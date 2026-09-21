@@ -127,6 +127,180 @@ paths:
 
   # =============================================================== amorçage
 
+  /v1/auth/sign-in:
+    post:
+      operationId: signInStudio
+      tags: [bootstrap]
+      summary: Ouvre une session professionnelle.
+      description: |
+        **Relais documenté vers `identity`**, et obligatoire pour les mêmes trois raisons que côté
+        storefront : zod est la source et l'OpenAPI en est généré — un relais transparent
+        n'apparaîtrait pas ici ; l'i18n par codes interdit les phrases anglaises de la
+        bibliothèque ; et la limitation de débit par appareil n'existe pas chez elle.
+
+        La réponse porte **l'amorçage complet**, pas une forme de session brute : la surface ne
+        peint rien avant lui, et un second appel serait un écran blanc de plus.
+
+        `TWO_FACTOR_REQUIRED` porte un `challengeId`. La double authentification est une
+        **précondition** du transfert de propriété d'une chaîne.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      security: []
+      x-arthome-idempotency-exemption: |
+        Une ouverture de session doit **toujours** ré-authentifier : rendre une réponse mémorisée
+        reviendrait à délivrer un jeton sans vérifier les justificatifs. La protection contre le
+        double-envoi est la limitation de débit, pas le magasin d'idempotence.
+      parameters:
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, mode]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+                mode: { $ref: '#/components/schemas/SessionMode' }
+                deviceId: { type: [string, 'null'], format: uuid }
+                deviceLabel: { type: [string, 'null'] }
+            example: { email: claire@example.org, password: 'un-mot-de-passe-long', mode: bearer, deviceLabel: 'iPhone de Claire' }
+      responses:
+        '200':
+          description: Session ouverte et amorçage servi, dans le mode demandé.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: '#/components/schemas/SessionEstablished' } }
+              example:
+                servedAt: '2026-09-21T17:58:00.000Z'
+                rightsVersion: 412
+                data:
+                  mode: bearer
+                  accessToken: sess_7c1de4
+                  refreshToken: refr_2b9f
+                  expiresAt: '2026-09-28T17:58:00Z'
+                  bootstrap:
+                    person: { personId: 019928b0-0000-7000-8000-000000000001, displayName: 'Claire D.' }
+                    channels: []
+                    personNavigation: [agenda, inbox, help]
+                    rightsVersion: 412
+                    constants: { technicalProvisionThreshold: 10000, provisionRevisionHours: 72, waitlistPriorityWindowHours: 2, cancelDeadlineMinutesBefore: 60, payoutDelayDays: 14, commissionRateBps: 1200, chatBurstThresholdPerMinute: 60, holdScreenAutoAfterSec: 15, seasonBounds: { startsOn: '09-01', endsOn: '08-31' } }
+                    labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/studio/fr/v41.json' }
+                    counters: { moderationPending: 14, inboxUnread: 2, dutiesTonight: 3 }
+        '401':
+          description: '`INVALID_CREDENTIALS` — indistinct d''un courriel inconnu — ou `TWO_FACTOR_REQUIRED`.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error: { code: TWO_FACTOR_REQUIRED, nature: refused, params: { challengeId: chl_7ab2 }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                servedAt: '2026-09-21T17:58:00.000Z'
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /v1/auth/two-factor/verify:
+    post:
+      operationId: verifyTwoFactorStudio
+      tags: [bootstrap]
+      summary: Répond au défi de double authentification.
+      description: '`challengeId` de courte durée et à usage unique ; un code de secours consommé ne se rejoue pas.'
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challengeId, code, mode]
+              properties:
+                challengeId: { type: string }
+                code: { type: string }
+                mode: { $ref: '#/components/schemas/SessionMode' }
+                deviceId: { type: [string, 'null'], format: uuid }
+            example: { challengeId: chl_7ab2, code: '318204', mode: bearer }
+      responses:
+        '200':
+          description: Session ouverte.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: '#/components/schemas/SessionEstablished' } }
+              example:
+                servedAt: '2026-09-21T17:58:20.000Z'
+                rightsVersion: 412
+                data:
+                  mode: cookie
+                  bootstrap:
+                    person: { personId: 019928b0-0000-7000-8000-000000000001, displayName: 'Claire D.' }
+                    channels: []
+                    rightsVersion: 412
+                    constants: { technicalProvisionThreshold: 10000, provisionRevisionHours: 72, waitlistPriorityWindowHours: 2, cancelDeadlineMinutesBefore: 60, payoutDelayDays: 14, commissionRateBps: 1200, chatBurstThresholdPerMinute: 60, holdScreenAutoAfterSec: 15, seasonBounds: { startsOn: '09-01', endsOn: '08-31' } }
+                    labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/studio/fr/v41.json' }
+                    counters: { moderationPending: 14, inboxUnread: 2, dutiesTonight: 3 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '410': { $ref: '#/components/responses/Gone' }
+
+  /v1/auth/forget-password:
+    post:
+      operationId: requestPasswordResetStudio
+      tags: [bootstrap]
+      summary: Demande un lien de réinitialisation.
+      description: |
+        **Répond toujours `202`**, que le compte existe ou non. Le lien du courriel pointe
+        **`studio.arthome.fr/reset`** — la surface, par produit et par langue —, jamais l'API : le
+        défaut de la bibliothèque le construirait depuis son adresse de base et mènerait la
+        personne sur un point d'entrée d'API.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+                locale: { type: string }
+            example: { email: claire@example.org, locale: fr }
+      responses:
+        '202':
+          description: Demande prise en compte — réponse identique dans les deux cas.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      data: { type: object, properties: { accepted: { type: boolean } } }
+              example:
+                servedAt: '2026-09-21T17:57:00.000Z'
+                rightsVersion: 0
+                data: { accepted: true }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
   /v1/bootstrap:
     get:
       operationId: getStudioBootstrap
@@ -2231,6 +2405,10 @@ paths:
         portent jamais le même nom, et seul `ingestUpKbps` alimente la liste de pré-vol.
       x-arthome-maturity: provisional
       x-arthome-upstream: [streaming]
+      x-arthome-idempotency-exemption: |
+        **Une mesure par seconde et par direct, tolérante à la perte.** Un échantillon rejoué est
+        un échantillon de plus dans une série ; un échantillon perdu ne manque à personne. La
+        série se **re-demande**, elle ne se rejoue pas — c'est déjà la règle de reprise du canal.
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
@@ -4393,17 +4571,12 @@ paths:
         Il est **nominatif et situé**, conservé 24 mois. Les **tentatives** de marche arrière sur
         une transition engagée y figurent : c'est en soi une information de conduite.
       x-arthome-maturity: stable
-      x-arthome-upstream: [identity, catalog, chat, streaming, payouts]
-      x-arthome-fanout-exception: |
-        **Seule opération des deux contrats au-dessus du seuil de quatre, et elle est assumée en
-        attendant un propriétaire.** Le journal est une jointure au moment de la requête, paginée
-        par décalage, sur l'artefact que le studio conserve 24 mois — et son `totalItems` exact
-        suppose de compter, par période et par nature, les entrées de cinq services, puis
-        d'appliquer la projection par rôle, puis de trier l'union. Aucun des cinq ne connaît le
-        total des quatre autres, et le BFF n'a pas le droit de tenir une table.
-        **Le journal n'a aucun contexte propriétaire** : aucun agrégat ne le définit, il n'est dans
-        aucun tableau de modèles de lecture, et sa rétention est fixée sans dire où. Tant qu'il
-        n'en a pas un, ce chemin reste hors seuil et le sait.
+      x-arthome-upstream: [identity]
+      # Un appel, pas cinq. Le journal est rattaché à `identity` comme modèle de lecture alimenté
+      # UNIQUEMENT par consommation Kafka : un propriétaire unique tient le total exact, la
+      # projection par rôle et le tri, sans jointure au moment de la requête et sans que le BFF
+      # acquière une table. L'exception de fan-out qui figurait ici n'a plus d'objet — et le
+      # système n'en a plus aucune, ce qui vaut mieux que d'en déclarer une.
       parameters:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/Surface'
@@ -5285,6 +5458,49 @@ components:
         personId: { type: [string, 'null'], format: uuid }
         displayName: { type: [string, 'null'] }
         surface: { type: string, x-arthome-vocabulary: [studio-web, studio-mobile, system] }
+
+    SessionMode:
+      type: string
+      description: |
+        **Paramètre explicite, validé, jamais déduit du `User-Agent`** — celui-ci est falsifiable.
+        `cookie` pour le studio web ; `bearer` pour la coquille native, où `capacitor://localhost`
+        est un contexte tiers sur iOS et où aucun cookie ne survivrait.
+      enum: [cookie, bearer]
+
+    SessionEstablished:
+      description: |
+        **Invariant : une réponse ne porte jamais un cookie et un jeton à la fois.** Deux porteurs
+        pour une session, c'est deux révocations à tenir et une qu'on oubliera. Ce sont donc
+        **deux schémas**, discriminés par le mode, et non un schéma à champ facultatif.
+      oneOf:
+        - $ref: '#/components/schemas/SessionEstablishedCookie'
+        - $ref: '#/components/schemas/SessionEstablishedBearer'
+      discriminator:
+        propertyName: mode
+        mapping:
+          cookie: '#/components/schemas/SessionEstablishedCookie'
+          bearer: '#/components/schemas/SessionEstablishedBearer'
+
+    SessionEstablishedCookie:
+      type: object
+      required: [mode, bootstrap]
+      description: Cookie `HttpOnly` `Secure` `SameSite=Lax` sur le **domaine du BFF**. **Rien dans le corps.**
+      properties:
+        mode: { type: string, const: cookie }
+        bootstrap: { $ref: '#/components/schemas/StudioBootstrap' }
+
+    SessionEstablishedBearer:
+      type: object
+      required: [mode, accessToken, expiresAt, bootstrap]
+      description: |
+        Jeton opaque dans le corps, **aucun cookie**, rangé dans le magasin natif —
+        `@capacitor/preferences`, **jamais `localStorage`**.
+      properties:
+        mode: { type: string, const: bearer }
+        accessToken: { type: string }
+        refreshToken: { type: [string, 'null'] }
+        expiresAt: { type: string, format: date-time }
+        bootstrap: { $ref: '#/components/schemas/StudioBootstrap' }
 
     # ---------------------------------------------------------- droits et amorçage
 

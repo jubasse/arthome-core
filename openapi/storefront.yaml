@@ -198,6 +198,691 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '503': { $ref: '#/components/responses/Unavailable' }
 
+  /v1/auth/sign-up:
+    post:
+      operationId: signUp
+      tags: [account]
+      summary: Crée un compte par courriel et mot de passe.
+      description: |
+        **Relais documenté vers `identity`, et le relais est obligatoire, pas préférable.** Trois
+        raisons, dont la première vient de notre propre outillage :
+
+        1. **zod est la source et l'OpenAPI en est généré.** Un relais transparent n'a pas de
+           schéma, donc **n'apparaîtrait pas dans ce document** — les six contrats manquants
+           resteraient manquants. C'est l'argument décisif ;
+        2. **l'i18n par codes.** La bibliothèque d'authentification répond des phrases anglaises
+           (`"Invalid email or password"`), ce que l'enveloppe d'erreur interdit. Le BFF traduit en
+           **codes**, enveloppe comprise ;
+        3. **la limitation de débit par `device_id`**, que la bibliothèque ne sait pas faire : ses
+           plafonds sont par adresse ou par session, et un salon derrière un NAT partage son
+           adresse.
+
+        Le cookie, quand il y en a un, est posé sur le **domaine du BFF** — c'est ce qui permet au
+        rendu serveur de le lire, et ce qui garde la règle critique 1 sans exception par la porte
+        de l'authentification.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, mode, acceptedTermsVersion]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 12 }
+                displayName: { type: string, maxLength: 80 }
+                mode: { $ref: '#/components/schemas/SessionMode' }
+                deviceId: { type: [string, 'null'], format: uuid }
+                acceptedTermsVersion:
+                  type: integer
+                  description: '**Horodaté par le serveur, versionné** : un consentement sans version ni date ne vaut rien.'
+            example: { email: marie@example.org, password: 'un-mot-de-passe-long', displayName: 'Marie J.', mode: cookie, acceptedTermsVersion: 3 }
+      responses:
+        '201':
+          description: Compte créé et session ouverte, dans le mode demandé.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: '#/components/schemas/SessionEstablished' } }
+              example:
+                servedAt: '2026-09-21T18:00:00.000Z'
+                data:
+                  mode: cookie
+                  viewerContext:
+                    deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
+                    signedIn: true
+                    profiles: []
+                    constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 10, reactionQuotaPerDate: 20, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
+                    labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json' }
+                    taxonomyArtifact: { locale: fr, version: 12, url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409':
+          description: '`EMAIL_TAKEN` — un **code**, pas la phrase anglaise de la bibliothèque.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error: { code: EMAIL_TAKEN, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                servedAt: '2026-09-21T18:00:00.000Z'
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /v1/auth/sign-in:
+    post:
+      operationId: signIn
+      tags: [account]
+      summary: Ouvre une session par courriel et mot de passe.
+      description: |
+        Même relais, même traduction en codes : `INVALID_CREDENTIALS` ne distingue **jamais** un
+        courriel inconnu d'un mot de passe faux — la distinction dirait à un attaquant quels
+        comptes existent.
+
+        `TWO_FACTOR_REQUIRED` est un refus **intermédiaire**, pas un échec : il porte un
+        `challengeId` à présenter à `/v1/auth/two-factor/verify`.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      x-arthome-idempotency-exemption: |
+        **Seule écriture des deux contrats sans `Idempotency-Key`, et c'est délibéré.** Le régime
+        d'idempotence rend la réponse d'origine **verbatim** ; sur une ouverture de session, cela
+        reviendrait à **rendre un jeton sans avoir vérifié les justificatifs**. Une clé volée
+        deviendrait un porteur de session.
+
+        Les cinq autres routes d'authentification la portent, elles, parce qu'un rejeu y rend la
+        réponse d'origine plutôt qu'un `410` ou un second effet — c'est la reprise sûre. Une
+        connexion, non : elle doit **toujours** ré-authentifier. La protection contre le
+        double-envoi est ici la limitation de débit par `device_id`, pas le magasin d'idempotence.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, mode]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+                mode: { $ref: '#/components/schemas/SessionMode' }
+                deviceId: { type: [string, 'null'], format: uuid }
+            example: { email: marie@example.org, password: 'un-mot-de-passe-long', mode: bearer, deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77 }
+      responses:
+        '200':
+          description: Session ouverte, dans le mode demandé.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: '#/components/schemas/SessionEstablished' } }
+              example:
+                servedAt: '2026-09-21T18:00:10.000Z'
+                data:
+                  mode: bearer
+                  accessToken: sess_9f2ac1b4
+                  refreshToken: refr_4d77e2
+                  expiresAt: '2026-09-28T18:00:10Z'
+                  viewerContext:
+                    deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
+                    signedIn: true
+                    profiles: []
+                    constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 6, reactionQuotaPerDate: 20, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
+                    labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json' }
+                    taxonomyArtifact: { locale: fr, version: 12, url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json' }
+        '401':
+          description: '`INVALID_CREDENTIALS`, ou `TWO_FACTOR_REQUIRED` avec son `challengeId`.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error: { code: TWO_FACTOR_REQUIRED, nature: refused, params: { challengeId: chl_7ab2 }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                servedAt: '2026-09-21T18:00:10.000Z'
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /v1/auth/sign-out:
+    post:
+      operationId: signOut
+      tags: [account]
+      summary: Ferme la session courante — et rien d'autre.
+      description: |
+        **Le piège que cette opération existe pour éviter.** Le `signOut` de la bibliothèque
+        d'authentification révoque **toutes** les sessions de l'utilisateur. Sur un téléviseur
+        partagé à cinq profils, ce n'est jamais ce qu'on veut : on déconnecterait le salon entier.
+
+        **Deux gestes, deux routes, jamais l'une pour l'autre** :
+        - **celle-ci** ferme la session courante ;
+        - **`DELETE /v1/me/device-sessions/{sessionId}`** déconnecte **un profil** d'un appareil
+          (`multi-session.revoke`), les autres comptes restant connectés ;
+        - **`DELETE /v1/me/devices/{deviceId}`** supprime l'appareil, toutes ses sessions **et ses
+          baux de lecture**.
+
+        **L'ordre compte en mode `bearer`** : la session est détruite côté serveur **puis** le
+        client efface son magasin natif. Effacer le magasin n'est pas révoquer. En mode `cookie`,
+        le cookie est effacé **avec exactement les attributs qui l'ont posé** — sans quoi il n'est
+        pas effacé.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Session close. Rejouée, elle réussit.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      data: { type: object, properties: { signedOut: { type: boolean } } }
+              example:
+                servedAt: '2026-09-21T23:00:00.000Z'
+                data: { signedOut: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/auth/forget-password:
+    post:
+      operationId: requestPasswordReset
+      tags: [account]
+      summary: Demande un lien de réinitialisation.
+      description: |
+        **Répond toujours `202`, que le compte existe ou non.** Distinguer les deux dirait à un
+        attaquant quels courriels sont inscrits.
+
+        **Le lien du courriel pointe la surface, jamais l'API** — `arthome.fr/reset?token=…` — et
+        donc **par produit et par langue**. Le défaut de la bibliothèque le construit depuis sa
+        propre adresse de base et mènerait la personne sur une API.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+                locale: { type: string, examples: [fr] }
+            example: { email: marie@example.org, locale: fr }
+      responses:
+        '202':
+          description: Demande prise en compte — la réponse est la même dans les deux cas.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      data: { type: object, properties: { accepted: { type: boolean } } }
+              example:
+                servedAt: '2026-09-21T18:01:00.000Z'
+                data: { accepted: true }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /v1/auth/reset-password:
+    post:
+      operationId: resetPassword
+      tags: [account]
+      summary: Pose un nouveau mot de passe depuis un jeton de réinitialisation.
+      description: |
+        **N'ouvre pas de session.** La personne se reconnecte, ce qui garantit que le nouveau mot
+        de passe fonctionne et évite qu'un lien de courriel devienne un porteur de session.
+        Le jeton est à usage unique et de courte durée.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string, minLength: 12 }
+            example: { token: rst_9f2ac1, password: 'un-nouveau-mot-de-passe' }
+      responses:
+        '200':
+          description: Mot de passe changé. **Toutes les autres sessions sont révoquées** — un mot de passe changé après un vol doit fermer la porte.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      data: { type: object, properties: { changed: { type: boolean }, otherSessionsRevoked: { type: integer } } }
+              example:
+                servedAt: '2026-09-21T18:02:00.000Z'
+                data: { changed: true, otherSessionsRevoked: 3 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '410': { $ref: '#/components/responses/Gone' }
+
+  /v1/auth/social/{provider}/start:
+    post:
+      operationId: startSocialSignIn
+      tags: [account]
+      summary: Démarre une connexion sociale — les surfaces ne parlent jamais au fournisseur.
+      description: |
+        **Le client OAuth est confidentiel et côté serveur.** Aucune application n'embarque de
+        secret : c'est la seule forme défendable sur un binaire distribué, et la redirection est
+        enregistrée **une fois par fournisseur**, sur le domaine du BFF.
+
+        **Le lien profond de retour ne porte jamais le jeton.** Il ne porte qu'un **état opaque à
+        usage unique**, que l'application échange ensuite contre son jeton en TLS direct avec le
+        BFF (`/v1/auth/exchange`). L'URL de retour transite par le système, peut être journalisée,
+        et peut être ouverte par une autre application.
+
+        **Par surface** : les navigateurs suivent une redirection ordinaire ; les coquilles
+        natives ouvrent le **navigateur système**, jamais leur WebView, et reviennent par lien
+        universel. **Le téléviseur ne fait pas d'OAuth** : il passe par l'appairage, intention
+        `signin`.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string, enum: [google, facebook] }
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode]
+              properties:
+                mode: { $ref: '#/components/schemas/SessionMode' }
+                deviceId: { type: [string, 'null'], format: uuid }
+                returnPath:
+                  type: [string, 'null']
+                  description: |
+                    Chemin **relatif** de retour dans la surface. Une adresse absolue est refusée :
+                    la liste d'autorisation est faite de **chaînes littérales**, jamais d'un motif.
+            example: { mode: bearer, deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77, returnPath: /compte }
+      responses:
+        '200':
+          description: L'adresse d'autorisation à ouvrir, et l'état opaque qui reviendra.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        required: [authorizationUrl, state, expiresAt]
+                        properties:
+                          authorizationUrl: { type: string, format: uri }
+                          state: { type: string, description: '**Opaque, à usage unique, de courte durée.** Il ne porte rien de signifiant.' }
+                          expiresAt: { type: string, format: date-time }
+              example:
+                servedAt: '2026-09-21T18:03:00.000Z'
+                data:
+                  authorizationUrl: 'https://api.arthome.fr/v1/auth/social/google/redirect?state=ott_9f2ac1'
+                  state: ott_9f2ac1
+                  expiresAt: '2026-09-21T18:13:00Z'
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /v1/auth/exchange:
+    post:
+      operationId: exchangeOneTimeToken
+      tags: [account]
+      summary: Échange l'état opaque du retour contre une session.
+      description: |
+        **C'est ce qui rend le parcours rejouable si le système tue l'application pendant le
+        détour** : l'état d'attente vit côté serveur, pas en mémoire d'application. Au retour, le
+        lien profond dit **où aller**, et cet échange dit **ce qui a changé**.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state, mode]
+              properties:
+                state: { type: string }
+                mode: { $ref: '#/components/schemas/SessionMode' }
+                deviceId: { type: [string, 'null'], format: uuid }
+            example: { state: ott_9f2ac1, mode: bearer, deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77 }
+      responses:
+        '200':
+          description: Session ouverte dans le mode demandé.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: '#/components/schemas/SessionEstablished' } }
+              example:
+                servedAt: '2026-09-21T18:03:40.000Z'
+                data:
+                  mode: bearer
+                  accessToken: sess_4d77e2
+                  expiresAt: '2026-09-28T18:03:40Z'
+                  viewerContext:
+                    deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
+                    signedIn: true
+                    profiles: []
+                    constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 6, reactionQuotaPerDate: 20, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
+                    labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json' }
+                    taxonomyArtifact: { locale: fr, version: 12, url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json' }
+        '410': { $ref: '#/components/responses/Gone' }
+
+  /v1/auth/password:
+    patch:
+      operationId: changePassword
+      tags: [account]
+      summary: Change le mot de passe depuis le compte.
+      description: |
+        **Le mot de passe courant est exigé**, et ce n'est pas une formalité : sans lui, une
+        session volée suffirait à verrouiller le compte de son propriétaire.
+
+        **Les autres sessions sont révoquées** — c'est le geste qu'on fait quand on soupçonne un
+        vol, et le laisser sans effet sur les autres porteurs le viderait de son sens. La session
+        courante survit : on ne se déconnecte pas soi-même en changeant son mot de passe.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string }
+                newPassword: { type: string, minLength: 12 }
+                revokeOtherSessions: { type: boolean, default: true }
+            example: { currentPassword: 'ancien-mot-de-passe', newPassword: 'un-nouveau-mot-de-passe' }
+      responses:
+        '200':
+          description: Mot de passe changé.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      data: { type: object, properties: { changed: { type: boolean }, otherSessionsRevoked: { type: integer } } }
+              example:
+                servedAt: '2026-09-21T18:57:00.000Z'
+                data: { changed: true, otherSessionsRevoked: 2 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /v1/auth/two-factor:
+    post:
+      operationId: enableTwoFactor
+      tags: [account]
+      summary: Active la double authentification et rend les codes de secours.
+      description: |
+        **Les codes de secours ne sont rendus qu'ici, une seule fois.** Ils ne sont jamais relus :
+        le serveur n'en garde que des empreintes. Une opération qui saurait les redire saurait les
+        lire, et ce ne serait plus un second facteur.
+
+        La double authentification est une **précondition** du transfert de propriété d'une
+        chaîne côté studio : le contrat le refuse sans elle.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, description: Réauthentification — c'est une opération sensible. }
+            example: { password: 'un-mot-de-passe-long' }
+      responses:
+        '201':
+          description: Secret à enrôler et codes de secours, rendus **une seule fois**.
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        required: [otpauthUri, backupCodes]
+                        properties:
+                          otpauthUri: { type: string }
+                          backupCodes: { type: array, items: { type: string } }
+              example:
+                servedAt: '2026-09-21T18:58:00.000Z'
+                data:
+                  otpauthUri: 'otpauth://totp/Arthome:marie%40example.org?secret=JBSWY3DP&issuer=Arthome'
+                  backupCodes: ['7K2M-9QP4', 'X3N8-2VTR']
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      operationId: disableTwoFactor
+      tags: [account]
+      summary: Désactive la double authentification.
+      description: '**Réauthentification exigée** : désactiver un second facteur est exactement ce qu''un voleur de session tenterait en premier.'
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string }
+            example: { password: 'un-mot-de-passe-long' }
+      responses:
+        '200':
+          description: Double authentification désactivée.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      data: { type: object, properties: { twoFactorEnabled: { type: boolean } } }
+              example:
+                servedAt: '2026-09-21T18:58:30.000Z'
+                data: { twoFactorEnabled: false }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/auth/two-factor/verify:
+    post:
+      operationId: verifyTwoFactor
+      tags: [account]
+      summary: Répond au défi de double authentification, et ouvre la session.
+      description: |
+        Suite de `TWO_FACTOR_REQUIRED`. Le `challengeId` est **de courte durée et à usage
+        unique** ; un code de secours consommé ne se rejoue pas.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challengeId, code, mode]
+              properties:
+                challengeId: { type: string }
+                code: { type: string }
+                mode: { $ref: '#/components/schemas/SessionMode' }
+                deviceId: { type: [string, 'null'], format: uuid }
+            example: { challengeId: chl_7ab2, code: '318204', mode: cookie }
+      responses:
+        '200':
+          description: Session ouverte, dans le mode demandé.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: '#/components/schemas/SessionEstablished' } }
+              example:
+                servedAt: '2026-09-21T18:00:25.000Z'
+                data:
+                  mode: cookie
+                  viewerContext:
+                    deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
+                    signedIn: true
+                    profiles: []
+                    constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 10, reactionQuotaPerDate: 20, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
+                    labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json' }
+                    taxonomyArtifact: { locale: fr, version: 12, url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '410': { $ref: '#/components/responses/Gone' }
+
+  /v1/me/passkeys:
+    post:
+      operationId: addPasskey
+      tags: [account]
+      summary: Enrôle une clé d'accès.
+      description: |
+        Rend les options d'enrôlement produites par le serveur ; la surface les passe à l'API du
+        navigateur ou du système, puis renvoie l'attestation à `PUT`. **Le secret ne quitte jamais
+        le matériel.**
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label: { type: string, maxLength: 80 }
+            example: { label: 'MacBook de Marie' }
+      responses:
+        '201':
+          description: Options d'enrôlement, à usage unique.
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          registrationOptions: { type: object, additionalProperties: true }
+                          expiresAt: { type: string, format: date-time }
+              example:
+                servedAt: '2026-09-21T18:59:00.000Z'
+                data:
+                  registrationOptions: { challenge: 'k7M2pQ', rp: { id: arthome.fr, name: Arthome } }
+                  expiresAt: '2026-09-21T19:04:00Z'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/me/passkeys/{passkeyId}:
+    delete:
+      operationId: removePasskey
+      tags: [account]
+      summary: Retire une clé d'accès.
+      description: '**Refusée si c''est le dernier justificatif du compte** (`LAST_CREDENTIAL`) : un compte sans aucun moyen de connexion est un compte perdu.'
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      parameters:
+        - name: passkeyId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Clé retirée.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      data: { type: object, properties: { removed: { type: boolean } } }
+              example:
+                servedAt: '2026-09-21T18:59:30.000Z'
+                data: { removed: true }
+        '409': { $ref: '#/components/responses/Conflict' }
+
   /v1/viewer-context:
     get:
       operationId: getViewerContext
@@ -1221,6 +1906,12 @@ paths:
         elle serait écrite trois fois.
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
+      x-arthome-idempotency-exemption: |
+        **Un devis rejoué doit être frais, jamais mémorisé** — même raison qu'un renouvellement de
+        jeton. Le devis tire sa valeur de son `validUntil` : rendre la réponse d'origine pourrait
+        rendre un devis **déjà expiré**, ou un prix que la promotion au prorata a rendu faux. Et
+        cette opération n'écrit rien : c'est une lecture, en `POST` parce que ses critères ne
+        tiennent pas dans une chaîne de requête.
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
@@ -1364,10 +2055,180 @@ paths:
                       date: { id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001, displayState: live }
                   date: { id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001, displayState: live }
                   order: { id: 019928f5-0000-7000-8000-0000000000aa, reference: ATH-2026-00042, kind: seat, state: paid, placedAt: '2026-09-21T18:41:30Z' }
+        '202':
+          description: |
+            **Authentification forte requise** — la commande existe, le paiement n'est pas abouti.
+            La surface présente l'élément de paiement avec le `clientSecret`, puis suit l'état par
+            `getOrder`. Elle ne conclut **jamais** depuis le retour d'URL.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: '#/components/schemas/PaymentHandoff' } }
+              example:
+                servedAt: '2026-09-21T18:41:30.000Z'
+                data:
+                  orderId: 019928f5-0000-7000-8000-0000000000aa
+                  state: awaiting_action
+                  paymentIntentRef: pi_3Ab2Cd
+                  clientSecret: pi_3Ab2Cd_secret_9f2
+                  nextAction: { kind: redirect_to_url, redirectUrl: 'https://hooks.stripe.com/3ds/authenticate' }
+                  returnUrl: 'https://arthome.fr/paiement/retour?order=019928f5-0000-7000-8000-0000000000aa'
+                  expiresAt: '2026-09-21T19:11:30Z'
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '409': { $ref: '#/components/responses/Conflict' }
         '503': { $ref: '#/components/responses/Unavailable' }
+
+  /v1/orders/{orderId}:
+    get:
+      operationId: getOrder
+      tags: [commerce]
+      summary: L'état d'une commande — **la seule source de vérité après un paiement**.
+      description: |
+        **C'est cette opération qui reprend une commande restée `awaiting_action`**, et c'est elle
+        que la surface interroge au retour d'une authentification forte. Le retour d'URL dit **où
+        aller** ; il ne dit jamais **ce qui a changé** : notre état n'avance que sur un webhook
+        vérifié, jamais sur un paramètre de navigateur.
+
+        **`no-store`** : l'état d'un paiement ne se met pas en cache.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [ticketing]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: La commande, et ce qu'elle a produit quand elle est `paid`.
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        required: [order]
+                        properties:
+                          order: { $ref: '#/components/schemas/Order' }
+                          tickets: { type: array, items: { $ref: '#/components/schemas/TicketCard' } }
+                          handoff:
+                            allOf: [{ $ref: '#/components/schemas/PaymentHandoff' }]
+                            description: Présent tant que la commande est `awaiting_action` — c'est ce qui permet de **reprendre** une authentification abandonnée.
+              example:
+                servedAt: '2026-09-21T18:43:00.000Z'
+                data:
+                  order: { id: 019928f5-0000-7000-8000-0000000000aa, reference: ATH-2026-00042, kind: seat, state: paid, placedAt: '2026-09-21T18:41:30Z', invoiceAvailable: true }
+                  tickets: []
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/me/payment-methods:
+    post:
+      operationId: addPaymentMethod
+      tags: [account]
+      summary: Enregistre un moyen de paiement depuis le web.
+      description: |
+        **La seule surface capable d'enregistrer une carte était celle qui n'a pas de clavier.**
+        L'intention `payment_method` existait pour l'appairage du téléviseur, et la section
+        Sécurité du compte affichait « Moyens de paiement · Gérer » sans qu'aucune commande ne
+        l'atteigne.
+
+        **Aucun numéro de carte ne touche notre domaine** : la commande rend un `clientSecret` de
+        configuration, et l'élément de paiement de la surface s'en charge — c'est ce qui garde le
+        périmètre de conformité au plus étroit.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [ticketing]
+      x-arthome-invalidates: ['account:payment-methods']
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [returnPath]
+              properties:
+                returnPath: { type: string, description: Chemin **relatif** dans la surface. Une adresse absolue est refusée. }
+                setAsDefault: { type: boolean, default: false }
+            example: { returnPath: /compte/securite, setAsDefault: true }
+      responses:
+        '201':
+          description: Configuration ouverte. La surface présente l'élément de paiement.
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        required: [setupIntentRef, clientSecret, returnUrl]
+                        properties:
+                          setupIntentRef: { type: string }
+                          clientSecret: { type: string }
+                          returnUrl: { type: string, format: uri }
+                          expiresAt: { type: string, format: date-time }
+              example:
+                servedAt: '2026-09-21T18:55:20.000Z'
+                data:
+                  setupIntentRef: seti_1Ab2Cd
+                  clientSecret: seti_1Ab2Cd_secret_7f3
+                  returnUrl: 'https://arthome.fr/compte/securite?setup=seti_1Ab2Cd'
+                  expiresAt: '2026-09-21T19:25:20Z'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/me/payment-methods/{paymentMethodId}:
+    delete:
+      operationId: removePaymentMethod
+      tags: [account]
+      summary: Retire un moyen de paiement.
+      description: |
+        **Refusée si c'est le dernier moyen d'un abonnement actif** (`PAYMENT_METHOD_IN_USE`) :
+        retirer en silence la seule carte d'un abonnement produirait un échec de prélèvement et
+        une formule résiliée sans que personne l'ait voulu.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [ticketing]
+      parameters:
+        - name: paymentMethodId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Moyen retiré. Rejouée sur un moyen déjà retiré, elle réussit.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      data: { type: object, properties: { removed: { type: boolean } } }
+              example:
+                servedAt: '2026-09-21T18:56:00.000Z'
+                data: { removed: true }
+        '409': { $ref: '#/components/responses/Conflict' }
 
   /v1/seats/{seatId}/cancel:
     post:
@@ -1672,6 +2533,11 @@ paths:
         deux commandes au paiement.
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
+      x-arthome-idempotency-exemption: |
+        **Un devis rejoué doit être frais, jamais mémorisé.** Le total présenté est celui qui sera
+        débité, et cette promesse tient **quinze minutes** : servir un devis mémorisé rendrait un
+        total dont la fenêtre est entamée, voire close — c'est-à-dire un devis opposable qui ne
+        l'est plus. Le rejeu produit donc un nouveau devis, avec sa propre fenêtre.
       parameters:
         - $ref: '#/components/parameters/Surface'
         - $ref: '#/components/parameters/Traceparent'
@@ -1774,6 +2640,26 @@ paths:
                 data:
                   orders: [{ id: 019928f6-2222-7000-8000-000000000001, reference: ATH-2026-00043, kind: merch, state: paid, placedAt: '2026-09-21T18:46:00Z' }]
                   cart: { lines: [], vendorGroups: [] }
+        '202':
+          description: '**Authentification forte requise.** Voir `PaymentHandoff` — le retour d''URL ne conclut rien, `getOrder` fait foi.'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: '#/components/schemas/PaymentHandoff' } }
+              example:
+                servedAt: '2026-09-21T18:46:00.000Z'
+                data:
+                  orderId: 019928f6-2222-7000-8000-000000000001
+                  state: awaiting_action
+                  paymentIntentRef: pi_3Ef4Gh
+                  clientSecret: pi_3Ef4Gh_secret_1a2
+                  nextAction: { kind: redirect_to_url, redirectUrl: 'https://hooks.stripe.com/3ds/authenticate' }
+                  returnUrl: 'https://arthome.fr/paiement/retour?order=019928f6-2222-7000-8000-000000000001'
+                  expiresAt: '2026-09-21T19:16:00Z'
         '409':
           description: |
             `CHECKOUT_LINE_UNAVAILABLE` (avec `unavailableLineIds`), `QUOTE_ADDRESS_MISMATCH`, ou
@@ -1833,6 +2719,26 @@ paths:
               example:
                 servedAt: '2026-09-21T18:47:00.000Z'
                 data: { planTier: premium, state: active, startedAt: '2026-09-21T18:47:00Z', currentPeriodEnd: '2026-10-21T18:47:00Z', cancelAtPeriodEnd: false }
+        '202':
+          description: '**Authentification forte requise.** Voir `PaymentHandoff` — le retour d''URL ne conclut rien, `getOrder` fait foi.'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: '#/components/schemas/PaymentHandoff' } }
+              example:
+                servedAt: '2026-09-21T18:47:00.000Z'
+                data:
+                  orderId: 019928f7-3333-7000-8000-000000000001
+                  state: awaiting_action
+                  paymentIntentRef: pi_3Ij5Kl
+                  clientSecret: pi_3Ij5Kl_secret_3c4
+                  nextAction: { kind: redirect_to_url, redirectUrl: 'https://hooks.stripe.com/3ds/authenticate' }
+                  returnUrl: 'https://arthome.fr/paiement/retour?order=019928f7-3333-7000-8000-000000000001'
+                  expiresAt: '2026-09-21T19:17:00Z'
         '402':
           description: Paiement refusé par le prestataire. **Distinct** d'un refus métier.
           content:
@@ -1896,6 +2802,13 @@ paths:
         **`Cache-Control: no-store`.** Un droit relu depuis le disque est un droit faux.
       x-arthome-maturity: provisional
       x-arthome-upstream: [streaming]
+      x-arthome-idempotency-exemption: |
+        **L'idempotence y serait redondante, parce que la reprise la porte déjà.** Une ouverture
+        sur un `deviceId` qui tient un bail vivant **reprend ce bail** et rend le même
+        `sessionId` : l'effet d'un second appel est celui du premier, par construction et non par
+        mémorisation. Y ajouter une clé mémoriserait en plus un `PlaybackTicket` — donc un jeton
+        signé et son instant d'expiration — dans un magasin de 24 heures, pour une réponse dont le
+        contrat dit qu'elle ne se met **jamais** en cache.
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
@@ -2011,6 +2924,12 @@ paths:
         différents. Un code générique en produirait un faux trois fois sur quatre.
       x-arthome-maturity: provisional
       x-arthome-upstream: [streaming]
+      x-arthome-idempotency-exemption: |
+        **Un renouvellement doit produire une fenêtre fraîche, jamais une fenêtre mémorisée.**
+        Rendre la réponse d'origine rendrait un jeton déjà entamé — et, au pire moment, un jeton
+        déjà expiré — alors que l'appel existe précisément pour en obtenir un neuf. C'est aussi ce
+        renouvellement qui porte la limite d'écrans simultanés : le rejouer depuis un magasin
+        contournerait le décompte.
       parameters:
         - name: sessionId
           in: path
@@ -2067,6 +2986,10 @@ paths:
         lecteur sur le même appareil réutilise le bail au lieu d'en ouvrir un second.
       x-arthome-maturity: provisional
       x-arthome-upstream: [streaming]
+      x-arthome-idempotency-exemption: |
+        **Idempotente par nature, et rien n'en dépend.** Libérer deux fois laisse le même état, et
+        c'est le **bail qui expire** qui fait foi — cet appel ne fait qu'accélérer. Une clé
+        protégerait un effet qui n'a ni cumul ni conséquence.
       parameters:
         - name: sessionId
           in: path
@@ -2110,6 +3033,12 @@ paths:
         **Dernier écrivain gagne, et le rang vient du serveur.**
       x-arthome-maturity: provisional
       x-arthome-upstream: [streaming]
+      x-arthome-idempotency-exemption: |
+        **L'écriture la plus fréquente du système.** Une clé par tranche de 30 secondes, par
+        spectateur et par direct ferait du magasin d'idempotence la table la plus chaude de
+        `streaming` — pour protéger une écriture dont la perte est sans conséquence et dont la
+        règle est déjà « dernier écrivain gagne, rang serveur ». Le coût serait par minute de
+        lecture et par spectateur.
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
@@ -2278,6 +3207,10 @@ paths:
         réaction en vol à la fois.**
       x-arthome-maturity: provisional
       x-arthome-upstream: [chat]
+      x-arthome-idempotency-exemption: |
+        **Le quota borne déjà l'effet**, et il est servi avec la réponse. Une clé rejouée rendrait
+        un quota **périmé** — « il vous en reste 17 » alors qu'il en reste 12 —, ce qui est pire
+        que pas de réponse du tout : la surface désactive son contrôle sur ce nombre.
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
@@ -4406,6 +5339,65 @@ components:
         venueTimezone: { type: string, examples: ['Europe/Paris'] }
         venueUtcOffsetMin: { type: integer, examples: [120] }
 
+    # ------------------------------------------------------------ authentification
+
+    SessionMode:
+      type: string
+      description: |
+        **Un paramètre explicite, validé, jamais déduit du `User-Agent`** — celui-ci est
+        falsifiable, et une heuristique contournable ne compte pas comme réponse.
+
+        `cookie` pour les surfaces web ; `bearer` pour les coquilles natives, où
+        `capacitor://localhost` est un contexte tiers sur iOS et où aucun cookie ne survivrait ;
+        `device` pour le téléviseur, qui n'a **ni cookie ni jeton** au moment où il ouvre un
+        appairage de connexion — c'est ce que l'identité d'appareil résout.
+      enum: [cookie, bearer, device]
+
+    SessionEstablished:
+      description: |
+        **Invariant : une réponse ne porte jamais un cookie et un jeton à la fois.** Deux porteurs
+        pour une session, c'est **deux révocations à tenir et une qu'on oubliera** — c'est ce qui
+        empêche une session de survivre à sa propre déconnexion. Ce n'est donc pas un schéma avec
+        un champ facultatif : ce sont **deux schémas**, discriminés par le mode.
+      oneOf:
+        - $ref: '#/components/schemas/SessionEstablishedCookie'
+        - $ref: '#/components/schemas/SessionEstablishedBearer'
+      discriminator:
+        propertyName: mode
+        mapping:
+          cookie: '#/components/schemas/SessionEstablishedCookie'
+          bearer: '#/components/schemas/SessionEstablishedBearer'
+          device: '#/components/schemas/SessionEstablishedBearer'
+
+    SessionEstablishedCookie:
+      type: object
+      required: [mode, viewerContext]
+      description: |
+        Le cookie est posé en en-tête `Set-Cookie` — `HttpOnly`, `Secure`, `SameSite=Lax`, sur le
+        **domaine du BFF**. **Rien dans le corps** : pas de jeton, pas d'identifiant de session.
+      properties:
+        mode: { type: string, const: cookie }
+        viewerContext:
+          allOf: [{ $ref: '#/components/schemas/ViewerContext' }]
+          description: |
+            **Projeté, jamais la forme brute de la bibliothèque d'authentification.** La surface
+            reçoit le contexte qu'elle utilise partout ailleurs, et n'a pas deux formes de session
+            à connaître.
+
+    SessionEstablishedBearer:
+      type: object
+      required: [mode, accessToken, expiresAt, viewerContext]
+      description: |
+        Jeton opaque dans le corps, **aucun cookie**. Le client le range dans le magasin natif —
+        Keychain, Keystore, `@capacitor/preferences` — **jamais dans `localStorage`**, qui est lié
+        à l'origine, vidable par le système, et ne voyage d'aucune façon.
+      properties:
+        mode: { type: string, x-arthome-vocabulary: [bearer, device] }
+        accessToken: { type: string }
+        refreshToken: { type: [string, 'null'] }
+        expiresAt: { type: string, format: date-time }
+        viewerContext: { $ref: '#/components/schemas/ViewerContext' }
+
     # ------------------------------------------------------- amorçage du spectateur
 
     DomainConstants:
@@ -5386,6 +6378,50 @@ components:
             part en instruction : refuser l'achat punirait le spectateur d'une ambiguïté qui n'est
             pas la sienne, et masquer le conflit produirait une déclaration fausse et silencieuse.
         resolvedAt: { type: string, format: date-time }
+
+    PaymentHandoff:
+      type: object
+      required: [orderId, state, paymentIntentRef, clientSecret, returnUrl]
+      description: |
+        **Le pas que le contrat n'avait pas, et sans lequel aucun paiement soumis à
+        l'authentification forte européenne n'aboutit.** Le vocabulaire d'état portait
+        `awaiting_action` ← « 3-D Secure en cours », et **aucune opération ne permettait ni
+        d'atteindre cet état ni d'en sortir** : les trois commandes d'argent ne répondaient que
+        `201 · paid`, sans `clientSecret`, sans `nextAction`, sans adresse de retour.
+
+        Ce n'était pas un raffinement : une part significative des paiements par carte en Europe
+        exige une authentification forte. Un parcours qui ne prévoit pas `requires_action`
+        **échoue en production sur des paiements parfaitement valides**, et il échoue en
+        silence — la commande reste `awaiting_action` et rien ne la reprend.
+
+        **Le `clientSecret` est produit côté serveur** et ne sert qu'à l'élément de paiement de la
+        surface ; il n'autorise rien d'autre et ne remplace aucune session.
+      properties:
+        orderId: { type: string, format: uuid }
+        state: { type: string, x-arthome-vocabulary: [pending, awaiting_action, processing] }
+        paymentIntentRef:
+          type: string
+          description: Référence **opaque** au domaine. Seul l'adaptateur sait la lire.
+        clientSecret: { type: string }
+        nextAction:
+          type: [object, 'null']
+          description: |
+            Ce que la surface doit faire ensuite, **déclaré** plutôt que deviné : une redirection
+            d'authentification forte, ou rien.
+          properties:
+            kind: { type: string, x-arthome-vocabulary: [redirect_to_url, use_stripe_sdk, none] }
+            redirectUrl: { type: [string, 'null'], format: uri }
+        returnUrl:
+          type: string
+          format: uri
+          description: |
+            **Où le fournisseur renvoie après l'authentification.** Liste d'autorisation en
+            **chaînes littérales**, jamais un motif.
+
+            **Et le retour ne confirme rien** : *un paiement confirmé par un paramètre d'URL est
+            un paiement confirmé par le client*. Le retour dit **où aller** ; c'est
+            `getOrder` — alimenté par le webhook vérifié — qui dit **ce qui a changé**.
+        expiresAt: { type: string, format: date-time }
 
     Order:
       type: object

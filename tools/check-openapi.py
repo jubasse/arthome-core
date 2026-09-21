@@ -108,15 +108,32 @@ def check(fn):
         params = o.get("parameters",[]) or []
         has_idem = any(pa.get("$ref","").endswith("/IdempotencyKey") or pa.get("name")=="Idempotency-Key"
                        for pa in params)
-        # Exceptions ASSUMÉES : écritures tolérantes à la perte ou sans effet cumulatif.
-        # Une clé d'idempotence y coûterait plus cher que ce qu'elle protège.
-        SAFE_WRITE = {"recordPlaybackPosition",  # la plus fréquente du système
-                      "submitHealthSample",      # une mesure par seconde, par direct
-                      "openPlayback", "renewPlaybackTicket", "releasePlayback",
-                      "sendReaction",            # le quota borne déjà l'effet
-                      "quoteCart", "quoteSeat"}  # lectures déguisées en POST
-        if m in ("post","put","patch","delete") and oid not in SAFE_WRITE and not has_idem:
+        # L'exemption se lit DANS LE DOCUMENT, pas dans une liste tenue ici.
+        #
+        # La première version portait un `SAFE_WRITE` codé en dur — c'est-à-dire
+        # une table littérale parallèle au contrat, tenue dans l'outil qui existe
+        # pour interdire les tables littérales parallèles. E2 dans sa propre porte.
+        # Elle a échoué comme une telle table échoue toujours : le contrat a gagné
+        # deux opérations (`signIn`, `signInStudio`) et la liste ne le savait pas.
+        #
+        # Une opération exemptée porte donc `x-arthome-idempotency-exemption`, avec
+        # son motif en clair — le motif étant la partie utile, puisqu'il se relit.
+        # Deux familles, toutes deux légitimes :
+        #
+        #   · écriture tolérante à la perte ou sans effet cumulatif, où la clé
+        #     coûterait plus cher que ce qu'elle protège (position de lecture,
+        #     échantillon de santé, réaction bornée par un quota, devis) ;
+        #   · ouverture de session, et le motif est sérieux : le régime
+        #     d'idempotence rend la réponse d'origine VERBATIM, donc sur un
+        #     `signIn` il rendrait un jeton sans avoir vérifié les justificatifs.
+        #     Une clé rejouée deviendrait un porteur de session.
+        exempt = o.get("x-arthome-idempotency-exemption")
+        if m in ("post","put","patch","delete") and not exempt and not has_idem:
             err(fn, f"R11 Idempotency-Key absent sur une écriture — {oid}")
+        if exempt and has_idem:
+            err(fn, f"R11 exemption déclarée ET Idempotency-Key présent — {oid}")
+        if exempt and not str(exempt).strip():
+            err(fn, f"R11 exemption sans motif — {oid}")
 
         # R12 — traceparent propagé partout
         if not any(pa.get("$ref","").endswith("/Traceparent") or pa.get("name")=="traceparent"
