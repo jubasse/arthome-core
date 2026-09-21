@@ -604,6 +604,28 @@ structure is authorial — a line per clause is what makes a prose diff reviewab
 `prototypes/` (the five mockups, reproduced as they are, README §3), `docs/` (the handoff dossier,
 corrected in place but not ours to restyle), the lockfile and every generated directory.
 
+**And it does not own a generated artefact's target either — the same boundary, one category further
+out.** `openapi/storefront.yaml` and `openapi/studio.yaml` are the **target** that
+`@arthome/contracts` must emit, and the moment of truth for that package is `contracts:emit`
+producing an **empty diff** against them. That makes their byte-level formatting a property of the
+**emitter**, not of the formatter: if Prettier restyles them, the emitter has to learn to reproduce
+Prettier's YAML style, or the diff is never empty.
+
+This one was not reasoned out in advance. It was written after a repository-wide `prettier --write`
+reflowed `storefront.yaml` while another agent was mid-translation — single quotes to double, flow
+mappings exploded, about seven hundred lines of growth — which moved every line number that agent
+was holding by up to 835 and destroyed **151 keys**. The document stopped parsing. It was recovered
+in full by rebuilding from `HEAD` and re-applying all 514 translations keyed on **token signatures
+instead of line numbers**, which is the more durable technique and is now the one to use.
+
+Three lessons, and only the first is about Prettier:
+
+1. **A file that is a target is owned by whatever produces it.** Ask "what would have to change if
+   this file were reformatted?" — if the answer is "a generator", the generator owns the format.
+2. **Keying an edit on line numbers is keying it on someone else's restraint.** Token signatures
+   survive a reformat; line numbers do not survive anything.
+3. **The reformat itself was the fault, not the file.** That is §8.5.
+
 ---
 
 ## 4. `@arthome/tooling` — the configuration package
@@ -1371,6 +1393,76 @@ why it must be **generated or checked**, not written by hand. The detail belongs
 `architecture/events.md`; this document only requires that the check exist and appear in
 `pnpm run verify`.
 
+#### 5.3.1 The gate between the two artefacts
+
+§5.3 proves that no enumeration value is **copied into** the source. `check-openapi.py` R14 proves
+that every reachable enum is **declared**. Neither proves the two **agree** — and for four months
+they did not.
+
+Found by hand, not by a gate: `@arthome/core` exports `moderation-page` where `openapi/studio.yaml`
+declares `moderation`, and `team` exists in the domain and not in the contract. Five gates were
+green. That is E2 — the parallel literal table — surviving **between the two artefacts built to
+prevent it**, which is the most expensive place for it to live: the domain and the contract are
+precisely the pair that must not disagree.
+
+`arthome-check-vocabulary` closes it. Three decisions it rests on, each with its cost:
+
+**a. The contract declares its source. It is never guessed.**
+
+```yaml
+x-arthome-vocabulary-source: NAVIGATION_ENTRIES
+x-arthome-vocabulary: [agenda, dashboard, moderation-page, crew, …]
+```
+
+Heuristic matching by member overlap was tried first, and it is *why* this key exists: at 0.38
+overlap the matcher paired a display-state list with `DATE_OUTCOMES` and invented five missing
+members. A gate that guesses produces false positives, and a gate that shouts wrongly gets switched
+off. The cost is honest and it is not small: **148 blocks need the key**, and five of them sit inside
+YAML flow mappings where it cannot be added by inserting a line.
+
+**b. A vocabulary with no domain counterpart says so, in place.**
+
+```yaml
+x-arthome-vocabulary-source: none
+x-arthome-vocabulary-reason: Input filter, not a domain vocabulary.
+```
+
+In the artefact, not in a side file — because a side file would have to identify the block by line
+number, and line numbers are what §3.7 learned not to key on. The reason is mandatory: an exception
+that does not say why is not an exception, it is a hole.
+
+**c. The migration is a ratchet, not a truce.** `tools/vocabulary-migration.json` records how many
+blocks are still unannotated, so the gate is useful **today** against contracts nobody has annotated
+yet. Two properties make it a ratchet: the number may go **down and never up**, so new drift fails
+immediately; and it carries a `removeAfter` date the gate enforces, so it cannot be forgotten. Same
+shape as §7.6, for the same reason.
+
+**What it found on its first real run, which nobody was looking for.** In five blocks a vocabulary
+member is **not a string**:
+
+```yaml
+x-arthome-vocabulary: [open, emoji, read_only, off]   # `off` is a BOOLEAN
+```
+
+YAML 1.1 reads bare `off`, `on`, `yes` and `no` as booleans. PyYAML returns `False`, and so will many
+code generators. The contract does not say what its author believes it says, and nothing had reported
+it — `check-openapi.py` reads the same file with the same parser and does not look at member types.
+The fix is one pair of quotes; the lesson is that **an unquoted YAML scalar is a type decision made
+by the parser**, and a vocabulary of short lowercase words is exactly where that bites.
+
+The gate reports this as its own class and **skips the agreement check for that block**: until the
+members are strings, comparing them is meaningless, and two messages for one cause invites fixing
+the wrong one — the same principle as §4.5.1's broken-chain rule.
+
+**Where it lives, and why not in `@arthome/tooling`.** In `tools/`, in Python, next to
+`check-openapi.py`. Python because it reads OpenAPI and a gate that reads OpenAPI with a real YAML
+parser already exists here — hand-rolling a second YAML reader in Node, for a format with four
+distinct flow shapes in these two files alone, would be a parallel implementation of parsing. And
+`tools/` rather than the shared package because this is a **one-repository rule**: only
+`arthome-core` holds both `@arthome/core` and `openapi/`. `arthome-check-language` moved into the
+package because it is a seven-repository rule; this one does not, and the distinction is the test to
+apply to every future gate.
+
 ### 5.4 The shape of a repository
 
 Common to all seven — what must exist and carry this name:
@@ -1994,6 +2086,36 @@ period exists to protect against a compromised third party, not against ourselve
 
 ---
 
+### 7.7 One pnpm behaviour that will cost the next repository an hour
+
+**Adding a `bin` to a workspace package does not relink it.** `pnpm install` decides whether there is
+anything to do by looking at the **lockfile**, and a new `bin` entry in a workspace package does not
+change the lockfile. So the install prints `Already up to date`, exits 0, and the new command is not
+there:
+
+```
+$ pnpm exec arthome-check-language
+  × Command "arthome-check-language" not found
+```
+
+Reproduced deliberately: deleting `node_modules/.bin/<name>` and running `pnpm install` restores
+nothing — it still reports `Already up to date`. The fix is one flag:
+
+```bash
+pnpm install --force      # relinks the workspace binaries
+```
+
+**Why this earns a section rather than a footnote.** The error message points at the wrong thing. It
+says the command does not exist, so the reflex is to check the `bin` entry, the file path, the shebang
+and the executable bit — all of which are correct. Nothing in the message suggests the install was
+skipped. Every repository born after this one adds gates to `@arthome/tooling` and will hit it once.
+
+The general shape, worth carrying: **`pnpm install` is a lockfile operation, not a "make
+`node_modules` correct" operation.** Anything that changes what a workspace package *exposes* rather
+than what it *depends on* is invisible to it.
+
+---
+
 ## 8. The gates — everything is checkable locally
 
 The account's Actions quota is exhausted. No gate assumes a remote runner.
@@ -2018,8 +2140,10 @@ The account's Actions quota is exhausted. No gate assumes a remote runner.
 | 14 | Tests | `pnpm exec vitest run` | green | §5.8 |
 | 15 | Commit message | the `commit-msg` hook | conformant | §5.9, §8.4 |
 | 16 | OpenAPI conformance | `python3 tools/check-openapi.py openapi/*.yaml` | `✓ conformant` | `definition-of-done.md` |
+| 17 | No French prose committed | `pnpm exec arthome-check-language` | `PASS` | D-024 |
+| 18 | **Contracts and domain share one vocabulary** | `python3 tools/check-vocabulary.py openapi/*.yaml` | `PASS` | §5.3.1 |
 
-**Gates 9, 10, 11 and 16 run without `node_modules`** — the first three are pure Node shipped by
+**Gates 9, 10, 11, 16, 17 and 18 run without `node_modules`** — the first three are pure Node shipped by
 `@arthome/tooling`, the fourth is Python with no dependency beyond PyYAML. That is deliberate: a gate
 that needs an install in order to exist does not exist on the day a repository is created, which is
 the day it would help most. Hence the second script in §8.2.
@@ -2120,6 +2244,50 @@ gives the illusion of a gate. Lint, typing and tests are in `pnpm run verify`, r
 **The day the Actions quota returns:** the workflow file calls `pnpm run verify` and nothing else.
 That is why everything sits behind a single command — the remote CI will not add a second definition
 of what is checked, so there will never be two lists to keep in agreement.
+
+### 8.5 A repository-wide rewrite is a stop-the-world operation
+
+**The rule.** A repository-wide `--write`, a codemod, a rename sweep or any reformat that touches
+files you do not own is **announced, then everyone stops, then one agent runs it, then everyone
+resumes**. Never while another agent is mid-file.
+
+**Why it is a rule and not a courtesy.** This document cost 151 keys in `openapi/storefront.yaml`
+learning it. A `prettier --write .` run across a working tree that nine agents were editing landed
+between another agent's two passes — it had extracted French units with their line numbers and was
+about to write English back at those line numbers. The reformat moved every one of them by up to
+835. The next batch wrote sixty blocks into the wrong places, and the document stopped parsing.
+
+Three properties made it undetectable at the moment it happened, and they are the reason this needs
+a rule rather than care:
+
+- **The reformat was correct.** Prettier did exactly what it was asked. Nothing failed, nothing
+  warned, and the command exited 0.
+- **The damage was in a file the runner had no reason to be looking at.** I reported it as another
+  agent's transient breakage, because that is what it looked like from outside: a file that had been
+  green, was briefly red, and went green again.
+- **`git status` does not distinguish "my change" from "my change on top of someone's half-finished
+  change".** There is no signal to read.
+
+**So the default scope is narrowed, and that is the part that generalises:**
+
+> `prettier --write .` is not the same operation as `prettier --write` **on the files you own**. The
+> second is the default. The first is a stop-the-world operation and needs the announcement.
+
+```bash
+# the default: format what you touched
+pnpm exec prettier --write $(git diff --name-only --diff-filter=ACMR)
+
+# stop-the-world: announced first, one agent, nobody else mid-file
+pnpm exec prettier --write .
+```
+
+The `pre-commit` hook (§8.4) already has the right scope — staged files only — and that is not a
+coincidence: a hook that reformatted the whole repository on every commit would have caused this
+weekly.
+
+**What this rule is not.** It is not "avoid repo-wide commands". They are necessary, and postponing
+them is how a repository ends up with two formatting styles. It is: **name the moment**. The cost of
+announcing is one message; the cost of not announcing was a full rebuild of a 6,300-line contract.
 
 ---
 

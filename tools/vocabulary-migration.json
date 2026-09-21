@@ -1,0 +1,27 @@
+{
+  "_comment": [
+    "A RATCHET, not an exemption. It records how many x-arthome-vocabulary blocks",
+    "in openapi/*.yaml still carry no x-arthome-vocabulary-source, so the gate can",
+    "be useful TODAY on contracts that are not annotated yet.",
+    "",
+    "Two properties make it a ratchet and not a truce:",
+    "  - the number may go DOWN, never up. New drift fails immediately, because a",
+    "    new block without a source pushes the count above the allowance.",
+    "  - it EXPIRES. `removeAfter` is read by the gate, which turns red once the",
+    "    date has passed. An allowance without a deadline is a permanent exemption",
+    "    that does not say its name (code-conventions.md 7.6).",
+    "",
+    "Lower `undeclaredAllowed` as blocks get annotated. When it reaches 0, delete",
+    "this file.",
+    "",
+    "Why 148 and not the 143 the gate currently counts: five blocks are skipped",
+    "because a member parses as a YAML 1.1 boolean, so they are not yet countable.",
+    "Quoting those members makes them parseable and raises the undeclared count to",
+    "148. Setting the allowance to 143 would turn the gate red for FIXING a defect,",
+    "which is the one thing a ratchet must never do."
+  ],
+  "undeclaredAllowed": 148,
+  "removeAfter": "2026-10-31",
+  "why": "148 of 148 blocks are unannotated: the x-arthome-vocabulary-source key was introduced with the gate itself, on 2026-09-22. Annotating them is backend-contracts' work and it is not mechanical — five blocks sit inside YAML flow mappings and cannot be annotated by inserting a line.",
+  "owner": "backend-contracts"
+}

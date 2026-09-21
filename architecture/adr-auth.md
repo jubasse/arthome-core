@@ -222,6 +222,14 @@ PAIRING_CODE_ALPHABET = "ACDEFHJKLMNPQRTVWXY23456789"   // 27 symbols
 PAIRING_CODE_LENGTH   = 6
 ```
 
+> ⚠ **This block is provisional and this document is the wrong home for it.** These values exist
+> **nowhere else in the repository** — unlike `SEAT_CODE_ALPHABET`, which is an exported constant
+> with a spec. They belong in `@arthome/core` beside it, exported, with the invariant below
+> asserted in a spec; `backend-domain` owns that file. Until that constant exists this ADR is the
+> only source, so the string stays here **and is not to be copied elsewhere in the meantime**.
+> Once it is exported, replace this block with the identifier and assert that no copy of its
+> value remains — the same rule this section applies to the seat code. See §12.5.
+
 **The principle, and it is stronger than "drop the confusable glyphs":** for every commonly
 confused pair, **keep exactly one member**. It is the kept member that makes correction *safe*
 rather than guessed — the rule `backend-domain` formulated while writing the seat code's
@@ -962,7 +970,7 @@ anything.
 ## 12. What I escalate to the lead
 
 No technical impossibility: **no binding decision is reopened.** Three points had been escalated
-and a fourth came from the lead; **all four are closed.** I leave them here with their outcome
+and a fourth came from the lead; **four are closed, and a fifth is open.** I leave them here with their outcome
 rather than deleting them — a question resolved without a trace gets asked again.
 
 1. **~~The `seat` pairing duration must be the duration of a seat hold~~ — closed.** (§4/Q4.)
@@ -984,6 +992,21 @@ rather than deleting them — a question resolved without a trace gets asked aga
    What I was asking for was less the rule than **the prohibition on correcting it**: an exception
    that looks like a mistake gets repaired by someone well-intentioned, and the token then stops
    being verifiable by any conformant verifier at all.
+5. **The pairing alphabet exists only in prose** — **open**, and it is the sharpest instance of
+   this document's own argument. `rg` over the repository finds `PAIRING_CODE` and
+   `ACDEFHJKLMNPQRTVWXY` in **exactly one file: this one.** The section that establishes that a
+   value needs an owning document is itself the owning document of a value that exists nowhere
+   else. "Prose has no gate" (§9.4) is therefore not a limitation of the ADR — it is a
+   description of where that alphabet lives, and it cannot have a gate until it is a constant.
+   For `backend-domain`, in `@arthome/core` beside `SEAT_CODE_ALPHABET`.
+
+   **One sequencing note, because it is the difference between a move and a loss.** The invariant
+   does not determine the string: **960 distinct alphabets satisfy it** (3 choices for which of
+   `1`/`I`/`L` survives, 2 each for the five binary classes, and 10 ways to pick which 3 of
+   `0`/`O`/`D`/`Q`/`C` survive). Handing over the invariant as the specification would be
+   underdetermined by three orders of magnitude. **The string travels with it**, and this block
+   is deleted only once the export exists.
+
 4. **~~The static JWKS document has no owner~~ — closed, and my proposal was the wrong one.**
    (§8.1.) I was asking for *a single rotation job* to be assigned; `definition-of-done.md` §7.6
    showed that the simplification was illusory, my own table already carrying two calendars. The

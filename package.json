@@ -23,8 +23,9 @@
     "check:versions": "arthome-check-versions",
     "check:tsconfig": "arthome-check-tsconfig",
     "check:openapi": "python3 tools/check-openapi.py openapi/storefront.yaml openapi/studio.yaml",
+    "check:vocabulary": "python3 tools/check-vocabulary.py openapi/storefront.yaml openapi/studio.yaml",
     "verify": "pnpm run verify:offline && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test",
-    "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:language && pnpm run check:core-entry && pnpm run check:openapi"
+    "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:language && pnpm run check:core-entry && pnpm run check:openapi && pnpm run check:vocabulary"
   },
   "devDependencies": {
     "@arthome/tooling": "workspace:*",
