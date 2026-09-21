@@ -46,12 +46,12 @@ info:
     Every response carries `X-Arthome-Rights-Version`. When it changes, the navigation is stale:
     an accepted invitation adds a channel to the switcher, a one-off access expires on its own at
     curtain-down, a role is withdrawn. Without that counter, the person keeps a tab that opens a
-    403 and finds out **in the middle of a shift**. The maximum staleness of authorisation is
+    403 and finds out **while on duty**. The maximum staleness of authorisation is
     **60 seconds**, the lifetime of the internal token minted by the BFF.
 
     ## Three command regimes, named
 
-    - **conditional** — most of the gestures made on shift. They carry `expectedVersion`, and the
+    - **conditional** — most of the gestures made on duty. They carry `expectedVersion`, and the
       server **refuses** if it has changed. The canonical case is the moderation verdict: the
       second verdict is **refused, with the verdict that won and the name of whoever rendered
       it**. A blind idempotent replay would produce exactly the opposite;
@@ -75,8 +75,8 @@ info:
 
     ## Errors
 
-    The same envelope as the storefront: `code`, `nature`, `params`, `traceId`. `nature` is what a
-    shift requires: `refused` (do not retry, understand), `unavailable` (retry),
+    The same envelope as the storefront: `code`, `nature`, `params`, `traceId`. `nature` is what being
+    on duty requires: `refused` (do not retry, understand), `unavailable` (retry),
     `offline_forbidden` (a **local** refusal, before anything is sent — **never emitted by the
     server**). It is the decision someone on call must make in ten seconds.
 
@@ -101,7 +101,7 @@ tags:
   - name: bootstrap
     description: Bootstrap, effective rights, inbox, counters.
   - name: agenda
-    description: Channel schedule, shifts, event board.
+    description: Channel schedule, duties, event board.
   - name: publication
     description: A date's life cycle, state machine, publication gate.
   - name: ticketing
@@ -354,7 +354,7 @@ paths:
         with their effective roles, `grants` **projected onto those roles**, the preferences, the
         rights version, the badge counters and the domain constants.
 
-        **The root is a person, not a channel.** A freelance stage manager can be on shift for two
+        **The root is a person, not a channel.** A freelance stage manager can be on duty for two
         live shows the same evening, at two different channels.
 
         The failure of this call is **a failure screen in its own right, with the trace identifier**:
@@ -502,7 +502,7 @@ paths:
       operationId: markInboxRead
       tags: [bootstrap]
       summary: Marks inbox entries as read.
-      description: '"**Monotonic: nothing gets un-read.** Replayed, it changes nothing."'
+      description: "**Monotonic: nothing gets un-read.** Replayed, it changes nothing."
       x-arthome-maturity: provisional
       x-arthome-upstream: [notifications]
       parameters:
@@ -549,7 +549,7 @@ paths:
 
         **The factor is served, not guessed.** `GET` returns `acceptedFactors` for this device and
         this person; the surface offers what the server accepts, instead of assuming. This is the
-        question a shift asks: rotating a stream key is the stage manager's emergency gesture — the
+        question being on duty asks: rotating a stream key is the stage manager's emergency gesture — the
         one you make when you suspect a leak **during** a live show. If re-authentication is a
         password to be typed in a dark room, one-handed, the guarantee is paid for in dead air.
 
@@ -808,9 +808,9 @@ paths:
     put:
       operationId: registerStudioPushToken
       tags: [bootstrap]
-      summary: Registers the push token — without it, a shift does not wake up.
+      summary: Registers the push token — without it, a duty does not wake up.
       description: |
-        **The routing was settled, the recipient did not exist.** Shift alerts — moderation queue
+        **The routing was settled, the recipient did not exist.** Duty alerts — moderation queue
         saturated, no moderator assigned at D-1, unstable bitrate — arrive precisely when the
         application is **not** in the foreground. Payload redaction was promised; the payload had
         nobody to go to.
@@ -941,7 +941,7 @@ paths:
     get:
       operationId: listDuties
       tags: [agenda]
-      summary: My shifts — across all channels, with the overlaps.
+      summary: My duties — across all channels, with the overlaps.
       description: |
         `person_duties` is held by `identity` and carries **all** accessible channels. The overlap is
         **served** (`overlapsWith`), computed once in `@arthome/core`: a surface recomputing it would
@@ -962,7 +962,7 @@ paths:
           schema: { type: string, format: date-time }
       responses:
         "200":
-          description: The shifts in the period.
+          description: The duties in the period.
           content:
             application/json:
               schema:
@@ -1748,7 +1748,7 @@ paths:
         whose entire navigation is `crew · log · help`:
 
         - `/v1/dates/{dateId}/crew` was **POST only**: the dates × posts matrix and the "tonight"
-          list had no read path at all. `listDuties` gives **my** shifts,
+          list had no read path at all. `listDuties` gives **my** duties,
           `EffectiveRights.dateGrants` gives **my** accesses — neither gives the coverage;
         - **`revokeDateAccess` revokes by `grantId`, an identifier no read handed out**;
         - `moderator_assigned` is one of the checklist items and `datesToCover` a served counter:
@@ -2359,7 +2359,7 @@ paths:
               required: [newDateId, startsAt]
               properties:
                 newDateId:
-                  { type: string, format: uuid, description: Généré par le domaine côté client. }
+                  { type: string, format: uuid, description: "Generated client-side by the domain." }
                 startsAt: { type: string, format: date-time }
                 applyToSeries: { type: boolean, default: false }
             example:
@@ -2493,7 +2493,7 @@ paths:
                 servedAt: "2026-09-21T20:50:00.000Z"
         "409": { $ref: "#/components/responses/Conflict" }
 
-  # =============================================================== conduite du direct
+  # =============================================================== running the live show
 
   /v1/dates/{dateId}/run:
     get:
@@ -2550,6 +2550,14 @@ paths:
                     viewers: 1842
                   incident: null
                   chapters: []
+                  presence:
+                    - {
+                        personId: 019928b2-0000-7000-8000-00000000000a,
+                        displayName: "Marie J.",
+                        roles: [production],
+                        lastActivityAt: "2026-09-21T19:19:48Z",
+                        isSelf: false,
+                      }
                   chatThroughputPerMinute: 41
                   version: 3
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -2738,6 +2746,74 @@ paths:
         "409": { $ref: "#/components/responses/Conflict" }
 
   /v1/dates/{dateId}/run/health-samples:
+    get:
+      operationId: getHealthSeries
+      tags: [run]
+      summary: The health series over a bounded window — the curve a reconnection re-requests.
+      description: |
+        **The write promised a read that did not exist.** `submitHealthSample`'s own exemption motive
+        says the series "is **re-requested**, it is not replayed", and `realtime.md` §5.1 files a
+        bitrate curve under "to throw away" for that same reason — yet nothing could request it, and
+        `RunConsole` served `lastSample` alone. One point is not a curve.
+
+        Three paths cross this read every evening and none of them is exceptional: after a
+        `resume:too_old`, after a reconnection, and simply opening the console in the middle of a
+        live show.
+
+        **Bounded by construction.** The window is a parameter, capped, and defaults to the last
+        three minutes — `studio-mobile` asked for it short, and a control room reads the last three
+        minutes, not the last three hours.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [streaming]
+      parameters:
+        - $ref: "#/components/parameters/DateId"
+        - $ref: "#/components/parameters/Surface"
+        - $ref: "#/components/parameters/IfRightsVersion"
+        - $ref: "#/components/parameters/Traceparent"
+        - name: windowSec
+          in: query
+          required: false
+          description: |
+            The window, in seconds, ending now. The server **caps** it and serves back the window it
+            applied (`HealthSeries.windowSec`), rather than refusing: an operator asking for too much
+            wants a curve, not an error.
+          schema: { type: integer, minimum: 30, maximum: 3600, default: 180 }
+      responses:
+        "200":
+          description: The series over the window actually applied, with its peak.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/EnvelopeMeta"
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: "#/components/schemas/HealthSeries" } }
+              example:
+                servedAt: "2026-09-21T21:40:02.000Z"
+                rightsVersion: 412
+                data:
+                  windowSec: 180
+                  samples:
+                    - {
+                        measuredAt: "2026-09-21T21:39:00Z",
+                        source: ingest_server,
+                        ingestUpKbps: 8900,
+                        droppedPct: 0.1,
+                        viewers: 412,
+                      }
+                    - {
+                        measuredAt: "2026-09-21T21:39:30Z",
+                        source: ingest_server,
+                        ingestUpKbps: 8700,
+                        droppedPct: 0.2,
+                        viewers: 431,
+                      }
+                  peakViewers: 431
+                  peakViewersAt: "2026-09-21T21:39:30Z"
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
     post:
       operationId: submitHealthSample
       tags: [run]
@@ -3111,8 +3187,7 @@ paths:
                 reauthToken:
                   {
                     type: string,
-                    description: Single-use re-authentication token,
-                    de courte durée.,
+                    description: "Single-use re-authentication token, short-lived.",
                   }
             example: { reauthToken: ott_9f2ac1 }
       responses:
@@ -3408,7 +3483,7 @@ paths:
         on the person — never stack.
 
         **Queued offline**, together with sanctions on a named person, and **nothing else**: it is the
-        one gesture on shift that a basement 4G must be able to defer.
+        one gesture on duty that a basement 4G must be able to defer.
       x-arthome-maturity: provisional
       x-arthome-upstream: [chat]
       parameters:
@@ -3673,7 +3748,7 @@ paths:
       operationId: removeBannedWord
       tags: [moderation]
       summary: Removes a word from the dictionary.
-      description: '"Removal **does not republish** messages already removed: a moderation decision stays a fact."'
+      description: "Removal **does not republish** messages already removed: a moderation decision stays a fact."
       x-arthome-maturity: provisional
       x-arthome-upstream: [chat]
       parameters:
@@ -3753,7 +3828,7 @@ paths:
                             state: { type: string, x-arthome-vocabulary: [published, removed] }
                             badge:
                               type: string
-                              description: '"**Derived** by `moderationBadgeOf` and served. Precedence: banned > silenced > removed > published."'
+                              description: "**Derived** by `moderationBadgeOf` and served. Precedence: banned > silenced > removed > published."
                               x-arthome-vocabulary: [published, removed, muted, banned]
                             body: { $ref: "#/components/schemas/LocalizedText" }
                       page: { $ref: "#/components/schemas/CursorPageInfo" }
@@ -4067,7 +4142,7 @@ paths:
       operationId: removeMember
       tags: [crew]
       summary: Removes a member from the channel.
-      description: '"**The owner is never removable**: the refusal carries `OWNER_NOT_REMOVABLE`."'
+      description: "**The owner is never removable**: the refusal carries `OWNER_NOT_REMOVABLE`."
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
       parameters:
@@ -4344,7 +4419,7 @@ paths:
                   }
                 servedAt: "2026-09-21T18:22:00.000Z"
 
-  # =============================================================== argent
+  # =============================================================== money
 
   /v1/channels/{channelId}/payouts:
     get:
@@ -5336,7 +5411,7 @@ paths:
       operationId: getChannelExport
       tags: [payouts]
       summary: An export's state, and its signed URL once it is ready.
-      description: '"Until it is `ready`, `downloadUrl` is null: the contract never serves an address that would not answer."'
+      description: "Until it is `ready`, `downloadUrl` is null: the contract never serves an address that would not answer."
       x-arthome-maturity: provisional
       x-arthome-upstream: [payouts]
       parameters:
@@ -5556,7 +5631,7 @@ paths:
       operationId: pinMerchDuringLive
       tags: [channel]
       summary: Pins an item during the live show.
-      description: '"**A put**: pinning the same item twice does not pin it twice."'
+      description: "**A put**: pinning the same item twice does not pin it twice."
       x-arthome-maturity: provisional
       x-arthome-upstream: [ticketing]
       parameters:
@@ -5807,7 +5882,7 @@ components:
         device.
 
         On returning from the background with an expired token: **silent refresh**. A
-        re-authentication in the middle of a shift is an operational fault. It is required only for
+        re-authentication while on duty is an operational fault. It is required only for
         **sensitive operations** — revealing or rotating a stream key, transferring ownership of a
         channel, changing a payout method — and it is then asked for **at the moment of the
         operation**, not on returning to a screen.
@@ -5861,7 +5936,7 @@ components:
         hundred milliseconds ago": **two of the three refusal codes were out of reach**, and only
         `FORBIDDEN` was left — that is, the very indistinction the three codes existed to remove.
 
-        The difference, on shift, is not theoretical: on `FORBIDDEN` the application sends the
+        The difference, on duty, is not theoretical: on `FORBIDDEN` the application sends the
         operator back to the home screen as if they had never had the right; on
         `RIGHTS_VERSION_STALE` it reloads the bootstrap and **finds its place again**.
 
@@ -5889,14 +5964,14 @@ components:
       name: page
       in: query
       required: false
-      description: '"**Page number, from 1.** That is the affordance wanted: you pin a page and send it to a colleague."'
+      description: "**Page number, from 1.** That is the affordance wanted: you pin a page and send it to a colleague."
       schema: { type: integer, minimum: 1, default: 1 }
 
     PageSize:
       name: pageSize
       in: query
       required: false
-      description: '"Small pages, and deliberately so: a thumb does not scan a hundred rows."'
+      description: "Small pages, and deliberately so: a thumb does not scan a hundred rows."
       schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
 
     SortBy:
@@ -5935,7 +6010,7 @@ components:
 
   headers:
     ServedAt:
-      description: The server instant of this response. Every shift countdown refers to it, never to the workstation's clock.
+      description: The server instant of this response. Every duty countdown refers to it, never to the workstation's clock.
       schema: { type: string, format: date-time }
 
     RightsVersion:
@@ -6061,7 +6136,7 @@ components:
             servedAt: "2026-09-21T20:31:04.118Z"
 
     Unavailable:
-      description: 'Our servers. `nature: "unavailable"` lets a shift tell "retry" from "understand".'
+      description: 'Our servers. `nature: "unavailable"` lets someone on duty tell "retry" from "understand".'
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -6084,7 +6159,7 @@ components:
           type: string
           format: date-time
           description: |
-            The reference clock. The shift countdown, the length of a silencing, "the replay expires in
+            The reference clock. The duty countdown, the length of a silencing, "the replay expires in
             41 h", the expiry of a one-off access: everything is counted against it and a measured offset,
             **never against the workstation's clock**.
           examples: ["2026-09-21T20:31:04.118Z"]
@@ -6116,7 +6191,7 @@ components:
     CursorPageInfo:
       type: object
       required: [hasMore]
-      description: '"The two exceptions: the moderation queue and the live chat."'
+      description: "The two exceptions: the moderation queue and the live chat."
       properties:
         nextCursor: { type: [string, "null"] }
         prevCursor: { type: [string, "null"] }
@@ -6136,7 +6211,7 @@ components:
           description: |
             Closed vocabulary, i18n by codes, **with a snapshot embedded at build time as a mandatory
             fallback**. That is vital here: **a store review is slow**. If a new code arrives from the
-            backend before the application is updated, the person on shift must see a sentence, not
+            backend before the application is updated, the person on duty must see a sentence, not
             `moderation.verdict.conflict`.
           examples: [PUBLICATION_CHECKLIST_INCOMPLETE]
         nature:
@@ -6147,7 +6222,7 @@ components:
             **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
             retryable. A frozen `enum` here would make an earlier version of the application reject the
             **whole** error envelope — that is, lose the ability to read errors at the precise moment
-            something is wrong, on shift, on an application a store review takes days to replace.
+            something is wrong, on duty, on an application a store review takes days to replace.
           x-arthome-vocabulary: [refused, unavailable, offline_forbidden]
           x-arthome-unknown-fallback: unavailable
         params:
@@ -6276,14 +6351,29 @@ components:
           description: Exactly one row per channel. **Never removable, and their roles never editable.**
         navigation:
           type: array
-          description: The **open** entries, in the served canonical order. The surface neither orders nor filters.
+          description: |
+            The **open** entries, in the served canonical order. The surface neither orders nor
+            filters.
+
+            **The list is `NAVIGATION_ENTRIES` in `@arthome/core`, and the direction is not a
+            preference**: critical rule 2 says a value displayed twice comes from core, so the
+            contract follows core and never the reverse. It had drifted on two members, in the two
+            ways a copied list always drifts — one missing, one renamed:
+
+            - `team` was in core and absent here, while this document serves the team page
+              (`listChannelMembers`). A screen with no way into it;
+            - core says `moderation-page` where this document said `moderation`. That is the worse
+              of the two, because both sides believed they shared the value. And the disambiguation
+              is core's to keep: in **this** document `moderation` is already a **role** — one of
+              the eight canonical values, in six places — so a navigation entry spelled the same
+              way collides with a role inside one payload.
           items:
             type: string
             x-arthome-vocabulary:
               [
                 agenda,
                 dashboard,
-                moderation,
+                moderation-page,
                 crew,
                 events,
                 stream,
@@ -6291,6 +6381,7 @@ components:
                 tickets,
                 store,
                 replays,
+                team,
                 payouts,
                 journal,
                 settings,
@@ -6300,14 +6391,14 @@ components:
           type: array
           description: |
             **The pages reached from another page, never listed in a menu** — and they need a rights
-            carrier like the rest. `regie` is a stage manager's shift page, the one they open when the
+            carrier like the rest. `regie` is a stage manager's duty page, the one they open when the
             feed drops; `wizard` creates a date; `event` is the record; `inbox` is open to everyone,
             with no role condition.
 
             **They are not in `navigation`, and that is deliberate**: `navigation` populates the bar and
             the sheet, these four do not. Filing them together had produced the opposite mistake —
             `regie` had been removed from the vocabulary to make an inconsistency between two tables go
-            away, that is, **the shift's main destination was deleted in order to silence the symptom
+            away, that is, **the duty's main destination was deleted in order to silence the symptom
             that pointed at it**. The two tables are reconciled here, and the page is given back.
           items: { type: string, x-arthome-vocabulary: [regie, wizard, event, inbox] }
           examples: [[regie, wizard, event, inbox]]
@@ -6400,7 +6491,7 @@ components:
             isFreelance: { type: boolean }
             runsCalled:
               type: integer
-              description: '"**A read model**, not a hand-written field: it increments on `run_ended`."'
+              description: "**A read model**, not a hand-written field: it increments on `run_ended`."
             readingTimezone:
               type: string
               description: "**The same field** as the storefronts reading timezone — same account, one carrier only."
@@ -6416,8 +6507,8 @@ components:
             everyone. Filing them under the **per-channel** `navigation` meant a person on three channels
             received the same entry three times — or zero times, which is what happened in the example
             this document served: a `video` role received `[events, stream, replays, help]`, with no
-            `agenda`, although a stage manager's shift page is precisely that one. The `dutiesTonight`
-            counter was served all the same, which presupposes that shifts count.
+            `agenda`, although a stage manager's duty page is precisely that one. The `dutiesTonight`
+            counter was served all the same, which presupposes that duties count.
           items: { type: string, x-arthome-vocabulary: [agenda, inbox, help] }
           examples: [[agenda, inbox, help]]
         rightsVersion: { type: integer, format: int64 }
@@ -6582,14 +6673,14 @@ components:
               moderation_backlog,
             ]
         severity: { type: string, x-arthome-vocabulary: [info, warning, urgent] }
-        textCode: { type: string, description: Un **code** i18n, jamais la phrase rédigée. }
+        textCode: { type: string, description: "An i18n **code**, never the authored sentence." }
         params: { type: object, additionalProperties: true }
         targetPage: { type: string, x-arthome-vocabulary: [event, regie, crew, events, moderation] }
         dateId: { type: [string, "null"], format: uuid }
         countdownTo:
           type: [string, "null"]
           format: date-time
-          description: '"**An instant**, not a sentence: the countdown is computed against `servedAt`."'
+          description: "**An instant**, not a sentence: the countdown is computed against `servedAt`."
         actionable: { type: boolean }
 
     DashboardScreen:
@@ -6983,8 +7074,8 @@ components:
       type: object
       required: [dateId, channelId, crewRole, startsAt]
       description: |
-        A shift. `person_duties` is held by `identity` and carries **all channels together**: a stage
-        manager can be on shift for two live shows the same evening, and the banner flags the
+        A duty. `person_duties` is held by `identity` and carries **all channels together**: a stage
+        manager can be on duty for two live shows the same evening, and the banner flags the
         **overlap**.
       properties:
         dateId: { type: string, format: uuid }
@@ -6996,18 +7087,17 @@ components:
         venueClock:
           type: object
           description: |
-            **Le fuseau de la salle, sur la garde elle-même.** L'écran des gardes est l'écran
-            d'accueil de cette surface, et il affiche pour chaque ligne l'heure de la personne
-            **et** l'heure de salle — « l'heure du spectateur d'abord, l'heure de salle en second
-            quand elle diffère ». Sans ce bloc, le rendre demandait un appel par garde :
-            exactement le N+1 que l'amorçage existe pour tuer, sur le seul écran qu'un régisseur
-            ouvre en arrivant dans une salle.
+            **The room's timezone, on the duty itself.** The duties screen is this surface's home
+            screen, and for each row it displays the person's time **and** the room's time — "the
+            viewer's time first, the room's time second when it differs". Without this block, rendering
+            it took one call per duty: exactly the N+1 the bootstrap exists to kill, on the one screen a
+            stage manager opens on arriving at a venue.
           properties:
             venueTimezone: { type: string, examples: ["Europe/Paris"] }
             venueUtcOffsetMin: { type: integer, examples: [120] }
         runtimeMin:
           type: [integer, "null"]
-          description: La durée annoncée, que la ligne affiche.
+          description: The announced duration, the one the row displays.
         displayState:
           type: string
           x-arthome-vocabulary:
@@ -7019,20 +7109,19 @@ components:
           }
         overlapsWith:
           type: array
-          description: "**Servi**, jamais calculé par la surface : `overlapsWith` vit dans `@arthome/core`."
+          description: "**Served**, never computed by the surface: `overlapsWith` lives in `@arthome/core`."
           items: { type: string, format: uuid }
         accessExpiresAt: { type: [string, "null"], format: date-time }
 
-    # ---------------------------------------------------------- billetterie
+    # ------------------------------------------------------------ ticketing
 
     DateSalesPane:
       type: object
       required: [dateId, capacityTotal, seatsAvailable, priceTiers, pricesLocked]
       description: |
-        Le volet `tickets`. La jauge **s'élargit par paliers et ne se réduit jamais** après la mise
-        en vente ; les tarifs **se verrouillent à la mise en vente**, l'horaire **à l'antenne**.
-        « Appliquer à la série » **exclut les tarifs et la jauge** : chaque date engage ses propres
-        acheteurs.
+        The `tickets` pane. Capacity **widens in tiers and never shrinks** once the sale has opened;
+        prices **lock when the sale opens**, the schedule **when it goes on air**. "Apply to the
+        series" **excludes prices and capacity**: each date commits its own buyers.
       properties:
         dateId: { type: string, format: uuid }
         capacityTotal: { type: integer }
@@ -7074,7 +7163,7 @@ components:
               validUntil: { type: string, format: date-time }
         serviceFeePerSeat:
           allOf: [{ $ref: "#/components/schemas/Money" }]
-          description: "**Par place**, et le barème est servi, jamais une constante d'écran."
+          description: "**Per seat**, and the scale is served, never a screen constant."
         pricesLocked: { type: boolean }
         replayUnitPrice: { $ref: "#/components/schemas/Money" }
         complimentaries:
@@ -7088,10 +7177,10 @@ components:
         technicalProvision:
           type: object
           description: |
-            Au-delà de **10 000 places**, l'infrastructure se provisionne à l'avance ; un
-            prévisionnel très au-dessus du réel expose à un **malus** ; révisable jusqu'à **72 h**
-            avant. **Seuil, provision, échéance et exposition sont des données du contrat**, pas
-            des constantes recopiées sur cinq surfaces.
+            Beyond **10,000 seats**, the infrastructure is provisioned in advance; a forecast far above
+            the real figure exposes you to a **penalty**; revisable up to **72 h** beforehand.
+            **Threshold, provision, deadline and exposure are contract data**, not constants copied out
+            across five surfaces.
           properties:
             required: { type: boolean }
             threshold: { type: integer }
@@ -7099,79 +7188,79 @@ components:
             malusExposure: { $ref: "#/components/schemas/Money" }
         grossRevenue:
           allOf: [{ $ref: "#/components/schemas/Money" }]
-          description: "**Absent** quand le rôle n'a pas `canRevenue`."
+          description: "**Absent** when the role lacks `canRevenue`."
         version: { type: integer }
 
-    # ---------------------------------------------------------- conduite
+    # ----------------------------------------------------------- the run
 
     HealthSample:
       type: object
       required: [measuredAt, source]
       description: |
-        **Chaque métrique est nullable, et l'absence a un sens.** Le gigue et les paquets perdus
-        **n'existent qu'en entrée WebRTC** ; en RTMP, transporté sur TCP, ils n'ont pas de sens, et
-        le contrat les **omet** plutôt que de servir zéro. Un zéro se lit « parfait », pas « non
-        mesuré ».
+        **Every metric is nullable, and the absence means something.** Jitter and lost packets
+        **exist only on a WebRTC ingest**; over RTMP, carried on TCP, they have no meaning, and the
+        contract **omits** them rather than serving zero. A zero reads as "perfect", not as "not
+        measured".
 
-        `measuredAt` est l'instant de mesure **à l'ingest**, pas à la réception : c'est ce qui
-        permet d'afficher « débit 8,9 Mb/s, mesuré il y a 3 s » ou « dernière mesure il y a
-        2 min » au lieu de « 0 Mb/s », qui est un mensonge.
+        `measuredAt` is the instant of measurement **at the ingest**, not on reception: it is what
+        lets you display "bitrate 8.9 Mb/s, measured 3 s ago" or "last measurement 2 min ago" instead
+        of "0 Mb/s", which is a lie.
       properties:
         measuredAt: { type: string, format: date-time }
         source:
           type: string
           description: |
-            `client_submitted` pour la latence bout-en-bout, mesurée côté régie par
-            `RTCPeerConnection.getStats()` sur la voie WHEP et **soumise** — jamais un chiffre
-            natif présenté comme bout-en-bout. Si elle n'est pas mesurée, elle est **absente**.
+            `client_submitted` for the end-to-end latency, measured in the control room by
+            `RTCPeerConnection.getStats()` on the WHEP return path and **submitted** — never a native
+            figure presented as end-to-end. If it is not measured, it is **absent**.
           x-arthome-vocabulary: [ingest_server, client_submitted]
         ingestUpKbps:
           type: [integer, "null"]
           description: |
-            Observation **serveur**. À ne jamais confondre avec `deviceUpKbps`, qui mesure la
-            liaison du téléphone et non l'encodeur : **deux débits différents ne portent jamais le
-            même nom**. Seul le premier alimente la liste de pré-vol.
+            A **server-side** observation. Never to be confused with `deviceUpKbps`, which measures the
+            phone's uplink and not the encoder: **two different bitrates never carry the same name**. Only
+            the first feeds the pre-flight checklist.
         deviceUpKbps: { type: [integer, "null"] }
         latencyMs: { type: [integer, "null"] }
         droppedPct: { type: [number, "null"] }
         jitterMs:
           {
             type: [integer, "null"],
-            description: "**Omis** en RTMP — il n'y a pas de sens à le servir.",
+            description: "**Omitted** over RTMP — there is no sense in serving it.",
           }
-        lostPackets: { type: [integer, "null"], description: "**Omis** en RTMP." }
+        lostPackets: { type: [integer, "null"], description: "**Omitted** over RTMP." }
         viewers:
           type: [integer, "null"]
-          description: "**Absent — jamais zéro — quand la date n'est pas à l'antenne.**"
+          description: "**Absent — never zero — when the date is not on air.**"
 
     RunConsole:
       type: object
       required: [dateId, state, ingestProtocol, monitorPath, afterGracePeriod]
       description: |
-        L'état de la conduite, servi en **un** appel. Le studio distingue **« accroc amorti »** de
-        **« publieur parti »** — deux champs, pas un : une coupure réseau de deux secondes en salle
-        ne doit produire ni incident en régie ni manifeste HLS reparti de zéro.
+        The state of the run, served in **one** call. The studio distinguishes **"hiccup absorbed"**
+        from **"publisher gone"** — two fields, not one: a two-second network break in a room must
+        produce neither an incident in the control room nor an HLS manifest restarted from zero.
       properties:
         dateId: { type: string, format: uuid }
         state:
           type: string
           description: |
-            L'axe **technique**, et rien d'autre. `postponed` et `cancelled` en sont **retirés** :
-            c'étaient des échos de l'issue logés dans l'état technique. Une régie n'a pas d'état
-            « annulée » — elle a un plateau qui n'envoie rien.
+            The **technical** axis, and nothing else. `postponed` and `cancelled` are **withdrawn** from
+            it: they were echoes of the outcome lodged in the technical state. A control room has no
+            "cancelled" state — it has a stage sending nothing.
           x-arthome-vocabulary: [idle, rehearsal, on_air, interrupted, ended]
         afterGracePeriod: { type: boolean }
         ingestProtocol:
           type: string
-          description: "**Décide des métriques réellement disponibles.**"
+          description: "**Decides which metrics are actually available.**"
           x-arthome-vocabulary: [rtmps, srt, whip]
         monitorPath:
           type: string
           description: |
-            La voie de retour **réellement ouverte**. WHEP sous la seconde sur entrée WHIP, LL-HLS
-            à quelques secondes sur entrée RTMP. **Le studio doit le savoir pour ne pas promettre à
-            l'opérateur une latence qu'il n'a pas** — le contrat porte la vérité, pas l'uniformité.
-            Sur la coquille native, `whep` n'est pas promis au palier 5 (D-019).
+            The return path **actually open**. WHEP under a second on a WHIP ingest, LL-HLS at a few
+            seconds on an RTMP ingest. **The studio must know it so as not to promise the operator a
+            latency it does not have** — the contract carries the truth, not uniformity. On the native
+            shell, `whep` is not promised at tier 5 (D-019).
           x-arthome-vocabulary: [whep, ll_hls]
         monitorUrl: { type: [string, "null"], format: uri }
         qualityLadder:
@@ -7194,36 +7283,118 @@ components:
               id: { type: string, format: uuid }
               vocabId: { type: string }
               atMediaSec: { type: integer }
+        presence:
+          type: array
+          description: |
+            **Who is online on this channel, with their roles and their last activity.** It is the
+            **snapshot** of what the `channel:{id}` room pushes every ~10 s, and a room that
+            broadcasts a differential without exposing a snapshot is not a contract: a console
+            opened at 21:40 had nothing to paint and stayed that way until the next change.
+
+            It is **not cosmetic**. The cut confirmation reads "cutting ends the broadcast for N
+            viewers · **M other people online**", and that sentence is the guard rail on the most
+            destructive act in the run desk, **in a studio deliberately without a lock**. Unserved,
+            the guard rail reads "0 other people online" — the same screen as "you are alone", and
+            false.
+
+            Composed by the BFF from `identity.GetChannelPresence`, which `context-map.md` §10.1
+            already counts among the run desk's three internal calls. Fan-out 2 for this operation,
+            under the threshold of 4.
+          items: { $ref: "#/components/schemas/CrewPresence" }
         chatThroughputPerMinute:
           type: [integer, "null"]
           description: |
-            **Mesuré par le serveur, dans une unité déclarée** : fenêtre glissante de 60 s, unité
-            messages/minute, rafraîchi toutes les 5 s. Le seuil de bascule de la console (60
-            msg/min) se lit contre **cette mesure-là** — pas contre « nombre de messages ÷ heures
-            écoulées », qui n'est pas la même chose.
+            **Measured by the server, in a declared unit**: a 60 s sliding window, unit
+            messages/minute, refreshed every 5 s. The console's switching threshold (60 msg/min) reads
+            against **that measurement** — not against "number of messages ÷ hours elapsed", which is not
+            the same thing.
         grossRevenue:
           allOf: [{ $ref: "#/components/schemas/Money" }]
-          description: "**Absent** sans `canRevenue`. La salle temps réel `:revenue` est distincte pour la même raison."
+          description: "**Absent** without `canRevenue`. The `:revenue` real-time room is separate for the same reason."
         version: { type: integer }
+
+    CrewPresence:
+      type: object
+      required: [personId, displayName, roles, lastActivityAt, isSelf]
+      description: |
+        A crew member online **on the channel**. The scope is the channel, not the date: presence
+        follows the person, and the run desk is simply where it is read.
+      properties:
+        personId: { type: string, format: uuid }
+        displayName: { type: string }
+        roles:
+          type: array
+          description: |
+            **A set**, as everywhere else in this document: the eight canonical values, never the
+            fallback to six. Presence is read next to a cut button, and `director` there is not
+            `video`.
+          items:
+            type: string
+            x-arthome-vocabulary:
+              [artist, production, coordination, director, video, sound, moderation, treasury]
+        lastActivityAt:
+          type: string
+          format: date-time
+          description: |
+            **An instant, never "active 2 min ago".** The sentence belongs to the surface and is
+            computed against `servedAt`; the contract carries the instant, like every other
+            countdown here.
+        isSelf:
+          type: boolean
+          description: |
+            **Served, because the sentence the screen shows says "M OTHER people online".** The
+            surface holds its own `personId` from the bootstrap and could subtract itself — and two
+            surfaces subtracting differently is exactly how a guard rail ends up off by one on the
+            one screen where it guards a cut.
+
+    HealthSeries:
+      type: object
+      required: [windowSec, samples]
+      description: |
+        **The snapshot behind the differential.** `RunConsole.lastSample` is one point; this is the
+        curve, over a window the server declares having applied.
+
+        `peakViewers` and `peakViewersAt` are **served**: they are derived from the series and are
+        therefore obtainable only through it, and the cut confirmation quotes the peak. Derived on
+        two surfaces, they would be the same value computed twice — critical rule 2.
+      properties:
+        windowSec:
+          type: integer
+          description: |
+            **The window actually applied**, not the one asked for. A request beyond the cap is not
+            refused, it is answered with the truth about what it got: a cap a caller cannot see is a
+            cap a caller will fight.
+        samples:
+          type: array
+          description: |
+            Oldest first. An empty array is a **served case** — the live show has not started, or no
+            sample has arrived yet — and it is not the same thing as a flat curve at zero.
+          items: { $ref: "#/components/schemas/HealthSample" }
+        peakViewers:
+          type: [integer, "null"]
+          description: |
+            **Null when no sample in the window carried a viewer count** — never zero, because a zero
+            reads as "nobody watched" and that is a different statement.
+        peakViewersAt: { type: [string, "null"], format: date-time }
 
     StudioIncident:
       type: [object, "null"]
       required: [id, kind, cause, trigger, raisedAt]
       description: |
-        **Cause et issue sont deux vocabulaires**, et les confondre était la faute d'origine :
-        `catalogue.incidentMessages` ne porte que quatre entrées, **qui sont des issues**.
+        **Cause and outcome are two vocabularies**, and conflating them was the original fault:
+        `catalogue.incidentMessages` carries only four entries, **which are outcomes**.
       properties:
         id: { type: string, format: uuid }
         kind:
           type: string
-          description: L'**issue** visible du spectateur.
+          description: The **outcome** the viewer sees.
           x-arthome-vocabulary: [hold_screen, postponed, cancelled, interrupted]
         cause:
           type: string
           description: |
-            La **cause**, vocabulaire distinct. `compatibility_worker_failed` existe parce qu'un
-            *worker* de transcodage ne doit jamais mourir en silence — sinon la régie voit un
-            lecteur qui ne démarre jamais, sans cause.
+            The **cause**, a distinct vocabulary. `compatibility_worker_failed` exists because a
+            transcoding *worker* must never die silently — otherwise the control room sees a player that
+            never starts, with no cause.
           x-arthome-vocabulary:
             [
               venue_feed_lost,
@@ -7236,15 +7407,15 @@ components:
         trigger:
           type: string
           description: |
-            L'écran d'attente **automatique** produit un incident **de même nature** qu'un
-            déclenchement manuel — c'est la bonne réponse au cas « le régisseur est injoignable ».
-            Le journal doit néanmoins distinguer les deux.
+            The **automatic** holding screen produces an incident **of the same kind** as a manual
+            trigger — that is the right answer to the "the stage manager is unreachable" case. The log
+            must nonetheless tell the two apart.
           x-arthome-vocabulary: [manual, auto]
         message:
           allOf: [{ $ref: "#/components/schemas/LocalizedText" }]
           description: |
-            Écrit par la régie : du **contenu**, avec sa langue de rédaction. Le catalogue fournit
-            des **modèles** par nature d'incident, que la régie reprend ou remplace.
+            Written by the control room: **content**, with its authoring language. The catalogue supplies
+            **templates** per kind of incident, which the control room reuses or replaces.
         raisedAt: { type: string, format: date-time }
         raisedBy: { $ref: "#/components/schemas/Actor" }
 
@@ -7252,31 +7423,31 @@ components:
       type: object
       required: [streamKey, ingestUrl, revealedAt]
       description: |
-        **Un secret affiché sur un téléphone, dans une salle, souvent devant un prestataire.**
-        Quatre garanties : la clé n'est **jamais** dans une charge utile de liste ; sa révélation
-        est une **commande distincte, auditée et nominative** ; son renouvellement est immédiat et
-        l'ancienne **cesse aussitôt de diffuser** ; la réponse porte `Cache-Control: no-store`,
-        pour qu'elle ne se retrouve ni dans le cache HTTP du téléphone ni dans l'instantané
-        d'application pris par le système au passage en arrière-plan.
+        **A secret displayed on a phone, in a room, often in front of a contractor.** Four
+        guarantees: the key is **never** in a list payload; revealing it is a **separate command,
+        audited and by name**; rotating it is immediate and the old one **stops broadcasting at
+        once**; the response carries `Cache-Control: no-store`, so that it ends up neither in the
+        phone's HTTP cache nor in the application snapshot the OS takes when it goes to the
+        background.
 
-        L'affectation du créneau `director` — **qui donne accès à la clé** — est réservée à
-        `artist ∨ production`, et le contrat rend cette raison explicite plutôt que de la laisser
-        deviner.
+        Assignment to the `director` slot — **which grants access to the key** — is reserved to
+        `artist ∨ production`, and the contract makes that reason explicit rather than leaving it to
+        be guessed.
       properties:
         streamKey: { type: string }
         ingestUrl: { type: string, format: uri }
         revealedAt: { type: string, format: date-time }
 
-    # ---------------------------------------------------------- modération
+    # ---------------------------------------------------------- moderation
 
     ModerationItem:
       type: object
       required: [id, messageId, dateId, state, reportsCount, atMediaSec, version]
       description: |
-        **Trois axes, jamais empilés.** `state` est la nature de la **ligne de file** — c'est pour
-        cela que la file se construisait en filtrant `state === 'reported'`, ce qui n'est pas un
-        filtre d'état mais un filtre de nature. L'état du **message** et la sanction sur la
-        **personne** sont deux autres axes, portés ailleurs.
+        **Three axes, never stacked.** `state` is the nature of the **queue row** — which is why the
+        queue was built by filtering `state === 'reported'`, which is not a state filter but a nature
+        filter. The **message's** state and the sanction on the **person** are two other axes, carried
+        elsewhere.
       properties:
         id: { type: string, format: uuid }
         messageId: { type: string, format: uuid }
@@ -7296,48 +7467,46 @@ components:
           type: [string, "null"]
           format: date-time
           description: |
-            **Un bail court**, renouvelé tant que la personne est présente, **libéré par le
-            serveur** à l'expiration. Sans lui, un modérateur qui ferme son navigateur gèle une
-            ligne pendant tout le direct.
+            **A short lease**, renewed while the person is present, **released by the server** on
+            expiry. Without it, a moderator who closes their browser freezes a row for the whole live
+            show.
         verdict: { type: [string, "null"], x-arthome-vocabulary: [publish, remove, mute, ban] }
         settledBy: { $ref: "#/components/schemas/Actor" }
         settledAt: { type: [string, "null"], format: date-time }
         origin:
           type: string
           description: |
-            Le journal doit distinguer un **reclassement automatique** d'une **décision humaine**.
-            `retroactive_filter` marque les éléments produits par l'ajout d'un mot au dictionnaire.
+            The log must tell an **automatic reclassification** from a **human decision**.
+            `retroactive_filter` marks the items produced by adding a word to the dictionary.
           x-arthome-vocabulary: [human_verdict, retroactive_filter, author_sanctioned]
         version:
           type: integer
           description: |
-            **Porte le bail, et lui seul.** Une prise en charge puis un relâchement l'incrémentent
-            deux fois **sans que rien n'ait été tranché**.
+            **Carries the lease, and nothing else.** A claim followed by a release increments it twice
+            **without anything having been settled**.
         decisionVersion:
           type: integer
           description: |
-            **N'est incrémenté que par un verdict.** C'est sur cet axe-là que `settleModerationItem`
-            conditionne, et la raison est une règle de la conception, pas une commodité :
-            « prendre en charge n'est pas trancher — **tant que le confrère n'a pas rendu de
-            verdict, votre sanction s'applique** ». Un verdict doit donc être **accepté** pendant
-            qu'un autre tient le bail.
+            **Incremented only by a verdict.** It is on that axis that `settleModerationItem` sets its
+            condition, and the reason is a design rule, not a convenience: "taking charge is not deciding
+            — **as long as your colleague has rendered no verdict, your sanction applies**". A verdict
+            must therefore be **accepted** while someone else holds the lease.
 
-            Avec un compteur unique, c'était impossible : poser puis relâcher un bail faisait
-            passer la version de 1 à 3, et un verdict mis en file hors ligne à `expectedVersion: 1`
-            était refusé **alors que personne n'avait tranché** — sur un direct à soixante messages
-            par minute, les lignes changent de bail sans arrêt, et la file hors ligne est la seule
-            concession accordée au mobile. Un compteur ne peut pas exprimer « refuse si tranché,
-            accepte si seulement réclamé ».
+            With a single counter that was impossible: taking then releasing a lease moved the version
+            from 1 to 3, and a verdict queued offline at `expectedVersion: 1` was refused **although
+            nobody had settled anything** — in a live show at sixty messages a minute, rows change hands
+            constantly, and the offline queue is the one concession granted to mobile. One counter cannot
+            express "refuse if settled, accept if merely claimed".
 
-            C'est la doctrine des trois axes que le contrat applique déjà à la modération,
-            appliquée au verrou lui-même.
+            It is the doctrine of the three axes that the contract already applies to moderation, applied
+            to the lock itself.
 
     AudienceMember:
       type: object
       required: [id, handle, sanction, messagesCount, present]
       description: |
-        **Le public d'une chaîne est une collection interrogeable par elle-même**, pas une
-        projection du tchat : la console cherche « un spectateur présent, **qui n'a pas écrit** ».
+        **A channel's audience is a collection queryable in its own right**, not a projection of the
+        chat: the console looks for "a viewer present, **who has not written**".
       properties:
         id: { type: string, format: uuid }
         handle: { type: string, examples: ["@marie.j"] }
@@ -7346,15 +7515,15 @@ components:
           type: [string, "null"]
           format: date-time
           description: |
-            **Un instant, jamais une étiquette.** « Sans limite », 1 min, 10 min, 1 h et la durée
-            libre sont un seul champ, calculé une fois. Absent = sans limite.
+            **An instant, never a label.** "No limit", 1 min, 10 min, 1 h and a free-form duration are a
+            single field, computed once. Absent = no limit.
         messagesCount: { type: integer }
         firstSeenAt: { type: string, format: date-time }
         subscriberTier: { type: [string, "null"], x-arthome-vocabulary: [free, pass, premium] }
         holdsSeat: { type: boolean }
         present:
           type: boolean
-          description: Présence **sur le direct en cours**.
+          description: Presence **on the live show in progress**.
 
     ChatPolicy:
       type: object
@@ -7365,9 +7534,9 @@ components:
         filterSeverity:
           type: string
           description: |
-            **Un seul vocabulaire.** Deux coexistaient dans le même fichier de maquette —
-            « souple/normale/haute » en réglages de chaîne, « basse/moyenne/haute » en page de
-            modération — et aucun n'était dans les sources partagées.
+            **A single vocabulary.** Two coexisted in the same design file — "lenient/normal/high" in
+            channel settings, "low/medium/high" on the moderation page — and neither was in the shared
+            sources.
           x-arthome-vocabulary: [low, medium, high]
         slowModeSec: { type: integer }
         holdersOnly: { type: boolean }
@@ -7375,12 +7544,11 @@ components:
         locked:
           type: boolean
           description: |
-            Vrai dès que la publication est engagée. **`chat` applique son propre verrou**, il ne
-            demande rien à `catalog` : après engagement on peut toujours **fermer** un tchat en
-            direct, jamais l'ouvrir davantage.
+            True as soon as publication is committed. **`chat` applies its own lock**, it asks `catalog`
+            for nothing: once committed, a live chat can still be **closed**, never opened wider.
         version: { type: integer }
 
-    # ---------------------------------------------------------- équipe
+    # ---------------------------------------------------------- team
 
     ChannelMember:
       type: object
@@ -7391,7 +7559,7 @@ components:
         email: { type: [string, "null"], format: email }
         roles:
           type: array
-          description: "**Un ensemble.** Les huit valeurs canoniques, jamais le repli à six."
+          description: "**A set.** The eight canonical values, never the fallback to six."
           items:
             {
               type: string,
@@ -7400,7 +7568,7 @@ components:
             }
         isOwner:
           type: boolean
-          description: "**Jamais retirable ni modifiable en rôles.** `transferOwnership` déplace le drapeau."
+          description: "**Never removable, and their roles never editable.** `transferOwnership` moves the flag."
         joinedAt: { type: string, format: date-time }
         note: { type: [string, "null"] }
         invitationState:
@@ -7411,9 +7579,9 @@ components:
       type: object
       required: [grantId, dateId, personId, crewRole, expiresAt]
       description: |
-        Le **renfort ponctuel** — portée une date, expiration **servie comme un instant**,
-        révocable **sans toucher à l'appartenance à la chaîne**. Le confondre avec une
-        appartenance ferait d'une révocation de renfort une exclusion de chaîne.
+        The **one-off stand-in** — scoped to a date, expiry **served as an instant**, revocable
+        **without touching channel membership**. Conflating it with a membership would turn revoking a
+        stand-in into expulsion from the channel.
       properties:
         grantId: { type: string, format: uuid }
         dateId: { type: string, format: uuid }
@@ -7423,20 +7591,20 @@ components:
         expiresAt: { type: string, format: date-time }
         grantedBy: { $ref: "#/components/schemas/Actor" }
 
-    # ---------------------------------------------------------- argent
+    # ----------------------------------------------------------- money
 
     PayoutLine:
       type: object
       required:
         [payoutId, dateId, state, grossTtc, vat, grossHt, commissionRateBps, commission, net, dueAt]
       description: |
-        **La ventilation par marché est la forme, et elle est sûre dans les deux modèles
-        fiscaux** : un modèle à taux unique produit une ventilation à une ligne. Un
-        `vatAmount` scalaire unique aurait été le seul choix réellement irréversible.
+        **The breakdown by market is the shape, and it is safe under both tax models**: a
+        single-rate model produces a one-line breakdown. A single scalar `vatAmount` would have been
+        the only genuinely irreversible choice.
 
-        Le modèle retenu (D-015) est le **commissionnaire** : assiette = le billet entier, taux =
-        celui du pays du spectateur, redevable = Arthome. **⚠ Ce n'est pas un avis fiscal** —
-        à valider par un conseil avant tout encaissement réel.
+        The model adopted (D-015) is the **commissionaire**: base = the whole ticket, rate = that of
+        the viewer's country, liable party = Arthome. **⚠ This is not tax advice** — to be validated
+        by an adviser before any real money is taken.
       properties:
         payoutId: { type: string, format: uuid }
         dateId: { type: string, format: uuid }
@@ -7444,26 +7612,23 @@ components:
         state:
           type: string
           description: |
-            **Piloté par l'issue de la date** : `held` tant qu'une issue est ouverte, `refunded` si
-            annulée, `suspended` tant qu'un changement de coordonnées bancaires attend sa
-            contre-signature.
+            **Driven by the date's outcome**: `held` while an outcome is open, `refunded` if cancelled,
+            `suspended` while a change of bank details awaits its counter-signature.
           x-arthome-vocabulary: [scheduled, held, paid, refunded, suspended]
         grossTtc: { $ref: "#/components/schemas/Money" }
         vat:
           type: array
           description: |
-            **Une ligne par juridiction, et non par marché de facturation.** `marketId` est
-            retiré : un marché est une notion de **prix** — dans quelle devise on vend — jamais une
-            notion de **taxe**. La clé portait trois valeurs là où la règle en demande des
-            milliers : un spectateur français et un spectateur belge règlent tous deux dans le
-            marché `eur`, à deux taux différents, et une ventilation dont la clé est le marché ne
-            peut pas porter deux lignes `eur` sans que la clé cesse d'être une clé.
+            **One line per jurisdiction, and not per billing market.** `marketId` is withdrawn: a market
+            is a notion of **price** — which currency you sell in — never a notion of **tax**. The key
+            carried three values where the rule asks for thousands: a French viewer and a Belgian viewer
+            both pay in the `eur` market, at two different rates, and a breakdown keyed by market cannot
+            carry two `eur` lines without the key ceasing to be a key.
 
-            **C'est la seule partie irréversible du chapitre fiscal.** Le modèle — qui est
-            redevable, sur quelle assiette — est un **calcul** : il se refait. Le taux appliqué à
-            la vente et la juridiction qui le commande sont des **faits datés** : non capturés à
-            l'instant de la vente, ils ne sont pas coûteux à reconstituer, ils sont
-            **impossibles** à reconstituer.
+            **This is the only irreversible part of the tax chapter.** The model — who is liable, on what
+            base — is a **calculation**: it can be redone. The rate applied to the sale and the
+            jurisdiction that commands it are **dated facts**: not captured at the instant of the sale,
+            they are not expensive to reconstruct, they are **impossible** to reconstruct.
           items:
             type: object
             required: [rateBps, base, amount, jurisdictionCode, jurisdictionLevel, supplyKind]
@@ -7471,33 +7636,31 @@ components:
               rateBps:
                 type: integer
                 description: |
-                  Taux en points de base — 550 = 5,5 %. **Un entier, jamais un flottant** : en
-                  virgule flottante il finit par produire un centime d'écart. Et c'est le taux
-                  **appliqué au moment de la vente, conservé sur la ligne** — pas le taux courant :
-                  une facture se conserve dix ans, les taux changent.
+                  Rate in basis points — 550 = 5.5%. **An integer, never a float**: in floating point it ends
+                  up producing a one-cent discrepancy. And it is the rate **applied at the moment of the sale,
+                  kept on the line** — not the current rate: an invoice is kept for ten years, rates change.
               base: { $ref: "#/components/schemas/Money" }
               amount: { $ref: "#/components/schemas/Money" }
               jurisdictionCode:
                 type: string
-                description: "« FR » · « US-CA-94103 » · « CH-ZH ». **Assez précis pour rejouer le calcul.**"
+                description: "\"FR\" · \"US-CA-94103\" · \"CH-ZH\". **Precise enough to replay the calculation.**"
                 examples: [FR]
               jurisdictionLevel:
                 { type: string, x-arthome-vocabulary: [country, state, county, city] }
               supplyKind:
                 type: string
                 description: |
-                  **Le taux dépend du couple juridiction × nature de la prestation**, jamais d'une
-                  constante par marché : l'exonération dont bénéficie une place de spectacle ne
-                  s'étend pas à son accès en direct — une place et un direct diffusé ne sont pas
-                  la même prestation.
+                  **The rate depends on the jurisdiction × nature-of-supply pair**, never on a constant per
+                  market: the exemption a theatre seat enjoys does not extend to watching it live — a seat and a
+                  broadcast live show are not the same supply.
                 x-arthome-vocabulary: [live_stream_access, replay_access, subscription, merchandise]
         grossHt: { $ref: "#/components/schemas/Money" }
         commissionRateBps:
           type: integer
           description: |
-            **Servi, jamais redérivé de `commission / gross`** — la maquette le redérive et
-            retombe sur 12 % par défaut quand le brut est nul. **La commission porte sur le HT** :
-            sur le TTC, les 12 % annoncés aux artistes varieraient avec le pays de l'acheteur.
+            **Served, never re-derived from `commission / gross`** — the design re-derives it and falls
+            back to 12% by default when the gross is null. **The commission is on the pre-tax amount**: on
+            the tax-inclusive amount, the 12% announced to artists would vary with the buyer's country.
           examples: [1200]
         commission: { $ref: "#/components/schemas/Money" }
         net: { $ref: "#/components/schemas/Money" }
@@ -7506,27 +7669,27 @@ components:
         dueAt:
           type: string
           format: date-time
-          description: "**Fin du direct + 14 jours.** L'échéance court depuis la fin, pas depuis le paiement."
+          description: "**End of the live show + 14 days.** The deadline runs from the end, not from the payment."
         stripeTransferRef: { type: [string, "null"] }
         reconciledAt: { type: [string, "null"], format: date-time }
         discrepancy:
           allOf: [{ $ref: "#/components/schemas/Money" }]
-          description: "**Une période ne se clôt pas avec un écart non expliqué.**"
+          description: "**A period does not close with an unexplained discrepancy.**"
         taxEvidenceConflicts:
           type: integer
           description: |
-            Le nombre de commandes de cette ligne dont les éléments de localisation de l'acheteur
-            **se contredisaient**. La vente se fait, la ligne part en instruction : **masquer le
-            conflit produirait une déclaration fausse et silencieuse**, et c'est le studio qui doit
-            pouvoir la voir avant la clôture de période.
+            The number of orders on this line whose buyer location evidence **contradicted itself**. The
+            sale goes through, the line is flagged for review: **hiding the conflict would produce a false
+            and silent declaration**, and it is the studio that must be able to see it before the period
+            closes.
 
     BankChangeRequest:
       type: object
       required: [requestId, state, maskedAccountTail, requestedAt, expiresAt]
       description: |
-        **Un agrégat à part entière, pas un champ** : deux acteurs, deux rôles distincts
-        (propriétaire **et** trésorerie), un délai, une trace — **et il suspend le virement en
-        cours** le temps de la signature. Une écriture ne peut pas porter cela.
+        **An aggregate in its own right, not a field**: two actors, two distinct roles (owner **and**
+        treasury), a delay, a trace — **and it suspends the payout in flight** for the duration of the
+        signing. A write cannot carry that.
       properties:
         requestId: { type: string, format: uuid }
         state:
@@ -7536,7 +7699,7 @@ components:
           }
         maskedAccountTail:
           type: string
-          description: "**Les quatre derniers caractères seulement.** Un IBAN complet n'a rien à faire dans un journal qui se rejoue."
+          description: "**The last four characters only.** A full IBAN has no business in a log that gets replayed."
           examples: ["4417"]
         requestedBy: { $ref: "#/components/schemas/Actor" }
         requestedAt: { type: string, format: date-time }
@@ -7548,10 +7711,10 @@ components:
       type: object
       required: [exportId, kind, state, requestedAt]
       description: |
-        Sur 24 mois, un export est un **travail asynchrone** (BullMQ **interne à son service**).
-        L'adresse rendue est **signée, de courte durée, et utilisable sans cookie de session** —
-        un export protégé par cookie est intéléchargeable depuis la coquille native. Durée
-        proposée : **60 minutes**.
+        Over 24 months, an export is an **asynchronous job** (BullMQ **internal to its service**).
+        The URL returned is **signed, short-lived, and usable without a session cookie** — an export
+        protected by a cookie is undownloadable from the native shell. Proposed lifetime:
+        **60 minutes**.
       properties:
         exportId: { type: string, format: uuid }
         kind:
@@ -7567,9 +7730,9 @@ components:
       type: object
       required: [uploadUrl, fields, expiresAt, assetId]
       description: |
-        **Téléversement par adresse de dépôt signée, obtenue par une commande JSON** — jamais de
-        `multipart` depuis un WebView. Durée proposée : **15 minutes**, assez pour une 4G de salle,
-        assez court pour ne pas être un jeton d'accès déguisé.
+        **Upload through a signed upload URL, obtained by a JSON command** — never `multipart` from
+        a WebView. Proposed lifetime: **15 minutes**, long enough for a room's 4G, short enough not to
+        be an access token in disguise.
       properties:
         assetId: { type: string, format: uuid }
         uploadUrl: { type: string, format: uri }
@@ -7580,14 +7743,14 @@ components:
       type: object
       required: [id, nature, occurredAt, actor, code, params]
       description: |
-        **Nominatif et situé**, conservé 24 mois. Une **tentative** de marche arrière sur un tarif
-        engagé y figure aussi : c'est en soi une information de conduite.
+        **Names names and places them**, kept for 24 months. An **attempt** to walk back a committed
+        price appears in it too: that is in itself a piece of operational information.
       properties:
         id: { type: string, format: uuid }
         nature: { type: string, x-arthome-vocabulary: [air, mod, event, access, money] }
         occurredAt: { type: string, format: date-time }
         actor: { $ref: "#/components/schemas/Actor" }
-        code: { type: string, description: Un **code**, jamais une phrase rédigée. }
+        code: { type: string, description: "A **code**, never an authored sentence." }
         params: { type: object, additionalProperties: true }
         dateId: { type: [string, "null"], format: uuid }
 
@@ -7595,8 +7758,8 @@ components:
       type: object
       required: [id, kind, createdAt, read]
       description: |
-        **Routée par rôle et par chaîne, côté serveur** : l'application ne filtre pas une file
-        commune. Et **jamais de montant si le rôle destinataire n'a pas `canRevenue`**.
+        **Routed by role and by channel, server-side**: the application does not filter a common
+        queue. And **never an amount if the recipient role lacks `canRevenue`**.
       properties:
         id: { type: string, format: uuid }
         kind:
@@ -7609,7 +7772,7 @@ components:
         dateId: { type: [string, "null"], format: uuid }
         body:
           allOf: [{ $ref: "#/components/schemas/LocalizedText" }]
-          description: Les textes de la boîte sont l'une des **deux seules exceptions** assumées à « i18n par codes ».
+          description: The inbox texts are one of the **only two** acknowledged exceptions to "i18n by codes".
         deepLinkCode: { type: [string, "null"] }
         createdAt: { type: string, format: date-time }
         read: { type: boolean }
@@ -7622,7 +7785,7 @@ components:
         showId: { type: [string, "null"], format: uuid }
         label:
           allOf: [{ $ref: "#/components/schemas/LocalizedText" }]
-          description: "**Bilingue.** L'absence de libellé anglais dans les sources est une **lacune de donnée** à combler au portage, pas une lacune de traduction (E10)."
+          description: "**Bilingual.** The absence of an English label in the sources is a **data gap** to be filled during the port, not a translation gap (E10)."
         variants:
           type: array
           items:
@@ -7635,7 +7798,7 @@ components:
         state: { type: string, x-arthome-vocabulary: [on_sale, out_of_stock] }
         source:
           type: string
-          description: "**Une seule intégration externe à la fois** par chaîne."
+          description: "**One external integration at a time** per channel."
           x-arthome-vocabulary: [arthome, shopify, woocommerce, prestashop, drupal, api]
         merchantUrl: { type: [string, "null"], format: uri }
         pinnedDateId: { type: [string, "null"], format: uuid }

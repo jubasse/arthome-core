@@ -720,3 +720,70 @@ ordinary verb, which a contract description cannot afford.
 It is a load-bearing term for the studio surfaces, so it is one word. The translation of a term of
 art is a vocabulary decision, and a vocabulary decision belongs here rather than in whichever file
 happened to need it first.
+
+### D-030 — `/v1/changes` keeps its `401`, and the public gap is named
+
+**Raised by `backend-contracts`, which refused to decide it.** The feed requires a credential, yet
+three of its twelve tags are public catalogue tags that an anonymous surface needs: Next's server
+rendering revalidates `date:{id}` for a page it serves to signed-out readers. Making the path answer
+anonymously with the public subset changes who may call it, what `Vary` it carries and whether it
+can be cached at all. It was right not to take it — it is not a translation and nobody had decided
+it.
+
+**The decision: the `401` stays.**
+
+**They are two resources, not one resource with two audiences.** A session-scoped pull feed answers
+*what changed for you since your cursor*; a public invalidation stream answers *what changed in the
+catalogue since T*. Their cacheability requirements are opposite — the first must `Vary` on the
+credential and can never be edge-cached, the second is worthless unless it is. Serving both from one
+path gives the public half the private half's `Vary`, so a revalidation check hits origin every
+time, which is most of what the path exists to save.
+
+**Reversibility decides the remainder, which is the mission's own criterion.** Making a path
+anonymous cannot be undone — once clients call it without a credential, the credential cannot come
+back. Adding a separate public path later is purely additive. When one direction is reversible and
+the other is not, and neither is clearly right, take the reversible one.
+
+**The accepted cost**: public pages fall back to time-based revalidation at stage 1. That is a
+performance property, not a contract property, and a measurement can reopen it.
+
+**What must not happen is designing the public path now.** Nobody has designed it — keyed on time or
+on entity, what window, what a client that has been away a week receives, whether it is a feed at
+all rather than an `ETag` on each catalogue read. D-022 applies exactly: what has no source does not
+enter the contract. The gap is written down with what it would take to fill it, and the shape is
+left alone.
+
+**And a recount that corrected me.** I had passed on "three listed-but-unemitted against four
+emitted-but-unlisted" as one defect in two directions. `backend-contracts` established that
+`x-arthome-invalidates` names what the **caller caused**, so a catalogue tag reaching this feed
+because the *studio* published is listed-and-unemitted **by construction**. Counting the two lists
+against each other proves nothing. Only the other direction was ever a defect — four account tags a
+Next server would have revalidated on keys it never receives — and it is closed.
+
+### D-031 — E2 is a rule about documents, not about data
+
+**Arrived at by `auth`, from the other end, and it generalises past its file.**
+
+Critical rule 15 was written for operational constants: one owning document, reference it, never
+copy it. `adr-auth.md` then committed the fault about its **own alphabet** — a precise scoped
+sentence at line 240, a summary fifty-nine lines below that generalised past it, and a third line
+underneath having to explain the exception, which only makes sense if the others are not exceptions.
+Three rows, two of them disagreeing with the one between them, in the section whose entire subject
+is not restating values.
+
+**So the project's dominant fault is not bad data. It is the same thing said twice.** E2 found it on
+eight data fields, and a CI gate can catch it there. **Prose has no gate.** The only defence is the
+same one: state a fact once, reference it afterwards.
+
+**And `auth`'s diagnosis of why one copy drifted is the part worth keeping**, because it appeals to
+neither care nor competence: *the measured table was computed; the contrast table was adopted.* Both
+were in one file, forty lines apart, by one author with one set of facts. The difference is
+provenance.
+
+**Rule 15 is therefore extended in practice, not in wording**: it already says an operational
+constant has one owning document. It turns out to say the same of any fact stated precisely once —
+including a fact about the document's own subject, restated in a summary two tables away.
+
+*Extended to this journal as well. Two of the entries above are corrections of reasons the lead
+wrote without the facts to write them: D-027b, and the specimen carried in `adr-auth.md` §9.4.
+Having the facts is no protection, because the gap being filled is the one the author cannot see.*

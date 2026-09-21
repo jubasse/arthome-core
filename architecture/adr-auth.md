@@ -262,8 +262,10 @@ Crockford keeps `0` and `1` **because a base-32 encoding must have exactly 32 sy
 normalisation table compensates a cardinality constraint, it does not express an ergonomic ideal.
 My code encodes nothing — it is a random token, its cardinality is free. Inheriting the
 compromise without inheriting the constraint would turn `5/S`, `8/B`, `2/Z` and `6/G` into
-**four pairs with both members present**, that is, the worst failure mode for this surface: a
-misread that produces a valid code fails *with nothing to signal where*.
+**four pairs with both members present** — the four where this alphabet in fact keeps the digit
+alone, and which are counted again under §5.1's comparison with the seat code below. That is the
+worst failure mode for this surface: a misread that produces a valid code fails *with nothing to
+signal where*.
 
 **`U` is removed**, for Crockford's two reasons: `U`/`V` are confused at three metres, and the
 absence of `U` rules out six-letter codes that form an unfortunate word — a code is displayed at
@@ -290,22 +292,57 @@ in a prose document is exactly the parallel literal table that E2 found on eight
 a different costume. Read it from `@arthome/core`, and assert against the import, never against a
 transcription.
 
-The two alphabets are **deliberately different, because the two codes fail differently.**
+The two alphabets differ, but **far less than one would think, and the narrow difference is the
+interesting one.** Both keep one member of a confusable class wherever they can, and both refuse
+to guess. Computed from `ACDEFHJKLMNPQRTVWXY23456789`, six of the seven classes keep a member —
+`L`, `5`, `8`, `2`, `6`, `V` — and exactly one does not:
 
 | | `PAIRING_CODE` (this ADR) | `SEAT_CODE_ALPHABET` (ticketing) |
 |---|---|---|
 | Channel | **read once off a television, then discarded** | **dictated to support, retyped off a printed confirmation months later** |
-| Optimises for | **not being misread** | **being recoverable** |
-| Confusable pairs | **both members excluded** | **one member kept, the other mapped to it** |
-| Normalisation | 8 rows, and `0`/`O` has no target by design | 3 rows, exhaustive over the excluded set |
+| Confusable classes keeping a member | **6 of 7** | **all of them** |
+| Classes made unrecoverable | **one**, `0`/`O`, deliberately | **none** |
+| Normalisation | 7 characters mapped, `0` and `O` unmapped by design | 3 rows, exhaustive over the excluded set |
+| Cost of a rejection | one retry on the remote | **a phone call** |
 
-A code that is read once and thrown away can afford to remove an ambiguous glyph class outright:
-nothing is ever brought back, so ambiguity is pure loss (§5.1 above). A code that comes back —
-spoken aloud, or typed from paper — cannot. **Recoverability requires that every confusable
-character have exactly one valid target**, which is possible only if one member of each pair
-survives in the alphabet. Excluding both, as I do, would leave someone who says "O" with no valid
-value to be corrected to. `backend-domain` reports that a first draft of the seat code made
-precisely that mistake.
+**The rule is shared, and it is arithmetic rather than judgement.** Count, for each confusable
+class, how many of its members survive in the alphabet:
+
+| Class | Survivors | Normalisable? |
+|---|---|---|
+| `1`/`I`/`L` · `S`/`5` · `B`/`8` · `Z`/`2` · `G`/`6` · `U`/`V` | **1** each | **yes** — the target is forced |
+| `0`/`O`/`D`/`Q`/`C` | **3** (`D`, `Q`, `C`) | **no** — any mapping is a guess |
+
+> **Normalise a confusable class if and only if exactly one of its members is in the alphabet.**
+> One survivor: the target is forced, and correction is safe. Several: every mapping is a guess.
+> None: it is not a class, it is a hole.
+
+Nobody chose a philosophy here. **Recoverability requires that every confusable character have
+exactly one valid target**, and whether that holds is a property of the alphabet, computable in
+ten seconds. Ticketing satisfies it on every class it has; this alphabet satisfies it on six of
+seven. `backend-domain` reports that a first draft of the seat code excluded *both* members of a
+class — the third case above, a hole — and made correction impossible.
+
+**Where the two genuinely differ is upstream of the arithmetic: the channel decides what counts
+as a confusable class at all.** `U`/`V` is a class for me, because the code is read; it is not one
+for a code dictated aloud, where "you" and "vee" are distinct. `U` is absent from the seat
+alphabet for an unrelated reason — it rules out unfortunate words — and is therefore correctly
+left unmapped there, even though `V` survives. The arithmetic is universal; the class list is not.
+
+**And the one class I cannot normalise is a choice of mine, not a constraint.** It is tempting to
+say the alphabet forced it, and for ticketing that is true — Crockford must keep 32 symbols. My
+cardinality is free, so the honest statement is that I could have bought normalisability and
+declined to: dropping `C`, `D`, `Q` and admitting `0` leaves that class one survivor and makes all
+seven normalisable, at **25 symbols and 27.9 bits** instead of 27 and 28.5. I decline because
+three common letters cost more, on a six-character code read at three metres, than one class that
+refuses with a named error — `PAIRING_CODE_AMBIGUOUS_GLYPH` — where the cost of refusing is one
+retry with the remote already in hand. Ticketing, priced at a phone call, would have had to take
+the other side of that trade.
+
+**This invariant should be a gate, not a sentence.** It is checkable from the alphabet string and
+the class list alone, for both codes: *every mapped class has exactly one survivor, and no mapped
+class has two.* It belongs in `definition-of-done.md` next to §7.6 — prose has no gate (§9.4),
+which is how the claim above this one drifted twice.
 
 The two therefore converge on one rule and diverge on everything below it: **correct
 exhaustively, or not at all.** `normalizeSeatCodeInput` strips spaces, hyphens and a leading
@@ -813,6 +850,28 @@ This is the question explicitly asked. **Two token systems, five points of conta
    table. The remedy is not more care either: it is to **name the hole** — write "whose name
    belongs to `backend-domain`" and leave it ugly — because a named hole gets filled and a
    definite description that reads fine does not.
+
+   The second specimen arrived from the lead, about this same section, and it is sharper than
+   mine: told that this alphabet "excludes both members of each confusable pair", I adopted it
+   into a comparison table, and it was true of **one class out of seven**. The person who wrote
+   it was the person who had supplied me the facts — he had the two alphabet strings in front of
+   him and nothing about their normalisation, needed a crisp contrast for a message, and
+   generalised past what he held. So the failure mode is not about access or seniority: **having
+   the facts is no protection, because the gap being filled is the one the author cannot see.**
+   My own normalisation table, eight rows, sat in this document contradicting the claim for two
+   drafts. What caught it was arithmetic on the alphabet string, not rereading.
+
+   **The mechanism under both, and it is the one E2 already named.** Nothing false spread from
+   document to document: a **new summary contradicted a precise statement this same document
+   already made**, and nothing compared the two. The scoped, correct sentence — "the `0`/`O`
+   case, where I exclude both members" — was fifty-nine lines above the row that generalised it
+   into a policy, and the row immediately below then had to explain that `0`/`O` was special,
+   which only makes sense if the others are not. Three rows, two of them disagreeing with the one
+   between them. **That is the parallel literal table, in prose**: the same fact stated twice in
+   one document, the second copy drifting, because nobody reads a document against itself. E2
+   found it on eight data fields and a CI gate can catch it there; in prose there is no gate, so
+   the only defence is to state a fact once and reference it afterwards — which is rule 15,
+   arrived at from the other end.
 
 5. **The clocks.** All issuers are NTP-disciplined; declared tolerance **± 30 s** on both sides;
    `exp`/`iat` numeric (RFC 7519) inside tokens, ISO in API payloads. A CDN edge whose clock

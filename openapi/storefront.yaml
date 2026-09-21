@@ -977,10 +977,19 @@ paths:
         - name: scope
           in: query
           required: false
-          schema: { type: string, enum: [profile, device] , default: profile }
+          description: |
+            Which invalidations to return. `profile` covers what follows the account — tickets,
+            orders, subscription, cart — and is what a surface wants on returning to the
+            foreground. `device` restricts the answer to what follows **this device**, and exists
+            for the television, where five profiles share one device and a switch of profile must
+            not force the other four to reload.
+
+            A **closed** vocabulary, and legitimately so: this is an input, and the server must
+            refuse a scope it does not know rather than silently widen the answer.
+          schema: { type: string, enum: [profile, device], default: profile }
       responses:
         '200':
-          description: Liste d'invalidations.
+          description: A list of invalidations.
           content:
             application/json:
               schema:
@@ -1400,8 +1409,9 @@ paths:
         weekend" filter applies **before** grouping.
 
         Facet counts are computed on the current query and returned **in the same response**: no
-        second call. The total count is **approximate and bounded** — exact up to 10,000, "at least
-        10,000" beyond, and `totalIsLowerBound` says so.
+        second call. The total count is **approximate and bounded** — exact up to the threshold served
+        as `DomainConstants.searchExactTotalLimit`, a lower bound beyond it, and `totalIsLowerBound`
+        says which of the two it is.
 
         **Budget ≤ 200 ms**: a television's on-screen keyboard produces one character per press and
         the results live as you type; beyond that, the visual feedback of typing comes adrift. The
@@ -1780,7 +1790,7 @@ paths:
           headers:
             Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
             Vary: { $ref: '#/components/headers/VaryAuth' }
-            ETag: { schema: { type: string }, description: Cache validator, so the TV prefetch is not paid for twice. }
+            ETag: { schema: { type: string }, description: "Cache validator, so the TV prefetch is not paid for twice." }
           content:
             application/json:
               schema:
@@ -5185,10 +5195,16 @@ components:
         approximateTotal:
           type: [integer, 'null']
           description: |
-            **Approximate and bounded** count. Exact up to 10,000 (`track_total_hits`), and beyond that
-            the contract promises only "at least 10,000" — `totalIsLowerBound` says so. That is what
+            **Approximate and bounded** count. It is exact up to the threshold served as
+            `DomainConstants.searchExactTotalLimit`, and beyond it the contract promises only that the
+            true count is **at least** the value served — `totalIsLowerBound` says so. That is what
             makes "See more · N remaining" honest without promising an exact count an index does not
             give.
+
+            **The threshold is served, not written here, and no engine is named.** A number carved into
+            a description is a constant with no owning document (rule 15), and a vendor's parameter
+            named in a contract is the search engine's shape showing through the boundary — it would
+            have to be renamed the day the engine changes, in a document a generated client carries.
           examples: [428]
         totalIsLowerBound:
           type: boolean
@@ -5565,11 +5581,26 @@ components:
             Tags **named by the contract**, never invented by a surface — otherwise mobile and television
             would invent others and Next's server rendering would call `revalidateTag` on keys nobody
             emits.
+
+            **This list is the union of two families, and they are not symmetric with
+            `x-arthome-invalidates`.** That extension names, on a write, the reads that write makes
+            false — it therefore covers only what the caller **caused**. The three catalogue tags
+            appear in no `x-arthome-invalidates` and that is not a gap: nothing on the storefront
+            writes the catalogue. `date:{id}`, `artist:{id}` and `category:{id}` reach this feed
+            because the **studio** published, which is the case the description above calls "what the
+            storefront did not cause". Counting the two lists against each other therefore proves
+            nothing; a tag missing from **this** list is the defect, because it is the list
+            `revalidateTag` reads.
+
+            The `{…}` placeholder is the identifier of the resource. In `x-arthome-invalidates` the
+            same tag is written with the operation's own path parameter (`date:{dateId}:availability`)
+            because that is what supplies the value; it is the same tag.
           items:
             type: string
             x-arthome-vocabulary:
               ['date:{id}', 'date:{id}:availability', 'artist:{id}', 'category:{id}',
-               'account:tickets', 'account:orders', 'account:subscription', 'home:rails']
+               'account:tickets', 'account:orders', 'account:subscription', 'account:cart',
+               'account:profile', 'account:devices', 'account:payment-methods', 'home:rails']
           examples: [['date:019928a0-7d31-7a10-b8c4-2f9e11a4c001', 'account:tickets']]
         complete:
           type: boolean
@@ -5924,8 +5955,8 @@ components:
           description: |
             **The rail's count, not the served slice's.** Every rail displays a counter to the right of
             its title; without this field it can only display `items.length`, that is, the page size — a
-            false number. Same guarantee as `CursorPageInfo.approximateTotal`: exact up to 10,000, a
-            lower bound beyond.
+            false number. Same guarantee as `CursorPageInfo.approximateTotal`: exact up to the served
+            threshold, a lower bound beyond it.
         totalIsLowerBound: { type: boolean, default: false }
         nextCursor:
           type: [string, 'null']
