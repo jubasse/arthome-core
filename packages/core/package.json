@@ -1,0 +1,66 @@
+{
+  "name": "@arthome/core",
+  "version": "0.1.0",
+  "description": "Le domaine Arthome. Zero dependance framework. Deux entrees : les regles sans zod, les schemas de frontiere avec.",
+  "license": "UNLICENSED",
+  "private": false,
+  "type": "module",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julien-metral/arthome-core.git",
+    "directory": "packages/core"
+  },
+  "_comment_exports": [
+    "DEUX ENTREES, et c'est la decision structurante du paquet.",
+    "  .        les regles. N'importe zod A AUCUNE PROFONDEUR.",
+    "  ./schema les schemas de frontiere. La SEULE a dependre de zod.",
+    "Une surface qui n'a besoin que des regles ne tire pas une ligne de zod.",
+    "Le cout de zod est FIXE et lie a l'import, pas marginal et lie au nombre de",
+    "schemas (D-012) : si l'entree principale l'importait, aucune entree sans",
+    "barillet de @arthome/contracts ne pourrait rattraper la facture.",
+    "La porte tools/check-core-entry.mjs le verifie.",
+    "Voir architecture/core-port-plan.md section 2."
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema/index.d.ts",
+      "import": "./dist/schema/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "_comment_peer": [
+    "zod est OPTIONNELLE : elle n'est requise que par l'entree ./schema.",
+    "Un consommateur qui n'importe que les regles n'a rien a installer.",
+    "Version epinglee exact : regime A de versions.json — deux zod dans un meme",
+    "processus, c'est deux registres de schemas et des erreurs incomprehensibles."
+  ],
+  "peerDependencies": {
+    "zod": "4.6.5"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
+  }
+}

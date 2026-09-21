@@ -105,6 +105,14 @@ filterSeverity · stateChangeOrigin · memberRole · crewRole · priceTier · pl
 payoutState · incidentKind · incidentCause · blackoutReason
 ```
 
+**Trente-six au total, et non vingt-deux.** Le compte de cette liste était celui des vocabulaires
+que `data-model.md` nommait ; l'écriture en a fait apparaître quatorze de plus, tous déjà employés
+par un contrat ou un écran : les quatorze entrées de navigation du studio, les six volets d'une
+fiche de date, les six surfaces, les trois canaux de notification, les quatre natures de
+commande, les états d'abonnement, les verdicts de modération, la portée des droits, les natures
+d'appareil, les rôles d'équipe, et les trois vocabulaires fiscaux que le temps 4 a ajoutés.
+**Aucun n'est nouveau : ils étaient écrits en toutes lettres et déclarés nulle part.**
+
 **Et chacun porte `parseTolerant()`**, qui conserve une valeur inconnue et la traite comme neutre —
 jamais un rejet. C'est l'exigence de `storefront-tv` Q12, et c'est la seule chose du contrat qui,
 mal faite, produit un écran noir chez des gens qui ne peuvent rien y faire.
@@ -317,10 +325,21 @@ inférence entre fichiers**. Trois conséquences, toutes mécaniques :
 1. **Toute fonction exportée annote son type de retour.** `export function payoutOf(…)` sans
    annotation **ne compile pas**. Sur ~90 fonctions publiques, c'est du travail mécanique à faire
    d'emblée plutôt qu'à rattraper.
-2. **Aucun type public inféré depuis une valeur.** Pas de `export const ROLES = [...] as const` dont
-   le type serait déduit : le vocabulaire déclare son type **explicitement**, puis la liste s'y
-   conforme. Ce qui est une contrainte heureuse — c'est exactement ce que `vocabulary/` doit faire
-   de toute façon.
+2. **Aucun type public inféré depuis le CORPS d'une fonction.** C'est la formulation juste, et
+   elle corrige ce que ce document disait au temps de sa rédaction.
+
+   > **Correction rendue à l'écriture.** Ce paragraphe interdisait
+   > `export const ROLES = [...] as const`. **C'était faux sur les deux bouts.**
+   > D'abord, `isolatedDeclarations` **autorise** une assertion `as const` sur un littéral : le
+   > type y est syntaxiquement calculable, aucune inférence ne traverse un corps de fonction.
+   > Ensuite et surtout, `arthome-check-enums` **exige cette forme exacte** — elle découvre les
+   > vocabulaires par le motif `export const NOM = ['a','b'] as const`. Interdire la forme aurait
+   > **désactivé la porte anti-E2 du projet**.
+   >
+   > La forme retenue est donc, pour chaque vocabulaire, **trois déclarations** : la liste en
+   > `as const` (que la porte découvre), le type dérivé, et un objet de **membres nommés** pour
+   > que les règles n'écrivent jamais une chaîne littérale — sans quoi la porte serait
+   > intenable à l'usage.
 3. **Aucun type anonyme exporté.** Toute forme rendue par une fonction publique est un type
    **nommé et exporté** : `WatchVerdict`, `PayoutBreakdown`, `SeatAvailability`,
    `PublicationTransition`, `DisplayStateResult`. Le paquet y gagne — un type nommé se cite dans

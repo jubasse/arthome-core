@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": [
+    "outDir, rootDir, include et exclude appartiennent au paquet, jamais au",
+    "tsconfig partage : un chemin relatif ecrit dans un fichier etendu se",
+    "resoudrait depuis node_modules/@arthome/tooling/tsconfig/."
+  ],
+  "extends": "@arthome/tooling/tsconfig/lib.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
+}

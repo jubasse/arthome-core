@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": [
+    "Verification de types du paquet, tests compris. La CONSTRUCTION est dans",
+    "tsconfig.build.json : elle seule emet, et elle exclut les tests.",
+    "lib.json porte isolatedDeclarations et stableTypeOrdering — les deux options",
+    "qui rendent les .d.ts publies lisibles par TypeScript 6 comme par 7."
+  ],
+  "extends": "@arthome/tooling/tsconfig/lib.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"]
+}
