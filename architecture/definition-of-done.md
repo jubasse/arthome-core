@@ -504,10 +504,15 @@ document publié, comparé à sa cadence. L'assembleur est l'endroit naturel de 
 **Les quatre règles d'exploitation qui rendent ce découpage sûr.** Elles sont ici parce que trois
 d'entre elles, mal faites, ne se voient qu'en production.
 
-- **Publier avant de signer, retirer après.** La nouvelle clé publique entre dans le document
-  **avant** que son émetteur commence à signer avec ; l'ancienne n'est retirée qu'**après** la plus
-  longue durée de vie de jeton, plus marge. Sans recouvrement, une rotation coupe **toutes** les
-  lectures en cours.
+- **Publier avant de signer, retirer après — et « après » est un maximum, pas une durée.** La
+  nouvelle clé publique entre dans le document **avant** que son émetteur commence à signer avec ;
+  l'ancienne n'est retirée qu'après **`max(durée de vie du jeton, 2 × max-age du document)`**, plus
+  marge. Sans recouvrement, une rotation coupe **toutes** les lectures en cours.
+  **Ce point disait « après la plus longue durée de vie de jeton », et c'était faux** — la même
+  formulation que portait `adr-auth` §8.1 avant correction. Prise seule, elle dimensionne la
+  rétention sur 120 secondes quand l'arête sert l'ancien document pendant une heure, et produit
+  donc exactement le rejet de jetons valides que le point suivant décrit. Je le laisse écrit :
+  une puce se recopie hors de son contexte, et c'est ainsi que la règle 15 se viole.
 - **La fenêtre de grâce doit couvrir le cache du CDN, pas seulement la durée du jeton** — et c'est
   le vrai mécanisme derrière les deux cadences, que je n'ai vu écrit nulle part. La périphérie met
   le document en cache pendant des heures : publier la nouvelle clé puis signer soixante secondes
