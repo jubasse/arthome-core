@@ -183,9 +183,15 @@ sont **déjà ce que 7.0 émettrait**, donc la migration future ne produira pas 
 contrat sur les sept dépôts à la fois.
 
 Le coût annoncé est jusqu'à **25 % de vérification en plus**. C'est pourquoi l'option est réservée
-au `tsconfig.build.json` des **deux paquets publiés** — quelques centaines de fichiers, construits
+au `tsconfig/lib.json` des **deux paquets publiés** — quelques centaines de fichiers, construits
 rarement — et **interdite** dans les `tsconfig` d'application, où elle ralentirait chaque
 vérification de type pour rien.
+
+**Et elle est interdite pour une seconde raison, plus dure que la performance** : c'est la **seule
+option de tout le dispositif qui n'existe pas des deux côtés de la fracture.** Sous TypeScript 7 le
+tri déterministe « is `true` by default, and cannot be turned off ». Elle ne descend donc que dans
+le fichier de base que TypeScript 7 ne lira jamais. Le raisonnement complet, et les trois fichiers
+de base qui en découlent, sont au **§4.4**.
 
 **c. `"isolatedDeclarations": true` sur les deux paquets publiés.**
 Cette option refuse toute exportation dont le type ne peut pas être écrit sans inférer à travers le
@@ -238,11 +244,11 @@ Dans `arthome-core`, un espace de travail `tools/dts-check/` que rien ne publie 
 ```
 tools/dts-check/
 ├── package.json         # devDeps: typescript@6.0.3, @typescript/native@npm:typescript@7.0.2
-├── tsconfig.json        # strict, skipLibCheck: false, types: [], moduleResolution nodenext
+├── tsconfig.json        # extends @arthome/tooling/tsconfig/base.json ; skipLibCheck: false
 └── src/probe.ts         # export * from '@arthome/core'; export * from '@arthome/contracts';
 ```
 
-Les deux points qui font que cette porte prouve quelque chose :
+Les **trois** points qui font que cette porte prouve quelque chose :
 
 - **`"skipLibCheck": false`.** C'est toute la porte. Avec `skipLibCheck: true` — le défaut de
   beaucoup de modèles — TypeScript **ne vérifie pas les `.d.ts`**, et la porte devient un test qui
@@ -251,6 +257,11 @@ Les deux points qui font que cette porte prouve quelque chose :
   `.d.ts` construits. Un lien d'espace de travail pnpm qui résout vers les sources court-circuite
   exactement ce qu'on veut mesurer. Dans un espace de travail pnpm, `probe.ts` importe donc par le
   nom du paquet (`@arthome/core`) et jamais par un chemin relatif.
+- **la sonde étend `@arthome/tooling/tsconfig/base.json`.** Ce n'est pas une commodité : cela fait
+  que l'étape 3 vérifie **deux** choses — que les `.d.ts` passent sous TypeScript 7, *et* que le
+  fichier de base partagé par les sept dépôts est encore lisible par TypeScript 7. Le jour où
+  quelqu'un ajoutera une option propre à TS 6 dans la base, cette porte rougira le jour même
+  (§4.4.3).
 
 Les commandes, à lancer depuis `arthome-core` :
 
@@ -275,11 +286,12 @@ contre l'usage habituel, parce que c'est ce qui rend le changement de contrat **
 revue** plutôt que dans un incident chez un consommateur. Le coût est quelques diffs bruyants ; le
 bénéfice est que `@arthome/contracts` ne peut plus changer en silence.
 
-Les trois échecs à savoir lire :
+Les quatre échecs à savoir lire :
 
 | Symptôme | Cause | Quoi faire |
 |---|---|---|
-| l'étape 2 passe, l'étape 3 échoue | on a utilisé une option ou un comportement que 7.0 a durci en erreur | corriger le paquet, pas la porte |
+| l'étape 2 passe, l'étape 3 échoue **sur un type** | on a utilisé un comportement que 7.0 a durci en erreur | corriger le paquet, pas la porte |
+| l'étape 2 passe, l'étape 3 échoue **sur la configuration** (`TS5023` ou une option refusée) | une option propre à TS 6 a été ajoutée dans `tsconfig/base.json`, qui doit rester l'intersection | la déplacer dans `tsconfig/lib.json` (§4.4.2) |
 | l'étape 3 passe, l'étape 2 échoue | on a compilé le paquet avec 7.0 par mégarde | vérifier quel `tsc` a servi (§2.5) |
 | l'étape 4 échoue sans changement de source | `stableTypeOrdering` inactif, ou version de `typescript` déplacée | comparer les versions avant de toucher au code |
 
@@ -331,6 +343,9 @@ ont été payés d'avance.
   du §2.4 les valide déjà sous 7.0.2. La bascule ne rouvre pas le contrat ;
 - la porte du §2.4 **s'inverse** : `typescript@7.x` devient l'étape 2 et le plancher ancien devient
   l'étape 3, tant qu'un consommateur reste derrière ;
+- côté configuration, **une seule ligne disparaît** : `stableTypeOrdering` dans `tsconfig/lib.json`,
+  devenue inutile puisque 7.0 l'applique toujours. C'est tout, parce que `tsconfig/base.json` et
+  `tsconfig/app.json` sont déjà valides sous 7.0 par construction (§4.4.2) ;
 - la bascule se fait **dépôt par dépôt**, dans l'ordre du §7.3, et jamais plus d'un dépôt en
   transit ;
 - le `nest build` est le dernier à suivre, parce que le support de 7.1 dans `nest-cli` (PR #3554)
@@ -503,7 +518,7 @@ Les fichiers à passer, par dépôt :
 ### 3.6 Ce que Prettier possède, écrit une fois
 
 La configuration Prettier vit dans `@arthome/tooling` et n'est **jamais redéfinie** par un dépôt
-(§4.4). Son contenu :
+(§4.5). Son contenu :
 
 ```js
 // @arthome/tooling/prettier — la configuration Prettier de la flotte
@@ -576,7 +591,7 @@ Troisième paquet publié de `arthome-core`, à côté de `@arthome/core` et `@a
 ### 4.1 Ce qu'il expose
 
 Pas d'entrée `"."`. C'est délibéré : rien dans `src/` d'une application ne doit pouvoir importer ce
-paquet (§4.6).
+paquet (§4.7).
 
 ```json
 {
@@ -601,14 +616,23 @@ paquet (§4.6).
 | `./eslint/node` | `base` + globales Node, règles de service | `arthome-platform`, scripts d'outillage |
 | `./eslint/browser` | `base` + globales navigateur | les cinq applications |
 | `./prettier` | l'objet du §3.6 | les sept |
-| `./tsconfig/base.json` | options communes, toutes écrites (§2.3 d) | les sept |
-| `./tsconfig/lib.json` | `base` + `declaration`, `isolatedDeclarations`, `stableTypeOrdering` | `@arthome/core`, `@arthome/contracts` |
+| `./tsconfig/base.json` | l'**intersection** TS 6 / TS 7, toutes options écrites, **aucun chemin** (§4.4) | les sept |
+| `./tsconfig/lib.json` | `base` + `declaration`, `isolatedDeclarations`, **`stableTypeOrdering`** — le seul fichier que TS 7 ne lira jamais (§4.4.2) | `@arthome/core`, `@arthome/contracts` |
 | `./tsconfig/app.json` | `base` + `noEmit`, `moduleResolution: "bundler"` | les cinq applications |
 | `./vitest` | un **objet nu**, pas un `defineConfig` (§4.2) | les sept |
 
 **Trois entrées ESLint et pas une.** Une seule entrée obligerait à embarquer les globales navigateur
 dans les services et inversement, et les globales sont exactement ce qui produit les faux positifs
 qui font désactiver une règle — puis oublier de la rallumer.
+
+**Trois `tsconfig` et pas un** — c'est la question que le chef de projet pose, et elle a sa section :
+**§4.4**. Les sous-chemins `./tsconfig/*.json` sont listés dans `exports` **extension comprise**,
+parce que `extends` respecte `exports` (§4.4.4) — et les fichiers doivent en outre figurer dans le
+champ `files` du `package.json`, sinon ils ne sont tout simplement pas publiés.
+
+**Et trois `bin`**, qui sont les portes que ce paquet fournit aux six autres dépôts :
+`arthome-check-enums` (§5.3), `arthome-check-versions` (§7.4), `arthome-check-tsconfig` (§4.5.1).
+Chacun existe pour la même raison : sa table de référence ne doit vivre qu'**à un seul endroit**.
 
 ### 4.2 `dependencies` contre `peerDependencies`
 
@@ -968,7 +992,7 @@ La porte correspondante, qui trouve les désactivations devenues inutiles :
 pnpm exec eslint . --report-unused-disable-directives --max-warnings 0
 ```
 
-### 4.5 Comment une montée se propage sans casser sept dépôts le même jour
+### 4.6 Comment une montée se propage sans casser sept dépôts le même jour
 
 C'est la question que D-014 pose en deuxième, et c'est celle qui décide si le paquet survit.
 
@@ -1031,7 +1055,7 @@ minimumReleaseAgeExclude:
 sécurité en continu, une semaine de décantation sur les paquets tiers coûte peu et attrape
 l'essentiel des compromissions de chaîne d'approvisionnement, qui sont détectées en quelques jours.
 
-### 4.6 Comment il évite de devenir une dépendance de production
+### 4.7 Comment il évite de devenir une dépendance de production
 
 Quatre barrières, dont trois mécaniques.
 
@@ -1078,7 +1102,7 @@ deux paquets sont séparés (README §3), et c'est **elle** qui est vérifiée :
 
 ## 5. Le socle commun — ce qui vaut sur les sept dépôts
 
-Les règles marquées **[socle]** sont verrouillées (§4.4). Les autres sont des recommandations, et
+Les règles marquées **[socle]** sont verrouillées (§4.5). Les autres sont des recommandations, et
 elles le disent.
 
 ### 5.1 Formatage
@@ -1324,7 +1348,7 @@ dix fois plus, et c'est précisément la raison de calendrier qui a motivé D-01
 
 | Interdit | Règle | Exception |
 |---|---|---|
-| `any` explicite | `@typescript-eslint/no-explicit-any` | `src/generated/**` (§4.4) |
+| `any` explicite | `@typescript-eslint/no-explicit-any` | `src/generated/**` (§4.5) |
 | `as T` non vérifié | `@typescript-eslint/consistent-type-assertions` (`objectLiteralTypeAssertions: 'never'`) | `as const` ; un `satisfies` fait presque toujours l'affaire |
 | `!` d'assertion non nulle | `@typescript-eslint/no-non-null-assertion` | aucune : on écrit la vérification |
 | `@ts-ignore` | `@typescript-eslint/ban-ts-comment` | `@ts-expect-error` **avec description**, jamais `@ts-ignore` — la différence est que `@ts-expect-error` devient une erreur le jour où le problème est résolu |
@@ -1486,7 +1510,7 @@ fonction entière par le compilateur React** — catégorie `Suppression` — qu
 sans rien journaliser, bâtiment vert. C'est le cas d'école de la règle qui doit rester allumée : la
 désactiver ne masque pas un avertissement, elle **annule une optimisation** ailleurs.
 
-D'où la conséquence pratique, à retenir : **`--report-unused-disable-directives` (§4.4) n'est pas un
+D'où la conséquence pratique, à retenir : **`--report-unused-disable-directives` (§4.5) n'est pas un
 nettoyage cosmétique sur ces deux dépôts** ; c'est le seul détecteur des désactivations `react-hooks`
 oubliées, et donc des composants silencieusement non compilés.
 
@@ -1528,11 +1552,17 @@ plus qu'ailleurs, et c'est là qu'elle gagne son coût.
 
 **Ce qui s'ajoute encore, propre à l'empaqueteur :**
 
-- **`metro.config.js` ne lit pas `tsconfig.json`.** Les `paths` déclarés en TypeScript doivent être
-  **répliqués** dans la configuration de Metro. C'est une duplication inévitable, donc à traiter comme
-  telle : un commentaire croisé dans les deux fichiers, et la porte `tsc --noEmit` qui échoue si
-  l'un diverge de l'autre (il échouera sur l'import, pas sur la duplication — c'est une preuve
-  indirecte, et c'est mieux que rien).
+- **`metro.config.js` ne lit pas `tsconfig.json`.** Metro transpile par Babel, sans vérification de
+  type : l'`extends` de `@arthome/tooling` ne le concerne donc **jamais** (§4.4.4). En revanche les
+  `paths` déclarés en TypeScript doivent être **répliqués** dans la configuration de Metro. C'est une
+  duplication inévitable, donc à traiter comme telle : un commentaire croisé dans les deux fichiers,
+  et la porte `tsc --noEmit` qui échoue si l'un diverge de l'autre (il échouera sur l'import, pas sur
+  la duplication — c'est une preuve indirecte, et c'est mieux que rien).
+- **La résolution par `exports` est acquise, elle.** Elle est activée **par défaut** dans Metro
+  depuis la 0.82 (React Native 0.79), donc ici : l'entrée sans baril de `@arthome/contracts` (D-012)
+  est bien celle que Metro résout. Si un jour un paquet tiers s'y casse, l'échappatoire est
+  `resolver.unstable_enablePackageExports: false` — **et c'est alors tout le dépôt qui repasse en
+  résolution héritée**, y compris nos paquets. À ne pas faire sans mesurer.
 - **L'élagage n'est pas acquis.** D-012 le consigne : le gain de `zod/mini` est **conditionnel à un
   élagage que l'empaqueteur React Native n'active pas par défaut**, et la mesure (7,5 Ko contre
   93 Ko) a été faite sur un schéma isolé compilé par esbuild, pas sur un bundle applicatif réel. La
@@ -1694,7 +1724,7 @@ exécuteur.
 
 Toute montée d'un paquet de régime B suit cet ordre, **un dépôt à la fois** :
 
-1. **`arthome-core`** — il produit `@arthome/tooling` et se le mange (§4.5 e) ; s'il ne passe pas,
+1. **`arthome-core`** — il produit `@arthome/tooling` et se le mange (§4.6 e) ; s'il ne passe pas,
    rien ne part ;
 2. **`arthome-platform`** — sept services, mais un seul dépôt et un seul espace de travail ; il donne
    le plus de signal pour le moins de manipulations ;
@@ -1766,7 +1796,7 @@ Le quota d'Actions du compte est épuisé. Aucune porte ne suppose un exécuteur
 | 1 | **Conflit ESLint / Prettier nul** | `npx eslint-config-prettier <fichier>` | `No rules that are unnecessary or conflict with Prettier were found.` | §3.5 |
 | 2 | Formatage | `pnpm exec prettier --check .` | aucun fichier listé | §5.1 |
 | 3 | Lint | `pnpm exec eslint . --max-warnings 0` | aucune sortie | §5 |
-| 4 | Désactivations orphelines | `pnpm exec eslint . --report-unused-disable-directives --max-warnings 0` | aucune | §4.4, §6.2 |
+| 4 | Désactivations orphelines | `pnpm exec eslint . --report-unused-disable-directives --max-warnings 0` | aucune | §4.5, §6.2 |
 | 5 | Typage | `pnpm exec tsc --noEmit` | aucune erreur | §5.7 |
 | 6 | **`.d.ts` sous TypeScript 6.0.3** | `pnpm --filter dts-check exec tsc --noEmit` | aucune erreur | §2.4 |
 | 7 | **`.d.ts` sous TypeScript 7.0.2** | `pnpm --filter dts-check exec tsgo --noEmit` | aucune erreur | §2.4 |
@@ -1774,10 +1804,10 @@ Le quota d'Actions du compte est épuisé. Aucune porte ne suppose un exécuteur
 | 9 | **Pas de table littérale parallèle** | `pnpm exec arthome-check-enums` | aucune occurrence | §5.3 |
 | 10 | Versions alignées | `pnpm exec arthome-check-versions` | aucun écart | §7.4 |
 | 11 | Un seul ESLint, un seul TypeScript | `pnpm why eslint typescript prettier` | une version chacun | §4.2 |
-| 12 | Outillage hors production | `pnpm why -P @arthome/tooling` | aucune dépendance | §4.6 |
-| 13 | `@arthome/core` sans dépendance | script du §4.6 | vide | §4.6 |
+| 12 | Outillage hors production | `pnpm why -P @arthome/tooling` | aucune dépendance | §4.7 |
+| 13 | `@arthome/core` sans dépendance | script du §4.7 | vide | §4.7 |
 | 14 | Tests | `pnpm exec vitest run` | vert | §5.8 |
-| 15 | Configuration résolue | `pnpm exec tsc --showConfig` | conforme | §4.3 |
+| 15 | **Verrous tsconfig non desserrés** | `pnpm exec arthome-check-tsconfig` | aucun verrou desserré | §4.5.1 |
 | 16 | Message de commit | crochet `commit-msg` | conforme | §5.9, §8.4 |
 
 Les portes **1, 6, 7, 9** sont celles que D-013 et D-014 exigent nommément. Ce sont aussi les quatre
@@ -1800,7 +1830,8 @@ commande, qui enchaîne **celles qui les concernent** :
     "check:prettier-conflict": "eslint-config-prettier src/index.ts",
     "check:enums":    "arthome-check-enums",
     "check:versions": "arthome-check-versions",
-    "verify": "pnpm run check:versions && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run check:enums && pnpm run test"
+    "check:tsconfig": "arthome-check-tsconfig",
+    "verify": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run check:enums && pnpm run test"
   }
 }
 ```
@@ -1810,8 +1841,9 @@ Dans `arthome-core`, `verify` ajoute les portes 6, 7, 8 et 13.
 **Les mêmes noms sur les sept dépôts** — c'est la seule façon, pour une personne seule qui passe de
 l'un à l'autre, de ne jamais avoir à se demander comment on vérifie ici.
 
-**L'ordre est délibéré et ne doit pas changer :** les versions d'abord (une porte rouge parce qu'un
-paquet a glissé est du temps perdu à lire une erreur qui n'existe pas), le conflit Prettier ensuite
+**L'ordre est délibéré et ne doit pas changer :** les versions et les verrous `tsconfig` d'abord
+(une porte rouge parce qu'un paquet a glissé ou qu'un `strict: false` traîne est du temps perdu à
+lire une erreur qui n'existe pas), le conflit Prettier ensuite
 (il conditionne le sens des deux suivantes), puis le formatage, le lint, le typage, les énumérations
 et les tests. Du plus rapide et du plus explicatif vers le plus lent.
 
@@ -1901,9 +1933,15 @@ Ce document ne cite aucune version de mémoire. Relevés effectués ce jour, cha
 | Absence de contrainte TypeScript côté React Native | `react-native@0.87.1` → `peerDependencies` ; `@types/react@19.3.0` → `typesVersions` | **aucune** ; TS 5.1+ suffit |
 | Refus de TypeScript 7 par le CLI NestJS | `nest-cli` 12.0.3, `UNSUPPORTED_TYPESCRIPT_VERSION` | `tsc`, `swc` et `rspack` également |
 | Nature de TypeScript 7.0 | `devblogs.microsoft.com/typescript/announcing-typescript-7-0/` | portage Go, parité de vérification, **aucune syntaxe nouvelle**, pas d'API programmatique |
-| `stableTypeOrdering` | notes de version TypeScript 6.0 | tri déterministe de 7.0 porté à 6.0 ; jusqu'à 25 % plus lent |
+| `stableTypeOrdering` sous TS 6.0 | notes de version TypeScript 6.0 | tri déterministe de 7.0 porté à 6.0 ; jusqu'à 25 % plus lent |
+| **`stableTypeOrdering` sous TS 7.0** | annonce officielle de TypeScript 7.0 | « is `true` by default, and **cannot be turned off** » → seule option du dispositif qui ne vaut pas des deux côtés (§4.4.1). **Non vérifié** : si l'écrire explicitement à `true` sous 7.0 est accepté ou refusé — d'où la règle du §4.4.2, qui rend la question sans objet |
+| Options devenues **erreurs dures** en TypeScript 7.0 | annonce officielle de TypeScript 7.0 | `target: es5`, `downlevelIteration`, `moduleResolution: node/node10/classic`, `module: amd/umd/systemjs/none`, **`baseUrl`**, `esModuleInterop: false`, `allowSyntheticDefaultImports: false`, `alwaysStrict: false`, `outFile`, `module Foo {}`, `assert` sur les imports ; `ignoreDeprecations` ne les tait plus |
 | Défauts changés en TypeScript 6.0 | notes de version TypeScript 6.0 | `types: []`, `rootDir: "."`, `strict`, `module: esnext` |
 | `@typescript/typescript6` | registre npm, mainteneurs | **paquet officiel Microsoft**, binaire `tsc6`, publié à **6.0.2** |
+| **`extends` et le champ `exports`** | `microsoft/TypeScript#48665`, **PR #50955** (fusionnée déc. 2022) | le défaut historique — `extends` ignorait `exports` — est **corrigé** ; les sous-chemins doivent donc être listés dans `exports` (§4.4.4) |
+| **Chemins relatifs dans un `tsconfig` étendu** | `typescriptlang.org/tsconfig/extends.html` | « All relative paths found in the configuration file will be resolved relative to the configuration file they originated in » ; `files`/`include`/`exclude` **écrasent**, `references` n'est **pas hérité** → aucune option porteuse de chemin dans la base (§4.4.4) |
+| **Héritage d'`angularCompilerOptions` par `extends`** | commits `angular/angular` (`d7e5bbf`, `e3ccd56`), `angular.dev/reference/configs/angular-compiler-options` | Angular l'a **explicitement implémenté**, au même niveau que `compilerOptions` |
+| **Metro et `tsconfig`** | documentation Metro et React Native | Metro **ne lit pas** `tsconfig.json` ; résolution par `exports` **activée par défaut** depuis Metro 0.82 / React Native 0.79, donc dans RN 0.87 |
 | `eslint-config-prettier` : position, entrée `/flat`, outil en ligne de commande | `README` et `CHANGELOG` du dépôt | dernier du tableau ; `/flat` séparé depuis 10.1.1 ; `npx eslint-config-prettier <fichier>` |
 | `eslint-plugin-prettier` déconseillé | `prettier.io/docs/integrating-with-linters` | trois raisons citées au §3.3 |
 | `arrow-body-style` / `prefer-arrow-callback` | `README` d'`eslint-config-prettier` | « safe to use if you don't use eslint-plugin-prettier » |

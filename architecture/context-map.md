@@ -564,6 +564,44 @@ clés mis en cache, rotation toutes les 24 h avec deux clés vivantes et un `kid
   jeton expiré est **le rafraîchissement silencieux** ; une réauthentification en pleine garde est
   une faute. Le détail appartient à `adr-auth.md` ; la topologie est ici.
 
+### 7.0 Le document JWKS n'a pas de contexte propriétaire — et c'est voulu
+
+`adr-auth.md` §8.1 pose le mécanisme : **un document JWKS unique, statique, servi par le CDN**,
+portant les clés publiques des quatre émetteurs (BFF storefront, BFF studio, entitlement de
+lecture, `device_token`), distinguées par un préfixe de `kid`, en ES256, avec deux cadences de
+rotation distinctes. Ce qu'il ne dit pas, et `auth` le remonte lui-même : **qui le possède**.
+
+C'est une question pour cette carte, parce que la réponse conditionne une règle du projet :
+
+> **« Aucun service n'appelle le service d'identité » doit rester vrai *y compris pour la
+> découverte des clés*.**
+
+Deux réponses la casseraient, et il faut les écarter explicitement :
+
+| Fausse réponse | Ce qu'elle casse |
+|---|---|
+| `identity` sert le JWKS | **chaque service appellerait `identity`** à chaque construction de son jeu de clés — c'est la règle violée littéralement, par la porte de la découverte |
+| un BFF sert le JWKS | les services dépendraient de **l'entrée**. La dépendance est inversée : un service ne doit rien attendre du BFF |
+
+**Ma proposition — le JWKS est un artefact d'infrastructure, comme l'i18n et la taxonomie (§1.8),
+et il n'appartient à aucun contexte.**
+
+- il n'a **aucun invariant, aucune transaction, aucun événement** : c'est un fichier statique, et
+  un service qui sert un fichier statique est un service à exploiter pour rien. Même raisonnement
+  qu'en C6, et il a déjà servi deux fois ;
+- **chaque émetteur ne publie que ses clés publiques** dans un préfixe de stockage objet ; un
+  travail de `arthome-platform` les assemble en `/.well-known/jwks.json` et le pousse au CDN.
+  **Aucune clé privée ne quitte son émetteur**, et aucun service n'en lit un autre ;
+- le CDN met le document en cache agressivement — c'est précisément pourquoi `auth` impose deux
+  cadences de rotation et une publication de la nouvelle clé **avant** de signer avec.
+
+**Ce n'est pas tranché : je le propose, `backend-contracts` le traite aussi.** Le point où il faut
+s'accorder est le **découpage du travail de rotation** — un seul travail qui engendre les quatre
+paires (simple à exploiter pour une personne seule, mais il détient quatre clés privées) contre
+quatre rotations indépendantes qui ne publient que du public (rayon d'explosion borné, quatre
+choses à surveiller). Je penche pour le second, parce que le premier ferait d'un travail
+d'infrastructure le point le plus sensible du système.
+
 ### 7.1 Appareil et session : deux objets, et c'est `adr-auth.md` qui les nomme (E13, E15)
 
 `storefront-mobile` relève que la maquette traite appareils et sessions comme deux choses sans

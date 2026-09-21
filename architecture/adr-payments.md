@@ -1,8 +1,25 @@
 # ADR — Encaissement, commission, TVA, versements
 
-**Statut** : accepté pour la *forme*, **ouvert sur le fond fiscal** (§5).
+**Statut** : **accepté** — modèle fiscal tranché par **D-015**, devise d'affichage par **D-016**,
+quatre arbitrages secondaires par **D-017**.
 **Date** : 21 septembre 2026. **Auteur** : `backend-domain`.
 **Portée** : `ticketing` (encaisse), `payouts` (calcule le droit), Stripe Connect en **mode test**.
+
+---
+
+> ## ⚠ Avertissement — à lire avant tout le reste
+>
+> **Le modèle fiscal décrit au §5 est une recommandation d'architecture. Ce n'est pas un avis
+> fiscal, et il doit être validé par un conseil avant tout encaissement réel.**
+>
+> Qui doit la TVA, sur quelle assiette et qui en est redevable sont des **questions de droit**.
+> Elles dépendent du statut réel d'Arthome (assujetti ou non, seuils, pays d'établissement), du
+> statut des artistes (assujettis ou non, établis en France ou non) et du guichet unique pour les
+> ventes hors France. Aucun de ces faits n'est connu à la date de ce document.
+>
+> **Le risque est nul aujourd'hui** : Stripe tourne en mode test, aucun argent réel ne circule.
+> C'est précisément pour cela que la décision est prise maintenant — elle est **réversible sur le
+> fond**. Ce qui ne l'est pas, c'est la **forme** : voir l'encadré du §5.0.
 
 ---
 
@@ -110,7 +127,41 @@ les ports média de `streaming.md`.
 
 ---
 
-## 5. La TVA — la question que D5 laisse ouverte, instruite et non supposée
+## 5. La TVA — la question que D5 laissait ouverte, instruite et non supposée
+
+### 5.0 Le seul choix réellement irréversible, isolé
+
+Avant d'entrer dans le débat fiscal, il faut séparer ce qui se rejoue de ce qui ne se rejoue pas.
+C'est la distinction qui compte le plus dans ce document.
+
+> **Le modèle fiscal est un calcul : il se refait. La forme des données est une structure : elle
+> ne se refait pas.**
+>
+> **Le seul choix réellement irréversible de tout ce chapitre est de porter — ou non — une
+> ventilation de TVA par marché.**
+
+```
+irréversible   vat[] = [ { market, rate, base, amount }, … ]     ← ce qu'on grave
+                                                                   juste dans LES DEUX modèles
+réversible     quel taux, quelle assiette, quel redevable        ← ce qui se recalcule
+```
+
+Pourquoi ce n'est pas un détail de modélisation :
+
+- **La ventilation est juste dans les deux modèles fiscaux.** Un modèle à taux unique produit
+  simplement une ventilation **à une ligne**. Elle ne présume donc de rien, et elle survit à un
+  changement d'avis du conseil fiscal.
+- **Un champ `vat_amount` scalaire unique aurait figé le défaut.** Le jour où l'on découvre qu'il
+  faut ventiler — parce qu'un second marché s'ouvre, ou parce que le taux est celui de l'acheteur —
+  il faut **reconstruire l'assiette de chaque ligne passée**, sur des versements déjà payés et des
+  factures conservées dix ans. Ce n'est plus une migration, c'est une reconstitution comptable.
+- **Et c'est exactement le champ que la fixture invitait à écrire.** `fixtures.js` produit un seul
+  nombre, au taux de `billingMarkets[0]`, et il est plausible à l'euro près. C'est le piège
+  « forme contre règle » dans sa forme la plus coûteuse : **la fixture fait autorité sur la règle,
+  jamais sur la forme**, et ici la forme était le seul enjeu durable.
+
+`studio-web` a trouvé la contradiction entre la fixture et l'écran des versements ; c'est cette
+trouvaille qui a rendu la ventilation visible avant qu'il ne soit trop tard.
 
 ### 5.1 Ce que les deux sources disent, et pourquoi elles ne peuvent pas avoir raison ensemble
 
@@ -174,25 +225,46 @@ aux artistes sont **les mêmes partout**, ce qui est la seule promesse tenable.
 unique. Les deux sont corrigés au portage (palier 1), et le test de non-régression correspondant
 est l'un de ceux que le README cite comme « les règles qui font mal ».
 
-### 5.5 Ce que je remonte au chef, et ce qui ne peut pas être décidé ici
+### 5.5 L'arbitrage rendu, et la réserve qui l'accompagne
 
-> **Le modèle A est une recommandation d'architecture, pas un avis fiscal.**
+**Le modèle A est acté par D-015**, avec la commission sur le HT, sur les six indices convergents
+du §5.3. La forme, elle, est gravée et ne dépend pas de l'issue de la validation juridique — §5.0.
+
+> **Mais le modèle A reste une recommandation d'architecture, pas un avis fiscal.**
 > Qui doit la TVA, sur quelle assiette et qui en est redevable sont des questions de droit, et
 > elles dépendent du statut réel d'Arthome (assujetti ou non, seuils, pays d'établissement), du
 > statut des artistes (assujettis ou non, français ou non) et du guichet unique pour les ventes
 > hors France. **Elles doivent être validées par un conseil avant tout encaissement réel.**
-
-Ce qui est **sûr et non réversible**, et que je grave donc maintenant : **la forme porte une
-ventilation par marché**, chaque ligne avec son assiette, son taux et son montant. Elle est juste
-dans les deux modèles — un modèle à taux unique produit une ventilation à une ligne — et elle
-réconcilie l'écran du studio avec la donnée. **Un champ `vat_amount` scalaire unique aurait été le
-vrai choix irréversible**, et c'est celui que la fixture invitait à faire.
 
 **Multi-devise (D4, `studio-web` Q10)** : le solde d'une chaîne est présenté **dans la devise de
 son compte connecté**, et une chaîne qui vend dans deux devises a **deux soldes**, jamais un solde
 converti. Motif : convertir, c'est introduire un taux de change, donc une date de change, donc un
 écart de réconciliation qu'on ne saurait pas expliquer. Stripe tient un solde par devise ; on le
 reflète, on ne l'agrège pas.
+
+### 5.6 La devise d'affichage est retirée au palier 1 (D-016)
+
+`storefront-web` Q29 demandait si la devise d'affichage choisie par le spectateur et la devise de
+facturation d'une date peuvent différer. **Elles le peuvent en théorie, et le contrat ne les
+confond pas** — mais la préférence **disparaît des écrans au palier 1**.
+
+**Motif** : afficher un prix converti qu'on ne peut pas débiter est un mensonge, et D4 a montré
+qu'**aucune règle n'a jamais été éprouvée sur deux taux** — trois marchés sont déclarés, un seul
+est exercé par le générateur. Les prix s'affichent donc dans la **devise du marché de facturation
+de la date**, formatés côté client selon la locale.
+
+**Le retrait est réversible**, et voici exactement ce qu'il faudra écrire pour revenir dessus :
+
+| À trancher | Pourquoi ça bloque aujourd'hui |
+|---|---|
+| **source du taux** | un taux inventé est un prix inventé |
+| **date de change** | celui du jour de l'affichage, de la commande, ou du versement ? Les trois donnent trois montants |
+| **arrondi** | à quelle unité, et dans quel sens — le spectateur ou la plateforme |
+| **qui porte l'écart** | entre le converti affiché et le débité réel, quelqu'un paie la différence |
+
+Tant que ces quatre lignes ne sont pas écrites, la préférence ne peut produire qu'un affichage
+**indicatif** — et un prix indicatif sur une billetterie est le pire défaut possible, celui que
+`storefront-web` nomme lui-même à propos des promotions.
 
 ---
 
@@ -287,10 +359,13 @@ C'est ce qui rend acceptable de ne pas être parfait sur les webhooks : un évé
    parfaitement, et cela vaut pour le spectateur : *« un paiement confirmé par un paramètre d'URL
    est un paiement confirmé par le client »*. Le retour dit **où** aller ; le backend dit **ce qui
    a changé**.
-2. **La place est créée à `paid`, jamais avant.** Entre `pending` et `paid`, la jauge porte une
-   **réservation à durée de vie** (15 min) qui décrémente `seats_available` : sans elle, deux
-   spectateurs achètent la dernière place ; avec une réservation sans expiration, un panier
-   abandonné gèle une place pour toujours.
+2. **La place est créée à `paid`, jamais avant.** Entre `pending` et `paid`, la jauge porte un
+   **`SeatHold`** qui décrémente `seats_available` : sans lui, deux spectateurs achètent la
+   dernière place ; sans expiration, un panier abandonné gèle une place pour toujours.
+   **Et le hold n'a pas de durée à lui : il expire à l'instant exact où expire l'intention d'achat
+   qui l'a créé** — 15 min pour un paiement web ou mobile, **5 min pour un appairage TV**, celle
+   de l'appairage. C'est ce qui empêche la jauge affichée sur un téléviseur d'être fausse pendant
+   toute l'attente du téléphone (`data-model.md` §3.2).
 3. **Le prix est vérifié à la confirmation**, pas seulement à l'affichage. Refus `PRICE_STALE`,
    **distinct** de l'échec de paiement, avec le prix courant en paramètre. Avec cinq motifs de
    promotion dont un calculé au prorata du temps écoulé, l'écart entre le prix affiché et le prix
@@ -336,14 +411,17 @@ Pour la section « ce que je n'ai délibérément pas construit » que le README
 
 ---
 
-## 11. Ce qui reste à trancher par le chef
+## 11. Les arbitrages, rendus
 
-1. **Le modèle fiscal (§5.5)** — le A est recommandé et argumenté, il n'est pas validé.
-   **C'est l'arbitrage principal que je remonte.**
-2. **La portée de l'avoir (§6)** — « même chaîne » est recommandé pour borner l'engagement de
-   trésorerie. Élargir est possible, mais il faut alors dire qui provisionne.
-3. **Les frais de service** (`storefront-web` Q11) — j'ai posé **par place**, et le barème est
-   servi par le contrat. Il faut un barème, pas une constante d'écran.
-4. **Le cumul remise d'abonnement / promotion** (`storefront-web` Q12) — j'ai posé **la plus
-   favorable au spectateur, jamais le cumul**. C'est la règle la plus simple à expliquer et la
-   seule qui ne produise pas de prix négatif sur une avant-première à tarif de découverte.
+Tous tranchés le 21 septembre 2026. **Rien ne reste ouvert dans ce document, sauf la validation
+juridique du §5 — qui n'est pas un arbitrage de projet.**
+
+| Point | Décision | Référence |
+|---|---|---|
+| Modèle fiscal, commission sur le HT | **modèle commissionnaire**, acté | **D-015** |
+| Devise d'affichage | **retirée au palier 1**, réversible (§5.6) | **D-016** |
+| Portée de l'avoir | **la chaîne émettrice** — borne l'engagement de trésorerie | **D-017** |
+| Commande de marchandise | **mono-vendeur**, le panier se scinde au paiement | **D-017** |
+| Remise et promotion | **pas de cumul** : la plus favorable au spectateur | **D-017** |
+| Troisième canal de notification | **`in_app`**, pas `sms` | **D-017** |
+| Frais de service | **par place**, barème servi — jamais une constante d'écran | ce document, `data-model.md` §3.1 |

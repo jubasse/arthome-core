@@ -395,7 +395,45 @@ défaut typique.
   être une chaîne figée. Le contrat porte **la règle et ses paramètres**, et sert le prix courant
   avec sa `validUntil` (60 s).
 
-### 3.2 `Seat` — entité, et `SeatOrder` — agrégat racine
+### 3.2 `SeatHold` — la réservation de jauge, et sa durée
+
+Remontée par `auth` et elle engage `ticketing` : **la durée d'un appairage `seat` doit être la
+durée d'un `hold` de places**, sinon la jauge affichée sur la TV est fausse pendant tout le temps
+de l'attente. Le cas est concret : la TV montre « 12 places », le spectateur part chercher son
+téléphone, et pendant cinq minutes rien ne garantit que ces douze places existent encore.
+
+```
+SeatHold
+  id · date_id · account_id · profile_id · tier · quantity
+  origin        checkout | pairing        origin_ref  (session de paiement | pairing_id)
+  expires_at    timestamptz
+  state         active | consumed | expired | released
+```
+
+**L'invariant, et c'est lui la réponse :**
+
+> **`SeatHold.expires_at` est le MÊME instant que l'expiration de l'intention d'achat qui l'a
+> créé.** Un seul instant, porté par les deux objets, jamais deux durées qui dérivent.
+
+| Origine | Intention | `expires_at` du hold |
+|---|---|---|
+| paiement web ou mobile | session de paiement | **15 min** |
+| appairage TV, `intent = seat` | `DevicePairing` | **5 min** — celle de l'appairage |
+
+Le hold est posé **à l'ouverture de l'appairage**, pas à son approbation : c'est à l'instant où la
+TV affiche le code que la jauge doit devenir vraie. Et cela **justifie après coup la durée de 5 min
+retenue pour `seat`** (`adr-auth.md` §4/Q4) : une durée d'appairage est un engagement de jauge, et
+quinze minutes d'engagement par spectateur hésitant videraient une salle populaire sans qu'aucune
+place ne soit vendue.
+
+**Deux conséquences que `backend-contracts` doit porter :**
+
+1. `seats_available` servi au public est **net des holds actifs** — sinon deux spectateurs
+   achètent la dernière place ;
+2. l'expiration d'un hold republie `ticketing.date_sales.availability_changed.v1`, donc la jauge
+   **remonte** sur toutes les surfaces sans qu'aucune n'ait rien demandé.
+
+### 3.3 `Seat` — entité, et `SeatOrder` — agrégat racine
 
 ```
 Seat
@@ -411,7 +449,7 @@ le web, le mobile et la TV. La maquette le calcule par hachage : porté tel quel
 **trois codes différents pour la même place** dès qu'une surface change de fonction de hachage.
 Format servi, jamais recomposé.
 
-### 3.3 `MerchOrder` — agrégat racine, et `MerchItem`
+### 3.4 `MerchOrder` — agrégat racine, et `MerchItem`
 
 `MerchItem` : identifiant, spectacle, chaîne, libellé **bilingue** (E10 : `merchPool` n'a pas de
 `labelEn`, lacune de donnée à combler au portage), nature, **variantes** (un t-shirt sans taille
@@ -430,7 +468,7 @@ nous, et le contrat l'assume explicitement plutôt que de servir des champs vide
 quand l'hôte externe ne répond pas, le reflet est servi avec son âge, pas en erreur. Réponses à
 `storefront-web` Q16 et `storefront-mobile` Q9.
 
-### 3.4 `Cart` — agrégat racine
+### 3.5 `Cart` — agrégat racine
 
 **Le panier vit sur le compte, pas sur le navigateur** (`storefront-web` Q13, `storefront-mobile`
 Q8). Motifs : la maquette affiche un panier persistant dans l'en-tête, il se monte sur plusieurs
@@ -445,7 +483,7 @@ Conflit entre deux appareils : **par ligne, dernier écrivain gagne, et le rang 
 total et **`valid_until` (15 min)**. Le total présenté est celui qui sera débité. Au-delà, un
 nouveau devis. Les frais de port sont calculés **au devis**, pas à l'ajout.
 
-### 3.5 `Subscription` et `Plan`
+### 3.6 `Subscription` et `Plan`
 
 `Plan` : le vocabulaire qui fait autorité est celui de `catalogue.json` — **`free` (0), `pass` (12),
 `premium` (24)**, avec `opens[]` (neuf valeurs : `browse`, `trailers`, `free-dates`, `replays`,
@@ -466,7 +504,7 @@ créer : `plan_id`, `state` (`active | past_due | cancelled | trialing`), `start
 fois » impose un décompte serveur, tenu par `streaming` (§5.4). `ticketing` publie le plafond ;
 `streaming` le fait respecter.
 
-### 3.6 `Credit` — l'avoir de compte
+### 3.7 `Credit` — l'avoir de compte
 
 `storefront-web` le relève : l'avoir apparaît dans la copie et nulle part ailleurs dans le dossier.
 C'est **une monnaie interne**, donc un passif, donc un agrégat.
@@ -485,7 +523,7 @@ Credit
 `adr-payments.md` §6 : un avoir utilisé ailleurs obligerait la plateforme à financer la part d'un
 autre artiste sur ses propres fonds. La restriction est réversible ; l'ignorer ne l'est pas.
 
-### 3.7 `viewer_entitlements` — modèle de lecture (§4)
+### 3.8 `viewer_entitlements` — modèle de lecture (§4)
 
 ---
 
