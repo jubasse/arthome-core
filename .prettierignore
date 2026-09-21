@@ -27,3 +27,16 @@ pnpm-lock.yaml
 **/generated/
 .turbo/
 node_modules/
+
+# ── Owned by the emitter, not by the formatter ────────────────────────────────
+# These two documents are the TARGET that @arthome/contracts must emit, and the
+# moment of truth for that package is `contracts:emit` producing an EMPTY DIFF
+# against them. That makes their byte-level formatting a property of the
+# emitter, not of the formatter: if Prettier restyles them, the emitter has to
+# learn to reproduce Prettier's YAML style or the diff is never empty.
+#
+# Written after a repository-wide `prettier --write` reflowed storefront.yaml
+# while it was being translated, moving every held line number by up to 835 and
+# destroying 151 keys. Recovered in full — see the commit. The formatting was
+# never the point; the ownership is.
+openapi/

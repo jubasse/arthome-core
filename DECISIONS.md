@@ -607,3 +607,79 @@ propagation, multiplexing — pay off on the **depth** of a chain, and that dept
 construction**, since no call goes between services. A deadline has nobody to propagate to.
 Confirmed by the `skeptic`, including through a projected read model: that is a local table of the
 called service, it adds no network hop.
+
+---
+
+## The English pass — 22 September 2026
+
+### D-027 — The navigation vocabulary diverged, and `team` left without a record
+
+**Found by `studio-web`, then verified rather than believed.** It reported that `team` had
+disappeared from the studio's navigation vocabulary and that a reader of this journal could not
+find out why. Checking the two artefacts turned one finding into two:
+
+| | `@arthome/core` — `people.ts:61` | `openapi/studio.yaml:6282` |
+|---|---|---|
+| entries | **15** | **14** |
+| `team` | present | **absent** |
+| the moderation page | `moderation-page` | **`moderation`** |
+
+**The second difference is the worse one.** A missing member is visible the first time anyone
+compares; a value that differs by name inside a vocabulary both sides believe they share is the
+parallel literal table (E2), between the two artefacts that exist to prevent it, with five gates
+green.
+
+**The direction is not open**: critical rule 2 says any value displayed twice comes from
+`@arthome/core`. So the contract follows the domain, or the domain changes and the contract follows
+— never one of each. Which name wins is `backend-domain` and `backend-contracts`' to settle on the
+evidence, not mine to guess.
+
+**And the record `studio-web` asked for, which is the part that was actually missing.** `team` was
+removed from the contract because E6 established it is a **dead page** — absent from the access
+table of all six personas, with the line that has it absorbed by `crew` itself dead code. That is a
+good reason. It had simply never been written down, so the removal read as an accident.
+
+*A decision taken in passing is indistinguishable from an oversight. That is what this journal is
+for, and it failed here.*
+
+### D-028 — A repository-wide rewrite is a stop-the-world operation
+
+**The incident.** `conventions` ran `prettier --write` across the whole repository while
+`backend-contracts` had `openapi/storefront.yaml` open mid-translation. The harness held line
+numbers between an extract and a reinject; the reformat moved every one of them by up to 835, the
+next batch wrote sixty blocks of English into the wrong places, and **151 keys were destroyed** —
+`DateCard.outcome`, `DateDetail.rights`, `DateDetail.media`, most of `PriceTier`. The document
+stopped parsing.
+
+**Each agent reported the other's damage as the other's fault**, and both were describing the same
+collision from opposite ends. Neither was careless. **The process fault is mine**: I put nine agents
+in one working tree and never said that a repository-wide rewrite is not an ordinary edit.
+
+**The rule.** A repository-wide `--write`, codemod or reformat is **announced, everyone stops, one
+agent runs it, everyone resumes**. Never while another agent is mid-file. It lives in
+`code-conventions.md`, where it will be read.
+
+**And a second rule the incident exposed, which is about ownership rather than timing.** `openapi/`
+goes into `.prettierignore`. These two documents are the **target** that `@arthome/contracts` must
+emit, and the moment of truth for that package is `contracts:emit` producing an **empty diff**
+against them. That makes their byte-level formatting a property of the **emitter**, not of the
+formatter: if Prettier restyles them, the emitter must learn to reproduce Prettier's YAML style or
+the diff is never empty.
+
+**What came out better than it went in**: the harness is now keyed on a **token signature** — the
+backticked identifiers, the numbers, the error codes — instead of on line numbers. A reformat
+mid-flight can no longer misplace anything; it fails to match and says so.
+
+### D-029 — *garde* is **duty**, never **shift**
+
+**Raised by `studio-mobile`**, which found `/v1/me/push-registrations` rendering it as *shift*
+while all five `needs/` files use *duty* — and `openapi/studio.yaml` contradicting itself, with
+`/v1/me/duties` at one line and "a stage manager's shift page" at another.
+
+**Its reason decides it: "on duty" carries the on-call sense that "on shift" does not.** A show
+caller is not rostered for a period, they are answerable for a date. And *shift* collides with the
+ordinary verb, which a contract description cannot afford.
+
+It is a load-bearing term for the studio surfaces, so it is one word. The translation of a term of
+art is a vocabulary decision, and a vocabulary decision belongs here rather than in whichever file
+happened to need it first.
