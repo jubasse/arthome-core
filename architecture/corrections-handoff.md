@@ -1,209 +1,208 @@
-# Corrections au dossier de passation
+# Corrections to the handoff folder
 
-> **Soixante-dix-neuf écarts** relevés dans `arthome-design/design_handoff_arthome/` au cours de
-> la session « contrats d'interface, architecture backend, authentification » (21 septembre 2026) :
-> **27 en phase 0**, par le chef, en lisant le dossier contre les décisions déjà prises ;
-> **52 au temps 1**, par les cinq spécialistes de surface, en lisant leur maquette contre `shared/`.
+> **Seventy-nine discrepancies** found in `arthome-design/design_handoff_arthome/` over the course
+> of the "interface contracts, backend architecture, authentication" session (21 September 2026):
+> **27 in phase 0**, by the lead, reading the folder against the decisions already taken;
+> **52 at time 1**, by the five surface specialists, reading their mockup against `shared/`.
 >
-> **Statut des corrections.**
+> **Status of the corrections.**
 >
-> | Famille | Nature | Traitement |
+> | Family | Nature | Treatment |
 > |---|---|---|
-> | **A** (7) | le dossier contredit une décision prise depuis sa rédaction | **corrigé** dans le dossier |
-> | **B** (4) | le dossier se contredit lui-même | **corrigé** dans le dossier |
-> | **C** (9) | le dossier est muet là où le contrat doit trancher | section ajoutée ou renvoi posé |
-> | **D** (7) | `shared/` porte une donnée fausse, incomplète ou trompeuse | à corriger **au portage** |
-> | **E** (15) | écarts relevés par les spécialistes de surface au temps 1 | à corriger **au portage** |
+> | **A** (7) | the folder contradicts a decision taken since it was written | **corrected** in the folder |
+> | **B** (4) | the folder contradicts itself | **corrected** in the folder |
+> | **C** (9) | the folder is silent where the contract must decide | section added or cross-reference placed |
+> | **D** (7) | `shared/` carries data that is wrong, incomplete or misleading | to be corrected **at the port** |
+> | **E** (15) | discrepancies found by the surface specialists at time 1 | to be corrected **at the port** |
 >
-> Les familles A, B et C ont été corrigées dans les documents du dossier sur décision du chef de
-> projet ; les originaux sont conservés à côté d'eux sous `*.pre-corrections.md`.
-> Les familles **D** et **E** portent sur `shared/` et sur les maquettes, qui restent en **lecture
-> seule** : elles constituent la liste de courses du portage de `@arthome/core` (palier 1), et la
-> matière que les agents du temps 2 doivent avoir lue. Aucun de ces écarts ne doit être découvert
-> une seconde fois.
+> Families A, B and C were corrected in the folder's documents on the project owner's decision; the
+> originals are kept beside them as `*.pre-corrections.md`.
+> Families **D** and **E** bear on `shared/` and on the mockups, which remain **read only**: they
+> constitute the shopping list for the `@arthome/core` port (stage 1), and the material the time 2
+> agents must have read. None of these discrepancies should be discovered a second time.
 
 ---
 
-## Comment lire ce document
+## How to read this document
 
-Quatre familles, par nature de l'écart :
+Four families, by the nature of the discrepancy:
 
-| Famille | Nature | Traitement |
+| Family | Nature | Treatment |
 |---|---|---|
-| **A** | Le dossier contredit une décision déjà prise depuis sa rédaction | corrigé dans le dossier |
-| **B** | Le dossier se contredit lui-même | corrigé dans le dossier |
-| **C** | Le dossier est muet là où le contrat doit trancher | section ajoutée ou renvoi posé |
-| **D** | `shared/` porte une donnée fausse, incomplète ou trompeuse | à corriger au portage |
+| **A** | The folder contradicts a decision already taken since it was written | corrected in the folder |
+| **B** | The folder contradicts itself | corrected in the folder |
+| **C** | The folder is silent where the contract must decide | section added or cross-reference placed |
+| **D** | `shared/` carries data that is wrong, incomplete or misleading | to be corrected at the port |
 
-Un écart de la famille **D** mérite une attention particulière : `shared/` fait autorité sur le
-**vocabulaire et les règles**, pas sur les **formes**. Plusieurs entrées ci-dessous sont des
-formes qui *ressemblent* à des règles éprouvées. Les recopier graverait dans le contrat une
-commodité de maquette.
-
----
-
-## A — Le dossier contredit une décision déjà prise
-
-### A1 — Monorepo contre multi-dépôts
-
-**Où** : `README.md` §3 en entier (titre, arborescence, paragraphe « Monorepo »), §8 palier 0 ;
-`PROMPT.md` palier 0 point 1 et ADR-002.
-
-**L'écart** : le dossier décrit un dépôt unique `arthome/` portant `docs/`, `prototypes/`,
-`packages/`, `services/`, `apps/`, `infra/`. Le projet est passé en **multi-dépôts** depuis.
-
-**La correction, et la précision qui manquait.** « Multi-dépôts » ne veut **pas** dire « un dépôt
-par service ». La forme retenue est :
-
-- `arthome-core` — la vitrine, le domaine (`@arthome/core`), les contrats (`@arthome/contracts`),
-  la direction artistique, les ADR ;
-- `arthome-platform` — **les sept services ensemble**, plus l'infrastructure ;
-- puis **un dépôt par application** (storefront web, storefront mobile, storefront TV, studio web,
-  studio mobile).
-
-Cette précision n'est pas cosmétique : c'est parce que les sept services restent dans un seul
-dépôt que le cache turbo et l'« exécution par service touché » de `definition-of-done.md` gardent
-un sens. Avec sept dépôts, ces deux dispositifs tomberaient.
-
-### A2 — `packages/core` contre deux paquets dans `arthome-core`
-
-**Où** : `README.md` §3, sous-section « `@arthome/core` — le domaine » et l'arborescence.
-
-**L'écart** : le dossier place le domaine dans `packages/core` du monorepo et n'envisage qu'**un
-seul** paquet.
-
-**La correction** : le domaine vit dans le dépôt `arthome-core`, et il y a **deux** paquets
-publiés séparément :
-
-- `@arthome/core` — le domaine, **zéro dépendance framework**, porté depuis `shared/` ;
-- `@arthome/contracts` — les DTO de frontière et le code généré.
-
-La séparation est imposée, pas esthétique : le code Protobuf généré embarque un **runtime**, et le
-domaine s'interdit toute dépendance d'exécution. Les mélanger contaminerait `@arthome/core` et
-casserait la règle qui fait tout l'intérêt du paquet.
-
-### A3 — « Avro ou Protobuf » contre Protobuf seul
-
-**Où** : `README.md` §3, sous-section « Événements », premier point ;
-`PROMPT.md` palier 2 point 3.
-
-**L'écart** : le dossier laisse le choix ouvert entre Avro et Protobuf.
-
-**La correction** : **Protobuf seul**, outillé par `buf` (`buf lint`, `buf breaking`), avec un
-registre de schémas propriétaire du format. Le choix n'est plus ouvert — et il a une conséquence
-sur les contrats : un événement décodé depuis Kafka n'est **jamais** revalidé par zod, le registre
-faisant foi.
-
-### A4 — OpenTelemetry complet contre observabilité simple
-
-**Où** : `README.md` §3, tableau « Infrastructure » (ligne « OpenTelemetry + Grafana … dès le
-premier service ») et le paragraphe « Le traçage distribué dès le premier service » ;
-`PROMPT.md` palier 2 points 1 et 3.
-
-**L'écart** : le dossier exige une chaîne OpenTelemetry complète dès le premier service.
-
-**La correction** : **observabilité simple** pour l'instant. Ce qui est exigé dès le premier
-producteur, en revanche, est non négociable : **`traceparent` (W3C) propagé**, dans les en-têtes
-HTTP **et** dans les en-têtes Kafka. OpenTelemetry complet viendra ensuite, et il viendra bien
-moins cher si `traceparent` circule déjà.
-
-La nuance compte : l'outillage est reportable, la **propagation** ne l'est pas. Un événement
-publié sans `traceparent` est définitivement orphelin.
-
-### A5 — `node-linker=hoisted` devenu sans objet
-
-**Où** : `README.md` §3, paragraphe « Le point de friction connu » ; `PROMPT.md` palier 0 point 2.
-
-**L'écart** : le dossier prescrit un `.npmrc` avec `node-linker=hoisted` par espace de travail
-mobile, pour contourner le mauvais support des liens symboliques de pnpm par Metro.
-
-**La correction** : en multi-dépôts, chaque application mobile a **son dépôt, son `node_modules`
-et son lockfile**. La friction Metro/pnpm disparaît avec l'espace de travail partagé qui la
-causait, de même que le conflit documenté entre `react-native-tvos` et les autres projets Expo
-d'un même workspace. Le paragraphe est supprimé.
-
-### A6 — « Pourquoi un monolithe modulaire d'abord »
-
-**Où** : `README.md` §9, troisième puce.
-
-**L'écart** : le §9 propose d'écrire un ADR « pourquoi un monolithe modulaire d'abord », en
-contradiction frontale avec le §3 (« démontrer une architecture distribuée est un objectif du
-projet »), le §4 (sept services) et l'intégralité du palier 2.
-
-**La correction** : la puce est supprimée. Aucun monolithe modulaire n'est prévu à aucun moment.
-
-### A7 — « Pourquoi le multi-dépôts » dans un document qui prescrit un monorepo
-
-**Où** : `README.md` §9, troisième puce (même liste qu'en A6).
-
-**L'écart** : le §9 réclame un ADR « pourquoi le multi-dépôts » alors que le §3 du **même
-document** prescrit un monorepo, et que `PROMPT.md` nomme son ADR-002 « Monorepo ».
-
-**La correction** : c'est le §9 qui a raison — il porte la trace de l'arbitrage rendu en cours de
-rédaction, que le §3 n'a jamais reçue. Le §3 est aligné sur le §9, et non l'inverse.
-
-Cet écart est le plus instructif du lot : il montre qu'un document long se désynchronise de
-lui-même dès qu'une décision change, et que ce sont ses **sections tardives** qui portent l'état
-le plus récent.
+A family **D** discrepancy deserves particular attention: `shared/` is authoritative on
+**vocabulary and rules**, not on **shapes**. Several entries below are shapes that *look like*
+tested rules. Copying them across would carve a mockup convenience into the contract.
 
 ---
 
-## B — Le dossier se contredit lui-même
+## A — The folder contradicts a decision already taken
 
-### B1 — « Les neuf disciplines » alors qu'il y en a vingt et une
+### A1 — Monorepo versus multiple repositories
 
-**Où** : `Prompt - Storefront TV.md`, « Écran par écran » §8, entrée **Catégories**.
+**Where**: `README.md` §3 in full (title, tree, "Monorepo" paragraph), §8 stage 0;
+`PROMPT.md` stage 0 point 1 and ADR-002.
 
-**L'écart** : « les neuf disciplines en tuiles typographiques ». Le compte réel est **21**
-(`taxonomy.json` : 14 en univers Musique, 7 en univers Scène), confirmé par `README.md` §3
-(« facettes sur 21 disciplines, 176 genres, 205 tags ») et par `Taxonomie - projet.md`.
+**The discrepancy**: the folder describes a single `arthome/` repository carrying `docs/`,
+`prototypes/`, `packages/`, `services/`, `apps/`, `infra/`. The project has moved to **multiple
+repositories** since.
 
-**La correction** : la page Catégories de la TV est conçue pour **21 disciplines**, groupées par
-les deux univers (Musique, Scène) qui existent précisément pour structurer une longue liste. Si
-une sélection éditoriale plus courte est voulue en tête de page, elle doit être écrite comme une
-règle — un rang éditorial existe déjà dans `taxonomy.json` (`rank`, du plus grand public au plus
-pointu) et aucune surface n'a le droit de le recalculer.
+**The correction, and the precision that was missing.** "Multiple repositories" does **not** mean
+"one repository per service". The chosen shape is:
 
-**Pourquoi ça compte pour les contrats** : neuf tuiles tiennent sur un écran de télévision, vingt
-et une non. C'est une contrainte de mise en page qui remonte jusqu'au modèle de lecture servi à la
-TV — donc jusqu'au contrat.
+- `arthome-core` — the showcase, the domain (`@arthome/core`), the contracts
+  (`@arthome/contracts`), the art direction, the ADRs;
+- `arthome-platform` — **the seven services together**, plus the infrastructure;
+- then **one repository per application** (storefront web, storefront mobile, storefront TV, studio
+  web, studio mobile).
 
-### B2 — Vocabulaire de disciplines faux en tête du cahier des charges TV
+This precision is not cosmetic: it is because the seven services stay in a single repository that
+the turbo cache and the "run only the touched service" of `definition-of-done.md` keep any meaning.
+With seven repositories, both devices would collapse.
 
-**Où** : `Prompt - Storefront TV.md`, premier paragraphe.
+### A2 — `packages/core` versus two packages in `arthome-core`
 
-**L'écart** : « théâtre, danse, **ballet**, **concerts**, humour, classique, opéra, jazz, cirque ».
-`ballet` (précisément `ballet classique`) est un **sous-genre** de la discipline Danse ;
-`concerts` n'est pas une discipline mais un format.
+**Where**: `README.md` §3, subsection "`@arthome/core` — the domain" and the tree.
 
-**La correction** : la phrase emploie le vocabulaire de `taxonomy.json`. C'est exactement le
-glissement que `Taxonomie - projet.md` s'emploie à prévenir — une discipline est une **forme**,
-jamais un format ni une époque.
+**The discrepancy**: the folder puts the domain in the monorepo's `packages/core` and envisages
+only **one** package.
 
-### B3 — Les usages de Redis, incomplets
+**The correction**: the domain lives in the `arthome-core` repository, and there are **two**
+separately published packages:
 
-**Où** : `README.md` §3, tableau « Infrastructure », ligne Redis : « cache, sessions, diffusion
-WebSocket (pub/sub Socket.IO) ».
+- `@arthome/core` — the domain, **zero framework dependencies**, ported from `shared/`;
+- `@arthome/contracts` — the boundary DTOs and the generated code.
 
-**L'écart** : il manque **BullMQ**, et surtout la contrainte qui pèse sur les sessions.
+The separation is imposed, not aesthetic: generated Protobuf code ships a **runtime**, and the
+domain forbids itself any runtime dependency. Mixing them would contaminate `@arthome/core` and
+break the very rule that makes the package worth having.
 
-**La correction** : quatre usages **séparés**, et deux règles :
+### A3 — "Avro or Protobuf" versus Protobuf alone
 
-- **sessions** — au BFF **seulement**. Aucun service ne lit le magasin de sessions ;
-- **cache** — par service, jamais partagé entre services ;
-- **adaptateur Socket.IO** — diffusion aux clients connectés ;
-- **BullMQ** — jobs **internes à un service**, jamais un canal entre deux services.
+**Where**: `README.md` §3, subsection "Events", first bullet; `PROMPT.md` stage 2 point 3.
 
-La règle qui manquait le plus est la dernière : BullMQ entre deux services rouvrirait par la porte
-de derrière le couplage synchrone que Kafka existe pour interdire.
+**The discrepancy**: the folder leaves the choice open between Avro and Protobuf.
 
-### B4 — Les maquettes ne peuvent pas charger `shared/` — et le dossier promet le contraire
+**The correction**: **Protobuf alone**, tooled with `buf` (`buf lint`, `buf breaking`), with a
+schema registry owning the format. The choice is no longer open — and it has a consequence for the
+contracts: an event decoded from Kafka is **never** revalidated by zod, the registry being
+authoritative.
 
-**Où** : disposition du dossier (`mockups/` et `shared/` côte à côte) contre `README.md` §1,
-sous-section `mockups/` : « Ces fichiers s'ouvrent directement dans un navigateur ».
+### A4 — Full OpenTelemetry versus simple observability
 
-**L'écart** : chacune des cinq maquettes porte sa propre méthode `loadArthome()` qui résout ses
-dépendances **relativement à son propre fichier HTML** :
+**Where**: `README.md` §3, "Infrastructure" table (the "OpenTelemetry + Grafana … from the first
+service" row) and the paragraph "Distributed tracing from the first service";
+`PROMPT.md` stage 2 points 1 and 3.
+
+**The discrepancy**: the folder requires a full OpenTelemetry chain from the first service.
+
+**The correction**: **simple observability** for now. What *is* required from the first producer, on
+the other hand, is non-negotiable: **`traceparent` (W3C) propagated**, in HTTP headers **and** in
+Kafka headers. Full OpenTelemetry comes later, and it will come far cheaper if `traceparent` is
+already circulating.
+
+The nuance matters: the tooling can be deferred, the **propagation** cannot. An event published
+without `traceparent` is orphaned for good.
+
+### A5 — `node-linker=hoisted` has become moot
+
+**Where**: `README.md` §3, paragraph "The known friction point"; `PROMPT.md` stage 0 point 2.
+
+**The discrepancy**: the folder prescribes an `.npmrc` with `node-linker=hoisted` per mobile
+workspace, to work around Metro's poor support for pnpm's symbolic links.
+
+**The correction**: with multiple repositories, each mobile application has **its own repository,
+its own `node_modules` and its own lockfile**. The Metro/pnpm friction disappears along with the
+shared workspace that caused it, as does the documented conflict between `react-native-tvos` and
+the other Expo projects of a single workspace. The paragraph is deleted.
+
+### A6 — "Why a modular monolith first"
+
+**Where**: `README.md` §9, third bullet.
+
+**The discrepancy**: §9 proposes writing an ADR "why a modular monolith first", in head-on
+contradiction with §3 ("demonstrating a distributed architecture is a goal of the project"), §4
+(seven services) and the whole of stage 2.
+
+**The correction**: the bullet is deleted. No modular monolith is planned at any point.
+
+### A7 — "Why multiple repositories" in a document that prescribes a monorepo
+
+**Where**: `README.md` §9, third bullet (the same list as in A6).
+
+**The discrepancy**: §9 calls for an ADR "why multiple repositories" while §3 of the **same
+document** prescribes a monorepo, and `PROMPT.md` names its ADR-002 "Monorepo".
+
+**The correction**: §9 is the one that is right — it carries the trace of an arbitration handed down
+while the document was being written, which §3 never received. §3 is aligned on §9, not the other
+way round.
+
+This discrepancy is the most instructive of the lot: it shows that a long document desynchronises
+from itself the moment a decision changes, and that it is its **late sections** that carry the most
+recent state.
+
+---
+
+## B — The folder contradicts itself
+
+### B1 — "The nine disciplines" when there are twenty-one
+
+**Where**: `Prompt - Storefront TV.md`, "Screen by screen" §8, entry **Categories**.
+
+**The discrepancy**: "the nine disciplines as typographic tiles". The real count is **21**
+(`taxonomy.json`: 14 in the Music universe, 7 in the Stage universe), confirmed by `README.md` §3
+("facets over 21 disciplines, 176 genres, 205 tags") and by `Taxonomie - projet.md`.
+
+**The correction**: the TV's Categories page is designed for **21 disciplines**, grouped by the two
+universes (Music, Stage) that exist precisely to give a long list structure. If a shorter editorial
+selection is wanted at the top of the page, it must be written as a rule — an editorial rank already
+exists in `taxonomy.json` (`rank`, from the most popular to the most specialist) and no surface has
+the right to recompute it.
+
+**Why it matters for the contracts**: nine tiles fit on a television screen, twenty-one do not. That
+is a layout constraint that travels all the way up to the read model served to the TV — and
+therefore to the contract.
+
+### B2 — Wrong discipline vocabulary at the head of the TV brief
+
+**Where**: `Prompt - Storefront TV.md`, first paragraph.
+
+**The discrepancy**: "theatre, dance, **ballet**, **concerts**, comedy, classical, opera, jazz,
+circus". `ballet` (precisely `ballet classique`) is a **subgenre** of the Dance discipline;
+`concerts` is not a discipline but a format.
+
+**The correction**: the sentence uses `taxonomy.json`'s vocabulary. This is exactly the slippage
+`Taxonomie - projet.md` sets out to prevent — a discipline is a **form**, never a format nor a
+period.
+
+### B3 — Redis's uses, incomplete
+
+**Where**: `README.md` §3, "Infrastructure" table, Redis row: "cache, sessions, WebSocket fan-out
+(Socket.IO pub/sub)".
+
+**The discrepancy**: **BullMQ** is missing, and above all the constraint that bears on sessions.
+
+**The correction**: four **separate** uses, and two rules:
+
+- **sessions** — at the BFF **only**. No service reads the session store;
+- **cache** — per service, never shared between services;
+- **Socket.IO adapter** — fan-out to connected clients;
+- **BullMQ** — jobs **internal to one service**, never a channel between two services.
+
+The rule that was missing most is the last one: BullMQ between two services would reopen through the
+back door the synchronous coupling Kafka exists to forbid.
+
+### B4 — The mockups cannot load `shared/` — and the folder promises the opposite
+
+**Where**: the folder's layout (`mockups/` and `shared/` side by side) against `README.md` §1,
+subsection `mockups/`: "These files open directly in a browser".
+
+**The discrepancy**: each of the five mockups carries its own `loadArthome()` method, which resolves
+its dependencies **relative to its own HTML file**:
 
 ```js
 const at = (p) => new URL(p, document.baseURI).href;
@@ -215,150 +214,148 @@ const [catalogue, taxonomy, index] = await Promise.all([
 ]);
 ```
 
-Elle cherche donc `helpers.js`, `fixtures.js`, `catalogue.json`, `taxonomy.json` et `i18n/` dans
-`mockups/`. Or `mockups/` ne contient que les cinq `.dc.html` et `support.js` : ces fichiers sont
-dans `shared/`. L'import échoue, et le `try { … }` l'avale — la maquette rend en **état dégradé,
-sans dire pourquoi**.
+So it looks for `helpers.js`, `fixtures.js`, `catalogue.json`, `taxonomy.json` and `i18n/` inside
+`mockups/`. But `mockups/` holds only the five `.dc.html` files and `support.js`: those files are in
+`shared/`. The import fails, and the `try { … }` swallows it — the mockup renders in a **degraded
+state, without saying why**.
 
-**La correction** : `shared/` doit être placé **à côté des `.dc.html`**, par copie ou lien
-symbolique. Le README a été corrigé pour le dire, et pour ajouter qu'un serveur local est
-nécessaire (les modules ES et `fetch` ne fonctionnent pas sous `file://`).
+**The correction**: `shared/` must be placed **beside the `.dc.html` files**, by copy or symbolic
+link. The README has been corrected to say so, and to add that a local server is required (ES
+modules and `fetch` do not work under `file://`).
 
-**Pourquoi c'est bloquant au palier 0** : la galerie GitHub Pages est le livrable du palier 0 et
-son meilleur rapport signal/temps. Publiée telle quelle, elle montrerait cinq interfaces vides.
-C'est un écart de **packaging**, pas de conception — mais il ruinerait la démonstration.
+**Why this is blocking at stage 0**: the GitHub Pages gallery is stage 0's deliverable and its best
+signal-to-time ratio. Published as is, it would show five empty interfaces. This is a **packaging**
+discrepancy, not a design one — but it would ruin the demonstration.
 
-**Conséquence pour cette session** : les cinq spécialistes de surface **ne peuvent pas ouvrir les
-maquettes dans un navigateur** pour observer leurs états. Ils lisent la source, ce que la mission
-leur demande de toute façon — donc rien n'est bloqué ici.
+**Consequence for this session**: the five surface specialists **cannot open the mockups in a
+browser** to observe their states. They read the source, which the mission asks of them anyway — so
+nothing is blocked here.
 
 ---
 
-## C — Le dossier est muet là où le contrat doit trancher
+## C — The folder is silent where the contract must decide
 
-Ces neuf points ne sont pas des erreurs : ce sont des **silences**. Le dossier a été écrit pour
-cadrer une conception d'interface, pas un contrat réparti. Chacun est désormais signalé dans le
-dossier par un renvoi vers le document qui le traitera.
+These nine points are not errors: they are **silences**. The folder was written to frame an
+interface design, not a distributed contract. Each is now flagged in the folder by a cross-reference
+to the document that will handle it.
 
-### C1 — Aucune authentification
+### C1 — No authentication
 
-Le mot n'apparaît **nulle part** dans les quatre documents. Or il faut : 2FA, réinitialisation de
-mot de passe, **connexion sur téléviseur**, connexions sociales (Google, Facebook) et par courriel,
-sur cinq surfaces dont deux sans clavier utilisable.
+The word appears **nowhere** in the four documents. Yet we need: 2FA, password reset, **sign-in on a
+television**, social sign-in (Google, Facebook) and by email, across five surfaces, two of them with
+no usable keyboard.
 → `architecture/adr-auth.md`.
 
-### C2 — Aucun BFF, aucune topologie d'entrée
+### C2 — No BFF, no entry topology
 
-Le dossier va des applications aux services sans rien entre les deux. Il manque : la passerelle
-d'infrastructure (TLS, routage, limitation de débit), **un BFF par produit**, et l'échange de la
-session contre un jeton signé de courte durée — c'est-à-dire le mécanisme par lequel aucun service
-n'appelle jamais le service d'identité.
-→ `architecture/context-map.md`, section topologie d'entrée.
+The folder goes from the applications to the services with nothing in between. Missing: the
+infrastructure gateway (TLS, routing, rate limiting), **one BFF per product**, and the exchange of
+the session for a short-lived signed token — that is, the mechanism by which no service ever calls
+the identity service.
+→ `architecture/context-map.md`, entry topology section.
 
-### C3 — Aucun paiement
+### C3 — No payments
 
-`README.md` §3 décrit `ticketing` comme portant « places, commandes, paiements, issues » et s'en
-tient là. Rien sur le prestataire, le périmètre PCI, le traitement des webhooks, la réconciliation,
-ni le partage des responsabilités avec `payouts`.
+`README.md` §3 describes `ticketing` as carrying "seats, orders, payments, outcomes" and leaves it
+there. Nothing on the provider, the PCI scope, webhook handling, reconciliation, or the split of
+responsibilities with `payouts`.
 
-Le silence est d'autant plus notable que `shared/catalogue.json` fixe **déjà** les paramètres
-commerciaux : `commissionRate: 0.12`, `payoutDelayDays: 14`, et trois marchés de facturation avec
-leurs taux de TVA.
+The silence is all the more notable in that `shared/catalogue.json` **already** fixes the commercial
+parameters: `commissionRate: 0.12`, `payoutDelayDays: 14`, and three billing markets with their VAT
+rates.
 → `architecture/adr-payments.md`.
 
-### C4 — Aucun ORM, aucune bibliothèque de validation
+### C4 — No ORM, no validation library
 
-Deux décisions structurantes, absentes : **TypeORM ^1.1** (la syntaxe `relations`/`select` en
-tableau de chaînes a disparu en 1.0 — syntaxe objet uniquement) et **zod 4** comme unique outil de
-validation, de la configuration au DTO de frontière.
+Two structuring decisions, absent: **TypeORM ^1.1** (the `relations`/`select` string-array syntax
+disappeared in 1.0 — object syntax only) and **zod 4** as the single validation tool, from
+configuration to boundary DTO.
 
-zod mérite une mention explicite dans le dossier parce qu'il devient une **dépendance d'exécution
-partagée par sept services et cinq applications** : `peerDependency`, version épinglée dans
-`VERSIONS.md`, et une montée majeure traitée comme un changement de contrat.
-→ `architecture/definition-of-done.md` et `architecture/critical-rules.md`.
+zod deserves an explicit mention in the folder because it becomes a **runtime dependency shared by
+seven services and five applications**: `peerDependency`, version pinned in `VERSIONS.md`, and a
+major bump treated as a contract change.
+→ `architecture/definition-of-done.md` and `architecture/critical-rules.md`.
 
-### C5 — Aucune politique d'identifiants
+### C5 — No identifier policy
 
-**UUIDv7**, fourni nativement par `uuidv7()` de PostgreSQL 18. Restent à trancher : **où** il est
-généré (défaut de base, ou domaine — souvent préférable avec l'outbox, l'agrégat connaissant son
-identifiant avant l'insertion), et le fait qu'**un UUIDv7 révèle sa date de création**, ce qui se
-discute pour un identifiant d'utilisateur exposé en URL.
+**UUIDv7**, provided natively by PostgreSQL 18's `uuidv7()`. Still to settle: **where** it is
+generated (database default, or domain — often preferable with the outbox, since the aggregate knows
+its identifier before insertion), and the fact that **a UUIDv7 reveals its creation date**, which is
+debatable for a user identifier exposed in a URL.
 → `architecture/data-model.md`.
 
-### C6 — L'i18n dynamique : une rupture de modèle non écrite
+### C6 — Dynamic i18n: an unwritten change of model
 
-Le dossier traite la copie comme **compilée au build** (`i18n-compile.js`, « compile les
-dictionnaires dans chaque surface, avec contrôle d'intégrité »). La décision prise depuis ajoute un
-**catalogue de libellés servi dynamiquement**, pour corriger une coquille sans attendre une revue
-de magasin sur mobile et sur TV.
+The folder treats copy as **compiled at build time** (`i18n-compile.js`, "compiles the dictionaries
+into each surface, with an integrity check"). The decision taken since adds a **dynamically served
+label catalogue**, so a typo can be fixed without waiting for a store review on mobile and TV.
 
-C'est un changement de modèle, pas un détail : `core` garde les clés et le catalogue de référence,
-un service sert les mises à jour par-dessus, la lecture passe par des artefacts versionnés
-immuables en CDN, et chaque application embarque un **instantané au build** comme repli obligatoire
-— jamais un code brut affiché si le service est indisponible.
-→ `architecture/context-map.md` (le contexte propriétaire reste à trancher) et `data-model.md`.
+That is a change of model, not a detail: `core` keeps the keys and the reference catalogue, a
+service serves updates on top, reads go through immutable versioned artefacts on a CDN, and every
+application embeds a **build-time snapshot** as a mandatory fallback — never a raw code displayed if
+the service is unavailable.
+→ `architecture/context-map.md` (the owning context is still to be settled) and `data-model.md`.
 
-### C7 — Les abonnements n'ont aucun contexte propriétaire
+### C7 — Subscriptions have no owning context
 
-`shared/catalogue.json` déclare trois formules (`free`, `pass`, `premium`) avec leurs droits
-(`opens[]` : `replays`, `one-live-month`, `all-lives`, `multi-screen`, `archive`, `no-ads`) et une
-remise sur les places (`seatDiscount`). Elles s'affichent sur le storefront web, le mobile et la
-TV, et elles **conditionnent l'accès à la lecture**.
+`shared/catalogue.json` declares three plans (`free`, `pass`, `premium`) with their entitlements
+(`opens[]`: `replays`, `one-live-month`, `all-lives`, `multi-screen`, `archive`, `no-ads`) and a
+discount on seats (`seatDiscount`). They are displayed on the web storefront, on mobile and on TV,
+and they **gate access to playback**.
 
-Aucun des sept contextes annoncés ne les possède.
-→ à trancher dans `architecture/context-map.md`.
+None of the seven announced contexts owns them.
+→ to be settled in `architecture/context-map.md`.
 
-### C8 — La boutique n'a aucun contexte propriétaire
+### C8 — The store has no owning context
 
-`merch` porte un stock, des ventes, un état (`on-sale`, `out-of-stock`), et le panier du storefront
-web gère des **frais de port**. Même constat qu'en C7 : présent partout, possédé par personne.
-→ à trancher dans `architecture/context-map.md`.
+`merch` carries stock, sales, a state (`on-sale`, `out-of-stock`), and the web storefront's cart
+handles **shipping costs**. Same observation as C7: present everywhere, owned by nobody.
+→ to be settled in `architecture/context-map.md`.
 
-### C9 — L'annuaire des intervenants et les chaînes
+### C9 — The people directory and the channels
 
-Deux notions centrales au studio, absentes de la carte des contextes :
+Two notions central to the studio, absent from the context map:
 
-- **`people`** — un annuaire d'intervenants, dont des indépendants qui travaillent sur plusieurs
-  chaînes, avec leur activité réelle (`channels[]`, `runsCalled`) ;
-- **`channels`** — une chaîne par artiste, l'unité de travail du studio, avec ses membres, leurs
-  rôles et la table `grants` qui dit **qui peut inviter qui**.
+- **`people`** — a directory of contributors, including freelancers who work across several
+  channels, with their real activity (`channels[]`, `runsCalled`);
+- **`channels`** — one channel per artist, the studio's unit of work, with its members, their roles
+  and the `grants` table that says **who may invite whom**.
 
-Ces deux notions sont à cheval sur `identity` (les personnes, les rôles, les droits) et `catalog`
-(l'artiste, ses spectacles, ses dates). La frontière doit être tracée explicitement.
+Both notions straddle `identity` (people, roles, rights) and `catalog` (the artist, their shows,
+their dates). The boundary must be drawn explicitly.
 → `architecture/context-map.md`.
 
 ---
 
-## D — `shared/` : la liste de courses du portage
+## D — `shared/`: the shopping list for the port
 
-**Non corrigé dans cette session.** `shared/` est en lecture seule : c'est la source que les cinq
-spécialistes de surface vont lire. Ces sept points sont à traiter au **portage de
-`@arthome/core`** (palier 1), et à prendre en compte dès maintenant dans la conception des
-contrats.
+**Not corrected in this session.** `shared/` is read only: it is the source the five surface
+specialists are going to read. These seven points are to be handled at the **`@arthome/core` port**
+(stage 1), and to be taken into account right now in the design of the contracts.
 
-### D1 — `languageDependency` : le vocabulaire fermé est faux
+### D1 — `languageDependency`: the closed vocabulary is wrong
 
-`shared/taxonomy.json` déclare trois valeurs : `none | light | helpful`.
+`shared/taxonomy.json` declares three values: `none | light | helpful`.
 
-Or la valeur **`essential`** — absente du vocabulaire — est employée partout :
+Yet the value **`essential`** — absent from the vocabulary — is used everywhere:
 
-- `shared/catalogue.json` : cinq spectacles la portent ;
-- `shared/fixtures.js:458-462` : elle est attribuée par discipline (`theatre`, `comedy`, `rap`,
-  `chanson`) ;
-- `shared/i18n/storefront.json:1472` : la clé `enums.languageDependency.essential` existe et est
-  traduite ;
-- `shared/helpers.js:437` : `hasLanguageBarrier` **en fait son test** —
+- `shared/catalogue.json`: five shows carry it;
+- `shared/fixtures.js:458-462`: it is assigned by discipline (`theatre`, `comedy`, `rap`,
+  `chanson`);
+- `shared/i18n/storefront.json:1472`: the key `enums.languageDependency.essential` exists and is
+  translated;
+- `shared/helpers.js:437`: `hasLanguageBarrier` **makes it its test** —
   `languageDependency(show) === 'essential'`.
 
-À l'inverse, `light` n'est employé nulle part dans le projet.
+Conversely, `light` is used nowhere in the project.
 
-**Le vocabulaire réel est `none | helpful | essential`.** Un vocabulaire fermé qui ne contient pas
-la valeur dont dépend la règle la plus visible de la surface n'est pas un vocabulaire fermé. À
-corriger dans `taxonomy.json` au portage, et à écrire ainsi dans le contrat.
+**The real vocabulary is `none | helpful | essential`.** A closed vocabulary that does not contain
+the value the surface's most visible rule depends on is not a closed vocabulary. To be corrected in
+`taxonomy.json` at the port, and written that way in the contract.
 
-### D2 — Deux vocabulaires pour l'état d'une publication
+### D2 — Two vocabularies for a publication's state
 
-Deux tables décrivent la même machine à états, avec des noms différents :
+Two tables describe the same state machine, with different names:
 
 | `shared/catalogue.json` (`publicationStates`) | `mockups/Studio.dc.html` (`EV_MOVES`) |
 |---|---|
@@ -370,348 +367,338 @@ Deux tables décrivent la même machine à états, avec des noms différents :
 | `ended` | `done` |
 | `replay-online` | `replay` |
 
-La maquette du studio tient donc une **table parallèle**, et ne rejoint le vocabulaire partagé
-qu'en un seul endroit (`Studio.dc.html:2798`, via `A.enumLabel('publicationState', …)`).
+So the studio mockup keeps a **parallel table**, and rejoins the shared vocabulary in exactly one
+place (`Studio.dc.html:2798`, via `A.enumLabel('publicationState', …)`).
 
-C'est précisément ce que le principe n°1 du dossier interdit — « chaque affichage dérive de la
-donnée, jamais d'un littéral parallèle » — et c'est aussi la démonstration de son coût : deux
-équipes qui lisent deux tables écriront deux contrats.
+That is precisely what the folder's principle no. 1 forbids — "every display derives from the data,
+never from a parallel literal" — and it is also the demonstration of its cost: two teams reading two
+tables will write two contracts.
 
-**Le contrat doit fixer un seul jeu de noms.** Celui de `catalogue.json` fait autorité : il est
-explicite (`replay-online` dit ce que `replay` ne dit pas — la rediffusion est **en vente**), et
-c'est lui que porte l'i18n (`enums.publicationState.*`).
+**The contract must fix a single set of names.** `catalogue.json`'s is authoritative: it is explicit
+(`replay-online` says what `replay` does not — the replay is **on sale**), and it is the one the
+i18n carries (`enums.publicationState.*`).
 
-### D3 — Les fuseaux sont gelés en décalage fixe
+### D3 — Time zones are frozen as fixed offsets
 
-`shared/catalogue.json` stocke `venue.utcOffsetMin` — un décalage figé — et `helpers.js` en déduit
-l'abréviation d'été ou d'hiver en comparant ce décalage à celui de la table des zones.
+`shared/catalogue.json` stores `venue.utcOffsetMin` — a frozen offset — and `helpers.js` derives the
+summer or winter abbreviation from it by comparing that offset against the zone table's.
 
-La **règle** est juste et doit être portée telle quelle : heure du spectateur d'abord, heure de
-salle en second quand elle diffère. La **forme** est une commodité de maquette : un décalage fixe
-ne survit pas à un changement d'heure, et une date programmée dans six mois sera affichée à la
-mauvaise heure.
+The **rule** is right and must be ported as is: the viewer's time first, the venue's time second
+when it differs. The **shape** is a mockup convenience: a fixed offset does not survive a clock
+change, and a date scheduled six months out will be displayed at the wrong time.
 
-**Dans le contrat** : un identifiant de zone **IANA** (`Europe/Paris`) et un **instant UTC**. Le
-décalage se dérive, il ne se stocke pas.
+**In the contract**: an **IANA** zone identifier (`Europe/Paris`) and a **UTC instant**. The offset
+is derived, it is not stored.
 
-### D4 — Un seul marché de facturation réellement exercé
+### D4 — Only one billing market actually exercised
 
-`shared/catalogue.json` déclare trois marchés : `eur` (TVA 5,5 %), `chf` (2,6 %), `cad`
-(14,975 %) — ce dernier marqué `live: false`.
+`shared/catalogue.json` declares three markets: `eur` (VAT 5.5 %), `chf` (2.6 %), `cad` (14.975 %) —
+the last marked `live: false`.
 
-Mais `shared/fixtures.js:498` prend `billingMarkets[0]` pour **toutes** les dates, et
-`fixtures.js:1300` prend `billingMarkets[0].vatRate` pour **tous** les versements. Le multi-devise
-et le multi-TVA sont déclarés dans la donnée et **jamais exercés** par le générateur.
+But `shared/fixtures.js:498` takes `billingMarkets[0]` for **every** date, and `fixtures.js:1300`
+takes `billingMarkets[0].vatRate` for **every** payout. Multi-currency and multi-VAT are declared in
+the data and **never exercised** by the generator.
 
-Conséquence pour les contrats : aucun écran n'a jamais affiché deux devises, aucune règle n'a
-jamais été éprouvée sur deux taux. Ce que `shared/` porte ici est une **intention**, pas une règle
-éprouvée. Le contrat doit décider s'il l'honore — montant en unité canonique + code devise, ce qui
-est déjà la décision — et `adr-payments.md` doit dire ce qu'il advient d'un versement transfrontalier.
+Consequence for the contracts: no screen has ever displayed two currencies, no rule has ever been
+exercised on two rates. What `shared/` carries here is an **intention**, not a tested rule. The
+contract must decide whether to honour it — amount in canonical unit + currency code, which is
+already the decision — and `adr-payments.md` must say what becomes of a cross-border payout.
 
-### D5 — La formule de versement n'est pas une règle fiscale
+### D5 — The payout formula is not a tax rule
 
-`shared/fixtures.js:1297-1324` calcule :
+`shared/fixtures.js:1297-1324` computes:
 
 ```
-commission = round(gross × 0,12)
+commission = round(gross × 0.12)
 vat        = round(gross × vatRate)
 net        = gross − commission − vat
 ```
 
-La TVA y est donc appliquée au **brut de billetterie**, et retranchée du net de l'artiste.
+So VAT is applied to the **gross ticketing amount**, and deducted from the artist's net.
 
-**Ce que `shared/` ne tranche pas** : qui doit la TVA, sur quelle assiette — le billet ou la
-commission de la plateforme — et qui en est redevable, la plateforme ou l'artiste. Ce sont trois
-questions distinctes, et la formule ci-dessus n'en répond à aucune : elle produit un nombre
-plausible pour une maquette.
+**What `shared/` does not settle**: who owes the VAT, on what base — the ticket or the platform's
+commission — and who is liable, the platform or the artist. Those are three distinct questions, and
+the formula above answers none of them: it produces a plausible number for a mockup.
 
-**C'est le piège « forme contre règle » le plus coûteux du dossier.** Le calcul *ressemble* à une
-règle métier éprouvée écran par écran — il en a la place, le ton et la précision à l'euro. Il n'en
-est pas une. `adr-payments.md` doit l'instruire depuis le droit applicable et le modèle Stripe
-Connect, **sans supposer que la fixture fait autorité**.
+**This is the costliest "shape versus rule" trap in the folder.** The calculation *looks like* a
+domain rule tested screen by screen — it has the position, the tone and the to-the-euro precision.
+It is not one. `adr-payments.md` must research it from the applicable law and the Stripe Connect
+model, **without assuming the fixture is authoritative**.
 
-Ce qui, en revanche, fait bien autorité et doit être porté : la commission est de **12 %**, le
-délai de versement de **14 jours**, l'arrondi se fait **à l'unité** sur chaque composante prise
-séparément, et un versement est **retenu** (`held`) tant qu'une issue est ouverte — reportée ou
-interrompue — **remboursé** (`refunded`) si la date est annulée.
+What *is* authoritative and must be ported: the commission is **12 %**, the payout delay **14 days**,
+rounding is **to the unit** on each component taken separately, and a payout is **held** (`held`) as
+long as an outcome is open — postponed or interrupted — and **refunded** (`refunded`) if the date is
+cancelled.
 
-### D6 — Deux niveaux de sanction, non reliés
+### D6 — Two levels of sanction, unconnected
 
-La modération existe à deux échelles, avec deux vocabulaires et deux propriétaires possibles :
+Moderation exists at two scales, with two vocabularies and two possible owners:
 
-- **sur le message** — `catalogue.json.messageStates` : `ok`, `removed`, `muted`, `banned` ;
-- **sur la personne, au sein d'une chaîne** — `fixtures.js` `audience[].state` : `ok`, `muted`,
-  `banned`, avec son historique (`datesAttended`, `messages`, `firstSeenDaysAgo`).
+- **on the message** — `catalogue.json.messageStates`: `ok`, `removed`, `muted`, `banned`;
+- **on the person, within a channel** — `fixtures.js` `audience[].state`: `ok`, `muted`, `banned`,
+  with its history (`datesAttended`, `messages`, `firstSeenDaysAgo`).
 
-Rien ne dit comment les deux se composent, ni ce qui prime. `studio-data.js` réduit d'ailleurs le
-tout à deux états pour la régie (`ok` / `held`), ce qui est une troisième échelle.
+Nothing says how the two compose, nor which prevails. `studio-data.js` in fact reduces the whole
+thing to two states for the control room (`ok` / `held`), which is a third scale.
 
-À trancher : le message appartient à `chat`, mais la personne bannie d'une chaîne relève-t-elle de
-`chat` ou d'`identity` ? Une seule pastille s'affiche à l'écran ; il ne peut y avoir qu'un seul
-propriétaire de la vérité.
+To be settled: the message belongs to `chat`, but does a person banned from a channel fall under
+`chat` or under `identity`? A single badge is displayed on screen; there can be only one owner of
+the truth.
 
-### D7 — Les décalages en minutes sont une commodité de maquette
+### D7 — Offsets in minutes are a mockup convenience
 
-`shared/catalogue.json` le dit lui-même (`time.note`) : *« startOffsetMin, atMin and
+`shared/catalogue.json` says so itself (`time.note`): *"startOffsetMin, atMin and
 rescheduledToOffsetMin are offsets from the moment the app is opened: negative means already
-started. **Nothing here expires.** »*
+started. **Nothing here expires.**"*
 
-C'est un choix excellent pour une maquette — tous les états existent à toute heure, et les cinq
-surfaces voient la même chose. C'est inutilisable sur un contrat.
+That is an excellent choice for a mockup — every state exists at any hour, and the five surfaces see
+the same thing. It is unusable on a contract.
 
-**Sur le fil, ce sont des instants ISO 8601 en UTC.** La décision zod l'impose déjà par un autre
-chemin : `z.date()` est inconvertible en JSON Schema, donc les dates voyagent en **chaînes ISO**.
-Le stockage est en `timestamptz`, en UTC.
+**On the wire, these are ISO 8601 instants in UTC.** The zod decision already imposes it by another
+route: `z.date()` is inconvertible to JSON Schema, so dates travel as **ISO strings**. Storage is in
+`timestamptz`, in UTC.
 
-`fixtures.js` conserve sa seconde vie après le portage — jeu de données déterministe pour les
-tests et la démonstration — mais il produira des **instants**, et la conversion en décalages
-relatifs, si elle est encore utile, deviendra une commodité de présentation et non une forme
-transportée.
+`fixtures.js` keeps its second life after the port — a deterministic data set for tests and the
+demonstration — but it will produce **instants**, and the conversion to relative offsets, if still
+useful, will become a presentation convenience and not a transported shape.
 
 ---
 
-## E — Écarts relevés par les cinq spécialistes de surface (temps 1)
+## E — Discrepancies found by the five surface specialists (time 1)
 
-**Cinquante-deux écarts nouveaux**, relevés indépendamment par les cinq spécialistes en lisant
-leur maquette contre `shared/`. Consolidés ici par thème et non par surface : plusieurs ont été
-trouvés par deux, trois ou quatre agents séparément, et cette convergence est elle-même une
-information — elle distingue un accident d'une faute structurelle.
+**Fifty-two new discrepancies**, found independently by the five specialists reading their mockup
+against `shared/`. Consolidated here by theme and not by surface: several were found by two, three
+or four agents separately, and that convergence is itself information — it distinguishes an accident
+from a structural fault.
 
-Aucun n'est corrigé : ils portent sur `shared/` et sur les maquettes, qui restent en lecture
-seule. C'est la suite de la liste de courses du portage (palier 1), et la matière que les agents
-du temps 2 doivent avoir lue.
+None is corrected: they bear on `shared/` and on the mockups, which remain read only. This is the
+continuation of the shopping list for the port (stage 1), and the material the time 2 agents must
+have read.
 
-### E1 — Les abonnements sont cassés, et cela conditionne l'accès à la lecture
+### E1 — Subscriptions are broken, and they gate access to playback
 
-*Trouvé par `storefront-web`, `storefront-tv`, `storefront-mobile`.*
+*Found by `storefront-web`, `storefront-tv`, `storefront-mobile`.*
 
-**Quatre vocabulaires disjoints** pour la même notion :
+**Four disjoint vocabularies** for the same notion:
 
-| Source | Valeurs |
+| Source | Values |
 |---|---|
 | `catalogue.json` → `plans[]` | `free` (0 €) · `pass` (12 €) · `premium` (24 €) |
 | `catalogue.json` → `accounts[].plan` | `season` · `monthly` · `none` |
-| `i18n/storefront.json` → `enums.plan.*` | les six réunies |
-| maquette web | `free` · `unit` (7 €) · `sub` (14 €) |
-| maquette TV | `saison` (14 €) · `mécène` (39 €) |
+| `i18n/storefront.json` → `enums.plan.*` | all six together |
+| web mockup | `free` · `unit` (7 €) · `sub` (14 €) |
+| TV mockup | `saison` (14 €) · `mécène` (39 €) |
 
-**La conséquence est un défaut d'autorisation, vérifié.** `helpers.planOf()` fait
-`plans().filter(p => p.id === account.plan)[0] || plans()[0]`. Aucun des quatre comptes de
-référence ne porte un identifiant présent dans `plans[]` : **tous retombent silencieusement sur
-`free`**. Or `plan.opens[]` porte `replays`, `one-live-month`, `all-lives`, `multi-screen`,
-`archive` — c'est-à-dire les droits de lecture. L'i18n traduit les six valeurs, ce qui masque
-entièrement le problème à l'écran.
+**The consequence is an authorisation defect, verified.** `helpers.planOf()` does
+`plans().filter(p => p.id === account.plan)[0] || plans()[0]`. None of the four reference accounts
+carries an identifier present in `plans[]`: **all of them fall back silently to `free`**. Yet
+`plan.opens[]` carries `replays`, `one-live-month`, `all-lives`, `multi-screen`, `archive` — that
+is, the playback entitlements. The i18n translates all six values, which hides the problem entirely
+on screen.
 
-S'y ajoutent : les droits `opens[]` ne coïncident pas entre les sources, et **deux remises sur
-deux assiettes différentes** (`seatDiscount` 10/20 % sur les places dans la donnée, 15 % sur la
-boutique dans la maquette mobile).
+On top of that: the `opens[]` entitlements do not coincide across sources, and there are **two
+discounts on two different bases** (`seatDiscount` 10/20 % on seats in the data, 15 % on the store
+in the mobile mockup).
 
-### E2 — La faute D2 se répète sur huit champs
+### E2 — Fault D2 repeats across eight fields
 
-*Trouvé par les cinq. `storefront-mobile` classe 7 de ses 11 écarts dans cette seule famille.*
+*Found by all five. `storefront-mobile` files 7 of its 11 discrepancies under this family alone.*
 
-D2 signalait deux vocabulaires concurrents pour l'état d'une publication. Ce n'était pas un
-accident : c'est le mode de défaillance dominant du dossier. Une maquette tient une table
-littérale parallèle à `shared/`, et les deux divergent.
+D2 reported two competing vocabularies for a publication's state. That was not an accident: it is
+the folder's dominant failure mode. A mockup keeps a literal table parallel to `shared/`, and the
+two diverge.
 
-| Champ | Vocabulaires concurrents |
+| Field | Competing vocabularies |
 |---|---|
-| état de publication (D2) | `catalogue.json` contre les deux maquettes de studio |
-| régime de tchat | **trois** — dont une famille de copie `chat.*` (`free`) doublant `enums.chatMode.*` (`open`) |
-| politique de rediffusion | **trois** — `sub`/`unit` dans la maquette mobile contre `subscription`/`none` |
-| fenêtre de rediffusion | **trois** formulations, dont une dans la copie traduisible |
-| sévérité du filtre de tchat | deux, **dans le même fichier** |
-| liste de contrôle avant publication | deux — 4 entrées dans les fixtures, 7 dans la fiche de date |
-| devises | `eur`/`usd`/`chf` proposés, `cad` déclaré et manquant |
-| abonnement du compte | entièrement littéral dans la maquette mobile |
+| publication state (D2) | `catalogue.json` against both studio mockups |
+| chat regime | **three** — including a `chat.*` copy family (`free`) doubling `enums.chatMode.*` (`open`) |
+| replay policy | **three** — `sub`/`unit` in the mobile mockup against `subscription`/`none` |
+| replay window | **three** wordings, one of them inside translatable copy |
+| chat filter severity | two, **in the same file** |
+| pre-publication checklist | two — 4 entries in the fixtures, 7 on the date sheet |
+| currencies | `eur`/`usd`/`chf` offered, `cad` declared and missing |
+| account subscription | entirely literal in the mobile mockup |
 
-**Conséquence pour les contrats** : chaque énumération de frontière doit être déclarée une fois,
-dans `@arthome/core`, et typée. Une valeur d'énumération écrite en dur dans une application est la
-faute la plus fréquente de ce projet, et elle est silencieuse.
+**Consequence for the contracts**: every boundary enumeration must be declared once, in
+`@arthome/core`, and typed. An enumeration value hard-coded in an application is this project's most
+frequent fault, and it is silent.
 
-### E3 — Les sanctions : quatre échelles, et l'i18n n'en suit aucune
+### E3 — Sanctions: four scales, and the i18n follows none of them
 
-*Trouvé par `studio-web` et `studio-mobile`. Étend D6, qui n'en comptait que trois.*
+*Found by `studio-web` and `studio-mobile`. Extends D6, which counted only three.*
 
-`catalogue.messageStates` (`ok`…) · `audience[].state` (la personne dans une chaîne) ·
-`moderation[].state` (qui introduit **`reported`**) · `studio-data.js` (`ok` / `held` pour la
-régie) · et `i18n/studio.json` → `enums.moderationState.*` qui dit `published` là où le catalogue
-dit `ok`, et ne correspond à aucune des quatre.
+`catalogue.messageStates` (`ok`…) · `audience[].state` (the person within a channel) ·
+`moderation[].state` (which introduces **`reported`**) · `studio-data.js` (`ok` / `held` for the
+control room) · and `i18n/studio.json` → `enums.moderationState.*`, which says `published` where the
+catalogue says `ok`, and matches none of the four.
 
-Le défaut de fond : **`reported` est un état de triage logé dans le champ des sanctions**. Trois
-axes à séparer au contrat — nature de la ligne (signalée, prise en charge, tranchée), état du
-message, état de la personne.
+The underlying fault: **`reported` is a triage state lodged in the sanctions field**. Three axes to
+separate in the contract — the nature of the row (reported, taken up, decided), the state of the
+message, the state of the person.
 
-S'y ajoute une règle de conduite que seule la maquette porte : *« Prendre en charge n'est pas
-trancher : tant que le confrère n'a pas rendu de verdict, votre sanction s'applique. »* C'est une
-**supersession**, donc un bail sur une ligne de file et une règle de préséance — à porter au
-contrat, et la raison pour laquelle les commandes de modération doivent être **conditionnelles**
-et non idempotentes aveugles.
+On top of that, a rule of conduct that only the mockup carries: *"Taking a case up is not deciding
+it: until your colleague has returned a verdict, your sanction applies."* That is a **supersession**,
+hence a lease on a queue row and a precedence rule — to be carried into the contract, and the reason
+why moderation commands must be **conditional** and not blindly idempotent.
 
-### E4 — Trois axes d'état sur une même date, sans hiérarchie écrite
+### E4 — Three state axes on one date, with no written hierarchy
 
-*Trouvé par `studio-web` et `studio-mobile`.*
+*Found by `studio-web` and `studio-mobile`.*
 
-`publication.state` (sept valeurs), `run.state` (six), `date.outcome` (trois). L'état affiché
-d'une date est la **composition des trois**, et aucun ne la porte. Chaque surface recompose donc
-la hiérarchie à sa façon — la définition même d'une valeur calculée deux fois.
+`publication.state` (seven values), `run.state` (six), `date.outcome` (three). A date's displayed
+state is the **composition of all three**, and none of them carries it. So every surface recomposes
+the hierarchy its own way — the very definition of a value computed twice.
 
-### E5 — Le verrou porte sur des états, la maquette le pose sur des transitions
+### E5 — The lock is on states, the mockup puts it on transitions
 
-*Trouvé par `studio-web`.*
+*Found by `studio-web`.*
 
-Les fixtures encodent `lockedTransitions: ['scheduled', 'replay-online']` — une liste d'**états**.
-La maquette traite ces deux passages comme des **transitions sans retour**. C'est la seconde
-sémantique qui est juste : publier engage le tarif, mettre la rediffusion en ligne la met en
-vente. Le serveur doit **refuser** l'inverse avec un code et la promesse engagée.
+The fixtures encode `lockedTransitions: ['scheduled', 'replay-online']` — a list of **states**. The
+mockup treats those two passages as **transitions with no way back**. It is the second semantics
+that is right: publishing commits the price, putting the replay online puts it on sale. The server
+must **refuse** the reverse with a code and the commitment it has made.
 
-### E6 — Les rôles : le repli à six détruit un droit
+### E6 — Roles: the fallback to six destroys a right
 
-*Trouvé par `studio-web` et `studio-mobile`.*
+*Found by `studio-web` and `studio-mobile`.*
 
-`studio-data.js` rabat les huit `memberRoles` sur six personas, écrasant `director`, `video` et
-`sound` en `regie`. Or `grants` les distingue : `director` peut inviter `video` et `sound`, les
-deux autres ne peuvent inviter personne. **La projection à six n'est pas sûre pour
-l'autorisation** — c'est un libellé, jamais un droit.
+`studio-data.js` collapses the eight `memberRoles` into six personas, crushing `director`, `video`
+and `sound` into `regie`. But `grants` distinguishes them: `director` may invite `video` and
+`sound`, the other two may invite nobody. **The projection to six is not safe for authorisation** —
+it is a label, never a right.
 
-Deux défauts de navigation dans la même famille : `TAB_PREF.regie` nomme une page que `ACCESS`
-refuse ; et **`team` est une page morte**, absente de la table d'accès des six personas (la ligne
-qui la fait absorber par `crew` est elle-même du code mort).
+Two navigation faults in the same family: `TAB_PREF.regie` names a page that `ACCESS` refuses; and
+**`team` is a dead page**, absent from the access table of all six personas (the line that has it
+absorbed by `crew` is itself dead code).
 
-### E7 — Le fuseau du spectateur n'a aucun porteur
+### E7 — The viewer's time zone has no carrier
 
-*Trouvé par `storefront-tv` et `studio-mobile`.*
+*Found by `storefront-tv` and `studio-mobile`.*
 
-« Deux fuseaux : l'heure du spectateur d'abord, l'heure de salle en second » est un principe du
-dossier. Pourtant la maquette TV lit `fixtures.geography.viewerUtcOffsetMin`, qui **n'existe nulle
-part** dans `shared/` : il vaut `undefined`, et l'heure de salle est donc calculée contre UTC. La
-surface n'a aucune entrée pour le fuseau du spectateur. Croise D3 (les fuseaux gelés en décalage
-fixe).
+"Two time zones: the viewer's time first, the venue's time second" is a principle of the folder. Yet
+the TV mockup reads `fixtures.geography.viewerUtcOffsetMin`, which **exists nowhere** in `shared/`:
+it is `undefined`, and the venue's time is therefore computed against UTC. The surface has no input
+at all for the viewer's time zone. Crosses D3 (time zones frozen as fixed offsets).
 
-### E8 — Le modèle public fuit de la donnée de régie
+### E8 — The public model leaks control-room data
 
-*Trouvé par `storefront-tv`.*
+*Found by `storefront-tv`.*
 
-L'objet date que lit un client public porte `prices[].sold`, `prices[].revenue`, `seats.sold`,
-`publication`, `publishedBy` : des recettes et des références de studio. Deux fuites voisines :
-les raisons de géo-blocage portent `label`/`labelEn` — du texte rédigé **dans la donnée**, alors
-que tout le reste passe par `enums.*` ; et le classement éditorial des sous-genres est **calculé
-sur la surface**, à partir de cette donnée de billetterie.
+The date object a public client reads carries `prices[].sold`, `prices[].revenue`, `seats.sold`,
+`publication`, `publishedBy`: revenue figures and studio references. Two neighbouring leaks:
+geo-blocking reasons carry `label`/`labelEn` — prose written **inside the data**, when everything
+else goes through `enums.*`; and the editorial ranking of subgenres is **computed on the surface**,
+from that ticketing data.
 
-### E9 — La taxonomie est déclarée plus riche qu'elle n'est portée
+### E9 — The taxonomy is declared richer than it is carried
 
-*Trouvé par `storefront-web`.*
+*Found by `storefront-web`.*
 
-Le sous-genre est déclaré « optionnel, multiple » et porté au singulier ; le champ `attributes`
-d'une date porte en réalité des **étiquettes** ; **six des sept groupes d'attributs** sont
-déclarés et jamais portés — dont `accessibility`, que le dossier présente comme un filtre de
-premier plan qui ne doit « pas dépendre de la vigilance d'un régisseur » ; et `shows[].tags` est
-vide dans tout le catalogue rédigé.
+The subgenre is declared "optional, multiple" and carried in the singular; a date's `attributes`
+field in fact carries **tags**; **six of the seven attribute groups** are declared and never carried
+— including `accessibility`, which the folder presents as a front-rank filter that must "not depend
+on a stage manager's vigilance"; and `shows[].tags` is empty throughout the hand-written catalogue.
 
-### E10 — L'i18n se contredit sur ses propres effectifs
+### E10 — The i18n contradicts itself on its own counts
 
-*Trouvé par `storefront-web`, complété par le chef.*
+*Found by `storefront-web`, completed by the lead.*
 
-`i18n/index.json` se présente comme le contrôle d'intégrité de la copie. Il est faux sur la moitié
-de ses entrées, **et dans les deux sens** :
+`i18n/index.json` presents itself as copy's integrity check. It is wrong on half its entries, **and
+in both directions**:
 
-| Fichier | Annoncé | Réel |
+| File | Announced | Real |
 |---|---|---|
 | `storefront.json` | 243 | **671** |
 | `taxonomy.json` | 627 | **437** |
 | `studio.json` | 61 | 61 |
 | `system.json` | 18 | 18 |
 
-S'y ajoute : les libellés de marchandise n'existent qu'en français (`merchPool` sans champ
-anglais), sur un produit déclaré bilingue.
+On top of that: merchandise labels exist only in French (`merchPool` with no English field), on a
+product declared bilingual.
 
-### E11 — Les constantes de domaine sont recopiées en dur
+### E11 — Domain constants are copied out as literals
 
-*Trouvé par `storefront-tv` et `storefront-mobile`.*
+*Found by `storefront-tv` and `storefront-mobile`.*
 
-`roomOpensBeforeMin: 30` et `previewIdleSec: 4` vivent dans la donnée — et les maquettes les
-recopient en littéral. Ces constantes doivent arriver **par le contrat**, sinon elles divergeront
-entre cinq surfaces. C'est le principe « aucune valeur calculée deux fois » appliqué aux
-constantes.
+`roomOpensBeforeMin: 30` and `previewIdleSec: 4` live in the data — and the mockups copy them out as
+literals. These constants must arrive **through the contract**, otherwise they will diverge across
+five surfaces. It is the "no value computed twice" principle applied to constants.
 
-### E12 — L'appairage d'appareil : sa politique n'est nulle part
+### E12 — Device pairing: its policy is nowhere
 
-*Trouvé par `storefront-tv`.*
+*Found by `storefront-tv`.*
 
-« CODE VALABLE 15 MINUTES » n'existe que dans une **chaîne de copie**, et les codes eux-mêmes sont
-des littéraux (`H4T9RD`, `K7QM2P`). La durée de validité est une politique : elle appartient au
-contrat et doit être servie dans la réponse. De même, **l'alphabet du code n'est déclaré nulle
-part** — ce qui est une exigence de contrat et non de typographie, puisqu'un code lu à trois
-mètres et ressaisi sur un téléphone ne doit pas mêler `0/O`, `1/I`, `5/S`, `8/B`.
+"CODE VALID FOR 15 MINUTES" exists only in a **copy string**, and the codes themselves are literals
+(`H4T9RD`, `K7QM2P`). The validity period is a policy: it belongs to the contract and must be served
+in the response. Likewise, **the code's alphabet is declared nowhere** — which is a contract
+requirement and not a typographic one, since a code read at three metres and retyped on a phone must
+not mix `0/O`, `1/I`, `5/S`, `8/B`.
 
-### E13 — `devices` a deux formes sous un seul nom
+### E13 — `devices` has two shapes under one name
 
-*Trouvé par `storefront-tv`.*
+*Found by `storefront-tv`.*
 
-`catalogue.json` déclare `devices` comme un **entier** (3, 2, 1, 1). `fixtures.js` en fait ensuite
-une **liste d'objets**. Deux formes, un identifiant.
+`catalogue.json` declares `devices` as an **integer** (3, 2, 1, 1). `fixtures.js` then turns it into
+a **list of objects**. Two shapes, one identifier.
 
-### E14 — Les commandes externes n'ont aucun contexte propriétaire
+### E14 — External orders have no owning context
 
-*Trouvé par `storefront-web`.*
+*Found by `storefront-web`.*
 
-« Mes commandes » fusionne les commandes Arthome et celles passées sur la boutique propre de
-l'artiste (Shopify, WooCommerce, PrestaShop, Drupal, API), avec référence marchand et domaine,
-sans facture, ni suivi, ni remboursement chez nous. À rattacher au même arbitrage que C8 (la
-boutique).
+"My orders" merges Arthome orders with those placed on the artist's own store (Shopify,
+WooCommerce, PrestaShop, Drupal, API), with a merchant reference and a domain, with no invoice, no
+tracking and no refund on our side. To be attached to the same arbitration as C8 (the store).
 
-### E15 — Écarts de maquette sans portée contractuelle directe
+### E15 — Mockup discrepancies with no direct contractual bearing
 
-Utiles au portage, sans conséquence sur les contrats : l'action **Partager** est câblée vers
-l'écran de paiement (et révèle qu'**aucune commande de partage n'a jamais été définie** — sur TV
-elle ne peut vouloir dire qu'un QR vers une **URL canonique servie**) ; la page `plans` de la TV
-est spécifiée et absente de la maquette ; taux de remplissage et places restantes sont deux
-valeurs indépendantes ; le débit du tchat est mesuré dans une unité et comparé dans une autre ;
-deux débits différents portent le même nom sur l'écran de diffusion ; le troisième canal de
-notification n'est nommé nulle part ; appareils et sessions sont traités comme deux choses.
+Useful for the port, without consequence for the contracts: the **Share** action is wired to the
+payment screen (and reveals that **no share command has ever been defined** — on TV it can only mean
+a QR code to a **served canonical URL**); the TV's `plans` page is specified and absent from the
+mockup; occupancy rate and remaining seats are two independent values; chat throughput is measured
+in one unit and compared in another; two different bitrates carry the same name on the broadcast
+screen; the third notification channel is named nowhere; devices and sessions are treated as two
+different things.
 
-### Ce que la famille E apprend
+### What family E teaches
 
-Trois enseignements qui dépassent la liste :
+Three lessons that go beyond the list:
 
-1. **La faute dominante du projet est la table littérale parallèle** (E2). Elle a été commise sur
-   au moins huit champs, par cinq maquettes, malgré un principe explicite qui l'interdit. Un
-   principe ne suffit pas : il faut que l'énumération soit **typée depuis `core`** et qu'une porte
-   de CI le vérifie.
-2. **Ce qui n'est jamais appelé n'a jamais été éprouvé.** `storefront-mobile` a vérifié seize
-   fonctions de `helpers.js` : **quatorze ne sont jamais appelées** par sa maquette — droits
-   territoriaux, barrière de langue, places restantes, reprise, appareils, abonnements, modération
-   du tchat. Leur contrat doit être **conçu, pas observé**. Un silence n'est pas un accord.
-3. **Quatre agents ont trouvé E1 séparément**, et aucun n'avait été orienté vers lui. La
-   convergence de lectures indépendantes est le seul moyen fiable de distinguer un détail d'un
-   défaut structurel.
+1. **The project's dominant fault is the parallel literal table** (E2). It was committed on at least
+   eight fields, by five mockups, despite an explicit principle forbidding it. A principle is not
+   enough: the enumeration must be **typed from `core`** and a CI gate must check it.
+2. **What is never called has never been tested.** `storefront-mobile` checked sixteen functions of
+   `helpers.js`: **fourteen are never called** by its mockup — territorial rights, language barrier,
+   remaining seats, resume, devices, subscriptions, chat moderation. Their contract must be
+   **designed, not observed**. A silence is not an agreement.
+3. **Four agents found E1 separately**, and none had been pointed at it. The convergence of
+   independent readings is the only reliable way to tell a detail from a structural defect.
 
 ---
 
-## Ce qui reste ouvert
+## What remains open
 
-Trois points relevés en phase 0 qui ne sont pas des corrections mais des **questions adressées à
-l'équipe**, consignées ici pour qu'elles ne se perdent pas :
+Three points raised in phase 0 that are not corrections but **questions put to the team**, recorded
+here so they do not get lost:
 
-1. **Le catalogue de libellés dynamique (C6) : sous-domaine ou service à part ?** Un service de
-   plus se paie en exploitation, pour une personne seule.
-2. **Les abonnements et la boutique (C7, C8) : rattachés, ou huitième contexte ?** Les rattacher
-   force une frontière discutable ; les isoler coûte un service.
-3. **Le code court de la TV.** La maquette l'emploie pour quatre parcours distincts — se
-   connecter, acheter une place, s'abonner, acheter du merch. C'est le même mécanisme que le
-   **device flow OAuth (RFC 8628)**. S'il est conçu deux fois — une fois par `auth`, une fois par
-   `ticketing` — il sera implémenté deux fois. À traiter comme une primitive unique.
+1. **The dynamic label catalogue (C6): subdomain or separate service?** One more service costs
+   operations, for a single person.
+2. **Subscriptions and the store (C7, C8): attached, or an eighth context?** Attaching them forces a
+   debatable boundary; isolating them costs a service.
+3. **The TV's short code.** The mockup uses it for four distinct flows — signing in, buying a seat,
+   subscribing, buying merchandise. It is the same mechanism as the **OAuth device flow (RFC 8628)**.
+   If it is designed twice — once by `auth`, once by `ticketing` — it will be implemented twice. To
+   be treated as a single primitive.
 
 ---
 
-## Ce que cette liste a coûté, et ce qu'elle épargne
+## What this list cost, and what it saves
 
-Vingt-sept écarts, relevés sans ouvrir une seule maquette en entier. Sept d'entre eux (famille D)
-n'auraient été découverts qu'au moment d'écrire le code — c'est-à-dire trop tard pour le contrat.
-Un autre (**B4**) n'aurait été découvert qu'en publiant la galerie du palier 0, devant cinq
-interfaces vides.
+The twenty-seven of phase 0 were found without opening a single mockup in full. Seven of them
+(family D) would have been discovered only when writing the code — that is, too late for the
+contract. Another (**B4**) would have been discovered only on publishing the stage 0 gallery, in
+front of five empty interfaces.
 
-Le plus instructif reste **A7** : un document qui se contredit lui-même entre son §3 et son §9,
-parce qu'une décision a changé pendant sa rédaction et que seules les sections tardives l'ont
-reçue. C'est l'argument le plus solide en faveur des `critical-rules.md` courtes et recopiées dans
-chaque dépôt : un document long finit toujours par mentir sur lui-même.
+The most instructive remains **A7**: a document that contradicts itself between its §3 and its §9,
+because a decision changed while it was being written and only the late sections received it. That
+is the strongest argument in favour of short `critical-rules.md` files copied into every repository:
+a long document always ends up lying about itself.

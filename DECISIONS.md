@@ -1,629 +1,608 @@
-# Journal des arbitrages
+# Arbitration log
 
-> Les décisions rendues par le chef d'orchestre au fil de la session, avec leur raison.
-> Une décision qui n'est pas ici n'a pas été rendue.
+> The decisions handed down by the lead over the course of the session, with their reason.
+> A decision that is not here was not handed down.
 
 ---
 
-## Phase 0 — 21 septembre 2026
+## Phase 0 — 21 September 2026
 
-### D-001 — Orchestrateur si existant, sinon skills spécialisées au cas par cas
+### D-001 — Orchestrator where one exists, otherwise specialised skills case by case
 
-**La règle, posée par le chef de projet.** Chaque coéquipier charge **l'orchestrateur de sa
-technologie avant de décider ou d'écrire quoi que ce soit**. Quand il n'en existe pas, il charge
-**les skills spécialisées au cas par cas**, en justifiant son choix.
+**The rule, set by the project owner.** Every teammate loads **the orchestrator for its technology
+before deciding or writing anything at all**. Where none exists, it loads **specialised skills case
+by case**, justifying its choice.
 
-C'est une règle générale, pas une exception : elle vaudra pour toute pile future dont la banque de
-skills n'a pas de porte d'entrée.
+This is a general rule, not an exception: it will hold for any future stack whose skill bank has no
+front door.
 
-**Application aux huit coéquipiers.**
+**Applied to the eight teammates.**
 
-| Coéquipier | Orchestrateur | État |
+| Teammate | Orchestrator | State |
 |---|---|---|
-| `storefront-web` | `nextjs-how-to` | existe |
-| `studio-web` | `angular-how-to` | existe |
-| `studio-mobile` | `ionic-capacitor-how-to` + `angular-how-to` | existent |
-| `backend-domain`, `backend-contracts`, `auth` | `nestjs-how-to` | existe |
-| `storefront-mobile`, `storefront-tv` | selon la pile — voir ci-dessous | **conditionnel** |
+| `storefront-web` | `nextjs-how-to` | exists |
+| `studio-web` | `angular-how-to` | exists |
+| `studio-mobile` | `ionic-capacitor-how-to` + `angular-how-to` | exist |
+| `backend-domain`, `backend-contracts`, `auth` | `nestjs-how-to` | exists |
+| `storefront-mobile`, `storefront-tv` | depends on the stack — see below | **conditional** |
 
-**Le cas des deux surfaces React Native.** Le prompt de mission prévoyait `react-how-to`. Il est
-bien installé, mais s'exclut lui-même de React Native : « Router for React 19 **on the web — no
+**The case of the two React Native surfaces.** The mission prompt expected `react-how-to`. It is
+indeed installed, but it excludes itself from React Native: "Router for React 19 **on the web — no
 Next, no React Native** […] Not for Next.js (→ nextjs-how-to), Expo or React Native
-(→ expo-overview) ». La porte suivante, `expo-overview`, pose sa propre condition : « a bare
-React Native project with no `expo` dependency is not Expo work ».
+(→ expo-overview)". The next door, `expo-overview`, sets its own condition: "a bare React Native
+project with no `expo` dependency is not Expo work".
 
-Inventaire de la banque, vérifié :
+Inventory of the bank, verified:
 
-| Famille | Skills installées | Orchestrateur |
+| Family | Skills installed | Orchestrator |
 |---|---|---|
 | React web | 6 | `react-how-to` |
 | Expo / EAS | 26 | `expo-overview` |
-| **React Native nu** | **8** | **aucun** |
+| **Bare React Native** | **8** | **none** |
 
-Donc : en **Expo** (y compris Expo TV), `expo-overview` s'applique et la règle joue normalement.
-En **React Native nu**, aucun orchestrateur n'existe et on passe au cas par cas. Le choix Expo /
-RN nu **n'est pas fait** et sort du périmètre de cette session.
+So: under **Expo** (including Expo TV), `expo-overview` applies and the rule holds normally. Under
+**bare React Native**, no orchestrator exists and we fall back to case by case. The Expo / bare RN
+choice **is not made** and is out of scope for this session.
 
-**Les skills retenues pour le temps 1, au cas par cas.** L'essentiel de la banque React Native
-traite de *construire et livrer* ; au temps 1 un spécialiste **exprime un besoin de données** et
-n'écrit pas une ligne de code. Quatre skills seulement, chacune parce qu'elle pèse sur le contrat :
+**The skills selected for time 1, case by case.** Most of the React Native bank is about *building
+and shipping*; at time 1 a specialist **expresses a data need** and writes no code at all. Four
+skills only, each because it bears on the contract:
 
-- `react-core` — sémantique React ;
-- `react-native-tv-best-practices` — moteur de focus, UI à trois mètres, mémoire contrainte,
-  lecture. Vise explicitement « react-native-tvos, Expo TV », donc valable dans les deux
-  hypothèses de pile ;
-- `react-native-best-practices` — virtualisation de listes et mémoire, qui commandent la
-  pagination et le volume attendu ;
-- `react-server-state` — fraîcheur, cache, invalidation : ce que le client attend du contrat en
-  temps réel et hors ligne.
+- `react-core` — React semantics;
+- `react-native-tv-best-practices` — focus engine, ten-foot UI, constrained memory, playback. It
+  explicitly targets "react-native-tvos, Expo TV", so it holds under either stack hypothesis;
+- `react-native-best-practices` — list virtualisation and memory, which drive pagination and the
+  expected volume;
+- `react-server-state` — freshness, cache, invalidation: what the client expects from the contract
+  in real time and offline.
 
-Écartées comme hors périmètre : tests, montées de version, brownfield, EAS, scaffolding de
-bibliothèque.
+Set aside as out of scope: testing, version upgrades, brownfield, EAS, library scaffolding.
 
-**Resté ouvert, à trancher avant le palier mobile** : Expo ou React Native nu.
+**Left open, to be settled before the mobile stage**: Expo or bare React Native.
 
-### D-002 — L'agent `backend` est scindé en deux
+### D-002 — The `backend` agent is split in two
 
-**Le constat.** Tel que prévu, un seul coéquipier produisait neuf livrables longs :
-`context-map.md`, `data-model.md`, `events.md` avec `proto/`, `realtime.md`, deux OpenAPI,
+**The observation.** As planned, a single teammate produced nine long deliverables:
+`context-map.md`, `data-model.md`, `events.md` with `proto/`, `realtime.md`, two OpenAPI documents,
 `definition-of-done.md`, `critical-rules.md`, `adr-payments.md`, `adr-stream-entitlement.md`.
-Point de défaillance unique, et risque réel de dégradation sur les derniers documents.
+Single point of failure, and a real risk of degradation on the last documents.
 
-**La décision.** Deux coéquipiers qui se relaient sur le même palier :
+**The decision.** Two teammates relaying each other on the same stage:
 
-- **`backend-domain`** — carte des contextes, modèle de données par service, catalogue
-  d'événements et `proto/`, temps réel, persistance, plus les deux ADR (`adr-payments`,
-  `adr-stream-entitlement`) ;
-- **`backend-contracts`** — les deux OpenAPI de BFF, le contrat des appels synchrones
-  BFF → service et le transport retenu, `definition-of-done.md`, `critical-rules.md`.
+- **`backend-domain`** — context map, per-service data model, event catalogue and `proto/`, real
+  time, persistence, plus the two ADRs (`adr-payments`, `adr-stream-entitlement`);
+- **`backend-contracts`** — the two BFF OpenAPI documents, the contract for synchronous
+  BFF → service calls and the chosen transport, `definition-of-done.md`, `critical-rules.md`.
 
-`backend-contracts` démarre en lisant ce que `backend-domain` a produit : l'ordre est imposé, les
-contrats se déduisent du modèle et non l'inverse.
+`backend-contracts` starts by reading what `backend-domain` produced: the order is imposed,
+contracts follow from the model and not the other way round.
 
-**Ce qui ne change pas.** Le périmètre total, la profondeur attendue, et la règle des deux régimes
-de stabilité (`stable` pour `identity`, `catalog`, `ticketing` ; `provisoire` pour le reste).
+**What does not change.** Total scope, expected depth, and the two-stability-regimes rule (`stable`
+for `identity`, `catalog`, `ticketing`; `provisional` for the rest).
 
-### D-003 — Les cinq surfaces au premier tour
+### D-003 — All five surfaces in round one
 
-**Le contexte.** L'estimation de la phase 0 donne 2,3 à 3,3 millions de tokens d'agents et trois à
-quatre sessions pour les cinq surfaces. Une coupe à trois surfaces (storefront web, studio web,
-storefront TV) avait été recommandée par le chef, au motif que mobile et studio mobile sont des
-variations de surfaces déjà couvertes et contesteraient la mise en page plutôt que la **forme**
-des contrats.
+**The context.** The phase 0 estimate gives 2.3 to 3.3 million agent tokens and three to four
+sessions for five surfaces. A cut to three surfaces (storefront web, studio web, storefront TV) had
+been recommended by the lead, on the grounds that mobile and studio mobile are variations of
+surfaces already covered and would contest layout rather than the **shape** of the contracts.
 
-**La décision du chef de projet : les cinq surfaces.** Aucune décision n'est retirée, aucun
-contexte n'est laissé de côté.
+**The project owner's decision: all five surfaces.** No decision is dropped, no context left aside.
 
-**Cadence, arbitrée par le chef de projet : les cinq d'un coup.** Cinq coéquipiers en parallèle,
-cinq panneaux tmux. Le temps 1 dure celui du plus lent. Une cadence en deux vagues avait été
-proposée pour permettre une lecture précoce ; elle est écartée au profit de l'horloge.
+**Cadence, arbitrated by the project owner: all five at once.** Five teammates in parallel, five
+tmux panes. Time 1 lasts as long as the slowest. A two-wave cadence had been proposed to allow an
+early read; it is set aside in favour of the clock.
 
-### D-004 — Le dossier de passation est corrigé dans cette session
+### D-004 — The handoff folder is corrected in this session
 
-**Le contexte.** Le prompt de mission réservait la réécriture au palier 0, quand le dossier
-entrerait dans `arthome-core` comme `docs/` : « pas dans cette session ». La phase 0 ne devait
-produire que la liste des écarts.
+**The context.** The mission prompt reserved the rewrite for stage 0, when the folder would enter
+`arthome-core` as `docs/`: "not in this session". Phase 0 was only meant to produce the list of
+discrepancies.
 
-**La décision du chef de projet : corriger maintenant.** Les cinq spécialistes de surface liront
-donc un dossier juste, et non un dossier faux accompagné d'un errata.
+**The project owner's decision: correct now.** The five surface specialists will therefore read a
+correct folder, not a wrong one accompanied by an erratum.
 
-**Le périmètre de la correction, arbitré par le chef.** Les **documents** du dossier sont corrigés
-(`README.md`, `Prompt - Storefront TV.md`, `PROMPT.md`) — familles A, B et C de
-`architecture/corrections-handoff.md`. **`shared/` n'est pas touché** : le prompt le déclare en
-lecture seule, et c'est la source que les spécialistes vont lire. Les sept écarts de données
-(famille D) restent la liste de courses du portage au palier 1.
+**The scope of the correction, arbitrated by the lead.** The folder's **documents** are corrected
+(`README.md`, `Prompt - Storefront TV.md`, `PROMPT.md`) — families A, B and C of
+`architecture/corrections-handoff.md`. **`shared/` is not touched**: the prompt declares it read
+only, and it is the source the specialists are going to read. The seven data discrepancies
+(family D) remain the shopping list for the port at stage 1.
 
-**Réversibilité.** `~/Dev/arthome-design` n'est pas un dépôt git. Les originaux ont été copiés en
-`*.pre-corrections.md` à côté des documents corrigés, avant toute modification.
+**Reversibility.** `~/Dev/arthome-design` is not a git repository. The originals were copied to
+`*.pre-corrections.md` alongside the corrected documents, before any modification.
 
-### D-005 — `corrections-handoff.md` est écrit avant le temps 1
+### D-005 — `corrections-handoff.md` is written before time 1
 
-**La décision.** Le dépôt `arthome-core` est créé (`git init`, aucun remote, aucun push) et la
-liste des vingt-sept écarts y est écrite immédiatement. Elle sert trois fois : livrable de la
-phase 0, source des corrections apportées au dossier, et liste de courses du portage au palier 1.
+**The decision.** The `arthome-core` repository is created (`git init`, no remote, no push) and the
+list of twenty-seven discrepancies is written into it immediately. It serves three times: phase 0
+deliverable, source of the corrections applied to the folder, and shopping list for the port at
+stage 1.
 
-**Ce qui n'est pas créé.** Rien d'autre. Pas de `package.json`, pas de TypeScript, pas de
-`proto/` ni d'`openapi/` peuplés — seulement les dossiers vides que la structure attend.
+**What is not created.** Nothing else. No `package.json`, no TypeScript, no populated `proto/` or
+`openapi/` — only the empty directories the structure expects.
 
-### D-006 — Couverture exhaustive, rédaction dédupliquée
+### D-006 — Exhaustive coverage, deduplicated writing
 
-**Le constat.** Appliqué à la lettre, « chaque écran, sept dimensions » donne une centaine
-d'écrans sur cinq surfaces, dont beaucoup répètent les mêmes données — la section Compte du
-storefront web et celle du mobile portent les mêmes onze sous-écrans et la même donnée.
+**The observation.** Applied literally, "every screen, seven dimensions" yields a hundred-odd
+screens across five surfaces, many of them repeating the same data — the Account section of the web
+storefront and that of mobile carry the same eleven sub-screens and the same data.
 
-**La décision.** **Couverture exhaustive, rédaction dédupliquée.** Chaque écran est énuméré, rien
-n'est oublié. Mais les sept dimensions ne sont rédigées en entier que là où l'écran introduit une
-**forme de donnée**, une **commande**, un **besoin temps réel** ou une **contrainte de surface**
-nouvelle. Ailleurs, un renvoi d'une ligne vers l'écran qui l'a déjà décrite.
+**The decision.** **Exhaustive coverage, deduplicated writing.** Every screen is enumerated, nothing
+is forgotten. But the seven dimensions are written out in full only where the screen introduces a
+new **data shape**, a new **command**, a new **real-time need** or a new **surface constraint**.
+Elsewhere, a one-line cross-reference to the screen that already described it.
 
-**Pourquoi.** Ce qui fait un contrat, c'est l'ensemble des formes et des commandes — pas
-l'énumération. Et l'énumération reste nécessaire pour que le temps 3 puisse contester : « cet
-écran n'est pas servi » exige que l'écran ait été nommé.
+**Why.** What makes a contract is the set of shapes and commands — not the enumeration. And the
+enumeration remains necessary so that time 3 can contest: "this screen is not served" requires that
+the screen have been named.
 
-### D-007 — La contestation du temps 3 reste dans le fichier de sa surface
+### D-007 — The time 3 challenge stays in its own surface's file
 
-**Le constat.** Le prompt prévoit que les cinq spécialistes contestent l'offre au temps 3, mais
-sa liste de livrables ne connaît que `needs/<surface>.md`. La contestation n'avait pas de
-destination.
+**The observation.** The prompt has the five specialists contest the offer at time 3, but its list
+of deliverables knows only `needs/<surface>.md`. The challenge had no destination.
 
-**La décision.** Chaque spécialiste ajoute une section **« Confrontation »** à son propre
-`needs/<surface>.md`. Il en reste **seul auteur**, et le fichier porte l'histoire complète d'une
-surface : ce qu'elle demandait, ce qu'on lui a répondu, ce qu'elle conteste. Les arbitrages rendus
-par le chef vont dans ce journal.
+**The decision.** Each specialist adds a **"Confrontation"** section to its own
+`needs/<surface>.md`. It remains **sole author** of it, and the file carries the complete history of
+a surface: what it asked for, what it was answered, what it contests. The arbitrations handed down
+by the lead go in this log.
 
-**Écarté** : une synthèse unique écrite par le chef. Elle ferait du chef le filtre de ce qui
-remonte, et c'est précisément ce qu'un temps de confrontation existe pour éviter.
+**Set aside**: a single synthesis written by the lead. That would make the lead the filter for what
+gets escalated, which is precisely what a confrontation phase exists to prevent.
 
-### D-008 — Un commit à chaque point d'arrêt
+### D-008 — One commit at every stopping point
 
-**La décision.** `arthome-core` est committé à la fin de la phase 0, puis à la fin de chacun des
-trois temps. Messages en anglais. **Aucun remote, aucun push, jamais** — conforme au prompt.
+**The decision.** `arthome-core` is committed at the end of phase 0, then at the end of each of the
+three times. Messages in English. **No remote, no push, ever** — as the prompt requires.
 
-**Pourquoi.** Huit agents écrivent dans ce dépôt sur trois à quatre sessions. Les commits donnent
-la récupérabilité si deux agents se marchent dessus, et rendent lisible ce que chaque temps a
-produit.
+**Why.** Eight agents write into this repository across three to four sessions. Commits give
+recoverability if two agents collide, and make legible what each time produced.
 
-### D-009 — Cette session définit des contrats, elle ne conçoit pas d'écrans
+### D-009 — This session defines contracts, it does not design screens
 
-**Le rappel, posé par le chef de projet.** L'objet de cette session est de définir **les contrats
-d'interface, l'architecture backend et l'authentification**. Pas de réaliser les écrans, ni de les
-décrire.
+**The reminder, set by the project owner.** The object of this session is to define **the interface
+contracts, the backend architecture and authentication**. Not to build the screens, nor to describe
+them.
 
-**Le risque réel.** Cinq agents qui lisent des maquettes haute fidélité écran par écran dérivent
-naturellement vers la description d'interface : mise en page, composants, jetons, animations,
-ordre de focus. Ce travail est déjà fait — les maquettes *sont* la conception — et le refaire en
-prose produirait cinq documents longs et inutiles au contrat.
+**The real risk.** Five agents reading high-fidelity mockups screen by screen drift naturally into
+interface description: layout, components, tokens, animations, focus order. That work is already
+done — the mockups *are* the design — and redoing it in prose would produce five long documents,
+useless to the contract.
 
-**Le test, à recopier dans le prompt de chaque coéquipier.** Une observation entre dans
-`needs/<surface>.md` **seulement si elle change ce que le contrat doit porter ou garantir**.
+**The test, to be copied into every teammate's prompt.** An observation enters `needs/<surface>.md`
+**only if it changes what the contract must carry or guarantee**.
 
-| N'entre pas | Entre |
+| Does not enter | Enters |
 |---|---|
-| « la carte fait 320 × 180, rayon 4 px » | « la carte affiche un compteur de spectateurs qui doit être temps réel à moins de N secondes » |
-| « le focus passe à l'échelle 1,08 » | « la TV n'accepte aucune saisie au-delà de six caractères : le paiement doit être un appairage d'appareil » |
-| « les squelettes de chargement utilisent l'animation `skel` » | « cet écran doit distinguer *votre connexion* de *nos serveurs* : l'enveloppe d'erreur doit porter cette distinction » |
-| « le tchat est un panneau latéral de 420 px » | « un message de tchat porte sa position dans le média, pas son heure d'envoi » |
+| "the card is 320 × 180, radius 4 px" | "the card shows a viewer counter that must be real time to within N seconds" |
+| "focus scales to 1.08" | "the TV accepts no input beyond six characters: payment must be a device pairing" |
+| "loading skeletons use the `skel` animation" | "this screen must distinguish *your connection* from *our servers*: the error envelope must carry that distinction" |
+| "chat is a 420 px side panel" | "a chat message carries its position in the media, not its send time" |
 
-Formulé autrement : le spécialiste de surface **exprime un besoin**, il ne décrit pas une
-solution d'interface. S'il se surprend à écrire un pixel, une couleur ou un nom de composant,
-c'est qu'il est sorti du périmètre.
+Put another way: the surface specialist **expresses a need**, it does not describe an interface
+solution. If it catches itself writing a pixel, a colour or a component name, it has left the scope.
 
-**Ce qui reste légitime** : les contraintes propres à la surface, quand elles contraignent le
-contrat — la TV et ses cinq touches, Capacitor et ses liens profonds, Next et le rendu serveur qui
-fait de la session son affaire, React Native et son cycle de vie.
+**What remains legitimate**: the constraints proper to the surface, when they constrain the
+contract — the TV and its five keys, Capacitor and its deep links, Next and the server rendering
+that makes the session its business, React Native and its lifecycle.
 
 ---
 
-## Temps 1 — 21 septembre 2026
+## Time 1 — 21 September 2026
 
-### D-010 — La pagination reste choisie par le motif d'interface, avec deux exceptions nommées
+### D-010 — Pagination stays chosen by the interface pattern, with two named exceptions
 
-**La décision d'origine, confirmée.** Storefront = **curseur** (défilement infini, plus fluide
-pour le spectateur) ; studio = **page + total** (on épingle une page et on l'envoie à un
-collègue). La raison est une affordance d'interface, pas une propriété de la donnée.
+**The original decision, confirmed.** Storefront = **cursor** (infinite scroll, smoother for the
+viewer); studio = **page + total** (you pin a page and send it to a colleague). The reason is an
+interface affordance, not a property of the data.
 
-**Ce que la recherche a confirmé.** Le cadre que l'industrie recommande est exactement celui-là :
-choisir d'abord selon le **motif d'interface**, ensuite selon la donnée, enfin selon le cache.
-Curseur pour les flux et le défilement infini ; décalage pour les tableaux de back-office où l'on
-veut des numéros de page et des signets. Slack n'a migré d'offset vers curseur que lorsque ses
-volumes ont explosé. Et le compromis est précisément celui qui a été pesé : le curseur ne donne
-**ni total ni saut de page**, ce que la littérature signale comme problématique pour un
-back-office. Épingler et partager une page, c'est `?page=3`.
+**What the research confirmed.** The framework the industry recommends is exactly that one: choose
+first by **interface pattern**, then by the data, last by the cache. Cursor for feeds and infinite
+scroll; offset for back-office tables where you want page numbers and bookmarks. Slack only
+migrated from offset to cursor once its volumes exploded. And the trade-off is precisely the one
+that was weighed: a cursor gives **neither a total nor page jumps**, which the literature flags as
+problematic for a back office. Pinning and sharing a page is `?page=3`.
 
-**Correction d'une erreur du chef.** Le chef avait annoncé « quatre agents contestent cette
-décision par quatre chemins ». Relecture faite, **deux seulement** portent sur curseur contre
-décalage :
+**Correcting an error of the lead's.** The lead had announced "four agents contest this decision
+along four paths". On re-reading, **only two** bear on cursor versus offset:
 
-| Agent | Objection | Porte-t-elle sur le mécanisme ? |
+| Agent | Objection | Does it bear on the mechanism? |
 |---|---|---|
-| `studio-web`, `studio-mobile` | file de modération et tchat grossissent pendant la lecture | **oui** |
-| `storefront-web` | la recherche regroupe les dates sous une carte de spectacle | non — c'est l'**unité** paginée |
-| `storefront-mobile` | un curseur doit survivre à une nuit | non — c'est la **durée de vie** du curseur |
+| `studio-web`, `studio-mobile` | moderation queue and chat grow while you read | **yes** |
+| `storefront-web` | search groups dates under a show card | no — that is the paginated **unit** |
+| `storefront-mobile` | a cursor must survive overnight | no — that is the cursor's **lifetime** |
 
-Quatre objections avaient été rangées sous une étiquette qui n'en couvrait que deux.
+Four objections had been filed under a label that covered only two of them.
 
-**Les deux exceptions, et pas une de plus.** La **file de modération** et le **tchat en direct**
-passent au curseur. Motif : ce sont des flux, pas des tableaux, même hébergés dans le studio — une
-pagination par décalage y duplique et y saute mécaniquement, puisque des lignes s'insèrent pendant
-la lecture. La règle reste « selon le motif d'interface » ; ces deux collections ont le motif d'un
-flux.
+**The two exceptions, and not one more.** The **moderation queue** and **live chat** move to cursor.
+Reason: these are feeds, not tables, even when hosted in the studio — offset pagination there
+mechanically duplicates and skips, since rows are inserted while you read. The rule remains "by
+interface pattern"; these two collections have the pattern of a feed.
 
-**Le journal reste en page + total.** `studio-web` le demandait au curseur, pour cause de décalage
-profond sur 24 mois de conservation. Écarté : personne ne pagine jusqu'au 50 000ᵉ élément d'un
-journal, on filtre par période d'abord. **Décalage + filtre de période obligatoire** garde les
-numéros de page — donc l'affordance voulue — et reste rapide. Passer au curseur échangerait un
-problème qu'on n'a pas contre la perte de ce qu'on voulait.
+**The audit log stays on page + total.** `studio-web` asked for cursor, on account of deep offset
+over 24 months of retention. Set aside: nobody paginates to the 50,000th entry of a log, you filter
+by period first. **Offset + mandatory period filter** keeps the page numbers — hence the intended
+affordance — and stays fast. Moving to cursor would trade a problem we do not have for the loss of
+what we wanted.
 
-**Deux sujets orthogonaux, renvoyés au backend comme questions** et non tranchés ici :
-l'**unité** de pagination de la recherche (spectacles ou dates), et la **durée de vie d'un
-curseur**, avec un code explicite « trop ancien, recharge tout ».
+**Two orthogonal subjects, referred to the backend as questions** and not settled here: the
+pagination **unit** for search (shows or dates), and the **lifetime of a cursor**, with an explicit
+code meaning "too old, reload everything".
 
-**Une pratique confirmée**, qui rejoint une décision déjà prise : Stripe, GitHub et Slack encodent
-le curseur en **Base64 opaque** sur une clé de tri composite (`created_at` + identifiant). C'est
-le « tri déterministe avec départage par identifiant » déjà acté.
+**A practice confirmed**, which meets a decision already taken: Stripe, GitHub and Slack encode the
+cursor as **opaque Base64** over a composite sort key (`created_at` + identifier). That is the
+"deterministic sort with tie-break on identifier" already settled.
 
-### D-011 — Deux commandes distinctes : places et marchandise
+### D-011 — Two distinct orders: seats and merchandise
 
-**Le constat.** Le chef avait donné aux spécialistes une instruction fausse — un panier portant
-« places **et** marchandise ». `storefront-web` a vérifié plutôt que de le croire :
-`ticketing.cart.head` et `.title` valent « Panier merch », l'état vide dit « Le merch s'ajoute
-depuis la boutique d'un live », et l'achat d'une place est un parcours séparé en modale.
+**The observation.** The lead had given the specialists a false instruction — a cart carrying "seats
+**and** merchandise". `storefront-web` verified rather than believe it: `ticketing.cart.head` and
+`.title` read "Panier merch", the empty state says "Le merch s'ajoute depuis la boutique d'un live",
+and buying a seat is a separate flow in a modal.
 
-**La décision.** Le contrat porte **deux commandes distinctes**. C'est ce que la conception montre
-réellement sur les trois storefronts, et les deux n'ont ni les mêmes garanties (une place a une
-jauge, un code, une fenêtre d'annulation), ni le même prestataire d'expédition, ni le même
-destinataire de versement.
+**The decision.** The contract carries **two distinct orders**. That is what the design actually
+shows on all three storefronts, and the two have neither the same guarantees (a seat has a capacity,
+a code, a cancellation window), nor the same shipping provider, nor the same payout recipient.
 
-**Écarté** : la commande mixte. Elle est sans doute inévitable un jour — acheter une place et le
-t-shirt du spectacle en un paiement — mais **aucune maquette ne la montre**. La graver maintenant
-reviendrait à mettre dans le contrat une intention que rien n'a éprouvée, ce que la mission
-interdit explicitement.
+**Set aside**: the mixed order. It is doubtless inevitable one day — buying a seat and the show's
+t-shirt in one payment — but **no mockup shows it**. Carving it now would be putting into the
+contract an intention nothing has tested, which the mission explicitly forbids.
 
-**À relier** : les commandes externes (E14) et la boutique (C8) attendent toujours un contexte
-propriétaire.
+**To be connected**: external orders (E14) and the store (C8) are still waiting for an owning
+context.
 
-### D-012 — `@arthome/contracts` expose une entrée sans barillet
+### D-012 — `@arthome/contracts` exposes a barrel-free entry point
 
-**Les mesures.** Deux agents ont mesuré indépendamment, et convergent :
+**The measurements.** Two agents measured independently, and converge:
 
-| Entrée | `storefront-mobile` | `storefront-tv` |
+| Entry point | `storefront-mobile` | `storefront-tv` |
 |---|---|---|
-| `zod` classique | 93 Ko gzip | 92 Ko gzip |
-| `zod/mini` élagué | 7,5 Ko | 7,7 Ko |
+| classic `zod` | 93 KB gzip | 92 KB gzip |
+| `zod/mini` tree-shaken | 7.5 KB | 7.7 KB |
 
-**La cause, identifiée par `storefront-mobile`** : l'entrée classique rend joignables **64 fichiers
-de traduction** des messages d'erreur (341 Ko de source), poids mort intégral pour un projet en
-**i18n par codes** — qui interdit de toute façon d'afficher un message de bibliothèque.
-`storefront-tv` ajoute que le coût est **fixe, pas marginal** : 267 octets d'écart entre un schéma
-trivial et un schéma de vingt champs. On ne peut donc pas s'en tirer en limitant le nombre de
-schémas sur les surfaces contraintes ; le coupable est l'espace de noms `z`, un import barillet.
+**The cause, identified by `storefront-mobile`**: the classic entry point makes **64 translation
+files** of error messages reachable (341 KB of source), entirely dead weight for a project using
+**i18n by codes** — which forbids displaying a library message anyway. `storefront-tv` adds that the
+cost is **fixed, not marginal**: 267 bytes of difference between a trivial schema and a
+twenty-field schema. So you cannot get out of it by limiting the number of schemas on the
+constrained surfaces; the culprit is the `z` namespace, a barrel import.
 
-**La décision.** `@arthome/contracts` **expose une entrée sans fichier baril**, et c'est une
-exigence de `definition-of-done.md`. Aucun des deux agents ne rouvre la décision zod elle-même, et
-elle n'est pas rouverte.
+**The decision.** `@arthome/contracts` **exposes an entry point with no barrel file**, and that is a
+requirement of `definition-of-done.md`. Neither agent reopens the zod decision itself, and it is not
+reopened.
 
-**Réserve consignée** : les deux mesures portent sur un schéma isolé compilé par esbuild, pas sur
-un bundle applicatif réel, et le gain de `zod/mini` est **conditionnel à un élagage que
-l'empaqueteur React Native n'active pas par défaut**. À revérifier sur un vrai bundle au palier
-mobile. La concordance des deux mesures à 1 Ko près rend l'ordre de grandeur sûr.
+**Reservation recorded**: both measurements are on an isolated schema compiled by esbuild, not on a
+real application bundle, and the `zod/mini` gain is **conditional on tree shaking that the React
+Native bundler does not enable by default**. To be re-verified on a real bundle at the mobile stage.
+The two measurements agreeing to within 1 KB makes the order of magnitude safe.
 
-### D-013 — Des conventions de développement communes, et l'outillage qui les tient
+### D-013 — Common development conventions, and the tooling that holds them
 
-**Demandé par le chef de projet**, en ajout à la mission. Celle-ci disait « rien d'autre » ; le
-chef de projet l'élargit, et c'est consigné comme tel. La raison est de calendrier : cinq dépôts
-d'application plus `arthome-platform` vont naître, et des conventions écrites après coup ne sont
-jamais appliquées.
+**Requested by the project owner**, in addition to the mission. The mission said "nothing else"; the
+project owner widens it, and it is recorded as such. The reason is scheduling: five application
+repositories plus `arthome-platform` are about to be born, and conventions written after the fact
+are never applied.
 
-**Livrable** : `architecture/code-conventions.md`, écrit par un septième coéquipier lancé au
-temps 2, en parallèle de `backend-domain` et d'`auth` — le travail ne dépend d'aucun des deux.
+**Deliverable**: `architecture/code-conventions.md`, written by a seventh teammate launched at
+time 2, in parallel with `backend-domain` and `auth` — the work depends on neither.
 
-**Outillage : ESLint + Prettier, sur les sept dépôts.** Biome a été écarté malgré sa rapidité et
-son unicité : le projet veut démontrer la qualité, et ce sont les greffons de framework — lint de
-template Angular, règles des hooks et du compilateur React, `eslint-config-next` — qui attrapent
-les vraies fautes. Biome n'a pas cet écosystème.
+**Tooling: ESLint + Prettier, across the seven repositories.** Biome was set aside despite its speed
+and its single-tool appeal: the project wants to demonstrate quality, and it is the framework
+plugins — Angular template lint, React hooks and compiler rules, `eslint-config-next` — that catch
+the real faults. Biome does not have that ecosystem.
 
-**La contrainte n°1, posée par le chef de projet : ESLint et Prettier ne doivent jamais se
-contredire.** La réponse est établie et a été vérifiée en ligne pour septembre 2026 :
+**Constraint no. 1, set by the project owner: ESLint and Prettier must never contradict each
+other.** The answer is established and was verified online for September 2026:
 
-1. `eslint-config-prettier` désactive toutes les règles ESLint touchant au formatage, et il est
-   **le dernier élément** du tableau de configuration à plat — placé avant, il ne désactive rien
-   de ce qui suit ;
-2. **`eslint-plugin-prettier` est proscrit.** Faire tourner Prettier comme une règle ESLint est
-   explicitement déconseillé aujourd'hui : cela ralentit ESLint et produit des erreurs
-   incompréhensibles. C'est le montage qui *crée* les conflits qu'on veut éviter ;
-3. une **porte locale** : `npx eslint-config-prettier <fichier>` énumère les règles encore en
-   conflit et doit rendre une liste vide, sur chaque dépôt ;
-4. deux règles gênent même ainsi — `arrow-body-style` et `prefer-arrow-callback` — et sont
-   nommées dans le document.
+1. `eslint-config-prettier` turns off every ESLint rule that touches formatting, and it is the
+   **last element** of the flat config array — placed earlier, it turns off nothing that follows;
+2. **`eslint-plugin-prettier` is banned.** Running Prettier as an ESLint rule is explicitly
+   discouraged today: it slows ESLint down and produces incomprehensible errors. That setup is what
+   *creates* the conflicts we want to avoid;
+3. a **local gate**: `npx eslint-config-prettier <file>` enumerates the rules still in conflict and
+   must return an empty list, in every repository;
+4. two rules get in the way even so — `arrow-body-style` and `prefer-arrow-callback` — and are named
+   in the document.
 
-Partage écrit noir sur blanc : **Prettier possède le formatage, ESLint ne possède que la qualité
-de code.** Recouvrement zéro, vérifié par une commande et non par la discipline.
+The split, written in black and white: **Prettier owns formatting, ESLint owns only code quality.**
+Zero overlap, verified by a command and not by discipline.
 
-**Ce document n'est pas `critical-rules.md`.** Celui-ci reste sous vingt lignes et porte les
-règles métier impératives, parce qu'au-delà il n'est plus lu à chaque session. Des conventions de
-style n'y ont pas leur place.
+**This document is not `critical-rules.md`.** That one stays under twenty lines and carries the
+imperative domain rules, because beyond that it stops being read every session. Style conventions
+have no place there.
 
-### D-014 — `@arthome/tooling`, troisième paquet publié de `arthome-core`
+### D-014 — `@arthome/tooling`, third published package of `arthome-core`
 
-**La décision, et son nom, viennent du chef de projet.** Un paquet à côté de `@arthome/core` et
-`@arthome/contracts`, publié sur GitHub Packages, portant la configuration de base que chaque
-dépôt **étend** : ESLint, Prettier, **TypeScript** et Vitest.
+**The decision, and its name, come from the project owner.** A package alongside `@arthome/core` and
+`@arthome/contracts`, published on GitHub Packages, carrying the base configuration that every
+repository **extends**: ESLint, Prettier, **TypeScript** and Vitest.
 
-**Écarté** : la recopie avec porte anti-dérive, et l'autonomie complète de chaque dépôt. Avec sept
-dépôts et une seule personne, des configurations autonomes divergeront — c'est exactement la faute
-E2 (la table littérale parallèle) appliquée à l'outillage.
+**Set aside**: copying with an anti-drift gate, and full autonomy for each repository. With seven
+repositories and one person, autonomous configurations will diverge — that is exactly fault E2 (the
+parallel literal table) applied to tooling.
 
-**⚠ La contrainte TypeScript — version corrigée le 21 septembre 2026, après vérification au
-registre npm par le coéquipier `conventions`.**
+**⚠ The TypeScript constraint — version corrected on 21 September 2026, after verification against
+the npm registry by the `conventions` teammate.**
 
-La première rédaction de cette décision affirmait une **fracture** entre dépôts : Angular sur TS
-6.0.x, React sur TS 7.x, et des `.d.ts` partagés devant servir les deux majeures simultanément.
-**C'était faux.** Le chef avait lu le `verified-versions: typescript 7.0.2` de `react-how-to`
-comme une contrainte, alors que c'est un **constat de registre** — ce qui était courant le jour de
-vérification de la skill.
+The first draft of this decision asserted a **fracture** between repositories: Angular on TS 6.0.x,
+React on TS 7.x, and shared `.d.ts` files having to serve both majors at once. **That was false.**
+The lead had read `react-how-to`'s `verified-versions: typescript 7.0.2` as a constraint, when it is
+a **registry observation** — what was current on the day the skill was verified.
 
-Ce que dit réellement le registre :
+What the registry actually says:
 
-| Paquet | Contrainte réelle sur `typescript` |
+| Package | Real constraint on `typescript` |
 |---|---|
-| `@angular/compiler-cli@22.1.7` | `>=6.0 <6.1` — **peer dependency, dure** |
-| `react-native@0.87.1` | **aucun peer `typescript`** |
-| `@types/react@19.3.0` | **aucun peer `typescript`** |
-| `@nestjs` (`nest build`) | **abandonne sur TS 7.0** (`UNSUPPORTED_TYPESCRIPT_VERSION`) — TS 7.0 ne livre pas d'API programmatique |
-| **`typescript-eslint@8.70.0`** | **`>=4.8.4 <6.1.0`** — et la demande de support TS 7 est fermée « not planned » |
+| `@angular/compiler-cli@22.1.7` | `>=6.0 <6.1` — **peer dependency, hard** |
+| `react-native@0.87.1` | **no `typescript` peer** |
+| `@types/react@19.3.0` | **no `typescript` peer** |
+| `@nestjs` (`nest build`) | **gives up on TS 7.0** (`UNSUPPORTED_TYPESCRIPT_VERSION`) — TS 7.0 ships no programmatic API |
+| **`typescript-eslint@8.70.0`** | **`>=4.8.4 <6.1.0`** — and the TS 7 support request is closed "not planned" |
 
-**La conclusion s'inverse.** Il n'y a pas de fracture entre dépôts : il y a un **plafond unique à
-TS 6.0.x sur les sept**, imposé par `typescript-eslint` — c'est-à-dire par l'outil même qui
-justifiait d'écarter Biome en D-013. Le lint typé est la raison du choix ; il en est aussi le
-plafond.
+**The conclusion inverts.** There is no fracture between repositories: there is a **single ceiling at
+TS 6.0.x across all seven**, imposed by `typescript-eslint` — that is, by the very tool that
+justified setting Biome aside in D-013. Typed lint is the reason for the choice; it is also its
+ceiling.
 
-**La décision : TypeScript 6.0.3 sur les sept dépôts, épinglé exact.** Rien ne pousse vers le haut
-aujourd'hui.
+**The decision: TypeScript 6.0.3 on the seven repositories, pinned exact.** Nothing pushes upward
+today.
 
-**La fracture est un événement futur, pas un état présent** — `latest` vaut déjà 7.0.2. Elle est
-rendue **survivable** plutôt que niée : les deux paquets partagés se compilent avec le **plancher**
-de leurs consommateurs, avec `stableTypeOrdering: true` (le tri déterministe de TS 7 porté à
-TS 6 — les `.d.ts` publiés sont donc *déjà* ce que 7 émettrait) et surtout
-**`isolatedDeclarations: true`**, qui force à annoter toute la surface publique. C'est une
-garantie bien meilleure qu'une interdiction de syntaxe — d'autant qu'**il n'existe pas de syntaxe
-propre à TS 7** : 7.0 est un portage Go à parité de vérification. Le danger réel est dans les
-**options** (TS 6 a changé `types`, `rootDir`, `module`, `strict`) et dans l'**ordre d'émission**.
+**The fracture is a future event, not a present state** — `latest` is already 7.0.2. It is made
+**survivable** rather than denied: the two shared packages compile against the **floor** of their
+consumers, with `stableTypeOrdering: true` (TS 7's deterministic ordering backported to TS 6 — the
+published `.d.ts` are therefore *already* what 7 would emit) and above all
+**`isolatedDeclarations: true`**, which forces the whole public surface to be annotated. That is a
+far better guarantee than a syntax ban — all the more so since **there is no syntax proper to
+TS 7**: 7.0 is a Go port at checking parity. The real danger is in the **options** (TS 6 changed
+`types`, `rootDir`, `module`, `strict`) and in the **emission order**.
 
-**La preuve** : `tools/dts-check/` compile le contrat publié sous `typescript@6.0.3` puis sous
-`7.0.2` (`tsgo`), avec **`skipLibCheck: false`** — sans quoi la porte passe toujours — plus un
-`git diff --exit-code` sur les `.d.ts`. Quand Angular montera, les `.d.ts` ne changeront pas et la
-porte s'inversera, dépôt par dépôt.
+**The proof**: `tools/dts-check/` compiles the published contract under `typescript@6.0.3` then
+under `7.0.2` (`tsgo`), with **`skipLibCheck: false`** — without which the gate always passes — plus
+a `git diff --exit-code` on the `.d.ts`. When Angular moves up, the `.d.ts` will not change and the
+gate will invert, repository by repository.
 
-**Ce que le paquet porte, et comment** — établi par `conventions` : `eslint`, `prettier` et
-`typescript` en **peer** (ce sont les binaires que le dépôt exécute) ; `typescript-eslint`,
-`eslint-config-prettier`, `import-x` et `globals` en **dependencies**, épinglés exact — en
-configuration à plat un greffon est un *objet passé par valeur*, plus un nom à résoudre, donc sans
-ambiguïté. Les greffons de pile (`angular-eslint`, `eslint-config-next`, react-hooks, RN) **nulle
-part**, sinon les sept dépôts devraient monter de framework ensemble. `vitest` ni en peer ni en
-dépendance : l'entrée exporte un objet nu et jamais un `defineConfig`, sinon Angular (Vitest 4) et
-les autres (Vitest 5) ne peuvent pas coexister.
+**What the package carries, and how** — established by `conventions`: `eslint`, `prettier` and
+`typescript` as **peers** (they are the binaries the repository executes); `typescript-eslint`,
+`eslint-config-prettier`, `import-x` and `globals` as **dependencies**, pinned exact — in flat
+config a plugin is an *object passed by value*, no longer a name to resolve, hence no ambiguity.
+Stack plugins (`angular-eslint`, `eslint-config-next`, react-hooks, RN) **nowhere**, otherwise the
+seven repositories would have to move framework together. `vitest` neither as peer nor as
+dependency: the entry point exports a bare object and never a `defineConfig`, otherwise Angular
+(Vitest 4) and the others (Vitest 5) cannot coexist.
 
-**Propagation** : allumer une règle est un changement **MAJEUR** — sinon sept dépôts passent au
-rouge sur un `pnpm update`. Toute règle passe par `warn` en mineur N, puis `error` en majeur N+1,
-un seul dépôt en transit à la fois. `arthome-core` consomme son propre paquet avant publication.
+**Propagation**: turning a rule on is a **MAJOR** change — otherwise seven repositories go red on a
+`pnpm update`. Every rule goes through `warn` in minor N, then `error` in major N+1, one repository
+in transit at a time. `arthome-core` consumes its own package before publication.
 
-### D-015 — Modèle fiscal : commissionnaire, à valider par un conseil
+### D-015 — Tax model: commissionaire, to be validated by an adviser
 
-**Le problème (D5).** La fixture calcule `net = brut − 12 % − TVA(brut)` à taux unique ; la maquette
-des versements ventile la TVA **par marché de facturation**. Les deux sont incompatibles et
-**aucune n'est instruite**. `backend-domain` a instruit plutôt que de supposer.
+**The problem (D5).** The fixture computes `net = gross − 12 % − VAT(gross)` at a single rate; the
+payouts mockup breaks VAT down **by billing market**. The two are incompatible and **neither is
+researched**. `backend-domain` researched rather than assume.
 
-**La décision.** Le **modèle commissionnaire** : Arthome agit en son nom propre, l'assiette est le
-**billet entier**, le taux est celui du **pays du spectateur**, le redevable est **Arthome**.
-Fondé sur six indices convergents de la conception — Arthome affiche le prix, encaisse, facture,
-tient la politique d'annulation, rembourse, émet l'avoir ; le spectateur ne contracte jamais avec
-l'artiste.
+**The decision.** The **commissionaire model**: Arthome acts in its own name, the base is the
+**whole ticket**, the rate is that of the **viewer's country**, the liable party is **Arthome**.
+Grounded in six converging indications from the design — Arthome displays the price, collects,
+invoices, holds the cancellation policy, refunds, issues the credit note; the viewer never contracts
+with the artist.
 
-**Et la commission porte sur le HT, pas le TTC.** Sur le TTC, les 12 % annoncés aux artistes
-varieraient avec le pays de l'acheteur — une commission qui change selon l'acheteur n'est pas une
-commission.
+**And the commission is on the net-of-tax amount, not the gross.** On the tax-inclusive amount, the
+12 % announced to artists would vary with the buyer's country — a commission that changes with the
+buyer is not a commission.
 
-**⚠ Ce n'est pas un avis fiscal.** `adr-payments.md` doit le porter en tête : le modèle est à
-**valider par un conseil avant tout encaissement réel**. Le risque est nul aujourd'hui — Stripe en
-mode test, aucun argent réel.
+**⚠ This is not tax advice.** `adr-payments.md` must carry it at the top: the model is **to be
+validated by an adviser before any real collection**. The risk is nil today — Stripe in test mode,
+no real money.
 
-**Ce qui est sûr dans les deux modèles, et qui est le vrai enjeu** : la **ventilation par marché**.
-Un `vat_amount` scalaire unique aurait été le seul choix réellement irréversible, et c'est
-précisément celui que la fixture invitait à faire.
+**What is certain in both models, and is the real stake**: the **per-market breakdown**. A single
+scalar `vat_amount` would have been the only genuinely irreversible choice, and it is precisely the
+one the fixture invited.
 
-### D-016 — La préférence de devise d'affichage est retirée au palier 1
+### D-016 — The display-currency preference is withdrawn at stage 1
 
-**Le constat.** `backend-domain` refuse d'honorer `storefront-web` Q29. C'est le seul endroit de
-toute la session où un agent demande à la **conception** de reculer, et l'argument est juste :
-afficher un prix converti qu'on ne peut pas débiter est un mensonge, et D4 a montré qu'**aucune
-règle n'a jamais été éprouvée sur deux taux** — les trois marchés sont déclarés, un seul est
-exercé.
+**The observation.** `backend-domain` refuses to honour `storefront-web` Q29. It is the only place
+in the whole session where an agent asks **design** to back down, and the argument is right:
+displaying a converted price you cannot charge is a lie, and D4 showed that **no rule has ever been
+exercised on two rates** — three markets are declared, one is exercised.
 
-**La décision.** La préférence de devise **disparaît des écrans** au palier 1. Les prix s'affichent
-dans la devise du marché de facturation de la date, formatés côté client selon la locale.
+**The decision.** The currency preference **disappears from the screens** at stage 1. Prices are
+displayed in the currency of the billing market for the date, formatted client-side by locale.
 
-**Réversible** : la préférence pourra revenir le jour où une vraie règle de conversion existera —
-source du taux, date de change, arrondi, qui porte l'écart. Le coût immédiat est une case en moins
-dans les réglages du compte.
+**Reversible**: the preference can come back the day a real conversion rule exists — rate source,
+exchange date, rounding, who bears the difference. The immediate cost is one fewer box in the
+account settings.
 
-### D-017 — Quatre arbitrages secondaires, acceptés tels que proposés
+### D-017 — Four secondary arbitrations, accepted as proposed
 
-Remontés par `backend-domain`, acceptés avec son raisonnement :
+Raised by `backend-domain`, accepted with its reasoning:
 
-- **Portée de l'avoir : la chaîne émettrice.** Un avoir utilisable partout obligerait la plateforme
-  à financer la part d'un autre artiste sur ses fonds propres. Borne l'engagement de trésorerie.
-- **Troisième canal de notification : `in_app`, pas `sms`.** Coût par message, réglementation
-  propre, prestataire de plus — pour une valeur que rien n'a éprouvée.
-- **Commande de marchandise mono-vendeur.** Un panier à deux chaînes se scinde au paiement ; le
-  motif métier et le motif Stripe sont indépendants et concordent.
-- **Remise et promotion ne se cumulent pas** : la plus favorable au spectateur s'applique.
+- **Credit-note scope: the issuing channel.** A credit note usable anywhere would force the platform
+  to fund another artist's share out of its own money. Bounds the cash commitment.
+- **Third notification channel: `in_app`, not `sms`.** Cost per message, its own regulation, one
+  more provider — for a value nothing has tested.
+- **Single-vendor merchandise order.** A cart spanning two channels splits at payment; the domain
+  reason and the Stripe reason are independent and agree.
+- **Discount and promotion do not stack**: whichever favours the viewer applies.
 
-### D-018 — `answers-to-surfaces.md` est conservé
+### D-018 — `answers-to-surfaces.md` is kept
 
-`backend-domain` a ajouté un huitième fichier hors table de livraison, index des 99 réponses aux
-questions des surfaces, et demande s'il doit fusionner.
+`backend-domain` added an eighth file outside the delivery table, an index of the 99 answers to the
+surfaces' questions, and asks whether it should merge it.
 
-**Il reste.** Motif : au temps 3, les cinq surfaces vérifieront que leurs questions ont reçu une
-réponse — c'est exactement l'usage d'un index. Fondre 99 réponses dans `context-map.md` le rendrait
-illisible pour `backend-contracts`, et un index qui renvoie ailleurs ne duplique rien.
+**It stays.** Reason: at time 3 the five surfaces will check that their questions were answered —
+that is exactly what an index is for. Melting 99 answers into `context-map.md` would make it
+unreadable for `backend-contracts`, and an index that points elsewhere duplicates nothing.
 
-### D-019 — Le retour de régie WHEP n'est pas promis sur la coquille native
+### D-019 — WHEP control-room return is not promised on the native shell
 
-`studio-mobile` Q8. Réservé au studio **web** au palier 5 ; le studio mobile reçoit LL-HLS avec sa
-**latence réelle annoncée**, jamais une sous-seconde promise et non tenue.
+`studio-mobile` Q8. Reserved for the **web** studio at stage 5; the mobile studio gets LL-HLS with
+its **real latency stated**, never a sub-second promised and not kept.
 
-Motif : `capacitor://localhost` comme **contexte sécurisé** dans WKWebView n'est pas vérifié, et il
-conditionne aussi `getUserMedia` et Web Crypto. **À mesurer sur appareil réel avant toute
-promesse** — c'est une vérification, pas une opinion.
-
----
-
-## Temps 3 et 4 — 21 septembre 2026
-
-### D-020 — Le jeton de lecture reste à 120 s
-
-`backend-domain` a remonté ce point **sans réponse**, et il a eu raison : raccourcir à 60 s
-ramènerait la fenêtre de révocation mais **doublerait la fréquence de renouvellement sur le chemin
-le plus chaud du système**, que personne n'a mesuré.
-
-**Le défaut n'a jamais été la fenêtre, c'était la promesse.** Cinq documents annonçaient ≤ 60 s et
-le contrat servait le nombre (`playbackCutWithinSec: 60`) alors que le jeton dure 120 s. La
-correction est la vérité, pas le mécanisme.
-
-La raison décisive est venue de `backend-domain` après coup : **la propriété de sécurité qui
-compte est tenue à l'émission, pas à la révocation.** La révocation traite un droit qui a existé
-puis cessé — abonnement échu, appareil déconnecté, limite d'écrans, remboursement. Aucun de ces cas
-ne justifie de doubler la charge du chemin chaud.
-
-**Addition** : un signal `playback:stop` poussé sur le canal existant, **étiqueté courtoisie et non
-frontière de sécurité** — un client modifié l'ignore, la périphérie sert jusqu'à 120 s, la garantie
-reste 120 s. L'ADR rejette d'emblée « toute heuristique contournable » ; il serait incohérent d'en
-vendre une ensuite comme une protection.
-
-**Seuil de réouverture, chiffré et non intentionnel** : si le renouvellement à 45 s coûte moins de
-5 % du temps processeur de `streaming` en pointe et moins de 2 % de latence ajoutée au p95
-d'`OpenPlayback` — **mesuré** —, raccourcir devient gratuit.
-
-### D-021 — Le modèle fiscal confirmé, et la forme corrigée
-
-**Confirmé après vérification sur trois juridictions** : `on_behalf_of` retiré, modèle
-commissionnaire gardé. La documentation de Stripe est explicite — *« indirect charges using the
-`on_behalf_of` parameter : the merchant of record is the connected account »* —, donc le paramètre
-mettait la configuration en contradiction frontale avec le modèle qu'elle exécute.
-
-Les trois régimes convergent, et **le modèle intermédiaire n'exonère nulle part** : en Europe
-l'article 28 attrape **sur les faits** (le spectacle vivant capté n'est pas un service électronique,
-donc la présomption automatique de l'article 9a ne s'applique pas) ; aux États-Unis les lois
-*marketplace facilitator* obligent à collecter dans **46 États plus le district de Columbia**,
-quelle que soit la position contractuelle ; au Royaume-Uni HMRC n'a pas aligné ses règles sur la
-directive 2022/542, donc le fournisseur est taxé par établissement. Le 10-Q d'Eventbrite décrit
-publiquement le même montage.
-
-**Et la forme gravée était fausse, ce qui était plus grave que l'arbitrage.** `backend-domain`
-avait fait de « la ventilation par marché » son argument d'irréversibilité. Son propre diagnostic :
-**un marché de facturation est une notion de prix — dans quelle devise on vend — jamais une notion
-de taxe.** Le `skeptic` corrigeait « marché » en « pays » ; le pays ne suffit pas davantage —
-environ 9 000 juridictions aux États-Unis, et au Royaume-Uni un taux qui dépend du couple
-juridiction × nature de la prestation (Derby Quad : l'exonération des places de théâtre **ne
-s'étend pas** au direct diffusé).
-
-**La forme retenue** : `BuyerTaxLocation` (pays, subdivision, code postal, ville) portée par la
-commande, `TaxEvidence[]` avec source et horodatage, un drapeau `evidence_conflicting`, et
-`VatLine` clée sur `jurisdiction_code` / `jurisdiction_level` / `supply_kind` avec le **taux
-appliqué à la vente**. Rétention dix ans, une adresse IP conservée à titre de preuve fiscale
-relevant d'une base légale distincte du consentement.
-
-**La règle de preuve ne peut pas être déléguée à Stripe** : Stripe Tax privilégie une adresse
-unique là où l'Europe exige **deux éléments non contradictoires**. Ce n'est pas une préférence,
-personne ne le fait à notre place.
-
-**KYB/KYC et localisation fiscale ne portent pas sur la même personne** : Connect vérifie
-**l'artiste** pour pouvoir lui verser, la localisation concerne **le spectateur** pour savoir quel
-taux appliquer et le justifier dix ans. Avoir l'une ne donne rien de l'autre.
-
-**Le coût assumé** : Stripe **exige** `on_behalf_of` hors région commune, donc une chaîne suisse ou
-canadienne devra être traitée autrement ou attendre. L'avertissement de validation par un conseil
-reste entier.
-
-### D-022 — Ce qui n'a pas de source n'entre pas au contrat
-
-**La provenance des spectateurs est retirée**, pas servie vide. `studio-web` a établi que la
-maquette apporte **cinq libellés et rien d'autre** : valeurs codées en dur, et aucune source
-d'attribution dans `shared/`, `fixtures.js` ni `catalogue.json`. L'écrire aurait été laisser la
-mise en page d'un écran dicter la structure d'une API — la faute que la mission interdisait dès sa
-première page.
-
-`backend-contracts` a ajouté ce qui n'était pas demandé et qui compte : **ce qu'il faudrait pour
-que la donnée existe**, parce qu'un manque sans son remède se redécouvre.
-
-**Même traitement pour les deux tuiles mortes** de `dashboard` : elles testent le rôle principal et
-ni `mod` ni `regie` n'ouvre la page. Quatre tuiles servies, la question de produit consignée —
-ouvrir la page à ces deux rôles, ou retirer les tuiles.
-
-### D-023 — L'authentification passe par le BFF
-
-**Le BFF expose `/v1/auth/*` en relais documenté, cookie sur le domaine du BFF.** Trois contraintes
-le déterminaient : la règle critique 1 interdit qu'un navigateur appelle `identity` directement ;
-Next ne voit pas un cookie posé sur un autre domaine, ce qui viderait de son sens la surface
-choisie pour son rendu serveur ; et `capacitor://localhost` est un contexte tiers sur iOS 14+, donc
-le studio mobile ne peut porter aucun cookie.
-
-**`auth` a trouvé l'argument qui rend le relais obligatoire plutôt que préférable** : l'OpenAPI est
-généré depuis zod, donc **un relais transparent n'apparaîtrait pas dans l'OpenAPI** et les six
-contrats manquants resteraient manquants.
-
-**Invariant** : une réponse ne porte jamais un cookie **et** un jeton — deux porteurs pour une
-session, c'est deux révocations à tenir et une qu'on oubliera. Porté en `oneOf` discriminé par le
-mode, le mode étant un paramètre explicite validé par zod, jamais déduit du `User-Agent`.
-
-**Ce qui casse, assumé** : le client officiel de better-auth devient inutilisable. Contrepartie
-imprévue — `@better-auth/expo` n'étant plus installé, **l'authentification devient indifférente au
-choix Expo / React Native nu**, qui reste ouvert (D-001).
-
-### D-024 — Une porte lit le contrat, jamais une liste tenue à côté
-
-Deux durcissements de `tools/check-openapi.py`, et **les deux fois le vérificateur s'est fait
-prendre à son propre jeu**.
-
-**R14** ne se déclenchait que si `enum` **et** `x-arthome-vocabulary` coexistaient : un `enum` nu
-en réponse passait, et c'est `storefront-tv` qui l'a trouvé à la main sur `Error.nature` — dans le
-corps de **toutes** les erreurs, où une quatrième valeur aurait fait rejeter l'enveloppe entière
-par un parc qu'on ne met pas à jour. Le durcissement proposé (« tout `enum` sous
-`components/schemas` ») a été **essayé puis rejeté** : il criait sur `SearchCriteria`, référencée
-seulement en `in: query`, et un vocabulaire d'entrée est légitimement fermé. Le critère juste est
-l'**atteignabilité depuis une réponse**. Une porte qui crie à tort se fait désactiver.
-
-**R11** portait une liste d'exemptions codée en dur — c'est-à-dire **une table littérale parallèle
-au contrat, tenue dans l'outil qui existe pour les interdire**. `backend-contracts` a refusé la
-correction facile et diagnostiqué la forme. L'exemption se lit désormais dans le document, avec son
-motif obligatoire.
-
-La suppression de la liste a révélé **six opérations exemptées sans que personne n'ait jamais écrit
-pourquoi**, plus deux que la liste ne couvrait pas. Toutes légitimes — et c'est ce qui rend la
-découverte utile : *une liste de noms sans motifs est indistinguable d'une liste de noms sans
-raisons.*
+Reason: `capacitor://localhost` as a **secure context** in WKWebView is not verified, and it also
+gates `getUserMedia` and Web Crypto. **To be measured on a real device before any promise** — that
+is a verification, not an opinion.
 
 ---
 
-## Après la session — 21 septembre 2026
+## Times 3 and 4 — 21 September 2026
 
-### D-025 — Expo pour les deux surfaces React Native
+### D-020 — The playback token stays at 120 s
 
-**Décision du chef de projet : Expo**, pour `storefront-mobile` et `storefront-tv`.
+`backend-domain` raised this point **with no answer**, and it was right: shortening to 60 s would
+bring the revocation window back but would **double the renewal frequency on the hottest path in the
+system**, which nobody has measured.
 
-**Ce que cela ferme.** D-001 laissait ouvert le choix Expo / React Native nu, et notait que le
-trou d'orchestrateur en dépendait. Il est comblé : **`expo-overview` est l'orchestrateur** des deux
-surfaces, et la règle « orchestrateur si existant, sinon skills spécialisées au cas par cas »
-retrouve son premier terme. Les huit coéquipiers ont désormais tous une porte d'entrée.
+**The fault was never the window, it was the promise.** Five documents announced ≤ 60 s and the
+contract served the number (`playbackCutWithinSec: 60`) while the token lasts 120 s. The correction
+is the truth, not the mechanism.
 
-La banque compte **26 skills Expo/EAS** derrière cet orchestrateur, contre 8 skills React Native
-nues sans porte d'entrée. Le choix améliore donc aussi la couverture.
+The decisive reason came from `backend-domain` afterwards: **the security property that matters is
+held at issuance, not at revocation.** Revocation deals with a right that existed and then ceased —
+lapsed subscription, disconnected device, screen limit, refund. None of those cases justifies
+doubling the load on the hot path.
 
-**Ce que cela ne change pas.** `react-native-tv-best-practices` reste la skill principale de la TV
-— elle vise explicitement « react-native-tvos, **Expo TV** », donc elle valait déjà dans les deux
-hypothèses. Et l'authentification reste indifférente : `auth` a établi que le client officiel de
-better-auth devient inutilisable puisque le BFF projette la session en `ViewerContext`, donc
-`@better-auth/expo` n'est pas installé et le risque R4 est éteint quel que soit ce choix.
+**Addition**: a `playback:stop` signal pushed over the existing channel, **labelled a courtesy and
+not a security boundary** — a modified client ignores it, the edge serves for up to 120 s, the
+guarantee stays 120 s. The ADR rejects "any bypassable heuristic" outright; it would be incoherent
+to then sell one as a protection.
 
-**Ce qu'il faut vérifier au palier mobile.** Le dossier de passation signalait un conflit documenté
-entre `react-native-tvos` et les autres projets Expo d'un même espace de travail. En multi-dépôts
-la question ne se pose plus telle quelle (A5), mais **Expo TV et son support de `react-native-tvos`
-sont à vérifier sur la version retenue** avant d'engager la surface TV.
+**Reopening threshold, numeric and not intentional**: if renewal at 45 s costs less than 5 % of
+`streaming`'s CPU time at peak and less than 2 % added latency on `OpenPlayback`'s p95 —
+**measured** — then shortening becomes free.
 
-### D-026 — Rappel : gRPC a été écarté, `proto/` sert les événements
+### D-021 — The tax model confirmed, and the shape corrected
 
-Consigné parce que la question s'est posée après coup, et que `proto/` peut prêter à confusion.
+**Confirmed after verification across three jurisdictions**: `on_behalf_of` removed, commissionaire
+model kept. Stripe's documentation is explicit — *"indirect charges using the `on_behalf_of`
+parameter: the merchant of record is the connected account"* — so the parameter put the
+configuration in head-on contradiction with the model it executes.
 
-**Le transport retenu est HTTP/JSON décrit en OpenAPI.** `transport.md` : *« Un document OpenAPI
-par service, à côté des deux documents de BFF. Pas de gRPC. »*
+The three regimes converge, and **the intermediary model exonerates nowhere**: in Europe Article 28
+catches you **on the facts** (a captured live performance is not an electronically supplied service,
+so Article 9a's automatic presumption does not apply); in the United States marketplace facilitator
+laws require collection in **46 states plus the District of Columbia**, whatever the contractual
+position; in the United Kingdom HMRC has not aligned its rules with Directive 2022/542, so the
+supplier is taxed by establishment. Eventbrite's 10-Q publicly describes the same arrangement.
 
-**`proto/` porte 109 types et zéro `service`** : ce sont les schémas d'**événements Kafka**,
-outillés par `buf`. Protobuf sert le journal d'événements, jamais les appels synchrones.
-`backend-domain` a délibérément laissé `service` vide pour ne pas préempter une décision qui ne lui
-revenait pas.
+**And the shape that had been carved was wrong, which was graver than the arbitration.**
+`backend-domain` had made "the per-market breakdown" its irreversibility argument. Its own
+diagnosis: **a billing market is a pricing notion — what currency you sell in — never a tax
+notion.** The `skeptic` corrected "market" to "country"; country is no more sufficient — about
+9,000 jurisdictions in the United States, and in the United Kingdom a rate that depends on the pair
+jurisdiction × nature of the supply (Derby Quad: the theatre-ticket exemption **does not extend** to
+a live stream).
 
-**Le nombre qui a tranché n'est pas 192 mais 1 et 4** : les deux avantages réels de gRPC — délai
-propagé, multiplexage — paient sur la **profondeur** d'une chaîne, et cette profondeur est **1 par
-construction**, puisque aucun appel ne va entre services. Un délai n'a personne à qui se propager.
-Confirmé par le `skeptic`, y compris à travers un modèle de lecture projeté : c'est une table
-locale du service appelé, elle n'ajoute aucun saut réseau.
+**The shape adopted**: `BuyerTaxLocation` (country, subdivision, postal code, city) carried by the
+order, `TaxEvidence[]` with source and timestamp, an `evidence_conflicting` flag, and `VatLine`
+keyed on `jurisdiction_code` / `jurisdiction_level` / `supply_kind` with the **rate applied to the
+sale**. Ten-year retention, an IP address kept as tax evidence resting on a legal basis distinct
+from consent.
+
+**The evidence rule cannot be delegated to Stripe**: Stripe Tax favours a single address where
+Europe requires **two non-contradictory items**. This is not a preference, nobody does it for us.
+
+**KYB/KYC and tax location are not about the same person**: Connect verifies **the artist** so it
+can pay them, location concerns **the viewer** so we know which rate to apply and can justify it for
+ten years. Having one gives you nothing of the other.
+
+**The accepted cost**: Stripe **requires** `on_behalf_of` outside the common region, so a Swiss or
+Canadian channel will have to be handled differently or wait. The warning about validation by an
+adviser stands in full.
+
+### D-022 — What has no source does not enter the contract
+
+**Viewer attribution is withdrawn**, not served empty. `studio-web` established that the mockup
+supplies **five labels and nothing else**: hard-coded values, and no attribution source in `shared/`,
+`fixtures.js` or `catalogue.json`. Writing it would have been letting one screen's layout dictate
+the structure of an API — the fault the mission forbade on its first page.
+
+`backend-contracts` added what was not asked for and does count: **what it would take for the data to
+exist**, because a gap without its remedy gets rediscovered.
+
+**Same treatment for the two dead tiles** of `dashboard`: they test the principal role and neither
+`mod` nor `regie` opens the page. Four tiles served, the product question recorded — open the page to
+those two roles, or drop the tiles.
+
+### D-023 — Authentication goes through the BFF
+
+**The BFF exposes `/v1/auth/*` as a documented relay, cookie on the BFF's domain.** Three
+constraints determined it: critical rule 1 forbids a browser calling `identity` directly; Next does
+not see a cookie set on another domain, which would empty of its meaning the surface chosen for its
+server rendering; and `capacitor://localhost` is a third-party context on iOS 14+, so the mobile
+studio can carry no cookie.
+
+**`auth` found the argument that makes the relay mandatory rather than preferable**: the OpenAPI is
+generated from zod, so **a transparent relay would not appear in the OpenAPI** and the six missing
+contracts would stay missing.
+
+**Invariant**: a response never carries a cookie **and** a token — two bearers for one session means
+two revocations to hold and one we will forget. Carried as a `oneOf` discriminated by the mode, the
+mode being an explicit parameter validated by zod, never inferred from the `User-Agent`.
+
+**What this breaks, accepted**: better-auth's official client becomes unusable. Unforeseen
+compensation — with `@better-auth/expo` no longer installed, **authentication becomes indifferent to
+the Expo / bare React Native choice**, which stays open (D-001).
+
+### D-024 — A gate reads the contract, never a list kept beside it
+
+Two hardenings of `tools/check-openapi.py`, and **both times the checker was caught at its own
+game**.
+
+**R14** only fired if `enum` **and** `x-arthome-vocabulary` coexisted: a bare `enum` in a response
+passed, and it is `storefront-tv` that found it by hand on `Error.nature` — in the body of **every**
+error, where a fourth value would have had the whole envelope rejected by a fleet we do not update.
+The proposed hardening ("every `enum` under `components/schemas`") was **tried and then rejected**:
+it shouted at `SearchCriteria`, referenced only `in: query`, and an input vocabulary is legitimately
+closed. The right criterion is **reachability from a response**. A gate that shouts wrongly gets
+disabled.
+
+**R11** carried a hard-coded exemption list — that is, **a literal table parallel to the contract,
+kept inside the very tool that exists to forbid them**. `backend-contracts` refused the easy fix and
+diagnosed the shape. The exemption is now read from the document, with its motive mandatory.
+
+Removing the list revealed **six operations exempted without anyone ever having written why**, plus
+two the list did not cover. All legitimate — and that is what makes the discovery useful: *a list of
+names without motives is indistinguishable from a list of names without reasons.*
+
+---
+
+## After the session — 21 September 2026
+
+### D-025 — Expo for both React Native surfaces
+
+**Project owner's decision: Expo**, for `storefront-mobile` and `storefront-tv`.
+
+**What this closes.** D-001 left the Expo / bare React Native choice open, and noted that the
+orchestrator gap depended on it. It is filled: **`expo-overview` is the orchestrator** for both
+surfaces, and the rule "orchestrator where one exists, otherwise specialised skills case by case"
+recovers its first term. All eight teammates now have a front door.
+
+The bank holds **26 Expo/EAS skills** behind that orchestrator, against 8 bare React Native skills
+with no front door. The choice therefore also improves coverage.
+
+**What this does not change.** `react-native-tv-best-practices` remains the TV's primary skill — it
+explicitly targets "react-native-tvos, **Expo TV**", so it already held under both hypotheses. And
+authentication stays indifferent: `auth` established that better-auth's official client becomes
+unusable since the BFF projects the session as `ViewerContext`, so `@better-auth/expo` is not
+installed and risk R4 is extinguished whatever this choice.
+
+**What must be verified at the mobile stage.** The handoff folder reported a documented conflict
+between `react-native-tvos` and the other Expo projects of a single workspace. Under multiple
+repositories the question no longer arises in that form (A5), but **Expo TV and its support for
+`react-native-tvos` are to be verified on the chosen version** before committing to the TV surface.
+
+### D-026 — Reminder: gRPC was set aside, `proto/` serves the events
+
+Recorded because the question came up afterwards, and because `proto/` can mislead.
+
+**The chosen transport is HTTP/JSON described in OpenAPI.** `transport.md`: *"One OpenAPI document
+per service, alongside the two BFF documents. No gRPC."*
+
+**`proto/` carries 109 types and zero `service`**: these are the **Kafka event** schemas, tooled with
+`buf`. Protobuf serves the event log, never synchronous calls. `backend-domain` deliberately left
+`service` empty so as not to pre-empt a decision that was not its to make.
+
+**The number that settled it is not 192 but 1 and 4**: gRPC's two real advantages — deadline
+propagation, multiplexing — pay off on the **depth** of a chain, and that depth is **1 by
+construction**, since no call goes between services. A deadline has nobody to propagate to.
+Confirmed by the `skeptic`, including through a projected read model: that is a local table of the
+called service, it adds no network hop.
