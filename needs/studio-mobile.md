@@ -887,3 +887,378 @@ contremarques par catégorie ; la source d'un article de boutique et les command
 intégration externe ; l'épinglage d'un article pendant le direct. Six formes absentes, toutes
 affichées par la maquette. Lesquelles entrent au contrat du palier 1 ?
 → `data-model.md`, `context-map.md` (C8)
+
+---
+
+# Confrontation
+
+> Temps 3. Lecture de `answers-to-surfaces.md`, `adr-auth.md`, `context-map.md`, `data-model.md`,
+> `events.md`, `realtime.md`, `transport.md`, `critical-rules.md`, `openapi/studio.yaml` et
+> `DECISIONS.md`. **Sur pièces** : l'index des réponses est une promesse, le YAML est la preuve.
+> Chaque contestation ci-dessous est vérifiable par une ligne du contrat, citée.
+
+---
+
+## Ce qui est satisfait
+
+Court, parce que c'est massif. Sur mes treize questions, l'essentiel est tenu — et plusieurs fois
+mieux que ce que je demandais.
+
+**L'amorçage existe et il est meilleur que ma demande.** `GET /v1/bootstrap` porte la personne,
+**toutes** ses chaînes avec `roles` au vocabulaire à huit, `assignableRoles` **matérialisés**,
+`dateGrants` avec leur instant d'expiration, `rightsVersion`, `counters`, `constants`,
+`labelCatalog` et `realtime`. Et `datePanes` par chaîne **plus** `openPanes` par date : les volets
+de la fiche que j'avais trouvés dérivés du rôle sont servis, pas déduits.
+
+**La session native est tranchée dans mon sens.** `adr-auth.md` §2.2 : « `capacitor://localhost`
+est un **contexte tiers sur iOS 14+** → le cookie est mort », jeton porteur dans
+`@capacitor/preferences`, jamais `localStorage`, rafraîchissement silencieux au retour
+d'arrière-plan. §6.6 reprend mot pour mot les deux chaînes littérales de CORS et la comparaison
+sur la chaîne brute. §6.4 adopte intégralement les cinq sorties : liste blanche de chaînes
+littérales, état opaque à usage unique de 10 minutes, **état d'attente côté serveur**, et ma
+phrase telle quelle — *un paiement confirmé par un paramètre d'URL est un paiement confirmé par le
+client*.
+
+**Le reste, en une ligne chacun.** Les trois natures d'erreur (`refused` / `unavailable` /
+`offline_forbidden`) sont dans l'enveloppe et dans `critical-rules.md` §8. La file hors ligne est
+bornée à mes deux familles. Les baux de prise en charge existent. Le second verdict est refusé
+**avec le gagnant**. Les trois axes de modération sont séparés. Mes deux exceptions de pagination
+sont accordées (D-010) avec `pendingCount` séparé pour la pastille. `resume:too_old` existe. Le
+canal est **par personne**, multi-chaînes. `measuredAt` est à l'ingest. Le dépôt signé est à
+15 min, l'export à 60. Le vocabulaire de causes d'incident existe, séparé des issues, avec
+`IncidentTrigger.AUTO`. Et `critical-rules.md` §9 grave mon exigence d'horloge : « un décompte se
+calcule contre `servedAt`, jamais contre l'horloge du client ».
+
+Je n'y reviens pas. Ce qui suit est ce qui ne tient pas.
+
+---
+
+## Ce qui n'est pas satisfait
+
+Douze points. Les quatre premiers sont graves : chacun casse un mécanisme que le contrat déclare
+par ailleurs tenir.
+
+### C1 — Quatre de mes dix-huit pages n'ont aucun porteur de droit, dont la page de garde
+
+`EffectiveRights.navigation` a un vocabulaire **fermé** de quatorze entrées :
+
+```
+[agenda, dashboard, moderation, crew, events, stream, stats, tickets, store,
+ replays, payouts, journal, settings, help]
+```
+
+Mes quatre pages contextuelles — `regie`, `wizard`, `event`, `inbox` — n'y sont pas, et **aucun
+autre champ ne les autorise**. `canOps`, `canTech` et `canDecideOutcome` existent, mais aucun
+texte du contrat ne dit qu'ils ouvrent `regie` ou `wizard`.
+
+**La conséquence est mesurable** : la barre du bas d'un régisseur ne peut pas contenir `regie` —
+sa page de garde, celle qu'il ouvre quand le flux tombe. Elle contiendrait `agenda`, `stream`,
+`events` et rien d'autre.
+
+Et le chemin par lequel on y est arrivé mérite d'être dit. J'avais signalé, et l'errata a retenu
+en **E6**, que « `TAB_PREF.regie` nomme une page que `ACCESS` refuse ». La résolution a été de
+**retirer la page du vocabulaire** plutôt que de réconcilier les deux tables. On a supprimé la
+destination principale de la garde pour faire disparaître l'incohérence qui la signalait.
+
+Ce n'est pas un oubli de chemins : `/v1/dates/{dateId}/run`, `/run/state`, `/run/health-samples`,
+`/incidents`, `/stream-key/*` existent tous et servent la régie très bien. C'est **le droit** qui
+manque, pas la donnée.
+
+### C2 — La barre de quatre onglets ne se dérive pas de `navigation`, et la preuve est arithmétique
+
+`navigation` est décrite comme servie « dans l'**ordre canonique** ». C'est `ORDER`. Or la barre
+n'est pas `ORDER` tronqué à quatre : c'est `TAB_PREF`, un ordre **par rôle**, différent.
+
+Pour `artist`, `ORDER ∩ ACCESS` donne dans l'ordre :
+
+```
+dashboard · crew · events · stream · stats · tickets · store · replays · payouts · journal · settings · help
+        ↑ les quatre premières : dashboard, crew, events, stream
+TAB_PREF.artist                 : dashboard, events, crew, tickets
+```
+
+**Deux différences sur quatre.** Prendre les quatre premières entrées de `navigation` met
+`stream` dans la barre d'un artiste et en sort `tickets` — la billetterie, ce qu'un artiste
+regarde le plus. Pour `prod`, `regie` et `tres`, l'écart est du même ordre.
+
+J'avais demandé que `TAB_PREF` vive dans `@arthome/core`, parce que le studio web ordonne le même
+menu et que `critical-rules.md` §2 l'impose — « toute valeur affichée deux fois vient de
+`@arthome/core` : deux *appels* sont permis, deux *implémentations* jamais ». Recherche faite sur
+tout le dépôt : **`TAB_PREF` n'apparaît qu'une seule fois**, dans `corrections-handoff.md`, comme
+l'errata E6. Elle n'est ni dans le contrat, ni nommée comme appartenant au domaine. Deux surfaces
+vont donc l'implémenter deux fois, et c'est exactement le cas que la règle 2 interdit.
+
+### C3 — L'optimistic lock de la modération confond le bail et la décision, et annule la file hors ligne
+
+C'est ma contestation la plus grave, et elle se démontre avec les **exemples du contrat
+lui-même**.
+
+```
+POST /moderation/items/{id}/claim    → data: { state: claimed,  …, version: 2 }
+DELETE /moderation/items/{id}/claim  → data: { state: reported, …, version: 3 }
+POST /moderation/items/{id}/verdict  ← body: { verdict: mute, …, expectedVersion: 2 }
+```
+
+Poser puis relâcher un bail — **sans rien trancher** — fait passer la version de 1 à 3. Donc :
+
+> Un modérateur lit la file à `version: 1`. Le réseau tombe. Il tranche ; le verdict part en file
+> hors ligne avec `expectedVersion: 1`. Pendant ce temps un confrère prend la ligne en charge
+> puis la relâche, **sans verdict**. À la reconnexion, le verdict est refusé.
+
+La file hors ligne est **la seule concession accordée au mobile**, et le bail la vide de son
+contenu. Sur un direct à 60 messages par minute, les lignes changent de bail sans arrêt.
+
+Le défaut est plus profond qu'un compteur mal placé. La règle réelle de la maquette est une
+**supersession** : « prendre en charge n'est pas trancher — tant que le confrère n'a pas rendu de
+verdict, **votre sanction s'applique** ». Un verdict doit donc être **accepté** pendant qu'un
+autre tient le bail. Un compteur unique ne peut pas exprimer « refuse si tranché, accepte si
+seulement réclamé ».
+
+Et le contrat se contredit sur ce point : le **seul** 409 documenté sur `/verdict` est
+`MODERATION_ALREADY_SETTLED`. De deux choses l'une — soit `expectedVersion` est réellement
+vérifié, et il manque un `STATE_CONFLICT` non documenté qui refusera des verdicts légitimes ;
+soit il ne l'est pas, et `expectedVersion` est décoratif alors que le contrat en fait sa garantie
+de conditionnalité.
+
+**Correctif demandé** : conditionner le verdict sur l'**axe du règlement** — `settledAt` nul, ou
+un `decisionVersion` que **seul un verdict incrémente** — et laisser `version` porter le bail.
+Deux axes séparés, ce qui est précisément la doctrine que le contrat applique déjà, et bien, aux
+trois états de modération.
+
+### C4 — `RIGHTS_VERSION_STALE` est inémettable, et c'est exactement le cas de la transition
+
+Le contrat pose la doctrine en toutes lettres : trois codes distincts — `FORBIDDEN`,
+`RIGHTS_VERSION_STALE`, `CHANNEL_ACCESS_REVOKED` — « parce que la personne doit savoir s'il faut
+recharger, appeler, ou renoncer ». La réponse porte `X-Arthome-Rights-Version`.
+
+Mais **aucun paramètre de requête ne porte la version que le client détient**. La liste complète
+des paramètres réutilisables du document est : `Traceparent`, `Surface`, `IdempotencyKey`,
+`ChannelId`, `DateId`, `Page`, `PageSize`, `SortBy`, `SortDir`, `Cursor`, `Limit`. Rien d'autre.
+
+Le serveur ne peut donc pas distinguer « tu n'as jamais eu ce droit » de « tu l'avais il y a deux
+cents millisecondes ». Deux des trois codes sont hors d'atteinte, et il ne reste que `FORBIDDEN` —
+c'est-à-dire l'indistinction que les trois codes existaient pour supprimer.
+
+**C'est précisément la question posée** : un événement arrive pendant une transition. Sous
+`ion-router-outlet` la page est déjà poussée, la requête est déjà partie. Elle revient en 403. Si
+le code est `FORBIDDEN`, l'application renvoie l'opérateur à l'accueil comme s'il n'avait jamais
+eu le droit ; si c'est `RIGHTS_VERSION_STALE`, elle recharge l'amorçage et **retrouve sa place**.
+La différence, en garde, est entre « je continue » et « j'ai perdu mon écran ».
+
+Il manque un en-tête de requête — `If-Rights-Version`, symétrique de celui de la réponse.
+
+**Et il y a deux horloges de révocation, pas une.** `realtime.md` §3 : « le serveur fait quitter
+les salles d'une chaîne perdue **sans attendre une reconnexion** » — immédiat. Le préambule de
+`studio.yaml` : « la fraîcheur maximale de l'autorisation est de **60 secondes**, durée du jeton
+interne frappé par le BFF ». Pendant une minute, la console est muette mais la commande passe
+encore. Laquelle fait foi à l'écran ? Le contrat ne le dit pas, et un modérateur qui voit sa file
+se figer pendant que ses verdicts aboutissent ne comprendra ni l'un ni l'autre.
+
+### C5 — Quatre commandes exigent un `reauthToken` que rien n'émet
+
+`stream-key/reveal`, `stream-key/rotate`, `ownership-transfer` et la suppression de chaîne
+déclarent `required: [reauthToken]`. **Aucun point d'entrée du BFF studio ne le frappe.**
+`adr-auth.md` §6.1 renvoie au plugin `one-time-token` de better-auth — un détail d'implémentation
+d'`identity`, pas un contrat de surface. Le contrat exige un jeton qu'il n'offre pas.
+
+Et la question de fond n'est pas tranchée pour la coquille native : **par quel facteur ?**
+Renouveler la clé de flux est le geste d'urgence du régisseur — « le geste à faire après chaque
+prestataire », et celui qu'on fait quand on soupçonne une clé fuitée pendant un direct. Si la
+réauthentification est un mot de passe à taper dans une salle noire, à une main, la garantie se
+paie en antenne noire. Si c'est la biométrie de l'appareil, il faut le dire, et dire ce qui se
+passe quand elle échoue.
+
+### C6 — Aucune gestion d'appareil, aucune révocation, aucune déconnexion
+
+La réponse à ma question 1 promet « **révocation par appareil** ». Le contrat du studio n'offre
+ni `/me/sessions`, ni `/me/devices`, ni révocation, **ni déconnexion**. La feuille « Mon compte »
+de la maquette porte pourtant « SE DÉCONNECTER », et c'est la seule sortie qu'un opérateur a.
+
+`adr-auth.md` §6.5 ne donne la révocation d'appareil qu'au **téléviseur partagé** — `Device` et
+`DeviceSession` sont les notions de l'appairage RFC 8628, pas celles d'une session porteuse de
+jeton sur un téléphone. Sans notion d'appareil attachée à la session mobile, « révoquer ce
+téléphone » n'a pas de référent.
+
+Ce que cela vaut concrètement : un téléphone oublié dans une salle ouvre une console de
+modération et la révélation d'une clé de flux **sur des chaînes qui n'appartiennent pas à son
+porteur** — un indépendant intervient sur plusieurs chaînes, c'est la prémisse de toute cette
+surface. Le contrat n'offre aucun geste, ni à la personne, ni au propriétaire de la chaîne.
+
+### C7 — Aucun enregistrement de jeton de notification
+
+Ma question 10 est répondue « routage par rôle et par chaîne décidé côté serveur, enregistrement
+d'appareil par compte, charge utile portant chaîne + date + page cible ». Le routage serveur est
+acquis — `escalate` rend `routedToRoles`. Mais il n'existe **ni point d'entrée ni schéma** pour
+déclarer un jeton FCM : recherche faite sur `push`, `fcm`, `apns`, `deviceToken` dans
+`studio.yaml`, aucune occurrence hors du préambule sur la redaction.
+
+Sans lui, la garde ne peut pas être réveillée application fermée. C'est la moitié de la raison
+d'être d'un outil de garde : « file de modération saturée », « aucun modérateur affecté à J-1 »,
+« débit instable » sont des alertes qui arrivent quand l'application n'est pas au premier plan.
+La redaction des montants dans la charge utile est promise ; la charge utile n'a pas de
+destinataire.
+
+### C8 — `GET /changes` n'existe que sur le BFF storefront
+
+`realtime.md` §5.2 décrit exactement le mécanisme dont j'ai besoin :
+
+```
+GET /changes?since=<servedAt>&scope=… → { invalidated: [...], servedAt, complete: bool }
+```
+
+Il rend **une liste d'invalidations, pas les données**, et `complete: false` signifie « recharge
+tout » — la même honnêteté que `resume:too_old`. Le document l'attribue à « un besoin propre au
+storefront mobile ».
+
+Il est dans `openapi/storefront.yaml`. Il n'est **pas** dans `openapi/studio.yaml`.
+
+C'est pourtant le besoin que j'avais nommé, et pour une raison qui n'existe que chez moi : sous
+`ion-router-outlet`, une page **reste dans le DOM** après qu'on l'a quittée et se réaffiche telle
+quelle au retour. Il faut une lecture bon marché de fraîcheur, sinon chaque retour sur une page
+est soit un affichage périmé, soit un rechargement complet sur la 4G d'une salle. Le studio a
+`servedAt` et `rightsVersion` par réponse, mais rien qui dise en un appel « voici ce qui a
+changé » pour les six lectures d'un écran. Le mécanisme est écrit, motivé, spécifié par un autre —
+et non branché chez moi.
+
+### C9 — Deux pages sont nommées dans `navigation` et n'ont aucun point d'entrée
+
+`dashboard` et `stats` figurent dans le vocabulaire de `navigation` et dans l'exemple servi par
+l'amorçage. Il n'existe dans `studio.yaml` **ni chemin, ni schéma** qui les serve : la liste
+complète des schémas ne contient aucun agrégat de mesure, et la seule trace de statistiques est
+`stats_csv` comme type d'export comptable.
+
+Ce n'est pas une page secondaire. **`dashboard` est la première entrée de `TAB_PREF` pour
+`artist`, `prod` et `tres`** — l'onglet par défaut de trois personas sur six. Tel quel, trois
+personas ouvrent l'application sur un écran que le contrat ne remplit pas.
+
+### C10 — Le motif « un appel par volet » n'est implémenté que pour un volet sur six
+
+`GET /dates/{dateId}/sheet` sert `openPanes`, et sert mieux que ma demande : **par date** plutôt
+que par chaîne. La description pose le motif : « un appel pour la fiche, puis **un appel par volet
+ouvert, chez son propriétaire** », avec mon propre argument en justification — « un modérateur
+doit pouvoir charger le volet `chat` **sans** charger la fiche entière, sinon la billetterie
+transite pour rien ».
+
+Seul `/v1/dates/{dateId}/panes/tickets` existe. Il n'y a pas de volet `chat`, `tech`, `crew`,
+`replay` ni `public`.
+
+L'argument est donc **défait par sa propre mise en œuvre** : un `mod` dont le seul volet est
+`chat` doit appeler `/sheet` — ne serait-ce que pour apprendre quels volets lui sont ouverts —
+puis n'a nulle part où aller. Des chemins voisins existent (`/dates/{id}/crew`, `/run`,
+`/chat-policy`, `/replay-policy`) et couvrent peut-être la matière, mais alors le motif annoncé
+est faux et la surface ne sait pas quel chemin appeler pour quel volet.
+
+### C11 — `Duty` ne porte pas le fuseau de la salle
+
+`DateSheet` porte `venueClock { venueTimezone, venueUtcOffsetMin }`. `Duty` porte `dateId`,
+`channelId`, `channelName`, `title`, `crewRole`, `startsAt`, `runState`, `overlapsWith`,
+`accessExpiresAt` — et pas le fuseau.
+
+Or l'écran de garde, qui est l'**écran d'accueil de cette surface**, affiche pour chaque garde
+l'heure de salle **et** l'heure de la personne. C'est la doctrine du dossier (« heure du
+spectateur d'abord, heure de salle en second »), c'est D3, c'est E7 — et c'est un besoin explicite
+de mon document, cité dans la réponse qui m'est faite.
+
+Rendre l'heure de salle sur la liste de gardes demande donc un appel par garde : **exactement le
+N+1 que l'amorçage existe pour tuer**, et sur le seul écran qu'un régisseur ouvre en arrivant dans
+une salle. Manque aussi `runtimeMin`, que la ligne affiche (« durée annoncée »). La **règle** est
+sauve — `overlapsWith` est servi et calculé dans `@arthome/core`, ce qui est juste — mais pas
+l'affichage.
+
+### C12 — Sept trous d'écran, nommés
+
+Moins graves, mais chacun est une page ou un geste de la maquette sans contrepartie :
+
+| Manque | Ce qui existe à la place |
+|---|---|
+| **Matrice équipe** — créneaux par date × poste sur N dates | `/dates/{id}/crew`, un appel par date |
+| **Journal des accès** (distinct du journal de chaîne) | `/channels/{id}/journal` seulement |
+| **Catalogue de rediffusions** au niveau chaîne | `/dates/{id}/replay-window`, par date |
+| **Transfert de place** et **litige bancaire** — deux des trois « demandes en cours » | `/seats/{id}/refund` seulement |
+| **Profils d'encodage** nommés, qui « voyagent d'une chaîne à l'autre » | `encodingProfileName`, une chaîne — rien ne stocke les profils |
+| **Déconnexion** | rien |
+| **`help`** | rien, et rien ne dit que c'est un artefact statique |
+
+---
+
+## Ce qui est satisfait autrement, et si ça me va
+
+**WHEP → LL-HLS (D-019) : ça me va, et c'est mieux que ma demande.** Je demandais qu'on ne
+promette pas ce qui n'est pas mesuré ; le contrat va plus loin en servant `monitorPath`
+(`whep | ll_hls`) dans l'état du run, donc l'application **annonce** la latence qu'elle a au lieu
+de la promettre. Je maintiens la réserve telle que D-019 l'écrit : la mesure sur appareil réel
+reste à faire, et elle conditionne aussi **Web Crypto** — donc tout ce qu'on voudrait un jour
+chiffrer côté client.
+
+**La battue de vie (`ws:pulse`) est une meilleure réponse que la mienne.** Je demandais que chaque
+mesure porte son instant de mesure, pour que l'application puisse dire « mesuré il y a 3 s » au
+lieu de « 0 Mb/s ». Le contrat le fait (`measuredAt` à l'ingest) **et** ajoute un mécanisme que je
+n'avais pas proposé : plus de pulse pendant 15 s = je suis sourd ; pulse sans échantillon depuis
+30 s = la salle n'envoie plus. Deux états, deux écrans, aucune inférence — et le même pulse porte
+`serverTime` comme horloge de référence et `seq` comme point de reprise. Trois de mes besoins
+réglés par un seul mécanisme. Accepté sans réserve.
+
+**`deviceUpKbps` contre `ingestUpKbps` : mon incohérence 7 est réglée.** Deux noms distincts, et
+la phrase qui tranche — « seul `ingestUpKbps` alimente la liste de pré-vol ». Le téléphone n'est
+pas l'encodeur, et le contrat le dit maintenant.
+
+**La liste de pré-vol passe de quatre à sept éléments**, dont deux deviennent des avertissements
+non bloquants. Mon incohérence 8 visait l'inverse — je demandais qu'elle soit entièrement
+serveur ; elle l'est, et elle est de surcroît plus juste que ce que je signalais.
+
+**Les trois axes de modération (E3/D6).** `ModerationItemState` = `reported | claimed | settled`,
+état du message = `published | removed`, sanction de personne = `none | muted | banned`, et la
+pastille unique **dérivée** par `moderationBadgeOf` avec une préséance servie. `reported` a quitté
+le champ des sanctions, exactement comme demandé — et la description du schéma reprend mon
+diagnostic : « c'est pour cela que la file se construisait en filtrant `state === 'reported'`, ce
+qui n'est pas un filtre d'état mais un filtre de nature ». Accepté.
+
+**Deux ajouts que je n'avais pas demandés et qui sont justes.** `atMediaSec` sur la ligne de file
+— l'ancrage média porté jusque dans la modération, ce qui rend le journal relisible sur une
+rediffusion. Et `origin: human_verdict | retroactive_filter | author_sanctioned`, qui permet au
+journal de distinguer un reclassement automatique d'une décision humaine.
+
+**Mon filet de sécurité est devenu une règle serveur.** `holdScreenAutoAfterSec: 15` est servi
+dans les constantes, et son déclenchement produit un incident de même nature qu'un déclenchement
+manuel, marqué `IncidentTrigger.AUTO`. C'est mieux que ce que je demandais : je proposais que la
+règle existe, le contrat la sert **et** la rend auditable.
+
+**Les constantes servies règlent mon incohérence 6 à moitié.** `chatBurstThresholdPerMinute: 60`
+est servi, donc le seuil ne sera pas recopié sur deux surfaces. Il manque la **fenêtre** de la
+mesure — voir les questions.
+
+**Le fuseau de lecture** est logé dans `AccountPreferences` d'`identity`, **même champ que le
+storefront**. Je demandais qui le possède ; la réponse est plus forte que la question, et elle
+règle mon incohérence 9.
+
+**`critical-rules.md` §9** grave mon exigence d'horloge en règle critique du projet : « un
+décompte se calcule contre `servedAt`, jamais contre l'horloge du client ». Je demandais un
+comportement d'application ; c'est devenu une règle de contrat.
+
+**L'escalade : à moitié.** `routedToRoles: [artist, production]` est servi, le routage est
+serveur, et le geste existe pour les rôles sans `canDecideOutcome` — c'était mon besoin. Deux
+réserves : la maquette annonce « **2 personnes** ont reçu l'alerte », et des **libellés de rôle**
+ne disent pas combien d'humains ont été joints ; et le corps de la commande ne porte qu'un `note`
+en texte libre, alors que la maquette promet que « le signalement leur arrive avec le relevé
+technique ». Si le relevé est attaché côté serveur depuis l'incident, c'est bien — mais il faut
+l'écrire, sinon la surface tentera de le mettre dans la note.
+
+---
+
+## Les questions sans réponse
+
+| # | Question |
+|---|---|
+| **a** | Sous quelle forme le client déclare-t-il la version de droits qu'il détient ? Sans en-tête de requête, `RIGHTS_VERSION_STALE` est inémettable (C4). |
+| **b** | Des deux horloges de révocation — canal immédiat, HTTP à 60 s — laquelle fait foi à l'écran ? |
+| **c** | Qui frappe le `reauthToken` des quatre commandes sensibles, et **par quel facteur** sur un téléphone en salle ? |
+| **d** | Révocation d'appareil et déconnexion : quel point d'entrée du BFF studio ? |
+| **e** | Enregistrement du jeton de notification : quel point d'entrée, et la charge utile porte-t-elle bien `channelId` + `dateId` + page cible ? |
+| **f** | `regie`, `wizard`, `event`, `inbox` : quel champ porte leur droit ? `canTech` et `canOps` sont-ils prévus pour cela, ou faut-il élargir `navigation` ? |
+| **g** | `TAB_PREF` : où vit-elle, puisque deux surfaces l'affichent et que `critical-rules.md` §2 interdit deux implémentations ? |
+| **h** | Le verdict est conditionnel **sur quel axe** exactement, et quels 409 le contrat documente-t-il au-delà de `MODERATION_ALREADY_SETTLED` ? |
+| **i** | `dashboard` et `stats` : reportés à un palier nommé, ou omis ? Ils sont dans `navigation` et en tête de `TAB_PREF` pour trois personas. |
+| **j** | Les cinq volets de fiche sans point d'entrée : servis par les chemins voisins — et lesquels — ou à écrire ? |
+| **k** | Quelle est la **fenêtre** de mesure du débit du tchat ? Le seuil est servi, la fenêtre non — et c'est la moitié qui manquait à mon incohérence 6. |
+| **l** | `GET /changes` sur le BFF studio : accordé ou refusé ? Le cache de page d'Ionic en dépend. |
+| **m** | L'escalade : le relevé technique est-il attaché côté serveur depuis l'incident, et le nombre de personnes réellement jointes est-il rendu ? |
