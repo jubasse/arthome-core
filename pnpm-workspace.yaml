@@ -16,6 +16,39 @@ minimumReleaseAgeExclude:
   #   << la version n'existe pas >>, ce qui envoie chercher au mauvais endroit.
   - '@arthome/*'
 
+  # prettier@3.9.8 — publiee le 2026-09-17, soit 4 jours avant le premier
+  # `pnpm install` de ce depot (2026-09-21). Le seuil d'une semaine l'a refusee.
+  # Exception NOMMEE et DATEE plutot qu'un seuil abaisse : c'est la version
+  # epinglee au catalogue et dans @arthome/tooling/versions.json, et l'abaisser
+  # globalement aurait leve la decantation sur TOUS les paquets tiers pour un
+  # seul cas.
+  # ⚠ A RETIRER apres le 2026-09-24, date a laquelle la version aura sept jours
+  #   et l'exception n'aura plus d'objet. Une exception qu'on oublie de retirer
+  #   est un seuil abaisse qui ne dit pas son nom.
+  - 'prettier'
+
+  # ⚠ CONTRADICTION ENTRE DEUX DECISIONS, constatee au premier `pnpm install`.
+  #
+  #   `versions.json` epingle les versions VERIFIEES LE JOUR MEME (2026-09-21),
+  #   et cette politique refuse tout ce qui a moins de sept jours. Les deux ne
+  #   peuvent pas tenir ensemble : epingler la derniere version verifiee garantit
+  #   qu'elle sera trop fraiche. Ce n'est pas la politique qui est mauvaise, c'est
+  #   la conjonction — et elle ne s'est vue qu'a l'installation.
+  #
+  #   Exceptions NOMMEES et DATEES plutot qu'un seuil abaisse. Les dates de
+  #   publication sont celles que pnpm a rapportees.
+  - 'eslint'            # 10.11.0 publiee le 2026-09-18 — mature le 2026-09-25
+  - 'vitest'            # 5.0.1   publiee le 2026-09-15 — mature le 2026-09-22
+  - '@vitest/*'         # idem, sous-paquets de vitest
+  #
+  # ⚠ LES QUATRE EXCEPTIONS CI-DESSUS SONT A RETIRER APRES LE 2026-09-25.
+  #   Une exception qu'on oublie de retirer est un seuil abaisse qui ne dit pas
+  #   son nom — et ce fichier reste court, ou la regle est mauvaise.
+  #
+  #   Le remede durable n'est pas d'en ajouter : c'est qu'une montee de version
+  #   epingle une version DEJA MATURE, jamais celle du jour. A porter dans
+  #   code-conventions.md, section gouvernance des versions.
+
 # Si `pnpm install` refuse une version epinglee parce qu'elle est trop recente,
 # la reponse est une exception NOMMEE ici, avec sa raison et sa date — jamais
 # d'abaisser minimumReleaseAge globalement.
@@ -32,3 +65,17 @@ catalog:
   '@eslint/js': 10.0.1
   prettier: 3.9.8
   vitest: 5.0.1
+
+# ------------------------------------------------------------------ construction
+# pnpm 11 n'execute plus les scripts d'installation d'une dependance sans
+# approbation NOMMEE. C'est la bonne posture : un script d'installation est du
+# code arbitraire execute avec les droits du developpeur.
+allowBuilds:
+  # unrs-resolver — resolveur natif (Rust) dont depend
+  # `eslint-import-resolver-typescript`, ajoute pour que `import-x/no-cycle`
+  # resolve reellement les chemins TypeScript. Son script d'installation lie le
+  # binaire natif de la plateforme.
+  # Approuve parce que SANS LUI la regle ne signale pas qu'elle echoue : elle
+  # tourne et ne trouve rien, ce qui est la pire des deux facons d'echouer —
+  # une porte verte qui ne verifie rien.
+  unrs-resolver: true

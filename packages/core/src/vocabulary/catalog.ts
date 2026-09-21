@@ -33,7 +33,7 @@ export const PublicationState = {
   LIVE: 'live',
   ENDED: 'ended',
   REPLAY_ONLINE: 'replay-online',
-} as const satisfies Record<string, PublicationState>;
+} as const;
 
 /**
  * L'axe TECHNIQUE, et rien d'autre.
@@ -52,7 +52,7 @@ export const RunState = {
   ON_AIR: 'on-air',
   INTERRUPTED: 'interrupted',
   ENDED: 'run-ended',
-} as const satisfies Record<string, RunState>;
+} as const;
 
 /**
  * L'ISSUE. Elle est un FAIT sur la representation : jamais reecrite, jamais
@@ -65,7 +65,7 @@ export const DateOutcome = {
   POSTPONED: 'postponed',
   CANCELLED: 'cancelled',
   INTERRUPTED: 'interrupted',
-} as const satisfies Record<string, DateOutcome>;
+} as const;
 
 /**
  * La QUATRIEME valeur, derivee et unique — CE QUE LA PASTILLE DIT.
@@ -108,7 +108,7 @@ export const DisplayState = {
   POSTPONED: 'postponed',
   CANCELLED: 'cancelled',
   INTERRUPTED: 'interrupted',
-} as const satisfies Record<string, DisplayState>;
+} as const;
 
 /**
  * La PROMESSE faite avant l'achat — c'est elle qui justifie l'ecart de tarif,
@@ -127,7 +127,7 @@ export const ReplayPolicy = {
   SUBSCRIPTION: 'subscription',
   UNIT: 'unit',
   NONE: 'none',
-} as const satisfies Record<string, ReplayPolicy>;
+} as const;
 
 export const RIGHTS_SCOPES = ['worldwide', 'restricted'] as const;
 export type RightsScope = (typeof RIGHTS_SCOPES)[number];
@@ -135,7 +135,7 @@ export type RightsScope = (typeof RIGHTS_SCOPES)[number];
 export const RightsScope = {
   WORLDWIDE: 'worldwide',
   RESTRICTED: 'restricted',
-} as const satisfies Record<string, RightsScope>;
+} as const;
 
 /**
  * Un CODE, jamais une phrase.
@@ -154,7 +154,7 @@ export const BlackoutReason = {
   CO_PRODUCTION: 'co-production',
   BROADCASTER: 'broadcaster',
   FESTIVAL: 'festival',
-} as const satisfies Record<string, BlackoutReason>;
+} as const;
 
 /**
  * Vocabulaire REEL, corrige (D1).
@@ -172,7 +172,7 @@ export const LanguageDependency = {
   NONE: 'none',
   HELPFUL: 'helpful',
   ESSENTIAL: 'essential',
-} as const satisfies Record<string, LanguageDependency>;
+} as const;
 
 /** Les quatre natures d'incident visibles du spectateur. */
 export const INCIDENT_KINDS = ['hold-screen', 'incident-postponed', 'incident-cancelled', 'incident-interrupted'] as const;
@@ -183,7 +183,7 @@ export const IncidentKind = {
   POSTPONED: 'incident-postponed',
   CANCELLED: 'incident-cancelled',
   INTERRUPTED: 'incident-interrupted',
-} as const satisfies Record<string, IncidentKind>;
+} as const;
 
 /**
  * La CAUSE, vocabulaire NOUVEAU et distinct de l'issue.
@@ -209,4 +209,4 @@ export const IncidentCause = {
   COMPATIBILITY_WORKER_FAILED: 'compatibility-worker-failed',
   PROVIDER_ERROR: 'provider-error',
   MANUAL: 'manual-cause',
-} as const satisfies Record<string, IncidentCause>;
+} as const;

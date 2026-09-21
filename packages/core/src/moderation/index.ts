@@ -39,7 +39,7 @@ export const ModerationBadge = {
   MUTED: 'badge-muted',
   REMOVED: 'badge-removed',
   PUBLISHED: 'badge-published',
-} as const satisfies Record<string, ModerationBadge>;
+} as const;
 
 export function moderationBadgeOf(
   messageState: MessageState,

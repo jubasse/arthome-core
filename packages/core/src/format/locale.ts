@@ -17,7 +17,7 @@ export type Locale = (typeof LOCALES)[number];
 export const Locale = {
   FR: 'fr',
   EN: 'en',
-} as const satisfies Record<string, Locale>;
+} as const;
 
 export function parseLocale(raw: string): Locale {
   const head = raw.toLowerCase().split('-')[0] ?? '';

@@ -35,7 +35,7 @@ export const MemberRole = {
   SOUND: 'sound',
   MODERATION: 'moderation',
   TREASURY: 'treasury',
-} as const satisfies Record<string, MemberRole>;
+} as const;
 
 /**
  * Le poste tenu sur UNE date, par opposition au role tenu dans la chaine.
@@ -50,7 +50,7 @@ export const CrewRole = {
   VIDEO: 'crew-video',
   SOUND: 'crew-sound',
   MODERATION: 'crew-moderation',
-} as const satisfies Record<string, CrewRole>;
+} as const;
 
 /**
  * Les quatorze entrees de navigation du studio.
@@ -93,7 +93,7 @@ export const NavigationEntry = {
   JOURNAL: 'journal',
   SETTINGS: 'settings',
   HELP: 'help',
-} as const satisfies Record<string, NavigationEntry>;
+} as const;
 
 /** Les six volets d'une fiche de date, ouverts selon les droits effectifs. */
 export const DATE_PANES = ['public', 'pane-tickets', 'pane-chat', 'tech', 'pane-crew', 'pane-replay'] as const;
@@ -106,7 +106,7 @@ export const DatePane = {
   TECH: 'tech',
   CREW: 'pane-crew',
   REPLAY: 'pane-replay',
-} as const satisfies Record<string, DatePane>;
+} as const;
 
 /**
  * Un appareil EST enregistre ; une SESSION est le couple (appareil, profil).
@@ -124,7 +124,7 @@ export const DeviceKind = {
   STICK: 'stick',
   CONSOLE: 'console',
   BOX: 'box',
-} as const satisfies Record<string, DeviceKind>;
+} as const;
 
 /**
  * Le journal du studio est nominatif ET situe : « qui a decide, quand, depuis
@@ -148,7 +148,7 @@ export const Surface = {
   STUDIO_WEB: 'studio-web',
   STUDIO_MOBILE: 'studio-mobile',
   SYSTEM: 'system',
-} as const satisfies Record<string, Surface>;
+} as const;
 
 /** Le troisieme canal, propose et non constate : `in-app`, pas `sms` (D-017). */
 export const NOTIFICATION_CHANNELS = ['push', 'email', 'in-app'] as const;
@@ -158,4 +158,4 @@ export const NotificationChannel = {
   PUSH: 'push',
   EMAIL: 'email',
   IN_APP: 'in-app',
-} as const satisfies Record<string, NotificationChannel>;
+} as const;

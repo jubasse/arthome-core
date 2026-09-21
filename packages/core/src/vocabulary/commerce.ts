@@ -13,7 +13,7 @@ export const PriceTier = {
   FULL: 'full',
   REDUCED: 'reduced',
   SUPPORT: 'support',
-} as const satisfies Record<string, PriceTier>;
+} as const;
 
 /**
  * E1 — L'ECART LE PLUS GRAVE DU DOSSIER, et ce n'est pas un defaut d'affichage.
@@ -38,7 +38,7 @@ export const PlanTier = {
   FREE: 'free',
   PASS: 'pass',
   PREMIUM: 'premium',
-} as const satisfies Record<string, PlanTier>;
+} as const;
 
 /**
  * Les NEUF ouvertures reellement portees par `catalogue.json`.
@@ -72,7 +72,7 @@ export const PlanOpening = {
   ALL_LIVES: 'all-lives',
   MULTI_SCREEN: 'multi-screen',
   ARCHIVE: 'archive',
-} as const satisfies Record<string, PlanOpening>;
+} as const;
 
 export const SUBSCRIPTION_STATES = ['active', 'past-due', 'sub-cancelled', 'trialing'] as const;
 export type SubscriptionState = (typeof SUBSCRIPTION_STATES)[number];
@@ -82,7 +82,7 @@ export const SubscriptionState = {
   PAST_DUE: 'past-due',
   CANCELLED: 'sub-cancelled',
   TRIALING: 'trialing',
-} as const satisfies Record<string, SubscriptionState>;
+} as const;
 
 /**
  * Cinq motifs relevés dans la conception, avec des regles distinctes.
@@ -104,7 +104,7 @@ export const PromotionReason = {
   DISCOVERY_RATE: 'discovery-rate',
   FINAL_DATE: 'final-date',
   LATE_RATE: 'late-rate',
-} as const satisfies Record<string, PromotionReason>;
+} as const;
 
 /** D-011 : deux commandes DISTINCTES, jamais une commande mixte. */
 export const ORDER_KINDS = ['seat-order', 'merch-order', 'subscription-order'] as const;
@@ -114,7 +114,7 @@ export const OrderKind = {
   SEAT: 'seat-order',
   MERCH: 'merch-order',
   SUBSCRIPTION: 'subscription-order',
-} as const satisfies Record<string, OrderKind>;
+} as const;
 
 /**
  * `held` tant qu'une ISSUE est ouverte, `refunded` si la date est annulee,
@@ -131,7 +131,7 @@ export const PayoutState = {
   PAID: 'paid',
   REFUNDED: 'refunded',
   SUSPENDED: 'suspended',
-} as const satisfies Record<string, PayoutState>;
+} as const;
 
 /**
  * Le taux depend du couple JURIDICTION x NATURE DE LA PRESTATION, jamais d'une
@@ -151,7 +151,7 @@ export const TaxSupplyKind = {
   REPLAY_ACCESS: 'replay-access',
   SUBSCRIPTION: 'subscription-access',
   MERCHANDISE: 'merchandise',
-} as const satisfies Record<string, TaxSupplyKind>;
+} as const;
 
 /**
  * L'UE exige DEUX elements de preuve NON CONTRADICTOIRES pour une vente B2C —
@@ -175,7 +175,7 @@ export const TaxEvidenceKind = {
   CARD_COUNTRY: 'card-country',
   SIM_COUNTRY: 'sim-country',
   DECLARED_BY_BUYER: 'declared-by-buyer',
-} as const satisfies Record<string, TaxEvidenceKind>;
+} as const;
 
 /** Environ 9 000 juridictions aux Etats-Unis : un pays ne permet aucun calcul. */
 export const TAX_JURISDICTION_LEVELS = ['country', 'state', 'county', 'city'] as const;
@@ -186,4 +186,4 @@ export const TaxJurisdictionLevel = {
   STATE: 'state',
   COUNTY: 'county',
   CITY: 'city',
-} as const satisfies Record<string, TaxJurisdictionLevel>;
+} as const;

@@ -27,7 +27,7 @@ export const FailureNature = {
   REFUSED: 'refused',
   UNAVAILABLE: 'unavailable',
   OFFLINE_FORBIDDEN: 'offline_forbidden',
-} as const satisfies Record<string, FailureNature>;
+} as const;
 
 export interface DomainErrorInit {
   readonly code: string;

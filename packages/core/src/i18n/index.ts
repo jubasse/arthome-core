@@ -31,7 +31,7 @@ export const MessageDomain = {
   STUDIO: 'studio',
   TAXONOMY: 'taxonomy',
   SYSTEM: 'system',
-} as const satisfies Record<string, MessageDomain>;
+} as const;
 
 /**
  * Une cle de message : `<domaine>.<chemin>`.

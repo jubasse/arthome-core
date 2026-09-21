@@ -16,18 +16,21 @@
     "lint": "eslint . --max-warnings 0 --report-unused-disable-directives",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-
     "check:prettier-conflict": "eslint-config-prettier packages/tooling/eslint/base.js",
     "check:enums": "arthome-check-enums",
     "check:core-entry": "node tools/check-core-entry.mjs",
     "check:versions": "arthome-check-versions",
     "check:tsconfig": "arthome-check-tsconfig",
     "check:openapi": "python3 tools/check-openapi.py openapi/storefront.yaml openapi/studio.yaml",
-
     "verify": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:core-entry && pnpm run check:openapi && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test",
     "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:core-entry && pnpm run check:openapi"
   },
   "devDependencies": {
-    "@arthome/tooling": "workspace:*"
+    "@arthome/tooling": "workspace:*",
+    "@eslint/js": "10.0.1",
+    "eslint": "10.11.0",
+    "prettier": "3.9.8",
+    "typescript": "6.0.3",
+    "vitest": "5.0.1"
   }
 }

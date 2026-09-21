@@ -65,7 +65,7 @@ export const WatchDenialReason = {
   CONCURRENT_LIMIT_REACHED: 'concurrent-limit-reached',
   DATE_CANCELLED: 'date-cancelled',
   NOT_PUBLISHED: 'not-published',
-} as const satisfies Record<string, WatchDenialReason>;
+} as const;
 
 /** L'action qui SORT DE L'IMPASSE — un etat vide sans issue est proscrit. */
 export const WATCH_FALLBACK_ACTIONS = ['buy-seat', 'subscribe', 'see-other-dates', 'release-a-screen', 'none-action'] as const;
@@ -77,7 +77,7 @@ export const WatchFallbackAction = {
   SEE_OTHER_DATES: 'see-other-dates',
   RELEASE_A_SCREEN: 'release-a-screen',
   NONE: 'none-action',
-} as const satisfies Record<string, WatchFallbackAction>;
+} as const;
 
 /** Les CINQ entrees, nommees. Aucune n'est devinee, aucune n'est globale. */
 export interface WatchInput {

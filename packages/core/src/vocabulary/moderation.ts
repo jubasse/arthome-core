@@ -23,7 +23,7 @@ export type MessageState = (typeof MESSAGE_STATES)[number];
 export const MessageState = {
   PUBLISHED: 'published',
   REMOVED: 'removed',
-} as const satisfies Record<string, MessageState>;
+} as const;
 
 /** AXE 2 — la nature de la LIGNE DE FILE. */
 export const MODERATION_ITEM_STATES = ['reported', 'claimed', 'settled'] as const;
@@ -33,7 +33,7 @@ export const ModerationItemState = {
   REPORTED: 'reported',
   CLAIMED: 'claimed',
   SETTLED: 'settled',
-} as const satisfies Record<string, ModerationItemState>;
+} as const;
 
 /**
  * AXE 3 — la sanction sur la PERSONNE, AU SEIN D'UNE CHAINE.
@@ -48,7 +48,7 @@ export const AudienceSanction = {
   NONE: 'none-sanction',
   MUTED: 'muted',
   BANNED: 'banned',
-} as const satisfies Record<string, AudienceSanction>;
+} as const;
 
 export const MODERATION_VERDICTS = ['publish', 'remove', 'mute', 'ban'] as const;
 export type ModerationVerdict = (typeof MODERATION_VERDICTS)[number];
@@ -58,7 +58,7 @@ export const ModerationVerdict = {
   REMOVE: 'remove',
   MUTE: 'mute',
   BAN: 'ban',
-} as const satisfies Record<string, ModerationVerdict>;
+} as const;
 
 /**
  * Vocabulaire de `shared/catalogue.json` `moderationReasons`, qui fait autorite
@@ -81,7 +81,7 @@ export const ModerationReason = {
   SPOILER: 'spoiler',
   OFF_TOPIC: 'off-topic',
   HARASSMENT: 'harassment',
-} as const satisfies Record<string, ModerationReason>;
+} as const;
 
 /**
  * D'ou vient un changement d'etat — et l'origine SURVIT au reglement.
@@ -106,7 +106,7 @@ export const StateChangeOrigin = {
   RETROACTIVE_FILTER: 'retroactive-filter',
   AUTOMATIC_FILTER: 'automatic-filter',
   AUTHOR_SANCTIONED: 'author-sanctioned',
-} as const satisfies Record<string, StateChangeOrigin>;
+} as const;
 
 /**
  * Vocabulaire de `catalogue.json`. Trois tables paralleles existaient dans les
@@ -121,7 +121,7 @@ export const ChatMode = {
   EMOJI: 'emoji',
   READ_ONLY: 'read-only',
   OFF: 'off',
-} as const satisfies Record<string, ChatMode>;
+} as const;
 
 /**
  * Deux vocabulaires existaient dans le MEME fichier de maquette — `souple /
@@ -135,4 +135,4 @@ export const FilterSeverity = {
   LOW: 'low',
   MEDIUM: 'medium',
   HIGH: 'high',
-} as const satisfies Record<string, FilterSeverity>;
+} as const;

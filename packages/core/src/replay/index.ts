@@ -75,7 +75,7 @@ export type ReplayUnavailabilityReason = (typeof REPLAY_UNAVAILABILITY_REASONS)[
 export const ReplayUnavailabilityReason = {
   NO_POLICY: 'no-replay-policy',
   WINDOW_EXPIRED: 'replay-window-expired',
-} as const satisfies Record<string, ReplayUnavailabilityReason>;
+} as const;
 
 /**
  * Le diagnostic complet, en une passe.
