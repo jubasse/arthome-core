@@ -106,7 +106,88 @@ enum CreditOrigin {
   CREDIT_ORIGIN_GOODWILL = 2;
 }
 
-// Une ligne de TVA, par marché de facturation.
+// ---------------------------------------------------------- fiscalité
+//
+// CE BLOC EST LA SEULE PARTIE IRRÉVERSIBLE DE TOUT LE CHAPITRE FISCAL.
+// Le modèle — qui est redevable, sur quelle assiette — est un CALCUL : il se
+// refait. La localisation de l'acheteur et le taux appliqué à la vente sont des
+// FAITS DATÉS : s'ils ne sont pas capturés à l'instant de la vente, ils
+// n'existent nulle part, et les reconstituer n'est pas coûteux — c'est
+// IMPOSSIBLE. Voir adr-payments.md §5.0.
+
+// D'où vient un élément de preuve de localisation. L'UE exige DEUX éléments
+// NON CONTRADICTOIRES pour une vente B2C — et Stripe Tax privilégie une adresse
+// unique au lieu de les comparer, donc la règle de preuve ne peut pas lui être
+// déléguée : c'est notre registre qui la porte.
+enum TaxEvidenceKind {
+  TAX_EVIDENCE_KIND_UNSPECIFIED = 0;
+  TAX_EVIDENCE_KIND_BILLING_ADDRESS = 1;
+  TAX_EVIDENCE_KIND_IP_ADDRESS = 2;
+  TAX_EVIDENCE_KIND_BANK_COUNTRY = 3;
+  TAX_EVIDENCE_KIND_CARD_COUNTRY = 4;
+  TAX_EVIDENCE_KIND_SIM_COUNTRY = 5;
+  TAX_EVIDENCE_KIND_DECLARED_BY_BUYER = 6;
+}
+
+enum TaxJurisdictionLevel {
+  TAX_JURISDICTION_LEVEL_UNSPECIFIED = 0;
+  TAX_JURISDICTION_LEVEL_COUNTRY = 1;
+  TAX_JURISDICTION_LEVEL_STATE = 2;
+  TAX_JURISDICTION_LEVEL_COUNTY = 3;
+  TAX_JURISDICTION_LEVEL_CITY = 4;
+}
+
+// Le taux dépend du couple JURIDICTION x NATURE DE LA PRESTATION, jamais d'une
+// constante par marché. L'arrêt Derby Quad contre HMRC a jugé que
+// l'exonération des places de théâtre NE S'ÉTEND PAS au direct diffusé : une
+// place de spectacle et son accès en direct ne sont pas la même prestation.
+enum TaxSupplyKind {
+  TAX_SUPPLY_KIND_UNSPECIFIED = 0;
+  TAX_SUPPLY_KIND_LIVE_STREAM_ACCESS = 1;
+  TAX_SUPPLY_KIND_REPLAY_ACCESS = 2;
+  TAX_SUPPLY_KIND_SUBSCRIPTION = 3;
+  TAX_SUPPLY_KIND_MERCHANDISE = 4;
+}
+
+message TaxEvidence {
+  TaxEvidenceKind kind = 1;
+  // ISO 3166-1 alpha-2, tel que CET élément-là l'indique — pas le résultat.
+  string country = 2;
+  // ISO 3166-2 quand l'élément le porte.
+  string subdivision = 3;
+  // D'où il vient, pour l'audit : « stripe.payment_method », « edge.geoip »,
+  // « account.billing_address ». Une preuve sans provenance n'est pas une preuve.
+  string source = 4;
+  google.protobuf.Timestamp collected_at = 5;
+}
+
+// La localisation fiscale de l'ACHETEUR, portée par la commande.
+// PAS un identifiant de marché, PAS un simple pays :
+//   - aux États-Unis, environ 9 000 juridictions (État, comté, ville) — un pays
+//     ne permet AUCUN calcul, et le code postal est indispensable ;
+//   - dans l'UE, la preuve est double et doit être conservée.
+//
+// À NE PAS CONFONDRE avec le KYB/KYC de Connect, qui porte sur l'ARTISTE
+// (vérification d'identité et d'entreprise du compte connecté) et n'a rien à
+// voir avec la localisation du SPECTATEUR. Les deux sont souvent confondus.
+message BuyerTaxLocation {
+  string country = 1;
+  // ISO 3166-2 : État américain, province canadienne, Land allemand.
+  string subdivision = 2;
+  // Indispensable au calcul américain, où le taux change d'une rue à l'autre.
+  string postal_code = 3;
+  string city = 4;
+
+  // DEUX AU MOINS pour une vente B2C dans l'UE, non contradictoires.
+  repeated TaxEvidence evidence = 5;
+  // Vrai quand deux éléments se contredisent : la vente se fait, la ligne part
+  // en instruction. Masquer le conflit produirait une déclaration fausse et
+  // silencieuse.
+  bool evidence_conflicting = 6;
+  google.protobuf.Timestamp resolved_at = 7;
+}
+
+// Une ligne de TVA, par JURIDICTION — et non par marché de facturation.
 // La FORME est sûre et ne bougera pas, quel que soit le modèle fiscal retenu :
 // un modèle à taux unique produit une ventilation à une ligne. Le modèle
 // lui-même n'est PAS tranché — voir adr-payments.md §5. `studio-web` a trouvé
@@ -114,13 +195,25 @@ enum CreditOrigin {
 // fixture applique un taux unique au brut : deux affirmations incompatibles,
 // aucune instruite (D5).
 message VatLine {
-  // « eur », « chf », « cad ».
-  string market_id = 1;
+  // `market_id` retiré : un marché de facturation est une notion de PRIX
+  // (dans quelle devise on vend), jamais une notion de TAXE. Numéro réservé,
+  // un numéro de champ ne se réutilise jamais.
+  reserved 1;
+  reserved "market_id";
+
   // Taux en points de base : 550 = 5,5 %. Un entier, jamais un flottant :
   // un taux en virgule flottante finit par produire un centime d'écart.
+  // C'est le TAUX APPLIQUÉ AU MOMENT DE LA VENTE, conservé sur la ligne —
+  // pas le taux courant. Une facture se conserve dix ans ; les taux changent.
   uint32 rate_bps = 2;
   arthome.common.v1.Money base = 3;
   arthome.common.v1.Money amount = 4;
+
+  // « FR » · « US-CA-94103 » · « CH-ZH ». Assez précis pour rejouer le calcul.
+  string jurisdiction_code = 5;
+  TaxJurisdictionLevel jurisdiction_level = 6;
+  // Le taux dépend du couple juridiction x nature — voir TaxSupplyKind.
+  TaxSupplyKind supply_kind = 7;
 }
 
 message PriceTierAmount {
@@ -249,6 +342,14 @@ message OrderPaid {
   // non expliqué.
   string payment_intent_ref = 11;
   google.protobuf.Timestamp paid_at = 12;
+
+  // La localisation fiscale retenue, AVEC SES PREUVES. Trois raisons de ne pas
+  // s'en remettre au `Customer` de Stripe : la facture se conserve DIX ANS et
+  // l'objet Stripe ne vit que tant qu'on reste chez Stripe ; il faut le taux
+  // HISTORIQUE et non le taux courant ; et l'obligation de conservation porte
+  // sur six éléments — date, preuves de localisation, nature du produit, taux
+  // applicable, montant de TVA, total. C'est notre registre qui les porte.
+  BuyerTaxLocation buyer_tax_location = 13;
 }
 
 message OrderRefunded {

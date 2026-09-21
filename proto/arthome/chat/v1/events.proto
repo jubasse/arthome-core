@@ -123,8 +123,15 @@ enum FilterSeverity {
 enum StateChangeOrigin {
   STATE_CHANGE_ORIGIN_UNSPECIFIED = 0;
   STATE_CHANGE_ORIGIN_HUMAN_VERDICT = 1;
+  // Un mot ajouté au dictionnaire EN DIRECT reclasse des messages déjà publiés.
   STATE_CHANGE_ORIGIN_RETROACTIVE_FILTER = 2;
   STATE_CHANGE_ORIGIN_AUTHOR_SANCTIONED = 3;
+  // La modération AUTOMATIQUE, qui agit à l'INGESTION — pas après réclamation.
+  // Elle n'est pas construite aujourd'hui ; la forme doit pouvoir l'accueillir
+  // sans changement de contrat, ce qui est bon marché maintenant et cher après.
+  // À distinguer de RETROACTIVE_FILTER : celui-ci reclasse l'existant, celle-là
+  // décide à l'arrivée.
+  STATE_CHANGE_ORIGIN_AUTOMATIC_FILTER = 4;
 }
 
 // ---------------------------------------------------------------- régime
@@ -215,7 +222,32 @@ message ModerationSettled {
   uint32 reports_count = 8;
   int32 at_media_sec = 9;
   google.protobuf.Timestamp settled_at = 10;
+
+  // Qui a tranché. Peut être un acteur NON HUMAIN : `Actor.surface` porte
+  // SURFACE_SYSTEM, et `account_id` est alors vide. Aucune forme nouvelle
+  // n'est nécessaire pour qu'un modérateur automatique rende un verdict.
   arthome.common.v1.Actor settled_by = 11;
+
+  // L'ORIGINE DU RÈGLEMENT, et elle SURVIT au règlement.
+  // Sans elle, « retiré par le filtre, puis confirmé par X » s'écrase en
+  // « retiré par X », et l'on perd de quoi mesurer plus tard la qualité du
+  // filtre. C'est gratuit maintenant, irrattrapable ensuite — le même
+  // raisonnement que l'ancrage média d'un message.
+  StateChangeOrigin origin = 12;
+
+  // Renseignés quand un humain CONFIRME (ou renverse) une décision automatique.
+  // La préséance est écrite dans un seul sens : un humain peut renverser une
+  // décision automatique, JAMAIS l'inverse — sinon un filtre rétroactif
+  // effacerait un arbitrage rendu.
+  arthome.common.v1.Actor confirmed_by = 13;
+  google.protobuf.Timestamp confirmed_at = 14;
+
+  // L'AXE DU RÈGLEMENT, distinct de la version qui porte le bail.
+  // Seul un verdict l'incrémente ; prendre puis relâcher une prise en charge ne
+  // le touche pas. C'est lui qu'une commande conditionnelle vise.
+  // Voir data-model.md §6.1 : un compteur unique ne peut pas exprimer
+  // « refuse si tranché, accepte si seulement réclamé ».
+  uint64 decision_version = 15;
 }
 
 // Une sanction porte un INSTANT d'expiration, jamais une étiquette :

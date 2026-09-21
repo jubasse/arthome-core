@@ -559,12 +559,13 @@ un consommateur idempotent, lue en une requête.
 | `viewer_relations` | `identity` | suivis, liste | — |
 | `viewer_progress` | `streaming` | points de reprise | — |
 | `entitlement_projection` | **`streaming`** | — | `ticketing.seat.activated.v1` · `ticketing.seat.cancelled.v1` · `ticketing.subscription.changed.v1` · `catalog.date.scheduled.v1` · `catalog.date.outcome_declared.v1` · `catalog.date.replay_policy_set.v1` |
-| `person_duties` (les gardes, toutes chaînes) | `identity` | appartenances, accès ponctuels | + `catalog.date.scheduled.v1` · `streaming.run.state_changed.v1` |
+| `person_duties` (les gardes, toutes chaînes) | `identity` | appartenances, accès ponctuels | + `catalog.date.scheduled.v1` · `streaming.run.state_changed.v1`. **Bornée aux chaînes où la personne a un accès VIVANT** : un accès ponctuel expiré au tomber du rideau en sort sans attendre une reconnexion |
 | `artist_counters` (abonnés, audience moyenne) | `catalog` | — | `identity.artist.followed.v1` / `unfollowed` · `streaming.run.ended.v1` |
 | `channel_dues` (dates en vente, versements dus) | `identity` | — | `ticketing.*` · `payouts.payout.state_changed.v1` — sert le refus de suppression de chaîne |
 | `channel_presence` | `identity` | connexions/déconnexions au canal `/studio` | — (état tenu en Redis, TTL 30 s) — **lu, pas seulement poussé** (`realtime.md` §5.3) |
 | `run_health_series` | `streaming` | échantillons d'ingest | — (série courte, fenêtre paramétrable, porte le **pic et son heure**) |
-| `moderation_queue` | `chat` | signalements, verdicts | — |
+| `moderation_queue` | `chat` | signalements, verdicts | — **clé `channel_id`** ; une lecture sans chaîne n'existe pas (`context-map.md` §1.1) |
+| `channel_audience` | `chat` | présence, messages, sanctions | — **clé `channel_id`** ; la même personne est un `AudienceMember` distinct par chaîne |
 | `payout_ledger` | `payouts` | — | `ticketing.order.paid.v1` · `ticketing.order.refunded.v1` · `catalog.date.outcome_declared.v1` · `streaming.run.ended.v1` (l'échéance court depuis la fin) |
 | **`channel_journal`** | **`identity`** | — | **tous les contextes**, par l'en-tête `actor-id` que tout message porte déjà. 24 mois, `page + total`, filtre de période **obligatoire**, nature `money` **absente** sans `canRevenue` (`context-map.md` §1.9) |
 | `inbox` | `notifications` | — | tous les contextes, routés par rôle |
@@ -761,10 +762,66 @@ heure de salle et que le journal de modération en a besoin.
 
 `ModerationItem` : `state` (`reported | claimed | settled`), `reason`, `reports_count`,
 `claimed_by` + **`claim_expires_at`** (un bail court : un modérateur qui ferme son navigateur ne
-gèle pas une ligne pendant tout le direct), `verdict`, `settled_by`, `settled_at`.
+gèle pas une ligne pendant tout le direct), `verdict`, `settled_by`, `settled_at`, `origin`,
+`confirmed_by`.
 **Le second verdict est refusé et transporte la décision gagnante** — auteur et verdict — pour que
 l'écran affiche « X a déjà supprimé ce message » au lieu d'un échec nu. Réponses à `studio-web`
 Q21, Q22 et `studio-mobile` Q6.
+
+#### Deux compteurs, parce que le bail et la décision ne sont pas le même fait
+
+`studio-mobile` C3 a démontré, sur les exemples du contrat lui-même, qu'un **compteur unique
+annule la file hors ligne** — la seule concession accordée au mobile :
+
+```
+claim    → version 1 → 2      prendre en charge
+release  → version 2 → 3      relâcher, SANS RIEN TRANCHER
+```
+
+Un modérateur lit la file à `version: 1`, perd le réseau, tranche ; son verdict part en file avec
+`expectedVersion: 1`. Un confrère prend puis relâche la ligne **sans verdict**. À la reconnexion,
+le verdict légitime est **refusé**. Sur un direct à 60 messages par minute, les lignes changent de
+bail sans arrêt.
+
+Et le défaut est plus profond qu'un compteur mal placé : la règle réelle est une **supersession** —
+*« prendre en charge n'est pas trancher : tant que le confrère n'a pas rendu de verdict, votre
+sanction s'applique »*. Un verdict doit donc être **accepté pendant qu'un autre tient le bail**.
+**Un compteur unique ne peut pas exprimer « refuse si tranché, accepte si seulement réclamé ».**
+
+> **`version` porte le bail. `decision_version` porte le règlement, et seul un verdict
+> l'incrémente.** Une commande de verdict est conditionnée sur `decision_version`, jamais sur
+> `version`.
+
+C'est la doctrine des trois axes, appliquée une fois de plus : on avait séparé les **états**, on
+empilait encore les **compteurs**.
+
+#### La modération automatique : rien à construire, une forme à ne pas fermer
+
+Elle est au programme « à terme ». Trois contraintes, à écrire maintenant parce qu'elles sont
+gratuites aujourd'hui et chères après — c'est de la **compatibilité ascendante**, pas une
+fonctionnalité.
+
+1. **Un modérateur automatique ne prend pas de bail.** Il agit à l'**ingestion**, pas après
+   réclamation. C'est un argument de plus pour la coupe ci-dessus : avec un compteur unique, une
+   décision automatique et un verdict humain mis en file hors ligne entreraient en collision d'une
+   façon que ce compteur **ne sait pas exprimer**.
+2. **La préséance est écrite dans un seul sens : un humain renverse une décision automatique,
+   jamais l'inverse.** Sans cette règle, un filtre rétroactif effacerait un arbitrage rendu — et
+   l'arbitrage humain est précisément ce qu'on conserve 24 mois et qu'on journalise nominativement.
+3. **L'origine survit au règlement.** Le journal doit pouvoir dire « retiré par le filtre,
+   **confirmé par X** » aussi bien que « retiré par X ». D'où `origin` **et** `confirmed_by` sur la
+   ligne réglée : si l'un écrase l'autre, on perd de quoi mesurer la qualité du filtre, et c'est
+   irrattrapable. Même raisonnement que l'ancrage média d'un message.
+
+**L'acteur non humain ne demande aucune forme nouvelle** : `common.Actor` porte déjà
+`SURFACE_SYSTEM` (`account_id` vide), qui sert aussi à l'écran d'attente automatique et à
+l'expiration d'un bail. Un verdict rendu par une machine est un `Actor` comme un autre.
+
+`AudienceMember` est **indexé par `(channel_id, account_id)`**, jamais par compte seul : la même
+personne est un membre du public **distinct dans chaque chaîne**, avec sa propre sanction, son
+propre historique et son propre pseudonyme visible. C'est ce qui rend l'isolation vérifiable plutôt
+que déclarative — un modérateur indépendant qui travaille pour trois artistes ne peut pas lire
+l'historique d'un spectateur chez le quatrième, parce que la ligne n'existe pas dans sa chaîne.
 
 `AudienceMember` : le public d'une chaîne est **une collection interrogeable par elle-même**, pas
 une projection du tchat — la console cherche « un spectateur présent, qui n'a pas écrit »

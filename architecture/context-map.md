@@ -109,6 +109,35 @@ de `grants` sur ces rôles (`assignableRoles[]`), matérialisée, jamais la tabl
 
 Les confondre ferait d'une révocation de renfort une exclusion de chaîne. Ce sont deux agrégats.
 
+#### L'isolation entre chaînes est un **invariant**, pas une commodité
+
+Les régisseurs et les modérateurs **ne sont pas nos salariés** : ce sont des collaborateurs des
+artistes ou des indépendants qui travaillent sur plusieurs chaînes — `people` le modélise déjà
+ainsi, avec `channels[]` et `runsCalled`, et une date sur douze est tenue par un renfort
+indépendant.
+
+Cela change la nature du besoin. Tant qu'on croyait parler d'employés, l'absence de déconnexion et
+de révocation d'appareil côté studio (`studio-mobile` C6) était un **défaut d'ergonomie**. Avec des
+tiers qui vont d'un artiste à l'autre, c'est un **défaut de protection des données** : un
+indépendant verrait la file de modération, les pseudonymes et l'historique des spectateurs de
+chaînes qui ne sont pas les siennes.
+
+> **Toute lecture du studio est portée par une chaîne, et le droit se vérifie sur cette
+> chaîne-là — jamais sur l'appartenance à une chaîne quelconque.** Aucune lecture de modération,
+> d'audience, de journal ou de billetterie ne traverse une frontière de chaîne, même pour un
+> propriétaire.
+
+Trois conséquences, qui sont des invariants et non des filtres d'affichage :
+
+- **les collections de `chat` sont indexées par chaîne** — `AudienceMember`, `ModerationItem`,
+  `BannedWord`, les sanctions — et une requête sans `channel_id` n'existe pas ;
+- **les deux seules lectures par personne** sont `person_duties` (mes gardes) et la boîte. Toutes
+  deux ne portent que ce qui concerne **les chaînes où la personne a un accès vivant**, et un accès
+  ponctuel expiré au tomber du rideau les retire **sans attendre une reconnexion** ;
+- **un accès révoqué se voit dans la seconde** : `identity.rights_version.bumped.v1` fait quitter
+  les salles de la chaîne perdue (`realtime.md` §3), et le jeton de service émis par le BFF ne vit
+  que 60 s — c'est la borne de fraîcheur de l'autorisation, et elle est écrite.
+
 **Réfutation possible.** On peut soutenir que `Channel` mérite son propre contexte `organisation`.
 Je l'écarte parce que la seule chose qu'une chaîne fait sans `identity` est de porter un nom, et
 qu'un nom n'est pas un invariant.
