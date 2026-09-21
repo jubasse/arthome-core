@@ -1,25 +1,25 @@
 {
   "_comment": [
-    "Les exceptions a arthome-check-enums, CHACUNE AVEC SA RAISON.",
+    "The exceptions to arthome-check-enums, EACH WITH ITS REASON.",
     "",
-    "Ce fichier reste court ou la regle est mauvaise. Au-dela de vingt lignes,",
-    "c'est le signe qu'une valeur manque dans @arthome/core — pas que la porte",
-    "est trop severe.",
+    "This file stays short or the rule is a bad one. Past twenty lines, that is",
+    "the sign that a value is missing from @arthome/core — not that the gate is",
+    "too severe.",
     "",
-    "Une exception legitime a une forme reconnaissable : la valeur appartient a",
-    "un ESPACE PARTAGE par deux vocabulaires distincts, et importer la constante",
-    "serait SEMANTIQUEMENT FAUX. Toute autre justification est suspecte."
+    "A legitimate exception has a recognisable shape: the value belongs to a",
+    "SPACE SHARED by two distinct vocabularies, and importing the constant would",
+    "be SEMANTICALLY WRONG. Any other justification is suspect."
   ],
   "allow": [
     {
       "file": "packages/core/src/fixtures/build.ts",
       "value": "fr",
-      "reason": "Code BCP 47 de la langue JOUEE d'un spectacle, pas la locale d'affichage. Les deux partagent l'espace BCP 47 sans etre le meme vocabulaire : un spectacle peut etre joue en italien alors que l'interface ne connait que fr et en. Importer LOCALES ici graverait la confusion au lieu de la corriger."
+      "reason": "BCP 47 code of the language a show is PERFORMED in, not the display locale. The two share the BCP 47 space without being the same vocabulary: a show can be performed in Italian while the interface only knows fr and en. Importing LOCALES here would carve the confusion in rather than correct it."
     },
     {
       "file": "packages/core/src/fixtures/build.ts",
       "value": "en",
-      "reason": "Idem : code BCP 47 d'une piste de sous-titres, pas la locale d'affichage."
+      "reason": "Same: BCP 47 code of a subtitle track, not the display locale."
     }
   ]
 }

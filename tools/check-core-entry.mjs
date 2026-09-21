@@ -1,27 +1,26 @@
 #!/usr/bin/env node
-// arthome-check-core-entry — la porte des DEUX ENTREES de @arthome/core.
+// arthome-check-core-entry — the gate on @arthome/core's TWO ENTRY POINTS.
 //
-// CE QU'ELLE GARANTIT
-//   L'entree `.` de @arthome/core n'importe zod A AUCUNE PROFONDEUR.
+// WHAT IT GUARANTEES
+//   @arthome/core's `.` entry point imports zod AT NO DEPTH.
 //
-// POURQUOI C'EST UNE PORTE ET PAS UNE CONVENTION
-//   Le cout de zod est FIXE et lie a l'import, pas marginal et lie au nombre de
-//   schemas : deux agents l'ont mesure independamment et convergent a 1 Ko pres
-//   — 93 Ko compresses pour un seul `z.string()` en entree classique, 7,5 Ko en
-//   `zod/mini` elague (D-012). Un seul `import { z }` ajoute au fond d'un
-//   module de regles suffit donc a faire payer la facture entiere a la TV et au
-//   mobile, SANS QUE RIEN NE LE SIGNALE : le code compile, les tests passent,
-//   et le bundle grossit de 93 Ko.
+// WHY THIS IS A GATE AND NOT A CONVENTION
+//   zod's cost is FIXED and tied to the import, not marginal and tied to the
+//   number of schemas: two agents measured it independently and converge to
+//   within 1 KB — 93 KB gzipped for a single `z.string()` on the classic entry
+//   point, 7.5 KB on tree-shaken `zod/mini` (D-012). So a single `import { z }`
+//   added deep inside a rules module is enough to hand the whole bill to TV and
+//   mobile, WITH NOTHING REPORTING IT: the code compiles, the tests pass, and
+//   the bundle grows by 93 KB.
 //
-//   C'est exactement le profil d'une faute qu'un principe n'attrape pas.
+//   That is exactly the profile of a fault a principle does not catch.
 //
-// COMMENT
-//   Parcours du graphe d'imports depuis src/index.ts, sur les SOURCES. Pas de
-//   build, pas de node_modules, pas de resolution de module : le meme choix que
-//   arthome-check-enums, et pour la meme raison — la porte doit fonctionner des
-//   le premier jour.
+// HOW
+//   Walk the import graph from src/index.ts, over the SOURCES. No build, no
+//   node_modules, no module resolution: the same choice as arthome-check-enums,
+//   and for the same reason — the gate must work from day one.
 //
-// Voir architecture/core-port-plan.md section 2.
+// See architecture/core-port-plan.md section 2.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -39,13 +38,20 @@ const CORE_SRC = path.resolve(CWD, opt('core', 'packages/core/src'));
 const ENTRY = path.join(CORE_SRC, 'index.ts');
 const SCHEMA_ENTRY = path.join(CORE_SRC, 'schema', 'index.ts');
 
-// Ce qui ne doit jamais etre joignable depuis l'entree `.`.
+// What must never be reachable from the `.` entry point.
 const FORBIDDEN = [
-  { test: (s) => s === 'zod' || s.startsWith('zod/'), why: 'zod — cout fixe de 93 Ko compresses (D-012)' },
-  { test: (s) => s.startsWith('node:'), why: 'API Node — le paquet doit tourner sous Metro et dans un navigateur' },
+  {
+    test: (s) => s === 'zod' || s.startsWith('zod/'),
+    why: 'zod — fixed cost of 93 KB gzipped (D-012)',
+  },
+  {
+    test: (s) => s.startsWith('node:'),
+    why: 'Node API — the package must run under Metro and in a browser',
+  },
 ];
 
-const IMPORT_RE = /(?:^|\n)\s*(?:import|export)\s+(?:type\s+)?(?:[^'"]*?\sfrom\s+)?['"]([^'"]+)['"]/g;
+const IMPORT_RE =
+  /(?:^|\n)\s*(?:import|export)\s+(?:type\s+)?(?:[^'"]*?\sfrom\s+)?['"]([^'"]+)['"]/g;
 const DYNAMIC_RE = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 
 function specifiersOf(file) {
@@ -58,7 +64,7 @@ function specifiersOf(file) {
 
 function resolveRelative(fromFile, spec) {
   const base = path.resolve(path.dirname(fromFile), spec);
-  // nodenext : les imports relatifs portent `.js`, les sources sont en `.ts`.
+  // nodenext: relative imports carry `.js`, the sources are `.ts`.
   const candidates = [base.replace(/\.js$/, '.ts'), `${base}.ts`, path.join(base, 'index.ts')];
   return candidates.find((c) => fs.existsSync(c) && fs.statSync(c).isFile()) ?? null;
 }
@@ -92,48 +98,56 @@ function rel(p) {
 function main() {
   const entry = walk(ENTRY);
   if (entry.missing) {
-    console.error(`⚠ arthome-check-core-entry : ${rel(ENTRY)} introuvable.`);
-    console.error('  PORTE INACTIVE tant que @arthome/core n\'a pas son entree principale.');
+    console.error(`⚠ arthome-check-core-entry: ${rel(ENTRY)} not found.`);
+    console.error('  GATE INACTIVE until @arthome/core has its main entry point.');
     process.exit(0);
   }
 
   if (!QUIET) {
     console.log(
-      `arthome-check-core-entry : ${entry.visited.size} module(s) joignable(s) depuis l'entree « . »`,
+      `arthome-check-core-entry: ${entry.visited.size} module(s) reachable from the "." entry point`,
     );
   }
 
   if (entry.findings.length) {
-    console.error(`\n✗ l'entree « . » de @arthome/core atteint ${entry.findings.length} import(s) interdit(s) :\n`);
+    console.error(
+      `\n✗ @arthome/core's "." entry point reaches ${entry.findings.length} forbidden import(s):\n`,
+    );
     for (const f of entry.findings) {
       console.error(`  ${rel(f.file)}  →  '${f.spec}'`);
       console.error(`    ${f.why}`);
       if (f.chain.length > 1) {
-        console.error(`    chemin : ${f.chain.map(rel).join('\n             → ')}`);
+        console.error(`    path: ${f.chain.map(rel).join('\n          → ')}`);
       }
     }
-    console.error('\n  Un schema de frontiere vit dans src/schema/, jamais dans une regle.');
+    console.error('\n  A boundary schema lives in src/schema/, never inside a rule.');
     process.exit(1);
   }
 
-  // L'entree ./schema, elle, DOIT dependre de zod — sinon elle n'a pas d'objet.
+  // The ./schema entry point, on the other hand, MUST depend on zod — otherwise
+  // it has no purpose.
   if (fs.existsSync(SCHEMA_ENTRY)) {
     const schema = walk(SCHEMA_ENTRY);
     const usesZod = schema.visited.size
-      ? [...schema.visited].some((f) => specifiersOf(f).some((s) => s === 'zod' || s.startsWith('zod/')))
+      ? [...schema.visited].some((f) =>
+          specifiersOf(f).some((s) => s === 'zod' || s.startsWith('zod/')),
+        )
       : false;
     if (!usesZod) {
-      console.error('\n✗ l\'entree « ./schema » n\'importe pas zod.');
-      console.error('  Une entree de schemas sans schemas n\'a pas d\'objet : soit elle porte des');
-      console.error('  schemas zod, soit elle ne doit pas exister.');
+      console.error('\n✗ the "./schema" entry point does not import zod.');
+      console.error('  A schema entry point with no schemas has no purpose: either it carries zod');
+      console.error('  schemas, or it must not exist.');
       process.exit(1);
     }
-    if (!QUIET) console.log(`arthome-check-core-entry : entree « ./schema » — ${schema.visited.size} module(s), zod present`);
+    if (!QUIET)
+      console.log(
+        `arthome-check-core-entry: "./schema" entry point — ${schema.visited.size} module(s), zod present`,
+      );
   } else if (!QUIET) {
-    console.log('arthome-check-core-entry : entree « ./schema » pas encore ecrite (vague 6)');
+    console.log('arthome-check-core-entry: "./schema" entry point not written yet (wave 6)');
   }
 
-  if (!QUIET) console.log('✓ l\'entree « . » n\'atteint ni zod ni une API Node');
+  if (!QUIET) console.log('✓ the "." entry point reaches neither zod nor a Node API');
 }
 
 main();
