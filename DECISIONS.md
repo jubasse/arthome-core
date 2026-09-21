@@ -455,3 +455,130 @@ illisible pour `backend-contracts`, et un index qui renvoie ailleurs ne duplique
 Motif : `capacitor://localhost` comme **contexte sécurisé** dans WKWebView n'est pas vérifié, et il
 conditionne aussi `getUserMedia` et Web Crypto. **À mesurer sur appareil réel avant toute
 promesse** — c'est une vérification, pas une opinion.
+
+---
+
+## Temps 3 et 4 — 21 septembre 2026
+
+### D-020 — Le jeton de lecture reste à 120 s
+
+`backend-domain` a remonté ce point **sans réponse**, et il a eu raison : raccourcir à 60 s
+ramènerait la fenêtre de révocation mais **doublerait la fréquence de renouvellement sur le chemin
+le plus chaud du système**, que personne n'a mesuré.
+
+**Le défaut n'a jamais été la fenêtre, c'était la promesse.** Cinq documents annonçaient ≤ 60 s et
+le contrat servait le nombre (`playbackCutWithinSec: 60`) alors que le jeton dure 120 s. La
+correction est la vérité, pas le mécanisme.
+
+La raison décisive est venue de `backend-domain` après coup : **la propriété de sécurité qui
+compte est tenue à l'émission, pas à la révocation.** La révocation traite un droit qui a existé
+puis cessé — abonnement échu, appareil déconnecté, limite d'écrans, remboursement. Aucun de ces cas
+ne justifie de doubler la charge du chemin chaud.
+
+**Addition** : un signal `playback:stop` poussé sur le canal existant, **étiqueté courtoisie et non
+frontière de sécurité** — un client modifié l'ignore, la périphérie sert jusqu'à 120 s, la garantie
+reste 120 s. L'ADR rejette d'emblée « toute heuristique contournable » ; il serait incohérent d'en
+vendre une ensuite comme une protection.
+
+**Seuil de réouverture, chiffré et non intentionnel** : si le renouvellement à 45 s coûte moins de
+5 % du temps processeur de `streaming` en pointe et moins de 2 % de latence ajoutée au p95
+d'`OpenPlayback` — **mesuré** —, raccourcir devient gratuit.
+
+### D-021 — Le modèle fiscal confirmé, et la forme corrigée
+
+**Confirmé après vérification sur trois juridictions** : `on_behalf_of` retiré, modèle
+commissionnaire gardé. La documentation de Stripe est explicite — *« indirect charges using the
+`on_behalf_of` parameter : the merchant of record is the connected account »* —, donc le paramètre
+mettait la configuration en contradiction frontale avec le modèle qu'elle exécute.
+
+Les trois régimes convergent, et **le modèle intermédiaire n'exonère nulle part** : en Europe
+l'article 28 attrape **sur les faits** (le spectacle vivant capté n'est pas un service électronique,
+donc la présomption automatique de l'article 9a ne s'applique pas) ; aux États-Unis les lois
+*marketplace facilitator* obligent à collecter dans **46 États plus le district de Columbia**,
+quelle que soit la position contractuelle ; au Royaume-Uni HMRC n'a pas aligné ses règles sur la
+directive 2022/542, donc le fournisseur est taxé par établissement. Le 10-Q d'Eventbrite décrit
+publiquement le même montage.
+
+**Et la forme gravée était fausse, ce qui était plus grave que l'arbitrage.** `backend-domain`
+avait fait de « la ventilation par marché » son argument d'irréversibilité. Son propre diagnostic :
+**un marché de facturation est une notion de prix — dans quelle devise on vend — jamais une notion
+de taxe.** Le `skeptic` corrigeait « marché » en « pays » ; le pays ne suffit pas davantage —
+environ 9 000 juridictions aux États-Unis, et au Royaume-Uni un taux qui dépend du couple
+juridiction × nature de la prestation (Derby Quad : l'exonération des places de théâtre **ne
+s'étend pas** au direct diffusé).
+
+**La forme retenue** : `BuyerTaxLocation` (pays, subdivision, code postal, ville) portée par la
+commande, `TaxEvidence[]` avec source et horodatage, un drapeau `evidence_conflicting`, et
+`VatLine` clée sur `jurisdiction_code` / `jurisdiction_level` / `supply_kind` avec le **taux
+appliqué à la vente**. Rétention dix ans, une adresse IP conservée à titre de preuve fiscale
+relevant d'une base légale distincte du consentement.
+
+**La règle de preuve ne peut pas être déléguée à Stripe** : Stripe Tax privilégie une adresse
+unique là où l'Europe exige **deux éléments non contradictoires**. Ce n'est pas une préférence,
+personne ne le fait à notre place.
+
+**KYB/KYC et localisation fiscale ne portent pas sur la même personne** : Connect vérifie
+**l'artiste** pour pouvoir lui verser, la localisation concerne **le spectateur** pour savoir quel
+taux appliquer et le justifier dix ans. Avoir l'une ne donne rien de l'autre.
+
+**Le coût assumé** : Stripe **exige** `on_behalf_of` hors région commune, donc une chaîne suisse ou
+canadienne devra être traitée autrement ou attendre. L'avertissement de validation par un conseil
+reste entier.
+
+### D-022 — Ce qui n'a pas de source n'entre pas au contrat
+
+**La provenance des spectateurs est retirée**, pas servie vide. `studio-web` a établi que la
+maquette apporte **cinq libellés et rien d'autre** : valeurs codées en dur, et aucune source
+d'attribution dans `shared/`, `fixtures.js` ni `catalogue.json`. L'écrire aurait été laisser la
+mise en page d'un écran dicter la structure d'une API — la faute que la mission interdisait dès sa
+première page.
+
+`backend-contracts` a ajouté ce qui n'était pas demandé et qui compte : **ce qu'il faudrait pour
+que la donnée existe**, parce qu'un manque sans son remède se redécouvre.
+
+**Même traitement pour les deux tuiles mortes** de `dashboard` : elles testent le rôle principal et
+ni `mod` ni `regie` n'ouvre la page. Quatre tuiles servies, la question de produit consignée —
+ouvrir la page à ces deux rôles, ou retirer les tuiles.
+
+### D-023 — L'authentification passe par le BFF
+
+**Le BFF expose `/v1/auth/*` en relais documenté, cookie sur le domaine du BFF.** Trois contraintes
+le déterminaient : la règle critique 1 interdit qu'un navigateur appelle `identity` directement ;
+Next ne voit pas un cookie posé sur un autre domaine, ce qui viderait de son sens la surface
+choisie pour son rendu serveur ; et `capacitor://localhost` est un contexte tiers sur iOS 14+, donc
+le studio mobile ne peut porter aucun cookie.
+
+**`auth` a trouvé l'argument qui rend le relais obligatoire plutôt que préférable** : l'OpenAPI est
+généré depuis zod, donc **un relais transparent n'apparaîtrait pas dans l'OpenAPI** et les six
+contrats manquants resteraient manquants.
+
+**Invariant** : une réponse ne porte jamais un cookie **et** un jeton — deux porteurs pour une
+session, c'est deux révocations à tenir et une qu'on oubliera. Porté en `oneOf` discriminé par le
+mode, le mode étant un paramètre explicite validé par zod, jamais déduit du `User-Agent`.
+
+**Ce qui casse, assumé** : le client officiel de better-auth devient inutilisable. Contrepartie
+imprévue — `@better-auth/expo` n'étant plus installé, **l'authentification devient indifférente au
+choix Expo / React Native nu**, qui reste ouvert (D-001).
+
+### D-024 — Une porte lit le contrat, jamais une liste tenue à côté
+
+Deux durcissements de `tools/check-openapi.py`, et **les deux fois le vérificateur s'est fait
+prendre à son propre jeu**.
+
+**R14** ne se déclenchait que si `enum` **et** `x-arthome-vocabulary` coexistaient : un `enum` nu
+en réponse passait, et c'est `storefront-tv` qui l'a trouvé à la main sur `Error.nature` — dans le
+corps de **toutes** les erreurs, où une quatrième valeur aurait fait rejeter l'enveloppe entière
+par un parc qu'on ne met pas à jour. Le durcissement proposé (« tout `enum` sous
+`components/schemas` ») a été **essayé puis rejeté** : il criait sur `SearchCriteria`, référencée
+seulement en `in: query`, et un vocabulaire d'entrée est légitimement fermé. Le critère juste est
+l'**atteignabilité depuis une réponse**. Une porte qui crie à tort se fait désactiver.
+
+**R11** portait une liste d'exemptions codée en dur — c'est-à-dire **une table littérale parallèle
+au contrat, tenue dans l'outil qui existe pour les interdire**. `backend-contracts` a refusé la
+correction facile et diagnostiqué la forme. L'exemption se lit désormais dans le document, avec son
+motif obligatoire.
+
+La suppression de la liste a révélé **six opérations exemptées sans que personne n'ait jamais écrit
+pourquoi**, plus deux que la liste ne couvrait pas. Toutes légitimes — et c'est ce qui rend la
+découverte utile : *une liste de noms sans motifs est indistinguable d'une liste de noms sans
+raisons.*
