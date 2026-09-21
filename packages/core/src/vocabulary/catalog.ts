@@ -68,14 +68,24 @@ export const DateOutcome = {
 } as const satisfies Record<string, DateOutcome>;
 
 /**
- * La QUATRIEME valeur, derivee et unique — la seule que les cartes affichent.
+ * La QUATRIEME valeur, derivee et unique — CE QUE LA PASTILLE DIT.
  *
  * Aucun des trois axes ne la portait, et chaque surface recomposait la
  * hierarchie a sa facon : la definition meme d'une valeur calculee deux fois.
- * Les trois issues la REMPLACENT quand elles existent.
+ *
+ * ⚠ ONZE valeurs, et non huit. Une version anterieure de ce vocabulaire
+ * n'avait que les etats PUBLICS — c'etait oublier que le studio affiche aussi
+ * les dates qui ne le sont pas encore, et que `displayState` est prescrit sur
+ * LES DEUX produits, le studio d'abord. `draft`, `reserve` et `technical`
+ * portent donc la MEME chaine que l'etat de publication correspondant : quand
+ * aucun axe posterieur ne prend le dessus, l'etat affiche EST l'etat de
+ * publication. Le partage de valeur est delibere, comme celui des trois issues.
  */
 export const DISPLAY_STATES = [
+  'draft',
+  'reserve',
   'scheduled-soon',
+  'technical',
   'room-open',
   'on-air-live',
   'replay-available',
@@ -87,7 +97,10 @@ export const DISPLAY_STATES = [
 export type DisplayState = (typeof DISPLAY_STATES)[number];
 
 export const DisplayState = {
+  DRAFT: 'draft',
+  RESERVE: 'reserve',
   SCHEDULED: 'scheduled-soon',
+  TECHNICAL: 'technical',
   ROOM_OPEN: 'room-open',
   LIVE: 'on-air-live',
   REPLAY: 'replay-available',

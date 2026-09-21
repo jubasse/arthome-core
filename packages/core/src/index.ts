@@ -26,3 +26,8 @@ export * from './taxonomy/index.js';
 export * from './media/index.js';
 export * from './format/index.js';
 export * from './i18n/index.js';
+
+// Vague 3 — ce qui est publie, ce qui se rediffuse, ce qui est permis.
+export * from './catalog/index.js';
+export * from './replay/index.js';
+export * from './permissions/index.js';
