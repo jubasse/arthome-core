@@ -292,14 +292,15 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
       x-arthome-idempotency-exemption: |
-        **Seule écriture des deux contrats sans `Idempotency-Key`, et c'est délibéré.** Le régime
-        d'idempotence rend la réponse d'origine **verbatim** ; sur une ouverture de session, cela
-        reviendrait à **rendre un jeton sans avoir vérifié les justificatifs**. Une clé volée
-        deviendrait un porteur de session.
+        **La seule exemption qui ne soit pas « sans effet à dédupliquer » : celle-ci est une
+        interdiction.** Le régime d'idempotence rend la réponse d'origine **verbatim** ; sur une
+        ouverture de session, cela reviendrait à **rendre un jeton sans avoir vérifié les
+        justificatifs**. Une clé rejouée deviendrait un porteur de session — et une clé volée,
+        une session volée.
 
-        Les cinq autres routes d'authentification la portent, elles, parce qu'un rejeu y rend la
-        réponse d'origine plutôt qu'un `410` ou un second effet — c'est la reprise sûre. Une
-        connexion, non : elle doit **toujours** ré-authentifier. La protection contre le
+        Les cinq autres routes d'authentification portent la clé, elles, parce qu'un rejeu y rend
+        la réponse d'origine plutôt qu'un `410` ou un second effet : c'est la reprise sûre. Une
+        connexion, non — elle doit **toujours** ré-authentifier. La protection contre le
         double-envoi est ici la limitation de débit par `device_id`, pas le magasin d'idempotence.
       security: []
       parameters:
@@ -1907,11 +1908,18 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
       x-arthome-idempotency-exemption: |
-        **Un devis rejoué doit être frais, jamais mémorisé** — même raison qu'un renouvellement de
-        jeton. Le devis tire sa valeur de son `validUntil` : rendre la réponse d'origine pourrait
-        rendre un devis **déjà expiré**, ou un prix que la promotion au prorata a rendu faux. Et
-        cette opération n'écrit rien : c'est une lecture, en `POST` parce que ses critères ne
-        tiennent pas dans une chaîne de requête.
+        **Une lecture déguisée en `POST` : elle est en `POST` parce que ses critères ne tiennent
+        pas dans une URL, pas parce qu'elle écrit.** Un devis calcule, il ne crée rien — il n'y a
+        donc aucun effet à dédupliquer.
+
+        **Et une clé n'y protégerait rien**, parce que la fraîcheur est déjà garantie ailleurs :
+        le tarif porte son `validUntil`, et `expectedTotal` est **obligatoire** à l'achat — un
+        prix périmé est refusé par `PRICE_STALE` au moment qui compte, pas au moment du devis.
+
+        **Pire : elle nuirait.** Le régime rend la réponse d'origine **verbatim**, donc un devis
+        rejoué serait un devis **déjà entamé, voire expiré** — ou un prix que la promotion au
+        prorata du temps écoulé a rendu faux. Même raison qu'un renouvellement de jeton : ce qu'on
+        demande, c'est une valeur fraîche.
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
@@ -2534,10 +2542,15 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
       x-arthome-idempotency-exemption: |
-        **Un devis rejoué doit être frais, jamais mémorisé.** Le total présenté est celui qui sera
-        débité, et cette promesse tient **quinze minutes** : servir un devis mémorisé rendrait un
-        total dont la fenêtre est entamée, voire close — c'est-à-dire un devis opposable qui ne
-        l'est plus. Le rejeu produit donc un nouveau devis, avec sa propre fenêtre.
+        **Une lecture déguisée en `POST`**, pour la même raison que `quoteSeat` : le panier et
+        l'adresse de livraison ne tiennent pas dans une URL. Un devis calcule le port et les
+        remises ; il ne crée ni commande ni réservation.
+
+        **Une clé n'y protégerait rien** — `checkoutCart` porte le `quoteId` et refuse un devis
+        périmé — **et elle nuirait** : le total présenté est celui qui sera débité, et cette
+        promesse tient **quinze minutes**. Servir un devis mémorisé rendrait un total dont la
+        fenêtre est entamée ou close, c'est-à-dire **un devis opposable qui ne l'est plus**. Le
+        rejeu produit donc un devis neuf, avec sa propre fenêtre.
       parameters:
         - $ref: '#/components/parameters/Surface'
         - $ref: '#/components/parameters/Traceparent'
