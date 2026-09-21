@@ -591,6 +591,6 @@ jamais été l'argument (§1).
    `openapi/storefront.yaml` ou `openapi/studio.yaml` ; personne n'a été désigné pour choisir
    l'outil, l'épingler et décider où le client généré est publié (un paquet de plus dans
    `arthome-core` ? un dossier `src/generated/**` par surface, déjà exempté du lint par
-   `code-conventions.md` §4.4 ?). Ma recommandation est la seconde — un client généré n'est pas un
+   `code-conventions.md` §4.5 ?). Ma recommandation est la seconde — un client généré n'est pas un
    contrat, c'est une commodité de surface, et le publier créerait une troisième chose à faire
    tourner. À attribuer.

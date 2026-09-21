@@ -610,7 +610,7 @@ palier 2** est la bonne cadence ; le construire plus tôt serait de l'outillage 
 
 **2. Le générateur de client des cinq surfaces.** Personne n'a été désigné pour choisir l'outil,
 l'épingler et décider où le client publié vit. Ma recommandation : `src/generated/**` dans chaque
-dépôt de surface — déjà exempté du lint par `code-conventions.md` §4.4 — et **pas** un paquet
+dépôt de surface — déjà exempté du lint par `code-conventions.md` §4.5 — et **pas** un paquet
 publié. Un client généré n'est pas un contrat, c'est une commodité de surface ; le publier créerait
 une quatrième chose à faire tourner, pour une personne seule.
 

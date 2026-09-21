@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Vérificateur de conformité OpenAPI 3.1 — règles Arthome.
+"""OpenAPI 3.1 conformance checker — Arthome rules.
 Usage: python3 check-openapi.py openapi/*.yaml
-Aucune dépendance hors PyYAML. Tout se vérifie en local."""
+No dependency beyond PyYAML. Everything is verified locally."""
 import sys, re, yaml
 
 HTTP = {"get","put","post","delete","patch","head","options","trace"}
@@ -23,28 +23,28 @@ def check(fn):
 
     # R1 — OpenAPI 3.1
     if not str(d.get("openapi","")).startswith("3.1"):
-        err(fn, f"R1 openapi doit être 3.1.x, trouvé {d.get('openapi')}")
+        err(fn, f"R1 openapi must be 3.1.x, found {d.get('openapi')}")
 
-    # R2 — pas de `nullable` (retiré en 3.1), pas de `example` dans un schéma (c'est `examples`)
+    # R2 — no `nullable` (dropped in 3.1), no boolean `exclusiveMinimum`
     for p, n in walk(d.get("components",{}).get("schemas",{}), "components/schemas"):
         if "nullable" in n:
-            err(fn, f"R2 `nullable` interdit en 3.1 → type: [T,'null'] — {p}")
+            err(fn, f"R2 `nullable` forbidden in 3.1 → type: [T,'null'] — {p}")
         if "exclusiveMinimum" in n and isinstance(n["exclusiveMinimum"], bool):
-            err(fn, f"R2 exclusiveMinimum est un nombre en 2020-12 — {p}")
+            err(fn, f"R2 exclusiveMinimum is a number in 2020-12 — {p}")
 
-    # R3 — tous les $ref résolvent
+    # R3 — every $ref resolves
     refs = set()
     for p, n in walk(d):
         r = n.get("$ref") if isinstance(n, dict) else None
         if isinstance(r, str): refs.add((p, r))
     for p, r in refs:
         if not r.startswith("#/"):
-            err(fn, f"R3 $ref externe interdit: {r} ({p})"); continue
+            err(fn, f"R3 external $ref forbidden: {r} ({p})"); continue
         cur = d
         for seg in r[2:].split("/"):
             seg = seg.replace("~1","/").replace("~0","~")
             if not isinstance(cur, dict) or seg not in cur:
-                err(fn, f"R3 $ref non résolu: {r} ({p})"); cur=None; break
+                err(fn, f"R3 unresolved $ref: {r} ({p})"); cur=None; break
             cur = cur[seg]
 
     ops = [(pp, m, o) for pp, pi in d.get("paths",{}).items()
@@ -53,118 +53,117 @@ def check(fn):
     ids = {}
     for pp, m, o in ops:
         oid = o.get("operationId")
-        # R4 — operationId présent, lowerCamelCase, unique
+        # R4 — operationId present, lowerCamelCase, unique
         if not oid:
-            err(fn, f"R4 operationId manquant — {m.upper()} {pp}"); continue
+            err(fn, f"R4 missing operationId — {m.upper()} {pp}"); continue
         if not re.fullmatch(r"[a-z][A-Za-z0-9]*", oid):
-            err(fn, f"R4 operationId doit être lowerCamelCase: {oid}")
+            err(fn, f"R4 operationId must be lowerCamelCase: {oid}")
         if oid in ids:
-            err(fn, f"R4 operationId dupliqué: {oid} ({ids[oid]} et {m.upper()} {pp})")
+            err(fn, f"R4 duplicate operationId: {oid} ({ids[oid]} and {m.upper()} {pp})")
         ids[oid] = f"{m.upper()} {pp}"
 
-        # R5 — summary et description obligatoires
-        if not o.get("summary"): err(fn, f"R5 summary manquant — {oid}")
-        if not o.get("description"): err(fn, f"R5 description manquante — {oid}")
+        # R5 — summary and description are mandatory
+        if not o.get("summary"): err(fn, f"R5 missing summary — {oid}")
+        if not o.get("description"): err(fn, f"R5 missing description — {oid}")
 
-        # R6 — maturité déclarée
+        # R6 — maturity declared
         mat = o.get("x-arthome-maturity")
         if mat not in ("stable","provisional"):
-            err(fn, f"R6 x-arthome-maturity absent ou invalide — {oid}")
+            err(fn, f"R6 x-arthome-maturity missing or invalid — {oid}")
 
-        # R7 — service amont déclaré
+        # R7 — upstream service declared
         if not o.get("x-arthome-upstream"):
-            err(fn, f"R7 x-arthome-upstream absent — {oid}")
+            err(fn, f"R7 x-arthome-upstream missing — {oid}")
 
-        # R8 — exemple sur toute requête avec corps
+        # R8 — example on every request with a body
         rb = o.get("requestBody")
         if rb:
             for ct, media in rb.get("content",{}).items():
                 if "example" not in media and "examples" not in media:
-                    err(fn, f"R8 exemple manquant sur la requête — {oid} ({ct})")
+                    err(fn, f"R8 missing example on the request — {oid} ({ct})")
 
         resp = o.get("responses",{})
-        # R9 — au moins une réponse 2xx, avec exemple
+        # R9 — at least one 2xx response, with an example
         success = [c for c in resp if str(c).startswith("2")]
         if not success:
-            err(fn, f"R9 aucune réponse 2xx — {oid}")
+            err(fn, f"R9 no 2xx response — {oid}")
         for c in success:
             for ct, media in (resp[c].get("content") or {}).items():
                 if "example" not in media and "examples" not in media:
-                    err(fn, f"R9 exemple manquant sur la réponse {c} — {oid} ({ct})")
+                    err(fn, f"R9 missing example on response {c} — {oid} ({ct})")
 
-        # R10 — enveloppe d'erreur partagée sur toute réponse 4xx/5xx
+        # R10 — shared error envelope on every 4xx/5xx response
         for c, r in resp.items():
             if str(c)[0] in "45":
                 if "$ref" in r:
                     if not r["$ref"].startswith("#/components/responses/"):
-                        err(fn, f"R10 réponse d'erreur non partagée — {oid} {c}")
+                        err(fn, f"R10 error response is not shared — {oid} {c}")
                     continue
                 for ct, media in (r.get("content") or {}).items():
                     s = media.get("schema",{})
                     if s.get("$ref") != "#/components/schemas/ErrorEnvelope":
-                        err(fn, f"R10 réponse {c} n'utilise pas ErrorEnvelope — {oid}")
+                        err(fn, f"R10 response {c} does not use ErrorEnvelope — {oid}")
 
-        # R11 — toute écriture d'engagement porte Idempotency-Key
+        # R11 — every committing write carries Idempotency-Key
         params = o.get("parameters",[]) or []
         has_idem = any(pa.get("$ref","").endswith("/IdempotencyKey") or pa.get("name")=="Idempotency-Key"
                        for pa in params)
-        # L'exemption se lit DANS LE DOCUMENT, pas dans une liste tenue ici.
+        # The exemption is read FROM THE DOCUMENT, not from a list kept here.
         #
-        # La première version portait un `SAFE_WRITE` codé en dur — c'est-à-dire
-        # une table littérale parallèle au contrat, tenue dans l'outil qui existe
-        # pour interdire les tables littérales parallèles. E2 dans sa propre porte.
-        # Elle a échoué comme une telle table échoue toujours : le contrat a gagné
-        # deux opérations (`signIn`, `signInStudio`) et la liste ne le savait pas.
+        # The first version carried a hardcoded `SAFE_WRITE` — that is, a parallel
+        # literal table of the contract, kept inside the very tool that exists to
+        # forbid parallel literal tables. E2 in its own gate. It failed the way
+        # such a table always fails: the contract gained two operations
+        # (`signIn`, `signInStudio`) and the list did not know it.
         #
-        # Une opération exemptée porte donc `x-arthome-idempotency-exemption`, avec
-        # son motif en clair — le motif étant la partie utile, puisqu'il se relit.
-        # Deux familles, toutes deux légitimes :
+        # An exempted operation therefore carries `x-arthome-idempotency-exemption`
+        # with its reason in plain words — the reason being the useful part, since
+        # it is what gets reread. Two families, both legitimate:
         #
-        #   · écriture tolérante à la perte ou sans effet cumulatif, où la clé
-        #     coûterait plus cher que ce qu'elle protège (position de lecture,
-        #     échantillon de santé, réaction bornée par un quota, devis) ;
-        #   · ouverture de session, et le motif est sérieux : le régime
-        #     d'idempotence rend la réponse d'origine VERBATIM, donc sur un
-        #     `signIn` il rendrait un jeton sans avoir vérifié les justificatifs.
-        #     Une clé rejouée deviendrait un porteur de session.
+        #   · a loss-tolerant write, or one with no cumulative effect, where the key
+        #     would cost more than it protects (playback position, health sample,
+        #     quota-bounded reaction, quote);
+        #   · a session opening, and the reason is serious: the idempotency regime
+        #     replays the original response VERBATIM, so on a `signIn` it would
+        #     return a token without having verified the credentials.
+        #     A replayed key would become a session bearer.
         exempt = o.get("x-arthome-idempotency-exemption")
         if m in ("post","put","patch","delete") and not exempt and not has_idem:
-            err(fn, f"R11 Idempotency-Key absent sur une écriture — {oid}")
+            err(fn, f"R11 Idempotency-Key missing on a write — {oid}")
         if exempt and has_idem:
-            err(fn, f"R11 exemption déclarée ET Idempotency-Key présent — {oid}")
+            err(fn, f"R11 exemption declared AND Idempotency-Key present — {oid}")
         if exempt and not str(exempt).strip():
-            err(fn, f"R11 exemption sans motif — {oid}")
+            err(fn, f"R11 exemption without a reason — {oid}")
 
-        # R12 — traceparent propagé partout
+        # R12 — traceparent propagated everywhere
         if not any(pa.get("$ref","").endswith("/Traceparent") or pa.get("name")=="traceparent"
                    for pa in params):
-            err(fn, f"R12 traceparent absent — {oid}")
+            err(fn, f"R12 traceparent missing — {oid}")
 
-    # R13 — pas de phrase d'interface : aucun champ nommé `label`, `message`, `title` en string nu
-    #        hors LocalizedText (contenu rédigé assumé)
+    # R13 — no interface sentence: no field named `label`, `message`, `title` as a bare
+    #        string, outside LocalizedText (authored content, assumed)
     for p, n in walk(d.get("components",{}).get("schemas",{}), "components/schemas"):
         if not isinstance(n, dict): continue
         props = n.get("properties")
         if not isinstance(props, dict): continue
         for name, sch in props.items():
             if name in ("labelFr","labelEn","messageFr","messageEn"):
-                err(fn, f"R13 fuite d'i18n dans la donnée: {p}/{name}")
+                err(fn, f"R13 i18n leak in the data: {p}/{name}")
 
-    # R14 — aucun `enum` figé dans un schéma ATTEIGNABLE DEPUIS UNE RÉPONSE.
+    # R14 — no frozen `enum` in a schema REACHABLE FROM A RESPONSE.
     #
-    # Deux corrections successives. La version d'origine ne se déclenchait que si
-    # `enum` ET `x-arthome-vocabulary` étaient présents ensemble : un `enum` nu
-    # passait au travers, et c'est ce que `storefront-tv` a trouvé à la main sur
-    # `Error.nature` — `required` dans `Error`, lui-même `required` dans
-    # `ErrorEnvelope`, donc dans le corps de TOUTES les erreurs. Une quatrième
-    # nature aurait fait rejeter l'enveloppe entière par un parc qu'on ne met pas
-    # à jour, au moment précis où quelque chose ne va pas.
+    # Two successive corrections. The original version only fired when `enum` AND
+    # `x-arthome-vocabulary` were present together: a bare `enum` slipped through,
+    # and that is what `storefront-tv` found by hand on `Error.nature` — `required`
+    # in `Error`, itself `required` in `ErrorEnvelope`, hence in the body of EVERY
+    # error. A fourth nature would have made a fleet we cannot update reject the
+    # whole envelope, at the exact moment something is already wrong.
     #
-    # La première tentative de durcissement — « tout `enum` sous
-    # components/schemas » — criait à tort sur `SearchCriteria`, qui n'est
-    # référencée qu'en `in: query`. Un vocabulaire d'ENTRÉE est légitimement
-    # fermé : le serveur doit refuser ce qu'il ne connaît pas. Une porte qui crie
-    # à tort se fait désactiver, donc le critère juste est l'atteignabilité.
+    # The first hardening attempt — "every `enum` under components/schemas" — cried
+    # wolf on `SearchCriteria`, which is only referenced `in: query`. An INPUT
+    # vocabulary is legitimately closed: the server must refuse what it does not
+    # know. A gate that cries wolf gets switched off, so the right criterion is
+    # reachability.
     schemas = d.get("components", {}).get("schemas", {})
 
     def refs_of(node):
@@ -196,10 +195,10 @@ def check(fn):
         for sp, n in walk(schemas[name], f"components/schemas/{name}"):
             if isinstance(n, dict) and "enum" in n:
                 hint = ("" if "x-arthome-vocabulary" in n
-                        else " (ajouter x-arthome-vocabulary et x-arthome-unknown-fallback)")
-                err(fn, f"R14 enum figé dans un schéma servi en réponse{hint} — {sp}")
+                        else " (add x-arthome-vocabulary and x-arthome-unknown-fallback)")
+                err(fn, f"R14 frozen enum in a schema served in a response{hint} — {sp}")
 
-    # R15 — tout schéma de réponse racine porte servedAt (via EnvelopeMeta)
+    # R15 — every root response schema carries servedAt (through EnvelopeMeta)
     for pp, m, o in ops:
         oid = o.get("operationId","?")
         for c, r in (o.get("responses") or {}).items():
@@ -212,16 +211,16 @@ def check(fn):
                 if isinstance(allof, list):
                     ok = any(isinstance(x, dict) and x.get("$ref","").endswith("/EnvelopeMeta") for x in allof)
                 if not ok:
-                    err(fn, f"R15 réponse {c} sans EnvelopeMeta (donc sans servedAt) — {oid}")
+                    err(fn, f"R15 response {c} without EnvelopeMeta (hence without servedAt) — {oid}")
 
-    print(f"{fn}: {len(d.get('paths',{}))} chemins, {len(ops)} opérations, "
-          f"{len(d.get('components',{}).get('schemas',{}))} schémas")
+    print(f"{fn}: {len(d.get('paths',{}))} paths, {len(ops)} operations, "
+          f"{len(d.get('components',{}).get('schemas',{}))} schemas")
 
 for fn in sys.argv[1:]:
     check(fn)
 
 if ERRS:
-    print(f"\n{len(ERRS)} écart(s) :")
+    print(f"\n{len(ERRS)} finding(s):")
     for e in ERRS: print("  ✗", e)
     sys.exit(1)
-print("\n✓ conforme")
+print("\n✓ conformant")
