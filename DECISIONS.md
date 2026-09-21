@@ -333,33 +333,59 @@ dépôt **étend** : ESLint, Prettier, **TypeScript** et Vitest.
 dépôts et une seule personne, des configurations autonomes divergeront — c'est exactement la faute
 E2 (la table littérale parallèle) appliquée à l'outillage.
 
-**La fracture TypeScript, découverte en vérifiant les épinglages des orchestrateurs.**
+**⚠ La contrainte TypeScript — version corrigée le 21 septembre 2026, après vérification au
+registre npm par le coéquipier `conventions`.**
 
-| Pile | TypeScript | Vitest |
-|---|---|---|
-| Angular 22 — studio web, studio mobile | **`>=6.0 <6.1`** | `^4.0.8` |
-| React 19.3 — storefront mobile, TV | **`7.0.2`** | `5.0.1` |
-| Next 16 — storefront web | `5.1+` (plancher) | — |
-| NestJS 12 — les services | non épinglé | — |
+La première rédaction de cette décision affirmait une **fracture** entre dépôts : Angular sur TS
+6.0.x, React sur TS 7.x, et des `.d.ts` partagés devant servir les deux majeures simultanément.
+**C'était faux.** Le chef avait lu le `verified-versions: typescript 7.0.2` de `react-how-to`
+comme une contrainte, alors que c'est un **constat de registre** — ce qui était courant le jour de
+vérification de la skill.
 
-**`@arthome/core` et `@arthome/contracts` seront consommés simultanément par un dépôt en TS 6.0.x
-et par des dépôts en TS 7.x.** Leurs `.d.ts` publiés doivent être lisibles par les deux, et leurs
-types publics s'interdire toute syntaxe propre à TS 7. Ce n'est pas une convention de style : c'est
-une contrainte de publication qui pèse sur les contrats, donc elle relève bien de cette session.
+Ce que dit réellement le registre :
 
-Conséquence directe sur `@arthome/tooling` : **un seul tsconfig de base ne peut pas suffire** —
-certaines options n'existent pas dans les deux versions, ou ne s'y comportent pas pareil. Le
-coéquipier doit dire combien de fichiers de base sont nécessaires, vérifier que `extends` à travers
-une frontière de paquet tient dans les sept contextes (pnpm et ses liens symboliques, la résolution
-d'`exports`, l'empaqueteur Metro, le CLI Angular), et **énumérer ce qu'un dépôt a le droit de
-redéfinir et ce qui est verrouillé**. Sans cette dernière liste, `extends` n'est qu'une suggestion.
+| Paquet | Contrainte réelle sur `typescript` |
+|---|---|
+| `@angular/compiler-cli@22.1.7` | `>=6.0 <6.1` — **peer dependency, dure** |
+| `react-native@0.87.1` | **aucun peer `typescript`** |
+| `@types/react@19.3.0` | **aucun peer `typescript`** |
+| `@nestjs` (`nest build`) | **abandonne sur TS 7.0** (`UNSUPPORTED_TYPESCRIPT_VERSION`) — TS 7.0 ne livre pas d'API programmatique |
+| **`typescript-eslint@8.70.0`** | **`>=4.8.4 <6.1.0`** — et la demande de support TS 7 est fermée « not planned » |
 
-**La seule preuve acceptée** que la contrainte tient : compiler les `.d.ts` publiés contre les deux
-versions de TypeScript. En local — le quota d'Actions du compte est épuisé.
+**La conclusion s'inverse.** Il n'y a pas de fracture entre dépôts : il y a un **plafond unique à
+TS 6.0.x sur les sept**, imposé par `typescript-eslint` — c'est-à-dire par l'outil même qui
+justifiait d'écarter Biome en D-013. Le lint typé est la raison du choix ; il en est aussi le
+plafond.
 
----
+**La décision : TypeScript 6.0.3 sur les sept dépôts, épinglé exact.** Rien ne pousse vers le haut
+aujourd'hui.
 
-## Temps 2 — 21 septembre 2026
+**La fracture est un événement futur, pas un état présent** — `latest` vaut déjà 7.0.2. Elle est
+rendue **survivable** plutôt que niée : les deux paquets partagés se compilent avec le **plancher**
+de leurs consommateurs, avec `stableTypeOrdering: true` (le tri déterministe de TS 7 porté à
+TS 6 — les `.d.ts` publiés sont donc *déjà* ce que 7 émettrait) et surtout
+**`isolatedDeclarations: true`**, qui force à annoter toute la surface publique. C'est une
+garantie bien meilleure qu'une interdiction de syntaxe — d'autant qu'**il n'existe pas de syntaxe
+propre à TS 7** : 7.0 est un portage Go à parité de vérification. Le danger réel est dans les
+**options** (TS 6 a changé `types`, `rootDir`, `module`, `strict`) et dans l'**ordre d'émission**.
+
+**La preuve** : `tools/dts-check/` compile le contrat publié sous `typescript@6.0.3` puis sous
+`7.0.2` (`tsgo`), avec **`skipLibCheck: false`** — sans quoi la porte passe toujours — plus un
+`git diff --exit-code` sur les `.d.ts`. Quand Angular montera, les `.d.ts` ne changeront pas et la
+porte s'inversera, dépôt par dépôt.
+
+**Ce que le paquet porte, et comment** — établi par `conventions` : `eslint`, `prettier` et
+`typescript` en **peer** (ce sont les binaires que le dépôt exécute) ; `typescript-eslint`,
+`eslint-config-prettier`, `import-x` et `globals` en **dependencies**, épinglés exact — en
+configuration à plat un greffon est un *objet passé par valeur*, plus un nom à résoudre, donc sans
+ambiguïté. Les greffons de pile (`angular-eslint`, `eslint-config-next`, react-hooks, RN) **nulle
+part**, sinon les sept dépôts devraient monter de framework ensemble. `vitest` ni en peer ni en
+dépendance : l'entrée exporte un objet nu et jamais un `defineConfig`, sinon Angular (Vitest 4) et
+les autres (Vitest 5) ne peuvent pas coexister.
+
+**Propagation** : allumer une règle est un changement **MAJEUR** — sinon sept dépôts passent au
+rouge sur un `pnpm update`. Toute règle passe par `warn` en mineur N, puis `error` en majeur N+1,
+un seul dépôt en transit à la fois. `arthome-core` consomme son propre paquet avant publication.
 
 ### D-015 — Modèle fiscal : commissionnaire, à valider par un conseil
 
