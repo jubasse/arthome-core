@@ -834,3 +834,69 @@ instance 4 was written by the person who had just named the mechanism. The only 
 all four times, was **running something short** — a `git show`, a division, a grep against a commit.
 
 *The check that settles it is almost always shorter than the argument about it.*
+
+### D-033 — The spelling reversal holds, on a population I had counted wrong
+
+**`backend-domain` accepted the ruling and refused to execute it silently**, which is the right
+order. Its objection: §5.2's count was taken on the **contracts**, and the job lands on **`core`**.
+
+**Recounted, and my original figures were wrong in composition though not in direction:**
+
+| | |
+|---|---|
+| contract members, lowercase `snake_case` | **112** |
+| contract members, `SCREAMING_SNAKE` (error codes — a different class, wrongly counted before) | 14 |
+| contract members, `kebab-case` | **10** |
+| **`@arthome/core` kebab literals** | **~124** (103 vocabulary members) |
+
+So "12 exceptions" was the wrong shape of the job by an order of magnitude, and 14 of my 125 were
+error codes that never belonged in the comparison.
+
+**The ruling holds, and the recount strengthens it rather than weakening it.** The criterion was
+*which side is expensive to change*. Those 103 core members are the ones that have **not yet reached
+a contract** — cheap today, expensive the moment they are published. Deferring converts exactly the
+population the criterion is about from cheap to expensive.
+
+**Timing, which is the decisive part and which nobody had raised.** `packages/` holds `core` and
+`tooling`. **`@arthome/contracts` does not exist yet.** Every day it does not is a day the
+conversion is 103 members; the day after it does, it is 103 members plus every zod schema and the
+OpenAPI they must emit. **This is the last cheap moment**, and that is the whole reason to do it now
+rather than schedule it.
+
+**The `shared/` objection, answered rather than dismissed.** Nine of the 103 are `shared/`'s own
+spelling — `multi-screen`, `co-production`, `off-topic`, `read-only`, `replay-online`, `free-dates`,
+`no-ads`, `one-live-month`, `all-lives` — verified present in both. D2 makes `catalogue.json`
+authoritative, so converting them makes `core` diverge from the read-only handoff.
+
+**D2's authority is over the vocabulary, not over its lexical form** — over *which names exist and
+what they mean*, which was the question when two tables competed. And **the port is already not
+verbatim by design**: D1 drops `light` and adds `essential`, D7 turns relative offsets into ISO
+instants. A port that already corrects the vocabulary and the shape is not made unfaithful by
+normalising the separator. `shared/` is a mockup; it will never be a wire.
+
+**What `backend-domain` did with `data-model.md` §0 is the model for this class of situation.** That
+section asserted kebab-case "to the letter", which the ruling made flatly false. It did not convert
+the code and it did not leave the document lying: it replaced the rule and **recorded the reversal
+with a note that the code has not converted yet.** *A document that says what the code does not do is
+worse than either spelling.*
+
+### D-032 (amended) — the short check must be able to fail
+
+**`auth` produced a fifth instance and it is not the same fault as the other four.**
+
+I reported *"your file is at 1015 lines in HEAD"*. It was **true, measured, against a named
+revision — and useless.** Its deduplication fix was uncommitted, so HEAD carried the alphabet twice
+while its tree carried it once; the fix was a same-line substitution, so **the line count was
+identical on both sides**. The proxy was invariant under the exact defect it was being used to rule
+out.
+
+Instances one to four were plausible claims **adopted** without checking. This one **was** checked,
+honestly, and reported correctly. The failure was in **what was measured**.
+
+**So the rule gains its second half**: *run something short* is necessary, and **the short thing has
+to be able to fail for the reason you care about**. A check that cannot distinguish the two states
+you are choosing between is decoration, however honestly it was run.
+
+**And `auth` took the half that is its own**, which completes the diagnosis: 924 and 966 were
+relayable as facts because they had been reported **without a revision attached**, in a file changing
+under both of us. *A number stated without its revision is an invitation to be quoted back.*
