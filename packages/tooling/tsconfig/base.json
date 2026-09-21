@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": [
+    "Socle commun aux sept depots. LU PAR TYPESCRIPT 6 ET PAR TYPESCRIPT 7.",
+    "",
+    "REGLE 1 — intersection stricte. Ce fichier ne contient que des options valides",
+    "dans les DEUX compilateurs. Toute option propre a une version descend dans le",
+    "fichier que seule cette version lit (voir tsconfig/lib.json).",
+    "Notamment ABSENTS et interdits ici : stableTypeOrdering (TS 7 : true et non",
+    "desactivable), baseUrl, target es5, downlevelIteration, moduleResolution node10,",
+    "module amd/umd/systemjs, outFile, ignoreDeprecations.",
+    "",
+    "REGLE 2 — aucune option porteuse de chemin. Les chemins relatifs d'un tsconfig",
+    "etendu se resolvent DEPUIS LE FICHIER OU ILS SONT ECRITS, donc depuis",
+    "node_modules/@arthome/tooling/tsconfig/. Sont donc absents : include, exclude,",
+    "files, outDir, rootDir, declarationDir, paths, typeRoots. Ils appartiennent au",
+    "tsconfig.json du depot. (references n'est de toute facon jamais herite.)",
+    "",
+    "La porte qui prouve la regle 1 : tools/dts-check etend ce fichier et est",
+    "type-verifie sous les deux compilateurs. Voir architecture/code-conventions.md",
+    "sections 4.4.1 a 4.4.3."
+  ],
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2022"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "useUnknownInCatchVariables": true,
+
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+
+    "types": []
+  }
+}

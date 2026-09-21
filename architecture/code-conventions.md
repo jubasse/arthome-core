@@ -642,21 +642,31 @@ de partage est nette et tient en une question : **le dépôt nomme-t-il ce paque
 ```json
 {
   "peerDependencies": {
+    "@eslint/js": "^9.39.5 || ^10.0.1",
     "eslint":     "^9.39.5 || ^10.11.0",
     "prettier":   "^3.9.8",
     "typescript": "6.0.3"
   },
-  "peerDependenciesMeta": {
-    "prettier": { "optional": false }
-  },
   "dependencies": {
-    "typescript-eslint":      "8.70.0",
-    "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-import-x": "4.17.1",
-    "globals":                "16.4.0"
+    "typescript-eslint":                "8.70.0",
+    "eslint-config-prettier":           "10.1.8",
+    "eslint-plugin-import-x":           "4.17.1",
+    "eslint-import-resolver-typescript": "4.4.5",
+    "globals":                          "16.4.0"
   }
 }
 ```
+
+**`@eslint/js` est un peer, et ce n'est pas un détail** — c'est le cas qui rend la règle du §4.2
+concrète. Il publie **un majeur par majeur d'ESLint** (10.0.1 en face d'ESLint 10, 9.39.5 en face
+d'ESLint 9). L'épingler en `dependencies` imposerait donc indirectement un majeur d'ESLint aux sept
+dépôts — et casserait précisément les deux qui sont cloués sur ESLint 9 par
+`@react-native/eslint-config` (§6.3). Il suit `eslint`, donc il est peer comme `eslint`.
+
+`eslint-import-resolver-typescript` est en revanche une `dependency` : c'est un objet passé à
+`settings['import-x/resolver-next']`, le dépôt ne le nomme jamais. Sans lui, `import-x/no-cycle` et
+`no-restricted-imports` ne voient ni les `paths` ni les `exports` — la règle tourne et ne trouve
+rien, ce qui est la pire des deux façons d'échouer.
 
 **En `peerDependencies` — les binaires que le dépôt exécute :**
 
@@ -1262,9 +1272,9 @@ E2 prouve qu'écrire la règle ne suffit pas. Ce qu'il faut, c'est détecter **l
 valeur d'énumération ailleurs que là où elle est déclarée**. C'est mécanisable et bon marché :
 
 > Un script `tools/check-enum-literals.mjs`, dans `arthome-core`, qui :
-> 1. importe depuis `@arthome/core` **toutes** les constantes exportées qui sont des tableaux de
->    chaînes `as const`, sans en connaître la liste à l'avance, et collecte l'ensemble de leurs
->    valeurs ;
+> 1. lit les **sources** de `@arthome/core` et y découvre **toutes** les constantes exportées de la
+>    forme `export const NOM = [...] as const`, sans en connaître la liste à l'avance, puis collecte
+>    l'ensemble de leurs valeurs ;
 > 2. parcourt les fichiers source du dépôt (`src/**`, `app/**`), hors le module de déclaration, hors
 >    `**/generated/**`, hors les fichiers de test ;
 > 3. signale toute chaîne littérale appartenant à cet ensemble ;
@@ -1276,6 +1286,12 @@ paragraphe donnait la liste en dur — `CHAT_MODES`, `REPLAY_POLICIES`, `PUBLICA
 énumérations, recopiée à côté des énumérations. Le script lit ce que `@arthome/core` exporte
 réellement ; une énumération nouvelle est couverte le jour où elle est déclarée, sans que personne
 ait à penser à l'inscrire quelque part.
+
+**Et il lit les sources, pas le paquet construit.** Importer `@arthome/core` exigerait qu'il soit
+compilé *et* installé ; lire `packages/core/src/**/*.ts` fonctionne dès le premier jour, sans
+construction, sans exécution et sans résolution de module. C'est le seul écart entre cette
+spécification et l'implémentation, et il est dans le sens de la robustesse : une porte qui attend
+qu'un paquet soit construit pour exister n'existe pas le jour où on en a le plus besoin.
 
 Un exemple de ce que la liste en dur aurait coûté, et il n'est pas théorique : `MODERATION_STATES`
 au singulier **conflait trois axes que `proto/arthome/chat/v1/events.proto` sépare** — `MessageState`
@@ -1602,7 +1618,13 @@ réglage de construction opt-in, **jamais un défaut de React 19**. Trois règle
 Et `eslint-plugin-react-compiler` **ne s'installe pas** : dernière publication en août 2025, restée
 au stade RC, jamais stable. Ses règles vivent dans `eslint-plugin-react-hooks`.
 
-### 6.3 React Native et react-native-tvos — les deux dépôts de surface mobile et TV
+### 6.3 Expo — `arthome-storefront-mobile`, `arthome-storefront-tv`
+
+> **D-025 retient Expo** pour les deux surfaces. Ce qui suit vaut pour Expo comme pour React
+> Native nu — c'est Metro et l'absence de contrainte TypeScript qui commandent, pas le
+> gestionnaire de projet. Ce qui change avec Expo : `eslint-config-expo` s'ajoute à la liste des
+> préréglages de pile que `@arthome/tooling` ne porte pas, et c'est **son** peer `eslint` qu'il
+> faudra relever au palier mobile, à côté de celui de `@react-native/eslint-config`.
 
 **Ce qui s'ajoute :** `@react-native/eslint-config@0.87.1`, par son entrée `./flat`.
 
@@ -1784,10 +1806,20 @@ premier. **24.21.0.**
 Écrite à trois endroits, parce que trois outils différents la lisent :
 
 ```
-.nvmrc                              →  24.21.0
-package.json → "engines": { "node": "^24.21.0" }
-package.json → "packageManager": "pnpm@12.5.1"
+.nvmrc                              →  24
+package.json → "engines": { "node": "^22.22.3 || ^24.15.0 || >=26" }
+package.json → "packageManager": "pnpm@12.4.2"
 ```
+
+**`engines` porte la contrainte, pas la version du jour.** Écrire `^24.21.0` reviendrait à refuser
+une machine sur 24.19.0 — qui satisfait pourtant les quatre planchers. La fourchette est celle
+d'Angular, la plus exigeante des quatre : c'est elle qui décide, et elle est la seule à mériter
+d'être recopiée. De même `.nvmrc` porte `24` et non un correctif précis, pour ne pas déclencher un
+téléchargement à chaque montée de patch amont.
+
+`packageManager` porte en revanche une version **exacte**, parce que c'est son rôle : Corepack
+installe celle-là. On y écrit **la version réellement utilisée sur la machine**, pas la dernière du
+registre — sinon le premier `pnpm` de la journée part chercher une version qu'on n'a pas choisie.
 
 `packageManager` est ce qui fait que Corepack installe la **bonne** version de pnpm sans y penser —
 c'est la mesure qui coûte le moins et évite le plus de « ça marche chez moi » entre une machine et un
@@ -1882,6 +1914,12 @@ Le quota d'Actions du compte est épuisé. Aucune porte ne suppose un exécuteur
 | 14 | Tests | `pnpm exec vitest run` | vert | §5.8 |
 | 15 | **Verrous tsconfig non desserrés** | `pnpm exec arthome-check-tsconfig` | aucun verrou desserré | §4.5.1 |
 | 16 | Message de commit | crochet `commit-msg` | conforme | §5.9, §8.4 |
+| 17 | Conformité OpenAPI | `python3 tools/check-openapi.py openapi/*.yaml` | `✓ conforme` | `definition-of-done.md` |
+
+**Les portes 9, 10, 15 et 17 tournent sans `node_modules`** — les trois premières sont du Node pur
+livré par `@arthome/tooling`, la quatrième du Python sans dépendance hors PyYAML. C'est délibéré :
+une porte qui attend une installation pour exister n'existe pas le jour de la création d'un dépôt,
+c'est-à-dire le jour où elle servirait le plus. D'où le second script du §8.2.
 
 Les portes **1, 6, 7, 9** sont celles que D-013 et D-014 exigent nommément. Ce sont aussi les quatre
 qu'un projet abandonnerait en premier, parce qu'aucune ne correspond à une habitude installée.
@@ -1904,7 +1942,10 @@ commande, qui enchaîne **celles qui les concernent** :
     "check:enums":    "arthome-check-enums",
     "check:versions": "arthome-check-versions",
     "check:tsconfig": "arthome-check-tsconfig",
-    "verify": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run check:enums && pnpm run test"
+    "check:openapi":  "python3 tools/check-openapi.py openapi/storefront.yaml openapi/studio.yaml",
+
+    "verify": "pnpm run verify:offline && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test",
+    "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:openapi"
   }
 }
 ```
@@ -1913,6 +1954,11 @@ Dans `arthome-core`, `verify` ajoute les portes 6, 7, 8 et 13.
 
 **Les mêmes noms sur les sept dépôts** — c'est la seule façon, pour une personne seule qui passe de
 l'un à l'autre, de ne jamais avoir à se demander comment on vérifie ici.
+
+**`verify:offline` n'est pas un sous-ensemble de confort** : c'est l'ensemble des portes qui ne
+demandent rien d'installé. Il tourne sur un dépôt fraîchement cloné, avant le premier
+`pnpm install`, et c'est ce qui permet de créer les six autres dépôts avec leurs portes déjà
+vertes. `verify` l'appelle puis ajoute ce qui exige `node_modules`.
 
 **L'ordre est délibéré et ne doit pas changer :** les versions et les verrous `tsconfig` d'abord
 (une porte rouge parce qu'un paquet a glissé ou qu'un `strict: false` traîne est du temps perdu à
@@ -1977,10 +2023,14 @@ seconde définition de ce qui est vérifié, et il n'y aura donc jamais deux lis
 
 Consigné pour que ça ne se perde pas, et **ne pas** traité de mémoire le jour venu :
 
-1. **Expo ou React Native nu** pour les deux surfaces mobiles et TV. D-001 le laisse ouvert et hors
-   périmètre. La réponse change le §6.3 : Expo apporte son propre `eslint-config-expo` et sa propre
-   gestion de versions, ce qui déplace la frontière entre ce que `@arthome/tooling` porte et ce que
-   la pile porte.
+1. ~~**Expo ou React Native nu**~~ — **tranché depuis : D-025 retient Expo** pour `storefront-mobile`
+   et `storefront-tv`. Conséquence pour ce document, et elle est mince : `eslint-config-expo` rejoint
+   la liste des préréglages de pile que **`@arthome/tooling` ne porte pas** (§4.2), au même titre
+   qu'`angular-eslint` et `eslint-config-next` — sa version doit suivre le SDK Expo installé dans le
+   dépôt. Le §6.3 reste juste sur le fond : Metro, l'élagage et la résolution par `exports` sont
+   ceux d'Expo comme ceux de React Native nu. **Reste à vérifier au palier mobile**, et à ne pas
+   traiter de mémoire : quel ESLint `eslint-config-expo` accepte — c'est lui qui décidera si les
+   deux dépôts restent sur ESLint 9 (§6.3) ou peuvent passer en 10.
 2. **Le runtime Protobuf de `@arthome/contracts`** — son nom et sa version ne sont pas fixés
    (`architecture/events.md` et `proto/buf.yaml` en décideront). Sa place au **régime A** (§7.1) est
    en revanche décidée, par le même raisonnement que zod.

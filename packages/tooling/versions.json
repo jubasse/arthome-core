@@ -1,0 +1,112 @@
+{
+  "_comment": [
+    "LA table des versions attendues, pour les sept depots. Une seule, ici.",
+    "",
+    "Entre les sept depots il n'existe pas de catalogue pnpm — c'est la limite du",
+    "multi-depots, et elle est assumee. Le substitut est cette table plus la porte",
+    "`arthome-check-versions`, PAS un espoir. Sept package.json autonomes seraient",
+    "sept tables litterales paralleles sous un nom commun : la faute E2 appliquee",
+    "aux versions.",
+    "",
+    "Regimes (code-conventions.md section 7.1) :",
+    "  A — epingle exact, une montee majeure se traite comme un changement de",
+    "      contrat. Y entre ce que PLUSIEURS depots doivent voir de la meme facon",
+    "      A L'EXECUTION. Test d'appartenance : si deux depots en ont deux versions",
+    "      en meme temps, est-ce que quelque chose casse de facon difficile a",
+    "      diagnostiquer ? zod : oui. react : non (un node_modules par depot).",
+    "  B — epingle exact, montee coordonnee dans l'ordre de la section 7.3.",
+    "  C — fourchette, montee au fil de l'eau. Le verrou fait foi.",
+    "",
+    "Releve le 21 septembre 2026 sur registry.npmjs.org. CE TABLEAU PERIME :",
+    "la section 7.5 donne les commandes qui le reconstruisent."
+  ],
+  "verifiedOn": "2026-09-21",
+
+  "runtime": {
+    "node": {
+      "range": "^22.22.3 || ^24.15.0 || >=26",
+      "preferred": "24.21.0",
+      "why": "Intersection des quatre planchers. Angular 22 est le plus exigeant (^22.22.3 || ^24.15.0 || >=26) ; RN 0.87 demande ^22.13 || ^24.3 || >=26 ; ESLint 10 ^20.19 || ^22.13 || >=24 ; @nestjs/cli >=20.11. Node 24 << Krypton >> est LTS ; 26 ne l'est pas encore."
+    },
+    "pnpm": {
+      "range": ">=12.4.2",
+      "preferred": "12.5.1",
+      "why": "packageManager fait installer la bonne version par Corepack. minimumReleaseAge vaut 1440 par defaut depuis pnpm 11."
+    }
+  },
+
+  "A": {
+    "_why": "Partage a l'execution par plusieurs depots. Une montee majeure = changement de contrat.",
+    "zod": {
+      "version": "4.6.5",
+      "why": "Dependance d'execution partagee par sept services et cinq applications. En peerDependency de @arthome/contracts, epinglee. Deux zod dans un meme processus, c'est deux registres de schemas et des erreurs de validation incomprehensibles. Acte par le chef de projet."
+    },
+    "typescript": {
+      "version": "6.0.3",
+      "why": "Une seule version par depot et la meme sur les sept. Plafond dur d'Angular (@angular/compiler-cli peer >=6.0 <6.1), rejoint par nest build (abandonne sur TS 7) et par typescript-eslint (peer >=4.8.4 <6.1.0). Rien ne pousse vers le haut : react-native n'a aucun peer typescript et @types/react accepte TS 5.1+."
+    }
+  },
+
+  "B": {
+    "_why": "Outillage qui decide si la construction passe. Epingle exact, monte dans l'ordre de la section 7.3.",
+    "eslint": {
+      "version": "10.11.0",
+      "exceptions": {
+        "arthome-storefront-mobile": "9.39.5",
+        "arthome-storefront-tv": "9.39.5"
+      },
+      "why": "Divergence imposee et datee : @react-native/eslint-config@0.87.1 a pour peer `eslint ^8.0.0 || ^9.0.0` — pas 10. Condition de sortie : une version de ce prereglage acceptant ESLint 10. eslintrc n'existe plus en 10 ; config cherchee depuis le dossier du fichier linte."
+    },
+    "@eslint/js": {
+      "version": "10.0.1",
+      "exceptions": {
+        "arthome-storefront-mobile": "9.39.5",
+        "arthome-storefront-tv": "9.39.5"
+      },
+      "why": "Doit suivre le majeur d'eslint : c'est pourquoi il est en peerDependency de @arthome/tooling et non en dependency."
+    },
+    "prettier": {
+      "version": "3.9.8",
+      "why": "Prettier 4 est en alpha (4.0.0-alpha.13). On reste en 3.x."
+    },
+    "eslint-config-prettier": {
+      "version": "10.1.8",
+      "why": "Entree a plat dediee depuis 10.1.1 : importer `eslint-config-prettier/flat`, et le placer DERNIER. Gere les regles @stylistic depuis 10.0.0."
+    },
+    "typescript-eslint": {
+      "version": "8.70.0",
+      "why": "Peer typescript >=4.8.4 <6.1.0 : c'est le plafond reel de la flotte. La demande de support TS 7 (issue #12518) a ete fermee << not planned >>, faute d'API TypeScript 7 ; elle est attendue en 7.1."
+    },
+    "eslint-plugin-import-x": { "version": "4.17.1" },
+    "eslint-import-resolver-typescript": { "version": "4.4.5" },
+    "globals": { "version": "16.4.0" },
+    "vitest": {
+      "version": "5.0.1",
+      "exceptions": {
+        "arthome-studio-web": "4.1.11",
+        "arthome-studio-mobile": "4.1.11"
+      },
+      "why": "Angular 22 epingle vitest ^4.0.8. C'est pourquoi @arthome/tooling/vitest exporte un objet nu et n'importe rien de vitest."
+    },
+    "turbo": {
+      "version": "2.11.2",
+      "scope": ["arthome-core", "arthome-platform"],
+      "why": "Cache de taches seulement. Les cinq applications n'en ont pas : un depot d'une seule application n'a pas de graphe a mettre en cache. Pas de Nx, sur aucun des sept."
+    }
+  },
+
+  "forbidden": {
+    "_why": "Installer l'un de ces paquets annule une decision. La porte le dit avant la revue.",
+    "eslint-plugin-prettier": "Proscrit : faire tourner Prettier comme une regle ESLint est le montage qui CREE les conflits qu'on veut eviter (section 3.3).",
+    "prettier-plugin-organize-imports": "Proscrit : ferait trier les imports a Prettier, en concurrence avec import-x/order.",
+    "@trivago/prettier-plugin-sort-imports": "Proscrit : meme raison.",
+    "@stylistic/eslint-plugin": "Proscrit : rend ESLint au formatage, ce que eslint-config-prettier est la pour eteindre.",
+    "eslint-plugin-react-compiler": "Ne pas installer : derniere publication 2025-08-15, restee au stade RC. Ses regles vivent dans eslint-plugin-react-hooks.",
+    "@biomejs/biome": "Ecarte (D-013) : ce sont les greffons de framework — lint de template Angular, regles des hooks et du compilateur React, eslint-config-next — qui attrapent les vraies fautes, et Biome n'a pas cet ecosysteme.",
+    "nx": "Pas de Nx (README section 3) : ses generateurs, executeurs et migrations deviennent un projet dans le projet.",
+    "tslint": "Mort depuis 2019.",
+    "husky": "Non : core.hooksPath et deux crochets de dix lignes font le meme travail sans trois paquets a entretenir en sept exemplaires (section 8.4).",
+    "lint-staged": "Meme raison que husky.",
+    "@commitlint/cli": "Meme raison : le crochet commit-msg tient en dix lignes."
+  }
+}

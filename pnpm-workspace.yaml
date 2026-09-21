@@ -1,0 +1,34 @@
+packages:
+  - 'packages/*'
+  - 'tools/*'
+
+# ---------------------------------------------------------------- chaine d'approvisionnement
+# minimumReleaseAge : nombre de MINUTES pendant lesquelles pnpm refuse d'installer
+# une version fraichement publiee. Le defaut est 1440 (un jour) depuis pnpm 11.
+# 10080 = une semaine : pour une personne seule qui ne surveille pas les avis de
+# securite en continu, une semaine de decantation sur les paquets tiers coute peu
+# et attrape l'essentiel des compromissions, qui sont detectees en quelques jours.
+minimumReleaseAge: 10080
+
+minimumReleaseAgeExclude:
+  # ⚠ Sans cette ligne, un paquet @arthome/* publie a l'instant serait INVISIBLE
+  #   pendant une semaine pour le depot qui l'attend — et le symptome est
+  #   << la version n'existe pas >>, ce qui envoie chercher au mauvais endroit.
+  - '@arthome/*'
+
+# Si `pnpm install` refuse une version epinglee parce qu'elle est trop recente,
+# la reponse est une exception NOMMEE ici, avec sa raison et sa date — jamais
+# d'abaisser minimumReleaseAge globalement.
+
+# ------------------------------------------------------------------------ catalogue
+# Le catalogue ne vaut QU'A L'INTERIEUR de cet espace de travail. Entre les sept
+# depots il n'en existe pas : c'est la limite du multi-depots, et le substitut est
+# la porte `arthome-check-versions` qui lit @arthome/tooling/versions.json.
+# pnpm remplace `catalog:` par la version reelle a la publication, donc un
+# consommateur exterieur ne voit jamais le protocole.
+catalog:
+  typescript: 6.0.3
+  eslint: 10.11.0
+  '@eslint/js': 10.0.1
+  prettier: 3.9.8
+  vitest: 5.0.1

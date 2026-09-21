@@ -1,0 +1,17 @@
+node_modules/
+.turbo/
+coverage/
+*.log
+.DS_Store
+*.tsbuildinfo
+
+# ⚠ `dist/` n'est PAS ignore pour les deux paquets publies (@arthome/core et
+#   @arthome/contracts) : leurs .d.ts sont suivis volontairement, contre l'usage
+#   habituel, parce que c'est ce qui rend un changement de contrat visible dans
+#   une revue plutot que dans un incident chez un consommateur.
+#   Voir architecture/code-conventions.md section 2.4, porte n°8.
+#   (git ne sait pas re-inclure un fichier sous un dossier exclu : on n'exclut
+#   donc `dist/` que la ou il est vraiment un artefact.)
+/dist/
+packages/tooling/dist/
+tools/*/dist/

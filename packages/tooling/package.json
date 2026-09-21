@@ -1,0 +1,65 @@
+{
+  "name": "@arthome/tooling",
+  "version": "0.1.0",
+  "description": "Configuration de base partagee par les sept depots Arthome : ESLint, Prettier, TypeScript, Vitest, et les portes locales.",
+  "license": "UNLICENSED",
+  "private": false,
+  "type": "module",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julien-metral/arthome-core.git",
+    "directory": "packages/tooling"
+  },
+  "exports": {
+    "./eslint/base": "./eslint/base.js",
+    "./eslint/node": "./eslint/node.js",
+    "./eslint/browser": "./eslint/browser.js",
+    "./prettier": "./prettier.js",
+    "./vitest": "./vitest.js",
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/lib.json": "./tsconfig/lib.json",
+    "./tsconfig/app.json": "./tsconfig/app.json",
+    "./versions.json": "./versions.json",
+    "./tsconfig-locks.json": "./tsconfig-locks.json",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "arthome-check-enums": "./bin/check-enums.mjs",
+    "arthome-check-versions": "./bin/check-versions.mjs",
+    "arthome-check-tsconfig": "./bin/check-tsconfig.mjs"
+  },
+  "files": [
+    "bin",
+    "eslint",
+    "tsconfig",
+    "prettier.js",
+    "vitest.js",
+    "versions.json",
+    "tsconfig-locks.json",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@eslint/js": "^9.39.5 || ^10.0.1",
+    "eslint": "^9.39.5 || ^10.11.0",
+    "prettier": "^3.9.8",
+    "typescript": "6.0.3"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": false
+    }
+  },
+  "dependencies": {
+    "eslint-config-prettier": "10.1.8",
+    "eslint-import-resolver-typescript": "4.4.5",
+    "eslint-plugin-import-x": "4.17.1",
+    "globals": "16.4.0",
+    "typescript-eslint": "8.70.0"
+  }
+}
