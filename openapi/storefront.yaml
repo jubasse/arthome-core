@@ -1312,6 +1312,18 @@ paths:
                 contributionMinor: { type: [integer, 'null'] }
                 applyCreditId: { type: [string, 'null'], format: uuid }
                 profileId: { type: [string, 'null'], format: uuid }
+                declaredTaxLocation:
+                  type: [object, 'null']
+                  description: |
+                    Localisation **déclarée par l'acheteur**, quand la surface la lui demande. Elle
+                    entre au registre comme un élément de preuve parmi les autres
+                    (`declared_by_buyer`) — **elle ne les remplace pas** : c'est le serveur qui
+                    arbitre, et deux éléments qui se contredisent produisent
+                    `evidenceConflicting`, jamais un refus d'achat.
+                  properties:
+                    country: { type: string, pattern: '^[A-Z]{2}$' }
+                    subdivision: { type: [string, 'null'] }
+                    postalCode: { type: [string, 'null'] }
             example:
               dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
               tier: full
@@ -5325,6 +5337,56 @@ components:
         total: { $ref: '#/components/schemas/Money' }
         validUntil: { type: string, format: date-time }
 
+    TaxEvidence:
+      type: object
+      required: [kind, country, source, collectedAt]
+      description: |
+        **Un élément de preuve de localisation, avec sa provenance.** Une vente B2C dans l'Union
+        exige **deux éléments non contradictoires** — et un prestataire de taxe privilégie en
+        général une adresse unique au lieu de les comparer, donc la règle de preuve ne peut pas lui
+        être déléguée : c'est notre registre qui la porte.
+
+        `source` n'est pas décoratif : **une preuve sans provenance n'est pas une preuve**.
+      properties:
+        kind:
+          type: string
+          x-arthome-vocabulary:
+            [billing_address, ip_address, bank_country, card_country, sim_country, declared_by_buyer]
+        country:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          description: Ce que **cet élément-là** indique — pas le résultat de l'arbitrage.
+        subdivision: { type: [string, 'null'], description: 'ISO 3166-2, quand l''élément le porte.' }
+        source: { type: string, examples: ['edge.geoip'] }
+        collectedAt: { type: string, format: date-time }
+
+    BuyerTaxLocation:
+      type: object
+      required: [country, evidence, evidenceConflicting]
+      description: |
+        **La localisation fiscale de l'acheteur, portée par la commande.** Ni un identifiant de
+        marché, ni un simple pays : aux États-Unis le taux change d'une rue à l'autre, donc le code
+        postal est indispensable ; dans l'Union la preuve est **double** et doit être conservée.
+
+        **À ne pas confondre avec la vérification d'identité du compte connecté**, qui porte sur
+        l'**artiste** et n'a rien à voir avec la localisation du **spectateur**. Les deux sont
+        souvent confondues.
+      properties:
+        country: { type: string, pattern: '^[A-Z]{2}$' }
+        subdivision: { type: [string, 'null'] }
+        postalCode: { type: [string, 'null'] }
+        city: { type: [string, 'null'] }
+        evidence:
+          type: array
+          items: { $ref: '#/components/schemas/TaxEvidence' }
+        evidenceConflicting:
+          type: boolean
+          description: |
+            Vrai quand deux éléments se contredisent. **La vente se fait quand même** et la ligne
+            part en instruction : refuser l'achat punirait le spectateur d'une ambiguïté qui n'est
+            pas la sienne, et masquer le conflit produirait une déclaration fausse et silencieuse.
+        resolvedAt: { type: string, format: date-time }
+
     Order:
       type: object
       required: [id, reference, kind, state, placedAt]
@@ -5340,6 +5402,11 @@ components:
         total: { $ref: '#/components/schemas/Money' }
         placedAt: { type: string, format: date-time }
         invoiceAvailable: { type: boolean }
+        buyerTaxLocation:
+          allOf: [{ $ref: '#/components/schemas/BuyerTaxLocation' }]
+          description: |
+            **Résolue et figée à l'instant de la vente.** Elle n'est pas relue plus tard : le pays
+            d'un spectateur change entre deux lectures, et une facture se conserve dix ans.
 
     ExternalOrderRef:
       type: object

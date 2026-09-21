@@ -776,6 +776,160 @@ paths:
                 servedAt: '2026-09-21T18:01:00.000Z'
         '404': { $ref: '#/components/responses/NotFound' }
 
+  /v1/channels/{channelId}/dashboard:
+    get:
+      operationId: getChannelDashboard
+      tags: [agenda]
+      summary: Le tableau de bord — tuiles agrégées sur une période, et la liste « à traiter ».
+      description: |
+        **C'est l'onglet par défaut de trois personas sur six**, et il n'avait aucune opération.
+
+        Il porte **seulement ce qui n'avait pas de porteur** : les tuiles agrégées et la liste
+        routée. Tout le reste de l'écran est une recomposition de collections déjà servies — les
+        prochaines dates et la carte de décompte viennent de `listChannelEvents`, la recette par
+        date de `listPayouts`, les dates en réserve de `listChannelEvents?state=reserve`, et le
+        décompte **se calcule localement** contre `startsAt` et le `serverTime` du canal, comme le
+        contrat le prescrit partout ailleurs. Les redemander ici aurait été la valeur composée à
+        deux endroits.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [catalog, ticketing, streaming, chat]
+      x-arthome-freshness: 300
+      parameters:
+        - $ref: '#/components/parameters/ChannelId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+        - name: period
+          in: query
+          schema: { type: string, enum: [last_7_days, last_30_days, last_90_days, season, custom], default: last_30_days }
+        - name: from
+          in: query
+          description: Requis quand `period` vaut `custom`.
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Tuiles et rappels, projetés selon le rôle.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: '#/components/schemas/DashboardScreen' } }
+              example:
+                servedAt: '2026-09-21T18:05:00.000Z'
+                rightsVersion: 412
+                data:
+                  period: { preset: last_30_days, from: '2026-08-22', to: '2026-09-21', days: 30, datesCovered: 7 }
+                  tiles:
+                    - id: shop_sales
+                      value: 184200
+                      unit: currency_minor
+                      currencyCode: EUR
+                      seriesGranularity: per_date
+                      series:
+                        - { at: '2026-09-04T19:00:00Z', value: 42100, dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001 }
+                    - id: followers_gained
+                      value: 312
+                      unit: count
+                      seriesGranularity: per_date
+                      series: [{ at: '2026-09-04T19:00:00Z', value: 48 }]
+                    - id: replay_views
+                      value: 1840
+                      unit: count
+                      seriesGranularity: per_date
+                      series: [{ at: '2026-09-04T19:00:00Z', value: 412 }]
+                    - id: fill_rate
+                      value: 87
+                      unit: percent
+                      seriesGranularity: per_date
+                      series: [{ at: '2026-09-04T19:00:00Z', value: 84 }]
+                  reminders:
+                    - id: rem-1
+                      kind: technical_check_missing
+                      severity: urgent
+                      textCode: dashboard.reminder.technical_check_missing
+                      params: { title: Nuit blanche }
+                      targetPage: regie
+                      dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                      countdownTo: '2026-09-21T19:00:00Z'
+                      actionable: true
+                  revenueByDate:
+                    total: { amountMinor: 14049600, currencyCode: EUR }
+                    totalScope: channel_period
+                    items:
+                      - { dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001, title: Nuit blanche, startsAt: '2026-09-21T19:00:00Z', gross: { amountMinor: 417600, currencyCode: EUR } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /v1/channels/{channelId}/stats:
+    get:
+      operationId: getChannelStats
+      tags: [agenda]
+      summary: Audience et recettes, ou comparaison des dates d'une série.
+      description: |
+        Deux onglets, un chemin. L'export `stats_csv` existait déjà : **on pouvait exporter une
+        statistique qu'on ne pouvait pas lire.**
+
+        Le titre de l'écran varie avec le rôle — « Audience et recettes » sous `canRevenue`,
+        « Audience » sinon —, et c'est la **projection** qui le décide : sans `canRevenue`, les
+        champs de recette sont **absents**, pas masqués.
+
+        **La provenance des spectateurs n'est pas servie** : voir `StatsAudience`. C'est le seul
+        point de ces deux écrans qui demandait une donnée que le système ne produit nulle part.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [catalog, ticketing, streaming]
+      x-arthome-freshness: 300
+      parameters:
+        - $ref: '#/components/parameters/ChannelId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+        - name: tab
+          in: query
+          schema: { type: string, enum: [audience, series], default: audience }
+        - name: period
+          in: query
+          schema: { type: string, enum: [last_7_days, last_30_days, last_90_days, season, custom], default: last_30_days }
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+        - name: showId
+          in: query
+          description: Restreint l'onglet `series` à une série. Absent, toutes les séries sont servies.
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: L'onglet demandé. `audience` et `series` sont exclusifs.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      audience: { $ref: '#/components/schemas/StatsAudience' }
+                      series: { $ref: '#/components/schemas/StatsSeries' }
+              example:
+                servedAt: '2026-09-21T18:06:00.000Z'
+                rightsVersion: 412
+                audience:
+                  period: { preset: last_30_days, from: '2026-08-22', to: '2026-09-21', days: 30, datesCovered: 7 }
+                  headline: { viewersTotal: 18420, averageFillRateBps: 8700, datesCount: 7, netRevenue: { amountMinor: 1240000, currencyCode: EUR } }
+                  fillByDate:
+                    - { dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001, title: Nuit blanche, startsAt: '2026-09-21T19:00:00Z', fillRateBps: 8700, seatsSold: 174, capacityTotal: 200, onSale: true }
+                  audienceByDate:
+                    - { dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001, title: Nuit blanche, startsAt: '2026-09-21T19:00:00Z', displayState: live, seatsSold: 174, liveViewersPeak: 1842, replayViews: 412, fillRateBps: 8700 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /v1/channels/{channelId}/agenda:
     get:
       operationId: getChannelAgenda
@@ -3548,7 +3702,7 @@ paths:
                     state: scheduled
                     grossTtc: { amountMinor: 417600, currencyCode: EUR }
                     vat:
-                      - { marketId: eur, rateBps: 550, base: { amountMinor: 395830, currencyCode: EUR }, amount: { amountMinor: 21770, currencyCode: EUR } }
+                      - { rateBps: 550, base: { amountMinor: 395830, currencyCode: EUR }, amount: { amountMinor: 21770, currencyCode: EUR }, jurisdictionCode: FR, jurisdictionLevel: country, supplyKind: live_stream_access }
                     grossHt: { amountMinor: 395830, currencyCode: EUR }
                     commissionRateBps: 1200
                     commission: { amountMinor: 47500, currencyCode: EUR }
@@ -5356,6 +5510,296 @@ components:
                 inférence.
               examples: [5]
 
+    # ------------------------------------------------ mesure : période, tuiles, séries
+
+    PeriodBounds:
+      type: object
+      required: [from, to, days, datesCovered, preset]
+      description: |
+        **Les bornes effectives de la période, calculées par le serveur.** Une plage personnalisée
+        affiche « 94 jours · 7 dates » : les deux nombres sont servis, parce qu'ils dépendent du
+        calendrier de la chaîne et que `SAISON` est une notion de domaine (1er septembre →
+        31 août) dont les bornes sont déjà servies à l'amorçage.
+      properties:
+        preset: { type: string, x-arthome-vocabulary: [last_7_days, last_30_days, last_90_days, season, custom] }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        days: { type: integer, examples: [94] }
+        datesCovered: { type: integer, examples: [7] }
+
+    MetricTile:
+      type: object
+      required: [id, value, unit, series, seriesGranularity]
+      description: |
+        **Un seul gabarit : identifiant, valeur, unité, série.** Trois choses qu'il ne porte pas,
+        et chacune est une décision :
+
+        **1. Pas de variation.** Elle se **dérive** de la série par `trendOf` dans
+        `@arthome/core` — moyenne de la première moitié contre la seconde, **rien sous 4 points de
+        série ni sous 0,1 % d'écart**, en pourcentage sauf le remplissage qui est en **points**.
+        La servir en plus de la série, ce serait la même valeur calculée à deux endroits.
+
+        **2. Pas d'unité littérale.** `unit` est un **code**, et la période vient de la requête.
+        La maquette portait « sur 30 j » en dur sur une tuile alors qu'un sélecteur de période
+        existe à côté : le libellé aurait menti dès le premier clic.
+
+        **3. La valeur est bornée par la période demandée**, les six tuiles sans exception. La
+        maquette figeait `ABONNÉS GAGNÉS` à trente jours **puis le multipliait** par un
+        coefficient de période — un compteur figé, mis à l'échelle. Le contrat agrège sur la
+        période, ou ne sert pas la tuile.
+      properties:
+        id:
+          type: string
+          x-arthome-vocabulary: [shop_sales, followers_gained, replay_views, fill_rate, moderated_messages, signal_quality]
+        value: { type: number }
+        unit: { type: string, x-arthome-vocabulary: [currency_minor, count, percent, points] }
+        currencyCode: { type: [string, 'null'], pattern: '^[A-Z]{3}$' }
+        series:
+          type: array
+          description: |
+            **La sparkline prend les 14 derniers points.** Servir plus coûte peu et permet au
+            client de choisir ; servir moins rendrait la variation inexprimable.
+          items:
+            type: object
+            required: [at, value]
+            properties:
+              at: { type: string, format: date-time }
+              value: { type: number }
+              dateId: { type: [string, 'null'], format: uuid }
+        seriesGranularity:
+          type: string
+          description: |
+            **Déclarée, parce qu'elle n'est pas évidente.** Dans la conception la série est **une
+            valeur par date**, jamais par jour — une granularité journalière n'y figure nulle
+            part. La déclarer rend `per_day` ajoutable plus tard **sans casser un client** : il lit
+            ce que le serveur annonce au lieu de supposer.
+          x-arthome-vocabulary: [per_date, per_day]
+          examples: [per_date]
+
+    DashboardReminder:
+      type: object
+      required: [id, kind, severity, textCode, params, targetPage, actionable]
+      description: |
+        **Une liste routée, comme la boîte** : nature, gravité, cible et portée de rôle décidées
+        **côté serveur**. `actionable` dit si la page de destination est ouverte à cette
+        personne — la ligne reste visible sinon, mais n'est pas cliquable, et c'est le serveur qui
+        le sait puisque c'est lui qui tient les droits effectifs.
+      properties:
+        id: { type: string }
+        kind:
+          type: string
+          x-arthome-vocabulary:
+            [publication_incomplete, technical_check_missing, moderator_unassigned,
+             near_sold_out, moderation_backlog]
+        severity: { type: string, x-arthome-vocabulary: [info, warning, urgent] }
+        textCode: { type: string, description: Un **code** i18n, jamais la phrase rédigée. }
+        params: { type: object, additionalProperties: true }
+        targetPage: { type: string, x-arthome-vocabulary: [event, regie, crew, events, moderation] }
+        dateId: { type: [string, 'null'], format: uuid }
+        countdownTo:
+          type: [string, 'null']
+          format: date-time
+          description: '**Un instant**, pas une phrase : le compte à rebours se calcule contre `servedAt`.'
+        actionable: { type: boolean }
+
+    DashboardScreen:
+      type: object
+      required: [period, tiles, reminders]
+      description: |
+        **La plus grande partie de cet écran est une recomposition de collections déjà servies.**
+        Ce chemin ne porte que ce qui n'avait pas de porteur : les tuiles agrégées sur une période
+        et la liste « à traiter », qui est une agrégation **au niveau chaîne** dont tous les
+        ingrédients existaient sans que personne ne les réunisse.
+
+        Les prochaines dates, le décompte avant le lever de rideau, la recette par date et le
+        nombre de dates en réserve **ne sont pas ici** : ils viennent de `listChannelEvents`,
+        `listPayouts` et du `serverTime` du canal. Les redemander aurait été la valeur composée à
+        deux endroits que la règle 2 interdit.
+      properties:
+        period: { $ref: '#/components/schemas/PeriodBounds' }
+        tiles:
+          type: array
+          description: |
+            **La tuile est retirée du tableau, pas vidée** — même mécanisme que partout ailleurs
+            dans le studio : un champ interdit est absent, jamais présent et nul. `artist` et
+            `production` en reçoivent quatre, `treasury` trois (pas `canOps`).
+
+            **Quatre tuiles sur six sont servies, et c'est une décision assumée.**
+            `moderated_messages` et `signal_quality` testent le rôle **principal** — `mod` et
+            `regie` — or ni l'un ni l'autre n'ouvre `dashboard` : elles ne s'affichent **jamais**.
+            Le contrat sert ce qui est atteignable plutôt que de porter deux tuiles mortes. Elles
+            restent au vocabulaire, parce que la question ouverte est de produit, pas de contrat :
+            **ouvrir `dashboard` à ces deux rôles, ou retirer les tuiles.**
+          items: { $ref: '#/components/schemas/MetricTile' }
+        reminders:
+          type: array
+          description: |
+            Bornée à cinq, et à **deux** lignes issues des listes de contrôle de publication.
+            L'ordre est **servi** : gravité décroissante, puis échéance la plus proche.
+          items: { $ref: '#/components/schemas/DashboardReminder' }
+        revenueByDate:
+          type: [object, 'null']
+          description: '**Absent** sans `canRevenue`.'
+          properties:
+            total: { $ref: '#/components/schemas/Money' }
+            totalScope:
+              type: string
+              description: |
+                **Ce que le total compte, déclaré.** La conception affiche un total en tête de six
+                lignes sans dire s'il s'agit de la somme des six ou du total de la chaîne sur la
+                période — et le chiffre y est codé en dur, donc il ne tranche pas. Le contrat sert
+                `channel_period` et le **dit**, plutôt que de laisser deux surfaces additionner
+                six barres et trouver un autre nombre.
+              x-arthome-vocabulary: [channel_period, listed_rows]
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  dateId: { type: string, format: uuid }
+                  title: { type: string }
+                  startsAt: { type: string, format: date-time }
+                  gross: { $ref: '#/components/schemas/Money' }
+
+    StatsAudience:
+      type: object
+      required: [period, headline, fillByDate, audienceByDate]
+      description: |
+        **L'anneau de provenance n'est pas servi, et ce n'est pas un oubli.** La conception
+        apporte cinq libellés — accueil, recherche interne, partage, lien direct, mise en avant —
+        et **rien d'autre** : les valeurs y sont codées en dur et **aucune source d'attribution
+        n'existe** dans les données de référence. Le porter aurait été écrire une intention en la
+        faisant passer pour un relevé, c'est-à-dire laisser la mise en page d'une maquette dicter
+        la structure d'une API.
+
+        **Ce qu'il faudrait pour qu'il existe** : une capture de provenance à l'entrée du parcours
+        (paramètre de campagne, référent, origine interne), portée jusqu'à la commande et projetée
+        par date. C'est un mécanisme, pas un champ — et tant qu'il n'existe pas, le contrat ne
+        promet rien.
+      properties:
+        period: { $ref: '#/components/schemas/PeriodBounds' }
+        headline:
+          type: object
+          properties:
+            viewersTotal:
+              type: [integer, 'null']
+              description: |
+                **Ce n'est pas un décompte d'individus uniques**, et le nom ne le prétend pas ici.
+                C'est la somme par date de `max(spectateurs en direct, places vendues)` plus les
+                vues de rediffusion. La définition d'un spectateur **unique** n'existe nulle part
+                dans les sources ; la servir sous ce nom aurait été une promesse qu'on ne tient
+                pas.
+            averageFillRateBps: { type: integer }
+            datesCount:
+              type: integer
+              description: '**Toutes** les dates de la chaîne sur la période, sans filtre d''état — comme la conception les compte.'
+            netRevenue:
+              allOf: [{ $ref: '#/components/schemas/Money' }]
+              description: '**Absent** sans `canRevenue`.'
+        fillByDate:
+          type: array
+          items:
+            type: object
+            properties:
+              dateId: { type: string, format: uuid }
+              title: { type: string }
+              startsAt: { type: string, format: date-time }
+              fillRateBps: { type: integer }
+              seatsSold: { type: [integer, 'null'] }
+              capacityTotal: { type: [integer, 'null'] }
+              onSale: { type: boolean }
+        audienceByDate:
+          type: array
+          description: |
+            **`seatsSold` et `liveViewers` sont deux champs distincts.** La conception affiche
+            « N spect. » et l'alimente avec les places vendues : le libellé et la donnée y
+            divergent. Le contrat sert les deux séparément et laisse la surface choisir ce qu'elle
+            nomme — au lieu de graver la confusion.
+          items:
+            type: object
+            properties:
+              dateId: { type: string, format: uuid }
+              title: { type: string }
+              startsAt: { type: string, format: date-time }
+              displayState: { type: string, x-arthome-vocabulary: [scheduled, room_open, live, replay, ended, postponed, cancelled, interrupted] }
+              seatsSold: { type: integer }
+              liveViewersPeak: { type: [integer, 'null'] }
+              replayViews: { type: [integer, 'null'] }
+              fillRateBps: { type: integer }
+
+    StatsSeries:
+      type: object
+      required: [period, headline, series]
+      description: |
+        **Le contrat porte le groupement, la référence et les deux écarts — calculés.** Pas les
+        ingrédients : le choix de la référence est une **règle de domaine**, et deux surfaces la
+        réimplémenteraient différemment.
+      properties:
+        period: { $ref: '#/components/schemas/PeriodBounds' }
+        headline:
+          type: object
+          properties:
+            seriesCount: { type: integer }
+            bestFillRateBps: { type: [integer, 'null'] }
+            bestFillShowId: { type: [string, 'null'], format: uuid }
+            averageGapPoints:
+              type: [number, 'null']
+              description: |
+                En **points**, entre la référence et les suivantes, toutes séries confondues.
+                **Nul quand aucune date suivante n'a vendu** — « pas encore mesurable » est un
+                état, pas un zéro.
+            pendingDecisionCount:
+              type: integer
+              description: Les dates **en réserve**. Déjà obtenable par `listChannelEvents?state=reserve` ; servi ici pour éviter un second appel au bandeau.
+        series:
+          type: array
+          description: |
+            **Groupées par `showId`**, jamais par titre — la conception groupe par titre, mais le
+            domaine a un spectacle et c'est lui la clé juste. Les états `draft` et `technical` sont
+            **exclus** du groupement, et seuls les groupes de **plus d'une date** sont des séries.
+            Un tableau vide est un **cas servi** : « aucune série » invite à dupliquer une date.
+          items:
+            type: object
+            required: [showId, title, referenceDateId, dates]
+            properties:
+              showId: { type: string, format: uuid }
+              title: { type: string }
+              referenceDateId:
+                type: string
+                format: uuid
+                description: |
+                  **La première date qui a vendu au moins une place**, à défaut la première du
+                  groupe. Ce n'est pas la première par ordre chronologique, et c'est toute la
+                  différence : comparer à une date qui n'a rien vendu ferait passer chaque série
+                  suivante pour un succès.
+              dates:
+                type: array
+                items:
+                  type: object
+                  required: [dateId, startsAt, fillRateBps, isReference]
+                  properties:
+                    dateId: { type: string, format: uuid }
+                    startsAt: { type: string, format: date-time }
+                    displayState: { type: string, x-arthome-vocabulary: [scheduled, room_open, live, replay, ended, postponed, cancelled, interrupted] }
+                    fillRateBps: { type: integer }
+                    seatsSold: { type: integer }
+                    revenue:
+                      allOf: [{ $ref: '#/components/schemas/Money' }]
+                      description: '**Absent** sans `canRevenue`.'
+                    isReference: { type: boolean }
+                    fillGapPoints:
+                      type: [number, 'null']
+                      description: |
+                        Écart de remplissage **en points** par rapport à la référence.
+                        **Nul — donc rien à afficher — quand la date n'a aucune vente** : « il n'y
+                        a pas d'écart à mesurer, c'est une décision à prendre, pas un déclin ».
+                    revenueGapPct:
+                      type: [number, 'null']
+                      description: Écart de recette en **pourcentage**. **Absent** sans `canRevenue`, nul sans vente.
+                    canOpenSale:
+                      type: boolean
+                      description: Vrai si la date est en réserve **et** que la personne peut ouvrir la vente. Servi, parce que c'est un droit.
+
     # ---------------------------------------------------------- publication
 
     PublicationChecklistItem:
@@ -5504,6 +5948,13 @@ components:
         lowestPrice: { $ref: '#/components/schemas/Money' }
         fillRateBps: { type: [integer, 'null'] }
         seatsSold: { type: [integer, 'null'] }
+        capacityTotal:
+          type: [integer, 'null']
+          description: |
+            **La carte « prochaine date » affiche « N / M places »**, et `seatsSold` +
+            `fillRateBps` ne donnaient pas le M. Un client qui le dériverait
+            (`seatsSold / fillRateBps`) recalculerait une valeur que le serveur possède, avec une
+            division et un arrondi en prime. Un champ, pas un chemin.
         grossRevenue:
           allOf: [{ $ref: '#/components/schemas/Money' }]
           description: '**Absent** de la réponse quand le rôle n''a pas `canRevenue`. Jamais présent et nul.'
@@ -5952,15 +6403,45 @@ components:
         grossTtc: { $ref: '#/components/schemas/Money' }
         vat:
           type: array
-          description: '**Une ligne par marché**, chacune avec son assiette, son taux et son montant.'
+          description: |
+            **Une ligne par juridiction, et non par marché de facturation.** `marketId` est
+            retiré : un marché est une notion de **prix** — dans quelle devise on vend — jamais une
+            notion de **taxe**. La clé portait trois valeurs là où la règle en demande des
+            milliers : un spectateur français et un spectateur belge règlent tous deux dans le
+            marché `eur`, à deux taux différents, et une ventilation dont la clé est le marché ne
+            peut pas porter deux lignes `eur` sans que la clé cesse d'être une clé.
+
+            **C'est la seule partie irréversible du chapitre fiscal.** Le modèle — qui est
+            redevable, sur quelle assiette — est un **calcul** : il se refait. Le taux appliqué à
+            la vente et la juridiction qui le commande sont des **faits datés** : non capturés à
+            l'instant de la vente, ils ne sont pas coûteux à reconstituer, ils sont
+            **impossibles** à reconstituer.
           items:
             type: object
-            required: [marketId, rateBps, base, amount]
+            required: [rateBps, base, amount, jurisdictionCode, jurisdictionLevel, supplyKind]
             properties:
-              marketId: { type: string, examples: [eur] }
-              rateBps: { type: integer, description: 'Taux en points de base — 550 = 5,5 %. **Un entier, jamais un flottant** : un taux en virgule flottante finit par produire un centime d''écart.' }
+              rateBps:
+                type: integer
+                description: |
+                  Taux en points de base — 550 = 5,5 %. **Un entier, jamais un flottant** : en
+                  virgule flottante il finit par produire un centime d'écart. Et c'est le taux
+                  **appliqué au moment de la vente, conservé sur la ligne** — pas le taux courant :
+                  une facture se conserve dix ans, les taux changent.
               base: { $ref: '#/components/schemas/Money' }
               amount: { $ref: '#/components/schemas/Money' }
+              jurisdictionCode:
+                type: string
+                description: '« FR » · « US-CA-94103 » · « CH-ZH ». **Assez précis pour rejouer le calcul.**'
+                examples: [FR]
+              jurisdictionLevel: { type: string, x-arthome-vocabulary: [country, state, county, city] }
+              supplyKind:
+                type: string
+                description: |
+                  **Le taux dépend du couple juridiction × nature de la prestation**, jamais d'une
+                  constante par marché : l'exonération dont bénéficie une place de spectacle ne
+                  s'étend pas à son accès en direct — une place et un direct diffusé ne sont pas
+                  la même prestation.
+                x-arthome-vocabulary: [live_stream_access, replay_access, subscription, merchandise]
         grossHt: { $ref: '#/components/schemas/Money' }
         commissionRateBps:
           type: integer
@@ -5982,6 +6463,13 @@ components:
         discrepancy:
           allOf: [{ $ref: '#/components/schemas/Money' }]
           description: '**Une période ne se clôt pas avec un écart non expliqué.**'
+        taxEvidenceConflicts:
+          type: integer
+          description: |
+            Le nombre de commandes de cette ligne dont les éléments de localisation de l'acheteur
+            **se contredisaient**. La vente se fait, la ligne part en instruction : **masquer le
+            conflit produirait une déclaration fausse et silencieuse**, et c'est le studio qui doit
+            pouvoir la voir avant la clôture de période.
 
     BankChangeRequest:
       type: object
