@@ -1,29 +1,35 @@
 /**
- * Le jeu de donnees deterministe.
+ * The deterministic data set.
  *
- * ⚠ CE QUI CHANGE PAR RAPPORT A `fixtures.js` : il produit des INSTANTS, pas
- * des decalages. `catalogue.json` le dit lui-meme — « startOffsetMin, atMin and
+ * ⚠ WHAT CHANGES AGAINST `fixtures.js`: it produces INSTANTS, not offsets.
+ * `catalogue.json` says it itself — "startOffsetMin, atMin and
  * rescheduledToOffsetMin are offsets from the moment the app is opened […]
- * NOTHING HERE EXPIRES ». C'est excellent pour une maquette, ou tous les etats
- * existent a toute heure et ou les cinq surfaces voient la meme chose. C'est
- * inutilisable sur un contrat.
+ * NOTHING HERE EXPIRES". That is excellent for a mockup, where every state
+ * exists at any hour and all five surfaces see the same thing. It is unusable
+ * in a contract.
  *
- * La conversion en decalages relatifs, si elle sert encore a une demonstration,
- * devient une COMMODITE DE PRESENTATION et non une forme transportee.
+ * Converting back to relative offsets, if a demonstration still needs it,
+ * becomes a PRESENTATION CONVENIENCE and not a transported shape.
  *
- * ⚠ ET CE QU'IL COUVRE. Ce module ne reproduit pas les 1 814 dates du
- * generateur d'origine : il produit les CAS QUI FONT MAL, ceux que les tests
- * d'integration et la demonstration doivent exercer. Un volume de donnees
- * plausibles ne prouve rien ; une issue de chaque nature, une fenetre de
- * rediffusion sur le point d'expirer et un blackout territorial prouvent
- * quelque chose.
+ * ⚠ AND WHAT IT COVERS. This module does not reproduce the original
+ * generator's 1,814 dates: it produces the CASES THAT HURT, the ones the
+ * integration tests and the demonstration must exercise. A volume of plausible
+ * data proves nothing; one outcome of each kind, a replay window about to
+ * expire and a territorial blackout prove something.
  */
 
 import type { Clock, Instant } from '../kernel/clock.js';
 import { plusHours, plusMinutes } from '../time/instant.js';
 import { venueClock, type VenueClock } from '../time/venue-clock.js';
 import { money, type Money } from '../money/money.js';
-import { DateOutcome, LanguageDependency, PublicationState, ReplayPolicy, RunState, BlackoutReason } from '../vocabulary/catalog.js';
+import {
+  DateOutcome,
+  LanguageDependency,
+  PublicationState,
+  ReplayPolicy,
+  RunState,
+  BlackoutReason,
+} from '../vocabulary/catalog.js';
 import { PriceTier } from '../vocabulary/commerce.js';
 import type { DateTiming } from '../catalog/date-state.js';
 import { restrictedRights, worldwideRights, type TerritoryRights } from '../catalog/rights.js';
@@ -52,7 +58,7 @@ export interface FixtureDate {
   readonly language: LanguageProfile;
   readonly gauge: Gauge;
   readonly prices: readonly TierPrice[];
-  /** Le cas que cette date existe pour exercer. Lisible dans un echec de test. */
+  /** The case this date exists to exercise. Readable in a test failure. */
   readonly covers: string;
 }
 
@@ -74,7 +80,13 @@ function tiers(full: number): readonly TierPrice[] {
 }
 
 function timingAt(startsAt: Instant, policy: ReplayPolicy, windowHours: number): DateTiming {
-  return { startsAt, runtimeMin: 120, roomOpensBeforeMin: 30, replayPolicy: policy, replayWindowHours: windowHours };
+  return {
+    startsAt,
+    runtimeMin: 120,
+    roomOpensBeforeMin: 30,
+    replayPolicy: policy,
+    replayWindowHours: windowHours,
+  };
 }
 
 const NO_BARRIER: LanguageProfile = {
@@ -88,26 +100,44 @@ const FRENCH_ESSENTIAL: LanguageProfile = {
   spoken: ['fr'],
   subtitles: ['en'],
   surtitles: [],
-  // D1 : la valeur ABSENTE du vocabulaire declare, et dont depend la regle la
-  // plus visible de la surface. Le jeu de donnees l'exerce delibberement.
+  // D1: the value ABSENT from the declared vocabulary, and on which the
+  // surface's most visible rule depends. The data set exercises it deliberately.
   dependency: LanguageDependency.ESSENTIAL,
 };
 
 /**
- * Construit le jeu deterministe.
+ * Builds the deterministic set.
  *
- * L'horloge est INJECTEE : deux appels avec la meme graine et la meme horloge
- * produisent exactement le meme jeu. C'est ce qui rend un test d'integration
- * reproductible a six mois d'intervalle.
+ * The clock is INJECTED: two calls with the same seed and the same clock
+ * produce exactly the same set. That is what makes an integration test
+ * reproducible six months apart.
  */
 export function buildFixtures(seed: number, clock: Clock): Fixtures {
   const random = new DeterministicRandom(seed);
   const now = clock.now();
 
   const venues: readonly FixtureVenue[] = [
-    { id: 'venue:criee', city: 'Marseille', country: 'FR', clock: venueClock('Europe/Paris', 120), capacity: 780 },
-    { id: 'venue:zurich', city: 'Zurich', country: 'CH', clock: venueClock('Europe/Zurich', 120), capacity: 420 },
-    { id: 'venue:montreal', city: 'Montreal', country: 'CA', clock: venueClock('America/Toronto', -240), capacity: 1200 },
+    {
+      id: 'venue:criee',
+      city: 'Marseille',
+      country: 'FR',
+      clock: venueClock('Europe/Paris', 120),
+      capacity: 780,
+    },
+    {
+      id: 'venue:zurich',
+      city: 'Zurich',
+      country: 'CH',
+      clock: venueClock('Europe/Zurich', 120),
+      capacity: 420,
+    },
+    {
+      id: 'venue:montreal',
+      city: 'Montreal',
+      country: 'CA',
+      clock: venueClock('America/Toronto', -240),
+      capacity: 1200,
+    },
   ];
 
   const dates: readonly FixtureDate[] = [
@@ -123,7 +153,7 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       language: FRENCH_ESSENTIAL,
       gauge: { capacityTotal: 780, seatsSold: 694, seatsHeld: 0, waitlistCount: 0 },
       prices: tiers(2600),
-      covers: 'un direct en cours, avec barriere de langue',
+      covers: 'a live show in progress, with a language barrier',
     },
     {
       id: 'date:room-open',
@@ -137,7 +167,7 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       language: NO_BARRIER,
       gauge: { capacityTotal: 780, seatsSold: 700, seatsHeld: 4, waitlistCount: 0 },
       prices: tiers(3200),
-      covers: 'la salle ouverte, et des places retenues par une intention en cours',
+      covers: 'the room open, and seats held by an intent in progress',
     },
     {
       id: 'date:scarce',
@@ -151,7 +181,7 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       language: NO_BARRIER,
       gauge: { capacityTotal: 420, seatsSold: 361, seatsHeld: 0, waitlistCount: 0 },
       prices: tiers(2800),
-      covers: 'le seuil de rarete a 85 %, juste au-dessus',
+      covers: 'the scarcity threshold at 85%, just above it',
     },
     {
       id: 'date:sold-out-waitlist',
@@ -165,13 +195,13 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       language: NO_BARRIER,
       gauge: { capacityTotal: 1200, seatsSold: 1200, seatsHeld: 0, waitlistCount: 340 },
       prices: tiers(3800),
-      covers: 'complet avec liste d\'attente — deux etats distincts',
+      covers: 'sold out with a waiting list — two distinct states',
     },
     {
       id: 'date:replay-expiring',
       showId: 'show:giselle',
       venueId: 'venue:criee',
-      // Fin il y a 47 h, fenetre de 48 h : il reste UNE heure.
+      // Ended 47 h ago, a 48 h window: ONE hour left.
       timing: timingAt(plusHours(now, -49), ReplayPolicy.INCLUDED, 48),
       publicationState: PublicationState.REPLAY_ONLINE,
       runState: null,
@@ -180,7 +210,7 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       language: NO_BARRIER,
       gauge: { capacityTotal: 780, seatsSold: 540, seatsHeld: 0, waitlistCount: 0 },
       prices: tiers(2400),
-      covers: 'une fenetre de rediffusion qui expire dans une heure',
+      covers: 'a replay window expiring in one hour',
     },
     {
       id: 'date:blackout',
@@ -194,7 +224,7 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       language: NO_BARRIER,
       gauge: { capacityTotal: 780, seatsSold: 120, seatsHeld: 0, waitlistCount: 0 },
       prices: tiers(3000),
-      covers: 'un blackout territorial, avec son motif code',
+      covers: 'a territorial blackout, with its reason as a code',
     },
     {
       id: 'date:cancelled',
@@ -208,7 +238,7 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       language: NO_BARRIER,
       gauge: { capacityTotal: 420, seatsSold: 380, seatsHeld: 0, waitlistCount: 0 },
       prices: tiers(2200),
-      covers: 'une annulation — remboursement integral, versement rembourse',
+      covers: 'a cancellation — full refund, payout refunded',
     },
     {
       id: 'date:postponed',
@@ -222,7 +252,7 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       language: NO_BARRIER,
       gauge: { capacityTotal: 780, seatsSold: 410, seatsHeld: 0, waitlistCount: 0 },
       prices: tiers(2600),
-      covers: 'un report — aucun mouvement d\'argent, la place suit',
+      covers: 'a postponement — no movement of money, the seat follows',
     },
     {
       id: 'date:interrupted',
@@ -236,15 +266,15 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       language: NO_BARRIER,
       gauge: { capacityTotal: 1200, seatsSold: 890, seatsHeld: 0, waitlistCount: 0 },
       prices: tiers(3400),
-      covers: 'une interruption — avoirs emis, versement retenu',
+      covers: 'an interruption — credits issued, payout withheld',
     },
     {
       id: 'date:absurd-race',
       showId: 'show:hamlet',
       venueId: 'venue:criee',
       timing: timingAt(plusMinutes(now, -30), ReplayPolicy.INCLUDED, 48),
-      // LE cas qui parait absurde et qu'un ordre de consommation Kafka produit :
-      // publication `live`, antenne `on-air`, ET une issue declaree.
+      // THE case that looks absurd and that a Kafka consumption order produces:
+      // publication `live`, on air `on-air`, AND a declared outcome.
       publicationState: PublicationState.LIVE,
       runState: RunState.ON_AIR,
       outcome: DateOutcome.CANCELLED,
@@ -252,7 +282,7 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       language: NO_BARRIER,
       gauge: { capacityTotal: 780, seatsSold: 500, seatsHeld: 0, waitlistCount: 0 },
       prices: tiers(2600),
-      covers: 'les trois axes en contradiction — la course de consommation Kafka',
+      covers: 'the three axes in contradiction — the Kafka consumption race',
     },
     {
       id: 'date:draft',
@@ -266,18 +296,18 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       language: NO_BARRIER,
       gauge: { capacityTotal: 420, seatsSold: 0, seatsHeld: 0, waitlistCount: 0 },
       prices: [],
-      covers: 'un brouillon — visible du studio, invisible du storefront',
+      covers: 'a draft — visible from the studio, invisible from the storefront',
     },
   ];
 
-  // Le generateur est consulte pour que la graine ait un effet observable :
-  // un jeu qui ignore sa graine donnerait l'illusion du determinisme.
+  // The generator is consulted so the seed has an observable effect: a set that
+  // ignored its seed would give the illusion of determinism.
   void random.next();
 
   return { seed, generatedAt: now, venues, dates };
 }
 
-/** Retrouve un cas par son identifiant — pour qu'un test nomme ce qu'il exerce. */
+/** Finds a case by its identifier — so a test can name what it exercises. */
 export function fixtureDate(fixtures: Fixtures, id: string): FixtureDate | null {
   return fixtures.dates.find((date) => date.id === id) ?? null;
 }

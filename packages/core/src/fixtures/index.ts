@@ -1,4 +1,4 @@
-/** Le jeu de donnees deterministe — tests, recette, demonstration publique. */
+/** The deterministic data set — tests, staging, public demonstration. */
 
 export { DeterministicRandom } from './random.js';
 export type { FixtureDate, FixtureVenue, Fixtures } from './build.js';

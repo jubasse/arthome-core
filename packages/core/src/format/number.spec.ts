@@ -5,65 +5,65 @@ import { Locale } from './locale.js';
 import { formatCompact, formatInteger, formatMoney } from './number.js';
 
 /**
- * INVARIANT PROTEGE
- *   Le contrat transporte un CODE DEVISE, jamais un symbole ni une position de
- *   symbole. La derivation vit ici, une seule fois.
+ * PROTECTED INVARIANT
+ *   The contract transports a CURRENCY CODE, never a symbol nor a symbol
+ *   position. The derivation lives here, once only.
  *
- * POURQUOI
- *   Cinq surfaces formatent les memes montants. Cinq tables de symboles
- *   produiraient cinq resultats, et l'une d'elles mettrait le symbole du
- *   mauvais cote. Et le formatage se fait SANS `Intl` : le moteur de React
- *   Native n'en offre pas partout une implementation complete, et le polyfill
- *   coute plusieurs centaines de kilo-octets dans cinq applications.
+ * WHY
+ *   Five surfaces format the same amounts. Five symbol tables would produce
+ *   five results, and one of them would put the symbol on the wrong side. And
+ *   the formatting is done WITHOUT `Intl`: React Native's engine does not offer
+ *   a complete implementation everywhere, and the polyfill costs several
+ *   hundred kilobytes in five applications.
  */
-describe('le formatage des montants', () => {
-  it('place le symbole selon la langue, pas selon la devise', () => {
+describe('formatting amounts', () => {
+  it('places the symbol by language, not by currency', () => {
     const price = money(2650, 'EUR');
     expect(formatMoney(price, Locale.FR)).toBe('26,50 €');
     expect(formatMoney(price, Locale.EN)).toBe('€26.50');
   });
 
-  it('omet les centimes quand ils sont nuls', () => {
+  it('omits the cents when they are zero', () => {
     expect(formatMoney(money(2600, 'EUR'), Locale.FR)).toBe('26 €');
   });
 
-  it('rend le CODE pour une devise inconnue, jamais un symbole devine', () => {
-    // « 26,00 XPF » est juste ; « 26,00 ¤ » est un mensonge poli.
+  it('returns the CODE for an unknown currency, never a guessed symbol', () => {
+    // "26,00 XPF" is correct; "26,00 ¤" is a polite lie.
     expect(formatMoney(money(2600, 'XPF'), Locale.FR)).toBe('26 XPF');
   });
 
-  it('porte correctement un montant negatif — remboursement et avoir', () => {
+  it('carries a negative amount correctly — refund and credit note', () => {
     expect(formatMoney(money(-2650, 'EUR'), Locale.FR)).toBe('-26,50 €');
   });
 
-  it('groupe les milliers avec un espace insecable en francais', () => {
+  it('groups thousands with a no-break space in French', () => {
     expect(formatInteger(20732, Locale.FR)).toBe('20 732');
     expect(formatInteger(20732, Locale.EN)).toBe('20,732');
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Le compteur d'audience est compact au-dela de mille, exact en deca.
+ * PROTECTED INVARIANT
+ *   The audience counter is compact above a thousand, exact below it.
  *
- * POURQUOI
- *   En deca de mille, le nombre exact est plus informatif et tient dans la
- *   meme largeur. Et la regle du dossier interdit « 0 EN DIRECT » : le
- *   compteur est ABSENT quand il n'y a pas d'antenne, ce qui est une decision
- *   de contrat, pas de formatage — d'ou l'absence de cas zero ici.
+ * WHY
+ *   Below a thousand, the exact number is more informative and fits the same
+ *   width. And the file's rule forbids "0 LIVE": the counter is ABSENT when
+ *   nothing is on air, which is a contract decision, not a formatting one —
+ *   hence no zero case here.
  */
-describe('le compteur compact', () => {
-  it('reste exact sous mille', () => {
+describe('the compact counter', () => {
+  it('stays exact below a thousand', () => {
     expect(formatCompact(860, Locale.FR)).toBe('860');
   });
 
-  it('abrege au-dela', () => {
+  it('abbreviates above it', () => {
     expect(formatCompact(12_400, Locale.FR)).toBe('12,4 k');
     expect(formatCompact(12_400, Locale.EN)).toBe('12.4 k');
     expect(formatCompact(1_200_000, Locale.FR)).toBe('1,2 M');
   });
 
-  it('omet la decimale quand elle est nulle', () => {
+  it('omits the decimal when it is zero', () => {
     expect(formatCompact(12_000, Locale.FR)).toBe('12 k');
   });
 });

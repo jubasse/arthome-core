@@ -1,4 +1,4 @@
-/** La taxonomie : types, rang editorial, resolution d'un terme. */
+/** The taxonomy: types, editorial rank, resolving a term. */
 
 export type {
   AttributeGroup,

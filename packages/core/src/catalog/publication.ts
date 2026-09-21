@@ -1,41 +1,40 @@
 /**
- * La machine a etats d'une publication, et ses deux passages SANS RETOUR.
+ * A publication's state machine, and its two ONE-WAY passages.
  *
- * E5 — la correction la plus discrete et la plus importante : les fixtures
- * encodent `lockedTransitions: ['scheduled', 'replay-online']`, une liste
- * d'ETATS, et testent l'appartenance de l'etat courant. La maquette encode des
- * COUPLES `from>to`. Ce sont deux semantiques differentes, et c'est la seconde
- * qui est juste — verrouiller un ETAT empecherait aussi d'y entrer.
+ * E5 — the quietest and most important correction: the fixtures encode
+ * `lockedTransitions: ['scheduled', 'replay-online']`, a list of STATES, and
+ * test membership of the current state. The mockup encodes `from>to` PAIRS.
+ * Those are two different semantics, and the second is the right one —
+ * locking a STATE would also prevent entering it.
  *
- * Et une garantie que l'interface ne donne pas : **le serveur refuse la
- * transition inverse**. Ne pas l'offrir dans l'ecran est une politesse, pas une
- * garantie.
+ * And a guarantee the interface does not give: **the server refuses the reverse
+ * transition**. Not offering it on screen is a courtesy, not a guarantee.
  */
 
 import { DomainError } from '../kernel/errors.js';
 import { PublicationState } from '../vocabulary/catalog.js';
 
-/** Une transition offerte, avec ce qu'elle engage. */
+/** An offered transition, with what it commits to. */
 export interface PublicationTransition {
   readonly from: PublicationState;
   readonly to: PublicationState;
   /**
-   * Le CODE de la promesse engagee, servi avec le refus pour que le message
-   * soit traduit cote client. Nul quand la transition est reversible.
+   * The CODE of the promise made, served with the refusal so the message can be
+   * translated client-side. Null when the transition is reversible.
    */
   readonly irreversiblePromiseCode: string | null;
 }
 
 /**
- * La table, ecrite une fois. Deux couples sont sans retour :
- *   `draft|reserve -> scheduled`  — la publication engage LE TARIF AFFICHE ;
- *   `ended -> replay-online`      — des spectateurs ont PAYE pour la rediffusion.
+ * The table, written once. Two pairs are one-way:
+ *   `draft|reserve -> scheduled`  — publishing commits THE DISPLAYED PRICE;
+ *   `ended -> replay-online`      — viewers have PAID for the replay.
  *
- * ⚠ `technical -> live` et `live -> ended` ne sont PAS des commandes : elles
- * sont CAUSEES par `streaming.run.started.v1` et `streaming.run.ended.v1`.
- * C'est ce qui laisse `Publication` agregat d'un seul contexte, alors qu'elle
- * semblait a cheval sur trois. La commande « passer a l'antenne » va a
- * `streaming`, qui seul sait si le flux entre.
+ * ⚠ `technical -> live` and `live -> ended` are NOT commands: they are CAUSED
+ * by `streaming.run.started.v1` and `streaming.run.ended.v1`. That is what
+ * keeps `Publication` the aggregate of a single context, when it looked as if
+ * it straddled three. The "go on air" command goes to `streaming`, which alone
+ * knows whether the feed is coming in.
  */
 const TRANSITIONS: readonly PublicationTransition[] = [
   { from: PublicationState.DRAFT, to: PublicationState.RESERVE, irreversiblePromiseCode: null },
@@ -50,8 +49,16 @@ const TRANSITIONS: readonly PublicationTransition[] = [
     to: PublicationState.SCHEDULED,
     irreversiblePromiseCode: 'publication.promise.prices_engaged',
   },
-  { from: PublicationState.SCHEDULED, to: PublicationState.TECHNICAL, irreversiblePromiseCode: null },
-  { from: PublicationState.TECHNICAL, to: PublicationState.SCHEDULED, irreversiblePromiseCode: null },
+  {
+    from: PublicationState.SCHEDULED,
+    to: PublicationState.TECHNICAL,
+    irreversiblePromiseCode: null,
+  },
+  {
+    from: PublicationState.TECHNICAL,
+    to: PublicationState.SCHEDULED,
+    irreversiblePromiseCode: null,
+  },
   {
     from: PublicationState.ENDED,
     to: PublicationState.REPLAY_ONLINE,
@@ -59,18 +66,18 @@ const TRANSITIONS: readonly PublicationTransition[] = [
   },
 ];
 
-/** Les transitions causees par un evenement, jamais par une commande studio. */
+/** The transitions caused by an event, never by a studio command. */
 const EVENT_DRIVEN: readonly PublicationTransition[] = [
   { from: PublicationState.TECHNICAL, to: PublicationState.LIVE, irreversiblePromiseCode: null },
   { from: PublicationState.LIVE, to: PublicationState.ENDED, irreversiblePromiseCode: null },
 ];
 
 /**
- * Le RANG d'un etat, servi avec lui.
+ * The RANK of a state, served with it.
  *
- * Le tableau des evenements du studio trie PAR ETAT, et l'ordre est celui de la
- * machine, pas l'ordre alphabetique. Sans rang servi, chaque surface
- * reinventerait `STATE_ORDER` — `studio-web` Q5.
+ * The studio's events table sorts BY STATE, and the order is the machine's, not
+ * alphabetical. Without a served rank, each surface would reinvent
+ * `STATE_ORDER` — `studio-web` Q5.
  */
 const ORDER: readonly PublicationState[] = [
   PublicationState.DRAFT,
@@ -87,13 +94,13 @@ export function orderRankOf(state: PublicationState): number {
 }
 
 /**
- * Les transitions offertes A CET OPERATEUR.
+ * The transitions offered TO THIS OPERATOR.
  *
- * `canDecide` (artist ∨ production) est un ARGUMENT : seuls le proprietaire et
- * la production deplacent une date ; une regie voit la fiche et ne la deplace
- * pas. Servir la liste evite que chaque surface recalcule la table — et c'est
- * aussi ce qui permet au correctif temps reel de porter les transitions du
- * DESTINATAIRE, sans quoi un bouton perime resterait affiche (`realtime.md` §3.3).
+ * `canDecide` (artist ∨ production) is an ARGUMENT: only the owner and
+ * production move a date; a run desk sees the sheet and does not move it.
+ * Serving the list stops every surface recomputing the table — and it is also
+ * what lets the realtime correction carry the RECIPIENT's transitions, without
+ * which a stale button would stay on screen (`realtime.md` §3.3).
  */
 export function nextPublicationTransitions(
   from: PublicationState,
@@ -103,17 +110,17 @@ export function nextPublicationTransitions(
   return TRANSITIONS.filter((transition) => transition.from === from);
 }
 
-/** Cette transition est-elle causee par un evenement plutot que commandee ? */
+/** Is this transition caused by an event rather than commanded? */
 export function isEventDriven(from: PublicationState, to: PublicationState): boolean {
   return EVENT_DRIVEN.some((transition) => transition.from === from && transition.to === to);
 }
 
 /**
- * Le verrou porte sur le COUPLE, jamais sur l'etat.
+ * The lock is on the PAIR, never on the state.
  *
- * Rend le code de la promesse engagee quand la transition inverse est refusee,
- * `null` quand elle est simplement inconnue — deux refus differents, deux
- * messages differents.
+ * Returns the code of the promise made when the reverse transition is refused,
+ * `null` when it is simply unknown — two different refusals, two different
+ * messages.
  */
 export function irreversiblePromiseBlocking(
   from: PublicationState,
@@ -144,17 +151,17 @@ export function assertTransitionAllowed(
 }
 
 /**
- * LA LISTE DE CONTROLE QUI FAIT FOI : SEPT elements, ceux de la fiche.
+ * THE AUTHORITATIVE CHECKLIST: SEVEN items, the ones on the sheet.
  *
- * `studio-web` Q7 : les fixtures en portent QUATRE, la fiche en affiche SEPT,
- * et les deux repondent a la meme question. Les quatre sont un sous-ensemble
- * arbitraire ; les sept sont ceux qu'un ecran a reellement exerces.
+ * `studio-web` Q7: the fixtures carry FOUR, the sheet shows SEVEN, and both
+ * answer the same question. The four are an arbitrary subset; the seven are the
+ * ones a screen actually exercised.
  *
- * ⚠ TROIS des sept sont des FAITS PROJETES depuis d'autres contextes —
- * `at_least_one_active_price` et `capacity` viennent de `ticketing`,
- * `technical_check_passed` de `streaming`. `catalog` les tient a jour par
- * evenement et ne les demande a personne : c'est ce qui evite qu'une
- * publication ait besoin d'un appel synchrone vers deux services.
+ * ⚠ THREE of the seven are FACTS PROJECTED from other contexts —
+ * `at_least_one_active_price` and `capacity` come from `ticketing`,
+ * `technical_check_passed` from `streaming`. `catalog` keeps them up to date by
+ * event and asks nobody for them: that is what stops a publication needing a
+ * synchronous call to two services.
  */
 export const PUBLICATION_CHECKLIST_ITEMS = [
   'title-and-discipline',
@@ -168,18 +175,18 @@ export const PUBLICATION_CHECKLIST_ITEMS = [
 export type PublicationChecklistItem = (typeof PUBLICATION_CHECKLIST_ITEMS)[number];
 
 /**
- * Les avertissements NON BLOQUANTS.
+ * The NON-BLOCKING warnings.
  *
- * « Chapitres prevus » et « moderateur affecte » quittent la liste bloquante :
- * on doit pouvoir publier une date sans chapitres, et un poste non affecte se
- * rattrape jusqu'au dernier jour.
+ * "Chapters planned" and "moderator assigned" leave the blocking list: it must
+ * be possible to publish a date without chapters, and an unassigned post can be
+ * filled up to the last day.
  */
 export const PUBLICATION_WARNING_ITEMS = ['chapters-planned', 'moderator-assigned'] as const;
 export type PublicationWarningItem = (typeof PUBLICATION_WARNING_ITEMS)[number];
 
 export interface PublicationReadiness {
   readonly ready: boolean;
-  /** Les identifiants MANQUANTS — jamais un pourcentage, que le client calcule. */
+  /** The MISSING identifiers — never a percentage, which the client computes. */
   readonly missing: readonly PublicationChecklistItem[];
   readonly warnings: readonly PublicationWarningItem[];
 }

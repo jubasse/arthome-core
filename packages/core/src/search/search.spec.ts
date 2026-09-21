@@ -16,20 +16,19 @@ const criteria = (over: Partial<SearchCriteria> = {}): SearchCriteria => ({
 });
 
 /**
- * INVARIANT PROTEGE
- *   Deux saisies equivalentes produisent LA MEME signature.
+ * PROTECTED INVARIANT
+ *   Two equivalent entries produce THE SAME signature.
  *
- * POURQUOI CE TEST EXISTE
- *   La deduplication « deja enregistree » s'affiche sur DEUX ecrans (`browse`
- *   et `category`) et determine une ECRITURE. La maquette la calcule cote
- *   client : c'est donc une valeur de `@arthome/core`, normalisee une fois.
- *   Si elle depend de l'ordre de saisie, « deja enregistree » ment et on cree
- *   deux alertes pour la meme recherche.
+ * WHY THIS TEST EXISTS
+ *   The "already saved" deduplication appears on TWO screens (`browse` and
+ *   `category`) and determines a WRITE. The mockup computes it client-side: so
+ *   it is a value of `@arthome/core`, normalised once. If it depends on entry
+ *   order, "already saved" lies and we create two alerts for one search.
  */
-describe('la signature des criteres', () => {
-  it("ne depend pas de l'ordre des filtres", () => {
-    // Le cas exact : deux disciplines et trois etiquettes cochees dans deux
-    // ordres differents. C'est UNE recherche.
+describe('the criteria signature', () => {
+  it('does not depend on the order of the filters', () => {
+    // The exact case: two disciplines and three tags ticked in two different
+    // orders. That is ONE search.
     const left = criteria({
       disciplineIds: ['jazz', 'dance'],
       tagIds: ['open-air', 'revival', 'archive'],
@@ -42,30 +41,37 @@ describe('la signature des criteres', () => {
     expect(sameCriteria(left, right)).toBe(true);
   });
 
-  it('ne depend ni de la casse ni des espaces du texte', () => {
+  it('depends on neither the case nor the whitespace of the text', () => {
     expect(
       sameCriteria(criteria({ text: '  Nuit   Blanche ' }), criteria({ text: 'nuit blanche' })),
     ).toBe(true);
   });
 
-  it('deduplique une valeur cochee deux fois', () => {
+  it('deduplicates a value ticked twice', () => {
     expect(
-      sameCriteria(criteria({ disciplineIds: ['jazz', 'jazz'] }), criteria({ disciplineIds: ['jazz'] })),
+      sameCriteria(
+        criteria({ disciplineIds: ['jazz', 'jazz'] }),
+        criteria({ disciplineIds: ['jazz'] }),
+      ),
     ).toBe(true);
   });
 
-  it('DISTINGUE deux recherches reellement differentes', () => {
-    // Le test qui protege contre une normalisation trop zelee : une signature
-    // qui rendrait tout egal serait pire qu'aucune signature.
-    expect(sameCriteria(criteria({ disciplineIds: ['jazz'] }), criteria({ disciplineIds: ['dance'] }))).toBe(false);
+  it('TELLS APART two genuinely different searches', () => {
+    // The test that guards against over-zealous normalisation: a signature that
+    // made everything equal would be worse than no signature.
+    expect(
+      sameCriteria(criteria({ disciplineIds: ['jazz'] }), criteria({ disciplineIds: ['dance'] })),
+    ).toBe(false);
     expect(sameCriteria(criteria({ text: 'carmen' }), criteria({ text: 'giselle' }))).toBe(false);
-    expect(sameCriteria(criteria({ priceMaxMinor: 3000 }), criteria({ priceMaxMinor: 4000 }))).toBe(false);
+    expect(sameCriteria(criteria({ priceMaxMinor: 3000 }), criteria({ priceMaxMinor: 4000 }))).toBe(
+      false,
+    );
   });
 
-  it('est lisible dans un journal, pas un hachage opaque', () => {
-    // Un hachage aurait exige une source de hachage — donc une API de
-    // plateforme — que ce paquet s'interdit. Et il serait illisible le jour ou
-    // l'on cherche pourquoi deux recherches ont ete confondues.
+  it('is readable in a log, not an opaque hash', () => {
+    // A hash would have required a hashing source — hence a platform API —
+    // which this package forbids itself. And it would be unreadable the day we
+    // look for why two searches were conflated.
     const signature = criteriaSignature(criteria({ text: 'carmen', disciplineIds: ['opera'] }));
     expect(signature).toContain('q:carmen');
     expect(signature).toContain('d:opera');
@@ -73,54 +79,56 @@ describe('la signature des criteres', () => {
 });
 
 /**
- * INVARIANT PROTEGE
- *   Un intervalle inverse est REMIS A L'ENDROIT, pas refuse.
+ * PROTECTED INVARIANT
+ *   An inverted range is PUT BACK THE RIGHT WAY ROUND, not refused.
  *
- * POURQUOI
- *   Une recherche n'est pas un formulaire de paiement : refuser une saisie
- *   maladroite couterait un ecran d'erreur pour une intention parfaitement
- *   claire.
+ * WHY
+ *   A search is not a payment form: refusing a clumsy entry would cost an error
+ *   screen for a perfectly clear intention.
  */
-describe('la normalisation des intervalles', () => {
-  it('remet un intervalle de prix a l\'endroit', () => {
-    const normalized = normalizeSearchCriteria(criteria({ priceMinMinor: 5000, priceMaxMinor: 2000 }));
+describe('normalising ranges', () => {
+  it('puts a price range back the right way round', () => {
+    const normalized = normalizeSearchCriteria(
+      criteria({ priceMinMinor: 5000, priceMaxMinor: 2000 }),
+    );
     expect(normalized.priceMinMinor).toBe(2000);
     expect(normalized.priceMaxMinor).toBe(5000);
   });
 
-  it('laisse un intervalle ouvert tel quel', () => {
-    const normalized = normalizeSearchCriteria(criteria({ priceMinMinor: null, priceMaxMinor: 2000 }));
+  it('leaves an open range as it is', () => {
+    const normalized = normalizeSearchCriteria(
+      criteria({ priceMinMinor: null, priceMaxMinor: 2000 }),
+    );
     expect(normalized.priceMinMinor).toBeNull();
     expect(normalized.priceMaxMinor).toBe(2000);
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Une recherche enregistree SE REJOUE ou SE DECLARE PERIMEE. Jamais elle ne
- *   disparait, jamais elle ne s'execute en silence sur des criteres qu'elle ne
- *   comprend plus.
+ * PROTECTED INVARIANT
+ *   A saved search REPLAYS or DECLARES ITSELF STALE. It never vanishes, and it
+ *   never runs in silence on criteria it no longer understands.
  *
- * POURQUOI
- *   `storefront-web` Q24 : elle survit a des mois et a des montees de version.
- *   Une serialisation opaque de l'etat d'ecran, comme celle de la maquette, ne
- *   le permet pas — et une execution silencieuse sur des criteres mal compris
- *   rendrait le compteur de correspondances faux sans que personne le sache.
+ * WHY
+ *   `storefront-web` Q24: it survives months and version upgrades. An opaque
+ *   serialisation of screen state, like the mockup's, does not allow that — and
+ *   a silent run on misunderstood criteria would make the match counter wrong
+ *   with nobody knowing.
  */
-describe('la survie a un changement de grammaire', () => {
-  it('rejoue une recherche de la version courante', () => {
+describe('surviving a grammar change', () => {
+  it('replays a search of the current version', () => {
     const migration = migrateCriteria(criteria({ text: 'carmen' }));
     expect(migration.status).toBe('current');
   });
 
-  it('declare perimee une recherche d\'une version anterieure', () => {
+  it('declares a search of an earlier version stale', () => {
     const migration = migrateCriteria(criteria({ version: CRITERIA_VERSION - 1 }));
     expect(migration).toEqual({ status: 'stale', fromVersion: CRITERIA_VERSION - 1 });
   });
 
-  it("declare perimee une recherche d'une version FUTURE plutot que de deviner", () => {
-    // L'application est en retard sur le serveur — cas reel sur mobile, ou une
-    // revue de magasin est lente. On ne devine pas, on le dit.
+  it('declares a search of a FUTURE version stale rather than guessing', () => {
+    // The application is behind the server — a real case on mobile, where a
+    // store review is slow. We do not guess, we say so.
     const migration = migrateCriteria(criteria({ version: CRITERIA_VERSION + 1 }));
     expect(migration.status).toBe('stale');
   });

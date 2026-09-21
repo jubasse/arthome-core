@@ -1,17 +1,17 @@
-// Événements du contexte `chat` — la parole dans une chaîne, et sa police.
+// Events of the `chat` context — speech in a channel, and its policing.
 //
-// Sujets Kafka :
-//   arthome.chat.message     clé date_id   12 partitions
-//   arthome.chat.moderation  clé date_id    6 partitions
+// Kafka topics:
+//   arthome.chat.message     key date_id   12 partitions
+//   arthome.chat.moderation  key date_id    6 partitions
 //
-// Kafka est le JOURNAL durable — modération, audit, rejeu, historique.
-// Redis assure la DIFFUSION aux clients connectés. Confondre les deux est
-// l'erreur classique, et `streaming.md` la nomme.
+// Kafka is the durable JOURNAL — moderation, audit, replay, history.
+// Redis handles BROADCAST to connected clients. Confusing the two is the
+// classic error, and `streaming.md` names it.
 //
-// Maturité : PROVISOIRE (palier 5). Quatre vocabulaires de sanction existaient ;
-// j'en tranche trois axes, mais AUCUN écran n'a jamais exercé la modération vue
-// du spectateur — `storefront-mobile` a vérifié que `chatOf` n'est jamais
-// appelée dans sa maquette. Un contrat conçu et non observé ne se fige pas.
+// Maturity: PROVISIONAL (milestone 5). Four sanction vocabularies existed; I
+// settle three axes from them, but NO screen has ever exercised moderation as
+// the viewer sees it — `storefront-mobile` verified that `chatOf` is never
+// called in its mockup. A contract designed and not observed does not freeze.
 syntax = "proto3";
 
 package arthome.chat.v1;
@@ -19,10 +19,10 @@ package arthome.chat.v1;
 import "arthome/common/v1/common.proto";
 import "google/protobuf/timestamp.proto";
 
-// Vocabulaire de `catalogue.json`, qui fait autorité.
-// Trois tables parallèles existent dans les maquettes — `free | emoji | off`
-// côté web et console de régie, `read` au lieu de `read-only` — et l'i18n ne
-// résout que le premier jeu. C'est le défaut D2 sur un autre champ (E2).
+// Vocabulary from `catalogue.json`, which has authority.
+// Three parallel tables exist in the mockups — `free | emoji | off` on the web
+// and the run-desk console, `read` instead of `read-only` — and the i18n
+// resolves only the first set. It is defect D2 on another field (E2).
 enum ChatMode {
   CHAT_MODE_UNSPECIFIED = 0;
   CHAT_MODE_OPEN = 1;
@@ -31,21 +31,20 @@ enum ChatMode {
   CHAT_MODE_OFF = 4;
 }
 
-// AXE 1 — l'état du MESSAGE. Deux valeurs, et deux seulement.
-// `muted` et `banned` DISPARAISSENT de cet axe : ils n'y ont jamais eu de sens,
-// ils portent sur la personne. `ok` est renommé `published`, qui est le
-// vocabulaire de l'i18n et le seul qui dise ce qu'il fait (D6, E3).
+// AXIS 1 — the MESSAGE's state. Two values, and two only.
+// `muted` and `banned` DISAPPEAR from this axis: they never had meaning here,
+// they bear on the person. `ok` is renamed `published`, which is the i18n
+// vocabulary and the only one that says what it does (D6, E3).
 enum MessageState {
   MESSAGE_STATE_UNSPECIFIED = 0;
   MESSAGE_STATE_PUBLISHED = 1;
   MESSAGE_STATE_REMOVED = 2;
 }
 
-// AXE 2 — la nature de la LIGNE DE FILE.
-// `reported` est un état de TRIAGE, et il était logé dans le champ des
-// sanctions : c'est pour cela que la file se construisait en filtrant
-// `state === 'reported'`, ce qui n'est pas un filtre d'état mais un filtre de
-// nature. Séparé ici.
+// AXIS 2 — the nature of the QUEUE ITEM.
+// `reported` is a TRIAGE state, and it sat in the sanctions field: that is why
+// the queue was built by filtering `state === 'reported'`, which is not a state
+// filter but a kind filter. Separated here.
 enum ModerationItemState {
   MODERATION_ITEM_STATE_UNSPECIFIED = 0;
   MODERATION_ITEM_STATE_REPORTED = 1;
@@ -61,28 +60,29 @@ enum ModerationVerdict {
   MODERATION_VERDICT_BAN = 4;
 }
 
-// Vocabulaire de `shared/catalogue.json` `moderationReasons`, qui fait autorité
-// — et qui n'avait ici AUCUN concurrent, contrairement aux autres enums.
+// Vocabulary from `shared/catalogue.json` `moderationReasons`, which has
+// authority — and which, unlike the other enums, had NO competitor here.
 //
-// Une version antérieure de ce fichier perdait `insult` et `spoiler` et
-// inventait `hate` et `filter`. C'était donc le CONTRAT qui tenait une table
-// parallèle contre `shared/` : exactement le reproche que ce projet adresse aux
-// maquettes (E2), commis dans l'autre sens.
+// An earlier version of this file dropped `insult` and `spoiler` and invented
+// `hate` and `filter`. So it was THE CONTRACT holding a parallel table against
+// `shared/`: exactly the charge this project lays at the mockups (E2),
+// committed in the other direction.
 //
-// Deux précisions sur ce qui a été retiré :
-//   - `spoiler` (« Divulgue le spectacle ») est LE SEUL motif propre au
-//     spectacle vivant, il est traduit dans `shared/i18n/studio.json`
-//     (`enums.moderationReason.spoiler`), et plus personne n'aurait pu l'émettre ;
-//   - `filter` n'est pas un motif, c'est une ORIGINE — et le contrat la porte
-//     déjà correctement dans `StateChangeOrigin`. La loger aussi ici donnerait
-//     deux axes à un champ, précisément le reproche fait à `reported` dans les
-//     sanctions et à `postponed` dans `run.state`.
+// Two notes on what was removed:
+//   - `spoiler` ("Gives the show away") is THE ONLY reason specific to live
+//     performance, it is translated in `shared/i18n/studio.json`
+//     (`enums.moderationReason.spoiler`), and nobody could have emitted it any
+//     more;
+//   - `filter` is not a reason, it is an ORIGIN — and the contract already
+//     carries it correctly in `StateChangeOrigin`. Lodging it here as well would
+//     give one field two axes, precisely the charge laid at `reported` in the
+//     sanctions and at `postponed` in `run.state`.
 //
-// La règle « une valeur inconnue est conservée et traitée comme neutre » ne
-// sauvait rien ici : le problème n'était pas de recevoir `spoiler` sans le
-// comprendre, c'était que plus aucun émetteur ne pouvait le produire.
+// The "an unknown value is kept and treated as neutral" rule saved nothing
+// here: the problem was not receiving `spoiler` without understanding it, it
+// was that no emitter could produce it any more.
 //
-// Numéros 3 et 5 réservés : un numéro d'énumération ne se réutilise jamais.
+// Numbers 3 and 5 reserved: an enumeration number is never reused.
 enum ModerationReason {
   reserved 3, 5;
   reserved "MODERATION_REASON_HATE", "MODERATION_REASON_FILTER";
@@ -95,11 +95,12 @@ enum ModerationReason {
   MODERATION_REASON_SPOILER = 7;
 }
 
-// AXE 3 — la sanction sur la PERSONNE, AU SEIN D'UNE CHAÎNE.
-// La même personne est bannie chez un artiste et bienvenue chez un autre :
-// c'est pourquoi la sanction appartient à `chat` et non à `identity`. Y loger
-// la sanction obligerait chaque verdict — geste le plus fréquent d'un direct
-// saturé — à une écriture croisée vers le service le plus sensible du système.
+// AXIS 3 — the sanction on the PERSON, WITHIN ONE CHANNEL.
+// The same person is banned on one artist's channel and welcome on another's:
+// that is why the sanction belongs to `chat` and not to `identity`. Lodging the
+// sanction there would force every verdict — the most frequent act of a
+// saturated live show — into a cross-service write to the most sensitive
+// service in the system.
 enum AudienceSanctionKind {
   AUDIENCE_SANCTION_KIND_UNSPECIFIED = 0;
   AUDIENCE_SANCTION_KIND_NONE = 1;
@@ -107,9 +108,9 @@ enum AudienceSanctionKind {
   AUDIENCE_SANCTION_KIND_BANNED = 3;
 }
 
-// Deux vocabulaires existent dans le MÊME fichier de maquette
-// (`souple/normale/haute` en réglages de chaîne, `basse/moyenne/haute` en page
-// de modération) et aucun n'est dans `shared/`. Le contrat en fixe un.
+// Two vocabularies exist in the SAME mockup file (`souple/normale/haute` in
+// channel settings, `basse/moyenne/haute` on the moderation page) and neither
+// is in `shared/`. The contract fixes one.
 enum FilterSeverity {
   FILTER_SEVERITY_UNSPECIFIED = 0;
   FILTER_SEVERITY_LOW = 1;
@@ -117,39 +118,39 @@ enum FilterSeverity {
   FILTER_SEVERITY_HIGH = 3;
 }
 
-// Ajouter un mot au dictionnaire en direct RECLASSE les messages déjà publiés
-// si l'option rétroactive est active. Le journal doit distinguer un
-// reclassement automatique d'une décision humaine.
+// Adding a word to the dictionary live RECLASSIFIES messages already
+// published, if the retroactive option is on. The journal must tell an
+// automatic reclassification apart from a human decision.
 enum StateChangeOrigin {
   STATE_CHANGE_ORIGIN_UNSPECIFIED = 0;
   STATE_CHANGE_ORIGIN_HUMAN_VERDICT = 1;
-  // Un mot ajouté au dictionnaire EN DIRECT reclasse des messages déjà publiés.
+  // A word added to the dictionary LIVE reclassifies messages already published.
   STATE_CHANGE_ORIGIN_RETROACTIVE_FILTER = 2;
   STATE_CHANGE_ORIGIN_AUTHOR_SANCTIONED = 3;
-  // La modération AUTOMATIQUE, qui agit à l'INGESTION — pas après réclamation.
-  // Elle n'est pas construite aujourd'hui ; la forme doit pouvoir l'accueillir
-  // sans changement de contrat, ce qui est bon marché maintenant et cher après.
-  // À distinguer de RETROACTIVE_FILTER : celui-ci reclasse l'existant, celle-là
-  // décide à l'arrivée.
+  // AUTOMATIC moderation, which acts at INGESTION — not after a report.
+  // It is not built today; the shape must be able to accommodate it without a
+  // contract change, which is cheap now and expensive later.
+  // To be distinguished from RETROACTIVE_FILTER: that one reclassifies what
+  // exists, this one decides on arrival.
   STATE_CHANGE_ORIGIN_AUTOMATIC_FILTER = 4;
 }
 
-// ---------------------------------------------------------------- régime
+// ---------------------------------------------------------------- policy
 
-// Consommé par `catalog` : la carte publique porte `chatMode`, et le lecteur
-// en a besoin dans le même aller-retour que le jeton de lecture.
+// Consumed by `catalog`: the public card carries `chatMode`, and the player
+// needs it in the same round trip as the playback token.
 message DateChatPolicyChanged {
   string date_id = 1;
   string channel_id = 2;
   ChatMode mode = 3;
   FilterSeverity filter_severity = 4;
-  // Mode lent : délai minimal entre deux messages d'une même personne.
+  // Slow mode: minimum delay between two messages from the same person.
   uint32 slow_mode_sec = 5;
-  // Réserve aux détenteurs de place.
+  // Reserved to seat holders.
   bool holders_only = 6;
-  // Vrai dès que `catalog.publication.engaged` a été consommé. `chat` applique
-  // SON verrou : après engagement on peut toujours FERMER un tchat en direct,
-  // jamais l'ouvrir davantage.
+  // True as soon as `catalog.publication.engaged` has been consumed. `chat`
+  // applies ITS OWN lock: after the commitment you can still CLOSE a live chat,
+  // never open it further.
   bool locked = 7;
   google.protobuf.Timestamp occurred_at = 8;
   arthome.common.v1.Actor changed_by = 9;
@@ -157,8 +158,8 @@ message DateChatPolicyChanged {
 
 // ---------------------------------------------------------------- message
 
-// Journal durable : rejeu de rediffusion, audit, historique. La DIFFUSION aux
-// clients connectés passe par Redis et n'entre pas ici.
+// Durable journal: replay playback, audit, history. BROADCAST to connected
+// clients goes over Redis and does not enter here.
 message MessagePosted {
   string message_id = 1;
   string date_id = 2;
@@ -166,29 +167,29 @@ message MessagePosted {
   string audience_member_id = 4;
   string author_handle = 5;
 
-  // LA POSITION DANS LE MÉDIA, en secondes depuis le lever de rideau.
-  // Sans elle, le tchat rejoué sur une rediffusion est décalé de tout ce que le
-  // spectateur a mis à lancer la lecture. Les maquettes prévoient des
-  // rediffusions avec chapitres : le problème est certain. Ça ne coûte rien si
-  // on y pense au départ, c'est irrattrapable ensuite.
+  // THE POSITION IN THE MEDIA, in seconds from curtain-up.
+  // Without it, chat replayed over a replay is offset by however long the viewer
+  // took to start playback. The mockups plan replays with chapters: the problem is
+  // certain. It costs nothing if you think of it at the start, it is
+  // unrecoverable later.
   int32 at_media_sec = 6;
 
-  // L'instant absolu, EN PLUS : le studio horodate en heure de salle et le
-  // journal de modération en a besoin. Les deux sont portés, jamais l'un seul.
+  // The absolute instant, AS WELL: the studio timestamps in venue time and the
+  // moderation journal needs it. Both are carried, never one alone.
   google.protobuf.Timestamp sent_at = 7;
 
-  // Monotone par date. C'est le POINT DE REPRISE du flux temps réel : une
-  // console rouverte à 21 h 40 doit pouvoir rejouer depuis 20 h 30, et un
-  // mobile revenu d'arrière-plan doit savoir ce qu'il a manqué.
+  // Monotonic per date. It is the RESUME POINT of the realtime stream: a console
+  // reopened at 21:40 must be able to replay from 20:30, and a mobile returning
+  // from the background must know what it missed.
   uint64 seq = 8;
 
   arthome.common.v1.LocalizedText body = 9;
 }
 
-// Un message retiré qui reste affiché est un échec de modération : cet
-// événement doit atteindre les écrans ouverts en moins de deux secondes.
-// La surface PUBLIQUE ne reçoit jamais un message retiré ; le studio voit les
-// deux états.
+// A removed message that stays on screen is a moderation failure: this event
+// must reach open screens in under two seconds.
+// The PUBLIC surface never receives a removed message; the studio sees both
+// states.
 message MessageStateChanged {
   string message_id = 1;
   string date_id = 2;
@@ -199,18 +200,19 @@ message MessageStateChanged {
   arthome.common.v1.Actor changed_by = 7;
 }
 
-// ---------------------------------------------------------------- modération
+// ---------------------------------------------------------------- moderation
 
-// Le second verdict est REFUSÉ et transporte la décision gagnante — auteur et
-// verdict — pour que l'écran affiche « X a déjà supprimé ce message » au lieu
-// d'un échec nu. Un refus nu obligerait à un second aller-retour en plein direct.
+// The second verdict is REFUSED and carries the winning decision — author and
+// verdict — so the screen can show "X has already deleted this message" instead
+// of a bare failure. A bare refusal would force a second round trip in the
+// middle of a live show.
 //
-// La prise en charge est un BAIL COURT, pas une écriture : un modérateur dont
-// le téléphone s'éteint ne doit pas geler une ligne pendant tout le direct.
-// « Prendre en charge n'est pas trancher : tant que le confrère n'a pas rendu
-// de verdict, votre sanction s'applique » — c'est une supersession, donc une
-// règle de préséance, et c'est pourquoi les commandes de modération sont
-// CONDITIONNELLES et non idempotentes aveugles (E3).
+// Claiming is a SHORT LEASE, not a write: a moderator whose phone dies must not
+// freeze a row for the whole live show.
+// "Claiming is not settling: as long as your colleague has returned no verdict,
+// your sanction applies" — that is a supersession, hence a precedence rule, and
+// it is why moderation commands are CONDITIONAL and not blindly idempotent
+// (E3).
 message ModerationSettled {
   string moderation_item_id = 1;
   string message_id = 2;
@@ -223,36 +225,36 @@ message ModerationSettled {
   int32 at_media_sec = 9;
   google.protobuf.Timestamp settled_at = 10;
 
-  // Qui a tranché. Peut être un acteur NON HUMAIN : `Actor.surface` porte
-  // SURFACE_SYSTEM, et `account_id` est alors vide. Aucune forme nouvelle
-  // n'est nécessaire pour qu'un modérateur automatique rende un verdict.
+  // Who settled. May be a NON-HUMAN actor: `Actor.surface` carries
+  // SURFACE_SYSTEM, and `account_id` is then empty. No new shape is needed for an
+  // automatic moderator to return a verdict.
   arthome.common.v1.Actor settled_by = 11;
 
-  // L'ORIGINE DU RÈGLEMENT, et elle SURVIT au règlement.
-  // Sans elle, « retiré par le filtre, puis confirmé par X » s'écrase en
-  // « retiré par X », et l'on perd de quoi mesurer plus tard la qualité du
-  // filtre. C'est gratuit maintenant, irrattrapable ensuite — le même
-  // raisonnement que l'ancrage média d'un message.
+  // THE ORIGIN OF THE SETTLEMENT, and it SURVIVES the settlement.
+  // Without it, "removed by the filter, then confirmed by X" collapses into
+  // "removed by X", and we lose what it takes to measure the filter's quality
+  // later. Free now, unrecoverable later — the same reasoning as a message's
+  // media anchor.
   StateChangeOrigin origin = 12;
 
-  // Renseignés quand un humain CONFIRME (ou renverse) une décision automatique.
-  // La préséance est écrite dans un seul sens : un humain peut renverser une
-  // décision automatique, JAMAIS l'inverse — sinon un filtre rétroactif
-  // effacerait un arbitrage rendu.
+  // Filled in when a human CONFIRMS (or overturns) an automatic decision.
+  // The precedence is written in one direction only: a human may overturn an
+  // automatic decision, NEVER the reverse — otherwise a retroactive filter would
+  // erase a judgement already made.
   arthome.common.v1.Actor confirmed_by = 13;
   google.protobuf.Timestamp confirmed_at = 14;
 
-  // L'AXE DU RÈGLEMENT, distinct de la version qui porte le bail.
-  // Seul un verdict l'incrémente ; prendre puis relâcher une prise en charge ne
-  // le touche pas. C'est lui qu'une commande conditionnelle vise.
-  // Voir data-model.md §6.1 : un compteur unique ne peut pas exprimer
-  // « refuse si tranché, accepte si seulement réclamé ».
+  // THE SETTLEMENT AXIS, distinct from the version that carries the lease.
+  // Only a verdict increments it; claiming then releasing does not touch it. It
+  // is what a conditional command targets.
+  // See data-model.md §6.1: a single counter cannot express "refuse if settled,
+  // accept if merely claimed".
   uint64 decision_version = 15;
 }
 
-// Une sanction porte un INSTANT d'expiration, jamais une étiquette :
-// « sans limite », 1 min, 10 min, 1 h et la durée libre sont un seul champ,
-// calculé une fois. `expires_at` absent = sans limite.
+// A sanction carries an EXPIRY INSTANT, never a label: "no limit", 1 min,
+// 10 min, 1 h and a free-form duration are one single field, computed once.
+// `expires_at` absent = no limit.
 message AudienceSanctioned {
   string audience_member_id = 1;
   string channel_id = 2;
@@ -269,7 +271,7 @@ message AudienceSanctionLifted {
   string channel_id = 2;
   google.protobuf.Timestamp occurred_at = 3;
   arthome.common.v1.Actor lifted_by = 4;
-  // Vrai quand c'est l'expiration, et non un geste humain, qui a levé la
-  // sanction. Le journal doit distinguer les deux.
+  // True when it is the expiry, and not a human act, that lifted the sanction.
+  // The journal must tell the two apart.
   bool expired = 5;
 }

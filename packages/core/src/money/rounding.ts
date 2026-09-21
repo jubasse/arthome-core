@@ -1,29 +1,29 @@
 /**
- * L'ARRONDI — l'invariant le plus cite du projet, et celui qui se trompe le
- * plus discretement.
+ * ROUNDING — the most-quoted invariant in the project, and the one that goes
+ * wrong most quietly.
  *
- * `shared/` le porte et il fait autorite : « l'arrondi se fait A L'UNITE sur
- * CHAQUE COMPOSANTE PRISE SEPAREMENT ». Ce n'est pas un detail de presentation :
+ * `shared/` carries it and it has authority: "rounding happens TO THE MINOR
+ * UNIT, on EACH COMPONENT TAKEN SEPARATELY". This is not a presentation detail:
  *
- *   la somme des arrondis n'est pas l'arrondi de la somme.
+ *   the sum of the roundings is not the rounding of the sum.
  *
- * Trois places a 26,33 € : 3 x round(2633 x 0,12) = 3 x 316 = 948, quand
- * round(3 x 2633 x 0,12) = round(947,88) = 948 — ici ils coincident. A
- * 26,37 € : 3 x round(2637 x 0,12) = 3 x 316 = 948, contre round(949,32) = 949.
- * Un centime, sur chaque commande, dans le sens de la plateforme. C'est
- * exactement le genre d'ecart qu'une reconciliation Stripe fait apparaitre six
- * mois plus tard sans qu'on sache d'ou il vient.
+ * Three seats at €26.33: 3 x round(2633 x 0.12) = 3 x 316 = 948, while
+ * round(3 x 2633 x 0.12) = round(947.88) = 948 — here they agree. At €26.37:
+ * 3 x round(2637 x 0.12) = 3 x 316 = 948, against round(949.32) = 949. One
+ * cent, on every order, always in the platform's favour. That is exactly the
+ * kind of gap a Stripe reconciliation surfaces six months later with nobody
+ * able to say where it came from.
  */
 
 import { DomainError } from '../kernel/errors.js';
 import { money, type Money } from './money.js';
 
 /**
- * Les taux voyagent en POINTS DE BASE, entiers : 1200 = 12 %, 550 = 5,5 %.
+ * Rates travel in BASIS POINTS, as integers: 1200 = 12%, 550 = 5.5%.
  *
- * Jamais en virgule flottante. `0.12` semble innocent jusqu'a ce que
- * `2633 * 0.12` rende 315,95999999999998 et qu'un arrondi bascule du mauvais
- * cote. Un taux est une donnee exacte : il se porte en entier.
+ * Never in floating point. `0.12` looks innocent until `2633 * 0.12` returns
+ * 315.95999999999998 and a rounding tips the wrong way. A rate is exact data:
+ * it is carried as an integer.
  */
 export type BasisPoints = number;
 
@@ -37,14 +37,12 @@ export function basisPoints(value: number): BasisPoints {
 }
 
 /**
- * Arrondi au plus proche, a l'unite mineure, moities vers le haut en valeur
- * absolue (« half away from zero »).
+ * Round half away from zero, to the minor unit.
  *
- * Pourquoi pas `Math.round` : il arrondit -0,5 vers 0 et 0,5 vers 1, donc il
- * est ASYMETRIQUE sur les negatifs — et les negatifs existent ici, ce sont les
- * remboursements et les avoirs. Un remboursement de 2,505 € et un paiement de
- * 2,505 € doivent produire le meme centime, au signe pres, sinon un aller-retour
- * ne revient pas a zero.
+ * Why not `Math.round`: it rounds -0.5 towards 0 and 0.5 towards 1, so it is
+ * ASYMMETRIC on negatives — and negatives exist here, they are refunds and
+ * credit notes. A €2.505 refund and a €2.505 payment must produce the same
+ * cent, up to sign, or a round trip does not return to zero.
  */
 export function roundMinor(value: number): number {
   const rounded = value < 0 ? -Math.round(-value) : Math.round(value);
@@ -55,35 +53,35 @@ export function roundMinor(value: number): number {
 }
 
 /**
- * Applique un taux a un montant, et arrondit — LA composante elementaire.
+ * Applies a rate to an amount and rounds — THE elementary component.
  *
- * Toute regle qui applique un taux passe par ici : commission, TVA, remise,
- * prorata. C'est ce qui garantit que l'arrondi se fait une seule fois, au meme
- * endroit, dans le meme sens.
+ * Every rule that applies a rate goes through here: commission, VAT, discount,
+ * pro rata. That is what guarantees rounding happens once, in one place, in one
+ * direction.
  */
 export function applyRate(value: Money, rate: BasisPoints): Money {
   return money(roundMinor((value.amountMinor * rate) / BASIS_POINTS_SCALE), value.currencyCode);
 }
 
 /**
- * Le complement : ce qui reste apres avoir applique un taux.
+ * The complement: what remains after applying a rate.
  *
- * `remainderAfterRate(x, r)` vaut `x - applyRate(x, r)` EXACTEMENT, jamais
- * `applyRate(x, 10000 - r)` — les deux different d'un centime des que
- * l'arrondi tombe sur une moitie, et c'est la difference entre un net juste et
- * un net qui derive.
+ * `remainderAfterRate(x, r)` is EXACTLY `x - applyRate(x, r)`, never
+ * `applyRate(x, 10000 - r)` — the two differ by a cent as soon as the rounding
+ * lands on a half, and that is the difference between a correct net and a net
+ * that drifts.
  */
 export function remainderAfterRate(value: Money, rate: BasisPoints): Money {
   return money(value.amountMinor - applyRate(value, rate).amountMinor, value.currencyCode);
 }
 
 /**
- * Extrait la part de taxe d'un montant TTC.
+ * Extracts the tax portion from a gross (tax-inclusive) amount.
  *
- * Le prix affiche a un consommateur est TTC (convention B2C) : la TVA s'en
- * EXTRAIT, elle ne s'y ajoute pas. `ttc x rate / (10000 + rate)`, et non
- * `ttc x rate / 10000` — l'erreur classique, qui surestime la taxe de
- * `rate/(10000+rate)` et fait un ecart de 5 % sur un taux a 5,5 %.
+ * A price shown to a consumer is tax-inclusive (B2C convention): VAT is
+ * EXTRACTED from it, not added to it. `gross x rate / (10000 + rate)`, and not
+ * `gross x rate / 10000` — the classic error, which overstates the tax by
+ * `rate/(10000+rate)`, a 5% error on a 5.5% rate.
  */
 export function taxIncludedIn(grossTtc: Money, rate: BasisPoints): Money {
   return money(

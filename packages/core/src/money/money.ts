@@ -1,22 +1,21 @@
 /**
- * L'argent, en unite mineure entiere.
+ * Money, in whole minor units.
  *
- * Decision du projet : « une unite canonique (centimes entiers + code devise)
- * en base et dans les contrats. Jamais de chaine formatee stockee ni
- * transportee, sauf dans un document. » Le formatage est de la presentation et
- * vit dans `format/`, avec une locale explicite.
+ * Project decision: "one canonical unit (whole cents + currency code) in the
+ * database and in the contracts. Never a formatted string stored or
+ * transported, except inside a document." Formatting is presentation and lives
+ * in `format/`, with an explicit locale.
  *
- * ⚠ `fixtures.js` porte les prix en EUROS ENTIERS (`price: 26`). C'est une
- * commodite de maquette : elle ne sait pas exprimer 26,50 €. Le portage
- * multiplie par cent.
+ * ⚠ `fixtures.js` carries prices in WHOLE EUROS (`price: 26`). That is a mockup
+ * convenience: it cannot express €26.50. The port multiplies by a hundred.
  */
 
 import { DomainError } from '../kernel/errors.js';
 
 export interface Money {
-  /** La plus petite unite de la devise, en entier. Peut etre negatif. */
+  /** The currency's smallest unit, as an integer. May be negative. */
   readonly amountMinor: number;
-  /** ISO 4217, majuscules. */
+  /** ISO 4217, uppercase. */
   readonly currencyCode: string;
 }
 
@@ -48,13 +47,12 @@ export function isNegative(value: Money): boolean {
 }
 
 /**
- * Additionner deux devises differentes est une faute, jamais une conversion
- * implicite.
+ * Adding two different currencies is a fault, never an implicit conversion.
  *
- * D4 : trois marches sont declares, UN SEUL est exerce — le multi-devise est
- * une intention, pas une regle eprouvee. Convertir ici introduirait un taux,
- * donc une date de change, donc un ecart de reconciliation qu'on ne saurait pas
- * expliquer. Une chaine qui vend dans deux devises a DEUX SOLDES.
+ * D4: three markets are declared, ONE is exercised — multi-currency is an
+ * intention, not a proven rule. Converting here would introduce a rate, hence a
+ * conversion date, hence a reconciliation gap nobody could explain. A channel
+ * selling in two currencies has TWO BALANCES.
  */
 function assertSameCurrency(left: Money, right: Money): void {
   if (left.currencyCode !== right.currencyCode) {

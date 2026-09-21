@@ -1,46 +1,46 @@
 /**
- * `@arthome/core` — le domaine Arthome.
+ * `@arthome/core` — the Arthome domain.
  *
- * ⚠ CETTE ENTREE N'IMPORTE PAS ZOD, A AUCUNE PROFONDEUR.
+ * ⚠ THIS ENTRY POINT DOES NOT IMPORT ZOD, AT ANY DEPTH.
  *
- * C'est la decision structurante du paquet, et elle se verifie :
- * `tools/check-core-entry.mjs` refuse tout chemin d'import menant a zod depuis
- * ici. Les schemas de frontiere vivent dans `@arthome/core/schema`, et c'est la
- * seule entree qui en depend.
+ * That is the package's structuring decision, and it is verified:
+ * `tools/check-core-entry.mjs` refuses any import path leading to zod from
+ * here. The boundary schemas live in `@arthome/core/schema`, and that is the
+ * only entry point that depends on it.
  *
- * Le motif est mesure (D-012) : le cout de zod est FIXE et lie a l'import, pas
- * marginal et lie au nombre de schemas — 93 Ko compresses pour un seul
- * `z.string()` en entree classique. Si cette entree importait zod, aucune
- * entree sans barillet de `@arthome/contracts` ne pourrait rattraper la
- * facture sur la surface la plus contrainte du projet.
+ * The reason is measured (D-012): zod's cost is FIXED and tied to the import,
+ * not marginal and tied to the number of schemas — 93 KB compressed for a
+ * single `z.string()` through the classic entry point. If this entry point
+ * imported zod, no barrel-free entry point of `@arthome/contracts` could ever
+ * claw the bill back on the most constrained surface in the project.
  */
 
-// Vague 1 — le socle.
+// Wave 1 — the foundation.
 export * from './kernel/index.js';
 export * from './vocabulary/index.js';
 export * from './money/index.js';
 export * from './time/index.js';
 
-// Vague 2 — ce qui se lit et ce qui s'affiche.
+// Wave 2 — what is read and what is displayed.
 export * from './taxonomy/index.js';
 export * from './media/index.js';
 export * from './format/index.js';
 export * from './i18n/index.js';
 
-// Vague 3 — ce qui est publie, ce qui se rediffuse, ce qui est permis.
+// Wave 3 — what is published, what is replayed, what is permitted.
 export * from './catalog/index.js';
 export * from './replay/index.js';
 export * from './permissions/index.js';
 
-// Vague 4 — ce qui s'achete, ce qui se dit, ce qui s'alerte, ce qui se cherche.
+// Wave 4 — what is bought, what is said, what is alerted, what is searched.
 export * from './ticketing/index.js';
 export * from './moderation/index.js';
 export * from './notification/index.js';
 export * from './search/index.js';
 
-// Vague 5 — les deux qui composent le plus, donc les dernieres des regles.
+// Wave 5 — the two that compose the most, hence the last of the rules.
 export * from './entitlement/index.js';
 export * from './payout/index.js';
 
-// Vague 7 — le jeu deterministe. Depend de tout, dependu par rien.
+// Wave 7 — the deterministic data set. Depends on everything, depended on by nothing.
 export * from './fixtures/index.js';

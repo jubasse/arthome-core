@@ -1,18 +1,18 @@
 /**
- * Les vocabulaires des personnes et des droits.
+ * The vocabularies of people and rights.
  *
- * ⚠ CE FICHIER EST DECLARANT (voir catalog.ts).
+ * ⚠ THIS FILE IS A DECLARING FILE (see catalog.ts).
  */
 
 /**
- * Les HUIT roles canoniques de `catalogue.json`.
+ * The EIGHT canonical roles from `catalogue.json`.
  *
- * E6 — `studio-data.js` les rabat sur six personas et ECRASE `director`,
- * `video` et `sound` en un seul « regie ». Or `grants` les distingue :
- * `director` peut inviter `video` et `sound`, les deux autres ne peuvent
- * inviter personne. Autoriser sur le role court accorderait un droit
- * d'invitation inexistant. **Les six personas sont un LIBELLE, jamais un
- * droit** — ils n'existent pas dans ce paquet.
+ * E6 — `studio-data.js` folds them onto six personas and CRUSHES `director`,
+ * `video` and `sound` into a single "run desk". But `grants` tells them apart:
+ * `director` may invite `video` and `sound`, the other two may invite nobody.
+ * Authorising on the short role would grant an invitation right that does not
+ * exist. **The six personas are a LABEL, never a right** — they do not exist in
+ * this package.
  */
 export const MEMBER_ROLES = [
   'artist',
@@ -38,9 +38,9 @@ export const MemberRole = {
 } as const;
 
 /**
- * Le poste tenu sur UNE date, par opposition au role tenu dans la chaine.
- * Deux echelles, deux cycles de vie : les confondre ferait d'une revocation de
- * renfort une exclusion de chaine.
+ * The post held on ONE date, as opposed to the role held in the channel.
+ * Two scales, two lifecycles: confusing them would turn revoking a stand-in
+ * into exclusion from the channel.
  */
 export const CREW_ROLES = ['crew-director', 'crew-video', 'crew-sound', 'crew-moderation'] as const;
 export type CrewRole = (typeof CREW_ROLES)[number];
@@ -53,10 +53,10 @@ export const CrewRole = {
 } as const;
 
 /**
- * Les quatorze entrees de navigation du studio.
+ * The studio's navigation entries.
  *
- * L'acces est l'UNION des roles tenus, JAMAIS un rang : une personne qui tient
- * `video` et `moderation` sur la meme chaine ouvre la reunion des deux.
+ * Access is the UNION of the roles held, NEVER a rank: someone holding both
+ * `video` and `moderation` on the same channel opens the union of the two.
  */
 export const NAVIGATION_ENTRIES = [
   'agenda',
@@ -95,8 +95,15 @@ export const NavigationEntry = {
   HELP: 'help',
 } as const;
 
-/** Les six volets d'une fiche de date, ouverts selon les droits effectifs. */
-export const DATE_PANES = ['public', 'pane-tickets', 'pane-chat', 'tech', 'pane-crew', 'pane-replay'] as const;
+/** The six panes of a date sheet, opened according to effective rights. */
+export const DATE_PANES = [
+  'public',
+  'pane-tickets',
+  'pane-chat',
+  'tech',
+  'pane-crew',
+  'pane-replay',
+] as const;
 export type DatePane = (typeof DATE_PANES)[number];
 
 export const DatePane = {
@@ -109,11 +116,19 @@ export const DatePane = {
 } as const;
 
 /**
- * Un appareil EST enregistre ; une SESSION est le couple (appareil, profil).
- * E13 : `catalogue.json` declare `devices` comme un ENTIER et `fixtures.js`
- * comme une LISTE d'objets. Deux formes, un nom.
+ * A device IS registered; a SESSION is the (device, profile) pair.
+ * E13: `catalogue.json` declares `devices` as an INTEGER and `fixtures.js` as
+ * a LIST of objects. Two shapes, one name.
  */
-export const DEVICE_KINDS = ['tv', 'mobile', 'tablet', 'desktop', 'stick', 'console', 'box'] as const;
+export const DEVICE_KINDS = [
+  'tv',
+  'mobile',
+  'tablet',
+  'desktop',
+  'stick',
+  'console',
+  'box',
+] as const;
 export type DeviceKind = (typeof DEVICE_KINDS)[number];
 
 export const DeviceKind = {
@@ -127,9 +142,9 @@ export const DeviceKind = {
 } as const;
 
 /**
- * Le journal du studio est nominatif ET situe : « qui a decide, quand, depuis
- * quelle surface ». `system` est un acteur comme un autre — ecran d'attente
- * automatique, expiration d'un bail, moderation automatique.
+ * The studio journal is by-name AND situated: "who decided, when, from which
+ * surface". `system` is an actor like any other — automatic standby screen,
+ * lease expiry, automatic moderation.
  */
 export const SURFACES = [
   'storefront-web',
@@ -150,7 +165,7 @@ export const Surface = {
   SYSTEM: 'system',
 } as const;
 
-/** Le troisieme canal, propose et non constate : `in-app`, pas `sms` (D-017). */
+/** The third channel, proposed and not observed: `in-app`, not `sms` (D-017). */
 export const NOTIFICATION_CHANNELS = ['push', 'email', 'in-app'] as const;
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 

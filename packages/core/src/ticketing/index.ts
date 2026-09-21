@@ -1,4 +1,4 @@
-/** Le commerce du spectateur : jauge, reservation, prix, code de place. */
+/** The viewer's commerce: capacity, holds, prices, seat code. */
 
 export type { Gauge, SeatAvailability, SeatHold } from './seats.js';
 export {

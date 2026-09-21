@@ -1,11 +1,10 @@
 /**
- * Le prix paye n'est pas le prix du palier.
+ * The price paid is not the tier's price.
  *
- * `storefront-web` (forme 5) : le recapitulatif porte
- * `palier + frais de service − remise d'abonnement − promotion = total`, et
- * **les quatre lignes doivent venir du contrat**. C'est exactement le cas
- * « un total de commande compose a deux endroits » que le dossier cite comme
- * defaut typique.
+ * `storefront-web` (shape 5): the summary carries
+ * `tier + service fee − subscription discount − promotion = total`, and **all
+ * four lines must come from the contract**. That is exactly the "an order total
+ * composed in two places" case the file cites as a typical defect.
  */
 
 import { DomainError } from '../kernel/errors.js';
@@ -28,11 +27,12 @@ export interface Promotion {
   readonly validUntil: Instant;
 }
 
-/** Le tarif d'appel : le plus bas des paliers ACTIFS. */
+/** The headline price: the lowest of the ACTIVE tiers. */
 export function lowestActivePrice(tiers: readonly TierPrice[]): Money | null {
   const active = tiers.filter((tier) => tier.active);
   return active.reduce<Money | null>(
-    (lowest, tier) => (lowest === null || tier.amount.amountMinor < lowest.amountMinor ? tier.amount : lowest),
+    (lowest, tier) =>
+      lowest === null || tier.amount.amountMinor < lowest.amountMinor ? tier.amount : lowest,
     null,
   );
 }
@@ -41,10 +41,7 @@ export function priceOfTier(tiers: readonly TierPrice[], tier: PriceTier): Money
   return tiers.find((entry) => entry.tier === tier && entry.active)?.amount ?? null;
 }
 
-export function activePromotion(
-  promotions: readonly Promotion[],
-  now: Instant,
-): Promotion | null {
+export function activePromotion(promotions: readonly Promotion[], now: Instant): Promotion | null {
   return (
     promotions.find(
       (promotion) => !isBefore(now, promotion.validFrom) && isBefore(now, promotion.validUntil),
@@ -53,15 +50,14 @@ export function activePromotion(
 }
 
 /**
- * Le tarif « seance commencee », AU PRORATA du temps restant.
+ * The "show already started" price, PRO RATA of the time remaining.
  *
- * `storefront-web` : « c'est une valeur qui depend de l'instant de lecture :
- * elle doit venir du contrat avec sa date de validite, ou etre recalculable par
- * `@arthome/core` a partir de parametres servis. Elle ne peut pas etre une
- * chaine figee. »
+ * `storefront-web`: "it is a value that depends on the instant of reading: it
+ * must come from the contract with its validity date, or be recomputable by
+ * `@arthome/core` from served parameters. It cannot be a frozen string."
  *
- * D'ou cette fonction : le serveur sert les parametres, la surface reevalue
- * quand `validUntil` passe. Une regle, deux appels.
+ * Hence this function: the server serves the parameters, the surface
+ * re-evaluates when `validUntil` passes. One rule, two calls.
  */
 export function lateRatePrice(fullPrice: Money, progress: number): Money {
   const remaining = Math.min(1, Math.max(0, 1 - progress));
@@ -69,13 +65,13 @@ export function lateRatePrice(fullPrice: Money, progress: number): Money {
 }
 
 /**
- * LA REMISE ET LA PROMOTION NE SE CUMULENT PAS : la plus favorable au
- * spectateur s'applique (D-017).
+ * THE DISCOUNT AND THE PROMOTION DO NOT STACK: the one most favourable to the
+ * viewer applies (D-017).
  *
- * C'est la regle la plus simple a expliquer, et la seule qui ne produise pas de
- * prix negatif sur une avant-premiere a tarif de decouverte pour un abonne
- * `premium`. `storefront-web` Q12 la posait : sans elle, trois ecrans
- * l'ecriraient trois fois.
+ * It is the simplest rule to explain, and the only one that does not produce a
+ * negative price on a preview at a discovery rate for a `premium` subscriber.
+ * `storefront-web` Q12 asked the question: without it, three screens would
+ * write it three times.
  */
 export function applyBestDiscount(
   basePrice: Money,
@@ -94,11 +90,10 @@ export function applyBestDiscount(
 }
 
 /**
- * Les frais de service : PAR PLACE, et le bareme est SERVI.
+ * Service fees: PER SEAT, and the schedule is SERVED.
  *
- * `storefront-web` Q11. Jamais une constante d'ecran — le storefront affiche
- * une ligne « frais de service » dans son recapitulatif, et elle doit etre
- * calculable une seule fois.
+ * `storefront-web` Q11. Never a screen constant — the storefront shows a
+ * "service fee" line in its summary, and it must be computable only once.
  */
 export interface ServiceFeeSchedule {
   readonly perSeat: Money;
@@ -114,7 +109,7 @@ export function serviceFeeFor(
   return money(perSeat.amountMinor * quantity, perSeat.currencyCode);
 }
 
-/** Les quatre lignes du recapitulatif, composees UNE FOIS. */
+/** The four lines of the summary, composed ONCE. */
 export interface OrderQuote {
   readonly tierTotal: Money;
   readonly serviceFee: Money;
@@ -130,12 +125,16 @@ export function quoteSeats(
   feeSchedule: ServiceFeeSchedule,
 ): OrderQuote {
   if (!Number.isSafeInteger(quantity) || quantity <= 0) {
-    throw new DomainError({ code: 'order.quantity_invalid', params: { quantity: String(quantity) } });
+    throw new DomainError({
+      code: 'order.quantity_invalid',
+      params: { quantity: String(quantity) },
+    });
   }
   const unitAfterDiscount = applyBestDiscount(unitPrice, subscriptionDiscountBps, promotionPrice);
-  // L'arrondi a deja eu lieu sur le prix UNITAIRE : la multiplication qui suit
-  // est exacte. C'est l'ordre impose par « arrondi sur chaque composante prise
-  // separement » — l'inverse produirait un centime d'ecart par commande.
+  // The rounding has already happened on the UNIT price: the multiplication
+  // that follows is exact. That is the order imposed by "rounding on each
+  // component taken separately" — the reverse produces a cent of drift per
+  // order.
   const tierTotal = money(unitPrice.amountMinor * quantity, unitPrice.currencyCode);
   const discountedTotal = money(unitAfterDiscount.amountMinor * quantity, unitPrice.currencyCode);
   const discount = subtract(tierTotal, discountedTotal);

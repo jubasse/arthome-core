@@ -1,54 +1,54 @@
-// Types partagés par tous les contextes.
+// Types shared by every context.
 //
-// Règles qui commandent ce fichier :
-//   - un montant est une unité mineure entière + un code devise ISO 4217 ;
-//     jamais une chaîne formatée, le formatage est de la présentation ;
-//   - un instant est un `google.protobuf.Timestamp`, toujours en UTC ;
-//     au passage à la frontière JSON il devient une chaîne ISO 8601 ;
-//   - un fuseau est un identifiant IANA, jamais un décalage en minutes (D3) ;
-//   - un libellé d'interface ne voyage JAMAIS : l'API rend des codes.
-//     Les deux seules exceptions sont du CONTENU et portent leur langue de
-//     rédaction : le message d'écran d'attente écrit par la régie, et les
-//     textes de la boîte du studio. D'où `LocalizedText`.
+// Rules that govern this file:
+//   - an amount is a whole minor unit + an ISO 4217 currency code;
+//     never a formatted string — formatting is presentation;
+//   - an instant is a `google.protobuf.Timestamp`, always in UTC;
+//     crossing into JSON it becomes an ISO 8601 string;
+//   - a time zone is an IANA identifier, never an offset in minutes (D3);
+//   - an interface label NEVER travels: the API returns codes.
+//     The only two exceptions are CONTENT and carry the language they were
+//     written in: the standby-screen message written by the run desk, and the
+//     studio shop's texts. Hence `LocalizedText`.
 syntax = "proto3";
 
 package arthome.common.v1;
 
-// Un montant. Unité canonique : la plus petite unité de la devise, en entier.
+// An amount. Canonical unit: the currency's smallest unit, as an integer.
 message Money {
-  // Centimes pour EUR et CHF. Peut être négatif (avoir, remboursement).
+  // Cents for EUR and CHF. May be negative (credit note, refund).
   int64 amount_minor = 1;
-  // ISO 4217, majuscules. « EUR », « CHF », « CAD ».
+  // ISO 4217, uppercase. "EUR", "CHF", "CAD".
   string currency_code = 2;
 }
 
-// Un texte RÉDIGÉ, par opposition à un libellé d'interface.
-// N'apparaît que là où un humain a écrit une phrase que nul ne traduira par clé.
+// A text that was WRITTEN, as opposed to an interface label.
+// Appears only where a human wrote a sentence nobody will translate by key.
 message LocalizedText {
-  // BCP 47 : « fr », « en ».
+  // BCP 47: "fr", "en".
   string content_language = 1;
   string text = 2;
 }
 
-// Un visuel DÉJÀ décliné à une taille réellement affichée.
-// Jamais une recette d'URL avec un gabarit de largeur : sur un téléviseur à 1 Go,
-// un fond 4K décodé pour une vignette coûte autant qu'un plein écran.
+// An image ALREADY produced at a size that is actually displayed.
+// Never a URL recipe with a width template: on a 1 GB television, a 4K
+// background decoded for a thumbnail costs as much as a full screen.
 message ImageRendition {
   string url = 1;
   uint32 width_px = 2;
   uint32 height_px = 3;
 }
 
-// Le jeu de visuels d'une entité, aux deux formats que les surfaces affichent.
+// An entity's image set, in the two aspect ratios the surfaces display.
 message MediaSet {
-  // 16/9, du plus petit au plus grand.
+  // 16:9, smallest to largest.
   repeated ImageRendition wide = 1;
-  // 2/3 ou 3/4 selon la surface, du plus petit au plus grand.
+  // 2:3 or 3:4 depending on the surface, smallest to largest.
   repeated ImageRendition poster = 2;
 }
 
-// La surface depuis laquelle un geste a été posé. Le journal du studio est
-// nominatif ET situé : « qui a décidé, quand, depuis quelle surface ».
+// The surface an act was performed from. The studio journal is by-name AND
+// situated: "who decided, when, from which surface".
 enum Surface {
   SURFACE_UNSPECIFIED = 0;
   SURFACE_STOREFRONT_WEB = 1;
@@ -56,33 +56,33 @@ enum Surface {
   SURFACE_STOREFRONT_TV = 3;
   SURFACE_STUDIO_WEB = 4;
   SURFACE_STUDIO_MOBILE = 5;
-  // Une règle serveur : écran d'attente automatique, expiration d'un bail,
-  // ramasse-miettes. Un acteur non humain est un acteur quand même.
+  // A server rule: automatic standby screen, lease expiry, garbage collection.
+  // A non-human actor is an actor all the same.
   SURFACE_SYSTEM = 6;
 }
 
-// Qui a causé le fait. Absent quand le fait n'a pas d'auteur humain.
+// Who caused the fact. Absent when the fact has no human author.
 message Actor {
-  // Vide pour SURFACE_SYSTEM.
+  // Empty for SURFACE_SYSTEM.
   string account_id = 1;
-  // L'intervenant, quand le geste est studio. Vide côté storefront.
+  // The person, when the act is a studio one. Empty on the storefront side.
   string person_id = 2;
   Surface surface = 3;
 }
 
-// Le fuseau de la salle, servi à côté de l'instant UTC qu'il qualifie.
-// « L'heure du spectateur d'abord, l'heure de salle en second quand elle
-// diffère » est un principe du dossier, et il est inapplicable si l'un des deux
-// manque. L'instant lui-même est porté par le message qui inclut ce bloc.
+// The venue's time zone, served alongside the UTC instant it qualifies.
+// "The viewer's time first, the venue's time second when it differs" is a
+// principle of the file, and it is inapplicable if either one is missing. The
+// instant itself is carried by the message that includes this block.
 message VenueClock {
-  // Identifiant IANA, « Europe/Paris ». Jamais une abréviation, jamais un
-  // décalage stocké (D3) : un décalage figé ne survit pas à un changement
-  // d'heure, et une date programmée dans six mois s'afficherait fausse.
+  // IANA identifier, "Europe/Paris". Never an abbreviation, never a stored
+  // offset (D3): a frozen offset does not survive a daylight-saving change, and
+  // a date scheduled six months out would display wrongly.
   string venue_timezone = 1;
 
-  // Le décalage CALCULÉ PAR LE SERVEUR pour l'instant qualifié, en minutes.
-  // Ce n'est pas un retour au décalage figé de D3 : c'est une valeur servie,
-  // recalculée à chaque service, jamais stockée. Elle évite d'embarquer une base
-  // de fuseaux dans cinq applications, et le calcul n'a donc lieu qu'une fois.
+  // The offset COMPUTED BY THE SERVER for the qualified instant, in minutes.
+  // This is not a return to D3's frozen offset: it is a served value,
+  // recomputed at every serve, never stored. It avoids bundling a time zone
+  // database into five applications, so the computation happens only once.
   int32 venue_utc_offset_min = 2;
 }

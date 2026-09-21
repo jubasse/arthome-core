@@ -40,23 +40,23 @@ const taxonomy: Taxonomy = {
 };
 
 /**
- * INVARIANT PROTEGE
- *   Le rang editorial fait autorite, et AUCUNE SURFACE NE REORDONNE.
+ * PROTECTED INVARIANT
+ *   The editorial rank is authoritative, and NO SURFACE REORDERS.
  *
- * POURQUOI
- *   Le rang va du plus grand public au plus pointu, FAMILLES MELEES. Une
- *   surface qui trierait par famille, par ordre alphabetique ou par nombre de
- *   dates produirait un autre ordre — et il y en aurait cinq.
+ * WHY
+ *   The rank runs from the most popular to the most specialised, FAMILIES
+ *   MIXED. A surface sorting by family, alphabetically or by number of dates
+ *   would produce a different order — and there would be five of them.
  */
-describe('le rang editorial', () => {
-  it('ordonne par rang, familles melees', () => {
+describe('the editorial rank', () => {
+  it('orders by rank, families mixed', () => {
     const ordered = disciplinesInEditorialOrder(taxonomy).map((entry) => entry.id);
     expect(ordered).toEqual(['theatre', 'dance', 'jazz']);
   });
 
-  it("ne mute pas l'artefact servi", () => {
-    // L'artefact est partage par tout le processus : `sort` mute en place, et
-    // muter une donnee servie est un effet de bord a distance.
+  it('does not mutate the served artefact', () => {
+    // The artefact is shared by the whole process: `sort` mutates in place, and
+    // mutating served data is an action at a distance.
     const before = taxonomy.disciplines.map((entry) => entry.id);
     disciplinesInEditorialOrder(taxonomy);
     expect(taxonomy.disciplines.map((entry) => entry.id)).toEqual(before);
@@ -64,44 +64,49 @@ describe('le rang editorial', () => {
 });
 
 /**
- * INVARIANT PROTEGE
- *   Un sous-genre se cherche DANS SA DISCIPLINE.
+ * PROTECTED INVARIANT
+ *   A sub-genre is looked up WITHIN ITS DISCIPLINE.
  *
- * POURQUOI
- *   `studio-web` (incoherence 10) a trouve `A.genre(id)` appele avec un seul
- *   argument alors que la fonction en attend deux. Ce n'est pas un detail :
- *   deux disciplines portent un sous-genre du meme nom — `contemporary` existe
- *   en theatre ET en jazz.
+ * WHY
+ *   `studio-web` (inconsistency 10) found `A.genre(id)` called with a single
+ *   argument while the function expects two. That is not a detail: two
+ *   disciplines carry a sub-genre of the same name — `contemporary` exists in
+ *   theatre AND in jazz.
  */
-describe('un sous-genre appartient a une discipline', () => {
-  it('distingue deux sous-genres homonymes', () => {
+describe('a sub-genre belongs to a discipline', () => {
+  it('tells apart two sub-genres of the same name', () => {
     expect(findGenre(taxonomy, 'jazz', 'contemporary')?.i18nKey).toBe('genres.jazz.contemporary');
-    expect(findGenre(taxonomy, 'theatre', 'contemporary')?.i18nKey).toBe('genres.theatre.contemporary');
+    expect(findGenre(taxonomy, 'theatre', 'contemporary')?.i18nKey).toBe(
+      'genres.theatre.contemporary',
+    );
   });
 
-  it('ne trouve pas un sous-genre dans la mauvaise discipline', () => {
+  it('does not find a sub-genre in the wrong discipline', () => {
     expect(findGenre(taxonomy, 'jazz', 'ballet-classique')).toBeNull();
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Une discipline est une FORME — jamais une langue, une epoque ni un pays —
- *   et elle prime sur une etiquette homonyme.
+ * PROTECTED INVARIANT
+ *   A discipline is a FORM — never a language, a period or a country — and it
+ *   outranks a tag of the same name.
  *
- * POURQUOI
- *   B2 : le cahier des charges TV appelait `ballet` une discipline, alors que
- *   c'est un SOUS-GENRE de la danse, et `concerts` une discipline alors que
- *   c'est un FORMAT. La resolution par specificite decroissante encode cette
- *   hierarchie : une recherche sur « jazz » doit rendre la discipline entiere,
- *   pas une poignee de dates etiquetees.
+ * WHY
+ *   B2: the TV brief called `ballet` a discipline, when it is a SUB-GENRE of
+ *   dance, and `concerts` a discipline when it is a FORMAT. Resolution by
+ *   decreasing specificity encodes that hierarchy: a search for "jazz" must
+ *   return the whole discipline, not a handful of tagged dates.
  */
-describe('la resolution d\'un terme libre', () => {
-  it('prefere la discipline au sous-genre et a l\'etiquette', () => {
-    expect(resolveTerm(taxonomy, 'jazz')).toEqual({ kind: 'discipline', id: 'jazz', disciplineId: null });
+describe('resolving a free-text term', () => {
+  it('prefers the discipline to the sub-genre and to the tag', () => {
+    expect(resolveTerm(taxonomy, 'jazz')).toEqual({
+      kind: 'discipline',
+      id: 'jazz',
+      disciplineId: null,
+    });
   });
 
-  it('trouve un sous-genre avec sa discipline', () => {
+  it('finds a sub-genre with its discipline', () => {
     expect(resolveTerm(taxonomy, 'ballet-classique')).toEqual({
       kind: 'genre',
       id: 'ballet-classique',
@@ -109,16 +114,16 @@ describe('la resolution d\'un terme libre', () => {
     });
   });
 
-  it('trouve une etiquette par son alias, accents et espaces compris', () => {
+  it('finds a tag by its alias, accents and spaces included', () => {
     expect(resolveTerm(taxonomy, 'Plein Air')?.id).toBe('open-air');
   });
 
-  it('rend null plutot que de deviner', () => {
+  it('returns null rather than guessing', () => {
     expect(resolveTerm(taxonomy, 'zzz')).toBeNull();
     expect(resolveTerm(taxonomy, '   ')).toBeNull();
   });
 
-  it('normalise sans Intl — « opéra » et « opera » sont le meme terme', () => {
+  it('normalises without Intl — "opéra" and "opera" are the same term', () => {
     expect(normalizeTerm('Opéra')).toBe('opera');
     expect(normalizeTerm('  Musique  Ancienne ')).toBe('musique-ancienne');
   });

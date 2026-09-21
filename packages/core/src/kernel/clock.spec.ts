@@ -3,39 +3,39 @@ import { describe, expect, it } from 'vitest';
 import { FixedClock, SystemClock } from './clock.js';
 
 /**
- * INVARIANT PROTEGE
- *   Aucune regle ne lit l'heure de la machine. L'horloge est un PORT.
+ * PROTECTED INVARIANT
+ *   No rule reads the machine's clock. The clock is a PORT.
  *
- * POURQUOI
- *   Un test qui passe a 23 h 59 et echoue a 00 h 01 a trouve un `Date.now()`
- *   oublie. Et un paquet importe par sept services ne peut pas porter d'etat
- *   global : deux requetes concurrentes partageraient la meme horloge.
+ * WHY
+ *   A test that passes at 23:59 and fails at 00:01 has found a forgotten
+ *   `Date.now()`. And a package imported by seven services cannot carry global
+ *   state: two concurrent requests would share the same clock.
  */
-describe("l'horloge est injectable", () => {
-  it('rend un instant ISO 8601 UTC, jamais un decalage en minutes', () => {
+describe('the clock is injectable', () => {
+  it('returns an ISO 8601 UTC instant, never an offset in minutes', () => {
     const clock = new FixedClock('2026-09-21T20:30:00.000Z');
     expect(clock.now()).toBe('2026-09-21T20:30:00.000Z');
     expect(clock.now()).toMatch(/Z$/);
   });
 
-  it('est deterministe — deux lectures rendent le meme instant', () => {
+  it('is deterministic — two reads return the same instant', () => {
     const clock = new FixedClock('2026-09-21T20:30:00.000Z');
     expect(clock.now()).toBe(clock.now());
   });
 
-  it("avance a la demande, pour les tests de fenetre", () => {
+  it('advances on demand, for window tests', () => {
     const clock = new FixedClock('2026-09-21T20:30:00.000Z');
     clock.advance(90 * 1000);
     expect(clock.now()).toBe('2026-09-21T20:31:30.000Z');
   });
 
-  it("accepte un instant en millisecondes, pour le jeu deterministe", () => {
+  it('accepts an instant in milliseconds, for the deterministic data set', () => {
     const clock = new FixedClock(0);
     expect(clock.now()).toBe('1970-01-01T00:00:00.000Z');
     expect(clock.nowMs()).toBe(0);
   });
 
-  it("l'horloge systeme est la seule a lire la machine", () => {
+  it('the system clock is the only one that reads the machine', () => {
     const clock = new SystemClock();
     expect(clock.now()).toMatch(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);
     expect(Math.abs(clock.nowMs() - Date.now())).toBeLessThan(1000);

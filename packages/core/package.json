@@ -1,7 +1,7 @@
 {
   "name": "@arthome/core",
   "version": "0.1.0",
-  "description": "Le domaine Arthome. Zero dependance framework. Deux entrees : les regles sans zod, les schemas de frontiere avec.",
+  "description": "The Arthome domain. Zero framework dependencies. Two entry points: the rules without zod, the boundary schemas with it.",
   "license": "UNLICENSED",
   "private": false,
   "type": "module",
@@ -17,15 +17,15 @@
     "directory": "packages/core"
   },
   "_comment_exports": [
-    "DEUX ENTREES, et c'est la decision structurante du paquet.",
-    "  .        les regles. N'importe zod A AUCUNE PROFONDEUR.",
-    "  ./schema les schemas de frontiere. La SEULE a dependre de zod.",
-    "Une surface qui n'a besoin que des regles ne tire pas une ligne de zod.",
-    "Le cout de zod est FIXE et lie a l'import, pas marginal et lie au nombre de",
-    "schemas (D-012) : si l'entree principale l'importait, aucune entree sans",
-    "barillet de @arthome/contracts ne pourrait rattraper la facture.",
-    "La porte tools/check-core-entry.mjs le verifie.",
-    "Voir architecture/core-port-plan.md section 2."
+    "TWO ENTRY POINTS, and that is the package's structuring decision.",
+    "  .        the rules. Imports zod AT NO DEPTH.",
+    "  ./schema the boundary schemas. The ONLY one that depends on zod.",
+    "A surface that needs only the rules pulls in not one line of zod.",
+    "zod's cost is FIXED and tied to the import, not marginal and tied to the",
+    "number of schemas (D-012): if the main entry point imported it, no",
+    "barrel-free entry point of @arthome/contracts could claw the bill back.",
+    "The tools/check-core-entry.mjs gate verifies it.",
+    "See architecture/core-port-plan.md section 2."
   ],
   "exports": {
     ".": {
@@ -50,10 +50,10 @@
     "test": "vitest run"
   },
   "_comment_peer": [
-    "zod est OPTIONNELLE : elle n'est requise que par l'entree ./schema.",
-    "Un consommateur qui n'importe que les regles n'a rien a installer.",
-    "Version epinglee exact : regime A de versions.json — deux zod dans un meme",
-    "processus, c'est deux registres de schemas et des erreurs incomprehensibles."
+    "zod is OPTIONAL: it is required only by the ./schema entry point.",
+    "A consumer that imports only the rules has nothing to install.",
+    "Exactly pinned: regime A of versions.json — two zod copies in one process",
+    "means two schema registries and unintelligible errors."
   ],
   "peerDependencies": {
     "zod": "4.6.5"

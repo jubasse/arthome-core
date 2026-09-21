@@ -1,102 +1,101 @@
-# Plan de portage de `@arthome/core`
+# Porting plan for `@arthome/core`
 
-> **Un plan, pas du code.** Aucun TypeScript n'est écrit ici : le paquet se compilera avec les
-> `tsconfig` que `@arthome/tooling` est en train de poser. Tout le travail de **conception** peut
-> se faire maintenant, et c'est lui qui décidera si le paquet reste importable sous Metro.
+> **A plan, not code.** No TypeScript is written here: the package will compile with the
+> `tsconfig` files `@arthome/tooling` is currently laying down. All the **design** work can be
+> done now, and it is the design that will decide whether the package stays importable under Metro.
 >
-> Sources : `shared/helpers.js` (810 lignes, **153 fonctions**, ~130 membres exportés),
+> Sources: `shared/helpers.js` (810 lines, **153 functions**, ~130 exported members),
 > `shared/fixtures.js`, `shared/studio-data.js`, `shared/catalogue.json`, `shared/taxonomy.json`,
-> et mes propres `data-model.md`, `context-map.md`, `events.md`.
+> and my own `data-model.md`, `context-map.md`, `events.md`.
 >
-> **On porte les règles, on remodèle les formes.** Les familles D et E de
-> `corrections-handoff.md` sont la liste de courses : §4 dit, règle par règle, ce qui est corrigé
-> au passage.
+> **We port the rules, we reshape the forms.** Families D and E of `corrections-handoff.md` are
+> the shopping list: §4 says, rule by rule, what is corrected on the way through.
 
 ---
 
-## 0. Les quatre contraintes qui commandent tout le reste
+## 0. The four constraints that govern everything else
 
-| Contrainte | Conséquence immédiate |
+| Constraint | Immediate consequence |
 |---|---|
-| **Zéro dépendance framework** | pas de React, pas d'Angular, pas de Nest, **pas d'API navigateur**, pas de Node spécifique. Le paquet tourne sous Node, Next, **Metro** et Angular |
-| **`isolatedDeclarations` sous TS 6.0.3** | **toute surface publique est annotée explicitement** — §6. Ce n'est pas du style, c'est une condition de compilation |
-| **zod ne doit pas contaminer le domaine** | **deux entrées de paquet**, `.` sans dépendance et `./schema` avec zod — §2. C'est la décision structurante |
-| **Aucune valeur calculée deux fois** | une règle vit **une fois** ici et s'évalue partout ; ce qui est interdit, ce sont deux **implémentations** (`context-map.md` §0) |
+| **Zero framework dependencies** | no React, no Angular, no Nest, **no browser API**, nothing Node-specific. The package runs under Node, Next, **Metro** and Angular |
+| **`isolatedDeclarations` under TS 6.0.3** | **every public surface is annotated explicitly** — §6. That is not style, it is a compilation condition |
+| **zod must not contaminate the domain** | **two package entry points**, `.` with no dependency and `./schema` with zod — §2. That is the structuring decision |
+| **No value computed twice** | a rule lives **once** here and is evaluated everywhere; what is forbidden is two **implementations** (`context-map.md` §0) |
 
-**Et une contrainte que `shared/` viole partout, à traiter d'emblée.** `helpers.js` porte trois
-états globaux mutables — `locale`, `viewerCountry`, et une horloge `now()` implicite — plus un
-index global `byId` sur le jeu de fixtures. Dans un fichier chargé par une maquette, c'est
-commode. **Dans un paquet importé par sept services et cinq applications, c'est un défaut** : deux
-requêtes concurrentes d'un service NestJS partageraient la même langue et le même pays.
+**And one constraint `shared/` violates everywhere, to be dealt with up front.** `helpers.js`
+carries three mutable global states — `locale`, `viewerCountry`, and an implicit `now()` clock —
+plus a global `byId` index over the fixture set. In one file loaded by a mockup, that is
+convenient. **In a package imported by seven services and five applications it is a defect**: two
+concurrent requests of one NestJS service would share the same language and the same country.
 
-> **Règle de portage n°1 : aucun état global. Toute fonction reçoit son contexte en argument.**
+> **Porting rule no. 1: no global state. Every function receives its context as an argument.**
 
-C'est le remodelage le plus mécanique du lot, et le plus envahissant : il touche presque toutes
-les 153 fonctions. Il se paie une fois.
+It is the most mechanical reshaping of the lot, and the most pervasive: it touches nearly all 153
+functions. It is paid for once.
 
 ---
 
-## 1. L'arborescence — dix-neuf modules
+## 1. The tree — nineteen modules
 
-Le dossier de passation propose `taxonomy/`, `catalog/`, `fixtures/`, `i18n/` et
-`domain/{booking, replay, payout, permissions, timezone}`. **Je la corrige** : elle date d'avant la
-carte des contextes, elle range sous `booking` des choses qui n'y sont pas (le droit de lire, la
-modération), et elle n'a nulle part où mettre les vocabulaires fermés — qui sont pourtant le
-remède écrit à la faute dominante du projet (E2).
+The handover file proposes `taxonomy/`, `catalog/`, `fixtures/`, `i18n/` and
+`domain/{booking, replay, payout, permissions, timezone}`. **I am correcting it**: it predates the
+context map, it files under `booking` things that do not belong there (the right to watch,
+moderation), and it has nowhere to put the closed vocabularies — which are nonetheless the written
+remedy to the project's dominant fault (E2).
 
 ```
 @arthome/core/src/
-├── kernel/          horloge injectable · erreurs de domaine · types de base
-├── vocabulary/      TOUS les vocabulaires fermés + la tolérance à l'inconnu
-├── money/           Money · roundMinor · arithmétique en unité mineure
-├── time/            instants · VenueClock · fenêtres · IANA
-├── taxonomy/        univers · disciplines · genres · étiquettes · attributs · rang
-├── catalog/         date · publication · displayState · droits territoriaux · langue
-├── ticketing/       jauge · SeatHold · prix · promotions · remises · code de place
-├── entitlement/     decideWatch · aperçu · sessions simultanées
-├── replay/          politique · fenêtre · expiration · heures restantes
-├── payout/          commission · TVA par juridiction · net · retenue
-├── permissions/     rôles · grants · droits effectifs · navigation
-├── moderation/      trois axes · badge dérivé · préséance · deux compteurs
-├── notification/    seuils · heures calmes
-├── search/          normalisation des critères · signature
-├── media/           renditions déclarées
-├── format/          formatage sans Intl, locale explicite
-├── i18n/            les CLÉS et le catalogue de référence
-├── schema/          ← LA SEULE À DÉPENDRE DE ZOD (§2)
-└── fixtures/        jeu déterministe — seconde vie de fixtures.js
+├── kernel/          injectable clock · domain errors · base types
+├── vocabulary/      ALL the closed vocabularies + tolerance of the unknown
+├── money/           Money · roundMinor · arithmetic in minor units
+├── time/            instants · VenueClock · windows · IANA
+├── taxonomy/        universes · disciplines · genres · tags · attributes · rank
+├── catalog/         date · publication · displayState · territorial rights · language
+├── ticketing/       capacity · SeatHold · prices · promotions · discounts · seat code
+├── entitlement/     decideWatch · preview · concurrent sessions
+├── replay/          policy · window · expiry · hours left
+├── payout/          commission · VAT by jurisdiction · net · withholding
+├── permissions/     roles · grants · effective rights · navigation
+├── moderation/      three axes · derived badge · precedence · two counters
+├── notification/    thresholds · quiet hours
+├── search/          criteria normalisation · signature
+├── media/           declared renditions
+├── format/          formatting without Intl, explicit locale
+├── i18n/            the KEYS and the reference catalogue
+├── schema/          ← THE ONLY ONE THAT DEPENDS ON ZOD (§2)
+└── fixtures/        deterministic set — fixtures.js's second life
 ```
 
-### Ce que chaque module exporte
+### What each module exports
 
-| Module | Exporte | Ne contient pas |
+| Module | Exports | Does not contain |
 |---|---|---|
-| `kernel` | `Clock` (port), `SystemClock`, `FixedClock` · `DomainError` + son code · `Result` · `Brand<T>` pour les identifiants typés | aucune règle métier |
-| `vocabulary` | les **22 vocabulaires fermés** typés, chacun avec sa liste, son type et `parseTolerant()` qui **conserve l'inconnu comme neutre** | des libellés |
-| `money` | `Money` · `money()` · `add` · `sub` · `mulRate` · **`roundMinor`** · `compareCurrency` | du formatage |
-| `time` | `Instant` (ISO UTC) · `VenueClock` · `offsetForInstant` · `isWithin` · `expiresAt` · `seasonBounds` | de l'affichage |
-| `taxonomy` | l'artefact typé · `rankOf` · `familyOf` · `genresOf` · `matchTag` · `resolveTerm` | des requêtes sur un catalogue |
-| `catalog` | **`displayStateOf`** · `outcomePrecedence` · `isRoomOpen` · `progressOf` · `isAvailableIn` · `blackoutReasonOf` · `languageProfileOf` · `hasLanguageBarrier` · `isUnderstandable` · **`nextPublicationTransitions`** · `publicationChecklist` · `isTransitionLocked` | les données |
+| `kernel` | `Clock` (port), `SystemClock`, `FixedClock` · `DomainError` + its code · `Result` · `Brand<T>` for typed identifiers | any business rule |
+| `vocabulary` | the **22 closed vocabularies**, typed, each with its list, its type and `parseTolerant()` which **keeps the unknown as neutral** | labels |
+| `money` | `Money` · `money()` · `add` · `sub` · `mulRate` · **`roundMinor`** · `compareCurrency` | formatting |
+| `time` | `Instant` (ISO UTC) · `VenueClock` · `offsetForInstant` · `isWithin` · `expiresAt` · `seasonBounds` | display |
+| `taxonomy` | the typed artefact · `rankOf` · `familyOf` · `genresOf` · `matchTag` · `resolveTerm` | queries over a catalogue |
+| `catalog` | **`displayStateOf`** · `outcomePrecedence` · `isRoomOpen` · `progressOf` · `isAvailableIn` · `blackoutReasonOf` · `languageProfileOf` · `hasLanguageBarrier` · `isUnderstandable` · **`nextPublicationTransitions`** · `publicationChecklist` · `isTransitionLocked` | the data |
 | `ticketing` | `seatsAvailability` · `fillRate` · `isScarce` · **`holdExpiryFor`** · `priceFor` · `applyBestDiscount` · `serviceFeeFor` · **`seatCode`** · `capacityTierRules` · `cancellationDeadline` | Stripe |
-| `entitlement` | **`decideWatch`** · `WatchVerdict` · `previewBudgetOf` · `concurrentLimitOf` | l'émission de jetons |
-| `replay` | `replayWindowOf` · `replayExpiresAt` · **`replayHoursLeft`** · `isReplayOnSale` | le fichier |
-| `payout` | **`payoutOf`** · `commissionOf` · `vatBreakdownOf` · `netOf` · `payoutStateFor` · `dueAtFor` | Stripe, la réconciliation |
-| `permissions` | `MemberRole` (8) · **`effectiveRightsOf`** · **`assignableRolesOf`** · `canRevenue` · `canDecide` · `navigationFor` · `openPanesFor` · `tabPreferenceFor` | l'authentification |
-| `moderation` | **`moderationBadgeOf`** · `precedenceOf` · `canSettle` · `claimLeaseDuration` · `settlementGuard` | la file |
-| `notification` | les **cinq seuils** · `quietHoursApply` · `reminderLeadFor` | l'envoi |
-| `search` | **`normalizeSearchCriteria`** · `criteriaSignature` · `migrateCriteria` | l'index |
-| `media` | `renditionsFor` · `pickRendition` | des URL de fournisseur |
-| `format` | `formatMoney` · `formatNumber` · `formatCompact` · `formatClock` · `formatDuration` · `formatTimecode` · `formatDayLabel` — **tous avec `locale` en argument explicite** | de l'état global |
-| `i18n` | le type `MessageKey` · le catalogue de référence · `keysFor(surface)` | des phrases traduites servies dynamiquement |
-| `schema` | les schémas zod de base — §2 | des règles |
-| `fixtures` | `buildFixtures(seed, clock)` — déterministe | rien d'exporté vers la production |
+| `entitlement` | **`decideWatch`** · `WatchVerdict` · `previewBudgetOf` · `concurrentLimitOf` | issuing tokens |
+| `replay` | `replayWindowOf` · `replayExpiresAt` · **`replayHoursLeft`** · `isReplayOnSale` | the file |
+| `payout` | **`payoutOf`** · `commissionOf` · `vatBreakdownOf` · `netOf` · `payoutStateFor` · `dueAtFor` | Stripe, reconciliation |
+| `permissions` | `MemberRole` (8) · **`effectiveRightsOf`** · **`assignableRolesOf`** · `canRevenue` · `canDecide` · `navigationFor` · `openPanesFor` · `tabPreferenceFor` | authentication |
+| `moderation` | **`moderationBadgeOf`** · `precedenceOf` · `canSettle` · `claimLeaseDuration` · `settlementGuard` | the queue |
+| `notification` | the **five thresholds** · `quietHoursApply` · `reminderLeadFor` | sending |
+| `search` | **`normalizeSearchCriteria`** · `criteriaSignature` · `migrateCriteria` | the index |
+| `media` | `renditionsFor` · `pickRendition` | provider URLs |
+| `format` | `formatMoney` · `formatNumber` · `formatCompact` · `formatClock` · `formatDuration` · `formatTimecode` · `formatDayLabel` — **all with `locale` as an explicit argument** | global state |
+| `i18n` | the `MessageKey` type · the reference catalogue · `keysFor(surface)` | translated sentences served dynamically |
+| `schema` | the base zod schemas — §2 | rules |
+| `fixtures` | `buildFixtures(seed, clock)` — deterministic | nothing exported to production |
 
-**Dix-neuf modules, et deux entrées de paquet.**
+**Nineteen modules, and two package entry points.**
 
-**Pourquoi `vocabulary` est un module à part et pas un fichier dans chaque domaine.** E2 est la
-faute dominante du projet : huit champs, cinq maquettes, une table littérale parallèle à chaque
-fois. Le remède n'est pas un principe, c'est **un seul endroit où un vocabulaire est déclaré**, et
-un endroit qu'on puisse citer dans une revue. Les vingt-deux :
+**Why `vocabulary` is a module of its own and not a file inside each domain.** E2 is the project's
+dominant fault: eight fields, five mockups, a parallel literal table every time. The remedy is not
+a principle, it is **one single place where a vocabulary is declared**, and a place you can quote
+in a review. The twenty-two:
 
 ```
 publicationState · runState · dateOutcome · displayState · replayPolicy · chatMode
@@ -105,24 +104,23 @@ filterSeverity · stateChangeOrigin · memberRole · crewRole · priceTier · pl
 payoutState · incidentKind · incidentCause · blackoutReason
 ```
 
-**Trente-six au total, et non vingt-deux.** Le compte de cette liste était celui des vocabulaires
-que `data-model.md` nommait ; l'écriture en a fait apparaître quatorze de plus, tous déjà employés
-par un contrat ou un écran : les quatorze entrées de navigation du studio, les six volets d'une
-fiche de date, les six surfaces, les trois canaux de notification, les quatre natures de
-commande, les états d'abonnement, les verdicts de modération, la portée des droits, les natures
-d'appareil, les rôles d'équipe, et les trois vocabulaires fiscaux que le temps 4 a ajoutés.
-**Aucun n'est nouveau : ils étaient écrits en toutes lettres et déclarés nulle part.**
+**Thirty-six in total, and not twenty-two.** This list's count was the one `data-model.md` named;
+writing the code brought fourteen more to light, all already used by a contract or a screen: the
+studio's navigation entries, the six panes of a date sheet, the six surfaces, the three
+notification channels, the four order kinds, the subscription states, the moderation verdicts, the
+rights scope, the device kinds, the crew roles, and the three tax vocabularies temps 4 added.
+**None is new: they were written out in full and declared nowhere.**
 
-**Et chacun porte `parseTolerant()`**, qui conserve une valeur inconnue et la traite comme neutre —
-jamais un rejet. C'est l'exigence de `storefront-tv` Q12, et c'est la seule chose du contrat qui,
-mal faite, produit un écran noir chez des gens qui ne peuvent rien y faire.
+**And each carries `parseTolerant()`**, which keeps an unknown value and treats it as neutral —
+never a rejection. That is `storefront-tv` Q12's requirement, and it is the one thing in the
+contract which, done badly, produces a black screen for people who can do nothing about it.
 
 ---
 
-## 2. Le partage TypeScript pur / zod — la décision structurante
+## 2. The pure-TypeScript / zod split — the structuring decision
 
-Ce n'est pas seulement « lesquels sont en zod ». **C'est une frontière de paquet**, et c'est elle
-qui décide de la facture du client mobile.
+It is not only "which ones are in zod". **It is a package boundary**, and it is what decides the
+mobile client's bill.
 
 ```json
 "exports": {
@@ -131,247 +129,241 @@ qui décide de la facture du client mobile.
 }
 ```
 
-> **L'entrée `.` n'importe zod nulle part, à aucune profondeur.** Une surface qui n'a besoin que
-> des règles — la TV qui dérive un `displayState`, le mobile qui calcule des heures restantes —
-> **ne tire pas une ligne de zod**.
+> **The `.` entry point imports zod nowhere, at no depth.** A surface that needs only the rules —
+> the TV deriving a `displayState`, mobile computing hours remaining — **pulls in not one line of
+> zod**.
 
-C'est la même leçon que D-012, appliquée un cran plus tôt : le coût de zod est **fixe et lié à
-l'import**, pas marginal et lié au nombre de schémas. Si `@arthome/core` importait zod depuis son
-entrée principale, aucune entrée sans barillet de `@arthome/contracts` ne pourrait rattraper la
-facture. **Une porte de CI le vérifie** : `import('@arthome/core')` ne doit résoudre aucun module
-`zod`.
+It is the same lesson as D-012, applied one notch earlier: zod's cost is **fixed and tied to the
+import**, not marginal and tied to the number of schemas. If `@arthome/core` imported zod from its
+main entry point, no barrel-free entry point of `@arthome/contracts` could claw the bill back. **A
+CI gate verifies it**: `import('@arthome/core')` must resolve no `zod` module.
 
-### Ce qui reste TypeScript pur — zéro dépendance
+### What stays pure TypeScript — zero dependencies
 
-**Tout ce qui décide.** Un invariant n'a pas besoin d'être validé, il a besoin d'être vrai.
+**Everything that decides.** An invariant does not need to be validated, it needs to be true.
 
-| Famille | Fonctions |
+| Family | Functions |
 |---|---|
-| arrondi et argent | `roundMinor`, `add`, `sub`, `mulRate` — l'arrondi **à l'unité mineure, sur chaque composante prise séparément** |
-| code de place | `seatCode` — **émis par le serveur**, jamais dérivé côté client |
-| fenêtre de rediffusion | `replayExpiresAt`, `replayHoursLeft`, `isReplayOnSale` |
-| versement | `payoutOf`, `commissionOf`, `vatBreakdownOf`, `netOf`, `payoutStateFor`, `dueAtFor` |
-| droits par rôle | `effectiveRightsOf`, `assignableRolesOf`, `canRevenue`, `canDecide`, `navigationFor` |
-| état et transitions | `displayStateOf`, `nextPublicationTransitions`, `isTransitionLocked`, `publicationChecklist` |
-| droit de lire | `decideWatch`, `previewBudgetOf`, `concurrentLimitOf` |
-| jauge et prix | `seatsAvailability`, `fillRate`, `isScarce`, `priceFor`, `applyBestDiscount`, `holdExpiryFor` |
-| modération | `moderationBadgeOf`, `precedenceOf`, `settlementGuard` |
-| temps | `offsetForInstant`, `isWithin`, `seasonBounds`, `isRoomOpen`, `progressOf` |
-| recherche | `normalizeSearchCriteria`, `criteriaSignature` |
-| formatage | tout `format/` — sans `Intl`, locale en argument |
+| rounding and money | `roundMinor`, `add`, `sub`, `mulRate` — rounding **to the minor unit, on each component taken separately** |
+| seat code | `seatCode` — **issued by the server**, never derived client-side |
+| replay window | `replayExpiresAt`, `replayHoursLeft`, `isReplayOnSale` |
+| payout | `payoutOf`, `commissionOf`, `vatBreakdownOf`, `netOf`, `payoutStateFor`, `dueAtFor` |
+| rights by role | `effectiveRightsOf`, `assignableRolesOf`, `canRevenue`, `canDecide`, `navigationFor` |
+| state and transitions | `displayStateOf`, `nextPublicationTransitions`, `isTransitionLocked`, `publicationChecklist` |
+| the right to watch | `decideWatch`, `previewBudgetOf`, `concurrentLimitOf` |
+| capacity and prices | `seatsAvailability`, `fillRate`, `isScarce`, `priceFor`, `applyBestDiscount`, `holdExpiryFor` |
+| moderation | `moderationBadgeOf`, `precedenceOf`, `settlementGuard` |
+| time | `offsetForInstant`, `isWithin`, `seasonBounds`, `isRoomOpen`, `progressOf` |
+| search | `normalizeSearchCriteria`, `criteriaSignature` |
+| formatting | all of `format/` — without `Intl`, locale as an argument |
 
-### Ce qui vit en zod, dans `./schema`
+### What lives in zod, inside `./schema`
 
-**Uniquement ce qui traverse une frontière et doit être vérifié à l'arrivée.** Les schémas **de
-base**, ceux que `@arthome/contracts` étend par `.extend()` et `.pick()` plutôt que de les
-redéclarer.
+**Only what crosses a boundary and must be checked on arrival.** The **base** schemas, the ones
+`@arthome/contracts` extends with `.extend()` and `.pick()` rather than redeclaring.
 
-| Schéma | Pourquoi ici et pas dans `contracts` |
+| Schema | Why here and not in `contracts` |
 |---|---|
-| `MoneySchema` | sept services et cinq applications l'échangent ; le redéclarer serait E2 sur la valeur la plus manipulée du système |
-| `InstantSchema` | **chaîne ISO 8601 UTC** — `z.date()` est inconvertible en JSON Schema, donc jamais de `z.date()` à une frontière |
-| `VenueClockSchema` | `{ venueTimezone, venueUtcOffsetMin }` — les deux voyagent toujours ensemble (D3) |
-| `IanaTimeZoneSchema` | validation de forme, pas d'existence : la base IANA n'est pas embarquée |
-| les **22 vocabulaires** | `z.enum` strict en **entrée**, `z.union([z.enum, z.string])` en **sortie** — la règle R14 de `backend-contracts` |
-| identifiants marqués | `AccountId`, `ProfileId`, `DateId`, `ShowId`, `ArtistId`, `VenueId`, `ChannelId`, `SeatId`, `OrderId` — UUIDv7 validé en forme |
-| `SlugSchema`, `LocaleSchema`, `CountryCodeSchema`, `CurrencyCodeSchema` | vocabulaires de frontière |
-| `PageCursorSchema` | Base64 opaque sur `(created_at, id)` |
-| `BuyerTaxLocationSchema`, `TaxEvidenceSchema` | §5 — nouveaux, et ils traversent |
+| `MoneySchema` | seven services and five applications exchange it; redeclaring it would be E2 on the most manipulated value in the system |
+| `InstantSchema` | **ISO 8601 UTC string** — `z.date()` is inconvertible to JSON Schema, so never a `z.date()` at a boundary |
+| `VenueClockSchema` | `{ venueTimezone, venueUtcOffsetMin }` — the two always travel together (D3) |
+| `IanaTimeZoneSchema` | shape validation, not existence: the IANA database is not bundled |
+| the **22 vocabularies** | strict `z.enum` on the **way in**, `z.union([z.enum, z.string])` on the **way out** — `backend-contracts`'s rule R14 |
+| branded identifiers | `AccountId`, `ProfileId`, `DateId`, `ShowId`, `ArtistId`, `VenueId`, `ChannelId`, `SeatId`, `OrderId` — UUIDv7 validated by shape |
+| `SlugSchema`, `LocaleSchema`, `CountryCodeSchema`, `CurrencyCodeSchema` | boundary vocabularies |
+| `PageCursorSchema` | opaque Base64 over `(created_at, id)` |
+| `BuyerTaxLocationSchema`, `TaxEvidenceSchema` | §5 — new, and they cross |
 | `ErrorEnvelopeSchema` | `code`, `params`, `traceId`, **`nature`** |
 
-**Trois règles de frontière, à écrire dans le paquet lui-même :**
+**Three boundary rules, to be written into the package itself:**
 
-1. **aucun `z.transform()` dans un schéma de frontière** — inconvertible en JSON Schema, donc
-   l'OpenAPI généré mentirait ;
-2. **`io: "input"` décrit une requête, la sortie décrit une réponse** — ce sont deux schémas, pas
-   un seul lu deux fois ;
-3. **un échec de validation se traduit en code**, jamais en message anglais de zod — sinon l'i18n
-   fuit à la première erreur de formulaire, et c'est le formulaire de paiement qui la fait fuir.
+1. **no `z.transform()` in a boundary schema** — inconvertible to JSON Schema, so the generated
+   OpenAPI would lie;
+2. **`io: "input"` describes a request, the output describes a response** — those are two schemas,
+   not one read twice;
+3. **a validation failure translates into a code**, never into a zod message in English — otherwise
+   i18n leaks at the first form error, and it is the payment form that leaks it.
 
-**Ce qui n'est PAS en zod, et qu'on serait tenté d'y mettre** : les règles. `decideWatch` ne
-valide pas son entrée par un schéma — il reçoit des types déjà vérifiés à la frontière et **décide**.
-Y mettre zod ferait payer la dépendance à chaque évaluation d'un droit, sur le chemin le plus chaud
-du système.
+**What is NOT in zod, and what one would be tempted to put there**: the rules. `decideWatch` does
+not validate its input with a schema — it receives types already checked at the boundary and
+**decides**. Putting zod there would charge the dependency to every entitlement evaluation, on the
+hottest path in the system.
 
 ---
 
-## 3. Le tableau de portage — ce qui vient d'où
+## 3. The porting table — where each thing comes from
 
-**Sur ~130 membres exportés de `helpers.js`** : 38 portent une règle, 24 sont du formatage,
-31 sont des requêtes sur le jeu de fixtures, 19 sont de la résolution i18n, et le reste est de
-l'accès indexé. La proportion compte : **moins d'un tiers du fichier est du domaine**, et c'est ce
-tiers qu'on porte.
+**Of ~130 exported members of `helpers.js`**: 38 carry a rule, 24 are formatting, 31 are queries
+over the fixture set, 19 are i18n resolution, and the rest is indexed access. The proportion
+matters: **less than a third of the file is domain**, and it is that third we port.
 
-### 3.1 Porté tel quel — la règle est juste, la forme aussi
+### 3.1 Ported as it stands — the rule is right, and so is the shape
 
 | `helpers.js` | `@arthome/core` | Note |
 |---|---|---|
-| `isRoomOpen` | `catalog.isRoomOpen` | constante `roomOpensBeforeMin` servie, plus recopiée (E11) |
-| `progressOf` | `catalog.progressOf` | borne 0–1 |
-| `isSoldOut` | `ticketing.seatsAvailability` | devient une **union discriminée**, pas un booléen |
-| `matchTag`, `resolveTerm` | `taxonomy.*` | inchangé |
-| `categoryOfShow`, `genreOfShow` | `taxonomy.*` | inchangé |
-| `number`, `compact`, `duration`, `timecode` | `format.*` | **sans `Intl`, vérifié** : le portage reste sans `Intl`, ce qui est exactement ce qu'il faut pour Metro |
+| `isRoomOpen` | `catalog.isRoomOpen` | the `roomOpensBeforeMin` constant is served, no longer copied (E11) |
+| `progressOf` | `catalog.progressOf` | clamped 0–1 |
+| `isSoldOut` | `ticketing.seatsAvailability` | becomes a **discriminated union**, not a boolean |
+| `matchTag`, `resolveTerm` | `taxonomy.*` | unchanged |
+| `categoryOfShow`, `genreOfShow` | `taxonomy.*` | unchanged |
+| `number`, `compact`, `duration`, `timecode` | `format.*` | **without `Intl`, verified**: the port stays free of `Intl`, which is exactly what Metro needs |
 
-### 3.2 Porté avec correction — la règle est juste, la donnée est fausse
+### 3.2 Ported with a correction — the rule is right, the data is wrong
 
-| `helpers.js` | Devient | Ce qui est corrigé |
+| `helpers.js` | Becomes | What is corrected |
 |---|---|---|
-| `stateOf` | **`catalog.displayStateOf`** | **E4** : trois axes sans hiérarchie. La nouvelle fonction compose `publication.state`, `run.state` et `outcome` avec la préséance écrite — `outcome` > `run` > `publication` — et rend **`{ state, validUntil }`** |
-| `replayHoursLeft` | `replay.replayHoursLeft` | **E2** : `sub`/`off` de la maquette mobile ne sont pas du vocabulaire ; `helpers.stateOf` testait `policy !== 'none'`, donc une date créée avec `off` n'aurait jamais été reconnue sans rediffusion |
-| `languageDependency`, `hasLanguageBarrier` | `catalog.languageProfileOf`, `hasLanguageBarrier` | **D1** : le vocabulaire déclaré `none \| light \| helpful` ne contient pas `essential` — la valeur dont dépend la règle, portée par cinq spectacles et traduite dans l'i18n. `light` n'est employé nulle part. Le vocabulaire réel est **`none \| helpful \| essential`** |
-| `availableIn`, `blackoutReason` | `catalog.isAvailableIn`, `blackoutReasonOf` | **E8** : `blackoutReasons[]` porte `label`/`labelEn` — du texte rédigé **dans la donnée**. La fonction rend un **code**, jamais une phrase |
-| `venueClock`, `venueDiffers`, `zoneAbbr` | `time.offsetForInstant`, `VenueClock` | **D3** : `venue.utcOffsetMin` est un décalage **gelé** ; l'abréviation était déduite en le comparant à une table. Un décalage figé ne survit pas à un changement d'heure, et une date à six mois s'affiche fausse. Identifiant **IANA** + instant UTC, décalage **recalculé au service** |
-| `plans`, `planOf` | `vocabulary.PlanTier` + `entitlement.planOpeningsOf` | **E1, le plus grave** : quatre vocabulaires disjoints, et `planOf()` fait `filter(...)[0] \|\| plans()[0]` — **aucun compte de référence ne trouve le sien, tous retombent sur `free`**. Comme `plan.opens[]` conditionne l'accès à la lecture, c'est un **défaut d'autorisation**, pas d'affichage. Un seul jeu : `free \| pass \| premium`, en **kebab-case sur le fil** |
-| `canInvite`, `invitableRoles` | `permissions.assignableRolesOf` | **E6** : `studio-data.js` rabat huit rôles sur six personas et **détruit le droit d'invitation de `director`**. Le domaine porte les **huit** ; les six sont un libellé |
-| `messageState`, `isVisible` | `moderation.moderationBadgeOf` | **E3 / D6** : quatre échelles, et `reported` — un état de **triage** — logé dans le champ des sanctions. Trois axes séparés, préséance écrite, badge dérivé |
-| `publicationState`, `isLocked` | `catalog.nextPublicationTransitions`, `isTransitionLocked` | **E5** : les fixtures verrouillent des **états**, la maquette des **transitions**. C'est la seconde qui est juste — publier engage le tarif, mettre en ligne met en vente. Le verrou porte sur un **couple `from > to`** |
-| `payoutOf`, `balanceOf` | `payout.payoutOf` | **D5** : `net = brut − 12 % − TVA(brut)` n'est **pas une règle fiscale**, c'est un nombre plausible pour une maquette. Remodelé au §4 |
-| `imageUrl`, `seededImage` | `media.renditionsFor` | La recette `{id}?w={w}` est une **commodité de maquette**. Un fond 4K décodé pour une vignette coûte autant qu'un plein écran : le contrat porte des **renditions déclarées** aux tailles réellement affichées |
-| `seatsLabel` | `ticketing.seatsAvailability` + i18n | la fonction rendait une **phrase** (« 86 places », « Complet ») ; elle rend désormais un état, et le libellé est une clé |
-| `devicesOf` | `permissions` / hors domaine | **E13** : `devices` est un **entier** dans `catalogue.json` et une **liste** dans `fixtures.js`. Deux formes, un nom. Tranché : `Device` + `DeviceSession` |
+| `stateOf` | **`catalog.displayStateOf`** | **E4**: three axes with no hierarchy. The new function composes `publication.state`, `run.state` and `outcome` with the written precedence — `outcome` > `run` > `publication` — and returns **`{ state, validUntil }`** |
+| `replayHoursLeft` | `replay.replayHoursLeft` | **E2**: `sub`/`off` from the mobile mockup are not vocabulary; `helpers.stateOf` tested `policy !== 'none'`, so a date created with `off` would never have been recognised as having no replay |
+| `languageDependency`, `hasLanguageBarrier` | `catalog.languageProfileOf`, `hasLanguageBarrier` | **D1**: the declared vocabulary `none \| light \| helpful` does not contain `essential` — the value the rule depends on, carried by five shows and translated in the i18n. `light` is used nowhere. The real vocabulary is **`none \| helpful \| essential`** |
+| `availableIn`, `blackoutReason` | `catalog.isAvailableIn`, `blackoutReasonOf` | **E8**: `blackoutReasons[]` carries `label`/`labelEn` — prose written **into the data**. The function returns a **code**, never a sentence |
+| `venueClock`, `venueDiffers`, `zoneAbbr` | `time.offsetForInstant`, `VenueClock` | **D3**: `venue.utcOffsetMin` is a **frozen** offset; the abbreviation was derived by comparing it against a table. A frozen offset does not survive a daylight-saving change, and a date six months out displays wrongly. **IANA** identifier + UTC instant, offset **recomputed at serve time** |
+| `plans`, `planOf` | `vocabulary.PlanTier` + `entitlement.planOpeningsOf` | **E1, the gravest**: four disjoint vocabularies, and `planOf()` does `filter(...)[0] \|\| plans()[0]` — **no reference account finds its own, all fall back to `free`**. Since `plan.opens[]` conditions access to playback, it is an **authorisation defect**, not a display one. One single set: `free \| pass \| premium`, in **kebab-case on the wire** |
+| `canInvite`, `invitableRoles` | `permissions.assignableRolesOf` | **E6**: `studio-data.js` folds eight roles onto six personas and **destroys `director`'s invitation right**. The domain carries the **eight**; the six are a label |
+| `messageState`, `isVisible` | `moderation.moderationBadgeOf` | **E3 / D6**: four scales, and `reported` — a **triage** state — lodged in the sanctions field. Three separated axes, written precedence, derived badge |
+| `publicationState`, `isLocked` | `catalog.nextPublicationTransitions`, `isTransitionLocked` | **E5**: the fixtures lock **states**, the mockup locks **transitions**. It is the second that is right — publishing commits the price, putting a replay online puts it on sale. The lock is on a **`from > to` pair** |
+| `payoutOf`, `balanceOf` | `payout.payoutOf` | **D5**: `net = gross − 12% − VAT(gross)` is **not a tax rule**, it is a plausible number for a mockup. Reshaped in §4 |
+| `imageUrl`, `seededImage` | `media.renditionsFor` | The `{id}?w={w}` recipe is a **mockup convenience**. A 4K background decoded for a thumbnail costs as much as a full screen: the contract carries **declared renditions** at the sizes actually displayed |
+| `seatsLabel` | `ticketing.seatsAvailability` + i18n | the function returned a **sentence** ("86 seats", "Sold out"); it now returns a state, and the label is a key |
+| `devicesOf` | `permissions` / outside the domain | **E13**: `devices` is an **integer** in `catalogue.json` and a **list** in `fixtures.js`. Two shapes, one name. Settled: `Device` + `DeviceSession` |
 
-### 3.3 Remodelé, pas porté — la forme ne survit pas
+### 3.3 Reshaped, not ported — the shape does not survive
 
-| `helpers.js` | Pourquoi la forme tombe |
+| `helpers.js` | Why the shape falls |
 |---|---|
-| **`isWatchable(account, date)`** | suppose que le client **détient la liste complète des places du compte**. Intenable : elle grandit, elle change pendant que l'application dort, et la décision territoriale n'appartient pas au client. Devient **`decideWatch(inputs): WatchVerdict`** — cinq entrées, un verdict, un code de refus, une action de repli, une expiration |
-| `ownedDates`, `owns`, `follows`, `resumeOf` | des lectures sur un jeu global. Deviennent des **entrées** de `decideWatch` ou des modèles de lecture de service |
-| `catalogueFor` | le filtrage du profil enfant se fait **côté serveur** : sinon la TV d'un enfant télécharge le catalogue adulte pour le masquer |
-| `t`, `label`, `enumLabel`, `content`, `title`, `synopsis`, `bio`, `chatText` | de la **résolution i18n** sur un état global de langue. `core` garde les **clés** ; la résolution est côté surface, sur l'artefact versionné |
-| `now`, `nowMinutes`, `dateAt` | **D7** : `startOffsetMin` et `atMin` sont des décalages relatifs à l'ouverture de l'application, et `catalogue.json` le dit lui-même : *« nothing here expires »*. Excellent pour une maquette, **inutilisable sur un contrat**. Deviennent des **instants ISO** + une **horloge injectable** |
-| `setLocale`, `setViewerCountry` | état global mutable — voir §0 |
-| `show()`, `artist()`, `date()`, `datesOfShow`, `liveNow`, `tonight`, `datesInCategory`… (31 membres) | des **requêtes sur les fixtures**. Elles ne sont pas du domaine : elles deviennent des requêtes de dépôt dans les services, et survivent telles quelles dans `fixtures/` pour les tests |
-| `publicationOf`, `payoutOf` (accès), `healthOf`, `moderationOf`, `merchOf`, `inboxOf` | idem — accès indexé, pas règle |
+| **`isWatchable(account, date)`** | assumes the client **holds the complete list of the account's seats**. Untenable: it grows, it changes while the application sleeps, and the territorial decision does not belong to the client. Becomes **`decideWatch(inputs): WatchVerdict`** — five inputs, one verdict, a refusal code, a fallback action, an expiry |
+| `ownedDates`, `owns`, `follows`, `resumeOf` | reads over a global set. Become **inputs** to `decideWatch` or service read models |
+| `catalogueFor` | the child-profile filtering happens **server-side**: otherwise a child's TV downloads the adult catalogue in order to hide it |
+| `t`, `label`, `enumLabel`, `content`, `title`, `synopsis`, `bio`, `chatText` | **i18n resolution** over a global language state. `core` keeps the **keys**; resolution is surface-side, over the versioned artefact |
+| `now`, `nowMinutes`, `dateAt` | **D7**: `startOffsetMin` and `atMin` are offsets relative to the moment the application opens, and `catalogue.json` says it itself: *"nothing here expires"*. Excellent for a mockup, **unusable in a contract**. Become **ISO instants** + an **injectable clock** |
+| `setLocale`, `setViewerCountry` | mutable global state — see §0 |
+| `show()`, `artist()`, `date()`, `datesOfShow`, `liveNow`, `tonight`, `datesInCategory`… (31 members) | **queries over the fixtures**. They are not domain: they become repository queries in the services, and they survive as they are in `fixtures/` for the tests |
+| `publicationOf`, `payoutOf` (access), `healthOf`, `moderationOf`, `merchOf`, `inboxOf` | same — indexed access, not a rule |
 
-### 3.4 `fixtures.js` — sa seconde vie
+### 3.4 `fixtures.js` — its second life
 
-`buildFixtures(seed, clock)` : **déterministe**, même catalogue à chaque exécution, mais il produit
-désormais des **instants** et non des décalages. La conversion en décalages relatifs, si elle sert
-encore à une démonstration, devient une **commodité de présentation** et non une forme transportée.
+`buildFixtures(seed, clock)`: **deterministic**, the same catalogue on every run, but it now
+produces **instants** and not offsets. Converting back to relative offsets, if a demonstration
+still needs it, becomes a **presentation convenience** and not a transported shape.
 
-Trois usages : les tests d'intégration des sept services, le jeu de démonstration publique, et le
-mode `FakePaymentAdapter` qui doit tourner **sans clé et sans réseau**.
-
----
-
-## 4. Ce qui est nouveau — rien dans `shared/` ne le porte
-
-Ces règles ont été **conçues** pendant cette session, pas observées. Elles n'ont aucune fixture
-derrière elles, et c'est un avertissement autant qu'une liste.
-
-| Nouveau | Ce que c'est | Pourquoi ça n'existait pas |
-|---|---|---|
-| **`displayStateOf`** | la quatrième valeur, dérivée et unique, des trois axes d'état | chaque surface recomposait la hiérarchie à sa façon — la définition même d'une valeur calculée deux fois (E4) |
-| **`decideWatch`** | le verdict de lecture à cinq entrées | `isWatchable` supposait un client omniscient |
-| **`holdExpiryFor`** | **`SeatHold.expiresAt` est le MÊME instant que l'expiration de l'intention d'achat** — 15 min pour un paiement, 5 min pour un appairage TV | rien ne réservait la jauge : la TV affichait « 12 places » pendant toute l'attente du téléphone |
-| **`seatCode`** | l'émission serveur du code de place | la maquette le **hachait côté client** : trois surfaces, trois fonctions de hachage, trois codes pour la même place |
-| **`vatBreakdownOf` + `BuyerTaxLocation`** | ventilation par **juridiction**, preuves de localisation, **taux appliqué à la vente** | la fixture applique `billingMarkets[0]` à tout. Et un marché de facturation est une notion de **prix**, jamais de **taxe** |
-| **`payoutOf` remodelé** | commission sur le **HT**, TVA au taux du pays du spectateur, redevable = la plateforme | D5 : la formule de la fixture produit un nombre plausible et ne répond à aucune des trois questions fiscales |
-| **les deux compteurs de modération** | `version` porte le **bail**, `decisionVersion` porte le **règlement** — seul un verdict l'incrémente | un compteur unique ne peut pas exprimer « refuse si tranché, accepte si seulement réclamé », et il annulait la file hors ligne du mobile |
-| **`precedenceOf` (modération auto)** | un humain renverse une décision automatique, **jamais l'inverse** ; l'origine **survit** au règlement | rien à construire aujourd'hui ; la forme doit pouvoir accueillir un acteur non humain sans changement de contrat |
-| **`normalizeSearchCriteria` + `criteriaSignature`** | la déduplication « déjà enregistrée », calculée **une fois** | la maquette la calculait côté client, sur deux écrans, et elle déclenche une écriture |
-| **`migrateCriteria` + `criteriaVersion`** | une recherche enregistrée **se rejoue ou se déclare périmée**, jamais ne disparaît en silence | rien ne versionnait la grammaire des filtres |
-| **`seasonBounds`** | 1ᵉʳ septembre → 31 août | notion de domaine que cinq surfaces auraient devinée |
-| **les cinq seuils de notification** | 30 min · 85 % · 6 h · file > 10 · poste non affecté à J-1 | écrits dans des textes d'écran, recopiés par surface |
-| **`capacityTierRules`** | paliers monotones, seuil de provision (10 000), échéance de révision (72 h), fenêtre de priorité (2 h) | absent de `shared/` ; six formes affichées par la maquette sans porteur |
-| **`parseTolerant`** | conserver une valeur d'énumération inconnue et la traiter comme **neutre** | la survie du parc TV en dépend |
-| **`concurrentLimitOf`** | `multi-screen` est une **contrainte d'exécution**, pas une ligne de marketing | aucun décompte n'existait |
+Three uses: the seven services' integration tests, the public demonstration set, and the
+`FakePaymentAdapter` mode which must run **with no key and no network**.
 
 ---
 
-## 5. Les tests qui font mal — et l'invariant que chacun protège
+## 4. What is new — nothing in `shared/` carries it
 
-**La règle que j'ai imposée dans la définition de fini s'applique d'abord ici : un test nomme
-l'invariant qu'il protège.** Un test qui décrit ce que fait le code ne sert à rien le jour où le
-code change ; un test qui nomme une promesse survit au refactoring.
+These rules were **designed** during this session, not observed. They have no fixture behind them,
+and that is a warning as much as a list.
 
-### 5.1 Ceux que le dossier d'origine nommait
-
-| Test | Invariant protégé | Le cas qui fait mal |
+| New | What it is | Why it did not exist |
 |---|---|---|
-| **Fuseaux** | *une date programmée dans six mois s'affiche à la bonne heure* | une date le **lendemain d'un changement d'heure**, dans une salle d'un autre fuseau que le spectateur, avec un décalage de jour (« la veille » / « le lendemain »). C'est le cas qui a fait échouer D3, et un décalage gelé le rate toujours |
-| **Expiration de rediffusion** | *la fenêtre est calculée depuis la fin du direct, jamais depuis le début* | une date **interrompue** : la fenêtre part-elle de l'interruption ou de la fin annoncée ? Plus une fenêtre de 200 h qui traverse un changement d'heure |
-| **Droits par rôle** | *le repli à six personas ne crée jamais un droit* | une personne tenant `video` **et** `moderation` sur la même chaîne : la navigation est l'**union**, et `assignableRolesOf` doit rendre **vide** — ni `video` ni `moderation` ne peuvent inviter |
-| **TVA et arrondis** | *chaque composante est arrondie séparément, à l'unité mineure* | un panier de trois places à un tarif qui ne tombe pas juste, dans **deux juridictions** — la somme des arrondis n'est pas l'arrondi de la somme, et c'est là qu'on perd un centime |
-| **Versements** | *la commission porte sur le HT, jamais sur le TTC* | la **même place vendue en France et en Suisse** : la commission doit être **identique**, sinon les 12 % annoncés aux artistes varient avec le pays de l'acheteur |
-| **Codes de place** | *le serveur émet, le client n'invente jamais* | le même `seatId` traité par trois surfaces doit rendre le **même code servi** — et le test doit échouer si quelqu'un réintroduit un hachage client |
-| **Transitions d'état** | *deux transitions sont sans retour* | `scheduled → draft` et `replay-online → ended` doivent être **refusées** avec la promesse engagée en paramètre ; et la **tentative** doit être journalisée |
-
-### 5.2 Ceux que la session a fait émerger
-
-| Test | Invariant protégé | Le cas qui fait mal |
-|---|---|---|
-| **Préséance des trois axes** | *`outcome` prime sur `run`, qui prime sur `publication`* | une date `publication: live`, `run: on_air`, `outcome: cancelled` — l'issue doit gagner. Combinaison absurde en apparence, **produite par un ordre de consommation Kafka** |
-| **`validUntil` de `displayState`** | *un état servi porte l'instant où il cesse d'être vrai* | un état servi **une seconde avant** l'ouverture de salle : `validUntil` doit valoir cet instant-là, pas `now + 60 s` |
-| **`decideWatch`, les cinq entrées** | *un seul verdict, le même vocabulaire de refus des deux côtés* | **table de vérité complète** : possession × état × territoire × politique de rediffusion × formule. Et le cas qui compte : détenteur d'une place, **hors territoire** → `OUT_OF_TERRITORY`, pas `NO_SEAT` |
-| **`SeatHold` et l'appairage** | *un seul instant, porté par deux objets* | un appairage `seat` qui expire doit libérer la jauge **au même instant**, et `seatsAvailable` doit **remonter** sans qu'aucune surface ne demande rien |
-| **Les deux compteurs de modération** | *un verdict est accepté pendant qu'un autre tient le bail* | `claim` → `release` → verdict hors ligne à `expectedVersion` d'avant : **accepté**. Puis un verdict après un verdict : **refusé, avec le gagnant** |
-| **`parseTolerant`** | *une valeur inconnue est conservée et neutre, jamais rejetée* | une **22ᵉ discipline** et une issue inédite dans la même charge utile : la page entière doit rendre. C'est la seule chose qui, mal faite, produit un écran noir chez des gens qui ne peuvent rien y faire |
-| **`criteriaSignature`** | *la même recherche produit la même signature, quel que soit l'ordre des filtres* | deux disciplines et trois étiquettes **dans deux ordres différents** → une seule signature. Sinon « déjà enregistrée » ment et on crée deux alertes |
-| **Remise contre promotion** | *la plus favorable au spectateur, jamais le cumul* | une avant-première à tarif de découverte pour un abonné `premium` : le cumul donnerait un **prix négatif** |
-| **`roundMinor` et l'avoir** | *un avoir ne crée jamais de monnaie* | un remboursement partiel suivi d'un avoir sur le reliquat : la somme doit être **exactement** le montant payé, au centime |
-| **Ordre de consommation** | *un consommateur ne voit jamais une issue avant la publication qui la crée* | `publication.engaged` et `date.scheduled` sur la **même partition**, rejoués dans le désordre → le projecteur doit rester juste |
-| **Horloge injectable** | *aucune règle ne lit l'heure système* | toute fonction de `time/`, `replay/` et `catalog/` doit être **déterministe sous `FixedClock`**. Un test qui passe à 23 h 59 et échoue à 00 h 01 a trouvé un `Date.now()` oublié |
+| **`displayStateOf`** | the fourth value, derived and unique, from the three state axes | each surface recomposed the hierarchy its own way — the very definition of a value computed twice (E4) |
+| **`decideWatch`** | the five-input playback verdict | `isWatchable` assumed an omniscient client |
+| **`holdExpiryFor`** | **`SeatHold.expiresAt` is the SAME instant as the purchase intent's expiry** — 15 min for a checkout, 5 min for a TV pairing | nothing held the capacity: the TV showed "12 seats" for the whole time the phone was awaited |
+| **`seatCode`** | server-side issuance of the seat code | the mockup **hashed it client-side**: three surfaces, three hash functions, three codes for the same seat |
+| **`vatBreakdownOf` + `BuyerTaxLocation`** | breakdown by **jurisdiction**, location evidence, **rate applied at the sale** | the fixture applies `billingMarkets[0]` to everything. And a billing market is a **pricing** notion, never a **tax** one |
+| **`payoutOf` reshaped** | commission on the **net of tax**, VAT at the viewer's country rate, liable party = the platform | D5: the fixture's formula produces a plausible number and answers none of the three tax questions |
+| **the two moderation counters** | `version` carries the **lease**, `decisionVersion` carries the **settlement** — only a verdict increments it | a single counter cannot express "refuse if settled, accept if merely claimed", and it cancelled out mobile's offline queue |
+| **`precedenceOf` (automatic moderation)** | a human overturns an automatic decision, **never the reverse**; the origin **survives** the settlement | nothing to build today; the shape must be able to accommodate a non-human actor without a contract change |
+| **`normalizeSearchCriteria` + `criteriaSignature`** | the "already saved" deduplication, computed **once** | the mockup computed it client-side, on two screens, and it triggers a write |
+| **`migrateCriteria` + `criteriaVersion`** | a saved search **replays or declares itself stale**, never vanishes in silence | nothing versioned the filter grammar |
+| **`seasonBounds`** | 1 September → 31 August | a domain notion five surfaces would have guessed |
+| **the five notification thresholds** | 30 min · 85% · 6 h · queue > 10 · post unassigned at D-1 | written into screen copy, copied per surface |
+| **`capacityTierRules`** | monotonic tiers, provisioning threshold (10,000), revision deadline (72 h), priority window (2 h) | absent from `shared/`; six shapes displayed by the mockup with no owner |
+| **`parseTolerant`** | keeping an unknown enumeration value and treating it as **neutral** | the TV fleet's survival depends on it |
+| **`concurrentLimitOf`** | `multi-screen` is an **execution constraint**, not a marketing line | no count existed |
 
 ---
 
-## 6. `isolatedDeclarations` — ce que ça impose concrètement
+## 5. The tests that hurt — and the invariant each one protects
 
-Les `.d.ts` publiés sont compilés avec `isolatedDeclarations` sous **TS 6.0.3**, plafond commun
-aux sept dépôts. Le compilateur doit pouvoir écrire la déclaration **fichier par fichier, sans
-inférence entre fichiers**. Trois conséquences, toutes mécaniques :
+**The rule I imposed in the definition of done applies here first: a test names the invariant it
+protects.** A test that describes what the code does is useless the day the code changes; a test
+that names a promise survives the refactoring.
 
-1. **Toute fonction exportée annote son type de retour.** `export function payoutOf(…)` sans
-   annotation **ne compile pas**. Sur ~90 fonctions publiques, c'est du travail mécanique à faire
-   d'emblée plutôt qu'à rattraper.
-2. **Aucun type public inféré depuis le CORPS d'une fonction.** C'est la formulation juste, et
-   elle corrige ce que ce document disait au temps de sa rédaction.
+### 5.1 The ones the original file named
 
-   > **Correction rendue à l'écriture.** Ce paragraphe interdisait
-   > `export const ROLES = [...] as const`. **C'était faux sur les deux bouts.**
-   > D'abord, `isolatedDeclarations` **autorise** une assertion `as const` sur un littéral : le
-   > type y est syntaxiquement calculable, aucune inférence ne traverse un corps de fonction.
-   > Ensuite et surtout, `arthome-check-enums` **exige cette forme exacte** — elle découvre les
-   > vocabulaires par le motif `export const NOM = ['a','b'] as const`. Interdire la forme aurait
-   > **désactivé la porte anti-E2 du projet**.
+| Test | Invariant protected | The case that hurts |
+|---|---|---|
+| **Time zones** | *a date scheduled six months out displays at the right hour* | a date **the day after a daylight-saving change**, in a venue in a different zone from the viewer, with a day shift ("the day before" / "the next day"). It is the case that made D3 fail, and a frozen offset still misses it |
+| **Replay expiry** | *the window is computed from the end of the live show, never from the start* | an **interrupted** date: does the window run from the interruption or from the announced end? Plus a 200 h window crossing a daylight-saving change |
+| **Rights by role** | *the fold onto six personas never creates a right* | a person holding `video` **and** `moderation` on the same channel: the navigation is the **union**, and `assignableRolesOf` must return **empty** — neither `video` nor `moderation` can invite |
+| **VAT and rounding** | *each component is rounded separately, to the minor unit* | a basket of three seats at a price that does not divide evenly, in **two jurisdictions** — the sum of the roundings is not the rounding of the sum, and that is where a cent is lost |
+| **Payouts** | *the commission is taken on the net of tax, never on the gross* | the **same seat sold in France and in Switzerland**: the commission must be **identical**, otherwise the 12% announced to artists varies with the buyer's country |
+| **Seat codes** | *the server issues, the client never invents* | the same `seatId` handled by three surfaces must return the **same served code** — and the test must fail if somebody reintroduces a client-side hash |
+| **State transitions** | *two transitions are one-way* | `scheduled → draft` and `replay-online → ended` must be **refused** with the promise made as a parameter; and the **attempt** must be journalled |
+
+### 5.2 The ones this session brought out
+
+| Test | Invariant protected | The case that hurts |
+|---|---|---|
+| **Precedence of the three axes** | *`outcome` outranks `run`, which outranks `publication`* | a date with `publication: live`, `run: on_air`, `outcome: cancelled` — the outcome must win. A combination that looks absurd, **produced by a Kafka consumption order** |
+| **`displayState`'s `validUntil`** | *a served state carries the instant at which it stops being true* | a state served **one second before** the room opens: `validUntil` must be that instant, not `now + 60 s` |
+| **`decideWatch`, the five inputs** | *one verdict, the same refusal vocabulary on both sides* | the **complete truth table**: holding × state × territory × replay policy × plan. And the case that matters: a seat holder, **out of territory** → `OUT_OF_TERRITORY`, not `NO_SEAT` |
+| **`SeatHold` and pairing** | *one instant, carried by two objects* | a `seat` pairing that expires must free the capacity **at the same instant**, and `seatsAvailable` must **go back up** without any surface asking for anything |
+| **The two moderation counters** | *a verdict is accepted while another holds the lease* | `claim` → `release` → an offline verdict at the previous `expectedVersion`: **accepted**. Then a verdict after a verdict: **refused, with the winner** |
+| **`parseTolerant`** | *an unknown value is kept and neutral, never rejected* | a **22nd discipline** and an unheard-of outcome in the same payload: the whole page must render. It is the one thing which, done badly, produces a black screen for people who can do nothing about it |
+| **`criteriaSignature`** | *the same search produces the same signature, whatever the order of the filters* | two disciplines and three tags **in two different orders** → one single signature. Otherwise "already saved" lies and we create two alerts |
+| **Discount against promotion** | *the one most favourable to the viewer, never both* | a preview at a discovery rate for a `premium` subscriber: stacking would give a **negative price** |
+| **`roundMinor` and the credit note** | *a credit note never creates money* | a partial refund followed by a credit note on the remainder: the sum must be **exactly** the amount paid, to the cent |
+| **Consumption order** | *a consumer never sees an outcome before the publication that creates it* | `publication.engaged` and `date.scheduled` on the **same partition**, replayed out of order → the projector must stay correct |
+| **Injectable clock** | *no rule reads the system clock* | every function in `time/`, `replay/` and `catalog/` must be **deterministic under `FixedClock`**. A test that passes at 23:59 and fails at 00:01 has found a forgotten `Date.now()` |
+
+---
+
+## 6. `isolatedDeclarations` — what it imposes in practice
+
+The published `.d.ts` files are compiled with `isolatedDeclarations` under **TS 6.0.3**, the common
+ceiling of the seven repositories. The compiler must be able to write the declaration **file by
+file, with no inference between files**. Three consequences, all mechanical:
+
+1. **Every exported function annotates its return type.** `export function payoutOf(…)` without an
+   annotation **does not compile**. Over ~90 public functions, that is mechanical work to do up
+   front rather than to catch up on.
+2. **No public type inferred from a function's BODY.** That is the correct phrasing, and it
+   corrects what this document said when it was written.
+
+   > **Correction reported at writing time.** This paragraph forbade
+   > `export const ROLES = [...] as const`. **It was wrong on both counts.**
+   > First, `isolatedDeclarations` **allows** an `as const` assertion on a literal: the type is
+   > syntactically computable there, no inference crosses a function body.
+   > Second and above all, `arthome-check-enums` **requires that exact form** — it discovers the
+   > vocabularies by the pattern `export const NAME = ['a','b'] as const`. Forbidding the form
+   > would have **disabled the project's anti-E2 gate**.
    >
-   > La forme retenue est donc, pour chaque vocabulaire, **trois déclarations** : la liste en
-   > `as const` (que la porte découvre), le type dérivé, et un objet de **membres nommés** pour
-   > que les règles n'écrivent jamais une chaîne littérale — sans quoi la porte serait
-   > intenable à l'usage.
-3. **Aucun type anonyme exporté.** Toute forme rendue par une fonction publique est un type
-   **nommé et exporté** : `WatchVerdict`, `PayoutBreakdown`, `SeatAvailability`,
-   `PublicationTransition`, `DisplayStateResult`. Le paquet y gagne — un type nommé se cite dans
-   une revue, un type anonyme se recopie.
+   > The form adopted is therefore, for each vocabulary, **three declarations**: the list in
+   > `as const` (which the gate discovers), the derived type, and an object of **named members** so
+   > the rules never write a string literal — without which the gate would be unbearable in use.
+3. **No anonymous type exported.** Every shape returned by a public function is a **named and
+   exported** type: `WatchVerdict`, `PayoutBreakdown`, `SeatAvailability`, `PublicationTransition`,
+   `DisplayStateResult`. The package gains from it — a named type can be quoted in a review, an
+   anonymous one gets copied.
 
-**La preuve attendue, et elle est en local** (le quota d'Actions est épuisé) : compiler les `.d.ts`
-publiés et les type-vérifier depuis un projet en TS 6.0.3. Un paquet dont les déclarations ne se
-lisent que par la version qui les a produites n'est pas fini.
+**The proof expected, and it is local** (the Actions quota is exhausted): compile the published
+`.d.ts` files and type-check them from a project on TS 6.0.3. A package whose declarations can only
+be read by the version that produced them is not finished.
 
 ---
 
-## 7. L'ordre de portage
+## 7. The porting order
 
-Les modules ont des dépendances entre eux ; les porter dans le désordre oblige à écrire des
-bouchons. L'ordre qui n'en demande aucun :
+The modules depend on one another; porting them out of order forces you to write stubs. The order
+that needs none:
 
 ```
-1. kernel · vocabulary · money · time          aucune dépendance, tout en dépend
-2. taxonomy · media · format · i18n            dépendent de 1
-3. catalog · replay · permissions              dépendent de 1 et 2
+1. kernel · vocabulary · money · time          no dependencies, everything depends on them
+2. taxonomy · media · format · i18n            depend on 1
+3. catalog · replay · permissions              depend on 1 and 2
 4. ticketing · moderation · notification · search
-5. entitlement · payout                        dépendent de 3 et 4 — les plus exposés
-6. schema                                      la SEULE à ajouter zod
-7. fixtures                                    dépend de tout, dépendu par rien
+5. entitlement · payout                        depend on 3 and 4 — the most exposed
+6. schema                                      the ONLY one that adds zod
+7. fixtures                                    depends on everything, depended on by nothing
 ```
 
-**`entitlement` et `payout` en dernier des règles**, et c'est délibéré : ce sont les deux qui
-composent le plus de choses — cinq entrées pour l'un, une juridiction et un modèle fiscal pour
-l'autre — et les deux dont un défaut coûte le plus cher. Les écrire en dernier, c'est les écrire
-sur des fondations déjà testées.
+**`entitlement` and `payout` last among the rules**, and that is deliberate: they are the two that
+compose the most — five inputs for one, a jurisdiction and a tax model for the other — and the two
+where a defect costs the most. Writing them last means writing them on foundations already tested.
 
-**`schema` après toutes les règles**, parce qu'un schéma de frontière décrit une forme que le
-domaine a déjà fixée. L'inverse — dessiner les schémas d'abord — produirait des règles dictées par
-la forme d'une charge utile, c'est-à-dire exactement le défaut que ce projet passe son temps à
-corriger.
+**`schema` after all the rules**, because a boundary schema describes a shape the domain has
+already fixed. The reverse — drawing the schemas first — would produce rules dictated by the shape
+of a payload, which is exactly the defect this project spends its time correcting.

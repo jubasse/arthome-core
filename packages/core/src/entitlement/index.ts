@@ -1,24 +1,24 @@
 /**
- * `decideWatch` — LA VALEUR LA PLUS DANGEREUSE DU SYSTEME.
+ * `decideWatch` — THE MOST DANGEROUS VALUE IN THE SYSTEM.
  *
- * Cinq sources : possession d'une place, etat de la date, droits territoriaux,
- * politique de rediffusion, formule d'abonnement. Affichee sur CHAQUE CARTE de
- * CHAQUE SURFACE. Candidate numero un au « calcule deux fois ».
+ * Five sources: holding a seat, the date's state, territorial rights, replay
+ * policy, subscription plan. Shown on EVERY CARD of EVERY SURFACE. Candidate
+ * number one for "computed twice".
  *
- * ⚠ CE QUI NE SE PORTE PAS. `helpers.isWatchable(account, date)` suppose que le
- * client DETIENT LA LISTE COMPLETE DES PLACES DU COMPTE. `storefront-mobile`
- * l'a demontre intenable : elle grandit, elle change pendant que l'application
- * dort, et la decision territoriale n'appartient pas au client.
+ * ⚠ WHAT DOES NOT PORT. `helpers.isWatchable(account, date)` assumes the client
+ * HOLDS THE COMPLETE LIST OF THE ACCOUNT'S SEATS. `storefront-mobile` showed
+ * that to be untenable: it grows, it changes while the application sleeps, and
+ * the territorial decision does not belong to the client.
  *
- * ⚠ UNE IMPLEMENTATION, DEUX SITES D'EVALUATION, UNE SEULE AUTORITE :
- *   - au BFF, pour peindre une carte sans second aller-retour. Le verdict y est
- *     INDICATIF ET NON OPPOSABLE, et le contrat le declare tel ;
- *   - dans `streaming`, a l'ouverture du lecteur. **Seule evaluation qui fait
- *     autorite**, parce que seule a produire un jeton.
+ * ⚠ ONE IMPLEMENTATION, TWO EVALUATION SITES, ONE SINGLE AUTHORITY:
+ *   - at the BFF, to paint a card without a second round trip. The verdict
+ *     there is INDICATIVE AND NOT BINDING, and the contract says so;
+ *   - in `streaming`, when the player opens. **The only authoritative
+ *     evaluation**, because it is the only one that produces a token.
  *
- * Et le meme vocabulaire de refus des deux cotes : une carte qui annonce
- * « abonnement requis » et un lecteur qui refuse pour la meme raison disent le
- * MEME code.
+ * And the same refusal vocabulary on both sides: a card announcing
+ * "subscription required" and a player refusing for the same reason say the
+ * SAME code.
  */
 
 import type { Instant } from '../kernel/clock.js';
@@ -31,12 +31,11 @@ import { isAvailableIn, type TerritoryRights } from '../catalog/rights.js';
 import type { PublicationState, RunState } from '../vocabulary/catalog.js';
 
 /**
- * Les motifs de refus — un CODE par ecran different.
+ * The denial reasons — one CODE per different screen.
  *
- * `storefront-tv` les liste un par un : chacun produit un ecran different, et
- * un code generique en produirait un faux. « Aucune rediffusion pour cette
- * date » et « rediffusion expiree » sont deux choses ; « complet » et « liste
- * d'attente » aussi.
+ * `storefront-tv` lists them one by one: each produces a different screen, and
+ * a generic code would produce a wrong one. "No replay for this date" and
+ * "replay expired" are two things; so are "sold out" and "waiting list".
  */
 export const WATCH_DENIAL_REASONS = [
   'no-seat',
@@ -67,8 +66,14 @@ export const WatchDenialReason = {
   NOT_PUBLISHED: 'not-published',
 } as const;
 
-/** L'action qui SORT DE L'IMPASSE — un etat vide sans issue est proscrit. */
-export const WATCH_FALLBACK_ACTIONS = ['buy-seat', 'subscribe', 'see-other-dates', 'release-a-screen', 'none-action'] as const;
+/** The action that GETS OUT OF THE DEAD END — an empty state with no way out is banned. */
+export const WATCH_FALLBACK_ACTIONS = [
+  'buy-seat',
+  'subscribe',
+  'see-other-dates',
+  'release-a-screen',
+  'none-action',
+] as const;
 export type WatchFallbackAction = (typeof WATCH_FALLBACK_ACTIONS)[number];
 
 export const WatchFallbackAction = {
@@ -79,7 +84,7 @@ export const WatchFallbackAction = {
   NONE: 'none-action',
 } as const;
 
-/** Les CINQ entrees, nommees. Aucune n'est devinee, aucune n'est globale. */
+/** The FIVE inputs, named. None is guessed, none is global. */
 export interface WatchInput {
   readonly holdsSeat: boolean;
   readonly planOpenings: readonly PlanOpening[];
@@ -98,15 +103,15 @@ export interface WatchInput {
 
 export interface WatchVerdict {
   readonly allowed: boolean;
-  /** `preview` quand l'acces est un apercu gratuit borne. */
+  /** `preview` when access is a bounded free preview. */
   readonly scope: 'full' | 'preview' | 'none';
   readonly reason: WatchDenialReason | null;
   readonly fallback: WatchFallbackAction;
   readonly previewSecondsLeft: number;
   /**
-   * ⚠ NE DEPASSE JAMAIS 60 SECONDES, et le droit ne se met JAMAIS en cache sur
-   * disque : il expire, il depend du territoire, il depend de la limite
-   * d'ecrans. Un droit relu depuis le disque est un droit FAUX.
+   * ⚠ NEVER EXCEEDS 60 SECONDS, and the entitlement is NEVER cached to disk: it
+   * expires, it depends on territory, it depends on the screen limit. An
+   * entitlement re-read from disk is a WRONG entitlement.
    */
   readonly validUntil: Instant;
 }
@@ -123,26 +128,36 @@ function denied(
 }
 
 /**
- * L'ordre des refus est une DECISION, pas une commodite.
+ * The order of the refusals is a DECISION, not a convenience.
  *
- * Il va du plus definitif au plus rattrapable, pour que le message affiche soit
- * le plus utile : dire « hors territoire » a quelqu'un qui n'a pas de place est
- * plus juste que « pas de place », puisque acheter une place ne le
- * debloquerait pas. `storefront-web` Q19 le demandait sans le formuler ainsi —
- * c'est le test de la table de verite qui l'a fait apparaitre.
+ * It runs from the most definitive to the most recoverable, so that the message
+ * shown is the most useful one: telling someone with no seat "out of territory"
+ * is truer than "no seat", since buying a seat would not unblock them.
+ * `storefront-web` Q19 asked for this without putting it that way — it was the
+ * truth-table test that brought it out.
  */
 export function decideWatch(input: WatchInput): WatchVerdict {
   const horizon = shortHorizon(input.now);
   const preview = Math.max(0, input.previewSecondsLeft);
 
-  // 1. Le territoire — definitif, et il ne s'achete pas.
+  // 1. Territory — definitive, and it cannot be bought.
   if (!isAvailableIn(input.rights, input.viewerCountry)) {
-    return denied(WatchDenialReason.OUT_OF_TERRITORY, WatchFallbackAction.SEE_OTHER_DATES, preview, horizon);
+    return denied(
+      WatchDenialReason.OUT_OF_TERRITORY,
+      WatchFallbackAction.SEE_OTHER_DATES,
+      preview,
+      horizon,
+    );
   }
 
-  // 2. L'issue — une date annulee ne se regarde pas, meme avec une place.
+  // 2. The outcome — a cancelled date cannot be watched, even with a seat.
   if (input.outcome === DateOutcome.CANCELLED) {
-    return denied(WatchDenialReason.DATE_CANCELLED, WatchFallbackAction.SEE_OTHER_DATES, preview, horizon);
+    return denied(
+      WatchDenialReason.DATE_CANCELLED,
+      WatchFallbackAction.SEE_OTHER_DATES,
+      preview,
+      horizon,
+    );
   }
 
   const display = displayStateOf({
@@ -153,7 +168,7 @@ export function decideWatch(input: WatchInput): WatchVerdict {
     now: input.now,
   });
 
-  // 3. Ce qui n'est pas public ne se regarde pas.
+  // 3. What is not public cannot be watched.
   if (
     display.state === DisplayState.DRAFT ||
     display.state === DisplayState.RESERVE ||
@@ -162,8 +177,8 @@ export function decideWatch(input: WatchInput): WatchVerdict {
     return denied(WatchDenialReason.NOT_PUBLISHED, WatchFallbackAction.NONE, preview, horizon);
   }
 
-  // 4. La limite d'ecrans — elle se rattrape en liberant un ecran, d'ou
-  //    l'action de repli. Un refus nu laisserait le spectateur sans issue.
+  // 4. The screen limit — recoverable by releasing a screen, hence the fallback
+  //    action. A bare refusal would leave the viewer with no way out.
   if (input.concurrentStreamsOpen >= input.concurrentStreamsAllowed) {
     return denied(
       WatchDenialReason.CONCURRENT_LIMIT_REACHED,
@@ -175,33 +190,64 @@ export function decideWatch(input: WatchInput): WatchVerdict {
 
   const validUntil = earliest(horizon, display.validUntil ?? horizon);
 
-  // 5. La rediffusion — trois refus distincts, que la TV exige de distinguer.
+  // 5. The replay — three distinct refusals, which the TV insists on telling apart.
   if (display.state === DisplayState.REPLAY) {
     return decideReplay(input, preview, validUntil);
   }
 
-  // 6. Le direct — une place detenue ouvre le spectacle (principe n°3).
+  // 6. Live — holding a seat opens the show (principle no. 3).
   if (display.state === DisplayState.LIVE || display.state === DisplayState.ROOM_OPEN) {
     if (input.holdsSeat) {
-      return { allowed: true, scope: 'full', reason: null, fallback: WatchFallbackAction.NONE, previewSecondsLeft: preview, validUntil };
+      return {
+        allowed: true,
+        scope: 'full',
+        reason: null,
+        fallback: WatchFallbackAction.NONE,
+        previewSecondsLeft: preview,
+        validUntil,
+      };
     }
     if (input.planOpenings.includes(PlanOpening.ALL_LIVES)) {
-      return { allowed: true, scope: 'full', reason: null, fallback: WatchFallbackAction.NONE, previewSecondsLeft: preview, validUntil };
+      return {
+        allowed: true,
+        scope: 'full',
+        reason: null,
+        fallback: WatchFallbackAction.NONE,
+        previewSecondsLeft: preview,
+        validUntil,
+      };
     }
-    // L'apercu gratuit : borne, decompte par le SERVEUR, et jamais renouvelable
-    // en rechargeant la page.
+    // The free preview: bounded, counted down by the SERVER, and never renewed
+    // by reloading the page.
     if (preview > 0) {
-      return { allowed: true, scope: 'preview', reason: null, fallback: WatchFallbackAction.BUY_SEAT, previewSecondsLeft: preview, validUntil };
+      return {
+        allowed: true,
+        scope: 'preview',
+        reason: null,
+        fallback: WatchFallbackAction.BUY_SEAT,
+        previewSecondsLeft: preview,
+        validUntil,
+      };
     }
-    return denied(WatchDenialReason.PREVIEW_EXHAUSTED, WatchFallbackAction.BUY_SEAT, preview, validUntil);
+    return denied(
+      WatchDenialReason.PREVIEW_EXHAUSTED,
+      WatchFallbackAction.BUY_SEAT,
+      preview,
+      validUntil,
+    );
   }
 
-  // 7. Avant l'ouverture de salle, une place ne suffit pas encore.
+  // 7. Before the room opens, a seat is not yet enough.
   if (display.state === DisplayState.SCHEDULED) {
-    return denied(WatchDenialReason.ROOM_NOT_OPEN, input.holdsSeat ? WatchFallbackAction.NONE : WatchFallbackAction.BUY_SEAT, preview, validUntil);
+    return denied(
+      WatchDenialReason.ROOM_NOT_OPEN,
+      input.holdsSeat ? WatchFallbackAction.NONE : WatchFallbackAction.BUY_SEAT,
+      preview,
+      validUntil,
+    );
   }
 
-  // 8. Terminee, sans rediffusion en ligne.
+  // 8. Over, with no replay online.
   return denied(
     input.timing.replayPolicy === ReplayPolicy.NONE
       ? WatchDenialReason.NO_REPLAY
@@ -224,21 +270,36 @@ function decideReplay(input: WatchInput, preview: number, validUntil: Instant): 
 
   switch (input.timing.replayPolicy) {
     case ReplayPolicy.INCLUDED:
-      // Incluse : une place detenue l'ouvre. Sans place, il faut l'acheter.
+      // Included: holding a seat opens it. Without a seat, it must be bought.
       return input.holdsSeat
         ? allow()
         : denied(WatchDenialReason.NO_SEAT, WatchFallbackAction.BUY_SEAT, preview, validUntil);
     case ReplayPolicy.SUBSCRIPTION:
       return input.planOpenings.includes(PlanOpening.REPLAYS)
         ? allow()
-        : denied(WatchDenialReason.SUBSCRIPTION_REQUIRED, WatchFallbackAction.SUBSCRIBE, preview, validUntil);
+        : denied(
+            WatchDenialReason.SUBSCRIPTION_REQUIRED,
+            WatchFallbackAction.SUBSCRIBE,
+            preview,
+            validUntil,
+          );
     case ReplayPolicy.UNIT:
       if (input.holdsSeat) return allow();
       return input.replayOnSale
         ? denied(WatchDenialReason.NO_SEAT, WatchFallbackAction.BUY_SEAT, preview, validUntil)
-        : denied(WatchDenialReason.REPLAY_NOT_ON_SALE, WatchFallbackAction.SEE_OTHER_DATES, preview, validUntil);
+        : denied(
+            WatchDenialReason.REPLAY_NOT_ON_SALE,
+            WatchFallbackAction.SEE_OTHER_DATES,
+            preview,
+            validUntil,
+          );
     case ReplayPolicy.NONE:
-      return denied(WatchDenialReason.NO_REPLAY, WatchFallbackAction.SEE_OTHER_DATES, preview, validUntil);
+      return denied(
+        WatchDenialReason.NO_REPLAY,
+        WatchFallbackAction.SEE_OTHER_DATES,
+        preview,
+        validUntil,
+      );
   }
 }
 
@@ -247,25 +308,25 @@ function shortHorizon(now: Instant): Instant {
 }
 
 /**
- * Le plafond d'ecrans simultanes, derive de la formule.
+ * The concurrent-screen ceiling, derived from the plan.
  *
- * `multi-screen` n'est pas une ligne de marketing : c'est une CONTRAINTE
- * D'EXECUTION qui impose un decompte serveur. `ticketing` publie le plafond ;
- * `streaming` le fait respecter par un bail qui expire.
+ * `multi-screen` is not a marketing line: it is an EXECUTION CONSTRAINT that
+ * forces a server-side count. `ticketing` publishes the ceiling; `streaming`
+ * enforces it with a lease that expires.
  */
 export function concurrentStreamsAllowedFor(planOpenings: readonly PlanOpening[]): number {
   return planOpenings.includes(PlanOpening.MULTI_SCREEN) ? 2 : 1;
 }
 
 /**
- * Le budget d'apercu gratuit — DECOMPTE PAR LE SERVEUR, par COMPTE.
+ * The free-preview budget — COUNTED DOWN BY THE SERVER, per ACCOUNT.
  *
- * `storefront-web` Q20 : « un apercu que l'on prolonge en rechargeant la page
- * n'est pas un apercu ». `storefront-mobile` Q6 ajoute qu'une reinstallation
- * remettrait un compteur client a zero.
+ * `storefront-web` Q20: "a preview you extend by reloading the page is not a
+ * preview". `storefront-mobile` Q6 adds that a reinstall would reset a
+ * client-side counter to zero.
  *
- * Par COMPTE et non par appareil : sinon un foyer a quatre appareils obtient
- * quatre apercus.
+ * Per ACCOUNT and not per device: otherwise a household with four devices gets
+ * four previews.
  */
 export const PREVIEW_BUDGET_SECONDS = 300;
 

@@ -1,50 +1,52 @@
 /**
- * Le CODE DE PLACE — emis par le SERVEUR, jamais derive cote client.
+ * The SEAT CODE — issued by the SERVER, never derived client-side.
  *
- * `storefront-web` Q18 : il s'affiche a l'identique sur le web, le mobile et la
- * TV. La maquette le calcule par HACHAGE — commodite qui, portee telle quelle,
- * donnerait **trois codes differents pour la meme place** des qu'une surface
- * change de fonction de hachage. Ce n'est pas un risque theorique : les trois
- * surfaces sont ecrites dans trois langages par trois piles differentes.
+ * `storefront-web` Q18: it appears identically on the web, on mobile and on TV.
+ * The mockup computes it by HASHING — a convenience which, ported as it stands,
+ * would give **three different codes for the same seat** as soon as one surface
+ * changed hash function. That is not a theoretical risk: the three surfaces are
+ * written in three languages on three different stacks.
  *
- * Ce module ne GENERE donc pas un code depuis un identifiant : il en valide la
- * FORME et le formate. La generation est une ecriture de service, avec une
- * source d'alea et une contrainte d'unicite — deux choses qu'un domaine pur
- * n'a pas.
+ * So this module does not GENERATE a code from an identifier: it validates its
+ * SHAPE and formats it. Generation is a service-side write, with a source of
+ * randomness and a uniqueness constraint — two things a pure domain does not
+ * have.
  */
 
 import { DomainError } from '../kernel/errors.js';
 
 /**
- * L'alphabet : Crockford base 32 — les dix chiffres, et les lettres SAUF
- * `I`, `L`, `O` et `U`.
+ * The alphabet: Crockford base 32 — the ten digits, and the letters EXCEPT
+ * `I`, `L`, `O` and `U`.
  *
- * ⚠ Le choix de l'exclusion n'est pas libre, et une premiere redaction s'y est
- * trompee : exclure LES DEUX membres d'une paire confusable (`0` ET `O`)
- * rend la correction IMPOSSIBLE — un spectateur qui dicte « O » au support n'a
- * alors aucune valeur valide a laquelle on puisse le ramener.
+ * ⚠ The choice of exclusions is not free, and a first draft got it wrong:
+ * excluding BOTH members of a confusable pair (`0` AND `O`) makes correction
+ * IMPOSSIBLE — a viewer who dictates "O" to support then has no valid value to
+ * be brought back to.
  *
- * Crockford garde un membre de chaque paire et exclut l'autre, ce qui rend la
- * normalisation SURE plutot que devinee : `I` et `L` ne peuvent etre que `1`,
- * `O` ne peut etre que `0`. Et `U` est exclue pour une raison sans rapport —
- * eviter de composer par hasard un mot grossier.
+ * Crockford keeps one member of each pair and excludes the other, which makes
+ * normalisation SAFE rather than guessed: `I` and `L` can only be `1`, `O` can
+ * only be `0`. And `U` is excluded for an unrelated reason — to avoid
+ * accidentally spelling a rude word.
  */
 export const SEAT_CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 export const SEAT_CODE_BODY_LENGTH = 6;
 const SEAT_CODE_PREFIX = 'ATH';
 
-const SEAT_CODE_SHAPE = new RegExp(`^${SEAT_CODE_PREFIX}-[${SEAT_CODE_ALPHABET}]{${String(SEAT_CODE_BODY_LENGTH)}}$`);
+const SEAT_CODE_SHAPE = new RegExp(
+  `^${SEAT_CODE_PREFIX}-[${SEAT_CODE_ALPHABET}]{${String(SEAT_CODE_BODY_LENGTH)}}$`,
+);
 
 export function isSeatCode(value: string): boolean {
   return SEAT_CODE_SHAPE.test(value);
 }
 
 /**
- * Compose un code a partir d'un corps deja tire par le service.
+ * Composes a code from a body already drawn by the service.
  *
- * Le corps vient d'une source d'alea cryptographique cote service : le domaine
- * n'en a pas, et c'est tant mieux — une source d'alea rendrait ce paquet
- * dependant d'une API de plateforme, ce qu'il s'interdit.
+ * The body comes from a cryptographic randomness source on the service side:
+ * the domain has none, and that is just as well — a randomness source would
+ * make this package depend on a platform API, which it forbids itself.
  */
 export function seatCode(body: string): string {
   const normalized = body.toUpperCase();
@@ -56,17 +58,17 @@ export function seatCode(body: string): string {
 }
 
 /**
- * Normalise une saisie humaine avant comparaison.
+ * Normalises human input before comparison.
  *
- * Le support lit un code au telephone, le spectateur le retape : minuscules,
- * espaces, tiret oublie, prefixe omis, et surtout les confusables. La
- * correction est SURE et non devinee : `I` et `L` sont absentes de l'alphabet,
- * donc elles ne peuvent etre que `1` ; `O` en est absente, donc elle ne peut
- * etre que `0`.
+ * Support reads a code over the phone, the viewer retypes it: lowercase,
+ * spaces, a forgotten hyphen, an omitted prefix, and above all the confusables.
+ * The correction is SAFE and not guessed: `I` and `L` are absent from the
+ * alphabet, so they can only be `1`; `O` is absent from it, so it can only be
+ * `0`.
  *
- * ⚠ On ne corrige RIEN d'autre. Un caractere qui reste hors alphabet apres
- * normalisation fait echouer `isSeatCode`, et c'est le bon resultat : mieux
- * vaut « ce code n'existe pas » qu'un code voisin trouve par hasard.
+ * ⚠ We correct NOTHING else. A character still outside the alphabet after
+ * normalisation makes `isSeatCode` fail, and that is the right result: better
+ * "this code does not exist" than a neighbouring code found by accident.
  */
 export function normalizeSeatCodeInput(raw: string): string {
   const body = raw

@@ -3,110 +3,177 @@ import { describe, expect, it } from 'vitest';
 import { money } from '../money/money.js';
 import { DateOutcome } from '../vocabulary/catalog.js';
 import { PayoutState, TaxJurisdictionLevel, TaxSupplyKind } from '../vocabulary/commerce.js';
-import { COMMISSION_RATE_BPS, PAYOUT_DELAY_DAYS, dueAtFor, payoutOf, payoutStateFor, vatLineFor } from './index.js';
+import {
+  COMMISSION_RATE_BPS,
+  PAYOUT_DELAY_DAYS,
+  dueAtFor,
+  payoutOf,
+  payoutStateFor,
+  vatLineFor,
+} from './index.js';
 
 const eur = (amountMinor: number) => money(amountMinor, 'EUR');
 const chf = (amountMinor: number) => money(amountMinor, 'CHF');
 
 /**
- * INVARIANT PROTEGE
- *   La commission porte sur le HT. Pour un MEME HT, elle est IDENTIQUE quelle
- *   que soit la juridiction de l'acheteur.
+ * PROTECTED INVARIANT
+ *   The commission is taken on the net-of-tax amount. For the SAME net, it is
+ *   IDENTICAL whatever the buyer's jurisdiction.
  *
- * POURQUOI CE TEST EXISTE
- *   D5 : `fixtures.js` calcule `net = brut − 12 % − TVA(brut)` avec un taux
- *   unique, et le resultat est plausible A L'EURO PRES. C'est le piege
- *   « forme contre regle » dans sa forme la plus couteuse : le portage naif
- *   consiste exactement a recopier trois lignes qui ont l'air justes.
+ * WHY THIS TEST EXISTS
+ *   D5: `fixtures.js` computes `net = gross − 12% − VAT(gross)` with a single
+ *   rate, and the result is plausible TO THE EURO. It is the "shape against
+ *   rule" trap in its most expensive form: the naive port consists of copying
+ *   exactly three lines that look right.
  *
- *   Sur le TTC, les 12 % annonces aux artistes VARIERAIENT avec le pays de
- *   l'acheteur. Une commission est le prix d'un service ; elle n'a aucune
- *   raison de suivre un taux de TVA etranger.
+ *   On the tax-inclusive amount, the 12% announced to artists would VARY with
+ *   the buyer's country. A commission is the price of a service; it has no
+ *   reason to follow a foreign VAT rate.
  *
- *   Ecrit AVANT la regle.
+ *   Written BEFORE the rule.
  */
-describe('la commission porte sur le HT', () => {
-  it('est identique en France et en Suisse pour un meme HT', () => {
-    // Un artiste qui gagne 24,64 € HT gagne la meme chose quel que soit le
-    // pays de l'acheteur. C'est CA que « 12 % » promet.
+describe('the commission is taken on the net-of-tax amount', () => {
+  it('is identical in France and Switzerland for the same net', () => {
+    // An artist earning €24.64 net of tax earns the same whatever the buyer's
+    // country. THAT is what "12%" promises.
     const htAmount = 2464;
 
     const france = payoutOf({
       grossTtc: eur(htAmount + 136),
-      vatLines: [vatLineFor(eur(htAmount + 136), 'FR', TaxJurisdictionLevel.COUNTRY, 550, TaxSupplyKind.LIVE_STREAM_ACCESS)],
+      vatLines: [
+        vatLineFor(
+          eur(htAmount + 136),
+          'FR',
+          TaxJurisdictionLevel.COUNTRY,
+          550,
+          TaxSupplyKind.LIVE_STREAM_ACCESS,
+        ),
+      ],
       commissionRateBps: COMMISSION_RATE_BPS,
     });
-    const suisse = payoutOf({
+    const switzerland = payoutOf({
       grossTtc: chf(htAmount + 64),
-      vatLines: [vatLineFor(chf(htAmount + 64), 'CH', TaxJurisdictionLevel.COUNTRY, 260, TaxSupplyKind.LIVE_STREAM_ACCESS)],
+      vatLines: [
+        vatLineFor(
+          chf(htAmount + 64),
+          'CH',
+          TaxJurisdictionLevel.COUNTRY,
+          260,
+          TaxSupplyKind.LIVE_STREAM_ACCESS,
+        ),
+      ],
       commissionRateBps: COMMISSION_RATE_BPS,
     });
 
     expect(france.grossHt.amountMinor).toBe(htAmount);
-    expect(suisse.grossHt.amountMinor).toBe(htAmount);
-    expect(france.commission.amountMinor).toBe(suisse.commission.amountMinor);
-    expect(france.net.amountMinor).toBe(suisse.net.amountMinor);
+    expect(switzerland.grossHt.amountMinor).toBe(htAmount);
+    expect(france.commission.amountMinor).toBe(switzerland.commission.amountMinor);
+    expect(france.net.amountMinor).toBe(switzerland.net.amountMinor);
   });
 
-  it('NE serait PAS identique si la commission portait sur le TTC', () => {
-    // La demonstration de ce qu'on evite : a TTC egal, le HT differe selon le
-    // taux, donc 12 % du TTC donnerait la meme commission mais un NET
-    // different — et l'artiste ne saurait pas pourquoi.
+  it('would NOT be identical if the commission were taken on the gross', () => {
+    // The demonstration of what we avoid: at equal gross, the net-of-tax amount
+    // differs with the rate, so 12% of the gross would give the same commission
+    // but a different NET — and the artist would not know why.
     const ttc = 2600;
     const france = payoutOf({
       grossTtc: eur(ttc),
-      vatLines: [vatLineFor(eur(ttc), 'FR', TaxJurisdictionLevel.COUNTRY, 550, TaxSupplyKind.LIVE_STREAM_ACCESS)],
+      vatLines: [
+        vatLineFor(
+          eur(ttc),
+          'FR',
+          TaxJurisdictionLevel.COUNTRY,
+          550,
+          TaxSupplyKind.LIVE_STREAM_ACCESS,
+        ),
+      ],
       commissionRateBps: COMMISSION_RATE_BPS,
     });
-    const suisse = payoutOf({
+    const switzerland = payoutOf({
       grossTtc: chf(ttc),
-      vatLines: [vatLineFor(chf(ttc), 'CH', TaxJurisdictionLevel.COUNTRY, 260, TaxSupplyKind.LIVE_STREAM_ACCESS)],
+      vatLines: [
+        vatLineFor(
+          chf(ttc),
+          'CH',
+          TaxJurisdictionLevel.COUNTRY,
+          260,
+          TaxSupplyKind.LIVE_STREAM_ACCESS,
+        ),
+      ],
       commissionRateBps: COMMISSION_RATE_BPS,
     });
 
-    // A TTC fixe, les HT different — donc les commissions aussi.
-    expect(france.grossHt.amountMinor).not.toBe(suisse.grossHt.amountMinor);
-    expect(france.commission.amountMinor).not.toBe(suisse.commission.amountMinor);
+    // At fixed gross, the net-of-tax amounts differ — so do the commissions.
+    expect(france.grossHt.amountMinor).not.toBe(switzerland.grossHt.amountMinor);
+    expect(france.commission.amountMinor).not.toBe(switzerland.commission.amountMinor);
   });
 
-  it('extrait la TVA du TTC, jamais ne l\'y ajoute', () => {
-    // L'erreur classique — `ttc x taux / 10000` — surestime la taxe de
-    // `taux / (10000 + taux)`, soit 5 % sur un taux a 5,5 %.
-    const line = vatLineFor(eur(2600), 'FR', TaxJurisdictionLevel.COUNTRY, 550, TaxSupplyKind.LIVE_STREAM_ACCESS);
+  it('extracts the VAT from the gross, never adds it to it', () => {
+    // The classic error — `gross x rate / 10000` — overstates the tax by
+    // `rate / (10000 + rate)`, that is 5% on a 5.5% rate.
+    const line = vatLineFor(
+      eur(2600),
+      'FR',
+      TaxJurisdictionLevel.COUNTRY,
+      550,
+      TaxSupplyKind.LIVE_STREAM_ACCESS,
+    );
     expect(line.amount.amountMinor).toBe(136); // 2600 x 550 / 10550
-    expect(line.base.amountMinor).toBe(2464); // le HT, qui est l'assiette reelle
+    expect(line.base.amountMinor).toBe(2464); // the net of tax, which is the real base
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   La ventilation est PAR JURIDICTION, et le total se referme exactement.
+ * PROTECTED INVARIANT
+ *   The breakdown is PER JURISDICTION, and the total closes exactly.
  *
- * POURQUOI
- *   Environ 9 000 juridictions aux Etats-Unis. Une commande peut porter
- *   plusieurs lignes ; leur somme doit etre EXACTEMENT la TVA retiree du TTC,
- *   sinon le net derive d'un centime par commande.
+ * WHY
+ *   Roughly 9,000 jurisdictions in the United States. One order can carry
+ *   several lines; their sum must be EXACTLY the VAT removed from the gross,
+ *   otherwise the net drifts by a cent per order.
  */
-describe('la ventilation par juridiction', () => {
-  it('se referme exactement : HT + TVA = TTC', () => {
+describe('the breakdown by jurisdiction', () => {
+  it('closes exactly: net + VAT = gross', () => {
     const grossTtc = eur(2600);
     const breakdown = payoutOf({
       grossTtc,
-      vatLines: [vatLineFor(grossTtc, 'FR', TaxJurisdictionLevel.COUNTRY, 550, TaxSupplyKind.LIVE_STREAM_ACCESS)],
+      vatLines: [
+        vatLineFor(
+          grossTtc,
+          'FR',
+          TaxJurisdictionLevel.COUNTRY,
+          550,
+          TaxSupplyKind.LIVE_STREAM_ACCESS,
+        ),
+      ],
       commissionRateBps: COMMISSION_RATE_BPS,
     });
 
-    expect(breakdown.grossHt.amountMinor + breakdown.vatTotal.amountMinor).toBe(grossTtc.amountMinor);
+    expect(breakdown.grossHt.amountMinor + breakdown.vatTotal.amountMinor).toBe(
+      grossTtc.amountMinor,
+    );
   });
 
-  it('accepte plusieurs juridictions sur une meme commande', () => {
-    // Etat + comte + ville : trois lignes, une seule assiette.
+  it('accepts several jurisdictions on one order', () => {
+    // State + county + city: several lines, one single base.
     const grossTtc = money(10_000, 'USD');
     const breakdown = payoutOf({
       grossTtc,
       vatLines: [
-        vatLineFor(grossTtc, 'US-CA', TaxJurisdictionLevel.STATE, 600, TaxSupplyKind.LIVE_STREAM_ACCESS),
-        vatLineFor(grossTtc, 'US-CA-SF', TaxJurisdictionLevel.CITY, 125, TaxSupplyKind.LIVE_STREAM_ACCESS),
+        vatLineFor(
+          grossTtc,
+          'US-CA',
+          TaxJurisdictionLevel.STATE,
+          600,
+          TaxSupplyKind.LIVE_STREAM_ACCESS,
+        ),
+        vatLineFor(
+          grossTtc,
+          'US-CA-SF',
+          TaxJurisdictionLevel.CITY,
+          125,
+          TaxSupplyKind.LIVE_STREAM_ACCESS,
+        ),
       ],
       commissionRateBps: COMMISSION_RATE_BPS,
     });
@@ -115,48 +182,58 @@ describe('la ventilation par juridiction', () => {
     expect(breakdown.grossHt.amountMinor + breakdown.vatTotal.amountMinor).toBe(10_000);
   });
 
-  it('ne produit jamais de monnaie : HT − commission = net', () => {
+  it('never creates money: net-of-tax − commission = payable', () => {
     for (const amount of [2600, 1, 99, 12_345, 7]) {
       const grossTtc = eur(amount);
       const breakdown = payoutOf({
         grossTtc,
-        vatLines: [vatLineFor(grossTtc, 'FR', TaxJurisdictionLevel.COUNTRY, 550, TaxSupplyKind.LIVE_STREAM_ACCESS)],
+        vatLines: [
+          vatLineFor(
+            grossTtc,
+            'FR',
+            TaxJurisdictionLevel.COUNTRY,
+            550,
+            TaxSupplyKind.LIVE_STREAM_ACCESS,
+          ),
+        ],
         commissionRateBps: COMMISSION_RATE_BPS,
       });
-      expect(breakdown.net.amountMinor + breakdown.commission.amountMinor).toBe(breakdown.grossHt.amountMinor);
+      expect(breakdown.net.amountMinor + breakdown.commission.amountMinor).toBe(
+        breakdown.grossHt.amountMinor,
+      );
     }
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Un versement est RETENU tant qu'une issue est ouverte, et REMBOURSE si la
- *   date est annulee. L'echeance court depuis la FIN DU DIRECT.
+ * PROTECTED INVARIANT
+ *   A payout is WITHHELD while an outcome is open, and REFUNDED if the date is
+ *   cancelled. The due date runs from the END OF THE LIVE SHOW.
  *
- * POURQUOI
- *   Ce que `shared/` porte et qui fait autorite : commission 12 %, delai
- *   14 jours, retenue tant qu'une issue est ouverte. C'est la seule partie de
- *   la formule des fixtures qui soit une vraie regle.
+ * WHY
+ *   What `shared/` carries and what has authority: commission 12%, delay
+ *   14 days, withholding while an outcome is open. It is the only part of the
+ *   fixtures' formula that is a real rule.
  */
-describe("l'etat d'un versement", () => {
-  it('retient tant qu\'une issue est ouverte', () => {
+describe('a payout\'s state', () => {
+  it('withholds while an outcome is open', () => {
     expect(payoutStateFor(DateOutcome.POSTPONED, false, false)).toBe(PayoutState.HELD);
     expect(payoutStateFor(DateOutcome.INTERRUPTED, false, false)).toBe(PayoutState.HELD);
   });
 
-  it('rembourse quand la date est annulee', () => {
+  it('refunds when the date is cancelled', () => {
     expect(payoutStateFor(DateOutcome.CANCELLED, false, false)).toBe(PayoutState.REFUNDED);
   });
 
-  it('suspend quand un changement bancaire attend sa contre-signature', () => {
-    // Il SUSPEND le virement en cours : une ecriture ne peut pas porter cela,
-    // c'est un agregat a double detente.
+  it('suspends when a bank change awaits its counter-signature', () => {
+    // It SUSPENDS the transfer in progress: a single write cannot carry that,
+    // it is a two-stage aggregate.
     expect(payoutStateFor(null, false, true)).toBe(PayoutState.SUSPENDED);
-    // Et la suspension prime sur le programme normal.
+    // And the suspension outranks the normal schedule.
     expect(payoutStateFor(null, true, true)).toBe(PayoutState.SUSPENDED);
   });
 
-  it('court depuis la fin du direct, pas depuis le paiement', () => {
+  it('runs from the end of the live show, not from the payment', () => {
     expect(dueAtFor('2026-09-21T21:00:00.000Z')).toBe('2026-10-05T21:00:00.000Z');
     expect(PAYOUT_DELAY_DAYS).toBe(14);
   });

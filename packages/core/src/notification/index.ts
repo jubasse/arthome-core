@@ -1,29 +1,29 @@
 /**
- * Les SEUILS de notification — des regles de domaine, pas des textes d'ecran.
+ * The notification THRESHOLDS — domain rules, not screen copy.
  *
- * `storefront-mobile` Q10 : les cinq seuils sont ecrits dans des libelles de
- * maquette. « Recopies, ils divergeront : le web dira 30 minutes, la TV 15, et
- * le mobile aura raison par hasard. »
+ * `storefront-mobile` Q10: the five thresholds are written into mockup labels.
+ * "Copied, they will diverge: the web will say 30 minutes, the TV 15, and
+ * mobile will be right by accident."
  *
- * Deux d'entre eux n'avaient AUCUN porteur nulle part (G6) — le seuil de file
- * de moderation et le delai d'affectation d'un poste. Ils sont ici.
+ * Two of them had NO owner anywhere (G6) — the moderation-queue threshold and
+ * the crew-assignment deadline. They are here.
  */
 
 import type { Instant } from '../kernel/clock.js';
 import { minutesBetween, plusMinutes } from '../time/instant.js';
 import { NotificationChannel } from '../vocabulary/people.js';
 
-/** Un artiste suivi passe a l'antenne : des l'ouverture du flux. */
+/** A followed artist goes on air: as soon as the feed opens. */
 export const LIVE_START_LEAD_MINUTES = 0;
-/** Rappel avant un direct pour lequel je detiens une place. */
+/** Reminder before a live show for which I hold a seat. */
 export const REMINDER_LEAD_MINUTES = 30;
-/** « Bientot complet » — LE MEME nombre que le seuil de rarete d'une carte. */
+/** "Almost full" — THE SAME number as a card's scarcity threshold. */
 export const ALMOST_FULL_THRESHOLD_BPS = 8_500;
-/** Fin de disponibilite d'une rediffusion. */
+/** End of a replay's availability. */
 export const REPLAY_EXPIRY_WARNING_HOURS = 6;
-/** File de moderation saturee — n'avait aucun porteur. */
+/** Moderation queue saturated — had no owner anywhere. */
 export const MODERATION_QUEUE_ALERT_SIZE = 10;
-/** Poste non affecte a J-1 — n'avait aucun porteur non plus. */
+/** Crew post unassigned at D-1 — had no owner either. */
 export const CREW_UNASSIGNED_ALERT_HOURS = 24;
 
 export function reminderInstantFor(startsAt: Instant): Instant {
@@ -31,14 +31,14 @@ export function reminderInstantFor(startsAt: Instant): Instant {
 }
 
 /**
- * Les HEURES CALMES, et leur exception.
+ * QUIET HOURS, and their exception.
  *
- * 23 h -> 9 h, aucune notification — SAUF le debut d'un direct pour lequel la
- * personne detient une place. `storefront-web` le releve : « c'est une regle
- * metier du service de notification, pas un reglage d'interface ».
+ * 23:00 -> 09:00, no notification — EXCEPT the start of a live show for which
+ * the person holds a seat. `storefront-web` points it out: "that is a business
+ * rule of the notification service, not an interface setting".
  *
- * ⚠ Le decalage est un ARGUMENT : les heures calmes sont celles du DORMEUR, pas
- * celles du serveur. C'est la meme discipline que partout dans ce paquet.
+ * ⚠ The offset is an ARGUMENT: quiet hours are the SLEEPER's, not the server's.
+ * The same discipline as everywhere in this package.
  */
 export const QUIET_HOURS_START = 23;
 export const QUIET_HOURS_END = 9;
@@ -55,12 +55,11 @@ export interface DeliveryDecision {
 }
 
 /**
- * Faut-il delivrer maintenant ?
+ * Should it be delivered now?
  *
- * L'exception est etroite ET explicite : elle ne couvre que le debut d'un
- * direct dont la personne detient une place. Un rappel « nouvelle date
- * annoncee » a 3 h du matin reste refuse — c'est tout le sens des heures
- * calmes.
+ * The exception is narrow AND explicit: it covers only the start of a live show
+ * for which the person holds a seat. A "new date announced" reminder at 3 a.m.
+ * stays refused — that is the whole point of quiet hours.
  */
 export function shouldDeliverNow(
   instant: Instant,
@@ -77,24 +76,23 @@ export function shouldDeliverNow(
 }
 
 /**
- * La REDACTION s'applique aussi a une notification.
+ * REDACTION applies to a notification too.
  *
- * `studio-mobile` : « une notification ne porte jamais un montant si le role
- * destinataire n'a pas `canRevenue` ». L'argument est decisif — une
- * notification s'affiche sur un ECRAN VERROUILLE.
+ * `studio-mobile`: "a notification never carries an amount if the recipient's
+ * role does not have `canRevenue`". The argument is decisive — a notification
+ * appears on a LOCKED SCREEN.
  */
 export function mayCarryAmount(recipientCanRevenue: boolean): boolean {
   return recipientCanRevenue;
 }
 
 /**
- * Le TROISIEME canal est `in-app`, pas `sms` (D-017).
+ * The THIRD channel is `in-app`, not `sms` (D-017).
  *
- * La grille de preferences offre trois canaux par declencheur, deux seulement
- * sont nommes dans le dossier, et le champ telephone porte la mention « pour
- * les SMS de rappel ». Un canal SMS a un cout par message, une reglementation
- * propre — consentement, horaires, desinscription — et un prestataire de plus,
- * pour une valeur que rien n'a eprouvee.
+ * The preferences grid offers three channels per trigger, only two are named in
+ * the file, and the phone field carries the note "for reminder SMS". An SMS
+ * channel has a per-message cost, a regulation of its own — consent, hours,
+ * opt-out — and one more provider, for a value nothing has tested.
  */
 export const DEFAULT_CHANNELS: readonly NotificationChannel[] = [
   NotificationChannel.PUSH,
@@ -102,8 +100,8 @@ export const DEFAULT_CHANNELS: readonly NotificationChannel[] = [
 ];
 
 /**
- * Un rappel est une PROMESSE DATEE : il suit un report et s'annule avec une
- * annulation, jamais ne part a vide.
+ * A reminder is a DATED PROMISE: it follows a postponement and is cancelled
+ * with a cancellation; it never fires into the void.
  */
 export function reminderStillValid(
   scheduledFor: Instant,

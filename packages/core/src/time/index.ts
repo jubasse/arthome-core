@@ -1,4 +1,4 @@
-/** Le temps : instants ISO, fenetres, deux horloges, saison. */
+/** Time: ISO instants, windows, two clocks, seasons. */
 
 export type { Instant, Window } from './instant.js';
 export {

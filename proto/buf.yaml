@@ -7,9 +7,9 @@ lint:
 breaking:
   use:
     - FILE
-  # Les contextes « provisoires » ne bloquent pas encore sur la compatibilité :
-  # leur palier n'est pas arrivé et aucun consommateur n'existe.
-  # Voir architecture/events.md §5.1. Une ligne se retire quand son palier est livré.
+  # The "provisional" contexts do not yet block on compatibility: their
+  # milestone has not arrived and no consumer exists.
+  # See architecture/events.md §5.1. A line is removed when its milestone ships.
   ignore:
     - arthome/streaming/v1
     - arthome/chat/v1

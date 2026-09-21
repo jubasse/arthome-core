@@ -17,32 +17,32 @@ import {
 } from './index.js';
 
 /**
- * INVARIANT PROTEGE
- *   Un verdict est ACCEPTE pendant qu'un confrere tient le bail, et REFUSE
- *   seulement si la ligne est deja tranchee — avec le verdict gagnant.
+ * PROTECTED INVARIANT
+ *   A verdict is ACCEPTED while a colleague holds the lease, and REFUSED only
+ *   if the row is already settled — with the winning verdict.
  *
- * POURQUOI CE TEST EXISTE
- *   C3 de `studio-mobile`, demontre sur les exemples du contrat : `claim` puis
- *   `release` SANS RIEN TRANCHER fait passer la version de 1 a 3. Un moderateur
- *   qui lit la file a `version: 1`, perd le reseau et tranche voit son verdict
- *   REFUSE a la reconnexion — alors que la file hors ligne est la seule
- *   concession accordee au mobile.
+ * WHY THIS TEST EXISTS
+ *   `studio-mobile`'s C3, demonstrated on the contract's own examples: `claim`
+ *   then `release` WITHOUT SETTLING ANYTHING moves the version from 1 to 3. A
+ *   moderator who reads the queue at `version: 1`, loses the network and
+ *   settles sees their verdict REFUSED on reconnection — when the offline queue
+ *   is the one concession granted to mobile.
  *
- *   La regle reelle est une SUPERSESSION : « tant que le confrere n'a pas rendu
- *   de verdict, votre sanction s'applique ». Un compteur unique ne peut pas
- *   exprimer « refuse si tranche, accepte si seulement reclame ».
+ *   The real rule is a SUPERSESSION: "as long as your colleague has returned no
+ *   verdict, your sanction applies". A single counter cannot express "refuse if
+ *   settled, accept if merely claimed".
  */
-describe('les deux compteurs de moderation', () => {
+describe('the two moderation counters', () => {
   const claimed: ModerationItemSnapshot = {
     state: ModerationItemState.CLAIMED,
-    version: 3, // un confrere a pris puis relache : la version a bouge
-    decisionVersion: 0, // mais RIEN n'a ete tranche
+    version: 3, // a colleague claimed then released: the version moved
+    decisionVersion: 0, // but NOTHING was settled
     settledBy: null,
     verdict: null,
   };
 
-  it('accepte un verdict hors ligne malgre un bail pris entre-temps', () => {
-    // Le cas exact du defaut : la version a bouge de 1 a 3 sans verdict.
+  it('accepts an offline verdict despite a lease taken in the meantime', () => {
+    // The exact case of the defect: the version moved from 1 to 3 with no verdict.
     const outcome = evaluateSettlement(claimed, {
       expectedDecisionVersion: 0,
       verdict: ModerationVerdict.REMOVE,
@@ -52,9 +52,9 @@ describe('les deux compteurs de moderation', () => {
     expect(outcome.accepted).toBe(true);
   });
 
-  it('refuse un second verdict ET transporte le gagnant', () => {
-    // Un refus nu obligerait a un second aller-retour en plein direct. L'ecran
-    // doit pouvoir dire « X a deja supprime ce message ».
+  it('refuses a second verdict AND carries the winner', () => {
+    // A bare refusal would force a second round trip in the middle of a live
+    // show. The screen must be able to say "X has already deleted this message".
     const settled: ModerationItemSnapshot = {
       state: ModerationItemState.SETTLED,
       version: 5,
@@ -76,7 +76,7 @@ describe('les deux compteurs de moderation', () => {
     });
   });
 
-  it('refuse quand le reglement a avance depuis la lecture', () => {
+  it('refuses when the settlement has moved on since the read', () => {
     const advanced: ModerationItemSnapshot = { ...claimed, decisionVersion: 2 };
     const outcome = evaluateSettlement(advanced, {
       expectedDecisionVersion: 0,
@@ -89,56 +89,74 @@ describe('les deux compteurs de moderation', () => {
 });
 
 /**
- * INVARIANT PROTEGE
- *   Un humain renverse une decision automatique ; JAMAIS l'inverse.
+ * PROTECTED INVARIANT
+ *   A human overturns an automatic decision; NEVER the reverse.
  *
- * POURQUOI
- *   Sans cette regle, un filtre retroactif effacerait un arbitrage rendu — et
- *   l'arbitrage humain est precisement ce qu'on conserve 24 mois et qu'on
- *   journalise nominativement. Rien n'est construit aujourd'hui : la forme doit
- *   pouvoir accueillir un acteur non humain sans changement de contrat.
+ * WHY
+ *   Without this rule, a retroactive filter would erase a judgement already
+ *   made — and human judgement is precisely what we keep for 24 months and
+ *   journal by name. Nothing is built today: the shape must be able to
+ *   accommodate a non-human actor without a contract change.
  */
-describe('la preseance humain / automatique', () => {
-  it('laisse un humain renverser une decision automatique', () => {
-    expect(canOverride(StateChangeOrigin.AUTOMATIC_FILTER, StateChangeOrigin.HUMAN_VERDICT)).toBe(true);
-    expect(canOverride(StateChangeOrigin.RETROACTIVE_FILTER, StateChangeOrigin.HUMAN_VERDICT)).toBe(true);
+describe('the human / automatic precedence', () => {
+  it('lets a human overturn an automatic decision', () => {
+    expect(canOverride(StateChangeOrigin.AUTOMATIC_FILTER, StateChangeOrigin.HUMAN_VERDICT)).toBe(
+      true,
+    );
+    expect(canOverride(StateChangeOrigin.RETROACTIVE_FILTER, StateChangeOrigin.HUMAN_VERDICT)).toBe(
+      true,
+    );
   });
 
-  it("interdit a l'automatique de renverser un humain", () => {
-    expect(canOverride(StateChangeOrigin.HUMAN_VERDICT, StateChangeOrigin.AUTOMATIC_FILTER)).toBe(false);
-    expect(canOverride(StateChangeOrigin.HUMAN_VERDICT, StateChangeOrigin.RETROACTIVE_FILTER)).toBe(false);
+  it('forbids the automatic side overturning a human', () => {
+    expect(canOverride(StateChangeOrigin.HUMAN_VERDICT, StateChangeOrigin.AUTOMATIC_FILTER)).toBe(
+      false,
+    );
+    expect(canOverride(StateChangeOrigin.HUMAN_VERDICT, StateChangeOrigin.RETROACTIVE_FILTER)).toBe(
+      false,
+    );
   });
 
-  it('laisse un humain revenir sur un humain', () => {
-    expect(canOverride(StateChangeOrigin.HUMAN_VERDICT, StateChangeOrigin.HUMAN_VERDICT)).toBe(true);
+  it('lets a human revisit a human', () => {
+    expect(canOverride(StateChangeOrigin.HUMAN_VERDICT, StateChangeOrigin.HUMAN_VERDICT)).toBe(
+      true,
+    );
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Une seule pastille s'affiche, et la preseance va de la PERSONNE vers le
- *   MESSAGE.
+ * PROTECTED INVARIANT
+ *   Only one badge is shown, and the precedence runs from the PERSON towards
+ *   the MESSAGE.
  */
-describe('la pastille unique', () => {
-  it('fait primer la sanction de la personne sur l\'etat du message', () => {
-    expect(moderationBadgeOf(MessageState.PUBLISHED, AudienceSanction.BANNED)).toBe(ModerationBadge.BANNED);
-    expect(moderationBadgeOf(MessageState.REMOVED, AudienceSanction.MUTED)).toBe(ModerationBadge.MUTED);
-    expect(moderationBadgeOf(MessageState.REMOVED, AudienceSanction.NONE)).toBe(ModerationBadge.REMOVED);
-    expect(moderationBadgeOf(MessageState.PUBLISHED, AudienceSanction.NONE)).toBe(ModerationBadge.PUBLISHED);
+describe('the single badge', () => {
+  it('makes the person\'s sanction outrank the message\'s state', () => {
+    expect(moderationBadgeOf(MessageState.PUBLISHED, AudienceSanction.BANNED)).toBe(
+      ModerationBadge.BANNED,
+    );
+    expect(moderationBadgeOf(MessageState.REMOVED, AudienceSanction.MUTED)).toBe(
+      ModerationBadge.MUTED,
+    );
+    expect(moderationBadgeOf(MessageState.REMOVED, AudienceSanction.NONE)).toBe(
+      ModerationBadge.REMOVED,
+    );
+    expect(moderationBadgeOf(MessageState.PUBLISHED, AudienceSanction.NONE)).toBe(
+      ModerationBadge.PUBLISHED,
+    );
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Le debit du tchat est mesure dans une unite DECLAREE.
+ * PROTECTED INVARIANT
+ *   The chat's rate is measured in a DECLARED unit.
  *
- * POURQUOI
- *   La maquette calcule `messages / heures ecoulees` et l'etiquette
- *   « MSG/MIN », puis le compare a un seuil de 60 msg/min. Ce ne sont pas les
- *   memes grandeurs, et l'ecart est d'un facteur soixante.
+ * WHY
+ *   The mockup computes `messages / hours elapsed`, labels it "MSG/MIN", then
+ *   compares it against a threshold of 60 msg/min. Those are not the same
+ *   quantities, and the gap is a factor of sixty.
  */
-describe('le debit du tchat', () => {
-  it('bascule sur la file au-dela du seuil, pas avant', () => {
+describe('the chat rate', () => {
+  it('switches to the queue past the threshold, not before', () => {
     expect(shouldCollapseToQueue(59)).toBe(false);
     expect(shouldCollapseToQueue(60)).toBe(true);
   });

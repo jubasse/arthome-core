@@ -1,17 +1,17 @@
 /**
- * Les vocabulaires fermes du domaine, declares UNE FOIS.
+ * The domain's closed vocabularies, declared ONCE.
  *
- * E2 — la table litterale parallele — est la faute dominante du projet :
- * commise sur huit champs par cinq maquettes, malgre un principe explicite qui
- * l'interdisait. La lecon est qu'un principe ne suffit pas. Ce module est le
- * seul endroit ou un vocabulaire est declare, et `arthome-check-enums` signale
- * toute recopie ailleurs dans le depot.
+ * E2 — the parallel literal table — is this project's dominant fault: committed
+ * on eight fields by five mockups, despite an explicit principle forbidding it.
+ * The lesson is that a principle is not enough. This module is the only place a
+ * vocabulary is declared, and `arthome-check-enums` reports any copy of one of
+ * its values elsewhere in the repository.
  *
- * Chaque vocabulaire porte trois choses :
- *   - la LISTE, en `as const` — c'est elle que la porte decouvre ;
- *   - le TYPE, derive de la liste ;
- *   - un objet de MEMBRES NOMMES, pour que les regles n'ecrivent jamais une
- *     chaine litterale. C'est ce qui rend la porte tenable.
+ * Each vocabulary carries three things:
+ *   - the LIST, as `as const` — this is what the gate discovers;
+ *   - the TYPE, derived from the list;
+ *   - an object of NAMED MEMBERS, so that rules never write a string literal.
+ *     That is what makes the gate bearable in daily use.
  */
 
 export * from './tolerant.js';

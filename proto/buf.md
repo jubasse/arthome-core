@@ -1,14 +1,14 @@
-# proto/ — schémas d'événements Arthome
+# proto/ — Arthome event schemas
 
-Protobuf seul (A3), outillé par `buf`. **Ces schémas décrivent les événements Kafka.**
-Les contrats d'API (OpenAPI, généré depuis zod) et les éventuels services gRPC BFF → service
-sont du ressort de `backend-contracts` : voir `architecture/context-map.md` §10.
+Protobuf only (A3), tooled with `buf`. **These schemas describe the Kafka events.**
+The API contracts (OpenAPI, generated from zod) and any BFF → service gRPC services
+belong to `backend-contracts`: see `architecture/context-map.md` §10.
 
-- Un sujet Kafka par **type d'agrégat** ; plusieurs types de message par sujet
-  → stratégie de sujet du registre : **`RecordNameStrategy`**.
-- Compatibilité du registre : **`BACKWARD`** (les consommateurs montent d'abord).
-- `buf breaking` est bloquant sur `identity`, `catalog`, `ticketing` (**stable**) et
-  ignoré sur les quatre autres (**provisoire**) — voir `buf.yaml`.
-- **Un numéro de champ n'est jamais réutilisé.** Un champ supprimé passe en `reserved`.
-- Toute énumération porte une valeur zéro `_UNSPECIFIED`, traitée comme **neutre** par un
-  consommateur, jamais comme une erreur.
+- One Kafka topic per **aggregate type**; several message types per topic
+  → registry subject strategy: **`RecordNameStrategy`**.
+- Registry compatibility: **`BACKWARD`** (consumers upgrade first).
+- `buf breaking` is blocking on `identity`, `catalog`, `ticketing` (**stable**) and
+  ignored on the four others (**provisional**) — see `buf.yaml`.
+- **A field number is never reused.** A deleted field becomes `reserved`.
+- Every enumeration carries a `_UNSPECIFIED` zero value, treated as **neutral** by a
+  consumer, never as an error.

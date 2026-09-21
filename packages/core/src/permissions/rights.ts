@@ -1,15 +1,15 @@
 /**
- * Les DROITS EFFECTIFS — calcules UNE FOIS ici, servis par le BFF studio.
+ * EFFECTIVE RIGHTS — computed ONCE here, served by the studio BFF.
  *
- * `studio-web` Q1 posait la question et sa position est retenue : le contrat
- * sert LES DEUX — la matiere brute au vocabulaire a huit roles, et les droits
- * effectifs calcules. Sans quoi le studio web, le studio mobile et les gardes
- * de chaque service liraient la meme table trois fois.
+ * `studio-web` Q1 asked the question and its position is adopted: the contract
+ * serves BOTH — the raw material in the eight-role vocabulary, and the computed
+ * effective rights. Without that, the studio web, the studio mobile and each
+ * service's guards would read the same table three times.
  *
- * ⚠ L'ACCES EST L'UNION DES ROLES, JAMAIS UN RANG. Une personne qui tient
- * `video` et `moderation` sur la meme chaine ouvre la reunion des deux. C'est
- * la regle que la barre d'onglets du studio mobile applique, et elle est
- * arithmetique : il n'y a pas de role « superieur ».
+ * ⚠ ACCESS IS THE UNION OF THE ROLES, NEVER A RANK. Someone holding `video` and
+ * `moderation` on the same channel opens the union of the two. That is the rule
+ * the studio mobile tab bar applies, and it is arithmetic: there is no
+ * "superior" role.
  */
 
 import { DatePane, MemberRole, NavigationEntry } from '../vocabulary/people.js';
@@ -76,8 +76,22 @@ const NAVIGATION: Readonly<Record<MemberRole, readonly NavigationEntry[]>> = {
 };
 
 const PANES: Readonly<Record<MemberRole, readonly DatePane[]>> = {
-  artist: [DatePane.PUBLIC, DatePane.TICKETS, DatePane.CHAT, DatePane.TECH, DatePane.CREW, DatePane.REPLAY],
-  production: [DatePane.PUBLIC, DatePane.TICKETS, DatePane.CHAT, DatePane.TECH, DatePane.CREW, DatePane.REPLAY],
+  artist: [
+    DatePane.PUBLIC,
+    DatePane.TICKETS,
+    DatePane.CHAT,
+    DatePane.TECH,
+    DatePane.CREW,
+    DatePane.REPLAY,
+  ],
+  production: [
+    DatePane.PUBLIC,
+    DatePane.TICKETS,
+    DatePane.CHAT,
+    DatePane.TECH,
+    DatePane.CREW,
+    DatePane.REPLAY,
+  ],
   coordination: [DatePane.TECH, DatePane.CREW],
   director: [DatePane.TECH],
   video: [DatePane.TECH],
@@ -93,10 +107,10 @@ const REVENUE_ROLES: readonly MemberRole[] = [
   MemberRole.TREASURY,
 ];
 
-/** `canDecide` = artist ∨ production. Les gestes qui engagent les acheteurs. */
+/** `canDecide` = artist ∨ production. The acts that commit buyers. */
 const DECIDE_ROLES: readonly MemberRole[] = [MemberRole.ARTIST, MemberRole.PRODUCTION];
 
-/** `canOps` = artist ∨ production ∨ les trois postes de regie. */
+/** `canOps` = artist ∨ production ∨ the three run-desk posts. */
 const OPS_ROLES: readonly MemberRole[] = [
   MemberRole.ARTIST,
   MemberRole.PRODUCTION,
@@ -117,14 +131,13 @@ function unionOf<T>(
 }
 
 /**
- * `canRevenue` ne masque pas une colonne : IL DECIDE DE CE QUE LA REPONSE
- * CONTIENT.
+ * `canRevenue` does not hide a column: IT DECIDES WHAT THE RESPONSE CONTAINS.
  *
- * Une regie qui recevrait le brut de billetterie dans sa charge utile et ne
- * l'afficherait pas est une FUITE, pas une regle — la charge utile est en clair
- * dans un WebView, inspectable, et elle survit dans le cache HTTP du telephone
- * (`studio-mobile` §3). Corollaire porte par le contrat : une cle de tri sur un
- * champ absent est REFUSEE, jamais ignoree.
+ * A run desk that received the ticketing gross in its payload and did not show
+ * it is a LEAK, not a rule — the payload is in the clear in a WebView,
+ * inspectable, and it survives in the phone's HTTP cache (`studio-mobile` §3).
+ * The corollary the contract carries: a sort key on an absent field is REFUSED,
+ * never ignored.
  */
 export function canRevenue(heldRoles: readonly MemberRole[]): boolean {
   return heldRoles.some((role) => REVENUE_ROLES.includes(role));
@@ -148,15 +161,14 @@ export interface EffectiveRights {
 }
 
 /**
- * Les droits effectifs d'une personne SUR UNE CHAINE.
+ * A person's effective rights ON ONE CHANNEL.
  *
- * ⚠ SUR UNE CHAINE, et c'est un invariant, pas une commodite. Les regisseurs et
- * les moderateurs ne sont pas des salaries : ce sont des collaborateurs des
- * artistes ou des independants qui travaillent sur plusieurs chaines. Un droit
- * verifie sur « l'appartenance a une chaine quelconque » laisserait un
- * independant lire la file de moderation, les pseudonymes et l'historique des
- * spectateurs d'une chaine qui n'est pas la sienne — ce n'est pas un defaut
- * d'ergonomie, c'est un defaut de PROTECTION DES DONNEES.
+ * ⚠ ON ONE CHANNEL, and that is an invariant, not a convenience. Run-desk staff
+ * and moderators are not employees: they are artists' collaborators or
+ * freelancers working across several channels. A right checked against
+ * "membership of some channel" would let a freelancer read the moderation
+ * queue, the nicknames and the viewer history of a channel that is not theirs —
+ * that is not an ergonomics defect, it is a DATA-PROTECTION defect.
  */
 export function effectiveRightsOf(heldRoles: readonly MemberRole[]): EffectiveRights {
   return {

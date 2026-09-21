@@ -46,40 +46,92 @@ const PAIRS: readonly VocabularyPair[] = [
   { name: 'Locale', values: LOCALES, members: Locale },
   { name: 'MessageDomain', values: MESSAGE_DOMAINS, members: MessageDomain },
   { name: 'ModerationBadge', values: MODERATION_BADGES, members: ModerationBadge },
-  { name: 'ReplayUnavailabilityReason', values: REPLAY_UNAVAILABILITY_REASONS, members: ReplayUnavailabilityReason },
+  {
+    name: 'ReplayUnavailabilityReason',
+    values: REPLAY_UNAVAILABILITY_REASONS,
+    members: ReplayUnavailabilityReason,
+  },
   { name: 'WatchDenialReason', values: WATCH_DENIAL_REASONS, members: WatchDenialReason },
   { name: 'WatchFallbackAction', values: WATCH_FALLBACK_ACTIONS, members: WatchFallbackAction },
 
-  { name: 'PublicationState', values: catalog.PUBLICATION_STATES, members: catalog.PublicationState },
+  {
+    name: 'PublicationState',
+    values: catalog.PUBLICATION_STATES,
+    members: catalog.PublicationState,
+  },
   { name: 'RunState', values: catalog.RUN_STATES, members: catalog.RunState },
   { name: 'DateOutcome', values: catalog.DATE_OUTCOMES, members: catalog.DateOutcome },
   { name: 'DisplayState', values: catalog.DISPLAY_STATES, members: catalog.DisplayState },
   { name: 'ReplayPolicy', values: catalog.REPLAY_POLICIES, members: catalog.ReplayPolicy },
   { name: 'RightsScope', values: catalog.RIGHTS_SCOPES, members: catalog.RightsScope },
   { name: 'BlackoutReason', values: catalog.BLACKOUT_REASONS, members: catalog.BlackoutReason },
-  { name: 'LanguageDependency', values: catalog.LANGUAGE_DEPENDENCIES, members: catalog.LanguageDependency },
+  {
+    name: 'LanguageDependency',
+    values: catalog.LANGUAGE_DEPENDENCIES,
+    members: catalog.LanguageDependency,
+  },
   { name: 'IncidentKind', values: catalog.INCIDENT_KINDS, members: catalog.IncidentKind },
   { name: 'IncidentCause', values: catalog.INCIDENT_CAUSES, members: catalog.IncidentCause },
 
   { name: 'PriceTier', values: commerce.PRICE_TIERS, members: commerce.PriceTier },
   { name: 'PlanTier', values: commerce.PLAN_TIERS, members: commerce.PlanTier },
   { name: 'PlanOpening', values: commerce.PLAN_OPENINGS, members: commerce.PlanOpening },
-  { name: 'SubscriptionState', values: commerce.SUBSCRIPTION_STATES, members: commerce.SubscriptionState },
-  { name: 'PromotionReason', values: commerce.PROMOTION_REASONS, members: commerce.PromotionReason },
+  {
+    name: 'SubscriptionState',
+    values: commerce.SUBSCRIPTION_STATES,
+    members: commerce.SubscriptionState,
+  },
+  {
+    name: 'PromotionReason',
+    values: commerce.PROMOTION_REASONS,
+    members: commerce.PromotionReason,
+  },
   { name: 'OrderKind', values: commerce.ORDER_KINDS, members: commerce.OrderKind },
   { name: 'PayoutState', values: commerce.PAYOUT_STATES, members: commerce.PayoutState },
   { name: 'TaxSupplyKind', values: commerce.TAX_SUPPLY_KINDS, members: commerce.TaxSupplyKind },
-  { name: 'TaxEvidenceKind', values: commerce.TAX_EVIDENCE_KINDS, members: commerce.TaxEvidenceKind },
-  { name: 'TaxJurisdictionLevel', values: commerce.TAX_JURISDICTION_LEVELS, members: commerce.TaxJurisdictionLevel },
+  {
+    name: 'TaxEvidenceKind',
+    values: commerce.TAX_EVIDENCE_KINDS,
+    members: commerce.TaxEvidenceKind,
+  },
+  {
+    name: 'TaxJurisdictionLevel',
+    values: commerce.TAX_JURISDICTION_LEVELS,
+    members: commerce.TaxJurisdictionLevel,
+  },
 
   { name: 'MessageState', values: moderation.MESSAGE_STATES, members: moderation.MessageState },
-  { name: 'ModerationItemState', values: moderation.MODERATION_ITEM_STATES, members: moderation.ModerationItemState },
-  { name: 'AudienceSanction', values: moderation.AUDIENCE_SANCTIONS, members: moderation.AudienceSanction },
-  { name: 'ModerationVerdict', values: moderation.MODERATION_VERDICTS, members: moderation.ModerationVerdict },
-  { name: 'ModerationReason', values: moderation.MODERATION_REASONS, members: moderation.ModerationReason },
-  { name: 'StateChangeOrigin', values: moderation.STATE_CHANGE_ORIGINS, members: moderation.StateChangeOrigin },
+  {
+    name: 'ModerationItemState',
+    values: moderation.MODERATION_ITEM_STATES,
+    members: moderation.ModerationItemState,
+  },
+  {
+    name: 'AudienceSanction',
+    values: moderation.AUDIENCE_SANCTIONS,
+    members: moderation.AudienceSanction,
+  },
+  {
+    name: 'ModerationVerdict',
+    values: moderation.MODERATION_VERDICTS,
+    members: moderation.ModerationVerdict,
+  },
+  {
+    name: 'ModerationReason',
+    values: moderation.MODERATION_REASONS,
+    members: moderation.ModerationReason,
+  },
+  {
+    name: 'StateChangeOrigin',
+    values: moderation.STATE_CHANGE_ORIGINS,
+    members: moderation.StateChangeOrigin,
+  },
   { name: 'ChatMode', values: moderation.CHAT_MODES, members: moderation.ChatMode },
-  { name: 'FilterSeverity', values: moderation.FILTER_SEVERITIES, members: moderation.FilterSeverity },
+  {
+    name: 'FilterSeverity',
+    values: moderation.FILTER_SEVERITIES,
+    members: moderation.FilterSeverity,
+  },
 
   { name: 'MemberRole', values: people.MEMBER_ROLES, members: people.MemberRole },
   { name: 'CrewRole', values: people.CREW_ROLES, members: people.CrewRole },
@@ -87,7 +139,11 @@ const PAIRS: readonly VocabularyPair[] = [
   { name: 'DatePane', values: people.DATE_PANES, members: people.DatePane },
   { name: 'DeviceKind', values: people.DEVICE_KINDS, members: people.DeviceKind },
   { name: 'Surface', values: people.SURFACES, members: people.Surface },
-  { name: 'NotificationChannel', values: people.NOTIFICATION_CHANNELS, members: people.NotificationChannel },
+  {
+    name: 'NotificationChannel',
+    values: people.NOTIFICATION_CHANNELS,
+    members: people.NotificationChannel,
+  },
 ];
 
 describe('named members match their vocabulary', () => {

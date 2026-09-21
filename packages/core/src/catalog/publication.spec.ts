@@ -12,58 +12,66 @@ import {
 } from './publication.js';
 
 /**
- * INVARIANT PROTEGE
- *   Le verrou porte sur le COUPLE `from > to`, jamais sur l'ETAT.
+ * PROTECTED INVARIANT
+ *   The lock is on the PAIR `from > to`, never on the STATE.
  *
- * POURQUOI CE TEST EXISTE
- *   E5 : les fixtures encodent `lockedTransitions: ['scheduled',
- *   'replay-online']` — une liste d'ETATS — et testent l'appartenance de l'etat
- *   courant. La maquette encode des couples. Ce sont deux semantiques, et la
- *   difference n'est pas academique : verrouiller un ETAT empecherait aussi d'y
- *   ENTRER. Une date ne pourrait jamais etre publiee.
+ * WHY THIS TEST EXISTS
+ *   E5: the fixtures encode `lockedTransitions: ['scheduled',
+ *   'replay-online']` — a list of STATES — and test membership of the current
+ *   state. The mockup encodes pairs. Those are two semantics, and the
+ *   difference is not academic: locking a STATE would also prevent ENTERING it.
+ *   A date could never be published.
  */
-describe('le verrou porte sur la transition', () => {
-  it('laisse ENTRER dans un etat verrouille', () => {
-    // C'est le cas que la semantique des fixtures aurait casse.
+describe('the lock is on the transition', () => {
+  it('lets you ENTER a locked state', () => {
+    // This is the case the fixtures' semantics would have broken.
     expect(() =>
       assertTransitionAllowed(PublicationState.DRAFT, PublicationState.SCHEDULED, true),
     ).not.toThrow();
   });
 
-  it("refuse d'en SORTIR, avec la promesse engagee", () => {
+  it('refuses to LEAVE it, with the promise made', () => {
     expect(irreversiblePromiseBlocking(PublicationState.SCHEDULED, PublicationState.DRAFT)).toBe(
       'publication.promise.prices_engaged',
     );
-    expect(irreversiblePromiseBlocking(PublicationState.REPLAY_ONLINE, PublicationState.ENDED)).toBe(
-      'publication.promise.replay_on_sale',
-    );
+    expect(
+      irreversiblePromiseBlocking(PublicationState.REPLAY_ONLINE, PublicationState.ENDED),
+    ).toBe('publication.promise.replay_on_sale');
   });
 
-  it('distingue « sans retour » de « inconnue » — deux refus, deux messages', () => {
-    // Revenir sur un tarif engage n'est pas la meme chose que tenter une
-    // transition qui n'existe pas. Le premier merite une explication.
-    expect(irreversiblePromiseBlocking(PublicationState.RESERVE, PublicationState.DRAFT)).toBeNull();
-    expect(() => assertTransitionAllowed(PublicationState.DRAFT, PublicationState.LIVE, true)).toThrow();
+  it('tells "one-way" apart from "unknown" — two refusals, two messages', () => {
+    // Going back on a committed price is not the same thing as attempting a
+    // transition that does not exist. The first deserves an explanation.
+    expect(
+      irreversiblePromiseBlocking(PublicationState.RESERVE, PublicationState.DRAFT),
+    ).toBeNull();
+    expect(() =>
+      assertTransitionAllowed(PublicationState.DRAFT, PublicationState.LIVE, true),
+    ).toThrow();
   });
 
-  it('laisse aller et revenir entre brouillon et reserve', () => {
-    expect(() => assertTransitionAllowed(PublicationState.DRAFT, PublicationState.RESERVE, true)).not.toThrow();
-    expect(() => assertTransitionAllowed(PublicationState.RESERVE, PublicationState.DRAFT, true)).not.toThrow();
+  it('lets you go back and forth between draft and reserve', () => {
+    expect(() =>
+      assertTransitionAllowed(PublicationState.DRAFT, PublicationState.RESERVE, true),
+    ).not.toThrow();
+    expect(() =>
+      assertTransitionAllowed(PublicationState.RESERVE, PublicationState.DRAFT, true),
+    ).not.toThrow();
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Deux transitions ne sont pas des commandes : elles sont CAUSEES par un
- *   evenement de `streaming`.
+ * PROTECTED INVARIANT
+ *   Two transitions are not commands: they are CAUSED by a `streaming` event.
  *
- * POURQUOI
- *   C'est ce qui laisse `Publication` agregat d'un SEUL contexte, alors qu'elle
- *   semblait a cheval sur trois. La commande « passer a l'antenne » va a
- *   `streaming`, qui seul sait si le flux entre — `catalog` l'APPREND.
+ * WHY
+ *   That is what keeps `Publication` the aggregate of a SINGLE context, when it
+ *   looked as if it straddled three. The "go on air" command goes to
+ *   `streaming`, which alone knows whether the feed is coming in — `catalog`
+ *   LEARNS it.
  */
-describe('ce que le studio ne commande pas', () => {
-  it("n'offre jamais `technical -> live` ni `live -> ended` a un operateur", () => {
+describe('what the studio does not command', () => {
+  it('never offers `technical -> live` or `live -> ended` to an operator', () => {
     const fromTechnical = nextPublicationTransitions(PublicationState.TECHNICAL, true);
     expect(fromTechnical.map((t) => t.to)).not.toContain(PublicationState.LIVE);
 
@@ -71,7 +79,7 @@ describe('ce que le studio ne commande pas', () => {
     expect(fromLive).toEqual([]);
   });
 
-  it('les reconnait comme causees par un evenement', () => {
+  it('recognises them as caused by an event', () => {
     expect(isEventDriven(PublicationState.TECHNICAL, PublicationState.LIVE)).toBe(true);
     expect(isEventDriven(PublicationState.LIVE, PublicationState.ENDED)).toBe(true);
     expect(isEventDriven(PublicationState.DRAFT, PublicationState.SCHEDULED)).toBe(false);
@@ -79,63 +87,69 @@ describe('ce que le studio ne commande pas', () => {
 });
 
 /**
- * INVARIANT PROTEGE
- *   Les transitions offertes sont calculees POUR CET OPERATEUR.
+ * PROTECTED INVARIANT
+ *   The transitions offered are computed FOR THIS OPERATOR.
  *
- * POURQUOI
- *   Seuls le proprietaire et la production deplacent une date ; une regie voit
- *   la fiche et ne la deplace pas. Et c'est ce qui permet au correctif temps
- *   reel de porter les transitions du DESTINATAIRE — sans quoi un bouton
- *   perime resterait affiche, ce qui ne ferait que deplacer le defaut d'un cran.
+ * WHY
+ *   Only the owner and production move a date; a run desk sees the sheet and
+ *   does not move it. And it is what lets the realtime correction carry the
+ *   RECIPIENT's transitions — without which a stale button would stay on
+ *   screen, which would only move the defect one notch along.
  */
-describe('les transitions sont par operateur', () => {
-  it("n'offre rien a qui ne peut pas decider", () => {
+describe('transitions are per operator', () => {
+  it('offers nothing to someone who cannot decide', () => {
     expect(nextPublicationTransitions(PublicationState.DRAFT, false)).toEqual([]);
     expect(nextPublicationTransitions(PublicationState.ENDED, false)).toEqual([]);
   });
 
-  it('offre les deux issues du brouillon a qui peut decider', () => {
+  it('offers both ways out of draft to someone who can decide', () => {
     const offered = nextPublicationTransitions(PublicationState.DRAFT, true).map((t) => t.to);
     expect([...offered].sort()).toEqual(['reserve', 'scheduled']);
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Le RANG suit la machine a etats, jamais l'ordre alphabetique.
+ * PROTECTED INVARIANT
+ *   The RANK follows the state machine, never alphabetical order.
  *
- * POURQUOI
- *   `studio-web` Q5 : le tableau des evenements trie par etat. Sans rang servi,
- *   chaque surface reinventerait `STATE_ORDER` — et l'ordre alphabetique
- *   placerait `draft` apres `replay-online`.
+ * WHY
+ *   `studio-web` Q5: the events table sorts by state. Without a served rank,
+ *   each surface would reinvent `STATE_ORDER` — and alphabetical order would
+ *   put `draft` after `replay-online`.
  */
-describe('le rang des etats', () => {
-  it('suit la machine, pas l\'alphabet', () => {
-    expect(orderRankOf(PublicationState.DRAFT)).toBeLessThan(orderRankOf(PublicationState.SCHEDULED));
-    expect(orderRankOf(PublicationState.LIVE)).toBeLessThan(orderRankOf(PublicationState.REPLAY_ONLINE));
-    // L'alphabet placerait `draft` (d) apres `replay-online` (r) : ce n'est pas
-    // ce qu'on veut, et c'est ce qu'une surface ferait sans rang servi.
-    expect(orderRankOf(PublicationState.DRAFT)).toBeLessThan(orderRankOf(PublicationState.REPLAY_ONLINE));
+describe('the rank of the states', () => {
+  it('follows the machine, not the alphabet', () => {
+    expect(orderRankOf(PublicationState.DRAFT)).toBeLessThan(
+      orderRankOf(PublicationState.SCHEDULED),
+    );
+    expect(orderRankOf(PublicationState.LIVE)).toBeLessThan(
+      orderRankOf(PublicationState.REPLAY_ONLINE),
+    );
+    // The alphabet would put `draft` (d) after `replay-online` (r): that is not
+    // what we want, and it is what a surface would do without a served rank.
+    expect(orderRankOf(PublicationState.DRAFT)).toBeLessThan(
+      orderRankOf(PublicationState.REPLAY_ONLINE),
+    );
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   La liste de controle qui fait foi a SEPT elements, et elle rend les
- *   MANQUANTS — jamais un pourcentage.
+ * PROTECTED INVARIANT
+ *   The authoritative checklist has SEVEN items, and it returns the MISSING
+ *   ones — never a percentage.
  *
- * POURQUOI
- *   `studio-web` Q7 : les fixtures en portent quatre, la fiche en affiche sept,
- *   et les deux repondent a la meme question. Les quatre sont un sous-ensemble
- *   arbitraire. Et l'ecran compte les manques (« publier — 3 manques ») : un
- *   pourcentage l'obligerait a recalculer ce que le serveur sait deja.
+ * WHY
+ *   `studio-web` Q7: the fixtures carry four, the sheet shows seven, and both
+ *   answer the same question. The four are an arbitrary subset. And the screen
+ *   counts what is missing ("publish — 3 missing"): a percentage would force it
+ *   to recompute what the server already knows.
  */
-describe('la porte de publication', () => {
-  it('porte sept elements bloquants', () => {
+describe('the publication gate', () => {
+  it('carries seven blocking items', () => {
     expect(PUBLICATION_CHECKLIST_ITEMS).toHaveLength(7);
   });
 
-  it('rend la liste des manquants, pas un compte', () => {
+  it('returns the list of missing items, not a count', () => {
     const readiness = publicationReadiness(['poster', 'description', 'capacity'], []);
     expect(readiness.ready).toBe(false);
     expect(readiness.missing).toContain('technical-check-passed');
@@ -143,9 +157,9 @@ describe('la porte de publication', () => {
     expect(readiness.missing).toHaveLength(4);
   });
 
-  it('ne bloque PAS sur les chapitres ni sur le moderateur affecte', () => {
-    // On doit pouvoir publier une date sans chapitres, et un poste non affecte
-    // se rattrape jusqu'au dernier jour. Ils sont des avertissements.
+  it('does NOT block on chapters or on the assigned moderator', () => {
+    // It must be possible to publish a date without chapters, and an unassigned
+    // post can be filled up to the last day. They are warnings.
     const readiness = publicationReadiness([...PUBLICATION_CHECKLIST_ITEMS], []);
     expect(readiness.ready).toBe(true);
     expect(readiness.warnings).toHaveLength(2);

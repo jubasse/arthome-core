@@ -1,41 +1,40 @@
 /**
- * Les deux horloges — celle du spectateur et celle de la salle.
+ * The two clocks — the viewer's and the venue's.
  *
- * D3 — `shared/catalogue.json` stocke `venue.utcOffsetMin`, un decalage FIGE,
- * et `helpers.js` en deduit l'abreviation d'ete ou d'hiver en le comparant a
- * une table. La REGLE est juste et se porte telle quelle : heure du spectateur
- * d'abord, heure de salle en second quand elle differe. La FORME ne survit pas :
- * un decalage fixe ne passe pas un changement d'heure, et une date programmee
- * dans six mois s'affiche a la mauvaise heure.
+ * D3 — `shared/catalogue.json` stores `venue.utcOffsetMin`, a FROZEN offset,
+ * and `helpers.js` derives the summer or winter abbreviation by comparing it
+ * against a table. The RULE is right and ports as it stands: viewer's time
+ * first, venue time second when it differs. The SHAPE does not survive: a fixed
+ * offset does not cross a daylight-saving change, and a date scheduled six
+ * months out displays at the wrong hour.
  *
- * E7 — et la maquette TV lit `fixtures.geography.viewerUtcOffsetMin`, qui
- * N'EXISTE NULLE PART : il vaut `undefined`, donc « l'heure a la salle » est en
- * realite calculee contre UTC. La surface n'avait aucune entree pour le fuseau
- * du spectateur.
+ * E7 — and the TV mockup reads `fixtures.geography.viewerUtcOffsetMin`, which
+ * EXISTS NOWHERE: it is `undefined`, so "time at the venue" is in fact computed
+ * against UTC. The surface had no input at all for the viewer's time zone.
  *
- * ⚠ Ce module NE CALCULE PAS un decalage a partir d'un identifiant IANA : la
- * base des fuseaux n'est pas embarquee, et l'embarquer couterait des centaines
- * de kilo-octets dans cinq applications. Le decalage est SERVI par le serveur,
- * recalcule pour l'instant concerne. Le calcul a donc lieu UNE FOIS.
+ * ⚠ This module DOES NOT compute an offset from an IANA identifier: the time
+ * zone database is not bundled, and bundling it would cost hundreds of
+ * kilobytes in five applications. The offset is SERVED by the server,
+ * recomputed for the instant concerned. So the computation happens ONCE.
  */
 
 import { DomainError } from '../kernel/errors.js';
 import { toEpochMs, type Instant, MINUTE_MS } from './instant.js';
 
-/** Le fuseau d'une salle, servi a cote de l'instant UTC qu'il qualifie. */
+/** A venue's time zone, served alongside the UTC instant it qualifies. */
 export interface VenueClock {
-  /** Identifiant IANA : « Europe/Paris ». Jamais une abreviation. */
+  /** IANA identifier: "Europe/Paris". Never an abbreviation. */
   readonly timeZone: string;
-  /** Le decalage CALCULE PAR LE SERVEUR pour l'instant qualifie, en minutes. */
+  /** The offset COMPUTED BY THE SERVER for the qualified instant, in minutes. */
   readonly utcOffsetMinutes: number;
 }
 
 const IANA_SHAPE = /^[A-Za-z]+(?:[_+-][A-Za-z0-9]+)*(?:\/[A-Za-z0-9]+(?:[_+-][A-Za-z0-9]+)*)+$/;
 
 /**
- * Verifie la FORME, jamais l'existence : la base IANA n'est pas embarquee.
- * « Europe/Paris » passe, « CEST » et « +02:00 » sont refuses — ce sont
- * precisement les deux formes que D3 remplace.
+ * Validates SHAPE, never existence: the IANA database is not bundled.
+ * "Europe/Paris" passes; "CEST" and "+02:00" are refused — precisely the two
+ * forms D3 replaces.
  */
 export function venueClock(timeZone: string, utcOffsetMinutes: number): VenueClock {
   if (!IANA_SHAPE.test(timeZone)) {
@@ -51,23 +50,23 @@ export function venueClock(timeZone: string, utcOffsetMinutes: number): VenueClo
 }
 
 /**
- * Les deux horloges different-elles pour cet instant ?
+ * Do the two clocks differ for this instant?
  *
- * Le decalage du SPECTATEUR est un argument, jamais un global : c'est
- * exactement l'etat global que `helpers.js` portait, et deux requetes
- * concurrentes d'un service le partageraient.
+ * The VIEWER's offset is an argument, never a global: that is exactly the
+ * global state `helpers.js` carried, and two concurrent requests of one service
+ * would share it.
  */
 export function clocksDiffer(venue: VenueClock, viewerUtcOffsetMinutes: number): boolean {
   return venue.utcOffsetMinutes !== viewerUtcOffsetMinutes;
 }
 
 /**
- * Le decalage de JOUR entre les deux horloges : -1, 0 ou +1.
+ * The DAY shift between the two clocks: -1, 0 or +1.
  *
- * Le studio affiche « la veille » ou « le lendemain » quand le passage d'une
- * horloge a l'autre change de jour. C'est faux avec un decalage fige, et c'est
- * le cas qui a fait echouer D3 : une date a 23 h 30 heure de salle peut etre le
- * lendemain chez le spectateur.
+ * The studio shows "the day before" or "the next day" when moving from one
+ * clock to the other changes the date. That is wrong with a frozen offset, and
+ * it is the case that made D3 fail: a date at 23:30 venue time can be the next
+ * day for the viewer.
  */
 export function dayShift(
   instant: Instant,
@@ -82,10 +81,10 @@ export function dayShift(
 }
 
 /**
- * Les composantes murales d'un instant dans un fuseau donne.
+ * The wall-clock components of an instant in a given offset.
  *
- * Rendues comme des NOMBRES, jamais comme une chaine : le formatage est de la
- * presentation et depend de la locale.
+ * Returned as NUMBERS, never as a string: formatting is presentation and
+ * depends on the locale.
  */
 export interface WallClock {
   readonly year: number;

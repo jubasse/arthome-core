@@ -1,24 +1,24 @@
 /**
- * L'erreur de domaine porte un CODE, jamais une phrase.
+ * A domain error carries a CODE, never a sentence.
  *
- * Decision « i18n par codes » : l'API rend des codes et leurs parametres,
- * enveloppe d'erreur comprise. Un message anglais qui remonte jusqu'a un ecran
- * fait fuir l'i18n des la premiere erreur de formulaire — et c'est le
- * formulaire de paiement qui la fait fuir en premier.
+ * The "i18n by codes" decision: the API returns codes and their parameters,
+ * error envelope included. An English message reaching a screen leaks i18n from
+ * the first form error onwards — and it is the payment form that leaks first.
  */
 
-/** Les parametres d'un message, resolus par la surface contre son catalogue. */
+/** Message parameters, resolved by the surface against its catalogue. */
 export type MessageParams = Readonly<Record<string, string | number | boolean>>;
 
 /**
- * La NATURE d'un echec, que `studio-mobile` a demandee et qui manquait.
+ * The NATURE of a failure, which `studio-mobile` asked for and which was
+ * missing.
  *
- * C'est la decision qu'une personne en garde doit prendre en dix secondes :
- * reessayer, comprendre, ou decrocher le telephone d'astreinte.
+ * This is the decision an on-call person has to make in ten seconds: retry,
+ * understand, or pick up the escalation phone.
  *
- * `offline_forbidden` n'est JAMAIS emise par un serveur : c'est la nature d'un
- * refus local, avant tout envoi. Elle est au vocabulaire pour que la surface
- * n'ait qu'une seule forme d'erreur a rendre.
+ * `offline_forbidden` is NEVER emitted by a server: it is the nature of a local
+ * refusal, before anything is sent. It is in the vocabulary so the surface has
+ * a single error shape to render.
  */
 export const FAILURE_NATURES = ['refused', 'unavailable', 'offline_forbidden'] as const;
 export type FailureNature = (typeof FAILURE_NATURES)[number];
@@ -35,7 +35,7 @@ export interface DomainErrorInit {
   readonly nature?: FailureNature;
 }
 
-/** Une violation d'invariant. Elle ne porte pas de texte : elle porte un code. */
+/** An invariant violation. It carries no text: it carries a code. */
 export class DomainError extends Error {
   public readonly code: string;
   public readonly params: MessageParams;

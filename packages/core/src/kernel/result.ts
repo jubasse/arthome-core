@@ -1,8 +1,8 @@
 /**
- * Un resultat explicite, pour les regles qui refusent sans que ce soit un bogue.
+ * An explicit result, for rules that refuse without that being a bug.
  *
- * `decideWatch` en est le cas type : un refus de droit est une REPONSE, pas une
- * exception — et il porte un code que cinq surfaces affichent differemment.
+ * `decideWatch` is the archetype: an entitlement refusal is an ANSWER, not an
+ * exception — and it carries a code that five surfaces display differently.
  */
 
 import type { MessageParams } from './errors.js';

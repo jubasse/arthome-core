@@ -1,31 +1,31 @@
 /**
- * Le VERSEMENT — commission, TVA par juridiction, net, retenue.
+ * The PAYOUT — commission, VAT by jurisdiction, net, withholding.
  *
- * ⚠ D5 EST LE PIEGE LE PLUS COUTEUX DU DOSSIER, et il faut le dire avant tout
- * le reste. `fixtures.js:1297-1324` calcule :
+ * ⚠ D5 IS THE MOST EXPENSIVE TRAP IN THE FILE, and it has to be said before
+ * anything else. `fixtures.js:1297-1324` computes:
  *
- *     commission = round(gross x 0,12)
- *     vat        = round(gross x vatRate)     ← un taux UNIQUE, sur le BRUT
+ *     commission = round(gross x 0.12)
+ *     vat        = round(gross x vatRate)     ← a SINGLE rate, on the GROSS
  *     net        = gross − commission − vat
  *
- * Cela RESSEMBLE a une regle metier eprouvee — meme place, meme ton, meme
- * precision a l'euro. Ce n'en est pas une : elle produit un nombre plausible
- * pour une maquette et ne repond a AUCUNE des trois questions fiscales — qui
- * doit la TVA, sur quelle assiette, qui en est redevable.
+ * It LOOKS like a business rule that has been proven — same place, same tone,
+ * same to-the-euro precision. It is not one: it produces a plausible number for
+ * a mockup and answers NONE of the three tax questions — who owes the VAT, on
+ * what base, who is liable for it.
  *
- * Ce qui fait autorite dans `shared/` et qui est porte tel quel :
- *   commission 12 % · delai 14 jours · arrondi a l'unite sur CHAQUE composante
- *   prise separement · retenue tant qu'une issue est ouverte.
+ * What is authoritative in `shared/` and ports as it stands:
+ *   commission 12% · delay 14 days · rounding to the unit on EACH component
+ *   taken separately · withholding while an outcome is open.
  *
- * Le modele retenu (D-015) : COMMISSIONNAIRE — Arthome agit en son nom propre,
- * l'assiette de la TVA est le billet entier, le taux est celui du pays du
- * spectateur, le redevable est Arthome. **Et la commission porte sur le HT**,
- * parce que sur le TTC les 12 % annonces aux artistes varieraient avec le pays
- * de l'acheteur.
+ * The model adopted (D-015): COMMISSIONNAIRE — Arthome acts in its own name,
+ * the VAT base is the whole ticket, the rate is that of the viewer's country,
+ * the liable party is Arthome. **And the commission is taken on the net-of-tax
+ * amount**, because on the tax-inclusive amount the 12% announced to artists
+ * would vary with the buyer's country.
  *
- * ⚠ La validation juridique n'est PAS faite : voir l'avertissement en tete
- * d'`adr-payments.md`. Ce module calcule ; il ne tranche pas une question de
- * droit.
+ * ⚠ Legal validation is NOT done: see the warning at the top of
+ * `adr-payments.md`. This module computes; it does not settle a question of
+ * law.
  */
 
 import type { Instant } from '../kernel/clock.js';
@@ -36,37 +36,37 @@ import type { DateOutcome } from '../vocabulary/catalog.js';
 import { DateOutcome as Outcome } from '../vocabulary/catalog.js';
 import { PayoutState, TaxJurisdictionLevel, TaxSupplyKind } from '../vocabulary/commerce.js';
 
-/** `commissionRate: 0.12` de `catalogue.json`, en points de base. */
+/** `commissionRate: 0.12` from `catalogue.json`, in basis points. */
 export const COMMISSION_RATE_BPS: BasisPoints = basisPoints(1_200);
 /** `payoutDelayDays: 14`. */
 export const PAYOUT_DELAY_DAYS = 14;
 
 /**
- * Une ligne de TVA, PAR JURIDICTION — et non par marche de facturation.
+ * One VAT line, PER JURISDICTION — and not per billing market.
  *
- * Un marche de facturation est une notion de PRIX — dans quelle devise on vend.
- * **Ce n'est pas une notion de TAXE**, et les confondre etait la faute.
- * Le pays ne suffit pas davantage : environ 9 000 juridictions aux Etats-Unis,
- * et au Royaume-Uni un taux qui depend du couple juridiction x nature de la
- * prestation (l'arret Derby Quad a juge que l'exoneration des places de theatre
- * ne s'etend pas au direct diffuse).
+ * A billing market is a PRICING notion — which currency we sell in. **It is
+ * never a TAX notion**, and confusing the two was the fault.
+ * The country is no more sufficient: roughly 9,000 jurisdictions in the United
+ * States, and in the United Kingdom a rate that depends on the pair
+ * jurisdiction x nature of the supply (the Derby Quad decision held that the
+ * theatre-ticket exemption does not extend to a streamed live show).
  */
 export interface VatLine {
   readonly jurisdictionCode: string;
   readonly jurisdictionLevel: TaxJurisdictionLevel;
   readonly supplyKind: TaxSupplyKind;
-  /** LE TAUX APPLIQUE A LA VENTE, conserve — jamais le taux courant. */
+  /** THE RATE APPLIED AT THE SALE, kept — never the current rate. */
   readonly rateBps: BasisPoints;
-  /** L'assiette : le HT. */
+  /** The base: the net-of-tax amount. */
   readonly base: Money;
   readonly amount: Money;
 }
 
 /**
- * Extrait une ligne de TVA d'un montant TTC.
+ * Extracts a VAT line from a tax-inclusive amount.
  *
- * Le prix affiche a un consommateur est TTC (convention B2C) : la TVA s'en
- * EXTRAIT, elle ne s'y ajoute pas.
+ * A price shown to a consumer is tax-inclusive (B2C convention): VAT is
+ * EXTRACTED from it, it is not added to it.
  */
 export function vatLineFor(
   grossTtc: Money,
@@ -103,11 +103,11 @@ export interface PayoutBreakdown {
 }
 
 /**
- * Le calcul, dans l'ordre qui compte.
+ * The computation, in the order that matters.
  *
- * Chaque composante est arrondie SEPAREMENT, et le HT est obtenu par
- * SOUSTRACTION — jamais par `applyRate(ttc, 10000 − taux)`, qui derive d'un
- * centime des que l'arrondi tombe sur une moitie.
+ * Each component is rounded SEPARATELY, and the net-of-tax amount is obtained
+ * by SUBTRACTION — never by `applyRate(ttc, 10000 − rate)`, which drifts by a
+ * cent as soon as the rounding lands on a half.
  */
 export function payoutOf(input: PayoutInput): PayoutBreakdown {
   const currency = input.grossTtc.currencyCode;
@@ -129,23 +129,23 @@ export function payoutOf(input: PayoutInput): PayoutBreakdown {
 }
 
 /**
- * L'echeance : fin du direct + 14 jours.
+ * The due date: end of the live show + 14 days.
  *
- * ⚠ Depuis la FIN DU DIRECT, pas depuis le paiement — d'ou la consommation de
- * `streaming.run.ended.v1` par `payouts`. Un spectateur qui achete trois mois
- * a l'avance ne declenche pas un versement trois mois avant le spectacle.
+ * ⚠ From the END OF THE LIVE SHOW, not from the payment — hence `payouts`
+ * consuming `streaming.run.ended.v1`. A viewer buying three months ahead does
+ * not trigger a payout three months before the show.
  */
 export function dueAtFor(runEndedAt: Instant): Instant {
   return fromEpochMs(toEpochMs(runEndedAt) + PAYOUT_DELAY_DAYS * DAY_MS);
 }
 
 /**
- * L'etat d'un versement.
+ * A payout's state.
  *
- * L'ordre des tests est la preseance, et il n'est pas arbitraire : une
- * suspension bancaire prime sur tout, parce qu'elle protege contre un virement
- * vers un compte dont on doute. Vient ensuite l'issue, qui engage de l'argent
- * du spectateur.
+ * The order of the tests is the precedence, and it is not arbitrary: a banking
+ * suspension outranks everything, because it protects against a transfer to an
+ * account we have doubts about. Then comes the outcome, which commits the
+ * viewer's money.
  */
 export function payoutStateFor(
   outcome: DateOutcome | null,
@@ -159,20 +159,20 @@ export function payoutStateFor(
 }
 
 /**
- * L'AVOIR — une monnaie interne, donc un passif.
+ * THE CREDIT NOTE — an internal currency, therefore a liability.
  *
- * `storefront-web` le releve : il apparait dans la copie — « interrompue,
- * avoirs emis » — et NULLE PART AILLEURS dans le dossier.
+ * `storefront-web` points it out: it appears in the copy — "interrupted,
+ * credits issued" — and NOWHERE ELSE in the file.
  *
- * ⚠ Le piege, ecrit avant de le rencontrer : quand un spectateur paie avec un
- * avoir, Stripe recoit MOINS, mais l'artiste de la date achetee doit etre paye
- * EN ENTIER — il n'est pour rien dans l'incident d'un autre spectacle. La
- * plateforme finance donc cette part sur ses propres fonds.
+ * ⚠ The trap, written down before meeting it: when a viewer pays with a credit,
+ * Stripe receives LESS, but the artist of the date bought must be paid IN FULL
+ * — they had nothing to do with another show's incident. The platform therefore
+ * funds that share out of its own money.
  *
- * D'ou la portee retenue (D-017) : un avoir est emis pour une issue
- * `interrupted` et n'est redeployable que sur LA MEME CHAINE. La retenue de
- * versement deja en place sur cette chaine couvre alors l'engagement — on
- * retient ce qu'on devra re-verser.
+ * Hence the scope adopted (D-017): a credit is issued for an `interrupted`
+ * outcome and can only be redeployed on THE SAME CHANNEL. The payout
+ * withholding already in place on that channel then covers the commitment — we
+ * withhold what we will have to pay out again.
  */
 export const CREDIT_VALIDITY_MONTHS = 12;
 

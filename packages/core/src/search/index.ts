@@ -1,27 +1,25 @@
 /**
- * La normalisation des criteres de recherche, et leur SIGNATURE.
+ * Normalising search criteria, and their SIGNATURE.
  *
- * `storefront-web` (forme 13) : la deduplication « deja enregistree » s'affiche
- * sur DEUX ecrans et determine une ECRITURE. La maquette la calcule cote
- * client : c'est donc une valeur de `@arthome/core`, normalisee une fois,
- * jamais deux.
+ * `storefront-web` (shape 13): the "already saved" deduplication appears on TWO
+ * screens and determines a WRITE. The mockup computes it client-side: so it is
+ * a value of `@arthome/core`, normalised once, never twice.
  *
- * Et une exigence que rien ne portait : les valeurs de filtre sont des
- * IDENTIFIANTS STABLES, jamais des indices de tableau. La maquette filtre sur
- * `fCats: [1]` — une POSITION, qui ne survit ni a une URL partageable, ni a une
- * recherche enregistree, ni a l'insertion d'une discipline.
+ * And a requirement nothing carried: filter values are STABLE IDENTIFIERS,
+ * never array indices. The mockup filters on `fCats: [1]` — a POSITION, which
+ * survives neither a shareable URL, nor a saved search, nor the insertion of a
+ * discipline.
  */
 
 import { DomainError } from '../kernel/errors.js';
 
 /**
- * La VERSION de la grammaire des criteres.
+ * The VERSION of the criteria grammar.
  *
- * `storefront-web` Q24 : une recherche enregistree survit a des mois et a des
- * montees de version. Si la grammaire change, elle doit soit se rejouer a
- * l'identique, soit **se declarer perimee** — jamais disparaitre en silence.
- * Une serialisation opaque de l'etat d'ecran, comme celle de la maquette, ne le
- * permet pas.
+ * `storefront-web` Q24: a saved search survives months and version upgrades. If
+ * the grammar changes, it must either replay identically or **declare itself
+ * stale** — never vanish in silence. An opaque serialisation of screen state,
+ * like the mockup's, does not allow that.
  */
 export const CRITERIA_VERSION = 1;
 
@@ -54,19 +52,22 @@ export function emptyCriteria(): SearchCriteria {
 }
 
 function normalizeList(values: readonly string[]): readonly string[] {
-  return [...new Set(values.map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0))].sort();
+  return [
+    ...new Set(
+      values.map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0),
+    ),
+  ].sort();
 }
 
 /**
- * Normalise des criteres pour que DEUX SAISIES EQUIVALENTES produisent la meme
- * chose.
+ * Normalises criteria so that TWO EQUIVALENT ENTRIES produce the same thing.
  *
- * Trois normalisations, et chacune corrige un cas reel :
- *   - les listes sont TRIEES et DEDUPLIQUEES — deux disciplines cochees dans
- *     deux ordres sont la meme recherche ;
- *   - le texte est reduit et mis en minuscules ;
- *   - un intervalle inverse est remis a l'endroit plutot que refuse : une
- *     recherche n'est pas un formulaire de paiement.
+ * Three normalisations, and each corrects a real case:
+ *   - lists are SORTED and DEDUPLICATED — two disciplines ticked in two orders
+ *     are the same search;
+ *   - the text is collapsed and lowercased;
+ *   - an inverted range is put back the right way round rather than refused: a
+ *     search is not a payment form.
  */
 export function normalizeSearchCriteria(criteria: SearchCriteria): SearchCriteria {
   const [priceMin, priceMax] = orderedPair(criteria.priceMinMinor, criteria.priceMaxMinor);
@@ -85,18 +86,21 @@ export function normalizeSearchCriteria(criteria: SearchCriteria): SearchCriteri
   };
 }
 
-function orderedPair<T extends number | string>(left: T | null, right: T | null): readonly [T | null, T | null] {
+function orderedPair<T extends number | string>(
+  left: T | null,
+  right: T | null,
+): readonly [T | null, T | null] {
   if (left === null || right === null) return [left, right];
   return left <= right ? [left, right] : [right, left];
 }
 
 /**
- * La SIGNATURE — ce qui repond « deja enregistree » sur deux ecrans.
+ * The SIGNATURE — what answers "already saved" on two screens.
  *
- * Deterministe et stable : elle ne depend ni de l'ordre de saisie, ni de la
- * casse, ni des espaces. C'est une representation canonique, pas un hachage :
- * un hachage aurait exige une source de hachage — donc une API de plateforme —
- * que ce paquet s'interdit, et il serait illisible dans un journal.
+ * Deterministic and stable: it depends on neither entry order, nor case, nor
+ * whitespace. It is a canonical representation, not a hash: a hash would have
+ * required a hashing source — hence a platform API — which this package forbids
+ * itself, and it would be unreadable in a log.
  */
 export function criteriaSignature(criteria: SearchCriteria): string {
   const normalized = normalizeSearchCriteria(criteria);
@@ -117,27 +121,26 @@ export function sameCriteria(left: SearchCriteria, right: SearchCriteria): boole
   return criteriaSignature(left) === criteriaSignature(right);
 }
 
-/** Ce qu'il advient d'une recherche enregistree apres un changement de grammaire. */
+/** What becomes of a saved search after a grammar change. */
 export type CriteriaMigration =
   | { readonly status: 'current'; readonly criteria: SearchCriteria }
   | { readonly status: 'migrated'; readonly criteria: SearchCriteria }
   | { readonly status: 'stale'; readonly fromVersion: number };
 
 /**
- * Rejoue une recherche enregistree contre la grammaire courante.
+ * Replays a saved search against the current grammar.
  *
- * Elle se rejoue, ou elle **se declare perimee**. Jamais elle ne disparait, et
- * jamais elle ne s'execute en silence sur des criteres qu'elle ne comprend
- * plus — ce qui rendrait un compteur de correspondances faux sans que personne
- * le sache.
+ * It replays, or it **declares itself stale**. It never vanishes, and it never
+ * runs in silence on criteria it no longer understands — which would make a
+ * match counter wrong with nobody knowing.
  */
 export function migrateCriteria(criteria: SearchCriteria): CriteriaMigration {
   if (criteria.version === CRITERIA_VERSION) {
     return { status: 'current', criteria: normalizeSearchCriteria(criteria) };
   }
   if (criteria.version > CRITERIA_VERSION) {
-    // Une version FUTURE : l'application est en retard sur le serveur. On ne
-    // devine pas, on le dit.
+    // A FUTURE version: the application is behind the server. We do not guess,
+    // we say so.
     return { status: 'stale', fromVersion: criteria.version };
   }
   return { status: 'stale', fromVersion: criteria.version };

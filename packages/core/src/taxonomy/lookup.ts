@@ -1,31 +1,30 @@
 /**
- * Les regles de lecture de la taxonomie.
+ * The rules for reading the taxonomy.
  *
- * Toutes prennent l'artefact en ARGUMENT. `helpers.js` les ecrivait contre un
- * index global (`byId.category`, `byId.genre`), ce qui est precisement l'etat
- * global qu'un paquet importe par sept services ne peut pas porter.
+ * All of them take the artefact as an ARGUMENT. `helpers.js` wrote them against
+ * a global index (`byId.category`, `byId.genre`), which is exactly the global
+ * state a package imported by seven services cannot carry.
  */
 
 import type { Discipline, Genre, Tag, Taxonomy } from './types.js';
 
 /**
- * Les disciplines dans le RANG EDITORIAL declare, du plus grand public au plus
- * pointu, familles melees.
+ * The disciplines in the declared EDITORIAL RANK, from the most popular to the
+ * most specialised, families mixed.
  *
- * B1 — le cahier des charges TV annoncait « les neuf disciplines » ; il y en a
- * VINGT ET UNE (14 en Musique, 7 en Scene). Neuf tuiles tiennent sur un
- * televiseur, vingt et une non — c'est une contrainte de mise en page qui
- * remonte jusqu'au modele de lecture, et la reponse est le groupement par
- * univers, pas un tri invente par la surface.
+ * B1 — the TV brief announced "the nine disciplines"; there are TWENTY-ONE
+ * (14 in Music, 7 in Stage). Nine tiles fit on a television, twenty-one do not
+ * — a layout constraint that reaches all the way up to the reading model, and
+ * the answer is grouping by universe, not a sort invented by the surface.
  *
- * La copie est deliberee : `sort` mute en place, et muter l'artefact servi
- * serait un effet de bord sur une donnee partagee par tout le processus.
+ * The copy is deliberate: `sort` mutates in place, and mutating the served
+ * artefact would be a side effect on data shared by the whole process.
  */
 export function disciplinesInEditorialOrder(taxonomy: Taxonomy): readonly Discipline[] {
   return [...taxonomy.disciplines].sort((left, right) => left.rank - right.rank);
 }
 
-/** Les disciplines d'un univers, dans le rang editorial. */
+/** A universe's disciplines, in editorial rank. */
 export function disciplinesOfFamily(taxonomy: Taxonomy, familyId: string): readonly Discipline[] {
   return disciplinesInEditorialOrder(taxonomy).filter(
     (discipline) => discipline.familyId === familyId,
@@ -37,12 +36,12 @@ export function findDiscipline(taxonomy: Taxonomy, disciplineId: string): Discip
 }
 
 /**
- * Un sous-genre se cherche DANS SA DISCIPLINE.
+ * A sub-genre is looked up WITHIN ITS DISCIPLINE.
  *
- * `helpers.js` exposait `genre(id)` a un seul argument, et la maquette du
- * studio l'appelait ainsi alors que la fonction en attend deux — un defaut
- * releve par `studio-web` (incoherence 10). Deux disciplines peuvent porter un
- * sous-genre du meme nom : `contemporary` existe en theatre et en danse.
+ * `helpers.js` exposed `genre(id)` with a single argument, and the studio
+ * mockup called it that way while the function expects two — a defect reported
+ * by `studio-web` (inconsistency 10). Two disciplines can carry a sub-genre of
+ * the same name: `contemporary` exists in theatre and in dance.
  */
 export function findGenre(taxonomy: Taxonomy, disciplineId: string, genreId: string): Genre | null {
   const discipline = findDiscipline(taxonomy, disciplineId);
@@ -58,11 +57,11 @@ export function findTag(taxonomy: Taxonomy, tagId: string): Tag | null {
 }
 
 /**
- * Une etiquette correspond-elle a un terme libre ?
+ * Does a tag match a free-text term?
  *
- * Compare l'identifiant ET les alias, insensible a la casse et aux accents —
- * « opera » doit trouver « opéra ». C'est la meme normalisation que la
- * recherche, et elle vit ici pour n'etre ecrite qu'une fois.
+ * Compares the identifier AND the aliases, insensitive to case and accents —
+ * "opera" must find "opéra". It is the same normalisation as search, and it
+ * lives here so it is written only once.
  */
 export function matchesTag(tag: Tag, term: string): boolean {
   const needle = normalizeTerm(term);
@@ -72,11 +71,11 @@ export function matchesTag(tag: Tag, term: string): boolean {
 }
 
 /**
- * Normalise un terme pour la comparaison : minuscules, sans accents, sans
- * ponctuation de separation.
+ * Normalises a term for comparison: lowercase, no accents, no separating
+ * punctuation.
  *
- * `normalize('NFD')` est de l'ECMAScript, pas une API navigateur : disponible
- * sous Node, Metro et Hermes. C'est ce qui permet de rester sans `Intl`.
+ * `normalize('NFD')` is ECMAScript, not a browser API: available under Node,
+ * Metro and Hermes. That is what allows us to stay free of `Intl`.
  */
 export function normalizeTerm(term: string): string {
   return term
@@ -87,22 +86,21 @@ export function normalizeTerm(term: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-/** Ce qu'un terme libre a designe dans la taxonomie. */
+/** What a free-text term designated in the taxonomy. */
 export interface TermMatch {
   readonly kind: 'discipline' | 'genre' | 'tag';
   readonly id: string;
-  /** Renseigne pour un sous-genre : sa discipline. */
+  /** Filled in for a sub-genre: its discipline. */
   readonly disciplineId: string | null;
 }
 
 /**
- * Resout un terme libre en une reference taxonomique.
+ * Resolves a free-text term into a taxonomic reference.
  *
- * L'ordre de recherche est celui de la specificite decroissante : une
- * discipline d'abord, puis un sous-genre, puis une etiquette. Il n'est pas
- * arbitraire — « jazz » est une discipline ET pourrait etre une etiquette de
- * style ; c'est la discipline qui doit gagner, sinon une recherche sur « jazz »
- * rend une poignee de dates etiquetees au lieu de la discipline entiere.
+ * The lookup order is that of decreasing specificity: a discipline first, then
+ * a sub-genre, then a tag. It is not arbitrary — "jazz" is a discipline AND
+ * could be a style tag; the discipline must win, otherwise a search for "jazz"
+ * returns a handful of tagged dates instead of the whole discipline.
  */
 export function resolveTerm(taxonomy: Taxonomy, term: string): TermMatch | null {
   const needle = normalizeTerm(term);

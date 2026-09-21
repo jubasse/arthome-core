@@ -1,18 +1,18 @@
-// Événements du contexte `ticketing` — ce que le spectateur achète, et ce que
-// cet achat ouvre.
+// Events of the `ticketing` context — what the viewer buys, and what that
+// purchase opens.
 //
-// Ce contexte absorbe les deux orphelins C7 (abonnements) et C8 (boutique).
-// Son langage n'est pas « les billets » : c'est le COMMERCE DU SPECTATEUR.
-// Motif : même client Stripe, même enveloppe de commande, même flux de
-// versement, même politique de remboursement — et `plan.opens[]` conditionne
-// le droit de lire, que ce contexte sert déjà.
+// This context absorbs the two orphans C7 (subscriptions) and C8 (shop).
+// Its language is not "tickets": it is THE VIEWER'S COMMERCE.
+// Reason: same Stripe customer, same order envelope, same payout flow, same
+// refund policy — and `plan.opens[]` conditions the right to watch, which this
+// context already serves.
 //
-// Sujets Kafka :
-//   arthome.ticketing.date_sales    clé date_id     12 partitions
-//   arthome.ticketing.order         clé order_id
-//   arthome.ticketing.subscription  clé account_id
+// Kafka topics:
+//   arthome.ticketing.date_sales    key date_id     12 partitions
+//   arthome.ticketing.order         key order_id
+//   arthome.ticketing.subscription  key account_id
 //
-// Maturité : STABLE (palier 3).
+// Maturity: STABLE (milestone 3).
 syntax = "proto3";
 
 package arthome.ticketing.v1;
@@ -20,7 +20,7 @@ package arthome.ticketing.v1;
 import "arthome/common/v1/common.proto";
 import "google/protobuf/timestamp.proto";
 
-// Vocabulaire fermé tranché par `shared` : `enums.priceTier`.
+// Closed vocabulary settled by `shared`: `enums.priceTier`.
 enum PriceTier {
   PRICE_TIER_UNSPECIFIED = 0;
   PRICE_TIER_FULL = 1;
@@ -28,10 +28,10 @@ enum PriceTier {
   PRICE_TIER_SUPPORT = 3;
 }
 
-// D-011 : deux commandes DISTINCTES, jamais une commande mixte.
-// Elles n'ont ni les mêmes garanties (une place a une jauge, un code, une
-// fenêtre d'annulation), ni le même prestataire d'expédition, ni le même
-// destinataire de versement — et aucune maquette ne montre de commande mixte.
+// D-011: two DISTINCT orders, never a mixed one.
+// They have neither the same guarantees (a seat has a capacity, a code, a
+// cancellation window), nor the same shipping provider, nor the same payout
+// recipient — and no mockup shows a mixed order.
 enum OrderKind {
   ORDER_KIND_UNSPECIFIED = 0;
   ORDER_KIND_SEAT = 1;
@@ -39,13 +39,13 @@ enum OrderKind {
   ORDER_KIND_SUBSCRIPTION = 3;
 }
 
-// Le vocabulaire de `plans[]` de `catalogue.json` fait autorité.
-// E1 est l'écart le plus grave du dossier : QUATRE vocabulaires disjoints
-// coexistent, `helpers.planOf()` fait retomber TOUS les comptes sur `free`, et
-// `plan.opens[]` conditionne l'accès à la lecture. C'est un défaut
-// d'AUTORISATION, pas d'affichage. `monthly`, `season` et `none` sont retirés :
-// aucune donnée ne les référence. La place à l'unité n'est pas un abonnement,
-// c'est un mode d'achat : elle n'entre pas dans ce vocabulaire.
+// The `plans[]` vocabulary of `catalogue.json` has authority.
+// E1 is the gravest divergence in the file: FOUR disjoint vocabularies coexist,
+// `helpers.planOf()` falls ALL accounts back to `free`, and `plan.opens[]`
+// conditions access to playback. That is an AUTHORISATION defect, not a display
+// one. `monthly`, `season` and `none` are dropped: no data references them. A
+// one-off seat is not a subscription, it is a way of buying: it does not belong
+// in this vocabulary.
 enum PlanTier {
   PLAN_TIER_UNSPECIFIED = 0;
   PLAN_TIER_FREE = 1;
@@ -53,9 +53,9 @@ enum PlanTier {
   PLAN_TIER_PREMIUM = 3;
 }
 
-// Les neuf ouvertures réellement portées par `catalogue.json`.
-// `multi-screen` n'est pas une ligne de marketing : c'est une contrainte
-// d'exécution, qui impose un décompte serveur tenu par `streaming`.
+// The nine openings actually carried by `catalogue.json`.
+// `multi-screen` is not a marketing line: it is an execution constraint, which
+// forces a server-side count held by `streaming`.
 enum PlanOpening {
   PLAN_OPENING_UNSPECIFIED = 0;
   PLAN_OPENING_BROWSE = 1;
@@ -77,9 +77,9 @@ enum SubscriptionState {
   SUBSCRIPTION_STATE_TRIALING = 4;
 }
 
-// Cinq motifs relevés dans la conception, avec des règles distinctes.
-// LATE_RATE est au PRORATA du temps restant : le prix dépend de l'instant de
-// lecture, donc il voyage avec sa validité et n'est jamais une chaîne figée.
+// Five reasons found in the design, with distinct rules.
+// LATE_RATE is PRO RATA of the time remaining: the price depends on the instant
+// of reading, so it travels with its validity and is never a frozen string.
 enum PromotionReason {
   PROMOTION_REASON_UNSPECIFIED = 0;
   PROMOTION_REASON_PRE_SALE = 1;
@@ -97,28 +97,28 @@ enum SeatCancelReason {
   SEAT_CANCEL_REASON_PAYMENT_FAILED = 4;
 }
 
-// L'avoir est une MONNAIE INTERNE, donc un passif, donc un agrégat.
-// Il apparaît dans la copie du storefront et nulle part ailleurs dans le
-// dossier : sans ce type, il n'existerait pas au contrat.
+// The credit note is an INTERNAL CURRENCY, therefore a liability, therefore an
+// aggregate. It appears in the storefront copy and nowhere else in the file:
+// without this type, it would not exist in the contract.
 enum CreditOrigin {
   CREDIT_ORIGIN_UNSPECIFIED = 0;
   CREDIT_ORIGIN_INTERRUPTED_DATE = 1;
   CREDIT_ORIGIN_GOODWILL = 2;
 }
 
-// ---------------------------------------------------------- fiscalité
+// ---------------------------------------------------------- tax
 //
-// CE BLOC EST LA SEULE PARTIE IRRÉVERSIBLE DE TOUT LE CHAPITRE FISCAL.
-// Le modèle — qui est redevable, sur quelle assiette — est un CALCUL : il se
-// refait. La localisation de l'acheteur et le taux appliqué à la vente sont des
-// FAITS DATÉS : s'ils ne sont pas capturés à l'instant de la vente, ils
-// n'existent nulle part, et les reconstituer n'est pas coûteux — c'est
-// IMPOSSIBLE. Voir adr-payments.md §5.0.
+// THIS BLOCK IS THE ONLY IRREVERSIBLE PART OF THE WHOLE TAX CHAPTER.
+// The model — who is liable, on what base — is a COMPUTATION: it can be redone.
+// The buyer's location and the rate applied at the sale are DATED FACTS: if
+// they are not captured at the instant of the sale, they exist nowhere, and
+// reconstructing them is not expensive — it is IMPOSSIBLE. See
+// adr-payments.md §5.0.
 
-// D'où vient un élément de preuve de localisation. L'UE exige DEUX éléments
-// NON CONTRADICTOIRES pour une vente B2C — et Stripe Tax privilégie une adresse
-// unique au lieu de les comparer, donc la règle de preuve ne peut pas lui être
-// déléguée : c'est notre registre qui la porte.
+// Where a piece of location evidence comes from. The EU requires TWO
+// NON-CONTRADICTORY pieces for a B2C sale — and Stripe Tax favours a single
+// address instead of comparing them, so the evidence rule cannot be delegated
+// to it: our own register carries it.
 enum TaxEvidenceKind {
   TAX_EVIDENCE_KIND_UNSPECIFIED = 0;
   TAX_EVIDENCE_KIND_BILLING_ADDRESS = 1;
@@ -137,10 +137,10 @@ enum TaxJurisdictionLevel {
   TAX_JURISDICTION_LEVEL_CITY = 4;
 }
 
-// Le taux dépend du couple JURIDICTION x NATURE DE LA PRESTATION, jamais d'une
-// constante par marché. L'arrêt Derby Quad contre HMRC a jugé que
-// l'exonération des places de théâtre NE S'ÉTEND PAS au direct diffusé : une
-// place de spectacle et son accès en direct ne sont pas la même prestation.
+// The rate depends on the pair JURISDICTION x NATURE OF THE SUPPLY, never on a
+// per-market constant. The Derby Quad v HMRC decision held that the
+// theatre-ticket exemption DOES NOT EXTEND to a streamed live show: a
+// performance ticket and live access to it are not the same supply.
 enum TaxSupplyKind {
   TAX_SUPPLY_KIND_UNSPECIFIED = 0;
   TAX_SUPPLY_KIND_LIVE_STREAM_ACCESS = 1;
@@ -151,68 +151,67 @@ enum TaxSupplyKind {
 
 message TaxEvidence {
   TaxEvidenceKind kind = 1;
-  // ISO 3166-1 alpha-2, tel que CET élément-là l'indique — pas le résultat.
+  // ISO 3166-1 alpha-2, as THIS piece indicates it — not the result.
   string country = 2;
-  // ISO 3166-2 quand l'élément le porte.
+  // ISO 3166-2 when the piece carries it.
   string subdivision = 3;
-  // D'où il vient, pour l'audit : « stripe.payment_method », « edge.geoip »,
-  // « account.billing_address ». Une preuve sans provenance n'est pas une preuve.
+  // Where it came from, for audit: "stripe.payment_method", "edge.geoip",
+  // "account.billing_address". Evidence with no provenance is not evidence.
   string source = 4;
   google.protobuf.Timestamp collected_at = 5;
 }
 
-// La localisation fiscale de l'ACHETEUR, portée par la commande.
-// PAS un identifiant de marché, PAS un simple pays :
-//   - aux États-Unis, environ 9 000 juridictions (État, comté, ville) — un pays
-//     ne permet AUCUN calcul, et le code postal est indispensable ;
-//   - dans l'UE, la preuve est double et doit être conservée.
+// The BUYER's tax location, carried by the order.
+// NOT a market identifier, NOT a plain country:
+//   - in the United States, roughly 9,000 jurisdictions (state, county, city) —
+//     a country allows NO computation at all, and the postal code is essential;
+//   - in the EU, the evidence is twofold and must be kept.
 //
-// À NE PAS CONFONDRE avec le KYB/KYC de Connect, qui porte sur l'ARTISTE
-// (vérification d'identité et d'entreprise du compte connecté) et n'a rien à
-// voir avec la localisation du SPECTATEUR. Les deux sont souvent confondus.
+// NOT TO BE CONFUSED with Connect's KYB/KYC, which is about the ARTIST
+// (identity and business verification of the connected account) and has nothing
+// to do with the VIEWER's location. The two are often confused.
 message BuyerTaxLocation {
   string country = 1;
-  // ISO 3166-2 : État américain, province canadienne, Land allemand.
+  // ISO 3166-2: US state, Canadian province, German Land.
   string subdivision = 2;
-  // Indispensable au calcul américain, où le taux change d'une rue à l'autre.
+  // Essential to the US computation, where the rate changes from street to street.
   string postal_code = 3;
   string city = 4;
 
-  // DEUX AU MOINS pour une vente B2C dans l'UE, non contradictoires.
+  // AT LEAST TWO for a B2C sale in the EU, non-contradictory.
   repeated TaxEvidence evidence = 5;
-  // Vrai quand deux éléments se contredisent : la vente se fait, la ligne part
-  // en instruction. Masquer le conflit produirait une déclaration fausse et
-  // silencieuse.
+  // True when two pieces contradict each other: the sale goes through, the line
+  // goes to review. Hiding the conflict would produce a false and silent
+  // declaration.
   bool evidence_conflicting = 6;
   google.protobuf.Timestamp resolved_at = 7;
 }
 
-// Une ligne de TVA, par JURIDICTION — et non par marché de facturation.
-// La FORME est sûre et ne bougera pas, quel que soit le modèle fiscal retenu :
-// un modèle à taux unique produit une ventilation à une ligne. Le modèle
-// lui-même n'est PAS tranché — voir adr-payments.md §5. `studio-web` a trouvé
-// que la maquette des versements ventile « par pays d'achat » alors que la
-// fixture applique un taux unique au brut : deux affirmations incompatibles,
-// aucune instruite (D5).
+// One VAT line, per JURISDICTION — and not per billing market.
+// The SHAPE is safe and will not move, whatever tax model is adopted: a
+// single-rate model produces a one-line breakdown. The model itself is NOT
+// settled — see adr-payments.md §5. `studio-web` found that the payouts mockup
+// breaks down "by country of purchase" while the fixture applies a single rate
+// to the gross: two incompatible statements, neither examined (D5).
 message VatLine {
-  // `market_id` retiré : un marché de facturation est une notion de PRIX
-  // (dans quelle devise on vend), jamais une notion de TAXE. Numéro réservé,
-  // un numéro de champ ne se réutilise jamais.
+  // `market_id` removed: a billing market is a PRICING notion (which currency we
+  // sell in), never a TAX notion. Number reserved — a field number is never
+  // reused.
   reserved 1;
   reserved "market_id";
 
-  // Taux en points de base : 550 = 5,5 %. Un entier, jamais un flottant :
-  // un taux en virgule flottante finit par produire un centime d'écart.
-  // C'est le TAUX APPLIQUÉ AU MOMENT DE LA VENTE, conservé sur la ligne —
-  // pas le taux courant. Une facture se conserve dix ans ; les taux changent.
+  // Rate in basis points: 550 = 5.5%. An integer, never a float: a
+  // floating-point rate ends up producing a cent of drift.
+  // It is the RATE APPLIED AT THE MOMENT OF THE SALE, kept on the line — not the
+  // current rate. An invoice is kept for ten years; rates change.
   uint32 rate_bps = 2;
   arthome.common.v1.Money base = 3;
   arthome.common.v1.Money amount = 4;
 
-  // « FR » · « US-CA-94103 » · « CH-ZH ». Assez précis pour rejouer le calcul.
+  // "FR" · "US-CA-94103" · "CH-ZH". Precise enough to replay the computation.
   string jurisdiction_code = 5;
   TaxJurisdictionLevel jurisdiction_level = 6;
-  // Le taux dépend du couple juridiction x nature — voir TaxSupplyKind.
+  // The rate depends on the jurisdiction x nature pair — see TaxSupplyKind.
   TaxSupplyKind supply_kind = 7;
 }
 
@@ -230,22 +229,22 @@ message Promotion {
   google.protobuf.Timestamp valid_until = 5;
 }
 
-// ------------------------------------------------------- jauge et tarifs
+// ------------------------------------------------------- capacity and prices
 
-// LE fait le plus consommé du système : il alimente la carte publique de
-// `catalog`, l'index de recherche, l'agenda du studio et le seuil « bientôt
-// complet » de `notifications`.
+// THE most-consumed fact in the system: it feeds `catalog`'s public card, the
+// search index, the studio agenda and `notifications`'s "almost full"
+// threshold.
 message DateSalesAvailabilityChanged {
   string date_id = 1;
   string channel_id = 2;
   uint32 seats_available = 3;
   uint32 waitlist_count = 4;
-  // Le TAUX de remplissage, pas la capacité. La surface a besoin du taux ;
-  // servir la capacité et laisser calculer recrée la valeur composée à deux
-  // endroits que le projet interdit — et la maquette le prouve, en appliquant
-  // une constante de 2000 places indépendante de la salle.
+  // The fill RATE, not the capacity. The surface needs the rate; serving the
+  // capacity and letting it be computed recreates the composed-in-two-places
+  // value the project forbids — and the mockup proves it, by applying a constant
+  // of 2,000 seats independent of the venue.
   uint32 fill_rate_bps = 5;
-  // Le tarif d'appel, promotion appliquée. Absent si aucun tarif actif.
+  // The headline price, promotion applied. Absent if no tier is active.
   arthome.common.v1.Money lowest_price = 6;
   bool sold_out = 7;
   google.protobuf.Timestamp occurred_at = 8;
@@ -256,47 +255,47 @@ message DateSalesPricingChanged {
   string channel_id = 2;
   repeated PriceTierAmount tiers = 3;
   repeated Promotion promotions = 4;
-  // Vrai dès que `catalog.publication.engaged` a été consommé : `ticketing`
-  // applique SON verrou, il ne demande rien à `catalog`.
+  // True as soon as `catalog.publication.engaged` has been consumed: `ticketing`
+  // applies ITS OWN lock, it asks `catalog` for nothing.
   bool prices_locked = 5;
   google.protobuf.Timestamp occurred_at = 6;
   arthome.common.v1.Actor changed_by = 7;
 }
 
-// La jauge s'élargit PAR PALIERS et ne se réduit jamais après la mise en vente.
-// Ouvrir un palier prévient la liste d'attente DANS LE MÊME GESTE, avec une
-// fenêtre de priorité : deux appels laisseraient la rareté se dissiper entre eux.
+// Capacity widens BY TIERS and never shrinks after going on sale.
+// Opening a tier notifies the waiting list IN THE SAME ACT, with a priority
+// window: two calls would let the scarcity dissipate between them.
 message DateSalesCapacitySet {
   string date_id = 1;
   string channel_id = 2;
   uint32 capacity_total = 3;
-  // Vrai au-delà du seuil de provision technique (10 000 spectateurs
-  // simultanés) : l'infrastructure se provisionne à l'avance et un prévisionnel
-  // très au-dessus du réel expose à un malus. Seuil, provision, échéance de
-  // révision (72 h) et exposition sont des DONNÉES du contrat, pas des
-  // constantes recopiées sur cinq surfaces.
+  // True beyond the technical provisioning threshold (10,000 concurrent
+  // viewers): the infrastructure is provisioned in advance and a forecast far
+  // above the real figure exposes you to a penalty. Threshold, provisioning,
+  // revision deadline (72 h) and exposure are CONTRACT DATA, not constants copied
+  // onto five surfaces.
   bool technical_provision_required = 4;
   google.protobuf.Timestamp provision_revisable_until = 5;
   google.protobuf.Timestamp occurred_at = 6;
   arthome.common.v1.Actor set_by = 7;
 }
 
-// ---------------------------------------------------------------- place
+// ---------------------------------------------------------------- seat
 
 message SeatActivated {
   string seat_id = 1;
   string order_id = 2;
   string date_id = 3;
   string account_id = 4;
-  // Le profil qui a acheté, quand l'achat vient d'un téléviseur partagé.
+  // The profile that bought, when the purchase comes from a shared television.
   string profile_id = 5;
   PriceTier tier = 6;
-  // ÉMIS PAR LE SERVEUR. Il s'affiche à l'identique sur le web, le mobile et la
-  // TV : la maquette le calcule par hachage, ce qui donnerait TROIS codes
-  // différents pour la même place dès qu'une surface change de fonction.
+  // ISSUED BY THE SERVER. It appears identically on the web, on mobile and on
+  // TV: the mockup computes it by hashing, which would give THREE different codes
+  // for the same seat as soon as one surface changed function.
   string seat_code = 7;
-  // L'échéance d'annulation, comme un INSTANT. « Jusqu'à 1 h avant le début »
-  // est une règle de domaine, pas une mention d'écran.
+  // The cancellation deadline, as an INSTANT. "Up to 1 h before the start" is a
+  // domain rule, not a screen note.
   google.protobuf.Timestamp cancel_deadline = 8;
   google.protobuf.Timestamp occurred_at = 9;
 }
@@ -309,46 +308,45 @@ message SeatCancelled {
   google.protobuf.Timestamp occurred_at = 5;
 }
 
-// ---------------------------------------------------------------- commande
+// ---------------------------------------------------------------- order
 
-// La matière du droit à versement. `payouts` ne consomme que ceci et les
-// remboursements : il ne reconstruit jamais le grand livre de Stripe.
+// The raw material of the right to a payout. `payouts` consumes only this and
+// the refunds: it never rebuilds Stripe's ledger.
 message OrderPaid {
   string order_id = 1;
   OrderKind kind = 2;
-  // UNE commande de marchandise est MONO-VENDEUR : un panier à deux chaînes se
-  // scinde en deux commandes au paiement. Motif métier (deux expéditions, deux
-  // commissions) et motif technique (le modèle Stripe retenu n'admet qu'une
-  // seule destination par paiement).
+  // ONE merchandise order is SINGLE-SELLER: a basket spanning two channels
+  // splits into two orders at payment. Business reason (two shipments, two
+  // commissions) and technical reason (the Stripe model adopted allows only one
+  // destination per payment).
   string channel_id = 3;
-  // Présent pour ORDER_KIND_SEAT.
+  // Present for ORDER_KIND_SEAT.
   string date_id = 4;
   string account_id = 5;
 
   arthome.common.v1.Money gross_ttc = 6;
-  // Ventilation par marché de facturation. Voir VatLine.
+  // Breakdown by jurisdiction. See VatLine.
   repeated VatLine vat = 7;
   arthome.common.v1.Money service_fee = 8;
-  // Remise appliquée : d'abonnement OU promotion, jamais les deux — la règle
-  // retient la plus favorable au spectateur, et elle vit dans @arthome/core.
+  // Discount applied: subscription OR promotion, never both — the rule keeps the
+  // one most favourable to the viewer, and it lives in @arthome/core.
   arthome.common.v1.Money discount = 9;
-  // Part financée par un avoir de compte plutôt que par Stripe. Le versement de
-  // l'artiste n'en dépend pas : la plateforme finance cette part sur ses fonds
-  // (adr-payments.md §6).
+  // The share funded by an account credit rather than by Stripe. The artist's
+  // payout does not depend on it: the platform funds that share out of its own
+  // money (adr-payments.md §6).
   arthome.common.v1.Money credit_applied = 10;
 
-  // La référence Stripe. On ne reconstruit jamais son grand livre : on
-  // RÉCONCILIE le nôtre avec lui, et une période ne se clôt pas avec un écart
-  // non expliqué.
+  // The Stripe reference. We never rebuild its ledger: we RECONCILE ours with
+  // it, and a period does not close with an unexplained gap.
   string payment_intent_ref = 11;
   google.protobuf.Timestamp paid_at = 12;
 
-  // La localisation fiscale retenue, AVEC SES PREUVES. Trois raisons de ne pas
-  // s'en remettre au `Customer` de Stripe : la facture se conserve DIX ANS et
-  // l'objet Stripe ne vit que tant qu'on reste chez Stripe ; il faut le taux
-  // HISTORIQUE et non le taux courant ; et l'obligation de conservation porte
-  // sur six éléments — date, preuves de localisation, nature du produit, taux
-  // applicable, montant de TVA, total. C'est notre registre qui les porte.
+  // The tax location adopted, WITH ITS EVIDENCE. Three reasons not to rely on
+  // Stripe's `Customer`: the invoice is kept for TEN YEARS and the Stripe object
+  // only lives as long as we stay with Stripe; we need the HISTORICAL rate and
+  // not the current one; and the retention obligation covers six items — date,
+  // location evidence, nature of the product, applicable rate, VAT amount, total.
+  // Our own register carries them.
   BuyerTaxLocation buyer_tax_location = 13;
 }
 
@@ -364,9 +362,9 @@ message OrderRefunded {
 message CreditIssued {
   string credit_id = 1;
   string account_id = 2;
-  // Portée recommandée : la même chaîne. Un avoir utilisable ailleurs
-  // obligerait la plateforme à financer la part d'un autre artiste sur ses
-  // propres fonds. Restriction réversible ; l'ignorer ne l'est pas.
+  // Recommended scope: the same channel. A credit usable elsewhere would force
+  // the platform to fund another artist's share out of its own money. The
+  // restriction is reversible; ignoring it is not.
   string channel_id = 3;
   arthome.common.v1.Money amount = 4;
   CreditOrigin origin = 5;
@@ -375,29 +373,29 @@ message CreditIssued {
   google.protobuf.Timestamp occurred_at = 8;
 }
 
-// ---------------------------------------------------------------- abonnement
+// ---------------------------------------------------------------- subscription
 
-// Consommé par `streaming` pour son `entitlement_projection` — la seule
-// duplication d'une donnée de `ticketing` que j'assume, parce que `streaming`
-// est le seul à pouvoir décider d'un droit et le seul à émettre un jeton.
+// Consumed by `streaming` for its `entitlement_projection` — the one
+// duplication of a `ticketing` datum I accept, because `streaming` is the only
+// one that can decide an entitlement and the only one that issues a token.
 message SubscriptionChanged {
   string account_id = 1;
   PlanTier plan = 2;
   SubscriptionState state = 3;
   repeated PlanOpening opens = 4;
-  // Remise sur les PLACES, en points de base : 1000 = 10 %.
-  // À ne pas confondre avec la remise boutique de 15 % : deux remises, deux
-  // assiettes, et ni le taux ni l'assiette ne coïncident dans les sources (E1).
+  // Discount on SEATS, in basis points: 1000 = 10%.
+  // Not to be confused with the 15% shop discount: two discounts, two bases, and
+  // neither the rate nor the base coincides across the sources (E1).
   uint32 seat_discount_bps = 5;
-  // Plafond d'écrans simultanés, dérivé de PLAN_OPENING_MULTI_SCREEN.
-  // `ticketing` publie le plafond ; `streaming` le fait respecter.
+  // Concurrent-screen ceiling, derived from PLAN_OPENING_MULTI_SCREEN.
+  // `ticketing` publishes the ceiling; `streaming` enforces it.
   uint32 concurrent_streams_allowed = 6;
   google.protobuf.Timestamp current_period_end = 7;
   google.protobuf.Timestamp occurred_at = 8;
 }
 
-// Ouvrir un palier prévient la liste d'attente dans le même geste, avec une
-// fenêtre de priorité (2 h) avant l'ouverture publique.
+// Opening a tier notifies the waiting list in the same act, with a priority
+// window (2 h) before the public opening.
 message WaitlistNotified {
   string date_id = 1;
   repeated string account_ids = 2;

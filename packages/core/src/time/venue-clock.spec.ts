@@ -3,38 +3,43 @@ import { describe, expect, it } from 'vitest';
 import { clocksDiffer, dayShift, venueClock, wallClockAt } from './venue-clock.js';
 
 /**
- * INVARIANT PROTEGE
- *   Une date programmee dans six mois s'affiche a la BONNE heure — y compris
- *   de l'autre cote d'un changement d'heure.
+ * PROTECTED INVARIANT
+ *   A date scheduled six months out displays at the RIGHT hour — including on
+ *   the far side of a daylight-saving change.
  *
- * POURQUOI CE TEST EXISTE
- *   C'est le cas qui a fait echouer D3. `shared/catalogue.json` stocke
- *   `venue.utcOffsetMin`, un decalage FIGE, et `helpers.js` en deduit
- *   l'abreviation d'ete ou d'hiver en le comparant a une table. La regle est
- *   juste, la forme ne survit pas : un decalage fixe ne passe pas un
- *   changement d'heure.
+ * WHY THIS TEST EXISTS
+ *   This is the case that made D3 fail. `shared/catalogue.json` stores
+ *   `venue.utcOffsetMin`, a FROZEN offset, and `helpers.js` derives the summer
+ *   or winter abbreviation by comparing it against a table. The rule is right,
+ *   the shape does not survive: a fixed offset does not cross a
+ *   daylight-saving change.
  *
- *   Le decalage est donc SERVI, recalcule par le serveur pour l'instant
- *   concerne — ce que ce module verifie en refusant tout ce qui n'est pas un
- *   identifiant IANA.
+ *   So the offset is SERVED, recomputed by the server for the instant
+ *   concerned — which this module enforces by refusing anything that is not an
+ *   IANA identifier.
  */
-describe('le fuseau est un identifiant IANA, pas un decalage', () => {
-  it('refuse une abreviation et un decalage — les deux formes que D3 remplace', () => {
+describe('the time zone is an IANA identifier, not an offset', () => {
+  it('refuses an abbreviation and an offset — the two shapes D3 replaces', () => {
     expect(() => venueClock('Europe/Paris', 120)).not.toThrow();
     expect(() => venueClock('CEST', 120)).toThrow();
     expect(() => venueClock('+02:00', 120)).toThrow();
     expect(() => venueClock('Europe/Paris', 17 * 60)).toThrow();
   });
 
-  it('accepte les formes IANA reelles du catalogue', () => {
-    for (const zone of ['Europe/Paris', 'America/New_York', 'Europe/Zurich', 'America/Argentina/Buenos_Aires']) {
+  it('accepts the real IANA forms from the catalogue', () => {
+    for (const zone of [
+      'Europe/Paris',
+      'America/New_York',
+      'Europe/Zurich',
+      'America/Argentina/Buenos_Aires',
+    ]) {
       expect(() => venueClock(zone, 60)).not.toThrow();
     }
   });
 
-  it('porte DEUX decalages pour la meme salle, selon la saison', () => {
-    // La meme salle, deux instants, deux decalages servis. C'est precisement ce
-    // qu'un champ fige ne peut pas exprimer.
+  it('carries TWO offsets for the same venue, according to the season', () => {
+    // The same venue, two instants, two offsets served. That is precisely what
+    // a frozen field cannot express.
     const summer = venueClock('Europe/Paris', 120);
     const winter = venueClock('Europe/Paris', 60);
 
@@ -44,47 +49,48 @@ describe('le fuseau est un identifiant IANA, pas un decalage', () => {
 });
 
 /**
- * INVARIANT PROTEGE
- *   « L'heure du spectateur d'abord, l'heure de salle en second quand elle
- *   differe » — avec le suffixe « la veille » / « le lendemain » quand le
- *   passage d'une horloge a l'autre change de jour.
+ * PROTECTED INVARIANT
+ *   "The viewer's time first, the venue's time second when it differs" — with
+ *   the "the day before" / "the next day" suffix when moving from one clock to
+ *   the other changes the date.
  *
- * POURQUOI
- *   E7 : la maquette TV lit `fixtures.geography.viewerUtcOffsetMin`, qui
- *   N'EXISTE NULLE PART. Il vaut `undefined`, donc « l'heure a la salle » est
- *   calculee contre UTC, pas contre le spectateur. Le decalage du spectateur
- *   est donc un ARGUMENT, jamais un global.
+ * WHY
+ *   E7: the TV mockup reads `fixtures.geography.viewerUtcOffsetMin`, which
+ *   EXISTS NOWHERE. It is `undefined`, so "time at the venue" is computed
+ *   against UTC, not against the viewer. The viewer's offset is therefore an
+ *   ARGUMENT, never a global.
  */
-describe('les deux horloges', () => {
-  it('detecte le passage au lendemain', () => {
-    // 23 h 30 a Paris en ete (UTC+2) = 21 h 30 UTC. Un spectateur a Los Angeles
-    // (UTC-7) est alors au 14 h 30 du MEME jour : la salle est « le lendemain ».
+describe('the two clocks', () => {
+  it('detects the shift to the next day', () => {
+    // 23:30 in Paris in summer (UTC+2) = 21:30 UTC. A viewer in Los Angeles
+    // (UTC-7) is then at 14:30 on the SAME day: the venue is "the next day".
     const instant = '2026-06-15T21:30:00.000Z';
     const paris = venueClock('Europe/Paris', 120);
 
     expect(dayShift(instant, paris, -420)).toBe(0);
 
-    // A 23 h 30 UTC, Paris est au 16 juin, Los Angeles encore au 15.
+    // At 23:30 UTC, Paris is on 16 June, Los Angeles still on the 15th.
     expect(dayShift('2026-06-15T23:30:00.000Z', paris, -420)).toBe(1);
   });
 
-  it('detecte la veille', () => {
-    // 00 h 30 a Paris en ete = 22 h 30 UTC la veille. Un spectateur a Tokyo
-    // (UTC+9) est deja au lendemain : la salle est « la veille ».
+  it('detects the day before', () => {
+    // 17:30 in Paris in summer (UTC+2) = 15:30 UTC. A viewer in Tokyo (UTC+9)
+    // is then at 00:30 the NEXT day: seen from there, the venue is "the day
+    // before".
     const paris = venueClock('Europe/Paris', 120);
-    expect(dayShift('2026-06-15T22:30:00.000Z', paris, 540)).toBe(-1);
+    expect(dayShift('2026-06-15T15:30:00.000Z', paris, 540)).toBe(-1);
   });
 
-  it('ne signale aucune difference quand les deux horloges coincident', () => {
+  it('reports no difference when the two clocks coincide', () => {
     const paris = venueClock('Europe/Paris', 120);
     expect(clocksDiffer(paris, 120)).toBe(false);
     expect(clocksDiffer(paris, 60)).toBe(true);
     expect(dayShift('2026-06-15T19:00:00.000Z', paris, 120)).toBe(0);
   });
 
-  it("rend des composantes murales en nombres, jamais une chaine formatee", () => {
-    // Le formatage est de la presentation : il depend de la locale et vit
-    // ailleurs. Ce module rend des nombres.
+  it('returns wall-clock components as numbers, never a formatted string', () => {
+    // Formatting is presentation: it depends on the locale and lives elsewhere.
+    // This module returns numbers.
     const wall = wallClockAt('2026-06-15T19:04:00.000Z', 120);
     expect(wall).toEqual({ year: 2026, month: 6, day: 15, hour: 21, minute: 4 });
   });

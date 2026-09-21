@@ -1,12 +1,12 @@
-// Événements du contexte `catalog` — ce qui est publié.
+// Events of the `catalog` context — what is published.
 //
-// Sujets Kafka :
-//   arthome.catalog.date          clé date_id     12 partitions
-//   arthome.catalog.show          clé show_id
-//   arthome.catalog.artist        clé artist_id
-//   arthome.catalog.saved_search  clé account_id
+// Kafka topics:
+//   arthome.catalog.date          key date_id     12 partitions
+//   arthome.catalog.show          key show_id
+//   arthome.catalog.artist        key artist_id
+//   arthome.catalog.saved_search  key account_id
 //
-// Maturité : STABLE (palier 2).
+// Maturity: STABLE (milestone 2).
 syntax = "proto3";
 
 package arthome.catalog.v1;
@@ -14,10 +14,10 @@ package arthome.catalog.v1;
 import "arthome/common/v1/common.proto";
 import "google/protobuf/timestamp.proto";
 
-// L'ACTE de la chaîne. Vocabulaire de `catalogue.json`, qui fait autorité (D2) :
-// `replay-online` dit ce que `replay` ne dit pas — la rediffusion est EN VENTE.
-// Les tables parallèles des deux maquettes de studio (`hidden`, `sched`, `tech`,
-// `done`) ne sont jamais reprises.
+// The channel's ACT. Vocabulary from `catalogue.json`, which has authority (D2):
+// `replay-online` says what `replay` does not — the replay is ON SALE.
+// The parallel tables of the two studio mockups (`hidden`, `sched`, `tech`,
+// `done`) are never adopted.
 enum PublicationState {
   PUBLICATION_STATE_UNSPECIFIED = 0;
   PUBLICATION_STATE_DRAFT = 1;
@@ -29,10 +29,10 @@ enum PublicationState {
   PUBLICATION_STATE_REPLAY_ONLINE = 7;
 }
 
-// L'ISSUE. Trois axes existent sur une date sans hiérarchie écrite (E4) :
-// `publication.state`, `run.state` et `outcome`. Le contrat l'écrit une fois :
-//   outcome PRIME sur run.state, qui PRIME sur publication.state.
-// L'issue est un FAIT sur la représentation : elle n'est jamais réécrite.
+// THE OUTCOME. Three axes exist on a date with no written hierarchy (E4):
+// `publication.state`, `run.state` and `outcome`. The contract writes it once:
+//   outcome OUTRANKS run.state, which OUTRANKS publication.state.
+// The outcome is a FACT about the performance: it is never rewritten.
 enum DateOutcome {
   DATE_OUTCOME_UNSPECIFIED = 0;
   DATE_OUTCOME_POSTPONED = 1;
@@ -40,12 +40,12 @@ enum DateOutcome {
   DATE_OUTCOME_INTERRUPTED = 3;
 }
 
-// La PROMESSE faite avant l'achat — c'est elle qui justifie l'écart de tarif,
-// et le dossier en fait un principe. La mise en vente est à `ticketing`,
-// le fichier et son expiration à `streaming`.
-// `sub`/`off` des maquettes mobile et de l'assistant de création ne sont pas du
-// vocabulaire : `helpers.stateOf` teste littéralement `policy !== 'none'`, donc
-// une date créée avec `off` ne serait jamais reconnue sans rediffusion (E2).
+// The PROMISE made before the purchase — it is what justifies the price
+// difference, and the file makes it a principle. Putting it on sale belongs to
+// `ticketing`, the file and its expiry to `streaming`.
+// `sub`/`off` from the mobile mockup and the creation wizard are not
+// vocabulary: `helpers.stateOf` literally tests `policy !== 'none'`, so a date
+// created with `off` would never be recognised as having no replay (E2).
 enum ReplayPolicy {
   REPLAY_POLICY_UNSPECIFIED = 0;
   REPLAY_POLICY_INCLUDED = 1;
@@ -60,10 +60,10 @@ enum RightsScope {
   RIGHTS_SCOPE_RESTRICTED = 2;
 }
 
-// Un CODE, jamais une phrase. `geography.rightsPolicy.blackoutReasons[]` porte
-// aujourd'hui `label` et `labelEn` — du texte rédigé DANS la donnée, alors que
-// tout le reste passe par `enums.*`. C'est une fuite d'i18n dans le modèle, et
-// elle est exactement du genre que « i18n par codes » existe pour interdire (E8).
+// A CODE, never a sentence. `geography.rightsPolicy.blackoutReasons[]` today
+// carries `label` and `labelEn` — prose written INTO the data, while all the
+// rest goes through `enums.*`. That is an i18n leak into the model, and it is
+// exactly the kind "i18n by codes" exists to forbid (E8).
 enum BlackoutReason {
   BLACKOUT_REASON_UNSPECIFIED = 0;
   BLACKOUT_REASON_CO_PRODUCTION = 1;
@@ -71,11 +71,11 @@ enum BlackoutReason {
   BLACKOUT_REASON_FESTIVAL = 3;
 }
 
-// Vocabulaire RÉEL, corrigé : `taxonomy.json` déclare `none | light | helpful`,
-// mais `essential` est employé par cinq spectacles, traduit dans l'i18n, et
-// `hasLanguageBarrier` EN FAIT SON TEST ; `light` n'est employé nulle part (D1).
-// Un vocabulaire fermé qui ne contient pas la valeur dont dépend la règle la
-// plus visible de la surface n'est pas un vocabulaire fermé.
+// The REAL vocabulary, corrected: `taxonomy.json` declares `none | light |
+// helpful`, but `essential` is used by five shows, translated in the i18n, and
+// `hasLanguageBarrier` MAKES IT ITS TEST; `light` is used nowhere (D1).
+// A closed vocabulary that does not contain the value the surface's most
+// visible rule depends on is not a closed vocabulary.
 enum LanguageDependency {
   LANGUAGE_DEPENDENCY_UNSPECIFIED = 0;
   LANGUAGE_DEPENDENCY_NONE = 1;
@@ -83,21 +83,21 @@ enum LanguageDependency {
   LANGUAGE_DEPENDENCY_ESSENTIAL = 3;
 }
 
-// Ce que la publication ENGAGE. La publication ne verrouille rien qu'elle ne
-// possède : elle publie un fait, et chaque propriétaire applique SON verrou.
-// C'est la réponse au reproche « un agrégat à cheval sur trois contextes ».
+// What publication COMMITS. Publication locks nothing it does not own: it
+// publishes a fact, and each owner applies ITS OWN lock.
+// That is the answer to the charge of "an aggregate straddling three contexts".
 enum PublicationEngagement {
   PUBLICATION_ENGAGEMENT_UNSPECIFIED = 0;
-  PUBLICATION_ENGAGEMENT_PRICES = 1;    // consommé par ticketing
-  PUBLICATION_ENGAGEMENT_REPLAY = 2;    // consommé par ticketing
-  PUBLICATION_ENGAGEMENT_CHAT_MODE = 3; // consommé par chat
+  PUBLICATION_ENGAGEMENT_PRICES = 1;    // consumed by ticketing
+  PUBLICATION_ENGAGEMENT_REPLAY = 2;    // consumed by ticketing
+  PUBLICATION_ENGAGEMENT_CHAT_MODE = 3; // consumed by chat
 }
 
 message TerritoryRights {
   RightsScope scope = 1;
-  // ISO 3166-1 alpha-2. Vide quand `scope` vaut RIGHTS_SCOPE_WORLDWIDE.
-  // Diffusion mondiale par défaut : une restriction est l'exception, et elle se
-  // justifie par un motif codé.
+  // ISO 3166-1 alpha-2. Empty when `scope` is RIGHTS_SCOPE_WORLDWIDE.
+  // Worldwide broadcast by default: a restriction is the exception, and it is
+  // justified by a coded reason.
   repeated string blackout_countries = 2;
   BlackoutReason reason = 3;
 }
@@ -113,17 +113,17 @@ message DateDrafted {
   arthome.common.v1.Actor drafted_by = 6;
 }
 
-// La publication engage le tarif affiché : `draft|reserve -> scheduled` est une
-// transition SANS RETOUR. Le serveur refuse l'inverse avec un code et la
-// promesse engagée en paramètre ; ne pas l'offrir dans l'interface est une
-// politesse, pas une garantie.
+// Publication commits the displayed price: `draft|reserve -> scheduled` is a
+// ONE-WAY transition. The server refuses the reverse with a code and the
+// promise made as a parameter; not offering it in the interface is a courtesy,
+// not a guarantee.
 message DateScheduled {
   string date_id = 1;
   string channel_id = 2;
   string show_id = 3;
   string venue_id = 4;
 
-  // UTC. Jamais un décalage en minutes, jamais une heure murale formatée (D7).
+  // UTC. Never an offset in minutes, never a formatted wall-clock time (D7).
   google.protobuf.Timestamp starts_at = 5;
   arthome.common.v1.VenueClock venue_clock = 6;
   uint32 runtime_min = 7;
@@ -132,10 +132,10 @@ message DateScheduled {
   uint32 replay_window_hours = 9;
   TerritoryRights rights = 10;
 
-  // L'URL publique canonique de la date. SERVIE, jamais construite par une
-  // surface : c'est elle qu'on partage, qu'on met en favori, vers quoi pointent
-  // un rappel et une notification, et ce qu'on indexe. Sans elle, les quatre
-  // pointent vers « la prochaine date », qui change.
+  // The date's canonical public URL. SERVED, never built by a surface: it is
+  // what gets shared, bookmarked, what a reminder and a notification point to,
+  // and what gets indexed. Without it, all four point at "the next date", which
+  // changes.
   string canonical_url = 11;
 
   google.protobuf.Timestamp occurred_at = 12;
@@ -149,42 +149,42 @@ message PublicationEngaged {
   google.protobuf.Timestamp occurred_at = 4;
 }
 
-// La transition d'état de la publication. IL MANQUAIT, et son absence avait une
-// conséquence précise : `draft -> reserve`, `scheduled <-> technical` et
-// `ended -> replay-online` ne produisaient AUCUN événement, donc l'écran d'un
-// second opérateur affichait indéfiniment l'état d'avant.
+// The publication's state transition. IT WAS MISSING, and its absence had a
+// precise consequence: `draft -> reserve`, `scheduled <-> technical` and
+// `ended -> replay-online` produced NO event, so a second operator's screen
+// showed the previous state indefinitely.
 //
-// Le scénario que `studio-web` a établi : A publie (version 7 -> 8, tarifs
-// engagés, transition SANS RETOUR) ; l'écran de B affiche toujours BROUILLON
-// avec ses deux transitions offertes ; B clique « Publier », croyant franchir
-// le premier une porte irréversible, et l'apprend par une erreur — la
-// tentative partant au journal à son nom. La sûreté était complète
-// (`expectedVersion`, `STATE_CONFLICT`, `TRANSITION_IRREVERSIBLE`), la
-// FRAÎCHEUR était entièrement absente.
+// The scenario `studio-web` established: A publishes (version 7 -> 8, prices
+// committed, ONE-WAY transition); B's screen still shows DRAFT with its two
+// offered transitions; B clicks "Publish", believing they are first through an
+// irreversible door, and learns otherwise from an error — the attempt going to
+// the journal under their name. The safety was complete (`expectedVersion`,
+// `STATE_CONFLICT`, `TRANSITION_IRREVERSIBLE`), the FRESHNESS was entirely
+// absent.
 //
-// Routé vers la salle `channel:{id}` comme un correctif ordinaire
-// { entity: "publication", id, op: "upsert", seq, patch } — voir realtime.md §3.1.
+// Routed to the `channel:{id}` room as an ordinary correction
+// { entity: "publication", id, op: "upsert", seq, patch } — see realtime.md §3.1.
 message PublicationStateChanged {
   string date_id = 1;
   string channel_id = 2;
   PublicationState from_state = 3;
   PublicationState to_state = 4;
 
-  // La version APRÈS transition. C'est elle que le destinataire doit porter
-  // dans son prochain `expectedVersion`, sinon son correctif appliqué le laisse
-  // avec une version périmée et il repart en STATE_CONFLICT.
+  // The version AFTER the transition. It is the one the recipient must carry in
+  // their next `expectedVersion`, otherwise the correction they applied leaves
+  // them with a stale version and they go straight back into STATE_CONFLICT.
   uint64 version = 5;
 
-  // Vrai quand la transition était sans retour. Le journal doit pouvoir
-  // distinguer un passage ordinaire d'un engagement définitif.
+  // True when the transition was one-way. The journal must be able to tell an
+  // ordinary move apart from a final commitment.
   bool irreversible = 6;
 
   google.protobuf.Timestamp occurred_at = 7;
   arthome.common.v1.Actor changed_by = 8;
 }
 
-// Un report ne bouge pas d'argent : la place SUIT la nouvelle date, sans
-// démarche. `notifications` déplace le rappel plutôt que de l'envoyer à vide.
+// A postponement moves no money: the seat FOLLOWS the new date, with nothing
+// to do. `notifications` moves the reminder rather than firing it into the void.
 message DateRescheduled {
   string date_id = 1;
   google.protobuf.Timestamp previous_starts_at = 2;
@@ -194,35 +194,34 @@ message DateRescheduled {
   arthome.common.v1.Actor rescheduled_by = 6;
 }
 
-// UN événement, QUATRE conséquences, et aucun des quatre consommateurs ne parle
-// aux autres :
-//   ticketing  rembourse (cancelled) / crédite (interrupted) / ne bouge pas (postponed)
-//   payouts    retient, puis rembourse si annulée
-//   catalog    l'issue remplace l'état sur CHAQUE CARTE, pas seulement sur la fiche
-//   notifications  prévient les détenteurs
+// ONE event, FOUR consequences, and none of the four consumers talks to the
+// others:
+//   ticketing      refunds (cancelled) / credits (interrupted) / does nothing (postponed)
+//   payouts        withholds, then refunds if cancelled
+//   catalog        the outcome replaces the state on EVERY CARD, not just the sheet
+//   notifications  warns the seat holders
 message DateOutcomeDeclared {
   string date_id = 1;
   string channel_id = 2;
   DateOutcome outcome = 3;
 
-  // Le message écrit par la régie. C'est du CONTENU, pas un libellé : il voyage
-  // avec sa langue de rédaction, comme un synopsis. Seule exception assumée à
-  // « i18n par codes », avec les textes de la boîte du studio.
+  // The message written by the run desk. It is CONTENT, not a label: it travels
+  // with the language it was written in, like a synopsis. The one assumed
+  // exception to "i18n by codes", together with the studio shop's texts.
   arthome.common.v1.LocalizedText message = 4;
 
-  // Présent seulement pour DATE_OUTCOME_POSTPONED.
+  // Present only for DATE_OUTCOME_POSTPONED.
   google.protobuf.Timestamp rescheduled_to = 5;
 
   google.protobuf.Timestamp declared_at = 6;
-  // Réservé au propriétaire et à la production. Les autres rôles ne peuvent que
-  // SIGNALER. Le journal est nominatif : une décision d'issue vaut plusieurs
-  // milliers d'euros.
+  // Reserved to the owner and to production. The other roles can only REPORT.
+  // The journal is by-name: an outcome decision is worth several thousand euros.
   arthome.common.v1.Actor declared_by = 7;
 }
 
-// REPLAY_POLICY_NONE est DÉFINITIF pour cette date : on ne peut pas activer
-// ensuite une rediffusion qu'on a promis de ne pas faire, le tarif public en
-// dépendait. Les autres valeurs se verrouillent à l'ouverture de la billetterie.
+// REPLAY_POLICY_NONE is FINAL for this date: you cannot later enable a replay
+// you promised not to make — the public price depended on it. The other values
+// lock when the box office opens.
 message DateReplayPolicySet {
   string date_id = 1;
   ReplayPolicy policy = 2;
@@ -237,16 +236,16 @@ message DateRightsChanged {
   google.protobuf.Timestamp occurred_at = 3;
 }
 
-// ---------------------------------------------------------------- spectacle
+// ---------------------------------------------------------------- show
 
 message ShowPublished {
   string show_id = 1;
   string channel_id = 2;
   string artist_id = 3;
   string category_id = 4;
-  // MULTIPLE. `taxonomy.json` le déclare « optionnel, multiple »,
-  // `catalogue.json` le porte au singulier, et le filtre de recherche du web est
-  // une multi-sélection : le contrat tranche pour le pluriel (E9).
+  // MULTIPLE. `taxonomy.json` declares it "optional, multiple",
+  // `catalogue.json` carries it in the singular, and the web search filter is a
+  // multi-select: the contract settles on the plural (E9).
   repeated string genre_ids = 5;
   repeated string tag_ids = 6;
   uint32 runtime_min = 7;
@@ -268,7 +267,7 @@ message ShowUpdated {
   google.protobuf.Timestamp occurred_at = 6;
 }
 
-// ---------------------------------------------------------------- artiste
+// ---------------------------------------------------------------- artist
 
 message ArtistUpdated {
   string artist_id = 1;
@@ -280,12 +279,12 @@ message ArtistUpdated {
   google.protobuf.Timestamp occurred_at = 7;
 }
 
-// ---------------------------------------------------- recherche enregistrée
+// ---------------------------------------------------- saved search
 
-// Déclenché par le PERCOLATOR de l'index quand une date NOUVELLE correspond à
-// une recherche enregistrée. C'est ce qui permet à la page Compte d'afficher
-// « nouvelles depuis votre dernière visite » sans dix agrégations par
-// affichage : le compteur s'incrémente ici et se remet à zéro à la lecture.
+// Raised by the index's PERCOLATOR when a NEW date matches a saved search.
+// That is what lets the Account page show "new since your last visit" without
+// ten aggregations per render: the counter increments here and resets to zero
+// on read.
 message SavedSearchMatched {
   string saved_search_id = 1;
   string account_id = 2;

@@ -1,15 +1,14 @@
 /**
- * Identifiants marques — un `DateId` n'est pas un `ShowId`, et le compilateur
- * le sait.
+ * Branded identifiers — a `DateId` is not a `ShowId`, and the compiler knows it.
  *
- * `shared/helpers.js` manipule des identifiants en `string` nus, ce qui laisse
- * passer `datesOfShow(artistId)` sans un mot. Sur sept contextes qui echangent
- * neuf familles d'identifiants, c'est une faute qui arrive.
+ * `shared/helpers.js` handles identifiers as bare strings, which lets
+ * `datesOfShow(artistId)` through without a word. Across seven contexts
+ * exchanging nine families of identifier, that is a mistake that happens.
  */
 
 declare const brand: unique symbol;
 
-/** Un type nominal : structurellement une chaine, distinct a la compilation. */
+/** A nominal type: structurally a string, distinct at compile time. */
 export type Brand<TBrand extends string> = string & { readonly [brand]: TBrand };
 
 export type AccountId = Brand<'AccountId'>;
@@ -26,11 +25,11 @@ export type OrderId = Brand<'OrderId'>;
 export type MessageId = Brand<'MessageId'>;
 
 /**
- * Marque une chaine deja validee a la frontiere.
+ * Brands a string that has already been validated at the boundary.
  *
- * Volontairement sans verification : la forme est verifiee UNE FOIS par zod,
- * dans `@arthome/core/schema`. La revalider ici ferait payer la dependance a
- * chaque evaluation d'une regle, sur le chemin le plus chaud du systeme.
+ * Deliberately unchecked: the shape is validated ONCE by zod, in
+ * `@arthome/core/schema`. Re-validating here would make every rule evaluation
+ * pay for that dependency, on the hottest path in the system.
  */
 export function brandId<T extends Brand<string>>(value: string): T {
   return value as T;

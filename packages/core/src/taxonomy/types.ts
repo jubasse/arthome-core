@@ -1,52 +1,52 @@
 /**
- * La taxonomie : 2 univers, 21 disciplines, 176 sous-genres, 205 etiquettes,
- * 7 groupes d'attributs.
+ * The taxonomy: 2 universes, 21 disciplines, 176 sub-genres, 205 tags,
+ * 7 attribute groups.
  *
- * ⚠ CE MODULE NE PORTE PAS LA DONNEE. La taxonomie est servie comme un
- * ARTEFACT VERSIONNE IMMUABLE — `/taxonomy/{locale}/v{N}.json` — par langue et
- * par surface, avec un cache tres long et un instantane embarque au build
- * comme repli. 59,5 Ko bruts, 8,4 Ko gzip : ce n'est pas un appel d'API, et
- * encore moins une constante compilee dans un paquet que cinq applications
- * embarquent.
+ * ⚠ THIS MODULE DOES NOT CARRY THE DATA. The taxonomy is served as an
+ * IMMUTABLE VERSIONED ARTEFACT — `/taxonomy/{locale}/v{N}.json` — per language
+ * and per surface, with a very long cache and a build-time snapshot as a
+ * fallback. 59.5 KB raw, 8.4 KB gzip: that is not an API call, and still less a
+ * constant compiled into a package five applications embed.
  *
- * Ce module porte les TYPES et les REGLES. Le chargement est la ou vit
- * l'artefact.
+ * This module carries the TYPES and the RULES. Loading happens where the
+ * artefact lives.
  */
 
-/** Un univers : NAVIGATION SEULEMENT, jamais un niveau taxonomique. */
+/** A universe: NAVIGATION ONLY, never a taxonomic level. */
 export interface Family {
   readonly id: string;
   readonly i18nKey: string;
 }
 
-/** Un sous-genre : optionnel, MULTIPLE, vocabulaire ferme. */
+/** A sub-genre: optional, MULTIPLE, closed vocabulary. */
 export interface Genre {
   readonly id: string;
   readonly i18nKey: string;
-  /** Etiquettes suggerees par ce sous-genre. Une suggestion, jamais une regle. */
+  /** Tags suggested by this sub-genre. A suggestion, never a rule. */
   readonly suggests: readonly string[];
 }
 
 /**
- * Une discipline : obligatoire, unique, vocabulaire ferme.
+ * A discipline: mandatory, single, closed vocabulary.
  *
- * Une discipline est une FORME — jamais une langue, une epoque ni un pays.
- * C'est la distinction que `Taxonomie - projet.md` s'emploie a prevenir, et que
- * le cahier des charges TV avait perdue en appelant « concerts » une discipline
- * et « ballet » autre chose qu'un sous-genre de la danse (B2).
+ * A discipline is a FORM — never a language, a period or a country. That is the
+ * distinction `Taxonomie - projet.md` works to protect, and which the TV brief
+ * had lost by calling "concerts" a discipline and "ballet" something other than
+ * a sub-genre of dance (B2).
  */
 export interface Discipline {
   readonly id: string;
   readonly familyId: string;
   readonly i18nKey: string;
   /**
-   * Le RANG EDITORIAL, du plus grand public au plus pointu, familles melees.
+   * The EDITORIAL RANK, from the most popular to the most specialised,
+   * families mixed.
    *
-   * ⚠ AUCUNE SURFACE NE REORDONNE. C'est une decision editoriale, servie avec
-   * la taxonomie ; la recalculer sur cinq surfaces produirait cinq ordres.
+   * ⚠ NO SURFACE REORDERS. It is an editorial decision, served with the
+   * taxonomy; recomputing it on five surfaces would produce five orders.
    */
   readonly rank: number;
-  /** Teinte de la pastille. Presentation, portee ici parce que servie. */
+  /** The badge's hue. Presentation, carried here because it is served. */
   readonly hue: number;
   readonly genres: readonly Genre[];
 }
@@ -59,7 +59,7 @@ export interface Tag {
   readonly aliases: readonly string[];
 }
 
-/** Un groupe d'attributs facetables : `audience`, `accessibility`, … */
+/** A facetable attribute group: `audience`, `accessibility`, … */
 export interface AttributeGroup {
   readonly id: string;
   readonly values: readonly AttributeValue[];
@@ -70,7 +70,7 @@ export interface AttributeValue {
   readonly i18nKey: string;
 }
 
-/** L'artefact complet, tel qu'il est servi et tel qu'il est embarque au build. */
+/** The complete artefact, as served and as embedded at build time. */
 export interface Taxonomy {
   readonly version: number;
   readonly families: readonly Family[];
@@ -80,19 +80,19 @@ export interface Taxonomy {
 }
 
 /**
- * La reference taxonomique d'un spectacle.
+ * A show's taxonomic reference.
  *
- * E9 — TROIS corrections par rapport a `catalogue.json` :
- *   - le sous-genre est MULTIPLE. `taxonomy.json` le declare « optionnel,
- *     multiple », `catalogue.json` le porte au singulier, et le filtre de
- *     recherche du web est une multi-selection. Le pluriel tranche ;
- *   - `attributes` portait en realite des ETIQUETTES — `revival`,
- *     `new-creation`, `opening-night`, `open-air`, `archive` sont des tags au
- *     sens de `tagPolicy`, pas des valeurs des sept groupes d'attributs.
- *     Collision de nom entre deux notions : elles sont separees ici ;
- *   - les attributs sont un enregistrement groupe par groupe, pas une liste
- *     plate : « accessible en fauteuil » appartient a `accessibility`, et le
- *     savoir est ce qui permet d'en faire une facette.
+ * E9 — THREE corrections against `catalogue.json`:
+ *   - the sub-genre is MULTIPLE. `taxonomy.json` declares it "optional,
+ *     multiple", `catalogue.json` carries it in the singular, and the web
+ *     search filter is a multi-select. The plural wins;
+ *   - `attributes` in fact carried TAGS — `revival`, `new-creation`,
+ *     `opening-night`, `open-air`, `archive` are tags in `tagPolicy`'s sense,
+ *     not values of the seven attribute groups. A name collision between two
+ *     notions: they are separated here;
+ *   - attributes are a record group by group, not a flat list: "wheelchair
+ *     accessible" belongs to `accessibility`, and knowing that is what makes it
+ *     a facet.
  */
 export interface TaxonomyRef {
   readonly disciplineId: string;

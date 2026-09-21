@@ -1,18 +1,17 @@
 /**
- * Les vocabulaires du catalogue : ce qui est publie, diffuse, et ce qui en
- * decide l'etat.
+ * Catalogue vocabularies: what is published, what is broadcast, and what
+ * decides their state.
  *
- * ⚠ CE FICHIER EST DECLARANT. La porte `arthome-check-enums` y decouvre les
- * valeurs et signale toute recopie ailleurs dans le depot. C'est pour cela que
- * les regles importent les objets de membres nommes ci-dessous et n'ecrivent
- * jamais une chaine litterale.
+ * ⚠ THIS FILE IS A DECLARING FILE. `arthome-check-enums` discovers the values
+ * here and reports any copy elsewhere in the repository. That is why rules
+ * import the named-member objects below and never write a string literal.
  */
 
 /**
- * L'acte de la chaine. Vocabulaire de `catalogue.json`, qui fait autorite (D2).
- * `replay-online` dit ce que `replay` ne dit pas : la rediffusion est EN VENTE.
- * Les tables paralleles des deux maquettes de studio — `hidden`, `sched`,
- * `tech`, `done` — ne sont jamais reprises.
+ * The channel's act. Vocabulary from `catalogue.json`, which has authority (D2).
+ * `replay-online` says what `replay` does not: the replay is ON SALE.
+ * The parallel tables in the two studio mockups — `hidden`, `sched`, `tech`,
+ * `done` — are never carried over.
  */
 export const PUBLICATION_STATES = [
   'draft',
@@ -36,12 +35,12 @@ export const PublicationState = {
 } as const;
 
 /**
- * L'axe TECHNIQUE, et rien d'autre.
+ * The TECHNICAL axis, and nothing else.
  *
- * `postponed` et `cancelled` sont RETIRES : c'etaient des echos de
- * `DateOutcome` loges dans l'etat technique — la meme faute que `reported`
- * dans le champ des sanctions (E4). Une regie n'a pas d'etat « annulee » :
- * elle a un plateau qui n'envoie rien.
+ * `postponed` and `cancelled` are REMOVED: they were echoes of `DateOutcome`
+ * lodged in the technical state — the same fault as `reported` sitting in the
+ * sanctions field (E4). A run desk has no "cancelled" state: it has a stage
+ * that is sending nothing.
  */
 export const RUN_STATES = ['idle', 'rehearsal', 'on-air', 'interrupted', 'run-ended'] as const;
 export type RunState = (typeof RUN_STATES)[number];
@@ -55,8 +54,8 @@ export const RunState = {
 } as const;
 
 /**
- * L'ISSUE. Elle est un FAIT sur la representation : jamais reecrite, jamais
- * effacee. C'est elle qui prime sur les deux autres axes.
+ * The OUTCOME. It is a FACT about the performance: never rewritten, never
+ * erased. It takes precedence over the other two axes.
  */
 export const DATE_OUTCOMES = ['postponed', 'cancelled', 'interrupted'] as const;
 export type DateOutcome = (typeof DATE_OUTCOMES)[number];
@@ -68,18 +67,18 @@ export const DateOutcome = {
 } as const;
 
 /**
- * La QUATRIEME valeur, derivee et unique — CE QUE LA PASTILLE DIT.
+ * The FOURTH value, derived and unique — WHAT THE BADGE SAYS.
  *
- * Aucun des trois axes ne la portait, et chaque surface recomposait la
- * hierarchie a sa facon : la definition meme d'une valeur calculee deux fois.
+ * None of the three axes carried it, and every surface recomposed the hierarchy
+ * its own way: the very definition of a value computed twice.
  *
- * ⚠ ONZE valeurs, et non huit. Une version anterieure de ce vocabulaire
- * n'avait que les etats PUBLICS — c'etait oublier que le studio affiche aussi
- * les dates qui ne le sont pas encore, et que `displayState` est prescrit sur
- * LES DEUX produits, le studio d'abord. `draft`, `reserve` et `technical`
- * portent donc la MEME chaine que l'etat de publication correspondant : quand
- * aucun axe posterieur ne prend le dessus, l'etat affiche EST l'etat de
- * publication. Le partage de valeur est delibere, comme celui des trois issues.
+ * ⚠ ELEVEN values, not eight. An earlier version of this vocabulary held only
+ * the PUBLIC states — which forgot that the studio also shows dates that are
+ * not public yet, and that `displayState` is prescribed on BOTH products, the
+ * studio first. So `draft`, `reserve` and `technical` carry the SAME string as
+ * the matching publication state: when no later axis takes over, the displayed
+ * state IS the publication state. Sharing the value is deliberate, exactly as
+ * it is for the three outcomes.
  */
 export const DISPLAY_STATES = [
   'draft',
@@ -111,13 +110,12 @@ export const DisplayState = {
 } as const;
 
 /**
- * La PROMESSE faite avant l'achat — c'est elle qui justifie l'ecart de tarif,
- * et le dossier en fait un principe.
+ * The PROMISE made before purchase — it is what justifies the price difference,
+ * and the handover file makes it a principle.
  *
- * `sub` et `off` des maquettes mobile et de l'assistant de creation ne sont pas
- * du vocabulaire (E2) : `helpers.stateOf` testait litteralement
- * `policy !== 'none'`, donc une date creee avec `off` n'aurait JAMAIS ete
- * reconnue comme sans rediffusion.
+ * `sub` and `off`, from the mobile mockup and the creation wizard, are not
+ * vocabulary (E2): `helpers.stateOf` literally tested `policy !== 'none'`, so a
+ * date created with `off` would NEVER have been recognised as having no replay.
  */
 export const REPLAY_POLICIES = ['included', 'subscription', 'unit', 'none'] as const;
 export type ReplayPolicy = (typeof REPLAY_POLICIES)[number];
@@ -138,14 +136,14 @@ export const RightsScope = {
 } as const;
 
 /**
- * Un CODE, jamais une phrase.
+ * A CODE, never a sentence.
  *
- * `geography.rightsPolicy.blackoutReasons[]` porte aujourd'hui `label` et
- * `labelEn` — du texte redige DANS la donnee, alors que tout le reste passe
- * par `enums.*`. C'est une fuite d'i18n dans le modele (E8).
+ * `geography.rightsPolicy.blackoutReasons[]` currently carries `label` and
+ * `labelEn` — prose written INSIDE the data, while everything else goes through
+ * `enums.*`. That is an i18n leak in the model (E8).
  *
- * Orthographe : celle de `shared/`, a la lettre — donc `co-production` en
- * kebab-case, et non `co_production` (K6).
+ * Spelling: `shared/`'s, to the letter — so `co-production` in kebab-case, not
+ * `co_production` (K6).
  */
 export const BLACKOUT_REASONS = ['co-production', 'broadcaster', 'festival'] as const;
 export type BlackoutReason = (typeof BLACKOUT_REASONS)[number];
@@ -157,13 +155,13 @@ export const BlackoutReason = {
 } as const;
 
 /**
- * Vocabulaire REEL, corrige (D1).
+ * The REAL vocabulary, corrected (D1).
  *
- * `taxonomy.json` declare `none | light | helpful`. Or `essential` — ABSENTE du
- * vocabulaire — est employee par cinq spectacles, traduite dans l'i18n, et
- * `hasLanguageBarrier` EN FAIT SON TEST. A l'inverse, `light` n'est employee
- * nulle part. Un vocabulaire ferme qui ne contient pas la valeur dont depend la
- * regle la plus visible de la surface n'est pas un vocabulaire ferme.
+ * `taxonomy.json` declares `none | light | helpful`. But `essential` — ABSENT
+ * from the vocabulary — is carried by five shows, translated in the i18n files,
+ * and `hasLanguageBarrier` MAKES IT ITS TEST. Meanwhile `light` is used
+ * nowhere. A closed vocabulary that omits the value the surface's most visible
+ * rule depends on is not a closed vocabulary.
  */
 export const LANGUAGE_DEPENDENCIES = ['none', 'helpful', 'essential'] as const;
 export type LanguageDependency = (typeof LANGUAGE_DEPENDENCIES)[number];
@@ -174,8 +172,13 @@ export const LanguageDependency = {
   ESSENTIAL: 'essential',
 } as const;
 
-/** Les quatre natures d'incident visibles du spectateur. */
-export const INCIDENT_KINDS = ['hold-screen', 'incident-postponed', 'incident-cancelled', 'incident-interrupted'] as const;
+/** The four incident kinds a viewer can see. */
+export const INCIDENT_KINDS = [
+  'hold-screen',
+  'incident-postponed',
+  'incident-cancelled',
+  'incident-interrupted',
+] as const;
 export type IncidentKind = (typeof INCIDENT_KINDS)[number];
 
 export const IncidentKind = {
@@ -186,11 +189,11 @@ export const IncidentKind = {
 } as const;
 
 /**
- * La CAUSE, vocabulaire NOUVEAU et distinct de l'issue.
+ * The CAUSE — a NEW vocabulary, distinct from the outcome.
  *
- * `catalogue.incidentMessages` ne connait que quatre entrees, qui sont des
- * ISSUES. La regie mobile en distingue trois de plus qui n'existent dans aucun
- * vocabulaire, et `streaming.md` en nomme une quatrieme.
+ * `catalogue.incidentMessages` knows only four entries, and they are OUTCOMES.
+ * The mobile run desk distinguishes three more that exist in no vocabulary, and
+ * `streaming.md` names a fourth.
  */
 export const INCIDENT_CAUSES = [
   'venue-feed-lost',

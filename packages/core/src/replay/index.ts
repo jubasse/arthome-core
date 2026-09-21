@@ -1,17 +1,17 @@
 /**
- * La rediffusion : la PROMESSE, la fenetre, et ce qu'il en reste.
+ * The replay: the PROMISE, the window, and what is left of it.
  *
- * Le decoupage entre ce module et `catalog/date-state` n'est pas arbitraire, il
- * suit la carte des contextes :
- *   - la POLITIQUE et la FENETRE sont a `catalog` — c'est la promesse faite
- *     AVANT L'ACHAT, et le dossier en fait un principe : c'est elle qui
- *     justifie l'ecart de tarif ;
- *   - la MISE EN VENTE est a `ticketing` — le prix quand la politique est
- *     `unit` ;
- *   - le FICHIER et son expiration sont a `streaming`.
+ * The split between this module and `catalog/date-state` is not arbitrary; it
+ * follows the context map:
+ *   - the POLICY and the WINDOW belong to `catalog` — it is the promise made
+ *     BEFORE THE PURCHASE, and the file makes that a principle: it is what
+ *     justifies the price difference;
+ *   - PUTTING IT ON SALE belongs to `ticketing` — the price when the policy is
+ *     `unit`;
+ *   - the FILE and its expiry belong to `streaming`.
  *
- * Ce module porte ce que le SPECTATEUR en voit : combien de temps il lui reste,
- * et s'il peut regarder.
+ * This module carries what the VIEWER sees of it: how much time they have left,
+ * and whether they can watch.
  */
 
 import type { Instant } from '../kernel/clock.js';
@@ -20,19 +20,19 @@ import { ReplayPolicy } from '../vocabulary/catalog.js';
 import { replayEndsAt, type DateTiming } from '../catalog/date-state.js';
 
 /**
- * Les heures restantes de rediffusion — une valeur DECROISSANTE.
+ * The replay hours remaining — a DECREASING value.
  *
- * ⚠ C'est l'exemple canonique de la regle « aucune valeur calculee deux
- * fois », et `storefront-tv` l'a formule mieux que moi :
+ * ⚠ This is the canonical example of the "no value computed twice" rule, and
+ * `storefront-tv` put it better than I did:
  *
- *   « Les heures restantes se DERIVENT de l'instant de fin et de la fenetre,
- *     donc le contrat livre les deux entrees, pas le resultat. Si le serveur
- *     livrait le nombre d'heures, il serait faux des la minute suivante. »
+ *   "The hours remaining are DERIVED from the end instant and the window, so
+ *    the contract delivers the two inputs, not the result. If the server
+ *    delivered the hour count, it would be wrong a minute later."
  *
- * D'ou la forme : la fonction prend un `now` EXPLICITE. Le serveur l'appelle
- * avec son instant et sert le resultat AVEC ses entrees ; la surface la
- * rappelle avec l'instant serveur corrige de son decalage. Une regle, deux
- * appels, aucune reimplementation.
+ * Hence the shape: the function takes an EXPLICIT `now`. The server calls it
+ * with its instant and serves the result WITH its inputs; the surface calls it
+ * again with the server instant corrected for its own offset. One rule, two
+ * calls, no reimplementation.
  */
 export function replayHoursLeft(timing: DateTiming, now: Instant): number {
   const endsAtInstant = replayEndsAt(timing);
@@ -42,33 +42,33 @@ export function replayHoursLeft(timing: DateTiming, now: Instant): number {
 }
 
 /**
- * La rediffusion est-elle ENCORE en ligne ?
+ * Is the replay STILL online?
  *
- * Distincte de « existe-t-il une rediffusion » : une date peut avoir une
- * politique `included` et une fenetre expiree. `storefront-tv` exige que les
- * deux refus soient distinguables — « aucune rediffusion pour cette date » et
- * « rediffusion expiree » sont deux ecrans differents.
+ * Distinct from "does a replay exist": a date can have an `included` policy and
+ * an expired window. `storefront-tv` insists the two refusals be
+ * distinguishable — "no replay for this date" and "replay expired" are two
+ * different screens.
  */
 export function isReplayWindowOpen(timing: DateTiming, now: Instant): boolean {
   return replayHoursLeft(timing, now) > 0;
 }
 
-/** La date promet-elle une rediffusion, quelle que soit la fenetre ? */
+/** Does the date promise a replay at all, whatever the window? */
 export function hasReplayPolicy(timing: DateTiming): boolean {
   return timing.replayPolicy !== ReplayPolicy.NONE;
 }
 
 /**
- * La rediffusion se paie-t-elle a l'unite ?
+ * Is the replay paid for separately?
  *
- * `unit` est la seule politique qui demande un prix a `ticketing`. `included`
- * et `subscription` ouvrent sur un droit deja detenu.
+ * `unit` is the only policy that asks `ticketing` for a price. `included` and
+ * `subscription` open on an entitlement already held.
  */
 export function isReplaySoldSeparately(timing: DateTiming): boolean {
   return timing.replayPolicy === ReplayPolicy.UNIT;
 }
 
-/** Pourquoi la rediffusion n'est pas regardable — en CODE. */
+/** Why the replay is not watchable — as a CODE. */
 export const REPLAY_UNAVAILABILITY_REASONS = ['no-replay-policy', 'replay-window-expired'] as const;
 export type ReplayUnavailabilityReason = (typeof REPLAY_UNAVAILABILITY_REASONS)[number];
 
@@ -78,10 +78,10 @@ export const ReplayUnavailabilityReason = {
 } as const;
 
 /**
- * Le diagnostic complet, en une passe.
+ * The full diagnosis, in one pass.
  *
- * Rend `null` quand la rediffusion est disponible — l'absence de motif EST la
- * disponibilite, ce qui evite un second appel pour savoir pourquoi.
+ * Returns `null` when the replay is available — the absence of a reason IS
+ * availability, which avoids a second call to find out why.
  */
 export function replayUnavailabilityReason(
   timing: DateTiming,

@@ -1,4 +1,4 @@
-/** Les droits : huit roles canoniques, l'union jamais un rang, et `grants`. */
+/** Rights: eight canonical roles, the union never a rank, and `grants`. */
 
 export { assignableRolesOf, canAssign } from './grants.js';
 

@@ -1,24 +1,23 @@
 /**
- * Un generateur pseudo-aleatoire DETERMINISTE.
+ * A DETERMINISTIC pseudo-random generator.
  *
- * `fixtures.js` a une seconde vie apres le portage : jeu de donnees de test et
- * de demonstration. Deterministe, il produit le meme catalogue a chaque
- * execution — un socle solide pour les tests d'integration et les
- * environnements de recette.
+ * `fixtures.js` has a second life after the port: a test and demonstration data
+ * set. Being deterministic, it produces the same catalogue on every run — a
+ * solid base for integration tests and staging environments.
  *
- * ⚠ `Math.random()` est proscrit ici, et pas par purisme : un jeu de donnees
- * non reproductible rend un test intermittent, et un test intermittent finit
- * par etre desactive. C'est aussi ce qui permet au `FakePaymentAdapter` de
- * tourner SANS CLE ET SANS RESEAU, ce que la demonstration publique exige.
+ * ⚠ `Math.random()` is banned here, and not out of purism: a non-reproducible
+ * data set makes a test flaky, and a flaky test ends up disabled. It is also
+ * what lets the `FakePaymentAdapter` run WITH NO KEY AND NO NETWORK, which the
+ * public demonstration requires.
  */
 
 /**
- * Mulberry32 — trente-deux bits d'etat, une multiplication, trois decalages.
+ * Mulberry32 — thirty-two bits of state, one multiplication, three shifts.
  *
- * Choisi pour ce qu'il n'a pas : aucune dependance, aucune API de plateforme,
- * et un comportement identique sous Node, Metro et un navigateur. La qualite
- * statistique suffit largement a repartir des dates dans un calendrier ; on ne
- * chiffre rien avec.
+ * Chosen for what it does not have: no dependency, no platform API, and
+ * identical behaviour under Node, Metro and a browser. Its statistical quality
+ * is more than enough to spread dates across a calendar; we encrypt nothing
+ * with it.
  */
 export class DeterministicRandom {
   private state: number;
@@ -27,7 +26,7 @@ export class DeterministicRandom {
     this.state = seed >>> 0;
   }
 
-  /** Un flottant dans `[0, 1)`. */
+  /** A float in `[0, 1)`. */
   public next(): number {
     this.state = (this.state + 0x6d2b79f5) >>> 0;
     let t = this.state;
@@ -36,12 +35,12 @@ export class DeterministicRandom {
     return ((t ^ (t >>> 14)) >>> 0) / 4_294_967_296;
   }
 
-  /** Un entier dans `[min, max]`, bornes incluses. */
+  /** An integer in `[min, max]`, bounds included. */
   public intBetween(min: number, max: number): number {
     return min + Math.floor(this.next() * (max - min + 1));
   }
 
-  /** Un element, ou `null` si la liste est vide — jamais `undefined`. */
+  /** One element, or `null` if the list is empty — never `undefined`. */
   public pick<T>(values: readonly T[]): T | null {
     if (values.length === 0) return null;
     return values[this.intBetween(0, values.length - 1)] ?? null;

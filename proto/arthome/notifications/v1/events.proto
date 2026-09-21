@@ -1,30 +1,29 @@
-// Événements du contexte `notifications` — atteindre une personne hors de
-// l'application.
+// Events of the `notifications` context — reaching a person outside the
+// application.
 //
-// Ce contexte NE POSSÈDE PAS les seuils qui déclenchent une alerte : ils sont du
-// domaine et vivent dans @arthome/core — « 30 minutes avant », « 85 % des
-// places », « 6 heures avant expiration », « file au-delà de dix messages »,
-// « poste non affecté à J-1 ». Il les lit, il ne les invente pas. Recopiés par
-// surface, ils divergeraient : le web dirait 30 minutes, la TV 15, et le mobile
-// aurait raison par hasard.
+// This context DOES NOT OWN the thresholds that trigger an alert: they are
+// domain and live in @arthome/core — "30 minutes before", "85% of the seats",
+// "6 hours before expiry", "queue beyond ten messages", "post unassigned at
+// D-1". It reads them, it does not invent them. Copied per surface, they would
+// diverge: the web would say 30 minutes, the TV 15, and mobile would be right
+// by accident.
 //
-// Maturité : PROVISOIRE (palier 6).
+// Maturity: PROVISIONAL (milestone 6).
 syntax = "proto3";
 
 package arthome.notifications.v1;
 
 import "google/protobuf/timestamp.proto";
 
-// Le TROISIÈME canal n'est nommé nulle part dans le dossier : la grille offre
-// trois canaux par déclencheur, deux seulement sont nommés (`push`, `email`), et
-// le champ téléphone porte la mention « pour les SMS de rappel ».
+// The THIRD channel is named nowhere in the file: the grid offers three
+// channels per trigger, only two are named (`push`, `email`), and the phone
+// field carries the note "for reminder SMS".
 //
-// Je propose NOTIFICATION_CHANNEL_IN_APP et non `sms`. Motif : un canal SMS a
-// un coût par message, une réglementation propre (consentement, horaires,
-// désinscription) et un prestataire de plus, pour une valeur que rien n'a
-// éprouvée. `in_app` est gratuit, déjà servi par le centre de notifications
-// existant, et ne promet rien qu'on ne tienne. À CONFIRMER PAR LE CHEF : c'est
-// une proposition, pas un constat.
+// I propose NOTIFICATION_CHANNEL_IN_APP and not `sms`. Reason: an SMS channel
+// has a per-message cost, a regulation of its own (consent, hours, opt-out) and
+// one more provider, for a value nothing has tested. `in_app` is free, already
+// served by the existing notification centre, and promises nothing we cannot
+// keep. TO BE CONFIRMED BY THE CHIEF: this is a proposal, not an observation.
 enum NotificationChannel {
   NOTIFICATION_CHANNEL_UNSPECIFIED = 0;
   NOTIFICATION_CHANNEL_PUSH = 1;
@@ -34,8 +33,8 @@ enum NotificationChannel {
 
 enum DeliveryFailureReason {
   DELIVERY_FAILURE_REASON_UNSPECIFIED = 0;
-  // Jeton de poussée mort : l'application a été désinstallée ou le jeton a
-  // tourné. Le nettoyage est une conséquence, pas une erreur.
+  // Dead push token: the application was uninstalled or the token rotated.
+  // Cleaning up is a consequence, not an error.
   DELIVERY_FAILURE_REASON_TOKEN_INVALID = 1;
   DELIVERY_FAILURE_REASON_PROVIDER_REJECTED = 2;
   DELIVERY_FAILURE_REASON_BOUNCED = 3;
@@ -47,8 +46,8 @@ message DeliveryFailed {
   string account_id = 2;
   NotificationChannel channel = 3;
   DeliveryFailureReason reason = 4;
-  // Présent pour NOTIFICATION_CHANNEL_PUSH. Consommé par `identity` pour
-  // détacher un jeton mort de l'appareil.
+  // Present for NOTIFICATION_CHANNEL_PUSH. Consumed by `identity` to detach a
+  // dead token from the device.
   string device_id = 5;
   google.protobuf.Timestamp occurred_at = 6;
 }

@@ -1,40 +1,43 @@
 /**
- * Le formatage des nombres et des montants, SANS `Intl`.
+ * Formatting numbers and amounts, WITHOUT `Intl`.
  *
- * Constat verifie par `storefront-mobile` et confirme a la lecture :
- * `helpers.js` formate entierement a la main — `price`, `number`, `compact`,
- * `clock`, `dayLabel`, `longDate`, `duration`, `timecode`, avec les noms de
- * jours et de mois en dur dans les deux langues. C'est exactement ce qu'il
- * faut : le moteur JavaScript de React Native n'offre pas partout une
- * implementation `Intl` complete, et le polyfill coute plusieurs centaines de
- * kilo-octets — dans cinq applications.
+ * An observation made by `storefront-mobile` and confirmed on reading:
+ * `helpers.js` formats entirely by hand — `price`, `number`, `compact`,
+ * `clock`, `dayLabel`, `longDate`, `duration`, `timecode`, with day and month
+ * names hard-coded in both languages. That is exactly what is needed: React
+ * Native's JavaScript engine does not offer a complete `Intl` implementation
+ * everywhere, and the polyfill costs several hundred kilobytes — in five
+ * applications.
  *
- * ⚠ Le formatage est de la PRESENTATION : il ne decide de rien. Il vit ici
- * parce qu'une valeur affichee a l'identique sur cinq surfaces ne peut pas
- * etre formatee par cinq implementations.
+ * ⚠ Formatting is PRESENTATION: it decides nothing. It lives here because a
+ * value shown identically on five surfaces cannot be formatted by five
+ * implementations.
  */
 
 import type { Money } from '../money/money.js';
-// `Locale` est a la fois un type et un objet de membres nommes : un seul import
-// porte les deux sens du nom.
+// `Locale` is both a type and an object of named members: one import carries
+// both meanings of the name.
 import { Locale } from './locale.js';
 
 const NARROW_NO_BREAK_SPACE = ' ';
 const NO_BREAK_SPACE = ' ';
 
-/** « 20 732 », avec l'espace insecable etroit en francais. */
+/** "20 732", with the narrow no-break space in French. */
 export function formatInteger(value: number, locale: Locale): string {
   const negative = value < 0;
   const digits = String(Math.abs(Math.trunc(value)));
-  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, locale === Locale.FR ? NARROW_NO_BREAK_SPACE : ',');
+  const grouped = digits.replace(
+    /\B(?=(\d{3})+(?!\d))/g,
+    locale === Locale.FR ? NARROW_NO_BREAK_SPACE : ',',
+  );
   return negative ? `-${grouped}` : grouped;
 }
 
 /**
- * « 12,4 k », « 1,2 M » — le compteur d'audience et le nombre d'abonnes.
+ * "12,4 k", "1,2 M" — the audience counter and the subscriber count.
  *
- * Seuil a mille : en dessous, le nombre exact est plus informatif et tient dans
- * la meme largeur.
+ * Threshold at a thousand: below it, the exact number is more informative and
+ * fits the same width.
  */
 export function formatCompact(value: number, locale: Locale): string {
   const abs = Math.abs(value);
@@ -49,16 +52,22 @@ export function formatCompact(value: number, locale: Locale): string {
 }
 
 /**
- * Le symbole d'une devise, et sa POSITION.
+ * A currency's symbol, and its POSITION.
  *
- * Le contrat ne transporte JAMAIS un symbole ni une position : il transporte un
- * code ISO. La derivation vit ici, une fois — sinon cinq surfaces inventeraient
- * cinq tables, et l'une d'elles mettrait le symbole du mauvais cote.
+ * The contract NEVER transports a symbol or a position: it transports an ISO
+ * code. The derivation lives here, once — otherwise five surfaces would invent
+ * five tables, and one of them would put the symbol on the wrong side.
  *
- * Une devise inconnue rend son CODE, jamais un symbole devine : « 26,00 XPF »
- * est juste, « 26,00 ¤ » est un mensonge poli.
+ * An unknown currency returns its CODE, never a guessed symbol: "26,00 XPF" is
+ * correct, "26,00 ¤" is a polite lie.
  */
-const SYMBOLS: Readonly<Record<string, string>> = { EUR: '€', CHF: 'CHF', CAD: '$', USD: '$', GBP: '£' };
+const SYMBOLS: Readonly<Record<string, string>> = {
+  EUR: '€',
+  CHF: 'CHF',
+  CAD: '$',
+  USD: '$',
+  GBP: '£',
+};
 
 export function formatMoney(value: Money, locale: Locale): string {
   const symbol = SYMBOLS[value.currencyCode] ?? value.currencyCode;
@@ -72,6 +81,6 @@ export function formatMoney(value: Money, locale: Locale): string {
       ? formatInteger(units, locale)
       : `${formatInteger(units, locale)}${decimalSeparator}${String(cents).padStart(2, '0')}`;
   const signed = negative ? `-${body}` : body;
-  // Francais : symbole apres, espace insecable. Anglais : symbole avant, colle.
+  // French: symbol after, no-break space. English: symbol before, no space.
   return locale === Locale.FR ? `${signed}${NO_BREAK_SPACE}${symbol}` : `${symbol}${signed}`;
 }

@@ -1,14 +1,13 @@
 /**
- * Le formatage — SANS `Intl`, avec une locale explicite.
+ * Formatting — WITHOUT `Intl`, with an explicit locale.
  *
- * Il ne decide de rien. Il vit dans le domaine parce qu'une valeur affichee a
- * l'identique sur cinq surfaces ne peut pas etre formatee par cinq
- * implementations — c'est la meme raison que pour les regles, appliquee a la
- * presentation.
+ * It decides nothing. It lives in the domain because a value shown identically
+ * on five surfaces cannot be formatted by five implementations — the same
+ * reason as for the rules, applied to presentation.
  */
 
 export type { Bilingual } from './locale.js';
-// `Locale` porte ses deux sens — le type et les membres nommes.
+// `Locale` carries both of its meanings — the type and the named members.
 export { LOCALES, Locale, parseLocale, pickLanguage } from './locale.js';
 
 export { formatCompact, formatInteger, formatMoney } from './number.js';

@@ -1,18 +1,18 @@
 /**
- * Qui peut inviter qui — la table `grants` de `catalogue.json`, portee telle
- * quelle, sur les HUIT roles.
+ * Who may invite whom — the `grants` table from `catalogue.json`, ported as it
+ * stands, over the EIGHT roles.
  *
- * E6 — LA CORRECTION QUI EVITE UN DEFAUT D'AUTORISATION. `studio-data.js`
- * rabat les huit roles sur six personas et ecrase `director`, `video` et
- * `sound` en un seul « regie ». Or cette table les DISTINGUE : `director` peut
- * inviter `video` et `sound` ; `video` et `sound` ne peuvent inviter personne.
+ * E6 — THE CORRECTION THAT AVOIDS AN AUTHORISATION DEFECT. `studio-data.js`
+ * folds the eight roles onto six personas and crushes `director`, `video` and
+ * `sound` into a single "run desk". But this table TELLS THEM APART:
+ * `director` may invite `video` and `sound`; `video` and `sound` may invite
+ * nobody.
  *
- *   Autoriser sur le role court accorde a un regisseur son un droit
- *   d'invitation qu'il n'a pas.
+ *   Authorising on the short role grants a sound engineer an invitation right
+ *   they do not have.
  *
- * Les six personas sont un LIBELLE de presentation. Ils n'existent pas dans ce
- * paquet, et c'est delibere : ce qui n'est pas ici ne peut pas servir a
- * autoriser.
+ * The six personas are a presentation LABEL. They do not exist in this package,
+ * and that is deliberate: what is not here cannot be used to authorise.
  */
 
 import { MemberRole } from '../vocabulary/people.js';
@@ -34,12 +34,7 @@ const GRANTS: Readonly<Record<MemberRole, readonly MemberRole[]>> = {
     MemberRole.SOUND,
     MemberRole.MODERATION,
   ],
-  coordination: [
-    MemberRole.DIRECTOR,
-    MemberRole.VIDEO,
-    MemberRole.SOUND,
-    MemberRole.MODERATION,
-  ],
+  coordination: [MemberRole.DIRECTOR, MemberRole.VIDEO, MemberRole.SOUND, MemberRole.MODERATION],
   director: [MemberRole.VIDEO, MemberRole.SOUND],
   video: [],
   sound: [],
@@ -48,12 +43,12 @@ const GRANTS: Readonly<Record<MemberRole, readonly MemberRole[]>> = {
 };
 
 /**
- * Les roles qu'une personne peut attribuer, vu ses roles tenus.
+ * The roles a person may assign, given the roles they hold.
  *
- * L'UNION, jamais un rang : une personne qui tient `coordination` ET
- * `treasury` peut attribuer ce que `coordination` permet. Le studio sert cette
- * liste MATERIALISEE — `studio-web` le demande explicitement plutot que la
- * table `grants` a recomposer.
+ * The UNION, never a rank: someone holding `coordination` AND `treasury` may
+ * assign what `coordination` allows. The studio serves this list MATERIALISED —
+ * `studio-web` asks for it explicitly rather than the `grants` table to
+ * recompose.
  */
 export function assignableRolesOf(heldRoles: readonly MemberRole[]): readonly MemberRole[] {
   const assignable = new Set<MemberRole>();

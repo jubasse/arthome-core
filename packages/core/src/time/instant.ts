@@ -1,15 +1,15 @@
 /**
- * Les instants, et l'arithmetique qu'on a le droit de faire dessus.
+ * Instants, and the arithmetic we are allowed to do on them.
  *
- * D7 — `shared/catalogue.json` le dit lui-meme : « startOffsetMin, atMin and
+ * D7 — `shared/catalogue.json` says it itself: "startOffsetMin, atMin and
  * rescheduledToOffsetMin are offsets from the moment the app is opened […]
- * NOTHING HERE EXPIRES ». C'est un choix excellent pour une maquette : tous les
- * etats existent a toute heure, et les cinq surfaces voient la meme chose.
- * C'est inutilisable sur un contrat.
+ * NOTHING HERE EXPIRES". That is an excellent choice for a mockup: every state
+ * exists at any hour, and all five surfaces see the same thing. It is unusable
+ * in a contract.
  *
- * Sur le fil : des chaines ISO 8601 en UTC. En base : `timestamptz`, en UTC.
- * Et la decision zod l'impose par un autre chemin — `z.date()` est
- * inconvertible en JSON Schema.
+ * On the wire: ISO 8601 strings in UTC. In the database: `timestamptz`, in UTC.
+ * And the zod decision imposes it by another route — `z.date()` cannot be
+ * converted to JSON Schema.
  */
 
 import { DomainError } from '../kernel/errors.js';
@@ -64,7 +64,7 @@ export function latest(left: Instant, right: Instant): Instant {
   return isAfter(left, right) ? left : right;
 }
 
-/** Une fenetre fermee a gauche, ouverte a droite : `[start, end)`. */
+/** A half-open window: `[start, end)`. */
 export interface Window {
   readonly start: Instant;
   readonly end: Instant;
@@ -83,11 +83,11 @@ export function contains(window: Window, instant: Instant): boolean {
 }
 
 /**
- * Deux fenetres se chevauchent-elles ?
+ * Do two windows overlap?
  *
- * C'est la regle de domaine qui detecte les GARDES QUI SE RECOUVRENT du studio
- * mobile — « deux flux a tenir ce soir ». Elle doit vivre ici et non sur deux
- * surfaces : `studio-mobile` le demandait explicitement.
+ * This is the domain rule that detects the OVERLAPPING SHIFTS in the mobile
+ * studio — "two streams to hold tonight". It must live here rather than on two
+ * surfaces: `studio-mobile` asked for that explicitly.
  */
 export function overlaps(left: Window, right: Window): boolean {
   return isBefore(left.start, right.end) && isBefore(right.start, left.end);

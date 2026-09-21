@@ -1,11 +1,10 @@
 /**
- * La moderation : TROIS AXES separes, DEUX COMPTEURS, une preseance ecrite.
+ * Moderation: THREE separate AXES, TWO COUNTERS, a written precedence.
  *
- * D6 / E3 — quatre vocabulaires coexistaient pour une meme notion, et le
- * defaut de fond n'etait pas qu'ils divergent : c'est que `reported`, un etat
- * de TRIAGE, etait loge dans le champ des SANCTIONS. C'est pour cela que la
- * file se construisait en filtrant `state === 'reported'`, ce qui n'est pas un
- * filtre d'etat mais un filtre de nature.
+ * D6 / E3 — four vocabularies coexisted for one notion, and the underlying
+ * fault was not that they diverged: it was that `reported`, a TRIAGE state,
+ * sat in the SANCTIONS field. That is why the queue was built by filtering
+ * `state === 'reported'`, which is not a state filter but a kind filter.
  */
 
 import { DomainError } from '../kernel/errors.js';
@@ -20,18 +19,23 @@ import {
 } from '../vocabulary/moderation.js';
 
 /**
- * LA PASTILLE UNIQUE — derivee des trois axes, jamais recomposee par une
+ * THE SINGLE BADGE — derived from the three axes, never recomposed by a
  * surface.
  *
- * Une seule pastille s'affiche a l'ecran ; il ne peut donc y avoir qu'un seul
- * proprietaire de la verite. La preseance, ecrite une fois :
+ * Only one badge appears on screen, so there can be only one owner of the
+ * truth. The precedence, written once:
  *
- *   banni  >  reduit au silence  >  retire  >  publie
+ *   banned  >  muted  >  removed  >  published
  *
- * Elle va de la personne vers le message : une sanction sur la PERSONNE couvre
- * tous ses messages, alors qu'un retrait ne porte que sur un message.
+ * It runs from the person towards the message: a sanction on the PERSON covers
+ * all their messages, whereas a removal bears on one message only.
  */
-export const MODERATION_BADGES = ['badge-banned', 'badge-muted', 'badge-removed', 'badge-published'] as const;
+export const MODERATION_BADGES = [
+  'badge-banned',
+  'badge-muted',
+  'badge-removed',
+  'badge-published',
+] as const;
 export type ModerationBadge = (typeof MODERATION_BADGES)[number];
 
 export const ModerationBadge = {
@@ -52,10 +56,10 @@ export function moderationBadgeOf(
 }
 
 /**
- * LE BAIL DE PRISE EN CHARGE — court, et il EXPIRE.
+ * THE CLAIM LEASE — short, and it EXPIRES.
  *
- * « Prendre en charge n'est pas trancher. » Sans expiration, un moderateur qui
- * ferme son navigateur gele une ligne pendant tout le direct.
+ * "Claiming is not settling." Without an expiry, a moderator who closes their
+ * browser freezes a row for the whole live show.
  */
 export const CLAIM_LEASE_MINUTES = 3;
 
@@ -68,32 +72,32 @@ export function isClaimExpired(claimExpiresAt: Instant, now: Instant): boolean {
 }
 
 /**
- * LES DEUX COMPTEURS — et c'est la correction du C3 de `studio-mobile`.
+ * THE TWO COUNTERS — and this is the correction to `studio-mobile`'s C3.
  *
- * Demonstration sur les exemples du contrat lui-meme : `claim` puis `release`,
- * SANS RIEN TRANCHER, fait passer la version de 1 a 3. Un moderateur qui lit la
- * file a `version: 1`, perd le reseau et tranche voit donc son verdict REFUSE a
- * la reconnexion — alors que la file hors ligne est la seule concession
- * accordee au mobile, et que sur un direct a 60 messages par minute les lignes
- * changent de bail sans arret.
+ * Demonstrated on the contract's own examples: `claim` then `release`, WITHOUT
+ * SETTLING ANYTHING, moves the version from 1 to 3. A moderator who reads the
+ * queue at `version: 1`, loses the network and settles therefore sees their
+ * verdict REFUSED on reconnection — when the offline queue is the one
+ * concession granted to mobile, and on a live show at 60 messages a minute the
+ * rows change lease constantly.
  *
- * Le fond est plus grave qu'un compteur mal place : la regle reelle est une
- * SUPERSESSION — « tant que le confrere n'a pas rendu de verdict, votre
- * sanction s'applique ». Un verdict doit donc etre ACCEPTE pendant qu'un autre
- * tient le bail.
+ * The substance is graver than a misplaced counter: the real rule is a
+ * SUPERSESSION — "as long as your colleague has returned no verdict, your
+ * sanction applies". A verdict must therefore be ACCEPTED while someone else
+ * holds the lease.
  *
- *   ⚠ Un compteur unique ne peut pas exprimer
- *     « refuse si tranche, accepte si seulement reclame ».
+ *   ⚠ A single counter cannot express
+ *     "refuse if settled, accept if merely claimed".
  *
- * D'ou : `version` porte le BAIL, `decisionVersion` porte le REGLEMENT, et
- * SEUL un verdict l'incremente. Une commande de verdict est conditionnee sur le
- * second, jamais sur le premier.
+ * Hence: `version` carries the LEASE, `decisionVersion` carries the
+ * SETTLEMENT, and ONLY a verdict increments it. A verdict command is
+ * conditioned on the second, never on the first.
  */
 export interface ModerationItemSnapshot {
   readonly state: ModerationItemState;
-  /** Incrementee par tout changement, bail compris. */
+  /** Incremented by any change, lease included. */
   readonly version: number;
-  /** Incrementee par un VERDICT seulement. */
+  /** Incremented by a VERDICT only. */
   readonly decisionVersion: number;
   readonly settledBy: string | null;
   readonly verdict: ModerationVerdict | null;
@@ -110,21 +114,21 @@ export type SettlementOutcome =
   | {
       readonly accepted: false;
       readonly code: string;
-      /** Le verdict GAGNANT et son auteur, pour que l'ecran dise la verite. */
+      /** The WINNING verdict and its author, so the screen tells the truth. */
       readonly winner: { readonly verdict: ModerationVerdict; readonly settledBy: string } | null;
     };
 
 /**
- * Un verdict est-il recevable ?
+ * Is a verdict admissible?
  *
- * Trois reponses, et la deuxieme est celle qui manquait partout :
- *   - la ligne est deja TRANCHEE  -> refus, AVEC le verdict gagnant et son
- *     auteur, pour que l'ecran affiche « X a deja supprime ce message » au lieu
- *     d'un echec nu. Un refus nu obligerait a un second aller-retour en plein
- *     direct ;
- *   - la ligne est seulement RECLAMEE par un confrere -> ACCEPTE. C'est la
- *     supersession, et c'est ce qu'un compteur unique refusait ;
- *   - le reglement a avance depuis la lecture -> refus.
+ * Three answers, and the second is the one missing everywhere:
+ *   - the row is already SETTLED  -> refusal, WITH the winning verdict and its
+ *     author, so the screen can show "X has already deleted this message"
+ *     instead of a bare failure. A bare refusal would force a second round trip
+ *     in the middle of a live show;
+ *   - the row is merely CLAIMED by a colleague -> ACCEPTED. That is the
+ *     supersession, and it is what a single counter refused;
+ *   - the settlement has moved on since the read -> refusal.
  */
 export function evaluateSettlement(
   snapshot: ModerationItemSnapshot,
@@ -147,16 +151,14 @@ export function evaluateSettlement(
 }
 
 /**
- * LA PRESEANCE HUMAIN / AUTOMATIQUE, ecrite dans UN SEUL SENS.
+ * THE HUMAN / AUTOMATIC PRECEDENCE, written in ONE DIRECTION ONLY.
  *
- * Un humain renverse une decision automatique ; **jamais l'inverse**. Sans
- * cette regle, un filtre retroactif effacerait un arbitrage rendu — et
- * l'arbitrage humain est precisement ce qu'on conserve 24 mois et qu'on
- * journalise nominativement.
+ * A human overturns an automatic decision; **never the reverse**. Without this
+ * rule, a retroactive filter would erase a judgement already made — and human
+ * judgement is precisely what we keep for 24 months and journal by name.
  *
- * La moderation automatique n'est pas construite aujourd'hui. Cette fonction
- * existe pour que la forme puisse l'accueillir sans changement de contrat :
- * c'est bon marche maintenant, cher apres.
+ * Automatic moderation is not built today. This function exists so the shape
+ * can accommodate it without a contract change: cheap now, expensive later.
  */
 export function canOverride(
   existingOrigin: StateChangeOrigin,
@@ -181,12 +183,12 @@ export function assertCanOverride(
 }
 
 /**
- * Le DEBIT du tchat, mesure dans une unite DECLAREE.
+ * The chat's RATE, measured in a DECLARED unit.
  *
- * `studio-mobile` (incoherence 6) : la maquette calcule `messages / heures
- * ecoulees` et l'etiquette « MSG/MIN », puis le compare a un seuil de
- * 60 msg/min. Ce ne sont pas les memes grandeurs. Le contrat fixe donc la
- * fenetre, l'unite et la frequence.
+ * `studio-mobile` (inconsistency 6): the mockup computes `messages / hours
+ * elapsed`, labels it "MSG/MIN", then compares it against a threshold of
+ * 60 msg/min. Those are not the same quantities. So the contract fixes the
+ * window, the unit and the frequency.
  */
 export const CHAT_RATE_WINDOW_SECONDS = 60;
 export const CHAT_BURST_THRESHOLD_PER_MINUTE = 60;
@@ -195,13 +197,16 @@ export function chatRatePerMinute(messagesInWindow: number): number {
   return Math.round((messagesInWindow / CHAT_RATE_WINDOW_SECONDS) * 60);
 }
 
-/** Au-dela du seuil, la console cesse d'afficher le tchat message par message. */
+/** Past the threshold, the console stops showing the chat message by message. */
 export function shouldCollapseToQueue(messagesInWindow: number): boolean {
   return chatRatePerMinute(messagesInWindow) >= CHAT_BURST_THRESHOLD_PER_MINUTE;
 }
 
-/** Une sanction porte un INSTANT d'expiration, jamais une etiquette. */
-export function sanctionExpiryFrom(sanctionedAt: Instant, durationMinutes: number | null): Instant | null {
+/** A sanction carries an EXPIRY INSTANT, never a label. */
+export function sanctionExpiryFrom(
+  sanctionedAt: Instant,
+  durationMinutes: number | null,
+): Instant | null {
   return durationMinutes === null ? null : plusMinutes(sanctionedAt, durationMinutes);
 }
 

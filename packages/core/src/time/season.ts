@@ -1,25 +1,25 @@
 /**
- * Les bornes d'une SAISON de spectacle vivant.
+ * The bounds of a live-performance SEASON.
  *
- * `studio-web` Q12 : le selecteur de periode offre « saison » a cote de 7, 30
- * et 90 jours, et il refusait — a juste titre — de la coder dans le studio.
- * C'est une notion de domaine : servie, jamais devinee par cinq surfaces.
+ * `studio-web` Q12: the period selector offers "season" next to 7, 30 and 90
+ * days, and it rightly refused to hard-code it in the studio. This is a domain
+ * notion: served, never guessed by five surfaces.
  *
- * Convention : 1er septembre -> 31 aout. C'est celle du spectacle vivant, et
- * elle n'est ecrite nulle part dans `shared/` — d'ou ce module.
+ * Convention: 1 September -> 31 August. That is the live-performance
+ * convention, and it is written nowhere in `shared/` — hence this module.
  */
 
 import { fromEpochMs, windowOf, type Instant, type Window } from './instant.js';
 
-/** Le mois de bascule, en numerotation humaine : 9 = septembre. */
+/** The changeover month, in human numbering: 9 = September. */
 export const SEASON_START_MONTH = 9;
 
 /**
- * La saison qui CONTIENT cet instant, exprimee dans le fuseau donne.
+ * The season CONTAINING this instant, expressed in the given offset.
  *
- * Le fuseau compte : une date du 31 aout a 23 h 30 heure de salle peut etre du
- * 1er septembre en UTC, donc d'une autre saison. Le decalage est un argument,
- * comme partout ailleurs dans ce module.
+ * The offset matters: a date on 31 August at 23:30 venue time can be
+ * 1 September in UTC, and therefore a different season. The offset is an
+ * argument, as everywhere else in this module.
  */
 export function seasonBounds(instant: Instant, utcOffsetMinutes: number): Window {
   const shifted = new Date(Date.parse(instant) + utcOffsetMinutes * 60_000);
@@ -32,8 +32,10 @@ export function seasonBounds(instant: Instant, utcOffsetMinutes: number): Window
   return windowOf(start, end);
 }
 
-/** Le libelle d'une saison, en CODE : « 2026-2027 ». Jamais une phrase. */
+/** A season's label, as a CODE: "2026-2027". Never a sentence. */
 export function seasonLabel(instant: Instant, utcOffsetMinutes: number): string {
-  const startYear = new Date(Date.parse(seasonBounds(instant, utcOffsetMinutes).start)).getUTCFullYear();
+  const startYear = new Date(
+    Date.parse(seasonBounds(instant, utcOffsetMinutes).start),
+  ).getUTCFullYear();
   return `${String(startYear)}-${String(startYear + 1)}`;
 }

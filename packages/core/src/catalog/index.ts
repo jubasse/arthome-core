@@ -1,4 +1,4 @@
-/** Le catalogue : ce qui est publie, son etat affiche, ses droits, sa langue. */
+/** The catalogue: what is published, its displayed state, its rights, its language. */
 
 export type { DateTiming, DisplayStateInput, DisplayStateResult } from './date-state.js';
 export {

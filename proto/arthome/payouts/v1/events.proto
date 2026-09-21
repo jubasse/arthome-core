@@ -1,15 +1,16 @@
-// Événements du contexte `payouts` — ce que la plateforme doit à une chaîne.
+// Events of the `payouts` context — what the platform owes a channel.
 //
-// Sujet Kafka :
-//   arthome.payouts.payout   clé channel_id
+// Kafka topic:
+//   arthome.payouts.payout   key channel_id
 //
-// STRIPE RESTE LA SOURCE DE VÉRITÉ DU MOUVEMENT D'ARGENT. On ne reconstruit
-// jamais son grand livre : on RÉCONCILIE le nôtre avec lui, et une période ne
-// se clôt pas avec un écart non expliqué.
+// STRIPE REMAINS THE SOURCE OF TRUTH FOR THE MOVEMENT OF MONEY. We never
+// rebuild its ledger: we RECONCILE ours with it, and a period does not close
+// with an unexplained gap.
 //
-// Maturité : PROVISOIRE. La question fiscale n'est pas tranchée
-// (adr-payments.md §5, D5) : l'assiette et le redevable de la TVA changeront
-// les champs. La FORME — une ventilation par marché — est en revanche sûre.
+// Maturity: PROVISIONAL. The tax question is settled in adr-payments.md §5
+// (D-015, commissionnaire model), but its legal validation is not done: the VAT
+// base and the liable party could still move the fields. The SHAPE — a
+// breakdown per jurisdiction, each line carrying its own rate — is safe.
 syntax = "proto3";
 
 package arthome.payouts.v1;
@@ -18,12 +19,12 @@ import "arthome/common/v1/common.proto";
 import "arthome/ticketing/v1/events.proto";
 import "google/protobuf/timestamp.proto";
 
-// `held` tant qu'une issue est OUVERTE (reportée, interrompue) ;
-// `refunded` si la date est annulée ;
-// `suspended` tant qu'un changement de coordonnées bancaires attend sa
-// contre-signature. Ce qui fait autorité dans `shared/` et qu'on porte :
-// commission 12 %, délai 14 jours, arrondi à l'unité sur chaque composante
-// prise séparément, retenue tant qu'une issue est ouverte.
+// `held` while an outcome is OPEN (postponed, interrupted);
+// `refunded` if the date is cancelled;
+// `suspended` while a change of bank details awaits its counter-signature.
+// What has authority in `shared/` and what we port: commission 12%, delay
+// 14 days, rounding to the unit on each component taken separately, withholding
+// while an outcome is open.
 enum PayoutState {
   PAYOUT_STATE_UNSPECIFIED = 0;
   PAYOUT_STATE_SCHEDULED = 1;
@@ -40,40 +41,38 @@ message PayoutStateChanged {
   PayoutState state = 4;
 
   arthome.common.v1.Money gross_ttc = 5;
-  // Ventilation PAR MARCHÉ, chaque ligne portant son assiette, son taux et son
-  // montant. Elle porte quel que soit le modèle fiscal retenu : un modèle à
-  // taux unique produit une ventilation à une ligne. C'est ce qui réconcilie la
-  // maquette des versements (« le taux applicable est celui du pays de
-  // l'acheteur ») et la fixture (un taux unique au brut), sans supposer laquelle
-  // a raison.
+  // Breakdown PER JURISDICTION, each line carrying its base, its rate and its
+  // amount. It holds whatever tax model is adopted: a single-rate model produces
+  // a one-line breakdown. That is what reconciles the payouts mockup ("the
+  // applicable rate is that of the buyer's country") with the fixture (a single
+  // rate on the gross), without assuming which one is right.
   repeated arthome.ticketing.v1.VatLine vat = 6;
   arthome.common.v1.Money gross_ht = 7;
 
-  // SERVI, jamais redérivé de commission / gross : la maquette le redérive et
-  // retombe sur 12 % par défaut quand le brut est nul. 1200 = 12 %.
+  // SERVED, never re-derived from commission / gross: the mockup re-derives it
+  // and falls back to 12% by default when the gross is zero. 1200 = 12%.
   uint32 commission_rate_bps = 8;
   arthome.common.v1.Money commission = 9;
   arthome.common.v1.Money net = 10;
   arthome.common.v1.Money refunded = 11;
   arthome.common.v1.Money credited = 12;
 
-  // Fin du direct + 14 jours. L'échéance court depuis la FIN, pas depuis le
-  // paiement : `payouts` consomme `streaming.run.ended.v1` pour la poser.
+  // End of the live show + 14 days. The due date runs from the END, not from the
+  // payment: `payouts` consumes `streaming.run.ended.v1` to set it.
   google.protobuf.Timestamp due_at = 13;
   string stripe_transfer_ref = 14;
   google.protobuf.Timestamp occurred_at = 15;
 }
 
-// Une DEMANDE en attente d'un second accord, avec son propre cycle de vie et sa
-// propre trace — pas une écriture. Deux acteurs, deux rôles distincts
-// (propriétaire ET trésorerie), un délai, une trace. Et elle SUSPEND le
-// virement en cours le temps de la signature : une écriture ne peut pas porter
-// cela.
+// A REQUEST awaiting a second approval, with its own lifecycle and its own
+// trace — not a write. Two actors, two distinct roles (owner AND treasury), a
+// deadline, a trace. And it SUSPENDS the transfer in progress for the duration
+// of the signature: a single write cannot carry that.
 message BankChangeRequested {
   string request_id = 1;
   string channel_id = 2;
-  // Les quatre derniers caractères seulement. Un IBAN complet n'a rien à faire
-  // dans un journal d'événements qui se rejoue.
+  // The last four characters only. A full IBAN has no business in an event
+  // journal that gets replayed.
   string masked_account_tail = 3;
   google.protobuf.Timestamp requested_at = 4;
   arthome.common.v1.Actor requested_by = 5;
@@ -87,8 +86,8 @@ message BankChangeCountersigned {
   arthome.common.v1.Actor countersigned_by = 4;
 }
 
-// Une période ne se clôt pas avec un écart non expliqué : cet événement route
-// une alerte vers le rôle `treasury`.
+// A period does not close with an unexplained gap: this event routes an alert
+// to the `treasury` role.
 message ReconciliationDiscrepancyFound {
   string period_id = 1;
   string channel_id = 2;

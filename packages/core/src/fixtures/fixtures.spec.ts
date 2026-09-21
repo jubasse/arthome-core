@@ -10,55 +10,54 @@ import { DeterministicRandom } from './random.js';
 const clock = (): FixedClock => new FixedClock('2026-09-21T20:00:00.000Z');
 
 /**
- * INVARIANT PROTEGE
- *   Le jeu de donnees est DETERMINISTE : meme graine, meme horloge, meme jeu.
+ * PROTECTED INVARIANT
+ *   The data set is DETERMINISTIC: same seed, same clock, same set.
  *
- * POURQUOI
- *   Un jeu non reproductible rend un test intermittent, et un test
- *   intermittent finit par etre desactive. C'est aussi ce qui permet au
- *   `FakePaymentAdapter` de tourner sans cle et sans reseau, ce que la
- *   demonstration publique exige.
+ * WHY
+ *   A non-reproducible set makes a test flaky, and a flaky test ends up
+ *   disabled. It is also what lets the `FakePaymentAdapter` run with no key and
+ *   no network, which the public demonstration requires.
  */
-describe('le determinisme', () => {
-  it('produit exactement le meme jeu a graine et horloge egales', () => {
+describe('determinism', () => {
+  it('produces exactly the same set at equal seed and clock', () => {
     expect(buildFixtures(42, clock())).toEqual(buildFixtures(42, clock()));
   });
 
-  it('produit une suite reproductible', () => {
+  it('produces a reproducible sequence', () => {
     const first = new DeterministicRandom(7);
     const second = new DeterministicRandom(7);
     const draw = (r: DeterministicRandom): readonly number[] => [r.next(), r.next(), r.next()];
     expect(draw(first)).toEqual(draw(second));
   });
 
-  it('ne rend jamais `undefined` sur une liste vide', () => {
-    // `noUncheckedIndexedAccess` rend ce cas visible ; la signature le rend sur.
+  it('never returns `undefined` on an empty list', () => {
+    // `noUncheckedIndexedAccess` makes this case visible; the signature makes it safe.
     expect(new DeterministicRandom(1).pick([])).toBeNull();
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Le jeu couvre LES CAS QUI FONT MAL, pas un volume de donnees plausibles.
+ * PROTECTED INVARIANT
+ *   The set covers THE CASES THAT HURT, not a volume of plausible data.
  *
- * POURQUOI
- *   Un volume plausible ne prouve rien. Une issue de chaque nature, une fenetre
- *   sur le point d'expirer et un blackout territorial prouvent quelque chose —
- *   et chaque cas porte la raison de son existence dans `covers`, lisible dans
- *   un echec de test.
+ * WHY
+ *   A plausible volume proves nothing. One outcome of each kind, a window about
+ *   to expire and a territorial blackout prove something — and each case
+ *   carries the reason for its existence in `covers`, readable in a test
+ *   failure.
  */
-describe('la couverture du jeu', () => {
+describe('the set\'s coverage', () => {
   const fixtures = buildFixtures(42, clock());
 
-  it('exerce les trois issues', () => {
+  it('exercises the three outcomes', () => {
     for (const id of ['date:cancelled', 'date:postponed', 'date:interrupted']) {
       expect(fixtureDate(fixtures, id)?.outcome).not.toBeNull();
     }
   });
 
-  it('porte le cas des trois axes en contradiction', () => {
-    // La course de consommation Kafka, materialisee : publication `live`,
-    // antenne `on-air`, ET une issue declaree. L'issue doit gagner.
+  it('carries the case of the three axes in contradiction', () => {
+    // The Kafka consumption race, made concrete: publication `live`, on air
+    // `on-air`, AND a declared outcome. The outcome must win.
     const date = fixtureDate(fixtures, 'date:absurd-race');
     expect(date).not.toBeNull();
     if (date === null) return;
@@ -73,19 +72,19 @@ describe('la couverture du jeu', () => {
     expect(display.state).toBe(DisplayState.CANCELLED);
   });
 
-  it("porte une fenetre de rediffusion qui expire dans l'heure", () => {
+  it('carries a replay window expiring within the hour', () => {
     const date = fixtureDate(fixtures, 'date:replay-expiring');
     expect(date).not.toBeNull();
     if (date === null) return;
     expect(replayHoursLeft(date.timing, fixtures.generatedAt)).toBe(1);
   });
 
-  it('porte des places retenues par une intention en cours', () => {
-    // Le cas qui n'existait nulle part avant `SeatHold`.
+  it('carries seats held by an intent in progress', () => {
+    // The case that existed nowhere before `SeatHold`.
     expect(fixtureDate(fixtures, 'date:room-open')?.gauge.seatsHeld).toBeGreaterThan(0);
   });
 
-  it('donne a chaque cas la raison de son existence', () => {
+  it('gives each case the reason for its existence', () => {
     for (const date of fixtures.dates) {
       expect(date.covers.length).toBeGreaterThan(10);
     }

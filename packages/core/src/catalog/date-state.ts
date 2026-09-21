@@ -1,26 +1,27 @@
 /**
- * `displayStateOf` — LA valeur que les cartes affichent, et la seule.
+ * `displayStateOf` — THE value the cards show, and the only one.
  *
- * E4 : trois axes d'etat coexistaient sur une date sans hierarchie ecrite —
- * `publication.state` (sept valeurs), `run.state` (six) et `outcome` (trois) —
- * et AUCUN ne portait l'etat affiche. Chaque surface recomposait la hierarchie
- * a sa facon : la definition meme d'une valeur calculee deux fois.
+ * E4: three state axes coexisted on a date with no written hierarchy —
+ * `publication.state` (seven values), `run.state` (six) and `outcome` (three) —
+ * and NONE of them carried the displayed state. Each surface recomposed the
+ * hierarchy its own way: the very definition of a value computed twice.
  *
- * La hierarchie, ecrite une fois :
+ * The hierarchy, written once:
  *
- *   outcome  PRIME SUR  run.state  PRIME SUR  publication.state  PRIME SUR  le temps
+ *   outcome  OUTRANKS  run.state  OUTRANKS  publication.state  OUTRANKS  time
  *
- * Et la regle qui rend tout cela licite (`context-map.md` §0) : une regle vit
- * une fois ici et s'evalue partout. Ce qui est interdit, ce sont deux
- * IMPLEMENTATIONS, jamais deux APPELS. Le serveur evalue au service et sert
- * `validUntil` ; la surface reevalue LA MEME FONCTION quand cet instant passe.
+ * And the rule that makes all this legitimate (`context-map.md` §0): a rule
+ * lives once here and is evaluated everywhere. What is forbidden is two
+ * IMPLEMENTATIONS, never two CALLS. The server evaluates at serve time and
+ * sends `validUntil`; the surface re-evaluates THE SAME FUNCTION when that
+ * instant passes.
  */
 
 import type { Instant } from '../kernel/clock.js';
 import { isAfter, isBefore, minutesBetween, plusHours, plusMinutes } from '../time/instant.js';
-// Chaque nom porte ses DEUX sens : le type (l'union des valeurs) et l'objet de
-// membres nommes. Un seul import suffit, et une regle n'ecrit jamais une
-// chaine litterale — c'est ce qui rend `arthome-check-enums` tenable a l'usage.
+// Each name carries BOTH of its meanings: the type (the union of values) and
+// the object of named members. One import is enough, and a rule never writes a
+// string literal — that is what makes `arthome-check-enums` bearable in use.
 import {
   DateOutcome,
   DisplayState,
@@ -30,19 +31,18 @@ import {
 } from '../vocabulary/catalog.js';
 
 /**
- * Les BORNES d'une date — ce que le contrat sert a cote de l'etat.
+ * The BOUNDS of a date — what the contract serves alongside the state.
  *
- * D7 : `shared/` porte `startOffsetMin`, un decalage relatif a l'ouverture de
- * l'application, et `catalogue.json` le dit lui-meme — « nothing here
- * expires ». Ici, des instants.
+ * D7: `shared/` carries `startOffsetMin`, an offset relative to the moment the
+ * application opens, and `catalogue.json` says it itself — "nothing here
+ * expires". Here, instants.
  */
 export interface DateTiming {
   readonly startsAt: Instant;
   readonly runtimeMin: number;
   /**
-   * 30 minutes aujourd'hui — et c'est une CONSTANTE DE DOMAINE SERVIE, pas un
-   * littéral recopie dans cinq surfaces (E11). La maquette TV la recopiait dans
-   * plusieurs libelles.
+   * 30 minutes today — and it is a SERVED DOMAIN CONSTANT, not a literal copied
+   * into five surfaces (E11). The TV mockup copied it into several labels.
    */
   readonly roomOpensBeforeMin: number;
   readonly replayPolicy: ReplayPolicy;
@@ -60,13 +60,12 @@ export interface DisplayStateInput {
 export interface DisplayStateResult {
   readonly state: DisplayState;
   /**
-   * L'instant ou cet etat CESSE d'etre vrai — `null` quand seul un evenement
-   * peut le changer (une issue est un fait ; un brouillon attend une commande).
+   * The instant at which this state STOPS being true — `null` when only an
+   * event can change it (an outcome is a fact; a draft waits for a command).
    *
-   * C'est ce qui reconcilie « aucune valeur calculee deux fois » avec « une
-   * reponse doit rester juste huit heures apres avoir ete mise en cache ».
-   * Sans lui, une application reveillee affiche des etats faux ET NE SAIT PAS
-   * QU'ILS LE SONT.
+   * This is what reconciles "no value computed twice" with "a response must
+   * still be right eight hours after being cached". Without it, an application
+   * waking up shows false states AND DOES NOT KNOW THEY ARE FALSE.
    */
   readonly validUntil: Instant | null;
 }
@@ -80,33 +79,32 @@ export function endsAt(timing: DateTiming): Instant {
 }
 
 /**
- * La fin de la fenetre de rediffusion, ou `null` quand il n'y en a pas.
+ * The end of the replay window, or `null` when there is none.
  *
- * Elle court depuis la FIN du direct, jamais depuis le debut. E2 : la maquette
- * mobile emploie `sub` et `off` la ou le vocabulaire dit `subscription` et
- * `none`, et `helpers.stateOf` testait litteralement `policy !== 'none'` —
- * une date creee avec `off` n'aurait JAMAIS ete reconnue comme sans
- * rediffusion. Ici, le vocabulaire est ferme et typé : la faute est
- * impossible.
+ * It runs from the END of the live show, never from the start. E2: the mobile
+ * mockup uses `sub` and `off` where the vocabulary says `subscription` and
+ * `none`, and `helpers.stateOf` literally tested `policy !== 'none'` — a date
+ * created with `off` would NEVER have been recognised as having no replay.
+ * Here the vocabulary is closed and typed: the fault is impossible.
  */
 export function replayEndsAt(timing: DateTiming): Instant | null {
   if (timing.replayPolicy === ReplayPolicy.NONE || timing.replayWindowHours <= 0) return null;
   return plusHours(endsAt(timing), timing.replayWindowHours);
 }
 
-/** La salle est-elle ouverte ? Bornes : `[startsAt - 30 min, startsAt)`. */
+/** Is the room open? Bounds: `[startsAt - 30 min, startsAt)`. */
 export function isRoomOpen(timing: DateTiming, now: Instant): boolean {
   return !isBefore(now, roomOpensAt(timing)) && isBefore(now, timing.startsAt);
 }
 
-/** La progression d'un direct, bornee a `[0, 1]`. */
+/** A live show's progress, clamped to `[0, 1]`. */
 export function progressOf(timing: DateTiming, now: Instant): number {
   if (timing.runtimeMin <= 0) return 0;
   const elapsed = minutesBetween(timing.startsAt, now);
   return Math.min(1, Math.max(0, elapsed / timing.runtimeMin));
 }
 
-/** L'issue, traduite en etat affiche. Elle REMPLACE tout le reste. */
+/** The outcome, translated into a displayed state. It REPLACES everything else. */
 function outcomeDisplay(outcome: DateOutcome): DisplayState {
   switch (outcome) {
     case DateOutcome.POSTPONED:
@@ -119,12 +117,12 @@ function outcomeDisplay(outcome: DateOutcome): DisplayState {
 }
 
 /**
- * Les etats de publication qui ne sont pas encore publics : l'etat affiche EST
- * l'etat de publication.
+ * The publication states that are not yet public: the displayed state IS the
+ * publication state.
  *
- * Le studio affiche ces dates-la, et `displayState` est prescrit sur LES DEUX
- * produits — le studio d'abord, puisque c'est lui qui a trois axes a
- * reconcilier.
+ * The studio shows those dates, and `displayState` is prescribed on BOTH
+ * products — the studio first, since it is the one with three axes to
+ * reconcile.
  */
 function preSaleDisplay(state: PublicationState): DisplayState | null {
   switch (state) {
@@ -142,28 +140,28 @@ function preSaleDisplay(state: PublicationState): DisplayState | null {
 export function displayStateOf(input: DisplayStateInput): DisplayStateResult {
   const { publicationState, runState, outcome, timing, now } = input;
 
-  // 1. L'ISSUE PRIME SUR TOUT. Et elle n'expire jamais : c'est un fait.
+  // 1. THE OUTCOME OUTRANKS EVERYTHING. And it never expires: it is a fact.
   if (outcome !== null) {
     return { state: outcomeDisplay(outcome), validUntil: null };
   }
 
-  // 2. L'ANTENNE prime sur le temps — la regie peut passer a l'antenne avant
-  //    l'heure annoncee, et c'est elle qui fait foi.
-  //    `interrupted` reste LIVE : `streaming.md` pose que l'ecran d'attente est
-  //    un VOILE pose par-dessus une video intacte, jamais une bascule. Tant
-  //    qu'aucune issue n'est declaree, le spectacle peut reprendre.
+  // 2. BEING ON AIR outranks time — the run desk can go on air before the
+  //    announced hour, and it is the run desk that is authoritative.
+  //    `interrupted` stays LIVE: `streaming.md` states that the standby screen
+  //    is a VEIL laid over an intact video, never a switch. As long as no
+  //    outcome is declared, the show can resume.
   if (runState === RunState.ON_AIR || runState === RunState.INTERRUPTED) {
     return { state: DisplayState.LIVE, validUntil: endsAt(timing) };
   }
 
-  // 3. Les etats non publics : la pastille EST l'etat de publication, et seule
-  //    une commande la change.
+  // 3. The non-public states: the badge IS the publication state, and only a
+  //    command changes it.
   const preSale = preSaleDisplay(publicationState);
   if (preSale !== null) {
     return { state: preSale, validUntil: null };
   }
 
-  // 4. Le TEMPS, en dernier — et c'est lui qui porte les `validUntil` utiles.
+  // 4. TIME, last — and it is time that carries the useful `validUntil`s.
   const opensAt = roomOpensAt(timing);
   if (isBefore(now, opensAt)) {
     return { state: DisplayState.SCHEDULED, validUntil: opensAt };
@@ -186,12 +184,11 @@ export function displayStateOf(input: DisplayStateInput): DisplayStateResult {
 }
 
 /**
- * La date est-elle derriere nous, rediffusion comprise ?
+ * Is the date behind us, replay included?
  *
- * Sert au tri de « Mes places » : a l'antenne et salle ouverte d'abord, puis a
- * venir, puis rediffusions disponibles, puis issues fermees, puis passees.
- * Cet ordre est une REGLE DU DOMAINE (`storefront-tv`, `TicketCard`), pas une
- * preference d'ecran.
+ * Used to sort "My tickets": on air and room open first, then upcoming, then
+ * replays available, then closed outcomes, then past. That order is a DOMAIN
+ * RULE (`storefront-tv`, `TicketCard`), not a screen preference.
  */
 export function isFullyOver(timing: DateTiming, now: Instant): boolean {
   const replayUntil = replayEndsAt(timing);

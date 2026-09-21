@@ -1,16 +1,16 @@
 /**
- * La locale est un ARGUMENT, jamais un global.
+ * The locale is an ARGUMENT, never a global.
  *
- * `helpers.js` porte `let locale` au niveau du module, avec `setLocale()`.
- * Dans une maquette, c'est commode. Dans un paquet importe par sept services,
- * deux requetes concurrentes partageraient la meme langue — un spectateur
- * francais recevrait la reponse formatee pour un anglophone parce qu'une autre
- * requete a change le global entre-temps.
+ * `helpers.js` holds `let locale` at module level, with a `setLocale()`. In a
+ * mockup that is convenient. In a package imported by seven services, two
+ * concurrent requests would share the same language — a French viewer would get
+ * the response formatted for an English speaker because another request changed
+ * the global in the meantime.
  */
 
 import { DomainError } from '../kernel/errors.js';
 
-/** Les deux langues du produit. BCP 47, forme courte. */
+/** The product's two languages. BCP 47, short form. */
 export const LOCALES = ['fr', 'en'] as const;
 export type Locale = (typeof LOCALES)[number];
 
@@ -25,13 +25,13 @@ export function parseLocale(raw: string): Locale {
 }
 
 /**
- * Le choix d'un contenu bilingue : la langue du LECTEUR quand elle existe,
- * l'autre sinon.
+ * Choosing between bilingual content: the READER's language when it exists, the
+ * other one otherwise.
  *
- * C'est la regle `content()` de `helpers.js`, portee telle quelle — elle est
- * juste. Le point qu'elle ne dit pas et que le contrat ajoute : la langue de
- * JEU d'un spectacle se dit ailleurs (`spokenLanguages`), elle n'a rien a voir
- * avec la langue d'affichage.
+ * This is `helpers.js`'s `content()` rule, ported as it stands — it is right.
+ * The point it does not make, and the contract adds: a show's PERFORMED
+ * language is stated elsewhere (`spokenLanguages`); it has nothing to do with
+ * the display language.
  */
 export interface Bilingual {
   readonly fr: string;

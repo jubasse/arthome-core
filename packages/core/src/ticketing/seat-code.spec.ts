@@ -3,18 +3,18 @@ import { describe, expect, it } from 'vitest';
 import { SEAT_CODE_ALPHABET, isSeatCode, normalizeSeatCodeInput, seatCode } from './seat-code.js';
 
 /**
- * INVARIANT PROTEGE
- *   L'alphabet garde UN membre de chaque paire confusable et exclut l'autre —
- *   ce qui rend la normalisation SURE plutot que devinee.
+ * PROTECTED INVARIANT
+ *   The alphabet keeps ONE member of each confusable pair and excludes the
+ *   other — which makes normalisation SAFE rather than guessed.
  *
- * POURQUOI CE TEST EXISTE
- *   Une premiere redaction excluait LES DEUX membres (`0` ET `O`). L'erreur ne
- *   se voit qu'au moment d'ecrire la correction : un spectateur qui dicte « O »
- *   n'a alors AUCUNE valeur valide vers laquelle on puisse le ramener.
- *   Crockford garde `0` et `1`, exclut `I`, `L`, `O` et `U`.
+ * WHY THIS TEST EXISTS
+ *   A first draft excluded BOTH members (`0` AND `O`). The error only shows
+ *   when you come to write the correction: a viewer who dictates "O" then has
+ *   NO valid value to be brought back to. Crockford keeps `0` and `1`, excludes
+ *   `I`, `L`, `O` and `U`.
  */
-describe("l'alphabet du code de place", () => {
-  it('exclut I, L, O et U — et elles seules', () => {
+describe('the seat-code alphabet', () => {
+  it('excludes I, L, O and U — and only those', () => {
     for (const excluded of ['I', 'L', 'O', 'U']) {
       expect(SEAT_CODE_ALPHABET).not.toContain(excluded);
     }
@@ -23,62 +23,62 @@ describe("l'alphabet du code de place", () => {
     }
   });
 
-  it('compte trente-deux symboles', () => {
+  it('counts thirty-two symbols', () => {
     expect(SEAT_CODE_ALPHABET).toHaveLength(32);
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Le code est EMIS PAR LE SERVEUR. Ce module valide et compose ; il ne
- *   genere pas.
+ * PROTECTED INVARIANT
+ *   The code is ISSUED BY THE SERVER. This module validates and composes; it
+ *   does not generate.
  *
- * POURQUOI
- *   `storefront-web` Q18 : le code s'affiche a l'identique sur trois surfaces.
- *   La maquette le calcule par hachage — ce qui donnerait TROIS codes pour la
- *   meme place des qu'une surface change de fonction. Et une source d'alea est
- *   une API de plateforme, que ce paquet s'interdit.
+ * WHY
+ *   `storefront-web` Q18: the code appears identically on three surfaces. The
+ *   mockup computes it by hashing — which would give THREE codes for the same
+ *   seat as soon as one surface changed function. And a randomness source is a
+ *   platform API, which this package forbids itself.
  */
-describe('la forme du code', () => {
-  it('accepte une forme valide', () => {
+describe('the shape of the code', () => {
+  it('accepts a valid shape', () => {
     expect(seatCode('7K2M9P')).toBe('ATH-7K2M9P');
     expect(isSeatCode('ATH-7K2M9P')).toBe(true);
   });
 
-  it('refuse un corps qui porte une lettre exclue', () => {
+  it('refuses a body carrying an excluded letter', () => {
     expect(() => seatCode('7K2MOP')).toThrow();
-    expect(() => seatCode('7K2M9')).toThrow(); // trop court
-    expect(() => seatCode('7K2M9PX')).toThrow(); // trop long
+    expect(() => seatCode('7K2M9')).toThrow(); // too short
+    expect(() => seatCode('7K2M9PX')).toThrow(); // too long
   });
 
-  it('refuse un code sans prefixe', () => {
+  it('refuses a code with no prefix', () => {
     expect(isSeatCode('7K2M9P')).toBe(false);
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   La normalisation corrige ce qui est SUR, et rien d'autre.
+ * PROTECTED INVARIANT
+ *   Normalisation corrects what is SAFE, and nothing else.
  *
- * POURQUOI
- *   Mieux vaut « ce code n'existe pas » qu'un code voisin trouve par hasard.
- *   Un support qui valide la mauvaise place fait entrer quelqu'un a la place
- *   d'un autre.
+ * WHY
+ *   Better "this code does not exist" than a neighbouring code found by
+ *   accident. A support agent validating the wrong seat lets somebody in in
+ *   another person's place.
  */
-describe('la saisie humaine', () => {
-  it('ramene I, L et O a leur seule lecture possible', () => {
+describe('human input', () => {
+  it('brings I, L and O back to their only possible reading', () => {
     expect(normalizeSeatCodeInput('7k2mop')).toBe('ATH-7K2M0P');
     expect(normalizeSeatCodeInput('7K2MIP')).toBe('ATH-7K2M1P');
     expect(normalizeSeatCodeInput('7K2MLP')).toBe('ATH-7K2M1P');
   });
 
-  it('tolere le prefixe, les espaces et les tirets', () => {
+  it('tolerates the prefix, spaces and hyphens', () => {
     expect(normalizeSeatCodeInput('ath 7k2 m9p')).toBe('ATH-7K2M9P');
     expect(normalizeSeatCodeInput('ATH-7K2M9P')).toBe('ATH-7K2M9P');
   });
 
-  it('ne devine RIEN d\'autre — un caractere inconnu fait echouer', () => {
-    // `U` n'a pas de lecture unique : on ne la corrige pas.
+  it('guesses NOTHING else — an unknown character makes it fail', () => {
+    // `U` has no single reading: we do not correct it.
     expect(isSeatCode(normalizeSeatCodeInput('7K2MUP'))).toBe(false);
     expect(isSeatCode(normalizeSeatCodeInput('7K2M#P'))).toBe(false);
   });

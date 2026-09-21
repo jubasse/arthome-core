@@ -1,23 +1,24 @@
 /**
- * La lecture TOLERANTE d'un vocabulaire ferme.
+ * TOLERANT reading of a closed vocabulary.
  *
- * C'est la seule chose de ce paquet qui, mal faite, produit un ecran noir chez
- * des gens qui ne peuvent rien y faire.
+ * This is the one rule in the package whose failure is unrecoverable at a
+ * distance: it puts a black screen in front of people who can do nothing
+ * about it.
  *
- * Une revue de magasin TV est lente : une version publiee aujourd'hui tournera
- * dans des salons dans un an. Le jour ou le catalogue gagne une 22e discipline,
- * une nouvelle issue de date ou un nouveau regime de tchat, CES TELEVISEURS LA
- * RECEVRONT. Or une validation stricte par enumeration ne degrade pas
- * l'affichage d'une carte : elle fait echouer la validation de la PAGE ENTIERE.
+ * TV store review is slow. A build shipped today will still be running in
+ * living rooms a year from now. The day the catalogue gains a 22nd discipline,
+ * a new date outcome or a new chat mode, THOSE SETS WILL RECEIVE IT. And strict
+ * enum validation does not degrade one card — it fails validation of the WHOLE
+ * PAGE.
  *
- * D'ou la regle, ecrite au contrat et implementee ici une fois :
- *   conserver la valeur brute et la traiter comme NEUTRE, jamais rejeter.
+ * Hence the rule, written into the contract and implemented here once:
+ *   keep the raw value and treat it as NEUTRAL. Never reject.
  *
- * La severite porte sur la FORME — les champs obligatoires, les types —
- * jamais sur le MEMBRE d'un vocabulaire. (storefront-tv Q12.)
+ * Severity applies to SHAPE — required fields, types — never to a vocabulary
+ * MEMBER. (storefront-tv, Q12.)
  */
 
-/** Un vocabulaire ferme : la liste qui fait autorite. */
+/** A closed vocabulary: the list that has authority. */
 export type Vocabulary<T extends string> = readonly T[];
 
 export interface KnownMember<T extends string> {
@@ -27,43 +28,46 @@ export interface KnownMember<T extends string> {
 
 export interface UnknownMember {
   readonly known: false;
-  /** La valeur brute, CONSERVEE. Elle est neutre, elle n'est pas perdue. */
+  /** The raw value, KEPT. It is neutral; it is not lost. */
   readonly raw: string;
 }
 
 export type Tolerant<T extends string> = KnownMember<T> | UnknownMember;
 
 /**
- * Lit une valeur contre son vocabulaire sans jamais echouer.
+ * Reads a value against its vocabulary without ever failing.
  *
- * Une valeur inconnue revient telle quelle, marquee comme inconnue : la surface
- * l'affiche avec un libelle generique plutot qu'un code brut, et le reste de la
- * page rend normalement.
+ * An unknown value comes back as it arrived, marked unknown: the surface shows
+ * it with a generic label rather than a raw code, and the rest of the page
+ * renders normally.
  */
-export function parseTolerant<T extends string>(vocabulary: Vocabulary<T>, raw: string): Tolerant<T> {
+export function parseTolerant<T extends string>(
+  vocabulary: Vocabulary<T>,
+  raw: string,
+): Tolerant<T> {
   return (vocabulary as readonly string[]).includes(raw)
     ? { known: true, value: raw as T }
     : { known: false, raw };
 }
 
 /**
- * Garde de type, pour les chemins ou une valeur inconnue doit etre ignoree
- * plutot que conservee — un filtre, un tri, un agregat.
+ * Type guard, for the paths where an unknown value must be ignored rather than
+ * kept — a filter, a sort, an aggregate.
  *
- * A n'utiliser QUE la ou la valeur ne s'affiche pas : sur un affichage, c'est
- * `parseTolerant` qui s'applique.
+ * Use it ONLY where the value is not displayed. On a display, `parseTolerant`
+ * is the one that applies.
  */
 export function isMember<T extends string>(vocabulary: Vocabulary<T>, raw: string): raw is T {
   return (vocabulary as readonly string[]).includes(raw);
 }
 
 /**
- * Rend la valeur si elle est connue, la valeur de repli sinon.
+ * Returns the value if it is known, the fallback otherwise.
  *
- * Le repli est TOUJOURS explicite a l'appel : un repli par defaut cache dans
- * cette fonction ferait retomber tout le monde sur la meme valeur sans que
- * personne le voie — exactement ce que `helpers.planOf()` faisait avec `free`,
- * et c'est un defaut d'autorisation (E1).
+ * The fallback is ALWAYS explicit at the call site. A default fallback hidden
+ * inside this function would drop everyone onto the same value without anyone
+ * seeing it — exactly what `helpers.planOf()` did with `free`, and that is an
+ * authorization defect, not a display one (E1).
  */
 export function memberOr<T extends string>(vocabulary: Vocabulary<T>, raw: string, fallback: T): T {
   return isMember(vocabulary, raw) ? raw : fallback;

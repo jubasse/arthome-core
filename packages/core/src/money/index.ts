@@ -1,4 +1,4 @@
-/** L'argent : unite mineure entiere, taux en points de base, arrondi unique. */
+/** Money: whole minor units, rates in basis points, one rounding rule. */
 
 export type { Money } from './money.js';
 export {

@@ -1,11 +1,11 @@
 /**
- * Les vocabulaires du commerce du spectateur : ce qu'il achete, et ce que cet
- * achat ouvre.
+ * Viewer-commerce vocabularies: what the viewer buys, and what that purchase
+ * opens.
  *
- * ⚠ CE FICHIER EST DECLARANT (voir catalog.ts).
+ * ⚠ THIS FILE IS A DECLARING FILE (see catalog.ts).
  */
 
-/** Tranche par `shared` : `enums.priceTier`. */
+/** Settled by `shared`: `enums.priceTier`. */
 export const PRICE_TIERS = ['full', 'reduced', 'support'] as const;
 export type PriceTier = (typeof PRICE_TIERS)[number];
 
@@ -16,20 +16,21 @@ export const PriceTier = {
 } as const;
 
 /**
- * E1 — L'ECART LE PLUS GRAVE DU DOSSIER, et ce n'est pas un defaut d'affichage.
+ * E1 — THE MOST SERIOUS GAP IN THE HANDOVER FILE, and it is not a display
+ * defect.
  *
- * Quatre vocabulaires disjoints coexistaient : `plans[]` de `catalogue.json`
- * (`free`/`pass`/`premium`), `accounts[].plan` (`season`/`monthly`/`none`),
- * l'i18n qui traduit les six, et deux maquettes qui en inventent d'autres.
- * Consequence VERIFIEE : `helpers.planOf()` fait
- * `plans().filter(p => p.id === account.plan)[0] || plans()[0]` — AUCUN compte
- * de reference ne trouve le sien, TOUS retombent silencieusement sur `free`.
- * Et comme `plan.opens[]` conditionne l'acces a la lecture, c'est un DEFAUT
- * D'AUTORISATION.
+ * Four disjoint vocabularies coexisted: `plans[]` in `catalogue.json`
+ * (`free`/`pass`/`premium`), `accounts[].plan` (`season`/`monthly`/`none`), the
+ * i18n files translating all six, and two mockups inventing more. VERIFIED
+ * consequence: `helpers.planOf()` does
+ * `plans().filter(p => p.id === account.plan)[0] || plans()[0]` — NO reference
+ * account matches its own plan, so ALL of them silently fall back to `free`.
+ * And since `plan.opens[]` gates playback access, that is an AUTHORIZATION
+ * DEFECT.
  *
- * `catalogue.json` fait autorite. `monthly`, `season` et `none` sont retires :
- * aucune donnee ne les reference. Et la place a l'unite n'est pas un
- * abonnement, c'est un MODE D'ACHAT : elle n'entre pas dans ce vocabulaire.
+ * `catalogue.json` has authority. `monthly`, `season` and `none` are removed:
+ * no data references them. And a single-ticket purchase is not a plan, it is a
+ * PURCHASE MODE: it does not belong in this vocabulary.
  */
 export const PLAN_TIERS = ['free', 'pass', 'premium'] as const;
 export type PlanTier = (typeof PLAN_TIERS)[number];
@@ -41,13 +42,12 @@ export const PlanTier = {
 } as const;
 
 /**
- * Les NEUF ouvertures reellement portees par `catalogue.json`.
+ * The NINE openings `catalogue.json` actually carries.
  *
- * Orthographe : celle de `shared/`, A LA LETTRE — donc kebab-case (K6).
- * Un `opens.includes('multi-screen')` sur une charge utile qui porterait
- * `multi_screen` rend `false` EN SILENCE : tout le monde retombe a un ecran,
- * ce qui est la forme exacte d'E1, reintroduite par le contrat apres avoir ete
- * corrigee sur les formules.
+ * Spelling: `shared/`'s, TO THE LETTER — so kebab-case (K6).
+ * An `opens.includes('multi-screen')` against a payload carrying `multi_screen`
+ * returns `false` IN SILENCE: everyone drops to one screen. That is E1's exact
+ * shape, reintroduced by the contract after being fixed on the plans.
  */
 export const PLAN_OPENINGS = [
   'browse',
@@ -85,9 +85,10 @@ export const SubscriptionState = {
 } as const;
 
 /**
- * Cinq motifs relevés dans la conception, avec des regles distinctes.
- * `late-rate` est au PRORATA du temps restant : le prix depend de l'instant de
- * lecture, donc il voyage avec sa validite et n'est jamais une chaine figee.
+ * Five reasons observed in the design, each with a distinct rule.
+ * `late-rate` is PRO RATA of the time remaining: the price depends on the
+ * moment of reading, so it travels with its validity and is never a frozen
+ * string.
  */
 export const PROMOTION_REASONS = [
   'pre-sale',
@@ -106,7 +107,7 @@ export const PromotionReason = {
   LATE_RATE: 'late-rate',
 } as const;
 
-/** D-011 : deux commandes DISTINCTES, jamais une commande mixte. */
+/** D-011: two DISTINCT orders, never a mixed one. */
 export const ORDER_KINDS = ['seat-order', 'merch-order', 'subscription-order'] as const;
 export type OrderKind = (typeof ORDER_KINDS)[number];
 
@@ -117,10 +118,10 @@ export const OrderKind = {
 } as const;
 
 /**
- * `held` tant qu'une ISSUE est ouverte, `refunded` si la date est annulee,
- * `suspended` tant qu'un changement de coordonnees bancaires attend sa
- * contre-signature. Ce que `shared/` porte et qui fait autorite : commission
- * 12 %, delai 14 jours, arrondi a l'unite sur chaque composante separement.
+ * `held` while an OUTCOME is open, `refunded` if the date is cancelled,
+ * `suspended` while a bank-details change waits for its counter-signature.
+ * What `shared/` carries and what has authority: 12% commission, 14-day delay,
+ * rounding to the minor unit on each component taken separately.
  */
 export const PAYOUT_STATES = ['scheduled-payout', 'held', 'paid', 'refunded', 'suspended'] as const;
 export type PayoutState = (typeof PAYOUT_STATES)[number];
@@ -134,9 +135,9 @@ export const PayoutState = {
 } as const;
 
 /**
- * Le taux depend du couple JURIDICTION x NATURE DE LA PRESTATION, jamais d'une
- * constante par marche. L'arret Derby Quad contre HMRC a juge que
- * l'exoneration des places de theatre NE S'ETEND PAS au direct diffuse.
+ * The rate depends on the pair JURISDICTION x NATURE OF SUPPLY, never on a
+ * per-market constant. Derby Quad v HMRC held that the theatre-ticket exemption
+ * DOES NOT EXTEND to a live stream.
  */
 export const TAX_SUPPLY_KINDS = [
   'live-stream-access',
@@ -154,9 +155,9 @@ export const TaxSupplyKind = {
 } as const;
 
 /**
- * L'UE exige DEUX elements de preuve NON CONTRADICTOIRES pour une vente B2C —
- * et Stripe Tax privilegie une adresse unique au lieu de les comparer, donc la
- * regle de preuve NE PEUT PAS lui etre deleguee.
+ * The EU requires TWO NON-CONTRADICTORY pieces of evidence for a B2C sale — and
+ * Stripe Tax favours a single address instead of comparing them, so the
+ * evidence rule CANNOT be delegated to it.
  */
 export const TAX_EVIDENCE_KINDS = [
   'billing-address',
@@ -177,7 +178,7 @@ export const TaxEvidenceKind = {
   DECLARED_BY_BUYER: 'declared-by-buyer',
 } as const;
 
-/** Environ 9 000 juridictions aux Etats-Unis : un pays ne permet aucun calcul. */
+/** Roughly 9,000 US jurisdictions: a country allows no calculation at all. */
 export const TAX_JURISDICTION_LEVELS = ['country', 'state', 'county', 'city'] as const;
 export type TaxJurisdictionLevel = (typeof TAX_JURISDICTION_LEVELS)[number];
 

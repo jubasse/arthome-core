@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import type { DateTiming } from '../catalog/date-state.js';
 import { restrictedRights, worldwideRights } from '../catalog/rights.js';
-import { BlackoutReason, DateOutcome, PublicationState, ReplayPolicy, RunState } from '../vocabulary/catalog.js';
+import {
+  BlackoutReason,
+  DateOutcome,
+  PublicationState,
+  ReplayPolicy,
+  RunState,
+} from '../vocabulary/catalog.js';
 import { PlanOpening } from '../vocabulary/commerce.js';
 import {
   WatchDenialReason,
@@ -39,21 +45,21 @@ const base = (over: Partial<WatchInput> = {}): WatchInput => ({
 });
 
 /**
- * INVARIANT PROTEGE
- *   Un seul verdict, cinq entrees, et LE MEME vocabulaire de refus des deux
- *   cotes — a l'affichage comme a l'ouverture du lecteur.
+ * PROTECTED INVARIANT
+ *   One verdict, five inputs, and THE SAME refusal vocabulary on both sides —
+ *   at display time as at player-open time.
  *
- * POURQUOI CE TEST EXISTE
- *   `isWatchable` supposait que le client detient la liste complete des places
- *   du compte : intenable sur mobile. Et le cas qui compte n'est pas le cas
- *   nominal — c'est celui ou DEUX refus s'appliquent en meme temps, ou le
- *   message affiche depend de l'ORDRE dans lequel on les teste.
+ * WHY THIS TEST EXISTS
+ *   `isWatchable` assumed the client holds the complete list of the account's
+ *   seats: untenable on mobile. And the case that matters is not the nominal
+ *   one — it is the one where TWO refusals apply at once, where the message
+ *   shown depends on the ORDER in which they are tested.
  */
-describe('decideWatch — la table de verite', () => {
-  it('dit HORS TERRITOIRE a un detenteur de place, pas « pas de place »', () => {
-    // Le cas qui decide de l'ordre des tests : acheter une place ne
-    // debloquerait pas ce spectateur. Dire « pas de place » l'enverrait
-    // depenser de l'argent pour rien.
+describe('decideWatch — the truth table', () => {
+  it('says OUT OF TERRITORY to a seat holder, not "no seat"', () => {
+    // The case that decides the order of the tests: buying a seat would not
+    // unblock this viewer. Saying "no seat" would send them off to spend money
+    // for nothing.
     const verdict = decideWatch(
       base({
         holdsSeat: true,
@@ -67,13 +73,13 @@ describe('decideWatch — la table de verite', () => {
     expect(verdict.fallback).toBe(WatchFallbackAction.SEE_OTHER_DATES);
   });
 
-  it('ouvre le direct a une place detenue — principe n°3', () => {
+  it('opens the live show to a held seat — principle no. 3', () => {
     const verdict = decideWatch(base({ holdsSeat: true }));
     expect(verdict.allowed).toBe(true);
     expect(verdict.scope).toBe('full');
   });
 
-  it('ouvre un APERCU borne a qui n\'a pas de place', () => {
+  it('opens a bounded PREVIEW to someone with no seat', () => {
     const verdict = decideWatch(base({ previewSecondsLeft: 252 }));
     expect(verdict.allowed).toBe(true);
     expect(verdict.scope).toBe('preview');
@@ -81,31 +87,40 @@ describe('decideWatch — la table de verite', () => {
     expect(verdict.fallback).toBe(WatchFallbackAction.BUY_SEAT);
   });
 
-  it("refuse quand l'apercu est epuise, avec l'action qui sort de l'impasse", () => {
+  it('refuses when the preview is exhausted, with the way out', () => {
     const verdict = decideWatch(base({ previewSecondsLeft: 0 }));
     expect(verdict.reason).toBe(WatchDenialReason.PREVIEW_EXHAUSTED);
     expect(verdict.fallback).toBe(WatchFallbackAction.BUY_SEAT);
   });
 
-  it('propose de LIBERER UN ECRAN plutot que de refuser sechement', () => {
-    const verdict = decideWatch(base({ holdsSeat: true, concurrentStreamsOpen: 1, concurrentStreamsAllowed: 1 }));
+  it('offers to RELEASE A SCREEN rather than refusing flatly', () => {
+    const verdict = decideWatch(
+      base({ holdsSeat: true, concurrentStreamsOpen: 1, concurrentStreamsAllowed: 1 }),
+    );
     expect(verdict.reason).toBe(WatchDenialReason.CONCURRENT_LIMIT_REACHED);
     expect(verdict.fallback).toBe(WatchFallbackAction.RELEASE_A_SCREEN);
   });
 
-  it('refuse avant l\'ouverture de salle, meme avec une place', () => {
-    const verdict = decideWatch(base({ holdsSeat: true, runState: RunState.IDLE, publicationState: PublicationState.SCHEDULED, now: '2026-09-21T12:00:00.000Z' }));
+  it('refuses before the room opens, even with a seat', () => {
+    const verdict = decideWatch(
+      base({
+        holdsSeat: true,
+        runState: RunState.IDLE,
+        publicationState: PublicationState.SCHEDULED,
+        now: '2026-09-21T12:00:00.000Z',
+      }),
+    );
     expect(verdict.reason).toBe(WatchDenialReason.ROOM_NOT_OPEN);
-    // Il a deja sa place : ne pas lui proposer d'en acheter une.
+    // They already have their seat: do not offer to sell them one.
     expect(verdict.fallback).toBe(WatchFallbackAction.NONE);
   });
 
-  it('ne laisse jamais regarder une date annulee, meme avec une place', () => {
+  it('never lets a cancelled date be watched, even with a seat', () => {
     const verdict = decideWatch(base({ holdsSeat: true, outcome: DateOutcome.CANCELLED }));
     expect(verdict.reason).toBe(WatchDenialReason.DATE_CANCELLED);
   });
 
-  it('ne laisse rien voir de ce qui n\'est pas publie', () => {
+  it('shows nothing of what is not published', () => {
     const verdict = decideWatch(
       base({ holdsSeat: true, publicationState: PublicationState.DRAFT, runState: null }),
     );
@@ -114,87 +129,107 @@ describe('decideWatch — la table de verite', () => {
 });
 
 /**
- * INVARIANT PROTEGE
- *   Les quatre politiques de rediffusion produisent QUATRE refus distincts.
+ * PROTECTED INVARIANT
+ *   The four replay policies produce FOUR distinct refusals.
  *
- * POURQUOI
- *   `storefront-tv` les liste separement : « aucune rediffusion pour cette
- *   date » et « rediffusion expiree » sont deux ecrans, « abonnement requis »
- *   en est un troisieme. Un code generique en produirait un faux.
+ * WHY
+ *   `storefront-tv` lists them separately: "no replay for this date" and
+ *   "replay expired" are two screens, "subscription required" is a third. A
+ *   generic code would produce a wrong one.
  */
-describe('decideWatch — les quatre politiques de rediffusion', () => {
+describe('decideWatch — the four replay policies', () => {
   const replayNow = '2026-09-22T10:00:00.000Z';
   const replay = (over: Partial<WatchInput> = {}): WatchInput =>
-    base({ publicationState: PublicationState.REPLAY_ONLINE, runState: null, now: replayNow, ...over });
+    base({
+      publicationState: PublicationState.REPLAY_ONLINE,
+      runState: null,
+      now: replayNow,
+      ...over,
+    });
 
-  it('INCLUDED : une place detenue ouvre la rediffusion', () => {
+  it('INCLUDED: a held seat opens the replay', () => {
     expect(decideWatch(replay({ holdsSeat: true })).allowed).toBe(true);
     expect(decideWatch(replay({ holdsSeat: false })).reason).toBe(WatchDenialReason.NO_SEAT);
   });
 
-  it('SUBSCRIPTION : la formule ouvre, sinon on propose de s\'abonner', () => {
+  it('SUBSCRIPTION: the plan opens it, otherwise we offer to subscribe', () => {
     const timingSub: DateTiming = { ...timing, replayPolicy: ReplayPolicy.SUBSCRIPTION };
-    expect(decideWatch(replay({ timing: timingSub, planOpenings: [PlanOpening.REPLAYS] })).allowed).toBe(true);
+    expect(
+      decideWatch(replay({ timing: timingSub, planOpenings: [PlanOpening.REPLAYS] })).allowed,
+    ).toBe(true);
     const refused = decideWatch(replay({ timing: timingSub, planOpenings: [] }));
     expect(refused.reason).toBe(WatchDenialReason.SUBSCRIPTION_REQUIRED);
     expect(refused.fallback).toBe(WatchFallbackAction.SUBSCRIBE);
   });
 
-  it("UNIT : distingue « pas achetee » de « pas en vente »", () => {
+  it('UNIT: tells "not bought" apart from "not on sale"', () => {
     const timingUnit: DateTiming = { ...timing, replayPolicy: ReplayPolicy.UNIT };
-    expect(decideWatch(replay({ timing: timingUnit, replayOnSale: true })).reason).toBe(WatchDenialReason.NO_SEAT);
+    expect(decideWatch(replay({ timing: timingUnit, replayOnSale: true })).reason).toBe(
+      WatchDenialReason.NO_SEAT,
+    );
     expect(decideWatch(replay({ timing: timingUnit, replayOnSale: false })).reason).toBe(
       WatchDenialReason.REPLAY_NOT_ON_SALE,
     );
   });
 
-  it('NONE : aucune rediffusion, et ce n\'est pas « expiree »', () => {
-    const timingNone: DateTiming = { ...timing, replayPolicy: ReplayPolicy.NONE, replayWindowHours: 0 };
-    const verdict = decideWatch(replay({ timing: timingNone, holdsSeat: true, now: '2026-09-21T23:00:00.000Z' }));
+  it('NONE: no replay, and that is not "expired"', () => {
+    const timingNone: DateTiming = {
+      ...timing,
+      replayPolicy: ReplayPolicy.NONE,
+      replayWindowHours: 0,
+    };
+    const verdict = decideWatch(
+      replay({ timing: timingNone, holdsSeat: true, now: '2026-09-21T23:00:00.000Z' }),
+    );
     expect(verdict.reason).toBe(WatchDenialReason.NO_REPLAY);
   });
 
-  it('distingue « expiree » de « aucune » une fois la fenetre passee', () => {
+  it('tells "expired" apart from "none" once the window has passed', () => {
     const verdict = decideWatch(replay({ holdsSeat: true, now: '2026-09-25T00:00:00.000Z' }));
     expect(verdict.reason).toBe(WatchDenialReason.REPLAY_EXPIRED);
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Le droit ne se met JAMAIS en cache : sa validite ne depasse pas 60 s.
+ * PROTECTED INVARIANT
+ *   The entitlement is NEVER cached: its validity does not exceed 60 s.
  *
- * POURQUOI
- *   Il expire, il depend du territoire, il depend de la limite d'ecrans. Un
- *   droit relu depuis le disque est un droit FAUX — `storefront-mobile`,
- *   besoin n°5.
+ * WHY
+ *   It expires, it depends on territory, it depends on the screen limit. An
+ *   entitlement re-read from disk is a WRONG entitlement — `storefront-mobile`,
+ *   need no. 5.
  */
-describe('la validite d\'un verdict', () => {
-  it('ne depasse jamais soixante secondes', () => {
+describe('a verdict\'s validity', () => {
+  it('never exceeds sixty seconds', () => {
     const verdict = decideWatch(base({ holdsSeat: true }));
     const delta = Date.parse(verdict.validUntil) - Date.parse('2026-09-21T19:30:00.000Z');
     expect(delta).toBeLessThanOrEqual(60_000);
     expect(delta).toBeGreaterThan(0);
   });
 
-  it('se raccourcit quand une bascule d\'etat arrive avant', () => {
-    // Trente secondes avant l'ouverture de salle : la validite du droit ne peut
-    // pas depasser cette bascule.
+  it('shortens when a state switch arrives sooner', () => {
+    // Twenty seconds before the room opens: the entitlement's validity cannot
+    // run past that switch.
     const verdict = decideWatch(
-      base({ holdsSeat: true, runState: RunState.IDLE, publicationState: PublicationState.SCHEDULED, now: '2026-09-21T18:29:40.000Z' }),
+      base({
+        holdsSeat: true,
+        runState: RunState.IDLE,
+        publicationState: PublicationState.SCHEDULED,
+        now: '2026-09-21T18:29:40.000Z',
+      }),
     );
     expect(verdict.validUntil).toBe('2026-09-21T18:30:00.000Z');
   });
 });
 
-describe('les deux constantes derivees de la formule', () => {
-  it('donne deux ecrans a `multi-screen`, un seul sinon', () => {
+describe('the two constants derived from the plan', () => {
+  it('gives two screens to `multi-screen`, one otherwise', () => {
     expect(concurrentStreamsAllowedFor([PlanOpening.MULTI_SCREEN])).toBe(2);
     expect(concurrentStreamsAllowedFor([PlanOpening.REPLAYS])).toBe(1);
     expect(concurrentStreamsAllowedFor([])).toBe(1);
   });
 
-  it('borne le budget d\'apercu a zero, jamais en dessous', () => {
+  it('clamps the preview budget at zero, never below', () => {
     expect(previewSecondsLeft(0)).toBe(300);
     expect(previewSecondsLeft(48)).toBe(252);
     expect(previewSecondsLeft(9_999)).toBe(0);

@@ -5,62 +5,61 @@ import { assignableRolesOf } from './grants.js';
 import { canDecide, canRevenue, effectiveRightsOf } from './rights.js';
 
 /**
- * INVARIANT PROTEGE
- *   Le repli des huit roles sur six personas ne cree JAMAIS un droit.
+ * PROTECTED INVARIANT
+ *   Folding the eight roles onto six personas NEVER creates a right.
  *
- * POURQUOI CE TEST EXISTE
- *   E6 : `studio-data.js` ecrase `director`, `video` et `sound` en un seul
- *   « regie ». Or `grants` les distingue — `director` peut inviter `video` et
- *   `sound`, les deux autres ne peuvent inviter personne. Autoriser sur le role
- *   court accorde a un regisseur son un droit d'invitation qu'il n'a pas.
+ * WHY THIS TEST EXISTS
+ *   E6: `studio-data.js` crushes `director`, `video` and `sound` into a single
+ *   "run desk". But `grants` tells them apart — `director` may invite `video`
+ *   and `sound`, the other two may invite nobody. Authorising on the short role
+ *   grants a sound engineer an invitation right they do not have.
  *
- *   Le cas qui fait mal est celui d'une personne qui tient DEUX roles, parce
- *   que c'est la que la tentation d'un « rang » revient.
+ *   The case that hurts is someone holding TWO roles, because that is where the
+ *   temptation of a "rank" comes back.
  */
-describe('les roles attribuables', () => {
-  it("n'accorde rien a `video` ni a `sound`", () => {
+describe('the assignable roles', () => {
+  it('grants nothing to `video` or to `sound`', () => {
     expect(assignableRolesOf([MemberRole.VIDEO])).toEqual([]);
     expect(assignableRolesOf([MemberRole.SOUND])).toEqual([]);
     expect(assignableRolesOf([MemberRole.MODERATION])).toEqual([]);
   });
 
-  it('accorde a `director` exactement `video` et `sound`', () => {
+  it('grants `director` exactly `video` and `sound`', () => {
     expect([...assignableRolesOf([MemberRole.DIRECTOR])].sort()).toEqual(['sound', 'video']);
   });
 
-  it('rend VIDE pour une personne qui tient `video` ET `moderation`', () => {
-    // Le cas du repli : rabattus sur « regie » et « mod », ces deux roles
-    // sembleraient donner quelque chose. Ils ne donnent rien.
+  it('returns EMPTY for someone holding `video` AND `moderation`', () => {
+    // The folding case: reduced to "run desk" and "mod", these two roles would
+    // look as if they gave something. They give nothing.
     expect(assignableRolesOf([MemberRole.VIDEO, MemberRole.MODERATION])).toEqual([]);
   });
 
-  it("fait l'UNION des roles tenus, jamais un maximum", () => {
+  it('takes the UNION of the roles held, never a maximum', () => {
     const union = assignableRolesOf([MemberRole.DIRECTOR, MemberRole.COORDINATION]);
-    // `coordination` apporte `director` et `moderation` ; `director` apporte
-    // `video` et `sound`. L'union des deux, sans doublon.
+    // `coordination` brings `director` and `moderation`; `director` brings
+    // `video` and `sound`. The union of the two, without duplicates.
     expect([...union].sort()).toEqual(['director', 'moderation', 'sound', 'video']);
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   L'acces est l'UNION des roles tenus, jamais un rang.
+ * PROTECTED INVARIANT
+ *   Access is the UNION of the roles held, never a rank.
  *
- * POURQUOI
- *   C'est la regle que la barre d'onglets du studio mobile applique, et elle
- *   est arithmetique : il n'y a pas de role « superieur ». Une personne qui
- *   tient `moderation` et `treasury` ouvre la reunion des deux menus, qui n'est
- *   celui d'aucun des deux.
+ * WHY
+ *   It is the rule the studio mobile tab bar applies, and it is arithmetic:
+ *   there is no "superior" role. Someone holding `moderation` and `treasury`
+ *   opens the union of the two menus, which is neither of them.
  */
-describe('les droits effectifs', () => {
-  it("ouvre la reunion des deux menus, qui n'est celui d'aucun des deux", () => {
+describe('the effective rights', () => {
+  it('opens the union of the two menus, which is neither of them', () => {
     const rights = effectiveRightsOf([MemberRole.MODERATION, MemberRole.TREASURY]);
-    expect(rights.navigation).toContain(NavigationEntry.MODERATION); // du moderateur
-    expect(rights.navigation).toContain(NavigationEntry.PAYOUTS); // du tresorier
-    expect(rights.navigation).toContain(NavigationEntry.AGENDA); // du moderateur
+    expect(rights.navigation).toContain(NavigationEntry.MODERATION); // from the moderator
+    expect(rights.navigation).toContain(NavigationEntry.PAYOUTS); // from the treasurer
+    expect(rights.navigation).toContain(NavigationEntry.AGENDA); // from the moderator
   });
 
-  it('ne duplique pas une entree partagee par deux roles', () => {
+  it('does not duplicate an entry shared by two roles', () => {
     const rights = effectiveRightsOf([MemberRole.VIDEO, MemberRole.SOUND]);
     const streams = rights.navigation.filter((entry) => entry === NavigationEntry.STREAM);
     expect(streams).toHaveLength(1);
@@ -68,16 +67,16 @@ describe('les droits effectifs', () => {
 });
 
 /**
- * INVARIANT PROTEGE
- *   `canRevenue` decide de CE QUE LA REPONSE CONTIENT, pas de son affichage.
+ * PROTECTED INVARIANT
+ *   `canRevenue` decides WHAT THE RESPONSE CONTAINS, not how it is displayed.
  *
- * POURQUOI
- *   Une regie qui recevrait le brut de billetterie et ne l'afficherait pas est
- *   une FUITE : la charge utile est en clair dans un WebView, inspectable, et
- *   elle survit dans le cache HTTP du telephone.
+ * WHY
+ *   A run desk that received the ticketing gross and did not show it is a LEAK:
+ *   the payload is in the clear in a WebView, inspectable, and it survives in
+ *   the phone's HTTP cache.
  */
-describe('les trois capacites transverses', () => {
-  it('donne la recette a artist, production et treasury — a eux seuls', () => {
+describe('the three cross-cutting capabilities', () => {
+  it('gives revenue to artist, production and treasury — to them alone', () => {
     expect(canRevenue([MemberRole.ARTIST])).toBe(true);
     expect(canRevenue([MemberRole.PRODUCTION])).toBe(true);
     expect(canRevenue([MemberRole.TREASURY])).toBe(true);
@@ -86,15 +85,15 @@ describe('les trois capacites transverses', () => {
     expect(canRevenue([MemberRole.MODERATION])).toBe(false);
   });
 
-  it('reserve la decision d\'issue au proprietaire et a la production', () => {
-    // Reporter, annuler, dedommager : les autres ne peuvent que SIGNALER.
+  it('reserves the outcome decision to the owner and to production', () => {
+    // Postpone, cancel, compensate: the others can only REPORT.
     expect(canDecide([MemberRole.ARTIST])).toBe(true);
     expect(canDecide([MemberRole.PRODUCTION])).toBe(true);
     expect(canDecide([MemberRole.TREASURY])).toBe(false);
     expect(canDecide([MemberRole.DIRECTOR, MemberRole.COORDINATION])).toBe(false);
   });
 
-  it('ne donne rien a une personne sans role', () => {
+  it('gives nothing to someone with no role', () => {
     const rights = effectiveRightsOf([]);
     expect(rights.navigation).toEqual([]);
     expect(rights.openPanes).toEqual([]);

@@ -5,48 +5,48 @@ import { PLAN_OPENINGS, PlanOpening } from './commerce.js';
 import { isMember, memberOr, parseTolerant } from './tolerant.js';
 
 /**
- * INVARIANT PROTEGE
- *   Une valeur d'enumeration inconnue est CONSERVEE et traitee comme neutre.
- *   Elle ne fait echouer ni la carte, ni la page.
+ * PROTECTED INVARIANT
+ *   An unknown enumeration value is KEPT and treated as neutral. It fails
+ *   neither the card nor the page.
  *
- * POURQUOI CE TEST EXISTE
- *   C'est la seule regle de ce paquet dont le defaut est irrattrapable a
- *   distance. Une revue de magasin TV est lente : une version publiee
- *   aujourd'hui tournera dans des salons dans un an. Le jour ou le catalogue
- *   gagne une 22e discipline, une nouvelle issue ou un nouveau regime de tchat,
- *   CES TELEVISEURS LA RECEVRONT — et une validation stricte ne degrade pas une
- *   carte, elle fait echouer la PAGE ENTIERE.
+ * WHY THIS TEST EXISTS
+ *   It is the only rule in this package whose defect cannot be fixed remotely.
+ *   A TV store review is slow: a version published today will be running in
+ *   living rooms a year from now. The day the catalogue gains a 22nd
+ *   discipline, a new outcome or a new chat mode, THOSE TELEVISIONS WILL
+ *   RECEIVE IT — and strict validation does not degrade a card, it fails the
+ *   WHOLE PAGE.
  *
- *   Ecrit AVANT la regle, comme les deux autres regles a risque.
+ *   Written BEFORE the rule, like the two other risky rules.
  */
-describe('parseTolerant — la survie du parc', () => {
-  it("conserve une 22e discipline inconnue au lieu de la rejeter", () => {
+describe('parseTolerant — the fleet\'s survival', () => {
+  it('keeps an unknown 22nd discipline instead of rejecting it', () => {
     const result = parseTolerant(DATE_OUTCOMES, 'rescheduled-twice');
 
     expect(result.known).toBe(false);
-    // La valeur n'est pas perdue : la surface peut la journaliser et afficher
-    // un libelle generique, plutot qu'un code brut ou rien du tout.
+    // The value is not lost: the surface can log it and show a generic label,
+    // rather than a raw code or nothing at all.
     expect(result).toEqual({ known: false, raw: 'rescheduled-twice' });
   });
 
-  it('reconnait une valeur du vocabulaire et la rend typee', () => {
+  it('recognises a value of the vocabulary and returns it typed', () => {
     const result = parseTolerant(DATE_OUTCOMES, 'cancelled');
 
     expect(result).toEqual({ known: true, value: 'cancelled' });
   });
 
-  it("ne jette JAMAIS, quelle que soit l'entree", () => {
-    // Le cas qui compte n'est pas la valeur plausible : c'est celle que
-    // personne n'a prevue. Une chaine vide, un identifiant d'un autre
-    // vocabulaire, une valeur d'une version future.
+  it('NEVER throws, whatever the input', () => {
+    // The case that matters is not the plausible value: it is the one nobody
+    // foresaw. An empty string, an identifier from another vocabulary, a value
+    // from a future version.
     for (const raw of ['', 'live', 'UNSPECIFIED', 'étoile', '0', 'null']) {
       expect(() => parseTolerant(DATE_OUTCOMES, raw)).not.toThrow();
     }
   });
 
-  it("ne fait pas echouer une PAGE quand une seule carte porte l'inconnu", () => {
-    // La simulation exacte du defaut redoute : une page de cartes dont UNE
-    // porte une valeur inedite. Les autres doivent rendre.
+  it('does not fail a PAGE when a single card carries the unknown', () => {
+    // The exact simulation of the feared defect: a page of cards of which ONE
+    // carries an unheard-of value. The others must render.
     const page = ['cancelled', 'discipline-22', 'postponed'];
 
     const parsed = page.map((raw) => parseTolerant(DATE_OUTCOMES, raw));
@@ -55,46 +55,46 @@ describe('parseTolerant — la survie du parc', () => {
     expect(parsed).toHaveLength(3);
   });
 
-  it('distingue les vocabulaires qui partagent une valeur', () => {
-    // `replays` appartient aux ouvertures de formule ET aux entrees de
-    // navigation du studio : deux notions differentes, un meme mot. Chaque
-    // vocabulaire repond pour lui-meme.
+  it('tells apart vocabularies that share a value', () => {
+    // `replays` belongs to the plan openings AND to the studio navigation
+    // entries: two different notions, one same word. Each vocabulary answers
+    // for itself.
     expect(isMember(PLAN_OPENINGS, PlanOpening.REPLAYS)).toBe(true);
     expect(isMember(DATE_OUTCOMES, PlanOpening.REPLAYS)).toBe(false);
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Un repli est TOUJOURS explicite a l'appel.
+ * PROTECTED INVARIANT
+ *   A fallback is ALWAYS explicit at the call site.
  *
- * POURQUOI
- *   E1, verifie : `helpers.planOf()` fait `filter(...)[0] || plans()[0]`.
- *   Aucun compte de reference ne trouve le sien, donc TOUS retombent
- *   silencieusement sur `free` — et comme `plan.opens[]` conditionne l'acces a
- *   la lecture, c'est un defaut d'AUTORISATION. Un repli cache dans une
- *   fonction utilitaire reproduirait exactement ce defaut.
+ * WHY
+ *   E1, verified: `helpers.planOf()` does `filter(...)[0] || plans()[0]`. No
+ *   reference account finds its own, so ALL of them fall silently back to
+ *   `free` — and since `plan.opens[]` conditions access to playback, that is an
+ *   AUTHORISATION defect. A fallback hidden inside a utility function would
+ *   reproduce exactly that defect.
  */
-describe('memberOr — le repli ne se cache pas', () => {
-  it('rend le repli demande, pas le premier membre du vocabulaire', () => {
-    expect(memberOr(DATE_OUTCOMES, 'inconnu', 'cancelled')).toBe('cancelled');
-    // Et surtout : le repli n'est PAS `DATE_OUTCOMES[0]`.
-    expect(memberOr(DATE_OUTCOMES, 'inconnu', 'interrupted')).toBe('interrupted');
+describe('memberOr — the fallback does not hide', () => {
+  it('returns the requested fallback, not the vocabulary\'s first member', () => {
+    expect(memberOr(DATE_OUTCOMES, 'unknown-value', 'cancelled')).toBe('cancelled');
+    // And above all: the fallback is NOT `DATE_OUTCOMES[0]`.
+    expect(memberOr(DATE_OUTCOMES, 'unknown-value', 'interrupted')).toBe('interrupted');
   });
 
-  it('rend la valeur quand elle est connue', () => {
+  it('returns the value when it is known', () => {
     expect(memberOr(DATE_OUTCOMES, 'postponed', 'cancelled')).toBe('postponed');
   });
 });
 
-describe('les membres nommes valent les valeurs du fil', () => {
-  it("expose la meme chaine que l'orthographe de shared/", () => {
-    // K6 : trois orthographes pour une valeur dont depend `decideWatch`.
-    // Sur le fil, c'est le kebab-case de `shared/` qui fait autorite.
+describe('the named members equal the wire values', () => {
+  it('exposes the same string as shared/\'s spelling', () => {
+    // K6: three spellings for a value `decideWatch` depends on. On the wire, it
+    // is `shared/`'s kebab-case that has authority.
     expect(PlanOpening.MULTI_SCREEN).toBe('multi-screen');
     expect(PlanOpening.FREE_DATES).toBe('free-dates');
     expect(PlanOpening.ONE_LIVE_MONTH).toBe('one-live-month');
-    // Et l'issue EST l'etat affiche : meme valeur, deux axes.
+    // And the outcome IS the displayed state: same value, two axes.
     expect(DisplayState.CANCELLED).toBe('cancelled');
   });
 });

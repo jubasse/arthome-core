@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { LanguageDependency } from '../vocabulary/catalog.js';
-import { hasLanguageBarrier, isLanguageNeutral, isUnderstandable, type LanguageProfile } from './language.js';
+import {
+  hasLanguageBarrier,
+  isLanguageNeutral,
+  isUnderstandable,
+  type LanguageProfile,
+} from './language.js';
 
 const profile = (over: Partial<LanguageProfile> = {}): LanguageProfile => ({
   spoken: ['fr'],
@@ -12,64 +17,63 @@ const profile = (over: Partial<LanguageProfile> = {}): LanguageProfile => ({
 });
 
 /**
- * INVARIANT PROTEGE
- *   Le vocabulaire de `languageDependency` contient `essential`, et c'est la
- *   valeur dont depend la regle.
+ * PROTECTED INVARIANT
+ *   The `languageDependency` vocabulary contains `essential`, and that is the
+ *   value the rule depends on.
  *
- * POURQUOI CE TEST EXISTE
- *   D1 — la correction la plus verifiable du dossier. `taxonomy.json` declare
- *   `none | light | helpful`. Or `essential` est ABSENTE du vocabulaire, portee
- *   par cinq spectacles, traduite dans l'i18n, et `helpers.js:437` EN FAIT SON
- *   TEST. Tandis que `light` n'est employee NULLE PART.
+ * WHY THIS TEST EXISTS
+ *   D1 — the most verifiable correction in the file. `taxonomy.json` declares
+ *   `none | light | helpful`. But `essential` is ABSENT from the vocabulary,
+ *   carried by five shows, translated in the i18n, and `helpers.js:437` MAKES
+ *   IT ITS TEST. While `light` is used NOWHERE.
  *
- *   Un vocabulaire ferme qui ne contient pas la valeur dont depend la regle la
- *   plus visible de la surface n'est pas un vocabulaire ferme.
+ *   A closed vocabulary that does not contain the value the surface's most
+ *   visible rule depends on is not a closed vocabulary.
  */
-describe('la barriere de langue', () => {
-  it('ne tient qu\'a `essential`', () => {
+describe('the language barrier', () => {
+  it('hangs entirely on `essential`', () => {
     expect(hasLanguageBarrier(profile({ dependency: LanguageDependency.ESSENTIAL }))).toBe(true);
     expect(hasLanguageBarrier(profile({ dependency: LanguageDependency.HELPFUL }))).toBe(false);
     expect(hasLanguageBarrier(profile({ dependency: LanguageDependency.NONE }))).toBe(false);
   });
 
-  it('distingue « sans barriere pour personne » de « suivable par moi »', () => {
-    // Deux questions differentes : le filtre « sans barriere de langue » de la
-    // recherche ne depend d'AUCUN spectateur.
+  it('tells "barrier-free for anyone" apart from "followable by me"', () => {
+    // Two different questions: search's "no language barrier" filter depends on
+    // NO viewer at all.
     expect(isLanguageNeutral(profile({ dependency: LanguageDependency.NONE }))).toBe(true);
     expect(isLanguageNeutral(profile({ dependency: LanguageDependency.HELPFUL }))).toBe(false);
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   « Suivable » se decide sur les langues que JE comprends, et `helpful`
- *   reste suivable sans elles — c'est tout le sens de la valeur intermediaire.
+ * PROTECTED INVARIANT
+ *   "Followable" is decided on the languages I understand, and `helpful` stays
+ *   followable without them — that is the whole point of the middle value.
  */
-describe('« ce spectacle est-il suivable ? »', () => {
-  it('est toujours oui quand la langue ne compte pas', () => {
-    const danse = profile({ spoken: [], dependency: LanguageDependency.NONE });
-    expect(isUnderstandable(danse, [])).toBe(true);
-    expect(isUnderstandable(danse, ['ja'])).toBe(true);
+describe('"can this show be followed?"', () => {
+  it('is always yes when language does not matter', () => {
+    const dance = profile({ spoken: [], dependency: LanguageDependency.NONE });
+    expect(isUnderstandable(dance, [])).toBe(true);
+    expect(isUnderstandable(dance, ['ja'])).toBe(true);
   });
 
-  it('est oui quand je comprends la langue jouee', () => {
+  it('is yes when I understand the performed language', () => {
     expect(isUnderstandable(profile(), ['fr'])).toBe(true);
-    expect(isUnderstandable(profile(), ['FR'])).toBe(true); // la casse ne compte pas
+    expect(isUnderstandable(profile(), ['FR'])).toBe(true); // case does not matter
   });
 
-  it('est oui quand un sous-titrage me couvre', () => {
+  it('is yes when subtitles cover me', () => {
     expect(isUnderstandable(profile({ subtitles: ['en'] }), ['en'])).toBe(true);
     expect(isUnderstandable(profile({ surtitles: ['de'] }), ['de'])).toBe(true);
   });
 
-  it('est NON quand la langue est essentielle et que rien ne me couvre', () => {
-    // Le cas qui justifie l'existence de la regle : un texte de theatre joue en
-    // francais, sous-titre en anglais, pour un spectateur qui ne lit ni l'un ni
-    // l'autre.
+  it('is NO when the language is essential and nothing covers me', () => {
+    // The case that justifies the rule's existence: a theatre text performed in
+    // French, subtitled in English, for a viewer who reads neither.
     expect(isUnderstandable(profile({ subtitles: ['en'] }), ['ja'])).toBe(false);
   });
 
-  it('reste OUI quand la langue est seulement `helpful`', () => {
+  it('stays YES when the language is only `helpful`', () => {
     const opera = profile({ dependency: LanguageDependency.HELPFUL, subtitles: ['en'] });
     expect(isUnderstandable(opera, ['ja'])).toBe(true);
   });

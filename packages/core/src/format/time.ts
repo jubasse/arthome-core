@@ -1,16 +1,16 @@
 /**
- * Le formatage du temps, sans `Intl` — noms de jours et de mois en dur dans
- * les deux langues, comme `helpers.js` les portait.
+ * Formatting time, without `Intl` — day and month names hard-coded in both
+ * languages, as `helpers.js` carried them.
  *
- * ⚠ Toutes ces fonctions prennent un DECALAGE en argument. Aucune ne lit
- * l'heure de la machine ni ne devine un fuseau : c'est le serveur qui sert le
- * decalage, recalcule pour l'instant concerne (D3).
+ * ⚠ Every one of these functions takes an OFFSET as an argument. None reads the
+ * machine's clock or guesses a time zone: the server serves the offset,
+ * recomputed for the instant concerned (D3).
  */
 
 import { toEpochMs, type Instant } from '../time/instant.js';
 import { wallClockAt } from '../time/venue-clock.js';
-// `Locale` est a la fois un type et un objet de membres nommes : un seul import
-// porte les deux sens du nom.
+// `Locale` is both a type and an object of named members: one import carries
+// both meanings of the name.
 import { Locale } from './locale.js';
 
 const DAY_NAMES: Readonly<Record<Locale, readonly string[]>> = {
@@ -20,12 +20,32 @@ const DAY_NAMES: Readonly<Record<Locale, readonly string[]>> = {
 
 const MONTH_NAMES: Readonly<Record<Locale, readonly string[]>> = {
   fr: [
-    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+    'janvier',
+    'février',
+    'mars',
+    'avril',
+    'mai',
+    'juin',
+    'juillet',
+    'août',
+    'septembre',
+    'octobre',
+    'novembre',
+    'décembre',
   ],
   en: [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ],
 };
 
@@ -35,7 +55,7 @@ function twoDigits(value: number): string {
   return String(value).padStart(2, '0');
 }
 
-/** « 21 h 04 » en francais, « 9:04 PM » en anglais. */
+/** "21 h 04" in French, "9:04 PM" in English. */
 export function formatClock(instant: Instant, utcOffsetMinutes: number, locale: Locale): string {
   const wall = wallClockAt(instant, utcOffsetMinutes);
   if (locale === Locale.FR) {
@@ -46,7 +66,7 @@ export function formatClock(instant: Instant, utcOffsetMinutes: number, locale: 
   return `${String(hour12)}:${twoDigits(wall.minute)} ${suffix}`;
 }
 
-/** « samedi 12 octobre » — sans formule relative. */
+/** "samedi 12 octobre" — with no relative phrasing. */
 export function formatLongDate(instant: Instant, utcOffsetMinutes: number, locale: Locale): string {
   const wall = wallClockAt(instant, utcOffsetMinutes);
   const weekday = new Date(toEpochMs(instant) + utcOffsetMinutes * 60_000).getUTCDay();
@@ -58,9 +78,10 @@ export function formatLongDate(instant: Instant, utcOffsetMinutes: number, local
 }
 
 /**
- * « 2 h 30 » / « 2h 30m » — la duree d'un spectacle.
+ * "2 h 30" / "2h 30m" — a show's running time.
  *
- * Distincte de `formatCountdown` : une duree ne se compte pas, elle se declare.
+ * Distinct from `formatCountdown`: a duration is not counted down, it is
+ * declared.
  */
 export function formatDuration(minutes: number, locale: Locale): string {
   const total = Math.max(0, Math.round(minutes));
@@ -77,13 +98,13 @@ export function formatDuration(minutes: number, locale: Locale): string {
 }
 
 /**
- * « 42 min », « 2 h 10 », « 3 jours » — un decompte.
+ * "42 min", "2 h 10", "3 days" — a countdown.
  *
- * ⚠ Il prend un NOMBRE DE MINUTES, jamais deux instants : le calcul de l'ecart
- * appartient a l'appelant, qui doit le faire contre l'INSTANT SERVEUR
- * (`servedAt`) et non contre l'horloge du telephone. L'horloge d'un mobile
- * derive en veille, saute au changement de fuseau, et l'utilisateur peut la
- * regler — un decompte calcule contre elle fait mentir tous les ecrans.
+ * ⚠ It takes a NUMBER OF MINUTES, never two instants: computing the gap belongs
+ * to the caller, who must do it against the SERVER INSTANT (`servedAt`) and not
+ * against the phone's clock. A mobile clock drifts in sleep, jumps on a time
+ * zone change, and the user can set it — a countdown computed against it makes
+ * every screen lie.
  */
 export function formatCountdown(minutes: number, locale: Locale): string {
   const total = Math.max(0, Math.round(minutes));
@@ -94,7 +115,7 @@ export function formatCountdown(minutes: number, locale: Locale): string {
   return `${String(days)} day${days > 1 ? 's' : ''}`;
 }
 
-/** « 1:04:09 » — la position dans un media. Toujours la meme forme. */
+/** "1:04:09" — the position in a media item. Always the same shape. */
 export function formatTimecode(totalSeconds: number): string {
   const total = Math.max(0, Math.round(totalSeconds));
   const hours = Math.floor(total / 3600);

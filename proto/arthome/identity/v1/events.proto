@@ -1,11 +1,11 @@
-// Événements du contexte `identity` — la personne, l'appareil, et le droit d'agir.
+// Events of the `identity` context — the person, the device, and the right to act.
 //
-// Sujets Kafka :
-//   arthome.identity.account   clé account_id
-//   arthome.identity.device    clé device_id
-//   arthome.identity.channel   clé channel_id
+// Kafka topics:
+//   arthome.identity.account   key account_id
+//   arthome.identity.device    key device_id
+//   arthome.identity.channel   key channel_id
 //
-// Maturité : STABLE (palier 2). `buf breaking` bloque toute rupture.
+// Maturity: STABLE (milestone 2). `buf breaking` blocks any break.
 syntax = "proto3";
 
 package arthome.identity.v1;
@@ -13,12 +13,12 @@ package arthome.identity.v1;
 import "arthome/common/v1/common.proto";
 import "google/protobuf/timestamp.proto";
 
-// Les HUIT rôles canoniques de `catalogue.json`.
-// Le repli à six personas de `studio-data.js` est un LIBELLÉ de présentation et
-// n'apparaît dans aucune charge utile : il écrase `director`, `video` et `sound`
-// en un seul « regie », alors que `grants` les distingue — `director` peut
-// inviter `video` et `sound`, les deux autres ne peuvent inviter personne.
-// Autoriser sur le rôle court accorderait un droit d'invitation inexistant (E6).
+// The EIGHT canonical roles from `catalogue.json`.
+// `studio-data.js`'s fold onto six personas is a presentation LABEL and appears
+// in no payload: it crushes `director`, `video` and `sound` into a single "run
+// desk", while `grants` tells them apart — `director` may invite `video` and
+// `sound`, the other two may invite nobody. Authorising on the short role would
+// grant an invitation right that does not exist (E6).
 enum MemberRole {
   MEMBER_ROLE_UNSPECIFIED = 0;
   MEMBER_ROLE_ARTIST = 1;
@@ -31,9 +31,9 @@ enum MemberRole {
   MEMBER_ROLE_TREASURY = 8;
 }
 
-// Le poste tenu sur UNE date, par opposition au rôle tenu dans la chaîne.
-// Deux échelles, deux cycles de vie : les confondre ferait d'une révocation de
-// renfort une exclusion de chaîne.
+// The post held on ONE date, as opposed to the role held in the channel.
+// Two scales, two lifecycles: confusing them would turn revoking a stand-in
+// into exclusion from the channel.
 enum CrewRole {
   CREW_ROLE_UNSPECIFIED = 0;
   CREW_ROLE_DIRECTOR = 1;
@@ -49,9 +49,9 @@ enum MembershipAction {
   MEMBERSHIP_ACTION_REMOVED = 3;
 }
 
-// Un appareil EST une session (context-map §7.1). `catalogue.json` déclare
-// `devices` comme un entier et `fixtures.js` comme une liste d'objets : deux
-// formes sous un identifiant (E13). Le contrat tranche pour la seconde.
+// A device IS a session (context-map §7.1). `catalogue.json` declares `devices`
+// as an integer and `fixtures.js` as a list of objects: two shapes under one
+// name (E13). The contract settles on the second.
 enum DeviceKind {
   DEVICE_KIND_UNSPECIFIED = 0;
   DEVICE_KIND_TV = 1;
@@ -63,45 +63,45 @@ enum DeviceKind {
   DEVICE_KIND_BOX = 7;
 }
 
-// ---------------------------------------------------------------- compte
+// ---------------------------------------------------------------- account
 
 message AccountRegistered {
   string account_id = 1;
   google.protobuf.Timestamp occurred_at = 2;
   string locale = 3;
-  // ISO 3166-1 alpha-2, tel que résolu à l'inscription. Sert aux droits
-  // territoriaux et au marché de facturation ; il est réévalué à chaque lecture.
+  // ISO 3166-1 alpha-2, as resolved at sign-up. Used for territorial rights and
+  // for the billing market; it is re-evaluated at every read.
   string country = 4;
 }
 
-// Point d'entrée de la saga d'effacement. La suppression de compte est une
-// commande FINANCIÈRE autant que personnelle : « la suppression annule les
-// places non utilisées », ce qui déclenche des remboursements, touche des
-// versements déjà calculés, et se heurte à la conservation comptable de dix ans.
-// Elle ne peut donc être ni synchrone ni totale (data-model.md §7.5).
+// Entry point of the erasure saga. Deleting an account is a FINANCIAL command
+// as much as a personal one: "deletion cancels unused seats", which triggers
+// refunds, touches payouts already computed, and runs into the ten-year
+// accounting retention. So it can be neither synchronous nor total
+// (data-model.md §7.5).
 message AccountDeletionRequested {
   string account_id = 1;
   google.protobuf.Timestamp requested_at = 2;
-  // Fin du délai de grâce : le compte est réactivable sur simple connexion
-  // jusque-là. C'est ce qui rend l'irréversible acceptable.
+  // End of the grace period: the account is reactivable by simply signing in
+  // until then. That is what makes the irreversible acceptable.
   google.protobuf.Timestamp grace_until = 3;
 }
 
-// Terme de la saga. Les factures gardent leur contenu figé (un document est la
-// seule exception assumée à « jamais de chaîne formatée transportée ») ; les
-// messages de tchat sont dissociés de la personne, pas supprimés, tant que leur
-// rétention de 24 mois court.
+// End of the saga. Invoices keep their frozen content (a document is the one
+// assumed exception to "never a formatted string transported"); chat messages
+// are dissociated from the person, not deleted, while their 24-month retention
+// runs.
 message AccountAnonymised {
   string account_id = 1;
   google.protobuf.Timestamp occurred_at = 2;
 }
 
-// ---------------------------------------------------------------- appareil
+// ---------------------------------------------------------------- device
 
-// Consommé par `streaming`, qui invalide les BAUX DE LECTURE de cet appareil.
-// C'est ce qui fait que « déconnecter cet appareil » coupe réellement la lecture
-// sur le téléviseur visé, et non seulement une ligne dans une liste.
-// Effet visible au prochain renouvellement de jeton, donc au plus 60 s.
+// Consumed by `streaming`, which invalidates this device's PLAYBACK LEASES.
+// That is what makes "disconnect this device" actually stop playback on the
+// television concerned, and not merely remove a row from a list.
+// Visible at the next token renewal, so within 60 s at most.
 message DeviceRevoked {
   string device_id = 1;
   string account_id = 2;
@@ -110,40 +110,40 @@ message DeviceRevoked {
   arthome.common.v1.Actor revoked_by = 5;
 }
 
-// Déconnecter UN PROFIL d'un appareil partagé. Cet événement MANQUAIT, et son
-// absence vidait de sens la distinction Device / DeviceSession : `DeviceRevoked`
-// ne porte que `device_id`, donc `streaming` n'avait AUCUN moyen d'apprendre
-// qu'un profil avait été déconnecté.
+// Disconnecting ONE PROFILE from a shared device. This event WAS MISSING, and
+// its absence emptied the Device / DeviceSession distinction of meaning:
+// `DeviceRevoked` carries only `device_id`, so `streaming` had NO WAY to learn
+// that a profile had been disconnected.
 //
-// Conséquence, sur le téléviseur partagé qui est le motif même de la coupe :
-// cinq profils dans un salon, quelqu'un regarde sous votre profil, vous faites
-// « déconnecter ce profil » depuis le web — et le bail
-// PlaybackSession(account, profile, device, date) continuait de se renouveler.
-// La lecture ne s'arrêtait pas. Et comme le plafond d'écrans vaut 1 hors
-// premium, vous restiez bloqué sur votre PROPRE compte : le défaut exact que
-// storefront-mobile Q5 et storefront-tv Q9c demandaient d'éviter. La seule
-// issue était de révoquer l'appareil, ce qui déconnecte les cinq profils.
+// The consequence, on the shared television that is the very reason for the
+// cut: five profiles in a living room, somebody is watching under your profile,
+// you choose "disconnect this profile" from the web — and the
+// PlaybackSession(account, profile, device, date) lease kept renewing.
+// Playback did not stop. And since the screen ceiling is 1 outside premium, you
+// stayed locked out of your OWN account: the exact defect storefront-mobile Q5
+// and storefront-tv Q9c asked us to avoid. The only way out was to revoke the
+// device, which disconnects all five profiles.
 //
-// Consommé par `streaming`, qui révoque les baux du couple (appareil, profil)
-// — et d'eux seuls.
+// Consumed by `streaming`, which revokes the leases of the (device, profile)
+// pair — and of those alone.
 message DeviceSessionClosed {
   string device_id = 1;
   string account_id = 2;
-  // LE GRAIN QUI MANQUAIT.
+  // THE GRAIN THAT WAS MISSING.
   string profile_id = 3;
   google.protobuf.Timestamp occurred_at = 4;
-  // Vrai quand la fermeture vient de l'appareil lui-même, faux quand elle est
-  // commandée à distance depuis une autre surface. Les deux existent, et
-  // l'écran déconnecté n'affiche pas le même message.
+  // True when the close comes from the device itself, false when it is commanded
+  // remotely from another surface. Both exist, and the disconnected screen does
+  // not show the same message.
   bool self_initiated = 5;
   arthome.common.v1.Actor closed_by = 6;
 }
 
 // ---------------------------------------------------------------- relations
 
-// Suivre un artiste et être alerté sont DEUX réglages. Le premier est une
-// relation de catalogue, le second un drapeau porté par `notifications`.
-// Les confondre rendrait impossible de suivre sans être notifié.
+// Following an artist and being alerted are TWO settings. The first is a
+// catalogue relation, the second a flag carried by `notifications`.
+// Confusing them would make it impossible to follow without being notified.
 message ArtistFollowed {
   string account_id = 1;
   string artist_id = 2;
@@ -156,12 +156,12 @@ message ArtistUnfollowed {
   google.protobuf.Timestamp occurred_at = 3;
 }
 
-// ---------------------------------------------------------------- chaîne
+// ---------------------------------------------------------------- channel
 
-// La chaîne comme ESPACE DE TRAVAIL. Sa face publique — nom, biographie, avatar,
-// abonnés — appartient à `catalog.Artist`, en relation 1:1 par `channel_id`.
-// C'est la coupe qui résout C9 : l'autorisation d'un côté, la publication de
-// l'autre, et aucune commande du studio ne traverse les deux.
+// The channel as a WORKSPACE. Its public face — name, biography, avatar,
+// subscribers — belongs to `catalog.Artist`, in a 1:1 relation by `channel_id`.
+// That is the cut that resolves C9: authorisation on one side, publication on
+// the other, and no studio command crosses both.
 message ChannelCreated {
   string channel_id = 1;
   string owner_account_id = 2;
@@ -172,18 +172,18 @@ message ChannelCreated {
 message ChannelMembershipChanged {
   string channel_id = 1;
   string person_id = 2;
-  // Un ENSEMBLE de rôles : une personne en tient plusieurs sur une même chaîne,
-  // et la navigation du studio est l'UNION de leurs accès, jamais un rang.
-  // Vide quand `action` vaut MEMBERSHIP_ACTION_REMOVED.
+  // A SET of roles: one person holds several on the same channel, and the
+  // studio's navigation is the UNION of their accesses, never a rank.
+  // Empty when `action` is MEMBERSHIP_ACTION_REMOVED.
   repeated MemberRole roles = 3;
   MembershipAction action = 4;
   google.protobuf.Timestamp occurred_at = 5;
   arthome.common.v1.Actor changed_by = 6;
 }
 
-// Exige que le destinataire soit DÉJÀ membre et dispose de la double
-// authentification. Le compte bancaire (payouts) et la page publique (catalog)
-// suivent le transfert.
+// Requires the recipient to be ALREADY a member and to have two-factor
+// authentication. The bank account (payouts) and the public page (catalog)
+// follow the transfer.
 message ChannelOwnershipTransferred {
   string channel_id = 1;
   string from_person_id = 2;
@@ -191,8 +191,9 @@ message ChannelOwnershipTransferred {
   google.protobuf.Timestamp occurred_at = 4;
 }
 
-// Le renfort ponctuel : portée UNE date, expiration explicite et SERVIE.
-// « Expire au salut + 1 h » est une phrase d'écran ; le contrat porte l'instant.
+// The one-off stand-in: scoped to ONE date, expiry explicit and SERVED.
+// "Expires at curtain-down + 1 h" is a screen sentence; the contract carries
+// the instant.
 message DateAccessGranted {
   string grant_id = 1;
   string channel_id = 2;
@@ -209,20 +210,20 @@ message DateAccessRevoked {
   string date_id = 3;
   string person_id = 4;
   google.protobuf.Timestamp occurred_at = 5;
-  // Vrai quand c'est l'expiration du bail, et non un geste humain, qui a
-  // révoqué l'accès. Le journal doit distinguer les deux.
+  // True when it is the lease expiring, and not a human act, that revoked the
+  // access. The journal must tell the two apart.
   bool expired = 6;
 }
 
-// Les droits changent PENDANT que l'application est ouverte : une invitation
-// acceptée ajoute une chaîne au sélecteur, un accès ponctuel expire seul au
-// tomber du rideau, un rôle est retiré. Sans ce compteur, la personne garde un
-// onglet qui ouvre un 403 et le découvre en pleine garde.
-// Porté aussi sur chaque réponse HTTP et poussé sur le canal temps réel.
+// Rights change WHILE the application is open: an accepted invitation adds a
+// channel to the picker, a one-off access expires on its own at curtain-down, a
+// role is withdrawn. Without this counter, the person keeps a tab that opens a
+// 403 and discovers it mid-shift.
+// Carried on every HTTP response too, and pushed on the realtime channel.
 message RightsVersionBumped {
   string account_id = 1;
   uint64 rights_version = 2;
-  // Les chaînes touchées, pour que le client sache quoi recharger.
+  // The channels touched, so the client knows what to reload.
   repeated string channel_ids = 3;
   google.protobuf.Timestamp occurred_at = 4;
 }

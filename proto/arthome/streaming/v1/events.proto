@@ -1,13 +1,12 @@
-// Événements du contexte `streaming` — la conduite, et le droit de lire
-// maintenant.
+// Events of the `streaming` context — the run, and the right to watch now.
 //
-// Sujet Kafka :
-//   arthome.streaming.run   clé date_id   12 partitions
+// Kafka topic:
+//   arthome.streaming.run   key date_id   12 partitions
 //
-// Maturité : PROVISOIRE (palier 5). Le choix du fournisseur média n'est pas
-// fait, et les capacités déclarées — signature de segments, DRM, renditions —
-// changeront la forme du jeton de lecture. Figer maintenant, c'est figer contre
-// MediaMTX. `buf breaking` est ignoré sur ce répertoire (voir buf.yaml).
+// Maturity: PROVISIONAL (milestone 5). The media provider has not been chosen,
+// and the capabilities declared — segment signing, DRM, renditions — will
+// change the shape of the playback token. Freezing now means freezing against
+// MediaMTX. `buf breaking` is ignored on this directory (see buf.yaml).
 syntax = "proto3";
 
 package arthome.streaming.v1;
@@ -15,11 +14,11 @@ package arthome.streaming.v1;
 import "arthome/common/v1/common.proto";
 import "google/protobuf/timestamp.proto";
 
-// L'axe TECHNIQUE, et rien d'autre.
-// `postponed` et `cancelled` sont RETIRÉS de cet axe : c'étaient des échos de
-// `catalog.DateOutcome` logés dans l'état technique — la même faute que
-// `reported` dans le champ des sanctions. Une régie n'a pas d'état « annulée » :
-// elle a un plateau qui n'envoie rien (E4).
+// The TECHNICAL axis, and nothing else.
+// `postponed` and `cancelled` are REMOVED from this axis: they were echoes of
+// `catalog.DateOutcome` lodged in the technical state — the same fault as
+// `reported` in the sanctions field. A run desk has no "cancelled" state: it
+// has a stage sending nothing (E4).
 enum RunState {
   RUN_STATE_UNSPECIFIED = 0;
   RUN_STATE_IDLE = 1;
@@ -29,9 +28,9 @@ enum RunState {
   RUN_STATE_ENDED = 5;
 }
 
-// Le protocole d'entrée DÉCIDE des métriques réellement disponibles.
-// `streaming.md` est formel : le gigue et les paquets perdus n'existent qu'en
-// entrée WebRTC ; en RTMP, transporté sur TCP, ils n'ont pas de sens.
+// The ingest protocol DECIDES which metrics are actually available.
+// `streaming.md` is categorical: jitter and lost packets exist only on WebRTC
+// ingest; over RTMP, carried on TCP, they have no meaning.
 enum IngestProtocol {
   INGEST_PROTOCOL_UNSPECIFIED = 0;
   INGEST_PROTOCOL_RTMPS = 1;
@@ -39,18 +38,18 @@ enum IngestProtocol {
   INGEST_PROTOCOL_WHIP = 3;
 }
 
-// La voie de retour de régie RÉELLEMENT ouverte. Le studio doit la SAVOIR pour
-// ne pas promettre à l'opérateur une latence qu'il n'a pas : WHEP sous la
-// seconde sur entrée WHIP, LL-HLS à quelques secondes sur entrée RTMP.
-// `streaming.md` refuse de créer une branche média pour uniformiser un schéma :
-// le contrat porte donc la vérité, pas l'uniformité.
+// The monitor return path ACTUALLY open. The studio must KNOW it so as not to
+// promise the operator a latency they do not have: WHEP under a second on WHIP
+// ingest, LL-HLS at a few seconds on RTMP ingest.
+// `streaming.md` refuses to create a media branch just to make a schema
+// uniform: so the contract carries the truth, not uniformity.
 enum MonitorPath {
   MONITOR_PATH_UNSPECIFIED = 0;
   MONITOR_PATH_WHEP = 1;
   MONITOR_PATH_LL_HLS = 2;
 }
 
-// L'ISSUE visible du spectateur. Quatre valeurs, celles de
+// The OUTCOME the viewer sees. Four values, those of
 // `catalogue.incidentMessages`.
 enum IncidentKind {
   INCIDENT_KIND_UNSPECIFIED = 0;
@@ -60,13 +59,12 @@ enum IncidentKind {
   INCIDENT_KIND_INTERRUPTED = 4;
 }
 
-// La CAUSE, vocabulaire NOUVEAU et distinct de l'issue.
-// `catalogue.incidentMessages` ne connaît que quatre entrées, qui sont des
-// issues. La régie mobile en distingue trois de plus qui n'existent dans aucun
-// vocabulaire : flux perdu côté salle, poste de régie déconnecté, débit
-// effondré. `streaming.md` en nomme une quatrième,
-// COMPATIBILITY_WORKER_FAILED : un worker FFmpeg ne doit jamais mourir en
-// silence, sinon la régie voit un lecteur qui ne démarre jamais sans cause.
+// The CAUSE, a NEW vocabulary distinct from the outcome.
+// `catalogue.incidentMessages` knows only four entries, which are outcomes. The
+// mobile run desk tells three more apart that exist in no vocabulary: feed lost
+// at the venue, run desk disconnected, bitrate collapsed. `streaming.md` names
+// a fourth, COMPATIBILITY_WORKER_FAILED: an FFmpeg worker must never die in
+// silence, or the run desk sees a player that never starts with no cause.
 enum IncidentCause {
   INCIDENT_CAUSE_UNSPECIFIED = 0;
   INCIDENT_CAUSE_VENUE_FEED_LOST = 1;
@@ -77,22 +75,22 @@ enum IncidentCause {
   INCIDENT_CAUSE_MANUAL = 6;
 }
 
-// L'écran d'attente AUTOMATIQUE — règle de chaîne « si le flux se perd plus de
-// 15 s » — produit un incident de MÊME NATURE qu'un déclenchement manuel.
-// C'est la bonne réponse au cas « le régisseur est injoignable », et c'est une
-// règle serveur, pas un comportement d'application. Le journal doit néanmoins
-// distinguer les deux.
+// The AUTOMATIC standby screen — channel rule "if the feed is lost for more
+// than 15 s" — produces an incident of the SAME NATURE as a manual trigger.
+// That is the right answer to the "the run-desk operator is unreachable" case,
+// and it is a server rule, not an application behaviour. The journal must
+// nevertheless tell the two apart.
 enum IncidentTrigger {
   INCIDENT_TRIGGER_UNSPECIFIED = 0;
   INCIDENT_TRIGGER_MANUAL = 1;
   INCIDENT_TRIGGER_AUTO = 2;
 }
 
-// ---------------------------------------------------------------- conduite
+// ---------------------------------------------------------------- run
 
-// Déverrouille la liste de contrôle de publication : `technical_check_passed`
-// est l'un des sept éléments, et il vient d'ici. `catalog` le projette, il ne
-// le demande pas.
+// Unlocks the publication checklist: `technical_check_passed` is one of the
+// seven items, and it comes from here. `catalog` projects it, it does not ask
+// for it.
 message TechnicalCheckPassed {
   string date_id = 1;
   string channel_id = 2;
@@ -101,11 +99,11 @@ message TechnicalCheckPassed {
   arthome.common.v1.Actor checked_by = 5;
 }
 
-// Consommé par `catalog`, qui avance la publication de `technical` à `live`.
-// La commande « passer à l'antenne » va à `streaming`, pas à `catalog` : seul
-// `streaming` sait si le flux entre. Deux transitions de la machine à états de
-// publication sur huit sont donc CAUSÉES par un événement, ce qui laisse
-// `Publication` agrégat d'un seul contexte.
+// Consumed by `catalog`, which moves the publication from `technical` to
+// `live`. The "go on air" command goes to `streaming`, not to `catalog`: only
+// `streaming` knows whether the feed is coming in. So two of the publication
+// state machine's eight transitions are CAUSED by an event, which keeps
+// `Publication` the aggregate of a single context.
 message RunStarted {
   string date_id = 1;
   string channel_id = 2;
@@ -123,30 +121,32 @@ message RunEnded {
   uint32 peak_viewers = 5;
   google.protobuf.Timestamp peak_at = 6;
   uint32 avg_viewers = 7;
-  // L'échéance de versement (14 jours) court depuis LA FIN DU DIRECT, pas
-  // depuis le paiement : `payouts` consomme donc cet événement.
+  // The payout due date (14 days) runs from THE END OF THE LIVE SHOW, not from
+  // the payment: so `payouts` consumes this event.
   google.protobuf.Timestamp occurred_at = 8;
 }
 
 message RunStateChanged {
   string date_id = 1;
   RunState state = 2;
-  // Renseignée seulement pour RUN_STATE_INTERRUPTED.
+  // Filled in only for RUN_STATE_INTERRUPTED.
   IncidentCause cause = 3;
-  // Vrai quand l'état est celui d'APRÈS amortissement du délai de grâce.
-  // Une coupure réseau de deux secondes en salle ne doit produire ni incident
-  // en régie ni manifeste HLS reparti de zéro : le studio distingue « accroc
-  // amorti » de « publieur parti », et ce sont deux champs, pas un.
+  // True when the state is the one AFTER the grace period has absorbed the
+  // glitch. A two-second network drop at the venue must produce neither an
+  // incident on the run desk nor an HLS manifest restarted from zero: the studio
+  // tells "glitch absorbed" apart from "publisher gone", and those are two
+  // fields, not one.
   bool after_grace_period = 4;
   google.protobuf.Timestamp occurred_at = 5;
 }
 
 // ---------------------------------------------------------------- incident
 
-// L'écran d'attente est un VOILE CLIENT, jamais une bascule de flux : le plan
-// de contrôle publie l'état, le lecteur l'affiche par-dessus une vidéo intacte.
-// Instantané, identique sur web, mobile et TV, et le média reste intact pour la
-// reprise. Basculer le flux amont chez un fournisseur managé est lent et coûteux.
+// The standby screen is a CLIENT-SIDE VEIL, never a feed switch: the control
+// plane publishes the state, the player shows it over an intact video.
+// Instant, identical on web, mobile and TV, and the media stays intact for the
+// resume. Switching the upstream feed at a managed provider is slow and
+// expensive.
 message IncidentRaised {
   string incident_id = 1;
   string date_id = 2;
@@ -154,17 +154,17 @@ message IncidentRaised {
   IncidentKind kind = 4;
   IncidentCause cause = 5;
   IncidentTrigger trigger = 6;
-  // Le message écrit par la régie voyage AVEC l'état, dans sa langue de
-  // rédaction. C'est du contenu, pas une clé i18n : le catalogue en fournit des
-  // modèles par nature d'incident, que la régie reprend ou remplace.
+  // The message written by the run desk travels WITH the state, in the language
+  // it was written in. It is content, not an i18n key: the catalogue supplies
+  // templates per incident nature, which the run desk keeps or replaces.
   arthome.common.v1.LocalizedText message = 7;
   google.protobuf.Timestamp raised_at = 8;
   arthome.common.v1.Actor raised_by = 9;
 }
 
-// Quand l'incident se résout, l'état change et le lecteur RETIRE le voile.
-// Le client ne doit pas avoir à redemander un jeton de lecture, sinon la
-// reprise se paie d'un rechargement de flux.
+// When the incident resolves, the state changes and the player REMOVES the
+// veil. The client must not have to ask for a playback token again, or the
+// resume costs a stream reload.
 message IncidentResolved {
   string incident_id = 1;
   string date_id = 2;
@@ -172,14 +172,14 @@ message IncidentResolved {
   arthome.common.v1.Actor resolved_by = 4;
 }
 
-// ---------------------------------------------------------------- rediffusion
+// ---------------------------------------------------------------- replay
 
-// La POLITIQUE appartient à `catalog` (la promesse), la MISE EN VENTE à
-// `ticketing` (le prix), le FICHIER et son EXPIRATION à `streaming`.
-// `expires_at` se dérive de la fin du run et de `replay_window_hours` servi par
-// `catalog` : c'est @arthome/core qui décide de la durée, sinon la politique de
-// rediffusion finirait encodée dans un cycle de vie de stockage, hors de portée
-// des tests.
+// The POLICY belongs to `catalog` (the promise), PUTTING IT ON SALE to
+// `ticketing` (the price), the FILE and its EXPIRY to `streaming`.
+// `expires_at` is derived from the end of the run and from `replay_window_hours`
+// served by `catalog`: it is @arthome/core that decides the duration, otherwise
+// the replay policy would end up encoded in a storage lifecycle, out of reach
+// of the tests.
 message ReplayAssetReady {
   string date_id = 1;
   string channel_id = 2;
@@ -194,14 +194,14 @@ message ReplayExpired {
   google.protobuf.Timestamp occurred_at = 2;
 }
 
-// ---------------------------------------------------------------- chapitres
+// ---------------------------------------------------------------- chapters
 
-// Posés en régie, repris dans la rediffusion. Ils portent leur POSITION DANS LE
-// MÉDIA : c'est gratuit maintenant, irrattrapable ensuite.
+// Posted from the run desk, carried into the replay. They carry their POSITION
+// IN THE MEDIA: free now, unrecoverable later.
 message ChapterPosted {
   string chapter_id = 1;
   string date_id = 2;
-  // Identifiant du vocabulaire de chapitres, jamais un libellé rédigé.
+  // Identifier from the chapter vocabulary, never a written label.
   string chapter_vocab_id = 3;
   int32 at_media_sec = 4;
   google.protobuf.Timestamp occurred_at = 5;
@@ -216,17 +216,16 @@ message ChapterRemoved {
 
 // ---------------------------------------------------------------- audience
 
-// UNE FOIS PAR MINUTE, pas par seconde. Le compteur à la seconde circule sur
-// Redis (diffusion Socket.IO) ; seul l'agrégat à la minute entre dans le
-// journal durable. Un échantillon par seconde et par direct dans Kafka est du
-// gâchis, et c'est la frontière Kafka/Redis de `streaming.md`.
+// ONCE PER MINUTE, not per second. The per-second counter travels over Redis
+// (Socket.IO broadcast); only the per-minute aggregate enters the durable log.
+// One sample per second per live show in Kafka is waste, and this is
+// `streaming.md`'s Kafka/Redis boundary.
 //
-// Le compteur est ABSENT — jamais zéro — quand la date n'est pas à l'antenne :
-// la règle du dossier interdit « 0 EN DIRECT », et un zéro se lit « personne »,
-// pas « non mesuré ».
+// The counter is ABSENT — never zero — when the date is not on air: the file's
+// rule forbids "0 LIVE", and a zero reads as "nobody", not "not measured".
 message ViewerCountSampled {
   string date_id = 1;
-  // Début de la minute échantillonnée, UTC.
+  // Start of the sampled minute, UTC.
   google.protobuf.Timestamp minute = 2;
   uint32 viewers = 3;
 }

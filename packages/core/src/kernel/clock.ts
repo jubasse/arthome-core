@@ -1,32 +1,31 @@
 /**
- * L'horloge est un PORT, jamais `Date.now()` appele au fond d'une regle.
+ * The clock is a PORT, never a `Date.now()` buried inside a rule.
  *
- * C'est le remodelage le plus envahissant du portage, et il n'est pas
- * negociable. `shared/helpers.js` lit une horloge implicite au fond de
- * `stateOf`, `isRoomOpen`, `replayHoursLeft` et `dayLabel` ; et tout
- * `shared/` est bati sur des decalages relatifs a l'ouverture de
- * l'application — `catalogue.json` le dit lui-meme : « nothing here expires ».
- * Excellent pour une maquette, inutilisable sur un contrat.
+ * This is the most invasive reshaping of the port, and it is not negotiable.
+ * `shared/helpers.js` reads an implicit clock deep inside `stateOf`,
+ * `isRoomOpen`, `replayHoursLeft` and `dayLabel`; and all of `shared/` is built
+ * on offsets relative to app open — `catalogue.json` says so itself: "nothing
+ * here expires". Excellent for a mockup, unusable in a contract.
  *
- * Deux consequences :
- *   - une regle qui lit l'heure systeme n'est pas testable. Un test qui passe a
- *     23 h 59 et echoue a 00 h 01 a trouve un `Date.now()` oublie ;
- *   - un paquet importe par sept services NE PEUT PAS porter d'etat global.
- *     Deux requetes concurrentes partageraient la meme horloge, la meme langue
- *     et le meme pays.
+ * Two consequences:
+ *   - a rule that reads the system clock is not testable. A test that passes at
+ *     23:59 and fails at 00:01 has found a forgotten `Date.now()`;
+ *   - a package imported by seven services CANNOT hold global state. Two
+ *     concurrent requests would share the same clock, the same language and the
+ *     same country.
  */
 
-/** Un instant, en ISO 8601 UTC. Jamais un decalage en minutes (D7). */
+/** An instant, in ISO 8601 UTC. Never an offset in minutes (D7). */
 export type Instant = string;
 
 export interface Clock {
-  /** L'instant courant, en ISO 8601 UTC. */
+  /** The current instant, in ISO 8601 UTC. */
   now(): Instant;
-  /** Le meme instant en millisecondes depuis l'epoque, pour l'arithmetique. */
+  /** The same instant in milliseconds since the epoch, for arithmetic. */
   nowMs(): number;
 }
 
-/** L'horloge de production. La seule qui lise l'heure de la machine. */
+/** The production clock. The only one that reads the machine's time. */
 export class SystemClock implements Clock {
   public now(): Instant {
     return new Date().toISOString();
@@ -38,11 +37,10 @@ export class SystemClock implements Clock {
 }
 
 /**
- * L'horloge des tests, et du jeu de donnees deterministe.
+ * The clock for tests and for the deterministic dataset.
  *
- * `advance` existe pour les tests de fenetre — expiration de rediffusion,
- * bail de lecture, validite d'un devis — ou l'interet est justement de faire
- * passer un instant.
+ * `advance` exists for window tests — replay expiry, playback lease, quote
+ * validity — where the whole point is to make an instant pass.
  */
 export class FixedClock implements Clock {
   private ms: number;
@@ -59,7 +57,7 @@ export class FixedClock implements Clock {
     return this.ms;
   }
 
-  /** Avance l'horloge. Rend l'instant atteint. */
+  /** Advances the clock. Returns the instant reached. */
   public advance(millis: number): Instant {
     this.ms += millis;
     return this.now();

@@ -21,62 +21,62 @@ const gauge = (over: Partial<Gauge> = {}): Gauge => ({
 });
 
 /**
- * INVARIANT PROTEGE
- *   `SeatHold.expiresAt` est le MEME INSTANT que l'expiration de l'intention
- *   d'achat qui l'a creee. Un seul instant, porte par deux objets, jamais deux
- *   durees qui derivent.
+ * PROTECTED INVARIANT
+ *   `SeatHold.expiresAt` is the SAME INSTANT as the expiry of the purchase
+ *   intent that created it. One instant, carried by two objects, never two
+ *   durations that drift apart.
  *
- * POURQUOI CE TEST EXISTE
- *   Remontee par `auth` : la duree d'un appairage `seat` doit etre la duree
- *   d'un hold, sinon la jauge affichee sur la TV est fausse pendant toute
- *   l'attente du telephone. La TV montre « 12 places », le spectateur part
- *   chercher son telephone, et pendant cinq minutes rien ne garantit qu'elles
- *   existent encore.
+ * WHY THIS TEST EXISTS
+ *   Raised by `auth`: the duration of a `seat` pairing must be the duration of
+ *   a hold, otherwise the capacity shown on the TV is wrong for the whole time
+ *   the phone is awaited. The TV shows "12 seats", the viewer goes to fetch
+ *   their phone, and for five minutes nothing guarantees those seats still
+ *   exist.
  */
-describe('la reservation de jauge', () => {
-  it("prend l'instant d'expiration de l'intention, pas une duree a elle", () => {
-    // La signature IMPOSE l'invariant : on ne passe pas une duree, on passe
-    // l'instant d'expiration de l'intention. Il n'y a rien a synchroniser.
+describe('the capacity hold', () => {
+  it('takes the intent\'s expiry instant, not a duration of its own', () => {
+    // The signature ENFORCES the invariant: you do not pass a duration, you pass
+    // the intent's expiry instant. There is nothing to keep in sync.
     const intentExpiry = tvPairingIntentExpiry('2026-09-21T18:00:00.000Z');
     const hold = holdFor(2, intentExpiry);
     expect(hold.expiresAt).toBe(intentExpiry);
   });
 
-  it('donne cinq minutes a un appairage TV et quinze a un paiement direct', () => {
-    // Le choix de cinq minutes se JUSTIFIE ici : une duree d'appairage est un
-    // engagement de jauge, et quinze minutes par spectateur hesitant videraient
-    // une salle populaire sans qu'une seule place soit vendue.
+  it('gives five minutes to a TV pairing and fifteen to a direct checkout', () => {
+    // The choice of five minutes is JUSTIFIED here: a pairing duration is a
+    // capacity commitment, and fifteen minutes per hesitant viewer would empty
+    // a popular venue without a single seat being sold.
     expect(tvPairingIntentExpiry('2026-09-21T18:00:00.000Z')).toBe('2026-09-21T18:05:00.000Z');
     expect(checkoutIntentExpiry('2026-09-21T18:00:00.000Z')).toBe('2026-09-21T18:15:00.000Z');
   });
 
-  it('retire les places retenues de la disponibilite servie', () => {
-    // Sans ce retrait, deux spectateurs achetent la derniere place.
+  it('subtracts held seats from the availability served', () => {
+    // Without that subtraction, two viewers buy the last seat.
     expect(seatsAvailable(gauge({ seatsSold: 98, seatsHeld: 2 }))).toBe(0);
     expect(seatsAvailable(gauge({ seatsSold: 98, seatsHeld: 1 }))).toBe(1);
   });
 
-  it('libere la jauge a la seconde ou l\'intention expire', () => {
+  it('frees the capacity the second the intent expires', () => {
     const hold = holdFor(1, '2026-09-21T18:05:00.000Z');
     expect(isHoldExpired(hold, '2026-09-21T18:04:59.000Z')).toBe(false);
     expect(isHoldExpired(hold, '2026-09-21T18:05:00.000Z')).toBe(true);
   });
 
-  it('refuse une quantite absurde plutot que de la retenir', () => {
+  it('refuses an absurd quantity rather than holding it', () => {
     expect(() => holdFor(0, '2026-09-21T18:05:00.000Z')).toThrow();
     expect(() => holdFor(-1, '2026-09-21T18:05:00.000Z')).toThrow();
   });
 });
 
 /**
- * INVARIANT PROTEGE
- *   Un palier ELARGIT la jauge, jamais ne la reduit apres la mise en vente.
+ * PROTECTED INVARIANT
+ *   A tier WIDENS the capacity, never shrinks it after going on sale.
  *
- * POURQUOI
- *   Une reduction apres mise en vente annulerait des places deja vendues.
+ * WHY
+ *   Shrinking after going on sale would cancel seats already sold.
  */
-describe('les paliers de jauge', () => {
-  it('refuse une reduction', () => {
+describe('the capacity tiers', () => {
+  it('refuses a shrink', () => {
     expect(() => assertTierWidens(500, 800)).not.toThrow();
     expect(() => assertTierWidens(500, 500)).toThrow();
     expect(() => assertTierWidens(500, 300)).toThrow();
@@ -84,15 +84,15 @@ describe('les paliers de jauge', () => {
 });
 
 /**
- * INVARIANT PROTEGE
- *   L'etat de la jauge est un ETAT, jamais une phrase.
+ * PROTECTED INVARIANT
+ *   The capacity state is a STATE, never a sentence.
  *
- * POURQUOI
- *   `helpers.seatsLabel` rendait « 86 places » ou « Complet ». Une phrase ne se
- *   filtre pas, ne se trie pas, ne se traduit pas — et fait fuir l'i18n.
+ * WHY
+ *   `helpers.seatsLabel` returned "86 seats" or "Sold out". A sentence cannot
+ *   be filtered, cannot be sorted, cannot be translated — and leaks i18n.
  */
-describe('la disponibilite', () => {
-  it('distingue disponible, liste d\'attente seule, et complet', () => {
+describe('availability', () => {
+  it('tells apart available, waiting list only, and sold out', () => {
     expect(availabilityOf(gauge({ seatsSold: 14 }))).toEqual({
       kind: 'seats-available',
       seatsAvailable: 86,
@@ -104,8 +104,8 @@ describe('la disponibilite', () => {
     expect(availabilityOf(gauge({ seatsSold: 100 }))).toEqual({ kind: 'sold-out' });
   });
 
-  it('cesse d\'etre « bientot complet » quand il n\'y a plus rien', () => {
-    // « Bientot complet » sur une date complete serait un mensonge poli.
+  it('stops being "almost full" when nothing is left', () => {
+    // "Almost full" on a sold-out date would be a polite lie.
     expect(isScarce(gauge({ seatsSold: 90 }))).toBe(true);
     expect(isScarce(gauge({ seatsSold: 100 }))).toBe(false);
     expect(isScarce(gauge({ seatsSold: 84 }))).toBe(false);
