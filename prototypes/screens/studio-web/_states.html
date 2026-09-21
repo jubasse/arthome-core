@@ -1,0 +1,51 @@
+<!--
+==============================================================================
+  ÉCRAN — _states — la machine à états d'une publication (transverse)
+==============================================================================
+
+  Ce qu'il affiche : les sept états d'une date, leur ordre, les deux transitions sans retour et leur promesse engagée
+
+  Rôles qui l'ouvrent : lecture pour tous ; seuls artist et production déplacent une date
+  Mène vers : event · events · agenda · dashboard
+
+  Source : mockups/Studio.dc.html
+    balisage        aucun — tables de constantes
+    modèle de vue   lignes 2355–2372
+
+  Clés de copie employées :
+    aucune clé i18n directe
+
+  Contrat :
+    besoins   needs/studio-web.md § « Les commandes » → « La machine à états d'une publication »
+    openapi   openapi/studio.yaml · moveDatePublicationState
+    openapi   openapi/studio.yaml · setRunState (technical→live et live→ended sont CAUSÉES par streaming, jamais commandées ici)
+
+  Relevé d'extraction (défauts vus, non corrigés) :
+    · VOCABULAIRE PARALLÈLE (errata D2) : la maquette dit draft·hidden·sched·tech·live·done·replay ; shared/catalogue.json et le contrat disent draft·reserve·scheduled·technical·live·ended·replay-online. C'est CE DERNIER qui fait autorité.
+    · STATE_LOCKED porte des COUPLES `from>to` — c'est la bonne sémantique, retenue par le contrat (E5) ; shared/fixtures.js encode à tort une liste d'états.
+
+  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+-->
+
+<!-- ===================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+<!-- ···· modèle de vue · Studio.dc.html lignes 2355–2372 ···· -->
+const STATES = {
+  draft:  ['BROUILLON', 'oklch(0.6 0.014 245)'],
+  hidden: ['EN RÉSERVE', WARN],
+  sched:  ['PROGRAMMÉ', OK],
+  tech:   ['TESTS TECHNIQUES', INFO],
+  live:   ['EN DIRECT', LIVE],
+  done:   ['TERMINÉ', 'oklch(0.51 0.014 248)'],
+  replay: ['REDIFFUSION EN LIGNE', 'oklch(0.75 0.13 42)']
+};
+const STATE_ORDER = ['draft', 'hidden', 'sched', 'tech', 'live', 'done', 'replay'];
+/* deux passages sont sans retour : la publication engage le prix, la rediffusion est vendue */
+const STATE_LOCKED = {
+  'draft>sched':  'La publication engage le tarif affiché : elle ne se retire pas.',
+  'hidden>sched': 'La publication engage le tarif affiché : elle ne se retire pas.',
+  'done>replay':  'Des spectateurs ont payé pour la rediffusion : elle ne se désactive pas.'
+};
+const lockOf = (from, to) => STATE_LOCKED[from + '>' + to] || '';
+
+</script>

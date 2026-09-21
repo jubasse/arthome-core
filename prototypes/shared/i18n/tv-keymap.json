@@ -1,0 +1,618 @@
+{
+  "note": "Storefront TV — short name used in the component ↔ i18n key. upper: the surface renders it in capitals (styling, not a second translation). Regenerate the component dictionaries from i18n/ through this map; never edit copy inside the .dc.html.",
+  "map": {
+    "accountKicker": {
+      "key": "account.kicker",
+      "upper": true
+    },
+    "addAccount": {
+      "key": "account.addAccount"
+    },
+    "addAccountHint": {
+      "key": "account.addAccountHint",
+      "upper": true
+    },
+    "addList": {
+      "key": "common.actions.addToListShort"
+    },
+    "artistsKicker": {
+      "key": "discovery.artistsKicker",
+      "upper": true
+    },
+    "audioLabel": {
+      "key": "player.audioTrack",
+      "upper": true
+    },
+    "backLive": {
+      "key": "common.actions.backToLive"
+    },
+    "backToControls": {
+      "key": "player.backToControls"
+    },
+    "backToDate": {
+      "key": "player.backToDate"
+    },
+    "book": {
+      "key": "common.actions.book"
+    },
+    "bookKicker": {
+      "key": "common.actions.book",
+      "upper": true
+    },
+    "bookShort": {
+      "key": "common.actions.bookShort"
+    },
+    "cardLabel": {
+      "key": "account.paymentMethod",
+      "upper": true
+    },
+    "catsKicker": {
+      "key": "discovery.categoriesKicker",
+      "upper": true
+    },
+    "chooseTier": {
+      "key": "ticketing.choosePrice",
+      "upper": true
+    },
+    "codeNote": {
+      "key": "ticketing.codeValidity",
+      "upper": true
+    },
+    "confirmedLabel": {
+      "key": "ticketing.confirmed",
+      "upper": true
+    },
+    "dateInfoBack": {
+      "key": "player.dateInfoBack",
+      "upper": true
+    },
+    "dateInfoKicker": {
+      "key": "player.dateInfoKicker",
+      "upper": true
+    },
+    "devicesLabel": {
+      "key": "account.devices",
+      "upper": true
+    },
+    "enter": {
+      "key": "common.actions.enter"
+    },
+    "expiresIn": {
+      "key": "common.status.expiresIn",
+      "upper": true
+    },
+    "follow": {
+      "key": "common.actions.follow"
+    },
+    "geoBlocked": {
+      "key": "common.error.geoTitle",
+      "upper": true
+    },
+    "geoText": {
+      "key": "system.geoBody"
+    },
+    "hBack": {
+      "key": "remote.hint.back",
+      "upper": true
+    },
+    "hChat": {
+      "key": "remote.hint.chat",
+      "upper": true
+    },
+    "helpClose": {
+      "key": "common.actions.close"
+    },
+    "helpKicker": {
+      "key": "remote.helpKicker",
+      "upper": true
+    },
+    "helpSub": {
+      "key": "remote.helpBody"
+    },
+    "helpTitle": {
+      "key": "remote.helpTitle"
+    },
+    "hFold": {
+      "key": "remote.hint.fold",
+      "upper": true
+    },
+    "hHelp": {
+      "key": "remote.hint.help",
+      "upper": true
+    },
+    "hInfo": {
+      "key": "remote.hint.info",
+      "upper": true
+    },
+    "hKeys": {
+      "key": "remote.hint.keys",
+      "upper": true
+    },
+    "hNav": {
+      "key": "remote.hint.navigate",
+      "upper": true
+    },
+    "hOk": {
+      "key": "remote.hint.open",
+      "upper": true
+    },
+    "hours": {
+      "key": "common.units.hoursShort"
+    },
+    "hPlay": {
+      "key": "remote.hint.play",
+      "upper": true
+    },
+    "hRemove": {
+      "key": "remote.hint.remove",
+      "upper": true
+    },
+    "hSeek": {
+      "key": "remote.hint.seek"
+    },
+    "hSubs": {
+      "key": "remote.hint.subtitles",
+      "upper": true
+    },
+    "hTracks": {
+      "key": "remote.hint.tracks",
+      "upper": true
+    },
+    "incidentLabel": {
+      "key": "states.incidentAtVenue",
+      "upper": true
+    },
+    "infoCloseHint": {
+      "key": "player.infoCloseHint"
+    },
+    "kbClear": {
+      "key": "discovery.keyboard.clear",
+      "upper": true
+    },
+    "kbDel": {
+      "key": "discovery.keyboard.delete",
+      "upper": true
+    },
+    "kbSpace": {
+      "key": "discovery.keyboard.space",
+      "upper": true
+    },
+    "kEnterOpen": {
+      "key": "common.status.houseOpen",
+      "upper": true
+    },
+    "keysHelp": {
+      "key": "common.actions.keyHelp"
+    },
+    "kFull": {
+      "key": "common.status.soldOut",
+      "upper": true
+    },
+    "kIn": {
+      "key": "common.status.startsIn",
+      "upper": true
+    },
+    "kLast": {
+      "key": "common.status.lastSeats",
+      "upper": true
+    },
+    "kNew": {
+      "key": "common.status.new",
+      "upper": true
+    },
+    "kOnAir": {
+      "key": "common.status.onAir",
+      "upper": true
+    },
+    "kReplayOn": {
+      "key": "common.status.replayOnline",
+      "upper": true
+    },
+    "kWait": {
+      "key": "common.status.waitlist",
+      "upper": true
+    },
+    "left": {
+      "key": "common.units.left"
+    },
+    "listEmptyCta": {
+      "key": "discovery.listEmptyCta"
+    },
+    "listEmptyText": {
+      "key": "discovery.listEmptyBody"
+    },
+    "listEmptyTitle": {
+      "key": "discovery.listEmptyTitle"
+    },
+    "listKicker": {
+      "key": "discovery.listKicker",
+      "upper": true
+    },
+    "listRemoveHint": {
+      "key": "discovery.listRemoveHint",
+      "upper": true
+    },
+    "liveNowLabel": {
+      "key": "discovery.onAirNow",
+      "upper": true
+    },
+    "manageNote": {
+      "key": "account.manageOnWeb"
+    },
+    "manageProfiles": {
+      "key": "account.manageThisTv"
+    },
+    "manageScan": {
+      "key": "account.manageScan",
+      "upper": true
+    },
+    "minutes": {
+      "key": "common.units.minutesShort",
+      "upper": true
+    },
+    "more": {
+      "key": "common.actions.more"
+    },
+    "nAccount": {
+      "key": "common.nav.account"
+    },
+    "nArtists": {
+      "key": "common.nav.artists"
+    },
+    "nCats": {
+      "key": "common.nav.categories"
+    },
+    "netLostLabel": {
+      "key": "common.error.networkTitle",
+      "upper": true
+    },
+    "netLostText": {
+      "key": "system.networkLostBody"
+    },
+    "nextDateLabel": {
+      "key": "discovery.nextDate",
+      "upper": true
+    },
+    "nHome": {
+      "key": "common.nav.home"
+    },
+    "nList": {
+      "key": "common.actions.addToListShort"
+    },
+    "nLive": {
+      "key": "common.nav.live"
+    },
+    "noSeat": {
+      "key": "ticketing.seatRequired",
+      "upper": true
+    },
+    "nothingOnAir": {
+      "key": "discovery.nothingOnAir"
+    },
+    "nothingOnAirHint": {
+      "key": "discovery.nothingOnAirHint"
+    },
+    "nPlans": {
+      "key": "common.nav.plans"
+    },
+    "nReplays": {
+      "key": "common.nav.replays"
+    },
+    "nSearch": {
+      "key": "common.nav.search"
+    },
+    "nTickets": {
+      "key": "common.nav.tickets"
+    },
+    "oCancel": {
+      "key": "enums.outcome.cancelled",
+      "upper": true
+    },
+    "oCancelText": {
+      "key": "states.outcomeBody.cancelled"
+    },
+    "oPost": {
+      "key": "enums.outcome.postponed",
+      "upper": true
+    },
+    "oPostText": {
+      "key": "states.outcomeBody.postponed"
+    },
+    "orTypeIt": {
+      "key": "ticketing.orTypeCode",
+      "upper": true
+    },
+    "oStop": {
+      "key": "enums.outcome.interrupted",
+      "upper": true
+    },
+    "oStopText": {
+      "key": "states.outcomeBody.interrupted"
+    },
+    "ownedSeat": {
+      "key": "common.status.seatHeld",
+      "upper": true
+    },
+    "payKicker": {
+      "key": "ticketing.payKicker",
+      "upper": true
+    },
+    "perkLive": {
+      "key": "ticketing.perk.live",
+      "upper": true
+    },
+    "perkLiveVal": {
+      "key": "ticketing.perk.liveValue"
+    },
+    "perkReplay": {
+      "key": "ticketing.perk.replay",
+      "upper": true
+    },
+    "perkWindow": {
+      "key": "ticketing.perk.window",
+      "upper": true
+    },
+    "phonePayNote": {
+      "key": "ticketing.phonePayNote"
+    },
+    "previewMuted": {
+      "key": "states.previewMuted",
+      "upper": true
+    },
+    "profilesLabel": {
+      "key": "account.onThisTv",
+      "upper": true
+    },
+    "qualityLabel": {
+      "key": "player.quality",
+      "upper": true
+    },
+    "quitHint": {
+      "key": "remote.quitHint"
+    },
+    "rArtistDates": {
+      "key": "discovery.rail.artistDates"
+    },
+    "rArtistReplays": {
+      "key": "discovery.rail.artistReplays"
+    },
+    "rBecause": {
+      "key": "discovery.rail.because"
+    },
+    "rCatLive": {
+      "key": "discovery.rail.categoryLive"
+    },
+    "rCatReplays": {
+      "key": "discovery.rail.categoryReplays"
+    },
+    "rCatSoon": {
+      "key": "discovery.rail.categorySoon"
+    },
+    "reactLabel": {
+      "key": "chat.reactWithDpad",
+      "upper": true
+    },
+    "recentLabel": {
+      "key": "discovery.recentSearches",
+      "upper": true
+    },
+    "repIncluded": {
+      "key": "ticketing.replay.included"
+    },
+    "replayWatch": {
+      "key": "common.actions.replay"
+    },
+    "repNone": {
+      "key": "enums.replayPolicy.none"
+    },
+    "repNoWindow": {
+      "key": "ticketing.replay.noWindow"
+    },
+    "repSub": {
+      "key": "ticketing.replay.subscription"
+    },
+    "repUnit": {
+      "key": "ticketing.replay.single"
+    },
+    "repWindow": {
+      "key": "ticketing.replay.windowSuffix"
+    },
+    "resultsTitle": {
+      "key": "discovery.results"
+    },
+    "resume": {
+      "key": "common.actions.resume"
+    },
+    "rExpiring": {
+      "key": "discovery.rail.expiring"
+    },
+    "rOnAir": {
+      "key": "discovery.rail.onAir"
+    },
+    "rPosters": {
+      "key": "discovery.rail.posters"
+    },
+    "rResume": {
+      "key": "common.actions.resume"
+    },
+    "rSame": {
+      "key": "discovery.rail.sameArtist"
+    },
+    "rSeries": {
+      "key": "discovery.rail.series"
+    },
+    "rSuggest": {
+      "key": "discovery.rail.suggested"
+    },
+    "rTickets": {
+      "key": "discovery.rail.yourSeats"
+    },
+    "rTonight": {
+      "key": "discovery.rail.tonight"
+    },
+    "safeAreaLabel": {
+      "key": "system.safeArea",
+      "upper": true
+    },
+    "scanLabel": {
+      "key": "ticketing.scanWithPhone",
+      "upper": true
+    },
+    "searchEmptyHint": {
+      "key": "discovery.searchHint"
+    },
+    "seatCount": {
+      "key": "ticketing.seatCount"
+    },
+    "seePlans": {
+      "key": "ticketing.seePlans"
+    },
+    "sEnded": {
+      "key": "enums.dateState.ended",
+      "upper": true
+    },
+    "settingsLabel": {
+      "key": "account.settings",
+      "upper": true
+    },
+    "share": {
+      "key": "common.actions.share"
+    },
+    "siDone": {
+      "key": "common.qr.done"
+    },
+    "signIn": {
+      "key": "common.actions.signIn"
+    },
+    "siOrType": {
+      "key": "common.qr.orType",
+      "upper": true
+    },
+    "siScan": {
+      "key": "common.qr.signInTitle",
+      "upper": true
+    },
+    "siTitle": {
+      "key": "account.signIn.title"
+    },
+    "siWait": {
+      "key": "common.qr.waiting"
+    },
+    "sLive": {
+      "key": "common.nav.live",
+      "upper": true
+    },
+    "sReplay": {
+      "key": "common.status.replayOnline",
+      "upper": true
+    },
+    "sScheduled": {
+      "key": "enums.dateState.scheduled",
+      "upper": true
+    },
+    "switchProfile": {
+      "key": "account.switchAccount"
+    },
+    "ticketsEmptyText": {
+      "key": "ticketing.emptyBody"
+    },
+    "ticketsEmptyTitle": {
+      "key": "ticketing.emptyTitle"
+    },
+    "ticketsKicker": {
+      "key": "ticketing.mySeatsKicker",
+      "upper": true
+    },
+    "tonightGrid": {
+      "key": "discovery.tonightGrid"
+    },
+    "total": {
+      "key": "ticketing.total"
+    },
+    "trailer": {
+      "key": "common.actions.trailer"
+    },
+    "unfollow": {
+      "key": "common.actions.unfollow"
+    },
+    "viewersSuffix": {
+      "key": "common.units.viewers",
+      "upper": true
+    },
+    "waitlist": {
+      "key": "common.actions.joinWaitlist"
+    },
+    "watch": {
+      "key": "common.actions.watch"
+    },
+    "whatSeatGives": {
+      "key": "common.seat.whatItGives",
+      "upper": true
+    },
+    "whoWatches": {
+      "key": "account.whoWatches"
+    },
+    "writeFromPhone": {
+      "key": "chat.writeFromPhone"
+    },
+    "yourLiveSeat": {
+      "key": "common.status.yourSeat",
+      "upper": true
+    },
+    "nothingOnAirShort": {
+      "key": "discovery.nothingOnAirShort"
+    },
+    "seeTonight": {
+      "key": "discovery.seeTonight"
+    },
+    "onTheBill": {
+      "key": "discovery.onTheBill"
+    },
+    "rArtistsToFollow": {
+      "key": "discovery.rail.artistsToFollow"
+    },
+    "artistNoDates": {
+      "key": "discovery.artistNoDates"
+    },
+    "browseCategories": {
+      "key": "discovery.listEmptyCta"
+    },
+    "rCatArtists": {
+      "key": "discovery.rail.categoryArtists"
+    },
+    "catNoDates": {
+      "key": "discovery.categoryNoDates"
+    },
+    "seeAllCats": {
+      "key": "discovery.seeAllCategories"
+    },
+    "rAllReplays": {
+      "key": "discovery.rail.allReplays"
+    },
+    "noReplay": {
+      "key": "discovery.noReplay"
+    },
+    "navReplaysUp": {
+      "key": "common.nav.replays",
+      "upper": true
+    },
+    "onDay": {
+      "key": "common.time.onDay",
+      "upper": true
+    },
+    "datesUp": {
+      "key": "common.units.dates",
+      "upper": true
+    },
+    "dateUp": {
+      "key": "common.units.date",
+      "upper": true
+    },
+    "browse": {
+      "key": "common.actions.browse"
+    },
+    "rOtherStyles": {
+      "key": "discovery.rail.otherStyles"
+    }
+  }
+}

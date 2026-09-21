@@ -1,0 +1,96 @@
+<!--
+  ÉCRAN        payouts
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Solde, prochain virement, changement de compte bancaire, exports comptables.
+  RÔLES        artist · tres
+  MÈNE VERS    aucun (écran terminal)
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBand L475-485 · hasBlocks L731-791
+               modèle    L3023-3082
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - needs §Les commandes (double détente bancaire)
+               - openapi GET /v1/channels/{channelId}/payouts
+               - openapi POST /v1/channels/{channelId}/bank-change-requests
+               - openapi POST /v1/channels/{channelId}/exports
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBand        L475-485
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_payouts(c) {
+    const s = this.state;
+    const iban = s.ibanStep || 0;
+    return {
+      pageTitle: 'Versements et comptabilité',
+      band: this.stats([
+        ['SOLDE', c.eur(c.M.net), 'après commission', OK],
+        ['PROCHAIN VIREMENT', '15 SEPT.', 'sous 3 jours ouvrés'],
+        ['COMMISSION', c.M.rate + ' %', 'prélevée au versement'],
+        ['TVA', '5,5 %', 'taux du pays d’achat']
+      ]),
+      blocks: [
+        this.block('COORDONNÉES BANCAIRES', 'DOUBLE VALIDATION', {
+          intro: 'Tout changement de compte demande une seconde validation par un autre titulaire de rôle. C’est la fraude la plus fréquente du secteur.',
+          rows: this.rows([
+            { label: 'Compte courant', hint: 'FR76 •••• •••• •••• ' + String(1000 + (c.chan.name.length * 137) % 9000) + ' · ' + c.chan.name, pill: 'VÉRIFIÉ', pillColor: OK },
+            { label: iban === 0 ? 'Changer de compte' : (iban === 1 ? 'Demande envoyée à ' + ((ROSTER[c.chan.name] || [[]])[0][0] || 'la propriété') : 'Nouveau compte validé'),
+              hint: iban === 0 ? 'la demande partira au propriétaire pour contre-signature' : (iban === 1 ? 'en attente de sa signature — le virement du 15 est suspendu' : 'FR14 •••• •••• •••• 8890 · actif au prochain virement'),
+              pill: iban === 1 ? 'EN ATTENTE' : '', pillColor: WARN,
+              cta: iban === 0 ? 'DEMANDER LE CHANGEMENT' : (iban === 1 ? 'ANNULER LA DEMANDE' : ''),
+              tone: iban === 1 ? 'danger' : undefined,
+              act: () => this.setState({ ibanStep: iban === 0 ? 1 : 0 }) }
+          ])
+        }),
+        this.block('DE LA RECETTE AU VERSEMENT', 'CE QUI EST PRÉLEVÉ, CE QUI RESTE', {
+          rows: this.rows([
+            { label: 'Recette brute', hint: 'billetterie de la période', value: c.eur(c.M.gross), pct: 100, barColor: OK },
+            { label: 'Commission Arthome', hint: c.M.rate + ' % de la recette', value: '− ' + c.eur(c.M.commission), pct: c.M.gross ? Math.round((c.M.commission / c.M.gross) * 100) : 0, barColor: INFO },
+            { label: 'TVA spectacle vivant', hint: 'collectée puis reversée', value: '− ' + c.eur(c.M.vat), pct: c.M.gross ? Math.round((c.M.vat / c.M.gross) * 100) : 0, barColor: MUTE },
+            { label: 'Net à verser', hint: c.chan.name, value: c.eur(c.M.net), pct: c.M.gross ? Math.round((c.M.net / c.M.gross) * 100) : 0, barColor: OK }
+          ])
+        }),
+        this.block('RAPPROCHEMENT BILLETTERIE', 'AOÛT 2026', {
+          rows: this.rows([
+            { label: 'Recette brute encaissée', hint: c.num(c.M.sold) + ' places', value: c.eur(c.M.gross) },
+            { label: 'Commission Arthome', hint: c.M.rate + ' % de la recette', value: '– ' + c.eur(c.M.commission), valueColor: WARN },
+            { label: 'Retenu', hint: c.M.held ? 'issue de date encore ouverte' : 'aucune issue ouverte', value: '– ' + c.eur(c.M.held), valueColor: c.M.held ? WARN : '#4A535C' },
+            { label: 'TVA collectée', hint: 'au taux du pays d’achat', value: c.eur(c.M.vat) },
+            { label: 'Net à verser', hint: 'virement du 15 septembre', value: c.eur(c.M.net), valueColor: OK }
+          ])
+        }),
+        this.block('ÉCHÉANCIER', '', {
+          rows: this.rows([
+            { label: '15 septembre', hint: 'recette de la période close', value: c.eur(c.M.paid), valueColor: c.M.paid ? OK : '#4A535C' },
+            { label: '15 octobre', hint: 'recette en cours, estimée', value: '≈ ' + c.eur(c.M.scheduled) },
+            { label: '2 novembre', hint: 'régularisation de TVA', value: '—' }
+          ])
+        }),
+        this.block('EXPORT COMPTABLE', 'FICHIERS GÉNÉRÉS À LA DEMANDE', {
+          rows: this.rows([
+            { label: 'Journal des ventes', hint: 'CSV, une ligne par place', cta: 'EXPORTER' },
+            { label: 'Grand livre FEC', hint: 'format fiscal français', cta: 'EXPORTER' },
+            { label: 'Écritures Sage / Cegid', hint: 'plan comptable de la structure', cta: 'EXPORTER' },
+            { label: 'Factures groupées', hint: 'PDF, un dossier par mois', cta: 'TÉLÉCHARGER' }
+          ])
+        })
+      ]
+    };
+  }
+
+</script>

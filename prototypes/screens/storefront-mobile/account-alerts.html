@@ -1,0 +1,142 @@
+<!--
+  Arthome · storefront mobile — account-alerts
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : account · accTab=alerts
+  Affiche    : Recherches enregistrées : nom, jetons de filtre, canaux push et e-mail, activation, renommage, suppression.
+  Mène vers  : browse, category, sheet-delete
+  Contrat    : GET/POST /v1/me/saved-searches
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1436–1503
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1436–1503
+     ══════════════════════════════════════════════════════════════════════════ -->
+      <sc-if value="{{ accAlerts }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="display: flex; align-items: baseline; gap: 10px; padding-bottom: 12px;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ t.accAlertsSub }}</span>
+            <span onClick="{{ goBrowse }}" style="margin-left: auto; cursor: pointer; padding: 10px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2;">{{ t.newSearch }}</span>
+          </div>
+          <sc-if value="{{ noAlerts }}" hint-placeholder-val="{{ false }}">
+            <div style="border: 1px solid #1F1C19; background: #0D0C0A; padding: 26px 18px; text-align: center;">
+              <div style="font-family: 'Instrument Serif', serif; font-size: 20px;">{{ t.emptyAlerts }}</div>
+            </div>
+          </sc-if>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <sc-for list="{{ alertsList }}" as="al" hint-placeholder-count="3">
+              <div style="border: 1px solid #1F1C19; background: #0F0E0C; padding: 13px;">
+                <div style="display: flex; align-items: flex-start; gap: 9px; flex-wrap: wrap;">
+                  <span style="{{ al.kindStyle }}">{{ al.kindLabel }}</span>
+                  <sc-if value="{{ al.notEditing }}" hint-placeholder-val="{{ true }}">
+                    <span style="font-size: 14px; font-weight: 500; min-width: 0;">{{ al.title }}</span>
+                  </sc-if>
+                  <sc-if value="{{ al.editing }}" hint-placeholder-val="{{ false }}">
+                    <input data-pop="rename" value="{{ al.renameDraft }}" onChange="{{ al.onRenameInput }}" onKeyDown="{{ al.onRenameKey }}" style="flex: 1 1 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid rgba(237,231,220,0.5); background: #0B0A09; font-family: inherit; font-size: 14px; color: #EDE7DC; outline: none;" />
+                  </sc-if>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ al.stateColor }};">{{ al.stateLabel }}</span>
+                  <span onClick="{{ al.toggleExpand }}" style="flex: 1 0 100%; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ al.summary }} {{ al.caret }}</span>
+                </div>
+                <sc-if value="{{ al.expanded }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top: 11px; display: flex; flex-direction: column; gap: 8px;">
+                    <sc-for list="{{ al.groups }}" as="ag" hint-placeholder-count="2">
+                      <div>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #575047;">{{ ag.title }}</div>
+                        <div style="padding-top: 5px; display: flex; gap: 6px; flex-wrap: wrap;">
+                          <sc-for list="{{ ag.chips }}" as="tk" hint-placeholder-count="2">
+                            <span style="padding: 4px 9px; border: 1px solid #1F1C19; background: #131110; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #C9C0B2; white-space: nowrap;">{{ tk.label }}</span>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-for>
+                    <div>
+                      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #575047;">{{ t.sortLabel }}</div>
+                      <div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #9B948A;">{{ al.sortLine }}</div>
+                    </div>
+                  </div>
+                </sc-if>
+                <div style="margin-top: 12px; border-top: 1px solid #16140F; padding-top: 11px; display: flex; flex-direction: column; gap: 10px;">
+                  <div style="display: flex; align-items: center; gap: 13px;">
+                    <div style="display: flex; align-items: baseline; gap: 7px;">
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ t.alertMatches }}</span>
+                      <span style="font-family: 'Instrument Serif', serif; font-size: 16px; line-height: 1;">{{ al.matches }}</span>
+                    </div>
+                    <span onClick="{{ al.see }}" style="margin-left: auto; cursor: pointer; padding: 10px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC;">{{ al.seeLabel }}</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 7px; flex-wrap: wrap;">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ t.alertChannels }}</span>
+                    <span onClick="{{ al.togglePush }}" style="{{ al.pushStyle }}">PUSH</span>
+                    <span onClick="{{ al.toggleEmail }}" style="{{ al.emailStyle }}">E-MAIL</span>
+                    <div style="margin-left: auto; display: flex; gap: 7px;">
+                      <span onClick="{{ al.toggle }}" style="{{ al.toggleStyle }}">{{ al.toggleLabel }}</span>
+                      <span onClick="{{ al.startRename }}" style="cursor: pointer; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 13px; color: #857E73;">✎</span>
+                      <span onClick="{{ al.remove }}" style="cursor: pointer; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 13px; color: #857E73;">🗑</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (0 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* Aucun symbole propre : cet écran n'emploie que le noyau commun. */
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (6) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2337  accAlertsSub: "ALERTÉES DÈS QU’UNE DATE CORRESPOND"
+  EN L2790  accAlertsSub: "ALERTED AS SOON AS A DATE MATCHES"
+
+  FR L2355  alertChannels: "CANAUX"
+  EN L2808  alertChannels: "CHANNELS"
+
+  FR L2360  alertMatches: "CORRESPONDANCES"
+  EN L2813  alertMatches: "MATCHES"
+
+  FR L2461  emptyAlerts: "Aucune alerte enregistrée"
+  EN L2914  emptyAlerts: "No saved alert"
+
+  FR L2559  newSearch: "Nouvelle recherche"
+  EN L3012  newSearch: "New search"
+
+  FR L2720  sortLabel: "TRIER PAR"
+  EN L3173  sortLabel: "SORT BY"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

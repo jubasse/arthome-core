@@ -1,0 +1,84 @@
+<!--
+  ÉCRAN      Amorçage et enveloppe du document
+  ROUTE      avant toute route
+  AFFICHE    L'en-tête du document, les jetons de style, le grain, et l'écran d'amorçage avec son état d'erreur — le seul écran qu'un robot d'indexation ne doit jamais voir.
+  MÈNE VERS  toutes les routes, une fois `dataReady` vrai
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 1-58
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Contient `bootError` : l'erreur de chargement du catalogue est un état de premier
+             ordre.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #0B0A09; }
+  * { box-sizing: border-box; }
+  a { color: #EDE7DC; text-decoration: none; }
+  a:hover { color: oklch(0.72 0.16 42); }
+  ::-webkit-scrollbar:horizontal { height: 0; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #2A2621; border-radius: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  div { scrollbar-width: none; }
+  @keyframes pulseLive { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes slideIn { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes skeleton { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.9; } }
+  :focus-visible { outline: 2px solid oklch(0.72 0.16 42); outline-offset: 2px; }
+  input:focus-visible { outline-offset: 0; }
+  [data-reveal="0"] { opacity: 0; transform: translateY(16px); }
+  [data-burger] { display: none; }
+  @media (max-width: 1000px) { [data-nav-full] { display: none !important; } [data-burger] { display: grid; } }
+  @media (max-width: 1240px) { [data-hide-md] { display: none; } }
+  @media (max-width: 1080px) { [data-hide-sm] { display: none; } }
+  [data-reveal="1"] { opacity: 1; transform: none; transition: opacity .55s ease, transform .6s cubic-bezier(.2,.7,.2,1); }
+  #om-grain { opacity: 0.4; mix-blend-mode: overlay; background-repeat: repeat; background-size: 200px 200px; background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyMDAnIGhlaWdodD0nMjAwJz48ZmlsdGVyIGlkPSduJz48ZmVUdXJidWxlbmNlIHR5cGU9J2ZyYWN0YWxOb2lzZScgYmFzZUZyZXF1ZW5jeT0nMC45JyBudW1PY3RhdmVzPSczJy8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9JzIwMCcgaGVpZ2h0PScyMDAnIGZpbHRlcj0ndXJsKCNuKScgb3BhY2l0eT0nMC41Jy8+PC9zdmc+"); }
+</style>
+</helmet>
+
+<div style="position: relative; min-height: 100vh; background: #0B0A09; color: #EDE7DC; font-family: Archivo, sans-serif; overflow-x: clip;">
+
+<div id="om-grain" style="position: fixed; inset: 0; z-index: 9000; pointer-events: none;"></div>
+
+<sc-if value="{{ booting }}" hint-placeholder-val="{{ false }}">
+  <div style="position: fixed; inset: 0; z-index: 8000; background: #0B0A09; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 0 40px; text-align: center;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: #6B6459;">ARTHOME</div>
+    <div style="width: 220px; height: 2px; background: #1F1C19; overflow: hidden;">
+      <div style="width: 40%; height: 100%; background: #4A423A; animation: skel 1.2s infinite;"></div>
+    </div>
+    <div style="font-size: 14px; color: #857E73;">Chargement du catalogue…</div>
+    <sc-if value="{{ bootError }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width: 460px; padding: 12px 14px; border: 1px solid #4A2B2B; background: #1A1212; color: #E0A0A0; font-size: 13px; text-wrap: pretty;">{{ bootError }}</div>
+    </sc-if>
+  </div>
+</sc-if>
+
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

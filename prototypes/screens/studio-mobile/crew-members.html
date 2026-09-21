@@ -1,0 +1,144 @@
+<!--
+  ÉCRAN        crew / members
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Les membres de la chaîne, leurs rôles, et leur affectation aux créneaux d'une date.
+  RÔLES        artist · prod · coord
+  MÈNE VERS    feuilles : crewdate, invite, role
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBand L475-485 · hasTabs L487-495 · hasFilters L497-505 · hasNote L555-557 · hasSearch L559-567 · hasActions L569-575 · hasBlocks L731-791 · hasMore L795-806
+               modèle    L2472-2518 · L2519-2573
+  CLÉS DE COPIE
+               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
+               - table ROLES en dur (six personas — libellé, jamais un droit, E6)
+  CONTRAT
+               - openapi GET /v1/channels/{channelId}/members
+               - openapi PATCH /v1/channels/{channelId}/members/{personId}
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBand        L475-485
+    hasTabs        L487-495
+    hasFilters     L497-505
+    hasNote        L555-557
+    hasSearch      L559-567
+    hasActions     L569-575
+    hasBlocks      L731-791
+    hasMore        L795-806
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_crew(c) {
+    const s = this.state;
+    const TABS = [['members', 'AFFECTATIONS'], ['matrix', 'MATRICE'], ['guests', 'ACCÈS PONCTUELS'], ['log', 'JOURNAL']];
+    const tab = TABS.some(t => t[0] === s.crewTab) ? s.crewTab : 'members';
+    const q = (s.crewQ || '').trim().toLowerCase();
+
+    const roster = this.crewRoster(c);
+    const dates = this.crewDates(c);
+    const dsel = s.crewDate === undefined ? -1 : s.crewDate;
+    const cur = dsel >= 0 ? dates[Math.min(dsel, dates.length - 1)] : null;
+    const canAssignRegie = c.has('artist') || c.has('prod');
+    const holders = (di, rk) => this.holdersOf(c, di, rk);
+    const gapAt = di => ['regie', 'mod'].filter(rk => holders(di, rk).length === 0).length;
+
+    const filtered = roster.filter(m => !q || (m.name + ' ' + m.mail + ' ' + m.note + ' ' + m.roleKeys.map(k => ROLES[k][0]).join(' ')).toLowerCase().indexOf(q) > -1);
+    const roleF = s.crewRole && s.crewRole !== 'all' ? s.crewRole : null;
+    const shown = roleF ? filtered.filter(m => m.roleKeys.indexOf(roleF) > -1) : filtered;
+
+    /* Un accès ponctuel, c'est un indépendant affecté à une date précise :
+       la liste sort des équipes réelles, et reste vide quand il n'y en a pas. */
+    const guestsBase = this.guestsOf(c.chan.name).concat(s.guestAdd || []);
+    const guests = guestsBase.filter(g => !(s.guestGone || {})[g.name]);
+
+    const out = {
+      pageKicker: 'PLANNING · ' + c.chan.name.toUpperCase(),
+      pageTitle: cur ? cur[0][2] + ' · ' + cur[0][0].replace('.', '') : roster.length + ' personnes sur cette chaîne',
+      pageTabs: this.tabStrip([
+        ['members', 'AFFECTATIONS', String(shown.length)],
+        ['matrix', 'MATRICE'],
+        ['guests', 'ACCÈS PONCTUELS', guests.length ? String(guests.length) : ''],
+        ['log', 'JOURNAL']
+      ], tab, 'crewTab', { crewPage: 0 }),
+      band: this.stats([
+        ['MEMBRES', String(roster.length), 'toutes fonctions'],
+        ['DATES À COUVRIR', String(dates.filter(([r, i], n) => gapAt(n) > 0).length), 'un poste vacant au moins', dates.some((d, n) => gapAt(n) > 0) ? WARN : OK],
+        ['ACCÈS PONCTUELS', String(guests.length), 'expirent seuls'],
+        ['INVITATIONS', String(roster.filter(m => m.pending).length), 'en attente de réponse', roster.some(m => m.pending) ? WARN : INK3]
+      ]),
+      actions: [].concat(
+        this.act(cur ? 'DATE : ' + cur[0][0].replace('.', '').toUpperCase() + ' · ' + c.withZone(cur[0][1]) : 'TOUTES LES DATES DE LA CHAÎNE', () => this.openSheet('crewdate', { crewDates: dates.length })),
+        c.grantable.length ? [this.act('+ INVITER QUELQU’UN', () => this.openSheet('invite'), 'primary')] : []
+      ),
+      note: dates.some((d, n) => gapAt(n) > 0)
+        ? 'Rôles manquants à J-1 : ' + dates.filter((d, n) => gapAt(n) > 0).map(([r, i], n) => r[0].replace('.', '')).join(', ') + '. Une alerte partira vers la coordination.'
+        : ''
+    };
+
+
+    if (tab === 'members') {
+      out.hasSearch = true;
+      out.searchValue = s.crewQ || '';
+      out.searchPlaceholder = 'Nom, e-mail, fonction, rôle';
+      out.onSearch = e => this.setState({ crewQ: e.target.value, crewPage: 0 });
+      out.clearSearch = () => this.setState({ crewQ: '', crewPage: 0 });
+      out.searchCount = shown.length + (shown.length > 1 ? ' MEMBRES' : ' MEMBRE') + (q ? (shown.length > 1 ? ' TROUVÉS' : ' TROUVÉ') : '');
+      out.filters = this.tabStrip([['all', 'TOUS', String(filtered.length)]].concat(
+        ['artist', 'coord', 'prod', 'regie', 'mod', 'tres']
+          .map(rk => [rk, ROLES[rk][0], String(filtered.filter(m => m.roleKeys.indexOf(rk) > -1).length)])
+          .filter(([, , n]) => Number(n) > 0)
+      ), s.crewRole || 'all', 'crewRole', { crewPage: 0 });
+
+      const pg = this.pager(shown, 4, 'crewPage');
+      out.more = pg.more;
+      out.blocks = pg.items.map(m => {
+        const rolesTxt = m.roleKeys.length ? m.roleKeys.map(k => c.T(ROLES[k][0])).join(' · ') : 'SANS RÔLE';
+        const rows = cur
+          ? ['regie', 'mod'].map(rk => {
+              const di = dates.indexOf(cur);
+              const list = holders(di, rk);
+              const on = list.indexOf(m.name) > -1;
+              const others = list.filter(x => x !== m.name);
+              const able = m.roleKeys.indexOf(rk) > -1;
+              const locked = rk === 'regie' && !canAssignRegie;
+              return {
+                label: rk === 'regie' ? 'Créneau régie' : 'Créneau modération',
+                hint: locked
+                  ? 'la régie donne la clé de flux : seuls l’artiste et la production l’affectent'
+                  : (!able ? 'ne tient pas ce rôle sur cette chaîne'
+                    : (on ? (others.length ? 'affecté, avec ' + others.join(', ') : 'seul sur ce créneau')
+                      : (list.length ? 'tenu par ' + list.join(', ') + ' — on peut être plusieurs' : 'poste vacant'))),
+                pill: on ? 'AFFECTÉ' : (list.length ? list.length + (list.length > 1 ? ' PERSONNES' : ' PERSONNE') : 'VACANT'),
+                pillColor: on ? OK : (list.length ? INK3 : WARN),
+                cta: locked || !able ? '' : (on ? 'RETIRER DE CE CRÉNEAU' : 'AJOUTER SUR CE CRÉNEAU'),
+                tone: locked ? 'dead' : undefined,
+                act: () => this.toggleSlot(c, di, rk, m.name)
+              };
+            })
+          : [
+              { label: m.note, hint: m.mail, pill: m.online ? 'EN LIGNE' : (m.pending ? 'EN ATTENTE' : ''), pillColor: m.online ? OK : WARN }
+              , m.roleKeys.length
+                ? { label: 'Rôles', pills: m.roleKeys.map(k => [c.T(ROLES[k][0]), ROLES[k][1]]) }
+                : { label: 'Rôles', hint: 'aucun rôle sur cette chaîne' }
+            ].concat([
+              m.name === c.me.name || m.roleKeys.indexOf('artist') > -1
+                ? { label: m.roleKeys.indexOf('artist') > -1 ? 'Propriétaire' : 'C’est vous', hint: m.roleKeys.indexOf('artist') > -1 ? 'ne peut pas être retiré de la chaîne' : 'votre propre accès ne se modifie pas ici' }
+                : { label: 'Rôles et retrait', hint: 'le choix des rôles est borné par ce que vous pouvez attribuer', cta: 'CHANGER LES RÔLES', act: () => this.openSheet('role', { roleTarget: m.name }) }
+            ]);
+        return this.block(m.name.toUpperCase(), rolesTxt.toUpperCase(), { rows: this.rows(rows) });
+      });
+      if (!pg.items.length) out.blocks = [this.block('AUCUN MEMBRE', '', { intro: q ? 'Aucun membre ne correspond à « ' + q + ' ».' : 'Aucun membre ne tient ce rôle sur cette chaîne.' })];
+      return out;
+    }
+
+</script>

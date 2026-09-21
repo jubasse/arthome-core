@@ -1,0 +1,154 @@
+<!--
+  Arthome · storefront mobile — account-profile
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : account · accTab=profile
+  Affiche    : Mon profil : nom affiché, identifiant public, courriel vérifié, téléphone, ville.
+  Mène vers  : —
+  Contrat    : PATCH /v1/me/profile
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1597–1633
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1597–1633
+     ══════════════════════════════════════════════════════════════════════════ -->
+      <sc-if value="{{ accProfile }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+            <sc-for list="{{ profileFields }}" as="fl" hint-placeholder-count="4">
+              <div style="background: #100F0D; padding: 13px;">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ fl.label }}</div>
+                <input value="{{ fl.value }}" onChange="{{ fl.onChange }}" style="margin-top: 8px; width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid #262320; background: #0B0A09; font-family: inherit; font-size: 13.5px; color: #EDE7DC; outline: none;" />
+                <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: {{ fl.hintColor }};">{{ fl.hint }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <span onClick="{{ saveProfile }}" style="display: block; margin-top: 12px; cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  text-align: center; background: #EDE7DC; color: #0B0A09; font-size: 13px; font-weight: 600;">{{ saveLabel }}</span>
+
+          <div style="margin-top: 16px; border: 1px solid rgba(214,178,102,0.28); background: rgba(214,178,102,0.04); padding: 16px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: oklch(0.83 0.1 84);">{{ t.studioTag }}</div>
+            <div style="padding-top: 8px; font-family: 'Instrument Serif', serif; font-size: 21px; line-height: 1.15;">{{ t.becomeHost }}</div>
+            <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.55; color: #9B948A; text-wrap: pretty;">{{ t.studioBlurb }}</div>
+            <span onClick="{{ goStudio }}" style="display: block; margin-top: 13px; cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  text-align: center; background: #EDE7DC; color: #0B0A09; font-size: 13px; font-weight: 600;">{{ t.studioCta }}</span>
+          </div>
+
+          <div style="margin-top: 14px; border: 1px solid #1F1C19; background: #0F0E0C; padding: 16px;">
+            <div style="font-size: 13.5px;">{{ t.amHelp }}</div>
+            <div style="padding-top: 6px; font-size: 12.5px; line-height: 1.5; color: #857E73; text-wrap: pretty;">{{ t.helpBlurb }}</div>
+            <span onClick="{{ helpFromMenu }}" style="display: block; margin-top: 12px; cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  text-align: center; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2;">{{ t.helpCta }}</span>
+          </div>
+
+          <div style="margin-top: 14px; border: 1px solid #241C1A; background: #100E0D; padding: 16px;">
+            <div style="font-size: 13.5px;">{{ t.dangerTitle }}</div>
+            <div style="padding-top: 6px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ t.dangerBlurb }}</div>
+            <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+              <span style="cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  text-align: center; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2;">{{ t.exportData }}</span>
+              <span style="cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  text-align: center; border: 1px solid oklch(0.4 0.11 27); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.75 0.15 27);">{{ t.deleteAccount }}</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (3 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── profileDefs  —  calcul dans renderReady()  —  L5226–5238 ── */
+    const profileDefs = fr ? [
+      ['name', 'NOM AFFICHÉ', 'VISIBLE DANS LE TCHAT'],
+      ['handle', 'IDENTIFIANT', 'arthome.live/@marie.j'],
+      ['email', 'E-MAIL', 'VÉRIFIÉ ✓'],
+      ['phone', 'TÉLÉPHONE', 'POUR LES SMS DE RAPPEL'],
+      ['city', 'VILLE', 'SERT AUX RECOMMANDATIONS']
+    ] : [
+      ['name', 'DISPLAY NAME', 'SHOWN IN CHAT'],
+      ['handle', 'HANDLE', 'arthome.live/@marie.j'],
+      ['email', 'EMAIL', 'VERIFIED ✓'],
+      ['phone', 'PHONE', 'FOR SMS REMINDERS'],
+      ['city', 'CITY', 'USED FOR RECOMMENDATIONS']
+    ];
+
+/* ── profileFields  —  calcul dans renderReady()  —  L5239–5247 ── */
+    const profileFields = profileDefs.map(([key, label, hint]) => ({
+      label, hint,
+      value: s.profile[key],
+      hintColor: hint.indexOf('✓') > -1 ? 'oklch(0.7 0.13 150)' : '#6B6459',
+      onChange: e => {
+        const v = e.target.value;
+        this.setState(st => ({ profile: Object.assign({}, st.profile, { [key]: v }) }));
+      }
+    }));
+
+/* ── goStudio  —  clé du modèle rendu  —  L5832–5832 ── */
+      goStudio: () => this.setState({ studioOpen: true }),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (11) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2377  amHelp: "Aide et contact"
+  EN L2830  amHelp: "Help and contact"
+
+  FR L2398  becomeHost: "Diffuser sur Arthome"
+  EN L2851  becomeHost: "Stream on Arthome"
+
+  FR L2450  dangerBlurb: "Exportez l’historique de vos places, ou supprimez définitivement votre compte. La suppression annule les places non utilisées."
+  EN L2903  dangerBlurb: "Export your ticket history, or permanently delete your account. Deleting cancels any unused tickets."
+
+  FR L2451  dangerTitle: "Mes données"
+  EN L2904  dangerTitle: "My data"
+
+  FR L2459  deleteAccount: "Supprimer mon compte"
+  EN L2912  deleteAccount: "Delete my account"
+
+  FR L2480  exportData: "Exporter mes données"
+  EN L2933  exportData: "Export my data"
+
+  FR L2511  helpBlurb: "Une question sur une place, une rediffusion ou un paiement ? L’équipe répond sous 24 h."
+  EN L2964  helpBlurb: "A question about a ticket, a replay or a payment? The team replies within 24h."
+
+  FR L2513  helpCta: "Nous écrire"
+  EN L2966  helpCta: "Contact us"
+
+  FR L2734  studioBlurb: "Configurez votre live, votre billetterie et votre boutique depuis le studio. Intégration OBS en trois étapes."
+  EN L3187  studioBlurb: "Set up your live, ticketing and store from the studio. OBS integration in three steps."
+
+  FR L2735  studioCta: "Ouvrir le studio ↗"
+  EN L3188  studioCta: "Open the studio ↗"
+
+  FR L2740  studioTag: "ESPACE ARTISTE"
+  EN L3193  studioTag: "ARTIST SPACE"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

@@ -1,0 +1,2782 @@
+{
+  "version": 3,
+  "updated": "2026-09-09",
+  "note": "Authored Arthome content: venues, artists, shows, image ids, chapter vocabulary, chat pool and account bases. No dates, no counters, no state — fixtures.js generates those against the real clock so every case exists at any hour.",
+  "contentLanguage": "fr",
+  "geography": {
+    "note": "Live performance is not VOD: a broadcast is worldwide by default and a territorial restriction is the exception, declared per date. What actually gates a viewer is language, not rights.",
+    "billingMarkets": [
+      {
+        "id": "eur",
+        "name": "Zone euro",
+        "nameEn": "Euro area",
+        "currency": "EUR",
+        "vatRate": 0.055,
+        "defaultLocale": "fr",
+        "live": true
+      },
+      {
+        "id": "chf",
+        "name": "Suisse",
+        "nameEn": "Switzerland",
+        "currency": "CHF",
+        "vatRate": 0.026,
+        "defaultLocale": "fr",
+        "live": true
+      },
+      {
+        "id": "cad",
+        "name": "Canada",
+        "nameEn": "Canada",
+        "currency": "CAD",
+        "vatRate": 0.14975,
+        "defaultLocale": "fr",
+        "live": false
+      }
+    ],
+    "rightsPolicy": {
+      "default": "worldwide",
+      "note": "A date is watchable everywhere unless it declares a blackout: co-production clause, competing broadcaster, festival exclusivity. The reason is always shown to the viewer.",
+      "blackoutReasons": [
+        {
+          "id": "co-production",
+          "label": "Clause de coproduction",
+          "labelEn": "Co-production clause"
+        },
+        {
+          "id": "broadcaster",
+          "label": "Diffuseur exclusif sur ce territoire",
+          "labelEn": "Exclusive broadcaster in this territory"
+        },
+        {
+          "id": "festival",
+          "label": "Exclusivité de festival",
+          "labelEn": "Festival exclusivity"
+        }
+      ]
+    },
+    "viewerCountry": "FR",
+    "zones": [
+      {
+        "id": "Europe/Paris",
+        "abbrSummer": "CEST",
+        "abbrWinter": "CET",
+        "utcOffsetMin": 120,
+        "city": "Paris"
+      },
+      {
+        "id": "Europe/London",
+        "abbrSummer": "BST",
+        "abbrWinter": "GMT",
+        "utcOffsetMin": 60,
+        "city": "Londres"
+      },
+      {
+        "id": "Europe/Lisbon",
+        "abbrSummer": "WEST",
+        "abbrWinter": "WET",
+        "utcOffsetMin": 60,
+        "city": "Lisbonne"
+      },
+      {
+        "id": "America/Montreal",
+        "abbrSummer": "EDT",
+        "abbrWinter": "EST",
+        "utcOffsetMin": -240,
+        "city": "Montréal"
+      },
+      {
+        "id": "America/New_York",
+        "abbrSummer": "EDT",
+        "abbrWinter": "EST",
+        "utcOffsetMin": -240,
+        "city": "New York"
+      },
+      {
+        "id": "America/Sao_Paulo",
+        "abbrSummer": "-03",
+        "abbrWinter": "-03",
+        "utcOffsetMin": -180,
+        "city": "São Paulo"
+      },
+      {
+        "id": "Africa/Abidjan",
+        "abbrSummer": "GMT",
+        "abbrWinter": "GMT",
+        "utcOffsetMin": 0,
+        "city": "Abidjan"
+      },
+      {
+        "id": "Africa/Dakar",
+        "abbrSummer": "GMT",
+        "abbrWinter": "GMT",
+        "utcOffsetMin": 0,
+        "city": "Dakar"
+      },
+      {
+        "id": "Asia/Tokyo",
+        "abbrSummer": "JST",
+        "abbrWinter": "JST",
+        "utcOffsetMin": 540,
+        "city": "Tokyo"
+      },
+      {
+        "id": "Australia/Sydney",
+        "abbrSummer": "AEST",
+        "abbrWinter": "AEDT",
+        "utcOffsetMin": 600,
+        "city": "Sydney"
+      }
+    ]
+  },
+  "time": {
+    "basis": "relative",
+    "unit": "minute",
+    "note": "startOffsetMin, atMin and rescheduledToOffsetMin are offsets from the moment the app is opened: negative means already started. Nothing here expires.",
+    "roomOpensBeforeMin": 30,
+    "previewIdleSec": 4
+  },
+  "venues": [
+    {
+      "id": "criee",
+      "name": "Théâtre de la Criée",
+      "city": "Marseille",
+      "country": "FR",
+      "region": "FR-PAC",
+      "timezone": "Europe/Paris",
+      "utcOffsetMin": 120,
+      "capacity": 780
+    },
+    {
+      "id": "opera-lille",
+      "name": "Opéra de Lille",
+      "city": "Lille",
+      "country": "FR",
+      "region": "FR-HDF",
+      "timezone": "Europe/Paris",
+      "utcOffsetMin": 120,
+      "capacity": 1138
+    },
+    {
+      "id": "dynamo",
+      "name": "La Dynamo",
+      "city": "Pantin",
+      "country": "FR",
+      "region": "FR-IDF",
+      "timezone": "Europe/Paris",
+      "utcOffsetMin": 120,
+      "capacity": 240
+    },
+    {
+      "id": "point-virgule",
+      "name": "Le Point Virgule",
+      "city": "Paris",
+      "country": "FR",
+      "region": "FR-IDF",
+      "timezone": "Europe/Paris",
+      "utcOffsetMin": 120,
+      "capacity": 340
+    },
+    {
+      "id": "sainte-marie",
+      "name": "Chapelle Sainte-Marie",
+      "city": "Lyon",
+      "country": "FR",
+      "region": "FR-ARA",
+      "timezone": "Europe/Paris",
+      "utcOffsetMin": 120,
+      "capacity": 420
+    },
+    {
+      "id": "prado",
+      "name": "Chapiteau du Prado",
+      "city": "Marseille",
+      "country": "FR",
+      "region": "FR-PAC",
+      "timezone": "Europe/Paris",
+      "utcOffsetMin": 120,
+      "capacity": 900
+    },
+    {
+      "id": "tony-garnier",
+      "name": "Halle Tony Garnier",
+      "city": "Lyon",
+      "country": "FR",
+      "region": "FR-ARA",
+      "timezone": "Europe/Paris",
+      "utcOffsetMin": 120,
+      "capacity": 4200
+    },
+    {
+      "id": "auditorium-bordeaux",
+      "name": "Auditorium de Bordeaux",
+      "city": "Bordeaux",
+      "country": "FR",
+      "region": "FR-NAQ",
+      "timezone": "Europe/Paris",
+      "utcOffsetMin": 120,
+      "capacity": 1400
+    },
+    {
+      "id": "bastille",
+      "name": "Théâtre de la Bastille",
+      "city": "Paris",
+      "country": "FR",
+      "region": "FR-IDF",
+      "timezone": "Europe/Paris",
+      "utcOffsetMin": 120,
+      "capacity": 240
+    },
+    {
+      "id": "trianon",
+      "name": "Le Trianon",
+      "city": "Paris",
+      "country": "FR",
+      "region": "FR-IDF",
+      "timezone": "Europe/Paris",
+      "utcOffsetMin": 120,
+      "capacity": 1100
+    },
+    {
+      "id": "cdn-besancon",
+      "name": "CDN de Besançon",
+      "city": "Besançon",
+      "country": "FR",
+      "region": "FR-BFC",
+      "timezone": "Europe/Paris",
+      "utcOffsetMin": 120,
+      "capacity": 460
+    },
+    {
+      "id": "saint-merri",
+      "name": "Église Saint-Merri",
+      "city": "Paris",
+      "country": "FR",
+      "region": "FR-IDF",
+      "timezone": "Europe/Paris",
+      "utcOffsetMin": 120,
+      "capacity": 300
+    },
+    {
+      "id": "prospero",
+      "name": "Théâtre Prospero",
+      "city": "Montréal",
+      "country": "CA",
+      "region": "CA-QC",
+      "timezone": "America/Montreal",
+      "utcOffsetMin": -240,
+      "capacity": 320
+    },
+    {
+      "id": "bouffes-du-nord-london",
+      "name": "Wilton’s Music Hall",
+      "city": "Londres",
+      "country": "GB",
+      "region": "GB-LND",
+      "timezone": "Europe/London",
+      "utcOffsetMin": 60,
+      "capacity": 380
+    },
+    {
+      "id": "coliseu-lisboa",
+      "name": "Coliseu dos Recreios",
+      "city": "Lisbonne",
+      "country": "PT",
+      "region": "PT-11",
+      "timezone": "Europe/Lisbon",
+      "utcOffsetMin": 60,
+      "capacity": 3200
+    },
+    {
+      "id": "brooklyn-stage",
+      "name": "Kings Theatre",
+      "city": "New York",
+      "country": "US",
+      "region": "US-NY",
+      "timezone": "America/New_York",
+      "utcOffsetMin": -240,
+      "capacity": 3250
+    },
+    {
+      "id": "sesc-pompeia",
+      "name": "Sesc Pompéia",
+      "city": "São Paulo",
+      "country": "BR",
+      "region": "BR-SP",
+      "timezone": "America/Sao_Paulo",
+      "utcOffsetMin": -180,
+      "capacity": 1100
+    },
+    {
+      "id": "palais-culture-abidjan",
+      "name": "Palais de la culture",
+      "city": "Abidjan",
+      "country": "CI",
+      "region": "CI-AB",
+      "timezone": "Africa/Abidjan",
+      "utcOffsetMin": 0,
+      "capacity": 2400
+    },
+    {
+      "id": "grand-theatre-dakar",
+      "name": "Grand Théâtre national",
+      "city": "Dakar",
+      "country": "SN",
+      "region": "SN-DK",
+      "timezone": "Africa/Dakar",
+      "utcOffsetMin": 0,
+      "capacity": 1800
+    },
+    {
+      "id": "bunkamura",
+      "name": "Bunkamura Theatre Cocoon",
+      "city": "Tokyo",
+      "country": "JP",
+      "region": "JP-13",
+      "timezone": "Asia/Tokyo",
+      "utcOffsetMin": 540,
+      "capacity": 747
+    },
+    {
+      "id": "carriageworks",
+      "name": "Carriageworks",
+      "city": "Sydney",
+      "country": "AU",
+      "region": "AU-NSW",
+      "timezone": "Australia/Sydney",
+      "utcOffsetMin": 600,
+      "capacity": 1200
+    }
+  ],
+  "artists": [
+    {
+      "id": "ana-vieira",
+      "name": "Compagnie Ana Vieira",
+      "avatar": "ana",
+      "category": "theatre",
+      "genre": "contemporary",
+      "followers": 48200,
+      "country": "FR",
+      "contentLanguage": "fr",
+      "bio": "Compagnie de danse-théâtre fondée à Marseille en 2011. Douze créations, deux cents scènes, et depuis 2024 une saison entière diffusée en direct depuis le plateau.",
+      "bioEn": "Dance-theatre company founded in Marseille in 2011. Twelve creations, two hundred stages, and since 2024 a full season streamed live from the stage."
+    },
+    {
+      "id": "ballet-du-nord",
+      "name": "Ballet du Nord",
+      "avatar": "nord",
+      "category": "dance",
+      "genre": "ballet",
+      "followers": 31400,
+      "country": "FR",
+      "contentLanguage": "fr",
+      "bio": "Centre chorégraphique national. Vingt-huit danseurs, un répertoire qui va de Petipa aux commandes contemporaines.",
+      "bioEn": "National choreographic centre. Twenty-eight dancers, a repertoire running from Petipa to contemporary commissions."
+    },
+    {
+      "id": "sanhu-trio",
+      "name": "Sanhu Trio",
+      "avatar": "sanhu",
+      "category": "jazz",
+      "genre": "modern-jazz",
+      "followers": 12800,
+      "country": "FR",
+      "contentLanguage": "fr",
+      "bio": "Piano, contrebasse, batterie. Trois disques, et des sets nocturnes joués sans set-list.",
+      "bioEn": "Piano, bass, drums. Three records, and late sets played without a set-list."
+    },
+    {
+      "id": "opera-de-lille",
+      "name": "Opéra de Lille",
+      "avatar": "lille",
+      "category": "opera",
+      "genre": "classical-opera",
+      "followers": 57900,
+      "country": "FR",
+      "contentLanguage": "fr",
+      "bio": "Maison d’opéra, orchestre et chœur permanents. Huit productions par saison, toutes captées.",
+      "bioEn": "Opera house with resident orchestra and chorus. Eight productions a season, all captured."
+    },
+    {
+      "id": "karim-bellal",
+      "name": "Karim Bellal",
+      "avatar": "karim",
+      "category": "comedy",
+      "genre": "stand-up",
+      "followers": 22100,
+      "country": "FR",
+      "contentLanguage": "fr",
+      "bio": "Seul en scène, écriture au jour le jour. Deux heures qui ne sont jamais tout à fait les mêmes.",
+      "bioEn": "Solo stand-up, written day by day. Two hours that are never quite the same."
+    },
+    {
+      "id": "leo-marchand",
+      "name": "Léo Marchand",
+      "avatar": "leo",
+      "category": "classical",
+      "genre": "chamber",
+      "followers": 9400,
+      "country": "FR",
+      "contentLanguage": "fr",
+      "bio": "Pianiste. Bach, Ligeti, et des programmes annoncés le soir même.",
+      "bioEn": "Pianist. Bach, Ligeti, and programmes announced the same evening."
+    },
+    {
+      "id": "collectif-sud",
+      "name": "Collectif Sud",
+      "avatar": "sud",
+      "category": "circus",
+      "genre": "aerial",
+      "followers": 18300,
+      "country": "FR",
+      "contentLanguage": "fr",
+      "bio": "Cirque aérien et bal populaire. Quinze artistes, une structure de huit mètres, aucun filet.",
+      "bioEn": "Aerial circus and public ball. Fifteen artists, an eight-metre rig, no net."
+    },
+    {
+      "id": "maud-kessler",
+      "name": "Maud Kessler",
+      "avatar": "maud",
+      "category": "classical",
+      "genre": "chamber",
+      "followers": 7600,
+      "country": "FR",
+      "contentLanguage": "fr",
+      "bio": "Duo de piano à quatre mains avec sa sœur Alice. Schubert, Poulenc, et des transcriptions inédites.",
+      "bioEn": "Four-hand piano duo with her sister Alice. Schubert, Poulenc, and unpublished transcriptions."
+    },
+    {
+      "id": "nisha-rao",
+      "name": "Nisha Rao",
+      "avatar": "nisha",
+      "category": "theatre",
+      "genre": "contemporary",
+      "followers": 15200,
+      "country": "FR",
+      "contentLanguage": "fr",
+      "bio": "Metteuse en scène et interprète. Un théâtre de récit, une comédienne, une table.",
+      "bioEn": "Director and performer. Storytelling theatre: one actress, one table."
+    },
+    {
+      "id": "vega",
+      "name": "Vega",
+      "avatar": "vega",
+      "category": "electronic",
+      "genre": "techno",
+      "followers": 64500,
+      "country": "FR",
+      "contentLanguage": "fr",
+      "bio": "Duo électronique. Deux albums, une scène pensée comme un studio ouvert.",
+      "bioEn": "Electronic duo. Two albums, a stage built like an open studio."
+    },
+    {
+      "id": "choeur-vartan",
+      "name": "Chœur Vartan",
+      "avatar": "vartan",
+      "category": "classical",
+      "genre": "choral",
+      "followers": 5400,
+      "country": "FR",
+      "contentLanguage": "fr",
+      "bio": "Quarante voix d’hommes, répertoire liturgique arménien et créations.",
+      "bioEn": "Forty male voices, Armenian liturgical repertoire and new work."
+    }
+  ],
+  "shows": [
+    {
+      "id": "la-mouette",
+      "title": "La Mouette",
+      "artist": "ana-vieira",
+      "category": "theatre",
+      "genre": "repertoire",
+      "tags": [],
+      "image": "curtain",
+      "poster": "curtain",
+      "runtimeMin": 150,
+      "contentLanguage": "fr",
+      "spokenLanguage": [
+        "fr"
+      ],
+      "subtitles": [
+        "fr",
+        "en"
+      ],
+      "audience": "all-audiences",
+      "synopsis": "Quatre personnages se ratent pendant deux heures, dans une maison de campagne où personne ne dit ce qu’il veut. La compagnie joue Tchekhov debout, sans décor, en costumes de ville.",
+      "cast": "Ana Vieira, Paul Sézille, Inès Barrault, Tom Hallé · Mise en scène Ana Vieira",
+      "titleEn": "The Seagull",
+      "synopsisEn": "Four people miss each other for two hours in a country house where nobody says what they want. Chekhov played standing, no set, in street clothes.",
+      "castEn": "Ana Vieira, Paul Sézille, Inès Barrault, Tom Hallé · Directed by Ana Vieira",
+      "languageDependency": "essential",
+      "surtitles": []
+    },
+    {
+      "id": "le-sacre-du-printemps",
+      "title": "Le Sacre du printemps",
+      "artist": "ballet-du-nord",
+      "category": "dance",
+      "genre": "ballet",
+      "tags": [],
+      "image": "ballet",
+      "poster": "ballet",
+      "runtimeMin": 105,
+      "contentLanguage": "fr",
+      "spokenLanguage": [],
+      "subtitles": [],
+      "audience": "all-audiences",
+      "synopsis": "Vingt-huit danseurs, un orchestre en fosse et la partition de 1913 jouée sans coupe. La nouvelle chorégraphie de Wanda Sørensen pour le Ballet du Nord, en direct du plateau.",
+      "cast": "Ballet du Nord · Chorégraphie Wanda Sørensen · Orchestre de l’Opéra de Lille",
+      "titleEn": "The Rite of Spring",
+      "synopsisEn": "Twenty-eight dancers, a pit orchestra and the 1913 score played uncut. Wanda Sørensen’s new choreography for Ballet du Nord, live from the stage.",
+      "castEn": "Ballet du Nord · Choreography Wanda Sørensen · Opéra de Lille orchestra",
+      "languageDependency": "none",
+      "surtitles": []
+    },
+    {
+      "id": "nocturnes",
+      "title": "Nocturnes",
+      "artist": "sanhu-trio",
+      "category": "jazz",
+      "genre": "modern-jazz",
+      "tags": [],
+      "image": "jazz",
+      "poster": "jazz",
+      "runtimeMin": 90,
+      "contentLanguage": "fr",
+      "spokenLanguage": [],
+      "subtitles": [],
+      "audience": "all-audiences",
+      "synopsis": "Un set tardif, sans set-list. Le trio joue ce qui vient et s’arrête quand la salle est vide.",
+      "cast": "Sanhu Trio · Kenji Sanhu, Lise Fabre, Odilon Bak",
+      "synopsisEn": "A late set with no set-list. The trio plays what comes and stops when the room empties.",
+      "languageDependency": "none",
+      "surtitles": []
+    },
+    {
+      "id": "carmen",
+      "title": "Carmen",
+      "artist": "opera-de-lille",
+      "category": "opera",
+      "genre": "classical-opera",
+      "tags": [],
+      "image": "opera",
+      "poster": "opera",
+      "runtimeMin": 175,
+      "contentLanguage": "fr",
+      "spokenLanguage": [
+        "fr"
+      ],
+      "subtitles": [
+        "fr",
+        "en"
+      ],
+      "audience": "all-audiences",
+      "synopsis": "La production de 2026, captée à huit caméras, chœur et orchestre au complet.",
+      "cast": "Orchestre et chœur de l’Opéra de Lille · Direction Ilaria Costa",
+      "synopsisEn": "The 2026 production, captured on eight cameras, full chorus and orchestra.",
+      "castEn": "Opéra de Lille orchestra and chorus · Conducted by Ilaria Costa",
+      "languageDependency": "helpful",
+      "surtitles": [
+        "fr",
+        "en"
+      ]
+    },
+    {
+      "id": "plateau-libre",
+      "title": "Plateau libre",
+      "artist": "karim-bellal",
+      "category": "comedy",
+      "genre": "stand-up",
+      "tags": [],
+      "image": "micstand",
+      "poster": "micstand",
+      "runtimeMin": 80,
+      "contentLanguage": "fr",
+      "spokenLanguage": [
+        "fr"
+      ],
+      "subtitles": [
+        "fr",
+        "en"
+      ],
+      "audience": "all-audiences",
+      "synopsis": "Karim Bellal écrit le matin et joue le soir. Aucune rediffusion : ce qui se dit ce soir n’existe que ce soir.",
+      "cast": "Karim Bellal",
+      "titleEn": "Open Stage",
+      "synopsisEn": "Karim Bellal writes in the morning and plays at night. No replay: what is said tonight exists only tonight.",
+      "languageDependency": "essential",
+      "surtitles": []
+    },
+    {
+      "id": "variations-goldberg",
+      "title": "Variations Goldberg",
+      "artist": "leo-marchand",
+      "category": "classical",
+      "genre": "chamber",
+      "tags": [],
+      "image": "piano",
+      "poster": "piano",
+      "runtimeMin": 95,
+      "contentLanguage": "fr",
+      "spokenLanguage": [],
+      "subtitles": [],
+      "audience": "all-audiences",
+      "synopsis": "Une aria, trente variations, une reprise. Prise de son en un seul point, caméra fixe.",
+      "cast": "Léo Marchand, piano",
+      "titleEn": "Goldberg Variations",
+      "synopsisEn": "One aria, thirty variations, one reprise. Single-point sound, fixed camera.",
+      "languageDependency": "none",
+      "surtitles": []
+    },
+    {
+      "id": "gravite",
+      "title": "Gravité",
+      "artist": "collectif-sud",
+      "category": "circus",
+      "genre": "aerial",
+      "tags": [],
+      "image": "auditorium",
+      "poster": "auditorium",
+      "runtimeMin": 70,
+      "contentLanguage": "fr",
+      "spokenLanguage": [],
+      "subtitles": [],
+      "audience": "family",
+      "synopsis": "Huit mètres de structure, quinze artistes, aucun filet. Une heure dix sans entracte.",
+      "cast": "Collectif Sud · Direction Ysée Manaud",
+      "titleEn": "Gravity",
+      "synopsisEn": "An eight-metre rig, fifteen artists, no net. Seventy minutes without interval.",
+      "castEn": "Collectif Sud · Directed by Ysée Manaud",
+      "languageDependency": "none",
+      "surtitles": []
+    },
+    {
+      "id": "bal-moderne",
+      "title": "Bal moderne",
+      "artist": "collectif-sud",
+      "category": "dance",
+      "genre": "ball",
+      "tags": [],
+      "image": "dance",
+      "poster": "dance",
+      "runtimeMin": 120,
+      "contentLanguage": "fr",
+      "spokenLanguage": [
+        "fr"
+      ],
+      "subtitles": [
+        "fr",
+        "en"
+      ],
+      "audience": "family",
+      "synopsis": "Un bal appris en direct : trente minutes d’atelier, puis on danse jusqu’à la fin.",
+      "cast": "Collectif Sud et l’orchestre de bal du Sud",
+      "titleEn": "Modern Ball",
+      "synopsisEn": "A ball learned live: thirty minutes of workshop, then dancing to the end.",
+      "castEn": "Collectif Sud with the Sud ball orchestra",
+      "languageDependency": "helpful",
+      "surtitles": [
+        "fr"
+      ]
+    },
+    {
+      "id": "quatre-mains",
+      "title": "Quatre mains",
+      "artist": "maud-kessler",
+      "category": "classical",
+      "genre": "chamber",
+      "tags": [],
+      "image": "lights",
+      "poster": "lights",
+      "runtimeMin": 85,
+      "contentLanguage": "fr",
+      "spokenLanguage": [],
+      "subtitles": [],
+      "audience": "all-audiences",
+      "synopsis": "Schubert et Poulenc à quatre mains, deux sœurs, un seul piano.",
+      "cast": "Maud et Alice Kessler",
+      "titleEn": "Four Hands",
+      "synopsisEn": "Schubert and Poulenc for four hands, two sisters, one piano.",
+      "castEn": "Maud and Alice Kessler",
+      "languageDependency": "none",
+      "surtitles": []
+    },
+    {
+      "id": "la-traversee",
+      "title": "La Traversée",
+      "artist": "nisha-rao",
+      "category": "theatre",
+      "genre": "contemporary",
+      "tags": [],
+      "image": "smoke",
+      "poster": "smoke",
+      "runtimeMin": 140,
+      "contentLanguage": "fr",
+      "spokenLanguage": [
+        "fr"
+      ],
+      "subtitles": [
+        "fr",
+        "en"
+      ],
+      "audience": "all-audiences",
+      "synopsis": "Une comédienne, une table, et le récit d’un passage de frontière raconté sept fois.",
+      "cast": "Nisha Rao · Texte et mise en scène Nisha Rao",
+      "titleEn": "The Crossing",
+      "synopsisEn": "One actress, one table, and a border crossing told seven times over.",
+      "castEn": "Nisha Rao · Written and directed by Nisha Rao",
+      "languageDependency": "essential",
+      "surtitles": []
+    },
+    {
+      "id": "set-d-ouverture",
+      "title": "Set d’ouverture",
+      "artist": "vega",
+      "category": "electronic",
+      "genre": "techno",
+      "tags": [],
+      "image": "dj",
+      "poster": "dj",
+      "runtimeMin": 110,
+      "contentLanguage": "fr",
+      "spokenLanguage": [
+        "en"
+      ],
+      "subtitles": [],
+      "audience": "adults",
+      "synopsis": "Deux heures de machines à vue, sans playback. Le duo ouvre sa tournée et joue la moitié d’un album qui n’est pas encore sorti.",
+      "cast": "Vega · Lumières Marta Oyono",
+      "titleEn": "Opening Set",
+      "synopsisEn": "Two hours of machines in plain sight, no playback. The duo opens its tour and plays half an unreleased album.",
+      "castEn": "Vega · Lighting Marta Oyono",
+      "languageDependency": "none",
+      "surtitles": []
+    },
+    {
+      "id": "giselle",
+      "title": "Giselle",
+      "artist": "ballet-du-nord",
+      "category": "dance",
+      "genre": "ballet",
+      "tags": [],
+      "image": "crowd",
+      "poster": "crowd",
+      "runtimeMin": 130,
+      "contentLanguage": "fr",
+      "spokenLanguage": [],
+      "subtitles": [],
+      "audience": "all-audiences",
+      "synopsis": "Le ballet romantique dans la version de 1841, orchestre au complet.",
+      "cast": "Ballet du Nord · Orchestre de l’Opéra de Lille",
+      "synopsisEn": "The romantic ballet in its 1841 version, full orchestra.",
+      "castEn": "Ballet du Nord · Opéra de Lille orchestra",
+      "languageDependency": "none",
+      "surtitles": []
+    },
+    {
+      "id": "hamlet-ou-presque",
+      "title": "Hamlet, ou presque",
+      "artist": "ana-vieira",
+      "category": "theatre",
+      "genre": "repertoire",
+      "tags": [],
+      "image": "guitar",
+      "poster": "guitar",
+      "runtimeMin": 115,
+      "contentLanguage": "fr",
+      "spokenLanguage": [
+        "fr"
+      ],
+      "subtitles": [
+        "fr",
+        "en"
+      ],
+      "audience": "all-audiences",
+      "synopsis": "Trois acteurs, cinq rôles, un texte réduit à ce qui se joue vraiment.",
+      "cast": "Compagnie Ana Vieira",
+      "titleEn": "Hamlet, Almost",
+      "synopsisEn": "Three actors, five parts, a text cut down to what actually plays.",
+      "languageDependency": "essential",
+      "surtitles": []
+    },
+    {
+      "id": "voix-basses",
+      "title": "Voix basses",
+      "artist": "choeur-vartan",
+      "category": "classical",
+      "genre": "choral",
+      "tags": [
+        "a-cappella"
+      ],
+      "image": "smoke",
+      "poster": "smoke",
+      "runtimeMin": 75,
+      "contentLanguage": "fr",
+      "spokenLanguage": [
+        "hy"
+      ],
+      "subtitles": [],
+      "audience": "all-audiences",
+      "synopsis": "Quarante voix d’hommes, une acoustique de pierre, aucune amplification.",
+      "cast": "Chœur Vartan · Direction Sevan Malkhassian",
+      "titleEn": "Low Voices",
+      "synopsisEn": "Forty male voices, stone acoustics, no amplification.",
+      "castEn": "Chœur Vartan · Conducted by Sevan Malkhassian",
+      "languageDependency": "none",
+      "surtitles": []
+    },
+    {
+      "id": "ellipse",
+      "title": "Ellipse",
+      "artist": "nisha-rao",
+      "category": "dance",
+      "genre": "contemporary",
+      "tags": [],
+      "image": "dance",
+      "poster": "dance",
+      "runtimeMin": 90,
+      "contentLanguage": "fr",
+      "spokenLanguage": [],
+      "subtitles": [],
+      "audience": "all-audiences",
+      "synopsis": "Une création pour une interprète seule, écrite dans l’espace avant d’être écrite sur le papier.",
+      "cast": "Nisha Rao",
+      "synopsisEn": "A solo creation, written in space before it was written on paper.",
+      "languageDependency": "none",
+      "surtitles": []
+    },
+    {
+      "id": "le-grand-soir",
+      "title": "Le Grand Soir",
+      "artist": "karim-bellal",
+      "category": "comedy",
+      "genre": "stand-up",
+      "tags": [],
+      "image": "micstand",
+      "poster": "micstand",
+      "runtimeMin": 100,
+      "contentLanguage": "fr",
+      "spokenLanguage": [
+        "fr"
+      ],
+      "subtitles": [
+        "fr",
+        "en"
+      ],
+      "audience": "all-audiences",
+      "synopsis": "Une soirée de fin de tournée, jouée comme une dernière fois.",
+      "cast": "Karim Bellal",
+      "titleEn": "The Big Night",
+      "synopsisEn": "A closing-night show, played like a last time.",
+      "languageDependency": "essential",
+      "surtitles": []
+    }
+  ],
+  "chapterVocabulary": [
+    {
+      "id": "doors",
+      "label": "Ouverture des portes",
+      "labelEn": "Doors"
+    },
+    {
+      "id": "overture",
+      "label": "Ouverture",
+      "labelEn": "Overture"
+    },
+    {
+      "id": "act-1",
+      "label": "Acte I",
+      "labelEn": "Act I"
+    },
+    {
+      "id": "act-2",
+      "label": "Acte II",
+      "labelEn": "Act II"
+    },
+    {
+      "id": "tableau-1",
+      "label": "Premier tableau",
+      "labelEn": "First tableau"
+    },
+    {
+      "id": "tableau-2",
+      "label": "Deuxième tableau",
+      "labelEn": "Second tableau"
+    },
+    {
+      "id": "interval",
+      "label": "Entracte",
+      "labelEn": "Interval"
+    },
+    {
+      "id": "finale",
+      "label": "Final",
+      "labelEn": "Finale"
+    },
+    {
+      "id": "curtain-call",
+      "label": "Saluts",
+      "labelEn": "Curtain call"
+    },
+    {
+      "id": "set-1",
+      "label": "Premier set",
+      "labelEn": "First set"
+    },
+    {
+      "id": "set-2",
+      "label": "Second set",
+      "labelEn": "Second set"
+    },
+    {
+      "id": "encore",
+      "label": "Rappel",
+      "labelEn": "Encore"
+    }
+  ],
+  "chapterPatterns": {
+    "play": [
+      [
+        "doors",
+        -0.14
+      ],
+      [
+        "act-1",
+        0
+      ],
+      [
+        "interval",
+        0.42
+      ],
+      [
+        "act-2",
+        0.55
+      ],
+      [
+        "curtain-call",
+        0.96
+      ]
+    ],
+    "ballet": [
+      [
+        "doors",
+        -0.2
+      ],
+      [
+        "overture",
+        0
+      ],
+      [
+        "tableau-1",
+        0.04
+      ],
+      [
+        "interval",
+        0.44
+      ],
+      [
+        "tableau-2",
+        0.56
+      ],
+      [
+        "curtain-call",
+        0.95
+      ]
+    ],
+    "concert": [
+      [
+        "set-1",
+        0
+      ],
+      [
+        "set-2",
+        0.48
+      ],
+      [
+        "encore",
+        0.9
+      ]
+    ],
+    "recital": [
+      [
+        "overture",
+        0
+      ],
+      [
+        "tableau-1",
+        0.05
+      ],
+      [
+        "tableau-2",
+        0.52
+      ],
+      [
+        "curtain-call",
+        0.94
+      ]
+    ],
+    "circus": [
+      [
+        "doors",
+        -0.2
+      ],
+      [
+        "set-1",
+        0
+      ],
+      [
+        "finale",
+        0.78
+      ],
+      [
+        "curtain-call",
+        0.94
+      ]
+    ]
+  },
+  "showPatterns": {
+    "la-mouette": "play",
+    "hamlet-ou-presque": "play",
+    "la-traversee": "play",
+    "le-sacre-du-printemps": "ballet",
+    "giselle": "ballet",
+    "ellipse": "ballet",
+    "bal-moderne": "concert",
+    "nocturnes": "concert",
+    "set-d-ouverture": "concert",
+    "plateau-libre": "concert",
+    "le-grand-soir": "concert",
+    "carmen": "ballet",
+    "variations-goldberg": "recital",
+    "quatre-mains": "recital",
+    "voix-basses": "recital",
+    "gravite": "circus"
+  },
+  "crewPool": {
+    "la-mouette": [
+      [
+        "director",
+        "Ana Vieira"
+      ],
+      [
+        "video",
+        "Malo Ferrand"
+      ],
+      [
+        "sound",
+        "Rim Zaïdi"
+      ],
+      [
+        "moderation",
+        "Paul Sézille"
+      ]
+    ],
+    "le-sacre-du-printemps": [
+      [
+        "director",
+        "Wanda Sørensen"
+      ],
+      [
+        "video",
+        "Basile Nardin"
+      ],
+      [
+        "sound",
+        "Ilaria Costa"
+      ]
+    ],
+    "nocturnes": [
+      [
+        "director",
+        "Kenji Sanhu"
+      ],
+      [
+        "sound",
+        "Odilon Bak"
+      ]
+    ],
+    "carmen": [
+      [
+        "director",
+        "Ilaria Costa"
+      ],
+      [
+        "video",
+        "Basile Nardin"
+      ],
+      [
+        "sound",
+        "Anouk Bréval"
+      ],
+      [
+        "moderation",
+        "Inès Barrault"
+      ]
+    ],
+    "plateau-libre": [
+      [
+        "director",
+        "Karim Bellal"
+      ],
+      [
+        "sound",
+        "Rim Zaïdi"
+      ]
+    ],
+    "variations-goldberg": [
+      [
+        "director",
+        "Léo Marchand"
+      ],
+      [
+        "sound",
+        "Anouk Bréval"
+      ]
+    ],
+    "gravite": [
+      [
+        "director",
+        "Ysée Manaud"
+      ],
+      [
+        "video",
+        "Tom Regnier"
+      ],
+      [
+        "sound",
+        "Lila Escaffre"
+      ],
+      [
+        "moderation",
+        "Nour Aït"
+      ]
+    ],
+    "bal-moderne": [
+      [
+        "director",
+        "Ysée Manaud"
+      ],
+      [
+        "sound",
+        "Lila Escaffre"
+      ]
+    ],
+    "set-d-ouverture": [
+      [
+        "director",
+        "Marta Oyono"
+      ],
+      [
+        "video",
+        "Sacha Vieux"
+      ],
+      [
+        "sound",
+        "Vega"
+      ],
+      [
+        "moderation",
+        "Inès Barrault"
+      ]
+    ],
+    "giselle": [
+      [
+        "director",
+        "Wanda Sørensen"
+      ]
+    ],
+    "ellipse": [
+      [
+        "director",
+        "Nisha Rao"
+      ]
+    ],
+    "le-grand-soir": [
+      [
+        "director",
+        "Karim Bellal"
+      ],
+      [
+        "sound",
+        "Rim Zaïdi"
+      ]
+    ],
+    "quatre-mains": [
+      [
+        "director",
+        "Maud Kessler"
+      ],
+      [
+        "sound",
+        "Anouk Bréval"
+      ]
+    ],
+    "voix-basses": [
+      [
+        "director",
+        "Sevan Malkhassian"
+      ],
+      [
+        "sound",
+        "Anouk Bréval"
+      ]
+    ],
+    "la-traversee": [
+      [
+        "director",
+        "Nisha Rao"
+      ],
+      [
+        "video",
+        "Malo Ferrand"
+      ]
+    ],
+    "hamlet-ou-presque": [
+      [
+        "director",
+        "Ana Vieira"
+      ],
+      [
+        "sound",
+        "Rim Zaïdi"
+      ]
+    ]
+  },
+  "incidentMessages": {
+    "hold-screen": [
+      {
+        "id": "tuning",
+        "message": "Le piano est en cours d’accord, nous commençons dans quelques minutes.",
+        "messageEn": "The piano is being tuned, we will start in a few minutes."
+      },
+      {
+        "id": "seating",
+        "message": "Le placement en salle prend un peu plus longtemps que prévu. Nous lançons le direct dès que les portes sont fermées.",
+        "messageEn": "Seating is taking a little longer than planned. We will go live as soon as the doors are closed."
+      },
+      {
+        "id": "sound-check",
+        "message": "Un dernier réglage de son côté plateau. Restez avec nous, le spectacle commence dans un instant.",
+        "messageEn": "One last sound adjustment on stage. Stay with us, the show starts in a moment."
+      }
+    ],
+    "postponed": [
+      {
+        "id": "orchestra",
+        "message": "La représentation est reportée : une partie de l’orchestre est immobilisée. Votre place reste valable pour la nouvelle date.",
+        "messageEn": "The performance is postponed: part of the orchestra is stranded. Your seat stays valid for the new date."
+      }
+    ],
+    "cancelled": [
+      {
+        "id": "injury",
+        "message": "La représentation est annulée : l’interprète s’est blessée pendant l’échauffement. Vous serez remboursé sous trois à cinq jours.",
+        "messageEn": "The performance is cancelled: the performer was injured while warming up. You will be refunded within three to five days."
+      }
+    ],
+    "interrupted": [
+      {
+        "id": "power",
+        "message": "La salle a perdu le courant, le spectacle ne reprendra pas ce soir. Un avoir vous est adressé.",
+        "messageEn": "The venue lost power and the show will not resume tonight. A credit note is on its way."
+      }
+    ]
+  },
+  "chatPool": [
+    {
+      "author": "Salomé",
+      "role": "viewer",
+      "text": "La lumière sur le lac, quand même.",
+      "textEn": "That light on the lake, though."
+    },
+    {
+      "author": "Bruno",
+      "role": "viewer",
+      "text": "Première fois que je vois Tchekhov sans décor. Ça tient.",
+      "textEn": "First time I see Chekhov with no set. It holds."
+    },
+    {
+      "author": "Farid",
+      "role": "viewer",
+      "text": "Huit mètres sans filet, j’ai fermé les yeux.",
+      "textEn": "Eight metres with no net, I closed my eyes."
+    },
+    {
+      "author": "Nils",
+      "role": "viewer",
+      "text": "Le morceau 3 n’est pas sur l’album, non ?",
+      "textEn": "Track 3 isn’t on the album, right?"
+    },
+    {
+      "author": "Awa",
+      "role": "viewer",
+      "text": "Le son est parfait ce soir.",
+      "textEn": "The sound is perfect tonight."
+    },
+    {
+      "author": "Jeanne",
+      "role": "viewer",
+      "text": "On voit la respiration des danseurs, c’est fou.",
+      "textEn": "You can see the dancers breathing, it’s wild."
+    },
+    {
+      "author": "Marek",
+      "role": "viewer",
+      "text": "Quelqu’un sait s’il y a un entracte ?",
+      "textEn": "Anyone know if there’s an interval?"
+    },
+    {
+      "author": "Régie",
+      "role": "crew",
+      "text": "Entracte dans dix minutes.",
+      "textEn": "Interval in ten minutes."
+    },
+    {
+      "author": "Régie",
+      "role": "crew",
+      "text": "Le tchat est modéré pendant les portés.",
+      "textEn": "Chat is moderated during the lifts."
+    },
+    {
+      "author": "Compagnie",
+      "role": "artist",
+      "text": "Merci d’être là ce soir, où que vous soyez.",
+      "textEn": "Thank you for being here tonight, wherever you are."
+    }
+  ],
+  "accounts": [
+    {
+      "id": "camille",
+      "name": "Camille",
+      "avatar": "ana",
+      "email": "camille.roux@example.fr",
+      "plan": "season",
+      "badge": "subscriber",
+      "devices": 3,
+      "followedArtists": [
+        "ana-vieira",
+        "ballet-du-nord",
+        "collectif-sud"
+      ],
+      "watchlist": [
+        "nocturnes",
+        "bal-moderne"
+      ],
+      "paymentMethod": {
+        "brand": "Visa",
+        "last4": "4412"
+      }
+    },
+    {
+      "id": "theo",
+      "name": "Théo",
+      "avatar": "karim",
+      "email": "theo.bendjelloul@example.fr",
+      "plan": "monthly",
+      "badge": "subscriber",
+      "devices": 2,
+      "followedArtists": [
+        "vega",
+        "sanhu-trio"
+      ],
+      "watchlist": [
+        "set-d-ouverture"
+      ],
+      "paymentMethod": {
+        "brand": "Mastercard",
+        "last4": "8827"
+      }
+    },
+    {
+      "id": "lea",
+      "name": "Léa",
+      "avatar": "sud",
+      "email": null,
+      "plan": "season",
+      "badge": "kids",
+      "devices": 1,
+      "followedArtists": [
+        "collectif-sud"
+      ],
+      "watchlist": [
+        "bal-moderne"
+      ],
+      "kids": true,
+      "allowedCategories": [
+        "circus",
+        "dance",
+        "musical"
+      ]
+    },
+    {
+      "id": "jonas",
+      "name": "Jonas",
+      "avatar": "leo",
+      "email": "jonas.pham@example.fr",
+      "plan": "none",
+      "badge": "visitor",
+      "devices": 1,
+      "followedArtists": [],
+      "watchlist": []
+    }
+  ],
+  "images": {
+    "provider": "unsplash",
+    "wide": {
+      "curtain": "photo-1503095396549-807759245b35",
+      "ballet": "photo-1547153760-18fc86324498",
+      "dance": "photo-1518834107812-67b0b7c58434",
+      "jazz": "photo-1415201364774-f6f0bb35f28f",
+      "opera": "photo-1580809361436-42a7ec204889",
+      "auditorium": "photo-1507924538820-ede94a04019d",
+      "gigcrowd": "photo-1516450360452-9312f5e86fc7",
+      "piano": "photo-1520523839897-bd0b52f945a0",
+      "crowd": "photo-1540039155733-5bb30b53aa14",
+      "smoke": "photo-1493225457124-a3eb161ffa5f",
+      "dj": "photo-1470225620780-dba8ba36b745",
+      "lights": "photo-1459749411175-04bf5292ceea",
+      "guitar": "photo-1510915361894-db8b60106cb1",
+      "strings": "photo-1465847899084-d164df4dedc6",
+      "emptystage": "photo-1585699324551-f6c309eedeca",
+      "festival": "photo-1524368535928-5b5e00ddc76b",
+      "gignight": "photo-1533174072545-7a4b6ad7a6c3",
+      "acoustic": "photo-1471478331149-c72f17e33c73",
+      "drumkit": "photo-1519892300165-cb5542fb47c7",
+      "neonsign": "photo-1499415479124-43c32433a620",
+      "smallstage": "photo-1514320291840-2e0a9bf2a9ae",
+      "score": "photo-1507838153414-b4b713384a76",
+      "grandpiano": "photo-1470019693664-1d202d2c0907",
+      "drumstudio": "photo-1543443258-92b04ad5ec6b",
+      "bandstage": "photo-1526478806334-5fd488fcaabc",
+      "cello": "photo-1508025690966-2a9a1957da31",
+      "openaudience": "photo-1517457373958-b7bdd4587205",
+      "dancers": "photo-1524594152303-9fd13543fe6e",
+      "confetti": "photo-1492684223066-81342ee5ff30",
+      "pyro": "photo-1514533450685-4493e01d1fdc",
+      "backlight": "photo-1470229722913-7c0e2dbbafd3",
+      "micvintage": "photo-1485579149621-3123dd979885",
+      "micred": "photo-1511671782779-c97d3d27a1d4",
+      "singer": "photo-1498038432885-c6f3f1b912ee",
+      "countryband": "photo-1521337581100-8ca9a73a5f79",
+      "acousticgirl": "photo-1524650359799-842906ca1c06",
+      "crowdpurple": "photo-1470229538611-16ba8c7ffbd7",
+      "crowdpurple2": "photo-1506157786151-b8491531f063",
+      "micstand": "photo-1516280440614-37939bbacd81"
+    },
+    "avatars": {
+      "ana": "photo-1546961329-78bef0414d7c",
+      "nord": "photo-1541101767792-f9b2b1c4f127",
+      "sanhu": "photo-1531384441138-2736e62e0919",
+      "lille": "photo-1521119989659-a83eee488004",
+      "karim": "photo-1507003211169-0a1dd7228f2d",
+      "leo": "photo-1544005313-94ddf0286df2",
+      "sud": "photo-1552058544-f2b08422138a",
+      "maud": "photo-1494790108377-be9c29b29330",
+      "nisha": "photo-1534528741775-53994a69daeb",
+      "vega": "photo-1524253482453-3fed8d2fe12b",
+      "vartan": "photo-1500648767791-00dcc994a43e"
+    },
+    "recipes": {
+      "wide": "https://images.unsplash.com/{id}?auto=format&fit=crop&w={w}&q=72",
+      "poster": "https://images.unsplash.com/{id}?auto=format&fit=crop&w=520&h=780&q=72",
+      "avatar": "https://images.unsplash.com/{id}?auto=format&fit=crop&w=400&h=400&q=72",
+      "picsum": "https://picsum.photos/seed/{seed}/{w}/{h}"
+    },
+    "note": "Authored shows point at a curated Unsplash id (relevant stage photography). Generated shows carry imageSource \"picsum\" and an imageSeed, so each poster is distinct without an API key."
+  },
+  "peoplePool": [
+    [
+      "Ana Vieira",
+      [
+        "director"
+      ],
+      "Marseille"
+    ],
+    [
+      "Malo Ferrand",
+      [
+        "video"
+      ],
+      "Marseille"
+    ],
+    [
+      "Rim Zaïdi",
+      [
+        "sound"
+      ],
+      "Paris"
+    ],
+    [
+      "Paul Sézille",
+      [
+        "moderation"
+      ],
+      "Marseille"
+    ],
+    [
+      "Wanda Sørensen",
+      [
+        "director"
+      ],
+      "Lille"
+    ],
+    [
+      "Basile Nardin",
+      [
+        "video"
+      ],
+      "Lille"
+    ],
+    [
+      "Ilaria Costa",
+      [
+        "director",
+        "sound"
+      ],
+      "Lille"
+    ],
+    [
+      "Anouk Bréval",
+      [
+        "sound"
+      ],
+      "Bordeaux"
+    ],
+    [
+      "Ysée Manaud",
+      [
+        "director"
+      ],
+      "Marseille"
+    ],
+    [
+      "Tom Regnier",
+      [
+        "video"
+      ],
+      "Lyon"
+    ],
+    [
+      "Lila Escaffre",
+      [
+        "sound"
+      ],
+      "Lyon"
+    ],
+    [
+      "Nour Aït",
+      [
+        "moderation"
+      ],
+      "Paris"
+    ],
+    [
+      "Marta Oyono",
+      [
+        "director",
+        "video"
+      ],
+      "Paris"
+    ],
+    [
+      "Sacha Vieux",
+      [
+        "video"
+      ],
+      "Paris"
+    ],
+    [
+      "Inès Barrault",
+      [
+        "moderation"
+      ],
+      "Paris"
+    ],
+    [
+      "Sevan Malkhassian",
+      [
+        "director"
+      ],
+      "Paris"
+    ],
+    [
+      "Kenji Sanhu",
+      [
+        "director"
+      ],
+      "Pantin"
+    ],
+    [
+      "Odilon Bak",
+      [
+        "sound"
+      ],
+      "Pantin"
+    ],
+    [
+      "Lise Fabre",
+      [
+        "production"
+      ],
+      "Pantin"
+    ],
+    [
+      "Nisha Rao",
+      [
+        "director"
+      ],
+      "Paris"
+    ],
+    [
+      "Hélène Aubry",
+      [
+        "production"
+      ],
+      "Lyon"
+    ],
+    [
+      "Viktor Kaczmarek",
+      [
+        "coordination"
+      ],
+      "Strasbourg"
+    ],
+    [
+      "Jeanne Berthier",
+      [
+        "treasury"
+      ],
+      "Nantes"
+    ],
+    [
+      "Tomás Olivares",
+      [
+        "video",
+        "director"
+      ],
+      "Toulouse"
+    ],
+    [
+      "Nils Lindqvist",
+      [
+        "sound"
+      ],
+      "Rennes"
+    ],
+    [
+      "Camille Ferrandi",
+      [
+        "coordination"
+      ],
+      "Bordeaux"
+    ],
+    [
+      "Awa Diallo",
+      [
+        "moderation"
+      ],
+      "Paris"
+    ],
+    [
+      "Marek Varga",
+      [
+        "video"
+      ],
+      "Dijon"
+    ],
+    [
+      "Sonia Ricci",
+      [
+        "sound",
+        "video"
+      ],
+      "Nice"
+    ],
+    [
+      "Elias Bonnet",
+      [
+        "moderation"
+      ],
+      "Lille"
+    ],
+    [
+      "Faustine Roux",
+      [
+        "production"
+      ],
+      "Paris"
+    ],
+    [
+      "Amir Nazari",
+      [
+        "coordination"
+      ],
+      "Montpellier"
+    ],
+    [
+      "Iris Lindqvist",
+      [
+        "treasury"
+      ],
+      "Brest"
+    ],
+    [
+      "Gaspard Weiss",
+      [
+        "director",
+        "video"
+      ],
+      "Metz"
+    ],
+    [
+      "Naïma Sissoko",
+      [
+        "sound"
+      ],
+      "Marseille"
+    ],
+    [
+      "Selim Kaya",
+      [
+        "moderation"
+      ],
+      "Grenoble"
+    ],
+    [
+      "Alma Ricci",
+      [
+        "production"
+      ],
+      "Reims"
+    ],
+    [
+      "Zoé Lambert",
+      [
+        "coordination"
+      ],
+      "Angers"
+    ],
+    [
+      "Hugo Delaunay",
+      [
+        "video"
+      ],
+      "Rouen"
+    ],
+    [
+      "Clara Nakamura",
+      [
+        "sound"
+      ],
+      "Caen"
+    ]
+  ],
+  "freelancePool": [
+    [
+      "Théo Marceau",
+      [
+        "director",
+        "video"
+      ],
+      "Paris",
+      620
+    ],
+    [
+      "Lucie Ravel",
+      [
+        "sound"
+      ],
+      "Lyon",
+      480
+    ],
+    [
+      "Bastien Corre",
+      [
+        "video"
+      ],
+      "Nantes",
+      540
+    ],
+    [
+      "Élodie Pons",
+      [
+        "moderation"
+      ],
+      "Lille",
+      320
+    ],
+    [
+      "Ryad Amrani",
+      [
+        "director"
+      ],
+      "Marseille",
+      700
+    ],
+    [
+      "Céline Vasseur",
+      [
+        "sound",
+        "video"
+      ],
+      "Bordeaux",
+      560
+    ],
+    [
+      "Tarek Mansour",
+      [
+        "moderation"
+      ],
+      "Toulouse",
+      300
+    ],
+    [
+      "Jade Rimet",
+      [
+        "video"
+      ],
+      "Rennes",
+      500
+    ],
+    [
+      "Nicolas Perreau",
+      [
+        "director"
+      ],
+      "Strasbourg",
+      660
+    ],
+    [
+      "Sofia Barone",
+      [
+        "sound"
+      ],
+      "Nice",
+      470
+    ],
+    [
+      "Malik Ouedraogo",
+      [
+        "moderation"
+      ],
+      "Paris",
+      340
+    ],
+    [
+      "Anaïs Trémel",
+      [
+        "coordination"
+      ],
+      "Dijon",
+      380
+    ]
+  ],
+  "merchPool": {
+    "common": [
+      [
+        "Affiche signée",
+        18,
+        "poster"
+      ],
+      [
+        "Programme de salle",
+        8,
+        "print"
+      ],
+      [
+        "Tote bag",
+        15,
+        "textile"
+      ]
+    ],
+    "music": [
+      [
+        "Vinyle",
+        26,
+        "record"
+      ],
+      [
+        "CD du concert",
+        14,
+        "record"
+      ],
+      [
+        "T-shirt de tournée",
+        28,
+        "textile"
+      ]
+    ],
+    "stage": [
+      [
+        "Texte de la pièce",
+        12,
+        "print"
+      ],
+      [
+        "Photographies de plateau",
+        22,
+        "print"
+      ]
+    ],
+    "circus": [
+      [
+        "Carnet de croquis",
+        16,
+        "print"
+      ],
+      [
+        "Casquette",
+        20,
+        "textile"
+      ]
+    ]
+  },
+  "inboxPool": [
+    [
+      "seat-request",
+      "Une salle demande dix places supplémentaires en liste d’attente.",
+      "A venue is asking for ten more waiting-list seats."
+    ],
+    [
+      "crew-invite",
+      "Un régisseur indépendant a accepté votre invitation.",
+      "A freelance show caller accepted your invitation."
+    ],
+    [
+      "report",
+      "Un message a été signalé par trois spectateurs.",
+      "A message was reported by three viewers."
+    ],
+    [
+      "payout",
+      "Un versement a été programmé.",
+      "A payout has been scheduled."
+    ],
+    [
+      "replay-expiring",
+      "Une rediffusion ferme dans vingt-quatre heures.",
+      "A replay closes in twenty-four hours."
+    ],
+    [
+      "tech-check",
+      "Le contrôle technique est à faire avant le lever de rideau.",
+      "The technical check is due before curtain."
+    ],
+    [
+      "merch-stock",
+      "Un article de la boutique est en rupture.",
+      "A shop item is out of stock."
+    ],
+    [
+      "refund",
+      "Un remboursement a été traité.",
+      "A refund has been processed."
+    ]
+  ],
+  "moderationReasons": [
+    [
+      "spam",
+      "Spam",
+      "Spam"
+    ],
+    [
+      "insult",
+      "Insulte",
+      "Insult"
+    ],
+    [
+      "spoiler",
+      "Divulgue le spectacle",
+      "Spoiler"
+    ],
+    [
+      "off-topic",
+      "Hors sujet",
+      "Off topic"
+    ],
+    [
+      "harassment",
+      "Harcèlement",
+      "Harassment"
+    ]
+  ],
+  "commerce": {
+    "commissionRate": 0.12,
+    "payoutDelayDays": 14,
+    "note": "Gross ticket revenue minus platform commission and VAT gives the net payout. A payout is held while an outcome (refund, credit) is open."
+  },
+  "memberRoles": [
+    "artist",
+    "production",
+    "coordination",
+    "director",
+    "video",
+    "sound",
+    "moderation",
+    "treasury"
+  ],
+  "publicationStates": [
+    "draft",
+    "reserve",
+    "scheduled",
+    "technical",
+    "live",
+    "ended",
+    "replay-online"
+  ],
+  "grants": {
+    "note": "Which member role may invite which roles into a channel. The owner (artist) is implicit and can never be removed.",
+    "artist": [
+      "production",
+      "coordination",
+      "director",
+      "video",
+      "sound",
+      "moderation",
+      "treasury"
+    ],
+    "production": [
+      "coordination",
+      "director",
+      "video",
+      "sound",
+      "moderation"
+    ],
+    "coordination": [
+      "director",
+      "video",
+      "sound",
+      "moderation"
+    ],
+    "director": [
+      "video",
+      "sound"
+    ],
+    "video": [],
+    "sound": [],
+    "moderation": [],
+    "treasury": []
+  },
+  "messageStates": [
+    "ok",
+    "removed",
+    "muted",
+    "banned"
+  ],
+  "plans": [
+    {
+      "id": "free",
+      "priceMonth": 0,
+      "opens": [
+        "browse",
+        "trailers",
+        "free-dates"
+      ],
+      "seatDiscount": 0
+    },
+    {
+      "id": "pass",
+      "priceMonth": 12,
+      "opens": [
+        "browse",
+        "trailers",
+        "free-dates",
+        "replays",
+        "no-ads",
+        "one-live-month"
+      ],
+      "seatDiscount": 0.1
+    },
+    {
+      "id": "premium",
+      "priceMonth": 24,
+      "opens": [
+        "browse",
+        "trailers",
+        "free-dates",
+        "replays",
+        "no-ads",
+        "all-lives",
+        "multi-screen",
+        "archive"
+      ],
+      "seatDiscount": 0.2
+    }
+  ],
+  "devicePool": [
+    [
+      "tv",
+      "Téléviseur du salon",
+      "Living-room TV"
+    ],
+    [
+      "tv",
+      "Téléviseur de la chambre",
+      "Bedroom TV"
+    ],
+    [
+      "mobile",
+      "Téléphone",
+      "Phone"
+    ],
+    [
+      "tablet",
+      "Tablette",
+      "Tablet"
+    ],
+    [
+      "desktop",
+      "Ordinateur",
+      "Computer"
+    ],
+    [
+      "stick",
+      "Clé HDMI",
+      "HDMI stick"
+    ],
+    [
+      "console",
+      "Console de jeu",
+      "Games console"
+    ],
+    [
+      "box",
+      "Box opérateur",
+      "Set-top box"
+    ]
+  ],
+  "synopsisPool": {
+    "stage": {
+      "fr": [
+        "Plateau nu et lumière rasante : la mise en scène tient dans le jeu, capté au plus près des visages.",
+        "Une heure et demie sans entracte, filmée à six caméras dont une à l’épaule sur le plateau.",
+        "Création de la saison, jouée pour la première fois devant public et diffusée en direct.",
+        "Reprise resserrée : même distribution, décor allégé, et un tchat ouvert pendant toute la représentation.",
+        "Captation en une seule prise, sans montage, avec le son de salle mixé en direct.",
+        "Le public en salle et celui du direct voient la même chose, au même moment, au même endroit.",
+        "Décor unique, changements à vue, et une adresse directe au public dès la première réplique.",
+        "Un texte porté par une distribution de dix comédiens, filmé sans jamais couper le plan large.",
+        "Deux heures de plateau, écrites en répétition et jamais tout à fait les mêmes d’un soir à l’autre.",
+        "Trois comédiens, une table, deux chaises : tout le reste se joue dans l’adresse au public.",
+        "Une forme courte, créée en résidence et jouée telle quelle, sans filet.",
+        "La pièce se déplace de salle en salle : chaque soir un plateau différent, le même texte.",
+        "Lumière tenue au minimum, un seul projecteur suivi à la main, et le silence entre les répliques.",
+        "Adapté d’un roman, resserré à une heure vingt, porté par une comédienne seule en scène.",
+        "Le décor se construit à vue pendant la représentation, puis se démonte avant les saluts.",
+        "Un texte écrit pour ce plateau, joué pour la première fois devant un public payant.",
+        "Deux langues sur le plateau, surtitrées, et une distribution venue de deux compagnies.",
+        "Version resserrée d’une création de trois heures, ramenée à l’essentiel pour la tournée.",
+        "Une heure quarante sans entracte, jouée dans la lumière du jour déclinant.",
+        "Le texte est dit intégralement, sans coupe, par quatre comédiens immobiles.",
+        "Création collective écrite au plateau pendant trois semaines de résidence.",
+        "La scénographie tient dans une malle, ouverte au début, refermée à la fin.",
+        "Deux comédiens échangent leurs rôles à mi-parcours, sans prévenir.",
+        "Adaptation d’un fait divers, documentée pendant deux ans avant l’écriture.",
+        "Le public entre pendant que la pièce a déjà commencé, et s’installe où il peut.",
+        "Un monologue de cinquante minutes, écrit pour une comédienne et un violoncelle.",
+        "La pièce se joue trois fois de suite dans la soirée, chaque fois plus courte.",
+        "Un plateau tournant, six tableaux, aucune coupure noire.",
+        "La musique est jouée en direct par deux instrumentistes visibles côté cour.",
+        "Version pour l’extérieur, sans micro, portée par la seule voix des comédiens.",
+        "Une pièce sans décor, dont tout l’espace se construit par la parole.",
+        "Le texte a été écrit pour cette troupe et n’a jamais été joué ailleurs.",
+        "Représentation suivie d’une rencontre de trente minutes avec l’équipe.",
+        "Un spectacle jeune public joué à hauteur d’enfant, sans gradin.",
+        "Trois générations sur le plateau, du plus jeune de dix ans au plus âgé de quatre-vingts.",
+        "Reprise d’une création de 2019, remontée avec une distribution entièrement nouvelle."
+      ],
+      "en": [
+        "A bare stage and raking light: the staging lives in the acting, filmed close to the faces.",
+        "Ninety minutes without an interval, shot on six cameras, one of them handheld on stage.",
+        "This season’s creation, played before an audience for the first time and streamed live.",
+        "A tightened revival: same cast, lighter set, and chat open throughout the performance.",
+        "Filmed in a single take, unedited, with the room sound mixed live.",
+        "The audience in the hall and the one at home see the same thing, at the same moment.",
+        "One set, changes in full view, and the audience addressed directly from the first line.",
+        "A text carried by a cast of ten, filmed without ever cutting away from the wide shot.",
+        "Two hours on stage, written in rehearsal and never quite the same twice.",
+        "Three actors, a table, two chairs: everything else happens in the address to the audience.",
+        "A short form, created in residency and played as it stands, without a net.",
+        "The play travels from venue to venue: a different stage each night, the same text.",
+        "Light kept to a minimum, a single follow spot, and the silence between the lines.",
+        "Adapted from a novel, tightened to eighty minutes, carried by one actress alone on stage.",
+        "The set is built in full view during the performance, then struck before the curtain call.",
+        "A text written for this stage, played for the first time before a paying audience.",
+        "Two languages on stage, surtitled, and a cast drawn from two companies.",
+        "A tightened version of a three-hour creation, cut to the bone for the tour.",
+        "A hundred minutes without an interval, played in fading daylight.",
+        "The text is spoken in full, uncut, by four motionless actors.",
+        "A collective creation written on stage across three weeks of residency.",
+        "The set fits in a trunk, opened at the start and closed at the end.",
+        "Two actors swap roles halfway through, without warning.",
+        "Adapted from a news story, researched for two years before the writing began.",
+        "The audience enters once the play has started, and sits where it can.",
+        "A fifty-minute monologue, written for one actress and a cello.",
+        "The play runs three times in one evening, shorter each time.",
+        "A revolving stage, six tableaux, no blackouts.",
+        "The music is played live by two instrumentalists visible stage right.",
+        "An outdoor version, unmiked, carried by the actors’ voices alone.",
+        "A play without a set, where the whole space is built by speech.",
+        "The text was written for this company and has never been played elsewhere.",
+        "The performance is followed by a thirty-minute meeting with the team.",
+        "A young-audience piece played at child height, with no raked seating.",
+        "Three generations on stage, from a ten-year-old to an eighty-year-old.",
+        "A revival of a 2019 creation, restaged with an entirely new cast."
+      ]
+    },
+    "music": {
+      "fr": [
+        "Set complet, capté à huit caméras dont une sur la batterie, mixé en direct depuis la salle.",
+        "Nouveau répertoire joué pour la première fois sur scène, sans rien enlever au reste du set.",
+        "Deux heures sans coupure, avec le son de façade et les micros d’ambiance mêlés au mixage.",
+        "Une soirée pensée pour la salle : ordre resserré, longues transitions, rappel prévu de longue date.",
+        "Formation resserrée, prise de son au plus près des instruments, aucun re-recording.",
+        "Le concert diffusé tel qu’il se joue : les silences, les fausses pistes et les rappels compris.",
+        "Un passage attendu depuis deux ans, avec trois morceaux jamais donnés en public.",
+        "Le groupe au complet, plus deux invités, sur une scène montée pour l’occasion.",
+        "Un set qui commence doucement et ne redescend plus, filmé au milieu du public.",
+        "Une heure quarante sans rappel prévu, et pourtant il y en a toujours un.",
+        "Le nouvel album joué dans l’ordre, puis le reste du répertoire en seconde partie.",
+        "Prise de son au plus près des amplis, mixage de salle, aucune retouche après coup.",
+        "Deux formations sur la même scène : la première assure la première partie, la seconde le rappel.",
+        "Un set construit autour d’un seul morceau, étiré sur quarante minutes.",
+        "Répertoire acoustique, sans amplification, dans une salle de trois cents places.",
+        "Une soirée à trois plateaux, enchaînés sans coupure jusqu’au petit matin.",
+        "Le groupe rejoue son premier disque en entier, vingt ans après sa sortie.",
+        "Créations et reprises alternées, avec deux invités annoncés le soir même.",
+        "Le trio joue assis, face au public, sans retour de scène ni pupitre.",
+        "Une seule prise, du premier au dernier morceau, sans montage après coup.",
+        "Répertoire remanié pour cette salle, avec deux morceaux écrits sur place.",
+        "Le groupe invite un chœur amateur monté pour l’occasion, répété l’après-midi.",
+        "Concert en deux parties, séparées par une lecture de vingt minutes.",
+        "Set improvisé à partir de trois motifs annoncés au public avant de commencer.",
+        "Reprise intégrale d’un disque culte, dans l’ordre, sans rappel prévu.",
+        "La formation joue en acoustique la première heure, amplifiée la seconde.",
+        "Créations récentes et pièces anciennes alternées, sans annonce entre les titres.",
+        "Un plateau partagé entre deux formations qui se répondent morceau par morceau.",
+        "Le concert se termine par un morceau que le public choisit à main levée.",
+        "Captation à cinq caméras, dont une sur scène, au milieu des musiciens.",
+        "Programme resserré d’une heure, pensé pour les salles de petite jauge.",
+        "La tournée s’arrête ici pour trois soirs, avec un répertoire différent chaque soir.",
+        "Un set nocturne, commencé après minuit, qui s’arrête quand la salle se vide.",
+        "Le disque à venir joué en entier, six mois avant sa sortie.",
+        "Formation élargie à onze musiciens, avec section de cuivres et percussions.",
+        "Une soirée sans set-list : le groupe décide au fil du concert."
+      ],
+      "en": [
+        "A full set, shot on eight cameras — one of them on the drums — mixed live from the room.",
+        "New material played on stage for the first time, without dropping the rest of the set.",
+        "Two uninterrupted hours, front-of-house sound blended with room mics.",
+        "An evening built for the room: tight running order, long transitions, an encore planned long ago.",
+        "A stripped-back line-up, close-miked, with no overdubs.",
+        "The concert as it happens: silences, false starts and encores included.",
+        "A long-awaited date, with three tracks never played live before.",
+        "The full band plus two guests, on a stage built for the occasion.",
+        "A set that starts quietly and never comes back down, filmed from within the crowd.",
+        "A hundred minutes with no encore planned, and yet there is always one.",
+        "The new album played in order, then the rest of the repertoire after the break.",
+        "Close-miked on the amps, mixed in the room, untouched afterwards.",
+        "Two line-ups on one stage: the first opens, the second takes the encore.",
+        "A set built around a single track, stretched over forty minutes.",
+        "An acoustic repertoire, unamplified, in a three-hundred-seat room.",
+        "A three-stage night, running without a break until dawn.",
+        "The band plays its first record in full, twenty years after its release.",
+        "New pieces and covers alternating, with two guests announced on the night.",
+        "The trio plays seated, facing the audience, with no monitors and no stands.",
+        "One take, first track to last, untouched afterwards.",
+        "A repertoire reworked for this room, with two pieces written on site.",
+        "The band invites an amateur choir assembled for the night, rehearsed that afternoon.",
+        "A concert in two halves, separated by a twenty-minute reading.",
+        "An improvised set built from three motifs announced before they begin.",
+        "A cult record played in full, in order, with no encore planned.",
+        "The line-up plays acoustic for the first hour, amplified for the second.",
+        "Recent pieces and older ones alternating, with no announcements between titles.",
+        "A stage shared by two line-ups answering each other track for track.",
+        "The concert ends with a piece the audience picks by show of hands.",
+        "Filmed on five cameras, one of them on stage among the musicians.",
+        "A tight one-hour programme, made for small rooms.",
+        "The tour stops here for three nights, with a different repertoire each night.",
+        "A late set, starting after midnight, ending when the room empties.",
+        "The forthcoming record played in full, six months before release.",
+        "A line-up widened to eleven players, with brass and percussion.",
+        "An evening with no set-list: the band decides as it goes."
+      ]
+    }
+  },
+  "categoryImages": {
+    "rock": "bandstage",
+    "metal": "pyro",
+    "pop": "confetti",
+    "chanson": "micvintage",
+    "folk-country": "countryband",
+    "rap": "micred",
+    "rnb": "singer",
+    "soul-funk": "micstand",
+    "electronic": "dj",
+    "jazz": "jazz",
+    "blues": "acoustic",
+    "reggae": "crowdpurple",
+    "world": "festival",
+    "classical": "strings",
+    "theatre": "curtain",
+    "dance": "ballet",
+    "circus": "smoke",
+    "comedy": "emptystage",
+    "opera": "opera",
+    "musical": "lights",
+    "performance": "dancers"
+  },
+  "titleWords": {
+    "music": {
+      "nouns": [
+        {
+          "w": "nuit",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "orage",
+          "g": "m",
+          "elide": true
+        },
+        {
+          "w": "saison",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "passage",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "lumière",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "marée",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "chambre",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "fièvre",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "silence",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "vertige",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "écho",
+          "g": "m",
+          "elide": true
+        },
+        {
+          "w": "fracture",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "sillon",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "brume",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "lisière",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "rive",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "aube",
+          "g": "f",
+          "elide": true
+        },
+        {
+          "w": "crue",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "faille",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "ressac",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "braise",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "houle",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "clairière",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "talus",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "dérive",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "grève",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "vigie",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "cendre",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "sillage",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "orée",
+          "g": "f",
+          "elide": true
+        }
+      ],
+      "adjs": [
+        [
+          "fauve",
+          "fauve"
+        ],
+        [
+          "blanc",
+          "blanche"
+        ],
+        [
+          "lent",
+          "lente"
+        ],
+        [
+          "bas",
+          "basse"
+        ],
+        [
+          "haut",
+          "haute"
+        ],
+        [
+          "bref",
+          "brève"
+        ],
+        [
+          "ouvert",
+          "ouverte"
+        ],
+        [
+          "nu",
+          "nue"
+        ],
+        [
+          "tardif",
+          "tardive"
+        ],
+        [
+          "profond",
+          "profonde"
+        ],
+        [
+          "clair",
+          "claire"
+        ],
+        [
+          "sourd",
+          "sourde"
+        ],
+        [
+          "vif",
+          "vive"
+        ],
+        [
+          "ras",
+          "rase"
+        ],
+        [
+          "long",
+          "longue"
+        ]
+      ],
+      "preps": [
+        "Après",
+        "Avant",
+        "Sous",
+        "Contre",
+        "Vers",
+        "Depuis",
+        "Entre"
+      ]
+    },
+    "stage": {
+      "nouns": [
+        {
+          "w": "plateau",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "procès",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "jardin",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "seuil",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "exil",
+          "g": "m",
+          "elide": true
+        },
+        {
+          "w": "retour",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "aveu",
+          "g": "m",
+          "elide": true
+        },
+        {
+          "w": "partage",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "revers",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "tumulte",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "refuge",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "délire",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "serment",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "sursis",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "naufrage",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "inventaire",
+          "g": "m",
+          "elide": true
+        },
+        {
+          "w": "cortège",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "veillée",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "atelier",
+          "g": "m",
+          "elide": true
+        },
+        {
+          "w": "chantier",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "récit",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "héritage",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "exode",
+          "g": "m",
+          "elide": true
+        },
+        {
+          "w": "tribunal",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "banquet",
+          "g": "m",
+          "elide": false
+        },
+        {
+          "w": "relève",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "attente",
+          "g": "f",
+          "elide": true
+        },
+        {
+          "w": "absence",
+          "g": "f",
+          "elide": true
+        },
+        {
+          "w": "traversée",
+          "g": "f",
+          "elide": false
+        },
+        {
+          "w": "assemblée",
+          "g": "f",
+          "elide": true
+        }
+      ],
+      "adjs": [
+        [
+          "nu",
+          "nue"
+        ],
+        [
+          "ordinaire",
+          "ordinaire"
+        ],
+        [
+          "lointain",
+          "lointaine"
+        ],
+        [
+          "suspendu",
+          "suspendue"
+        ],
+        [
+          "commun",
+          "commune"
+        ],
+        [
+          "tardif",
+          "tardive"
+        ],
+        [
+          "oublié",
+          "oubliée"
+        ],
+        [
+          "exact",
+          "exacte"
+        ],
+        [
+          "fragile",
+          "fragile"
+        ],
+        [
+          "obstiné",
+          "obstinée"
+        ],
+        [
+          "muet",
+          "muette"
+        ],
+        [
+          "ardent",
+          "ardente"
+        ],
+        [
+          "sec",
+          "sèche"
+        ],
+        [
+          "clair",
+          "claire"
+        ],
+        [
+          "vaste",
+          "vaste"
+        ]
+      ],
+      "preps": [
+        "Après",
+        "Avant",
+        "Sous",
+        "Contre",
+        "Vers",
+        "Depuis",
+        "Entre"
+      ]
+    },
+    "note": "Banques de mots pour composer un titre de création quand la réserve rédigée d'une discipline est épuisée. Chaque nom porte son genre (m/f) et son élision ; chaque adjectif ses deux formes. La composition applique l'accord — voir composeTitle dans fixtures.js."
+  }
+}

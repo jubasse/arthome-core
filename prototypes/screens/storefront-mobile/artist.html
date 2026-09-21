@@ -1,0 +1,370 @@
+<!--
+  Arthome · storefront mobile — artist
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : artist
+  Affiche    : La fiche d'un artiste : biographie, dates à venir groupées, dates passées, rediffusions, politique de rediffusion, boutique.
+  Mène vers  : live, replay, sheet-ticket, sheet-share
+  Contrat    : GET /v1/artists/{artistId} · GET /v1/dates/{dateId}
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L909–1052
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L909–1052
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ isArtist }}" hint-placeholder-val="{{ false }}">
+<div style="animation: fadeIn .3s ease both;">
+  <div style="position: relative; aspect-ratio: 3/2; overflow: hidden; background: #131110; border-bottom: 1px solid #1F1C19;">
+    <sc-if value="{{ artist.showImg }}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.6) contrast(1.08) brightness(0.45); background-color: #17140F; background-image: {{ artist.showImgCss }}; background-size: cover; background-position: center;"></div>
+    </sc-if>
+    <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(11,10,9,0.97), rgba(11,10,9,0.3));"></div>
+    <div style="position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; align-items: flex-end; gap: 13px;">
+      <div style="flex: 0 0 68px; width: 68px; height: 68px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815; border: 1px solid #332E24;">
+        <sc-if value="{{ artist.portrait }}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.75) brightness(0.9); background-color: #17140F; background-image: {{ artist.portraitCss }}; background-size: cover; background-position: center;"></div>
+        </sc-if>
+      </div>
+      <div style="min-width: 0;">
+        <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 30px; line-height: 1;">{{ artist.name }}</h1>
+        <div style="padding-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #B0A899;">{{ artistMetaLine }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 14px 16px 0;">
+    <div style="display: flex; gap: 8px;">
+      <span onClick="{{ toggleFollow }}" style="{{ artistFollowStyle }}">{{ artistFollowLabel }}</span>
+      <span onClick="{{ openShare }}" style="cursor: pointer; padding: 12px 16px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; border: 1px solid #332E28; font-size: 13px; color: #C9C0B2;">{{ t.share }}</span>
+    </div>
+
+    <sc-if value="{{ artist.isLive }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ artist.liveRowOpen }}" style="cursor: pointer; margin-top: 14px; border: 1px solid oklch(0.36 0.09 27); background: #140F0E; padding: 13px 15px; display: flex; align-items: center; gap: 11px;">
+        <span style="width: 7px; height: 7px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+        <div style="min-width: 0;">
+          <div style="font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ artist.liveTitle }}</div>
+          <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: oklch(0.78 0.14 27);">{{ artistViewersLine }}</div>
+        </div>
+        <span style="margin-left: auto; flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #C9C0B2;">→</span>
+      </div>
+    </sc-if>
+
+    <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+      <sc-for list="{{ artistStats }}" as="st" hint-placeholder-count="3">
+        <div style="background: #100F0D; padding: 12px 10px; text-align: center;">
+          <div style="font-family: 'Instrument Serif', serif; font-size: 22px; line-height: 1;">{{ st.value }}</div>
+          <div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73;">{{ st.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top: 20px; font-size: 13.5px; line-height: 1.6; color: #B0A899; text-wrap: pretty;">{{ artist.bio }}</div>
+    <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+      <sc-for list="{{ artistFacts }}" as="fa" hint-placeholder-count="3">
+        <div style="background: #100F0D; padding: 11px 13px; display: flex; align-items: baseline; gap: 12px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ fa.label }}</span>
+          <span style="margin-left: auto; font-size: 13px; color: #C9C0B2;">{{ fa.value }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <h2 style="margin: 26px 0 12px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 24px;">{{ t.upcoming }}</h2>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <sc-for list="{{ artistEvents }}" as="ev" hint-placeholder-count="3">
+        <div style="border: 1px solid #1F1C19; background: #100F0D;">
+          <div onClick="{{ ev.open }}" style="cursor: pointer; position: relative; aspect-ratio: 16/9; overflow: hidden; background: #17140F;">
+            <sc-if value="{{ ev.img }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.75) brightness(0.76); background-color: #17140F; background-image: {{ ev.imgCss }}; background-size: cover; background-position: center;"></div>
+            </sc-if>
+            <div style="position: absolute; left: 10px; top: 10px; background: rgba(11,10,9,0.8); padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 42);">{{ ev.ovTag }}</div>
+            <sc-if value="{{ ev.pShowBox }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ ev.pBoxStyle }}"><span style="{{ ev.pMainStyle }}">{{ ev.promoPct }}</span></div>
+            </sc-if>
+          </div>
+          <div style="padding: 13px;">
+            <div style="font-size: 15px; font-weight: 500;">{{ ev.title }}</div>
+            <div style="padding-top: 5px; font-size: 12.5px; color: #9B948A;">{{ ev.when }}</div>
+            <div style="padding-top: 7px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ ev.desc }}</div>
+            <div style="padding-top: 9px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73;">{{ ev.seats }}</div>
+            <div style="padding-top: 11px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+              <sc-if value="{{ ev.pShowWas }}" hint-placeholder-val="{{ false }}">
+                <span style="{{ ev.pWasStyle }}">{{ ev.promoWasLabel }}</span>
+              </sc-if>
+              <span onClick="{{ ev.buy }}" style="{{ ev.buyStyle }}">{{ ev.priceLabel }}</span>
+              <sc-if value="{{ ev.hasExtra }}" hint-placeholder-val="{{ false }}">
+                <span onClick="{{ ev.toggleGroup }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #EDE7DC;">{{ ev.extraLabel }}</span>
+              </sc-if>
+            </div>
+          </div>
+          <sc-for list="{{ ev.extra }}" as="ex" hint-placeholder-count="0">
+            <div style="border-top: 1px solid #16140F; background: #0C0B0A; padding: 11px 13px; display: flex; align-items: center; gap: 10px;">
+              <div onClick="{{ ex.open }}" style="cursor: pointer; min-width: 0; font-size: 13px; color: #C9C0B2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ex.title }}</div>
+              <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ ex.whenLabel }}</span>
+              <span onClick="{{ ex.buy }}" style="flex: 0 0 auto; cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #2A2621; font-size: 12px; color: #C9C0B2;">{{ ex.priceLabel }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top: 26px; display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap;">
+      <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 24px;">{{ t.replaysTitle }}</h2>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ replayPolicyColor }};">{{ replayPolicyLabel }}</span>
+    </div>
+    <div style="padding-top: 7px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ replayPolicyHint }}</div>
+    <sc-if value="{{ hasReplays }}" hint-placeholder-val="{{ true }}">
+      <div style="margin-top: 13px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px;">
+        <sc-for list="{{ artistReplays }}" as="rp" hint-placeholder-count="4">
+          <div onClick="{{ rp.open }}" style="cursor: pointer; border: 1px solid #1F1C19; background: #100F0D;">
+            <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #17140F;">
+              <sc-if value="{{ rp.img }}" hint-placeholder-val="{{ false }}">
+                <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.6) brightness(0.62); background-color: #17140F; background-image: {{ rp.imgCss }}; background-size: cover; background-position: center;"></div>
+              </sc-if>
+            </div>
+            <div style="padding: 11px;">
+              <div style="font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ rp.title }}</div>
+              <div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ rp.date }} · {{ rp.duration }}</div>
+              <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #EDE7DC;">{{ rp.price }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <h2 style="margin: 26px 0 12px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 24px;">{{ t.otherArtists }}</h2>
+    <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+      <sc-for list="{{ sameDiscipline }}" as="sd" hint-placeholder-count="3">
+        <div onClick="{{ sd.openProfile }}" style="cursor: pointer; background: #0F0E0C; padding: 12px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  display: flex; align-items: center; gap: 11px;">
+          <div style="flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815;">
+            <sc-if value="{{ sd.portrait }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.82); background-color: #17140F; background-image: {{ sd.portraitCss }}; background-size: cover; background-position: center;"></div>
+            </sc-if>
+          </div>
+          <div style="min-width: 0;">
+            <div style="font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sd.name }}</div>
+            <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ sd.followers }} {{ t.followersShort }}</div>
+          </div>
+          <sc-if value="{{ sd.showDot }}" hint-placeholder-val="{{ false }}">
+            <span style="margin-left: auto; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;">
+              <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.14 27);">{{ sd.dotLabel }}</span>
+            </span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (21 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── groupByArtist  —  méthode de classe  —  L4056–4089 ── */
+  groupByArtist(list, fr) {
+    const baseOf = (title) => String(title || '').split(' — ')[0].trim();
+    const order = [];
+    const by = {};
+    list.forEach(o => {
+      const key = o.artistIdx + '§' + baseOf(o.title);
+      if (by[key] === undefined) { by[key] = []; order.push(key); }
+      by[key].push(o);
+    });
+    const open = this.state.groupOpen || {};
+    const out = [];
+    order.forEach(ai => {
+      const group = by[ai].slice().sort((a, b) => a.day - b.day);
+      if (group.length < 2) { out.push(Object.assign({}, group[0], { isGroup: false, extra: [], hasExtra: false })); return; }
+      const isOpen = !!open[ai];
+      out.push(Object.assign({}, group[0], {
+        promoTitle: group[0].title,
+        title: baseOf(group[0].title),
+        tHit: this.splitHit(baseOf(group[0].title), (this.state.liveQuery || '').trim()),
+        isGroup: true,
+        hasExtra: true,
+        extra: isOpen ? group.slice(1) : [],
+        extraLabel: isOpen
+          ? (fr ? 'Replier les dates ▴' : 'Collapse dates ▴')
+          : (fr ? 'Voir plus de dates (' + (group.length - 1) + ') ▾' : 'More dates (' + (group.length - 1) + ') ▾'),
+        datesLabel: group.length + ' ' + (fr ? 'DATES' : 'DATES'),
+        toggleGroup: (e) => {
+          if (e && e.stopPropagation) e.stopPropagation();
+          this.setState(st => ({ groupOpen: Object.assign({}, st.groupOpen, { [ai]: !((st.groupOpen || {})[ai]) }) }));
+        }
+      }));
+    });
+    return out;
+  }
+
+/* ── buyStyle  —  méthode de classe  —  L4130–4136 ── */
+  buyStyle(base, p, hasBorder) {
+    if (!p || !p.pAmberCta) return base;
+    const line = 'rgba(214,178,102,0.42)';
+    return base + (hasBorder
+      ? ' border-color: ' + line + '; color: ' + PROMO_INK + ';'
+      : ' background: transparent; border: 1px solid ' + line + '; padding: 7px 13px; color: ' + PROMO_INK + ';');
+  }
+
+/* ── polKey  —  calcul dans renderReady()  —  L4894–4894 ── */
+    const polKey = (!P.replayPolicy || P.replayPolicy === 'artiste') ? artist.replay
+
+/* ── pol  —  calcul dans renderReady()  —  L4896–4896 ── */
+    const pol = REPLAY[polKey] || REPLAY.included;
+
+/* ── replayPrice  —  calcul dans renderReady()  —  L4897–4897 ── */
+    const replayPrice = polKey === 'unit' ? '8 €' : (polKey === 'sub' ? (fr ? 'Abonnement' : 'Subscription') : (fr ? 'Incluse' : 'Included'));
+
+/* ── sameDiscipline  —  calcul dans renderReady()  —  L4918–4918 ── */
+    const sameDiscipline = roster
+
+/* ── ownAll  —  calcul dans renderReady()  —  L5402–5402 ── */
+    const ownAll = catalogue.filter(o => o.artistIdx === artist.i);
+
+/* ── ownDates  —  calcul dans renderReady()  —  L5403–5403 ── */
+    const ownDates = ownAll.filter(o => o.kind !== 'replay');
+
+/* ── ownFuture  —  calcul dans renderReady()  —  L5404–5404 ── */
+    const ownFuture = ownDates.slice().sort((a, b) => a.day - b.day);
+
+/* ── artistNextDate  —  calcul dans renderReady()  —  L5407–5407 ── */
+    const artistNextDate = artist.nextDate;
+
+/* ── artistLastLive  —  calcul dans renderReady()  —  L5408–5408 ── */
+    const artistLastLive = artist.lastLive;
+
+/* ── ownReplays  —  calcul dans renderReady()  —  L5410–5410 ── */
+    const ownReplays = catalogue.filter(o => o.artistIdx === artist.i && o.kind === 'replay').sort((a, b) => b.day - a.day);
+
+/* ── artistReplays  —  calcul dans renderReady()  —  L5411–5417 ── */
+    const artistReplays = polKey === 'off' ? [] : (ownReplays.length
+      ? ownReplays.map(o => [o.title, o.img, o.whenLabel, o.duration])
+      : [[artist.showTitle, artist.showImg, artistLastLive, '1 h 42']]
+    ).map(([title, img, date, duration]) => ({
+      title, img, imgCss: this.cssUrl(img), date, duration, price: replayPrice,
+      open: () => this.setState({ page: 'replay', artistId: artist.i, replayTitle: title, replayImg: img, replayDuration: duration, pos: 0, watching: artist.i, watchKind: 'replay', pipClosed: false })
+    }));
+
+/* ── artistEvents  —  calcul dans renderReady()  —  L5418–5435 ── */
+    const artistEvents = (ownDates.length
+      ? this.groupByArtist(ownFuture, fr).slice().sort((a, b) => a.day - b.day)
+      : [{ title: artist.showTitle, img: artist.showImg, whenLabel: artist.nextDate,
+            priceLabel: currentDate ? A.price(currentDate.prices[0].amount) : '',
+            soldPct: currentDate ? Math.round((currentDate.seats.sold / Math.max(1, A.venue(currentDate.venue).capacity)) * 100) : 0,
+            extra: [], hasExtra: false }]
+    ).map(o => Object.assign({}, o, {
+      when: o.whenLabel + (o.duration ? ' · ' + (fr ? String(o.duration).replace(/(\d+)\s*h\s*(\d*)/, (m, h, mn) => h + 'h' + (mn ? mn.padStart(2, '0') : '00')) : o.duration) : ''),
+      ovTag: o.kind === 'live'
+        ? (fr ? 'EN DIRECT · APERÇU GRATUIT' : 'LIVE · FREE PREVIEW')
+        : (o.subLabel || o.catName || '').toUpperCase(),
+      desc: o.descBare || o.fullDesc || o.desc || '',
+      seats: o.soldPct >= 100 ? (fr ? 'COMPLET' : 'SOLD OUT')
+        : (Math.round(2000 * (100 - (o.soldPct || 0)) / 100)).toLocaleString('fr-FR') + (fr ? ' PLACES RESTANTES' : ' SEATS LEFT'),
+      buy: o.buy || this.openTicketFor(o.title, o.priceLabel, fr, { artist: artist.name, img: o.img, meta: o.whenLabel, isLive: false }),
+      buyStyle: this.buyStyle("flex: 0 0 auto; cursor: pointer; padding: 11px 18px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; border: 1px solid #332E28; font-size: 13.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease, color .24s ease;", this.promoOf(o.promoTitle || o.title, o.priceLabel, fr), true),
+      ...this.promoOf(o.promoTitle || o.title, o.priceLabel, fr)
+    }));
+
+/* ── artistMetaLine  —  clé du modèle rendu  —  L5914–5914 ── */
+      artistMetaLine: artist.followers + ' ' + t.followersShort + ' · ' + artist.discipline.toUpperCase() + ' · ' + artist.city.toUpperCase(),
+
+/* ── artistViewersLine  —  clé du modèle rendu  —  L5915–5915 ── */
+      artistViewersLine: artist.viewers ? artist.viewers + ' ' + t.viewersShort : '',
+
+/* ── artistFollowLabel  —  clé du modèle rendu  —  L5916–5916 ── */
+      artistFollowLabel: artist.followed ? (fr ? 'Suivi ✓' : 'Following ✓') : (fr ? 'Suivre' : 'Follow'),
+
+/* ── artistFollowStyle  —  clé du modèle rendu  —  L5917–5917 ── */
+      artistFollowStyle: 'cursor: pointer; padding: 12px 20px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; font-size: 13.5px; font-weight: 600; transition: background .24s ease, border-color .24s ease; ' +
+
+/* ── artistStats  —  clé du modèle rendu  —  L5919–5924 ── */
+      artistStats: [
+        { value: artist.followers, label: t.followersShort },
+        { value: artist.replay === 'off' ? '0' : String(artistReplays.length), label: t.replaysTitle.toUpperCase() },
+        { value: '2 400', label: t.avgViewers },
+        { value: '2024', label: t.joined }
+      ],
+
+/* ── artistFacts  —  clé du modèle rendu  —  L5925–5930 ── */
+      artistFacts: [
+        { label: t.based, value: artist.city },
+        { label: t.shows, value: String(ownAll.length) },
+        { label: t.nextDate, value: artistNextDate },
+        { label: t.lastLive, value: artistLastLive }
+      ],
+
+/* ── replayPolicyLabel  —  clé du modèle rendu  —  L5931–5931 ── */
+      replayPolicyLabel: pol[0], replayPolicyColor: pol[1], replayPolicyHint: pol[2],
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (12) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2394  avgViewers: "AUDIENCE MOYENNE"
+  EN L2847  avgViewers: "AVERAGE AUDIENCE"
+
+  FR L2397  based: "BASÉ À"
+  EN L2850  based: "BASED IN"
+
+  FR L2494  followersShort: "ABONNÉS"
+  EN L2947  followersShort: "FOLLOWERS"
+
+  FR L2540  joined: "SUR ARTHOME DEPUIS"
+  EN L2993  joined: "ON ARTHOME SINCE"
+
+  FR L2541  lastLive: "DERNIER LIVE"
+  EN L2994  lastLive: "LAST LIVE"
+
+  FR L2560  nextDate: "PROCHAINE DATE"
+  EN L3013  nextDate: "NEXT DATE"
+
+  FR L2592  otherArtists: "Dans la même discipline"
+  EN L3045  otherArtists: "Same discipline"
+
+  FR L2658  replaysTitle: "Rediffusions"
+  EN L3111  replaysTitle: "Replays"
+
+  FR L2700  share: "Partager"
+  EN L3153  share: "Share"
+
+  FR L2704  shows: "SPECTACLES DIFFUSÉS"
+  EN L3157  shows: "SHOWS STREAMED"
+
+  FR L2773  upcoming: "à l’affiche"
+  EN L3226  upcoming: "on the bill"
+
+  FR L2778  viewersShort: "SPECTATEURS"
+  EN L3231  viewersShort: "WATCHING"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

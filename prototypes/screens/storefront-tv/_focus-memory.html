@@ -1,0 +1,76 @@
+<!--
+  Mécanique  : mémoire de focus
+  Source     : Storefront TV.dc.html — pageKey()/memSave() L2279-2280, go() L2285-2297,
+               back() L2298-2321, réinitialisations dans gate/signin
+  Rôle       : revenir sur une page déjà visitée doit ramener le focus EXACTEMENT sur la
+               carte quittée, et le carrousel à sa position. Le cahier des charges en fait
+               un piège nommé (« le focus oublié ») : c'est la différence entre une app qui
+               se laisse traverser et une app qui punit.
+  Structure  : this.mem — table { clé de page → identifiant de cible (fid) }
+               this.stack — pile de retour
+               this.mem est VIDÉ au changement de profil et à la déconnexion
+
+  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
+    `Storefront TV.dc.html` reste la source runnable de la galerie.
+-->
+
+<!-- ═══════════ pageKey() et memSave() (verbatim, L2279-2280) ═══════════ -->
+<script type="text/x-dc-extract">
+  pageKey() { const s = this.state; return s.page + ':' + (s.pid || s.cat || s.art || ''); }
+  memSave() { this.mem[this.pageKey()] = this.fid; }
+</script>
+
+<!-- ═══════════ closeRail(), go() — pose et restitution (verbatim, L2281-2297) ═══════════ -->
+<script type="text/x-dc-extract">
+  closeRail() {
+    this.railLock = true;
+    if (this.state.railHover || this.state.railOpen || this.state.focusFid) this.setState({ railHover: false, railOpen: false, focusFid: null });
+  }
+  go(page, extra) {
+    if (this.state.hintFull) { clearTimeout(this.hintT); this.setState({ hintFull: false }); }
+    if (this.state.novice) { clearTimeout(this.noviceT); this.setState({ novice: false }); }
+    if (this.state.focusCaps) this.setState({ focusCaps: '' });
+    this.memSave();
+    const s = this.state;
+    this.stack.push({ page: s.page, pid: s.pid, cat: s.cat, art: s.art, fid: this.fid });
+    this.nav = true;
+    this.setState(Object.assign({ page: page, ctrl: false, panel: null, chat: false, quitHint: false, ended: false, loading: false }, extra || {}));
+    if (page === 'home') this.armPreview();
+    if (page === 'pay') { clearTimeout(this.payT); this.payT = setTimeout(() => this.confirmPaid(), 7000); }
+    if (page === 'category' || page === 'artist') { this.setState({ loading: true }); setTimeout(() => { this.nav = true; this.setState({ loading: false }); }, 650); }
+  }
+</script>
+
+<!-- ═══════════ back() — dépile et restitue (verbatim, L2298-2321) ═══════════ -->
+<script type="text/x-dc-extract">
+  back() {
+    const s = this.state;
+    if (s.page === 'player' && s.panel === 'info') { this.closeInfo(); return; }
+    if (s.page === 'player' && (s.chat || s.panel)) { this.nav = true; this.setState({ chat: false, panel: null }); return; }
+    if (s.page === 'player' && s.ctrl) { this.hideCtrl(); return; }
+    const prev = this.stack.pop();
+    if (!prev) {
+      if (s.page === 'signin' || s.page === 'gate') {
+        clearTimeout(this.quitT);
+        this.setState({ quitHint: true });
+        this.quitT = setTimeout(() => this.setState({ quitHint: false }), 3000);
+        return;
+      }
+      if (s.page !== 'home') { this.nav = true; this.setState({ page: 'home' }); return; }
+      clearTimeout(this.quitT);
+      this.setState({ quitHint: true });
+      this.quitT = setTimeout(() => this.setState({ quitHint: false }), 3000);
+      return;
+    }
+    this.memSave();
+    this.nav = true; this.restore = prev.fid;
+    this.setState({ page: prev.page, pid: prev.pid, cat: prev.cat, art: prev.art, ctrl: false, panel: null, chat: false, loading: false });
+    if (prev.page === 'home') this.armPreview();
+  }
+</script>
+
+<!-- ═══════════ RENVOIS ═══════════
+  needs/storefront-tv.md → « Inventaire des écrans » (la mémoire de focus impose un id de rangée stable)
+  openapi/storefront.yaml → Rail.id — « la mémoire de focus s'y accroche »
+  Voir aussi : _focus-engine.html (sync() relit this.fid après chaque rendu)
+-->

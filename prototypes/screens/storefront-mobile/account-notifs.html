@@ -1,0 +1,115 @@
+<!--
+  Arthome · storefront mobile — account-notifs
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : account · accTab=notifs
+  Affiche    : Notifications : cinq déclencheurs × trois canaux, plus les heures calmes.
+  Mène vers  : —
+  Contrat    : PATCH /v1/me/notification-preferences
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1650–1671
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1650–1671
+     ══════════════════════════════════════════════════════════════════════════ -->
+      <sc-if value="{{ accNotifs }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+            <sc-for list="{{ notifRows }}" as="n" hint-placeholder-count="5">
+              <div style="background: #100F0D; padding: 13px;">
+                <div style="font-size: 13.5px;">{{ n.label }}</div>
+                <div style="padding-top: 9px; display: flex; gap: 7px; flex-wrap: wrap;">
+                  <sc-for list="{{ n.cells }}" as="c" hint-placeholder-count="2">
+                    <span onClick="{{ c.toggle }}" style="{{ c.style }}">{{ c.label }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top: 14px; border: 1px solid #1F1C19; background: #0F0E0C; padding: 14px;">
+            <div style="font-size: 13.5px;">{{ t.quietHours }}</div>
+            <div style="padding-top: 6px; font-size: 12.5px; line-height: 1.5; color: #857E73; text-wrap: pretty;">{{ t.quietHoursHint }}</div>
+            <span onClick="{{ toggleQuiet }}" style="{{ quietStyle }}">{{ quietLabel }}</span>
+          </div>
+        </div>
+      </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (2 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── notifDefs  —  calcul dans renderReady()  —  L5281–5293 ── */
+    const notifDefs = fr ? [
+      ['live', 'Un artiste suivi passe en direct', 'Envoyé dès l\u2019ouverture du flux.'],
+      ['soon', 'Rappel avant un live pour lequel j\u2019ai une place', '30 minutes avant le lever de rideau.'],
+      ['newEvent', 'Nouvelle date annoncée par un artiste suivi', 'Dès la mise en vente.'],
+      ['almost', 'Un événement enregistré est bientôt complet', 'À partir de 85 % des places vendues.'],
+      ['replay', 'Fin de disponibilité d\u2019une rediffusion', '6 heures avant expiration.']
+    ] : [
+      ['live', 'A followed artist goes live', 'Sent the moment the stream opens.'],
+      ['soon', 'Reminder before a show I hold a ticket for', '30 minutes before curtain.'],
+      ['newEvent', 'New date announced by a followed artist', 'As soon as tickets open.'],
+      ['almost', 'A saved event is almost sold out', 'From 85% of seats sold.'],
+      ['replay', 'A replay is about to expire', '6 hours before expiry.']
+    ];
+
+/* ── notifRows  —  calcul dans renderReady()  —  L5294–5308 ── */
+    const notifRows = notifDefs.map(([key, label, hint]) => ({
+      label, hint,
+      cells: [0, 1, 2].map(ci => {
+        const on = s.notif[key][ci];
+        return {
+          toggle: () => this.setState(st => {
+            const row = st.notif[key].slice(); row[ci] = !row[ci];
+            return { notif: Object.assign({}, st.notif, { [key]: row }) };
+          }),
+          wrapStyle: 'cursor: pointer; justify-self: center; width: 38px; height: 21px; border-radius: 11px; padding: 13px; min-height: 44px; box-sizing: border-box;  display: flex; ' +
+            (on ? 'background: oklch(0.68 0.18 42); justify-content: flex-end;' : 'background: #221F1B; justify-content: flex-start;'),
+          knobStyle: 'width: 15px; height: 15px; border-radius: 50%; background: ' + (on ? '#0B0A09' : '#857E73') + ';'
+        };
+      })
+    }));
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (2) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2646  quietHours: "Heures calmes"
+  EN L3099  quietHours: "Quiet hours"
+
+  FR L2647  quietHoursHint: "Aucune notification entre 23:00 et 9:00, sauf début d’un live pour lequel j’ai une place."
+  EN L3100  quietHoursHint: "No notifications between 11PM and 9AM, except a live starting that I hold a ticket for."
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

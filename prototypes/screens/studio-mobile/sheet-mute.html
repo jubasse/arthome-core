@@ -1,0 +1,120 @@
+<!--
+  ÉCRAN        feuille · mute
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Sanctionner une personne du public : durée, ou bannissement définitif.
+  RÔLES        mod
+  MÈNE VERS    aucun (écran terminal)
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  sheet L828-895
+               modèle    L3966-3989
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - openapi POST /v1/channels/{channelId}/audience/{memberId}/sanction
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!-- ---- sheet (L828-895) ---- -->
+  <sc-if value="{{ shOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position: fixed; inset: 0; z-index: 60; background: rgba(6,7,8,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease;"></div>
+    <div style="position: fixed; z-index: 61; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; pointer-events: none;">
+      <div style="{{ sheetStyle }} box-shadow: 0 -20px 44px rgba(0,0,0,0.6); animation: slideUp .26s cubic-bezier(.2,.7,.2,1);">
+        <div style="display: flex; justify-content: center; padding: 9px 0 5px 0;"><div style="width: 38px; height: 3px; background: #3A4149;"></div></div>
+        <div style="padding: 5px 14px 11px 14px;">
+          <div style="font-size: 15.5px; font-weight: 500; line-height: 1.3; letter-spacing: -0.01em; text-wrap: pretty;">{{ shTitle }}</div>
+          <sc-if value="{{ shIntro }}" hint-placeholder-val="{{ true }}">
+            <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.55; color: #7C858D; text-wrap: pretty;">{{ shIntro }}</div>
+          </sc-if>
+          <sc-if value="{{ shWarn }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ shWarnStyle }}">{{ shWarn }}</div>
+          </sc-if>
+        </div>
+        <sc-for list="{{ shGroups }}" as="g" hint-placeholder-count="1">
+          <div>
+            <sc-if value="{{ g.label }}" hint-placeholder-val="{{ true }}">
+              <div style="padding: 9px 14px 5px 14px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B; border-top: 1px solid #1D2126;">{{ g.label }}</div>
+            </sc-if>
+            <sc-for list="{{ g.items }}" as="o" hint-placeholder-count="4">
+              <div onClick="{{ o.act }}" style="{{ o.style }}">
+                <sc-if value="{{ o.img }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; background: #1D2126; background-color: #1A1D21; background-image: {{ o.imgCss }}; background-size: cover; background-position: center;"></div>
+                </sc-if>
+                <sc-if value="{{ o.svg }}" hint-placeholder-val="{{ false }}">
+                  <svg viewBox="0 0 24 24" style="{{ o.svgStyle }}"><path d="{{ o.svgPath }}"></path></svg>
+                </sc-if>
+                <sc-if value="{{ o.icon }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ o.iconStyle }}">{{ o.icon }}</span>
+                </sc-if>
+                <sc-if value="{{ o.lead }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ o.leadStyle }}">{{ o.lead }}</span>
+                </sc-if>
+                <div style="min-width: 0; flex: 1 1 auto;">
+                  <div style="{{ o.labelStyle }}">{{ o.label }}</div>
+                  <sc-if value="{{ o.hint }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding-top: 2px; font-size: 11.5px; line-height: 1.45; color: #7C858D; text-wrap: pretty;">{{ o.hint }}</div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ o.pill }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ o.pillStyle }}">{{ o.pill }}</span>
+                </sc-if>
+                <sc-if value="{{ o.badge }}" hint-placeholder-val="{{ false }}">
+                  <span style="flex: 0 1 auto; min-width: 0; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.06em; color: #5B636B;">{{ o.badge }}</span>
+                </sc-if>
+                <sc-if value="{{ o.mark }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ o.markStyle }}">{{ o.mark }}</span>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+        <sc-if value="{{ shHasInput }}" hint-placeholder-val="{{ false }}">
+          <div style="padding: 11px 14px; border-top: 1px solid #1D2126;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">{{ shInputLabel }}</div>
+            <input value="{{ shInputValue }}" onChange="{{ shOnInput }}" placeholder="{{ shInputPlaceholder }}" style="margin-top: 7px; width: 100%; box-sizing: border-box; min-height: 44px; padding: 0 11px; border: 1px solid #2A2F35; background: #0E0F10; color: #E6E9EC; font-family: 'JetBrains Mono', monospace; font-size: 13px;" />
+          </div>
+        </sc-if>
+        <sc-if value="{{ shHasBtns }}" hint-placeholder-val="{{ true }}">
+          <div style="padding: 11px 14px 16px 14px; border-top: 1px solid #1D2126; display: flex; flex-direction: column; gap: 7px;">
+            <sc-for list="{{ shBtns }}" as="b" hint-placeholder-count="2">
+              <div onClick="{{ b.act }}" style="{{ b.style }}">{{ b.label }}</div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+    if (kind === 'mute') {
+      const u = s.muteUser;
+      const n = parseInt(s.muteCustom, 10);
+      const set = v => () => this.setState(st => ({ modSanct: Object.assign({}, st.modSanct, { [u]: v }), sheet: null, muteCustom: '' }));
+      return Object.assign(base, {
+        shTitle: 'Sanctionner ' + u,
+        shIntro: 'Une sanction se lève à tout moment depuis l’onglet Sanctions.',
+        shGroups: [{ label: 'DURÉE', items: [
+          opt({ label: '10 minutes', hint: 'le rappel à l’ordre', act: set('MUET 10 MIN') }),
+          opt({ label: '1 heure', hint: 'le temps d’un acte', act: set('MUET 1 H') }),
+          opt({ label: 'Toute la représentation', hint: 'sans limite de temps', act: set('MUET SANS LIMITE') })
+        ] }],
+        shHasInput: true, shInputLabel: 'DURÉE PERSONNALISÉE EN MINUTES', shInputValue: s.muteCustom || '', shInputPlaceholder: '25',
+        shOnInput: e => this.setState({ muteCustom: e.target.value }),
+        shBtns: [
+          this.act(n > 0 ? 'RÉDUIRE AU SILENCE ' + (n >= 60 && n % 60 === 0 ? (n / 60) + ' H' : n + ' MIN') : 'SAISISSEZ UNE DURÉE',
+            () => { if (n > 0) set('MUET ' + (n >= 60 && n % 60 === 0 ? (n / 60) + ' H' : n + ' MIN'))(); }, n > 0 ? 'primary' : 'dead'),
+          this.act('BANNIR DÉFINITIVEMENT', set('BANNI'), 'danger'),
+          this.act('ANNULER', () => this.setState({ sheet: null }))
+        ],
+        shHasBtns: true
+      });
+    }
+
+</script>

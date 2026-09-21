@@ -1,0 +1,178 @@
+<!--
+  Arthome · storefront mobile — following
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : following
+  Affiche    : Suivi : les artistes suivis en direct, puis ceux qui ne le sont pas, classés par nom et dernier live.
+  Mène vers  : artist, live
+  Contrat    : ⚠ AUCUN POINT D'ENTRÉE — voir Confrontation C1
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1054–1108
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+  Note       : ⚠ ÉCRAN NON SERVI. Aucun point d'entrée de openapi/storefront.yaml ne rend
+               l'ensemble des artistes suivis : /v1/artists n'a pas de filtre followedOnly,
+               AccountScreen ne porte aucun suivi, /v1/me/follows/{artistId} est en ecriture
+               seule. Voir needs/storefront-mobile.md § Confrontation C1.
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1054–1108
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ isFollowing }}" hint-placeholder-val="{{ false }}">
+<div style="animation: fadeIn .3s ease both; padding: 18px 16px 0;">
+  <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px; line-height: 1.05;">{{ t.navFollowing }}</h1>
+  <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ followingCountLabel }}</div>
+
+  <div style="margin-top: 20px; display: flex; align-items: center; gap: 9px;">
+    <span style="width: 7px; height: 7px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+    <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 22px;">{{ t.liveSection }}</h2>
+    <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73;">{{ followLiveCount }}</span>
+  </div>
+  <sc-if value="{{ noFollowLive }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top: 12px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 24px 18px; text-align: center;">
+      <div style="font-family: 'Instrument Serif', serif; font-size: 20px;">{{ t.emptyFollowLive }}</div>
+    </div>
+  </sc-if>
+  <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+    <sc-for list="{{ followLive }}" as="a" hint-placeholder-count="2">
+      <div style="border: 1px solid #1F1C19; background: #100F0D; padding: 12px; display: flex; gap: 12px;">
+        <div onClick="{{ a.liveRowOpen }}" style="cursor: pointer; flex: 0 0 96px; position: relative; aspect-ratio: 16/11; overflow: hidden; background: #17140F;">
+          <sc-if value="{{ a.img }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.72) brightness(0.72); background-color: #17140F; background-image: {{ a.imgCss }}; background-size: cover; background-position: center;"></div>
+          </sc-if>
+        </div>
+        <div style="min-width: 0; flex: 1 1 auto;">
+          <div onClick="{{ a.open }}" style="cursor: pointer; font-size: 14px;">{{ a.name }}</div>
+          <div style="padding-top: 4px; font-size: 12.5px; color: #9B948A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ a.title }}</div>
+          <div style="padding-top: 7px; display: flex; align-items: center; gap: 7px;">
+            <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ a.liveColor }};">{{ a.liveLabel }}</span>
+          </div>
+          <span onClick="{{ a.liveRowOpen }}" style="display: inline-block; margin-top: 9px; cursor: pointer; padding: 10px 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600;">{{ t.joinLive }}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <h2 style="margin: 26px 0 12px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 22px;">{{ t.offlineSection }}</h2>
+  <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+    <sc-for list="{{ followOffline }}" as="a" hint-placeholder-count="5">
+      <div style="background: #0F0E0C; padding: 12px 13px; display: flex; align-items: center; gap: 11px;">
+        <div onClick="{{ a.open }}" style="cursor: pointer; flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815;">
+          <sc-if value="{{ a.portrait }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.8); background-color: #17140F; background-image: {{ a.portraitCss }}; background-size: cover; background-position: center;"></div>
+          </sc-if>
+        </div>
+        <div onClick="{{ a.open }}" style="cursor: pointer; min-width: 0;">
+          <div style="font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ a.name }}</div>
+          <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ t.lastLive }} {{ a.lastLive }}</div>
+        </div>
+        <span onClick="{{ a.toggleNotify }}" style="{{ a.notifyStyle }}">{{ a.notifyLabel }}</span>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (6 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── followRow  —  calcul dans renderReady()  —  L5121–5130 ── */
+    const followRow = (a, i) => ({
+      liveLabel: a.isLive ? t.onNow : '',
+      liveColor: 'oklch(0.72 0.16 27)',
+      notifyLabel: (s.notifyArtists[i] ? '🔔 ' : '🔕 ') + (fr ? 'ALERTES' : 'ALERTS'),
+      notifyStyle: 'cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.08em; '
+        + (s.notifyArtists[i] ? 'background: #221F1B; color: #EDE7DC;' : 'border: 1px solid #1F1C19; color: #857E73;'),
+      toggleNotify: () => this.setState(st => {
+        const n = st.notifyArtists.slice(); n[i] = !n[i]; return { notifyArtists: n };
+      })
+    });
+
+/* ── followLive  —  calcul dans renderReady()  —  L5131–5131 ── */
+    const followLive = followed.filter(a => a.isLive).map((a, i) => Object.assign({}, a, followRow(a, i)));
+
+/* ── followOffline  —  calcul dans renderReady()  —  L5132–5141 ── */
+    const followOffline = followed.filter(a => !a.isLive).map((a, i) => {
+      const hasReplay = a.replay !== 'off';
+      return Object.assign({}, a, followRow(a, i), {
+        nextColor: 'oklch(0.78 0.13 42)',
+        cta: hasReplay ? t.watchReplay : t.viewProfile,
+        action: hasReplay
+          ? (() => this.setState({ page: 'replay', artistId: a.i, replayTitle: a.showTitle, replayImg: a.showImg, replayDuration: '1 h 42', pos: 0, watching: a.i, watchKind: 'replay', pipClosed: false }))
+          : (() => this.setState({ page: 'artist', artistId: a.i }))
+      });
+    });
+
+/* ── noFollowLive  —  clé du modèle rendu  —  L6082–6082 ── */
+      noFollowLive: followLive.length === 0,
+
+/* ── followingCountLabel  —  clé du modèle rendu  —  L6434–6434 ── */
+      followingCountLabel: followed.length + (fr ? ' ARTISTES SUIVIS' : ' ARTISTS FOLLOWED'),
+
+/* ── followLiveCount  —  clé du modèle rendu  —  L6435–6435 ── */
+      followLiveCount: followLive.length + (fr ? ' EN DIRECT' : ' LIVE'),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (9) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2470  emptyFollowLive: "Aucun artiste suivi n’est en direct"
+  EN L2923  emptyFollowLive: "None of the artists you follow is live"
+
+  FR L2539  joinLive: "Rejoindre le live"
+  EN L2992  joinLive: "Join the live"
+
+  FR L2541  lastLive: "DERNIER LIVE"
+  EN L2994  lastLive: "LAST LIVE"
+
+  FR L2545  liveSection: "En direct maintenant"
+  EN L2998  liveSection: "Live right now"
+
+  FR L2556  navFollowing: "Suivi"
+  EN L3009  navFollowing: "Following"
+
+  FR L2571  offlineSection: "Pas en direct"
+  EN L3024  offlineSection: "Not live"
+
+  FR L2573  onNow: "EN DIRECT"
+  EN L3026  onNow: "LIVE NOW"
+
+  FR L2776  viewProfile: "Voir la fiche"
+  EN L3229  viewProfile: "View page"
+
+  FR L2781  watchReplay: "Voir la rediffusion"
+  EN L3234  watchReplay: "Watch the replay"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

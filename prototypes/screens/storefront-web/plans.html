@@ -1,0 +1,153 @@
+<!--
+  ÉCRAN      Formules
+  ROUTE      page === 'plans'
+  AFFICHE    Les trois formules et leur comparatif ligne à ligne.
+  MÈNE VERS  overlay-auth · account-subscription
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2959-2988
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Vocabulaire divergent relevé au temps 1 : cette page dit `free`/`unit`/`sub` (14
+             €/mois) quand `catalogue.json` dit `free`/`pass`/`premium` (0/12/24 €).
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — listPlans, setSubscriptionPlan
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, account, artist, catalogue, colsOf, followed, fr, s, t, tileCols
+  À LIRE     dépendances non recopiées ici : heroBase, onArtistLive, watched, watchedShow, watchedViewers
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ isPlans }}" hint-placeholder-val="{{ false }}">
+<section style="max-width: 1440px; margin: 0 auto; padding: 40px 40px 0; animation: riseIn .4s ease both;">
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #857E73;">{{ t.plansSub }}</div>
+  <h1 style="margin: 12px 0 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 52px; line-height: 1;">{{ t.plansTitle }}</h1>
+  <p style="margin: 14px 0 0; max-width: 560px; font-size: 15px; line-height: 1.6; color: #B0A899; text-wrap: pretty;">{{ t.plansIntro }}</p>
+
+  <div style="margin-top: 34px; display: grid; grid-template-columns: {{ colsPlans }}; gap: 18px; align-items: start;">
+    <sc-for list="{{ plans }}" as="pl" hint-placeholder-count="3">
+      <div style="{{ pl.cardStyle }}">
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: {{ pl.tagColor }};">{{ pl.tag }}</span>
+        </div>
+        <div style="padding-top: 14px; font-family: 'Instrument Serif', serif; font-size: 30px; line-height: 1;">{{ pl.name }}</div>
+        <div style="padding-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #EDE7DC;">{{ pl.price }}</div>
+        <div style="margin-top: 18px; border-top: 1px solid #1F1C19; padding-top: 16px; display: flex; flex-direction: column; gap: 11px;">
+          <sc-for list="{{ pl.features }}" as="ft" hint-placeholder-count="4">
+            <div style="display: flex; align-items: baseline; gap: 10px;">
+              <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: {{ ft.mark }};">{{ ft.glyph }}</span>
+              <span style="min-width: 0; font-size: 13.5px; line-height: 1.5; color: {{ ft.color }}; text-wrap: pretty;">{{ ft.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <span onClick="{{ pl.action }}" style="{{ pl.ctaStyle }}">{{ pl.cta }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <p style="margin: 26px 0 0; max-width: 680px; font-size: 13px; line-height: 1.6; color: #857E73; text-wrap: pretty;">{{ t.plansFootnote }}</p>
+</section>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* reactions  —  lignes 5141-5147 */
+    const reactions = ['👏 Bravo', '🌹', '😂', fr ? 'Magnifique' : 'Beautiful', fr ? 'Encore !' : 'Encore!'].map(label => ({
+      label,
+      send: () => this.setState(st => ({ messages: st.messages.concat([{ user: 'vous', text: label, color: 'oklch(0.72 0.16 42)' }]) }))
+    }));
+
+    /* Le catalogue public vient de fixtures.js : mêmes artistes, mêmes dates
+       et mêmes tarifs que la régie et que les autres surfaces. */
+/* hero  —  lignes 5551-5571 */
+    const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
+      title: s.pick.title,
+      artist: s.pick.artist,
+      blurb: artist.bio,
+      meta: s.pick.kind === 'live' ? s.pick.meta : s.pick.whenLabel,
+      viewersLabel: s.pick.kind === 'live'
+        ? ((s.pick.viewersLabel || watchedViewers || A.number((A.liveNow()[0] || { viewers: 0 }).viewers)) + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING'))
+        : s.pick.whenLabel,
+      priceLabel: s.pick.priceLabel,
+      img: s.pick.img, imgCss: this.cssUrl(s.pick.img)
+    } : (onArtistLive ? {
+      title: A.title(watchedShow),
+      artist: artist.name,
+      blurb: A.synopsis(watchedShow) || artist.bio,
+      meta: [artist.discipline, A.duration(watchedShow.runtimeMin),
+        (watchedShow.subtitles || []).length ? watchedShow.subtitles.join('/') : null]
+        .filter(Boolean).join(' · ').toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+      viewersLabel: (watchedViewers || A.number(0)) + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING'),
+      priceLabel: watched.prices[0].amount ? A.price(watched.prices[0].amount) : (fr ? 'Gratuit' : 'Free'),
+      img: A.showImage(watchedShow, 1600), imgCss: this.cssUrl(A.showImage(watchedShow, 1600))
+    } : heroBase);
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      isPlans: s.page === 'plans',
+      colsPlans: colsOf(Math.max(1, Math.min(3, tileCols))),
+      plans: (() => {
+        const F = (label, on) => ({ label, glyph: on ? '✓' : '—', mark: on ? 'oklch(0.7 0.13 150)' : '#413B34', color: on ? '#C9C0B2' : '#575047' });
+        const cur = s.guest ? 'free' : 'sub';
+        const defs = [
+          ['free', t.planFreeName, t.planFreePrice, t.planFreeTag, '#857E73', [
+            F(fr ? 'Aperçu gratuit de chaque live, sans compte' : 'Free preview of every live, no account', true),
+            F(fr ? 'Tchat en lecture seule' : 'Read-only chat', true),
+            F(fr ? 'Alertes et artistes suivis' : 'Alerts and followed artists', false),
+            F(fr ? 'Spectacle entier' : 'Full show', false),
+            F(fr ? 'Rediffusions' : 'Replays', false)
+          ]],
+          ['unit', t.planUnitName, t.planUnitPrice, t.planUnitTag, '#B0A899', [
+            F(fr ? 'Le spectacle entier, jusqu’au rideau' : 'The whole show, until the curtain', true),
+            F(fr ? 'Tchat actif et réactions' : 'Live chat and reactions', true),
+            F(fr ? 'Alertes, artistes suivis, recherches enregistrées' : 'Alerts, followed artists, saved searches', true),
+            F(fr ? 'Rediffusion 72 h quand l’artiste l’autorise' : '72h replay when the artist allows it', true),
+            F(fr ? 'Catalogue de rediffusions' : 'Replay catalogue', false)
+          ]],
+          ['sub', t.planSubName, t.planSubPrice, t.planSubTag, 'oklch(0.83 0.1 84)', [
+            F(fr ? 'Tout ce que comprend la place à l’unité' : 'Everything in the single ticket', true),
+            F(fr ? 'Catalogue de rediffusions inclus' : 'Replay catalogue included', true),
+            F(fr ? 'Captation 4K quand elle est proposée' : '4K feed when offered', true),
+            F(fr ? '15 % sur la boutique des artistes' : '15% off artist stores', true),
+            F(fr ? 'Places à tarif réduit toute l’année' : 'Reduced ticket prices all year', true)
+          ]]
+        ];
+        return defs.map(([k, name, price, tag, tagColor, features]) => {
+          const isCur = k === cur;
+          const hero = k === 'sub';
+          return {
+            name, price, tag, tagColor, features,
+            cardStyle: 'border: 1px solid ' + (hero ? 'rgba(214,178,102,0.34)' : '#1F1C19') + '; background: ' + (hero ? 'rgba(214,178,102,0.04)' : '#0F0E0C') + '; padding: 22px; display: flex; flex-direction: column; min-width: 0;',
+            cta: isCur ? t.planCurrent : (s.guest ? t.planSignUp : t.planChoose),
+            action: isCur ? (() => {}) : (s.guest ? () => this.setState({ authOpen: true, authTab: 'up' }) : () => this.setState({ page: 'account', accTab: 'profile' })),
+            ctaStyle: 'margin-top: 20px; cursor: ' + (isCur ? 'default' : 'pointer') + '; padding: 12px 18px; text-align: center; white-space: nowrap; font-size: 12.5px; transition: background .24s ease, border-color .24s ease, color .24s ease; ' +
+              (isCur ? 'border: 1px solid #262320; color: #6B6459;'
+                : hero ? 'background: #EDE7DC; color: #0B0A09; font-weight: 600; border: 1px solid transparent;'
+                : 'border: 1px solid #332E28; color: #C9C0B2;')
+          };
+        });
+      })(),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.planChoose  t.planCurrent  t.planFreeName  t.planFreePrice  t.planFreeTag  t.planSignUp  
+    t.planSubName  t.planSubPrice  t.planSubTag  t.planUnitName  t.planUnitPrice  
+    t.planUnitTag  t.plansFootnote  t.plansIntro  t.plansSub  t.plansTitle  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    guest  messages  page  pick  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    cssUrl, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

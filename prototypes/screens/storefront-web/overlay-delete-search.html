@@ -1,0 +1,76 @@
+<!--
+  ÉCRAN      Supprimer une recherche enregistrée
+  ROUTE      superposition, sans URL
+  AFFICHE    La confirmation de suppression d'une recherche ou d'une catégorie enregistrée.
+  MÈNE VERS  account-alerts
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 3114-3129
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — deleteSavedSearch
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : category, cats, s, t
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ deleteOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ cancelDelete }}" style="position: fixed; inset: 0; z-index: 8500; background: rgba(6,5,5,0.78); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .2s ease both;">
+  <div onClick="{{ stopEvt }}" style="width: 400px; max-width: 100%; max-height: calc(100vh - 64px); overflow-y: auto; border: 1px solid #332E28; background: #0B0A09; padding: 26px; animation: riseIn .26s ease both;">
+    <div style="font-family: 'Instrument Serif', serif; font-size: 25px;">{{ deleteTitle }}</div>
+    <div style="margin-top: 14px; border: 1px solid #1F1C19; background: #0F0E0C; padding: 12px 14px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ deleteKind }}</div>
+      <div style="padding-top: 6px; font-size: 14px; color: #EDE7DC;">{{ deleteName }}</div>
+    </div>
+    <div style="padding-top: 12px; font-size: 13px; line-height: 1.55; color: #857E73; text-wrap: pretty;">{{ t.delIntro }}</div>
+    <div style="padding-top: 20px; display: flex; gap: 8px; justify-content: flex-end;">
+      <span onClick="{{ cancelDelete }}" style="cursor: pointer; padding: 11px 18px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ t.delCancel }}</span>
+      <span onClick="{{ confirmDelete }}" style="cursor: pointer; padding: 11px 18px; white-space: nowrap; border: 1px solid oklch(0.5 0.14 27); background: oklch(0.32 0.09 27); font-size: 12.5px; font-weight: 600; color: oklch(0.9 0.06 27); transition: background .24s ease;" style-hover="background:oklch(0.4 0.13 27)">{{ t.delConfirm }}</span>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      stopEvt: e => { if (e && e.stopPropagation) e.stopPropagation(); },
+      deleteOpen: s.deleteId !== null,
+      deleteName: (() => {
+        const al = s.alerts.find(x => x.id === s.deleteId);
+        return al ? this.alertName(al, cats, t) : '';
+      })(),
+      deleteTitle: (() => {
+        const al = s.alerts.find(x => x.id === s.deleteId);
+        return al && al.scope === 'category' ? t.unfollowCat : t.delTitle;
+      })(),
+      deleteKind: (() => {
+        const al = s.alerts.find(x => x.id === s.deleteId);
+        return al && al.scope === 'category' ? t.scopeCategory : t.savedHere;
+      })(),
+      cancelDelete: () => this.setState({ deleteId: null }),
+      confirmDelete: () => this.setState(st => ({
+        alerts: st.alerts.filter(x => x.id !== st.deleteId),
+        deleteId: null, renameId: null, renameDraft: '', alertCreated: false
+      })),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.delCancel  t.delConfirm  t.delIntro  t.delTitle  t.savedHere  t.scopeCategory  
+    t.unfollowCat  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    alerts  deleteId  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    alertName, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

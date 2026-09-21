@@ -1,0 +1,194 @@
+<!--
+  Arthome · storefront mobile — browse-artists
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : browse · sTab=artists
+  Affiche    : Onglet Artistes : les artistes correspondants, leur prochaine date, le dépliage de toutes leurs dates.
+  Mène vers  : artist, live
+  Contrat    : GET /v1/search?tab=artists
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L505–564
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L505–564
+     ══════════════════════════════════════════════════════════════════════════ -->
+  <sc-if value="{{ showArtists }}" hint-placeholder-val="{{ false }}">
+    <sc-if value="{{ noArtistsTab }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 22px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 30px 20px; text-align: center;">
+        <div style="font-family: 'Instrument Serif', serif; font-size: 21px;">{{ t.emptyArtists }}</div>
+      </div>
+    </sc-if>
+    <div style="margin-top: 18px; display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+      <sc-for list="{{ artistsAll }}" as="ar" hint-placeholder-count="6">
+        <div style="background: #0F0E0C; padding: 13px;">
+          <div onClick="{{ ar.openProfile }}" style="cursor: pointer; display: flex; align-items: center; gap: 11px;">
+            <div style="flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815;">
+              <sc-if value="{{ ar.portrait }}" hint-placeholder-val="{{ false }}">
+                <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.82); background-color: #17140F; background-image: {{ ar.portraitCss }}; background-size: cover; background-position: center;"></div>
+              </sc-if>
+            </div>
+            <div style="min-width: 0;">
+              <div style="font-size: 14.5px;"><span>{{ ar.aHit.pre }}</span><span style="background: rgba(214,178,102,0.2); color: oklch(0.9 0.07 84);">{{ ar.aHit.hit }}</span><span>{{ ar.aHit.post }}</span></div>
+              <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ ar.discipline }} · {{ ar.followers }} {{ t.followersShort }}</div>
+            </div>
+            <sc-if value="{{ ar.isLiveRow }}" hint-placeholder-val="{{ false }}">
+              <span onClick="{{ ar.openLiveRow }}" style="margin-left: auto; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid oklch(0.42 0.12 27);">
+                <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.14 27);">{{ ar.liveLabel2 }}</span>
+              </span>
+            </sc-if>
+          </div>
+          <sc-if value="{{ ar.hasDates }}" hint-placeholder-val="{{ false }}">
+            <div style="padding-top: 10px; display: flex; flex-direction: column; gap: 7px;">
+              <sc-for list="{{ ar.dates }}" as="d" hint-placeholder-count="1">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span onClick="{{ d.open }}" style="cursor: pointer; min-width: 0; font-size: 12.5px; color: #C9C0B2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ d.title }}</span>
+                  <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ d.whenLabel }}</span>
+                  <span onClick="{{ d.buy }}" style="flex: 0 0 auto; cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #2A2621; font-size: 12px; color: #C9C0B2;">{{ d.priceLabel }}</span>
+                </div>
+              </sc-for>
+              <sc-if value="{{ ar.hasMoreDates }}" hint-placeholder-val="{{ false }}">
+                <span onClick="{{ ar.toggleDates }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #EDE7DC;">{{ ar.datesLabel }}</span>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ moreArtists }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 14px; display: flex; justify-content: center;">
+        <span onClick="{{ loadMoreArtists }}" style="cursor: pointer; padding: 13px 22px; border: 1px solid #332E28; font-size: 13px; color: #C9C0B2;">{{ moreArtistsLabel }}</span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ loadingArtists }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 10px; border: 1px solid #1F1C19; background: #100F0D; padding: 12px; display: flex; gap: 12px; animation: skel 1.2s ease-in-out infinite;">
+        <div style="flex: 0 0 96px; aspect-ratio: 16/11; background: #17140F;"></div>
+        <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px; padding-top: 3px;">
+          <div style="height: 13px; width: 68%; background: #1C1A17;"></div>
+          <div style="height: 11px; width: 44%; background: #17140F;"></div>
+          <div style="margin-top: 4px; height: 30px; width: 84px; background: #17140F;"></div>
+        </div>
+      </div>
+    </sc-if>
+  </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (6 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── paged  —  méthode de classe  —  L4091–4113 ── */
+  paged(key, list, step, fr) {
+    const n = (this.state.shown || {})[key] || step;
+    const rest = Math.max(0, list.length - n);
+    const busy = (this.state.loading || {})[key] === true;
+    const start = () => {
+      if ((this.state.loading || {})[key]) return;
+      this.setState(st => ({ loading: Object.assign({}, st.loading, { [key]: true }) }));
+      clearTimeout(this['_pgT_' + key]);
+      this['_pgT_' + key] = setTimeout(() => {
+        this.setState(st => ({
+          shown: Object.assign({}, st.shown, { [key]: ((st.shown || {})[key] || step) + step }),
+          loading: Object.assign({}, st.loading, { [key]: false })
+        }));
+      }, 1000);
+    };
+    return {
+      items: list.slice(0, n),
+      hasMore: rest > 0 && !busy,
+      loading: busy,
+      moreLabel: (fr ? 'Voir plus' : 'Show more') + ' · ' + rest + (fr ? ' restants' : ' left'),
+      loadMore: start
+    };
+  }
+
+/* ── artistsAll  —  calcul dans renderReady()  —  L5375–5396 ── */
+    const artistsAll = roster.filter(a => {
+      if (qq && (a.name + ' ' + a.discipline + ' ' + a.showTitle).toLowerCase().indexOf(qq) < 0) return false;
+      if (s.fCats.length && !catalogue.some(o => o.artistIdx === a.i && s.fCats.indexOf(o.cat) > -1)) return false;
+      if (s.fStatus === 'live' && !a.isLive) return false;
+      if (s.fHasDates && !catalogue.some(o => o.artistIdx === a.i && o.kind === 'upcoming')) return false;
+      return true;
+    }).map(a => {
+      const dates = catalogue.filter(o => o.artistIdx === a.i && o.kind === 'upcoming').sort((x, y) => x.day - y.day);
+      return Object.assign({}, a, {
+        dates: dates.slice(0, 1),
+        datesLabel: dates.length + ' ' + (dates.length > 1 ? t.datesToCome : t.dateToCome),
+        hasDates: dates.length > 0,
+        hasMoreDates: dates.length > 1,
+        moreDatesLabel: (fr ? 'Toutes les dates (' + dates.length + ') →' : 'All dates (' + dates.length + ') →'),
+        toggleDates: (e) => {
+          if (e && e.stopPropagation) e.stopPropagation();
+          this.setState({ page: 'artist', artistId: a.i, suggOpen: false, searchOpen: false });
+        },
+        isLiveRow: a.isLive, liveLabel2: a.isLive ? t.onNow : '',
+        openProfile2: () => this.setState({ page: 'artist', artistId: a.i })
+      });
+    });
+
+/* ── artistsHL  —  calcul dans renderReady()  —  L5398–5401 ── */
+    const artistsHL = artistsAll.map(a => Object.assign({}, a, {
+      nHit: this.splitHit(a.name, qq),
+      sHit: this.splitHit(a.showTitle, qq)
+    }));
+
+/* ── pgArtists  —  calcul dans renderReady()  —  L5441–5441 ── */
+    const pgArtists = this.paged('artists', artistsHL, 10, fr);
+
+/* ── moreArtists  —  clé du modèle rendu  —  L5678–5678 ── */
+      moreArtists: pgArtists.hasMore, moreArtistsLabel: pgArtists.moreLabel, loadMoreArtists: pgArtists.loadMore, loadingArtists: pgArtists.loading,
+
+/* ── noArtistsTab  —  clé du modèle rendu  —  L5683–5683 ── */
+      noArtistsTab: s.sTab === 'artists' && artistsAll.length === 0,
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (5) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2452  dateToCome: "date à venir"
+  EN L2905  dateToCome: "upcoming date"
+
+  FR L2454  datesToCome: "dates à venir"
+  EN L2907  datesToCome: "upcoming dates"
+
+  FR L2463  emptyArtists: "Aucun artiste dans cette discipline"
+  EN L2916  emptyArtists: "No artist in this discipline"
+
+  FR L2494  followersShort: "ABONNÉS"
+  EN L2947  followersShort: "FOLLOWERS"
+
+  FR L2573  onNow: "EN DIRECT"
+  EN L3026  onNow: "LIVE NOW"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

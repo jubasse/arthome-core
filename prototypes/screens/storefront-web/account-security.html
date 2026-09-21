@@ -1,0 +1,112 @@
+<!--
+  ÉCRAN      Compte — Sécurité et connexion
+  ROUTE      page === 'account', accTab === 'security'
+  AFFICHE    Mot de passe, double authentification, clé d'accès, moyens de paiement, et les appareils connectés.
+  MÈNE VERS  account
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2873-2907
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Défaut relevé au temps 3 : les quatre actions de cette section n'ont AUCUNE opération
+             dans `openapi/storefront.yaml`.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — revokeDevice, signOutProfile
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, availW, fr
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <sc-if value="{{ accSecurity }}" hint-placeholder-val="{{ false }}">
+      <div style="animation: fadeIn .3s ease both; max-width: 760px;">
+        <h2 style="{{ accH2 }} margin: 0 0 18px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.accSecurity }}</h2>
+        <div style="border: 1px solid #1F1C19; background: #100F0D;">
+          <sc-for list="{{ securityRows }}" as="r" hint-placeholder-count="4">
+            <div style="border-bottom: 1px solid #1F1C19; padding: 18px 20px; display: flex; align-items: center; gap: 20px;">
+              <div style="min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 15px;">{{ r.label }}</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ r.stateColor }};">{{ r.state }}</span>
+                </div>
+                <div style="padding-top: 5px; font-size: 12.5px; color: #8B857C; text-wrap: pretty;">{{ r.hint }}</div>
+              </div>
+              <span onClick="{{ r.action }}" style="margin-left: auto; flex: 0 0 auto; cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="background:#221F1B">{{ r.cta }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top: 24px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 12px;">{{ t.sessions }}</div>
+        <div style="border: 1px solid #1F1C19; background: #100F0D;">
+          <sc-for list="{{ sessions }}" as="ss" hint-placeholder-count="3">
+            <div style="border-bottom: 1px solid #1F1C19; padding: 15px 20px; display: flex; align-items: center; gap: 16px;">
+              <div style="min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 9px;">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: {{ ss.dot }};"></span>
+                  <span style="font-size: 13.5px;">{{ ss.device }}</span>
+                </div>
+                <div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ ss.meta }}</div>
+              </div>
+              <span style="margin-left: auto; flex: 0 0 auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ ss.ctaColor }}; border-bottom: 1px solid #1F1C19;">{{ ss.cta }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* accStack  —  lignes 5747-5747 */
+    const accStack = availW < 760;
+/* securityRows  —  lignes 5908-5922 */
+    const securityRows = (fr ? [
+      ['Mot de passe', 'MODIFIÉ IL Y A 4 MOIS', '#8B857C', 'Un mot de passe unique de 12 caractères minimum.', 'Modifier'],
+      ['Double authentification', 'ACTIVÉE ✓', 'oklch(0.7 0.13 150)', 'Application d\u2019authentification · codes de secours générés en mars 2026.', 'Gérer'],
+      ['Clé d\u2019accès (passkey)', 'NON CONFIGURÉE', 'oklch(0.74 0.15 42)', 'Connexion sans mot de passe par empreinte ou Face ID.', 'Ajouter'],
+      ['Moyens de paiement', '2 CARTES ENREGISTRÉES', '#8B857C', 'Visa ···· 4412 · Mastercard ···· 8830', 'Gérer']
+    ] : [
+      ['Password', 'CHANGED 4 MONTHS AGO', '#8B857C', 'A unique password of at least 12 characters.', 'Change'],
+      ['Two-factor authentication', 'ENABLED ✓', 'oklch(0.7 0.13 150)', 'Authenticator app · backup codes generated March 2026.', 'Manage'],
+      ['Passkey', 'NOT SET UP', 'oklch(0.74 0.15 42)', 'Password-free sign-in with fingerprint or Face ID.', 'Add'],
+      ['Payment methods', '2 SAVED CARDS', '#8B857C', 'Visa ···· 4412 · Mastercard ···· 8830', 'Manage']
+    ]).map(([label, state, stateColor, hint, cta]) => ({
+      label, state, stateColor, hint, cta,
+      action: () => this.setState({ accTab: 'security' })
+    }));
+
+/* sessions  —  lignes 5923-5933 */
+    const sessions = (fr ? [
+      ['MacBook Pro · Lyon', 'CHROME · SESSION ACTUELLE · IL Y A 2 MIN', 'oklch(0.7 0.13 150)', 'CETTE SESSION', '#6B6459'],
+      ['iPhone 15 · Lyon', 'APPLI ARTHOME · IL Y A 3 H', '#8B857C', 'DÉCONNECTER', '#C9C0B2'],
+      ['Apple TV · Salon', 'APPLI TV · HIER, 21:40', '#8B857C', 'DÉCONNECTER', '#C9C0B2']
+    ] : [
+      ['MacBook Pro · Lyon', 'CHROME · CURRENT SESSION · 2 MIN AGO', 'oklch(0.7 0.13 150)', 'THIS SESSION', '#6B6459'],
+      ['iPhone 15 · Lyon', 'ARTHOME APP · 3H AGO', '#8B857C', 'SIGN OUT', '#C9C0B2'],
+      ['Apple TV · Living room', 'TV APP · YESTERDAY, 9:40PM', '#8B857C', 'SIGN OUT', '#C9C0B2']
+    ]).map(([device, meta, dot, cta, ctaColor]) => ({ device, meta, dot, cta, ctaColor }));
+
+
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      accH2: accStack ? 'display: none;' : '',
+      securityRows: securityRows,
+      sessions: sessions,
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.accSecurity  t.sessions  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

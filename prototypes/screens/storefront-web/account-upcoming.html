@@ -1,0 +1,109 @@
+<!--
+  ÉCRAN      Compte — Événements à venir
+  ROUTE      page === 'account', accTab === 'upcoming'
+  AFFICHE    Les places confirmées, avec leur code de place, leur heure locale et l'accès à la salle.
+  MÈNE VERS  account
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2381-2416
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — listMyTickets
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, artist, availW, colsOf, colsTiles, colsWideN, followed, fr, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, tileCols, upcomingCount
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <sc-if value="{{ accUpcoming }}" hint-placeholder-val="{{ true }}">
+      <div style="animation: fadeIn .3s ease both;">
+        <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px;">
+          <h2 style="{{ accH2 }} margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.accUpcoming }}</h2>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ t.accUpcoming2 }} · {{ ticketsCount }}</span>
+        </div>
+        <div style="display: grid; grid-template-columns: {{ colsTiles }}; gap: 18px;">
+          <sc-for list="{{ tickets }}" as="tk" hint-placeholder-count="3">
+            <div style="{{ tk.cardStyle }}">
+              <div style="position: relative; aspect-ratio: 16/9; overflow: hidden; background: #17140F;">
+                <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.72) brightness(0.72); background-color: #1A1815; background-image: {{ tk.imgCss }}; background-size: cover; background-position: center;"></div>
+                <div style="position: absolute; left: 12px; top: 12px; background: rgba(11,10,9,0.78); padding: 4px 8px; display: flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ tk.statusColor }};">
+                  <sc-if value="{{ tk.isNow }}" hint-placeholder-val="{{ false }}">
+                    <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.74 0.15 42); animation: pulseLive 1.6s infinite;"></span>
+                  </sc-if>{{ tk.statusText }}</div>
+                <div style="position: absolute; inset: 0; opacity: 0; transform: translateY(8px); transition: opacity .26s ease, transform .34s cubic-bezier(.2,.7,.2,1); background: linear-gradient(to top, rgba(8,7,7,0.95), rgba(8,7,7,0.74)); display: flex; flex-direction: column; justify-content: flex-end; padding: 14px;" style-hover="opacity:1;transform:translateY(0)">
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 42);">{{ tk.when }}</div>
+                  <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.5; color: #EDE7DC; text-wrap: pretty; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{{ tk.desc }}</div>
+                </div>
+              </div>
+              <div style="padding: 16px;">
+                <div onClick="{{ tk.openShow }}" style="cursor: pointer; font-size: 16.5px; font-weight: 500; transition: color .2s ease;" style-hover="color:oklch(0.8 0.13 42)">{{ tk.title }}</div>
+                <div style="padding-top: 5px; font-size: 13.5px; color: #9B948A;">
+                  <span onClick="{{ tk.openArtist }}" style="cursor: pointer; border-bottom: 1px solid #262320; transition: color .2s ease, border-color .2s ease;" style-hover="color:#EDE7DC;border-color:#4A423A">{{ tk.artist }}</span> · {{ tk.when }}
+                </div>
+                <div style="margin-top: 14px; display: flex; align-items: center; gap: 10px; border-top: 1px dashed #262320; padding-top: 14px;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #857E73;">{{ tk.code }}</span>
+                  <span onClick="{{ tk.action }}" style="{{ tk.ctaStyle }}" style-hover="background:#221F1B">{{ tk.cta }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* faves  —  lignes 5207-5227 */
+    const faves = (() => {
+      const followed = (s.follows || []).map(i => roster[i]).filter(Boolean);
+      const pool = followed.length ? followed : roster.slice(0, 5);
+      return pool.slice(0, 5).map(a => ({
+        artist: a.name,
+        initials: a.name.split(/[\s’']+/).map(w => w[0]).filter(Boolean).join('').slice(0, 2).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+        title: a.showTitle,
+        /* Le rouge d'antenne ne sert qu'à l'antenne. */
+        isLive: !!a.isLive, notLive: !a.isLive,
+        nextLabel: a.isLive ? '' : (() => {
+          const next = A.datesOfArtist(a.id).filter(d => d.startOffsetMin > 0)
+            .sort((x, y) => x.startOffsetMin - y.startOffsetMin)[0];
+          return next
+            ? (A.dayLabel(next.startOffsetMin) + ' · ' + A.clock(next.startOffsetMin)).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US')
+            : (fr ? 'AUCUNE DATE' : 'NO DATE');
+        })(),
+        viewersLabel: a.viewers || '',
+        img: a.showImg, imgCss: this.cssUrl(a.showImg)
+      }));
+    })().map(x => Object.assign(x, { open: () => this.openLive(x.artist), openArtist: this.goArtistFrom(x.artist) }));
+
+/* accStack  —  lignes 5747-5747 */
+    const accStack = availW < 760;
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      colsTiles: colsOf(tileCols), colsWide: colsOf(colsWideN),
+      rowGrid5, rowGrid5b, rowGrid4, rowGrid4b, rowGridLive, rowThumb, rowStack,
+      accH2: accStack ? 'display: none;' : '',
+      ticketsCount: upcomingCount,
+      accUpcoming: s.accTab === 'upcoming', accPast: s.accTab === 'past', accFaves: s.accTab === 'faves',
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.accUpcoming  t.accUpcoming2  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    accTab  follows  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    cssUrl, goArtistFrom, openLive
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

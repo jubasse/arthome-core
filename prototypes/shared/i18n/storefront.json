@@ -1,0 +1,2689 @@
+{
+  "note": "Interface publique : actions, navigation, temps, états, découverte, billetterie, lecteur, tchat, compte, télécommande.",
+  "keys": {
+    "account.addAccount": {
+      "fr": "Connecter un compte",
+      "en": "Connect an account"
+    },
+    "account.addAccountHint": {
+      "fr": "Par QR",
+      "en": "By QR"
+    },
+    "account.alerts": {
+      "fr": "Recherches enregistrées",
+      "en": "Saved searches"
+    },
+    "account.alerts.alertActive": {
+      "fr": "Active",
+      "en": "Active"
+    },
+    "account.alerts.alertAll": {
+      "fr": "Tous les lives",
+      "en": "All live shows"
+    },
+    "account.alerts.alertChannels": {
+      "fr": "Canaux",
+      "en": "Channels"
+    },
+    "account.alerts.alertCreatedAt": {
+      "fr": "Créée le",
+      "en": "Created"
+    },
+    "account.alerts.alertDelete": {
+      "fr": "Supprimer",
+      "en": "Delete"
+    },
+    "account.alerts.alertDone": {
+      "fr": "Recherche enregistrée ✓",
+      "en": "Search saved ✓"
+    },
+    "account.alerts.alertHint": {
+      "fr": "Vous serez notifié dès qu’un live correspond à cette recherche.",
+      "en": "You will be notified as soon as a live show matches this search."
+    },
+    "account.alerts.alertMatches": {
+      "fr": "Correspondances",
+      "en": "Matches"
+    },
+    "account.alerts.alertPause": {
+      "fr": "Mettre en pause",
+      "en": "Pause"
+    },
+    "account.alerts.alertPaused": {
+      "fr": "En pause",
+      "en": "Paused"
+    },
+    "account.alerts.alertRename": {
+      "fr": "Renommer",
+      "en": "Rename"
+    },
+    "account.alerts.alertRenameHint": {
+      "fr": "Entrée pour valider, Échap pour annuler",
+      "en": "Enter to confirm, Esc to cancel"
+    },
+    "account.alerts.alertResume": {
+      "fr": "Réactiver",
+      "en": "Resume"
+    },
+    "account.alerts.alertSee": {
+      "fr": "Voir les résultats",
+      "en": "See results"
+    },
+    "account.alerts.alertSeeCat": {
+      "fr": "Voir la catégorie",
+      "en": "Open category"
+    },
+    "account.alerts.alreadySaved": {
+      "fr": "Recherche déjà enregistrée",
+      "en": "Search already saved"
+    },
+    "account.alerts.createAlert": {
+      "fr": "Enregistrer cette recherche",
+      "en": "Save this search"
+    },
+    "account.alerts.noSavedCatHere": {
+      "fr": "Aucune",
+      "en": "None"
+    },
+    "account.alerts.save": {
+      "fr": "Enregistrer",
+      "en": "Save"
+    },
+    "account.alerts.saveAskIntro": {
+      "fr": "Vérifiez les critères retenus. Vous serez alerté dès qu’une nouvelle date y correspond.",
+      "en": "Check the criteria kept. You will be alerted as soon as a new date matches."
+    },
+    "account.alerts.saveAskTitle": {
+      "fr": "Enregistrer cette recherche ?",
+      "en": "Save this search?"
+    },
+    "account.alerts.saveCatAskIntro": {
+      "fr": "Elle rejoint vos recherches enregistrées avec les filtres actifs. Vous serez alerté à chaque nouvelle date.",
+      "en": "It joins your saved searches with the active filters. You will be alerted on every new date."
+    },
+    "account.alerts.saveCatAskTitle": {
+      "fr": "Enregistrer cette catégorie ?",
+      "en": "Save this category?"
+    },
+    "account.alerts.saveCatTitle": {
+      "fr": "Catégorie enregistrée",
+      "en": "Category saved"
+    },
+    "account.alerts.saveChannels": {
+      "fr": "Alertes par",
+      "en": "Alerts via"
+    },
+    "account.alerts.saveConfirm": {
+      "fr": "Enregistrer",
+      "en": "Save"
+    },
+    "account.alerts.saveEmail": {
+      "fr": "E-mail",
+      "en": "Email"
+    },
+    "account.alerts.saveFilters": {
+      "fr": "Filtres retenus",
+      "en": "Filters kept"
+    },
+    "account.alerts.saveIntro": {
+      "fr": "Vous serez alerté dès qu’une nouvelle date correspond à ces critères.",
+      "en": "You will be alerted as soon as a new date matches these criteria."
+    },
+    "account.alerts.saveManage": {
+      "fr": "Gérer mes recherches",
+      "en": "Manage my searches"
+    },
+    "account.alerts.saveName": {
+      "fr": "Nom de la recherche",
+      "en": "Search name"
+    },
+    "account.alerts.saveNameHint": {
+      "fr": "Optionnel — un nom vous aidera à la retrouver.",
+      "en": "Optional — a name makes it easier to find."
+    },
+    "account.alerts.saveNoFilters": {
+      "fr": "Aucun filtre — toutes les catégories",
+      "en": "No filter — all categories"
+    },
+    "account.alerts.saveNoQuery": {
+      "fr": "Aucun mot-clé",
+      "en": "No keyword"
+    },
+    "account.alerts.savePush": {
+      "fr": "Notification",
+      "en": "Push"
+    },
+    "account.alerts.saveQuery": {
+      "fr": "Mots-clés",
+      "en": "Keywords"
+    },
+    "account.alerts.saveScope": {
+      "fr": "Portée",
+      "en": "Scope"
+    },
+    "account.alerts.saveTitle": {
+      "fr": "Recherche enregistrée",
+      "en": "Search saved"
+    },
+    "account.alerts.saved": {
+      "fr": "Enregistré ✓",
+      "en": "Saved ✓"
+    },
+    "account.alerts.savedCatHere": {
+      "fr": "Catégorie enregistrée",
+      "en": "Category saved"
+    },
+    "account.alerts.savedHere": {
+      "fr": "Recherche enregistrée",
+      "en": "Saved search"
+    },
+    "account.alerts.savedShows": {
+      "fr": "Spectacles mis de côté",
+      "en": "Saved shows"
+    },
+    "account.alerts.seeSaved": {
+      "fr": "Voir mes recherches",
+      "en": "See my searches"
+    },
+    "account.alertsSub": {
+      "fr": "Alertées dès qu’une date correspond",
+      "en": "Alerted as soon as a date matches"
+    },
+    "account.auth.alt": {
+      "fr": "Ou continuer sans compte",
+      "en": "Or continue without an account"
+    },
+    "account.auth.email": {
+      "fr": "Adresse e-mail",
+      "en": "Email address"
+    },
+    "account.auth.go": {
+      "fr": "Continuer",
+      "en": "Continue"
+    },
+    "account.auth.introIn": {
+      "fr": "Retrouvez vos places, vos alertes et vos rediffusions.",
+      "en": "Get back your tickets, alerts and replays."
+    },
+    "account.auth.introUp": {
+      "fr": "Deux minutes, et vous gardez vos places, vos artistes suivis et vos rediffusions.",
+      "en": "Two minutes, and you keep your tickets, the artists you follow and your replays."
+    },
+    "account.auth.name": {
+      "fr": "Nom",
+      "en": "Name"
+    },
+    "account.auth.pass": {
+      "fr": "Mot de passe",
+      "en": "Password"
+    },
+    "account.auth.switchIn": {
+      "fr": "Pas encore de compte ? En créer un",
+      "en": "No account yet? Create one"
+    },
+    "account.auth.switchUp": {
+      "fr": "Déjà un compte ? Se connecter",
+      "en": "Already have an account? Sign in"
+    },
+    "account.auth.titleUp": {
+      "fr": "Créer un compte",
+      "en": "Create an account"
+    },
+    "account.backToMenu": {
+      "fr": "Mon compte",
+      "en": "My account"
+    },
+    "account.data.blurb": {
+      "fr": "Exportez l’historique de vos places, ou supprimez définitivement votre compte. La suppression annule les places non utilisées.",
+      "en": "Export your ticket history, or permanently delete your account. Deleting cancels any unused tickets."
+    },
+    "account.data.title": {
+      "fr": "Mes données",
+      "en": "My data"
+    },
+    "account.delete.confirm": {
+      "fr": "Supprimer",
+      "en": "Delete"
+    },
+    "account.delete.eteAccount": {
+      "fr": "Supprimer mon compte",
+      "en": "Delete my account"
+    },
+    "account.delete.intro": {
+      "fr": "Vous ne serez plus alerté pour ces critères. Cette action est définitive.",
+      "en": "You will no longer be alerted for these criteria. This cannot be undone."
+    },
+    "account.delete.title": {
+      "fr": "Supprimer cette recherche ?",
+      "en": "Delete this search?"
+    },
+    "account.exportData": {
+      "fr": "Exporter mes données",
+      "en": "Export my data"
+    },
+    "account.exportInvoices": {
+      "fr": "Exporter mes factures",
+      "en": "Export invoices"
+    },
+    "account.faves": {
+      "fr": "Mes favoris",
+      "en": "My favourites"
+    },
+    "account.guest.banner": {
+      "fr": "Vous regardez en visiteur : les aperçus gratuits sont ouverts, la place débloque le spectacle entier.",
+      "en": "You are browsing as a guest: free previews are open, a ticket unlocks the whole show."
+    },
+    "account.guest.bannerCta": {
+      "fr": "Créer un compte",
+      "en": "Create an account"
+    },
+    "account.guest.chat": {
+      "fr": "Connectez-vous pour écrire dans le tchat",
+      "en": "Sign in to write in the chat"
+    },
+    "account.guest.follow": {
+      "fr": "Se connecter pour suivre",
+      "en": "Sign in to follow"
+    },
+    "account.guest.save": {
+      "fr": "Se connecter pour enregistrer",
+      "en": "Sign in to save"
+    },
+    "account.invoiceNote": {
+      "fr": "Factures disponibles pendant 10 ans",
+      "en": "Invoices kept for 10 years"
+    },
+    "account.kicker": {
+      "fr": "Compte, abonnement et appareils",
+      "en": "Account, plan and devices"
+    },
+    "account.manageOnWeb": {
+      "fr": "Formule, moyens de paiement et facturation se gèrent sur arthome.fr, depuis votre téléphone ou votre ordinateur.",
+      "en": "Plan, payment methods and billing are managed on arthome.fr, from your phone or computer."
+    },
+    "account.manageScan": {
+      "fr": "Scannez pour gérer votre compte",
+      "en": "Scan to manage your account"
+    },
+    "account.manageThisTv": {
+      "fr": "Gérer ce téléviseur",
+      "en": "Manage this TV"
+    },
+    "account.notifications.center": {
+      "fr": "Notifications",
+      "en": "Notifications"
+    },
+    "account.notifications.event": {
+      "fr": "Événement",
+      "en": "Event"
+    },
+    "account.notifications.quietHours": {
+      "fr": "Heures calmes",
+      "en": "Quiet hours"
+    },
+    "account.notifications.quietHoursHint": {
+      "fr": "Aucune notification entre 23:00 et 9:00, sauf début d’un live pour lequel j’ai une place.",
+      "en": "No notifications between 11PM and 9AM, except a live starting that I hold a ticket for."
+    },
+    "account.notifications.settings": {
+      "fr": "Régler mes notifications",
+      "en": "Notification settings"
+    },
+    "account.notifs": {
+      "fr": "Notifications",
+      "en": "Notifications"
+    },
+    "account.onThisTv": {
+      "fr": "Compte sur ce téléviseur",
+      "en": "Account on this TV"
+    },
+    "account.orders": {
+      "fr": "Mes commandes",
+      "en": "My orders"
+    },
+    "account.orders.arthomeNotice": {
+      "fr": "Expédiée et suivie par Arthome.",
+      "en": "Shipped and tracked by Arthome."
+    },
+    "account.orders.delivered": {
+      "fr": "Livrée",
+      "en": "Delivered"
+    },
+    "account.orders.detail": {
+      "fr": "Détail",
+      "en": "Details"
+    },
+    "account.orders.digital": {
+      "fr": "Numérique · disponible",
+      "en": "Digital · available"
+    },
+    "account.orders.download": {
+      "fr": "Télécharger",
+      "en": "Download"
+    },
+    "account.orders.extNotice": {
+      "fr": "Commande traitée par la boutique de l’artiste. Le suivi, l’échange et le remboursement se font sur son site.",
+      "en": "Order handled by the artist’s own store. Tracking, exchanges and refunds happen on their site."
+    },
+    "account.orders.extOpen": {
+      "fr": "Suivre sur",
+      "en": "Track on"
+    },
+    "account.orders.extRef": {
+      "fr": "Réf. marchand",
+      "en": "Merchant ref."
+    },
+    "account.orders.invoice": {
+      "fr": "Facture",
+      "en": "Invoice"
+    },
+    "account.orders.items": {
+      "fr": "Articles",
+      "en": "Items"
+    },
+    "account.orders.number": {
+      "fr": "Commande",
+      "en": "Order"
+    },
+    "account.orders.placed": {
+      "fr": "Passée le",
+      "en": "Placed"
+    },
+    "account.orders.prep": {
+      "fr": "En préparation",
+      "en": "Preparing"
+    },
+    "account.orders.shipped": {
+      "fr": "Expédiée",
+      "en": "Shipped"
+    },
+    "account.orders.soldArthome": {
+      "fr": "Boutique arthome",
+      "en": "Arthome store"
+    },
+    "account.orders.soldExternal": {
+      "fr": "Boutique de l’artiste",
+      "en": "Artist’s own store"
+    },
+    "account.orders.total": {
+      "fr": "Total",
+      "en": "Total"
+    },
+    "account.orders.track": {
+      "fr": "Suivre le colis",
+      "en": "Track parcel"
+    },
+    "account.ordersSub": {
+      "fr": "Merch et articles numériques",
+      "en": "Merch and digital items"
+    },
+    "account.past": {
+      "fr": "Événements passés",
+      "en": "Past events"
+    },
+    "account.past2": {
+      "fr": "Historique & rediffusions",
+      "en": "History & replays"
+    },
+    "account.prefs": {
+      "fr": "Préférences de lecture",
+      "en": "Playback preferences"
+    },
+    "account.privacy": {
+      "fr": "Confidentialité",
+      "en": "Privacy"
+    },
+    "account.privacy.consents": {
+      "fr": "Consentements",
+      "en": "Consents"
+    },
+    "account.privacy.cookies": {
+      "fr": "Cookies et traceurs",
+      "en": "Cookies and trackers"
+    },
+    "account.privacy.docs": {
+      "fr": "Documents",
+      "en": "Documents"
+    },
+    "account.privacy.dpo": {
+      "fr": "Écrire au délégué à la protection des données",
+      "en": "Contact the data protection officer"
+    },
+    "account.privacy.dpoHint": {
+      "fr": "Réponse sous 30 jours. Vous pouvez aussi saisir la CNIL à tout moment.",
+      "en": "Reply within 30 days. You may also refer the matter to your supervisory authority."
+    },
+    "account.privacy.locked": {
+      "fr": "Requis",
+      "en": "Required"
+    },
+    "account.privacy.manage": {
+      "fr": "Gérer",
+      "en": "Manage"
+    },
+    "account.privacy.off": {
+      "fr": "Désactivé",
+      "en": "Off"
+    },
+    "account.privacy.on": {
+      "fr": "Activé",
+      "en": "On"
+    },
+    "account.privacy.read": {
+      "fr": "Lire",
+      "en": "Read"
+    },
+    "account.privacy.retention": {
+      "fr": "Conservation des données",
+      "en": "Data retention"
+    },
+    "account.privacy.retentionText": {
+      "fr": "Places et factures : 10 ans (obligation comptable). Historique de visionnage : 24 mois. Messages de tchat : 90 jours. Journaux de connexion : 12 mois.",
+      "en": "Tickets and invoices: 10 years (accounting duty). Viewing history: 24 months. Chat messages: 90 days. Sign-in logs: 12 months."
+    },
+    "account.privacy.rights": {
+      "fr": "Vos droits",
+      "en": "Your rights"
+    },
+    "account.privacy.run": {
+      "fr": "Demander",
+      "en": "Request"
+    },
+    "account.privacy.updated": {
+      "fr": "Mise à jour",
+      "en": "Updated"
+    },
+    "account.profile": {
+      "fr": "Mon profil",
+      "en": "My profile"
+    },
+    "account.security": {
+      "fr": "Sécurité & connexion",
+      "en": "Security & sign-in"
+    },
+    "account.settings": {
+      "fr": "Réglages",
+      "en": "Settings"
+    },
+    "account.signIn.done": {
+      "fr": "Téléphone reconnu",
+      "en": "Phone recognised"
+    },
+    "account.signIn.orType": {
+      "fr": "Ou tapez cette adresse et ce code",
+      "en": "Or type this address and code"
+    },
+    "account.signIn.scan": {
+      "fr": "Connectez-vous avec votre téléphone",
+      "en": "Sign in with your phone"
+    },
+    "account.signIn.title": {
+      "fr": "Le spectacle vivant, en direct chez vous.",
+      "en": "Live performance, at home."
+    },
+    "account.signIn.waiting": {
+      "fr": "En attente de votre téléphone…",
+      "en": "Waiting for your phone…"
+    },
+    "account.switchAccount": {
+      "fr": "Changer de compte",
+      "en": "Switch account"
+    },
+    "account.upcoming": {
+      "fr": "Événements à venir",
+      "en": "Upcoming events"
+    },
+    "account.upcoming2": {
+      "fr": "Mes places confirmées",
+      "en": "My confirmed tickets"
+    },
+    "account.whoWatches": {
+      "fr": "Quel compte ?",
+      "en": "Which account?"
+    },
+    "chat.collapse": {
+      "fr": "Masquer le tchat",
+      "en": "Hide chat"
+    },
+    "chat.emoji": {
+      "fr": "Emojis + phrases",
+      "en": "Emoji + phrases"
+    },
+    "chat.free": {
+      "fr": "Libre",
+      "en": "Open"
+    },
+    "chat.modeDemo": {
+      "fr": "Mode défini par l’artiste",
+      "en": "Mode set by the artist"
+    },
+    "chat.off": {
+      "fr": "Désactivé",
+      "en": "Off"
+    },
+    "chat.offBody": {
+      "fr": "La salle a coupé le tchat pour cette date. Le spectacle continue normalement.",
+      "en": "The venue turned the chat off for this date. The performance carries on as normal."
+    },
+    "chat.offHint": {
+      "fr": "L’artiste a choisi de jouer sans tchat. Vous pouvez toujours réagir en fin de représentation et partager le live.",
+      "en": "The artist chose to play without chat. You can still react at the end and share the live."
+    },
+    "chat.offTitle": {
+      "fr": "Le tchat est désactivé pour ce live",
+      "en": "Chat is switched off for this show"
+    },
+    "chat.reactWithDpad": {
+      "fr": "Réagir À la croix",
+      "en": "React with the d-pad"
+    },
+    "chat.writeFromPhone": {
+      "fr": "Écrire depuis mon téléphone",
+      "en": "Write from my phone"
+    },
+    "common.actions.add": {
+      "fr": "Ajouter",
+      "en": "Add"
+    },
+    "common.actions.addToList": {
+      "fr": "Ajouter à ma liste",
+      "en": "Add to my list"
+    },
+    "common.actions.addToListShort": {
+      "fr": "Ma liste",
+      "en": "My list"
+    },
+    "common.actions.backToLive": {
+      "fr": "Revenir au direct",
+      "en": "Back to live"
+    },
+    "common.actions.book": {
+      "fr": "Réserver une place",
+      "en": "Book a seat"
+    },
+    "common.actions.bookShort": {
+      "fr": "Réserver",
+      "en": "Book"
+    },
+    "common.actions.browse": {
+      "fr": "Explorer",
+      "en": "Browse"
+    },
+    "common.actions.cancel": {
+      "fr": "Annuler",
+      "en": "Cancel"
+    },
+    "common.actions.close": {
+      "fr": "Fermer",
+      "en": "Close"
+    },
+    "common.actions.copy": {
+      "fr": "Copier",
+      "en": "Copy"
+    },
+    "common.actions.enter": {
+      "fr": "Entrer dans la salle",
+      "en": "Enter the room"
+    },
+    "common.actions.follow": {
+      "fr": "Suivre",
+      "en": "Follow"
+    },
+    "common.actions.following": {
+      "fr": "Suivi",
+      "en": "Following"
+    },
+    "common.actions.joinWaitlist": {
+      "fr": "Rejoindre la liste d’attente",
+      "en": "Join the waiting list"
+    },
+    "common.actions.keyHelp": {
+      "fr": "Aide des touches",
+      "en": "Key help"
+    },
+    "common.actions.more": {
+      "fr": "Plus d’informations",
+      "en": "More information"
+    },
+    "common.actions.removeFromList": {
+      "fr": "Retirer de ma liste",
+      "en": "Remove from my list"
+    },
+    "common.actions.replay": {
+      "fr": "Voir la rediffusion",
+      "en": "Watch the replay"
+    },
+    "common.actions.resume": {
+      "fr": "Reprendre",
+      "en": "Resume"
+    },
+    "common.actions.retry": {
+      "fr": "Réessayer",
+      "en": "Try again"
+    },
+    "common.actions.send": {
+      "fr": "Envoyer",
+      "en": "Send"
+    },
+    "common.actions.share": {
+      "fr": "Partager",
+      "en": "Share"
+    },
+    "common.actions.signIn": {
+      "fr": "Se connecter",
+      "en": "Sign in"
+    },
+    "common.actions.signOut": {
+      "fr": "Se déconnecter",
+      "en": "Sign out"
+    },
+    "common.actions.trailer": {
+      "fr": "Bande-annonce",
+      "en": "Trailer"
+    },
+    "common.actions.unfollow": {
+      "fr": "Ne plus suivre",
+      "en": "Unfollow"
+    },
+    "common.actions.watch": {
+      "fr": "Regarder",
+      "en": "Watch"
+    },
+    "common.devices.signOut": {
+      "fr": "Déconnecter cet appareil",
+      "en": "Sign this device out"
+    },
+    "common.devices.thisDevice": {
+      "fr": "Cet appareil",
+      "en": "This device"
+    },
+    "common.filters.language": {
+      "fr": "Langue",
+      "en": "Language"
+    },
+    "common.filters.languageAny": {
+      "fr": "Toutes les langues",
+      "en": "Any language"
+    },
+    "common.filters.noBarrier": {
+      "fr": "Sans barrière de langue",
+      "en": "No language barrier"
+    },
+    "common.filters.spokenIn": {
+      "fr": "Joué en {language}",
+      "en": "Performed in {language}"
+    },
+    "common.filters.subtitled": {
+      "fr": "Sous-titré",
+      "en": "Subtitled"
+    },
+    "common.filters.subtitledIn": {
+      "fr": "Sous-titres {languages}",
+      "en": "Subtitles {languages}"
+    },
+    "common.filters.surtitledIn": {
+      "fr": "Surtitré en salle en {languages}",
+      "en": "Surtitled in the venue in {languages}"
+    },
+    "common.incident.refundDelay": {
+      "fr": "Remboursement sous 3 à 5 jours",
+      "en": "Refunded within 3 to 5 days"
+    },
+    "common.incident.resumed": {
+      "fr": "Le spectacle reprend",
+      "en": "The show is resuming"
+    },
+    "common.incident.seatStillValid": {
+      "fr": "Votre place reste valable",
+      "en": "Your seat stays valid"
+    },
+    "common.language.noBarrierNote": {
+      "fr": "Danse, cirque, musique : rien à comprendre, tout à voir.",
+      "en": "Dance, circus, music: nothing to understand, everything to watch."
+    },
+    "common.language.textCentralNote": {
+      "fr": "Le texte est au cœur du spectacle : mieux vaut comprendre la langue ou activer les sous-titres.",
+      "en": "The text is central: understand the language or turn on subtitles."
+    },
+    "common.nav.account": {
+      "fr": "Compte",
+      "en": "Account"
+    },
+    "common.nav.artists": {
+      "fr": "Artistes",
+      "en": "Artists"
+    },
+    "common.nav.categories": {
+      "fr": "Catégories",
+      "en": "Categories"
+    },
+    "common.nav.help": {
+      "fr": "Aide",
+      "en": "Help"
+    },
+    "common.nav.home": {
+      "fr": "Accueil",
+      "en": "Home"
+    },
+    "common.nav.list": {
+      "fr": "Ma liste",
+      "en": "My list"
+    },
+    "common.nav.live": {
+      "fr": "En direct",
+      "en": "Live now"
+    },
+    "common.nav.plans": {
+      "fr": "Abonnements",
+      "en": "Plans"
+    },
+    "common.nav.replays": {
+      "fr": "Rediffusions",
+      "en": "Replays"
+    },
+    "common.nav.search": {
+      "fr": "Rechercher",
+      "en": "Search"
+    },
+    "common.nav.tickets": {
+      "fr": "Mes places",
+      "en": "My seats"
+    },
+    "common.plans.free": {
+      "fr": "Gratuit",
+      "en": "Free"
+    },
+    "common.plans.perMonth": {
+      "fr": " / mois",
+      "en": " / month"
+    },
+    "common.qr.done": {
+      "fr": "Téléphone reconnu",
+      "en": "Phone recognised"
+    },
+    "common.qr.orType": {
+      "fr": "Ou tapez cette adresse et ce code",
+      "en": "Or type this address and code"
+    },
+    "common.qr.payTitle": {
+      "fr": "Scannez pour payer",
+      "en": "Scan to pay"
+    },
+    "common.qr.signInTitle": {
+      "fr": "Connectez-vous avec votre téléphone",
+      "en": "Sign in with your phone"
+    },
+    "common.qr.waiting": {
+      "fr": "En attente de votre téléphone…",
+      "en": "Waiting for your phone…"
+    },
+    "common.replay.includedNote": {
+      "fr": "Votre place donne accès à la rediffusion.",
+      "en": "Your seat includes the replay."
+    },
+    "common.replay.window": {
+      "fr": "Fenêtre de rediffusion",
+      "en": "Replay window"
+    },
+    "common.seat.whatItGives": {
+      "fr": "Ce que donne la place",
+      "en": "What the seat gives you"
+    },
+    "common.status.expiresIn": {
+      "fr": "Expire dans",
+      "en": "Expires in"
+    },
+    "common.status.houseOpen": {
+      "fr": "Salle ouverte",
+      "en": "House open"
+    },
+    "common.status.lastSeats": {
+      "fr": "Dernières places",
+      "en": "Last seats"
+    },
+    "common.status.new": {
+      "fr": "Nouveau",
+      "en": "New"
+    },
+    "common.status.onAir": {
+      "fr": "À l’antenne",
+      "en": "On air"
+    },
+    "common.status.replayOnline": {
+      "fr": "Rediffusion en ligne",
+      "en": "Replay online"
+    },
+    "common.status.roomOpen": {
+      "fr": "La salle est ouverte",
+      "en": "The house is open"
+    },
+    "common.status.seatHeld": {
+      "fr": "Place détenue",
+      "en": "Seat held"
+    },
+    "common.status.soldOut": {
+      "fr": "Complet",
+      "en": "Sold out"
+    },
+    "common.status.startsIn": {
+      "fr": "En direct dans",
+      "en": "Live in"
+    },
+    "common.status.waitlist": {
+      "fr": "Liste d’attente",
+      "en": "Waiting list"
+    },
+    "common.status.yourSeat": {
+      "fr": "Votre place",
+      "en": "Your seat"
+    },
+    "common.time.onDay": {
+      "fr": "le",
+      "en": "on"
+    },
+    "common.time.today": {
+      "fr": "aujourd’hui",
+      "en": "today"
+    },
+    "common.time.tomorrow": {
+      "fr": "demain",
+      "en": "tomorrow"
+    },
+    "common.time.tonight": {
+      "fr": "ce soir",
+      "en": "tonight"
+    },
+    "common.time.venueTime": {
+      "fr": "à la salle",
+      "en": "at the venue"
+    },
+    "common.time.yesterday": {
+      "fr": "hier",
+      "en": "yesterday"
+    },
+    "common.time.yourTime": {
+      "fr": "chez vous",
+      "en": "your time"
+    },
+    "common.units.date": {
+      "fr": "date",
+      "en": "date"
+    },
+    "common.units.dates": {
+      "fr": "dates",
+      "en": "dates"
+    },
+    "common.units.hoursShort": {
+      "fr": "h",
+      "en": "h"
+    },
+    "common.units.left": {
+      "fr": "restantes",
+      "en": "left"
+    },
+    "common.units.minutesShort": {
+      "fr": "min",
+      "en": "min"
+    },
+    "common.units.seats": {
+      "fr": "places",
+      "en": "seats"
+    },
+    "common.units.viewers": {
+      "fr": "spectateurs",
+      "en": "watching"
+    },
+    "common.units.watching": {
+      "fr": "Spectateurs",
+      "en": "Watching"
+    },
+    "discovery.artistNoDates": {
+      "fr": "Aucune date annoncée pour cet artiste.",
+      "en": "No announced dates for this artist."
+    },
+    "discovery.artistsKicker": {
+      "fr": "Compagnies, orchestres et solistes",
+      "en": "Companies, orchestras and soloists"
+    },
+    "discovery.categoriesKicker": {
+      "fr": "Disciplines",
+      "en": "Disciplines"
+    },
+    "discovery.categoryNoDates": {
+      "fr": "Aucune date dans cette discipline pour l’instant.",
+      "en": "No dates in this discipline yet."
+    },
+    "discovery.filter.activeFilters": {
+      "fr": "Filtres actifs",
+      "en": "Active filters"
+    },
+    "discovery.filter.d30": {
+      "fr": "30 jours",
+      "en": "30 days"
+    },
+    "discovery.filter.d7": {
+      "fr": "7 jours",
+      "en": "7 days"
+    },
+    "discovery.filter.dAll": {
+      "fr": "Toutes dates",
+      "en": "Any date"
+    },
+    "discovery.filter.dRange": {
+      "fr": "Plage…",
+      "en": "Range…"
+    },
+    "discovery.filter.dWeekend": {
+      "fr": "Ce week-end",
+      "en": "This weekend"
+    },
+    "discovery.filter.expAll": {
+      "fr": "Toutes",
+      "en": "All"
+    },
+    "discovery.filter.expSoon": {
+      "fr": "Expire sous 90 h",
+      "en": "Expires < 90h"
+    },
+    "discovery.filter.fMisc": {
+      "fr": "Autres",
+      "en": "Other"
+    },
+    "discovery.filter.fPrice": {
+      "fr": "Tarif",
+      "en": "Price"
+    },
+    "discovery.filter.fStatus": {
+      "fr": "Statut",
+      "en": "Status"
+    },
+    "discovery.filter.filtersLabel": {
+      "fr": "Filtres",
+      "en": "Filters"
+    },
+    "discovery.filter.gauge": {
+      "fr": "Jauge",
+      "en": "Capacity"
+    },
+    "discovery.filter.hideFilters": {
+      "fr": "Filtres",
+      "en": "Filters"
+    },
+    "discovery.filter.noFilter": {
+      "fr": "Aucun filtre",
+      "en": "No filter"
+    },
+    "discovery.filter.price.1020": {
+      "fr": "10–20 €",
+      "en": "€10–20"
+    },
+    "discovery.filter.price.2035": {
+      "fr": "20–35 €",
+      "en": "€20–35"
+    },
+    "discovery.filter.price.35": {
+      "fr": "> 35 €",
+      "en": "> €35"
+    },
+    "discovery.filter.price.u10": {
+      "fr": "< 10 €",
+      "en": "< €10"
+    },
+    "discovery.filter.showFilters": {
+      "fr": "Filtres",
+      "en": "Filters"
+    },
+    "discovery.filter.sortAZ": {
+      "fr": "A → Z",
+      "en": "A → Z"
+    },
+    "discovery.filter.sortFollowers": {
+      "fr": "Popularité",
+      "en": "Popularity"
+    },
+    "discovery.filter.sortLabel": {
+      "fr": "Trier par",
+      "en": "Sort by"
+    },
+    "discovery.filter.sortPop": {
+      "fr": "Popularité",
+      "en": "Popularity"
+    },
+    "discovery.filter.sortPriceDown": {
+      "fr": "Prix ↓",
+      "en": "Price ↓"
+    },
+    "discovery.filter.sortPriceUp": {
+      "fr": "Prix ↑",
+      "en": "Price ↑"
+    },
+    "discovery.filter.sortRelevance": {
+      "fr": "Pertinence",
+      "en": "Relevance"
+    },
+    "discovery.filter.sortSoon": {
+      "fr": "Bientôt",
+      "en": "Soonest"
+    },
+    "discovery.filter.stAll": {
+      "fr": "Tout",
+      "en": "All"
+    },
+    "discovery.filter.stReplay": {
+      "fr": "Rediffusion",
+      "en": "Replay"
+    },
+    "discovery.filter.stSoon": {
+      "fr": "À venir",
+      "en": "Upcoming"
+    },
+    "discovery.filter.tabBest": {
+      "fr": "Vue d’ensemble",
+      "en": "Overview"
+    },
+    "discovery.filter.tabLives": {
+      "fr": "Lives",
+      "en": "Lives"
+    },
+    "discovery.filter.tabOverview": {
+      "fr": "Vue d’ensemble",
+      "en": "Overview"
+    },
+    "discovery.filter.viewLabel": {
+      "fr": "Affichage",
+      "en": "View"
+    },
+    "discovery.filter.viewList": {
+      "fr": "Liste",
+      "en": "List"
+    },
+    "discovery.filter.viewTiles": {
+      "fr": "Tuiles",
+      "en": "Tiles"
+    },
+    "discovery.keyboard.space": {
+      "fr": "Espace",
+      "en": "Space"
+    },
+    "discovery.listEmptyBody": {
+      "fr": "Mettez une date de côté depuis sa fiche : elle vous attendra ici, avec son compte à rebours.",
+      "en": "Save a date from its page: it waits for you here, with its countdown."
+    },
+    "discovery.listEmptyCta": {
+      "fr": "Explorer les catégories",
+      "en": "Browse categories"
+    },
+    "discovery.listEmptyTitle": {
+      "fr": "Rien dans Ma liste pour l’instant",
+      "en": "Nothing in My list yet"
+    },
+    "discovery.listKicker": {
+      "fr": "Mis de côté",
+      "en": "Saved for later"
+    },
+    "discovery.listRemoveHint": {
+      "fr": "Maintenir OK pour retirer",
+      "en": "Hold OK to remove"
+    },
+    "discovery.noReplay": {
+      "fr": "Aucune rediffusion disponible.",
+      "en": "No replay available."
+    },
+    "discovery.nothingOnAir": {
+      "fr": "Rien à l’antenne pour l’instant",
+      "en": "Nothing on air right now"
+    },
+    "discovery.nothingOnAirHint": {
+      "fr": "La soirée commence à 20 h 30. La grille complète est juste en dessous.",
+      "en": "The evening starts at 8:30 PM. The full schedule is just below."
+    },
+    "discovery.nothingOnAirShort": {
+      "fr": "Rien à l’antenne pour l’instant.",
+      "en": "Nothing on air right now."
+    },
+    "discovery.onAirNow": {
+      "fr": "À l’antenne maintenant",
+      "en": "On air now"
+    },
+    "discovery.overview.live": {
+      "fr": "En direct · aperçu gratuit",
+      "en": "Live · free preview"
+    },
+    "discovery.overview.replay": {
+      "fr": "Rediffusion disponible",
+      "en": "Replay available"
+    },
+    "discovery.overview.soon": {
+      "fr": "Places en vente",
+      "en": "Tickets on sale"
+    },
+    "discovery.rail.allReplays": {
+      "fr": "Toutes vos rediffusions",
+      "en": "All your replays"
+    },
+    "discovery.rail.artistDates": {
+      "fr": "Ses prochaines dates",
+      "en": "Upcoming dates"
+    },
+    "discovery.rail.artistReplays": {
+      "fr": "Ses rediffusions",
+      "en": "Replays"
+    },
+    "discovery.rail.artistsToFollow": {
+      "fr": "Artistes que vous pourriez suivre",
+      "en": "Artists you might follow"
+    },
+    "discovery.rail.because": {
+      "fr": "Parce que vous suivez",
+      "en": "Because you follow"
+    },
+    "discovery.rail.categoryArtists": {
+      "fr": "Artistes de cette discipline",
+      "en": "Artists in this discipline"
+    },
+    "discovery.rail.categoryLive": {
+      "fr": "En direct dans cette discipline",
+      "en": "Live in this discipline"
+    },
+    "discovery.rail.categoryReplays": {
+      "fr": "Rediffusions disponibles",
+      "en": "Available replays"
+    },
+    "discovery.rail.expiring": {
+      "fr": "Rediffusions qui expirent bientôt",
+      "en": "Replays expiring soon"
+    },
+    "discovery.rail.onAir": {
+      "fr": "À l’antenne en ce moment",
+      "en": "On air right now"
+    },
+    "discovery.rail.posters": {
+      "fr": "Les affiches de la saison",
+      "en": "Posters of the season"
+    },
+    "discovery.rail.resume": {
+      "fr": "Reprendre",
+      "en": "Keep watching"
+    },
+    "discovery.rail.sameArtist": {
+      "fr": "Du même artiste",
+      "en": "From the same artist"
+    },
+    "discovery.rail.series": {
+      "fr": "Autres dates de ce spectacle",
+      "en": "Other dates of this show"
+    },
+    "discovery.rail.suggested": {
+      "fr": "À voir aussi",
+      "en": "Also worth watching"
+    },
+    "discovery.rail.tonight": {
+      "fr": "Ce soir sur Arthome",
+      "en": "Tonight on Arthome"
+    },
+    "discovery.rail.yourSeats": {
+      "fr": "Vos places",
+      "en": "Your seats"
+    },
+    "discovery.search.emptyAlerts": {
+      "fr": "Aucune alerte enregistrée",
+      "en": "No saved alert"
+    },
+    "discovery.search.emptyAlertsHint": {
+      "fr": "Depuis l’explorateur, réglez une recherche puis « Créer une alerte » : vous serez notifié dès qu’un live correspond.",
+      "en": "From the browse page, set a search then hit “Create an alert”: you will be notified as soon as a live show matches."
+    },
+    "discovery.search.emptyArtists": {
+      "fr": "Aucun artiste dans cette discipline",
+      "en": "No artist in this discipline"
+    },
+    "discovery.search.emptyCatArtists": {
+      "fr": "Aucun artiste avec ces filtres",
+      "en": "No artist with these filters"
+    },
+    "discovery.search.emptyCatHint": {
+      "fr": "Retirez un filtre pour élargir la sélection.",
+      "en": "Remove a filter to widen the selection."
+    },
+    "discovery.search.emptyCatLive": {
+      "fr": "Aucun live en cours dans cette catégorie",
+      "en": "No live show in this category right now"
+    },
+    "discovery.search.emptyCatLiveHint": {
+      "fr": "Les prochaines dates sont juste en dessous.",
+      "en": "Upcoming dates are just below."
+    },
+    "discovery.search.emptyCatReplays": {
+      "fr": "Aucune rediffusion avec ces filtres",
+      "en": "No replay with these filters"
+    },
+    "discovery.search.emptyCatUpcoming": {
+      "fr": "Aucune date à venir avec ces filtres",
+      "en": "No upcoming date with these filters"
+    },
+    "discovery.search.emptyFollowLive": {
+      "fr": "Aucun artiste suivi n’est en direct",
+      "en": "None of the artists you follow is live"
+    },
+    "discovery.search.emptyFollowLiveHint": {
+      "fr": "Vous serez notifié dès qu’un artiste que vous suivez ouvre son flux.",
+      "en": "You will be notified as soon as one of them opens their stream."
+    },
+    "discovery.search.emptyOrders": {
+      "fr": "Aucune commande",
+      "en": "No orders yet"
+    },
+    "discovery.search.emptyOrdersHint": {
+      "fr": "Le merch acheté dans la boutique d’un live apparaîtra ici, avec son suivi et sa facture.",
+      "en": "Merch bought from a live’s store shows up here, with tracking and invoice."
+    },
+    "discovery.search.emptyResults": {
+      "fr": "Aucun spectacle pour cette recherche",
+      "en": "No show for this search"
+    },
+    "discovery.search.emptyResultsHint": {
+      "fr": "Essayez un autre mot, ou retirez les filtres actifs.",
+      "en": "Try another word, or clear the active filters."
+    },
+    "discovery.search.loadMore": {
+      "fr": "Voir plus",
+      "en": "Show more"
+    },
+    "discovery.search.newSearch": {
+      "fr": "Nouvelle recherche",
+      "en": "New search"
+    },
+    "discovery.search.noArtistFound": {
+      "fr": "Aucun artiste ne correspond",
+      "en": "No artist matches"
+    },
+    "discovery.search.noShowFound": {
+      "fr": "Aucun spectacle ne correspond",
+      "en": "No show matches"
+    },
+    "discovery.search.resultLabel": {
+      "fr": "Résultat",
+      "en": "Result"
+    },
+    "discovery.search.resultsLabel": {
+      "fr": "Résultats",
+      "en": "Results"
+    },
+    "discovery.search.seeAll": {
+      "fr": "Voir tous les résultats",
+      "en": "See all results"
+    },
+    "discovery.search.seeAllBlock": {
+      "fr": "Tout voir",
+      "en": "See all"
+    },
+    "discovery.search.seeAllShort": {
+      "fr": "Tout voir",
+      "en": "See all"
+    },
+    "discovery.search.suggNothing": {
+      "fr": "Aucun résultat — essayez « danse », « jazz », « humour ».",
+      "en": "Nothing found — try “dance”, “jazz”, “comedy”."
+    },
+    "discovery.search.suggShowsLabel": {
+      "fr": "Spectacles",
+      "en": "Shows"
+    },
+    "discovery.searchHint": {
+      "fr": "Essayez « danse », « jazz », « humour », ou le nom d’une salle.",
+      "en": "Try “dance”, “jazz”, “comedy”, or the name of a venue."
+    },
+    "discovery.seeAllCategories": {
+      "fr": "Voir toutes les catégories",
+      "en": "See all categories"
+    },
+    "discovery.seeTonight": {
+      "fr": "Voir la grille du soir",
+      "en": "See tonight’s schedule"
+    },
+    "discovery.side.alerts": {
+      "fr": "Mes alertes",
+      "en": "My alerts"
+    },
+    "discovery.side.alertsNew": {
+      "fr": "Recherches enregistrées",
+      "en": "Saved searches"
+    },
+    "discovery.side.almost": {
+      "fr": "Bientôt complet ici",
+      "en": "Almost sold out here"
+    },
+    "discovery.side.catSaved": {
+      "fr": "Mes recherches liées",
+      "en": "My related searches"
+    },
+    "discovery.side.followLive": {
+      "fr": "Suivis en direct",
+      "en": "Followed, live"
+    },
+    "discovery.side.noFollowLive": {
+      "fr": "Personne en direct",
+      "en": "Nobody live"
+    },
+    "discovery.side.other": {
+      "fr": "Autres catégories",
+      "en": "Other categories"
+    },
+    "discovery.side.recent": {
+      "fr": "Recherches récentes",
+      "en": "Recent searches"
+    },
+    "discovery.side.subs": {
+      "fr": "Sous-genres",
+      "en": "Subgenres"
+    },
+    "discovery.tonightGrid": {
+      "fr": "La grille de la soirée",
+      "en": "Tonight’s schedule"
+    },
+    "enums.badge.kids": {
+      "fr": "Compte enfant",
+      "en": "Kids account"
+    },
+    "enums.badge.subscriber": {
+      "fr": "Abonné",
+      "en": "Subscriber"
+    },
+    "enums.badge.visitor": {
+      "fr": "Visiteur",
+      "en": "Visitor"
+    },
+    "enums.chatMode.emoji": {
+      "fr": "Emojis et phrases préparées",
+      "en": "Emoji and preset phrases"
+    },
+    "enums.chatMode.off": {
+      "fr": "Tchat coupé",
+      "en": "Chat off"
+    },
+    "enums.chatMode.open": {
+      "fr": "Tchat libre",
+      "en": "Open chat"
+    },
+    "enums.chatMode.read-only": {
+      "fr": "Lecture seule",
+      "en": "Read only"
+    },
+    "enums.dateState.ended": {
+      "fr": "Terminé",
+      "en": "Ended"
+    },
+    "enums.dateState.live": {
+      "fr": "En direct",
+      "en": "Live"
+    },
+    "enums.dateState.replay": {
+      "fr": "Rediffusion en ligne",
+      "en": "Replay available"
+    },
+    "enums.dateState.scheduled": {
+      "fr": "Programmé",
+      "en": "Scheduled"
+    },
+    "enums.deviceKind.box": {
+      "fr": "Box opérateur",
+      "en": "Set-top box"
+    },
+    "enums.deviceKind.console": {
+      "fr": "Console",
+      "en": "Console"
+    },
+    "enums.deviceKind.desktop": {
+      "fr": "Ordinateur",
+      "en": "Computer"
+    },
+    "enums.deviceKind.mobile": {
+      "fr": "Téléphone",
+      "en": "Phone"
+    },
+    "enums.deviceKind.stick": {
+      "fr": "Clé HDMI",
+      "en": "HDMI stick"
+    },
+    "enums.deviceKind.tablet": {
+      "fr": "Tablette",
+      "en": "Tablet"
+    },
+    "enums.deviceKind.tv": {
+      "fr": "Téléviseur",
+      "en": "TV"
+    },
+    "enums.incidentKind.cancelled": {
+      "fr": "Annulation",
+      "en": "Cancellation"
+    },
+    "enums.incidentKind.hold-screen": {
+      "fr": "Écran d’attente",
+      "en": "Hold screen"
+    },
+    "enums.incidentKind.interrupted": {
+      "fr": "Interruption",
+      "en": "Interruption"
+    },
+    "enums.incidentKind.postponed": {
+      "fr": "Report",
+      "en": "Postponement"
+    },
+    "enums.languageDependency.essential": {
+      "fr": "Texte au cœur du spectacle",
+      "en": "Text-driven"
+    },
+    "enums.languageDependency.helpful": {
+      "fr": "Chanté ou surtitré",
+      "en": "Sung or surtitled"
+    },
+    "enums.languageDependency.none": {
+      "fr": "Sans barrière de langue",
+      "en": "No language barrier"
+    },
+    "enums.messageState.banned": {
+      "fr": "Banni",
+      "en": "Banned"
+    },
+    "enums.messageState.muted": {
+      "fr": "Réduit au silence",
+      "en": "Muted"
+    },
+    "enums.messageState.ok": {
+      "fr": "Publié",
+      "en": "Published"
+    },
+    "enums.messageState.removed": {
+      "fr": "Supprimé",
+      "en": "Removed"
+    },
+    "enums.outcome.cancelled": {
+      "fr": "Annulée et remboursée",
+      "en": "Cancelled and refunded"
+    },
+    "enums.outcome.interrupted": {
+      "fr": "Interrompue · avoirs émis",
+      "en": "Interrupted · credits issued"
+    },
+    "enums.outcome.postponed": {
+      "fr": "Reportée · places valables",
+      "en": "Postponed · seats valid"
+    },
+    "enums.plan.free": {
+      "fr": "Découverte",
+      "en": "Discover"
+    },
+    "enums.plan.monthly": {
+      "fr": "Abonnement mensuel",
+      "en": "Monthly subscription"
+    },
+    "enums.plan.none": {
+      "fr": "Sans abonnement",
+      "en": "No subscription"
+    },
+    "enums.plan.pass": {
+      "fr": "Pass Arthome",
+      "en": "Arthome Pass"
+    },
+    "enums.plan.premium": {
+      "fr": "Premium",
+      "en": "Premium"
+    },
+    "enums.plan.season": {
+      "fr": "Abonnement saison",
+      "en": "Season subscription"
+    },
+    "enums.planOpens.all-lives": {
+      "fr": "Tous les directs",
+      "en": "All lives"
+    },
+    "enums.planOpens.archive": {
+      "fr": "Accès aux archives",
+      "en": "Archive access"
+    },
+    "enums.planOpens.browse": {
+      "fr": "Tout le catalogue",
+      "en": "Full catalogue"
+    },
+    "enums.planOpens.free-dates": {
+      "fr": "Dates gratuites",
+      "en": "Free dates"
+    },
+    "enums.planOpens.multi-screen": {
+      "fr": "Deux écrans à la fois",
+      "en": "Two screens at once"
+    },
+    "enums.planOpens.no-ads": {
+      "fr": "Sans publicité",
+      "en": "No ads"
+    },
+    "enums.planOpens.one-live-month": {
+      "fr": "Un direct par mois",
+      "en": "One live a month"
+    },
+    "enums.planOpens.replays": {
+      "fr": "Rediffusions incluses",
+      "en": "Replays included"
+    },
+    "enums.planOpens.trailers": {
+      "fr": "Bandes-annonces",
+      "en": "Trailers"
+    },
+    "enums.priceTier.full": {
+      "fr": "Plein tarif",
+      "en": "Full price"
+    },
+    "enums.priceTier.reduced": {
+      "fr": "Tarif réduit",
+      "en": "Reduced"
+    },
+    "enums.priceTier.support": {
+      "fr": "Tarif soutien",
+      "en": "Support price"
+    },
+    "enums.replayPolicy.included": {
+      "fr": "Rediffusion incluse",
+      "en": "Replay included"
+    },
+    "enums.replayPolicy.none": {
+      "fr": "Aucune rediffusion",
+      "en": "No replay"
+    },
+    "enums.replayPolicy.subscription": {
+      "fr": "Incluse avec l’abonnement",
+      "en": "Included with a subscription"
+    },
+    "enums.replayPolicy.unit": {
+      "fr": "À l’unité",
+      "en": "Sold separately"
+    },
+    "hosting.amAll": {
+      "fr": "Tout mon compte",
+      "en": "My whole account"
+    },
+    "hosting.amFormule": {
+      "fr": "Formule",
+      "en": "Plan"
+    },
+    "hosting.amHelp": {
+      "fr": "Aide et contact",
+      "en": "Help and contact"
+    },
+    "hosting.amStudio": {
+      "fr": "Ouvrir le studio ↗",
+      "en": "Open the studio ↗"
+    },
+    "hosting.becomeHost": {
+      "fr": "Diffuser sur Arthome",
+      "en": "Stream on Arthome"
+    },
+    "hosting.studioBlurb": {
+      "fr": "Configurez votre live, votre billetterie et votre boutique depuis le studio. Intégration OBS en trois étapes.",
+      "en": "Set up your live, ticketing and store from the studio. OBS integration in three steps."
+    },
+    "hosting.studioCta": {
+      "fr": "Ouvrir le studio ↗",
+      "en": "Open the studio ↗"
+    },
+    "hosting.studioSoonBody": {
+      "fr": "La configuration du live — qualité, tchat, billetterie, boutique, modération — se fera dans Arthome Studio, qui s’ouvrira dans un nouvel onglet. Cet espace n’est pas encore conçu.",
+      "en": "Live setup — quality, chat, ticketing, store, moderation — will live in Arthome Studio, opening in a new tab. That space is not designed yet."
+    },
+    "hosting.studioSoonClose": {
+      "fr": "Compris",
+      "en": "Got it"
+    },
+    "hosting.studioSoonNote": {
+      "fr": "Prochaine étape du projet",
+      "en": "Next step of the project"
+    },
+    "hosting.studioSoonTitle": {
+      "fr": "Le studio est un site à part",
+      "en": "The studio is a separate site"
+    },
+    "hosting.studioTag": {
+      "fr": "Espace artiste",
+      "en": "Artist space"
+    },
+    "player.audioTrack": {
+      "fr": "Piste audio",
+      "en": "Audio track"
+    },
+    "player.backToControls": {
+      "fr": "Revenir aux fonctions",
+      "en": "Back to controls"
+    },
+    "player.backToDate": {
+      "fr": "Revenir à la date",
+      "en": "Back to the date"
+    },
+    "player.chapters": {
+      "fr": "Horodatage",
+      "en": "Timestamps"
+    },
+    "player.dateInfoBack": {
+      "fr": "Bleu ou retour pour revenir",
+      "en": "Blue or back to return"
+    },
+    "player.dateInfoKicker": {
+      "fr": "Informations sur la date",
+      "en": "About this date"
+    },
+    "player.emojisOnly": {
+      "fr": "Réactions uniquement",
+      "en": "Reactions only"
+    },
+    "player.infoCloseHint": {
+      "fr": "Retour, ⓘ ou bleu pour revenir",
+      "en": "Back, ⓘ or blue to return"
+    },
+    "player.phrases": {
+      "fr": "Phrases préfaites",
+      "en": "Preset phrases"
+    },
+    "player.pipBack": {
+      "fr": "Revenir au live",
+      "en": "Back to the live"
+    },
+    "player.pipBackReplay": {
+      "fr": "Reprendre la rediffusion",
+      "en": "Resume the replay"
+    },
+    "player.pipLeft": {
+      "fr": "Restant",
+      "en": "Left"
+    },
+    "player.pipReplay": {
+      "fr": "Rediffusion",
+      "en": "Replay"
+    },
+    "player.pipWatching": {
+      "fr": "En cours",
+      "en": "Playing"
+    },
+    "player.quality": {
+      "fr": "Qualité",
+      "en": "Quality"
+    },
+    "player.speed": {
+      "fr": "Vitesse",
+      "en": "Speed"
+    },
+    "remote.helpBody": {
+      "fr": "Tout se pilote à cinq touches. Maintenez OK à tout moment pour rouvrir cette page.",
+      "en": "Everything runs on five keys. Hold OK at any time to reopen this page."
+    },
+    "remote.helpKicker": {
+      "fr": "Télécommande",
+      "en": "Remote"
+    },
+    "remote.helpTitle": {
+      "fr": "Les touches",
+      "en": "The keys"
+    },
+    "remote.hint.back": {
+      "fr": "Retour",
+      "en": "Back"
+    },
+    "remote.hint.chat": {
+      "fr": "Tchat",
+      "en": "Chat"
+    },
+    "remote.hint.fold": {
+      "fr": "Réduire",
+      "en": "Fold"
+    },
+    "remote.hint.help": {
+      "fr": "Maintenir OK · aide",
+      "en": "Hold OK · help"
+    },
+    "remote.hint.info": {
+      "fr": "Infos",
+      "en": "Info"
+    },
+    "remote.hint.keys": {
+      "fr": "Commandes",
+      "en": "Keys"
+    },
+    "remote.hint.navigate": {
+      "fr": "Naviguer",
+      "en": "Navigate"
+    },
+    "remote.hint.open": {
+      "fr": "Ouvrir",
+      "en": "Open"
+    },
+    "remote.hint.play": {
+      "fr": "Lecture",
+      "en": "Play"
+    },
+    "remote.hint.remove": {
+      "fr": "Maintenir · retirer",
+      "en": "Hold · remove"
+    },
+    "remote.hint.seek": {
+      "fr": "±10 S",
+      "en": "±10 S"
+    },
+    "remote.hint.subtitles": {
+      "fr": "Sous-titres",
+      "en": "Subtitles"
+    },
+    "remote.hint.tracks": {
+      "fr": "Pistes",
+      "en": "Tracks"
+    },
+    "remote.quitHint": {
+      "fr": "Appuyez encore sur Retour pour quitter Arthome",
+      "en": "Press Back again to leave Arthome"
+    },
+    "states.incidentAtVenue": {
+      "fr": "Incident en salle",
+      "en": "Incident at the venue"
+    },
+    "states.outcomeBody.cancelled": {
+      "fr": "La date a été annulée. Votre place a été remboursée intégralement, crédit visible sous 3 à 5 jours ouvrés sur le moyen de paiement d’origine.",
+      "en": "This date was cancelled. Your seat has been refunded in full; the credit appears within 3 to 5 business days on the original payment method."
+    },
+    "states.outcomeBody.interrupted": {
+      "fr": "Le spectacle a été interrompu par la salle. Un avoir du montant de votre place a été émis sur votre compte Arthome.",
+      "en": "The venue stopped the performance. A credit for the price of your seat has been issued to your Arthome account."
+    },
+    "states.outcomeBody.postponed": {
+      "fr": "La date a été reportée. Votre place reste valable sans démarche, à la nouvelle date indiquée ci-dessus.",
+      "en": "This date was postponed. Your seat stays valid with nothing to do, for the new date shown above."
+    },
+    "states.previewMuted": {
+      "fr": "Aperçu · sans son",
+      "en": "Preview · muted"
+    },
+    "storefront.aboutArtist": {
+      "fr": "À propos",
+      "en": "About"
+    },
+    "storefront.allCategories": {
+      "fr": "Toutes les catégories",
+      "en": "All categories"
+    },
+    "storefront.allCatsSub": {
+      "fr": "Toutes les disciplines du spectacle vivant, en direct depuis la salle.",
+      "en": "Every live-performance discipline, streamed from the room."
+    },
+    "storefront.allCatsTitle": {
+      "fr": "Toutes les catégories",
+      "en": "All categories"
+    },
+    "storefront.almostFull": {
+      "fr": "Bientôt complet",
+      "en": "Almost sold out"
+    },
+    "storefront.almostGone": {
+      "fr": "Bientôt complet",
+      "en": "Almost sold out"
+    },
+    "storefront.almostGoneSub": {
+      "fr": "Recommandé pour vous · dernières places",
+      "en": "Picked for you · last seats"
+    },
+    "storefront.artistBio": {
+      "fr": "La biographie de l’artiste s’affiche ici, telle qu’il l’a rédigée dans son studio.",
+      "en": "The artist’s biography appears here, as written in their studio."
+    },
+    "storefront.artistMeta": {
+      "fr": "Abonnés · discipline · ville",
+      "en": "Followers · discipline · city"
+    },
+    "storefront.artistsSub": {
+      "fr": "Compagnies, orchestres et solistes sur arthome",
+      "en": "Companies, orchestras and solo acts on arthome"
+    },
+    "storefront.artistsTitle": {
+      "fr": "Les artistes",
+      "en": "The artists"
+    },
+    "storefront.avgViewers": {
+      "fr": "Audience moyenne",
+      "en": "Average audience"
+    },
+    "storefront.backToArtists": {
+      "fr": "← tous les artistes",
+      "en": "← all artists"
+    },
+    "storefront.backToCats": {
+      "fr": "← toutes les catégories",
+      "en": "← all categories"
+    },
+    "storefront.based": {
+      "fr": "Basé à",
+      "en": "Based in"
+    },
+    "storefront.catArtists": {
+      "fr": "Artistes de la catégorie",
+      "en": "Artists in this category"
+    },
+    "storefront.catLiveNow": {
+      "fr": "En direct dans cette catégorie",
+      "en": "Live in this category"
+    },
+    "storefront.catUpcoming": {
+      "fr": "Prochaines dates",
+      "en": "Upcoming dates"
+    },
+    "storefront.checkout": {
+      "fr": "Passer au paiement",
+      "en": "Go to checkout"
+    },
+    "storefront.chooseTier": {
+      "fr": "Choisir sa place",
+      "en": "Choose your ticket"
+    },
+    "storefront.clear": {
+      "fr": "Effacer",
+      "en": "Delete"
+    },
+    "storefront.clearAll": {
+      "fr": "Tout effacer",
+      "en": "Clear all"
+    },
+    "storefront.collapseSide": {
+      "fr": "Replier",
+      "en": "Collapse"
+    },
+    "storefront.dateToCome": {
+      "fr": "date à venir",
+      "en": "upcoming date"
+    },
+    "storefront.datesToCome": {
+      "fr": "dates à venir",
+      "en": "upcoming dates"
+    },
+    "storefront.expandSide": {
+      "fr": "Déplier",
+      "en": "Expand"
+    },
+    "storefront.favUpcoming": {
+      "fr": "Les prochaines dates de vos artistes",
+      "en": "Coming from your artists"
+    },
+    "storefront.favUpcomingSub": {
+      "fr": "Artistes que vous suivez",
+      "en": "Artists you follow"
+    },
+    "storefront.fees": {
+      "fr": "Frais de service",
+      "en": "Service fee"
+    },
+    "storefront.foldDates": {
+      "fr": "Replier",
+      "en": "Collapse"
+    },
+    "storefront.followCat": {
+      "fr": "Enregistrer cette catégorie",
+      "en": "Save this category"
+    },
+    "storefront.followCatHint": {
+      "fr": "Rejoint vos recherches enregistrées, avec les filtres actifs. Alerte à chaque nouvelle date.",
+      "en": "Joins your saved searches with the active filters. Alerted on every new date."
+    },
+    "storefront.followersShort": {
+      "fr": "Abonnés",
+      "en": "Followers"
+    },
+    "storefront.followingCat": {
+      "fr": "Catégorie enregistrée ✓",
+      "en": "Category saved ✓"
+    },
+    "storefront.followingEmpty": {
+      "fr": "Aucun artiste suivi pour le moment.",
+      "en": "No artists followed yet."
+    },
+    "storefront.footerTag": {
+      "fr": "La scène vivante, chez vous. Théâtre, danse, concerts et humour en direct — avec les artistes qui les font.",
+      "en": "Live stage, at home. Theatre, dance, concerts and comedy — live, with the artists who make them."
+    },
+    "storefront.freeGiveCta": {
+      "fr": "Réserver et contribuer",
+      "en": "Reserve and contribute"
+    },
+    "storefront.freePeek": {
+      "fr": "Voir l’aperçu gratuit",
+      "en": "Watch free preview"
+    },
+    "storefront.freeSeatCta": {
+      "fr": "Réserver ma place",
+      "en": "Reserve my seat"
+    },
+    "storefront.getTicket": {
+      "fr": "Prendre ma place",
+      "en": "Get my ticket"
+    },
+    "storefront.hasDates": {
+      "fr": "A des dates",
+      "en": "Has dates"
+    },
+    "storefront.includedLabel": {
+      "fr": "Incluse",
+      "en": "Included"
+    },
+    "storefront.joinAnytime": {
+      "fr": "Rejoignez en cours de route",
+      "en": "Join mid-show, any time"
+    },
+    "storefront.joinLive": {
+      "fr": "Rejoindre le live",
+      "en": "Join the live"
+    },
+    "storefront.joined": {
+      "fr": "Sur arthome depuis",
+      "en": "On arthome since"
+    },
+    "storefront.lastLive": {
+      "fr": "Dernier live",
+      "en": "Last live"
+    },
+    "storefront.legal": {
+      "fr": "Cgv · confidentialité · accessibilité · presse",
+      "en": "Terms · privacy · accessibility · press"
+    },
+    "storefront.liveNow": {
+      "fr": "Maintenant",
+      "en": "Right now"
+    },
+    "storefront.liveNowBanner": {
+      "fr": "Cet artiste est en direct en ce moment",
+      "en": "This artist is live right now"
+    },
+    "storefront.liveSection": {
+      "fr": "En direct maintenant",
+      "en": "Live right now"
+    },
+    "storefront.liveSectionSub": {
+      "fr": "Classé par nom",
+      "en": "Sorted by name"
+    },
+    "storefront.markRead": {
+      "fr": "Tout marquer comme lu",
+      "en": "Mark all as read"
+    },
+    "storefront.menuTitle": {
+      "fr": "Menu",
+      "en": "Menu"
+    },
+    "storefront.merch": {
+      "fr": "Boutique",
+      "en": "Store"
+    },
+    "storefront.mostWatched": {
+      "fr": "Les plus regardés",
+      "en": "Most watched"
+    },
+    "storefront.myTickets": {
+      "fr": "Mes places & rediffusions",
+      "en": "My tickets & replays"
+    },
+    "storefront.nextDate": {
+      "fr": "Prochaine date",
+      "en": "Next date"
+    },
+    "storefront.noFee": {
+      "fr": "—",
+      "en": "—"
+    },
+    "storefront.notToMiss": {
+      "fr": "À ne pas rater",
+      "en": "Don’t miss"
+    },
+    "storefront.notToMissSub": {
+      "fr": "Les plus attendus",
+      "en": "Most anticipated"
+    },
+    "storefront.offlineSection": {
+      "fr": "Pas en direct",
+      "en": "Not live"
+    },
+    "storefront.offlineSectionSub": {
+      "fr": "Classé par nom · dernier live",
+      "en": "Sorted by name · last live"
+    },
+    "storefront.otherArtists": {
+      "fr": "Dans la même discipline",
+      "en": "Same discipline"
+    },
+    "storefront.otherDates": {
+      "fr": "autres dates",
+      "en": "more dates"
+    },
+    "storefront.peekBlurb": {
+      "fr": "Le spectacle a commencé il y a 18 minutes. Prenez votre place et rejoignez-le où il en est.",
+      "en": "The show started 18 minutes ago. Get a ticket and join it where it is."
+    },
+    "storefront.peekTitle": {
+      "fr": "Aperçu gratuit — il vous reste 4 min 12",
+      "en": "Free preview — 4:12 left"
+    },
+    "storefront.promoBadge": {
+      "fr": "Promotion",
+      "en": "Promotion"
+    },
+    "storefront.recent": {
+      "fr": "Recherches récentes",
+      "en": "Recent searches"
+    },
+    "storefront.remaining": {
+      "fr": "restants",
+      "en": "left"
+    },
+    "storefront.remind": {
+      "fr": "Me rappeler",
+      "en": "Remind me"
+    },
+    "storefront.replayAccess": {
+      "fr": "Accès",
+      "en": "Access"
+    },
+    "storefront.replayLabel": {
+      "fr": "Rediffusion",
+      "en": "Replay"
+    },
+    "storefront.replayNote": {
+      "fr": "Votre place inclut la rediffusion pendant 72 h.",
+      "en": "Your ticket includes 72h replay access."
+    },
+    "storefront.replayOf": {
+      "fr": "Rediffusion du",
+      "en": "Replay of"
+    },
+    "storefront.replayPage": {
+      "fr": "Rediffusion",
+      "en": "Replay"
+    },
+    "storefront.replayPolicy": {
+      "fr": "Accès aux rediffusions",
+      "en": "Replay access"
+    },
+    "storefront.schedule": {
+      "fr": "Grille du soir",
+      "en": "Tonight’s line-up"
+    },
+    "storefront.scopeCategory": {
+      "fr": "Catégorie",
+      "en": "Category"
+    },
+    "storefront.scopeSearch": {
+      "fr": "Recherche",
+      "en": "Search"
+    },
+    "storefront.search": {
+      "fr": "Rechercher un artiste, un spectacle…",
+      "en": "Search an artist, a show…"
+    },
+    "storefront.seatsLeft": {
+      "fr": "Places restantes",
+      "en": "Seats left"
+    },
+    "storefront.secure": {
+      "fr": "Sécuriser ma place",
+      "en": "Secure my seat"
+    },
+    "storefront.seeArtist": {
+      "fr": "Voir la fiche",
+      "en": "View page"
+    },
+    "storefront.sessions": {
+      "fr": "Appareils connectés",
+      "en": "Connected devices"
+    },
+    "storefront.shareBlurb": {
+      "fr": "Vos amis peuvent regarder l’aperçu gratuitement.",
+      "en": "Friends can watch the free preview."
+    },
+    "storefront.shareTitle": {
+      "fr": "Partager ce live",
+      "en": "Share this live"
+    },
+    "storefront.shows": {
+      "fr": "Spectacles diffusés",
+      "en": "Shows streamed"
+    },
+    "storefront.signUp": {
+      "fr": "Créer un compte",
+      "en": "Create account"
+    },
+    "storefront.sponsored": {
+      "fr": "Mis en avant",
+      "en": "Featured"
+    },
+    "storefront.store": {
+      "fr": "Boutique",
+      "en": "Store"
+    },
+    "storefront.storeNote": {
+      "fr": "Boutique de l’artiste — livraison ou fichier",
+      "en": "Artist store — shipped or digital"
+    },
+    "storefront.ticketFine": {
+      "fr": "Paiement sécurisé · annulation jusqu’à 1 h avant le début · rediffusion 72 h incluse",
+      "en": "Secure payment · cancel up to 1h before start · 72h replay included"
+    },
+    "storefront.tocLabel": {
+      "fr": "Sur cette page",
+      "en": "On this page"
+    },
+    "storefront.total": {
+      "fr": "Total",
+      "en": "Total"
+    },
+    "storefront.unfollowCat": {
+      "fr": "Retirer cette catégorie de vos recherches ?",
+      "en": "Remove this category from your saved searches?"
+    },
+    "storefront.upcoming": {
+      "fr": "à l’affiche",
+      "en": "on the bill"
+    },
+    "storefront.viewProfile": {
+      "fr": "Voir la fiche",
+      "en": "View page"
+    },
+    "storefront.watchLive": {
+      "fr": "Voir les dates en direct",
+      "en": "See live dates"
+    },
+    "storefront.watchNow": {
+      "fr": "Regarder maintenant",
+      "en": "Watch now"
+    },
+    "storefront.yourFaves": {
+      "fr": "Vos artistes suivis",
+      "en": "Artists you follow"
+    },
+    "support.blurb": {
+      "fr": "Une question sur une place, une rediffusion ou un paiement ? L’équipe répond sous 24 h.",
+      "en": "A question about a ticket, a replay or a payment? The team replies within 24h."
+    },
+    "support.contactTitle": {
+      "fr": "Nous écrire directement",
+      "en": "Write to us directly"
+    },
+    "support.cta": {
+      "fr": "Nous écrire",
+      "en": "Contact us"
+    },
+    "support.dpoLabel": {
+      "fr": "Protection des données",
+      "en": "Data protection"
+    },
+    "support.hours": {
+      "fr": "Du lundi au vendredi, 10 h – 18 h. Les demandes liées à un live en cours sont traitées en priorité.",
+      "en": "Monday to Friday, 10am – 6pm. Requests about a live in progress are handled first."
+    },
+    "support.intro": {
+      "fr": "Une équipe de quatre personnes, à Lyon. Choisissez le sujet : votre message part au bon interlocuteur.",
+      "en": "A team of four, based in Lyon. Pick a topic and your message reaches the right person."
+    },
+    "support.mail": {
+      "fr": "bonjour@arthome.fr",
+      "en": "hello@arthome.fr"
+    },
+    "support.mailDpo": {
+      "fr": "donnees@arthome.fr",
+      "en": "privacy@arthome.fr"
+    },
+    "support.sub": {
+      "fr": "Réponse sous 24 h ouvrées",
+      "en": "Reply within 24 working hours"
+    },
+    "support.title": {
+      "fr": "Aide et contact",
+      "en": "Help and contact"
+    },
+    "support.topic1": {
+      "fr": "Billetterie et remboursement",
+      "en": "Tickets and refunds"
+    },
+    "support.topic1Hint": {
+      "fr": "Place non reçue, spectacle annulé, erreur de paiement.",
+      "en": "Ticket not received, show cancelled, payment error."
+    },
+    "support.topic2": {
+      "fr": "Lecture et qualité",
+      "en": "Playback and quality"
+    },
+    "support.topic2Hint": {
+      "fr": "Image saccadée, son décalé, passage en 4K, sous-titres.",
+      "en": "Stuttering picture, audio drift, 4K, subtitles."
+    },
+    "support.topic3Hint": {
+      "fr": "Rediffusion absente, expirée, ou incluse dans l’abonnement.",
+      "en": "Replay missing, expired, or included with the subscription."
+    },
+    "support.topic4": {
+      "fr": "Boutique et livraison",
+      "en": "Store and delivery"
+    },
+    "support.topic4Hint": {
+      "fr": "Commande de merch, suivi de colis, article numérique.",
+      "en": "Merch order, parcel tracking, digital item."
+    },
+    "support.topic5": {
+      "fr": "Compte et connexion",
+      "en": "Account and sign-in"
+    },
+    "support.topic5Hint": {
+      "fr": "Mot de passe, double authentification, appareils connectés.",
+      "en": "Password, two-factor, connected devices."
+    },
+    "support.topic6": {
+      "fr": "Données personnelles",
+      "en": "Personal data"
+    },
+    "support.topic6Hint": {
+      "fr": "Export, effacement, consentements, cookies.",
+      "en": "Export, erasure, consents, cookies."
+    },
+    "support.topics": {
+      "fr": "Sujets",
+      "en": "Topics"
+    },
+    "support.write": {
+      "fr": "Écrire",
+      "en": "Write"
+    },
+    "ticketing.cart.added": {
+      "fr": "Ajouté ✓",
+      "en": "Added ✓"
+    },
+    "ticketing.cart.backToShow": {
+      "fr": "Retourner au spectacle",
+      "en": "Back to the show"
+    },
+    "ticketing.cart.card": {
+      "fr": "Visa ···· 4412",
+      "en": "Visa ···· 4412"
+    },
+    "ticketing.cart.checkout": {
+      "fr": "Passer commande",
+      "en": "Checkout"
+    },
+    "ticketing.cart.done": {
+      "fr": "Commande confirmée ✓",
+      "en": "Order confirmed ✓"
+    },
+    "ticketing.cart.doneHint": {
+      "fr": "Reçu envoyé par e-mail · suivi dans « Mon compte ».",
+      "en": "Receipt sent by email · tracked in “My account”."
+    },
+    "ticketing.cart.empty": {
+      "fr": "Votre panier est vide",
+      "en": "Your cart is empty"
+    },
+    "ticketing.cart.emptyHint": {
+      "fr": "Le merch s’ajoute depuis la boutique d’un live.",
+      "en": "Merch is added from a live’s store."
+    },
+    "ticketing.cart.from": {
+      "fr": "Vendu par",
+      "en": "Sold by"
+    },
+    "ticketing.cart.goStore": {
+      "fr": "Ouvrir une boutique",
+      "en": "Open a store"
+    },
+    "ticketing.cart.head": {
+      "fr": "Panier merch",
+      "en": "Merch cart"
+    },
+    "ticketing.cart.item": {
+      "fr": "Article",
+      "en": "Item"
+    },
+    "ticketing.cart.items": {
+      "fr": "Articles",
+      "en": "Items"
+    },
+    "ticketing.cart.pay": {
+      "fr": "Payer",
+      "en": "Pay"
+    },
+    "ticketing.cart.paying": {
+      "fr": "Paiement…",
+      "en": "Processing…"
+    },
+    "ticketing.cart.remove": {
+      "fr": "Retirer",
+      "en": "Remove"
+    },
+    "ticketing.cart.ship": {
+      "fr": "Livraison calculée au paiement",
+      "en": "Shipping calculated at checkout"
+    },
+    "ticketing.cart.subtotal": {
+      "fr": "Sous-total",
+      "en": "Subtotal"
+    },
+    "ticketing.cart.title": {
+      "fr": "Panier merch",
+      "en": "Merch cart"
+    },
+    "ticketing.choosePrice": {
+      "fr": "Choisir son tarif",
+      "en": "Choose your price"
+    },
+    "ticketing.codeValidity": {
+      "fr": "Code valable 15 minutes",
+      "en": "Code valid for 15 minutes"
+    },
+    "ticketing.confirmed": {
+      "fr": "Confirmé",
+      "en": "Confirmed"
+    },
+    "ticketing.emptyBody": {
+      "fr": "Réservez une date : elle apparaîtra ici avec son heure locale et l’accès à la salle.",
+      "en": "Book a date and it shows up here, with its local time and house access."
+    },
+    "ticketing.emptyTitle": {
+      "fr": "Aucune place pour l’instant",
+      "en": "No seats yet"
+    },
+    "ticketing.kicker": {
+      "fr": "Réserver une place",
+      "en": "Book a seat"
+    },
+    "ticketing.mySeatsKicker": {
+      "fr": "Vos places, vos avoirs",
+      "en": "Your seats and credits"
+    },
+    "ticketing.orTypeCode": {
+      "fr": "Ou tapez ce code sur votre téléphone",
+      "en": "Or type this code on your phone"
+    },
+    "ticketing.payKicker": {
+      "fr": "Paiement sur téléphone",
+      "en": "Payment on your phone"
+    },
+    "ticketing.perk.live": {
+      "fr": "Accès au direct",
+      "en": "Live access"
+    },
+    "ticketing.perk.liveValue": {
+      "fr": "Depuis n’importe quel appareil",
+      "en": "From any device"
+    },
+    "ticketing.perk.window": {
+      "fr": "Fenêtre",
+      "en": "Window"
+    },
+    "ticketing.phonePayNote": {
+      "fr": "Le paiement se fait sur votre téléphone : on ne saisit pas de numéro de carte à la télécommande.",
+      "en": "Payment happens on your phone: nobody types a card number with a remote."
+    },
+    "ticketing.plans.planChoose": {
+      "fr": "Choisir",
+      "en": "Choose"
+    },
+    "ticketing.plans.planCurrent": {
+      "fr": "Votre formule",
+      "en": "Your plan"
+    },
+    "ticketing.plans.planFreeName": {
+      "fr": "Libre",
+      "en": "Free"
+    },
+    "ticketing.plans.planFreeTag": {
+      "fr": "Sans compte requis",
+      "en": "No account needed"
+    },
+    "ticketing.plans.planSignUp": {
+      "fr": "Créer un compte",
+      "en": "Create account"
+    },
+    "ticketing.plans.planSubName": {
+      "fr": "Abonnement",
+      "en": "Subscription"
+    },
+    "ticketing.plans.planSubPrice": {
+      "fr": "14 € / mois",
+      "en": "€14 / month"
+    },
+    "ticketing.plans.planSubTag": {
+      "fr": "Le plus choisi",
+      "en": "Most chosen"
+    },
+    "ticketing.plans.planUnitName": {
+      "fr": "Place à l’unité",
+      "en": "Single ticket"
+    },
+    "ticketing.plans.planUnitPrice": {
+      "fr": "dès 7 €",
+      "en": "from €7"
+    },
+    "ticketing.plans.planUnitTag": {
+      "fr": "À chaque spectacle",
+      "en": "Per show"
+    },
+    "ticketing.plans.plansCompare": {
+      "fr": "Ce que comprend chaque formule",
+      "en": "What each plan includes"
+    },
+    "ticketing.plans.plansFootnote": {
+      "fr": "Les rediffusions restent au choix de l’artiste : incluses dans l’abonnement, achetables à l’unité, ou désactivées. L’information figure sur l’affiche avant l’achat.",
+      "en": "Replays stay the artist’s call: included with the subscription, sold separately, or disabled. It is stated on the poster before you buy."
+    },
+    "ticketing.plans.plansIntro": {
+      "fr": "Aucun engagement, aucune formule cachée : vous payez la place, ou l’accès continu.",
+      "en": "No commitment, no hidden tier: pay for the ticket, or for continuous access."
+    },
+    "ticketing.plans.plansSub": {
+      "fr": "Formules arthome",
+      "en": "Arthome plans"
+    },
+    "ticketing.plans.plansTitle": {
+      "fr": "Trois façons d’assister",
+      "en": "Three ways to attend"
+    },
+    "ticketing.plans.subCancel": {
+      "fr": "Résilier l’abonnement",
+      "en": "Cancel subscription"
+    },
+    "ticketing.plans.subChange": {
+      "fr": "Changer de formule",
+      "en": "Change plan"
+    },
+    "ticketing.plans.subCompare": {
+      "fr": "Voir les trois formules",
+      "en": "See all three plans"
+    },
+    "ticketing.plans.subCurrent": {
+      "fr": "Formule actuelle",
+      "en": "Current plan"
+    },
+    "ticketing.plans.subIncluded": {
+      "fr": "Ce que vous avez avec cette formule",
+      "en": "What this plan gives you"
+    },
+    "ticketing.plans.subInvoices": {
+      "fr": "Mes factures",
+      "en": "My invoices"
+    },
+    "ticketing.plans.subMethod": {
+      "fr": "Moyen de paiement",
+      "en": "Payment method"
+    },
+    "ticketing.plans.subNone": {
+      "fr": "Vous n’avez pas d’abonnement",
+      "en": "You have no subscription"
+    },
+    "ticketing.plans.subNoneHint": {
+      "fr": "Vous payez chaque place à l’unité. L’abonnement inclut le catalogue de rediffusions et 15 % sur les boutiques.",
+      "en": "You pay per ticket. The subscription includes the replay catalogue and 15% off artist stores."
+    },
+    "ticketing.plans.subRenew": {
+      "fr": "Prochain prélèvement",
+      "en": "Next payment"
+    },
+    "ticketing.plans.subSelected": {
+      "fr": "Sélectionné",
+      "en": "Selected"
+    },
+    "ticketing.plans.subSince": {
+      "fr": "Abonnée depuis",
+      "en": "Subscriber since"
+    },
+    "ticketing.plans.subTitle": {
+      "fr": "Mon abonnement",
+      "en": "My subscription"
+    },
+    "ticketing.plans.subgenres": {
+      "fr": "Sous-genres",
+      "en": "Sub-genres"
+    },
+    "ticketing.plans.subsSelected": {
+      "fr": "Sélectionnés",
+      "en": "Selected"
+    },
+    "ticketing.plans.subtotal": {
+      "fr": "Sous-total",
+      "en": "Subtotal"
+    },
+    "ticketing.replay.included": {
+      "fr": "Incluse avec la place",
+      "en": "Included with the seat"
+    },
+    "ticketing.replay.none": {
+      "fr": "Aucune rediffusion",
+      "en": "No replay"
+    },
+    "ticketing.replay.single": {
+      "fr": "À l’unité, 8 €",
+      "en": "Single purchase, €8"
+    },
+    "ticketing.replay.subscription": {
+      "fr": "Avec l’abonnement",
+      "en": "With a subscription"
+    },
+    "ticketing.replay.windowSuffix": {
+      "fr": "h après le rideau",
+      "en": "h after curtain"
+    },
+    "ticketing.scanWithPhone": {
+      "fr": "Scannez avec votre téléphone",
+      "en": "Scan with your phone"
+    },
+    "ticketing.seatCount": {
+      "fr": "Nombre de places",
+      "en": "Number of seats"
+    },
+    "ticketing.seatRequired": {
+      "fr": "Place requise",
+      "en": "Seat required"
+    },
+    "ticketing.seePlans": {
+      "fr": "Voir les formules",
+      "en": "See the plans"
+    },
+    "player.peekTitle": {
+      "fr": "Aperçu gratuit — il vous reste {left}",
+      "en": "Free preview — {left} left"
+    },
+    "player.peekBlurb": {
+      "fr": "Le spectacle a commencé il y a {elapsed}. Prenez votre place et rejoignez-le où il en est.",
+      "en": "The show started {elapsed} ago. Get a ticket and join it where it is."
+    },
+    "account.paymentMethod": {
+      "fr": "Moyen de paiement",
+      "en": "Payment method"
+    },
+    "account.devices": {
+      "fr": "Appareils connectés",
+      "en": "Connected devices"
+    },
+    "discovery.keyboard.clear": {
+      "fr": "Effacer",
+      "en": "Clear"
+    },
+    "discovery.keyboard.delete": {
+      "fr": "Supprimer",
+      "en": "Delete"
+    },
+    "discovery.nextDate": {
+      "fr": "Prochaine date",
+      "en": "Next date"
+    },
+    "ticketing.perk.replay": {
+      "fr": "Rediffusion incluse",
+      "en": "Replay included"
+    },
+    "discovery.rail.categorySoon": {
+      "fr": "Bientôt dans cette discipline",
+      "en": "Coming soon in this discipline"
+    },
+    "discovery.recentSearches": {
+      "fr": "Recherches récentes",
+      "en": "Recent searches"
+    },
+    "ticketing.replay.noWindow": {
+      "fr": "Pas de rediffusion",
+      "en": "No replay"
+    },
+    "discovery.results": {
+      "fr": "Résultats",
+      "en": "Results"
+    },
+    "ticketing.total": {
+      "fr": "Total",
+      "en": "Total"
+    },
+    "discovery.onTheBill": {
+      "fr": "à l’affiche",
+      "en": "on the bill"
+    },
+    "attributes.language.none": {
+      "fr": "Sans paroles",
+      "en": "No spoken word"
+    },
+    "attributes.language.french": {
+      "fr": "Français",
+      "en": "French"
+    },
+    "attributes.language.english": {
+      "fr": "Anglais",
+      "en": "English"
+    },
+    "attributes.language.spanish": {
+      "fr": "Espagnol",
+      "en": "Spanish"
+    },
+    "attributes.language.german": {
+      "fr": "Allemand",
+      "en": "German"
+    },
+    "attributes.language.italian": {
+      "fr": "Italien",
+      "en": "Italian"
+    },
+    "attributes.language.dutch": {
+      "fr": "Néerlandais",
+      "en": "Dutch"
+    },
+    "attributes.language.portuguese": {
+      "fr": "Portugais",
+      "en": "Portuguese"
+    },
+    "attributes.language.wolof": {
+      "fr": "Wolof",
+      "en": "Wolof"
+    },
+    "attributes.language.arabic": {
+      "fr": "Arabe",
+      "en": "Arabic"
+    },
+    "attributes.language.armenian": {
+      "fr": "Arménien",
+      "en": "Armenian"
+    },
+    "discovery.rail.otherStyles": {
+      "fr": "Autres styles",
+      "en": "Other styles"
+    }
+  }
+}

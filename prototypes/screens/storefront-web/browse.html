@@ -1,0 +1,335 @@
+<!--
+  ÉCRAN      Explorateur — cadre, filtres et rail latéral
+  ROUTE      page === 'browse'
+  AFFICHE    Le cadre de l'explorateur : titre, champ de recherche, quatre onglets de résultats, menu de tri, panneau de filtres, rail latéral (recherches récentes, enregistrées, suivis en direct, bientôt complet) et le rail « presque complet » de bas de page.
+  MÈNE VERS  browse-best · browse-lives · browse-artists · browse-replays · overlay-save-search · live
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 732-734 · 813-875 · 1265-1300
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Le menu de tri (746-760) est recopié à l'identique dans `category` : voir
+             `overlay-sort.html`, et le rail latéral avec son panneau de filtres dans
+             `overlay-filters-rail.html`. Défaut relevé au temps 1 : les valeurs de filtre sont des
+             indices de tableau (`fCats: [1]`), pas des identifiants.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — search, listSavedSearches, createSavedSearch
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, artist, catalogue, category, cats, fr, roster, s, sideDrawer, t, tickets
+  À LIRE     dépendances non recopiées ici : curSig, modeDefs, ownDates, ownFuture, passFilters, qq, sortFn, tabDefs, tierDefs, tierIdx, tokens, watched, watchedShow
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ isBrowse }}" hint-placeholder-val="{{ false }}">
+<section style="max-width: 1440px; margin: 0 auto; padding: 40px 40px 0; animation: fadeIn .3s ease both;">
+    <div style="display: grid; grid-template-columns: {{ sideCols }}; gap: 28px; align-items: start;">
+
+      <!-- … le rail latéral et le panneau de filtres (lignes 735-812) sont dans overlay-filters-rail.html … -->
+
+      <div style="min-width: 0;">
+  <div style="display: flex; align-items: flex-end; gap: 18px;">
+    <div>
+      <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 52px; line-height: 1;">{{ browseTitle }}</h1>
+      <div style="padding-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: #857E73;">{{ searchCountLabel }}</div>
+    </div>
+    <div style="margin-left: auto; flex: 0 0 auto; display: flex; align-items: center; gap: 10px;">
+      <sc-if value="{{ notSaved }}" hint-placeholder-val="{{ true }}">
+        <span onClick="{{ createAlert }}" title="{{ createAlertTitle }}" style="{{ createAlertStyle }}" style-hover="border-color:#4A423A">{{ createAlertLabel }}</span>
+      </sc-if>
+      <sc-if value="{{ alreadySaved }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: center; gap: 10px; border: 1px solid rgba(112,190,140,0.3); background: rgba(112,190,140,0.05); padding: 8px 10px 8px 13px;">
+          <div style="min-width: 0;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: oklch(0.74 0.12 150);">{{ t.savedHere }}</div>
+            <sc-if value="{{ savedHereIdle }}" hint-placeholder-val="{{ true }}">
+              <div style="padding-top: 4px; font-size: 13.5px; color: #EDE7DC; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px;">{{ savedHereName }}</div>
+            </sc-if>
+            <sc-if value="{{ savedHereEditing }}" hint-placeholder-val="{{ false }}">
+              <input data-pop="rename" value="{{ savedHereDraft }}" onChange="{{ savedHereInput }}" onKeyDown="{{ savedHereKey }}" title="{{ t.alertRenameHint }}" style="margin-top: 3px; width: 240px; max-width: 100%; box-sizing: border-box; padding: 4px 8px; border: 1px solid rgba(237,231,220,0.5); background: #0B0A09; font-family: inherit; font-size: 13.5px; color: #EDE7DC; outline: none;" />
+            </sc-if>
+          </div>
+          <span onClick="{{ savedHereStartRename }}" title="{{ t.alertRename }}" style="flex: 0 0 auto; cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 11px; color: #857E73; transition: border-color .2s ease, color .2s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">✎</span>
+          <span onClick="{{ savedHereRemove }}" title="{{ t.alertDelete }}" style="flex: 0 0 auto; cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 11px; color: #857E73; transition: border-color .2s ease, color .2s ease;" style-hover="border-color:oklch(0.5 0.14 27);color:oklch(0.78 0.14 27)">🗑</span>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="margin-top: 24px; display: flex; gap: 26px; border-bottom: 1px solid #1F1C19;">
+    <sc-for list="{{ searchTabs }}" as="tb" hint-placeholder-count="4">
+      <div onClick="{{ tb.pick }}" style="{{ tb.style }}">
+        <span>{{ tb.label }}</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6B6459;">{{ tb.count }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="margin-top: 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+    <div style="margin-left: auto; order: 9; flex: 0 0 auto; display: flex; align-items: center; gap: 6px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459; padding-right: 2px;">{{ t.viewLabel }}</span>
+      <sc-for list="{{ resViewOptions }}" as="vo" hint-placeholder-count="2">
+        <span onClick="{{ vo.pick }}" style="{{ vo.style }}">{{ vo.label }}</span>
+      </sc-for>
+    </div>
+    <sc-if value="{{ hasTokens }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0;">
+        <sc-for list="{{ activeTokens }}" as="tk" hint-placeholder-count="3">
+          <span onClick="{{ tk.drop }}" title="{{ tk.title }}" style="{{ tk.style }}" style-hover="border-color:#857E73;color:#EDE7DC">{{ tk.label }} ✕</span>
+        </sc-for>
+        <span onClick="{{ clearAllFilters }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73; border-bottom: 1px solid #1F1C19; transition: color .2s ease;" style-hover="color:#EDE7DC">{{ t.clearAll }}</span>
+      </div>
+    </sc-if>
+  </div>
+
+
+  <sc-if value="{{ nothingFound }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top: 24px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 48px 32px; text-align: center;">
+      <div style="font-family: 'Instrument Serif', serif; font-size: 26px;">{{ t.emptyResults }}</div>
+      <div style="padding-top: 10px; font-size: 13.5px; color: #857E73;">{{ t.emptyResultsHint }}</div>
+      <span onClick="{{ clearAllFilters }}" style="display: inline-block; margin-top: 16px; cursor: pointer; padding: 12px 20px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease;" style-hover="border-color:#4A423A">{{ t.clearAll }}</span>
+    </div>
+  </sc-if>
+
+
+
+  <div style="margin-top: 48px; display: flex; align-items: baseline; gap: 14px;">
+    <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 26px;">{{ t.almostGone }}</h2>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: oklch(0.72 0.16 27);">{{ t.almostGoneSub }}</span>
+    <div style="margin-left: auto; display: flex; gap: 8px;">
+      <span onClick="{{ bSoldLeft }}" style="cursor: pointer; width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid #1F1C19; color: #9B948A; font-size: 13.5px; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">←</span>
+      <span onClick="{{ bSoldRight }}" style="cursor: pointer; width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid #1F1C19; color: #9B948A; font-size: 13.5px; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">→</span>
+    </div>
+  </div>
+  <div id="rail-b-sold" style="margin-top: 14px; display: flex; gap: 14px; overflow-x: auto; scroll-behavior: smooth; padding-bottom: 6px;">
+    <sc-for list="{{ soldOut }}" as="ev" hint-placeholder-count="4">
+      <div style="flex: 0 0 272px; display: grid; grid-template-columns: 88px 1fr; gap: 12px; align-items: center;">
+        <div onClick="{{ ev.open }}" style="cursor: pointer; position: relative; aspect-ratio: 1/1; overflow: hidden; background: #17140F; border: 1px solid #1F1C19;">
+          <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.74); background-color: #1A1815; background-image: {{ ev.imgCss }}; background-size: cover; background-position: center;"></div>
+        </div>
+        <div style="min-width: 0;">
+          <div style="font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ev.title }}</div>
+          <div style="padding-top: 3px; font-size: 12.5px; color: #9B948A;"><span onClick="{{ ev.openArtist }}" style="cursor: pointer; border-bottom: 1px solid #262320; transition: color .2s ease, border-color .2s ease;" style-hover="color:#EDE7DC;border-color:#6B6459">{{ ev.artist }}</span></div>
+          <div style="margin-top: 9px; height: 3px; background: #1F1C19;">
+            <div style="{{ ev.barStyle }}"></div>
+          </div>
+          <div style="padding-top: 8px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ ev.leftLabel }}</span>
+            <sc-if value="{{ ev.pShowWas }}" hint-placeholder-val="{{ false }}">
+              <span style="{{ ev.pWasStyle }}">{{ ev.promoWasLabel }}</span>
+              </sc-if>
+            <span onClick="{{ ev.buy }}" style="{{ ev.buyStyle }}" style-hover="background:#1B1815;border-color:#4A423A">{{ ev.priceLabel }}</span>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+      </div>
+    </div>
+</section>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* modes  —  lignes 5035-5040 */
+    const modes = modeDefs.map(([id, label]) => ({
+      label,
+      pick: () => this.setState({ mode: id }),
+      style: 'cursor: pointer; padding: 5px 10px; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.1em; ' +
+        (s.mode === id ? 'background: #EDE7DC; color: #0B0A09;' : 'background: rgba(11,10,9,0.72); color: #C9C0B2;')
+    }));
+/* qualities  —  lignes 5041-5047 */
+    const qualities = ['4K', '1080p', '720p', 'AUTO'].map(label => ({
+      label,
+      pick: () => this.setState({ quality: label }),
+      style: 'cursor: pointer; padding: 5px 9px; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.08em; ' +
+        (s.quality === label ? 'background: oklch(0.68 0.18 42); color: #0B0A09;' : 'background: rgba(11,10,9,0.72); color: #9B948A;')
+    }));
+
+/* tiers  —  lignes 5083-5088 */
+    const tiers = tierDefs.map(([name, price, desc], i) => ({
+      name, price, desc,
+      pick: () => this.setState({ tier: i }),
+      style: 'cursor: pointer; padding: 14px; border: 1px solid ' + (tierIdx === i ? '#EDE7DC' : '#262320') +
+        '; background: ' + (tierIdx === i ? '#141210' : 'transparent') + ';'
+    }));
+/* reactions  —  lignes 5141-5147 */
+    const reactions = ['👏 Bravo', '🌹', '😂', fr ? 'Magnifique' : 'Beautiful', fr ? 'Encore !' : 'Encore!'].map(label => ({
+      label,
+      send: () => this.setState(st => ({ messages: st.messages.concat([{ user: 'vous', text: label, color: 'oklch(0.72 0.16 42)' }]) }))
+    }));
+
+    /* Le catalogue public vient de fixtures.js : mêmes artistes, mêmes dates
+       et mêmes tarifs que la régie et que les autres surfaces. */
+/* soldOut  —  lignes 5672-5698 */
+    const soldOut = A.upcoming().map(d => {
+      const cap = A.venue(d.venue).capacity;
+      return { d, pct: cap ? Math.round((d.seats.sold / cap) * 100) : 0 };
+    })
+      /* Presque complet veut dire qu'il reste des places : une date complète
+         n'a rien à vendre et sortirait le spectateur en pleine réservation.
+         On trie par places restantes, pas par pourcentage : six badges « 98 % »
+         d'affilée se lisent comme un défaut d'affichage, alors que « 7 places »
+         puis « 25 places » dit quelque chose. */
+      .filter(x => x.pct >= 80 && x.d.seats.available > 0)
+      .sort((a, b) => a.d.seats.available - b.d.seats.available).slice(0, 6).map(({ d, pct }) => {
+      const show = A.show(d.show), art = A.artist(show.artist), venue = A.venue(d.venue);
+      return [A.title(show), art ? art.name : '', A.showImage(show, 900), pct,
+        A.number(d.seats.available) + ' ' + (fr ? 'places' : 'seats'),
+        d.prices[0].amount ? A.price(d.prices[0].amount) : (fr ? 'Gratuit' : 'Free'),
+        A.synopsis(show) || [A.label(A.category(show.category)), venue.name].join(' · ')];
+    })
+      .map(([title, artist, img, pct, left, priceLabel, desc]) => ({
+      title, artist, img, imgCss: this.cssUrl(img), priceLabel, desc,
+      ...this.promoOf(title, priceLabel, fr),
+      buyStyle: this.buyStyle("margin-left: auto; cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease, color .24s ease;", this.promoOf(title, priceLabel, fr), true),
+      pctLabel: pct + (fr ? ' % VENDU' : '% SOLD'),
+      barStyle: 'width: ' + pct + '%; height: 3px; background: ' + (pct >= 90 ? 'oklch(0.62 0.21 27)' : 'oklch(0.68 0.18 42)') + ';',
+      leftLabel: fr ? 'IL RESTE ' + left : left + ' LEFT',
+      open: () => this.openLive(artist), openArtist: this.goArtistFrom(artist), buy: this.openTicketFor(title, priceLabel, fr)
+    }));
+
+/* livesAll  —  lignes 5971-5971 */
+    const livesAll = catalogue.filter(o => o.kind !== 'replay' && passFilters(o)).sort(sortFn);
+/* replaysAll  —  lignes 5972-5972 */
+    const replaysAll = catalogue.filter(o => o.kind === 'replay' && passFilters(o)).sort(sortFn);
+/* artistsAll  —  lignes 5973-5995 */
+    const artistsAll = roster.filter(a => {
+      if (qq && (a.name + ' ' + a.discipline + ' ' + a.showTitle).toLowerCase().indexOf(qq) < 0) return false;
+      if (s.fCats.length && !catalogue.some(o => o.artistIdx === a.i && s.fCats.indexOf(o.cat) > -1)) return false;
+      if (s.fStatus === 'live' && !a.isLive) return false;
+      if (s.fHasDates && !catalogue.some(o => o.artistIdx === a.i && o.kind === 'upcoming')) return false;
+      return true;
+    }).map(a => {
+      const dates = catalogue.filter(o => o.artistIdx === a.i && o.kind === 'upcoming').sort((x, y) => x.day - y.day);
+      return Object.assign({}, a, {
+        dates: dates.slice(0, 1),
+        datesLabel: dates.length + ' ' + (dates.length > 1 ? t.datesToCome : t.dateToCome),
+        hasDates: dates.length > 0,
+        hasMoreDates: dates.length > 1,
+        moreDatesLabel: (fr ? 'Toutes les dates (' + dates.length + ') →' : 'All dates (' + dates.length + ') →'),
+        toggleDates: (e) => {
+          if (e && e.stopPropagation) e.stopPropagation();
+          this.setState({ page: 'artist', artistId: a.i, suggOpen: false, searchOpen: false });
+        },
+        isLiveRow: a.isLive, liveLabel2: a.isLive ? t.onNow : '',
+        openProfile2: () => this.setState({ page: 'artist', artistId: a.i })
+      });
+    });
+
+/* artistEvents  —  lignes 6016-6037 */
+    const artistEvents = (ownDates.length
+      ? this.groupByArtist(ownFuture, fr).slice().sort((a, b) => a.day - b.day)
+      : (watched ? [{
+          title: A.title(watchedShow), img: A.showImage(watchedShow, 900), imgCss: this.cssUrl(A.showImage(watchedShow, 900)),
+          whenLabel: A.when(watched),
+          priceLabel: watched.prices[0].amount ? A.price(watched.prices[0].amount) : (fr ? 'Gratuit' : 'Free'),
+          soldPct: (() => { const cap = A.venue(watched.venue).capacity; return cap ? Math.round((watched.seats.sold / cap) * 100) : 0; })(),
+          extra: [], hasExtra: false
+        }] : [])
+    ).map(o => Object.assign({}, o, {
+      when: o.whenLabel + (o.duration ? ' · ' + (fr ? String(o.duration).replace(/(\d+)\s*h\s*(\d*)/, (m, h, mn) => h + 'h' + (mn ? mn.padStart(2, '0') : '00')) : o.duration) : ''),
+      ovTag: o.kind === 'live'
+        ? (fr ? 'EN DIRECT · APERÇU GRATUIT' : 'LIVE · FREE PREVIEW')
+        : (o.subLabel || o.catName || '').toUpperCase(),
+      desc: o.descBare || o.fullDesc || o.desc || '',
+      seats: o.soldPct >= 100 ? (fr ? 'COMPLET' : 'SOLD OUT')
+        : (Math.round(2000 * (100 - (o.soldPct || 0)) / 100)).toLocaleString('fr-FR') + (fr ? ' PLACES RESTANTES' : ' SEATS LEFT'),
+      buy: o.buy || this.openTicketFor(o.title, o.priceLabel, fr, { artist: artist.name, img: o.img, imgCss: this.cssUrl(o.img), meta: o.whenLabel, isLive: false }),
+      buyStyle: this.buyStyle("flex: 0 0 auto; cursor: pointer; padding: 11px 18px; white-space: nowrap; border: 1px solid #332E28; font-size: 13.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease, color .24s ease;", this.promoOf(o.promoTitle || o.title, o.priceLabel, fr), true),
+      ...this.promoOf(o.promoTitle || o.title, o.priceLabel, fr)
+    }));
+
+/* savedMatch  —  lignes 6047-6047 */
+    const savedMatch = s.alerts.find(al => this.alertSig(al.query, al.st) === curSig) || null;
+/* alreadySaved  —  lignes 6048-6049 */
+    const alreadySaved = !!savedMatch;
+
+/* searchTabs  —  lignes 6075-6081 */
+    const searchTabs = tabDefs.map(([k, label, n]) => ({
+      label, count: String(n),
+      pick: () => this.setState({ sTab: k }),
+      style: 'cursor: pointer; padding: 12px 2px; display: flex; align-items: baseline; gap: 8px; font-size: 15px; white-space: nowrap; border-bottom: 2px solid ' +
+        (s.sTab === k ? '#EDE7DC' : 'transparent') + '; color: ' + (s.sTab === k ? '#EDE7DC' : '#857E73') + '; transition: color .24s ease, border-color .24s ease;'
+    }));
+
+/* activeTokens  —  lignes 6233-6237 */
+    const activeTokens = tokens.map(tk => Object.assign(tk, {
+      title: tk.title || tk.label,
+      style: 'cursor: pointer; padding: 4px 8px; display: inline-flex; align-items: center; gap: 5px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid #332E28; background: #141210; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: #C9C0B2; transition: border-color .2s ease, color .2s ease;'
+    }));
+
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      hasTokens: activeTokens.length > 0,
+      clearAllFilters: () => this.setState({ query: '', fCats: [], fSubs: [], fPrices: [], fDate: 'all', fStatus: 'all', fAlmost: false, fHasDates: false, fExpiring: false, fPromo: false, sort: 'auto', alertCreated: false }),
+      nothingFound: s.sTab === 'best' && livesAll.length === 0 && artistsAll.length === 0 && replaysAll.length === 0,
+      searchCountLabel: (() => {
+        const n = s.sTab === 'best' ? (livesAll.length + artistsAll.length + replaysAll.length)
+          : (s.sTab === 'artists' ? artistsAll.length : (s.sTab === 'replays' ? replaysAll.length : livesAll.length));
+        return n + ' ' + (n > 1 ? t.resultsLabel : t.resultLabel);
+      })(),
+      createAlert: this.gate(() => this.setState({ saveOpen: true, saveStep: 'ask', saveName: '', saveScope: 'search' })),
+      ...(() => {
+        const base = "cursor: pointer; transition: color .24s ease, -webkit-text-fill-color .24s ease; -webkit-text-fill-color: #9B948A;";
+        const on = "cursor: pointer; transition: color .24s ease, -webkit-text-fill-color .24s ease; -webkit-text-fill-color: #EDE7DC; font-weight: 500;";
+        const p = s.page;
+        return {
+          navHomeStyle: p === 'home' ? on : base,
+          navBrowseStyle: p === 'browse' ? on : base,
+          navCatsStyle: (p === 'categories' || p === 'category') ? on : base,
+          navArtistsStyle: (p === 'artists' || p === 'artist') ? on : base,
+          navFollowStyle: p === 'following' ? on : base
+        };
+      })(),
+      alreadySaved, notSaved: !alreadySaved,
+      savedHereName: savedMatch ? this.alertName(savedMatch, cats, t) : '',
+      savedHereEditing: !!savedMatch && s.renameId === savedMatch.id,
+      savedHereIdle: !!savedMatch && s.renameId !== savedMatch.id,
+      savedHereDraft: s.renameDraft,
+      savedHereStartRename: () => { if (savedMatch) this.setState({ renameId: savedMatch.id, renameDraft: this.alertName(savedMatch, cats, t) }); },
+      savedHereInput: e => this.setState({ renameDraft: e.target.value }),
+      savedHereKey: e => {
+        if (e.key === 'Enter') this.setState(st => ({
+          alerts: st.alerts.map(x => savedMatch && x.id === savedMatch.id ? Object.assign({}, x, { name: st.renameDraft.trim() }) : x),
+          renameId: null, renameDraft: ''
+        }));
+        if (e.key === 'Escape') this.setState({ renameId: null, renameDraft: '' });
+      },
+      savedHereRemove: () => { if (savedMatch) this.setState({ deleteId: savedMatch.id }); },
+      createAlertLabel: t.createAlert,
+      createAlertStyle: 'cursor: pointer; padding: 12px 20px; white-space: nowrap; font-size: 12.5px; border: 1px solid #332E28; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;',
+      createAlertTitle: t.alertHint,
+      bSoldLeft: () => this.scroll('rail-b-sold', -1), bSoldRight: () => this.scroll('rail-b-sold', 1),
+      modes, qualities, tiers, tickets, reactions, artistEvents,
+      resViewOptions: [['tiles', t.viewTiles], ['list', t.viewList]].map(([k, label]) => ({
+        label, pick: () => this.setState({ sView: k }),
+        style: CHIP + (s.sView === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+      })),
+      browseTitle: s.query ? '« ' + s.query + ' »' : (fr ? 'Explorer la scène' : 'Browse the stage'),
+      sideCols: sideDrawer ? 'minmax(0,1fr)' : (s.sideOpen ? '236px minmax(0,1fr)' : '38px minmax(0,1fr)'),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.alertDelete  t.alertHint  t.alertRename  t.alertRenameHint  t.almostGone  
+    t.almostGoneSub  t.clearAll  t.createAlert  t.dateToCome  t.datesToCome  t.emptyResults  
+    t.emptyResultsHint  t.onNow  t.resultLabel  t.resultsLabel  t.savedHere  t.viewLabel  
+    t.viewList  t.viewTiles  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    alerts  fCats  fHasDates  fStatus  messages  mode  page  quality  query  renameDraft  
+    renameId  sTab  sView  sideOpen  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    alertName, alertSig, buyStyle, cssUrl, gate, goArtistFrom, groupByArtist, openLive, openTicketFor, promoOf, scroll, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

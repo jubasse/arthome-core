@@ -1,0 +1,607 @@
+<!--
+==============================================================================
+  ÉCRAN — moderation — console de modération hors régie
+==============================================================================
+
+  Ce qu'il affiche : le tchat du direct, la file à valider, le filtre et le régime, les sanctions actives, et la fiche d'un spectateur
+
+  Rôles qui l'ouvrent : moderation
+  Mène vers : regie (onglet tchat et modération)
+
+  Source : mockups/Studio.dc.html
+    balisage        lignes 304–526, 528–595
+    modèle de vue   lignes 2642–2663, 2752–2770, 3239–3261, 3399–3413, 3433–3433, 3987–3988, 4220–4220, 5844–5847, 6380–6463, 6465–6488, 6491–6552
+
+  Clés de copie employées :
+    enums.moderationReason.*
+    enums.moderationState.*
+
+  Contrat :
+    besoins   needs/studio-web.md § « Le temps réel » et § « Les commandes de modération »
+    openapi   openapi/studio.yaml · listModerationQueue
+    openapi   openapi/studio.yaml · claimModerationItem
+    openapi   openapi/studio.yaml · releaseModerationItem
+    openapi   openapi/studio.yaml · settleModerationItem
+    openapi   openapi/studio.yaml · searchAudience
+    openapi   openapi/studio.yaml · sanctionAudienceMember
+    openapi   openapi/studio.yaml · addBannedWord
+    openapi   openapi/studio.yaml · removeBannedWord
+    openapi   openapi/studio.yaml · listStudioChatMessages
+    openapi   openapi/studio.yaml · setDateChatPolicy
+
+  Relevé d'extraction (défauts vus, non corrigés) :
+    · DEUX vocabulaires de sévérité dans le même fichier : severityChips dit souple/normale/haute, sevRows dit basse/moyenne/haute. Le contrat retient low/medium/high.
+    · les motifs de modération de la maquette ne sont pas ceux de shared/catalogue.json (spam · insult · spoiler · off-topic · harassment).
+    · la prise en charge (claim) et le refus du second verdict sont simulés localement : PEER_VERDICT est codé en dur sur la ligne 1.
+    · hors antenne, sévérité, mode lent et réserve aux détenteurs n'ont aucune cible : la maquette dit pourtant qu'ils restent modifiables.
+    · clés de vue non résolues automatiquement : modLiveNow, modTitleStyle, modEventTitle, modViewers, modStats, modNoQueue, modEmptyTitle, modEmptyHint, modRows, modeRows, sevRows, sevHint, retroHint, banList, sanctions
+
+  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+-->
+
+<!-- ======================= BALISAGE ======================= -->
+<!-- ···· balisage · Studio.dc.html lignes 304–526 ···· -->
+    <sc-if value="{{ isModeration }}" hint-placeholder-val="{{ false }}">
+    <div style="animation: fadeIn .2s ease both;">
+      <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 16px 22px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
+        <div style="min-width: 0;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">MODÉRATION · {{ chan.name }}</div>
+          <div style="padding-top: 7px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <sc-if value="{{ modLiveNow }}" hint-placeholder-val="{{ true }}">
+              <span style="flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+            </sc-if>
+            <span style="{{ modTitleStyle }}">{{ modEventTitle }}</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7C858D;">{{ modViewers }}</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="border-bottom: 1px solid #1D2126; background: #131518; display: grid; grid-template-columns: repeat(4, minmax(0,1fr));">
+        <sc-for list="{{ modStats }}" as="st" hint-placeholder-count="4">
+          <div style="border-right: 1px solid #1D2126; padding: 11px 16px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">{{ st.label }}</div>
+            <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 19px; font-weight: 500; line-height: 1; color: {{ st.color }};">{{ st.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div data-strip style="border-bottom: 1px solid #1D2126; background: #131518; padding: 0 22px; display: flex; overflow-x: auto; scrollbar-width: none;">
+        <sc-for list="{{ modTabs }}" as="mt" hint-placeholder-count="4">
+          <div onClick="{{ mt.pick }}" style="{{ mt.style }}">
+            <span>{{ mt.label }}</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: {{ mt.badgeColor }};">{{ mt.badge }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="padding: 16px 22px 30px; display: flex; flex-direction: column; gap: 12px; max-width: 1040px;">
+
+        <sc-if value="{{ mdChat }}" hint-placeholder-val="{{ true }}">
+          <div style="border: 1px solid #23272C; background: #15171A;">
+          <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">TCHAT EN DIRECT</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #646C74;">{{ chatCount }}</span>
+          <div style="margin-left: auto; display: flex; gap: 6px;">
+          <sc-for list="{{ chatFilters }}" as="cf" hint-placeholder-count="3">
+          <span onClick="{{ cf.pick }}" style="{{ cf.style }}">{{ cf.label }}</span>
+          </sc-for>
+          </div>
+          </div>
+          <div style="border-bottom: 1px solid #1D2126; padding: 9px 14px; display: flex; gap: 7px; align-items: center;">
+          <input value="{{ modSearch }}" onChange="{{ onModSearch }}" placeholder="chercher un pseudonyme ou une phrase" style="flex: 1 1 auto; min-width: 0; padding: 9px 11px; border: 1px solid #2A2F35; background: #0E0F10; font-size: 13px; color: #E6E9EC; outline: none;" />
+          <sc-if value="{{ hasModSearch }}" hint-placeholder-val="{{ false }}">
+          <span onClick="{{ clearModSearch }}" style="flex: 0 0 auto; cursor: pointer; padding: 9px 12px; border: 1px solid #2A2F35; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #98A0A8; transition: background .18s ease;" style-hover="background:#1A1D21">EFFACER</span>
+          </sc-if>
+          </div>
+          <div style="max-height: 340px; overflow-y: auto;">
+          <sc-if value="{{ chatEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="padding: 26px 16px; text-align: center; font-size: 12.5px; color: #7C858D;">{{ chatEmptyLabel }}</div>
+          </sc-if>
+          <sc-for list="{{ chatRows }}" as="c" hint-placeholder-count="8">
+          <div style="border-bottom: 1px solid #191C20; padding: 9px 14px; display: flex; gap: 10px; align-items: baseline; transition: background .16s ease;" style-hover="background:#191C20">
+          <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #4A535C;">{{ c.time }}</span>
+          <span onClick="{{ c.openUser }}" style="flex: 0 0 auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: {{ c.userColor }}; border-bottom: 1px solid #23272C;">{{ c.user }}</span>
+          <span style="min-width: 0; font-size: 12.5px; line-height: 1.45; color: {{ c.textColor }}; text-decoration: {{ c.textDeco }}; text-wrap: pretty;">{{ c.text }}</span>
+          <sc-if value="{{ c.hasTag }}" hint-placeholder-val="{{ false }}">
+          <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: {{ c.tagColor }};">{{ c.tag }}</span>
+          </sc-if>
+          <span onClick="{{ c.drop }}" style="flex: 0 0 auto; margin-left: auto; cursor: pointer; padding: 5px 9px; border: 1px solid #2A2F35; font-size: 11px; color: #98A0A8; transition: background .18s ease;" style-hover="background:#1A1D21">Supprimer</span>
+          </div>
+          </sc-for>
+          </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ mdQueue }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #23272C; background: #15171A;">
+          <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">MESSAGES RETENUS</span>
+          <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #646C74;">FILTRE AUTOMATIQUE</span>
+          </div>
+          <sc-if value="{{ modNoQueue }}" hint-placeholder-val="{{ false }}">
+          <div style="padding: 30px 18px; text-align: center;">
+          <div style="font-size: 15px; color: #C6CDD4;">{{ modEmptyTitle }}</div>
+          <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.55; color: #7C858D; max-width: 420px; margin: 0 auto; text-wrap: pretty;">{{ modEmptyHint }}</div>
+          </div>
+          </sc-if>
+          <sc-for list="{{ modRows }}" as="m" hint-placeholder-count="4">
+          <div style="{{ m.rowStyle }}" style-hover="background:#191C20">
+          <div style="{{ m.bodyStyle }}">
+          <div style="display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #C6CDD4;">{{ m.user }}</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: oklch(0.78 0.13 75);">{{ m.reason }}</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #4A535C;">{{ m.time }}</span>
+          <sc-if value="{{ m.claimedByOther }}" hint-placeholder-val="{{ false }}">
+            <span style="{{ m.claimStyle }}">{{ m.claimLabel }}</span>
+          </sc-if>
+          <sc-if value="{{ m.claimedByMe }}" hint-placeholder-val="{{ false }}">
+            <span style="{{ m.claimStyle }}">{{ m.claimLabel }}</span>
+          </sc-if>
+          </div>
+          <div style="padding-top: 6px; font-size: 13.5px; color: #E6E9EC; line-height: 1.5; text-wrap: pretty;">{{ m.text }}</div>
+          </div>
+          <sc-if value="{{ m.showClaimCta }}" hint-placeholder-val="{{ true }}">
+            <span onClick="{{ m.claim }}" style="{{ m.claimCtaStyle }}" style-hover="background:#1A1D21">{{ m.claimCta }}</span>
+          </sc-if>
+          <sc-if value="{{ m.pending }}" hint-placeholder-val="{{ true }}">
+          <div style="{{ m.actStyle }}">
+          <span onClick="{{ m.approve }}" title="Publier le message" style="cursor: pointer; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #2F4038; font-size: 14px; line-height: 1; color: oklch(0.8 0.13 155); transition: background .18s ease;" style-hover="background:#1A2A21">✓</span>
+          <span onClick="{{ m.del }}" title="Supprimer le message" style="cursor: pointer; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #2A2F35; font-size: 14px; line-height: 1; color: #C6CDD4; transition: background .18s ease;" style-hover="background:#1A1D21">✕</span>
+          <span onClick="{{ m.mute }}" title="Réduire au silence" style="cursor: pointer; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid oklch(0.4 0.09 300); font-size: 14px; line-height: 1; color: oklch(0.82 0.12 300); transition: background .18s ease;" style-hover="background:#1E1826">⊘</span>
+          <span onClick="{{ m.ban }}" title="Bannir définitivement" style="cursor: pointer; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid oklch(0.42 0.12 27); font-size: 14px; line-height: 1; color: oklch(0.8 0.14 27); transition: background .18s ease;" style-hover="background:#221514">⛔</span>
+          </div>
+          </sc-if>
+          <sc-if value="{{ m.settled }}" hint-placeholder-val="{{ false }}">
+          <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ m.verdictColor }};">{{ m.verdict }}</span>
+          </sc-if>
+          <sc-if value="{{ m.hasClash }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1 0 100%; margin-top: 4px; border: 1px solid oklch(0.42 0.12 27); background: oklch(0.2 0.05 27); padding: 9px 11px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; line-height: 1.6; color: oklch(0.86 0.1 27); text-wrap: pretty;">{{ m.clash }}</div>
+          </sc-if>
+          </div>
+          </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ mdFilter }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; grid-template-columns: {{ modFilterCols }}; gap: 12px; align-items: start;">
+            <div style="min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+              <div style="border: 1px solid #23272C; background: #15171A;">
+              <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">RÉGIME DU TCHAT</span>
+              </div>
+              <div style="padding: 13px 14px; display: flex; flex-direction: column; gap: 8px;">
+              <sc-for list="{{ modeRows }}" as="md" hint-placeholder-count="4">
+              <div onClick="{{ md.pick }}" style="{{ md.style }}">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #E6E9EC;">{{ md.label }}</div>
+              <div style="padding-top: 5px; font-size: 12px; color: #7C858D; text-wrap: pretty;">{{ md.hint }}</div>
+              </div>
+              </sc-for>
+              <div style="padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #5B636B;">La bascule est immédiate, sans couper le direct.</div>
+              </div>
+              </div>
+              <div style="border: 1px solid #23272C; background: #15171A;">
+              <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">SÉVÉRITÉ DU FILTRE</span>
+              </div>
+              <div style="padding: 13px 14px;">
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <sc-for list="{{ sevRows }}" as="sv" hint-placeholder-count="3">
+              <span onClick="{{ sv.pick }}" style="{{ sv.style }}">{{ sv.label }}</span>
+              </sc-for>
+              </div>
+              <div style="padding-top: 10px; font-size: 12.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">{{ sevHint }}</div>
+              </div>
+              </div>
+            </div>
+            <div style="min-width: 0;">
+              <div style="border: 1px solid #23272C; background: #15171A;">
+              <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">DICTIONNAIRE DE MOTS BLOQUÉS</span>
+              </div>
+              <div style="padding: 13px 14px;">
+              <div style="display: flex; gap: 7px;">
+              <input value="{{ banDraft }}" onChange="{{ onBanDraft }}" onKeyDown="{{ onBanKey }}" placeholder="ajouter un mot ou une expression" style="flex: 1 1 auto; min-width: 0; padding: 10px 12px; border: 1px solid #2A2F35; background: #0E0F10; font-size: 13px; color: #E6E9EC; outline: none;" />
+              <span onClick="{{ addBan }}" style="flex: 0 0 auto; cursor: pointer; padding: 10px 15px; border: 1px solid #333941; font-size: 12.5px; color: #C6CDD4; transition: background .18s ease;" style-hover="background:#1A1D21">Ajouter</span>
+              </div>
+              <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: oklch(0.78 0.13 75);">{{ retroHint }}</div>
+              <div style="padding-top: 12px; display: flex; gap: 6px; flex-wrap: wrap;">
+              <sc-for list="{{ banList }}" as="w" hint-placeholder-count="8">
+              <span onClick="{{ w.drop }}" style="cursor: pointer; padding: 5px 10px; border: 1px solid #2A2F35; background: #131518; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #C6CDD4; transition: border-color .18s ease;" style-hover="border-color:#4A5560">{{ w.label }} ✕</span>
+              </sc-for>
+              </div>
+              </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ mdSanct }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #23272C; background: #15171A;">
+            <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">CHERCHER UN SPECTATEUR</span>
+              <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #646C74;">{{ specCount }}</span>
+            </div>
+            <div style="padding: 12px 14px;">
+              <input value="{{ specSearch }}" onChange="{{ onSpecSearch }}" placeholder="pseudonyme, même sans message dans le tchat" style="width: 100%; padding: 10px 12px; border: 1px solid #2A2F35; background: #0E0F10; font-size: 13px; color: #E6E9EC; outline: none;" />
+              <sc-if value="{{ specEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding-top: 11px; font-size: 12.5px; color: #7C858D;">{{ specEmptyLabel }}</div>
+              </sc-if>
+              <sc-if value="{{ specHasQuery }}" hint-placeholder-val="{{ false }}">
+                <div style="padding-top: 11px; display: flex; flex-direction: column; gap: 1px; background: #1D2126; border: 1px solid #1D2126;">
+                  <sc-for list="{{ specResults }}" as="sp" hint-placeholder-count="3">
+                    <div onClick="{{ sp.open }}" style="cursor: pointer; background: #15171A; padding: 10px 12px; display: flex; align-items: center; gap: 11px; transition: background .16s ease;" style-hover="background:#191C20">
+                      <div style="min-width: 0;">
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #C6CDD4;">{{ sp.user }}</div>
+                        <div style="padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: {{ sp.metaColor }};">{{ sp.meta }}</div>
+                      </div>
+                      <sc-if value="{{ sp.hasSanction }}" hint-placeholder-val="{{ false }}">
+                        <span style="margin-left: auto; flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: {{ sp.sanctionColor }};">{{ sp.sanction }}</span>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+          <div style="border: 1px solid #23272C; background: #15171A;">
+          <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">SANCTIONS EN COURS</span>
+          </div>
+          <sc-for list="{{ sanctions }}" as="sn" hint-placeholder-count="3">
+          <div style="border-top: 1px solid #191C20; padding: 11px 14px; display: flex; align-items: center; gap: 10px;">
+          <div style="min-width: 0;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #C6CDD4;">{{ sn.user }}</div>
+          <div style="padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #646C74;">{{ sn.detail }}</div>
+          </div>
+          <span style="{{ sn.pillStyle }}">{{ sn.kind }}</span>
+          <span onClick="{{ sn.lift }}" style="flex: 0 0 auto; cursor: pointer; padding: 7px 11px; white-space: nowrap; border: 1px solid #2A2F35; font-size: 12px; color: #98A0A8; transition: background .18s ease;" style-hover="background:#1A1D21">{{ sn.liftLabel }}</span>
+          </div>
+          </sc-for>
+          </div>
+        </sc-if>
+
+      </div>
+    </div>
+    </sc-if>
+<!-- ···· balisage · Studio.dc.html lignes 528–595 ···· -->
+    <sc-if value="{{ userOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeUser }}" style="position: fixed; inset: 0; z-index: 8000; background: rgba(8,9,10,0.78); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .16s ease both;">
+      <div onClick="{{ stopEvt }}" style="width: 460px; max-width: 100%; max-height: calc(100vh - 64px); overflow-y: auto; border: 1px solid #333941; background: #15171A; animation: riseIn .2s ease both;">
+        <div style="border-bottom: 1px solid #1D2126; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px;">
+          <div style="min-width: 0;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #E6E9EC;">{{ userName }}</div>
+            <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.07em; color: #7C858D;">{{ userMeta }}</div>
+            <div style="padding-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ userSanctionColor }};">{{ userSanction }}</div>
+          </div>
+          <span onClick="{{ closeUser }}" style="margin-left: auto; flex: 0 0 auto; cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid #2A2F35; font-size: 12px; color: #98A0A8; transition: background .18s ease;" style-hover="background:#1A1D21">✕</span>
+        </div>
+        <div style="border-bottom: 1px solid #1D2126; padding: 12px 16px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">SES MESSAGES CE SOIR</div>
+          <sc-if value="{{ userSilent }}" hint-placeholder-val="{{ false }}">
+            <div style="padding-top: 9px; font-size: 12.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">Ce spectateur n'a rien écrit ce soir. Les sanctions restent applicables par précaution.</div>
+          </sc-if>
+          <div style="padding-top: 9px; display: flex; flex-direction: column; gap: 7px; max-height: 200px; overflow-y: auto;">
+            <sc-for list="{{ userMsgs }}" as="um" hint-placeholder-count="2">
+              <div style="display: flex; gap: 9px; align-items: baseline;">
+                <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #4A535C;">{{ um.time }}</span>
+                <span style="min-width: 0; font-size: 12.5px; line-height: 1.45; color: {{ um.textColor }}; text-wrap: pretty;">{{ um.text }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="padding: 13px 16px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">PAROLE</div>
+          <div style="padding-top: 6px; font-size: 12.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">Réduire au silence retire l'écriture : le spectateur continue de voir le spectacle et de lire le tchat.</div>
+
+          <sc-if value="{{ isMuted }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 11px; border: 1px solid oklch(0.38 0.09 300); background: #1A1522; padding: 11px 12px; display: flex; align-items: center; gap: 11px; flex-wrap: wrap;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.82 0.12 300);">{{ userSanction }}</span>
+              <span onClick="{{ liftUser }}" title="Rendre la parole" style="cursor: pointer; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #2F4038; background: #15201A; font-size: 15px; line-height: 1; color: oklch(0.8 0.13 155); transition: background .18s ease;" style-hover="background:#1A2A21">⏎</span>
+              <span style="font-size: 12.5px; color: #98A0A8;">Rendre la parole</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ notMuted }}" hint-placeholder-val="{{ true }}">
+            <div style="padding-top: 11px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #5B636B; padding-right: 3px;">DURÉE DU SILENCE</span>
+              <sc-for list="{{ muteRows }}" as="mu" hint-placeholder-count="4">
+                <span onClick="{{ mu.pick }}" title="{{ mu.title }}" style="cursor: pointer; padding: 10px 13px; white-space: nowrap; border: 1px solid oklch(0.36 0.08 300); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: oklch(0.82 0.12 300); transition: background .18s ease;" style-hover="background:#1E1826">{{ mu.label }}</span>
+              </sc-for>
+            </div>
+            <div style="padding-top: 8px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #5B636B; padding-right: 3px;">OU</span>
+              <input value="{{ muteCustom }}" onChange="{{ onMuteCustom }}" onKeyDown="{{ onMuteCustomKey }}" placeholder="45" style="width: 74px; padding: 10px 11px; border: 1px solid #2A2F35; background: #0E0F10; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #E6E9EC; outline: none;" />
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #7C858D;">MINUTES</span>
+              <span onClick="{{ muteCustomGo }}" title="Réduire au silence pour cette durée" style="{{ muteCustomStyle }}">Appliquer</span>
+            </div>
+          </sc-if>
+
+          <div style="margin-top: 15px; border-top: 1px solid #1D2126; padding-top: 13px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">BANNISSEMENT</div>
+            <div style="padding-top: 6px; font-size: 12.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">Le spectateur perd l'accès au tchat et aux directs de la chaîne. Sans durée.</div>
+            <div style="padding-top: 10px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap;">
+              <span onClick="{{ banUser }}" title="Bannir définitivement" style="cursor: pointer; width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid oklch(0.42 0.12 27); background: #1E1413; font-size: 15px; line-height: 1; color: oklch(0.82 0.14 27); transition: background .18s ease;" style-hover="background:#281817">⛔</span>
+              <span style="font-size: 12.5px; color: #98A0A8;">Bannir définitivement</span>
+              <sc-if value="{{ isBanned }}" hint-placeholder-val="{{ false }}">
+              <span onClick="{{ liftUser }}" title="Lever le bannissement" style="cursor: pointer; width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid #2A2F35; font-size: 15px; line-height: 1; color: #98A0A8; transition: background .18s ease;" style-hover="background:#1A1D21">↺</span>
+                <span style="font-size: 12.5px; color: #98A0A8;">Lever</span>
+              </sc-if>
+            </div>
+          </div>
+          </div>
+      </div>
+    </div>
+    </sc-if>
+
+<!-- ===================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+<!-- ···· modèle de vue · Studio.dc.html lignes 2642–2663 ···· -->
+  sanctionsOf(channelName) {
+    const A = this.A, D = this.data;
+    if (!A || !D) return [];
+    const channel = (D.cited || D.channels).filter(x => x.name === channelName)[0];
+    if (!channel) return [];
+    const out = [];
+    channel.dates.map(id => A.date(id)).filter(Boolean).forEach(date => {
+      A.moderationOf(date).filter(m => m.state === 'muted' || m.state === 'banned').forEach(m => {
+        const msg = A.messageById(m.message);
+        const viewer = msg ? A.viewerOf(msg) : null;
+        const handle = (viewer || {}).handle || (msg || {}).author || '';
+        if (!handle || out.some(x => x[0] === handle)) return;
+        out.push([
+          handle,
+          A.enumLabel('moderationState', m.state).toLocaleUpperCase('fr-FR'),
+          A.enumLabel('moderationReason', m.reason),
+          A.clock(date.startOffsetMin + m.atMin)
+        ]);
+      });
+    });
+    return out.slice(0, 6);
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 2752–2770 ···· -->
+  modLogOf(channelName) {
+    const A = this.A;
+    if (!A) return [];
+    const air = this.airOf(channelName);
+    if (!air.date) return [];
+    const rows = A.moderationOf(air.date).map(m => {
+      const msg = A.messageById(m.message);
+      const who = m.handledBy ? (A.person(m.handledBy) || {}).name : null;
+      return [
+        A.clock(air.date.startOffsetMin + m.atMin),
+        A.enumLabel('moderationState', m.state) + ' — ' + A.enumLabel('moderationReason', m.reason)
+          + (msg ? ' · « ' + A.chatText(msg).slice(0, 40) + ' »' : ''),
+        (who || 'FILTRE').toLocaleUpperCase('fr-FR')
+      ];
+    });
+    rows.push([A.clock(air.date.startOffsetMin), 'Diffusion lancée', 'RÉGIE']);
+    // Du plus récent au plus ancien : un journal se lit par le haut.
+    return rows.reverse();
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 3239–3261 ···· -->
+  settle(i, verdict, user, claimedBy, meName, peerVerdict) {
+    /* refus seulement si le confrère a réellement tranché : la ligne se clôt alors sur SA décision */
+    if (claimedBy && claimedBy !== meName && peerVerdict) {
+      const VERB = { ok: 'publié', del: 'supprimé', mute: 'réduit au silence', ban: 'banni' };
+      this.setState(st => Object.assign({
+        modDone: Object.assign({}, st.modDone, { [i]: peerVerdict }),
+        modClash: Object.assign({}, st.modClash, {
+          [i]: 'Refusé — ' + claimedBy.split(' ')[0] + ' a déjà ' + (VERB[peerVerdict] || 'traité') + ' ce message. Votre décision n\'a pas été appliquée.'
+        })
+      }, peerVerdict === 'mute' ? { modSanct: Object.assign({}, st.modSanct, { [user]: 'MUET SANS LIMITE' }) } : {}));
+      clearTimeout(this['_clash' + i]);
+      this['_clash' + i] = setTimeout(() => this.setState(st => {
+        const next = Object.assign({}, st.modClash);
+        delete next[i];
+        return { modClash: next };
+      }), 5000);
+      return;
+    }
+    this.setState(st => Object.assign(
+      { modDone: Object.assign({}, st.modDone, { [i]: verdict }) },
+      verdict === 'mute' ? { modSanct: Object.assign({}, st.modSanct, { [user]: 'MUET SANS LIMITE' }) } : {}
+    ));
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 3399–3413 ···· -->
+  applyCustomMute(user) {
+    const n = parseInt(this.state.muteCustom, 10);
+    if (!user || !n || n < 1) return;
+    const label = n >= 60 && n % 60 === 0 ? (n / 60) + ' H' : n + ' MIN';
+    this.setState(st => ({ modSanct: Object.assign({}, st.modSanct, { [user]: 'MUET ' + label }), muteCustom: '' }));
+  }
+
+  addBanWord() {
+    const w = (this.state.banDraft || '').trim().toLowerCase();
+    if (!w) return;
+    this.setState(st => {
+      const cur = st.banWords || ['idiot', 'nul', 'arnaque', 'remboursez', 'spoiler', 'triche', 'honte', 'scandale'];
+      return { banWords: cur.indexOf(w) > -1 ? cur : cur.concat([w]), banDraft: '' };
+    });
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 3433–3433 ···· -->
+        chan: i, chanOpen: false,
+<!-- ···· modèle de vue · Studio.dc.html lignes 3987–3988 ···· -->
+      stopEvt: e => { if (e && e.stopPropagation) e.stopPropagation(); },
+      me,
+<!-- ···· modèle de vue · Studio.dc.html lignes 4220–4220 ···· -->
+      isModeration: page === 'moderation',
+<!-- ···· modèle de vue · Studio.dc.html lignes 5844–5847 ···· -->
+          banDraft: s.banDraft || '',
+          onBanDraft: e => this.setState({ banDraft: e.target.value }),
+          onBanKey: e => { if (e.key === 'Enter') this.addBanWord(); },
+          addBan: () => this.addBanWord(),
+<!-- ···· modèle de vue · Studio.dc.html lignes 6380–6463 ···· -->
+              mdChat: tab === 'chat', mdQueue: tab === 'queue', mdFilter: tab === 'filter', mdSanct: tab === 'sanct',
+              modFilterCols: vw < 900 ? 'minmax(0,1fr)' : 'minmax(0,1fr) minmax(0,1fr)',
+              modTabs: [
+                ['chat', 'Tchat en direct', onAir ? String((LIVE_CHAT[chan.name] || []).length) : ''],
+                ['queue', 'À valider', pend ? String(pend) : ''],
+                ['filter', 'Filtre et régime', ''],
+                ['sanct', 'Sanctions', activeSanctions.length ? String(activeSanctions.length) : '']
+              ].map(([k, label, badge]) => ({
+                label, badge,
+                badgeColor: (k === 'queue' && badge) ? WARN : '#5B636B',
+                pick: () => this.setState({ modTab: k }),
+                style: 'cursor: pointer; padding: 12px 2px; margin-right: 22px; display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; white-space: nowrap; border-bottom: 2px solid '
+                  + (tab === k ? '#E6E9EC' : 'transparent') + '; color: ' + (tab === k ? '#E6E9EC' : '#98A0A8')
+                  + '; '
+              }))
+            };
+          })(),
+
+          ...(() => {
+            const q = (s.modSearch || '').trim().toLowerCase();
+            const filt = s.modFilter || 'all';
+            const raw = onAir ? (LIVE_CHAT[chan.name] || []) : [];
+            const acted = s.modActs || {};
+
+            const rows = raw.map((m, i) => Object.assign({}, m, { i, state: acted[i] || m.state }))
+              .filter(m => filt === 'all' || (filt === 'held' && m.state === 'held') || (filt === 'del' && m.state === 'del'))
+              .filter(m => !q || (m.user + ' ' + m.text).toLowerCase().indexOf(q) > -1);
+
+            const sel = s.modUser;
+            const cur = sel ? (s.modSanct || {})[sel] : null;
+            const selMsgs = sel ? raw.map((m, i) => Object.assign({}, m, { i })).filter(m => m.user === sel) : [];
+
+            return {
+              chatRows: rows.map(m => ({
+                user: m.user, text: m.text, time: m.time,
+                userColor: m.state === 'del' ? '#4A535C' : (m.state === 'held' ? 'oklch(0.78 0.13 75)' : '#C6CDD4'),
+                textColor: m.state === 'del' ? '#3A4149' : '#C6CDD4',
+                textDeco: m.state === 'del' ? 'line-through' : 'none',
+                hasTag: m.state !== 'ok',
+                tag: m.state === 'held' ? 'RETENU' : 'SUPPRIMÉ',
+                tagColor: m.state === 'held' ? 'oklch(0.78 0.13 75)' : '#5B636B',
+                openUser: () => this.setState({ modUser: m.user }),
+                drop: () => this.setState(st => ({ modActs: Object.assign({}, st.modActs, { [m.i]: 'del' }) }))
+              })),
+              chatEmpty: rows.length === 0,
+              chatEmptyLabel: !onAir ? 'Le tchat s\'ouvrira au lever de rideau.'
+                : (q ? 'Aucun message ne correspond à « ' + s.modSearch + ' »' : 'Aucun message dans ce filtre.'),
+              chatCount: onAir ? (rows.length + ' / ' + raw.length) : '—',
+              modSearch: s.modSearch || '',
+              onModSearch: e => this.setState({ modSearch: e.target.value }),
+              clearModSearch: () => this.setState({ modSearch: '' }),
+              hasModSearch: !!(s.modSearch || '').trim(),
+              chatFilters: [['all', 'TOUS'], ['held', 'RETENUS'], ['del', 'SUPPRIMÉS']].map(([k, label]) => ({
+                label, pick: () => this.setState({ modFilter: k }), style: this.chip(filt === k)
+              })),
+
+              specSearch: s.specSearch || '',
+              onSpecSearch: e => this.setState({ specSearch: e.target.value }),
+              specHasQuery: (s.specSearch || '').trim().length > 0,
+              specResults: (() => {
+                const sq = (s.specSearch || '').trim().toLowerCase();
+                if (!sq) return [];
+                const live = s.modSanct || {};
+                return (AUDIENCE[chan.name] || []).filter(u => u.toLowerCase().indexOf(sq) > -1).slice(0, 8).map(u => {
+                  const spoke = raw.some(m => m.user === u);
+                  const found = activeSanctions.find(x => x[0] === u);
+                  const sct = found ? (found[1] === 'MUET' ? 'MUET ' + found[2].split(' ·')[0].toUpperCase() : 'BANNI') : null;
+                  return {
+                    user: u,
+                    meta: spoke ? (raw.filter(m => m.user === u).length + ' message(s) ce soir') : 'Présent, n\'a pas écrit',
+                    metaColor: spoke ? '#98A0A8' : '#5B636B',
+                    sanction: sct || '',
+                    hasSanction: !!sct,
+                    sanctionColor: /^MUET/.test(sct || '') ? MUTE : LIVE,
+                    open: () => this.setState({ modUser: u })
+                  };
+                });
+              })(),
+              specEmpty: (s.specSearch || '').trim().length > 0
+                && (AUDIENCE[chan.name] || []).filter(u => u.toLowerCase().indexOf((s.specSearch || '').trim().toLowerCase()) > -1).length === 0,
+              specEmptyLabel: 'Aucun spectateur ne correspond à « ' + (s.specSearch || '').trim() + ' »',
+              specCount: (AUDIENCE[chan.name] || []).length.toLocaleString('fr-FR') + ' spectateurs présents',
+
+              userOpen: !!sel,
+<!-- ···· modèle de vue · Studio.dc.html lignes 6465–6488 ···· -->
+              userSilent: selMsgs.length === 0,
+              userName: sel || '',
+              userMeta: sel ? ((selMsgs.length ? selMsgs.length + ' message' + (selMsgs.length > 1 ? 's' : '') + ' ce soir' : 'Aucun message ce soir') + ' · compte créé il y a ' + (2 + (sel.length % 9)) + ' mois') : '',
+              userSanction: cur || 'AUCUNE SANCTION',
+              userSanctionColor: cur ? (/^MUET/.test(cur) ? MUTE : LIVE) : '#5B636B',
+              userMsgs: selMsgs.map(m => ({
+                text: m.text, time: m.time,
+                textColor: ((s.modActs || {})[m.i] === 'del' || m.state === 'del') ? '#4A535C' : '#C6CDD4'
+              })),
+              closeUser: () => this.setState({ modUser: null }),
+              muteRows: [['SANS LIMITE', 'SANS LIMITE', 'Réduire au silence sans limite'], ['1 MIN', '1 MIN', 'Réduire au silence 1 minute'], ['10 MIN', '10 MIN', 'Réduire au silence 10 minutes'], ['1 H', '1 H', 'Réduire au silence 1 heure']].map(([k, label, title]) => ({
+                label, title,
+                pick: () => this.setState(st => ({ modSanct: Object.assign({}, st.modSanct, { [sel]: 'MUET ' + k }) }))
+              })),
+              muteCustom: s.muteCustom || '',
+              onMuteCustom: e => this.setState({ muteCustom: e.target.value.replace(/[^0-9]/g, '') }),
+              onMuteCustomKey: e => { if (e.key === 'Enter') this.applyCustomMute(sel); },
+              muteCustomGo: () => this.applyCustomMute(sel),
+              muteCustomStyle: 'cursor: pointer; padding: 10px 14px; white-space: nowrap; font-size: 12.5px; border: 1px solid '
+                + ((s.muteCustom || '').length ? 'oklch(0.42 0.1 300); background: #1A1522; color: oklch(0.82 0.12 300);' : '#23272C; color: #4A535C;')
+                + ' ',
+              isBanned: cur === 'BANNI',
+              isMuted: sel ? /^MUET/.test(cur) : false,
+              notMuted: sel ? !/^MUET/.test(cur) : true,
+<!-- ···· modèle de vue · Studio.dc.html lignes 6491–6552 ···· -->
+              banUser: () => this.setState(st => ({ modSanct: Object.assign({}, st.modSanct, { [sel]: 'BANNI' }) })),
+              liftUser: () => this.setState(st => {
+                const n = Object.assign({}, st.modSanct); n[sel] = null; return { modSanct: n };
+              })
+            };
+          })(),
+          modTitleStyle: onAir
+            ? 'font-size: 20px; font-weight: 600; letter-spacing: -0.01em;'
+            : "font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.06em; color: #7C858D;",
+          modNoQueue: modQueue.length === 0,
+
+          modStats: [
+            ['EN ATTENTE', String(modQueue.filter((_, i) => !done[i]).length), WARN],
+            [onAir ? 'TRAITÉS CE SOIR' : 'TRAITÉS AU DERNIER DIRECT', String((onAir ? 28 : 61) + Object.keys(done).length), '#98A0A8'],
+            ['SANCTIONS ACTIVES', String(activeSanctions.length), '#98A0A8'],
+            ['MOTS AU DICTIONNAIRE', String(words.length), '#98A0A8']
+          ].map(([label, value, color]) => ({ label, value, color })),
+
+          modRows: modQueue.map(([user, text, reason, time], i) => {
+            const peer = roster.filter(m => m.roleKeys.indexOf('mod') > -1 && m.name !== me.name)[0];
+            const claims = Object.assign(peer ? { 1: peer.name } : {}, s.modClaim || {});
+            /* décision déjà rendue par le confrère, connue du serveur seul */
+            const PEER_VERDICT = peer ? { 1: 'del' } : {};
+            const by = claims[i];
+            const mine = by === me.name;
+            const other = !!by && !mine;
+            return {
+            user, text, reason, time,
+            settled: !!done[i],
+            pending: !done[i],
+            /* qui examine : évite la double sanction dès deux modérateurs */
+            claimedByOther: other && !done[i],
+            claimedByMe: mine && !done[i],
+            claimLabel: other ? by.split(' ')[0] + ' examine' : (mine ? 'Vous examinez' : ''),
+            claimStyle: MONO + 'flex: 0 0 auto; font-size: 9px; letter-spacing: 0.09em; padding: 3px 8px; white-space: nowrap; border: 1px solid '
+              + (other ? 'oklch(0.5 0.12 300); color: oklch(0.82 0.12 300);' : OK.replace(')', ' / 0.5)') + '; color: ' + OK + ';'),
+            claim: () => this.setState(st => {
+              const cur = Object.assign(peer ? { 1: peer.name } : {}, st.modClaim || {});
+              return { modClaim: Object.assign({}, cur, { [i]: cur[i] === me.name ? null : me.name }) };
+            }),
+            claimCta: mine ? 'Relâcher' : 'Prendre en charge',
+            claimCtaStyle: 'flex: 0 0 auto; cursor: pointer; padding: 6px 11px; ' + MONO + 'font-size: 9px; letter-spacing: 0.08em; border: 1px solid '
+              + (mine ? '#333941; color: #98A0A8;' : '#2A2F35; color: #C6CDD4;'),
+            showClaimCta: !done[i] && !other,
+            actStyle: 'flex: 0 0 auto; display: flex; gap: 6px; flex-wrap: wrap;' + (other ? ' opacity: 0.62;' : ''),
+            verdict: done[i] === 'ok' ? 'PUBLIÉ' : (done[i] === 'del' ? 'SUPPRIMÉ' : (done[i] === 'mute' ? 'RÉDUIT AU SILENCE' : 'BANNI')),
+            verdictColor: done[i] === 'ok' ? OK : (done[i] === 'ban' ? LIVE : (done[i] === 'mute' ? 'oklch(0.8 0.12 300)' : '#7C858D')),
+            rowStyle: 'border-top: 1px solid #191C20; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; ',
+            bodyStyle: 'flex: 1 1 260px; min-width: 0;' + (done[i] ? ' opacity: 0.45;' : ''),
+            approve: () => this.settle(i, 'ok', user, by, me.name, PEER_VERDICT[i]),
+            del: () => this.settle(i, 'del', user, by, me.name, PEER_VERDICT[i]),
+            mute: () => this.settle(i, 'mute', user, by, me.name, PEER_VERDICT[i]),
+            ban: () => this.settle(i, 'ban', user, by, me.name, PEER_VERDICT[i]),
+            clash: (s.modClash || {})[i] || '',
+            hasClash: !!(s.modClash || {})[i]
+            };
+          }),
+
+          mutedCount: Object.keys(s.modSanct || {}).filter(u => /^MUET/.test((s.modSanct || {})[u] || '')).length,
+          modeRows: [['free', 'LIBRE', 'Tout le monde écrit.'], ['emoji', 'EMOJIS + PHRASES', 'Réactions et phrases préparées seulement.'], ['read', 'LECTURE SEULE', 'Le tchat s\'affiche, personne n\'écrit.'], ['off', 'COUPÉ', 'Le tchat disparaît de la page.']]
+            .map(([k, label, hint]) => ({
+              label, hint,
+</script>

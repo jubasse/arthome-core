@@ -1,0 +1,86 @@
+<!--
+  ÉCRAN        journal
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Le journal de la chaîne : événement, argent, modération, accès.
+  RÔLES        artist · prod · coord · tres
+  MÈNE VERS    aucun (écran terminal)
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasTabs L487-495 · hasBlocks L731-791 · hasMore L795-806
+               modèle    L3083-3133
+  CLÉS DE COPIE
+               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
+               - table ROLES en dur (six personas — libellé, jamais un droit, E6)
+  CONTRAT
+               - openapi GET /v1/channels/{channelId}/journal (filtre de période obligatoire)
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasTabs        L487-495
+    hasBlocks      L731-791
+    hasMore        L795-806
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_journal(c) {
+    const s = this.state;
+    const ALL = this.journalOf(c) || [];
+
+    const JSCOPE = { artist: ['air', 'mod', 'event', 'access', 'money'], prod: ['air', 'mod', 'event', 'access'], coord: ['access'], regie: ['air'], mod: ['mod'], tres: ['money'] };
+    const scope = ['air', 'mod', 'event', 'access', 'money']
+      .filter(k => c.roles.some(r => (JSCOPE[r] || []).indexOf(k) > -1))
+      .filter(k => k !== 'money' || c.canRevenue);
+    const KINDS = (scope.length > 1 ? [['all', 'TOUT']] : []).concat(
+      [['air', 'ANTENNE'], ['mod', 'MODÉRATION'], ['event', 'ÉVÉNEMENT'], ['access', 'ACCÈS'], ['money', 'ARGENT']].filter(([k]) => scope.indexOf(k) > -1)
+    );
+    const cur = KINDS.some(([k]) => k === s.jKind) ? s.jKind : KINDS[0][0];
+    const shown = ALL.filter(r => scope.indexOf(r[5]) > -1).filter(r => cur === 'all' || r[5] === cur);
+    const TINT = { air: LIVE, mod: MUTE, event: INFO, access: INK2, money: OK };
+    const N = { air: 'd’antenne', mod: 'de modération', event: 'd’événement', access: 'd’accès', money: 'financières' };
+    const title = scope.length === 5 ? 'Tout ce qui a été décidé' : (() => {
+      const p = scope.map(k => N[k]);
+      const last = p.pop();
+      return 'Les décisions ' + (p.length ? p.join(', ') + ' et ' + last : last);
+    })();
+    const pg = this.pager(shown, 6, 'jPage');
+    return {
+      more: pg.more,
+      pageTitle: title,
+      pageTabs: KINDS.length > 1 ? this.tabStrip(KINDS.map(([k, l]) => [k, l, String(ALL.filter(r => scope.indexOf(r[5]) > -1).filter(r => k === 'all' || r[5] === k).length)]), cur, 'jKind', { jPage: 0 }) : [],
+      blocks: [
+        this.block('JOURNAL · ' + c.chan.name.toUpperCase(), pg.items.length + ' SUR ' + shown.length, {
+          rows: this.rows(pg.items.map(r => ({
+            label: r[1] + ' ' + r[2],
+            hint: (r[3] ? r[3] + ' · ' : '') + r[4],
+            pill: r[0], pillColor: TINT[r[5]]
+          })))
+        }),
+        this.block('ROUTAGE DES ALERTES', 'CE QUI DESCEND VERS QUI', {
+          intro: 'Une alerte ne part que vers les rôles qui peuvent y répondre. Les lignes qui vous concernent portent votre couleur.',
+          rows: this.rows([
+            ['regie', 'Débit instable, flux perdu', 'sous 30 secondes'],
+            ['mod', 'File de modération saturée', 'au-delà de dix messages en attente'],
+            ['coord', 'Poste non affecté à J-1', 'régie ou modération manquante'],
+            ['prod', 'Date bientôt complète', 'à 90 % de la jauge, pour décider d’un palier'],
+            ['tres', 'Litige de paiement, rejet bancaire', 'sous 24 h'],
+            ['artist', 'Transfert de propriété, suppression', 'toujours au propriétaire seul']
+          ].map(([rk, label, hint]) => ({
+            label: label + (c.roles.indexOf(rk) > -1 ? '  ← vous' : ''),
+            hint, pill: c.T(ROLES[rk][0]), pillColor: ROLES[rk][1]
+          })))
+        })
+      ]
+    };
+  }
+
+</script>

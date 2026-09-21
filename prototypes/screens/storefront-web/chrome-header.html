@@ -1,0 +1,154 @@
+<!--
+  ÉCRAN      En-tête et navigation
+  ROUTE      toutes les routes
+  AFFICHE    La barre d'en-tête présente sur toutes les routes : logo, navigation, champ de recherche, bascule de langue, bascule de variante, boutons visiteur, cloche de notifications, panier, menu de compte.
+  MÈNE VERS  home · browse · categories · artists · following · account · help · plans · les quatre popovers
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 59-71 · 131-143 · 253-283
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Trois trous dans ce fichier, marqués par des commentaires : la recherche et ses
+             suggestions (72-130), les notifications (144-171) et le panier (172-252) sont extraits
+             à part parce que ce sont les blocs qu'un agent aura le plus de mal à retrouver.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — getViewerContext, listNotifications, getCart
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : account, artist, artistsList, catalogue, disciplineKeys, favesCount, fr, pastCount, s, sideDrawer, t, upcomingCount
+  À LIRE     dépendances non recopiées ici : faves
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<div style="height: 77px;"></div>
+<header style="{{ headerStyle }}">
+  <div style="max-width: 1440px; margin: 0 auto; padding: 0 32px; height: 76px; display: flex; align-items: center; gap: 20px; min-width: 0;">
+    <div onClick="{{ goHome }}" style="cursor: pointer; font-family: 'Instrument Serif', serif; font-size: 26px; letter-spacing: 0.02em; line-height: 1;">ARTHOME<span style="color: oklch(0.68 0.18 42);">.</span></div>
+    <nav data-nav-full="1" style="display: flex; flex: 0 0 auto; gap: 18px; font-size: 13.5px; color: #9B948A; white-space: nowrap;">
+      <span onClick="{{ goHome }}" style="{{ navHomeStyle }}" style-hover="-webkit-text-fill-color:#EDE7DC">{{ t.navHome }}</span>
+      <span onClick="{{ goBrowse }}" style="{{ navBrowseStyle }}" style-hover="-webkit-text-fill-color:#EDE7DC">{{ t.navBrowse }}</span>
+      <span onClick="{{ goCategories }}" style="{{ navCatsStyle }}" style-hover="-webkit-text-fill-color:#EDE7DC">{{ t.categories }}</span>
+      <span onClick="{{ goArtists }}" style="{{ navArtistsStyle }}" style-hover="-webkit-text-fill-color:#EDE7DC">{{ t.navArtists }}</span>
+      <sc-if value="{{ isMember }}" hint-placeholder-val="{{ true }}">
+        <span onClick="{{ goFollowing }}" style="{{ navFollowStyle }}" style-hover="-webkit-text-fill-color:#EDE7DC">{{ t.navFollowing }}</span>
+      </sc-if>
+    </nav>
+
+    <div style="margin-left: auto; flex: 0 0 auto; display: flex; align-items: center; gap: 12px;">
+      <sc-if value="{{ searchCompact }}" hint-placeholder-val="{{ false }}">
+        <span onClick="{{ openSearch }}" title="{{ t.search }}" style="cursor: pointer; position: relative; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #332E28; transition: border-color .24s ease;" style-hover="border-color:#4A423A">
+          <span style="position: absolute; left: 11px; top: 10px; width: 11px; height: 11px; border: 1.5px solid #C9C0B2; border-radius: 50%;"></span>
+          <span style="position: absolute; left: 20px; top: 21px; width: 7px; height: 1.5px; background: #C9C0B2; transform: rotate(45deg);"></span>
+        </span>
+      </sc-if>
+      <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span onClick="{{ openSignIn }}" style="cursor: pointer; padding: 8px 14px; white-space: nowrap; font-size: 12.5px; color: #C9C0B2; border: 1px solid transparent; transition: color .24s ease;" style-hover="color:#EDE7DC">{{ t.signIn }}</span>
+          <span onClick="{{ openSignUp }}" style="cursor: pointer; padding: 9px 16px; white-space: nowrap; background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600; border: 1px solid transparent; transition: background .24s ease;" style-hover="background:oklch(0.94 0.03 80)">{{ t.signUp }}</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isMember }}" hint-placeholder-val="{{ true }}">
+        <div data-pop="accmenu" style="position: relative;">
+          <div onClick="{{ toggleAccMenu }}" title="{{ t.navTickets }}" style="cursor: pointer; width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(150deg, #2B2621, #171512); border: 1px solid #2E2A24; display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #C9C0B2;">{{ accountInitials }}</div>
+          <sc-if value="{{ accMenuOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; right: 0; top: 44px; width: 248px; z-index: 8200; border: 1px solid #332E28; background: #0B0A09; box-shadow: 0 22px 50px rgba(0,0,0,0.6); animation: riseIn .2s ease both;">
+              <div style="padding: 14px 15px; border-bottom: 1px solid #1F1C19; display: flex; align-items: center; gap: 11px;">
+                <div style="flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(150deg, #2B2621, #171512); border: 1px solid #2E2A24; display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #C9C0B2;">{{ accountInitials }}</div>
+                <div style="min-width: 0;">
+                  <div style="font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ accountName }}</div>
+                  <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: oklch(0.83 0.1 84);">{{ t.amFormule }} · {{ subName }}</div>
+                </div>
+              </div>
+              <div style="padding: 7px 0;">
+                <sc-for list="{{ accMenuItems }}" as="am" hint-placeholder-count="6">
+                  <div onClick="{{ am.go }}" style="{{ am.style }}" style-hover="background:#141210">
+                    <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ am.label }}</span>
+                    <span style="margin-left: auto; flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #6B6459;">{{ am.badge }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="border-top: 1px solid #1F1C19; padding: 7px 0 9px;">
+                <div onClick="{{ toggleSession }}" style="cursor: pointer; padding: 9px 15px; display: flex; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73; transition: background .18s ease, color .18s ease;" style-hover="background:#141210;color:#EDE7DC">{{ t.signOut }}</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</header>
+
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* artistFilters  —  lignes 5232-5236 */
+    const artistFilters = disciplineKeys.map((label, i) => ({
+      label,
+      pick: () => this.setState(st => ({ artistFilter: st.artistFilter === i ? -1 : i })),
+      style: CHIP + (s.artistFilter === i ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;')
+    }));
+/* artistSorts  —  lignes 5237-5243 */
+    const artistSorts = [['az', t.sortAZ], ['pop', t.sortFollowers]].map(([key, label]) => ({
+      label,
+      pick: () => this.setState({ artistSort: key }),
+      style: CHIP + (s.artistSort === key ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;')
+    }));
+
+    /* ---------- catalogue de recherche ---------- */
+/* navDefs  —  lignes 5740-5746 */
+    const navDefs = fr ? [
+      ['upcoming', 'Événements à venir', String(upcomingCount)], ['past', 'Événements passés', String(pastCount)], ['faves', 'Mes favoris', String(favesCount)],
+      ['alerts', 'Recherches enregistrées', String(s.alerts.length)], ['orders', 'Mes commandes', String(s.orders.length)], ['sub', 'Mon abonnement', ''], ['profile', 'Mon profil', ''], ['prefs', 'Préférences', ''], ['notifs', 'Notifications', '4'], ['security', 'Sécurité', ''], ['privacy', 'Confidentialité', '']
+    ] : [
+      ['upcoming', 'Upcoming events', String(upcomingCount)], ['past', 'Past events', String(pastCount)], ['faves', 'Favourites', String(favesCount)],
+      ['alerts', 'Saved searches', String(s.alerts.length)], ['orders', 'My orders', String(s.orders.length)], ['sub', 'My subscription', ''], ['profile', 'Profile', ''], ['prefs', 'Preferences', ''], ['notifs', 'Notifications', '4'], ['security', 'Security', ''], ['privacy', 'Privacy', '']
+    ];
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      goHome: this.nav('home'), goBrowse: this.nav('browse'), goArtist: this.nav('artist'),
+      goCategories: this.nav('categories'),
+      /* L'accueil s'arrête aux douze premières disciplines : au-delà, la
+         grille devient un sommaire. La page dédiée les montre toutes. */
+      isGuest: s.guest, isMember: !s.guest,
+      openSignUp: () => this.setState({ authOpen: true, authTab: 'up', menuOpen: false }),
+      openSignIn: () => this.setState({ authOpen: true, authTab: 'in', menuOpen: false }),
+      toggleSession: () => this.setState(st => ({ guest: !st.guest, menuOpen: false, accMenuOpen: false, page: 'home', pick: null, accTab: 'upcoming' })),
+      goArtists: this.nav('artists'), goFollowing: this.gate(this.nav('following')),
+      artistsList, artistFilters, artistSorts,
+      accMenuOpen: s.accMenuOpen,
+      toggleAccMenu: this.gate(() => this.setState(st => ({ accMenuOpen: !st.accMenuOpen, notifsOpen: false, cartOpen: false, suggOpen: false, searchOpen: false }))),
+      accMenuItems: ['profile', 'upcoming', 'past', 'orders'].map(k => navDefs.find(([tab]) => tab === k)).map(([tab, label, badge]) => ({
+        label, badge,
+        go: () => this.setState({ page: 'account', accTab: tab, accMenuOpen: false, pick: null }),
+        style: 'cursor: pointer; padding: 9px 15px; display: flex; align-items: baseline; gap: 10px; font-size: 13px; color: ' + (s.accTab === tab && s.page === 'account' ? '#EDE7DC' : '#C9C0B2') + '; transition: background .18s ease, color .18s ease;'
+      })),
+      subName: t.planSubName, subPrice: t.planSubPrice,
+      headerStyle: 'position: fixed; top: 0; left: 0; right: 0; z-index: 500; background: rgba(11,10,9,0.84); border-bottom: 1px solid #1F1C19;'
+        + (sideDrawer && s.searchOpen ? '' : ' backdrop-filter: blur(20px);'),
+      searchCompact: sideDrawer,
+      openSearch: () => this.setState({ searchOpen: true, menuOpen: false, accMenuOpen: false, notifsOpen: false, cartOpen: false }),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.amFormule  t.categories  t.navArtists  t.navBrowse  t.navFollowing  t.navHome  
+    t.navTickets  t.planSubName  t.planSubPrice  t.search  t.signIn  t.signOut  t.signUp  
+    t.sortAZ  t.sortFollowers  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    accMenuOpen  accTab  alerts  artistFilter  artistSort  guest  orders  page  searchOpen  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    gate, nav, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

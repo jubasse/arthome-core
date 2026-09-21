@@ -1,0 +1,109 @@
+<!--
+  ÉCRAN      Menu de tri
+  ROUTE      superposition, sans URL — DUPLIQUÉ
+  AFFICHE    Le sélecteur de tri des résultats : pertinence, bientôt, popularité, prix croissant, prix décroissant.
+  MÈNE VERS  browse · category
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 741-758 · 1700-1717
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       ⚠ CE BLOC EST RECOPIÉ DEUX FOIS DANS L'ORIGINAL — une fois dans `browse` (742-762),
+             une fois dans `category` (1701-1721), avec le même modèle de vue `sortRows`. Les deux
+             copies sont ci-dessous, telles quelles. Défaut relevé au temps 3 : le tri `price_desc`
+             de cet écran n'existe pas dans l'énumération `sort` d'`openapi/storefront.yaml`.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — search, getCategoryScreen
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : category, s, t
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+            <div data-pop="sort">
+              <div style="display: flex; align-items: baseline; border-bottom: 1px solid #1F1C19; padding-bottom: 7px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #C9C0B2;">{{ t.sortLabel }}</span>
+              </div>
+              <div style="position: relative;">
+                <div onClick="{{ toggleSortMenu }}" style="{{ sortFieldStyle }}" style-hover="border-color:rgba(237,231,220,0.5)">
+                  <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sortCurrentLabel }}</span>
+                  <span style="margin-left: auto; flex: 0 0 auto; font-size: 9px; color: #857E73;">{{ sortCaret }}</span>
+                </div>
+                <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="position: absolute; left: 0; right: 0; top: 100%; z-index: 40; margin-top: 4px; border: 1px solid #332E28; background: #0B0A09; box-shadow: 0 18px 40px rgba(0,0,0,0.55); animation: fadeIn .16s ease both;">
+                    <sc-for list="{{ sortRows }}" as="sr" hint-placeholder-count="5">
+                      <div onClick="{{ sr.pick }}" style="{{ sr.style }}" style-hover="background:#17140F;color:#EDE7DC">{{ sr.label }}</div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+
+            <div data-pop="sort">
+              <div style="display: flex; align-items: baseline; border-bottom: 1px solid #1F1C19; padding-bottom: 7px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #C9C0B2;">{{ t.sortLabel }}</span>
+              </div>
+              <div style="position: relative;">
+                <div onClick="{{ toggleSortMenu }}" style="{{ sortFieldStyle }}" style-hover="border-color:rgba(237,231,220,0.5)">
+                  <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sortCurrentLabel }}</span>
+                  <span style="margin-left: auto; flex: 0 0 auto; font-size: 9px; color: #857E73;">{{ sortCaret }}</span>
+                </div>
+                <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="position: absolute; left: 0; right: 0; top: 100%; z-index: 40; margin-top: 4px; border: 1px solid #332E28; background: #0B0A09; box-shadow: 0 18px 40px rgba(0,0,0,0.55); animation: fadeIn .16s ease both;">
+                    <sc-for list="{{ sortRows }}" as="sr" hint-placeholder-count="5">
+                      <div onClick="{{ sr.pick }}" style="{{ sr.style }}" style-hover="background:#17140F;color:#EDE7DC">{{ sr.label }}</div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* qq  —  lignes 5934-5934 */
+    const qq = (s.liveQuery || '').trim().toLowerCase();
+/* sortDefs  —  lignes 6082-6082 */
+    const sortDefs = [['auto', qq ? t.sortRelevance : t.sortSoon], ['soon', t.sortSoon], ['pop', t.sortPop], ['priceUp', t.sortPriceUp], ['priceDown', t.sortPriceDown]];
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      sortOpen: s.sortOpen,
+      toggleSortMenu: () => this.setState(st => ({ sortOpen: !st.sortOpen })),
+      sortFieldStyle: "cursor: pointer; margin-top: 9px; display: flex; align-items: center; gap: 8px; padding: 4px 9px; border: 1px solid " +
+        (s.sortOpen ? 'rgba(237,231,220,0.6)' : 'rgba(237,231,220,0.4)') + "; background: #0D0C0A; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #EDE7DC; transition: border-color .2s ease;",
+      sortCaret: s.sortOpen ? '▴' : '▾',
+      sortRows: (s.page === 'category'
+        ? sortDefs.filter(d => d[0] !== 'soon').map(([k, label]) => [k, label, s.cSort === k, () => this.setState({ cSort: k, shown: {} })])
+        : (qq ? sortDefs : sortDefs.filter(d => d[0] !== 'soon')).map(([k, label]) => [k, label, s.sort === k, () => this.setState({ sort: k, shown: {} })])
+      ).map(([k, label, on, pick]) => ({
+        label, on,
+        pick: () => { pick(); this.setState({ sortOpen: false }); },
+        style: "cursor: pointer; display: block; padding: 6px 9px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: " + (on ? '#EDE7DC' : '#9B948A') + '; background: ' + (on ? '#17140F' : 'transparent') + '; transition: background .18s ease, color .18s ease;'
+      })),
+      sortCurrentLabel: (() => {
+        const defs = s.page === 'category' ? sortDefs.filter(d => d[0] !== 'soon') : (qq ? sortDefs : sortDefs.filter(d => d[0] !== 'soon'));
+        const cur = s.page === 'category' ? s.cSort : s.sort;
+        return ((defs.find(d => d[0] === cur) || defs[0]) || ['', ''])[1];
+      })(),
+
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.sortLabel  t.sortPop  t.sortPriceDown  t.sortPriceUp  t.sortRelevance  t.sortSoon  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    cSort  liveQuery  page  sort  sortOpen  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

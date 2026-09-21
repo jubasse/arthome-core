@@ -1,0 +1,73 @@
+<!--
+  ÉCRAN        settings
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Identité publique, valeurs par défaut de diffusion, zone sensible du propriétaire.
+  RÔLES        artist
+  MÈNE VERS    feuilles : account, danger, slug
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBlocks L731-791
+               modèle    L3134-3172
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - openapi PATCH /v1/channels/{channelId}/identity
+               - openapi POST /v1/channels/{channelId}/ownership-transfer
+               - needs §Confrontation C5 (reauthToken exigé, émis par personne)
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_settings(c) {
+    const s = this.state;
+    const d = s.defs || {};
+    const on = k => d[k] !== undefined ? d[k] : true;
+    const toggle = k => () => this.setState(st => ({ defs: Object.assign({}, st.defs, { [k]: !(st.defs && st.defs[k] !== undefined ? st.defs[k] : true) }) }));
+    return {
+      pageTitle: 'Réglages de ' + c.chan.name,
+      blocks: [
+        this.block('IDENTITÉ PUBLIQUE', '', {
+          rows: this.rows([
+            { label: 'Nom de la chaîne', hint: 'affiché sur la page publique et les places', value: '' , pill: c.chan.name.toUpperCase(), pillColor: INK3 },
+            { label: 'Adresse de la page', hint: c.identity.url, cta: 'MODIFIER L’ADRESSE', act: () => this.setState({ sheet: 'slug' }) },
+            { label: 'Discipline', hint: c.identity.discipline, value: '' },
+            { label: 'Ville', hint: c.identity.city, value: '' , pill: c.identity.city.toUpperCase(), pillColor: INK3 },
+            { label: 'Fuseau de la salle', hint: (ZONES[c.zoneOf(c.chan.name)] || [])[2] + ' · ' + c.zAbbr + ' — toutes les heures de date s’y rapportent', cta: 'CHANGER DE FUSEAU', act: () => this.setState({ sheet: 'account' }) }
+          ])
+        }),
+        this.block('DIFFUSION PAR DÉFAUT', 'APPLIQUÉE AUX NOUVELLES DATES', {
+          rows: this.rows([
+            { label: 'Rediffusion incluse dans la place', hint: 'reste modifiable à la création de chaque date', pill: on('rpl') ? 'ACTIF' : 'INACTIF', pillColor: on('rpl') ? OK : INK3, cta: on('rpl') ? 'DÉSACTIVER' : 'ACTIVER', act: toggle('rpl') },
+            { label: 'Tchat ouvert dès l’ouverture des portes', hint: 'trente minutes avant le lever de rideau', pill: on('chat') ? 'ACTIF' : 'INACTIF', pillColor: on('chat') ? OK : INK3, cta: on('chat') ? 'DÉSACTIVER' : 'ACTIVER', act: toggle('chat') },
+            { label: 'Écran d’attente automatique', hint: 'affiché si le flux se perd plus de 15 s', pill: on('wait') ? 'ACTIF' : 'INACTIF', pillColor: on('wait') ? OK : INK3, cta: on('wait') ? 'DÉSACTIVER' : 'ACTIVER', act: toggle('wait') },
+            { label: 'Profil d’encodage recommandé', hint: '1080p · 6 Mb/s, déduit de vos dernières mesures', value: 'AUTO' }
+          ])
+        })
+      ].concat(c.has('artist') ? [this.block('ZONE SENSIBLE', 'PROPRIÉTAIRE SEUL', {
+        intro: 'Ces deux gestes ne se délèguent pas. Ils engagent les places vendues et l’historique de la chaîne.',
+        rows: this.rows([
+          { label: 'Transférer la propriété', hint: 'vers un autre compte Arthome · double validation', cta: 'TRANSFÉRER', tone: 'danger', act: () => this.setState({ sheet: 'danger' }) },
+          { label: 'Supprimer la chaîne', hint: 'impossible tant qu’une date est en vente ou qu’un versement est dû', cta: 'SUPPRIMER', tone: 'danger', act: () => this.setState({ sheet: 'danger' }) }
+        ])
+      })] : [this.block('CE QUI NE VOUS EST PAS OUVERT', '', {
+        intro: c.has('tres')
+          ? 'La trésorerie n’a pas accès aux réglages de chaîne : ses données propres vivent dans Versements.'
+          : 'Le transfert et la suppression de la chaîne restent au propriétaire seul.'
+      })])
+    };
+  }
+
+</script>

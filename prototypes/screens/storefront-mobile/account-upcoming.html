@@ -1,0 +1,88 @@
+<!--
+  Arthome · storefront mobile — account-upcoming
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : account · accTab=upcoming
+  Affiche    : Événements à venir : les places détenues sur des dates non encore jouées.
+  Mène vers  : live, artist
+  Contrat    : GET /v1/me/tickets?window=upcoming
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1349–1378
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1349–1378
+     ══════════════════════════════════════════════════════════════════════════ -->
+      <sc-if value="{{ accUpcoming }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <sc-for list="{{ tickets }}" as="tk" hint-placeholder-count="3">
+            <div style="border: 1px solid #1F1C19; background: #100F0D;">
+              <div style="position: relative; aspect-ratio: 16/9; overflow: hidden; background: #17140F;">
+                <sc-if value="{{ tk.img }}" hint-placeholder-val="{{ false }}">
+                  <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.72) brightness(0.7); background-color: #17140F; background-image: {{ tk.imgCss }}; background-size: cover; background-position: center;"></div>
+                </sc-if>
+                <div style="position: absolute; left: 10px; top: 10px; display: flex; align-items: center; gap: 6px; background: rgba(11,10,9,0.8); padding: 4px 8px;">
+                  <sc-if value="{{ tk.isNow }}" hint-placeholder-val="{{ false }}">
+                    <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.74 0.15 42); animation: pulseLive 1.6s infinite;"></span>
+                  </sc-if>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ tk.statusColor }};">{{ tk.statusText }}</span>
+                </div>
+              </div>
+              <div style="padding: 13px;">
+                <div style="font-size: 15px; font-weight: 500;">{{ tk.title }}</div>
+                <div style="padding-top: 5px; font-size: 12.5px; color: #9B948A;">{{ tk.artist }}</div>
+                <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73;">{{ tk.when }}</div>
+                <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ tk.desc }}</div>
+                <div style="padding-top: 11px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #6B6459;">{{ tk.code }}</span>
+                  <span onClick="{{ tk.action }}" style="margin-left: auto; cursor: pointer; padding: 10px 15px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC;">{{ tk.cta }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (0 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* Aucun symbole propre : cet écran n'emploie que le noyau commun. */
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (0) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  (aucune : cet écran n'emploie aucune clé des tables FR/EN)
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

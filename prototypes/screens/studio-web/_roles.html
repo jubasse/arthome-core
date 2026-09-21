@@ -1,0 +1,208 @@
+<!--
+==============================================================================
+  ÉCRAN — _roles — la mécanique de filtrage par rôle (transverse)
+==============================================================================
+
+  Ce qu'il affiche : la table d'accès, la navigation, les volets de fiche, les transitions offertes et les trois capacités transverses ; aucun écran ne s'affiche sans elle
+
+  Rôles qui l'ouvrent : tous — c'est elle qui décide de ce que chacun ouvre
+  Mène vers : tous les écrans
+
+  Source : mockups/Studio.dc.html
+    balisage        aucun — la mécanique est entièrement dans le modèle de vue
+    modèle de vue   lignes 2433–2442, 3420–3425, 3428–3460, 3474–3495, 3566–3580, 3617–3620, 3698–3712, 3731–3741, 3742–3790
+
+  Clés de copie employées :
+    aucune clé i18n directe
+    T(...) — littéraux français traduits par la table EN de _shared.html
+
+  Contrat :
+    besoins   needs/studio-web.md § « Les rôles et ce qu'ils ouvrent »
+    openapi   openapi/studio.yaml · getStudioBootstrap (EffectiveRights : roles, navigation, datePanes, canRevenue/canOps/canTech/canDecideOutcome, assignableRoles, dateGrants)
+
+  Relevé d'extraction (défauts vus, non corrigés) :
+    · le repli des huit rôles sur six personas (ROLE_FROM_FIXTURE, shared/studio-data.js) confond director, video et sound sous « regie » et EFFACE le droit d'invitation de director — le contrat retient les huit (E6).
+    · `team` figure dans ORDER et dans navDefs mais dans AUCUNE ligne d'ACCESS : la page est inatteignable, et la règle « crew absorbe team » la retire une seconde fois.
+    · ACCESS est indexé sur les six personas ; `agenda` y est donné à regie et mod, or c'est un écran DE PERSONNE (listDuties) et non de chaîne.
+    · canRevenue / canOps / canTech testent `roleOf` (le rôle principal) et non l'union `has()` — deux mesures du tableau de bord ne s'affichent donc jamais.
+
+  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+-->
+
+<!-- ===================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+<!-- ···· modèle de vue · Studio.dc.html lignes 2433–2442 ···· -->
+const ROLES = {
+  artist: ['ARTISTE · PROPRIÉTAIRE', '#C6CDD4'],
+  prod:   ['PRODUCTION', INFO],
+  regie:  ['RÉGIE', WARN],
+  mod:    ['MODÉRATION', 'oklch(0.72 0.12 300)'],
+  coord:  ['COORDINATION', OK],
+  tres:   ['TRÉSORERIE', 'oklch(0.75 0.12 200)']
+};
+
+const MUTE = 'oklch(0.75 0.12 300)';
+<!-- ···· modèle de vue · Studio.dc.html lignes 3420–3425 ···· -->
+    if (!s.dataReady) return { booting: true, ready: false, bootError: s.dataError || '' };
+    const vw = s.vw || 1196;
+    const personaRaw = P.persona || 'production';
+    const persona = { 'régie': 'regie', 'modération': 'moderation', 'trésorerie': 'tresorerie' }[personaRaw] || personaRaw;
+    const SECOND = { aucun: null, artiste: 'artist', production: 'prod', coordination: 'coord', régie: 'regie', modération: 'mod', trésorerie: 'tres' };
+    const second = SECOND[P.secondRole || 'aucun'] || null;
+<!-- ···· modèle de vue · Studio.dc.html lignes 3428–3460 ···· -->
+
+
+    const channels = (CHAN_SETS[persona] || CHAN_SETS.production).map(([name, img, rk, isLive, own], i) => ({
+      name, img, imgCss: img ? 'url("' + img + '")' : 'none', isLive, own, roleKey: rk, role: ROLES[rk][0],
+      pick: () => this.setState(st => ({
+        chan: i, chanOpen: false,
+        page: ['event', 'wizard', 'regie'].indexOf(st.page) > -1 ? null : st.page,
+        regieTab: 'ov', modDone: {}, evPage: 0, listPage: {}
+      })),
+      rowStyle: 'cursor: pointer; padding: 8px 11px; display: flex; align-items: center; gap: 9px; background: '
+        + (s.chan === i ? '#1A1D21' : 'transparent') + '; '
+    }));
+    const chan = channels[Math.min(s.chan, channels.length - 1)] || channels[0];
+    const roleOf = chan.roleKey;
+    const roles = [roleOf].concat(second && second !== roleOf ? [second] : []);
+    const has = r => roles.indexOf(r) > -1;
+    /* La personne connectée est un membre réel de la chaîne : celui qui tient
+       le rôle choisi, à défaut le propriétaire. */
+    const me = (() => {
+      const D = this.data, A = this.A;
+      const fallback = { name: chan.name, email: '', initials: (chan.name || '?').slice(0, 2).toUpperCase() };
+      if (!D || !A) return fallback;
+      const channel = (D.cited || D.channels).filter(x => x.name === chan.name)[0];
+      if (!channel) return fallback;
+      const mine = channel.members.filter(m => (D.roleOfMember ? D.roleOfMember(m) : null) === roleOf)[0]
+        || channel.members.filter(m => m.role === ({ artist: 'artist', prod: 'production', coord: 'coordination', regie: 'director', mod: 'moderation', tres: 'treasury' }[roleOf]))[0]
+        || channel.members[0];
+      return mine
+        ? { name: mine.name, email: mine.email || '', initials: mine.initials || mine.name.slice(0, 2).toUpperCase() }
+        : fallback;
+    })();
+    const role = ROLES[roleOf];
+
+<!-- ···· modèle de vue · Studio.dc.html lignes 3474–3495 ···· -->
+      return alt ? alt.time + ' ' + alt.abbr + alt.shift : '';
+    };
+
+    const chanGroups = [
+      { title: 'MA CHAÎNE', color: '#7C858D', items: channels.filter(c => c.own) },
+      { title: "CHAÎNES OÙ J'INTERVIENS", color: '#5B636B', items: channels.filter(c => !c.own) }
+    ].filter(g => g.items.length);
+    const multiChan = channels.length > 1;
+
+    const ACCESS = {
+      artist: ['dashboard', 'events', 'stream', 'crew', 'stats', 'tickets', 'store', 'replays', 'payouts', 'journal', 'settings', 'help'],
+      prod:   ['dashboard', 'events', 'stream', 'crew', 'stats', 'tickets', 'store', 'replays', 'journal', 'help'],
+      regie:  ['agenda', 'events', 'stream', 'replays', 'help'],
+      mod:    ['agenda', 'moderation', 'help'],
+      coord:  ['crew', 'journal', 'help'],
+      tres:   ['dashboard', 'stats', 'tickets', 'payouts', 'journal', 'help']
+    };
+    const ORDER = ['agenda', 'dashboard', 'moderation', 'crew', 'events', 'stream', 'stats', 'tickets', 'store', 'replays', 'team', 'payouts', 'journal', 'settings', 'help'];
+    const union = roles.reduce((acc, r) => acc.concat(ACCESS[r] || []), []);
+    let allowed = ORDER.filter(p => union.indexOf(p) > -1);
+    /* la console de coordination absorbe la page Équipe quand les deux sont ouvertes */
+    if (allowed.indexOf('crew') > -1) allowed = allowed.filter(p => p !== 'team');
+<!-- ···· modèle de vue · Studio.dc.html lignes 3566–3580 ···· -->
+    const SHORT = { artist: 'Artiste', prod: 'Production', regie: 'Régie', mod: 'Modération', coord: 'Coordination', tres: 'Trésorerie' };
+    const grantable = ['artist', 'coord', 'prod', 'regie', 'mod', 'tres']
+      .filter(k => roles.some(r => (GRANTS[r] || []).indexOf(k) > -1));
+    const canManageTeam = grantable.length > 0;
+    const grantReserved = ['artist', 'prod', 'regie', 'mod', 'coord', 'tres'].filter(k => grantable.indexOf(k) < 0);
+    const grantHint = canManageTeam
+      ? 'Vous pouvez attribuer : ' + grantable.map(k => SHORT[k]).join(', ') + '. '
+        + (grantReserved.indexOf('artist') > -1 ? 'Le rôle Artiste n\u2019est pas attribuable — il désigne le propriétaire. ' : '')
+        + (grantReserved.filter(k => k !== 'artist').length
+            ? grantReserved.filter(k => k !== 'artist').map(k => SHORT[k]).join(' et ')
+              + (grantReserved.filter(k => k !== 'artist').length > 1 ? ' ne s\u2019attribuent pas' : ' ne s\u2019attribue pas')
+              + ' depuis votre niveau. '
+            : '')
+        + 'Plusieurs personnes peuvent tenir le même rôle — une chaîne compte autant de régisseurs et de modérateurs que nécessaire.'
+      : 'Vous ne gérez pas les accès de cette chaîne. Demandez un renfort à la coordination ou au propriétaire.';
+<!-- ···· modèle de vue · Studio.dc.html lignes 3617–3620 ···· -->
+    const canRevenue = roleOf === 'artist' || roleOf === 'prod' || roleOf === 'tres';
+    const canOps = roleOf === 'artist' || roleOf === 'prod' || roleOf === 'regie';
+    const canTech = roleOf === 'artist' || roleOf === 'prod' || roleOf === 'regie';
+
+<!-- ···· modèle de vue · Studio.dc.html lignes 3698–3712 ···· -->
+    const EV_TABS = [
+      ['public', 'PUBLIC', ['artist', 'prod']],
+      ['tickets', 'BILLETTERIE', ['artist', 'prod', 'tres']],
+      ['chat', 'TCHAT', ['artist', 'prod', 'mod']],
+      ['tech', 'TECHNIQUE', ['artist', 'prod', 'regie', 'coord']],
+      ['crew', 'ÉQUIPE', ['artist', 'prod', 'coord']],
+      ['replay', 'REDIFFUSION', ['artist', 'prod']]
+    ];
+    const evOwn = EV_TABS.filter(t => roles.some(r => t[2].indexOf(r) > -1)).map(t => [t[0], t[1]]);
+    const evTabList = evOwn.length >= 3 ? [['all', 'VUE D\u2019ENSEMBLE']].concat(evOwn) : evOwn;
+    const evTab = (s.evTab && evTabList.some(t => t[0] === s.evTab)) ? s.evTab : (evTabList[0] || ['public'])[0];
+    const evSee = k => evTab === 'all' || evTab === k;
+
+    /* ce qu'il faut avant d'engager un tarif public */
+    const evMissing = [
+<!-- ···· modèle de vue · Studio.dc.html lignes 3731–3741 ···· -->
+    const EV_MOVES = {
+      draft:  [['hidden', 'Mettre en réserve', false], ['sched', 'Publier', true]],
+      hidden: [['sched', 'Ouvrir la vente', true]],
+      sched:  [['tech', 'Lancer les tests techniques', false]],
+      tech:   [['live', 'Passer à l\'antenne', true], ['sched', 'Arrêter les tests', false]],
+      live:   [['done', 'Terminer la diffusion', false]],
+      done:   [['replay', 'Activer la rediffusion', true]],
+      replay: []
+    };
+    const evMoves = (has('artist') || has('prod')) ? (EV_MOVES[evState] || []) : [];
+
+<!-- ···· modèle de vue · Studio.dc.html lignes 3742–3790 ···· -->
+    const navDefs = [
+      ['agenda', 'Mes dates', '⧉', agendaBadge],
+      ['dashboard', 'Tableau de bord', '◧', ''],
+      ['moderation', 'Modération', '◈', modQueueCount],
+      ['crew', 'Planning et équipe', '◉', ''],
+      ['events', 'Événements', '▤', String(evDefs.length)],
+      ['stream', 'Diffusion', '≋', preflightBadge],
+      ['stats', 'Statistiques', '◔', ''],
+      ['tickets', 'Billetterie', '▦', ''],
+      ['store', 'Boutique', '◫', String(this.countsOf(chan.name).merch || '')],
+      ['replays', 'Rediffusions', '▷', String(this.countsOf(chan.name).replays || '')],
+      ['team', 'Équipe', '◉', String(roster.length)],
+      ['payouts', 'Versements', '▧', ''],
+      ['journal', 'Journal', '≡', ''],
+      ['settings', 'Réglages de la chaîne', '⚙', ''],
+      ['help', 'Aide et guides', '?', '']
+    ];
+
+    const FREE = {
+      artist: ['event', 'wizard', 'regie'],
+      prod:   ['event', 'wizard', 'regie'],
+      regie:  ['event', 'regie'],
+      coord:  [], mod: [], tres: []
+    };
+    const free = ['event', 'wizard', 'regie'].filter(p => roles.some(r => (FREE[r] || []).indexOf(p) > -1));
+    free.push('inbox');
+    const canOpenRecord = free.length > 0;
+    const page = (s.page && (allowed.indexOf(s.page) > -1 || free.indexOf(s.page) > -1)) ? s.page : allowed[0];
+
+    const nav = navDefs.filter(d => allowed.indexOf(d[0]) > -1).map(([k, label0, icon, badge]) => {
+      const label = T(label0);
+      const on = page === k || (k === 'events' && free.indexOf(page) > -1);
+      return {
+        label, icon, badge,
+        go: () => this.setState({ page: k }),
+        iconColor: on ? '#E6E9EC' : '#5B636B',
+        style: 'cursor: pointer; padding: 8px 9px; display: flex; align-items: center; gap: 10px; font-size: 13px; border-left: 2px solid '
+          + (on ? '#E6E9EC' : 'transparent') + '; background: ' + (on ? '#191C20' : 'transparent')
+          + '; color: ' + (on ? '#E6E9EC' : '#98A0A8') + '; ',
+        badgeStyle: badge
+          ? ('margin-left: auto; flex: 0 0 auto; ' + MONO + 'font-size: 9px; letter-spacing: 0.06em; color: #5B636B;')
+          : 'display: none;'
+      };
+    });
+
+    const periods = [['7j', '7 J'], ['30j', '30 J'], ['90j', '90 J'], ['saison', 'SAISON'], ['custom', 'PERSONNALISÉ']]
+      .map(([k, label]) => ({ label, pick: () => this.setState({ period: k }), style: this.chip(s.period === k) }));
+
+    const mul = { '7j': 0.22, '30j': 1, '90j': 2.7, 'saison': 4.4, 'custom': 3.1 }[s.period] || 1;
+</script>

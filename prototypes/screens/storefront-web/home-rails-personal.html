@@ -1,0 +1,212 @@
+<!--
+  ÉCRAN      Accueil — rangées personnalisées et disciplines
+  ROUTE      page === 'home', variante 'a'
+  AFFICHE    Les prochaines dates de vos artistes suivis, les dates bientôt complètes, et les douze premières disciplines.
+  MÈNE VERS  live · artist · category · categories
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 475-572
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Extrait de `home.html`, à la suite de `home-rails.html`. C'est ici que se lit la
+             tension entre rendu serveur indexable et personnalisation : ces rangées dépendent du
+             spectateur, la billboard non.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — getHomeScreen
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, artist, cats, colsOf, colsTiles, colsWideN, followed, fr, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, tileCols
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+    <section style="max-width: 1440px; margin: 0 auto; padding: 72px 40px 0;">
+      <div style="display: flex; align-items: baseline; gap: 16px; margin-bottom: 20px;">
+        <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.favUpcoming }}</h2>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: #857E73;">{{ t.favUpcomingSub }}</span>
+        <div style="margin-left: auto; display: flex; gap: 8px;">
+          <span onClick="{{ favNextLeft }}" style="cursor: pointer; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #1F1C19; color: #9B948A; font-size: 15px; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease; transition: border-color .24s ease, color .24s ease, transform .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC;transform:translateX(-2px)">←</span>
+          <span onClick="{{ favNextRight }}" style="cursor: pointer; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #1F1C19; color: #9B948A; font-size: 15px; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease; transition: border-color .24s ease, color .24s ease, transform .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC;transform:translateX(2px)">→</span>
+        </div>
+      </div>
+      <div id="rail-favnext" style="display: flex; gap: 14px; overflow-x: auto; scroll-behavior: smooth; padding-bottom: 8px;">
+        <sc-for list="{{ favNext }}" as="ev" hint-placeholder-count="4">
+          <div style="flex: 0 0 402px; display: grid; grid-template-columns: 128px 1fr; gap: 14px; align-items: center; border: 1px solid #1F1C19; padding: 12px; background: #100F0D; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="border-color:#4A423A">
+            <div onClick="{{ ev.open }}" style="cursor: pointer; position: relative; aspect-ratio: 4/3; overflow: hidden; background: #17140F;">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.72) brightness(0.76); background-color: #1A1815; background-image: {{ ev.imgCss }}; background-size: cover; background-position: center;"></div>
+              <sc-if value="{{ ev.pShowBox }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ ev.pBoxStyle }}"><span style="{{ ev.pMainStyle }}">{{ ev.promoPct }}</span></div>
+              </sc-if>
+            </div>
+            <div style="min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 22px; height: 22px; border-radius: 50%; background: #221F1B; border: 1px solid #2E2A24; display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #C9C0B2;">{{ ev.initials }}</span>
+                <span onClick="{{ ev.openArtist }}" style="font-size: 13.5px; font-weight: 500; cursor: pointer; border-bottom: 1px solid #262320; transition: color .2s ease, border-color .2s ease;" style-hover="color:#EDE7DC;border-color:#6B6459">{{ ev.artist }}</span>
+              </div>
+              <div style="padding-top: 8px; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ev.title }}</div>
+              <div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #8B857C;">{{ ev.when }} · {{ ev.tag }}</div>
+              <div style="padding-top: 10px; display: flex; gap: 7px; align-items: center;">
+                <sc-if value="{{ ev.pShowWas }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ ev.pWasStyle }}">{{ ev.promoWasLabel }}</span>
+                  </sc-if>
+                <span onClick="{{ ev.buy }}" style="{{ ev.buyStyle }}" style-hover="background:#1B1815;border-color:#4A423A">{{ ev.priceLabel }}</span>
+                <span style="cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid transparent; background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600; transition: background .24s ease;" style-hover="background:oklch(0.94 0.03 80)">{{ t.remind }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="max-width: 1440px; margin: 0 auto; padding: 72px 40px 0;">
+      <div style="display: flex; align-items: baseline; gap: 16px; margin-bottom: 20px;">
+        <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.almostGone }}</h2>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: oklch(0.72 0.16 27);">{{ t.almostGoneSub }}</span>
+        <div style="margin-left: auto; display: flex; gap: 8px;">
+          <span onClick="{{ soldLeft }}" style="cursor: pointer; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #1F1C19; color: #9B948A; font-size: 15px; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease; transition: border-color .24s ease, color .24s ease, transform .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC;transform:translateX(-2px)">←</span>
+          <span onClick="{{ soldRight }}" style="cursor: pointer; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #1F1C19; color: #9B948A; font-size: 15px; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease; transition: border-color .24s ease, color .24s ease, transform .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC;transform:translateX(2px)">→</span>
+        </div>
+      </div>
+      <div id="rail-sold" style="display: flex; gap: 16px; overflow-x: auto; scroll-behavior: smooth; padding-bottom: 8px;">
+        <sc-for list="{{ soldOut }}" as="ev" hint-placeholder-count="4">
+          <div style="flex: 0 0 288px; border: 1px solid #1F1C19; background: #100F0D;">
+            <div onClick="{{ ev.open }}" style="cursor: pointer; position: relative; aspect-ratio: 16/9; overflow: hidden; background: #17140F;">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.72) brightness(0.72); background-color: #1A1815; background-image: {{ ev.imgCss }}; background-size: cover; background-position: center;"></div>
+              <sc-if value="{{ ev.pShowBox }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ ev.pBoxStyle }}"><span style="{{ ev.pMainStyle }}">{{ ev.promoPct }}</span></div>
+              </sc-if>
+              <div style="position: absolute; left: 10px; top: 10px; background: rgba(11,10,9,0.78); padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.14 27);">{{ ev.pctLabel }}</div>
+              <div style="position: absolute; inset: 0; opacity: 0; transform: translateY(8px); transition: opacity .26s ease, transform .34s cubic-bezier(.2,.7,.2,1); background: linear-gradient(to top, rgba(8,7,7,0.95), rgba(8,7,7,0.74)); display: flex; flex-direction: column; justify-content: flex-end; padding: 13px;" style-hover="opacity:1;transform:translateY(0)">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 42);">{{ ev.leftLabel }}</div>
+                <div style="padding-top: 7px; font-size: 12.5px; line-height: 1.5; color: #EDE7DC; text-wrap: pretty; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{{ ev.desc }}</div>
+              </div>
+            </div>
+            <div style="padding: 14px;">
+              <div style="font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ev.title }}</div>
+              <div style="padding-top: 4px; font-size: 12.5px; color: #9B948A;"><span onClick="{{ ev.openArtist }}" style="cursor: pointer; border-bottom: 1px solid #262320; transition: color .2s ease, border-color .2s ease;" style-hover="color:#EDE7DC;border-color:#6B6459">{{ ev.artist }}</span></div>
+              <div style="margin-top: 12px; height: 3px; background: #221F1B;">
+                <div style="{{ ev.barStyle }}"></div>
+              </div>
+              <div style="padding-top: 10px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #8B857C;">{{ ev.leftLabel }}</span>
+                <sc-if value="{{ ev.pShowWas }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ ev.pWasStyle }}">{{ ev.promoWasLabel }}</span>
+                  </sc-if>
+                <span onClick="{{ ev.buy }}" style="{{ ev.buyStyle }}" style-hover="background:#1B1815;border-color:#4A423A">{{ ev.priceLabel }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="max-width: 1440px; margin: 0 auto; padding: 72px 40px 0;">
+      <div style="display: flex; align-items: baseline; gap: 16px; margin-bottom: 20px;">
+        <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.categories }}</h2>
+        <span onClick="{{ goCategories }}" style="margin-left: auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; color: #9B948A; border-bottom: 1px solid #332E28; padding-bottom: 2px; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="color:#EDE7DC">{{ t.allCategories }}</span>
+      </div>
+      <div style="display: grid; grid-template-columns: {{ colsTiles }}; gap: 18px;">
+        <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="8">
+          <div onClick="{{ cat.open }}" style="cursor: pointer; position: relative; aspect-ratio: 3/2; overflow: hidden; background: #15130F; background-image: repeating-linear-gradient(118deg, rgba(237,231,220,0.05) 0 9px, rgba(0,0,0,0) 9px 20px); border: 1px solid #1F1C19; transition: border-color .24s ease;" style-hover="border-color:#4A423A">
+            <div style="position: absolute; inset: -7%; width: 114%; height: 114%; filter: saturate(0.55) contrast(1.1) brightness(0.62); transform: rotate(0deg) scale(1); transition: transform .6s cubic-bezier(.2,.7,.2,1); will-change: transform; backface-visibility: hidden; background-color: #1A1815; background-image: {{ cat.imgCss }}; background-size: cover; background-position: center;" style-hover="transform:rotate(1.8deg) scale(1.03)"></div>
+            <div style="position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, rgba(11,10,9,0.86), rgba(11,10,9,0.15));"></div>
+            <div style="position: absolute; left: 16px; bottom: 14px; pointer-events: none;">
+              <div style="font-family: 'Instrument Serif', serif; font-size: 26px; line-height: 1.05;">{{ cat.name }}</div>
+              <div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #B0A899; letter-spacing: 0.08em;">{{ cat.count }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* favNext  —  lignes 5644-5671 */
+    const favNext = (() => {
+      const followed = (s.follows || []).map(i => roster[i]).filter(Boolean);
+      const pool = followed.length ? followed : roster.slice(0, 5);
+      return pool.map(a => {
+        const next = A.datesOfArtist(a.id).filter(d => d.startOffsetMin > 0)
+          .sort((x, y) => x.startOffsetMin - y.startOffsetMin)[0];
+        if (!next) return null;
+        const show = A.show(next.show), venue = A.venue(next.venue);
+        const at = A.dateAt(next.startOffsetMin);
+        const cap = venue ? venue.capacity : 0;
+        const tight = cap && next.seats.available / cap < 0.15;
+        return [a.name,
+          a.name.split(/[\s’']+/).map(w => w[0]).filter(Boolean).join('').slice(0, 2).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+          A.title(show), A.showImage(show, 900),
+          A.when(next, false),
+          tight ? (fr ? 'PLACES LIMITÉES' : 'LIMITED SEATS') : (fr ? 'RAPPEL ACTIVÉ' : 'REMINDER ON'),
+          next.prices[0].amount ? A.price(next.prices[0].amount) : (fr ? 'Gratuit' : 'Free')];
+      }).filter(Boolean).slice(0, 5);
+    })()
+      .map(([artist, initials, title, img, whenLabel, tag, priceLabel]) => ({
+      artist, initials, title, img, imgCss: this.cssUrl(img), tag, priceLabel,
+      when: whenLabel,
+      ...this.promoOf(title, priceLabel, fr),
+      buyStyle: this.buyStyle("cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease, color .24s ease;", this.promoOf(title, priceLabel, fr), true),
+      open: () => this.openLive(artist), openArtist: this.goArtistFrom(artist), buy: this.openTicketFor(title, priceLabel, fr)
+    }));
+
+    /* Presque complet : les dates dont la jauge se referme. */
+/* soldOut  —  lignes 5672-5698 */
+    const soldOut = A.upcoming().map(d => {
+      const cap = A.venue(d.venue).capacity;
+      return { d, pct: cap ? Math.round((d.seats.sold / cap) * 100) : 0 };
+    })
+      /* Presque complet veut dire qu'il reste des places : une date complète
+         n'a rien à vendre et sortirait le spectateur en pleine réservation.
+         On trie par places restantes, pas par pourcentage : six badges « 98 % »
+         d'affilée se lisent comme un défaut d'affichage, alors que « 7 places »
+         puis « 25 places » dit quelque chose. */
+      .filter(x => x.pct >= 80 && x.d.seats.available > 0)
+      .sort((a, b) => a.d.seats.available - b.d.seats.available).slice(0, 6).map(({ d, pct }) => {
+      const show = A.show(d.show), art = A.artist(show.artist), venue = A.venue(d.venue);
+      return [A.title(show), art ? art.name : '', A.showImage(show, 900), pct,
+        A.number(d.seats.available) + ' ' + (fr ? 'places' : 'seats'),
+        d.prices[0].amount ? A.price(d.prices[0].amount) : (fr ? 'Gratuit' : 'Free'),
+        A.synopsis(show) || [A.label(A.category(show.category)), venue.name].join(' · ')];
+    })
+      .map(([title, artist, img, pct, left, priceLabel, desc]) => ({
+      title, artist, img, imgCss: this.cssUrl(img), priceLabel, desc,
+      ...this.promoOf(title, priceLabel, fr),
+      buyStyle: this.buyStyle("margin-left: auto; cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease, color .24s ease;", this.promoOf(title, priceLabel, fr), true),
+      pctLabel: pct + (fr ? ' % VENDU' : '% SOLD'),
+      barStyle: 'width: ' + pct + '%; height: 3px; background: ' + (pct >= 90 ? 'oklch(0.62 0.21 27)' : 'oklch(0.68 0.18 42)') + ';',
+      leftLabel: fr ? 'IL RESTE ' + left : left + ' LEFT',
+      open: () => this.openLive(artist), openArtist: this.goArtistFrom(artist), buy: this.openTicketFor(title, priceLabel, fr)
+    }));
+
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      favNextLeft: () => this.scroll('rail-favnext', -1), favNextRight: () => this.scroll('rail-favnext', 1),
+      soldLeft: () => this.scroll('rail-sold', -1), soldRight: () => this.scroll('rail-sold', 1),
+      goCategories: this.nav('categories'),
+      /* L'accueil s'arrête aux douze premières disciplines : au-delà, la
+         grille devient un sommaire. La page dédiée les montre toutes. */
+      categories: cats.slice(0, 12),
+      colsTiles: colsOf(tileCols), colsWide: colsOf(colsWideN),
+      rowGrid5, rowGrid5b, rowGrid4, rowGrid4b, rowGridLive, rowThumb, rowStack,
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.allCategories  t.almostGone  t.almostGoneSub  t.categories  t.favUpcoming  
+    t.favUpcomingSub  t.remind  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    follows  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    buyStyle, cssUrl, goArtistFrom, nav, openLive, openTicketFor, promoOf, scroll
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

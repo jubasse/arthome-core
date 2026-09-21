@@ -1,0 +1,81 @@
+<!--
+  ÉCRAN      Toutes les disciplines
+  ROUTE      page === 'categories'
+  AFFICHE    Les 21 disciplines en tuiles typographiques, dans leur rang éditorial.
+  MÈNE VERS  category
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 1652-1672
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       L'accueil n'en montre que douze ; cette page les montre toutes.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — listCategories
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : SUBS, catalogue, category, cats, s, subsSel
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ isCategories }}" hint-placeholder-val="{{ false }}">
+<section style="max-width: 1440px; margin: 0 auto; padding: 40px 40px 0; animation: riseIn .4s ease both;">
+  <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 52px; line-height: 1;">{{ t.allCatsTitle }}</h1>
+  <div style="padding-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: #857E73;">{{ t.allCatsSub }}</div>
+  <div style="margin-top: 30px; display: grid; grid-template-columns: {{ colsWide }}; gap: 18px;">
+    <sc-for list="{{ allCategories }}" as="cat" hint-placeholder-count="8">
+      <div onClick="{{ cat.open }}" style="cursor: pointer; position: relative; aspect-ratio: 21/9; overflow: hidden; background: #15130F; border: 1px solid #1F1C19; transition: border-color .24s ease;" style-hover="border-color:#4A423A">
+        <div style="position: absolute; inset: -7%; width: 114%; height: 114%; filter: saturate(0.55) contrast(1.1) brightness(0.6); transform: rotate(0deg) scale(1); transition: transform .6s cubic-bezier(.2,.7,.2,1); will-change: transform; backface-visibility: hidden; background-color: #1A1815; background-image: {{ cat.imgCss }}; background-size: cover; background-position: center;" style-hover="transform:rotate(1.8deg) scale(1.03)"></div>
+        <div style="position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, rgba(11,10,9,0.9), rgba(11,10,9,0.1));"></div>
+        <div style="position: absolute; left: 22px; right: 22px; bottom: 18px; pointer-events: none;">
+          <div style="font-family: 'Instrument Serif', serif; font-size: 32px; line-height: 1.05;">{{ cat.name }}</div>
+          <div style="padding-top: 7px; display: flex; align-items: baseline; gap: 12px;">
+            <sc-if value="{{ cat.hasLive }}" hint-placeholder-val="{{ false }}"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.14 27);">{{ cat.liveLabel }}</span></sc-if>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #B0A899;">{{ cat.count }}</span>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</section>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* subgenres  —  lignes 6216-6226 */
+    const subgenres = (SUBS[s.catId] || SUBS[0]).map((label, i) => ({
+      n: catalogue.filter(o => o.cat === s.catId && o.subs.indexOf(i) > -1).length,
+      label: label.toUpperCase(),
+      pick: () => this.setState(st => {
+        const cur = (st.subs || []).slice();
+        const k = cur.indexOf(i);
+        if (k > -1) cur.splice(k, 1); else cur.push(i);
+        return { subs: cur };
+      }),
+      style: CHIP + (subsSel.indexOf(i) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    })).filter(x => x.n > 0);
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      isCategories: s.page === 'categories', isCategory: s.page === 'category',
+      allCategories: cats, category, subgenres,
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.allCatsSub  t.allCatsTitle  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    catId  page  subs  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

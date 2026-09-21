@@ -1,0 +1,108 @@
+<!--
+  ÉCRAN        moderation / sanct
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Sanctions actives, recherche dans toute l'audience, journal de modération.
+  RÔLES        mod
+  MÈNE VERS    feuilles : mute
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBand L475-485 · hasTabs L487-495 · hasSearch L559-567 · hasBlocks L731-791
+               modèle    L2304-2334 · L2433-2471
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - needs §Les formes de données 6 (la personne du public)
+               - openapi GET /v1/channels/{channelId}/audience
+               - openapi POST /v1/channels/{channelId}/audience/{memberId}/sanction
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBand        L475-485
+    hasTabs        L487-495
+    hasSearch      L559-567
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_moderation(c) {
+    const s = this.state;
+    const ctx = MOD_CTX[c.chan.name] || { show: '', viewers: 0, rate: 0, queue: [], sanctions: [] };
+    const peer = (ROSTER[c.chan.name] || []).filter(m => m[3] === 'mod' && m[0] !== c.me.name)[0];
+    const peerName = peer ? peer[0] : 'un confrère';
+    const flood = c.P.autoMod !== false && ctx.rate > 60;
+    const done = s.modDone || {};
+    const taken = s.modTaken || {};
+    const left = ctx.queue.filter((q, i) => !done[i] && q[4] !== 'decided').length;
+    const TABS = [['live', 'TCHAT EN DIRECT'], ['queue', 'À VALIDER', String(left), left ? WARN : '#5B636B'], ['filter', 'FILTRE ET RÉGIME'], ['sanct', 'SANCTIONS']];
+    const tab = TABS.some(t => t[0] === s.modTab) ? s.modTab : (flood ? 'queue' : 'live');
+
+    const regime = s.chatMode || CHAT_FROM_PROP[c.P.chatRegime || 'emojis et phrases préparées'] || 'emoji';
+    const HINTS = { free: 'tout le monde écrit, le filtre travaille seul', emoji: 'le compromis des grandes salles', read: 'le public voit sans écrire', off: 'aucun tchat, aucune file' };
+    const REGIMES = CHAT_MODES.map(([k, label]) => [k, label, HINTS[k]]);
+    const sev = s.modSev || 'std';
+    const words = s.banWords || ['idiot', 'nul', 'arnaque', 'remboursez', 'spoiler', 'triche', 'honte', 'scandale'];
+    const sanct = s.modSanct || {};
+    const q = (s.modQ || '').trim().toLowerCase();
+
+    const out = {
+      pageTitle: ctx.viewers ? ctx.show + ' · ' + c.num(ctx.viewers) + ' spectateurs' : 'Aucun direct en cours',
+      pageTabs: this.tabStrip(TABS, tab, 'modTab'),
+      band: this.stats([
+        ['DÉBIT DU TCHAT', ctx.rate ? ctx.rate + ' MSG/MIN' : '—', flood ? 'au-delà du seuil de lecture' : 'lisible message par message', flood ? WARN : OK],
+        ['EN FILE', String(left), left ? 'à valider' : 'rien n’attend', left ? WARN : OK],
+        ['RÉGIME', CHAT_SHORT[regime], 'modifiable en direct', INFO],
+        ['SANCTIONS ACTIVES', String(ctx.sanctions.length + Object.keys(sanct).length), 'muets et bannis']
+      ])
+    };
+
+
+    /* sanctions */
+    const live = ctx.sanctions.filter(x => sanct[x[0]] === undefined)
+      .concat(Object.keys(sanct).filter(u => sanct[u]).map(u => {
+        const v = sanct[u];
+        const muted = /^MUET/.test(v);
+        return [u, muted ? 'MUET' : 'BANNI', muted ? v.replace('MUET ', '').toLowerCase() + ' · à l’instant' : 'définitif · à l’instant', muted ? MUTE : LIVE];
+      }));
+    const pool = (AUDIENCE[c.chan.name] || []).filter(u => q && u.toLowerCase().indexOf(q) > -1);
+    return Object.assign(out, {
+      hasSearch: true, searchValue: s.modQ || '', searchPlaceholder: 'Chercher un spectateur dans l’audience',
+      onSearch: e => this.setState({ modQ: e.target.value }), clearSearch: () => this.setState({ modQ: '' }),
+      searchCount: q ? (pool.length + (pool.length > 1 ? ' SPECTATEURS TROUVÉS' : ' SPECTATEUR TROUVÉ')) : c.num((AUDIENCE[c.chan.name] || []).length) + ' SPECTATEURS DANS L’AUDIENCE',
+      blocks: [].concat(q ? [this.block('RÉSULTATS DANS L’AUDIENCE', 'MÊME SANS AVOIR ÉCRIT', {
+        rows: this.rows(pool.length ? pool.map(u => ({
+          label: u, hint: sanct[u] ? 'sanction en cours : ' + sanct[u].toLowerCase() : 'aucune sanction',
+          pill: sanct[u] || '', pillColor: MUTE,
+          cta: sanct[u] ? 'LEVER LA SANCTION' : 'SANCTIONNER',
+          act: () => sanct[u]
+            ? this.setState(st => ({ modSanct: Object.assign({}, st.modSanct, { [u]: null }) }))
+            : this.openSheet('mute', { muteUser: u })
+        })) : [{ label: 'Aucun spectateur ne correspond à « ' + q + ' »', hint: 'la recherche porte sur toute l’audience, pas seulement sur qui a écrit' }])
+      })] : [], [
+        this.block('SANCTIONS ACTIVES', live.length + (live.length > 1 ? ' SANCTIONS' : ' SANCTION'), {
+          rows: this.rows(live.length ? live.map(([u, kind, when, color]) => ({
+            label: u, hint: when, pill: kind, pillColor: color,
+            cta: 'LEVER LA SANCTION', act: () => this.setState(st => ({ modSanct: Object.assign({}, st.modSanct, { [u]: null }) }))
+          })) : [{ label: 'Aucune sanction en cours', hint: 'la salle se tient bien ce soir' }])
+        }),
+        this.block('JOURNAL DE MODÉRATION', 'HORODATÉ ET NOMINATIF', {
+          rows: this.rows([
+            { label: c.me.name + ' a réduit @kaz_9 au silence', hint: '10 minutes · dictionnaire', value: c.airClock(18) },
+            { label: peerName + ' a banni @troll_du_nord', hint: 'définitif · récidive', value: c.airClock(32) },
+            { label: peerName + ' a publié un message retenu', hint: 'faux positif du filtre', value: c.airClock(35) }
+          ])
+        })
+      ])
+    });
+  }
+
+</script>

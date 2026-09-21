@@ -1,0 +1,511 @@
+<!--
+==============================================================================
+  ÉCRAN — dashboard — tableau de bord de la chaîne
+==============================================================================
+
+  Ce qu'il affiche : la prochaine date et son décompte, six mesures avec leur série, la recette par date, les prochaines dates et la liste « à traiter »
+
+  Rôles qui l'ouvrent : artist · production · treasury
+  Mène vers : regie · event · events · wizard
+
+  Source : mockups/Studio.dc.html
+    balisage        lignes 135–302
+    modèle de vue   lignes 2516–2530, 2599–2631, 2788–2820, 3073–3128, 3277–3294, 3433–3433, 3793–3832, 3920–3980, 4217–4217, 6240–6269, 6273–6274, 6276–6277
+
+  Clés de copie employées :
+    enums.publicationState.*
+
+  Contrat :
+    besoins   needs/studio-web.md § « Dashboard et stats — relevé pour le contrat »
+    openapi   openapi/studio.yaml · getChannelDashboard
+    openapi   openapi/studio.yaml · getChannelAgenda
+    openapi   openapi/studio.yaml · listChannelEvents
+
+  Relevé d'extraction (défauts vus, non corrigés) :
+    · les mesures 5 (MESSAGES MODÉRÉS) et 6 (SIGNAL MOYEN) testent roleOf === 'mod' / 'regie', or ni mod ni regie n'ouvrent dashboard : DEUX TUILES SUR SIX SONT MORTES.
+    · ABONNÉS GAGNÉS multiplie par le coefficient de période un compteur déjà figé à 30 jours ; MESSAGES MODÉRÉS porte l'unité littérale « sur 30 j » alors qu'un sélecteur de période existe.
+    · revenueTotal est codé en dur (140 496 € × coefficient) et ne dérive pas des six lignes affichées.
+    · le coefficient `mul` par période est une commodité de fixture, pas une règle.
+    · clés de vue non résolues automatiquement : periods, customRange, canOpenRecord, canTech, kpis, revenueTotal, revenueRows, agenda
+
+  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+-->
+
+<!-- ======================= BALISAGE ======================= -->
+<!-- ···· balisage · Studio.dc.html lignes 135–302 ···· -->
+    <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+    <div style="animation: fadeIn .2s ease both;">
+      <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 16px 22px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">TABLEAU DE BORD</div>
+          <div style="padding-top: 7px; font-size: 21px; font-weight: 600; letter-spacing: -0.01em;">{{ chan.name }}</div>
+        </div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B; padding-right: 3px;">PÉRIODE</span>
+          <sc-for list="{{ periods }}" as="p" hint-placeholder-count="5">
+            <span onClick="{{ p.pick }}" style="{{ p.style }}">{{ p.label }}</span>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{ customRange }}" hint-placeholder-val="{{ false }}">
+        <div style="border-bottom: 1px solid #1D2126; background: #131518; padding: 11px 22px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">DU</span>
+          <input value="{{ rangeFrom }}" onChange="{{ onRangeFrom }}" style="width: 128px; padding: 7px 9px; border: 1px solid #23272C; background: #0E0F10; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #E6E9EC; outline: none;" />
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">AU</span>
+          <input value="{{ rangeTo }}" onChange="{{ onRangeTo }}" style="width: 128px; padding: 7px 9px; border: 1px solid #23272C; background: #0E0F10; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #E6E9EC; outline: none;" />
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #646C74;">{{ rangeHint }}</span>
+        </div>
+      </sc-if>
+
+      <div style="{{ dashGrid }}">
+
+        <div style="min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+
+          <div style="border: 1px solid #23272C; background: #15171A;">
+            <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">{{ nextKicker }}</span>
+              <sc-if value="{{ nextIsLive }}" hint-placeholder-val="{{ false }}">
+                <span style="flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+              </sc-if>
+              <span style="{{ nextStateStyle }}">{{ next.state }}</span>
+            </div>
+            <div style="padding: 14px; display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap;">
+              <div style="flex: 0 0 132px; width: 132px; position: relative; aspect-ratio: 16/10; overflow: hidden; background: #1A1D21;">
+                <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.68) brightness(0.78); background-color: #1A1D21; background-image: {{ next.imgCss }}; background-size: cover; background-position: center;"></div>
+              </div>
+              <div style="flex: 1 1 200px; min-width: 0;">
+                <div style="font-size: 17px; font-weight: 600; letter-spacing: -0.01em;">{{ next.title }}</div>
+                <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #98A0A8;">{{ next.when }}</div>
+                <div style="padding-top: 12px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; white-space: nowrap;">{{ countdown }}</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">{{ countdownLabel }}</span>
+                </div>
+                <sc-if value="{{ canOpenRecord }}" hint-placeholder-val="{{ true }}">
+                  <div style="padding-top: 14px; display: flex; gap: 7px; flex-wrap: wrap;">
+                    <sc-if value="{{ canTech }}" hint-placeholder-val="{{ true }}">
+                      <span onClick="{{ openRegie }}" style="cursor: pointer; padding: 9px 14px; background: #E6E9EC; color: #0E0F10; font-size: 12.5px; font-weight: 600; transition: background .18s ease;" style-hover="background:#ffffff">Ouvrir la régie</span>
+                    </sc-if>
+                    <span onClick="{{ openEvent }}" style="cursor: pointer; padding: 9px 14px; border: 1px solid #333941; font-size: 12.5px; color: #C6CDD4; transition: background .18s ease;" style-hover="background:#1A1D21">Voir la date</span>
+                  </div>
+                </sc-if>
+              </div>
+              <sc-if value="{{ showFill }}" hint-placeholder-val="{{ true }}">
+              <div style="flex: 0 0 auto; min-width: 132px; border-left: 1px solid #1D2126; padding-left: 14px;">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">PLACES VENDUES</div>
+                <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 500; line-height: 1;">{{ next.sold }}</div>
+                <div style="padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #646C74;">/ {{ next.capacity }} places</div>
+                <div style="margin-top: 10px; height: 4px; background: #1D2126;"><div style="{{ next.barStyle }}"></div></div>
+                <div style="padding-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{ next.pctColor }};">{{ next.pct }}</div>
+              </div>
+              </sc-if>
+            </div>
+          </div>
+
+          <div style="{{ kpiGrid }}">
+            <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+              <div style="border: 1px solid #23272C; background: #15171A; padding: 13px 14px;">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">{{ k.label }}</div>
+                <div style="padding-top: 9px; display: flex; align-items: baseline; gap: 7px;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; line-height: 1;">{{ k.value }}</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #646C74;">{{ k.unit }}</span>
+                  <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{ k.deltaColor }};">{{ k.delta }}</span>
+                </div>
+                <sc-if value="{{ k.hasBars }}" hint-placeholder-val="{{ true }}">
+                <div style="margin-top: 12px; display: flex; align-items: flex-end; gap: 2px; height: 26px;">
+                  <sc-for list="{{ k.bars }}" as="b" hint-placeholder-count="12">
+                    <div style="{{ b.style }}"></div>
+                  </sc-for>
+                </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ showRevenue }}" hint-placeholder-val="{{ true }}">
+          <div style="border: 1px solid #23272C; background: #15171A;">
+            <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">RECETTE PAR DATE</span>
+              <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #98A0A8;">{{ revenueTotal }}</span>
+            </div>
+            <div style="padding: 14px; display: flex; flex-direction: column; gap: 9px;">
+              <sc-for list="{{ revenueRows }}" as="r" hint-placeholder-count="5">
+                <div style="display: flex; align-items: center; gap: 11px;">
+                  <span style="flex: 0 0 118px; font-size: 12.5px; color: #C6CDD4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ r.title }}</span>
+                  <div style="flex: 1 1 auto; min-width: 0; height: 16px; background: #1A1D21; position: relative;">
+                    <div style="{{ r.barStyle }}"></div>
+                  </div>
+                  <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #E6E9EC; min-width: 62px; text-align: right;">{{ r.amount }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+
+        <div style="min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+          <div style="border: 1px solid #23272C; background: #15171A;">
+            <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">PROCHAINES DATES</span>
+              <span onClick="{{ goEvents }}" style="margin-left: auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #7C858D;" style-hover="color:#E6E9EC">TOUT VOIR →</span>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+              <sc-for list="{{ agenda }}" as="a" hint-placeholder-count="6">
+                <div onClick="{{ a.open }}" style="{{ a.rowStyle }}" style-hover="background:{{ a.hoverStyle }}">
+                  <div style="flex: 0 0 42px; text-align: center;">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #5B636B;">{{ a.mon }}</div>
+                    <div style="padding-top: 2px; font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 500; line-height: 1;">{{ a.day }}</div>
+                  </div>
+                  <div style="flex: 0 0 1px; align-self: stretch; background: #1D2126;"></div>
+                  <div style="min-width: 0; flex: 1 1 auto;">
+                    <div style="font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ a.title }}</div>
+                    <div style="padding-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7C858D;">{{ a.time }}</span>
+                      <span style="{{ a.stateStyle }}">{{ a.state }}</span>
+                    </div>
+                  </div>
+                  <div style="flex: 0 0 auto; text-align: right;">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #C6CDD4;">{{ a.fill }}</div>
+                    <div style="padding-top: 3px; width: 44px; height: 3px; background: #1D2126;"><div style="{{ a.barStyle }}"></div></div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ canCreate }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ startWizard }}" style="cursor: pointer; padding: 12px 14px; display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: #98A0A8; transition: background .18s ease, color .18s ease;" style-hover="background:#191C20;color:#E6E9EC">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">+</span>
+                <span>Créer une date</span>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="border: 1px solid #23272C; background: #15171A;">
+            <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">À TRAITER</span>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+              <sc-for list="{{ todos }}" as="td" hint-placeholder-count="3">
+                <div onClick="{{ td.go }}" style="{{ td.rowStyle }}" style-hover="background:{{ td.hoverStyle }}">
+                  <span style="flex: 0 0 auto; margin-top: 4px; width: 6px; height: 6px; background: {{ td.dot }};"></span>
+                  <div style="min-width: 0;">
+                    <div style="font-size: 12.5px; color: #E6E9EC; text-wrap: pretty;">{{ td.text }}</div>
+                    <div style="padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #5B636B;">{{ td.meta }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    </sc-if>
+
+<!-- ===================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+<!-- ···· modèle de vue · Studio.dc.html lignes 2516–2530 ···· -->
+  // Variation lue dans une série : moyenne de la première moitié contre la
+  // seconde. Série trop courte : aucune variation affichée.
+  trendOf(values, unit) {
+    const list = (values || []).filter(v => typeof v === 'number' && isFinite(v));
+    if (list.length < 4) return null;
+    const half = Math.floor(list.length / 2);
+    const avg = (arr) => arr.reduce((a, b) => a + b, 0) / (arr.length || 1);
+    const before = avg(list.slice(0, half)), after = avg(list.slice(half));
+    if (!before && !after) return null;
+    const diff = unit === 'pts' ? after - before : (before ? ((after - before) / before) * 100 : 100);
+    const rounded = Math.round(diff * 10) / 10;
+    if (Math.abs(rounded) < 0.1) return null;
+    const shown = Math.abs(rounded) >= 10 ? Math.round(Math.abs(rounded)) : Math.abs(rounded).toString().replace('.', ',');
+    return { up: rounded > 0, label: (rounded > 0 ? '+' : '−') + shown + (unit === 'pts' ? ' pts' : ' %') };
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 2599–2631 ···· -->
+  metricsOf(channelName) {
+    const A = this.A, D = this.data;
+    const empty = { series: { merch: [], followers: [], replays: [], fill: [], moderation: [], signal: [] },
+      merchRevenue: 0, followersGained: 0, replayViews: 0, fillRate: 0, moderated: 0, signal: '—' };
+    if (!A || !D) return empty;
+    const channel = (D.cited || D.channels).filter(c => c.name === channelName)[0];
+    if (!channel) return empty;
+    const dates = channel.dates.map(id => A.date(id)).filter(Boolean);
+    const merch = channel.shows.reduce((n, id) => n + A.merchOf(id).reduce((m, x) => m + x.sold * x.price, 0), 0);
+    const fills = dates.map(d => { const cap = A.venue(d.venue).capacity; return cap ? (cap - d.seats.available) / cap : 0; });
+    const health = dates.map(d => A.healthOf(d)).filter(Boolean);
+    const dropped = health.length
+      ? health.reduce((n, h) => n + h.series.reduce((m, x) => m + x.droppedPct, 0) / h.series.length, 0) / health.length
+      : 0;
+    const byDate = dates.slice().sort((a, b) => a.startOffsetMin - b.startOffsetMin);
+    const series = {
+      merch: channel.shows.reduce((acc, id) => acc.concat(A.merchOf(id).map(x => x.sold * x.price)), []),
+      followers: [],
+      replays: byDate.map(d => d.replayViews || 0),
+      fill: byDate.map(d => { const cap = A.venue(d.venue).capacity; return cap ? Math.round(((cap - d.seats.available) / cap) * 100) : 0; }),
+      moderation: byDate.map(d => A.moderationOf(d).length),
+      signal: health.length ? health[0].series.map(x => Math.max(0, 100 - x.droppedPct * 10)) : []
+    };
+    return {
+      series,
+      merchRevenue: merch,
+      followersGained: channel.followersGained30d || 0,
+      replayViews: dates.reduce((n, d) => n + (d.replayViews || 0), 0),
+      fillRate: fills.length ? Math.round((fills.reduce((a, b) => a + b, 0) / fills.length) * 100) : 0,
+      moderated: dates.reduce((n, d) => n + A.moderationOf(d).length, 0),
+      signal: (100 - Math.round(dropped * 10) / 10).toString().replace('.', ',') + ' %'
+    };
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 2788–2820 ···· -->
+  checksOf(channelName) {
+    const A = this.A, D = this.data, fx = this.fx;
+    if (!A || !D) return [];
+    const channel = (D.cited || D.channels).filter(c => c.name === channelName)[0];
+    if (!channel) return [];
+    const out = [];
+    // Brouillons : ce qui n'est pas encore publiable.
+    ((fx.studio || {}).drafts || []).filter(x => x.channel === channel.id).slice(0, 1).forEach(x => {
+      const show = A.show(x.show);
+      const missing = (x.missing || []).map(m => ({ prices: 'le tarif', 'technical-check': 'le contrôle technique' }[m] || m));
+      const etat = A.enumLabel('publicationState', x.state);
+      /* Le texte nomme l'état réel du projet : un brouillon et une date en
+         réserve ne demandent pas la même décision. */
+      out.push([A.title(show) + ' — il manque ' + missing.join(' et ')
+          + ' : la date reste ' + (x.state === 'reserve' ? 'en réserve' : 'en brouillon'),
+        'ÉVÉNEMENT · ' + etat.toLocaleUpperCase('fr-FR'), WARN, 'event', 'ops']);
+    });
+    // Listes de contrôle : un poste ou un test qui manque avant l'antenne.
+    channel.dates.map(id => A.date(id)).filter(d => d && d.startOffsetMin > 0).forEach(d => {
+      if (out.length > 1) return;
+      const pub = A.publicationOf(d);
+      if (!pub) return;
+      const show = A.show(d.show);
+      if (!pub.checklist.technicalCheck) {
+        out.push(['Contrôle technique non passé pour ' + A.title(show) + ' · ' + A.dayLabel(d.startOffsetMin),
+          'RÉGIE · ' + A.countdown(d.startOffsetMin).toLocaleUpperCase('fr-FR'), WARN, 'regie', 'ops']);
+      } else if (!pub.checklist.moderationStaffed) {
+        out.push(['Aucun modérateur affecté à ' + A.title(show) + ' · ' + A.dayLabel(d.startOffsetMin),
+          'ÉQUIPE · ' + A.countdown(d.startOffsetMin).toLocaleUpperCase('fr-FR'), WARN, 'crew', 'ops']);
+      }
+    });
+    return out;
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 3073–3128 ···· -->
+  agendaOf(channelName) {
+    const A = this.A, D = this.data;
+    if (!A || !D) return [];
+    const channel = (D.cited || D.channels).filter(c => c.name === channelName)[0] || D.channels[0];
+    if (!channel) return [];
+    const MONTHS = ['janv.', 'févr.', 'mars', 'avril', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const DAYS = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+    const state = (d) => {
+      if (d.outcome) return 'done';
+      const st = A.stateOf(d);
+      return st === 'live' ? 'live' : st === 'replay' ? 'replay' : st === 'ended' ? 'done' : 'sched';
+    };
+    const rows = channel.dates.map(id => A.date(id)).filter(Boolean).map(d => {
+      const show = A.show(d.show);
+      const venue = A.venue(d.venue);
+      const at = A.dateAt(d.startOffsetMin);
+      const runtime = show.runtimeMin;
+      const sold = Math.max(0, venue.capacity - d.seats.available);
+      const meta = [A.label(A.category(show.category)), A.duration(runtime)].join(' · ').toLocaleUpperCase('fr-FR');
+      return [
+        DAYS[at.getDay()] + ' ' + at.getDate() + ' ' + MONTHS[at.getMonth()],
+        A.clock(d.startOffsetMin).replace(' h ', ':').replace(' h', ':00'),
+        A.title(show), state(d), sold, venue.capacity,
+        d.prices[0].amount,
+        /* « En réserve » = retenue avant publication. Une date complète
+           n'entre pas dans ce cas : elle est publiée et vendue. */
+        (A.publicationOf(d) || {}).state === 'reserve',
+        meta, A.duration(runtime),
+        Math.max(0, -d.startOffsetMin), A.showImage(show, 900), d.id,
+        // Recette brute : source unique, avec la vraie répartition des tarifs.
+        (A.payoutOf(d) || { gross: 0 }).gross
+      ];
+    });
+    /* Les projets retenus avant publication rejoignent l'agenda : une date en
+       réserve doit se voir là où la chaîne lit son calendrier. */
+    (A.draftsOf(channel) || []).filter(x => x.state === 'reserve').forEach(x => {
+      const show = A.show(x.show);
+      const venue = A.venue(x.venue);
+      if (!show || !venue) return;
+      const at = A.dateAt(x.intendedStartOffsetMin);
+      rows.push([
+        DAYS[at.getDay()] + ' ' + at.getDate() + ' ' + MONTHS[at.getMonth()],
+        A.clock(x.intendedStartOffsetMin).replace(' h ', ':').replace(' h', ':00'),
+        /* L'état porte le fait : « hidden » est la réserve, et les deux
+           rendus (agenda et liste d'événements) le lisent au même endroit. */
+        A.title(show), 'hidden', 0, venue.capacity,
+        0, true,
+        [A.label(A.category(show.category)), A.duration(show.runtimeMin)].join(' · ').toLocaleUpperCase('fr-FR'),
+        A.duration(show.runtimeMin), x.intendedStartOffsetMin, A.showImage(show, 900), x.id
+      ]);
+    });
+
+    // À l'antenne d'abord, puis les dates à venir, puis le passé.
+    const rank = (r) => r[3] === 'live' ? 0 : (r[10] > 0 ? 2 : 1);
+    return rows.sort((a, b) => rank(a) - rank(b) || (rank(a) === 2 ? b[10] - a[10] : a[10] - b[10]));
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 3277–3294 ···· -->
+  barsFrom(values, tint) {
+    const list = (values || []).filter(v => typeof v === 'number' && isFinite(v));
+    const max = Math.max.apply(null, list.concat([0]));
+    if (!list.length || max <= 0) return [];
+    return list.slice(-14).map((v, i, arr) => ({
+      style: 'flex: 1 1 auto; min-width: 2px; height: ' + Math.max(6, Math.round((v / max) * 100)) + '%; background: '
+        + (i === arr.length - 1 ? tint : '#2A3037') + ';'
+    }));
+  }
+
+  bars(seed, n, tint) {
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const h = 18 + ((seed * (i + 3) * 17) % 82);
+      out.push({ style: 'flex: 1 1 auto; min-width: 2px; height: ' + h + '%; background: ' + (i === n - 1 ? tint : '#2A3037') + ';' });
+    }
+    return out;
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 3433–3433 ···· -->
+        chan: i, chanOpen: false,
+<!-- ···· modèle de vue · Studio.dc.html lignes 3793–3832 ···· -->
+
+    const DUR_MIN = 130;
+    const target = (() => {
+      const d = new Date(s.now);
+      d.setHours(20, 30, 0, 0);
+      if (s.now >= d.getTime() + DUR_MIN * 60000) d.setDate(d.getDate() + 1);
+      return d;
+    })();
+    const nextState = (s.evOver || {})[0] || evDefs[0][3];
+    const onStage = nextState === 'live';
+    const elapsed = onStage ? Math.max(0, Math.round((evDefs[0][10] || 0) * 60)) + Math.floor((s.now / 1000) % 60) : 0;
+    const diff = Math.max(0, target.getTime() - s.now);
+    const dd = Math.floor(diff / 86400000);
+    const hh = Math.floor((diff % 86400000) / 3600000);
+    const mm = Math.floor((diff % 3600000) / 60000);
+    const ss = Math.floor((diff % 60000) / 1000);
+    const pad = n => (n < 10 ? '0' : '') + n;
+
+    const DAYS_FR = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+    const MONTHS_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+    const nextWhen = evDefs[0][0].replace('.', '') + ' · ' + withZone(evDefs[0][1])
+      + (localOf(evDefs[0][1]) ? ' (' + localOf(evDefs[0][1]) + ' chez vous)' : '')
+      + ' · ' + evDefs[0][9];
+
+    const nextSold = evDefs[0] ? evDefs[0][4] : 0;
+    const nextCap = evDefs[0] ? Math.max(1, evDefs[0][5]) : 1;
+    const nextPct = Math.round((nextSold / nextCap) * 100);
+
+
+    const stSel = s.stateSel || [];
+
+    const evQ = (s.evQuery || '').trim().toLowerCase();
+    const PAST = { done: 1, replay: 1 };
+    const MONTH_N = { 'août': 8, 'sept.': 9, 'oct.': 10, 'nov.': 11, 'déc.': 12 };
+    const dayKey = row => {
+      const m = row[0].match(/(\d+)\s+(\S+)/);
+      const mo = m ? (MONTH_N[m[2]] || 9) : 9;
+      const d = m ? parseInt(m[1], 10) : 1;
+      return mo * 100 + d + row[1].replace(':', '') / 10000;
+    };
+<!-- ···· modèle de vue · Studio.dc.html lignes 3920–3980 ···· -->
+    const M = this.metricsOf(chan.name);
+    const kpis = [
+      ['VENTES BOUTIQUE', eur(M.merchRevenue * mul), '', '', OK, 'merch', 'money'],
+      ['ABONNÉS GAGNÉS', num(M.followersGained * mul), 'nouveaux', '', OK, 'followers', 'all'],
+      ['REDIFFUSIONS VUES', num(M.replayViews * mul), 'vues', '', LIVE, 'replays', 'all'],
+      ['TAUX DE REMPLISSAGE', M.fillRate + ' %', 'moyen', '', OK, 'fill', 'ops'],
+      ['MESSAGES MODÉRÉS', num(M.moderated * mul), 'sur 30 j', '', OK, 'moderation', 'mod'],
+      ['SIGNAL MOYEN', M.signal, 'sans incident', '', OK, 'signal', 'regie']
+    ].filter(k => {
+      if (k[6] === 'money') return canRevenue;
+      if (k[6] === 'ops') return canOps;
+      if (k[6] === 'mod') return roleOf === 'mod';
+      if (k[6] === 'regie') return roleOf === 'regie';
+      return true;
+    }).map(([label, value, unit, delta, deltaColor, key]) => {
+      const bars = this.barsFrom(M.series[key], '#6B7783');
+      // La variation se lit dans la série : première moitié contre seconde.
+      const trend = this.trendOf(M.series[key], key === 'fill' ? 'pts' : '%');
+      return {
+        label, value, unit,
+        delta: trend ? trend.label : '', deltaColor: trend ? (trend.up ? OK : LIVE) : deltaColor,
+        bars, hasBars: bars.length > 0
+      };
+    });
+
+    const revBase = (() => {
+      const A = this.A, D = this.data;
+      if (!A || !D) return [];
+      const channel = (D.cited || D.channels).filter(c => c.name === chan.name)[0];
+      if (!channel) return [];
+      return channel.dates.map(id => A.date(id)).filter(Boolean)
+        .sort((a, b) => b.startOffsetMin - a.startOffsetMin)
+        .slice(0, 6)
+        .map(d => [A.title(A.show(d.show)), (A.payoutOf(d) || { gross: 0 }).gross]);
+    })();
+    const maxRev = Math.max.apply(null, revBase.map(r => r[1] * mul)) || 1;
+    const revenueRows = revBase.map(([title, v]) => ({
+      title, amount: v ? eur(v * mul) : 'Gratuit',
+      barStyle: 'position: absolute; left: 0; top: 0; bottom: 0; width: ' + Math.round((v * mul / maxRev) * 100) + '%; background: #3A434C;'
+    }));
+
+    const todos = [
+      ...this.checksOf(chan.name),
+      [(evDefs[1] ? evDefs[1][2] + ' du ' + evDefs[1][0] + ' à ' + (evDefs[1][5] ? Math.round((evDefs[1][4] / evDefs[1][5]) * 100) : 0) + ' % de la jauge' : 'Aucune date à ouvrir'), 'BILLETTERIE', INFO, 'events', 'money'],
+      [(AIR.holds ? AIR.holds + (AIR.holds > 1 ? ' messages retenus par le filtre attendent une décision' : ' message retenu par le filtre attend une décision') : 'Aucun message en attente de modération'), 'MODÉRATION · ' + (AIR.title || '').toLocaleUpperCase('fr-FR'), WARN, 'regie', 'all']
+    ].map(([text, meta, dot, target, scope]) => {
+      const reachable = allowed.indexOf(target) > -1 || (canOpenRecord && free.indexOf(target) > -1);
+      return {
+        text, meta, dot, scope,
+        go: reachable ? (() => this.setState({ page: target })) : (() => {}),
+        rowStyle: 'border-bottom: 1px solid #191C20; padding: 11px 14px; display: flex; gap: 10px; align-items: flex-start; '
+          + (reachable ? ' cursor: pointer;' : ''),
+        hoverStyle: reachable ? '#191C20' : 'transparent'
+      };
+    });
+
+    const EV_PER = 8;
+    const evPages = Math.max(1, Math.ceil(eventRows.length / EV_PER));
+    const evCur = Math.min(s.evPage || 0, evPages - 1);
+    const evPageRows = eventRows.slice(evCur * EV_PER, evCur * EV_PER + EV_PER);
+
+<!-- ···· modèle de vue · Studio.dc.html lignes 4217–4217 ···· -->
+      isDashboard: page === 'dashboard',
+<!-- ···· modèle de vue · Studio.dc.html lignes 6240–6269 ···· -->
+      rangeFrom: s.rangeFrom, rangeTo: s.rangeTo,
+      onRangeFrom: e => this.setState({ rangeFrom: e.target.value }),
+      onRangeTo: e => this.setState({ rangeTo: e.target.value }),
+      rangeHint: '94 jours · 7 dates',
+
+      dashGrid: 'padding: 16px 22px 30px; display: grid; grid-template-columns: '
+        + (vw < 1000 ? 'minmax(0,1fr)' : 'minmax(0,1fr) 380px') + '; gap: 14px; align-items: start;',
+      kpiGrid: 'display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px;',
+
+      next: {
+        title: evDefs[0] ? evDefs[0][2] : '', when: nextWhen,
+        img: (evDefs[0] && evDefs[0][11]) || chan.img, imgCss: this.cssUrl((evDefs[0] && evDefs[0][11]) || chan.img),
+        imgCss: this.cssUrl((evDefs[0] && evDefs[0][11]) || chan.img),
+        state: STATES[(s.evOver || {})[0] || (evDefs[0] || [])[3] || 'sched'][0],
+        sold: num(nextSold), capacity: num(nextCap), pct: nextPct + ' % de la jauge',
+        pctColor: nextPct >= 90 ? WARN : '#98A0A8',
+        barStyle: 'height: 100%; width: ' + nextPct + '%; background: ' + (nextPct >= 90 ? WARN : '#6B7783') + ';'
+      },
+      nextStateStyle: this.pill(onStage ? LIVE : OK),
+      nextIsLive: onStage,
+      nextKicker: onStage ? 'À L\u2019ANTENNE' : 'PROCHAINE DATE',
+      countdown: onStage
+        ? (pad(Math.floor(elapsed / 3600)) + ':' + pad(Math.floor((elapsed % 3600) / 60)) + ':' + pad(elapsed % 60))
+        : (dd > 0 ? (dd + ' j ' + pad(hh) + ':' + pad(mm)) : (pad(hh) + ':' + pad(mm) + ':' + pad(ss))),
+      countdownLabel: onStage ? 'DEPUIS LE LEVER DE RIDEAU' : 'AVANT LE LEVER DE RIDEAU',
+      openRegie: () => this.setState({ page: 'regie' }),
+      openEvent: () => this.setState({ page: 'event' }),
+      goEvents: () => this.setState({ page: 'events' }),
+      startWizard: () => this.setState({ page: 'wizard' }),
+      canCreate: roleOf === 'prod' || roleOf === 'artist',
+<!-- ···· modèle de vue · Studio.dc.html lignes 6273–6274 ···· -->
+      todos: todos.filter(t => t.scope === 'all' || (t.scope === 'money' && canRevenue) || (t.scope === 'ops' && canOps)),
+      showRevenue: evShowRev,
+<!-- ···· modèle de vue · Studio.dc.html lignes 6276–6277 ···· -->
+      showFill: canOps || canRevenue,
+      canOpenRecord, canTech,
+</script>

@@ -1,0 +1,159 @@
+<!--
+  Arthome · storefront mobile — account-privacy
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : account · accTab=privacy
+  Affiche    : Confidentialité : quatre finalités de consentement, deux catégories de traceurs, export des données, suppression du compte.
+  Mène vers  : —
+  Contrat    : PUT /v1/me/consents · POST /v1/me/exports · POST /v1/me/deletion
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1702–1771
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1702–1771
+     ══════════════════════════════════════════════════════════════════════════ -->
+      <sc-if value="{{ accPrivacy }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 10px;">{{ t.privConsents }}</div>
+          <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+            <sc-for list="{{ privConsents }}" as="r" hint-placeholder-count="4">
+              <div style="background: #100F0D; padding: 13px;">
+                <div style="display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+                  <span style="font-size: 14px;">{{ r.label }}</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ r.stateColor }};">{{ r.state }}</span>
+                </div>
+                <div style="padding-top: 5px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ r.hint }}</div>
+                <span onClick="{{ r.action }}" style="display: inline-block; margin-top: 11px; cursor: pointer; padding: 10px 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC;">{{ r.cta }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="margin-top: 20px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 10px;">{{ t.privCookies }}</div>
+          <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+            <sc-for list="{{ privCookieRows }}" as="r" hint-placeholder-count="3">
+              <div style="background: #100F0D; padding: 13px;">
+                <div style="display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+                  <span style="font-size: 14px;">{{ r.label }}</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ r.stateColor }};">{{ r.state }}</span>
+                </div>
+                <div style="padding-top: 5px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ r.hint }}</div>
+                <span onClick="{{ r.action }}" style="display: inline-block; margin-top: 11px; cursor: pointer; padding: 10px 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #262320; font-size: 12.5px; color: #C9C0B2;">{{ r.cta }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="margin-top: 20px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 10px;">{{ t.privRights }}</div>
+          <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+            <sc-for list="{{ privRightsRows }}" as="r" hint-placeholder-count="4">
+              <div style="background: #100F0D; padding: 13px;">
+                <div style="font-size: 14px;">{{ r.label }}</div>
+                <div style="padding-top: 5px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ r.hint }}</div>
+                <span onClick="{{ r.action }}" style="display: inline-block; margin-top: 11px; cursor: pointer; padding: 10px 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #332E28; font-size: 12.5px; color: {{ r.ctaColor }};">{{ r.cta }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="margin-top: 20px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 10px;">{{ t.privDocs }}</div>
+          <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+            <sc-for list="{{ privDocRows }}" as="d" hint-placeholder-count="5">
+              <div style="background: #100F0D; padding: 12px 13px; display: flex; align-items: baseline; gap: 10px;">
+                <div style="min-width: 0;">
+                  <div style="font-size: 13px; color: #C9C0B2;">{{ d.label }}</div>
+                  <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #575047;">{{ t.privUpdated }} {{ d.date }}</div>
+                </div>
+                <span style="margin-left: auto; flex: 0 0 auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73;">{{ t.privRead }} ↗</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="margin-top: 20px; border: 1px solid #1F1C19; background: #0C0B0A; padding: 14px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ t.privRetention }}</div>
+            <div style="padding-top: 9px; font-size: 12.5px; line-height: 1.6; color: #9B948A; text-wrap: pretty;">{{ t.privRetentionText }}</div>
+          </div>
+
+          <div style="margin-top: 14px; border: 1px solid #1F1C19; background: #100F0D; padding: 15px;">
+            <div style="font-size: 13.5px;">{{ t.privDpo }}</div>
+            <div style="padding-top: 6px; font-size: 12.5px; line-height: 1.5; color: #857E73; text-wrap: pretty;">{{ t.privDpoHint }}</div>
+            <span onClick="{{ helpFromMenu }}" style="display: block; margin-top: 12px; cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  text-align: center; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2;">{{ t.helpCta }}</span>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (0 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* Aucun symbole propre : cet écran n'emploie que le noyau commun. */
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (11) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2513  helpCta: "Nous écrire"
+  EN L2966  helpCta: "Contact us"
+
+  FR L2627  privConsents: "CONSENTEMENTS"
+  EN L3080  privConsents: "CONSENTS"
+
+  FR L2628  privCookies: "COOKIES ET TRACEURS"
+  EN L3081  privCookies: "COOKIES AND TRACKERS"
+
+  FR L2629  privDocs: "DOCUMENTS"
+  EN L3082  privDocs: "DOCUMENTS"
+
+  FR L2630  privDpo: "Écrire au délégué à la protection des données"
+  EN L3083  privDpo: "Contact the data protection officer"
+
+  FR L2631  privDpoHint: "Réponse sous 30 jours. Vous pouvez aussi saisir la CNIL à tout moment."
+  EN L3084  privDpoHint: "Reply within 30 days. You may also refer the matter to your supervisory authority."
+
+  FR L2636  privRead: "Lire"
+  EN L3089  privRead: "Read"
+
+  FR L2637  privRetention: "CONSERVATION DES DONNÉES"
+  EN L3090  privRetention: "DATA RETENTION"
+
+  FR L2638  privRetentionText: "Places et factures : 10 ans (obligation comptable). Historique de visionnage : 24 mois. Messages de tchat : 90 jours. Journaux de connexion : 12 mois."
+  EN L3091  privRetentionText: "Tickets and invoices: 10 years (accounting duty). Viewing history: 24 months. Chat messages: 90 days. Sign-in logs: 12 months."
+
+  FR L2639  privRights: "VOS DROITS"
+  EN L3092  privRights: "YOUR RIGHTS"
+
+  FR L2641  privUpdated: "MISE À JOUR"
+  EN L3094  privUpdated: "UPDATED"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

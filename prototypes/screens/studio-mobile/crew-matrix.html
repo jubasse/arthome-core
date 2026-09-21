@@ -1,0 +1,130 @@
+<!--
+  ÉCRAN        crew / matrix
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      La matrice des créneaux : une ligne par date, deux colonnes de postes.
+  RÔLES        artist · prod · coord
+  MÈNE VERS    feuilles : crewdate, invite, slot
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBand L475-485 · hasTabs L487-495 · hasNote L555-557 · hasActions L569-575 · hasMatrix L650-686
+               modèle    L2472-2518 · L2574-2618
+  CLÉS DE COPIE
+               - table ROLES en dur (six personas — libellé, jamais un droit, E6)
+  CONTRAT
+               - needs §Confrontation C12 (aucun point d'entrée ne rend la grille sur N dates)
+               - openapi PUT /v1/dates/{dateId}/crew
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBand        L475-485
+    hasTabs        L487-495
+    hasNote        L555-557
+    hasActions     L569-575
+    hasMatrix      L650-686
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_crew(c) {
+    const s = this.state;
+    const TABS = [['members', 'AFFECTATIONS'], ['matrix', 'MATRICE'], ['guests', 'ACCÈS PONCTUELS'], ['log', 'JOURNAL']];
+    const tab = TABS.some(t => t[0] === s.crewTab) ? s.crewTab : 'members';
+    const q = (s.crewQ || '').trim().toLowerCase();
+
+    const roster = this.crewRoster(c);
+    const dates = this.crewDates(c);
+    const dsel = s.crewDate === undefined ? -1 : s.crewDate;
+    const cur = dsel >= 0 ? dates[Math.min(dsel, dates.length - 1)] : null;
+    const canAssignRegie = c.has('artist') || c.has('prod');
+    const holders = (di, rk) => this.holdersOf(c, di, rk);
+    const gapAt = di => ['regie', 'mod'].filter(rk => holders(di, rk).length === 0).length;
+
+    const filtered = roster.filter(m => !q || (m.name + ' ' + m.mail + ' ' + m.note + ' ' + m.roleKeys.map(k => ROLES[k][0]).join(' ')).toLowerCase().indexOf(q) > -1);
+    const roleF = s.crewRole && s.crewRole !== 'all' ? s.crewRole : null;
+    const shown = roleF ? filtered.filter(m => m.roleKeys.indexOf(roleF) > -1) : filtered;
+
+    /* Un accès ponctuel, c'est un indépendant affecté à une date précise :
+       la liste sort des équipes réelles, et reste vide quand il n'y en a pas. */
+    const guestsBase = this.guestsOf(c.chan.name).concat(s.guestAdd || []);
+    const guests = guestsBase.filter(g => !(s.guestGone || {})[g.name]);
+
+    const out = {
+      pageKicker: 'PLANNING · ' + c.chan.name.toUpperCase(),
+      pageTitle: cur ? cur[0][2] + ' · ' + cur[0][0].replace('.', '') : roster.length + ' personnes sur cette chaîne',
+      pageTabs: this.tabStrip([
+        ['members', 'AFFECTATIONS', String(shown.length)],
+        ['matrix', 'MATRICE'],
+        ['guests', 'ACCÈS PONCTUELS', guests.length ? String(guests.length) : ''],
+        ['log', 'JOURNAL']
+      ], tab, 'crewTab', { crewPage: 0 }),
+      band: this.stats([
+        ['MEMBRES', String(roster.length), 'toutes fonctions'],
+        ['DATES À COUVRIR', String(dates.filter(([r, i], n) => gapAt(n) > 0).length), 'un poste vacant au moins', dates.some((d, n) => gapAt(n) > 0) ? WARN : OK],
+        ['ACCÈS PONCTUELS', String(guests.length), 'expirent seuls'],
+        ['INVITATIONS', String(roster.filter(m => m.pending).length), 'en attente de réponse', roster.some(m => m.pending) ? WARN : INK3]
+      ]),
+      actions: [].concat(
+        this.act(cur ? 'DATE : ' + cur[0][0].replace('.', '').toUpperCase() + ' · ' + c.withZone(cur[0][1]) : 'TOUTES LES DATES DE LA CHAÎNE', () => this.openSheet('crewdate', { crewDates: dates.length })),
+        c.grantable.length ? [this.act('+ INVITER QUELQU’UN', () => this.openSheet('invite'), 'primary')] : []
+      ),
+      note: dates.some((d, n) => gapAt(n) > 0)
+        ? 'Rôles manquants à J-1 : ' + dates.filter((d, n) => gapAt(n) > 0).map(([r, i], n) => r[0].replace('.', '')).join(', ') + '. Une alerte partira vers la coordination.'
+        : ''
+    };
+
+
+    if (tab === 'matrix') {
+      /* deux colonnes de postes, une ligne par date : la matrice tient à 430 px, et chaque case s'affecte */
+      const cellBase = 'min-height: 56px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 4px; cursor: pointer; background: ';
+      out.matrix = {
+        rows: dates.map(([r, i], di) => ({
+          when: r[0].replace('.', '').toUpperCase() + ' · ' + c.withZone(r[1]),
+          title: r[2],
+          cells: ['regie', 'mod'].map(rk => {
+            const list = holders(di, rk);
+            const locked = rk === 'regie' && !canAssignRegie;
+            const tone = list.length ? ROLES[rk][1] : (locked ? '#3A4149' : WARN);
+            const av = list.slice(0, 2).map(n => {
+              const m = roster.find(x => x.name === n);
+              return {
+                initials: m ? m.initials : n.slice(0, 2).toUpperCase(),
+                style: MONO + 'width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8.5px; letter-spacing: 0.04em; background: color-mix(in oklch, '
+                  + tone + ' 18%, #1D2126); color: ' + tone + ';'
+              };
+            });
+            if (list.length > 2) av.push({
+              initials: '+' + (list.length - 2),
+              style: MONO + 'width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8.5px; background: #1D2126; color: #98A0A8;'
+            });
+            return {
+              hasAvatars: av.length > 0,
+              avatars: av,
+              label: list.length > 1
+                ? list.length + ' PERSONNES'
+                : (list.length ? (list[0] === c.me.name ? 'VOUS' : list[0].split(' ')[0].toUpperCase()) : (locked ? 'RÉSERVÉ' : 'VACANT')),
+              style: cellBase + (list.length ? '#15171A' : (locked ? '#121417' : 'color-mix(in oklch, ' + WARN + ' 9%, #15171A)')) + ';',
+              labelStyle: MONO + 'font-size: 8.5px; letter-spacing: 0.07em; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: ' + tone + ';',
+              act: () => this.openSheet('slot', { slotDate: di, slotRole: rk })
+            };
+          })
+        })),
+        legend: [
+          { label: 'POSTE TENU', swatch: 'width: 10px; height: 10px; background: ' + OK + ';' },
+          { label: 'VACANT · À AFFECTER', swatch: 'width: 10px; height: 10px; background: ' + WARN + ';' },
+          { label: 'HORS DE VOTRE MAIN', swatch: 'width: 10px; height: 10px; background: #3A4149;' }
+        ]
+      };
+      out.note = 'Touchez une case pour affecter le poste. Une même personne peut tenir la régie et la modération d’une même date.';
+      return out;
+    }
+
+</script>

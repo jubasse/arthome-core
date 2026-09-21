@@ -1,0 +1,192 @@
+<!--
+  ÉCRAN        dashboard
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Ce qui vient ou ce qui est à l'antenne, avec les indicateurs filtrés par le rôle.
+  RÔLES        artist · prod · tres
+  MÈNE VERS    écrans : event, regie, stats
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  pgDash L234-292 · hasActions L569-575 · hasBlocks L731-791
+               modèle    L2065-2159
+  CLÉS DE COPIE
+               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
+               - table STATES en dur (draft|hidden|sched|tech|live|done|replay — vocabulaire parallèle, D2)
+               - table ROLES en dur (six personas — libellé, jamais un droit, E6)
+  CONTRAT
+               - needs §Confrontation C9 (dashboard est dans navigation et n'a aucun point d'entrée)
+               - openapi — AUCUN point d'entrée
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!-- ---- pgDash (L234-292) ---- -->
+    <sc-if value="{{ pgDash }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="position: relative;">
+          <div data-strip="1" style="display: flex; gap: 6px; overflow-x: auto; padding: 1px 0;">
+            <sc-for list="{{ periods }}" as="p" hint-placeholder-count="5">
+              <span data-chip="1" onClick="{{ p.pick }}" style="{{ p.style }}">{{ p.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+        <sc-if value="{{ periodCustom }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; gap: 7px;">
+            <input value="{{ rangeFrom }}" onChange="{{ onRangeFrom }}" style="flex: 1 1 0; min-width: 0; min-height: 44px; box-sizing: border-box; padding: 0 10px; border: 1px solid #2A2F35; background: #0E0F10; color: #E6E9EC; font-family: 'JetBrains Mono', monospace; font-size: 12px;" />
+            <input value="{{ rangeTo }}" onChange="{{ onRangeTo }}" style="flex: 1 1 0; min-width: 0; min-height: 44px; box-sizing: border-box; padding: 0 10px; border: 1px solid #2A2F35; background: #0E0F10; color: #E6E9EC; font-family: 'JetBrains Mono', monospace; font-size: 12px;" />
+          </div>
+        </sc-if>
+
+        <div style="border: 1px solid #2A2F35; background: #15171A;">
+          <div style="display: flex; align-items: center; gap: 8px; padding: 11px 12px; border-bottom: 1px solid #1D2126;">
+            <sc-if value="{{ onStage }}" hint-placeholder-val="{{ true }}">
+              <span style="width: 7px; height: 7px; background: oklch(0.7 0.19 27); animation: pulseLive 1.6s infinite;"></span>
+            </sc-if>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: {{ nextKickerColor }};">{{ nextKicker }}</div>
+            <span style="{{ nextStateStyle }}">{{ nextState }}</span>
+          </div>
+          <div style="display: flex; gap: 11px; padding: 12px;">
+            <div style="flex: 0 0 auto; width: 84px; height: 112px; background: #1D2126; border: 1px solid #23272C; background-color: #1A1D21; background-image: {{ nextImgCss }}; background-size: cover; background-position: center;"></div>
+            <div style="min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px;">
+              <div style="font-size: 16px; font-weight: 500; line-height: 1.25; letter-spacing: -0.01em; text-wrap: pretty;">{{ nextTitle }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.5; color: #98A0A8;">{{ nextWhen }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 500; color: {{ chronoColor }};">{{ chrono }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #5B636B;">{{ chronoLabel }}</div>
+            </div>
+          </div>
+          <div style="padding: 0 12px 12px 12px; display: flex; flex-direction: column; gap: 7px;">
+            <div style="display: flex; align-items: baseline; gap: 7px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #E6E9EC;">{{ nextSold }}</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #7C858D;">{{ nextCapLabel }}</span>
+              <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #C6CDD4;">{{ nextRevenue }}</span>
+            </div>
+            <div style="height: 3px; background: #1D2126;"><div style="{{ nextBarStyle }}"></div></div>
+          </div>
+          <div style="display: flex; gap: 1px; background: #1D2126; border-top: 1px solid #1D2126;">
+            <sc-for list="{{ nextActions }}" as="a" hint-placeholder-count="2">
+              <div onClick="{{ a.act }}" style="{{ a.style }}">{{ a.label }}</div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1D2126; border: 1px solid #23272C;">
+          <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+            <div style="background: #121417; padding: 11px 12px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">{{ k.label }}</div>
+              <div style="{{ k.valueStyle }}">{{ k.value }}</div>
+              <div style="padding-top: 3px; font-size: 10.5px; line-height: 1.35; color: #5B636B; text-wrap: pretty;">{{ k.hint }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasActions     L569-575
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_dashboard(c) {
+    const s = this.state;
+    const mul = { '7j': 0.22, '30j': 1, '90j': 2.7, 'saison': 4.4, 'custom': 3.1 }[s.period] || 1;
+    const idx = 0;
+    const st = c.stateAt(idx);
+    const row = c.evDefs[idx];
+    const onStage = st === 'live';
+    const vd = c.voidAt(idx);
+    const sold = vd ? 0 : row[4];
+    const cap = row[5];
+    const pct = cap ? Math.round((sold / cap) * 100) : 0;
+
+    const target = (() => { const d = new Date(s.now); d.setHours(20, 30, 0, 0); if (s.now >= d.getTime() + 130 * 60000) d.setDate(d.getDate() + 1); return d; })();
+    const diff = Math.max(0, target.getTime() - s.now);
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const elapsed = onStage ? Math.max(0, Math.round((row[12] || 0) * 60)) + Math.floor((s.now / 1000) % 60) : 0;
+    const chrono = onStage
+      ? pad(Math.floor(elapsed / 3600)) + ':' + pad(Math.floor((elapsed % 3600) / 60)) + ':' + pad(elapsed % 60)
+      : Math.floor(diff / 86400000) + 'j ' + pad(Math.floor((diff % 86400000) / 3600000)) + ':' + pad(Math.floor((diff % 3600000) / 60000)) + ':' + pad(Math.floor((diff % 60000) / 1000));
+
+    const loc = c.localOf(row[1]);
+    const actions = [];
+    if (c.free.indexOf('regie') > -1) actions.push({ label: onStage ? 'OUVRIR LA RÉGIE' : 'PRÉPARER LA RÉGIE', act: () => this.go('regie'), tone: onStage ? 'primary' : undefined });
+    if (c.free.indexOf('event') > -1) actions.push({ label: 'VOIR LA DATE', act: () => this.setState({ page: 'event', evSel: idx, sheet: null }) });
+    if (!actions.length) actions.push({ label: 'VOIR LES STATISTIQUES', act: () => this.go('stats') });
+
+    const money = [
+      ['RECETTE NETTE', c.eur(Math.round(c.M.net * mul)), 'commission ' + c.M.rate + ' % déduite', OK],
+      ['RETENU', c.eur(Math.round(c.M.held * mul)), c.M.held ? 'issue de date ouverte' : 'rien en attente', c.M.held ? WARN : OK]
+    ];
+    const ops = [
+      ['SPECTATEURS UNIQUES', c.num(Math.round(c.M.viewers * mul)), 'sur la période'],
+      ['REMPLISSAGE MOYEN', (c.M.sold + c.M.available ? Math.round((c.M.sold / (c.M.sold + c.M.available)) * 100) : 0) + ' %', 'de la jauge'],
+      ['PLACES VENDUES', c.num(Math.round(c.M.sold * mul)), 'toutes dates'],
+      ['DATES OUVERTES', String(c.M.dates.length), 'au catalogue']
+    ];
+    const kpis = this.stats(c.canRevenue ? ops.slice(0, 2).concat(money) : ops);
+
+    const upcoming = c.evDefs
+      .map((r, i) => [r, i])
+      .filter(([r, i]) => ['done', 'replay'].indexOf(c.stateAt(i)) < 0)
+      .slice(0, 5);
+
+    return {
+      pageTitle: onStage ? 'À l’antenne en ce moment' : 'Ce qui vient',
+      periods: [['7j', '7 J'], ['30j', '30 J'], ['90j', '90 J'], ['saison', 'SAISON'], ['custom', 'PERSONNALISÉ']].map(([k, label]) => ({
+        label, pick: () => this.setState({ period: k }), style: this.chip(s.period === k)
+      })),
+      periodCustom: s.period === 'custom',
+      rangeFrom: s.rangeFrom, rangeTo: s.rangeTo,
+      onRangeFrom: e => this.setState({ rangeFrom: e.target.value }),
+      onRangeTo: e => this.setState({ rangeTo: e.target.value }),
+      onStage,
+      nextKicker: onStage ? 'À L’ANTENNE' : 'PROCHAINE DATE',
+      nextKickerColor: onStage ? LIVE : '#5B636B',
+      nextState: vd ? vd[0] : c.T(STATES[st][0]), nextStateStyle: this.pill(vd ? vd[1] : STATES[st][1]),
+      nextImg: row[13] || '', nextImgCss: this.cssUrl(row[13] || ''),
+      nextTitle: row[2],
+      nextWhen: row[0].replace('.', '') + ' · ' + c.withZone(row[1]) + (loc ? ' (' + loc + ' chez vous)' : '') + ' · ' + row[9],
+      chrono, chronoColor: onStage ? LIVE : '#E6E9EC',
+      chronoLabel: onStage ? 'DEPUIS LE LEVER DE RIDEAU' : 'AVANT LE LEVER DE RIDEAU',
+      nextSold: c.num(sold), nextCapLabel: '/ ' + c.num(cap) + ' places · ' + pct + ' %',
+      nextRevenue: c.canRevenue ? (vd ? 'RECETTE NEUTRALISÉE' : c.eur(row[15] || 0)) : '',
+      nextBarStyle: 'height: 3px; width: ' + pct + '%; background: ' + (pct >= 90 ? WARN : (onStage ? LIVE : OK)) + ';',
+      nextActions: actions.map(a => ({ label: a.label, act: a.act, style: this.btn(a.tone) + ' flex: 1 1 0; min-width: 0;' })),
+      kpis,
+      blocks: [
+        this.block('AGENDA · PROCHAINES DATES', String(upcoming.length) + ' DATES', {
+          rows: this.rows(upcoming.map(([r, i]) => {
+            const st2 = c.stateAt(i);
+            const vd2 = c.voidAt(i);
+            const p = r[5] ? Math.round((r[4] / r[5]) * 100) : 0;
+            return {
+              label: r[2],
+              hint: r[0].replace('.', '') + ' · ' + c.withZone(r[1]) + (c.localOf(r[1]) ? ' (' + c.localOf(r[1]) + ' chez vous)' : ''),
+              pill: vd2 ? vd2[0] : c.T(STATES[st2][0]), pillColor: vd2 ? vd2[1] : STATES[st2][1],
+              pct: vd2 ? 0 : p, barColor: p >= 90 ? WARN : OK,
+              cta: c.free.indexOf('event') > -1 ? 'OUVRIR LA FICHE' : '',
+              act: () => this.setState({ page: 'event', evSel: i, sheet: null })
+            };
+          }))
+        }),
+        this.block('ALERTES ROUTÉES', c.myAlerts.length ? String(c.myAlerts.length) + ' POUR VOS RÔLES' : 'RIEN À SIGNALER', {
+          intro: c.myAlerts.length ? '' : 'Une alerte ne descend que vers les rôles qui peuvent y répondre. Aucune ne vise les vôtres en ce moment.',
+          rows: this.rows(c.myAlerts.map(a => ({
+            label: a[2], hint: a[3] + ' · ' + a[4],
+            pill: c.T(ROLES[a[1]][0]), pillColor: ROLES[a[1]][1],
+            cta: 'MARQUER LU', act: () => this.setState(st2 => ({ seen: Object.assign({}, st2.seen, { [a[0]]: 1 }) }))
+          })))
+        })
+      ]
+    };
+  }
+
+  /* surlignage du terme cherché, sans découper le libellé en littéraux parallèles */
+</script>

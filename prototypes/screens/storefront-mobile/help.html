@@ -1,0 +1,119 @@
+<!--
+  Arthome · storefront mobile — help
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : help
+  Affiche    : L'aide : six sujets et les coordonnées de contact. Aucune donnée métier.
+  Mène vers  : —
+  Contrat    : POST /v1/support/requests
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1806–1835
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1806–1835
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ isHelp }}" hint-placeholder-val="{{ false }}">
+<div style="animation: fadeIn .3s ease both; padding: 18px 16px 0;">
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #857E73;">{{ t.helpSub }}</div>
+  <h1 style="margin: 11px 0 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px; line-height: 1.03;">{{ t.helpTitle }}</h1>
+  <p style="margin: 12px 0 0; font-size: 14px; line-height: 1.6; color: #B0A899; text-wrap: pretty;">{{ t.helpIntro }}</p>
+  <div style="margin-top: 20px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 10px;">{{ t.helpTopics }}</div>
+  <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+    <sc-for list="{{ helpTopics }}" as="hp" hint-placeholder-count="6">
+      <div onClick="{{ hp.go }}" style="cursor: pointer; background: #100F0D; padding: 13px; min-height: 44px; box-sizing: border-box;  display: flex; align-items: center; gap: 12px;">
+        <div style="min-width: 0;">
+          <div style="font-size: 14px;">{{ hp.label }}</div>
+          <div style="padding-top: 5px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ hp.hint }}</div>
+        </div>
+        <span style="margin-left: auto; flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #6B6459;">→</span>
+      </div>
+    </sc-for>
+  </div>
+  <div style="margin-top: 16px; border: 1px solid #1F1C19; background: #0C0B0A; padding: 16px;">
+    <div style="font-family: 'Instrument Serif', serif; font-size: 22px; line-height: 1.1;">{{ t.helpContactTitle }}</div>
+    <div style="padding-top: 11px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #EDE7DC;">{{ t.helpMail }}</div>
+    <div style="padding-top: 9px; font-size: 12.5px; line-height: 1.6; color: #857E73; text-wrap: pretty;">{{ t.helpHours }}</div>
+  </div>
+  <div style="margin-top: 12px; border: 1px solid rgba(214,178,102,0.28); background: rgba(214,178,102,0.04); padding: 16px;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: oklch(0.83 0.1 84);">{{ t.helpDpoLabel }}</div>
+    <div style="padding-top: 9px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #EDE7DC;">{{ t.helpMailDpo }}</div>
+    <div style="padding-top: 9px; font-size: 12.5px; line-height: 1.6; color: #9B948A; text-wrap: pretty;">{{ t.privDpoHint }}</div>
+    <span onClick="{{ goPrivacy }}" style="display: block; margin-top: 13px; cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  text-align: center; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2;">{{ t.accPrivacy }} →</span>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (0 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* Aucun symbole propre : cet écran n'emploie que le noyau commun. */
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (11) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2346  accPrivacy: "Confidentialité"
+  EN L2799  accPrivacy: "Privacy"
+
+  FR L2512  helpContactTitle: "Nous écrire directement"
+  EN L2965  helpContactTitle: "Write to us directly"
+
+  FR L2514  helpDpoLabel: "PROTECTION DES DONNÉES"
+  EN L2967  helpDpoLabel: "DATA PROTECTION"
+
+  FR L2515  helpHours: "Du lundi au vendredi, 10 h – 18 h. Les demandes liées à un live en cours sont traitées en priorité."
+  EN L2968  helpHours: "Monday to Friday, 10am – 6pm. Requests about a live in progress are handled first."
+
+  FR L2516  helpIntro: "Une équipe de quatre personnes, à Lyon. Choisissez le sujet : votre message part au bon interlocuteur."
+  EN L2969  helpIntro: "A team of four, based in Lyon. Pick a topic and your message reaches the right person."
+
+  FR L2517  helpMail: "bonjour@arthome.fr"
+  EN L2970  helpMail: "hello@arthome.fr"
+
+  FR L2518  helpMailDpo: "donnees@arthome.fr"
+  EN L2971  helpMailDpo: "privacy@arthome.fr"
+
+  FR L2519  helpSub: "RÉPONSE SOUS 24 H OUVRÉES"
+  EN L2972  helpSub: "REPLY WITHIN 24 WORKING HOURS"
+
+  FR L2520  helpTitle: "Aide et contact"
+  EN L2973  helpTitle: "Help and contact"
+
+  FR L2533  helpTopics: "SUJETS"
+  EN L2986  helpTopics: "TOPICS"
+
+  FR L2631  privDpoHint: "Réponse sous 30 jours. Vous pouvez aussi saisir la CNIL à tout moment."
+  EN L3084  privDpoHint: "Reply within 30 days. You may also refer the matter to your supervisory authority."
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

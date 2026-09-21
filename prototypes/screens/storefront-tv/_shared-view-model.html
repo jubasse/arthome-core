@@ -1,0 +1,367 @@
+<!--
+  Mécanique  : constantes, adaptation des données partagées, et fonctions d'affichage
+  Source     : Storefront TV.dc.html — L1205-1229 (palette, recettes d'image, globales),
+               L1607-1659 (constructeur et état initial), L1660-1774 (buildCatalogue),
+               L2345-2467 (helpers : horloge, nombres, état, catalogue)
+  Rôle       : buildCatalogue() est l'ADAPTATEUR entre shared/ (helpers.js + fixtures.js)
+               et la forme plate que les écrans consomment. C'est le point à remplacer par
+               les modèles de lecture du contrat.
+
+  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
+    · fx.geography.viewerUtcOffsetMin n'existe nulle part : vaut 0, donc « heure à la salle » est calculée contre UTC (incohérence n°3 de needs/).
+    · Les durées et seuils (30 min d'ouverture de salle, 4 s d'aperçu, 480 000 ms de veille) sont recopiés en dur (incohérence n°11).
+
+  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
+    `Storefront TV.dc.html` reste la source runnable de la galerie.
+-->
+
+<!-- ═══════════ Constantes, palette, recettes d'image (verbatim, L1205-1229) ═══════════ -->
+<script type="text/x-dc-extract">
+const U = (i, w) => `https://images.unsplash.com/${i}?auto=format&fit=crop&w=${w || 1500}&q=72`;
+const V = (i) => `https://images.unsplash.com/${i}?auto=format&fit=crop&w=520&h=780&q=72`;
+const A = (i) => `https://images.unsplash.com/${i}?auto=format&fit=crop&w=400&h=400&q=72`;
+
+let PIC = {};
+let AVA = {};
+
+const LIVE = 'oklch(0.62 0.21 27)';
+const LIVE_INK = 'oklch(0.75 0.19 27)';
+const ACC = 'oklch(0.78 0.13 42)';
+const GOLD = 'oklch(0.9 0.07 84)';
+const OK = 'oklch(0.7 0.13 150)';
+const veil = (c) => `color-mix(in oklch, ${c} 14%, transparent)`;
+
+/* L'image d'une discipline : posée par le pont depuis le catalogue partagé. */
+let CAT_PIC = {};
+
+let ARTISTS = [];
+
+let CATS = [];
+
+let SHOWS = [];
+
+// Généré depuis i18n/ via i18n/tv-keymap.json — ne pas éditer ici :
+// la copie vit dans i18n/, et ce bloc se régénère avec i18n-compile.js.
+</script>
+
+<!-- ═══════════ Globales et état initial (verbatim, L1594-1659) ═══════════ -->
+<script type="text/x-dc-extract">
+let PROFILES = [];
+
+let OWNED = {};
+let FOLLOWED = {};
+/* Renseigné au chargement depuis la taxonomie : les disciplines ouvertes à un
+   profil enfant. Une liste écrite à la main se périme au premier renommage. */
+let KID_CATS = [];
+
+/* Sous-genres par discipline, dans l'ordre de la taxonomie. Sur TV on n'ouvre
+   pas un panneau de filtres : chaque style devient une rangée qu'on traverse
+   à la flèche du bas. Rien à activer, rien à penser à désactiver. */
+let GENRES = {};
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      page: props && props.signedIn === true ? 'gate' : 'signin', signinOk: false, pid: null, cat: null, art: null, q: '', prof: null,
+      list: [], follows: null, loading: false,
+      pos: 0, playing: true, ctrl: false, ctrlLeaving: false, infoLeaving: false, panel: null, chat: false, react: null, ended: false,
+      tier: 0, qty: 2, paid: [], netLost: false, quitHint: false, preview: false,
+      subs: true, subSize: 1, audioDesc: false, reduce: false, ambIdx: 0, seekFlash: null,
+      langOv: null, listening: false, plan: 'saison', railOpen: false, railHover: false, focusFid: null, focusCaps: '', novice: true, navCount: 0, hintFull: false,
+      devices: [
+        { id: 'tv', n: 'Téléviseur du salon', d: 'LG OLED55 · CE TÉLÉVISEUR' },
+        { id: 'ph', n: 'iPhone de Camille', d: 'Dernier accès il y a 2 h' },
+        { id: 'lap', n: 'MacBook Air', d: 'Dernier accès hier' }
+      ]
+    };
+    this.state.dataReady = false; this.state.dataError = null;
+    this.mem = {}; this.stack = []; this.nav = true;
+  }
+
+  /* Les données viennent de fixtures.js : une seule source pour les cinq
+     surfaces. La TV garde ses propres formes — le pont les compose. */
+  async loadArthome() {
+    try {
+      const at = (p) => new URL(p, document.baseURI).href;
+      const [helpers, fixtures] = await Promise.all([import(at('helpers.js')), import(at('fixtures.js'))]);
+      const get = async (p) => {
+        const res = await fetch(at(p));
+        if (!res.ok) throw new Error(p + ' (' + res.status + ')');
+        return res.json();
+      };
+      const [catalogue, taxonomy, index] = await Promise.all([get('catalogue.json'), get('taxonomy.json'), get('i18n/index.json')]);
+      const strings = await Promise.all(index.files.map(f => get('i18n/' + f.file)));
+      const fx = fixtures.buildFixtures({ catalogue, taxonomy });
+      this.ath = helpers.createArthome({
+        taxonomy, fixtures: fx, strings, locales: index.locales, i18nFormat: index,
+        locale: (this.props.lang || 'fr')
+      });
+      this.fx = fx;
+      this.buildCatalogue();
+      this.setState({ dataReady: true, dataError: null }, () => {
+        /* Le rendu de la coquille est asynchrone : l'observateur de mutation
+           s'en charge dès qu'elle est réellement dans le document. */
+        requestAnimationFrame(() => this.fit());
+      });
+    } catch (e) {
+      this.setState({ dataReady: false, dataError: String(e && e.message || e) });
+    }
+  }
+
+  /* Le pont : la TV garde ses formes historiques (identifiants courts, décalage
+     en minutes, état sur trois lettres), mais chaque valeur vient désormais du
+     catalogue partagé. Rien n'est inventé ici, tout est traduit. */
+</script>
+
+<!-- ═══════════ buildCatalogue() — adaptateur vers shared/ (verbatim, L1660-1774) ═══════════ -->
+<script type="text/x-dc-extract">
+  buildCatalogue() {
+    const H = this.ath, fx = this.fx;
+    const wide = fx.images.wide, avatars = fx.images.avatars;
+    Object.keys(wide).forEach(k => { PIC[k] = wide[k]; });
+    Object.keys(avatars).forEach(k => { AVA[k] = avatars[k]; });
+    const idOf = (url) => (String(url || '').match(/images\.unsplash\.com\/([^?]+)/) || [, ''])[1];
+
+    /* Disciplines : le rang éditorial de la taxonomie, la teinte répartie sur
+       le cercle chromatique. */
+    CATS = H.categoriesOf().map((c, i, all) => {
+      const key = 'cat-' + c.id;
+      const img = H.categoryImage(c.id, 1100);
+      if (idOf(img)) PIC[key] = idOf(img);
+      CAT_PIC[c.id] = key;
+      return { id: c.id, fr: H.labelIn(c, 'fr'), en: H.labelIn(c, 'en'), hue: Math.round((i / all.length) * 360) };
+    });
+
+    /* Artistes : ceux qui portent une date, les plus suivis d'abord. */
+    const withDates = fx.artists.filter(a => H.datesOfArtist(a.id).length)
+      .sort((a, b) => b.followers - a.followers);
+    ARTISTS = withDates.map(a => {
+      const key = 'ava-' + a.id;
+      const av = idOf(H.artistAvatar(a));
+      if (av) AVA[key] = av;
+      return {
+        id: a.id, name: a.name, k: av ? key : 'ana', disc: a.category, fol: a.followers,
+        bio: H.bioIn(a, 'fr'), bioEn: H.bioIn(a, 'en')
+      };
+    });
+    const known = {}; ARTISTS.forEach(a => { known[a.id] = true; });
+
+    /* Dates : une ligne par date publiée, dans la forme attendue par la TV. */
+    SHOWS = fx.dates.filter(d => { const sh = H.show(d.show); return sh && known[sh.artist]; }).map(d => {
+      const show = H.show(d.show), venue = H.venue(d.venue);
+      const st = H.stateOf(d);
+      const key = 'show-' + show.id;
+      const im = idOf(H.showImage(show, 1500));
+      if (im) PIC[key] = im;
+      const prices = d.prices.map(p => p.amount);
+      const row = {
+        id: d.id, ti: H.titleIn(show, 'fr'), tiEn: H.titleIn(show, 'en'),
+        ar: show.artist, cat: show.category, gen: show.genre || null, pic: im ? key : show.image,
+        st: st === 'live' ? 'live' : st === 'replay' ? 'replay' : st === 'ended' ? 'ended' : 'soon',
+        min: d.startOffsetMin, dur: show.runtimeMin,
+        /* Audience réelle de la date : spectateurs à l'antenne, vues de la
+           rediffusion, ou places vendues. Sert à classer les styles par
+           intérêt plutôt que par volume programmé. */
+        aud: st === 'live' ? (d.viewers || 0)
+          : st === 'replay' || st === 'ended' ? (d.replayViews || 0)
+          : ((d.seats && d.seats.sold) || 0),
+        ven: venue.name + ' · ' + venue.city,
+        tz: Math.round((venue.utcOffsetMin - (fx.geography.viewerUtcOffsetMin || 0)) / 60) || 0,
+        view: st === 'live' ? d.viewers : 0,
+        seats: d.seats.available, wait: d.seats.waitlist,
+        pr: [prices[0], prices[1] != null ? prices[1] : prices[0], prices[2] != null ? prices[2] : prices[0]],
+        rep: d.replay && d.replay.policy !== 'none' ? (d.replay.windowHours || 0) : 0,
+        syn: H.synopsisIn(show, 'fr'), synEn: H.synopsisIn(show, 'en'),
+        cast: H.castIn(show, 'fr'), castEn: H.castIn(show, 'en')
+      };
+      if (d.outcome) row.out = d.outcome === 'cancelled' ? 'cancel' : d.outcome === 'postponed' ? 'post' : 'stop';
+      if (d.outcome === 'postponed') row.newMin = d.startOffsetMin + 7 * 1440;
+      if (d.rights && d.rights.scope === 'restricted') row.geo = true;
+      return row;
+    });
+
+    /* Comptes connectés : ceux du jeu partagé, avec leurs places et leurs suivis. */
+    const accounts = (fx.accounts || []).slice(0, 4);
+    /* Le persona décrit un usage, pas une identité : deux comptes peuvent le
+       partager. Il sert à la prop de démonstration, jamais de clé. */
+    const personaOf = (acc) => acc.kids ? 'profil enfant'
+      : (acc.ownedDates || []).length ? 'détenteur de place'
+      : acc.plan && acc.plan !== 'none' ? 'abonné' : 'visiteur';
+    PROFILES = accounts.map(acc => {
+      const key = 'ava-acc-' + acc.id;
+      const av = idOf(acc.avatar ? H.imageUrl('avatar', acc.avatar) : '');
+      if (av) AVA[key] = av;
+      const artist = (acc.followedArtists || []).map(id => H.artist(id)).filter(Boolean)[0];
+      const fallback = artist && AVA['ava-' + artist.id] ? 'ava-' + artist.id : (ARTISTS[0] || { k: 'ana' }).k;
+      return {
+        id: acc.id, name: acc.name, k: av ? key : fallback,
+        persona: personaOf(acc),
+        tag: H.enumLabel('plan', acc.plan || 'none').toLocaleUpperCase('fr-FR')
+      };
+    });
+    /* Indexés par compte. Les quatre personas restent adressables — la prop de
+       démonstration les expose — en pointant vers le premier compte qui les
+       incarne, sans jamais écraser les autres. */
+    /* Un profil enfant voit les disciplines sans parole ou tout public :
+       cirque, danse, comédie musicale, classique, spectacle de rue. */
+    const KID_WANT = ['circus', 'dance', 'musical', 'classical', 'performance', 'world'];
+    GENRES = {};
+    (H.categoriesOf() || []).forEach(c => {
+      GENRES[c.id] = (H.genresOf(c.id) || []).map(g => ({
+        id: g.id, fr: H.labelIn(g, 'fr'), en: H.labelIn(g, 'en')
+      }));
+    });
+
+    KID_CATS = (H.categoriesOf() || []).map(c => c.id).filter(id => KID_WANT.indexOf(id) > -1);
+    if (!KID_CATS.length) KID_CATS = (H.categoriesOf() || []).slice(0, 6).map(c => c.id);
+
+    OWNED = {}; FOLLOWED = {};
+    PROFILES.forEach((pr, i) => {
+      const acc = accounts[i];
+      OWNED[pr.id] = (acc.ownedDates || []).slice();
+      FOLLOWED[pr.id] = (acc.followedArtists || []).filter(id => known[id]);
+    });
+    ['visiteur', 'abonné', 'détenteur de place', 'profil enfant'].forEach(persona => {
+      /* Uniquement vers un compte qui incarne réellement ce persona : un
+         visiteur ne détient rien, et ne doit pas hériter des places d'un autre. */
+      const pr = PROFILES.filter(x => x.persona === persona)[0];
+      OWNED[persona] = pr ? (OWNED[pr.id] || []) : [];
+      FOLLOWED[persona] = pr ? (FOLLOWED[pr.id] || []) : [];
+    });
+  }
+
+</script>
+
+<!-- ═══════════ Fonctions d'affichage (verbatim, L2345-2467) ═══════════ -->
+<script type="text/x-dc-extract">
+  // ---------- helpers ----------
+  fr() { return (this.state.langOv || this.props.lang || 'fr') !== 'en'; }
+  t() { return this.fr() ? FR : EN; }
+  type(ch) { this.setState({ q: (this.state.q + ch).slice(0, 32) }); }
+  del() { this.setState({ q: this.state.q.slice(0, -1) }); }
+  qr(seed) {
+    const N = 21, out = [];
+    let h = 0; for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) % 99991;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const finder = (fx, fy) => (x >= fx && x < fx + 7 && y >= fy && y < fy + 7) ? ((x === fx || x === fx + 6 || y === fy || y === fy + 6) || (x >= fx + 2 && x <= fx + 4 && y >= fy + 2 && y <= fy + 4)) : null;
+      let on = finder(0, 0); if (on === null) on = finder(14, 0); if (on === null) on = finder(0, 14);
+      const quiet = (x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12);
+      if (on === null) { on = quiet ? false : (((x * 7 + y * 13 + h + ((x * y) % 11)) % 5) < 2); }
+      out.push({ i: y * N + x, o: on ? 1 : 0 });
+    }
+    return out;
+  }
+  persona() { const p = this.state.prof; return p ? PROFILES.filter(x => x.id === p)[0].persona : (this.props.profile || 'détenteur de place'); }
+  kid() { return this.persona() === 'profil enfant'; }
+  accountKey() { return this.state.prof || (PROFILES.filter(x => x.persona === this.persona())[0] || {}).id; }
+  ownedIds() {
+    const k = this.accountKey();
+    const base = (k && OWNED[k]) || OWNED[this.persona()] || [];
+    return (this.state.paid || []).concat(base);
+  }
+  owns(o) { return this.ownedIds().indexOf(o.id) > -1; }
+  follows() {
+    if (this.state.follows) return this.state.follows;
+    const k = this.accountKey();
+    return (k && FOLLOWED[k]) || FOLLOWED[this.persona()] || [];
+  }
+  onAir() { return this.props.onAir !== false; }
+  colorKeys() { return (this.props.remote || 'croix + touches couleur').indexOf('couleur') > -1; }
+  incident() { const i = this.props.incident || 'aucun'; return i === 'aucun' ? null : i; }
+  pad(n) { return n < 10 ? '0' + n : '' + n; }
+  nowMin() { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+  dateAt(min) { const d = new Date(); d.setSeconds(0, 0); d.setMinutes(d.getMinutes() + Math.round(min)); return d; }
+  clock(min) {
+    const dt = this.dateAt(min);
+    const h = dt.getHours(), m = dt.getMinutes();
+    if (this.fr()) return h + ' h ' + this.pad(m);
+    const h12 = h % 12 || 12;
+    return h12 + ':' + this.pad(m) + (h < 12 ? ' AM' : ' PM');
+  }
+  /* Vrai quand dayLabel() nomme un jour (« samedi 19 sept. ») et non une
+     relation au présent (« demain », « ce soir »), qui ne prend pas d'article. */
+  dayIsNamed(min) {
+    const dt = this.dateAt(min);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const day = new Date(dt); day.setHours(0, 0, 0, 0);
+    const d = Math.round((day - today) / 86400000);
+    return d !== 0 && d !== 1 && d !== -1;
+  }
+  dayLabel(min) {
+    const t = this.fr();
+    const dt = this.dateAt(min);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const day = new Date(dt); day.setHours(0, 0, 0, 0);
+    const d = Math.round((day - today) / 86400000);
+    if (d === 0) return (this.nowMin() + min >= 17 * 60 && min >= 0) ? (t ? 'ce soir' : 'tonight') : (t ? 'aujourd’hui' : 'today');
+    if (d === 1) return t ? 'demain' : 'tomorrow';
+    if (d === -1) return t ? 'hier' : 'yesterday';
+    const names = t ? ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'] : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const mn = t ? ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'] : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const base = names[dt.getDay()] + ' ' + dt.getDate();
+    return (d > 6 || d < -6) ? base + ' ' + mn[dt.getMonth()] : base;
+  }
+  durLabel(m) { const h = Math.floor(m / 60), mm = m % 60; return this.fr() ? (h ? h + ' h ' + this.pad(mm) : mm + ' min') : (h ? h + 'h ' + mm + 'm' : mm + 'm'); }
+  countdown(min) {
+    const t = this.t();
+    if (min < 60) return t.kIn + ' ' + Math.max(1, Math.round(min)) + ' ' + t.minutes;
+    if (min < 1440) return t.kIn + ' ' + Math.floor(min / 60) + ' ' + t.hours + ' ' + this.pad(min % 60);
+    const day = this.dayLabel(min).toUpperCase();
+    return (this.dayIsNamed(min) ? this.t().onDay + ' ' + day : day) + ' · ' + this.clock(min);
+  }
+  num(n) { return (n || 0).toLocaleString(this.fr() ? 'fr-FR' : 'en-US'); }
+  hms(sec) {
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60);
+    return (h ? h + ':' + this.pad(m) : m + '') + ':' + this.pad(s);
+  }
+  blank() { return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; }
+  img(o) { return U(PIC[o.pic]); }
+  poster(o) { return V(PIC[o.pic]); }
+  artistOf(o) { return ARTISTS.filter(a => a.id === o.ar)[0]; }
+  catOf(o) { return CATS.filter(c => c.id === o.cat)[0]; }
+  catLabel(id) { const c = CATS.filter(x => x.id === id)[0]; return c ? (this.fr() ? c.fr : c.en) : ''; }
+  /* Intérêt d'un style : l'audience cumulée de ses dates. Un style très
+     programmé mais peu regardé passe derrière un style rare et très suivi.
+     C'est ici que viendra se greffer la pondération par préférences. */
+  genreInterest(items) {
+    return items.reduce((n, o) => n + (o.aud || 0), 0);
+  }
+  genLabel(catId, genId) {
+    const g = (GENRES[catId] || []).filter(x => x.id === genId)[0];
+    return g ? (this.fr() ? g.fr : g.en) : '';
+  }
+  title(o) { return this.fr() ? o.ti : o.tiEn; }
+  syn(o) { return this.fr() ? o.syn : o.synEn; }
+  cast(o) { return this.fr() ? o.cast : o.castEn; }
+  dur(o) { return (o ? o.dur : 100) * 60; }
+  st(o) { const s = o.st; if (s === 'live' && !this.onAir()) return 'soon'; return s; }
+  outcome(o) {
+    const inc = this.incident();
+    if (inc && this.st(o) === 'live') { if (inc === 'reportée') return 'post'; if (inc === 'annulée') return 'cancel'; }
+    return o.out || null;
+  }
+  repPolicy(o) {
+    const p = this.props.replayPolicy || 'incluse';
+    if (o.rep === 0) return 'aucune';
+    return p;
+  }
+  catalogue() {
+    const k = this.kid();
+    if (!k) return SHOWS;
+    const kids = SHOWS.filter(o => KID_CATS.indexOf(o.cat) > -1);
+    /* Un filtre qui ne retient rien n'est pas un catalogue vide : c'est un
+       filtre à revoir. On préfère montrer le catalogue complet. */
+    return kids.length ? kids : SHOWS;
+  }
+  shown(id) { return SHOWS.filter(o => o.id === id)[0]; }
+  cur() { return this.shown(this.state.pid) || this.catalogue()[0]; }
+  posterPool() { return this.catalogue().slice(0, 8); }
+
+</script>
+
+<!-- ═══════════ RENVOIS ═══════════
+  needs/storefront-tv.md → « Les formes de données » (DateCard, DateDetail)
+  openapi/storefront.yaml → schémas DateCard, DateDetail, VenueClock, MediaSet, DomainConstants
+  ⚠ buildCatalogue() charge 1 814 dates (1,79 Mo) et filtre côté client — exactement ce que le contrat rend impossible.
+-->

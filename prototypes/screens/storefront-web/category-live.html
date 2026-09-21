@@ -1,0 +1,142 @@
+<!--
+  ÉCRAN      Discipline — section En direct
+  ROUTE      page === 'category', catTab === 'live'
+  AFFICHE    Les directs en cours dans la discipline, en tuiles ou en liste.
+  MÈNE VERS  live · artist
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 1821-1883
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — getCategoryScreen
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : catalogue, colsOf, colsTiles, colsWideN, fr, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, subsSel, t, tileCols
+  À LIRE     dépendances non recopiées ici : catLiveList, catStep, dateMatch, ovMore, priceMatch
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+    <sc-if value="{{ catShowLive }}" hint-placeholder-val="{{ true }}">
+    <div id="cat-live" style="margin-top: 32px; display: flex; align-items: baseline; gap: 14px; scroll-margin-top: 90px;">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+      <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.catLiveNow }}</h2>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: #857E73;">{{ catCountLabel }}</span>
+    </div>
+    <sc-if value="{{ catNoLive }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 16px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 34px 28px; text-align: center;">
+        <div style="font-family: 'Instrument Serif', serif; font-size: 24px;">{{ t.emptyCatLive }}</div>
+        <div style="padding-top: 9px; font-size: 13.5px; color: #857E73;">{{ t.emptyCatLiveHint }}</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ catListView }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+        <sc-for list="{{ catLive }}" as="item" hint-placeholder-count="3">
+          <div onClick="{{ item.open }}" style="cursor: pointer; background: #0F0E0C; padding: 14px 16px; display: grid; {{ rowGridLive }} align-items: center; transition: background .24s ease;" style-hover="background:#161310">
+            <div style="{{ rowThumb }} position: relative; aspect-ratio: 16/10; overflow: hidden; background: #17140F;">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.7); transition: transform .8s cubic-bezier(.2,.7,.2,1); background-color: #1A1815; background-image: {{ item.imgCss }}; background-size: cover; background-position: center;"></div>
+            </div>
+            <div style="min-width: 0;">
+              <div style="font-size: 15px; font-weight: 500;">{{ item.title }}</div>
+              <div style="padding-top: 4px; font-size: 12.5px; color: #9B948A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ item.artist }}</div>
+            </div>
+            <div style="{{ rowStack }} display: inline-flex; align-items: center; gap: 7px; border: 1px solid oklch(0.42 0.12 27); padding: 4px 9px; justify-self: start;">
+              <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.14 27); white-space: nowrap;">{{ t.onNow }} · {{ item.viewersLabel }}</span>
+            </div>
+            <div style="{{ rowStack }} font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6B6459;">{{ item.meta }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ catTilesView }}" hint-placeholder-val="{{ true }}">
+    <div style="margin-top: 16px; display: grid; grid-template-columns: {{ colsTiles }}; gap: 18px;">
+      <sc-for list="{{ catLive }}" as="item" hint-placeholder-count="3">
+        <div onClick="{{ item.open }}" style="cursor: pointer; border: 1px solid #1F1C19; background: #100F0D; transition: border-color .24s ease;" style-hover="border-color:#4A423A">
+          <div style="position: relative; aspect-ratio: 16/9; overflow: hidden; background: #17140F;">
+            <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.75) brightness(0.74); transition: transform .8s cubic-bezier(.2,.7,.2,1); background-color: #1A1815; background-image: {{ item.imgCss }}; background-size: cover; background-position: center;"></div>
+            <div style="position: absolute; inset: 0; opacity: 0; transform: translateY(8px); transition: opacity .26s ease, transform .34s cubic-bezier(.2,.7,.2,1); background: linear-gradient(to top, rgba(8,7,7,0.95), rgba(8,7,7,0.7)); display: flex; flex-direction: column; justify-content: flex-end; padding: 14px;" style-hover="opacity:1;transform:translateY(0)">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 42);">{{ item.ovTag }}</div>
+              <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.5; color: #EDE7DC; text-wrap: pretty; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{{ item.desc }}</div>
+            </div>
+            <div style="position: absolute; left: 12px; top: 12px; display: flex; align-items: center; gap: 7px; background: rgba(11,10,9,0.78); padding: 5px 9px;">
+              <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em;">LIVE</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #C9C0B2;">{{ item.viewersLabel }}</span>
+            </div>
+          </div>
+          <div style="padding: 15px;">
+            <div style="font-size: 15px; font-weight: 500;">{{ item.title }}</div>
+            <div style="padding-top: 5px; font-size: 12.5px; color: #9B948A;">{{ item.artist }}</div>
+            <div style="padding-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ item.meta }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+    <sc-if value="{{ moreCatLive }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 14px; display: flex; justify-content: center;">
+        <span onClick="{{ loadMoreCatLive }}" style="cursor: pointer; padding: 12px 22px; white-space: nowrap; border: 1px solid #332E28; font-size: 13px; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ moreCatLiveLabel }}</span>
+      </div>
+    </sc-if>
+    </sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* catPool  —  lignes 6176-6191 */
+    const catPool = catalogue.filter(o => {
+      if (o.cat !== s.catId) return false;
+      if (subsSel.length && !subsSel.some(i => o.subs.indexOf(i) > -1)) return false;
+      if (s.cPrices.length && !s.cPrices.some(k => priceMatch(k, o.price))) return false;
+      if (s.cDate !== 'all' && !dateMatch(s.cDate, o.day)) return false;
+      if (s.cStatus !== 'all' && o.kind !== s.cStatus) return false;
+      if (s.cAlmost && o.kind !== 'replay' && o.soldPct < 80) return false;
+      if (s.cPromo && !o.hasPromo) return false;
+      return true;
+    }).sort((a, b) => {
+      if (s.cSort === 'soon') return a.day - b.day;
+      if (s.cSort === 'pop') return (b.viewers || b.soldPct * 40) - (a.viewers || a.soldPct * 40);
+      if (s.cSort === 'priceUp') return a.price - b.price;
+      if (s.cSort === 'priceDown') return b.price - a.price;
+      return 0;
+    });
+/* catOv  —  lignes 6192-6192 */
+    const catOv = s.catTab === 'ov';
+/* pgCatLive  —  lignes 6198-6198 */
+    const pgCatLive = this.paged('catLive', catLiveList, catStep, fr);
+/* mLive  —  lignes 6206-6206 */
+    const mLive = ovMore(pgCatLive, catLiveList, 'live');
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      catTilesView: s.cView === 'tiles', catListView: s.cView === 'list',
+      catLive: pgCatLive.items.map(o => Object.assign({}, o, {
+        viewersLabel: (o.viewers || 0).toLocaleString('fr-FR'),
+        meta: o.catName.toUpperCase() + ' · ' + o.duration
+      })),
+      catNoLive: !catPool.some(o => o.kind === 'live'),
+      catCountLabel: (() => { const n = catPool.filter(o => o.kind === 'live').length; return n + ' ' + (n > 1 ? t.resultsLabel : t.resultLabel); })(),
+      moreCatLive: pgCatLive.hasMore, moreCatLiveLabel: mLive.label, loadMoreCatLive: mLive.go,
+      colsTiles: colsOf(tileCols), colsWide: colsOf(colsWideN),
+      rowGrid5, rowGrid5b, rowGrid4, rowGrid4b, rowGridLive, rowThumb, rowStack,
+      catShowLive: catOv || s.catTab === 'live',
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.catLiveNow  t.emptyCatLive  t.emptyCatLiveHint  t.onNow  t.resultLabel  t.resultsLabel  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    cAlmost  cDate  cPrices  cPromo  cSort  cStatus  cView  catId  catTab  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    paged
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

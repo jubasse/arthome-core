@@ -1,0 +1,437 @@
+<!--
+  Arthome · storefront mobile — home
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : home
+  Affiche    : L'accueil : une de direct, rangées de directs, d'artistes suivis, de la grille du soir et des rediffusions.
+  Mène vers  : live, artist, browse, category, sheet-ticket
+  Contrat    : GET /v1/home · GET /v1/live
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L96–306
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L96–306
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div style="animation: fadeIn .3s ease both;">
+
+  <div onClick="{{ goLive }}" style="{{ heroBoxStyle }}">
+    <sc-if value="{{ hero.img }}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.72) contrast(1.06) brightness(0.6); background-color: #17140F; background-image: {{ hero.imgCss }}; background-size: cover; background-position: center;"></div>
+    </sc-if>
+    <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(11,10,9,0.97) 8%, rgba(11,10,9,0.35) 55%, rgba(11,10,9,0.55));"></div>
+    <div style="position: absolute; left: 16px; top: 16px; display: inline-flex; align-items: center; gap: 7px; background: rgba(11,10,9,0.72); padding: 5px 9px;">
+      <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.14 27);">{{ hero.viewersLabel }}</span>
+    </div>
+    <div style="position: absolute; left: 16px; right: 16px; bottom: 18px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #B0A899;">{{ hero.meta }}</div>
+      <h1 style="margin: 9px 0 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 38px; line-height: 1.02;">{{ hero.title }}</h1>
+      <div style="padding-top: 8px; font-size: 14px; color: #C9C0B2;">{{ hero.artist }}</div>
+      <div style="padding-top: 10px; font-size: 13px; line-height: 1.5; color: #9B948A; text-wrap: pretty;">{{ hero.blurb }}</div>
+      <sc-if value="{{ heroPromoLine }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top: 12px; display: inline-flex; align-items: baseline; gap: 9px; border: 1px solid rgba(214,178,102,0.34); background: rgba(214,178,102,0.06); padding: 6px 10px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: oklch(0.83 0.1 84);">{{ lpBadge }}</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #EDE7DC;">{{ lpPrices }}</span>
+        </div>
+      </sc-if>
+      <div style="padding-top: 14px; display: flex; flex-direction: column; gap: 8px;">
+        <sc-if value="{{ heroNeedsTicket }}" hint-placeholder-val="{{ true }}">
+          <span onClick="{{ openTicket }}" style="{{ heroBuyStyle }}">{{ t.getTicket }} · {{ hero.priceLabel }}</span>
+        </sc-if>
+        <sc-if value="{{ heroHasTicket }}" hint-placeholder-val="{{ false }}">
+          <span style="padding: 13px 18px; text-align: center; white-space: nowrap; border: 1px solid oklch(0.5 0.09 150); background: color-mix(in oklch, oklch(0.7 0.13 150) 12%, transparent); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: oklch(0.78 0.12 150);">{{ heroOwnedLabel }}</span>
+        </sc-if>
+        <span onClick="{{ goLive }}" style="cursor: pointer; padding: 13px 18px; text-align: center; white-space: nowrap; border: 1px solid #332E28; font-size: 13.5px; color: #C9C0B2;">{{ t.freePeek }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 26px 0 0;">
+    <div style="padding: 0 16px 12px; display: flex; align-items: baseline; gap: 10px;">
+      <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 26px;">{{ t.onNow }}</h2>
+      <span onClick="{{ goBrowse }}" style="margin-left: auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73;">{{ t.seeAll }} →</span>
+    </div>
+    <div id="rail-trend" data-rail="1" style="display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-left: 16px; padding: 0 16px 4px; cursor: grab; scrollbar-width: none;">
+      <sc-for list="{{ trending }}" as="item" hint-placeholder-count="4">
+        <div onClick="{{ item.open }}" style="cursor: pointer; flex: 0 0 236px; scroll-snap-align: start; border: 1px solid #1F1C19; background: #100F0D;">
+          <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #17140F;">
+            <sc-if value="{{ item.img }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.75) brightness(0.72); background-color: #17140F; background-image: {{ item.imgCss }}; background-size: cover; background-position: center;"></div>
+            </sc-if>
+            <div style="position: absolute; left: 9px; top: 9px; display: inline-flex; align-items: center; gap: 6px; background: rgba(11,10,9,0.78); padding: 4px 8px;">
+              <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.14 27);">{{ item.viewersLabel }}</span>
+            </div>
+            <sc-if value="{{ item.sponsored }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; right: 9px; top: 9px; background: rgba(11,10,9,0.78); padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73;">{{ t.sponsored }}</div>
+            </sc-if>
+          </div>
+          <div style="padding: 13px;">
+            <div style="font-size: 14.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ item.title }}</div>
+            <div onClick="{{ item.openArtist }}" style="cursor: pointer; padding-top: 5px; font-size: 12.5px; color: #9B948A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ item.artist }}</div>
+            <div style="padding-top: 9px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6B6459;">{{ item.meta }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <sc-if value="{{ isMember }}" hint-placeholder-val="{{ true }}">
+  <div style="padding: 26px 0 0;">
+    <div style="padding: 0 16px 12px;">
+      <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 26px;">{{ t.yourFaves }}</h2>
+    </div>
+    <div id="rail-fav" data-rail="1" style="display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-left: 16px; padding: 0 16px 4px; cursor: grab; scrollbar-width: none;">
+      <sc-for list="{{ faves }}" as="item" hint-placeholder-count="4">
+        <div onClick="{{ item.open }}" style="cursor: pointer; flex: 0 0 200px; scroll-snap-align: start; border: 1px solid #1F1C19; background: #100F0D;">
+          <div style="position: relative; aspect-ratio: 1/1; overflow: hidden; background: #17140F;">
+            <sc-if value="{{ item.img }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.75) brightness(0.72); background-color: #17140F; background-image: {{ item.imgCss }}; background-size: cover; background-position: center;"></div>
+            </sc-if>
+            <sc-if value="{{ item.isLive }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; left: 9px; top: 9px; display: inline-flex; align-items: center; gap: 6px; background: rgba(11,10,9,0.78); padding: 4px 8px;">
+              <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.14 27);">{{ item.viewersLabel }}</span>
+            </div>
+            </sc-if>
+            <sc-if value="{{ item.notLive }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; left: 9px; top: 9px; background: rgba(11,10,9,0.78); padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #B0A899;">{{ item.nextLabel }}</div>
+            </sc-if>
+          </div>
+          <div style="padding: 12px;">
+            <div style="font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ item.title }}</div>
+            <div style="padding-top: 4px; font-size: 12px; color: #9B948A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ item.artist }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <div style="padding: 26px 0 0;">
+    <div style="padding: 0 16px 12px;">
+      <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 26px;">{{ t.notToMiss }}</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px; padding: 0 16px;">
+      <sc-for list="{{ upNext }}" as="ev" hint-placeholder-count="3">
+        <div style="border: 1px solid #1F1C19; background: #100F0D;">
+          <div onClick="{{ ev.open }}" style="cursor: pointer; position: relative; aspect-ratio: 16/9; overflow: hidden; background: #17140F;">
+            <sc-if value="{{ ev.img }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.72) brightness(0.7); background-color: #17140F; background-image: {{ ev.imgCss }}; background-size: cover; background-position: center;"></div>
+            </sc-if>
+            <div style="position: absolute; left: 10px; top: 10px; background: rgba(11,10,9,0.8); padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 42);">{{ ev.countdown }}</div>
+            <sc-if value="{{ ev.pShowBox }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ ev.pBoxStyle }}"><span style="{{ ev.pMainStyle }}">{{ ev.promoPct }}</span></div>
+            </sc-if>
+          </div>
+          <div style="padding: 13px;">
+            <div style="font-size: 15px; font-weight: 500;">{{ ev.title }}</div>
+            <div onClick="{{ ev.openArtist }}" style="cursor: pointer; padding-top: 5px; font-size: 12.5px; color: #9B948A;">{{ ev.artist }}</div>
+            <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ ev.desc }}</div>
+            <div style="padding-top: 11px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73;">{{ ev.when }}</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6B6459;">{{ ev.seats }}</span>
+              <sc-if value="{{ ev.pShowWas }}" hint-placeholder-val="{{ false }}">
+                <span style="{{ ev.pWasStyle }}">{{ ev.promoWasLabel }}</span>
+              </sc-if>
+              <span onClick="{{ ev.buy }}" style="{{ ev.buyStyle }}">{{ t.book }} · {{ ev.priceLabel }}</span>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <sc-if value="{{ isMember }}" hint-placeholder-val="{{ true }}">
+  <div style="padding: 26px 0 0;">
+    <div style="padding: 0 16px 12px;">
+      <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 26px;">{{ t.favUpcoming }}</h2>
+    </div>
+    <div id="rail-favnext" data-rail="1" style="display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-left: 16px; padding: 0 16px 4px; cursor: grab; scrollbar-width: none;">
+      <sc-for list="{{ favNext }}" as="ev" hint-placeholder-count="3">
+        <div style="flex: 0 0 236px; scroll-snap-align: start; border: 1px solid #1F1C19; background: #100F0D;">
+          <div onClick="{{ ev.open }}" style="cursor: pointer; position: relative; aspect-ratio: 16/10; overflow: hidden; background: #17140F;">
+            <sc-if value="{{ ev.img }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.72) brightness(0.7); background-color: #17140F; background-image: {{ ev.imgCss }}; background-size: cover; background-position: center;"></div>
+            </sc-if>
+            <div style="position: absolute; left: 9px; top: 9px; background: rgba(11,10,9,0.8); padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 42);">{{ ev.tag }}</div>
+          </div>
+          <div style="padding: 12px;">
+            <div style="font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ev.title }}</div>
+            <div style="padding-top: 4px; font-size: 12px; color: #9B948A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ev.artist }}</div>
+            <div style="padding-top: 10px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ ev.when }}</span>
+              <span onClick="{{ ev.buy }}" style="{{ ev.buyStyle }}">{{ ev.priceLabel }}</span>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <div style="padding: 26px 0 0;">
+    <div style="padding: 0 16px 12px;">
+      <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 26px;">{{ t.almostGone }}</h2>
+      <div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ t.almostGoneSub }}</div>
+    </div>
+    <div id="rail-sold" data-rail="1" style="display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-left: 16px; padding: 0 16px 4px; cursor: grab; scrollbar-width: none;">
+      <sc-for list="{{ soldOut }}" as="ev" hint-placeholder-count="3">
+        <div style="flex: 0 0 236px; scroll-snap-align: start; border: 1px solid #1F1C19; background: #100F0D;">
+          <div onClick="{{ ev.open }}" style="cursor: pointer; position: relative; aspect-ratio: 16/10; overflow: hidden; background: #17140F;">
+            <sc-if value="{{ ev.img }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.72) brightness(0.68); background-color: #17140F; background-image: {{ ev.imgCss }}; background-size: cover; background-position: center;"></div>
+            </sc-if>
+            <div style="position: absolute; left: 9px; top: 9px; background: rgba(11,10,9,0.8); padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #C9C0B2;">{{ ev.pctLabel }}</div>
+          </div>
+          <div style="padding: 12px;">
+            <div style="height: 2px; background: #1F1C19;"><div style="{{ ev.barStyle }}"></div></div>
+            <div style="padding-top: 10px; font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ev.title }}</div>
+            <div style="padding-top: 4px; font-size: 12px; color: #9B948A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ev.artist }}</div>
+            <div style="padding-top: 10px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ ev.leftLabel }}</span>
+              <span onClick="{{ ev.buy }}" style="{{ ev.buyStyle }}">{{ ev.priceLabel }}</span>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="padding: 26px 0 0;">
+    <div style="padding: 0 16px 12px; display: flex; align-items: baseline; gap: 10px;">
+      <h2 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 26px;">{{ t.categories }}</h2>
+      <span onClick="{{ goCategories }}" style="margin-left: auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73;">{{ t.seeAll }} →</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; padding: 0 16px;">
+      <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="6">
+        <div onClick="{{ cat.open }}" style="cursor: pointer; position: relative; aspect-ratio: 4/3; overflow: hidden; background: #17140F;">
+          <sc-if value="{{ cat.img }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.6); background-color: #17140F; background-image: {{ cat.imgCss }}; background-size: cover; background-position: center;"></div>
+          </sc-if>
+          <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(8,7,7,0.92), rgba(8,7,7,0.15));"></div>
+          <div style="position: absolute; left: 11px; right: 11px; bottom: 11px;">
+            <div style="font-family: 'Instrument Serif', serif; font-size: 19px; line-height: 1.1;">{{ cat.name }}</div>
+            <sc-if value="{{ cat.hasLive }}" hint-placeholder-val="{{ false }}"><div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: oklch(0.78 0.14 27);">{{ cat.liveLabel }}</div></sc-if>
+            <sc-if value="{{ cat.noLive }}" hint-placeholder-val="{{ false }}"><div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #9B948A;">{{ cat.count }}</div></sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (20 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── nav  —  méthode de classe  —  L3977–3977 ── */
+  nav(page) { return () => this.setState({ page, pick: null, ticketOpen: false, shareOpen: false }); }
+
+/* ── goArtistFrom  —  méthode de classe  —  L4138–4143 ── */
+  goArtistFrom(who) {
+    return (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      this.setState({ page: 'artist', artistId: artistIndexFor(who), suggOpen: false, searchOpen: false });
+    };
+  }
+
+/* ── mk  —  calcul dans renderReady()  —  L4353–4361 ── */
+    const mk = (title, artist, v, meta, img, sponsored, desc, tag) => ({
+      title, artist, img, desc, imgCss: this.cssUrl(img),
+      sponsored: sponsored && P.showSponsored !== false,
+      tag: tag || (fr ? 'EN DIRECT · APERÇU GRATUIT' : 'LIVE · FREE PREVIEW'),
+      viewersLabel: v, meta,
+      ...this.promoOf(title, (PROMO_DEFS[title] || {}).now + ' €', fr, true),
+      open: () => this.openLive(artist),
+      openArtist: this.goArtistFrom(artist)
+    });
+
+/* ── trending  —  calcul dans renderReady()  —  L4363–4369 ── */
+    const trending = A.liveNow().slice(0, 6).map((d, k) => {
+      const show = A.show(d.show), art = A.artist(show.artist);
+      const cat = A.label(A.category(show.category)).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US');
+      return mk(A.title(show), art ? art.name : '', A.number(d.viewers),
+        cat + ' · ' + (fr ? 'EN COURS' : 'ON AIR'), A.showImage(show, 900), k === 0,
+        A.synopsis(show) || [cat, A.duration(show.runtimeMin), A.venue(d.venue).name].join(' · '));
+    });
+
+/* ── faves  —  calcul dans renderReady()  —  L4371–4371 ── */
+    const faves = (() => {
+
+/* ── ownsHero  —  calcul dans renderReady()  —  L4855–4855 ── */
+    const ownsHero = ownsDate(A.liveNow()[0] || A.upcoming()[0]);
+
+/* ── heroBase  —  calcul dans renderReady()  —  L4932–4949 ── */
+    const heroBase = (() => {
+      const d = A.liveNow()[0] || A.upcoming()[0];
+      if (!d) return { title: '', artist: '', blurb: '', meta: '', viewersLabel: '', priceLabel: '', img: '' };
+      const show = A.show(d.show), art = A.artist(show.artist), venue = A.venue(d.venue);
+      return {
+        title: A.title(show),
+        artist: art ? art.name : '',
+        blurb: A.synopsis(show) || (venue ? [A.label(A.category(show.category)), venue.name, venue.city].join(' · ') : ''),
+        meta: [A.label(A.category(show.category)), A.duration(show.runtimeMin), (show.subtitles || ['FR']).join('/')]
+          .join(' · ').toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+        viewersLabel: A.isOnAir(d)
+          ? A.number(d.viewers) + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING')
+          : A.when(d).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+        priceLabel: A.price(d.prices[0].amount),
+        img: A.showImage(show, 1200),
+        imgCss: this.cssUrl(A.showImage(show, 1200))
+      };
+    })();
+
+/* ── onArtistLive  —  calcul dans renderReady()  —  L4950–4950 ── */
+    const onArtistLive = (s.page === 'live' || s.page === 'replay') && artist.i !== 3;
+
+/* ── hero  —  calcul dans renderReady()  —  L4951–4977 ── */
+    const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
+      title: s.pick.title,
+      artist: s.pick.artist,
+      blurb: artist.bio,
+      meta: s.pick.kind === 'live' ? s.pick.meta : s.pick.whenLabel,
+      viewersLabel: s.pick.kind === 'live' ? ((artist.viewers || '1 240') + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING')) : s.pick.whenLabel,
+      priceLabel: s.pick.priceLabel,
+      img: s.pick.img, imgCss: this.cssUrl(s.pick.img)
+    } : (onArtistLive ? {
+      title: artist.showTitle,
+      artist: artist.name,
+      blurb: artist.bio,
+      meta: (() => {
+        const d = A.datesOfArtist(artist.id).filter(x => A.isOnAir(x))[0]
+          || A.datesOfArtist(artist.id).filter(x => x.startOffsetMin > 0)[0];
+        const show = d ? A.show(d.show) : null;
+        return [artist.discipline.toUpperCase(), show ? A.duration(show.runtimeMin) : null,
+          show ? (show.subtitles || ['FR']).join('/') : null].filter(Boolean).join(' · ');
+      })(),
+      viewersLabel: (artist.viewers || '') + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING'),
+      priceLabel: (() => {
+        const d = A.datesOfArtist(artist.id).filter(x => A.isOnAir(x))[0]
+          || A.datesOfArtist(artist.id).filter(x => x.startOffsetMin > 0)[0];
+        return d ? A.price(d.prices[0].amount) : '';
+      })(),
+      img: artist.showImg, imgCss: this.cssUrl(artist.showImg)
+    } : heroBase);
+
+/* ── upNext  —  calcul dans renderReady()  —  L5029–5039 ── */
+    const upNext = A.upcoming().slice(0, 8).map(d => {
+      const show = A.show(d.show), art = A.artist(show.artist), venue = A.venue(d.venue);
+      const at = A.dateAt(d.startOffsetMin);
+      return [
+        A.title(show), art ? art.name : '', A.showImage(show, 900),
+        [A.when(d, false), A.countdown(d.startOffsetMin).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US')],
+        d.prices[0].amount ? A.price(d.prices[0].amount) : (fr ? 'Gratuit' : 'Free'),
+        A.number(venue.capacity) + ' ' + (fr ? 'places' : 'seats'),
+        A.synopsis(show) || [A.label(A.category(show.category)), venue.name, venue.city].join(' · ')
+      ];
+    })
+
+/* ── favNext  —  calcul dans renderReady()  —  L5050–5050 ── */
+    const favNext = (() => {
+
+/* ── soldOut  —  calcul dans renderReady()  —  L5080–5083 ── */
+    const soldOut = A.upcoming().map(d => {
+      const cap = A.venue(d.venue).capacity;
+      return { d, pct: cap ? Math.round((d.seats.sold / cap) * 100) : 0 };
+    })
+
+/* ── heroPromo  —  calcul dans renderReady()  —  L5629–5629 ── */
+    const heroPromo = this.promoOf(hero.title, hero.priceLabel, fr);
+
+/* ── heroPromoLine  —  clé du modèle rendu  —  L5806–5806 ── */
+      heroPromoLine: heroPromo.hasPromo && this.props.heroPromo !== 'aucune' && this.props.heroPromo !== 'bouton',
+
+/* ── heroBuyStyle  —  clé du modèle rendu  —  L5807–5807 ── */
+      heroBuyStyle: 'cursor: pointer; padding: 14px 26px; white-space: nowrap; border: 1px solid #332E28; font-size: 13.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease, color .24s ease;' +
+
+/* ── isHome  —  clé du modèle rendu  —  L5827–5827 ── */
+      isHome: s.page === 'home', isBrowse: s.page === 'browse', isArtist: s.page === 'artist',
+
+/* ── goLive  —  clé du modèle rendu  —  L5831–5831 ── */
+      goLive: () => this.openLive(heroBase.artist), goAccount: this.gate(this.nav('account')),
+
+/* ── heroHasTicket  —  clé du modèle rendu  —  L5886–5886 ── */
+      heroHasTicket: ownsHero, heroNeedsTicket: !ownsHero,
+
+/* ── heroOwnedLabel  —  clé du modèle rendu  —  L5887–5887 ── */
+      heroOwnedLabel: (fr ? 'VOTRE PLACE' : 'YOUR SEAT'),
+
+/* ── goCategories  —  clé du modèle rendu  —  L6085–6085 ── */
+      goCategories: this.nav('categories'),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (12) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2372  almostGone: "Bientôt complet"
+  EN L2825  almostGone: "Almost sold out"
+
+  FR L2373  almostGoneSub: "RECOMMANDÉ POUR VOUS · DERNIÈRES PLACES"
+  EN L2826  almostGoneSub: "PICKED FOR YOU · LAST SEATS"
+
+  FR L2399  book: "Réserver"
+  EN L2852  book: "Book"
+
+  FR L2424  categories: "Catégories"
+  EN L2877  categories: "Categories"
+
+  FR L2487  favUpcoming: "Les prochaines dates de vos artistes"
+  EN L2940  favUpcoming: "Coming from your artists"
+
+  FR L2500  freePeek: "Voir l’aperçu gratuit"
+  EN L2953  freePeek: "Watch free preview"
+
+  FR L2503  getTicket: "Prendre ma place"
+  EN L2956  getTicket: "Get my ticket"
+
+  FR L2566  notToMiss: "À ne pas rater"
+  EN L3019  notToMiss: "Don’t miss"
+
+  FR L2573  onNow: "EN DIRECT"
+  EN L3026  onNow: "LIVE NOW"
+
+  FR L2693  seeAll: "Voir tous les résultats"
+  EN L3146  seeAll: "See all results"
+
+  FR L2727  sponsored: "MIS EN AVANT"
+  EN L3180  sponsored: "FEATURED"
+
+  FR L2782  yourFaves: "Vos artistes suivis"
+  EN L3235  yourFaves: "Artists you follow"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

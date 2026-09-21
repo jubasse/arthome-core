@@ -1,0 +1,256 @@
+<!--
+  Arthome · storefront mobile — category-upcoming
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : category · catTab=up
+  Affiche    : Section « Bientôt dans cette discipline », groupée par spectacle.
+  Mène vers  : artist, sheet-ticket
+  Contrat    : GET /v1/categories/{categoryId}
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L740–787
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L740–787
+     ══════════════════════════════════════════════════════════════════════════ -->
+    <sc-if value="{{ catShowUp }}" hint-placeholder-val="{{ true }}">
+      <div style="padding-top: 26px;">
+        <h2 style="margin: 0 0 12px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 24px;">{{ t.catUpcoming }}</h2>
+        <sc-if value="{{ catNoUpcoming }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #1F1C19; background: #0D0C0A; padding: 26px 18px; text-align: center;">
+            <div style="font-family: 'Instrument Serif', serif; font-size: 20px;">{{ t.emptyCatUpcoming }}</div>
+          </div>
+        </sc-if>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <sc-for list="{{ catUpcoming }}" as="ev" hint-placeholder-count="4">
+            <div style="border: 1px solid #1F1C19; background: #100F0D; padding: 12px; display: flex; gap: 12px;">
+              <div onClick="{{ ev.open }}" style="cursor: pointer; flex: 0 0 96px; position: relative; aspect-ratio: 16/11; overflow: hidden; background: #17140F;">
+                <sc-if value="{{ ev.img }}" hint-placeholder-val="{{ false }}">
+                  <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.7); background-color: #17140F; background-image: {{ ev.imgCss }}; background-size: cover; background-position: center;"></div>
+                </sc-if>
+              </div>
+              <div style="min-width: 0; flex: 1 1 auto;">
+                <div onClick="{{ ev.open }}" style="cursor: pointer; font-size: 14px; font-weight: 500;">{{ ev.title }}</div>
+                <div style="padding-top: 4px; font-size: 12.5px; color: #9B948A;">{{ ev.artist }}</div>
+                <div style="padding-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: oklch(0.78 0.13 42);">{{ ev.countdown }}</div>
+                <div style="padding-top: 9px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span onClick="{{ ev.buy }}" style="{{ ev.buyStyle }}">{{ ev.priceLabel }}</span>
+                  <sc-if value="{{ ev.hasExtra }}" hint-placeholder-val="{{ false }}">
+                    <span onClick="{{ ev.toggleGroup }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #EDE7DC;">{{ ev.extraLabel }}</span>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ moreCatUp }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top: 12px; display: flex; justify-content: center;">
+            <span onClick="{{ loadMoreCatUp }}" style="cursor: pointer; padding: 12px 20px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #332E28; font-size: 13px; color: #C9C0B2;">{{ moreCatUpLabel }}</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ loadingCatUp }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top: 10px; border: 1px solid #1F1C19; background: #100F0D; padding: 12px; display: flex; gap: 12px; animation: skel 1.2s ease-in-out infinite;">
+            <div style="flex: 0 0 96px; aspect-ratio: 16/11; background: #17140F;"></div>
+            <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px; padding-top: 3px;">
+              <div style="height: 13px; width: 68%; background: #1C1A17;"></div>
+              <div style="height: 11px; width: 44%; background: #17140F;"></div>
+              <div style="margin-top: 4px; height: 30px; width: 84px; background: #17140F;"></div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (17 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── groupByArtist  —  méthode de classe  —  L4056–4089 ── */
+  groupByArtist(list, fr) {
+    const baseOf = (title) => String(title || '').split(' — ')[0].trim();
+    const order = [];
+    const by = {};
+    list.forEach(o => {
+      const key = o.artistIdx + '§' + baseOf(o.title);
+      if (by[key] === undefined) { by[key] = []; order.push(key); }
+      by[key].push(o);
+    });
+    const open = this.state.groupOpen || {};
+    const out = [];
+    order.forEach(ai => {
+      const group = by[ai].slice().sort((a, b) => a.day - b.day);
+      if (group.length < 2) { out.push(Object.assign({}, group[0], { isGroup: false, extra: [], hasExtra: false })); return; }
+      const isOpen = !!open[ai];
+      out.push(Object.assign({}, group[0], {
+        promoTitle: group[0].title,
+        title: baseOf(group[0].title),
+        tHit: this.splitHit(baseOf(group[0].title), (this.state.liveQuery || '').trim()),
+        isGroup: true,
+        hasExtra: true,
+        extra: isOpen ? group.slice(1) : [],
+        extraLabel: isOpen
+          ? (fr ? 'Replier les dates ▴' : 'Collapse dates ▴')
+          : (fr ? 'Voir plus de dates (' + (group.length - 1) + ') ▾' : 'More dates (' + (group.length - 1) + ') ▾'),
+        datesLabel: group.length + ' ' + (fr ? 'DATES' : 'DATES'),
+        toggleGroup: (e) => {
+          if (e && e.stopPropagation) e.stopPropagation();
+          this.setState(st => ({ groupOpen: Object.assign({}, st.groupOpen, { [ai]: !((st.groupOpen || {})[ai]) }) }));
+        }
+      }));
+    });
+    return out;
+  }
+
+/* ── paged  —  méthode de classe  —  L4091–4113 ── */
+  paged(key, list, step, fr) {
+    const n = (this.state.shown || {})[key] || step;
+    const rest = Math.max(0, list.length - n);
+    const busy = (this.state.loading || {})[key] === true;
+    const start = () => {
+      if ((this.state.loading || {})[key]) return;
+      this.setState(st => ({ loading: Object.assign({}, st.loading, { [key]: true }) }));
+      clearTimeout(this['_pgT_' + key]);
+      this['_pgT_' + key] = setTimeout(() => {
+        this.setState(st => ({
+          shown: Object.assign({}, st.shown, { [key]: ((st.shown || {})[key] || step) + step }),
+          loading: Object.assign({}, st.loading, { [key]: false })
+        }));
+      }, 1000);
+    };
+    return {
+      items: list.slice(0, n),
+      hasMore: rest > 0 && !busy,
+      loading: busy,
+      moreLabel: (fr ? 'Voir plus' : 'Show more') + ' · ' + rest + (fr ? ' restants' : ' left'),
+      loadMore: start
+    };
+  }
+
+/* ── capOv  —  calcul dans renderReady()  —  L4309–4309 ── */
+    const capOv = Math.max(3, Number(this.props.overviewCap || 8));
+
+/* ── priceDefs  —  calcul dans renderReady()  —  L5338–5338 ── */
+    const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
+
+/* ── priceMatch  —  calcul dans renderReady()  —  L5566–5566 ── */
+    const priceMatch = (k, p) => { const d = priceDefs.find(x => x[0] === k); return d ? d[2](p) : true; };
+
+/* ── dateMatch  —  calcul dans renderReady()  —  L5567–5573 ── */
+    const dateMatch = (k, d) => {
+      if (k === 'range') return true;
+      if (k === 'tonight') return d === 0;
+      if (k === 'weekend') return d <= 3;
+      if (k === 'd7') return d >= 0 && d <= 7;
+      return d >= 0 && d <= 30;
+    };
+
+/* ── catPool  —  calcul dans renderReady()  —  L5575–5590 ── */
+    const catPool = catalogue.filter(o => {
+      if (o.cat !== s.catId) return false;
+      if (subsSel.length && !subsSel.some(i => o.subs.indexOf(i) > -1)) return false;
+      if (s.cPrices.length && !s.cPrices.some(k => priceMatch(k, o.price))) return false;
+      if (s.cDate !== 'all' && !dateMatch(s.cDate, o.day)) return false;
+      if (s.cStatus !== 'all' && o.kind !== s.cStatus) return false;
+      if (s.cAlmost && o.kind !== 'replay' && o.soldPct < 80) return false;
+      if (s.cPromo && !o.hasPromo) return false;
+      return true;
+    }).sort((a, b) => {
+      if (s.cSort === 'soon') return a.day - b.day;
+      if (s.cSort === 'pop') return (b.viewers || b.soldPct * 40) - (a.viewers || a.soldPct * 40);
+      if (s.cSort === 'priceUp') return a.price - b.price;
+      if (s.cSort === 'priceDown') return b.price - a.price;
+      return 0;
+    });
+
+/* ── catOv  —  calcul dans renderReady()  —  L5591–5591 ── */
+    const catOv = s.catTab === 'ov';
+
+/* ── catStep  —  calcul dans renderReady()  —  L5592–5592 ── */
+    const catStep = catOv ? capOv : 10;
+
+/* ── catUpGroups  —  calcul dans renderReady()  —  L5594–5594 ── */
+    const catUpGroups = this.groupByArtist(catPool.filter(o => o.kind === 'upcoming'), fr);
+
+/* ── pgCatUp  —  calcul dans renderReady()  —  L5598–5598 ── */
+    const pgCatUp = this.paged('catUp', catUpGroups, catStep, fr);
+
+/* ── ovMore  —  calcul dans renderReady()  —  L5602–5602 ── */
+    const ovMore = (pg, list, tab) => catOv
+
+/* ── mUp  —  calcul dans renderReady()  —  L5606–5606 ── */
+    const mUp = ovMore(pgCatUp, catUpGroups, 'up');
+
+/* ── catUpcoming  —  clé du modèle rendu  —  L6182–6184 ── */
+      catUpcoming: pgCatUp.items.map(o => Object.assign({}, o, {
+        fullDesc: o.desc, desc: o.subLabel, when: o.whenLabel, countdown: o.kind === 'replay' ? t.stReplay : o.statusLabel
+      })),
+
+/* ── catNoUpcoming  —  clé du modèle rendu  —  L6186–6186 ── */
+      catNoUpcoming: !catPool.some(o => o.kind === 'upcoming'),
+
+/* ── moreCatUp  —  clé du modèle rendu  —  L6192–6192 ── */
+      moreCatUp: pgCatUp.hasMore, moreCatUpLabel: mUp.label, loadMoreCatUp: mUp.go, loadingCatUp: pgCatUp.loading && !catOv,
+
+/* ── catShowUp  —  clé du modèle rendu  —  L6277–6277 ── */
+      catShowUp: catOv || s.catTab === 'up',
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (8) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2423  catUpcoming: "Prochaines dates"
+  EN L2876  catUpcoming: "Upcoming dates"
+
+  FR L2469  emptyCatUpcoming: "Aucune date à venir avec ces filtres"
+  EN L2922  emptyCatUpcoming: "No upcoming date with these filters"
+
+  FR L2597  p1020: "10–20 €"
+  EN L3050  p1020: "€10–20"
+
+  FR L2598  p2035: "20–35 €"
+  EN L3051  p2035: "€20–35"
+
+  FR L2599  p35: "> 35 €"
+  EN L3052  p35: "> €35"
+
+  FR L2600  pFree: "GRATUIT"
+  EN L3053  pFree: "FREE"
+
+  FR L2601  pU10: "< 10 €"
+  EN L3054  pU10: "< €10"
+
+  FR L2730  stReplay: "REDIFFUSION"
+  EN L3183  stReplay: "REPLAY"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

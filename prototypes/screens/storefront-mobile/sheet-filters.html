@@ -1,0 +1,271 @@
+<!--
+  Arthome · storefront mobile — sheet-filters
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : superposée · filtersOpen
+  Affiche    : Les filtres : disciplines, sous-genres, tranches de prix, fenêtre de date, statut, drapeaux.
+  Mène vers  : browse, category
+  Contrat    : GET /v1/search (paramètre filters)
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L2172–2196
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L2172–2196
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ sheetFilters }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeFiltersSheet }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
+<div style="{{ sheetBase }} background: #0B0A09; border-top: 1px solid #332E28; box-shadow: 0 -24px 60px rgba(0,0,0,0.6); animation: slideUp .26s cubic-bezier(.2,.7,.2,1) both;">
+  <div style="padding: 12px 0 6px; display: flex; justify-content: center;"><span style="width: 38px; height: 3px; background: #332E28;"></span></div>
+  <div style="padding: 6px 16px 14px; display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #1F1C19;">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ filtersHeadLabel }}</span>
+    <sc-if value="{{ hasAnyFilter }}" hint-placeholder-val="{{ false }}">
+      <span onClick="{{ clearFiltersHere }}" style="margin-left: auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73;">{{ t.clearAll }}</span>
+    </sc-if>
+  </div>
+  <div style="padding: 14px 16px 22px; display: flex; flex-direction: column; gap: 18px;">
+    <sc-for list="{{ filterGroups }}" as="fg" hint-placeholder-count="4">
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: {{ fg.color }};">{{ fg.title }}</div>
+        <div style="padding-top: 10px; display: flex; gap: 7px; flex-wrap: wrap;">
+          <sc-for list="{{ fg.chips }}" as="fc" hint-placeholder-count="5">
+            <span onClick="{{ fc.pick }}" style="{{ fc.style }}">{{ fc.label }}</span>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+    <span onClick="{{ closeFiltersSheet }}" style="cursor: pointer; padding: 14px; min-height: 44px; box-sizing: border-box;  text-align: center; background: #EDE7DC; color: #0B0A09; font-size: 13.5px; font-weight: 600;">{{ applyFiltersLabel }}</span>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (17 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── priceDefs  —  calcul dans renderReady()  —  L5338–5338 ── */
+    const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
+
+/* ── dateDefs  —  calcul dans renderReady()  —  L5339–5339 ── */
+    const dateDefs = [['tonight', t.dTonight], ['weekend', t.dWeekend], ['d7', t.d7], ['d30', t.d30], ['range', t.dRange]];
+
+/* ── statusDefs  —  calcul dans renderReady()  —  L5347–5347 ── */
+    const statusDefs = [['live', t.stLive], ['soon', t.stSoon], ['replay', t.stReplay]];
+
+/* ── expiryFilters  —  calcul dans renderReady()  —  L5499–5503 ── */
+    const expiryFilters = [{
+      label: t.expSoon,
+      pick: () => this.setState(st => ({ fExpiring: !st.fExpiring, shown: {} })),
+      style: CHIP + (s.fExpiring ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    }];
+
+/* ── catFilters  —  calcul dans renderReady()  —  L5504–5508 ── */
+    const catFilters = CAT_NAMES.map((name, i) => ({
+      label: name.toUpperCase(),
+      pick: () => this.setState(st => ({ fCats: st.fCats.indexOf(i) > -1 ? st.fCats.filter(x => x !== i) : st.fCats.concat([i]) })),
+      style: CHIP + (s.fCats.indexOf(i) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    }));
+
+/* ── priceFilters  —  calcul dans renderReady()  —  L5509–5513 ── */
+    const priceFilters = priceDefs.map(([k, label]) => ({
+      label,
+      pick: () => this.setState(st => ({ fPrices: st.fPrices.indexOf(k) > -1 ? st.fPrices.filter(x => x !== k) : st.fPrices.concat([k]) })),
+      style: CHIP + (s.fPrices.indexOf(k) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    }));
+
+/* ── dateFilters  —  calcul dans renderReady()  —  L5514–5518 ── */
+    const dateFilters = dateDefs.map(([k, label]) => ({
+      label,
+      pick: () => this.setState(st => ({ fDate: st.fDate === k ? 'all' : k })),
+      style: CHIP + (s.fDate === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    }));
+
+/* ── statusFilters  —  calcul dans renderReady()  —  L5519–5523 ── */
+    const statusFilters = statusDefs.map(([k, label]) => ({
+      label,
+      pick: () => this.setState(st => ({ fStatus: st.fStatus === k ? 'all' : k })),
+      style: CHIP + (s.fStatus === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    }));
+
+/* ── miscFilters  —  calcul dans renderReady()  —  L5524–5528 ── */
+    const miscFilters = [
+      { label: t.almostFull, on: s.fAlmost, toggle: () => this.setState(st => ({ fAlmost: !st.fAlmost })) },
+      { label: t.hasDates, on: s.fHasDates, toggle: () => this.setState(st => ({ fHasDates: !st.fHasDates })) },
+      { label: t.promoFilter, on: s.fPromo, toggle: () => this.setState(st => ({ fPromo: !st.fPromo })) }
+    ].map(o => ({ label: o.label, pick: o.toggle, style: CHIP + (o.on ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;') }));
+
+/* ── flags  —  calcul dans renderReady()  —  L5556–5556 ── */
+    const flags = [];
+
+/* ── catFilterCount  —  calcul dans renderReady()  —  L5574–5574 ── */
+    const catFilterCount = subsSel.length + s.cPrices.length + (s.cDate !== 'all' ? 1 : 0) + (s.cStatus !== 'all' ? 1 : 0) + (s.cAlmost ? 1 : 0) + (s.cPromo ? 1 : 0);
+
+/* ── catOv  —  calcul dans renderReady()  —  L5591–5591 ── */
+    const catOv = s.catTab === 'ov';
+
+/* ── activeFilterCount  —  calcul dans renderReady()  —  L5631–5631 ── */
+    const activeFilterCount = s.fCats.length + (s.fCats.length === 1 ? (s.fSubs || []).length : 0) + s.fPrices.length + (s.fDate !== 'all' ? 1 : 0) + (s.fStatus !== 'all' ? 1 : 0) + flags.length;
+
+/* ── filtersHeadLabel  —  clé du modèle rendu  —  L6299–6299 ── */
+      filtersHeadLabel: t.showFilters + (s.page === 'category' ? (catFilterCount ? ' · ' + catFilterCount : '') : (activeFilterCount ? ' · ' + activeFilterCount : '')),
+
+/* ── hasAnyFilter  —  clé du modèle rendu  —  L6300–6300 ── */
+      hasAnyFilter: s.page === 'category' ? catFilterCount > 0 : activeFilterCount > 0,
+
+/* ── clearFiltersHere  —  clé du modèle rendu  —  L6301–6303 ── */
+      clearFiltersHere: () => this.setState(s.page === 'category'
+        ? { subs: [], cPrices: [], cDate: 'all', cStatus: 'all', cAlmost: false, cPromo: false, cSort: 'auto', shown: {} }
+        : { fCats: [], fSubs: [], fPrices: [], fDate: 'all', fStatus: 'all', fAlmost: false, fHasDates: false, fExpiring: false, fPromo: false, shown: {} }),
+
+/* ── filterGroups  —  clé du modèle rendu  —  L6304–6340 ── */
+      filterGroups: (() => {
+        const g = [];
+        const add = (title, chips, on) => { if (on && chips.length) g.push({ title, chips }); };
+        if (s.page === 'category') {
+          add(t.subgenres, subgenres.map((sg, i) => ({
+            label: sg.label, pick: sg.pick,
+            style: CHIP + (subsSel.indexOf(i) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+          })), true);
+          add(t.fPrice, priceDefs.map(([k, label]) => ({
+            label, pick: () => this.setState(st => ({ cPrices: st.cPrices.indexOf(k) > -1 ? st.cPrices.filter(x => x !== k) : st.cPrices.concat([k]), shown: {} })),
+            style: CHIP + (s.cPrices.indexOf(k) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+          })), true);
+          add(t.fDate, dateDefs.filter(d => d[0] !== 'all').map(([k, label]) => ({
+            label, pick: () => this.setState(st => ({ cDate: st.cDate === k ? 'all' : k, shown: {} })),
+            style: CHIP + (s.cDate === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+          })), catOv || s.catTab === 'up');
+          add(t.fStatus, statusDefs.map(([k, label]) => ({
+            label, pick: () => this.setState(st => ({ cStatus: st.cStatus === k ? 'all' : k, shown: {} })),
+            style: CHIP + (s.cStatus === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+          })), catOv);
+          add(t.fMisc, [
+            { label: t.almostFull, on: s.cAlmost, pick: () => this.setState(st => ({ cAlmost: !st.cAlmost, shown: {} })) },
+            { label: t.promoFilter, on: s.cPromo, pick: () => this.setState(st => ({ cPromo: !st.cPromo, shown: {} })) }
+          ].map(o => ({
+            label: o.label, pick: o.pick,
+            style: CHIP + (o.on ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+          })), true);
+        } else {
+          add(t.fCats, catFilters, true);
+          add(t.fPrice, priceFilters, s.sTab !== 'artists');
+          add(t.fDate, dateFilters, s.sTab === 'best' || s.sTab === 'lives');
+          add(t.expiresIn, expiryFilters, s.sTab === 'replays');
+          add(t.fStatus, statusFilters, s.sTab === 'best');
+          add(t.fMisc, miscFilters, s.sTab !== 'replays');
+        }
+        return g;
+      })(),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (26) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2371  almostFull: "BIENTÔT COMPLET"
+  EN L2824  almostFull: "ALMOST SOLD OUT"
+
+  FR L2439  clearAll: "Tout effacer"
+  EN L2892  clearAll: "Clear all"
+
+  FR L2444  d30: "30 JOURS"
+  EN L2897  d30: "30 DAYS"
+
+  FR L2445  d7: "7 JOURS"
+  EN L2898  d7: "7 DAYS"
+
+  FR L2447  dRange: "PLAGE…"
+  EN L2900  dRange: "RANGE…"
+
+  FR L2448  dTonight: "CE SOIR"
+  EN L2901  dTonight: "TONIGHT"
+
+  FR L2449  dWeekend: "CE WEEK-END"
+  EN L2902  dWeekend: "THIS WEEKEND"
+
+  FR L2477  expSoon: "EXPIRE SOUS 90 H"
+  EN L2930  expSoon: "EXPIRES < 90H"
+
+  FR L2479  expiresIn: "EXPIRE DANS"
+  EN L2932  expiresIn: "EXPIRES IN"
+
+  FR L2482  fCats: "CATÉGORIES"
+  EN L2935  fCats: "CATEGORIES"
+
+  FR L2483  fDate: "DATE"
+  EN L2936  fDate: "DATE"
+
+  FR L2484  fMisc: "AUTRES"
+  EN L2937  fMisc: "OTHER"
+
+  FR L2485  fPrice: "TARIF"
+  EN L2938  fPrice: "PRICE"
+
+  FR L2486  fStatus: "STATUT"
+  EN L2939  fStatus: "STATUS"
+
+  FR L2510  hasDates: "A DES DATES"
+  EN L2963  hasDates: "HAS DATES"
+
+  FR L2597  p1020: "10–20 €"
+  EN L3050  p1020: "€10–20"
+
+  FR L2598  p2035: "20–35 €"
+  EN L3051  p2035: "€20–35"
+
+  FR L2599  p35: "> 35 €"
+  EN L3052  p35: "> €35"
+
+  FR L2600  pFree: "GRATUIT"
+  EN L3053  pFree: "FREE"
+
+  FR L2601  pU10: "< 10 €"
+  EN L3054  pU10: "< €10"
+
+  FR L2643  promoFilter: "TARIF RÉDUIT"
+  EN L3096  promoFilter: "REDUCED"
+
+  FR L2703  showFilters: "Filtres"
+  EN L3156  showFilters: "Filters"
+
+  FR L2729  stLive: "EN DIRECT"
+  EN L3182  stLive: "LIVE NOW"
+
+  FR L2730  stReplay: "REDIFFUSION"
+  EN L3183  stReplay: "REPLAY"
+
+  FR L2731  stSoon: "À VENIR"
+  EN L3184  stSoon: "UPCOMING"
+
+  FR L2754  subgenres: "SOUS-GENRES"
+  EN L3207  subgenres: "SUB-GENRES"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

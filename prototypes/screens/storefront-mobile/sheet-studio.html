@@ -1,0 +1,85 @@
+<!--
+  Arthome · storefront mobile — sheet-studio
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : superposée · studioOpen
+  Affiche    : L'annonce « Arthome Studio arrive » : purement éditorial, aucune donnée.
+  Mène vers  : —
+  Contrat    : —
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L2282–2293
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L2282–2293
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ studioOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeStudio }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
+<div style="{{ sheetBase }} background: #0B0A09; border-top: 1px solid #332E28; box-shadow: 0 -24px 60px rgba(0,0,0,0.6); animation: slideUp .26s cubic-bezier(.2,.7,.2,1) both;">
+  <div style="padding: 12px 0 6px; display: flex; justify-content: center;"><span style="width: 38px; height: 3px; background: #332E28;"></span></div>
+  <div style="padding: 6px 16px 24px;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: oklch(0.83 0.1 84);">{{ t.studioSoonNote }}</div>
+    <div style="padding-top: 11px; font-family: 'Instrument Serif', serif; font-size: 25px; line-height: 1.1;">{{ t.studioSoonTitle }}</div>
+    <div style="padding-top: 11px; font-size: 13px; line-height: 1.6; color: #9B948A; text-wrap: pretty;">{{ t.studioSoonBody }}</div>
+    <span onClick="{{ closeStudio }}" style="display: block; margin-top: 18px; cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  text-align: center; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2;">{{ t.studioSoonClose }}</span>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (2 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── studioOpen  —  clé du modèle rendu  —  L5833–5833 ── */
+      studioOpen: s.studioOpen,
+
+/* ── closeStudio  —  clé du modèle rendu  —  L5834–5834 ── */
+      closeStudio: () => this.setState({ studioOpen: false }),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (4) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2736  studioSoonBody: "La configuration du live — qualité, tchat, billetterie, boutique, modération — se fera dans Arthome Studio, qui s’ouvrira dans un nouvel onglet. Cet espace n’est pas encore conçu."
+  EN L3189  studioSoonBody: "Live setup — quality, chat, ticketing, store, moderation — will live in Arthome Studio, opening in a new tab. That space is not designed yet."
+
+  FR L2737  studioSoonClose: "Compris"
+  EN L3190  studioSoonClose: "Got it"
+
+  FR L2738  studioSoonNote: "PROCHAINE ÉTAPE DU PROJET"
+  EN L3191  studioSoonNote: "NEXT STEP OF THE PROJECT"
+
+  FR L2739  studioSoonTitle: "Le studio est un site à part"
+  EN L3192  studioSoonTitle: "The studio is a separate site"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

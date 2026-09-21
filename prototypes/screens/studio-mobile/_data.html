@@ -1,0 +1,568 @@
+<!--
+  PIÈCE        _data — tables, chargement et modèles de lecture
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  RÔLE         Ce qui alimente tous les écrans : les tables de vocabulaire, le chargement depuis shared/, et les fonctions qui remodèlent les fixtures en ce que chaque page attend.
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  —
+               modèle    L903-1083 (constantes et tables) · L1085-1087 (état) · L1092-1326 (modèles de lecture) · L1327-1411 (loadArthome) · L2254-2292 (équipe et créneaux)
+  NOTE         ⚠ loadArthome() résout helpers.js, fixtures.js, studio-data.js, catalogue.json, taxonomy.json et i18n/ RELATIVEMENT au fichier HTML : ils doivent être posés à côté (voir B4 de architecture/corrections-handoff.md). L'échec est avalé par le try : la maquette rend dégradé sans dire pourquoi.
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+/* ---- constantes, icônes, vocabulaires, table EN (L903-1083) ---- */
+const OK = 'oklch(0.72 0.14 155)';
+const WARN = 'oklch(0.78 0.13 75)';
+const LIVE = 'oklch(0.7 0.19 27)';
+const INFO = 'oklch(0.72 0.11 235)';
+const MUTE = 'oklch(0.72 0.12 300)';
+const RPL = 'oklch(0.75 0.13 42)';
+const INK2 = 'oklch(0.84 0.008 240)';
+const INK3 = 'oklch(0.68 0.011 240)';
+const DIM = 'oklch(0.52 0.012 245)';
+const MONO = "font-family: 'JetBrains Mono', monospace; ";
+
+/* Le jeu d'icônes en tracés : un attribut « d » est inerte tant que sa valeur
+   n'est pas résolue, alors qu'un « href » lié à un trou part en requête. */
+const ICON_PATH = {
+  "ic-account": "M8.6 8a3.4 3.4 0 1 0 6.8 0a3.4 3.4 0 1 0 -6.8 0z M5 20.6c0-3.9 3.1-6.3 7-6.3s7 2.4 7 6.3",
+  "ic-inbox": "M3 5h18v14h-18z M3 7.5l9 6 9-6",
+  "ic-dash": "M3 3h7.5v7.5h-7.5z M13.5 3h7.5v7.5h-7.5z M3 13.5h7.5v7.5h-7.5z M13.5 13.5h7.5v7.5h-7.5z",
+  "ic-agenda": "M3 5h18v16h-18z M3 10.5L21 10.5 M8 3L8 7 M16 3L16 7",
+  "ic-events": "M3 4h18v17h-18z M7 10L17 10 M7 14L17 14 M7 18L13 18",
+  "ic-crew": "M5.8 8.5a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0 -6.4 0z M3.2 20.5c0-3.2 2.6-5.2 5.8-5.2s5.8 2 5.8 5.2 M15.400000000000002 10a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0z M16.2 15.7c2.8-.3 4.8 1.7 4.8 4.8",
+  "ic-stream": "M9.6 12a2.4 2.4 0 1 0 4.8 0a2.4 2.4 0 1 0 -4.8 0z M7.8 7.8a6 6 0 000 8.4 M16.2 7.8a6 6 0 010 8.4 M4.6 4.6a10 10 0 000 14.8 M19.4 4.6a10 10 0 010 14.8",
+  "ic-regie": "M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0z M9.4 12a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0z",
+  "ic-mod": "M12 3l7.5 3.2v5.1c0 4.7-3.1 8.4-7.5 10.4-4.4-2-7.5-5.7-7.5-10.4V6.2z M9.4 12L14.6 12",
+  "ic-stats": "M3.5 13h4v7.5h-4z M10 8.5h4v12h-4z M16.5 4h4v16.5h-4z",
+  "ic-tickets": "M3 6.5h18v11h-18z M14.5 6.5L14.5 17.5",
+  "ic-store": "M4 8h16v12.5h-16z M9 8V6.2a3 3 0 016 0V8",
+  "ic-replays": "M3 5h18v14h-18z M10.2 9.2L16 12l-5.8 2.8z",
+  "ic-payouts": "M3 6h18v12h-18z M9.4 12a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0z",
+  "ic-journal": "M5 3h14v18h-14z M8.5 8L15.5 8 M8.5 12L15.5 12 M8.5 16L12.5 16",
+  "ic-settings": "M3 8L21 8 M6.4 8a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0z M3 16L21 16 M12.4 16a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0z",
+  "ic-help": "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0z",
+  "ic-event": "M4 3h16v18h-16z M6.799999999999999 8a1.4 1.4 0 1 0 2.8 0a1.4 1.4 0 1 0 -2.8 0z M11.5 8L16 8 M8 13L16 13 M8 17L13 17",
+  "ic-wizard": "M12 4L12 20 M4 12L20 12",
+  "ic-more": "M3.8 12a1.7 1.7 0 1 0 3.4 0a1.7 1.7 0 1 0 -3.4 0z M10.3 12a1.7 1.7 0 1 0 3.4 0a1.7 1.7 0 1 0 -3.4 0z M16.8 12a1.7 1.7 0 1 0 3.4 0a1.7 1.7 0 1 0 -3.4 0z",
+  "ic-swap": "M4 8.5h13l-3.4-3.4 M20 15.5H7l3.4 3.4"
+};
+const iconPath = (ref) => ICON_PATH[String(ref || '').replace('#', '')] || '';
+
+const STATES = {
+  draft:  ['BROUILLON', 'oklch(0.62 0.012 240)'],
+  hidden: ['EN RÉSERVE', WARN],
+  sched:  ['PROGRAMMÉ', OK],
+  tech:   ['TESTS TECHNIQUES', INFO],
+  live:   ['EN DIRECT', LIVE],
+  done:   ['TERMINÉ', DIM],
+  replay: ['REDIFFUSION EN LIGNE', RPL]
+};
+const STATE_ORDER = ['draft', 'hidden', 'sched', 'tech', 'live', 'done', 'replay'];
+const STATE_LOCKED = {
+  'draft>sched':  'La publication engage le tarif affiché : elle ne se retire pas.',
+  'hidden>sched': 'La publication engage le tarif affiché : elle ne se retire pas.',
+  'done>replay':  'Des spectateurs ont payé pour la rediffusion : elle ne se désactive pas.'
+};
+const VOIDS = {
+  cancel: ['ANNULÉE ET REMBOURSÉE', LIVE],
+  report: ['REPORTÉE · PLACES VALABLES', LIVE],
+  credit: ['INTERROMPUE · AVOIRS ÉMIS', LIVE]
+};
+
+const ROLES = {
+  artist: ['ARTISTE · PROPRIÉTAIRE', INK2],
+  prod:   ['PRODUCTION', INFO],
+  regie:  ['RÉGIE', 'oklch(0.7 0.012 240)'],
+  mod:    ['MODÉRATION', MUTE],
+  coord:  ['COORDINATION', WARN],
+  tres:   ['TRÉSORERIE', OK]
+};
+const SHORT = { artist: 'Artiste', prod: 'Production', regie: 'Régie', mod: 'Modération', coord: 'Coordination', tres: 'Trésorerie' };
+let GRANTS = {};
+const ACCESS = {
+  artist: ['dashboard', 'events', 'stream', 'crew', 'stats', 'tickets', 'store', 'replays', 'payouts', 'journal', 'settings', 'help'],
+  prod:   ['dashboard', 'events', 'stream', 'crew', 'stats', 'tickets', 'store', 'replays', 'journal', 'help'],
+  regie:  ['agenda', 'events', 'stream', 'replays', 'help'],
+  mod:    ['agenda', 'moderation', 'help'],
+  coord:  ['crew', 'journal', 'help'],
+  tres:   ['dashboard', 'stats', 'tickets', 'payouts', 'journal', 'help']
+};
+const FREE = {
+  artist: ['event', 'wizard', 'regie'],
+  prod:   ['event', 'wizard', 'regie'],
+  regie:  ['event', 'regie'],
+  coord:  [], mod: [], tres: []
+};
+const ORDER = ['agenda', 'dashboard', 'moderation', 'crew', 'events', 'stream', 'stats', 'tickets', 'store', 'replays', 'payouts', 'journal', 'settings', 'help'];
+const PAGE_META = {
+  agenda:     ['Mes dates', '#ic-agenda'],
+  dashboard:  ['Tableau de bord', '#ic-dash'],
+  moderation: ['Modération', '#ic-mod'],
+  crew:       ['Planning et équipe', '#ic-crew'],
+  events:     ['Événements', '#ic-events'],
+  stream:     ['Diffusion', '#ic-stream'],
+  stats:      ['Statistiques', '#ic-stats'],
+  tickets:    ['Billetterie', '#ic-tickets'],
+  store:      ['Boutique', '#ic-store'],
+  replays:    ['Rediffusions', '#ic-replays'],
+  payouts:    ['Versements', '#ic-payouts'],
+  journal:    ['Journal', '#ic-journal'],
+  settings:   ['Réglages de la chaîne', '#ic-settings'],
+  help:       ['Aide et guides', '#ic-help'],
+  regie:      ['Régie', '#ic-regie'],
+  event:      ['Fiche de la date', '#ic-event'],
+  wizard:     ['Nouvelle date', '#ic-wizard'],
+  inbox:      ['Boîte', '#ic-inbox']
+};
+const TAB_PREF = {
+  artist: ['dashboard', 'events', 'crew', 'tickets'],
+  prod:   ['dashboard', 'events', 'crew', 'stream'],
+  regie:  ['agenda', 'stream', 'regie', 'events'],
+  mod:    ['agenda', 'moderation', 'help'],
+  coord:  ['crew', 'journal', 'help'],
+  tres:   ['dashboard', 'payouts', 'tickets', 'stats']
+};
+const TAB_SHORT = {
+  dashboard: 'Bord', events: 'Dates', crew: 'Équipe', agenda: 'Mes dates', stream: 'Diffusion',
+  regie: 'Régie', moderation: 'Modér.', journal: 'Journal', payouts: 'Versements',
+  tickets: 'Billets', stats: 'Stats', help: 'Aide', store: 'Boutique', replays: 'Rediff.'
+};
+const CHAT_MODES = [['free', 'Libre'], ['emoji', 'Emojis et phrases préparées'], ['read', 'Lecture seule'], ['off', 'Coupé']];
+const CHAT_FROM_PROP = { 'libre': 'free', 'emojis et phrases préparées': 'emoji', 'lecture seule': 'read', 'coupé': 'off' };
+const CHAT_SHORT = { free: 'LIBRE', emoji: 'ENCADRÉ', read: 'LECTURE SEULE', off: 'COUPÉ' };
+
+let ZONES = {};
+let CHAN_ZONE = {};
+/* une heure de salle, rendue dans le fuseau de qui la lit */
+const shiftTime = (hhmm, from, to) => {
+  const zf = ZONES[from] || ZONES['Europe/Paris'];
+  const zt = ZONES[to] || zf;
+  const d = zt[1] - zf[1];
+  if (!d) return null;
+  const m = String(hhmm).match(/(\d{1,2})[:hH](\d{2})/);
+  if (!m) return null;
+  let h = (parseInt(m[1], 10) + d) % 24;
+  if (h < 0) h += 24;
+  const day = parseInt(m[1], 10) + d;
+  return {
+    time: (h < 10 ? '0' : '') + h + 'h' + m[2],
+    abbr: zt[0],
+    shift: day >= 24 ? ' le lendemain' : (day < 0 ? ' la veille' : '')
+  };
+};
+
+const U = id => 'https://images.unsplash.com/' + id + '?auto=format&fit=crop&w=900&q=70';
+const IMG = {
+  ballet: U('photo-1547153760-18fc86324498'),
+  curtain: U('photo-1503095396549-807759245b35'),
+  smoke: U('photo-1514525253161-7a46d19cd819'),
+  hall: U('photo-1580809361436-42a7ec204889')
+};
+let CHAN_IMG = {};
+
+let CHAN_SETS = {};
+
+let ROSTER = {};
+let DIRECTORY = [];
+
+let CHAN_DATES = {};
+
+/* invitations reçues : une seule table, lue par la boîte et par le sélecteur de chaînes */
+/* Renseigné au chargement depuis l'annuaire : les invitations en attente
+   nomment des personnes réelles, jamais une table figée. */
+let INV_DEFS = [];
+
+let MOD_CTX = {};
+let LIVE_CHAT = {};
+let AUDIENCE = {};
+
+const EN = {
+  'Mes dates': 'My dates', 'Tableau de bord': 'Dashboard', 'Modération': 'Moderation',
+  'Planning et équipe': 'Schedule & crew', 'Événements': 'Events', 'Diffusion': 'Streaming',
+  'Statistiques': 'Analytics', 'Billetterie': 'Ticketing', 'Boutique': 'Store',
+  'Rediffusions': 'Replays', 'Versements': 'Payouts', 'Journal': 'Activity log',
+  'Réglages de la chaîne': 'Channel settings', 'Aide et guides': 'Help & guides',
+  'Boîte': 'Inbox', 'Régie': 'Live desk', 'Fiche de la date': 'Event record', 'Nouvelle date': 'New date',
+  'Bord': 'Home', 'Dates': 'Dates', 'Équipe': 'Crew', 'Plus': 'More',
+  'ARTISTE · PROPRIÉTAIRE': 'ARTIST · OWNER', 'PRODUCTION': 'PRODUCTION', 'RÉGIE': 'TECHNICAL',
+  'MODÉRATION': 'MODERATION', 'COORDINATION': 'COORDINATION', 'TRÉSORERIE': 'FINANCE',
+  'BROUILLON': 'DRAFT', 'EN RÉSERVE': 'HELD BACK', 'PROGRAMMÉ': 'SCHEDULED',
+  'TESTS TECHNIQUES': 'TECH REHEARSAL', 'EN DIRECT': 'LIVE', 'TERMINÉ': 'ENDED',
+  'REDIFFUSION EN LIGNE': 'REPLAY ONLINE'
+};
+
+
+/* ---- état initial du composant (L1085-1087) ---- */
+  state = { dataReady: false, dataError: null, page: null, chan: 0, now: Date.now(), sheet: null, period: '30j', rangeFrom: '01/06/2026', rangeTo: '03/09/2026' };
+
+  // Les données viennent de fixtures.js par studio-data.js : une seule source
+
+/* ---- modèles de lecture par chaîne (L1092-1326) ---- */
+  metricsOf(channelName) {
+    const A = this.A, D = this.data;
+    const empty = { sold: 0, available: 0, waitlist: 0, gross: 0, commission: 0, vat: 0, net: 0,
+      paid: 0, held: 0, tiers: [], dates: [], rate: 12, merch: 0, viewers: 0 };
+    if (!A || !D) return empty;
+    const channel = (D.cited || D.channels).filter(c => c.name === channelName)[0];
+    if (!channel) return empty;
+    const dates = channel.dates.map(id => A.date(id)).filter(Boolean).sort((a, b) => a.startOffsetMin - b.startOffsetMin);
+    const bal = A.balanceOf(channel) || {};
+    const tiers = {};
+    let sold = 0, available = 0, waitlist = 0;
+    dates.forEach(d => {
+      sold += d.seats.sold || 0; available += d.seats.available; waitlist += d.seats.waitlist;
+      d.prices.forEach(p => {
+        const key = p.tier;
+        tiers[key] = tiers[key] || { tier: key, label: A.enumLabel('priceTier', key), amount: p.amount, count: 0 };
+        tiers[key].count += p.sold || 0;
+      });
+    });
+    return {
+      sold, available, waitlist,
+      gross: bal.gross || 0, commission: bal.commission || 0, vat: bal.vat || 0,
+      net: (bal.paid || 0) + (bal.scheduled || 0), paid: bal.paid || 0,
+      scheduled: bal.scheduled || 0, held: bal.held || 0,
+      rate: bal.gross ? Math.round((bal.commission / bal.gross) * 100) : 12,
+      merch: channel.shows.reduce((n, id) => n + A.merchOf(id).reduce((m, x) => m + x.sold * x.price, 0), 0),
+      merchItems: channel.shows.reduce((acc, id) => acc.concat(A.merchOf(id)), []),
+      viewers: dates.reduce((n, d) => n + Math.max(d.viewers || 0, d.seats.sold || 0) + (d.replayViews || 0), 0),
+      tiers: Object.keys(tiers).map(k => tiers[k]),
+      dates
+    };
+  }
+
+  // Journal d'une chaîne : les actes réels, du plus récent au plus ancien.
+  journalOf(c) {
+    const A = this.A;
+    if (!A || !c || !c.M) return [];
+    const out = [];
+    const when = (min) => A.dayLabel(min) + ' ' + A.clock(min);
+    const owner = (ROSTER[c.chan.name] || [[]])[0][0] || c.chan.name;
+    c.M.dates.forEach(d => {
+      const show = A.show(d.show), pub = A.publicationOf(d), pay = A.payoutOf(d);
+      if (pub) out.push(['ÉVÉNEMENT', owner, 'a publié ' + A.title(show),
+        'tarif engagé à ' + A.price(d.prices[0].amount), when(pub.publishedAtOffsetMin), 'event', pub.publishedAtOffsetMin]);
+      if (pay && pay.gross > 0) out.push(['ARGENT', owner, 'a demandé le versement de ' + A.title(show),
+        A.price(pay.net) + ' · ' + A.payoutLabel(d), when(pay.dueOffsetMin), 'money', pay.dueOffsetMin]);
+      A.moderationOf(d).slice(0, 2).forEach(m => {
+        const who = m.handledBy ? (A.person(m.handledBy) || {}).name : null;
+        out.push(['MODÉRATION', who || 'Filtre automatique',
+          'a ' + A.enumLabel('moderationState', m.state).toLowerCase() + ' un message',
+          A.enumLabel('moderationReason', m.reason), when(d.startOffsetMin + m.atMin), 'mod', d.startOffsetMin + m.atMin]);
+      });
+      A.crewOf(d).slice(0, 1).forEach(cr => {
+        out.push(['ACCÈS', owner, 'a affecté ' + cr.name + ' à la ' + A.roleLabel(cr.role).toLowerCase(),
+          A.title(show), when(d.startOffsetMin - 1440), 'access', d.startOffsetMin - 1440]);
+      });
+    });
+    return out.sort((a, b) => b[6] - a[6]).slice(0, 12).map(r => r.slice(0, 6));
+  }
+
+  // Rediffusions d'une chaîne : en ligne, archivées, vues, recette, chapitres.
+  replaysOf(c) {
+    const A = this.A;
+    const empty = { online: [], views: 0, revenue: 0, expiring: [], rows: [], chapters: [], chapterOf: '' };
+    if (!A || !c || !c.M) return empty;
+    const dates = c.M.dates;
+    const online = dates.filter(d => A.stateOf(d) === 'replay');
+    const past = dates.filter(d => A.stateOf(d) === 'ended');
+    const POLICY = { included: ['INCLUSE', RPL], subscription: ['ABONNEMENT', INFO], unit: ['À L’UNITÉ', RPL], none: ['AUCUNE', INK3] };
+    const rowOf = (d, expired) => {
+      const show = A.show(d.show);
+      const pol = POLICY[d.replayPolicy] || POLICY.included;
+      const left = expired ? 0 : A.replayHoursLeft(d);
+      const views = d.replayViews || 0;
+      const unit = d.replayPolicy === 'unit' ? Math.round(d.prices[0].amount * 0.4) : 0;
+      return {
+        label: A.title(show) + ' · ' + A.dayLabel(d.startOffsetMin),
+        hint: [A.replayLabel(d), unit ? A.price(unit) : null,
+          expired ? 'fenêtre close' : (left ? 'expire dans ' + left + ' h' : 'sans expiration'),
+          A.number(views) + ' vues'].filter(Boolean).join(' · '),
+        pill: expired ? 'EXPIRÉE' : pol[0], pillColor: expired ? INK3 : pol[1],
+        value: c.canRevenue ? A.price(unit * views) : A.number(views)
+      };
+    };
+    const first = online[0] || past[0] || null;
+    const run = first ? A.runOf(first) : null;
+    return {
+      online,
+      views: dates.reduce((n, d) => n + (d.replayViews || 0), 0),
+      revenue: online.reduce((n, d) => n + (d.replayPolicy === 'unit' ? Math.round(d.prices[0].amount * 0.4) * (d.replayViews || 0) : 0), 0),
+      expiring: online.filter(d => A.replayHoursLeft(d) && A.replayHoursLeft(d) < 48)
+        .map(d => ({ title: A.title(A.show(d.show)), hours: A.replayHoursLeft(d) })),
+      rows: online.map(d => rowOf(d, false)).concat(past.map(d => rowOf(d, true))),
+      chapters: run && run.chapters ? run.chapters.map(ch => ({ label: A.chapterLabel(ch), value: A.timecode(ch.atMin * 60) })) : [],
+      chapterOf: first ? A.title(A.show(first.show)) + ' · ' + A.dayLabel(first.startOffsetMin) : ''
+    };
+  }
+
+  // Identité publique d'une chaîne : adresse, discipline et ville, dérivées de
+  // l'artiste et de la salle où il joue — jamais d'un nom écrit en dur.
+  // Journal des accès : les affectations réellement posées sur les dates.
+  accessLogOf(channelName) {
+    const A = this.A, D = this.data;
+    if (!A || !D) return [];
+    const channel = (D.cited || D.channels).filter(c => c.name === channelName)[0];
+    if (!channel) return [];
+    const SHORT = { artist: 'artist', production: 'prod', coordination: 'coord',
+      director: 'regie', video: 'regie', sound: 'regie', moderation: 'mod', treasury: 'tres' };
+    /* Qui invite : la production ou la coordination si la chaîne en a une,
+       sinon le propriétaire. Une compagnie ne s'affecte pas elle-même. */
+    const inviter = channel.members.filter(m => m.role === 'production' || m.role === 'coordination')[0]
+      || channel.members.filter(m => m.canInvite && m.role !== 'artist')[0]
+      || channel.members.filter(m => m.role !== 'artist')[0]
+      || channel.members[0] || { name: channel.name };
+    /* Un journal ne consigne que le passé : l'affectation est datée du moment
+       où la date a été publiée, jamais de son lever de rideau à venir. */
+    const rows = [];
+    channel.dates.map(id => A.date(id)).filter(Boolean).forEach(d => {
+      const pub = A.publicationOf(d);
+      const at = pub ? pub.publishedAtOffsetMin : d.startOffsetMin - 1440;
+      if (at >= 0) return;
+      const title = A.title(A.show(d.show));
+      A.crewOf(d).forEach(cr => {
+        const person = cr.person ? A.person(cr.person) : null;
+        rows.push({
+          at,
+          who: inviter.name,
+          what: 'a affecté ' + cr.name + ' à la ' + A.roleLabel(cr.role).toLowerCase() + ' de ' + title,
+          how: person && person.freelance ? 'accès ponctuel · expire au tomber du rideau' : 'accès permanent',
+          role: SHORT[cr.role] || 'regie'
+        });
+      });
+    });
+    channel.members.slice(1, 3).forEach(mb => {
+      rows.push({
+        at: -mb.joinedDaysAgo * 1440,
+        who: inviter.name,
+        what: 'a donné le rôle ' + A.roleLabel(mb.role) + ' à ' + mb.name,
+        how: 'accès permanent',
+        role: SHORT[mb.role] || 'coord'
+      });
+    });
+    /* Du plus récent au plus ancien, sur l'horodatage lui-même. */
+    return rows.sort((a, b) => b.at - a.at).slice(0, 6);
+  }
+
+
+  // Accès ponctuels : les indépendants affectés à une date de la chaîne.
+  guestsOf(channelName) {
+    const A = this.A, D = this.data;
+    if (!A || !D) return [];
+    const channel = (D.cited || D.channels).filter(c => c.name === channelName)[0];
+    if (!channel) return [];
+    const SHORT = { director: 'regie', video: 'regie', sound: 'regie', moderation: 'mod',
+      production: 'prod', coordination: 'coord', treasury: 'tres', artist: 'artist' };
+    const out = [];
+    channel.dates.map(id => A.date(id)).filter(Boolean).forEach((d, di) => {
+      A.crewOf(d).forEach(cr => {
+        const person = cr.person ? A.person(cr.person) : null;
+        if (!person || !person.freelance || out.some(g => g.name === person.name)) return;
+        out.push({
+          name: person.name,
+          initials: person.initials || person.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(),
+          roleKey: SHORT[cr.role] || 'regie', dateIdx: di,
+          mail: '@' + person.id.replace('person:', '')
+        });
+      });
+    });
+    return out;
+  }
+
+  identityOf(channelName) {
+    const A = this.A, D = this.data;
+    const fallback = { name: channelName, url: 'arthome.fr', discipline: '', city: '' };
+    if (!A || !D) return fallback;
+    const channel = (D.cited || D.channels).filter(x => x.name === channelName)[0];
+    if (!channel) return fallback;
+    const artist = A.artist(channel.artist);
+    const date = channel.dates.map(id => A.date(id)).filter(Boolean)[0];
+    const venue = date ? A.venue(date.venue) : null;
+    const show = date ? A.show(date.show) : null;
+    const gen = show && show.genre ? A.genre(show.category, show.genre) : null;
+    return {
+      name: channel.name,
+      url: 'arthome.fr/' + channel.artist,
+      discipline: [A.label(A.category(artist.category)), gen ? A.label(gen) : null].filter(Boolean).join(' · '),
+      city: venue ? venue.city : ''
+    };
+  }
+
+  agendaOf(channelName) {
+    const A = this.A, D = this.data;
+    if (!A || !D) return [];
+    const channel = (D.cited || D.channels).filter(c => c.name === channelName)[0];
+    if (!channel) return [];
+    const MONTHS = ['janv.', 'févr.', 'mars', 'avril', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const DAYS = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+    const rows = channel.dates.map(id => A.date(id)).filter(Boolean).map(d => {
+      const show = A.show(d.show), venue = A.venue(d.venue), at = A.dateAt(d.startOffsetMin);
+      const st = A.stateOf(d);
+      const sold = Math.max(0, venue.capacity - d.seats.available);
+      return [
+        DAYS[at.getDay()] + ' ' + at.getDate() + ' ' + MONTHS[at.getMonth()],
+        A.clock(d.startOffsetMin).replace(' h ', ':').replace(' h', ':00'),
+        A.title(show),
+        d.outcome ? 'done' : st === 'live' ? 'live' : st === 'replay' ? 'replay' : st === 'ended' ? 'done' : 'sched',
+        sold, venue.capacity, d.prices[0].amount,
+        /* « En réserve » = retenue avant publication, pas « complet ». */
+        (A.publicationOf(d) || {}).state === 'reserve',
+        [A.label(A.category(show.category)), A.duration(show.runtimeMin)].join(' · ').toLocaleUpperCase('fr-FR'),
+        A.duration(show.runtimeMin),
+        true, true,
+        Math.max(0, -d.startOffsetMin), A.showImage(show, 900), d.id,
+        (A.payoutOf(d) || { gross: 0 }).gross
+      ];
+    });
+    /* Les projets retenus avant publication rejoignent l'agenda : une date en
+       réserve doit se voir là où la chaîne lit son calendrier. */
+    (A.draftsOf(channel) || []).filter(x => x.state === 'reserve').forEach(x => {
+      const show = A.show(x.show), venue = A.venue(x.venue);
+      if (!show || !venue) return;
+      const at = A.dateAt(x.intendedStartOffsetMin);
+      rows.push([
+        DAYS[at.getDay()] + ' ' + at.getDate() + ' ' + MONTHS[at.getMonth()],
+        A.clock(x.intendedStartOffsetMin).replace(' h ', ':').replace(' h', ':00'),
+        A.title(show), 'hidden', 0, venue.capacity, 0, true,
+        [A.label(A.category(show.category)), A.duration(show.runtimeMin)].join(' · ').toLocaleUpperCase('fr-FR'),
+        A.duration(show.runtimeMin), true, true,
+        x.intendedStartOffsetMin, A.showImage(show, 900), x.id, 0
+      ]);
+    });
+    const rank = (r) => r[3] === 'live' ? 0 : (r[12] > 0 ? 2 : 1);
+    return rows.sort((a, b) => rank(a) - rank(b) || (rank(a) === 2 ? b[12] - a[12] : a[12] - b[12]));
+  }
+
+
+/* ---- chargement de la couche de données (L1327-1411) ---- */
+  async loadArthome() {
+    try {
+      const at = (p) => new URL(p, document.baseURI).href;
+      const [helpers, fixtures, bridge] = await Promise.all([
+        import(at('helpers.js')), import(at('fixtures.js')), import(at('studio-data.js'))
+      ]);
+      const get = async (p) => {
+        const res = await fetch(at(p));
+        if (!res.ok) throw new Error(p + ' (' + res.status + ')');
+        return res.json();
+      };
+      const [catalogue, taxonomy, index] = await Promise.all([get('catalogue.json'), get('taxonomy.json'), get('i18n/index.json')]);
+      const strings = await Promise.all(index.files.map(f => get('i18n/' + f.file)));
+      const fx = fixtures.buildFixtures({ catalogue, taxonomy });
+      const A = helpers.createArthome({
+        taxonomy, fixtures: fx, strings, locales: index.locales, i18nFormat: index,
+        locale: (this.props.lang || 'fr')
+      });
+      const D = bridge.buildStudioData(A, fx);
+      DIRECTORY = D.directory; ZONES = D.zones; GRANTS = D.grants;
+      ROSTER = D.roster; AUDIENCE = D.audience;
+      /* Le pont rend des messages en objets ; cette surface les lit en colonnes
+         [pseudo, texte, heure, état]. Conversion unique, ici. */
+      LIVE_CHAT = {};
+      Object.keys(D.liveChat || {}).forEach(name => {
+        LIVE_CHAT[name] = (D.liveChat[name] || []).map(m =>
+          Array.isArray(m) ? m : [m.user, m.text, m.time, m.state]);
+      });
+      // Le mobile nomme ses colonnes autrement : [nom, rôle, antenne, propriétaire].
+      CHAN_SETS = {};
+      Object.keys(D.chanSets).forEach(k => {
+        CHAN_SETS[k] = D.chanSets[k].map(([name, img, roleKey, isLive, own]) => [name, roleKey, isLive, own]);
+      });
+      CHAN_ZONE = D.channelZone;
+      CHAN_IMG = {}; CHAN_DATES = {}; MOD_CTX = {};
+      (D.cited || D.channels).forEach(c => {
+        const dates = c.dates.map(id => A.date(id)).filter(Boolean).sort((a, b) => a.startOffsetMin - b.startOffsetMin);
+        const first = dates.map(d => A.show(d.show)).filter(Boolean)[0];
+        CHAN_IMG[c.name] = first ? A.showImage(first, 900) : '';
+        CHAN_DATES[c.name] = dates.slice(0, 3).map(d => {
+          const show = A.show(d.show);
+          const st = A.stateOf(d);
+          return [A.title(show), A.dayLabel(d.startOffsetMin),
+            A.clock(d.startOffsetMin).replace(' h ', ':').replace(' h', ':00'),
+            st === 'live' ? 'live' : st === 'replay' ? 'replay' : st === 'ended' ? 'done' : 'sched',
+            A.duration(show.runtimeMin)];
+        });
+        const live = dates.filter(d => A.isOnAir(d))[0];
+        MOD_CTX[c.name] = live ? {
+          show: A.title(A.show(live.show)), viewers: live.viewers,
+          rate: Math.max(1, Math.round(A.chatOf(live).length / Math.max(1, -live.startOffsetMin / 60))),
+          queue: A.moderationOf(live).filter(m => m.state === 'reported').slice(0, 5).map(m => {
+            const msg = A.messageById(m.message);
+            return [(msg && (A.viewerOf(msg) || {}).handle) || (msg || {}).author || '',
+              msg ? A.chatText(msg) : '',
+              A.enumLabel('moderationReason', m.reason).toLocaleUpperCase('fr-FR'),
+              A.clock(live.startOffsetMin + m.atMin), null];
+          }),
+          sanctions: A.moderationOf(live).filter(m => m.state === 'muted' || m.state === 'banned').slice(0, 4).map(m => {
+            const msg = A.messageById(m.message);
+            return [(msg && (A.viewerOf(msg) || {}).handle) || '',
+              A.enumLabel('moderationState', m.state).toLocaleUpperCase('fr-FR'),
+              A.enumLabel('moderationReason', m.reason),
+              A.clock(live.startOffsetMin + m.atMin)];
+          })
+        } : { show: dates[0] ? A.title(A.show(dates[0].show)) : '', viewers: 0, rate: 0, queue: [], sanctions: [] };
+      });
+      this.A = A; this.fx = fx; this.data = D;
+      /* Invitations en attente : des indépendants de l'annuaire, proposés par
+         d'autres chaînes que celle qu'on regarde. */
+      const others = D.cited || D.channels;
+      INV_DEFS = (D.directory || []).slice(0, 3).map((row, i) => {
+        const other = others[(i + 1) % others.length];
+        const date = other ? A.date(other.dates[0]) : null;
+        return ['iv' + (i + 1), other ? other.name : '', row[0], row[4] === 'mod' ? 'mod' : 'regie',
+          date ? 'date' : 'perm',
+          date ? A.title(A.show(date.show)) + ' — ' + A.dayLabel(date.startOffsetMin) + ' ' + A.clock(date.startOffsetMin) : '',
+          'il y a ' + (i + 1) + ' jours', date ? 'expire à la date' : 'expire dans 6 jours'];
+      });
+      this.setState({ dataReady: true, dataError: null });
+    } catch (e) {
+      this.setState({ dataReady: false, dataError: String(e && e.message || e) });
+    }
+  }
+
+
+/* ---- équipe, dates et créneaux (L2254-2292) ---- */
+  crewRoster(c) {
+    const s = this.state;
+    const gone = s.crewGone || {};
+    const set = s.roleSet || {};
+    return (ROSTER[c.chan.name] || [])
+      .map(([name, initials, mail, rk, note, online]) => {
+        const base = set[name] ? set[name].slice() : (rk ? [rk] : []);
+        return {
+          name, initials, mail, note, online, pending: false,
+          roleKeys: base.concat(name === c.me.name ? c.roles : []).filter((v, i, a) => a.indexOf(v) === i)
+        };
+      })
+      .concat((s.crewInvites || []).filter(i => i.chan === c.chan.name).map(i => ({
+        name: i.name, initials: i.initials, mail: i.mail, note: 'Invitation envoyée · en attente', online: false, pending: true, roleKeys: [i.roleKey]
+      })))
+      .filter(m => !gone[m.name]);
+  }
+
+  crewDates(c) {
+    return c.evDefs.map((r, i) => [r, i]).filter(([r, i]) => ['done', 'replay', 'draft'].indexOf(c.stateAt(i)) < 0).slice(0, 6);
+  }
+
+  /* un poste peut être tenu à plusieurs : deux régisseurs, deux modérateurs */
+  holdersOf(c, di, rk) {
+    const a = this.state.assign || {};
+    const key = di + '|' + rk;
+    if (a[key] !== undefined) return a[key] || [];
+    const able = this.crewRoster(c).filter(m => m.roleKeys.indexOf(rk) > -1 && !m.pending);
+    /* de quoi éprouver le cumul : la première date à trois, la troisième à deux, une sur deux vacante */
+    const n = [3, 0, 2, 0, 1, 2][di % 6];
+    return able.slice(0, n).map(m => m.name);
+  }
+
+  toggleSlot(c, di, rk, name) {
+    const cur = this.holdersOf(c, di, rk);
+    const next = cur.indexOf(name) > -1 ? cur.filter(x => x !== name) : cur.concat([name]);
+    this.setState(st => ({ assign: Object.assign({}, st.assign, { [di + '|' + rk]: next }) }));
+  }
+
+</script>

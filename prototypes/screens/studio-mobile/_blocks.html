@@ -1,0 +1,528 @@
+<!--
+  PIÈCE        _blocks — le balisage générique et ses fabriques
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  RÔLE         Les quinze sections que TOUS les écrans pilotent par leur modèle de vue : bande d'indicateurs, sous-onglets, filtres, panneau de décision, note, recherche, actions, tchat, formulaire, matrice, barres, anneau, blocs, « voir plus », pied de page.
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  L475-810
+               modèle    L1499-1518 (pill, btn, chip) · L1523-1556 (rows, stats, block) · L2160-2253 (parts, pager, fld, barsOf, donutOf) · L2293-2303 (tabStrip, act)
+  NOTE         Douze des dix-huit pages n'ont AUCUN balisage propre : elles n'existent que par ce fichier et par leur modèle de vue. C'est pourquoi il n'est recopié qu'ici, et référencé ailleurs.
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+<!--
+  Correspondance clé de modèle de vue -> section de balisage :
+    band        -> hasBand        L475-485      form     -> hasForm        L610-648
+    pageTabs    -> hasTabs        L487-495      matrix   -> hasMatrix      L650-686
+    filters     -> hasFilters     L497-505      bars     -> hasBars        L688-706
+    panel       -> hasPanel       L509-553      donut    -> hasDonut       L708-729
+    note        -> hasNote        L555-557      blocks   -> hasBlocks      L731-791
+    hasSearch   -> hasSearch      L559-567      more     -> hasMore        L795-806
+    actions     -> hasActions     L569-575      footer   -> hasFooterAct   L808-810
+    chatRows    -> hasChat        L577-608
+-->
+
+<!-- ======================== BALISAGE ======================== -->
+    <sc-if value="{{ hasBand }}" hint-placeholder-val="{{ false }}">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1D2126; border: 1px solid #23272C;">
+        <sc-for list="{{ band }}" as="k" hint-placeholder-count="4">
+          <div style="background: #121417; padding: 10px 11px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">{{ k.label }}</div>
+            <div style="{{ k.valueStyle }}">{{ k.value }}</div>
+            <div style="padding-top: 2px; font-size: 10.5px; line-height: 1.35; color: #5B636B; text-wrap: pretty;">{{ k.hint }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasTabs }}" hint-placeholder-val="{{ false }}">
+      <div style="position: relative; padding-top: 10px;">
+        <div data-strip="1" style="display: flex; gap: 6px; overflow-x: auto; padding: 1px 0;">
+          <sc-for list="{{ pageTabs }}" as="t" hint-placeholder-count="4">
+            <span data-chip="1" onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }}<sc-if value="{{ t.badge }}" hint-placeholder-val="{{ false }}"><span style="{{ t.badgeStyle }}">{{ t.badge }}</span></sc-if></span>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasFilters }}" hint-placeholder-val="{{ false }}">
+      <div style="position: relative; padding-top: 8px;">
+        <div data-strip="1" style="display: flex; gap: 6px; overflow-x: auto; padding: 1px 0;">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+            <span data-chip="1" onClick="{{ f.pick }}" style="{{ f.style }}">{{ f.label }}<sc-if value="{{ f.badge }}" hint-placeholder-val="{{ false }}"><span style="{{ f.badgeStyle }}">{{ f.badge }}</span></sc-if></span>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="{{ workAreaStyle }}">
+
+    <sc-if value="{{ hasPanel }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ panelStyle }}">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 11px 12px; border-bottom: 1px solid #1D2126;">
+          <sc-if value="{{ panelDot }}" hint-placeholder-val="{{ false }}">
+            <span style="{{ panelDotStyle }}"></span>
+          </sc-if>
+          <div style="{{ panelKickerStyle }}">{{ panelKicker }}</div>
+          <sc-if value="{{ panelPill }}" hint-placeholder-val="{{ false }}">
+            <span style="{{ panelPillStyle }}">{{ panelPill }}</span>
+          </sc-if>
+        </div>
+        <div style="padding: 12px;">
+          <div style="font-size: 15px; font-weight: 500; line-height: 1.3; text-wrap: pretty;">{{ panelTitle }}</div>
+          <sc-if value="{{ panelText }}" hint-placeholder-val="{{ true }}">
+            <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.6; color: #98A0A8; text-wrap: pretty;">{{ panelText }}</div>
+          </sc-if>
+          <sc-if value="{{ panelHasInput }}" hint-placeholder-val="{{ false }}">
+            <div style="padding-top: 12px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">{{ panelInputLabel }}</div>
+              <textarea value="{{ panelInputValue }}" onChange="{{ onPanelInput }}" rows="3" style="margin-top: 7px; width: 100%; box-sizing: border-box; padding: 10px 11px; border: 1px solid #2A2F35; background: #0E0F10; color: #E6E9EC; font-family: 'Archivo', sans-serif; font-size: 13px; line-height: 1.5; resize: vertical;"></textarea>
+            </div>
+          </sc-if>
+        </div>
+        <sc-for list="{{ panelRows }}" as="r" hint-placeholder-count="0">
+          <div style="display: flex; align-items: flex-start; gap: 9px; padding: 11px 12px; border-top: 1px solid #1D2126;">
+            <div style="min-width: 0; flex: 1 1 auto;">
+              <div style="font-size: 13px; line-height: 1.4; color: #E6E9EC; text-wrap: pretty;">{{ r.label }}</div>
+              <sc-if value="{{ r.hint }}" hint-placeholder-val="{{ true }}">
+                <div style="padding-top: 3px; font-size: 11.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">{{ r.hint }}</div>
+              </sc-if>
+            </div>
+            <sc-if value="{{ r.value }}" hint-placeholder-val="{{ true }}">
+              <div style="{{ r.valueStyle }}">{{ r.value }}</div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <sc-if value="{{ panelHasBtns }}" hint-placeholder-val="{{ true }}">
+          <div style="padding: 11px 12px 13px 12px; border-top: 1px solid #1D2126; display: flex; flex-direction: column; gap: 7px;">
+            <sc-for list="{{ panelBtns }}" as="b" hint-placeholder-count="2">
+              <div onClick="{{ b.act }}" style="{{ b.style }}">{{ b.label }}</div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasNote }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ noteStyle }}">{{ note }}</div>
+    </sc-if>
+
+    <sc-if value="{{ hasSearch }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 10px; display: flex; align-items: center; border: 1px solid #2A2F35; background: #111316;">
+        <input value="{{ searchValue }}" onChange="{{ onSearch }}" placeholder="{{ searchPlaceholder }}" style="flex: 1 1 auto; min-width: 0; min-height: 44px; box-sizing: border-box; padding: 0 11px; border: 0; background: transparent; color: #E6E9EC; font-size: 13px;" />
+        <sc-if value="{{ searchValue }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ clearSearch }}" style="flex: 0 0 auto; width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #7C858D;">✕</div>
+        </sc-if>
+      </div>
+      <div style="padding-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">{{ searchCount }}</div>
+    </sc-if>
+
+    <sc-if value="{{ hasActions }}" hint-placeholder-val="{{ false }}">
+      <div style="padding-top: 10px; display: flex; flex-direction: column; gap: 7px;">
+        <sc-for list="{{ actions }}" as="a" hint-placeholder-count="2">
+          <div onClick="{{ a.act }}" style="{{ a.style }}">{{ a.label }}</div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasChat }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 10px; border: 1px solid #23272C; background: #121417;">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #1D2126;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">{{ chatLabel }}</div>
+          <div style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: {{ chatRateColor }};">{{ chatRate }}</div>
+        </div>
+        <div style="max-height: 320px; overflow-y: auto; overflow-x: hidden;">
+          <sc-for list="{{ chatRows }}" as="m" hint-placeholder-count="6">
+            <div style="{{ m.style }}">
+              <div style="display: flex; align-items: baseline; gap: 7px;">
+                <span style="{{ m.userStyle }}">{{ m.user }}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #4A535C;">{{ m.time }}</span>
+                <sc-if value="{{ m.flag }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ m.flagStyle }}">{{ m.flag }}</span>
+                </sc-if>
+              </div>
+              <div style="padding-top: 3px; font-size: 12.5px; line-height: 1.45; color: {{ m.textColor }}; text-wrap: pretty;">{{ m.text }}</div>
+              <sc-if value="{{ m.hasActs }}" hint-placeholder-val="{{ false }}">
+                <div style="padding-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+                  <sc-for list="{{ m.acts }}" as="x" hint-placeholder-count="4">
+                    <span onClick="{{ x.act }}" style="{{ x.style }}" title="{{ x.title }}">{{ x.glyph }}</span>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ m.verdict }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ m.verdictStyle }}">{{ m.verdict }}</div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasForm }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 10px; border: 1px solid #2A2F35; background: #15171A;">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 11px 12px; border-bottom: 1px solid #1D2126;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">{{ formLabel }}</div>
+          <sc-if value="{{ formNote }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.09em; color: #4A535C; text-align: right;">{{ formNote }}</div>
+          </sc-if>
+        </div>
+        <sc-for list="{{ formFields }}" as="f" hint-placeholder-count="3">
+          <div style="padding: 11px 12px; border-bottom: 1px solid #1D2126; display: flex; flex-direction: column; gap: 7px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">{{ f.label }}</div>
+              <sc-if value="{{ f.badge }}" hint-placeholder-val="{{ false }}">
+                <span style="{{ f.badgeStyle }}">{{ f.badge }}</span>
+              </sc-if>
+            </div>
+            <sc-if value="{{ f.isText }}" hint-placeholder-val="{{ true }}">
+              <input value="{{ f.value }}" onChange="{{ f.onChange }}" placeholder="{{ f.placeholder }}" style="{{ f.inputStyle }}" />
+            </sc-if>
+            <sc-if value="{{ f.isArea }}" hint-placeholder-val="{{ false }}">
+              <textarea value="{{ f.value }}" onChange="{{ f.onChange }}" placeholder="{{ f.placeholder }}" rows="4" style="{{ f.areaStyle }}"></textarea>
+            </sc-if>
+            <sc-if value="{{ f.isPick }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3">
+                  <span onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</span>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ f.isToggle }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ f.act }}" style="{{ f.toggleStyle }}">{{ f.toggleLabel }}</div>
+            </sc-if>
+            <sc-if value="{{ f.hint }}" hint-placeholder-val="{{ true }}">
+              <div style="{{ f.hintStyle }}">{{ f.hint }}</div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasMatrix }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 10px; border: 1px solid #23272C; background: #1D2126;">
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 86px 86px; gap: 1px;">
+          <div style="background: #121417; padding: 9px 11px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">DATE</div>
+          <div style="background: #121417; padding: 9px 6px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #5B636B;">RÉGIE</div>
+          <div style="background: #121417; padding: 9px 6px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #5B636B;">MODÉR.</div>
+        </div>
+        <sc-for list="{{ matrixRows }}" as="m" hint-placeholder-count="4">
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) 86px 86px; gap: 1px; margin-top: 1px;">
+            <div style="background: #15171A; padding: 9px 11px; min-height: 56px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; gap: 3px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.04em; color: #C6CDD4;">{{ m.when }}</div>
+              <div style="font-size: 11.5px; line-height: 1.3; color: #7C858D; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ m.title }}</div>
+            </div>
+            <sc-for list="{{ m.cells }}" as="k" hint-placeholder-count="2">
+              <div onClick="{{ k.act }}" style="{{ k.style }}">
+                <sc-if value="{{ k.hasAvatars }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; align-items: center; gap: 3px;">
+                    <sc-for list="{{ k.avatars }}" as="a" hint-placeholder-count="1">
+                      <span style="{{ a.style }}">{{ a.initials }}</span>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <span style="{{ k.labelStyle }}">{{ k.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+        <div style="background: #121417; margin-top: 1px; padding: 10px 11px; display: flex; flex-wrap: wrap; gap: 12px;">
+          <sc-for list="{{ matrixLegend }}" as="l" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="{{ l.swatch }}"></span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.08em; color: #7C858D;">{{ l.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasBars }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 10px; border: 1px solid #23272C; background: #15171A;">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 11px 12px; border-bottom: 1px solid #1D2126;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">{{ barsLabel }}</div>
+          <sc-if value="{{ barsNote }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.09em; color: #4A535C; text-align: right;">{{ barsNote }}</div>
+          </sc-if>
+        </div>
+        <div style="display: flex; align-items: flex-end; gap: 8px; padding: 14px 12px 12px 12px;">
+          <sc-for list="{{ bars }}" as="b" hint-placeholder-count="4">
+            <div style="flex: 1 1 0; min-width: 0; height: 148px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px;">
+              <span style="{{ b.valueStyle }}">{{ b.value }}</span>
+              <div style="{{ b.barStyle }}"></div>
+              <span style="{{ b.labelStyle }}">{{ b.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasDonut }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 10px; border: 1px solid #23272C; background: #15171A;">
+        <div style="padding: 11px 12px; border-bottom: 1px solid #1D2126; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">{{ donutLabel }}</div>
+        <div style="display: flex; align-items: center; gap: 14px; padding: 14px 12px;">
+          <div style="{{ donutStyle }}">
+            <div style="position: absolute; inset: 16px; border-radius: 50%; background: #15171A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #E6E9EC;">{{ donutValue }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.09em; color: #5B636B;">{{ donutCaption }}</div>
+            </div>
+          </div>
+          <div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 9px;">
+            <sc-for list="{{ donutLegend }}" as="l" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="{{ l.swatch }}"></span>
+                <span style="min-width: 0; flex: 1 1 auto; font-size: 12px; color: #C6CDD4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ l.label }}</span>
+                <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #E6E9EC;">{{ l.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasBlocks }}" hint-placeholder-val="{{ true }}">
+      <div style="{{ blocksWrapStyle }}">
+        <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="3">
+          <div style="border: 1px solid #23272C; background: #15171A; animation: riseIn .18s ease; break-inside: avoid; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 11px 12px; border-bottom: 1px solid #1D2126;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B; min-width: 0;">{{ b.label }}</div>
+              <sc-if value="{{ b.note }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-left: auto; flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.09em; color: #4A535C; text-align: right;">{{ b.note }}</div>
+              </sc-if>
+            </div>
+            <sc-if value="{{ b.intro }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 11px 12px; font-size: 12.5px; line-height: 1.55; color: #7C858D; text-wrap: pretty;">{{ b.intro }}</div>
+            </sc-if>
+            <sc-if value="{{ b.hasStats }}" hint-placeholder-val="{{ false }}">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1D2126; border-top: 1px solid #1D2126;">
+                <sc-for list="{{ b.stats }}" as="k" hint-placeholder-count="2">
+                  <div style="background: #121417; padding: 10px 11px;">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">{{ k.label }}</div>
+                    <div style="{{ k.valueStyle }}">{{ k.value }}</div>
+                    <div style="padding-top: 2px; font-size: 10.5px; line-height: 1.35; color: #5B636B;">{{ k.hint }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ b.hasRows }}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="3">
+                <div style="padding: 11px 12px; border-top: 1px solid #1D2126; display: flex; flex-direction: column; gap: 7px;">
+                  <div style="display: flex; align-items: flex-start; gap: 9px;">
+                    <div style="min-width: 0; flex: 1 1 auto;">
+                      <div style="font-size: 13px; line-height: 1.4; color: #E6E9EC; text-wrap: pretty;">{{ r.label }}</div>
+                      <sc-if value="{{ r.hint }}" hint-placeholder-val="{{ true }}">
+                        <div style="padding-top: 3px; font-size: 11.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">{{ r.hint }}</div>
+                      </sc-if>
+                    </div>
+                    <sc-if value="{{ r.pill }}" hint-placeholder-val="{{ false }}">
+                      <span style="{{ r.pillStyle }}">{{ r.pill }}</span>
+                    </sc-if>
+                    <sc-if value="{{ r.value }}" hint-placeholder-val="{{ true }}">
+                      <div style="{{ r.valueStyle }}">{{ r.value }}</div>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{ r.hasPills }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                      <sc-for list="{{ r.pills }}" as="p" hint-placeholder-count="2">
+                        <span style="{{ p.style }}">{{ p.label }}</span>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ r.hasBar }}" hint-placeholder-val="{{ false }}">
+                    <div style="height: 3px; background: #1D2126;"><div style="{{ r.barStyle }}"></div></div>
+                  </sc-if>
+                  <sc-if value="{{ r.cta }}" hint-placeholder-val="{{ false }}">
+                    <div onClick="{{ r.act }}" style="{{ r.ctaStyle }}">{{ r.cta }}</div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    </div>
+
+    <sc-if value="{{ hasMore }}" hint-placeholder-val="{{ false }}">
+      <div style="padding-top: 10px; display: flex; flex-direction: column; gap: 7px;">
+        <sc-if value="{{ moreLoading }}" hint-placeholder-val="{{ false }}">
+          <div style="height: 62px; background: #131518; border: 1px solid #1D2126; animation: skel 1s ease-in-out infinite;"></div>
+          <div style="height: 62px; background: #131518; border: 1px solid #1D2126; animation: skel 1s ease-in-out infinite;"></div>
+        </sc-if>
+        <sc-if value="{{ moreHasBtn }}" hint-placeholder-val="{{ true }}">
+          <div onClick="{{ moreAct }}" style="{{ moreStyle }}">{{ moreLabel }}</div>
+        </sc-if>
+        <div style="text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">{{ moreRange }}</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasFooterAct }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ footerAct }}" style="{{ footerStyle }}">{{ footerLabel }}</div>
+    </sc-if>
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+  pill(c) {
+    return MONO + 'flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; padding: 3px 6px; font-size: 9px; letter-spacing: 0.09em; white-space: nowrap; border: 1px solid '
+      + c + '; color: ' + c + '; background: color-mix(in oklch, ' + c + ' 14%, transparent);';
+  }
+
+  btn(tone) {
+    const base = 'width: 100%; box-sizing: border-box; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; '
+      + MONO + 'font-size: 11px; letter-spacing: 0.08em; text-align: center; ';
+    if (tone === 'primary') return base + 'background: #E6E9EC; border: 1px solid #E6E9EC; color: #0E0F10;';
+    if (tone === 'danger') return base + 'background: color-mix(in oklch, ' + LIVE + ' 12%, transparent); border: 1px solid ' + LIVE + '; color: ' + LIVE + ';';
+    if (tone === 'dead') return base + 'background: #111316; border: 1px solid #1D2126; color: #4A535C; cursor: default;';
+    return base + 'background: #191C20; border: 1px solid #2A2F35; color: #C6CDD4;';
+  }
+
+  chip(on) {
+    return MONO + 'flex: 0 0 auto; min-width: 44px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; padding: 0 12px; '
+      + 'font-size: 10px; letter-spacing: 0.1em; white-space: nowrap; cursor: pointer; border: 1px solid '
+      + (on ? '#4A535C' : '#23272C') + '; background: ' + (on ? '#1A1D21' : '#121417') + '; color: ' + (on ? '#E6E9EC' : '#7C858D') + ';';
+  }
+
+
+  rows(arr) {
+    return arr.map(r => ({
+      label: r.label || '',
+      hint: r.hint || '',
+      pill: r.pill || '',
+      pillStyle: r.pill ? this.pill(r.pillColor || INK3) : '',
+      hasPills: !!(r.pills && r.pills.length),
+      pills: (r.pills || []).map(([label, color]) => ({ label, style: this.pill(color || INK3) })),
+      value: r.value === undefined || r.value === null ? '' : String(r.value),
+      valueStyle: MONO + 'flex: 0 0 auto; font-size: 12.5px; white-space: nowrap; color: ' + (r.valueColor || INK2) + ';',
+      hasBar: r.pct !== undefined,
+      barStyle: 'height: 3px; width: ' + Math.max(0, Math.min(100, Math.round(r.pct || 0))) + '%; background: ' + (r.barColor || '#4A535C') + ';',
+      cta: r.cta || '',
+      act: r.act || (() => {}),
+      ctaStyle: this.btn(r.tone)
+    }));
+  }
+
+  stats(arr) {
+    return arr.map(k => ({
+      label: k[0], value: k[1], hint: k[2] || '',
+      valueStyle: MONO + 'padding-top: 6px; font-size: 18px; font-weight: 500; line-height: 1.05; color: ' + (k[3] || '#E6E9EC') + ';'
+    }));
+  }
+
+  block(label, note, extra) {
+    const b = Object.assign({ label, note: note || '', intro: '', stats: [], rows: [] }, extra || {});
+    b.hasStats = b.stats.length > 0;
+    b.hasRows = b.rows.length > 0;
+    return b;
+  }
+
+  // Rien à rendre avant que la couche de données ait répondu : l'écran
+  // d'attente tient la place, et les tables ne sont jamais lues à vide.
+
+  parts(text, q) {
+    const base = 'color: inherit;';
+    const on = 'background: rgba(214,178,102,0.22); color: oklch(0.9 0.08 84);';
+    const t = String(text || '');
+    if (!q) return [{ t, style: base }];
+    const lt = t.toLowerCase();
+    const out = [];
+    let i = 0;
+    while (true) {
+      const j = lt.indexOf(q, i);
+      if (j < 0) { out.push({ t: t.slice(i), style: base }); break; }
+      if (j > i) out.push({ t: t.slice(i, j), style: base });
+      out.push({ t: t.slice(j, j + q.length), style: on });
+      i = j + q.length;
+    }
+    return out.filter(p => p.t);
+  }
+
+  /* chargement au fil du pouce : dix de plus, avec un squelette d'attente — pas de numéros de page */
+  pager(items, per, key) {
+    const s = this.state;
+    const step = s[key] || 0;
+    const shown = items.slice(0, per * (step + 1));
+    const rest = items.length - shown.length;
+    const loading = !!s[key + 'Load'];
+    return {
+      items: shown,
+      more: items.length > per ? {
+        hasBtn: rest > 0,
+        loading,
+        label: rest > 0 ? 'AFFICHER ' + Math.min(per, rest) + ' DE PLUS' : 'TOUT EST AFFICHÉ',
+        range: shown.length + ' SUR ' + items.length + (rest > 0 ? ' · ' + rest + ' EN RÉSERVE' : ''),
+        act: () => {
+          if (this.state[key + 'Load'] || rest <= 0) return;
+          this.setState({ [key + 'Load']: true });
+          setTimeout(() => this.setState({ [key]: (this.state[key] || 0) + 1, [key + 'Load']: false }), 700);
+        }
+      } : null
+    };
+  }
+
+  /* champs de saisie : la fiche s'écrit, elle ne se contemple pas */
+  fld(o) {
+    const lock = !!o.locked;
+    const box = 'width: 100%; box-sizing: border-box; padding: 0 11px; min-height: 44px; border: 1px solid '
+      + (lock ? '#1D2126' : '#2A2F35') + '; background: ' + (lock ? '#111316' : '#0E0F10') + '; color: ' + (lock ? '#5B636B' : '#E6E9EC') + ';';
+    return {
+      label: o.label,
+      badge: o.badge || '', badgeStyle: o.badge ? this.pill(o.badgeColor || INK3) : '',
+      isText: o.type === 'text', isArea: o.type === 'area', isPick: o.type === 'pick', isToggle: o.type === 'toggle',
+      value: o.value === undefined || o.value === null ? '' : String(o.value),
+      placeholder: o.placeholder || '',
+      onChange: lock ? (() => {}) : (e => o.set(e.target.value)),
+      inputStyle: box + (o.mono ? ' ' + MONO + 'font-size: 13px;' : ' font-size: 13.5px;'),
+      areaStyle: 'width: 100%; box-sizing: border-box; padding: 10px 11px; border: 1px solid ' + (lock ? '#1D2126' : '#2A2F35')
+        + '; background: ' + (lock ? '#111316' : '#0E0F10') + "; color: #E6E9EC; font-family: 'Archivo', sans-serif; font-size: 13px; line-height: 1.55; resize: vertical;",
+      options: (o.options || []).map(([k, label]) => ({ label, pick: () => o.set(k), style: this.chip(o.value === k) })),
+      act: o.act || (() => {}),
+      toggleStyle: this.btn(o.tone),
+      toggleLabel: o.toggleLabel || '',
+      hint: o.hint || '',
+      hintStyle: 'font-size: 11.5px; line-height: 1.5; color: ' + (o.hintColor || '#7C858D') + '; text-wrap: pretty;'
+    };
+  }
+
+  barsOf(list) {
+    const max = Math.max.apply(null, list.map(b => b.value).concat([1]));
+    return list.map(b => ({
+      label: b.label,
+      value: b.display === undefined ? String(b.value) : b.display,
+      barStyle: 'width: 100%; height: ' + Math.max(3, Math.round((b.value / max) * 96)) + 'px; background: ' + (b.color || OK) + ';',
+      valueStyle: MONO + 'font-size: 10px; color: ' + (b.color || '#C6CDD4') + ';',
+      labelStyle: MONO + 'font-size: 8.5px; letter-spacing: 0.06em; color: #5B636B; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;'
+    }));
+  }
+
+  donutOf(segs) {
+    const total = segs.reduce((a, x) => a + x.value, 0) || 1;
+    let acc = 0;
+    const stops = segs.map(sg => {
+      const from = (acc / total) * 100;
+      acc += sg.value;
+      return sg.color + ' ' + from.toFixed(2) + '% ' + ((acc / total) * 100).toFixed(2) + '%';
+    }).join(', ');
+    return {
+      style: 'position: relative; flex: 0 0 auto; width: 116px; height: 116px; border-radius: 50%; background: conic-gradient(' + stops + ');',
+      legend: segs.map(sg => ({
+        label: sg.label,
+        value: sg.display === undefined ? Math.round((sg.value / total) * 100) + ' %' : sg.display,
+        swatch: 'flex: 0 0 auto; width: 10px; height: 10px; background: ' + sg.color + ';'
+      }))
+    };
+  }
+
+
+  tabStrip(list, cur, key, extra) {
+    return list.map(([k, label, badge, badgeColor]) => ({
+      label, badge: badge || '',
+      badgeStyle: MONO + 'margin-left: 6px; font-size: 8.5px; letter-spacing: 0.05em; color: ' + (badgeColor || '#5B636B') + ';',
+      pick: () => this.setState(Object.assign({ [key]: k }, extra || {})),
+      style: this.chip(cur === k)
+    }));
+  }
+
+  act(label, fn, tone) { return { label, act: fn || (() => {}), style: this.btn(tone) }; }
+
+</script>

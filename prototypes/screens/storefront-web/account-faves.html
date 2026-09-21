@@ -1,0 +1,130 @@
+<!--
+  ÉCRAN      Compte — Favoris
+  ROUTE      page === 'account', accTab === 'faves'
+  AFFICHE    Les artistes suivis et les spectacles mis de côté.
+  MÈNE VERS  account
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2448-2488
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Servi à moitié : la liste a `/v1/me/watchlist`, les artistes suivis n'ont pas de
+             collection.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — listWatchlist
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, artist, availW, colsOf, colsTiles, colsWideN, fr, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, tileCols
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <sc-if value="{{ accFaves }}" hint-placeholder-val="{{ false }}">
+      <div style="animation: fadeIn .3s ease both;">
+        <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px;">
+          <h2 style="{{ accH2 }} margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.accFaves }}</h2>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ favesCountLabel }}</span>
+        </div>
+        <div style="display: grid; grid-template-columns: {{ colsWide }}; gap: 14px;">
+          <sc-for list="{{ favArtists }}" as="a" hint-placeholder-count="6">
+            <div style="border: 1px solid #1F1C19; background: #100F0D; padding: 14px; display: flex; align-items: center; gap: 14px; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="border-color:#4A423A">
+              <div onClick="{{ a.openArtist }}" style="cursor: pointer; flex: 0 0 52px; width: 52px; height: 52px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815; border: 1px solid #2E2A24; transition: border-color .24s ease;" style-hover="border-color:#6B6459">
+                <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.8); background-color: #1A1815; background-image: {{ a.imgCss }}; background-size: cover; background-position: center;"></div>
+              </div>
+              <div style="min-width: 0;">
+                <div onClick="{{ a.openArtist }}" style="cursor: pointer; font-size: 15px; font-weight: 500; transition: color .2s ease;" style-hover="color:oklch(0.8 0.13 42)">{{ a.name }}</div>
+                <div onClick="{{ a.openNext }}" style="cursor: pointer; padding-top: 4px; font-size: 12.5px; color: #9B948A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color .2s ease;" style-hover="color:#C9C0B2">{{ a.next }}</div>
+                <div style="padding-top: 8px; display: flex; gap: 12px; align-items: center;">
+                  <span onClick="{{ a.toggleNotify }}" style="{{ a.notifyStyle }}">{{ a.notifyLabel }}</span>
+                  <span onClick="{{ a.unfollow }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73; border-bottom: 1px solid #1F1C19; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="color:#C9C0B2">{{ t.unfollow }}</span>
+                </div>
+              </div>
+              <span style="margin-left: auto; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ a.liveColor }};"><sc-if value="{{ a.isLiveRow }}" hint-placeholder-val="{{ false }}"><span style="flex: 0 0 auto; width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span></sc-if>{{ a.liveLabel }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top: 24px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 18px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ t.savedShows }}</div>
+          <div style="margin-top: 14px; display: grid; grid-template-columns: {{ colsTiles }}; gap: 14px;">
+            <sc-for list="{{ savedShows }}" as="sv" hint-placeholder-count="4">
+              <div onClick="{{ sv.open }}" style="cursor: pointer;">
+                <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #17140F; border: 1px solid #1F1C19; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="border-color:#4A423A">
+                  <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.72); background-color: #1A1815; background-image: {{ sv.imgCss }}; background-size: cover; background-position: center;"></div>
+                </div>
+                <div style="padding-top: 9px; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sv.title }}</div>
+                <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ sv.when }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* accStack  —  lignes 5747-5747 */
+    const accStack = availW < 760;
+/* favArtists  —  lignes 5792-5817 */
+    const favArtists = roster.slice(0, (s.followedIds || []).length || 6).map((a, k) => {
+      const dates = A.datesOfArtist(a.id);
+      const onAir = dates.filter(d => A.isOnAir(d))[0] || null;
+      const next = dates.filter(d => d.startOffsetMin > 0).sort((x, y) => x.startOffsetMin - y.startOffsetMin)[0] || null;
+      const d = onAir || next;
+      const notify = (s.notifyArtists || [])[k] !== false;
+      return {
+        name: a.name, img: a.portrait, imgCss: this.cssUrl(a.portrait),
+        next: d ? A.when(d) + ' · ' + A.title(A.show(d.show)) : (fr ? 'Aucune date annoncée' : 'No announced date'),
+        isLiveRow: !!onAir,
+        liveLabel: onAir ? (fr ? 'EN DIRECT' : 'LIVE') : (next ? A.longDate(next.startOffsetMin).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US') : '—'),
+        liveColor: onAir ? 'oklch(0.74 0.15 27)' : '#857E73',
+        notifyLabel: notify ? (fr ? 'ALERTES ACTIVES' : 'ALERTS ON') : (fr ? 'ALERTES COUPÉES' : 'ALERTS OFF'),
+        notifyStyle: CHIP + (notify ? '#4A423A; color: #EDE7DC;' : '#262320; color: #857E73;'),
+        toggleNotify: () => this.setState(st => {
+          const list = (st.notifyArtists || []).slice();
+          list[k] = list[k] === false;
+          return { notifyArtists: list };
+        }),
+        openArtist: () => this.setState({ page: 'artist', artistId: a.i }),
+        openNext: () => this.openLive(a.name),
+        unfollow: () => this.setState(st => ({ unfollowed: st.unfollowed.concat([k]) }))
+      };
+    }).filter((_, k) => (s.unfollowed || []).indexOf(k) < 0);
+
+    /* Les spectacles mis de côté : les prochaines dates de la liste. */
+/* savedShows  —  lignes 5818-5823 */
+    const savedShows = A.upcoming().slice(0, 4).map(d => {
+      const show = A.show(d.show);
+      return { title: A.title(show), img: A.showImage(show, 900), imgCss: this.cssUrl(A.showImage(show, 900)), when: A.when(d),
+        open: () => this.openLive(A.title(show)) };
+    });
+
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      colsTiles: colsOf(tileCols), colsWide: colsOf(colsWideN),
+      rowGrid5, rowGrid5b, rowGrid4, rowGrid4b, rowGridLive, rowThumb, rowStack,
+      accH2: accStack ? 'display: none;' : '',
+      favArtists: favArtists,
+      favesCountLabel: favArtists.length + (fr ? ' ARTISTES SUIVIS' : ' ARTISTS FOLLOWED'),
+      savedShows: savedShows,
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.accFaves  t.savedShows  t.unfollow  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    followedIds  notifyArtists  unfollowed  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    cssUrl, openLive, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

@@ -1,0 +1,56 @@
+{
+  "version": 4,
+  "updated": "2026-09-10",
+  "note": "All Arthome copy, segmented by theme: interface strings and taxonomy labels alike. One file per theme; each key carries all its locales side by side so a translator sees both at once. Show titles, synopses, bios and chat messages are NOT here: they live in catalogue.json in the language the venue wrote them.",
+  "defaultLocale": "fr",
+  "locales": [
+    "fr",
+    "en"
+  ],
+  "fallback": "defaultLocale",
+  "idLanguage": "en",
+  "placeholders": "Braces, resolved by helpers.js: {language}, {languages}, {reason}, {count}.",
+  "conventions": [
+    "Store copy in sentence case. Uppercase kickers are a styling choice (text-transform), never a second key.",
+    "common.* is shared by every surface — prefer adding there over duplicating per surface.",
+    "enums.<type>.<id> mirrors an id in taxonomy.json, catalogue.json or fixtures.js, and is read through A.enumLabel(type, id).",
+    "studio-*.json is régie vocabulary: it never appears on a storefront.",
+    "taxonomy-*.json resolves the i18n keys declared in taxonomy.json — structure there, copy here."
+  ],
+  "files": [
+    {
+      "file": "storefront.json",
+      "keys": 243,
+      "note": "Interface publique : actions, navigation, temps, états, découverte, billetterie, lecteur, tchat, compte, télécommande."
+    },
+    {
+      "file": "taxonomy.json",
+      "keys": 627,
+      "note": "Taxonomie : familles, disciplines, genres, tags et attributs transverses. Résout les clés déclarées dans taxonomy.json."
+    },
+    {
+      "file": "studio.json",
+      "keys": 61,
+      "note": "Studio : régie, programmation, équipe et droits, public et modération, recettes et versements."
+    },
+    {
+      "file": "system.json",
+      "keys": 18,
+      "note": "Transverse aux cinq surfaces : chargement, vides, réseau, erreurs, zone sûre."
+    }
+  ],
+  "surfaces": {
+    "storefront": [
+      "storefront",
+      "taxonomy",
+      "system"
+    ],
+    "studio": [
+      "studio",
+      "taxonomy",
+      "system",
+      "storefront"
+    ],
+    "note": "A surface loads only the files it needs: loadArthome({ themes: [...] }). The studio also reads storefront.json for shared actions, time and state labels."
+  }
+}

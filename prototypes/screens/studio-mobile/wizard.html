@@ -1,0 +1,156 @@
+<!--
+  ÉCRAN        wizard
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Quatre décisions pour créer une date en brouillon ; le reste va sur la fiche.
+  RÔLES        artist · prod
+  MÈNE VERS    écrans : event
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  pgWizard L418-473
+               modèle    L3773-3843
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - needs §Les formes de données (la jauge est un engagement d'infrastructure)
+               - openapi POST /v1/channels/{channelId}/dates
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!-- ---- pgWizard (L418-473) ---- -->
+    <sc-if value="{{ pgWizard }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="border: 1px solid #23272C; background: #15171A; padding: 12px; display: flex; flex-direction: column; gap: 13px;">
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">TITRE DU SPECTACLE</div>
+            <input value="{{ wzTitle }}" onChange="{{ onWzTitle }}" placeholder="{{ wzTitlePlaceholder }}" style="margin-top: 7px; width: 100%; box-sizing: border-box; min-height: 44px; padding: 0 11px; border: 1px solid #2A2F35; background: #0E0F10; color: #E6E9EC; font-size: 14px;" />
+          </div>
+          <div style="display: flex; gap: 9px;">
+            <div style="flex: 1 1 0; min-width: 0;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">DATE</div>
+              <input value="{{ wzDate }}" onChange="{{ onWzDate }}" placeholder="12/10/2026" style="margin-top: 7px; width: 100%; box-sizing: border-box; min-height: 44px; padding: 0 11px; border: 1px solid #2A2F35; background: #0E0F10; color: #E6E9EC; font-family: 'JetBrains Mono', monospace; font-size: 13px;" />
+            </div>
+            <div style="flex: 0 0 auto; width: 118px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">HEURE DE SALLE</div>
+              <input value="{{ wzTime }}" onChange="{{ onWzTime }}" placeholder="20:30" style="margin-top: 7px; width: 100%; box-sizing: border-box; min-height: 44px; padding: 0 11px; border: 1px solid #2A2F35; background: #0E0F10; color: #E6E9EC; font-family: 'JetBrains Mono', monospace; font-size: 13px;" />
+            </div>
+          </div>
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">NOMBRE DE PLACES</div>
+            <input value="{{ wzCap }}" onChange="{{ onWzCap }}" placeholder="2000" style="margin-top: 7px; width: 100%; box-sizing: border-box; min-height: 44px; padding: 0 11px; border: 1px solid #2A2F35; background: #0E0F10; color: #E6E9EC; font-family: 'JetBrains Mono', monospace; font-size: 13px;" />
+            <div style="padding-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; line-height: 1.7; color: {{ wzCapColor }};">{{ wzCapHint }}</div>
+          </div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #5B636B; line-height: 1.6;">{{ wzZoneNote }}</div>
+        </div>
+
+        <div style="border: 1px solid #23272C; background: #15171A;">
+          <div style="padding: 11px 12px; border-bottom: 1px solid #1D2126;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">POLITIQUE DE REDIFFUSION</div>
+            <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.55; color: #98A0A8; text-wrap: pretty;">Ce choix ne se reprend pas : le tarif public en dépend. Une place qui donne droit à la rediffusion ne se vend pas au même prix qu'une place au direct seul.</div>
+          </div>
+          <sc-for list="{{ wzPolicies }}" as="p" hint-placeholder-count="4">
+            <div onClick="{{ p.pick }}" style="{{ p.style }}">
+              <span style="{{ p.dotStyle }}"></span>
+              <div style="min-width: 0; flex: 1 1 auto;">
+                <div style="font-size: 13.5px; color: #E6E9EC;">{{ p.label }}</div>
+                <div style="padding-top: 2px; font-size: 11.5px; line-height: 1.45; color: #7C858D; text-wrap: pretty;">{{ p.hint }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="border: 1px solid #23272C; background: #121417; padding: 12px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">CE QUI SE COMPLÉTERA SUR LA FICHE</div>
+          <div style="padding-top: 9px; display: flex; flex-direction: column; gap: 7px;">
+            <sc-for list="{{ wzLater }}" as="l" hint-placeholder-count="4">
+              <div style="display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 6px; font-size: 12px; line-height: 1.5; color: #98A0A8;">
+                <span style="font-family: 'JetBrains Mono', monospace; color: #4A535C;">—</span>
+                <span style="text-wrap: pretty;">{{ l }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div onClick="{{ wzCreate }}" style="{{ wzBtnStyle }}">{{ wzBtnLabel }}</div>
+      </div>
+    </sc-if>
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_wizard(c) {
+    const s = this.state;
+    const title = (s.wzTitle || '').trim();
+    const date = (s.wzDate || '').trim();
+    const time = (s.wzTime || '').trim();
+    const cap = parseInt((s.wzCap || '').replace(/\s/g, ''), 10) || 0;
+    const pol = s.wzPolicy || null;
+    const big = cap > 10000;
+    const missing = [];
+    if (!title) missing.push('le titre');
+    if (!date) missing.push('la date');
+    if (!time) missing.push('l’heure');
+    if (!cap) missing.push('le nombre de places');
+    if (!pol) missing.push('la politique de rediffusion');
+
+    const DAYS = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+    const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+    return {
+      pageKicker: 'NOUVELLE DATE · ' + c.chan.name.toUpperCase(),
+      pageTitle: 'Quatre décisions, le reste sur la fiche',
+      wzTitle: s.wzTitle || '',
+      wzTitlePlaceholder: (c.evDefs[0] || [])[2] || '', onWzTitle: e => this.setState({ wzTitle: e.target.value }),
+      wzDate: s.wzDate || '', onWzDate: e => this.setState({ wzDate: e.target.value }),
+      wzTime: s.wzTime || '', onWzTime: e => this.setState({ wzTime: e.target.value }),
+      wzCap: s.wzCap || '', onWzCap: e => this.setState({ wzCap: e.target.value }),
+      wzCapColor: big ? WARN : '#5B636B',
+      wzCapHint: cap === 0
+        ? 'LA JAUGE DIMENSIONNE L’INFRASTRUCTURE : ELLE S’ÉLARGIT PAR PALIERS, JAMAIS APRÈS LA MISE EN VENTE'
+        : (big
+            ? 'AU-DELÀ DE 10 000 PLACES, L’INFRASTRUCTURE EST PROVISIONNÉE À L’AVANCE : UN PRÉVISIONNEL TRÈS AU-DESSUS DU RÉEL ENTRAÎNE UN MALUS'
+            : c.num(cap) + ' PLACES · AUCUN ENGAGEMENT DE VOLUME REQUIS'),
+      wzZoneNote: 'HEURE DE SALLE EN ' + c.zAbbr + ' (' + (ZONES[c.zoneOf(c.chan.name)] || [])[2] + ')' + (c.zSame ? '' : ' · ' + (time ? c.localOf(time) + ' CHEZ VOUS' : 'CONVERTIE À VOTRE FUSEAU SUR LA FICHE')),
+      wzPolicies: [
+        ['inc', 'Incluse dans la place', 'Toute place achetée donne droit à la rediffusion pendant la fenêtre.'],
+        ['sub', 'Réservée aux abonnés', 'La rediffusion entre dans l’abonnement de la chaîne, pas dans la place.'],
+        ['unit', 'Vendue à l’unité', 'Un second tarif, indépendant de la place au direct.'],
+        ['none', 'Aucune rediffusion', 'Le direct seul. Ce choix se relit sur le tarif public.']
+      ].map(([k, label, hint]) => ({
+        label, hint, pick: () => this.setState({ wzPolicy: k }),
+        style: 'min-height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-top: 1px solid #1D2126; cursor: pointer; background: '
+          + (pol === k ? '#1A1D21' : 'transparent') + ';',
+        dotStyle: 'flex: 0 0 auto; width: 11px; height: 11px; border: 1px solid ' + (pol === k ? '#E6E9EC' : '#3A4149') + '; background: ' + (pol === k ? '#E6E9EC' : 'transparent') + ';'
+      })),
+      wzLater: [
+        'Affiche 16/9 et description de la page publique',
+        'Tarifs — plein, réduit, contremarques',
+        'Régime de tchat et dictionnaire de mots bloqués',
+        'Tests techniques : un flux reçu et stable avant publication'
+      ],
+      wzBtnLabel: missing.length ? 'IL MANQUE ' + missing.join(', ').toUpperCase() : 'CRÉER LA DATE EN BROUILLON',
+      wzBtnStyle: this.btn(missing.length ? 'dead' : 'primary'),
+      wzCreate: () => {
+        if (missing.length) return;
+        const m = date.match(/(\d{1,2})\D+(\d{1,2})\D+(\d{2,4})/);
+        let label = date;
+        if (m) {
+          const d = new Date(2000 + (Number(m[3]) % 100), Number(m[2]) - 1, Number(m[1]));
+          label = DAYS[d.getDay()] + ' ' + Number(m[1]) + ' ' + MONTHS[Number(m[2]) - 1];
+        }
+        const row = [label, time.replace('h', ':'), title, 'draft', 0, cap, 0, false,
+          'BROUILLON · ' + ({ inc: 'REDIFFUSION INCLUSE', sub: 'REDIFFUSION AUX ABONNÉS', unit: 'REDIFFUSION À L’UNITÉ', none: 'SANS REDIFFUSION' }[pol]),
+          '—', false, false];
+        this.setState(st => {
+          const list = (st.evNew || []).concat([row]);
+          return { evNew: list, page: 'event', evSel: 9 + list.length, evTab: null, wzTitle: '', wzDate: '', wzTime: '', wzCap: '', wzPolicy: null };
+        });
+      }
+    };
+  }
+
+</script>

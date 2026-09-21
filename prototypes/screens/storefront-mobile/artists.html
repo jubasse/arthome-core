@@ -1,0 +1,141 @@
+<!--
+  Arthome · storefront mobile — artists
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : artists
+  Affiche    : L'annuaire des artistes, filtrable par discipline, triable par nom ou par audience.
+  Mène vers  : artist
+  Contrat    : GET /v1/artists
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L870–907
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L870–907
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ isArtists }}" hint-placeholder-val="{{ false }}">
+<div style="animation: fadeIn .3s ease both; padding: 18px 16px 0;">
+  <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px; line-height: 1.05;">{{ t.artistsTitle }}</h1>
+  <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ artistsCountLabel }}</div>
+  <div data-strip="1" style="margin-top: 14px; display: flex; gap: 7px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; cursor: grab; padding-bottom: 4px;">
+    <sc-for list="{{ artistFilters }}" as="af" hint-placeholder-count="4">
+      <span onClick="{{ af.pick }}" style="{{ af.style }}">{{ af.label }}</span>
+    </sc-for>
+  </div>
+  <div data-strip="1" style="margin-top: 8px; display: flex; gap: 7px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; cursor: grab; padding-bottom: 4px;">
+    <sc-for list="{{ artistSorts }}" as="so" hint-placeholder-count="3">
+      <span onClick="{{ so.pick }}" style="{{ so.style }}">{{ so.label }}</span>
+    </sc-for>
+  </div>
+  <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px;">
+    <sc-for list="{{ artistsList }}" as="a" hint-placeholder-count="8">
+      <div style="border: 1px solid #1F1C19; background: #100F0D;">
+        <div onClick="{{ a.open }}" style="cursor: pointer; position: relative; aspect-ratio: 1/1; overflow: hidden; background: #17140F;">
+          <sc-if value="{{ a.img }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.7); background-color: #17140F; background-image: {{ a.imgCss }}; background-size: cover; background-position: center;"></div>
+          </sc-if>
+          <div onClick="{{ a.openLiveRow }}" title="{{ a.liveTitle }}" style="position: absolute; left: 9px; top: 9px; display: flex; align-items: center; gap: 6px; background: rgba(11,10,9,0.78); padding: 4px 8px; cursor: {{ a.statusCursor }};">
+            <sc-if value="{{ a.isLive }}" hint-placeholder-val="{{ false }}">
+              <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+            </sc-if>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ a.statusColor }};">{{ a.statusLabel }}</span>
+          </div>
+        </div>
+        <div style="padding: 11px;">
+          <div onClick="{{ a.open }}" style="cursor: pointer; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ a.name }}</div>
+          <div style="padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ a.discipline }}</div>
+          <span onClick="{{ a.toggleFollow }}" style="{{ a.followStyle }}">{{ a.followLabel }}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (8 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── disciplineKeys  —  calcul dans renderReady()  —  L4639–4639 ── */
+    const disciplineKeys = fr
+
+/* ── matchers  —  calcul dans renderReady()  —  L4642–4642 ── */
+    const matchers = [['théâtre', 'theatre'], ['danse', 'dance'], ['concert', 'club', 'jazz', 'guitare', 'guitar'], ['humour', 'comedy'], ['classique', 'classical', 'piano'], ['cirque', 'circus']];
+
+/* ── artistFilters  —  calcul dans renderReady()  —  L4643–4647 ── */
+    const artistFilters = disciplineKeys.map((label, i) => ({
+      label,
+      pick: () => this.setState(st => ({ artistFilter: st.artistFilter === i ? -1 : i })),
+      style: CHIP + (s.artistFilter === i ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;')
+    }));
+
+/* ── artistSorts  —  calcul dans renderReady()  —  L4648–4652 ── */
+    const artistSorts = [['az', t.sortAZ], ['pop', t.sortFollowers]].map(([key, label]) => ({
+      label,
+      pick: () => this.setState({ artistSort: key }),
+      style: CHIP + (s.artistSort === key ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;')
+    }));
+
+/* ── activeMatch  —  calcul dans renderReady()  —  L4828–4828 ── */
+    const activeMatch = s.artistFilter >= 0 ? matchers[s.artistFilter] : null;
+
+/* ── artistsList  —  calcul dans renderReady()  —  L4829–4833 ── */
+    let artistsList = roster.filter(a => {
+      if (!activeMatch) return true;
+      const d = a.discipline.toLowerCase();
+      return activeMatch.some(m => d.indexOf(m) > -1);
+    });
+
+/* ── isArtists  —  clé du modèle rendu  —  L6429–6429 ── */
+      isArtists: s.page === 'artists', isFollowing: s.page === 'following' && !s.guest,
+
+/* ── artistsCountLabel  —  clé du modèle rendu  —  L6432–6432 ── */
+      artistsCountLabel: roster.length + ' · ' + t.artistsSub,
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (4) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2381  artistsSub: "COMPAGNIES, ORCHESTRES ET SOLISTES SUR ARTHOME"
+  EN L2834  artistsSub: "COMPANIES, ORCHESTRAS AND SOLO ACTS ON ARTHOME"
+
+  FR L2382  artistsTitle: "Les artistes"
+  EN L2835  artistsTitle: "The artists"
+
+  FR L2718  sortAZ: "A → Z"
+  EN L3171  sortAZ: "A → Z"
+
+  FR L2719  sortFollowers: "POPULARITÉ"
+  EN L3172  sortFollowers: "POPULARITY"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

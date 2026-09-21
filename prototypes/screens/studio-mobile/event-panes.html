@@ -1,0 +1,154 @@
+<!--
+  ÉCRAN        event / volets
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Les six volets de la fiche, DÉRIVÉS DU RÔLE : public, tickets, chat, tech, crew, replay.
+  RÔLES        artist · prod · regie · mod · coord · tres   (les six)
+  MÈNE VERS    écrans : crew, stream
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  pgEvent L354-416
+               modèle    L3583-3643
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - needs §« Ce qui distingue cette surface » 2 (les volets dérivés du rôle)
+               - needs §Confrontation C10 (un seul volet sur six a un point d'entrée)
+               - openapi GET /v1/dates/{dateId}/panes/tickets — le seul qui existe
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!-- ---- pgEvent (L354-416) ---- -->
+    <sc-if value="{{ pgEvent }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="border: 1px solid #2A2F35; background: #15171A;">
+          <div style="display: flex; gap: 11px; padding: 12px;">
+            <div style="flex: 0 0 auto; width: 72px; height: 96px; background: #1D2126; border: 1px solid #23272C; background-color: #1A1D21; background-image: {{ evImgCss }}; background-size: cover; background-position: center;"></div>
+            <div style="min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 6px;">
+              <span style="{{ evStateStyle }}">{{ evStateLabel }}</span>
+              <div style="font-size: 15.5px; font-weight: 500; line-height: 1.25; text-wrap: pretty;">{{ evTitle }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.55; color: #98A0A8;">{{ evWhen }}</div>
+              <sc-if value="{{ evLock }}" hint-placeholder-val="{{ false }}">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 75);">{{ evLock }}</div>
+              </sc-if>
+            </div>
+          </div>
+          <div style="position: relative; border-top: 1px solid #1D2126;">
+            <div data-strip="1" style="display: flex; gap: 5px; overflow-x: auto; padding: 10px 12px;">
+              <sc-for list="{{ evFlow }}" as="f" hint-placeholder-count="7">
+                <span data-chip="1" style="{{ f.style }}">{{ f.label }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <sc-if value="{{ evShowGauge }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #23272C; background: #15171A;">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 11px 12px; border-bottom: 1px solid #1D2126;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">AVANT DE PUBLIER</div>
+              <div style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{ evPctColor }};">{{ evPctLabel }}</div>
+            </div>
+            <div style="height: 3px; background: #1D2126;"><div style="{{ evPctBar }}"></div></div>
+            <sc-for list="{{ evChecks }}" as="k" hint-placeholder-count="7">
+              <div style="display: flex; align-items: flex-start; gap: 9px; padding: 10px 12px; border-top: 1px solid #1D2126;">
+                <span style="{{ k.markStyle }}">{{ k.mark }}</span>
+                <div style="min-width: 0; flex: 1 1 auto;">
+                  <div style="{{ k.labelStyle }}">{{ k.label }}</div>
+                  <div style="padding-top: 2px; font-size: 11px; line-height: 1.45; color: #7C858D; text-wrap: pretty;">{{ k.hint }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ evHasMoves }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B; padding: 2px 1px;">CE QUE CET ÉTAT AUTORISE</div>
+            <sc-for list="{{ evMoves }}" as="m" hint-placeholder-count="2">
+              <div onClick="{{ m.act }}" style="{{ m.style }}">{{ m.label }}</div>
+            </sc-for>
+            <sc-if value="{{ evBlocked }}" hint-placeholder-val="{{ false }}">
+              <div style="border: 1px solid #23272C; background: #121417; padding: 11px 12px; font-size: 12px; line-height: 1.55; color: oklch(0.78 0.13 75); text-wrap: pretty;">{{ evBlocked }}</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <div style="position: relative;">
+          <div data-strip="1" style="display: flex; gap: 6px; overflow-x: auto; padding: 1px 0;">
+            <sc-for list="{{ evTabs }}" as="t" hint-placeholder-count="4">
+              <span data-chip="1" onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+    if (see('public')) blocks.push(this.block('PAGE PUBLIQUE', 'ARTHOME.FR/' + slug, {
+      rows: this.rows(c.canDecide ? [
+        { label: 'Voir la page publique', hint: 'arthome.fr/' + slug + ' · ce que le spectateur a sous les yeux', cta: 'OUVRIR LA PAGE ↗' },
+        { label: 'Description', hint: desc.trim() ? desc.trim().length + ' caractères publiés' : 'aucune description : la publication reste verrouillée', pill: desc.trim() ? 'PUBLIÉE' : 'À ÉCRIRE', pillColor: desc.trim() ? OK : WARN },
+        { label: 'Durée annoncée', hint: 'entracte compris', value: r[9] }
+      ] : [
+        { label: 'Titre et catégorie', hint: r[2] + ' · ' + r[8].split(' · ')[0].toLowerCase(), pill: 'RENSEIGNÉ', pillColor: OK },
+        { label: 'Affiche', hint: r[10] === false ? 'aucun visuel — la date ne peut pas être publiée' : 'visuel 16/9 en place', pill: r[10] === false ? 'MANQUANTE' : 'EN PLACE', pillColor: r[10] === false ? WARN : OK },
+        { label: 'Description', hint: desc.trim() ? desc.trim().length + ' caractères publiés' : 'à écrire avant publication', pill: desc.trim() ? 'PUBLIÉE' : 'À FAIRE', pillColor: desc.trim() ? OK : WARN },
+        { label: 'Durée annoncée', hint: 'entracte compris', value: r[9] }
+      ])
+    }));
+
+    if (see('tickets')) blocks.push(this.block('BILLETTERIE', c.canRevenue ? 'RECETTE VISIBLE' : 'MONTANTS MASQUÉS', {
+      intro: st === 'sched' || st === 'live' ? 'Les tarifs sont verrouillés depuis la mise en vente : ils engagent les places déjà achetées.' : '',
+      rows: this.rows([
+        { label: 'Plein tarif', hint: r[6] ? r[6] + ' € · ' + c.num(Math.round(r[4] * 0.72)) + ' places' : 'aucun tarif actif', pill: r[6] ? 'ACTIF' : 'AUCUN', pillColor: r[6] ? OK : WARN },
+        { label: 'Tarif réduit', hint: r[6] ? Math.round(r[6] * 0.7) + ' € · étudiants, demandeurs d’emploi' : '—', pill: r[6] ? 'ACTIF' : 'AUCUN', pillColor: r[6] ? OK : WARN },
+        { label: 'Jauge', hint: 'places mises en vente', value: c.num(r[5]) },
+        { label: 'Vendues', hint: r[5] ? Math.round((r[4] / r[5]) * 100) + ' % de la jauge' : 'sans billetterie', value: c.num(r[4]), pct: r[5] ? (r[4] / r[5]) * 100 : 0, barColor: OK },
+        c.canRevenue ? { label: 'Recette brute', hint: 'commission 12 % déduite au versement', value: c.eur(r[15] || 0), valueColor: OK } : { label: 'Contremarques', hint: 'presse et partenaires', value: '24 / 40' }
+      ])
+    }));
+
+    if (see('chat')) blocks.push(this.block('TCHAT', '', {
+      rows: this.rows([
+        { label: 'Régime', hint: 'modifiable en direct depuis la régie', pill: CHAT_SHORT[regime], pillColor: INFO },
+        { label: 'Dictionnaire de mots bloqués', hint: '8 termes · application rétroactive', value: 'STRICT' },
+        { label: 'Modérateur affecté', hint: (ROSTER[c.chan.name] || []).filter(m => m[3] === 'mod').map(m => m[0]).join(', ') || 'aucun — le tchat s’ouvrira sans surveillance', pill: (ROSTER[c.chan.name] || []).some(m => m[3] === 'mod') ? 'AFFECTÉ' : 'MANQUANT', pillColor: (ROSTER[c.chan.name] || []).some(m => m[3] === 'mod') ? OK : WARN }
+      ])
+    }));
+
+    if (see('tech')) blocks.push(this.block('TECHNIQUE', '', {
+      rows: this.rows([
+        { label: 'Serveur d’ingest', hint: 'rtmp://ingest-eu-west.arthome.fr/live', pill: 'EU-OUEST', pillColor: INFO },
+        { label: 'Tests techniques', hint: r[11] === false ? 'jamais passés sur cette date' : 'dernier test concluant · 8,9 Mb/s stable', pill: r[11] === false ? 'À FAIRE' : 'CONCLUANT', pillColor: r[11] === false ? WARN : OK, cta: c.allowed.indexOf('stream') > -1 ? 'OUVRIR LA DIFFUSION' : '', act: () => this.go('stream') },
+        { label: 'Profil recommandé', hint: 'déduit de la dernière mesure de débit', value: '1080p · 6 Mb/s' }
+      ])
+    }));
+
+    if (see('crew')) blocks.push(this.block('ÉQUIPE SUR CETTE DATE', '', {
+      rows: this.rows(['regie', 'mod'].map(rk => {
+        const who = (ROSTER[c.chan.name] || []).filter(m => m[3] === rk);
+        return {
+          label: rk === 'regie' ? 'Poste régie' : 'Poste modération',
+          hint: who.length ? who.map(m => m[0]).join(', ') : 'personne sur ce poste',
+          pill: who.length ? 'TENU' : 'VACANT', pillColor: who.length ? OK : WARN,
+          cta: c.allowed.indexOf('crew') > -1 ? 'OUVRIR LE PLANNING' : '', act: () => this.go('crew')
+        };
+      }))
+    }));
+
+    if (see('replay')) blocks.push(this.block('REDIFFUSION', st === 'replay' ? 'EN LIGNE · IRRÉVERSIBLE' : '', {
+      intro: st === 'replay' ? 'Des spectateurs ont payé pour cette rediffusion : la politique d’accès ne se retire plus.' : 'La politique se décide à la création et se verrouille à la première vente.',
+      rows: this.rows([
+        { label: 'Politique d’accès', hint: 'incluse dans la place du direct', pill: 'INCLUSE', pillColor: RPL },
+        { label: 'Fenêtre', hint: st === 'replay' ? 'expire dans 41 h' : 'ouverte 72 h après le tomber du rideau', value: '72 H' },
+        { label: 'Vues', hint: st === 'replay' ? '1 208 lectures uniques' : 'aucune lecture encore', value: st === 'replay' ? '1 208' : '0' }
+      ])
+    }));
+
+</script>

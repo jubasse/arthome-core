@@ -1,0 +1,172 @@
+<!--
+  Écran      : live
+  Route      : page === 'live'
+  Affiche    : Le direct du moment en grand avec aperçu, puis les autres directs, puis la grille horaire de la soirée — une ligne par heure, en heure locale du spectateur, avec l'heure de salle en second quand elle diffère.
+  Mène vers  : player · title · book
+  Partagé    : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
+
+  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
+    · Le groupement par heure est fait côté client (const hours), à partir d'une chaîne d'horloge reformatée par expression régulière.
+    · tzNote est codé en dur à « EUROPE/PARIS » (L3238) alors que le fuseau devrait venir du spectateur.
+
+  ⚠ EXTRACTION VERBATIM. Ne rien corriger ici : l'original
+    `Storefront TV.dc.html` reste la source runnable de la galerie.
+-->
+
+<!-- ═══════════ Balisage (verbatim, L316-400) ═══════════ -->
+      <sc-if value="{{ pgLive }}" hint-placeholder-val="{{ false }}">
+        <div data-row="1" style="position: relative; z-index: 0; overflow: hidden; width: 1920px; height: 620px;">
+          <img data-img="{{ liveHero.img }}" alt="" style="position: absolute; left: 0; right: 0; top: 0; bottom: 8px; width: 100%; height: calc(100% - 8px); object-fit: cover; filter: saturate(.72) brightness(.58); transform-origin: 50% 100%; animation: {{ ken }};" />
+          <div style="position: absolute; inset: 0; background: linear-gradient(90deg, #0B0A09 0%, rgba(11,10,9,.8) 44%, transparent 80%);"></div>
+          <div style="position: absolute; left: -2px; right: -2px; bottom: -3px; height: 403px; background: linear-gradient(180deg, transparent 0%, rgba(11,10,9,.55) 30%, rgba(11,10,9,.92) 54%, #0B0A09 66%, #0B0A09 100%);"></div>
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 26px; background: #0B0A09;"></div>
+          <div style="position: absolute; left: 184px; top: 112px; width: 900px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.18em; color: #857E73;">{{ t.liveNowLabel }}</div>
+            <sc-if value="{{ liveHero.has }}" hint-placeholder-val="{{ true }}">
+              <div style="padding-top: 18px; display: flex; align-items: center; gap: 18px;">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 4px; border: 1px solid oklch(0.62 0.21 27); background: color-mix(in oklch, oklch(0.62 0.21 27) 14%, transparent); font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.12em; color: oklch(0.72 0.19 27);">
+                  <span style="width: 10px; height: 10px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>{{ t.kOnAir }}
+                </div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.12em; color: #C9C0B2;">{{ liveHero.viewers }}</div>
+              </div>
+              <div style="padding-top: 20px; font-family: 'Instrument Serif', serif; font-size: 72px; line-height: 1;">{{ liveHero.title }}</div>
+              <div style="padding-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.1em; color: #9B948A;">{{ liveHero.meta }}</div>
+              <div style="padding-top: 30px; display: flex; gap: 18px;">
+                <div tabindex="-1" data-fid="live:hero:watch" data-play="{{ liveHero.playable }}" onClick="{{ liveHero.primary }}" style="display: flex; align-items: center; gap: 14px; padding: 20px 38px; border-radius: 4px; background: #EDE7DC; color: #0B0A09; font-size: 26px; font-weight: 600; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), box-shadow .16s ease;" style-focus="transform:translateY(-6px) scale(var(--fs,1.08));box-shadow:0 0 0 3px #EDE7DC, 0 18px 48px rgba(0,0,0,.7)">
+                  <div style="width: 16px; height: 20px; background: #0B0A09; clip-path: polygon(0 0, 100% 50%, 0 100%);"></div>{{ liveHero.primaryLabel }}
+                </div>
+                <div tabindex="-1" data-fid="live:hero:info" onClick="{{ liveHero.info }}" style="padding: 20px 38px; border-radius: 4px; border: 1px solid #4A423A; color: #C9C0B2; font-size: 26px; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), background .16s ease, color .16s ease;" style-focus="background:#EDE7DC;color:#0B0A09;transform:translateY(-6px) scale(var(--fs,1.08));box-shadow:0 18px 48px rgba(0,0,0,.7)">{{ t.more }}</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ liveHero.none }}" hint-placeholder-val="{{ false }}">
+              <div style="padding-top: 22px; font-family: 'Instrument Serif', serif; font-size: 64px; line-height: 1.05;">{{ t.nothingOnAir }}</div>
+              <div style="padding-top: 18px; max-width: 780px; font-size: 28px; line-height: 1.4; color: #9B948A;">{{ t.nothingOnAirHint }}</div>
+            </sc-if>
+          </div>
+        </div>
+        <sc-if value="{{ liveNowOn }}" hint-placeholder-val="{{ false }}">
+          <div data-row="1" style="padding-top: 20px;">
+            <div style="padding: 0 60px 18px 184px; display: flex; align-items: baseline; gap: 20px;">
+              <div style="font-size: 30px; font-weight: 600;">{{ t.rOnAir }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: #6B6459;">{{ liveNowCount }}</div>
+            </div>
+            <div data-scroll="x" style="position: relative; margin-left: 132px; display: flex; gap: 30px; overflow: hidden; padding: 10px 26px 22px 52px;">
+              <sc-for list="{{ liveNow }}" as="c" hint-placeholder-count="3">
+                <div style="flex: 0 0 auto; width: 420px; color: #857E73;" style-focus-within="color:#EDE7DC">
+                  <div tabindex="-1" data-fid="{{ c.fid }}" data-play="{{ c.playable }}" onClick="{{ c.open }}" style="display: flex; gap: 20px; padding: 16px; border-radius: 4px; border: 3px solid #221F1B; background: #17140F; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), border-color .16s ease, box-shadow .16s ease;" style-focus="transform:translateY(-6px) scale(var(--fs,1.08));border-color:var(--ring,#EDE7DC);box-shadow:0 18px 48px rgba(0,0,0,.7)">
+                    <div style="flex: 0 0 148px; width: 148px; height: 84px; border-radius: 4px; overflow: hidden; position: relative; background: #1A1815;">
+                      <img data-img="{{ c.img }}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.7) brightness(.7);" />
+                    </div>
+                    <div style="min-width: 0; flex: 1 1 auto;">
+                      <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="width: 9px; height: 9px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: {{ c.badgeCol }};">{{ c.badge }}</div>
+                      </div>
+                      <div style="padding-top: 8px; font-size: 26px; color: #EDE7DC; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.title }}</div>
+                      <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.1em; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.meta }}</div>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <div data-row="1" style="padding-top: 20px;">
+          <div style="padding: 0 60px 20px 184px; display: flex; align-items: baseline; gap: 20px;">
+            <div style="font-size: 30px; font-weight: 600;">{{ t.tonightGrid }}</div>
+            <div style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: #6B6459;">{{ tzNote }}</div>
+          </div>
+          <sc-for list="{{ schedule }}" as="h" hint-placeholder-count="4">
+            <div data-row="1" style="display: flex; gap: 34px; padding: 0 0 26px 184px; align-items: flex-start;">
+              <div style="flex: 0 0 132px; padding-top: 14px; font-family: 'JetBrains Mono', monospace; font-size: 30px; color: #857E73;">{{ h.hour }}</div>
+              <div data-scroll="x" style="position: relative; flex: 1 1 auto; display: flex; gap: 30px; overflow: hidden; padding: 10px 26px 14px 26px; margin-left: -26px;">
+                <sc-for list="{{ h.items }}" as="c" hint-placeholder-count="3">
+                  <div style="flex: 0 0 auto; width: 420px; color: #857E73;" style-focus-within="color:#EDE7DC">
+                    <div tabindex="-1" data-fid="{{ c.fid }}" onClick="{{ c.open }}" style="display: flex; gap: 20px; padding: 16px; border-radius: 4px; border: 3px solid #221F1B; background: #17140F; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), border-color .16s ease, box-shadow .16s ease;" style-focus="transform:translateY(-6px) scale(var(--fs,1.08));border-color:var(--ring,#EDE7DC);box-shadow:0 18px 48px rgba(0,0,0,.7)">
+                      <div style="flex: 0 0 148px; width: 148px; height: 84px; border-radius: 4px; overflow: hidden; position: relative; background: #1A1815;">
+                        <img data-img="{{ c.img }}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.7) brightness(.7);" />
+                      </div>
+                      <div style="min-width: 0; flex: 1 1 auto;">
+                        <div style="font-size: 26px; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.title }}</div>
+                        <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.1em; color: #857E73; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.meta }}</div>
+                        <div style="padding-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: {{ c.badgeCol }};">{{ c.badge }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+<!-- ═══════════ Modèle de vue — direct en tête (verbatim, L2769-2777) ═══════════ -->
+<script type="text/x-dc-extract">
+    // live page
+    const lh = lives[0];
+    const liveHero = lh ? {
+      has: true, none: false, img: this.img(lh), title: this.title(lh), viewers: this.num(lh.view) + ' ' + t.viewersSuffix,
+      meta: [this.artistOf(lh).name, this.catLabel(lh.cat), lh.ven, (fr ? 'commencé à ' : 'started at ') + this.clock(lh.min)].join(' · '),
+      primaryLabel: this.owns(lh) ? t.watch : t.book, playable: this.owns(lh) ? 'y' : '',
+      primary: () => this.owns(lh) ? this.openPlayer(lh) : this.go('book', { pid: lh.id, tier: 0, qty: 2 }),
+      info: () => this.go('title', { pid: lh.id })
+    } : { has: false, none: true, img: U(PIC.curtain) };
+</script>
+
+<!-- ═══════════ Modèle de vue — grille horaire et autres directs (verbatim, L2810-2832) ═══════════ -->
+<script type="text/x-dc-extract">
+    const hours = {};
+    cat.filter(x => this.st(x) === 'soon' && x.min < 2880).sort((a, b) => a.min - b.min).forEach(x => {
+      const h = this.clock(x.min).replace(/ [0-9]{2}$/, ' 00').replace(/:[0-9]{2}/, ':00');
+      if (!hours[h]) hours[h] = [];
+      const c = this.card(x, 'sched');
+      c.badge = x.seats === 0 ? (t.kFull + (x.wait ? ' · ' + this.num(x.wait) : '')) : (x.seats < 30 ? t.kLast + ' · ' + x.seats : (this.owns(x) ? t.ownedSeat : this.num(x.seats) + ' ' + (fr ? 'PLACES' : 'SEATS')));
+      c.badgeCol = x.seats === 0 ? '#9B948A' : (x.seats < 30 ? GOLD : (this.owns(x) ? GOLD : '#857E73'));
+      c.meta = this.clock(x.min) + (x.tz ? ' · ' + this.clock(x.min + x.tz * 60) + (fr ? ' à la salle' : ' venue') : '') + ' · ' + x.ven;
+      hours[h].push(c);
+    });
+    const schedule = Object.keys(hours).map(h => ({ hour: h, items: hours[h] }));
+    const liveNow = lives.filter(o => o !== lh)
+      .sort((a, b) => (this.owns(b) ? 1 : 0) - (this.owns(a) ? 1 : 0) || b.view - a.view)
+      .map(o => {
+        const c = this.card(o, 'livenow'), mine = this.owns(o);
+        c.badge = mine ? t.ownedSeat : this.num(o.view) + ' ' + t.viewersSuffix;
+        c.badgeCol = mine ? GOLD : LIVE_INK;
+        c.meta = this.artistOf(o).name + ' · ' + o.ven;
+        c.playable = mine ? 'y' : '';
+        c.open = () => mine ? this.openPlayer(o) : this.go('title', { pid: o.id });
+        return c;
+      });
+
+</script>
+
+<!-- ═══════════ Modèle de vue — compteurs (verbatim, L3179-3181) ═══════════ -->
+<script type="text/x-dc-extract">
+      pgGate: page === 'gate', pgHome: page === 'home', pgTitle: page === 'title', pgArtist: page === 'artist',
+      liveNow: liveNow, liveNowOn: liveNow.length > 0, liveNowCount: this.num(lives.length) + ' ' + (fr ? 'À L’ANTENNE' : 'ON AIR'),
+      pgLive: page === 'live', pgSearch: page === 'search', pgCats: page === 'categories', pgArtists: page === 'artists',
+</script>
+
+<!-- ═══════════ CLÉS DE COPIE ═══════════
+  jeton du composant  →  clé i18n (shared/i18n/tv-keymap.json)
+    t.book               → common.actions.book
+    t.kFull              → common.status.soldOut   [majuscules]
+    t.kLast              → common.status.lastSeats   [majuscules]
+    t.kOnAir             → common.status.onAir   [majuscules]
+    t.liveNowLabel       → discovery.onAirNow   [majuscules]
+    t.more               → common.actions.more
+    t.nothingOnAir       → discovery.nothingOnAir
+    t.nothingOnAirHint   → discovery.nothingOnAirHint
+    t.ownedSeat          → common.status.seatHeld   [majuscules]
+    t.rOnAir             → discovery.rail.onAir
+    t.tonightGrid        → discovery.tonightGrid
+    t.viewersSuffix      → common.units.viewers   [majuscules]
+    t.watch              → common.actions.watch
+-->
+
+<!-- ═══════════ RENVOIS ═══════════
+  needs/storefront-tv.md → « Le temps réel » : compteur de spectateurs 10 à 30 s, jamais zéro
+  openapi/storefront.yaml → getLiveScreen (GET /v1/live), fraîcheur 15 s, en-tête ViewerTimezone
+  ⚠ Le GROUPEMENT HORAIRE est serveur : il dépend du fuseau du spectateur, que la surface envoie.
+  Rangées partagées : _rails.html
+-->

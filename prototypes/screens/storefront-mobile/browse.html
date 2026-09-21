@@ -1,0 +1,329 @@
+<!--
+  Arthome · storefront mobile — browse
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : browse
+  Affiche    : Explorer, la coquille : recherche, jetons de filtre actifs, barre de quatre onglets, état vide. Les quatre onglets de résultats sont dans browse-*.html.
+  Mène vers  : browse-best/-lives/-artists/-replays, sheet-filters, sheet-sort, sheet-save-search
+  Contrat    : GET /v1/search
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L308–345, L602–603
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+  Note       : Les quatre onglets de resultats sont dans browse-best.html, browse-lives.html,
+               browse-artists.html et browse-replays.html.
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L308–345
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ isBrowse }}" hint-placeholder-val="{{ false }}">
+<div style="animation: fadeIn .3s ease both; padding: 18px 16px 0;">
+  <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px; line-height: 1.05;">{{ browseTitle }}</h1>
+  <div style="padding-top: 8px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ searchCountLabel }}</span>
+    <span onClick="{{ createAlert }}" style="{{ createAlertStyle }}">{{ createAlertLabel }}</span>
+  </div>
+
+  <div style="margin-top: 16px; display: flex; gap: 8px;">
+    <span onClick="{{ toggleFilters }}" style="{{ filtersBtnStyle }}">{{ filtersBtnLabel }}</span>
+    <span onClick="{{ toggleSortMenu }}" style="{{ sortFieldStyle }}">{{ sortCurrentLabel }} {{ sortCaret }}</span>
+  </div>
+
+  <sc-if value="{{ hasTokens }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+      <sc-for list="{{ activeTokens }}" as="tk" hint-placeholder-count="2">
+        <span onClick="{{ tk.drop }}" title="{{ tk.title }}" style="{{ tk.style }}">{{ tk.label }} ✕</span>
+      </sc-for>
+      <span onClick="{{ clearAllFilters }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73; align-self: center;">{{ t.clearAll }}</span>
+    </div>
+  </sc-if>
+
+  <div data-strip="1" style="margin-top: 16px; display: flex; gap: 18px; border-bottom: 1px solid #1F1C19; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; cursor: grab;">
+    <sc-for list="{{ searchTabs }}" as="tb" hint-placeholder-count="4">
+      <div onClick="{{ tb.pick }}" style="{{ tb.style }}">
+        <span>{{ tb.label }}</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #6B6459;">{{ tb.count }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{ nothingFound }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top: 22px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 32px 20px; text-align: center;">
+      <div style="font-family: 'Instrument Serif', serif; font-size: 22px;">{{ t.emptyResults }}</div>
+      <div style="padding-top: 9px; font-size: 13px; color: #857E73;">{{ t.emptyResultsHint }}</div>
+    </div>
+  </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L602–603
+     ══════════════════════════════════════════════════════════════════════════ -->
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (30 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── priceDefs  —  calcul dans renderReady()  —  L5338–5338 ── */
+    const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
+
+/* ── dateOk  —  calcul dans renderReady()  —  L5340–5346 ── */
+    const dateOk = (d) => {
+      if (s.fDate === 'all' || s.fDate === 'range') return true;
+      if (s.fDate === 'tonight') return d === 0;
+      if (s.fDate === 'weekend') return d >= 0 && d <= 3;
+      if (s.fDate === 'd7') return d >= 0 && d <= 7;
+      return d >= 0 && d <= 30;
+    };
+
+/* ── passFilters  —  calcul dans renderReady()  —  L5348–5363 ── */
+    const passFilters = (o) => {
+      if (!hit(o)) return false;
+      if (s.fCats.length && s.fCats.indexOf(o.cat) < 0) return false;
+      if (s.fCats.length === 1 && (s.fSubs || []).length && !s.fSubs.some(i => o.subs.indexOf(i) > -1)) return false;
+      if (s.fPrices.length && !s.fPrices.some(k => (priceDefs.find(p => p[0] === k) || [])[2](o.price))) return false;
+      if (s.fStatus !== 'all') {
+        if (s.fStatus === 'live' && o.kind !== 'live') return false;
+        if (s.fStatus === 'soon' && o.kind !== 'upcoming') return false;
+        if (s.fStatus === 'replay' && o.kind !== 'replay') return false;
+      }
+      if (o.kind !== 'replay' && !dateOk(o.day)) return false;
+      if (s.fPromo && !o.hasPromo) return false;
+      if (s.fAlmost && o.kind !== 'replay' && o.soldPct < 80) return false;
+      if (o.kind === 'replay' && s.fExpiring && o.expiresH > 90) return false;
+      return true;
+    };
+
+/* ── sortKey  —  calcul dans renderReady()  —  L5364–5364 ── */
+    const sortKey = s.sort === 'auto' ? (qq ? 'rel' : 'soon') : s.sort;
+
+/* ── sortFn  —  calcul dans renderReady()  —  L5365–5372 ── */
+    const sortFn = (a, b) => {
+      if (sortKey === 'soon') return (a.day < 0 ? 999 : a.day) - (b.day < 0 ? 999 : b.day);
+      if (sortKey === 'pop') return (b.viewers || roster[b.artistIdx].followers.replace(/\D/g, '') / 100) - (a.viewers || roster[a.artistIdx].followers.replace(/\D/g, '') / 100);
+      if (sortKey === 'priceUp') return a.price - b.price;
+      if (sortKey === 'priceDown') return b.price - a.price;
+      const score = o => (o.kind === 'live' ? -100 : 0) + (qq && o.title.toLowerCase().indexOf(qq) === 0 ? -50 : 0) + (qq && o.artist.toLowerCase().indexOf(qq) > -1 ? -20 : 0) + o.idx;
+      return score(a) - score(b);
+    };
+
+/* ── livesAll  —  calcul dans renderReady()  —  L5373–5373 ── */
+    const livesAll = catalogue.filter(o => o.kind !== 'replay' && passFilters(o)).sort(sortFn);
+
+/* ── replaysAll  —  calcul dans renderReady()  —  L5374–5374 ── */
+    const replaysAll = catalogue.filter(o => o.kind === 'replay' && passFilters(o)).sort(sortFn);
+
+/* ── artistsAll  —  calcul dans renderReady()  —  L5375–5396 ── */
+    const artistsAll = roster.filter(a => {
+      if (qq && (a.name + ' ' + a.discipline + ' ' + a.showTitle).toLowerCase().indexOf(qq) < 0) return false;
+      if (s.fCats.length && !catalogue.some(o => o.artistIdx === a.i && s.fCats.indexOf(o.cat) > -1)) return false;
+      if (s.fStatus === 'live' && !a.isLive) return false;
+      if (s.fHasDates && !catalogue.some(o => o.artistIdx === a.i && o.kind === 'upcoming')) return false;
+      return true;
+    }).map(a => {
+      const dates = catalogue.filter(o => o.artistIdx === a.i && o.kind === 'upcoming').sort((x, y) => x.day - y.day);
+      return Object.assign({}, a, {
+        dates: dates.slice(0, 1),
+        datesLabel: dates.length + ' ' + (dates.length > 1 ? t.datesToCome : t.dateToCome),
+        hasDates: dates.length > 0,
+        hasMoreDates: dates.length > 1,
+        moreDatesLabel: (fr ? 'Toutes les dates (' + dates.length + ') →' : 'All dates (' + dates.length + ') →'),
+        toggleDates: (e) => {
+          if (e && e.stopPropagation) e.stopPropagation();
+          this.setState({ page: 'artist', artistId: a.i, suggOpen: false, searchOpen: false });
+        },
+        isLiveRow: a.isLive, liveLabel2: a.isLive ? t.onNow : '',
+        openProfile2: () => this.setState({ page: 'artist', artistId: a.i })
+      });
+    });
+
+/* ── tabDefs  —  calcul dans renderReady()  —  L5473–5473 ── */
+    const tabDefs = [['best', t.tabBest, livesAll.length + artistsAll.length + replaysAll.length], ['artists', t.tabArtists, artistsAll.length], ['lives', t.tabLives, livesAll.length], ['replays', t.tabReplays, replaysAll.length]];
+
+/* ── searchTabs  —  calcul dans renderReady()  —  L5474–5479 ── */
+    const searchTabs = tabDefs.map(([k, label, n]) => ({
+      label, count: String(n),
+      pick: () => this.setState({ sTab: k }),
+      style: 'cursor: pointer; padding: 12px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  display: flex; align-items: baseline; gap: 8px; font-size: 15px; white-space: nowrap; border-bottom: 2px solid ' +
+        (s.sTab === k ? '#EDE7DC' : 'transparent') + '; color: ' + (s.sTab === k ? '#EDE7DC' : '#857E73') + '; transition: color .24s ease, border-color .24s ease;'
+    }));
+
+/* ── sortDefs  —  calcul dans renderReady()  —  L5481–5481 ── */
+    const sortDefs = [['auto', qq ? t.sortRelevance : t.sortSoon], ['soon', t.sortSoon], ['pop', t.sortPop], ['priceUp', t.sortPriceUp], ['priceDown', t.sortPriceDown]];
+
+/* ── tokens  —  calcul dans renderReady()  —  L5530–5530 ── */
+    const tokens = [];
+
+/* ── flags  —  calcul dans renderReady()  —  L5556–5556 ── */
+    const flags = [];
+
+/* ── activeFilterCount  —  calcul dans renderReady()  —  L5631–5631 ── */
+    const activeFilterCount = s.fCats.length + (s.fCats.length === 1 ? (s.fSubs || []).length : 0) + s.fPrices.length + (s.fDate !== 'all' ? 1 : 0) + (s.fStatus !== 'all' ? 1 : 0) + flags.length;
+
+/* ── activeTokens  —  calcul dans renderReady()  —  L5632–5635 ── */
+    const activeTokens = tokens.map(tk => Object.assign(tk, {
+      title: tk.title || tk.label,
+      style: 'cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  display: inline-flex; align-items: center; gap: 5px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid #332E28; background: #141210; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: #C9C0B2; transition: border-color .2s ease, color .2s ease;'
+    }));
+
+/* ── hasTokens  —  clé du modèle rendu  —  L5639–5639 ── */
+      hasTokens: activeTokens.length > 0,
+
+/* ── toggleFilters  —  clé du modèle rendu  —  L5641–5641 ── */
+      toggleFilters: () => this.setState(st => ({ filtersOpen: !st.filtersOpen })),
+
+/* ── filtersBtnLabel  —  clé du modèle rendu  —  L5642–5642 ── */
+      filtersBtnLabel: t.showFilters + (activeFilterCount ? ' · ' + activeFilterCount : '') + (s.filtersOpen ? ' ▴' : ' ▾'),
+
+/* ── filtersBtnStyle  —  clé du modèle rendu  —  L5643–5643 ── */
+      filtersBtnStyle: 'cursor: pointer; padding: 10px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; font-size: 12.5px; transition: background .2s ease, border-color .2s ease; ' +
+
+/* ── clearAllFilters  —  clé du modèle rendu  —  L5673–5673 ── */
+      clearAllFilters: () => this.setState({ query: '', fCats: [], fSubs: [], fPrices: [], fDate: 'all', fStatus: 'all', fAlmost: false, fHasDates: false, fExpiring: false, fPromo: false, sort: 'auto', alertCreated: false }),
+
+/* ── nothingFound  —  clé du modèle rendu  —  L5681–5681 ── */
+      nothingFound: s.sTab === 'best' && livesAll.length === 0 && artistsAll.length === 0 && replaysAll.length === 0,
+
+/* ── searchCountLabel  —  clé du modèle rendu  —  L5685–5689 ── */
+      searchCountLabel: (() => {
+        const n = s.sTab === 'best' ? (livesAll.length + artistsAll.length + replaysAll.length)
+          : (s.sTab === 'artists' ? artistsAll.length : (s.sTab === 'replays' ? replaysAll.length : livesAll.length));
+        return n + ' ' + (n > 1 ? t.resultsLabel : t.resultLabel);
+      })(),
+
+/* ── createAlert  —  clé du modèle rendu  —  L5716–5716 ── */
+      createAlert: this.gate(() => this.setState({ saveOpen: true, saveStep: 'ask', saveName: '', saveScope: 'search' })),
+
+/* ── createAlertLabel  —  clé du modèle rendu  —  L5766–5766 ── */
+      createAlertLabel: t.createAlert,
+
+/* ── createAlertStyle  —  clé du modèle rendu  —  L5767–5767 ── */
+      createAlertStyle: 'cursor: pointer; padding: 12px 20px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; font-size: 12.5px; border: 1px solid #332E28; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;',
+
+/* ── browseTitle  —  clé du modèle rendu  —  L5877–5877 ── */
+      browseTitle: s.query ? '« ' + s.query + ' »' : (fr ? 'Explorer la scène' : 'Browse the stage'),
+
+/* ── toggleSortMenu  —  clé du modèle rendu  —  L6281–6281 ── */
+      toggleSortMenu: () => this.setState(st => ({ sortOpen: !st.sortOpen })),
+
+/* ── sortFieldStyle  —  clé du modèle rendu  —  L6282–6282 ── */
+      sortFieldStyle: "cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 10px 12px; min-height: 44px; box-sizing: border-box;  border: 1px solid " +
+
+/* ── sortCaret  —  clé du modèle rendu  —  L6284–6284 ── */
+      sortCaret: s.sortOpen ? '▴' : '▾',
+
+/* ── sortCurrentLabel  —  clé du modèle rendu  —  L6293–6297 ── */
+      sortCurrentLabel: (() => {
+        const defs = s.page === 'category' ? sortDefs.filter(d => d[0] !== 'soon') : (qq ? sortDefs : sortDefs.filter(d => d[0] !== 'soon'));
+        const cur = s.page === 'category' ? s.cSort : s.sort;
+        return ((defs.find(d => d[0] === cur) || defs[0]) || ['', ''])[1];
+      })(),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (24) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2439  clearAll: "Tout effacer"
+  EN L2892  clearAll: "Clear all"
+
+  FR L2443  createAlert: "Enregistrer cette recherche"
+  EN L2896  createAlert: "Save this search"
+
+  FR L2452  dateToCome: "date à venir"
+  EN L2905  dateToCome: "upcoming date"
+
+  FR L2454  datesToCome: "dates à venir"
+  EN L2907  datesToCome: "upcoming dates"
+
+  FR L2474  emptyResults: "Aucun spectacle pour cette recherche"
+  EN L2927  emptyResults: "No show for this search"
+
+  FR L2475  emptyResultsHint: "Essayez un autre mot, ou retirez les filtres actifs."
+  EN L2928  emptyResultsHint: "Try another word, or clear the active filters."
+
+  FR L2573  onNow: "EN DIRECT"
+  EN L3026  onNow: "LIVE NOW"
+
+  FR L2597  p1020: "10–20 €"
+  EN L3050  p1020: "€10–20"
+
+  FR L2598  p2035: "20–35 €"
+  EN L3051  p2035: "€20–35"
+
+  FR L2599  p35: "> 35 €"
+  EN L3052  p35: "> €35"
+
+  FR L2600  pFree: "GRATUIT"
+  EN L3053  pFree: "FREE"
+
+  FR L2601  pU10: "< 10 €"
+  EN L3054  pU10: "< €10"
+
+  FR L2659  resultLabel: "RÉSULTAT"
+  EN L3112  resultLabel: "RESULT"
+
+  FR L2660  resultsLabel: "RÉSULTATS"
+  EN L3113  resultsLabel: "RESULTS"
+
+  FR L2703  showFilters: "Filtres"
+  EN L3156  showFilters: "Filters"
+
+  FR L2721  sortPop: "POPULARITÉ"
+  EN L3174  sortPop: "POPULARITY"
+
+  FR L2722  sortPriceDown: "PRIX ↓"
+  EN L3175  sortPriceDown: "PRICE ↓"
+
+  FR L2723  sortPriceUp: "PRIX ↑"
+  EN L3176  sortPriceUp: "PRICE ↑"
+
+  FR L2724  sortRelevance: "PERTINENCE"
+  EN L3177  sortRelevance: "RELEVANCE"
+
+  FR L2725  sortSoon: "BIENTÔT"
+  EN L3178  sortSoon: "SOONEST"
+
+  FR L2761  tabArtists: "Artistes"
+  EN L3214  tabArtists: "Artists"
+
+  FR L2762  tabBest: "Vue d’ensemble"
+  EN L3215  tabBest: "Overview"
+
+  FR L2765  tabLives: "Lives"
+  EN L3218  tabLives: "Lives"
+
+  FR L2767  tabReplays: "Rediffusions"
+  EN L3220  tabReplays: "Replays"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

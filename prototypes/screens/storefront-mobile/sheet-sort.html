@@ -1,0 +1,106 @@
+<!--
+  Arthome · storefront mobile — sheet-sort
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : superposée · sortOpen
+  Affiche    : Le tri : pertinence, bientôt, popularité, prix.
+  Mène vers  : browse, category
+  Contrat    : GET /v1/search (paramètre sort)
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L2198–2211
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L2198–2211
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ toggleSortMenu }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
+<div style="{{ sheetBase }} background: #0B0A09; border-top: 1px solid #332E28; box-shadow: 0 -24px 60px rgba(0,0,0,0.6); animation: slideUp .26s cubic-bezier(.2,.7,.2,1) both;">
+  <div style="padding: 12px 0 6px; display: flex; justify-content: center;"><span style="width: 38px; height: 3px; background: #332E28;"></span></div>
+  <div style="padding: 6px 16px 14px; border-bottom: 1px solid #1F1C19;">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.sortLabel }}</span>
+  </div>
+  <div style="padding: 8px 0 22px;">
+    <sc-for list="{{ sortRows }}" as="sr" hint-placeholder-count="5">
+      <div onClick="{{ sr.pick }}" style="{{ sr.style }}">{{ sr.label }}</div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (4 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── sortDefs  —  calcul dans renderReady()  —  L5481–5481 ── */
+    const sortDefs = [['auto', qq ? t.sortRelevance : t.sortSoon], ['soon', t.sortSoon], ['pop', t.sortPop], ['priceUp', t.sortPriceUp], ['priceDown', t.sortPriceDown]];
+
+/* ── sortOpen  —  clé du modèle rendu  —  L6280–6280 ── */
+      sortOpen: s.sortOpen,
+
+/* ── toggleSortMenu  —  clé du modèle rendu  —  L6281–6281 ── */
+      toggleSortMenu: () => this.setState(st => ({ sortOpen: !st.sortOpen })),
+
+/* ── sortRows  —  clé du modèle rendu  —  L6285–6292 ── */
+      sortRows: (s.page === 'category'
+        ? sortDefs.filter(d => d[0] !== 'soon').map(([k, label]) => [k, label, s.cSort === k, () => this.setState({ cSort: k, shown: {} })])
+        : (qq ? sortDefs : sortDefs.filter(d => d[0] !== 'soon')).map(([k, label]) => [k, label, s.sort === k, () => this.setState({ sort: k, shown: {} })])
+      ).map(([k, label, on, pick]) => ({
+        label, on,
+        pick: () => { pick(); this.setState({ sortOpen: false }); },
+        style: "cursor: pointer; display: flex; align-items: center; min-height: 48px; padding: 12px 16px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; color: " + (on ? '#EDE7DC' : '#9B948A') + '; background: ' + (on ? '#17140F' : 'transparent') + '; transition: background .18s ease, color .18s ease;'
+      })),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (6) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2720  sortLabel: "TRIER PAR"
+  EN L3173  sortLabel: "SORT BY"
+
+  FR L2721  sortPop: "POPULARITÉ"
+  EN L3174  sortPop: "POPULARITY"
+
+  FR L2722  sortPriceDown: "PRIX ↓"
+  EN L3175  sortPriceDown: "PRICE ↓"
+
+  FR L2723  sortPriceUp: "PRIX ↑"
+  EN L3176  sortPriceUp: "PRICE ↑"
+
+  FR L2724  sortRelevance: "PERTINENCE"
+  EN L3177  sortRelevance: "RELEVANCE"
+
+  FR L2725  sortSoon: "BIENTÔT"
+  EN L3178  sortSoon: "SOONEST"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

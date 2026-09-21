@@ -1,0 +1,285 @@
+<!--
+==============================================================================
+  ÉCRAN — _simple-page — le gabarit générique des douze pages simples
+==============================================================================
+
+  Ce qu'il affiche : un en-tête (kicker, titre, actions), un bandeau de chiffres, et une suite de blocs (lignes, pastilles, barres, anneau), paginés à huit
+
+  Rôles qui l'ouvrent : variable — c'est la page qui décide, pas le gabarit
+  Mène vers : agenda · stream · stats · tickets · store · replays · team · payouts · journal · settings · help · inbox
+
+  Source : mockups/Studio.dc.html
+    balisage        lignes 2209–2340
+    modèle de vue   lignes 4555–4663, 5336–5341
+
+  Clés de copie employées :
+    aucune clé i18n directe
+    T(...) — littéraux français traduits par la table EN de _shared.html
+
+  Contrat :
+    besoins   needs/studio-web.md § « Pagination et volumes »
+    openapi   openapi/studio.yaml · voir chaque page
+
+  Relevé d'extraction (défauts vus, non corrigés) :
+    · DOUZE écrans partagent ce balisage ; ils ne diffèrent que par leur entrée du registre PAGES. C'est pourquoi les douze fichiers d'écran ne portent que leur modèle de vue et renvoient ici.
+    · `strip()` retire les chiffres d'argent (/RECETTE|REVENU|VENTES|PANIER|VERSEMENT|COMMISSION|IMPAY/) sans canRevenue : le rôle change LA LISTE, pas le contenu d'une case.
+    · pagination : PER = 8, avec « 1–8 SUR N » et un bouton par page — d'où l'exigence page + total (D-010).
+
+  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+-->
+
+<!-- ======================= BALISAGE ======================= -->
+<!-- ···· balisage · Studio.dc.html lignes 2209–2340 ···· -->
+    <sc-if value="{{ hasSimple }}" hint-placeholder-val="{{ false }}">
+    <div style="animation: fadeIn .2s ease both;">
+      <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 16px 22px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
+        <div style="min-width: 0;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">{{ sp.kicker }}</div>
+          <div style="padding-top: 7px; font-size: 21px; font-weight: 600; letter-spacing: -0.01em;">{{ sp.title }}</div>
+        </div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 7px; flex-wrap: wrap;">
+          <sc-for list="{{ sp.actions }}" as="ac" hint-placeholder-count="1">
+            <span onClick="{{ ac.go }}" style="{{ ac.style }}">{{ ac.label }}</span>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{ sp.hasTabs }}" hint-placeholder-val="{{ false }}">
+        <div data-strip="1" style="border-bottom: 1px solid #1D2126; background: #131518; padding: 0 22px; display: flex; gap: 20px; overflow-x: auto;">
+          <sc-for list="{{ sp.tabs }}" as="tb" hint-placeholder-count="2">
+            <span onClick="{{ tb.pick }}" style="{{ tb.style }}">{{ tb.label }}</span>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ sp.hasStrip }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ sp.stripStyle }}">
+          <sc-for list="{{ sp.strip }}" as="st" hint-placeholder-count="4">
+            <div style="background: #15171A; padding: 11px 14px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">{{ st.label }}</div>
+              <div style="padding-top: 7px; display: flex; align-items: baseline; gap: 6px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 19px; font-weight: 500; line-height: 1; white-space: nowrap; color: {{ st.color }};">{{ st.value }}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #5B636B; white-space: nowrap;">{{ st.unit }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <div style="padding: 16px 22px 34px; display: flex; flex-direction: column; gap: 12px; max-width: 1180px;">
+        <sc-for list="{{ sp.blocks }}" as="bk" hint-placeholder-count="2">
+          <div style="{{ bk.cardStyle }}">
+            <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: {{ bk.titleColor }};">{{ bk.title }}</span>
+              <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #5B636B;">{{ bk.note }}</span>
+            </div>
+
+            <sc-if value="{{ bk.hasIntro }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 13px 14px 0; font-size: 12.5px; line-height: 1.6; color: #98A0A8; text-wrap: pretty;">{{ bk.intro }}</div>
+            </sc-if>
+
+            <sc-if value="{{ bk.isRows }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-direction: column;">
+                <sc-for list="{{ bk.pageRows }}" as="r" hint-placeholder-count="4">
+                  <div onClick="{{ r.go }}" style="{{ r.rowStyle }}" style-hover="background:#191C20">
+                    <sc-if value="{{ r.hasDot }}" hint-placeholder-val="{{ false }}">
+                      <span style="flex: 0 0 auto; width: 6px; height: 6px; background: {{ r.dot }};"></span>
+                    </sc-if>
+                    <sc-if value="{{ r.hasThumb }}" hint-placeholder-val="{{ false }}">
+                      <div style="flex: 0 0 62px; width: 62px; position: relative; aspect-ratio: 16/10; overflow: hidden; background: #1A1D21;">
+                        <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.68) brightness(0.78); background-color: #1A1D21; background-image: {{ r.imgCss }}; background-size: cover; background-position: center;"></div>
+                      </div>
+                    </sc-if>
+                    <div style="min-width: 0; flex: 1 1 160px;">
+                      <div style="font-size: 13px; color: #E6E9EC; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ r.label }}</div>
+                      <div style="padding-top: 4px; font-size: 12px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">{{ r.hint }}</div>
+                    </div>
+                    <sc-if value="{{ r.hasBar }}" hint-placeholder-val="{{ false }}">
+                      <div style="flex: 1 1 90px; min-width: 60px; height: 12px; background: #1A1D21; position: relative;"><div style="{{ r.barStyle }}"></div></div>
+                    </sc-if>
+                    <span style="{{ r.valueStyle }}">{{ r.value }}</span>
+                    <sc-if value="{{ r.hasCta2 }}" hint-placeholder-val="{{ false }}">
+                      <span onClick="{{ r.act2 }}" style="{{ r.cta2Style }}" style-hover="background:#1A1D21">{{ r.cta2 }}</span>
+                    </sc-if>
+                    <span onClick="{{ r.act }}" style="{{ r.ctaStyle }}">{{ r.cta }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ bk.hasPager }}" hint-placeholder-val="{{ false }}">
+                <div style="border-top: 1px solid #1D2126; padding: 9px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #5B636B;">{{ bk.pagerLabel }}</span>
+                  <div style="margin-left: auto; display: flex; gap: 5px; flex-wrap: wrap;">
+                    <sc-for list="{{ bk.pagerBtns }}" as="pb" hint-placeholder-count="3">
+                      <span onClick="{{ pb.go }}" style="{{ pb.style }}" style-hover="background:#1A1D21">{{ pb.label }}</span>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </sc-if>
+
+            <sc-if value="{{ bk.isBars }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 18px 16px 14px; display: flex; align-items: flex-end; gap: 10px;">
+                <sc-for list="{{ bk.bars }}" as="b" hint-placeholder-count="6">
+                  <div style="flex: 1 1 0; min-width: 0; height: 186px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 7px;">
+                    <span style="{{ b.valueStyle }}">{{ b.value }}</span>
+                    <div style="{{ b.barStyle }}"></div>
+                    <span style="{{ b.labelStyle }}">{{ b.label }}</span>
+                    <span style="{{ b.subStyle }}">{{ b.sub }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ bk.isDonut }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 18px 16px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
+                <div style="{{ bk.donutStyle }}">
+                  <div style="position: absolute; inset: 22px; border-radius: 50%; background: #15171A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; color: #E6E9EC;">{{ bk.donutValue }}</div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.1em; color: #5B636B;">{{ bk.donutCaption }}</div>
+                  </div>
+                </div>
+                <div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 10px;">
+                  <sc-for list="{{ bk.donutLegend }}" as="l" hint-placeholder-count="4">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span style="{{ l.swatch }}"></span>
+                      <span style="min-width: 0; flex: 1 1 auto; font-size: 12.5px; color: #C6CDD4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ l.label }}</span>
+                      <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #E6E9EC;">{{ l.value }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ bk.isChips }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 13px 14px; display: flex; gap: 7px; flex-wrap: wrap;">
+                <sc-for list="{{ bk.chips }}" as="ch" hint-placeholder-count="4">
+                  <span onClick="{{ ch.pick }}" style="{{ ch.style }}">{{ ch.label }}</span>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+<!-- ===================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+<!-- ···· modèle de vue · Studio.dc.html lignes 4555–4663 ···· -->
+        const p = page;
+        const simple = ['inbox', 'agenda', 'stream', 'stats', 'tickets', 'store', 'replays', 'team', 'payouts', 'journal', 'settings', 'help'];
+        if (simple.indexOf(p) < 0) return { hasSimple: false, sp: { kicker: '', title: '', actions: [], hasStrip: false, strip: [], stripStyle: '', blocks: [] } };
+
+        const card = 'border: 1px solid #23272C; background: #15171A;';
+        const rowBase = 'border-top: 1px solid #191C20; padding: 11px 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; ';
+        const val = (color, w) => 'flex: 0 0 auto; ' + MONO + 'font-size: 12px; color: ' + (color || '#C6CDD4') + '; min-width: ' + (w || 82) + 'px; text-align: right;';
+        const cta = (kind, blank) => 'flex: 0 0 auto; min-width: 106px; text-align: center; cursor: pointer; padding: 7px 12px; white-space: nowrap; font-size: 12px; border: 1px solid '
+          + (kind === 'strong' ? 'transparent; background: #E6E9EC; color: #0E0F10; font-weight: 600;' : '#2A2F35; color: #C6CDD4;') + (blank ? ' visibility: hidden; pointer-events: none;' : '');
+        const MONEY = /RECETTE|REVENU|VENTES|PANIER|VERSEMENT|COMMISSION|IMPAY/;
+        const strip = (items, cols) => {
+          const keep = items.filter(it => canRevenue || !MONEY.test(it[0]));
+          const n = Math.max(1, Math.min(cols, keep.length));
+          return {
+            hasStrip: keep.length > 0,
+            stripStyle: 'border-bottom: 1px solid #1D2126; display: grid; grid-template-columns: repeat(' + (vw < 700 ? Math.min(2, n) : n) + ', minmax(0,1fr)); gap: 1px; background: #1D2126;',
+            strip: keep.map(([label, value, unit, color]) => ({ label: T(label), value: T(value), unit: T(unit), color: color || '#E6E9EC' }))
+          };
+        };
+        const rows = (list) => list.map(r => Object.assign({
+          hasDot: !!r.dot, hasThumb: !!r.img, hasBar: r.pct !== undefined, hasCta: !!r.cta,
+          hasCta2: !!r.cta2, cta2: r.cta2 || '', act2: r.act2 || (() => {}),
+          cta2Style: 'flex: 0 0 auto; min-width: 88px; text-align: center; cursor: pointer; padding: 7px 12px; white-space: nowrap; border: 1px solid #2A2F35; '
+            + MONO + 'font-size: 9px; letter-spacing: 0.09em; color: #98A0A8; transition: background .18s ease;',
+          go: r.go || (() => {}), act: r.act || r.go || (() => {}),
+          value: T(r.value || ''), valueStyle: val(r.valueColor, r.valueWidth),
+          cta: T(r.cta || '·'), ctaStyle: cta(r.ctaKind, !r.cta), hint: r.hint || '',
+          label: T(r.label), cta2: T(r.cta2 || ''),
+          barStyle: 'position: absolute; left: 0; top: 0; bottom: 0; width: ' + (r.pct || 0) + '%; background: ' + (r.barColor || '#3A434C') + ';',
+          rowStyle: rowBase + (r.go ? ' cursor: pointer;' : '')
+        }, r));
+        const PER = 8;
+        const tabsOf = (defs, stateKey, dflt) => {
+          const cur = defs.some(d => d[0] === s[stateKey]) ? s[stateKey] : dflt;
+          return {
+            active: cur,
+            hasTabs: defs.length > 1,
+            tabs: defs.map(([k, label]) => ({
+              label,
+              pick: () => this.setState({ [stateKey]: k }),
+              style: 'cursor: pointer; padding: 12px 2px; white-space: nowrap; ' + MONO
+                + 'font-size: 9.5px; letter-spacing: 0.11em; border-bottom: 2px solid '
+                + (cur === k ? '#E6E9EC; color: #E6E9EC;' : 'transparent; color: #7C858D;')
+                + ' transition: color .18s ease, border-color .18s ease;'
+            }))
+          };
+        };
+
+        /* graphiques : mêmes données que les listes, lues d'un coup d'œil */
+        const barsOf = list => {
+          const max = Math.max.apply(null, list.map(b => b.value).concat([1]));
+          return list.map(b => ({
+            label: b.label, sub: b.sub || '',
+            value: b.display === undefined ? String(b.value) : b.display,
+            barStyle: 'width: 100%; height: ' + Math.max(3, Math.round((b.value / max) * 120)) + 'px; background: ' + (b.color || OK) + ';',
+            valueStyle: MONO + 'font-size: 11px; color: ' + (b.color || '#C6CDD4') + ';',
+            labelStyle: MONO + 'font-size: 9px; letter-spacing: 0.07em; color: #98A0A8; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;',
+            subStyle: MONO + 'font-size: 8.5px; letter-spacing: 0.06em; color: #5B636B; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;'
+          }));
+        };
+        const donutOf = (segs, value, caption) => {
+          const total = segs.reduce((a, x) => a + x.value, 0) || 1;
+          let acc = 0;
+          const stops = segs.map(sg => {
+            const from = (acc / total) * 100;
+            acc += sg.value;
+            return sg.color + ' ' + from.toFixed(2) + '% ' + ((acc / total) * 100).toFixed(2) + '%';
+          }).join(', ');
+          return {
+            isDonut: true,
+            donutStyle: 'position: relative; flex: 0 0 auto; width: 168px; height: 168px; border-radius: 50%; background: conic-gradient(' + stops + ');',
+            donutValue: value, donutCaption: caption,
+            donutLegend: segs.map(sg => ({
+              label: sg.label,
+              value: sg.display === undefined ? Math.round((sg.value / total) * 100) + ' %' : sg.display,
+              swatch: 'flex: 0 0 auto; width: 11px; height: 11px; background: ' + sg.color + ';'
+            }))
+          };
+        };
+
+        const block = (title, note, content) => {
+          const b = Object.assign({
+            title: T(title), note: T(note || ''), titleColor: '#5B636B', cardStyle: card,
+            isRows: false, isChips: false, isBars: false, isDonut: false, hasIntro: false, intro: '', rows: [], chips: [], bars: [],
+            donutStyle: '', donutValue: '', donutCaption: '', donutLegend: []
+          }, content);
+          /* au-delà du seuil, la liste se pagine plutôt que de s'étirer */
+          if (!b.isRows || b.rows.length <= PER) return Object.assign(b, { hasPager: false, pageRows: b.rows, pagerLabel: '', pagerBtns: [] });
+          const key = p + '/' + title;
+          const pages = Math.ceil(b.rows.length / PER);
+          const cur = Math.min((s.listPage || {})[key] || 0, pages - 1);
+          const go = n => () => this.setState(st => ({ listPage: Object.assign({}, st.listPage, { [key]: Math.max(0, Math.min(pages - 1, n)) }) }));
+          const pBtn = (label, target, on, off) => ({
+            label,
+            go: off ? (() => {}) : go(target),
+            style: 'flex: 0 0 auto; min-width: 30px; text-align: center; cursor: ' + (off ? 'default' : 'pointer') + '; padding: 6px 9px; ' + MONO
+              + 'font-size: 9px; letter-spacing: 0.08em; border: 1px solid ' + (on ? '#4A535C' : '#23272C')
+              + '; background: ' + (on ? '#1A1D21' : 'transparent') + '; color: ' + (off ? '#3A4149' : (on ? '#E6E9EC' : '#98A0A8')) + ';'
+          });
+          return Object.assign(b, {
+            hasPager: true,
+            pageRows: b.rows.slice(cur * PER, cur * PER + PER),
+            pagerLabel: (cur * PER + 1) + '–' + Math.min(b.rows.length, cur * PER + PER) + ' SUR ' + b.rows.length,
+            pagerBtns: [pBtn('‹', cur - 1, false, cur === 0)]
+              .concat(Array.from({ length: pages }, (_, n) => pBtn(String(n + 1), n, n === cur, false)))
+              .concat([pBtn('›', cur + 1, false, cur === pages - 1)])
+          });
+        };
+
+<!-- ···· modèle de vue · Studio.dc.html lignes 5336–5341 ···· -->
+
+        const pg = PAGES[p]();
+        return { hasSimple: true, sp: Object.assign({}, pg, {
+          kicker: T(pg.kicker), title: T(pg.title),
+          actions: (pg.actions || []).map(a => Object.assign({}, a, { label: T(a.label) }))
+        }) };
+</script>

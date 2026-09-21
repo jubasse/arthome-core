@@ -1,0 +1,468 @@
+<!--
+  Arthome · storefront mobile — category
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : category
+  Affiche    : Une discipline, la coquille : la une, le suivi de la discipline sous forme de recherche enregistrée, les sous-genres, les filtres et le sommaire ancré. Les quatre sections sont dans category-*.html.
+  Mène vers  : category-live/-upcoming/-artists/-replays, sheet-filters, sheet-save-search
+  Contrat    : GET /v1/categories/{categoryId}
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L627–686, L866–868
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+  Note       : Les quatre sections ancrées sont dans category-live.html, category-upcoming.html,
+               category-artists.html et category-replays.html.
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L627–686
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ isCategory }}" hint-placeholder-val="{{ false }}">
+<div style="animation: fadeIn .3s ease both;">
+  <div style="position: relative; aspect-ratio: 3/2; overflow: hidden; background: #131110; border-bottom: 1px solid #1F1C19;">
+    <sc-if value="{{ category.img }}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.65) contrast(1.05) brightness(0.5); background-color: #17140F; background-image: {{ category.imgCss }}; background-size: cover; background-position: center;"></div>
+    </sc-if>
+    <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(11,10,9,0.96), rgba(11,10,9,0.25));"></div>
+    <span onClick="{{ goCategories }}" style="position: absolute; left: 14px; top: 14px; cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  background: rgba(11,10,9,0.7); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #C9C0B2;">{{ t.backToCats }}</span>
+    <div style="position: absolute; left: 16px; right: 16px; bottom: 16px;">
+      <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 34px; line-height: 1;">{{ category.name }}</h1>
+      <div style="padding-top: 9px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <sc-if value="{{ category.hasLive }}" hint-placeholder-val="{{ false }}"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.14 27);">{{ category.liveLabel }}</span></sc-if>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #B0A899;">{{ catTotalLabel }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 14px 16px 0;">
+    <sc-if value="{{ catNotSaved }}" hint-placeholder-val="{{ true }}">
+      <span onClick="{{ catSaveNew }}" style="display: block; cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  text-align: center; border: 1px solid #332E28; font-size: 13px; color: #C9C0B2;">{{ t.followCat }}</span>
+    </sc-if>
+    <sc-if value="{{ catAlreadySaved }}" hint-placeholder-val="{{ false }}">
+      <div style="border: 1px solid rgba(112,190,140,0.3); background: rgba(112,190,140,0.05); padding: 11px 12px; display: flex; align-items: center; gap: 10px;">
+        <div style="min-width: 0; flex: 1 1 auto;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: oklch(0.74 0.12 150);">{{ t.savedCatHere }}</div>
+          <sc-if value="{{ catSavedIdle }}" hint-placeholder-val="{{ true }}">
+            <div style="padding-top: 5px; font-size: 13.5px; color: #EDE7DC; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ catSavedName }}</div>
+          </sc-if>
+          <sc-if value="{{ catSavedEditing }}" hint-placeholder-val="{{ false }}">
+            <input data-pop="rename" value="{{ catSavedDraft }}" onChange="{{ catSavedInput }}" onKeyDown="{{ catSavedKey }}" style="margin-top: 4px; width: 100%; box-sizing: border-box; padding: 7px 9px; border: 1px solid rgba(237,231,220,0.5); background: #0B0A09; font-family: inherit; font-size: 13.5px; color: #EDE7DC; outline: none;" />
+          </sc-if>
+        </div>
+        <span onClick="{{ catSavedStartRename }}" title="{{ t.alertRename }}" style="flex: 0 0 auto; cursor: pointer; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 13px; color: #857E73;">✎</span>
+        <span onClick="{{ catSavedRemove }}" title="{{ t.unfollowCat }}" style="flex: 0 0 auto; cursor: pointer; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 13px; color: #857E73;">🗑</span>
+      </div>
+    </sc-if>
+
+    <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
+      <span onClick="{{ toggleCatFilters }}" style="{{ catFiltersBtnStyle }}">{{ catFiltersBtnLabel }}</span>
+      <span onClick="{{ toggleSortMenu }}" style="{{ sortFieldStyle }}">{{ sortCurrentLabel }} {{ sortCaret }}</span>
+    </div>
+
+    <sc-if value="{{ catHasTokens }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+        <sc-for list="{{ catTokens }}" as="tk" hint-placeholder-count="2">
+          <span onClick="{{ tk.drop }}" title="{{ tk.title }}" style="{{ tk.style }}">{{ tk.label }} ✕</span>
+        </sc-for>
+        <span onClick="{{ clearCatFilters }}" style="cursor: pointer; align-self: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73;">{{ t.clearAll }}</span>
+      </div>
+    </sc-if>
+
+    <div data-strip="1" style="margin-top: 14px; display: flex; gap: 18px; border-bottom: 1px solid #1F1C19; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; cursor: grab;">
+      <sc-for list="{{ catTabs }}" as="tb" hint-placeholder-count="5">
+        <div onClick="{{ tb.pick }}" style="{{ tb.style }}">
+          <span>{{ tb.label }}</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #6B6459;">{{ tb.count }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L866–868
+     ══════════════════════════════════════════════════════════════════════════ -->
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (41 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── nav  —  méthode de classe  —  L3977–3977 ── */
+  nav(page) { return () => this.setState({ page, pick: null, ticketOpen: false, shareOpen: false }); }
+
+/* ── catAlertState  —  méthode de classe  —  L4202–4209 ── */
+  catAlertState() {
+    const s = this.state;
+    return {
+      fCats: [s.catId], fSubs: (s.subs || []).slice(), fPrices: (s.cPrices || []).slice(),
+      fDate: s.cDate, fStatus: s.cStatus, fAlmost: s.cAlmost, fHasDates: false,
+      fExpiring: false, fPromo: s.cPromo, sTab: 'best', sort: s.cSort
+    };
+  }
+
+/* ── alertTokens  —  méthode de classe  —  L4211–4232 ── */
+  alertTokens(al, cats, T) {
+    const st = al.st || {};
+    const out = [];
+    (st.fCats || []).forEach(i => { if (cats[i]) out.push(cats[i].name); });
+    if ((st.fCats || []).length === 1) {
+      (st.fSubs || []).forEach(i => {
+        const nm = (SUBS_ALL[this.props.lang === 'en' ? 'en' : 'fr'][st.fCats[0]] || [])[i];
+        if (nm) out.push(nm);
+      });
+    }
+    const P = { free: T.pFree, u10: T.pU10, '1020': T.p1020, '2035': T.p2035, o35: T.p35 };
+    (st.fPrices || []).forEach(k => { if (P[k]) out.push(P[k]); });
+    const D = { tonight: T.dTonight, weekend: T.dWeekend, d7: T.d7, d30: T.d30, range: T.dRange };
+    if (st.fDate && st.fDate !== 'all' && D[st.fDate]) out.push(D[st.fDate]);
+    const S = { live: T.stLive, soon: T.stSoon, replay: T.stReplay };
+    if (st.fStatus && st.fStatus !== 'all' && S[st.fStatus]) out.push(S[st.fStatus]);
+    if (st.fAlmost) out.push(T.almostFull);
+    if (st.fHasDates) out.push(T.hasDates);
+    if (st.fExpiring) out.push(T.expSoon);
+    if (st.fPromo) out.push(T.promoFilter);
+    return out;
+  }
+
+/* ── alertName  —  méthode de classe  —  L4234–4239 ── */
+  alertName(al, cats, T) {
+    if (al.name) return al.name;
+    if (al.query) return al.query;
+    const tk = this.alertTokens(al, cats, T);
+    return tk.length ? tk.join(' · ') : T.alertAll;
+  }
+
+/* ── priceDefs  —  calcul dans renderReady()  —  L5338–5338 ── */
+    const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
+
+/* ── dateDefs  —  calcul dans renderReady()  —  L5339–5339 ── */
+    const dateDefs = [['tonight', t.dTonight], ['weekend', t.dWeekend], ['d7', t.d7], ['d30', t.d30], ['range', t.dRange]];
+
+/* ── statusDefs  —  calcul dans renderReady()  —  L5347–5347 ── */
+    const statusDefs = [['live', t.stLive], ['soon', t.stSoon], ['replay', t.stReplay]];
+
+/* ── catSig  —  calcul dans renderReady()  —  L5443–5443 ── */
+    const catSig = this.alertSig('', this.catAlertState());
+
+/* ── catFollowEntry  —  calcul dans renderReady()  —  L5444–5444 ── */
+    const catFollowEntry = s.alerts.find(al => al.scope === 'category' && this.alertSig('', al.st) === catSig) || null;
+
+/* ── sortDefs  —  calcul dans renderReady()  —  L5481–5481 ── */
+    const sortDefs = [['auto', qq ? t.sortRelevance : t.sortSoon], ['soon', t.sortSoon], ['pop', t.sortPop], ['priceUp', t.sortPriceUp], ['priceDown', t.sortPriceDown]];
+
+/* ── priceMatch  —  calcul dans renderReady()  —  L5566–5566 ── */
+    const priceMatch = (k, p) => { const d = priceDefs.find(x => x[0] === k); return d ? d[2](p) : true; };
+
+/* ── dateMatch  —  calcul dans renderReady()  —  L5567–5573 ── */
+    const dateMatch = (k, d) => {
+      if (k === 'range') return true;
+      if (k === 'tonight') return d === 0;
+      if (k === 'weekend') return d <= 3;
+      if (k === 'd7') return d >= 0 && d <= 7;
+      return d >= 0 && d <= 30;
+    };
+
+/* ── catFilterCount  —  calcul dans renderReady()  —  L5574–5574 ── */
+    const catFilterCount = subsSel.length + s.cPrices.length + (s.cDate !== 'all' ? 1 : 0) + (s.cStatus !== 'all' ? 1 : 0) + (s.cAlmost ? 1 : 0) + (s.cPromo ? 1 : 0);
+
+/* ── catPool  —  calcul dans renderReady()  —  L5575–5590 ── */
+    const catPool = catalogue.filter(o => {
+      if (o.cat !== s.catId) return false;
+      if (subsSel.length && !subsSel.some(i => o.subs.indexOf(i) > -1)) return false;
+      if (s.cPrices.length && !s.cPrices.some(k => priceMatch(k, o.price))) return false;
+      if (s.cDate !== 'all' && !dateMatch(s.cDate, o.day)) return false;
+      if (s.cStatus !== 'all' && o.kind !== s.cStatus) return false;
+      if (s.cAlmost && o.kind !== 'replay' && o.soldPct < 80) return false;
+      if (s.cPromo && !o.hasPromo) return false;
+      return true;
+    }).sort((a, b) => {
+      if (s.cSort === 'soon') return a.day - b.day;
+      if (s.cSort === 'pop') return (b.viewers || b.soldPct * 40) - (a.viewers || a.soldPct * 40);
+      if (s.cSort === 'priceUp') return a.price - b.price;
+      if (s.cSort === 'priceDown') return b.price - a.price;
+      return 0;
+    });
+
+/* ── catLiveList  —  calcul dans renderReady()  —  L5593–5593 ── */
+    const catLiveList = catPool.filter(o => o.kind === 'live');
+
+/* ── catRepList  —  calcul dans renderReady()  —  L5595–5595 ── */
+    const catRepList = catPool.filter(o => o.kind === 'replay');
+
+/* ── catArtList  —  calcul dans renderReady()  —  L5596–5596 ── */
+    const catArtList = roster.filter(a => catPool.some(o => o.artistIdx === a.i));
+
+/* ── goCatTab  —  calcul dans renderReady()  —  L5601–5601 ── */
+    const goCatTab = k => () => this.setState({ catTab: k, shown: {} });
+
+/* ── goCategories  —  clé du modèle rendu  —  L6085–6085 ── */
+      goCategories: this.nav('categories'),
+
+/* ── catAlreadySaved  —  clé du modèle rendu  —  L6096–6096 ── */
+      catAlreadySaved: !!catFollowEntry, catNotSaved: !catFollowEntry,
+
+/* ── catSaveNew  —  clé du modèle rendu  —  L6097–6097 ── */
+      catSaveNew: this.gate(() => this.setState({ saveOpen: true, saveStep: 'ask', saveName: '', saveScope: 'category' })),
+
+/* ── catSavedName  —  clé du modèle rendu  —  L6098–6098 ── */
+      catSavedName: catFollowEntry ? this.alertName(catFollowEntry, cats, t) : '',
+
+/* ── catSavedEditing  —  clé du modèle rendu  —  L6099–6099 ── */
+      catSavedEditing: !!catFollowEntry && s.renameId === catFollowEntry.id,
+
+/* ── catSavedIdle  —  clé du modèle rendu  —  L6100–6100 ── */
+      catSavedIdle: !!catFollowEntry && s.renameId !== catFollowEntry.id,
+
+/* ── catSavedDraft  —  clé du modèle rendu  —  L6101–6101 ── */
+      catSavedDraft: s.renameDraft,
+
+/* ── catSavedStartRename  —  clé du modèle rendu  —  L6102–6102 ── */
+      catSavedStartRename: () => { if (catFollowEntry) this.setState({ renameId: catFollowEntry.id, renameDraft: this.alertName(catFollowEntry, cats, t) }); },
+
+/* ── catSavedInput  —  clé du modèle rendu  —  L6103–6103 ── */
+      catSavedInput: e => this.setState({ renameDraft: e.target.value }),
+
+/* ── catSavedKey  —  clé du modèle rendu  —  L6104–6110 ── */
+      catSavedKey: e => {
+        if (e.key === 'Enter') this.setState(st => ({
+          alerts: st.alerts.map(x => catFollowEntry && x.id === catFollowEntry.id ? Object.assign({}, x, { name: st.renameDraft.trim() }) : x),
+          renameId: null, renameDraft: ''
+        }));
+        if (e.key === 'Escape') this.setState({ renameId: null, renameDraft: '' });
+      },
+
+/* ── catSavedRemove  —  clé du modèle rendu  —  L6111–6111 ── */
+      catSavedRemove: () => { if (catFollowEntry) this.setState({ deleteId: catFollowEntry.id }); },
+
+/* ── toggleCatFilters  —  clé du modèle rendu  —  L6114–6114 ── */
+      toggleCatFilters: () => this.setState(st => ({ cFiltersOpen: !(st.cFiltersOpen === null ? catFilterCount > 0 : st.cFiltersOpen) })),
+
+/* ── catFiltersBtnLabel  —  clé du modèle rendu  —  L6115–6115 ── */
+      catFiltersBtnLabel: t.showFilters + (catFilterCount ? ' · ' + catFilterCount : '') + ((s.cFiltersOpen === null ? catFilterCount > 0 : s.cFiltersOpen) ? ' ▴' : ' ▾'),
+
+/* ── catFiltersBtnStyle  —  clé du modèle rendu  —  L6116–6116 ── */
+      catFiltersBtnStyle: 'cursor: pointer; padding: 10px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; font-size: 12.5px; transition: background .2s ease, border-color .2s ease; ' +
+
+/* ── catTokens  —  clé du modèle rendu  —  L6138–6163 ── */
+      catTokens: (() => {
+        const out = [];
+        if (subsSel.length) {
+          const names = SUBS[s.catId] || SUBS[0];
+          const picked = subsSel.map(i => names[i]).filter(Boolean);
+          out.push({ label: picked.length === 1 ? picked[0] : t.subgenres + ' (' + picked.length + ')', title: picked.join(' · '), drop: () => this.setState({ subs: [] }) });
+        }
+        if (s.cPrices.length) {
+          const labels = s.cPrices.map(k => (priceDefs.find(p => p[0] === k) || ['', k])[1]);
+          out.push({ label: labels.length === 1 ? labels[0] : t.fPrice + ' (' + labels.length + ')', title: labels.join(' · '), drop: () => this.setState({ cPrices: [] }) });
+        }
+        if (s.cDate !== 'all') out.push({ label: (dateDefs.find(d => d[0] === s.cDate) || ['', ''])[1], drop: () => this.setState({ cDate: 'all' }) });
+        if (s.cStatus !== 'all') out.push({ label: (statusDefs.find(d => d[0] === s.cStatus) || ['', ''])[1], drop: () => this.setState({ cStatus: 'all' }) });
+        const cFlags = [];
+        if (s.cAlmost) cFlags.push({ label: t.almostFull, clear: { cAlmost: false } });
+        if (s.cPromo) cFlags.push({ label: t.promoFilter, clear: { cPromo: false } });
+        if (cFlags.length) out.push({
+          label: cFlags.length === 1 ? cFlags[0].label : t.fMisc + ' (' + cFlags.length + ')',
+          title: cFlags.map(x => x.label).join(' · '),
+          drop: () => this.setState(cFlags.length === 1 ? cFlags[0].clear : { cAlmost: false, cPromo: false })
+        });
+        return out.map(tk => Object.assign(tk, {
+          title: tk.title || tk.label,
+          style: "cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 10px 12px; min-height: 44px; box-sizing: border-box;  border: 1px solid #332E28; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #C9C0B2; transition: border-color .2s ease;"
+        }));
+      })(),
+
+/* ── catHasTokens  —  clé du modèle rendu  —  L6164–6164 ── */
+      catHasTokens: catFilterCount > 0,
+
+/* ── clearCatFilters  —  clé du modèle rendu  —  L6165–6165 ── */
+      clearCatFilters: () => this.setState({ subs: [], cPrices: [], cDate: 'all', cStatus: 'all', cAlmost: false, cPromo: false, cSort: 'auto' }),
+
+/* ── catTotalLabel  —  clé du modèle rendu  —  L6190–6190 ── */
+      catTotalLabel: catPool.length + ' ' + (catPool.length > 1 ? t.resultsLabel : t.resultLabel),
+
+/* ── toggleSortMenu  —  clé du modèle rendu  —  L6281–6281 ── */
+      toggleSortMenu: () => this.setState(st => ({ sortOpen: !st.sortOpen })),
+
+/* ── sortFieldStyle  —  clé du modèle rendu  —  L6282–6282 ── */
+      sortFieldStyle: "cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 10px 12px; min-height: 44px; box-sizing: border-box;  border: 1px solid " +
+
+/* ── sortCaret  —  clé du modèle rendu  —  L6284–6284 ── */
+      sortCaret: s.sortOpen ? '▴' : '▾',
+
+/* ── sortCurrentLabel  —  clé du modèle rendu  —  L6293–6297 ── */
+      sortCurrentLabel: (() => {
+        const defs = s.page === 'category' ? sortDefs.filter(d => d[0] !== 'soon') : (qq ? sortDefs : sortDefs.filter(d => d[0] !== 'soon'));
+        const cur = s.page === 'category' ? s.cSort : s.sort;
+        return ((defs.find(d => d[0] === cur) || defs[0]) || ['', ''])[1];
+      })(),
+
+/* ── catTabs  —  clé du modèle rendu  —  L6414–6425 ── */
+      catTabs: [
+        ['ov', t.tabOverview, catPool.length],
+        ['live', t.tabCatLive, catLiveList.length],
+        ['up', t.catUpcoming, catPool.filter(o => o.kind === 'upcoming').length],
+        ['art', t.tabCatArtists, catArtList.length],
+        ['rep', t.replaysTitle, catRepList.length]
+      ].map(([k, label, n]) => ({
+        label, count: String(n),
+        pick: goCatTab(k),
+        style: 'cursor: pointer; padding: 12px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  display: flex; align-items: baseline; gap: 8px; font-size: 15px; white-space: nowrap; border-bottom: 2px solid ' +
+          (s.catTab === k ? '#EDE7DC' : 'transparent') + '; color: ' + (s.catTab === k ? '#EDE7DC' : '#857E73') + '; transition: color .24s ease, border-color .24s ease;'
+      })),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (40) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2354  alertAll: "Tous les lives"
+  EN L2807  alertAll: "All live shows"
+
+  FR L2363  alertRename: "Renommer"
+  EN L2816  alertRename: "Rename"
+
+  FR L2371  almostFull: "BIENTÔT COMPLET"
+  EN L2824  almostFull: "ALMOST SOLD OUT"
+
+  FR L2396  backToCats: "← TOUTES LES CATÉGORIES"
+  EN L2849  backToCats: "← ALL CATEGORIES"
+
+  FR L2423  catUpcoming: "Prochaines dates"
+  EN L2876  catUpcoming: "Upcoming dates"
+
+  FR L2439  clearAll: "Tout effacer"
+  EN L2892  clearAll: "Clear all"
+
+  FR L2444  d30: "30 JOURS"
+  EN L2897  d30: "30 DAYS"
+
+  FR L2445  d7: "7 JOURS"
+  EN L2898  d7: "7 DAYS"
+
+  FR L2447  dRange: "PLAGE…"
+  EN L2900  dRange: "RANGE…"
+
+  FR L2448  dTonight: "CE SOIR"
+  EN L2901  dTonight: "TONIGHT"
+
+  FR L2449  dWeekend: "CE WEEK-END"
+  EN L2902  dWeekend: "THIS WEEKEND"
+
+  FR L2477  expSoon: "EXPIRE SOUS 90 H"
+  EN L2930  expSoon: "EXPIRES < 90H"
+
+  FR L2484  fMisc: "AUTRES"
+  EN L2937  fMisc: "OTHER"
+
+  FR L2485  fPrice: "TARIF"
+  EN L2938  fPrice: "PRICE"
+
+  FR L2492  followCat: "Enregistrer cette catégorie"
+  EN L2945  followCat: "Save this category"
+
+  FR L2510  hasDates: "A DES DATES"
+  EN L2963  hasDates: "HAS DATES"
+
+  FR L2597  p1020: "10–20 €"
+  EN L3050  p1020: "€10–20"
+
+  FR L2598  p2035: "20–35 €"
+  EN L3051  p2035: "€20–35"
+
+  FR L2599  p35: "> 35 €"
+  EN L3052  p35: "> €35"
+
+  FR L2600  pFree: "GRATUIT"
+  EN L3053  pFree: "FREE"
+
+  FR L2601  pU10: "< 10 €"
+  EN L3054  pU10: "< €10"
+
+  FR L2643  promoFilter: "TARIF RÉDUIT"
+  EN L3096  promoFilter: "REDUCED"
+
+  FR L2658  replaysTitle: "Rediffusions"
+  EN L3111  replaysTitle: "Replays"
+
+  FR L2659  resultLabel: "RÉSULTAT"
+  EN L3112  resultLabel: "RESULT"
+
+  FR L2660  resultsLabel: "RÉSULTATS"
+  EN L3113  resultsLabel: "RESULTS"
+
+  FR L2684  savedCatHere: "CATÉGORIE ENREGISTRÉE"
+  EN L3137  savedCatHere: "CATEGORY SAVED"
+
+  FR L2703  showFilters: "Filtres"
+  EN L3156  showFilters: "Filters"
+
+  FR L2721  sortPop: "POPULARITÉ"
+  EN L3174  sortPop: "POPULARITY"
+
+  FR L2722  sortPriceDown: "PRIX ↓"
+  EN L3175  sortPriceDown: "PRICE ↓"
+
+  FR L2723  sortPriceUp: "PRIX ↑"
+  EN L3176  sortPriceUp: "PRICE ↑"
+
+  FR L2724  sortRelevance: "PERTINENCE"
+  EN L3177  sortRelevance: "RELEVANCE"
+
+  FR L2725  sortSoon: "BIENTÔT"
+  EN L3178  sortSoon: "SOONEST"
+
+  FR L2729  stLive: "EN DIRECT"
+  EN L3182  stLive: "LIVE NOW"
+
+  FR L2730  stReplay: "REDIFFUSION"
+  EN L3183  stReplay: "REPLAY"
+
+  FR L2731  stSoon: "À VENIR"
+  EN L3184  stSoon: "UPCOMING"
+
+  FR L2754  subgenres: "SOUS-GENRES"
+  EN L3207  subgenres: "SUB-GENRES"
+
+  FR L2763  tabCatArtists: "Artistes"
+  EN L3216  tabCatArtists: "Artists"
+
+  FR L2764  tabCatLive: "En direct"
+  EN L3217  tabCatLive: "Live now"
+
+  FR L2766  tabOverview: "Vue d’ensemble"
+  EN L3219  tabOverview: "Overview"
+
+  FR L2772  unfollowCat: "Retirer cette catégorie de vos recherches ?"
+  EN L3225  unfollowCat: "Remove this category from your saved searches?"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

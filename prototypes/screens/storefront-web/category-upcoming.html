@@ -1,0 +1,165 @@
+<!--
+  ÉCRAN      Discipline — section À venir
+  ROUTE      page === 'category', catTab === 'up'
+  AFFICHE    Les prochaines dates de la discipline, regroupées par spectacle.
+  MÈNE VERS  live · artist
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 1885-1971
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — getCategoryScreen
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : catalogue, colsOf, colsTiles, colsWideN, fr, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, subsSel, t, tileCols
+  À LIRE     dépendances non recopiées ici : catStep, catUpGroups, dateMatch, ovMore, priceMatch
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+    <sc-if value="{{ catShowUp }}" hint-placeholder-val="{{ true }}">
+    <h2 id="cat-up" style="margin: 48px 0 16px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px; scroll-margin-top: 90px;">{{ t.catUpcoming }}</h2>
+    <sc-if value="{{ catNoUpcoming }}" hint-placeholder-val="{{ false }}">
+      <div style="border: 1px solid #1F1C19; background: #0D0C0A; padding: 30px 26px; text-align: center;">
+        <div style="font-family: 'Instrument Serif', serif; font-size: 22px;">{{ t.emptyCatUpcoming }}</div>
+        <div style="padding-top: 8px; font-size: 13.5px; color: #857E73;">{{ t.emptyCatHint }}</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ catHasUpcoming }}" hint-placeholder-val="{{ true }}">
+    <sc-if value="{{ catTilesView }}" hint-placeholder-val="{{ true }}">
+      <div style="display: grid; grid-template-columns: {{ colsTiles }}; gap: 18px;">
+        <sc-for list="{{ catUpcoming }}" as="ev" hint-placeholder-count="3">
+          <div onClick="{{ ev.open }}" style="cursor: pointer; border: 1px solid #1F1C19; background: #100F0D; transition: border-color .24s ease;" style-hover="border-color:#4A423A">
+            <div style="position: relative; aspect-ratio: 16/9; overflow: hidden; background: #17140F;">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.68) brightness(0.68); transition: transform .8s cubic-bezier(.2,.7,.2,1); background-color: #1A1815; background-image: {{ ev.imgCss }}; background-size: cover; background-position: center;"></div>
+              <div style="position: absolute; inset: 0; opacity: 0; transform: translateY(8px); transition: opacity .26s ease, transform .34s cubic-bezier(.2,.7,.2,1); background: linear-gradient(to top, rgba(8,7,7,0.95), rgba(8,7,7,0.7)); display: flex; flex-direction: column; justify-content: flex-end; padding: 14px;" style-hover="opacity:1;transform:translateY(0)">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 42);">{{ ev.ovTag }}</div>
+                <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.5; color: #EDE7DC; text-wrap: pretty; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{{ ev.fullDesc }}</div>
+              </div>
+              <div style="position: absolute; left: 12px; top: 12px; background: rgba(11,10,9,0.78); padding: 5px 9px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 42);">{{ ev.countdown }}</div>
+            </div>
+            <div style="padding: 15px;">
+              <div style="font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ev.title }}</div>
+              <div style="padding-top: 5px; font-size: 12.5px; color: #9B948A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ev.artist }} · {{ ev.desc }}</div>
+              <div style="padding-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73; white-space: nowrap;">{{ ev.when }}</span>
+                <span onClick="{{ ev.buy }}" style="margin-left: auto; cursor: pointer; padding: 7px 13px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease;" style-hover="background:#221F1B">{{ ev.priceLabel }}</span>
+              </div>
+              <sc-if value="{{ ev.hasExtra }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 12px; border-top: 1px solid #16140F; padding-top: 11px;">
+                  <span onClick="{{ ev.toggleGroup }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #EDE7DC; transition: color .2s ease;" style-hover="color:#B0A899">{{ ev.extraLabel }}</span>
+                  <div style="display: flex; flex-direction: column; gap: 7px; padding-top: 10px;">
+                    <sc-for list="{{ ev.extra }}" as="ex" hint-placeholder-count="0">
+                      <div onClick="{{ ex.open }}" style="cursor: pointer; display: flex; align-items: baseline; gap: 10px;">
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #C9C0B2;">{{ ex.whenLabel }}</span>
+                        <span style="min-width: 0; font-size: 12px; color: #857E73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ex.title }}</span>
+                        <span onClick="{{ ex.buy }}" style="margin-left: auto; flex: 0 0 auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #EDE7DC; border-bottom: 1px solid #2A2621;">{{ ex.priceLabel }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ catListView }}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+      <sc-for list="{{ catUpcoming }}" as="ev" hint-placeholder-count="4">
+        <div onClick="{{ ev.open }}" style="cursor: pointer; background: #0F0E0C; padding: 14px 16px; display: grid; {{ rowGrid5 }} align-items: center; transition: background .24s ease;" style-hover="background:#161310">
+          <div style="{{ rowThumb }} position: relative; aspect-ratio: 16/10; overflow: hidden; background: #17140F;">
+            <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.68) brightness(0.68); transition: transform .8s cubic-bezier(.2,.7,.2,1); background-color: #1A1815; background-image: {{ ev.imgCss }}; background-size: cover; background-position: center;"></div>
+          </div>
+          <div style="min-width: 0;">
+            <div style="font-size: 15px; font-weight: 500;">{{ ev.title }}</div>
+            <div style="padding-top: 4px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+              <span style="font-size: 12.5px; color: #9B948A; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ev.artist }} · {{ ev.desc }}</span>
+            </div>
+            <sc-if value="{{ ev.hasExtra }}" hint-placeholder-val="{{ false }}">
+              <div style="padding-top: 8px;">
+                <span onClick="{{ ev.toggleGroup }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #EDE7DC; transition: color .2s ease;" style-hover="color:#B0A899">{{ ev.extraLabel }}</span>
+              </div>
+            </sc-if>
+          </div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #C9C0B2;">{{ ev.when }}</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: oklch(0.78 0.13 42);">{{ ev.countdown }}</div>
+          <span onClick="{{ ev.buy }}" style="cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease;" style-hover="background:#221F1B">{{ ev.priceLabel }}</span>
+        </div>
+        <sc-for list="{{ ev.extra }}" as="ex" hint-placeholder-count="0">
+          <div style="background: #0C0B0A; padding: 11px 16px 11px 136px; display: grid; {{ rowGrid4b }} align-items: center;">
+            <div onClick="{{ ex.open }}" style="cursor: pointer; font-size: 13.5px; color: #C9C0B2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ex.title }}</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #857E73;">{{ ex.whenLabel }}</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6B6459;">{{ ex.metaLine }}</div>
+            <span onClick="{{ ex.buy }}" style="cursor: pointer; padding: 6px 12px; white-space: nowrap; border: 1px solid #2A2621; font-size: 12px; color: #C9C0B2; transition: background .24s ease;" style-hover="background:#1F1C19">{{ ex.priceLabel }}</span>
+          </div>
+        </sc-for>
+      </sc-for>
+    </div>
+    </sc-if>
+    </sc-if>
+    <sc-if value="{{ moreCatUp }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 14px; display: flex; justify-content: center;">
+        <span onClick="{{ loadMoreCatUp }}" style="cursor: pointer; padding: 12px 22px; white-space: nowrap; border: 1px solid #332E28; font-size: 13px; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ moreCatUpLabel }}</span>
+      </div>
+    </sc-if>
+    </sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* catPool  —  lignes 6176-6191 */
+    const catPool = catalogue.filter(o => {
+      if (o.cat !== s.catId) return false;
+      if (subsSel.length && !subsSel.some(i => o.subs.indexOf(i) > -1)) return false;
+      if (s.cPrices.length && !s.cPrices.some(k => priceMatch(k, o.price))) return false;
+      if (s.cDate !== 'all' && !dateMatch(s.cDate, o.day)) return false;
+      if (s.cStatus !== 'all' && o.kind !== s.cStatus) return false;
+      if (s.cAlmost && o.kind !== 'replay' && o.soldPct < 80) return false;
+      if (s.cPromo && !o.hasPromo) return false;
+      return true;
+    }).sort((a, b) => {
+      if (s.cSort === 'soon') return a.day - b.day;
+      if (s.cSort === 'pop') return (b.viewers || b.soldPct * 40) - (a.viewers || a.soldPct * 40);
+      if (s.cSort === 'priceUp') return a.price - b.price;
+      if (s.cSort === 'priceDown') return b.price - a.price;
+      return 0;
+    });
+/* catOv  —  lignes 6192-6192 */
+    const catOv = s.catTab === 'ov';
+/* pgCatUp  —  lignes 6199-6199 */
+    const pgCatUp = this.paged('catUp', catUpGroups, catStep, fr);
+/* mUp  —  lignes 6207-6207 */
+    const mUp = ovMore(pgCatUp, catUpGroups, 'up');
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      catTilesView: s.cView === 'tiles', catListView: s.cView === 'list',
+      catHasUpcoming: catPool.some(o => o.kind === 'upcoming'),
+      catUpcoming: pgCatUp.items.map(o => Object.assign({}, o, {
+        fullDesc: o.desc, desc: o.subLabel, when: o.whenLabel, countdown: o.kind === 'replay' ? t.stReplay : o.statusLabel
+      })),
+      catNoUpcoming: !catPool.some(o => o.kind === 'upcoming'),
+      moreCatUp: pgCatUp.hasMore, moreCatUpLabel: mUp.label, loadMoreCatUp: mUp.go,
+      colsTiles: colsOf(tileCols), colsWide: colsOf(colsWideN),
+      rowGrid5, rowGrid5b, rowGrid4, rowGrid4b, rowGridLive, rowThumb, rowStack,
+      catShowUp: catOv || s.catTab === 'up',
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.catUpcoming  t.emptyCatHint  t.emptyCatUpcoming  t.stReplay  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    cAlmost  cDate  cPrices  cPromo  cSort  cStatus  cView  catId  catTab  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    paged
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

@@ -1,0 +1,112 @@
+<!--
+  ÉCRAN      Discipline — section Artistes
+  ROUTE      page === 'category', catTab === 'art'
+  AFFICHE    Les artistes de la discipline.
+  MÈNE VERS  artist
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2032-2060
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — getCategoryScreen, listArtists
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : artist, catalogue, colsOf, colsWideN, fr, roster, s, subsSel, tileCols
+  À LIRE     dépendances non recopiées ici : catArtList, catStep, dateMatch, ovMore, pgArtists, pgCatLive, pgCatRep, pgCatUp, pgLives, pgReplays, priceMatch
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+    <sc-if value="{{ catShowArt }}" hint-placeholder-val="{{ false }}">
+    <h2 id="cat-art" style="margin: 48px 0 16px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px; scroll-margin-top: 90px;">{{ t.catArtists }}</h2>
+    <sc-if value="{{ catNoArtists }}" hint-placeholder-val="{{ false }}">
+      <div style="border: 1px solid #1F1C19; background: #0D0C0A; padding: 30px 26px; text-align: center;">
+        <div style="font-family: 'Instrument Serif', serif; font-size: 22px;">{{ t.emptyCatArtists }}</div>
+        <div style="padding-top: 8px; font-size: 13.5px; color: #857E73;">{{ t.emptyCatHint }}</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ catHasArtists }}" hint-placeholder-val="{{ true }}">
+    <div style="{{ catArtistsStyle }}">
+      <sc-for list="{{ catArtists }}" as="a" hint-placeholder-count="4">
+        <div onClick="{{ a.openProfile }}" style="cursor: pointer; border: 1px solid #1F1C19; background: #100F0D; padding: 14px; display: flex; align-items: center; gap: 12px; transition: border-color .24s ease;" style-hover="border-color:#4A423A">
+          <div style="flex: 0 0 44px; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815; border: 1px solid #2E2A24;">
+            <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.72) brightness(0.84); background-color: #1A1815; background-image: {{ a.portraitCss }}; background-size: cover; background-position: center;"></div>
+          </div>
+          <div style="min-width: 0;">
+            <div style="font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ a.name }}</div>
+            <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ a.followers }} {{ t.followersShort }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+    <sc-if value="{{ moreCatArt }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 14px; display: flex; justify-content: center;">
+        <span onClick="{{ loadMoreCatArt }}" style="cursor: pointer; padding: 12px 22px; white-space: nowrap; border: 1px solid #332E28; font-size: 13px; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ moreCatArtLabel }}</span>
+      </div>
+    </sc-if>
+    </sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* catPool  —  lignes 6176-6191 */
+    const catPool = catalogue.filter(o => {
+      if (o.cat !== s.catId) return false;
+      if (subsSel.length && !subsSel.some(i => o.subs.indexOf(i) > -1)) return false;
+      if (s.cPrices.length && !s.cPrices.some(k => priceMatch(k, o.price))) return false;
+      if (s.cDate !== 'all' && !dateMatch(s.cDate, o.day)) return false;
+      if (s.cStatus !== 'all' && o.kind !== s.cStatus) return false;
+      if (s.cAlmost && o.kind !== 'replay' && o.soldPct < 80) return false;
+      if (s.cPromo && !o.hasPromo) return false;
+      return true;
+    }).sort((a, b) => {
+      if (s.cSort === 'soon') return a.day - b.day;
+      if (s.cSort === 'pop') return (b.viewers || b.soldPct * 40) - (a.viewers || a.soldPct * 40);
+      if (s.cSort === 'priceUp') return a.price - b.price;
+      if (s.cSort === 'priceDown') return b.price - a.price;
+      return 0;
+    });
+/* catOv  —  lignes 6192-6192 */
+    const catOv = s.catTab === 'ov';
+/* pgCatArt  —  lignes 6201-6201 */
+    const pgCatArt = this.paged('catArt', catArtList, catStep, fr);
+/* mArt  —  lignes 6209-6215 */
+    const mArt = ovMore(pgCatArt, catArtList, 'art');
+
+    this._pg = {
+      catLive: pgCatLive, catUp: pgCatUp, catRep: pgCatRep, catArt: pgCatArt,
+      lives: pgLives, artists: pgArtists, replays: pgReplays
+    };
+
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      catArtistsStyle: 'display: grid; grid-template-columns: ' +
+        (s.cView === 'tiles' ? colsOf(tileCols) : colsOf(colsWideN)) + '; gap: 14px;',
+      catHasArtists: roster.some(a => catPool.some(o => o.artistIdx === a.i)),
+      catNoArtists: !roster.some(a => catPool.some(o => o.artistIdx === a.i)),
+      moreCatArt: pgCatArt.hasMore, moreCatArtLabel: mArt.label, loadMoreCatArt: mArt.go,
+      catShowArt: catOv || s.catTab === 'art',
+      catArtists: pgCatArt.items.map(a => Object.assign({}, a, {
+        openProfile: () => this.setState({ page: 'artist', artistId: a.i })
+      })),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.catArtists  t.emptyCatArtists  t.emptyCatHint  t.followersShort  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    cAlmost  cDate  cPrices  cPromo  cSort  cStatus  cView  catId  catTab  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    paged, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

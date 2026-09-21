@@ -1,0 +1,197 @@
+<!--
+==============================================================================
+  ÉCRAN — _shell — coquille : barre latérale, sélecteur de chaîne, boîte, écran d'amorçage
+==============================================================================
+
+  Ce qu'il affiche : la colonne de gauche (compte, chaîne courante, boîte, navigation filtrée) et l'écran d'attente tant que les données n'ont pas répondu
+
+  Rôles qui l'ouvrent : tous
+  Mène vers : les quinze entrées de navigation · inbox
+
+  Source : mockups/Studio.dc.html
+    balisage        lignes 35–134, 2342–2345
+    modèle de vue   lignes 3982–4017, 4217–4221, 2586–2597
+
+  Clés de copie employées :
+    aucune clé i18n directe
+    T(...) — littéraux français traduits par la table EN de _shared.html
+
+  Contrat :
+    besoins   needs/studio-web.md § « États d'erreur et de chargement » → « Le démarrage »
+    openapi   openapi/studio.yaml · getStudioBootstrap
+    openapi   openapi/studio.yaml · listInbox
+    openapi   openapi/studio.yaml · markInboxRead
+
+  Relevé d'extraction (défauts vus, non corrigés) :
+    · l'écran d'amorçage porte l'identifiant de trace — c'est le seul moment où la personne peut le dicter au support.
+
+  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+-->
+
+<!-- ======================= BALISAGE ======================= -->
+<!-- ···· balisage · Studio.dc.html lignes 35–134 ···· -->
+<div style="display: flex; align-items: stretch; min-height: 100vh; background: #0E0F10; color: #E6E9EC; font-family: Archivo, sans-serif; font-size: 14px;">
+
+  <sc-if value="{{ booting }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; inset: 0; z-index: 90; background: #0E0F10; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #6E7681;">ARTHOME · STUDIO</div>
+      <div style="width: 240px; height: 3px; background: #1D2126; overflow: hidden;">
+        <div style="width: 40%; height: 100%; background: #3A424C; animation: skel 1.2s infinite;"></div>
+      </div>
+      <div style="font-size: 13px; color: #8B949E;">Chargement du catalogue et des chaînes…</div>
+      <sc-if value="{{ bootError }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width: 460px; padding: 12px 14px; border: 1px solid #4A2B2B; background: #1A1212; color: #E0A0A0; font-size: 12.5px; text-wrap: pretty;">{{ bootError }}</div>
+      </sc-if>
+
+
+    </div>
+  </sc-if>
+
+
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+  <aside style="{{ asideStyle }}">
+
+    <div style="flex: 0 0 auto; padding: 14px 14px 12px; border-bottom: 1px solid #1D2126;">
+      <div style="display: flex; align-items: center; gap: 8px; padding-bottom: 12px;">
+        <span style="width: 7px; height: 7px; background: #E6E9EC;"></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.14em;">ARTHOME</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #646C74;">STUDIO</span>
+      </div>
+      <div onClick="{{ goInbox }}" style="{{ inboxBarStyle }}" style-hover="border-color:#333941">
+        <span style="flex: 0 0 auto; font-size: 12px; color: {{ inboxIconColor }};">✉</span>
+        <span style="min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ inboxLabel }}</span>
+        <sc-if value="{{ inboxHasCount }}" hint-placeholder-val="{{ true }}">
+          <span style="{{ inboxBadgeStyle }}">{{ inboxBadge }}</span>
+        </sc-if>
+      </div>
+      <div data-pop="chan" style="position: relative;">
+        <div onClick="{{ toggleChan }}" style="{{ chanFieldStyle }}" style-hover="border-color:#333941">
+          <div style="flex: 0 0 30px; width: 30px; height: 30px; position: relative; overflow: hidden; background: #1A1D21;">
+            <div style="position: absolute; inset: 0; background-color: #1A1D21; background-image: {{ chan.imgCss }}; background-size: cover; background-position: center; filter: saturate(0.7) brightness(0.85);"></div>
+          </div>
+          <div style="min-width: 0; flex: 1 1 auto;">
+            <div style="font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ chan.name }}</div>
+            <div style="padding-top: 3px; display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;">
+              <sc-for list="{{ roleChips }}" as="rc" hint-placeholder-count="1">
+                <span style="{{ rc.style }}">{{ rc.label }}</span>
+              </sc-for>
+            </div>
+          </div>
+          <span style="flex: 0 0 auto; font-size: 9px; color: #646C74;">{{ chanCaret }}</span>
+        </div>
+        <sc-if value="{{ chanOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; left: 0; right: 0; top: calc(100% + 5px); z-index: 900; border: 1px solid #333941; background: #15171A; box-shadow: 0 16px 40px rgba(0,0,0,0.55); animation: fadeIn .14s ease both;">
+            <sc-for list="{{ chanGroups }}" as="g" hint-placeholder-count="2">
+              <div>
+                <div style="padding: 9px 11px 7px; border-top: 1px solid #191C20; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: {{ g.color }};">{{ g.title }}</div>
+                <sc-for list="{{ g.items }}" as="c" hint-placeholder-count="2">
+                  <div onClick="{{ c.pick }}" style="{{ c.rowStyle }}" style-hover="background:#1A1D21">
+                    <div style="flex: 0 0 24px; width: 24px; height: 24px; position: relative; overflow: hidden; background: #1A1D21;">
+                      <div style="position: absolute; inset: 0; background-color: #1A1D21; background-image: {{ c.imgCss }}; background-size: cover; background-position: center; filter: saturate(0.7) brightness(0.85);"></div>
+                    </div>
+                    <div style="min-width: 0;">
+                      <div style="font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ c.name }}</div>
+                      <div style="padding-top: 2px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #646C74;">{{ c.role }}</div>
+                    </div>
+                    <sc-if value="{{ c.isLive }}" hint-placeholder-val="{{ false }}">
+                      <span style="margin-left: auto; flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <nav style="flex: 1 1 auto; overflow-y: auto; padding: 8px 8px 14px;">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="8">
+        <div onClick="{{ n.go }}" style="{{ n.style }}" style-hover="background:#191C20;color:#E6E9EC">
+          <span style="flex: 0 0 16px; width: 16px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{ n.iconColor }};">{{ n.icon }}</span>
+          <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ n.label }}</span>
+          <span style="{{ n.badgeStyle }}">{{ n.badge }}</span>
+        </div>
+      </sc-for>
+    </nav>
+
+    <div style="flex: 0 0 auto; border-top: 1px solid #1D2126; padding: 11px 12px;">
+      <div style="display: flex; align-items: center; gap: 9px;">
+        <div style="flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #23272C; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.04em; color: #C6CDD4;">{{ me.initials }}</div>
+        <div style="min-width: 0; flex: 1 1 auto;">
+          <div style="font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ me.name }}</div>
+          <div style="padding-top: 2px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #5B636B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ me.email }}</div>
+        </div>
+        <span onClick="{{ goAccount }}" title="{{ accountLink }}" style="flex: 0 0 auto; cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid #23272C; font-size: 12px; color: #7C858D; transition: border-color .18s ease, color .18s ease;" style-hover="border-color:#333941;color:#E6E9EC">⚙</span>
+      </div>
+    </div>
+
+  </aside>
+
+  <main ref="{{ mainRef }}" style="flex: 1 1 auto; min-width: 0;">
+
+<!-- ···· balisage · Studio.dc.html lignes 2342–2345 ···· -->
+  </main>
+  </sc-if>
+
+</div>
+
+<!-- ===================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+<!-- ···· modèle de vue · Studio.dc.html lignes 3982–4017 ···· -->
+      ready: true, booting: false, bootError: '',
+      /* Les textes indicatifs nomment un exemple réel du catalogue. */
+      wzNamePlaceholder: (evDefs[0] || [])[2] || '',
+      invNamePlaceholder: ((this.data && this.data.directory) || [[]])[0][0] || '',
+      mainRef: this.mainRef,
+      stopEvt: e => { if (e && e.stopPropagation) e.stopPropagation(); },
+      me,
+      asideStyle: (s.rgFull && page === 'regie')
+        ? 'display: none;'
+        : 'flex: 0 0 244px; width: 244px; border-right: 1px solid #1D2126; background: #111316; display: flex; flex-direction: column; position: sticky; top: 0; align-self: flex-start; height: 100vh;',
+      chan, channels, chanGroups, nav,
+      goInbox: () => this.setState({ page: 'inbox' }),
+      goAccount: () => {},
+      accountLink: en ? 'My Arthome account ↗' : 'Mon compte Arthome ↗',
+      inboxLabel: inboxCount ? 'BOÎTE' : 'BOÎTE VIDE',
+      inboxBadge: String(inboxCount),
+      inboxHasCount: inboxCount > 0,
+      inboxIconColor: inboxCount ? WARN : '#5B636B',
+      inboxBarStyle: 'cursor: pointer; margin-bottom: 9px; border: 1px solid ' + (page === 'inbox' ? '#4A535C' : '#23272C')
+        + '; background: ' + (page === 'inbox' ? '#1A1D21' : '#15171A') + '; padding: 8px 10px; display: flex; align-items: center; gap: 9px; color: '
+        + (inboxCount ? '#E6E9EC' : '#7C858D') + '; transition: border-color .18s ease, background .18s ease;',
+      inboxBadgeStyle: 'margin-left: auto; flex: 0 0 auto; min-width: 17px; height: 17px; padding: 0 5px; box-sizing: border-box; display: grid; place-items: center; background: '
+        + WARN + '; color: #0E0F10; ' + MONO + 'font-size: 9px; font-weight: 700;',
+      chanOpen: s.chanOpen && multiChan,
+      chanCaret: multiChan ? (s.chanOpen ? '▲' : '▼') : '',
+      chanFieldStyle: 'border: 1px solid #23272C; background: #15171A; padding: 9px 10px; display: flex; align-items: center; gap: 9px; '
+        + (multiChan ? ' cursor: pointer;' : ''),
+      toggleChan: () => { if (multiChan) this.setState(st => ({ chanOpen: !st.chanOpen })); },
+      roleLabel: role[0], roleColor: role[1],
+      roleChips: roles.map(r => ({
+        label: T(ROLES[r][0]),
+        style: MONO + 'font-size: 9px; letter-spacing: 0.1em; color: ' + ROLES[r][1] + ';'
+      })),
+
+      openInvite: () => this.setState({ inviteOpen: true, invMode: 'account', invScope: 'staff', invDate: 0, invQuery: '', invPick: null, invMail: '', invName: '', invRole: 'mod' }),
+
+<!-- ···· modèle de vue · Studio.dc.html lignes 4217–4221 ···· -->
+      isDashboard: page === 'dashboard',
+      isEvents: page === 'events',
+      isEvent: page === 'event',
+      isModeration: page === 'moderation',
+      isCrew: page === 'crew',
+<!-- ···· modèle de vue · Studio.dc.html lignes 2586–2597 ···· -->
+  countsOf(channelName) {
+    const A = this.A, D = this.data;
+    if (!A || !D) return { merch: 0, replays: 0, events: 0 };
+    const channel = (D.cited || D.channels).filter(c => c.name === channelName)[0];
+    if (!channel) return { merch: 0, replays: 0, events: 0 };
+    const dates = channel.dates.map(id => A.date(id)).filter(Boolean);
+    return {
+      merch: channel.shows.reduce((n, id) => n + A.merchOf(id).filter(x => x.state === 'on-sale').length, 0),
+      replays: dates.filter(d => A.stateOf(d) === 'replay').length,
+      events: dates.length
+    };
+  }
+</script>

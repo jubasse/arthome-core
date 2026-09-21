@@ -1,0 +1,141 @@
+<!--
+  ÉCRAN      Explorateur — onglet Artistes
+  ROUTE      page === 'browse', sTab === 'artists'
+  AFFICHE    Les artistes correspondant à la recherche, en tuiles ou en liste, avec leur prochaine date et le dépliage « toutes les dates (N) ».
+  MÈNE VERS  artist · live
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 1138-1144 · 1145-1198
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — search, listArtists
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : artist, catalogue, colsOf, colsTiles, colsWideN, fr, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, t, tileCols
+  À LIRE     dépendances non recopiées ici : artistsHL, qq
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+  <sc-if value="{{ noArtistsTab }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top: 24px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 48px 32px; text-align: center;">
+      <div style="font-family: 'Instrument Serif', serif; font-size: 26px;">{{ t.emptyResults }}</div>
+      <div style="padding-top: 10px; font-size: 13.5px; color: #857E73;">{{ t.emptyResultsHint }}</div>
+      <span onClick="{{ clearAllFilters }}" style="display: inline-block; margin-top: 16px; cursor: pointer; padding: 12px 20px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease;" style-hover="border-color:#4A423A">{{ t.clearAll }}</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showArtists }}" hint-placeholder-val="{{ false }}">
+    <sc-if value="{{ resTiles }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 24px; display: grid; grid-template-columns: {{ colsTiles }}; gap: 16px;">
+        <sc-for list="{{ artistsAll }}" as="ar" hint-placeholder-count="4">
+          <div onClick="{{ ar.openProfile2 }}" style="cursor: pointer; border: 1px solid #1F1C19; background: #100F0D; padding: 18px; text-align: center; transition: border-color .24s ease;" style-hover="border-color:#4A423A">
+            <div style="width: 72px; height: 72px; margin: 0 auto; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815; border: 1px solid #2E2A24;">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.72) brightness(0.84); background-color: #1A1815; background-image: {{ ar.portraitCss }}; background-size: cover; background-position: center;"></div>
+            </div>
+            <div style="padding-top: 12px; font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span>{{ ar.nHit.pre }}</span><span style="background: rgba(214,178,102,0.2); color: oklch(0.9 0.07 84);">{{ ar.nHit.hit }}</span><span>{{ ar.nHit.post }}</span></div>
+            <div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6B6459;">{{ ar.discipline }}</div>
+            <div style="padding-top: 10px; display: flex; justify-content: center; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: oklch(0.78 0.14 27); min-height: 12px;">
+              <sc-if value="{{ ar.isLiveRow }}" hint-placeholder-val="{{ false }}"><span style="flex: 0 0 auto; width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span></sc-if>{{ ar.liveLabel2 }}
+            </div>
+            <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73;">{{ ar.datesLabel }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ resList }}" hint-placeholder-val="{{ true }}">
+    <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+      <sc-for list="{{ artistsAll }}" as="ar" hint-placeholder-count="3">
+        <div style="background: #0F0E0C; padding: 14px 16px; display: grid; grid-template-columns: 46px minmax(0,1fr) minmax(0,1fr) auto; gap: 16px; align-items: center; transition: background .24s ease;" style-hover="background:#161310">
+          <div style="width: 46px; height: 46px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815; border: 1px solid #2E2A24;">
+            <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.72) brightness(0.84); background-color: #1A1815; background-image: {{ ar.portraitCss }}; background-size: cover; background-position: center;"></div>
+          </div>
+          <div style="min-width: 0;">
+            <div onClick="{{ ar.openProfile2 }}" style="cursor: pointer; font-size: 15px; font-weight: 500; display: flex; align-items: baseline; gap: 9px;">
+              <span><span>{{ ar.nHit.pre }}</span><span style="background: rgba(214,178,102,0.2); color: oklch(0.9 0.07 84);">{{ ar.nHit.hit }}</span><span>{{ ar.nHit.post }}</span></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: oklch(0.78 0.14 27);"><sc-if value="{{ ar.isLiveRow }}" hint-placeholder-val="{{ false }}"><span style="flex: 0 0 auto; width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span></sc-if>{{ ar.liveLabel2 }}</span>
+            </div>
+            <div style="padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6B6459;">{{ ar.discipline }} · {{ ar.followers }} {{ t.followersShort }}</div>
+          </div>
+          <div style="min-width: 0;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ ar.datesLabel }}</div>
+            <div style="padding-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px;">
+              <sc-for list="{{ ar.dates }}" as="d" hint-placeholder-count="2">
+                <span onClick="{{ d.open }}" style="cursor: pointer; padding: 5px 10px; border: 1px solid #332E28; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #C9C0B2; transition: border-color .2s ease, color .2s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ d.whenLabel }} · {{ d.priceLabel }}</span>
+              </sc-for>
+              <sc-if value="{{ ar.hasMoreDates }}" hint-placeholder-val="{{ false }}">
+                <span onClick="{{ ar.toggleDates }}" style="cursor: pointer; padding: 5px 0 5px 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #EDE7DC; transition: color .2s ease;" style-hover="color:#B0A899">{{ ar.moreDatesLabel }}</span>
+              </sc-if>
+            </div>
+          </div>
+          <span onClick="{{ ar.openProfile2 }}" style="cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease;" style-hover="background:#1F1C19">{{ t.seeArtist }}</span>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+    <sc-if value="{{ moreArtists }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 14px; display: flex; justify-content: center;">
+        <span onClick="{{ loadMoreArtists }}" style="cursor: pointer; padding: 12px 22px; white-space: nowrap; border: 1px solid #332E28; font-size: 13px; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ moreArtistsLabel }}</span>
+      </div>
+    </sc-if>
+  </sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* artistsAll  —  lignes 5973-5995 */
+    const artistsAll = roster.filter(a => {
+      if (qq && (a.name + ' ' + a.discipline + ' ' + a.showTitle).toLowerCase().indexOf(qq) < 0) return false;
+      if (s.fCats.length && !catalogue.some(o => o.artistIdx === a.i && s.fCats.indexOf(o.cat) > -1)) return false;
+      if (s.fStatus === 'live' && !a.isLive) return false;
+      if (s.fHasDates && !catalogue.some(o => o.artistIdx === a.i && o.kind === 'upcoming')) return false;
+      return true;
+    }).map(a => {
+      const dates = catalogue.filter(o => o.artistIdx === a.i && o.kind === 'upcoming').sort((x, y) => x.day - y.day);
+      return Object.assign({}, a, {
+        dates: dates.slice(0, 1),
+        datesLabel: dates.length + ' ' + (dates.length > 1 ? t.datesToCome : t.dateToCome),
+        hasDates: dates.length > 0,
+        hasMoreDates: dates.length > 1,
+        moreDatesLabel: (fr ? 'Toutes les dates (' + dates.length + ') →' : 'All dates (' + dates.length + ') →'),
+        toggleDates: (e) => {
+          if (e && e.stopPropagation) e.stopPropagation();
+          this.setState({ page: 'artist', artistId: a.i, suggOpen: false, searchOpen: false });
+        },
+        isLiveRow: a.isLive, liveLabel2: a.isLive ? t.onNow : '',
+        openProfile2: () => this.setState({ page: 'artist', artistId: a.i })
+      });
+    });
+
+/* pgArtists  —  lignes 6042-6043 */
+    const pgArtists = this.paged('artists', artistsHL, 12, fr);
+
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      clearAllFilters: () => this.setState({ query: '', fCats: [], fSubs: [], fPrices: [], fDate: 'all', fStatus: 'all', fAlmost: false, fHasDates: false, fExpiring: false, fPromo: false, sort: 'auto', alertCreated: false }),
+      moreArtists: pgArtists.hasMore, moreArtistsLabel: pgArtists.moreLabel, loadMoreArtists: pgArtists.loadMore,
+      noArtistsTab: s.sTab === 'artists' && artistsAll.length === 0,
+      resTiles: s.sView === 'tiles', resList: s.sView !== 'tiles',
+      colsTiles: colsOf(tileCols), colsWide: colsOf(colsWideN),
+      rowGrid5, rowGrid5b, rowGrid4, rowGrid4b, rowGridLive, rowThumb, rowStack,
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.clearAll  t.dateToCome  t.datesToCome  t.emptyResults  t.emptyResultsHint  
+    t.followersShort  t.onNow  t.seeArtist  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    fCats  fHasDates  fStatus  sTab  sView  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    paged, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

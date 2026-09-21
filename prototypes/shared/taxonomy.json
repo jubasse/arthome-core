@@ -1,0 +1,2570 @@
+{
+  "version": 8,
+  "updated": "2026-09-10",
+  "note": "Single source of truth for the Arthome taxonomy, read by every surface. Structure only: every entry carries an i18n key whose copy lives in i18n/taxonomy.json. Four layers — universe (navigation only), discipline (mandatory, unique, closed), subgenre (0..n, closed), tag (0..n, flat and open) — plus structured attributes that sit OUTSIDE the taxonomy because a wheelchair filter must never depend on someone remembering a tag.",
+  "model": {
+    "universe": "Navigation only, never a taxonomic level. Shown where a long list needs structuring — section headings on the categories page, filter chips in search — never as a top-level tab.",
+    "discipline": "Mandatory, unique, closed vocabulary. A discipline is a FORM — never a language, an era or a country. Secondary disciplines may exist internally.",
+    "subgenre": "Optional, multiple, closed vocabulary. What the work IS artistically. A subgenre enters the list only if it has notable artists and a real stage presence in France; anything finer is a tag.",
+    "tag": "Optional, multiple, one flat canonical list. HOW, WHERE, FOR WHOM and UNDER WHAT CONDITIONS the work is seen. Carried by the date as much as by the show.",
+    "attribute": "Objective data the application must be able to query reliably. Rendered as pills, stored as fields.",
+    "noScenes": "There is no \"Rap FR\": that is discipline = rap crossed with artist.country = FR or language = fr. The search engine translates; the taxonomy stays clean.",
+    "duplicateLabels": "A label may appear in two disciplines. music.flamenco and dance.flamenco are two concepts, not one repeated identifier.",
+    "rank": "Ordre éditorial de présentation, du plus grand public au plus pointu, familles mêlées. Une surface qui liste les disciplines suit ce rang ; elle ne le recalcule pas."
+  },
+  "families": [
+    {
+      "id": "music",
+      "i18n": "families.music"
+    },
+    {
+      "id": "stage",
+      "i18n": "families.stage"
+    }
+  ],
+  "categories": [
+    {
+      "id": "pop",
+      "family": "music",
+      "i18n": "categories.pop",
+      "hue": 320,
+      "genres": [
+        {
+          "id": "mainstream",
+          "i18n": "genres.pop.mainstream",
+          "suggests": []
+        },
+        {
+          "id": "synth-pop",
+          "i18n": "genres.pop.synth-pop",
+          "suggests": []
+        },
+        {
+          "id": "indie-pop",
+          "i18n": "genres.pop.indie-pop",
+          "suggests": []
+        },
+        {
+          "id": "dream-pop",
+          "i18n": "genres.pop.dream-pop",
+          "suggests": [
+            "vaporwave"
+          ]
+        },
+        {
+          "id": "electropop",
+          "i18n": "genres.pop.electropop",
+          "suggests": [
+            "electroclash",
+            "french-touch"
+          ]
+        },
+        {
+          "id": "new-wave",
+          "i18n": "genres.pop.new-wave",
+          "suggests": []
+        },
+        {
+          "id": "urban-pop",
+          "i18n": "genres.pop.urban-pop",
+          "suggests": []
+        },
+        {
+          "id": "k-pop",
+          "i18n": "genres.pop.k-pop",
+          "suggests": []
+        },
+        {
+          "id": "hyperpop",
+          "i18n": "genres.pop.hyperpop",
+          "suggests": [
+            "glitch"
+          ]
+        }
+      ],
+      "rank": 1
+    },
+    {
+      "id": "rock",
+      "family": "music",
+      "i18n": "categories.rock",
+      "hue": 350,
+      "genres": [
+        {
+          "id": "classic-rock",
+          "i18n": "genres.rock.classic-rock",
+          "suggests": []
+        },
+        {
+          "id": "alternative",
+          "i18n": "genres.rock.alternative",
+          "suggests": [
+            "grunge",
+            "metal-alternatif",
+            "noise-rock"
+          ]
+        },
+        {
+          "id": "indie",
+          "i18n": "genres.rock.indie",
+          "suggests": [
+            "britpop",
+            "math-rock",
+            "lo-fi"
+          ]
+        },
+        {
+          "id": "punk",
+          "i18n": "genres.rock.punk",
+          "suggests": [
+            "hardcore",
+            "crust",
+            "screamo",
+            "post-hardcore"
+          ]
+        },
+        {
+          "id": "post-punk",
+          "i18n": "genres.rock.post-punk",
+          "suggests": [
+            "cold-wave"
+          ]
+        },
+        {
+          "id": "emo",
+          "i18n": "genres.rock.emo",
+          "suggests": [
+            "screamo",
+            "post-hardcore"
+          ]
+        },
+        {
+          "id": "garage",
+          "i18n": "genres.rock.garage",
+          "suggests": []
+        },
+        {
+          "id": "psychedelic",
+          "i18n": "genres.rock.psychedelic",
+          "suggests": []
+        },
+        {
+          "id": "prog-rock",
+          "i18n": "genres.rock.prog-rock",
+          "suggests": []
+        },
+        {
+          "id": "hard-rock",
+          "i18n": "genres.rock.hard-rock",
+          "suggests": []
+        },
+        {
+          "id": "shoegaze",
+          "i18n": "genres.rock.shoegaze",
+          "suggests": [
+            "blackgaze"
+          ]
+        },
+        {
+          "id": "post-rock",
+          "i18n": "genres.rock.post-rock",
+          "suggests": [
+            "drone",
+            "musique-repetitive"
+          ]
+        }
+      ],
+      "rank": 2
+    },
+    {
+      "id": "theatre",
+      "family": "stage",
+      "i18n": "categories.theatre",
+      "hue": 24,
+      "genres": [
+        {
+          "id": "repertoire",
+          "i18n": "genres.theatre.repertoire",
+          "suggests": [
+            "tragedie",
+            "comedie",
+            "farce",
+            "commedia-dell-arte"
+          ]
+        },
+        {
+          "id": "contemporary",
+          "i18n": "genres.theatre.contemporary",
+          "suggests": [
+            "ecriture-de-plateau",
+            "monologue"
+          ]
+        },
+        {
+          "id": "documentary",
+          "i18n": "genres.theatre.documentary",
+          "suggests": [
+            "ecriture-de-plateau"
+          ]
+        },
+        {
+          "id": "objects-puppetry",
+          "i18n": "genres.theatre.objects-puppetry",
+          "suggests": [
+            "marionnette-portee",
+            "theatre-d-ombres"
+          ]
+        },
+        {
+          "id": "music-theatre",
+          "i18n": "genres.theatre.music-theatre",
+          "suggests": []
+        },
+        {
+          "id": "improv",
+          "i18n": "genres.theatre.improv",
+          "suggests": []
+        },
+        {
+          "id": "street-theatre",
+          "i18n": "genres.theatre.street-theatre",
+          "suggests": [
+            "deambulatoire",
+            "spectacle-sans-paroles"
+          ]
+        }
+      ],
+      "rank": 3
+    },
+    {
+      "id": "comedy",
+      "family": "stage",
+      "i18n": "categories.comedy",
+      "hue": 84,
+      "genres": [
+        {
+          "id": "stand-up",
+          "i18n": "genres.comedy.stand-up",
+          "suggests": [
+            "solo",
+            "open-mic"
+          ]
+        },
+        {
+          "id": "improv",
+          "i18n": "genres.comedy.improv",
+          "suggests": []
+        },
+        {
+          "id": "satire",
+          "i18n": "genres.comedy.satire",
+          "suggests": [
+            "politique"
+          ]
+        },
+        {
+          "id": "musical-comedy",
+          "i18n": "genres.comedy.musical-comedy",
+          "suggests": []
+        }
+      ],
+      "rank": 4
+    },
+    {
+      "id": "rap",
+      "family": "music",
+      "i18n": "categories.rap",
+      "hue": 270,
+      "genres": [
+        {
+          "id": "boom-bap",
+          "i18n": "genres.rap.boom-bap",
+          "suggests": [
+            "turntablism",
+            "freestyle",
+            "battle-rap"
+          ]
+        },
+        {
+          "id": "hardcore-gangsta",
+          "i18n": "genres.rap.hardcore-gangsta",
+          "suggests": [
+            "g-funk",
+            "horrorcore"
+          ]
+        },
+        {
+          "id": "conscious",
+          "i18n": "genres.rap.conscious",
+          "suggests": []
+        },
+        {
+          "id": "lyric-rap",
+          "i18n": "genres.rap.lyric-rap",
+          "suggests": []
+        },
+        {
+          "id": "jazz-rap",
+          "i18n": "genres.rap.jazz-rap",
+          "suggests": [
+            "trip-hop",
+            "rap-instrumental"
+          ]
+        },
+        {
+          "id": "trap",
+          "i18n": "genres.rap.trap",
+          "suggests": [
+            "phonk",
+            "plugg",
+            "rage"
+          ]
+        },
+        {
+          "id": "drill",
+          "i18n": "genres.rap.drill",
+          "suggests": [
+            "uk-drill"
+          ]
+        },
+        {
+          "id": "cloud-rap",
+          "i18n": "genres.rap.cloud-rap",
+          "suggests": [
+            "lo-fi",
+            "vaporwave"
+          ]
+        },
+        {
+          "id": "emo-rap",
+          "i18n": "genres.rap.emo-rap",
+          "suggests": []
+        },
+        {
+          "id": "afro-trap",
+          "i18n": "genres.rap.afro-trap",
+          "suggests": [
+            "afroswing"
+          ]
+        }
+      ],
+      "rank": 5
+    },
+    {
+      "id": "electronic",
+      "family": "music",
+      "i18n": "categories.electronic",
+      "hue": 180,
+      "genres": [
+        {
+          "id": "techno",
+          "i18n": "genres.electronic.techno",
+          "suggests": [
+            "techno-minimale",
+            "acid-techno",
+            "techno-de-detroit",
+            "dub-techno",
+            "hard-techno"
+          ]
+        },
+        {
+          "id": "house",
+          "i18n": "genres.electronic.house",
+          "suggests": [
+            "tech-house",
+            "acid-house",
+            "afro-house",
+            "garage-house",
+            "disco-house"
+          ]
+        },
+        {
+          "id": "deep-house",
+          "i18n": "genres.electronic.deep-house",
+          "suggests": [
+            "tech-house"
+          ]
+        },
+        {
+          "id": "drum-and-bass",
+          "i18n": "genres.electronic.drum-and-bass",
+          "suggests": [
+            "jungle",
+            "liquid-drum-et-bass",
+            "neurofunk"
+          ]
+        },
+        {
+          "id": "dubstep",
+          "i18n": "genres.electronic.dubstep",
+          "suggests": [
+            "bass-music",
+            "breakcore"
+          ]
+        },
+        {
+          "id": "trance",
+          "i18n": "genres.electronic.trance",
+          "suggests": [
+            "psytrance",
+            "progressive-trance"
+          ]
+        },
+        {
+          "id": "hardstyle",
+          "i18n": "genres.electronic.hardstyle",
+          "suggests": [
+            "gabber",
+            "frenchcore",
+            "hardcore-rave"
+          ]
+        },
+        {
+          "id": "ambient",
+          "i18n": "genres.electronic.ambient",
+          "suggests": [
+            "drone",
+            "downtempo",
+            "glitch"
+          ]
+        },
+        {
+          "id": "idm",
+          "i18n": "genres.electronic.idm",
+          "suggests": [
+            "glitch",
+            "breakcore"
+          ]
+        },
+        {
+          "id": "breakbeat",
+          "i18n": "genres.electronic.breakbeat",
+          "suggests": [
+            "footwork",
+            "bass-music"
+          ]
+        },
+        {
+          "id": "uk-garage",
+          "i18n": "genres.electronic.uk-garage",
+          "suggests": [
+            "footwork",
+            "bass-music"
+          ]
+        },
+        {
+          "id": "synthwave",
+          "i18n": "genres.electronic.synthwave",
+          "suggests": [
+            "vaporwave",
+            "french-touch",
+            "electroclash"
+          ]
+        }
+      ],
+      "rank": 6
+    },
+    {
+      "id": "chanson",
+      "family": "music",
+      "i18n": "categories.chanson",
+      "hue": 40,
+      "genres": [
+        {
+          "id": "lyric-chanson",
+          "i18n": "genres.chanson.lyric-chanson",
+          "suggests": []
+        },
+        {
+          "id": "nouvelle-chanson",
+          "i18n": "genres.chanson.nouvelle-chanson",
+          "suggests": []
+        },
+        {
+          "id": "spoken-word",
+          "i18n": "genres.chanson.spoken-word",
+          "suggests": [
+            "polyphonie"
+          ]
+        },
+        {
+          "id": "jazz-chanson",
+          "i18n": "genres.chanson.jazz-chanson",
+          "suggests": []
+        },
+        {
+          "id": "folk-chanson",
+          "i18n": "genres.chanson.folk-chanson",
+          "suggests": []
+        },
+        {
+          "id": "theatrical-chanson",
+          "i18n": "genres.chanson.theatrical-chanson",
+          "suggests": []
+        }
+      ],
+      "rank": 7
+    },
+    {
+      "id": "dance",
+      "family": "stage",
+      "i18n": "categories.dance",
+      "hue": 300,
+      "genres": [
+        {
+          "id": "ballet",
+          "i18n": "genres.dance.ballet",
+          "suggests": []
+        },
+        {
+          "id": "neoclassical",
+          "i18n": "genres.dance.neoclassical",
+          "suggests": []
+        },
+        {
+          "id": "contemporary",
+          "i18n": "genres.dance.contemporary",
+          "suggests": [
+            "theatre-gestuel"
+          ]
+        },
+        {
+          "id": "hip-hop",
+          "i18n": "genres.dance.hip-hop",
+          "suggests": []
+        },
+        {
+          "id": "dance-theatre",
+          "i18n": "genres.dance.dance-theatre",
+          "suggests": [
+            "theatre-gestuel"
+          ]
+        },
+        {
+          "id": "percussive",
+          "i18n": "genres.dance.percussive",
+          "suggests": []
+        },
+        {
+          "id": "flamenco",
+          "i18n": "genres.dance.flamenco",
+          "suggests": []
+        },
+        {
+          "id": "traditional",
+          "i18n": "genres.dance.traditional",
+          "suggests": []
+        },
+        {
+          "id": "ball",
+          "i18n": "genres.dance.ball",
+          "suggests": [
+            "bal-participatif"
+          ]
+        },
+        {
+          "id": "butoh",
+          "i18n": "genres.dance.butoh",
+          "suggests": []
+        },
+        {
+          "id": "african-dance",
+          "i18n": "genres.dance.african-dance",
+          "suggests": []
+        }
+      ],
+      "rank": 8
+    },
+    {
+      "id": "classical",
+      "family": "music",
+      "i18n": "categories.classical",
+      "hue": 200,
+      "genres": [
+        {
+          "id": "symphonic",
+          "i18n": "genres.classical.symphonic",
+          "suggests": [
+            "orchestral",
+            "repertoire-lyrique"
+          ]
+        },
+        {
+          "id": "chamber",
+          "i18n": "genres.classical.chamber",
+          "suggests": [
+            "quatuor",
+            "polyphonie"
+          ]
+        },
+        {
+          "id": "baroque",
+          "i18n": "genres.classical.baroque",
+          "suggests": []
+        },
+        {
+          "id": "sacred",
+          "i18n": "genres.classical.sacred",
+          "suggests": [
+            "requiem",
+            "oratorio",
+            "cantate",
+            "polyphonie"
+          ]
+        },
+        {
+          "id": "choral",
+          "i18n": "genres.classical.choral",
+          "suggests": [
+            "polyphonie",
+            "a-cappella",
+            "oratorio"
+          ]
+        },
+        {
+          "id": "contemporary",
+          "i18n": "genres.classical.contemporary",
+          "suggests": [
+            "musique-minimaliste",
+            "musique-spectrale",
+            "musique-electroacoustique",
+            "musique-repetitive"
+          ]
+        },
+        {
+          "id": "early",
+          "i18n": "genres.classical.early",
+          "suggests": [
+            "polyphonie"
+          ]
+        }
+      ],
+      "rank": 9
+    },
+    {
+      "id": "circus",
+      "family": "stage",
+      "i18n": "categories.circus",
+      "hue": 60,
+      "genres": [
+        {
+          "id": "contemporary",
+          "i18n": "genres.circus.contemporary",
+          "suggests": [
+            "nouveau-cirque"
+          ]
+        },
+        {
+          "id": "aerial",
+          "i18n": "genres.circus.aerial",
+          "suggests": [
+            "trapeze",
+            "corde-lisse",
+            "tissu-aerien",
+            "mat-chinois"
+          ]
+        },
+        {
+          "id": "acrobatics",
+          "i18n": "genres.circus.acrobatics",
+          "suggests": [
+            "portes-acrobatiques",
+            "roue-cyr"
+          ]
+        },
+        {
+          "id": "juggling",
+          "i18n": "genres.circus.juggling",
+          "suggests": []
+        },
+        {
+          "id": "balance",
+          "i18n": "genres.circus.balance",
+          "suggests": [
+            "portes-acrobatiques"
+          ]
+        },
+        {
+          "id": "magic",
+          "i18n": "genres.circus.magic",
+          "suggests": [
+            "close-up",
+            "mentalisme"
+          ]
+        },
+        {
+          "id": "clown",
+          "i18n": "genres.circus.clown",
+          "suggests": [
+            "clown-blanc",
+            "bouffon",
+            "mime"
+          ]
+        },
+        {
+          "id": "street-arts",
+          "i18n": "genres.circus.street-arts",
+          "suggests": [
+            "deambulatoire",
+            "cirque-equestre"
+          ]
+        }
+      ],
+      "rank": 10
+    },
+    {
+      "id": "world",
+      "family": "music",
+      "i18n": "categories.world",
+      "hue": 140,
+      "genres": [
+        {
+          "id": "afrobeat-highlife",
+          "i18n": "genres.world.afrobeat-highlife",
+          "suggests": [
+            "maloya",
+            "sega"
+          ]
+        },
+        {
+          "id": "west-african",
+          "i18n": "genres.world.west-african",
+          "suggests": [
+            "morna",
+            "zouk",
+            "kompa"
+          ]
+        },
+        {
+          "id": "rai-chaabi",
+          "i18n": "genres.world.rai-chaabi",
+          "suggests": []
+        },
+        {
+          "id": "andalusian",
+          "i18n": "genres.world.andalusian",
+          "suggests": []
+        },
+        {
+          "id": "salsa-cuban",
+          "i18n": "genres.world.salsa-cuban",
+          "suggests": [
+            "afro-cubain",
+            "timba",
+            "bachata"
+          ]
+        },
+        {
+          "id": "cumbia",
+          "i18n": "genres.world.cumbia",
+          "suggests": [
+            "reggaeton"
+          ]
+        },
+        {
+          "id": "samba-bossa",
+          "i18n": "genres.world.samba-bossa",
+          "suggests": [
+            "forro",
+            "choro"
+          ]
+        },
+        {
+          "id": "flamenco",
+          "i18n": "genres.world.flamenco",
+          "suggests": []
+        },
+        {
+          "id": "fado",
+          "i18n": "genres.world.fado",
+          "suggests": []
+        },
+        {
+          "id": "celtic",
+          "i18n": "genres.world.celtic",
+          "suggests": [
+            "musique-bretonne",
+            "yodel"
+          ]
+        },
+        {
+          "id": "balkan",
+          "i18n": "genres.world.balkan",
+          "suggests": [
+            "klezmer",
+            "rebetiko",
+            "polyphonie-georgienne"
+          ]
+        },
+        {
+          "id": "indian",
+          "i18n": "genres.world.indian",
+          "suggests": [
+            "qawwali",
+            "carnatique",
+            "hindustani"
+          ]
+        },
+        {
+          "id": "east-asian",
+          "i18n": "genres.world.east-asian",
+          "suggests": [
+            "gamelan"
+          ]
+        }
+      ],
+      "rank": 11
+    },
+    {
+      "id": "jazz",
+      "family": "music",
+      "i18n": "categories.jazz",
+      "hue": 240,
+      "genres": [
+        {
+          "id": "modern-jazz",
+          "i18n": "genres.jazz.modern-jazz",
+          "suggests": []
+        },
+        {
+          "id": "bebop",
+          "i18n": "genres.jazz.bebop",
+          "suggests": [
+            "swing"
+          ]
+        },
+        {
+          "id": "hard-bop",
+          "i18n": "genres.jazz.hard-bop",
+          "suggests": [
+            "swing"
+          ]
+        },
+        {
+          "id": "cool-jazz",
+          "i18n": "genres.jazz.cool-jazz",
+          "suggests": []
+        },
+        {
+          "id": "modal-jazz",
+          "i18n": "genres.jazz.modal-jazz",
+          "suggests": [
+            "spiritual-jazz"
+          ]
+        },
+        {
+          "id": "free-jazz",
+          "i18n": "genres.jazz.free-jazz",
+          "suggests": [
+            "improvisation-libre",
+            "spiritual-jazz"
+          ]
+        },
+        {
+          "id": "vocal-jazz",
+          "i18n": "genres.jazz.vocal-jazz",
+          "suggests": []
+        },
+        {
+          "id": "big-band",
+          "i18n": "genres.jazz.big-band",
+          "suggests": [
+            "swing",
+            "fanfare"
+          ]
+        },
+        {
+          "id": "fusion",
+          "i18n": "genres.jazz.fusion",
+          "suggests": [
+            "jazz-electrique"
+          ]
+        },
+        {
+          "id": "nu-jazz",
+          "i18n": "genres.jazz.nu-jazz",
+          "suggests": []
+        },
+        {
+          "id": "gypsy-jazz",
+          "i18n": "genres.jazz.gypsy-jazz",
+          "suggests": []
+        },
+        {
+          "id": "afro-jazz",
+          "i18n": "genres.jazz.afro-jazz",
+          "suggests": [
+            "afro-cubain",
+            "spiritual-jazz"
+          ]
+        }
+      ],
+      "rank": 12
+    },
+    {
+      "id": "musical",
+      "family": "stage",
+      "i18n": "categories.musical",
+      "hue": 336,
+      "genres": [
+        {
+          "id": "original",
+          "i18n": "genres.musical.original",
+          "suggests": []
+        },
+        {
+          "id": "jukebox",
+          "i18n": "genres.musical.jukebox",
+          "suggests": []
+        },
+        {
+          "id": "cabaret-revue",
+          "i18n": "genres.musical.cabaret-revue",
+          "suggests": [
+            "cabaret"
+          ]
+        },
+        {
+          "id": "rock-opera",
+          "i18n": "genres.musical.rock-opera",
+          "suggests": []
+        }
+      ],
+      "rank": 13
+    },
+    {
+      "id": "opera",
+      "family": "stage",
+      "i18n": "categories.opera",
+      "hue": 12,
+      "genres": [
+        {
+          "id": "grand-opera",
+          "i18n": "genres.opera.grand-opera",
+          "suggests": [
+            "orchestre",
+            "repertoire-lyrique"
+          ]
+        },
+        {
+          "id": "bel-canto",
+          "i18n": "genres.opera.bel-canto",
+          "suggests": []
+        },
+        {
+          "id": "classical-opera",
+          "i18n": "genres.opera.classical-opera",
+          "suggests": []
+        },
+        {
+          "id": "baroque-opera",
+          "i18n": "genres.opera.baroque-opera",
+          "suggests": []
+        },
+        {
+          "id": "contemporary-opera",
+          "i18n": "genres.opera.contemporary-opera",
+          "suggests": []
+        },
+        {
+          "id": "operetta",
+          "i18n": "genres.opera.operetta",
+          "suggests": []
+        },
+        {
+          "id": "chamber-opera",
+          "i18n": "genres.opera.chamber-opera",
+          "suggests": [
+            "grand-ensemble"
+          ]
+        }
+      ],
+      "rank": 14
+    },
+    {
+      "id": "metal",
+      "family": "music",
+      "i18n": "categories.metal",
+      "hue": 358,
+      "genres": [
+        {
+          "id": "heavy",
+          "i18n": "genres.metal.heavy",
+          "suggests": [
+            "glam",
+            "speed-metal"
+          ]
+        },
+        {
+          "id": "thrash",
+          "i18n": "genres.metal.thrash",
+          "suggests": [
+            "speed-metal"
+          ]
+        },
+        {
+          "id": "death",
+          "i18n": "genres.metal.death",
+          "suggests": [
+            "death-melodique",
+            "death-technique",
+            "brutal-death",
+            "grindcore"
+          ]
+        },
+        {
+          "id": "black",
+          "i18n": "genres.metal.black",
+          "suggests": [
+            "black-atmospherique",
+            "blackgaze",
+            "viking-metal"
+          ]
+        },
+        {
+          "id": "doom-stoner",
+          "i18n": "genres.metal.doom-stoner",
+          "suggests": [
+            "sludge",
+            "funeral-doom",
+            "drone"
+          ]
+        },
+        {
+          "id": "power",
+          "i18n": "genres.metal.power",
+          "suggests": []
+        },
+        {
+          "id": "prog-metal",
+          "i18n": "genres.metal.prog-metal",
+          "suggests": [
+            "djent"
+          ]
+        },
+        {
+          "id": "metalcore",
+          "i18n": "genres.metal.metalcore",
+          "suggests": [
+            "mathcore",
+            "melodic-metalcore"
+          ]
+        },
+        {
+          "id": "deathcore",
+          "i18n": "genres.metal.deathcore",
+          "suggests": [
+            "brutal-death"
+          ]
+        },
+        {
+          "id": "nu-metal",
+          "i18n": "genres.metal.nu-metal",
+          "suggests": []
+        },
+        {
+          "id": "symphonic-gothic",
+          "i18n": "genres.metal.symphonic-gothic",
+          "suggests": []
+        },
+        {
+          "id": "industrial",
+          "i18n": "genres.metal.industrial",
+          "suggests": []
+        },
+        {
+          "id": "folk-pagan",
+          "i18n": "genres.metal.folk-pagan",
+          "suggests": []
+        }
+      ],
+      "rank": 15
+    },
+    {
+      "id": "rnb",
+      "family": "music",
+      "i18n": "categories.rnb",
+      "hue": 200,
+      "genres": [
+        {
+          "id": "contemporary-rnb",
+          "i18n": "genres.rnb.contemporary-rnb",
+          "suggests": []
+        },
+        {
+          "id": "neo-soul",
+          "i18n": "genres.rnb.neo-soul",
+          "suggests": []
+        },
+        {
+          "id": "trap-soul",
+          "i18n": "genres.rnb.trap-soul",
+          "suggests": []
+        },
+        {
+          "id": "slow-jam",
+          "i18n": "genres.rnb.slow-jam",
+          "suggests": []
+        },
+        {
+          "id": "afro-rnb",
+          "i18n": "genres.rnb.afro-rnb",
+          "suggests": []
+        },
+        {
+          "id": "new-jack-swing",
+          "i18n": "genres.rnb.new-jack-swing",
+          "suggests": []
+        }
+      ],
+      "rank": 16
+    },
+    {
+      "id": "soul-funk",
+      "family": "music",
+      "i18n": "categories.soul-funk",
+      "hue": 30,
+      "genres": [
+        {
+          "id": "soul",
+          "i18n": "genres.soul-funk.soul",
+          "suggests": [
+            "philly-soul",
+            "northern-soul"
+          ]
+        },
+        {
+          "id": "motown",
+          "i18n": "genres.soul-funk.motown",
+          "suggests": []
+        },
+        {
+          "id": "funk",
+          "i18n": "genres.soul-funk.funk",
+          "suggests": [
+            "deep-funk",
+            "funk-carioca"
+          ]
+        },
+        {
+          "id": "p-funk",
+          "i18n": "genres.soul-funk.p-funk",
+          "suggests": []
+        },
+        {
+          "id": "disco",
+          "i18n": "genres.soul-funk.disco",
+          "suggests": [
+            "disco-house"
+          ]
+        },
+        {
+          "id": "gospel",
+          "i18n": "genres.soul-funk.gospel",
+          "suggests": [
+            "gospel-contemporain"
+          ]
+        },
+        {
+          "id": "afrobeat",
+          "i18n": "genres.soul-funk.afrobeat",
+          "suggests": []
+        }
+      ],
+      "rank": 17
+    },
+    {
+      "id": "reggae",
+      "family": "music",
+      "i18n": "categories.reggae",
+      "hue": 160,
+      "genres": [
+        {
+          "id": "roots",
+          "i18n": "genres.reggae.roots",
+          "suggests": []
+        },
+        {
+          "id": "dub",
+          "i18n": "genres.reggae.dub",
+          "suggests": []
+        },
+        {
+          "id": "dancehall",
+          "i18n": "genres.reggae.dancehall",
+          "suggests": []
+        },
+        {
+          "id": "ska",
+          "i18n": "genres.reggae.ska",
+          "suggests": []
+        },
+        {
+          "id": "rocksteady",
+          "i18n": "genres.reggae.rocksteady",
+          "suggests": []
+        },
+        {
+          "id": "ragga",
+          "i18n": "genres.reggae.ragga",
+          "suggests": []
+        },
+        {
+          "id": "dub-poetry",
+          "i18n": "genres.reggae.dub-poetry",
+          "suggests": []
+        }
+      ],
+      "rank": 18
+    },
+    {
+      "id": "blues",
+      "family": "music",
+      "i18n": "categories.blues",
+      "hue": 220,
+      "genres": [
+        {
+          "id": "acoustic-blues",
+          "i18n": "genres.blues.acoustic-blues",
+          "suggests": []
+        },
+        {
+          "id": "delta-blues",
+          "i18n": "genres.blues.delta-blues",
+          "suggests": []
+        },
+        {
+          "id": "chicago-blues",
+          "i18n": "genres.blues.chicago-blues",
+          "suggests": []
+        },
+        {
+          "id": "blues-rock",
+          "i18n": "genres.blues.blues-rock",
+          "suggests": [
+            "jump-blues"
+          ]
+        },
+        {
+          "id": "boogie",
+          "i18n": "genres.blues.boogie",
+          "suggests": [
+            "jump-blues"
+          ]
+        },
+        {
+          "id": "soul-blues",
+          "i18n": "genres.blues.soul-blues",
+          "suggests": []
+        },
+        {
+          "id": "gospel-blues",
+          "i18n": "genres.blues.gospel-blues",
+          "suggests": []
+        }
+      ],
+      "rank": 19
+    },
+    {
+      "id": "folk-country",
+      "family": "music",
+      "i18n": "categories.folk-country",
+      "hue": 100,
+      "genres": [
+        {
+          "id": "folk",
+          "i18n": "genres.folk-country.folk",
+          "suggests": []
+        },
+        {
+          "id": "americana",
+          "i18n": "genres.folk-country.americana",
+          "suggests": []
+        },
+        {
+          "id": "country",
+          "i18n": "genres.folk-country.country",
+          "suggests": []
+        },
+        {
+          "id": "bluegrass",
+          "i18n": "genres.folk-country.bluegrass",
+          "suggests": []
+        },
+        {
+          "id": "folk-rock",
+          "i18n": "genres.folk-country.folk-rock",
+          "suggests": []
+        },
+        {
+          "id": "north-american-traditional",
+          "i18n": "genres.folk-country.north-american-traditional",
+          "suggests": []
+        }
+      ],
+      "rank": 20
+    },
+    {
+      "id": "performance",
+      "family": "stage",
+      "i18n": "categories.performance",
+      "hue": 264,
+      "genres": [
+        {
+          "id": "multidisciplinary",
+          "i18n": "genres.performance.multidisciplinary",
+          "suggests": [
+            "hybride"
+          ]
+        },
+        {
+          "id": "performance-art",
+          "i18n": "genres.performance.performance-art",
+          "suggests": []
+        },
+        {
+          "id": "sound-performance",
+          "i18n": "genres.performance.sound-performance",
+          "suggests": [
+            "musique-electroacoustique",
+            "drone",
+            "improvise"
+          ]
+        },
+        {
+          "id": "digital-arts",
+          "i18n": "genres.performance.digital-arts",
+          "suggests": [
+            "glitch",
+            "hybride"
+          ]
+        },
+        {
+          "id": "immersive",
+          "i18n": "genres.performance.immersive",
+          "suggests": [
+            "deambulatoire"
+          ]
+        },
+        {
+          "id": "lecture-performance",
+          "i18n": "genres.performance.lecture-performance",
+          "suggests": []
+        },
+        {
+          "id": "living-installation",
+          "i18n": "genres.performance.living-installation",
+          "suggests": [
+            "deambulatoire"
+          ]
+        },
+        {
+          "id": "dance-performance",
+          "i18n": "genres.performance.dance-performance",
+          "suggests": []
+        }
+      ],
+      "rank": 21
+    }
+  ],
+  "tags": {
+    "noise-rock": {
+      "i18n": "tags.noise-rock",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "math-rock": {
+      "i18n": "tags.math-rock",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "grunge": {
+      "i18n": "tags.grunge",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "britpop": {
+      "i18n": "tags.britpop",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "cold-wave": {
+      "i18n": "tags.cold-wave",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "hardcore": {
+      "i18n": "tags.hardcore",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "crust": {
+      "i18n": "tags.crust",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "screamo": {
+      "i18n": "tags.screamo",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "post-hardcore": {
+      "i18n": "tags.post-hardcore",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "sludge": {
+      "i18n": "tags.sludge",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "grindcore": {
+      "i18n": "tags.grindcore",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "mathcore": {
+      "i18n": "tags.mathcore",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "melodic-metalcore": {
+      "i18n": "tags.melodic-metalcore",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "death-melodique": {
+      "i18n": "tags.death-melodique",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "death-technique": {
+      "i18n": "tags.death-technique",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "brutal-death": {
+      "i18n": "tags.brutal-death",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "black-atmospherique": {
+      "i18n": "tags.black-atmospherique",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "blackgaze": {
+      "i18n": "tags.blackgaze",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "funeral-doom": {
+      "i18n": "tags.funeral-doom",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "viking-metal": {
+      "i18n": "tags.viking-metal",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "djent": {
+      "i18n": "tags.djent",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "speed-metal": {
+      "i18n": "tags.speed-metal",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "glam": {
+      "i18n": "tags.glam",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "metal-alternatif": {
+      "i18n": "tags.metal-alternatif",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "techno-minimale": {
+      "i18n": "tags.techno-minimale",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "acid-techno": {
+      "i18n": "tags.acid-techno",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "techno-de-detroit": {
+      "i18n": "tags.techno-de-detroit",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "dub-techno": {
+      "i18n": "tags.dub-techno",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "hard-techno": {
+      "i18n": "tags.hard-techno",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "tech-house": {
+      "i18n": "tags.tech-house",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "acid-house": {
+      "i18n": "tags.acid-house",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "afro-house": {
+      "i18n": "tags.afro-house",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "disco-house": {
+      "i18n": "tags.disco-house",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "garage-house": {
+      "i18n": "tags.garage-house",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "jungle": {
+      "i18n": "tags.jungle",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "liquid-drum-et-bass": {
+      "i18n": "tags.liquid-drum-et-bass",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "neurofunk": {
+      "i18n": "tags.neurofunk",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "breakcore": {
+      "i18n": "tags.breakcore",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "gabber": {
+      "i18n": "tags.gabber",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "frenchcore": {
+      "i18n": "tags.frenchcore",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "hardcore-rave": {
+      "i18n": "tags.hardcore-rave",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "psytrance": {
+      "i18n": "tags.psytrance",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "progressive-trance": {
+      "i18n": "tags.progressive-trance",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "downtempo": {
+      "i18n": "tags.downtempo",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "drone": {
+      "i18n": "tags.drone",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "glitch": {
+      "i18n": "tags.glitch",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "footwork": {
+      "i18n": "tags.footwork",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "bass-music": {
+      "i18n": "tags.bass-music",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "lo-fi": {
+      "i18n": "tags.lo-fi",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "vaporwave": {
+      "i18n": "tags.vaporwave",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "french-touch": {
+      "i18n": "tags.french-touch",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "electroclash": {
+      "i18n": "tags.electroclash",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "phonk": {
+      "i18n": "tags.phonk",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "plugg": {
+      "i18n": "tags.plugg",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "rage": {
+      "i18n": "tags.rage",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "uk-drill": {
+      "i18n": "tags.uk-drill",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "afroswing": {
+      "i18n": "tags.afroswing",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "g-funk": {
+      "i18n": "tags.g-funk",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "horrorcore": {
+      "i18n": "tags.horrorcore",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "freestyle": {
+      "i18n": "tags.freestyle",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "battle-rap": {
+      "i18n": "tags.battle-rap",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "turntablism": {
+      "i18n": "tags.turntablism",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "rap-instrumental": {
+      "i18n": "tags.rap-instrumental",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "trip-hop": {
+      "i18n": "tags.trip-hop",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "funk-carioca": {
+      "i18n": "tags.funk-carioca",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "quiet-storm": {
+      "i18n": "tags.quiet-storm",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "philly-soul": {
+      "i18n": "tags.philly-soul",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "deep-funk": {
+      "i18n": "tags.deep-funk",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "northern-soul": {
+      "i18n": "tags.northern-soul",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "gospel-contemporain": {
+      "i18n": "tags.gospel-contemporain",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "swing": {
+      "i18n": "tags.swing",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "latin-jazz": {
+      "i18n": "tags.latin-jazz",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "spiritual-jazz": {
+      "i18n": "tags.spiritual-jazz",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "jazz-electrique": {
+      "i18n": "tags.jazz-electrique",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "improvisation-libre": {
+      "i18n": "tags.improvisation-libre",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "fanfare": {
+      "i18n": "tags.fanfare",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "jump-blues": {
+      "i18n": "tags.jump-blues",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "polyphonie": {
+      "i18n": "tags.polyphonie",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "musique-minimaliste": {
+      "i18n": "tags.musique-minimaliste",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "musique-spectrale": {
+      "i18n": "tags.musique-spectrale",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "musique-repetitive": {
+      "i18n": "tags.musique-repetitive",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "musique-electroacoustique": {
+      "i18n": "tags.musique-electroacoustique",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "repertoire-lyrique": {
+      "i18n": "tags.repertoire-lyrique",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "requiem": {
+      "i18n": "tags.requiem",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "oratorio": {
+      "i18n": "tags.oratorio",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "cantate": {
+      "i18n": "tags.cantate",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "gnawa": {
+      "i18n": "tags.gnawa",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "touareg": {
+      "i18n": "tags.touareg",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "afro-cubain": {
+      "i18n": "tags.afro-cubain",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "timba": {
+      "i18n": "tags.timba",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "bachata": {
+      "i18n": "tags.bachata",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "reggaeton": {
+      "i18n": "tags.reggaeton",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "forro": {
+      "i18n": "tags.forro",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "choro": {
+      "i18n": "tags.choro",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "morna": {
+      "i18n": "tags.morna",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "zouk": {
+      "i18n": "tags.zouk",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "kompa": {
+      "i18n": "tags.kompa",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "maloya": {
+      "i18n": "tags.maloya",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "sega": {
+      "i18n": "tags.sega",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "klezmer": {
+      "i18n": "tags.klezmer",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "rebetiko": {
+      "i18n": "tags.rebetiko",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "qawwali": {
+      "i18n": "tags.qawwali",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "carnatique": {
+      "i18n": "tags.carnatique",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "hindustani": {
+      "i18n": "tags.hindustani",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "gamelan": {
+      "i18n": "tags.gamelan",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "musique-bretonne": {
+      "i18n": "tags.musique-bretonne",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "musique-corse": {
+      "i18n": "tags.musique-corse",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "polyphonie-georgienne": {
+      "i18n": "tags.polyphonie-georgienne",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "yodel": {
+      "i18n": "tags.yodel",
+      "category": "STYLE",
+      "aliases": []
+    },
+    "adaptation-litteraire": {
+      "i18n": "tags.adaptation-litteraire",
+      "category": "FORM",
+      "aliases": []
+    },
+    "ecriture-de-plateau": {
+      "i18n": "tags.ecriture-de-plateau",
+      "category": "FORM",
+      "aliases": []
+    },
+    "theatre-gestuel": {
+      "i18n": "tags.theatre-gestuel",
+      "category": "FORM",
+      "aliases": []
+    },
+    "mime": {
+      "i18n": "tags.mime",
+      "category": "FORM",
+      "aliases": []
+    },
+    "commedia-dell-arte": {
+      "i18n": "tags.commedia-dell-arte",
+      "category": "FORM",
+      "aliases": []
+    },
+    "tragedie": {
+      "i18n": "tags.tragedie",
+      "category": "FORM",
+      "aliases": []
+    },
+    "comedie": {
+      "i18n": "tags.comedie",
+      "category": "FORM",
+      "aliases": []
+    },
+    "farce": {
+      "i18n": "tags.farce",
+      "category": "FORM",
+      "aliases": []
+    },
+    "monologue": {
+      "i18n": "tags.monologue",
+      "category": "FORM",
+      "aliases": []
+    },
+    "spectacle-sans-paroles": {
+      "i18n": "tags.spectacle-sans-paroles",
+      "category": "FORM",
+      "aliases": []
+    },
+    "marionnette-portee": {
+      "i18n": "tags.marionnette-portee",
+      "category": "FORM",
+      "aliases": []
+    },
+    "theatre-d-ombres": {
+      "i18n": "tags.theatre-d-ombres",
+      "category": "FORM",
+      "aliases": []
+    },
+    "nouveau-cirque": {
+      "i18n": "tags.nouveau-cirque",
+      "category": "FORM",
+      "aliases": []
+    },
+    "cirque-equestre": {
+      "i18n": "tags.cirque-equestre",
+      "category": "FORM",
+      "aliases": []
+    },
+    "trapeze": {
+      "i18n": "tags.trapeze",
+      "category": "FORM",
+      "aliases": [
+        "trapeze-volant"
+      ]
+    },
+    "corde-lisse": {
+      "i18n": "tags.corde-lisse",
+      "category": "FORM",
+      "aliases": []
+    },
+    "tissu-aerien": {
+      "i18n": "tags.tissu-aerien",
+      "category": "FORM",
+      "aliases": []
+    },
+    "mat-chinois": {
+      "i18n": "tags.mat-chinois",
+      "category": "FORM",
+      "aliases": []
+    },
+    "roue-cyr": {
+      "i18n": "tags.roue-cyr",
+      "category": "FORM",
+      "aliases": []
+    },
+    "portes-acrobatiques": {
+      "i18n": "tags.portes-acrobatiques",
+      "category": "FORM",
+      "aliases": []
+    },
+    "close-up": {
+      "i18n": "tags.close-up",
+      "category": "FORM",
+      "aliases": []
+    },
+    "mentalisme": {
+      "i18n": "tags.mentalisme",
+      "category": "FORM",
+      "aliases": []
+    },
+    "clown-blanc": {
+      "i18n": "tags.clown-blanc",
+      "category": "FORM",
+      "aliases": []
+    },
+    "bouffon": {
+      "i18n": "tags.bouffon",
+      "category": "FORM",
+      "aliases": []
+    },
+    "solo": {
+      "i18n": "tags.solo",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "duo": {
+      "i18n": "tags.duo",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "trio": {
+      "i18n": "tags.trio",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "quatuor": {
+      "i18n": "tags.quatuor",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "grand-ensemble": {
+      "i18n": "tags.grand-ensemble",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "orchestre": {
+      "i18n": "tags.orchestre",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "a-cappella": {
+      "i18n": "tags.a-cappella",
+      "category": "FORMAT",
+      "aliases": [
+        "acapella",
+        "a-capella"
+      ]
+    },
+    "acoustique": {
+      "i18n": "tags.acoustique",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "amplifie": {
+      "i18n": "tags.amplifie",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "dj-set": {
+      "i18n": "tags.dj-set",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "live-band": {
+      "i18n": "tags.live-band",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "set-hardware": {
+      "i18n": "tags.set-hardware",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "seul-en-scene": {
+      "i18n": "tags.seul-en-scene",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "lecture-et-mise-en-espace": {
+      "i18n": "tags.lecture-et-mise-en-espace",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "recital": {
+      "i18n": "tags.recital",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "version-concert": {
+      "i18n": "tags.version-concert",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "cine-concert": {
+      "i18n": "tags.cine-concert",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "concert-commente": {
+      "i18n": "tags.concert-commente",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "bal-participatif": {
+      "i18n": "tags.bal-participatif",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "plateau-partage": {
+      "i18n": "tags.plateau-partage",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "open-mic": {
+      "i18n": "tags.open-mic",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "scene-ouverte": {
+      "i18n": "tags.scene-ouverte",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "grande-forme": {
+      "i18n": "tags.grande-forme",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "forme-legere": {
+      "i18n": "tags.forme-legere",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "instrumental": {
+      "i18n": "tags.instrumental",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "vocal": {
+      "i18n": "tags.vocal",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "improvise": {
+      "i18n": "tags.improvise",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "experimental": {
+      "i18n": "tags.experimental",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "orchestral": {
+      "i18n": "tags.orchestral",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "hybride": {
+      "i18n": "tags.hybride",
+      "category": "FORMAT",
+      "aliases": []
+    },
+    "premiere": {
+      "i18n": "tags.premiere",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "avant-premiere": {
+      "i18n": "tags.avant-premiere",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "creation": {
+      "i18n": "tags.creation",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "derniere-date": {
+      "i18n": "tags.derniere-date",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "reprise-de-repertoire": {
+      "i18n": "tags.reprise-de-repertoire",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "tournee": {
+      "i18n": "tags.tournee",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "residence": {
+      "i18n": "tags.residence",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "carte-blanche": {
+      "i18n": "tags.carte-blanche",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "repetition-ouverte": {
+      "i18n": "tags.repetition-ouverte",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "captation-d-archive": {
+      "i18n": "tags.captation-d-archive",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "festival": {
+      "i18n": "tags.festival",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "plein-air": {
+      "i18n": "tags.plein-air",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "nocturne": {
+      "i18n": "tags.nocturne",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "after": {
+      "i18n": "tags.after",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "salle-historique": {
+      "i18n": "tags.salle-historique",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "lieu-patrimonial": {
+      "i18n": "tags.lieu-patrimonial",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "friche": {
+      "i18n": "tags.friche",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "club": {
+      "i18n": "tags.club",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "cabaret": {
+      "i18n": "tags.cabaret",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "cafe-theatre": {
+      "i18n": "tags.cafe-theatre",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "chapiteau": {
+      "i18n": "tags.chapiteau",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "eglise": {
+      "i18n": "tags.eglise",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "amphitheatre": {
+      "i18n": "tags.amphitheatre",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "hors-les-murs": {
+      "i18n": "tags.hors-les-murs",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "en-appartement": {
+      "i18n": "tags.en-appartement",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "deambulatoire": {
+      "i18n": "tags.deambulatoire",
+      "category": "CONTEXT",
+      "aliases": []
+    },
+    "jeune-public": {
+      "i18n": "tags.jeune-public",
+      "category": "AUDIENCE",
+      "aliases": []
+    },
+    "tout-public": {
+      "i18n": "tags.tout-public",
+      "category": "AUDIENCE",
+      "aliases": []
+    },
+    "en-famille": {
+      "i18n": "tags.en-famille",
+      "category": "AUDIENCE",
+      "aliases": []
+    },
+    "public-averti": {
+      "i18n": "tags.public-averti",
+      "category": "AUDIENCE",
+      "aliases": []
+    },
+    "scolaire": {
+      "i18n": "tags.scolaire",
+      "category": "AUDIENCE",
+      "aliases": []
+    },
+    "festif": {
+      "i18n": "tags.festif",
+      "category": "EDITORIAL",
+      "aliases": []
+    },
+    "planant": {
+      "i18n": "tags.planant",
+      "category": "EDITORIAL",
+      "aliases": []
+    },
+    "intense": {
+      "i18n": "tags.intense",
+      "category": "EDITORIAL",
+      "aliases": []
+    },
+    "dansant": {
+      "i18n": "tags.dansant",
+      "category": "EDITORIAL",
+      "aliases": []
+    },
+    "emouvant": {
+      "i18n": "tags.emouvant",
+      "category": "EDITORIAL",
+      "aliases": []
+    },
+    "contemplatif": {
+      "i18n": "tags.contemplatif",
+      "category": "EDITORIAL",
+      "aliases": []
+    },
+    "politique": {
+      "i18n": "tags.politique",
+      "category": "EDITORIAL",
+      "aliases": []
+    },
+    "drole": {
+      "i18n": "tags.drole",
+      "category": "EDITORIAL",
+      "aliases": []
+    },
+    "sombre": {
+      "i18n": "tags.sombre",
+      "category": "EDITORIAL",
+      "aliases": []
+    },
+    "virtuose": {
+      "i18n": "tags.virtuose",
+      "category": "EDITORIAL",
+      "aliases": []
+    },
+    "with-big-band": {
+      "i18n": "tags.with-big-band",
+      "category": "FORMAT",
+      "aliases": [
+        "grand orchestre",
+        "big band"
+      ]
+    }
+  },
+  "tagCategories": {
+    "STYLE": "Micro-genre. Suggested by a subgenre.",
+    "FORM": "Stage form — mime, trapeze, shadow theatre.",
+    "FORMAT": "How it is performed — solo, DJ set, concert version, film concert.",
+    "CONTEXT": "When, where, in what setting — premiere, open air, church, tour.",
+    "AUDIENCE": "Editorial complement to the minimumAge attribute.",
+    "EDITORIAL": "Subjective descriptor. Feeds recommendation and editorial, never factual filtering."
+  },
+  "attributes": {
+    "audience": [
+      {
+        "id": "all-audiences",
+        "i18n": "attributes.audience.all-audiences"
+      },
+      {
+        "id": "young",
+        "i18n": "attributes.audience.young"
+      },
+      {
+        "id": "family",
+        "i18n": "attributes.audience.family"
+      },
+      {
+        "id": "adults",
+        "i18n": "attributes.audience.adults"
+      }
+    ],
+    "minimumAge": [
+      {
+        "id": "none",
+        "i18n": "attributes.minimumAge.none"
+      },
+      {
+        "id": "6",
+        "i18n": "attributes.minimumAge.6"
+      },
+      {
+        "id": "12",
+        "i18n": "attributes.minimumAge.12"
+      },
+      {
+        "id": "16",
+        "i18n": "attributes.minimumAge.16"
+      },
+      {
+        "id": "18",
+        "i18n": "attributes.minimumAge.18"
+      }
+    ],
+    "seatingMode": [
+      {
+        "id": "seated",
+        "i18n": "attributes.seatingMode.seated"
+      },
+      {
+        "id": "standing",
+        "i18n": "attributes.seatingMode.standing"
+      },
+      {
+        "id": "mixed",
+        "i18n": "attributes.seatingMode.mixed"
+      }
+    ],
+    "intermission": [
+      {
+        "id": "none",
+        "i18n": "attributes.intermission.none"
+      },
+      {
+        "id": "one",
+        "i18n": "attributes.intermission.one"
+      },
+      {
+        "id": "two",
+        "i18n": "attributes.intermission.two"
+      }
+    ],
+    "accessibility": [
+      {
+        "id": "wheelchair",
+        "i18n": "attributes.accessibility.wheelchair"
+      },
+      {
+        "id": "sign-language",
+        "i18n": "attributes.accessibility.sign-language"
+      },
+      {
+        "id": "audio-description",
+        "i18n": "attributes.accessibility.audio-description"
+      },
+      {
+        "id": "relaxed",
+        "i18n": "attributes.accessibility.relaxed"
+      },
+      {
+        "id": "induction-loop",
+        "i18n": "attributes.accessibility.induction-loop"
+      },
+      {
+        "id": "quiet-room",
+        "i18n": "attributes.accessibility.quiet-room"
+      }
+    ],
+    "languageDependency": [
+      {
+        "id": "none",
+        "i18n": "attributes.languageDependency.none"
+      },
+      {
+        "id": "light",
+        "i18n": "attributes.languageDependency.light"
+      },
+      {
+        "id": "helpful",
+        "i18n": "attributes.languageDependency.helpful"
+      }
+    ],
+    "venueType": [
+      {
+        "id": "hall",
+        "i18n": "attributes.venueType.hall"
+      },
+      {
+        "id": "club",
+        "i18n": "attributes.venueType.club"
+      },
+      {
+        "id": "church",
+        "i18n": "attributes.venueType.church"
+      },
+      {
+        "id": "big-top",
+        "i18n": "attributes.venueType.big-top"
+      },
+      {
+        "id": "industrial",
+        "i18n": "attributes.venueType.industrial"
+      },
+      {
+        "id": "open-air",
+        "i18n": "attributes.venueType.open-air"
+      },
+      {
+        "id": "heritage",
+        "i18n": "attributes.venueType.heritage"
+      },
+      {
+        "id": "arena",
+        "i18n": "attributes.venueType.arena"
+      },
+      {
+        "id": "stadium",
+        "i18n": "attributes.venueType.stadium"
+      }
+    ]
+  },
+  "tagPolicy": {
+    "flat": "One flat canonical list. The internal category creates no visible level: it exists only to suggest well — never offer a venue tag on an artist sheet, never offer blackgaze because a hall used it once.",
+    "identity": "slug is the stable key and is never displayed; the label is the display copy; aliases are absorbed on input; usageCount drives sorting and merging.",
+    "custom": "Artists and venues may create free tags from the studio. On input, match against existing tags and their aliases and suggest the match before creating.",
+    "noThreshold": "On a sheet, every tag is a clickable pill whatever its volume — that is lateral navigation. A global list of tags sorts by frequency and cuts the tail.",
+    "ownership": "A tag sits on the date as readily as on the show: the same show may be staged one night and given in concert version the next.",
+    "suggestedBy": "Subgenre suggests style tags; the artist brings its own; the venue suggests place tags; the date generates premiere / final / creation; the editor adds or removes freely."
+  },
+  "copy": "i18n/taxonomy.json — resolved through A.label(entry)."
+}

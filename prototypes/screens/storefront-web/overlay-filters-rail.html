@@ -1,0 +1,420 @@
+<!--
+  ÉCRAN      Rail latéral et panneau de filtres
+  ROUTE      superposition, sans URL — DUPLIQUÉ
+  AFFICHE    Le rail latéral de l'explorateur et de la page discipline : repli, menu de tri, panneau de filtres par groupes, puis les blocs contextuels (recherches récentes, recherches enregistrées, suivis en direct, bientôt complet ici, autres catégories).
+  MÈNE VERS  browse · category · overlay-save-search · live · artist
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 735-812 · 1694-1771
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       ⚠ CE BLOC EST RECOPIÉ DEUX FOIS DANS L'ORIGINAL — une fois dans `browse` (735-812),
+             une fois dans `category` (1694-1771), avec le même modèle de vue (`sideBlocks`,
+             `filterGroups`, `asideStyle`). Les deux copies sont ci-dessous, telles quelles. Le
+             menu de tri qu'il contient est lui-même extrait dans `overlay-sort.html`.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — search, getCategoryScreen, listSavedSearches
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : CAT_NAMES, SUBS, account, catalogue, category, cats, drawerOpen, roster, s, sideDrawer, subsSel, t
+  À LIRE     dépendances non recopiées ici : catSig, flags
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <aside style="{{ asideStyle }}">
+        <div style="{{ sideToggleRow }}">
+          <span onClick="{{ toggleSide }}" title="{{ sideToggleTitle }}" style="{{ sideToggleStyle }} cursor: pointer; display: grid; place-items: center; border: 1px solid #1F1C19; font-size: 13px; color: #857E73; transition: border-color .2s ease, color .2s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ sideToggleLabel }}</span>
+        </div>
+        <sc-if value="{{ sideOpen }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 26px; animation: fadeIn .2s ease both;">
+            <div data-pop="sort">
+              <div style="display: flex; align-items: baseline; border-bottom: 1px solid #1F1C19; padding-bottom: 7px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #C9C0B2;">{{ t.sortLabel }}</span>
+              </div>
+              <div style="position: relative;">
+                <div onClick="{{ toggleSortMenu }}" style="{{ sortFieldStyle }}" style-hover="border-color:rgba(237,231,220,0.5)">
+                  <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sortCurrentLabel }}</span>
+                  <span style="margin-left: auto; flex: 0 0 auto; font-size: 9px; color: #857E73;">{{ sortCaret }}</span>
+                </div>
+                <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="position: absolute; left: 0; right: 0; top: 100%; z-index: 40; margin-top: 4px; border: 1px solid #332E28; background: #0B0A09; box-shadow: 0 18px 40px rgba(0,0,0,0.55); animation: fadeIn .16s ease both;">
+                    <sc-for list="{{ sortRows }}" as="sr" hint-placeholder-count="5">
+                      <div onClick="{{ sr.pick }}" style="{{ sr.style }}" style-hover="background:#17140F;color:#EDE7DC">{{ sr.label }}</div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+            <div>
+              <div style="display: flex; align-items: baseline; gap: 8px; border-bottom: 1px solid #1F1C19; padding-bottom: 7px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #C9C0B2;">{{ filtersHeadLabel }}</span>
+                <sc-if value="{{ hasAnyFilter }}" hint-placeholder-val="{{ false }}">
+                  <span onClick="{{ clearFiltersHere }}" style="margin-left: auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #857E73; transition: color .2s ease;" style-hover="color:#EDE7DC">{{ t.clearAll }}</span>
+                </sc-if>
+              </div>
+              <div style="padding-top: 12px; display: flex; flex-direction: column; gap: 15px;">
+                <sc-for list="{{ filterGroups }}" as="fg" hint-placeholder-count="5">
+                  <div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ fg.title }}</div>
+                    <div style="padding-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+                      <sc-for list="{{ fg.chips }}" as="fc" hint-placeholder-count="4">
+                        <span onClick="{{ fc.pick }}" style="{{ fc.style }}">{{ fc.label }}</span>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <sc-for list="{{ sideBlocks }}" as="bk" hint-placeholder-count="4">
+              <div>
+                <div style="display: flex; align-items: baseline; gap: 8px; border-bottom: 1px solid #16140F; padding-bottom: 7px;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ bk.title }}</span>
+                  <sc-if value="{{ bk.hasMore }}" hint-placeholder-val="{{ false }}">
+                    <span onClick="{{ bk.moreGo }}" style="margin-left: auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #857E73; transition: color .2s ease;" style-hover="color:#EDE7DC">{{ bk.moreLabel }} →</span>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ bk.isEmpty }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding-top: 8px; font-size: 12.5px; color: #575047;">{{ bk.emptyLabel }}</div>
+                </sc-if>
+                <div style="padding-top: 3px; display: flex; flex-direction: column;">
+                  <sc-for list="{{ bk.items }}" as="it" hint-placeholder-count="4">
+                    <div onClick="{{ it.go }}" style="{{ it.rowStyle }}" style-hover="opacity:0.7">
+                      <sc-if value="{{ it.live }}" hint-placeholder-val="{{ false }}">
+                        <span style="flex: 0 0 auto; width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+                      </sc-if>
+                      <span style="{{ it.labelStyle }}">{{ it.label }}</span>
+                      <span style="{{ it.metaStyle }}">{{ it.meta }}</span>
+                      <sc-if value="{{ it.hasActs }}" hint-placeholder-val="{{ false }}">
+                        <span style="margin-left: auto; flex: 0 0 auto; display: inline-flex; gap: 7px; padding-left: 6px;">
+                          <sc-for list="{{ it.acts }}" as="ac" hint-placeholder-count="2">
+                            <span onClick="{{ ac.run }}" title="{{ ac.title }}" style="{{ ac.style }}" style-hover="{{ ac.hoverStyle }}">{{ ac.glyph }}</span>
+                          </sc-for>
+                        </span>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </aside>
+
+      <aside style="{{ asideStyle }}">
+        <div style="{{ sideToggleRow }}">
+          <span onClick="{{ toggleSide }}" title="{{ sideToggleTitle }}" style="{{ sideToggleStyle }} cursor: pointer; display: grid; place-items: center; border: 1px solid #1F1C19; font-size: 13px; color: #857E73; transition: border-color .2s ease, color .2s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ sideToggleLabel }}</span>
+        </div>
+        <sc-if value="{{ sideOpen }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 26px; animation: fadeIn .2s ease both;">
+            <div data-pop="sort">
+              <div style="display: flex; align-items: baseline; border-bottom: 1px solid #1F1C19; padding-bottom: 7px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #C9C0B2;">{{ t.sortLabel }}</span>
+              </div>
+              <div style="position: relative;">
+                <div onClick="{{ toggleSortMenu }}" style="{{ sortFieldStyle }}" style-hover="border-color:rgba(237,231,220,0.5)">
+                  <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sortCurrentLabel }}</span>
+                  <span style="margin-left: auto; flex: 0 0 auto; font-size: 9px; color: #857E73;">{{ sortCaret }}</span>
+                </div>
+                <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="position: absolute; left: 0; right: 0; top: 100%; z-index: 40; margin-top: 4px; border: 1px solid #332E28; background: #0B0A09; box-shadow: 0 18px 40px rgba(0,0,0,0.55); animation: fadeIn .16s ease both;">
+                    <sc-for list="{{ sortRows }}" as="sr" hint-placeholder-count="5">
+                      <div onClick="{{ sr.pick }}" style="{{ sr.style }}" style-hover="background:#17140F;color:#EDE7DC">{{ sr.label }}</div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+            <div>
+              <div style="display: flex; align-items: baseline; gap: 8px; border-bottom: 1px solid #1F1C19; padding-bottom: 7px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #C9C0B2;">{{ filtersHeadLabel }}</span>
+                <sc-if value="{{ hasAnyFilter }}" hint-placeholder-val="{{ false }}">
+                  <span onClick="{{ clearFiltersHere }}" style="margin-left: auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #857E73; transition: color .2s ease;" style-hover="color:#EDE7DC">{{ t.clearAll }}</span>
+                </sc-if>
+              </div>
+              <div style="padding-top: 12px; display: flex; flex-direction: column; gap: 15px;">
+                <sc-for list="{{ filterGroups }}" as="fg" hint-placeholder-count="5">
+                  <div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ fg.title }}</div>
+                    <div style="padding-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+                      <sc-for list="{{ fg.chips }}" as="fc" hint-placeholder-count="4">
+                        <span onClick="{{ fc.pick }}" style="{{ fc.style }}">{{ fc.label }}</span>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <sc-for list="{{ sideBlocks }}" as="bk" hint-placeholder-count="4">
+              <div>
+                <div style="display: flex; align-items: baseline; gap: 8px; border-bottom: 1px solid #16140F; padding-bottom: 7px;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ bk.title }}</span>
+                  <sc-if value="{{ bk.hasMore }}" hint-placeholder-val="{{ false }}">
+                    <span onClick="{{ bk.moreGo }}" style="margin-left: auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #857E73; transition: color .2s ease;" style-hover="color:#EDE7DC">{{ bk.moreLabel }} →</span>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ bk.isEmpty }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding-top: 8px; font-size: 12.5px; color: #575047;">{{ bk.emptyLabel }}</div>
+                </sc-if>
+                <div style="padding-top: 3px; display: flex; flex-direction: column;">
+                  <sc-for list="{{ bk.items }}" as="it" hint-placeholder-count="4">
+                    <div onClick="{{ it.go }}" style="{{ it.rowStyle }}" style-hover="opacity:0.7">
+                      <sc-if value="{{ it.live }}" hint-placeholder-val="{{ false }}">
+                        <span style="flex: 0 0 auto; width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+                      </sc-if>
+                      <span style="{{ it.labelStyle }}">{{ it.label }}</span>
+                      <span style="{{ it.metaStyle }}">{{ it.meta }}</span>
+                      <sc-if value="{{ it.hasActs }}" hint-placeholder-val="{{ false }}">
+                        <span style="margin-left: auto; flex: 0 0 auto; display: inline-flex; gap: 7px; padding-left: 6px;">
+                          <sc-for list="{{ it.acts }}" as="ac" hint-placeholder-count="2">
+                            <span onClick="{{ ac.run }}" title="{{ ac.title }}" style="{{ ac.style }}" style-hover="{{ ac.hoverStyle }}">{{ ac.glyph }}</span>
+                          </sc-for>
+                        </span>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </aside>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* q  —  lignes 5699-5699 */
+    const q = s.query.trim().toLowerCase();
+/* qq  —  lignes 5934-5934 */
+    const qq = (s.liveQuery || '').trim().toLowerCase();
+/* priceDefs  —  lignes 5936-5936 */
+    const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
+/* dateDefs  —  lignes 5937-5937 */
+    const dateDefs = [['tonight', t.dTonight], ['weekend', t.dWeekend], ['d7', t.d7], ['d30', t.d30], ['range', t.dRange]];
+/* statusDefs  —  lignes 5945-5945 */
+    const statusDefs = [['live', t.stLive], ['soon', t.stSoon], ['replay', t.stReplay]];
+/* catFollowEntry  —  lignes 6045-6045 */
+    const catFollowEntry = s.alerts.find(al => al.scope === 'category' && this.alertSig('', al.st) === catSig) || null;
+/* sortDefs  —  lignes 6082-6082 */
+    const sortDefs = [['auto', qq ? t.sortRelevance : t.sortSoon], ['soon', t.sortSoon], ['pop', t.sortPop], ['priceUp', t.sortPriceUp], ['priceDown', t.sortPriceDown]];
+/* expiryFilters  —  lignes 6100-6104 */
+    const expiryFilters = [{
+      label: t.expSoon,
+      pick: () => this.setState(st => ({ fExpiring: !st.fExpiring, shown: {} })),
+      style: CHIP + (s.fExpiring ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    }];
+/* catFilters  —  lignes 6105-6109 */
+    const catFilters = CAT_NAMES.map((name, i) => ({
+      label: name.toUpperCase(),
+      pick: () => this.setState(st => ({ fCats: st.fCats.indexOf(i) > -1 ? st.fCats.filter(x => x !== i) : st.fCats.concat([i]) })),
+      style: CHIP + (s.fCats.indexOf(i) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    }));
+/* priceFilters  —  lignes 6110-6114 */
+    const priceFilters = priceDefs.map(([k, label]) => ({
+      label,
+      pick: () => this.setState(st => ({ fPrices: st.fPrices.indexOf(k) > -1 ? st.fPrices.filter(x => x !== k) : st.fPrices.concat([k]) })),
+      style: CHIP + (s.fPrices.indexOf(k) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    }));
+/* dateFilters  —  lignes 6115-6119 */
+    const dateFilters = dateDefs.map(([k, label]) => ({
+      label,
+      pick: () => this.setState(st => ({ fDate: st.fDate === k ? 'all' : k })),
+      style: CHIP + (s.fDate === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    }));
+/* statusFilters  —  lignes 6120-6124 */
+    const statusFilters = statusDefs.map(([k, label]) => ({
+      label,
+      pick: () => this.setState(st => ({ fStatus: st.fStatus === k ? 'all' : k })),
+      style: CHIP + (s.fStatus === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    }));
+/* miscFilters  —  lignes 6125-6130 */
+    const miscFilters = [
+      { label: t.almostFull, on: s.fAlmost, toggle: () => this.setState(st => ({ fAlmost: !st.fAlmost })) },
+      { label: t.hasDates, on: s.fHasDates, toggle: () => this.setState(st => ({ fHasDates: !st.fHasDates })) },
+      { label: t.promoFilter, on: s.fPromo, toggle: () => this.setState(st => ({ fPromo: !st.fPromo })) }
+    ].map(o => ({ label: o.label, pick: o.toggle, style: CHIP + (o.on ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;') }));
+
+/* catFilterCount  —  lignes 6175-6175 */
+    const catFilterCount = subsSel.length + s.cPrices.length + (s.cDate !== 'all' ? 1 : 0) + (s.cStatus !== 'all' ? 1 : 0) + (s.cAlmost ? 1 : 0) + (s.cPromo ? 1 : 0);
+/* catOv  —  lignes 6192-6192 */
+    const catOv = s.catTab === 'ov';
+/* subgenres  —  lignes 6216-6226 */
+    const subgenres = (SUBS[s.catId] || SUBS[0]).map((label, i) => ({
+      n: catalogue.filter(o => o.cat === s.catId && o.subs.indexOf(i) > -1).length,
+      label: label.toUpperCase(),
+      pick: () => this.setState(st => {
+        const cur = (st.subs || []).slice();
+        const k = cur.indexOf(i);
+        if (k > -1) cur.splice(k, 1); else cur.push(i);
+        return { subs: cur };
+      }),
+      style: CHIP + (subsSel.indexOf(i) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    })).filter(x => x.n > 0);
+/* activeFilterCount  —  lignes 6232-6232 */
+    const activeFilterCount = s.fCats.length + (s.fCats.length === 1 ? (s.fSubs || []).length : 0) + s.fPrices.length + (s.fDate !== 'all' ? 1 : 0) + (s.fStatus !== 'all' ? 1 : 0) + flags.length;
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      sortOpen: s.sortOpen,
+      toggleSortMenu: () => this.setState(st => ({ sortOpen: !st.sortOpen })),
+      sortFieldStyle: "cursor: pointer; margin-top: 9px; display: flex; align-items: center; gap: 8px; padding: 4px 9px; border: 1px solid " +
+        (s.sortOpen ? 'rgba(237,231,220,0.6)' : 'rgba(237,231,220,0.4)') + "; background: #0D0C0A; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #EDE7DC; transition: border-color .2s ease;",
+      sortCaret: s.sortOpen ? '▴' : '▾',
+      sortRows: (s.page === 'category'
+        ? sortDefs.filter(d => d[0] !== 'soon').map(([k, label]) => [k, label, s.cSort === k, () => this.setState({ cSort: k, shown: {} })])
+        : (qq ? sortDefs : sortDefs.filter(d => d[0] !== 'soon')).map(([k, label]) => [k, label, s.sort === k, () => this.setState({ sort: k, shown: {} })])
+      ).map(([k, label, on, pick]) => ({
+        label, on,
+        pick: () => { pick(); this.setState({ sortOpen: false }); },
+        style: "cursor: pointer; display: block; padding: 6px 9px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: " + (on ? '#EDE7DC' : '#9B948A') + '; background: ' + (on ? '#17140F' : 'transparent') + '; transition: background .18s ease, color .18s ease;'
+      })),
+      sortCurrentLabel: (() => {
+        const defs = s.page === 'category' ? sortDefs.filter(d => d[0] !== 'soon') : (qq ? sortDefs : sortDefs.filter(d => d[0] !== 'soon'));
+        const cur = s.page === 'category' ? s.cSort : s.sort;
+        return ((defs.find(d => d[0] === cur) || defs[0]) || ['', ''])[1];
+      })(),
+
+      filtersHeadLabel: t.showFilters + (s.page === 'category' ? (catFilterCount ? ' · ' + catFilterCount : '') : (activeFilterCount ? ' · ' + activeFilterCount : '')),
+      hasAnyFilter: s.page === 'category' ? catFilterCount > 0 : activeFilterCount > 0,
+      clearFiltersHere: () => this.setState(s.page === 'category'
+        ? { subs: [], cPrices: [], cDate: 'all', cStatus: 'all', cAlmost: false, cPromo: false, cSort: 'auto', shown: {} }
+        : { fCats: [], fSubs: [], fPrices: [], fDate: 'all', fStatus: 'all', fAlmost: false, fHasDates: false, fExpiring: false, fPromo: false, shown: {} }),
+      filterGroups: (() => {
+        const g = [];
+        const add = (title, chips, on) => { if (on && chips.length) g.push({ title, chips }); };
+        if (s.page === 'category') {
+          add(t.subgenres, subgenres.map((sg, i) => ({
+            label: sg.label, pick: sg.pick,
+            style: CHIP + (subsSel.indexOf(i) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+          })), true);
+          add(t.fPrice, priceDefs.map(([k, label]) => ({
+            label, pick: () => this.setState(st => ({ cPrices: st.cPrices.indexOf(k) > -1 ? st.cPrices.filter(x => x !== k) : st.cPrices.concat([k]), shown: {} })),
+            style: CHIP + (s.cPrices.indexOf(k) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+          })), true);
+          add(t.fDate, dateDefs.filter(d => d[0] !== 'all').map(([k, label]) => ({
+            label, pick: () => this.setState(st => ({ cDate: st.cDate === k ? 'all' : k, shown: {} })),
+            style: CHIP + (s.cDate === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+          })), catOv || s.catTab === 'up');
+          add(t.fStatus, statusDefs.map(([k, label]) => ({
+            label, pick: () => this.setState(st => ({ cStatus: st.cStatus === k ? 'all' : k, shown: {} })),
+            style: CHIP + (s.cStatus === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+          })), catOv);
+          add(t.fMisc, [
+            { label: t.almostFull, on: s.cAlmost, pick: () => this.setState(st => ({ cAlmost: !st.cAlmost, shown: {} })) },
+            { label: t.promoFilter, on: s.cPromo, pick: () => this.setState(st => ({ cPromo: !st.cPromo, shown: {} })) }
+          ].map(o => ({
+            label: o.label, pick: o.pick,
+            style: CHIP + (o.on ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+          })), true);
+        } else {
+          add(t.fCats, catFilters, true);
+          add(t.fPrice, priceFilters, s.sTab !== 'artists');
+          add(t.fDate, dateFilters, s.sTab === 'best' || s.sTab === 'lives');
+          add(t.expiresIn, expiryFilters, s.sTab === 'replays');
+          add(t.fStatus, statusFilters, s.sTab === 'best');
+          add(t.fMisc, miscFilters, s.sTab !== 'replays');
+        }
+        return g;
+      })(),
+      sideOpen: drawerOpen,
+      toggleSide: () => this.setState(st => (sideDrawer ? { drawerOpen: !(st.drawerOpen === true) } : { sideOpen: !st.sideOpen })),
+      sideToggleLabel: sideDrawer ? (drawerOpen ? '✕' : '☰') : (s.sideOpen ? '‹' : '›'),
+      sideToggleRow: sideDrawer ? 'display: flex; justify-content: flex-start;' : 'display: flex; justify-content: flex-end;',
+      sideToggleTitle: s.sideOpen ? t.collapseSide : t.expandSide,
+      asideStyle: !sideDrawer
+        ? 'position: sticky; top: 84px; align-self: start; min-width: 0;'
+        : (drawerOpen
+          /* Le tiroir part sous l'en-tête collant, et la pastille repliée s'y
+             cale aussi : à 128 px elle flottait au milieu du contenu. */
+          ? 'position: fixed; left: 0; top: 77px; bottom: 0; width: 296px; max-width: 88%; z-index: 7000; padding: 16px 18px 28px; overflow-y: auto; background: #0B0A09; border-right: 1px solid #1F1C19; box-shadow: 24px 0 60px rgba(0,0,0,0.55);'
+          : 'position: fixed; left: 0; top: 89px; z-index: 7000; padding: 0; background: rgba(11,10,9,0.92); border: 1px solid #1F1C19; border-left: none;'),
+      /* Repliée, la pastille est la cible : 44 px, pas 26. */
+      sideToggleStyle: sideDrawer && !drawerOpen
+        ? 'width: 44px; height: 44px; border-color: transparent;'
+        : 'width: 26px; height: 26px;',
+      sideBlocks: (() => {
+        const item = (label, meta, go, extra) => Object.assign({
+          label, meta: meta || '', go: go || (() => {}), live: false, active: false, acts: [], hasActs: false,
+          rowStyle: 'cursor: pointer; display: flex; align-items: baseline; gap: 8px; padding: 6px 0; transition: color .2s ease;',
+          labelStyle: 'min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: #C9C0B2;',
+          metaStyle: "margin-left: auto; flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #6B6459;"
+        }, extra || {});
+
+        const liveFollowed = roster.filter(a => a.isLive && (s.follows || []).indexOf(a.i) > -1);
+        const blocks = [];
+
+        if (s.page === 'category') {
+          const scoped = (s.alerts || []).filter(al => al.scope === 'category' && al.catId === s.catId);
+          blocks.push({
+            title: t.sideCatSaved,
+            items: scoped.slice(0, 5).map(al => item(
+              this.alertName(al, cats, t), '',
+              () => this.applyAlert(al),
+              {
+                active: !!catFollowEntry && al.id === catFollowEntry.id,
+                labelStyle: 'min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: ' +
+                  (catFollowEntry && al.id === catFollowEntry.id ? 'oklch(0.82 0.1 150)' : '#C9C0B2') + ';'
+              }
+            )),
+            empty: t.noSavedCatHere,
+            more: scoped.length ? { label: t.seeAllShort, go: () => this.setState({ page: 'account', accTab: 'alerts' }) } : null
+          });
+          blocks.push({
+            title: t.sideOther,
+            items: cats.filter(c => c.i !== s.catId).slice(0, 6).map(c => item(c.name, '', c.open)),
+            more: { label: t.seeAllShort, go: () => this.setState({ page: 'categories' }) }
+          });
+        } else {
+          blocks.push({
+            title: t.sideRecent,
+            items: (s.recent || []).slice(0, 5).map(q => item(q, '', () => this.setState({ query: q, liveQuery: q, sTab: 'best', shown: {} }))),
+            more: null
+          });
+          blocks.push({
+            title: t.sideAlertsNew,
+            items: (s.alerts || []).filter(al => al.scope !== 'category').slice(0, 4).map(al => item(
+              this.alertName(al, cats, t), '', () => this.applyAlert(al),
+            )),
+            more: (s.alerts || []).some(al => al.scope !== 'category') ? { label: t.seeAllShort, go: () => this.setState({ page: 'account', accTab: 'alerts' }) } : null
+          });
+          blocks.push({
+            title: t.sideCats,
+            items: cats.slice(0, 6).map(c => item(c.name, '', c.open)),
+            more: { label: t.seeAllShort, go: () => this.setState({ page: 'categories' }) }
+          });
+        }
+        return blocks.filter(b => b.items.length || b.empty).map(b => Object.assign(b, {
+          hasItems: b.items.length > 0,
+          isEmpty: b.items.length === 0,
+          emptyLabel: b.empty || '',
+          hasMore: !!b.more,
+          moreLabel: b.more ? b.more.label : '',
+          moreGo: b.more ? b.more.go : (() => {})
+        }));
+      })(),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.almostFull  t.clearAll  t.collapseSide  t.d30  t.d7  t.dRange  t.dTonight  t.dWeekend  
+    t.expSoon  t.expandSide  t.expiresIn  t.fCats  t.fDate  t.fMisc  t.fPrice  t.fStatus  
+    t.hasDates  t.noSavedCatHere  t.p1020  t.p2035  t.p35  t.pFree  t.pU10  t.promoFilter  
+    t.seeAllShort  t.showFilters  t.sideAlertsNew  t.sideCatSaved  t.sideCats  t.sideOther  
+    t.sideRecent  t.sortLabel  t.sortPop  t.sortPriceDown  t.sortPriceUp  t.sortRelevance  
+    t.sortSoon  t.stLive  t.stReplay  t.stSoon  t.subgenres  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    alerts  cAlmost  cDate  cPrices  cPromo  cSort  cStatus  catId  catTab  drawerOpen  
+    fAlmost  fCats  fDate  fExpiring  fHasDates  fPrices  fPromo  fStatus  fSubs  follows  
+    liveQuery  page  query  recent  sTab  sideOpen  sort  sortOpen  subs  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    alertName, alertSig, applyAlert, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

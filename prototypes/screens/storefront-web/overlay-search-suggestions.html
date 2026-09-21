@@ -1,0 +1,148 @@
+<!--
+  ÉCRAN      Recherche et suggestions
+  ROUTE      superposition, sans URL
+  AFFICHE    Le champ de recherche de l'en-tête, son voile plein écran, et le panneau de suggestions : recherches récentes, artistes, spectacles, « voir tous les résultats ».
+  MÈNE VERS  browse · artist · live
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 72-130
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — search
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : artist, fr, roster, s, sideDrawer, t
+  À LIRE     dépendances non recopiées ici : REPLAY, matchQ
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+    <sc-if value="{{ searchModal }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeSearch }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.82); backdrop-filter: blur(6px); animation: fadeIn .18s ease both;"></div>
+    </sc-if>
+    <div data-pop="sugg" style="{{ searchWrapStyle }}">
+      <input value="{{ query }}" onChange="{{ onQuery }}" onFocus="{{ onSearchFocus }}" onBlur="{{ onSearchBlur }}" onKeyDown="{{ onSearchKey }}" placeholder="{{ t.search }}" style="width: 100%; height: 40px; background: #141210; border: 1px solid #1F1C19; border-radius: 2px; color: #EDE7DC; font-family: Archivo, sans-serif; font-size: 13.5px; padding: 0 14px 0 38px; outline: none;" style-focus="border-color:#4A423A" />
+      <div style="position: absolute; left: 15px; top: 12px; width: 13px; height: 13px; border: 1.5px solid #857E73; border-radius: 50%;"></div>
+      <div style="position: absolute; left: 25px; top: 24px; width: 7px; height: 1.5px; background: #857E73; transform: rotate(45deg);"></div>
+      <sc-if value="{{ suggOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position: absolute; left: 0; right: 0; top: 48px; z-index: 600; max-height: 68vh; overflow-y: auto; background: #0D0C0A; border: 1px solid #1F1C19; box-shadow: 0 24px 60px rgba(0,0,0,0.6); animation: riseIn .18s ease both;">
+          <sc-if value="{{ suggEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding: 16px; font-size: 12.5px; color: #8B857C;">{{ t.suggNothing }}</div>
+          </sc-if>
+          <sc-if value="{{ hasSuggShows }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="padding: 11px 14px 7px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.suggShowsLabel }}</div>
+              <sc-for list="{{ suggShows }}" as="sg" hint-placeholder-count="3">
+                <div onClick="{{ sg.open }}" style="cursor: pointer; padding: 9px 14px; display: flex; align-items: center; gap: 11px; transition: background .2s ease;" style-hover="background:#171410">
+                  <div style="flex: 0 0 44px; width: 44px; aspect-ratio: 16/10; overflow: hidden; position: relative; background: #17140F;">
+                    <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.74); background-color: #1A1815; background-image: {{ sg.imgCss }}; background-size: cover; background-position: center;"></div>
+                  </div>
+                  <div style="min-width: 0;">
+                    <div style="font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sg.name }}</div>
+                    <div style="padding-top: 2px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ sg.artist }}</div>
+                  </div>
+                  <span style="margin-left: auto; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ sg.statusColor }};"><sc-if value="{{ sg.isLive }}" hint-placeholder-val="{{ false }}"><span style="flex: 0 0 auto; width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span></sc-if>{{ sg.status }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noSuggShows }}" hint-placeholder-val="{{ false }}">
+            <div style="padding: 11px 14px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.suggShowsLabel }}</div>
+              <div style="padding-top: 6px; font-size: 12.5px; color: #857E73;">{{ t.noShowFound }}</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ hasSuggArtists }}" hint-placeholder-val="{{ true }}">
+            <div style="border-top: 1px solid #1F1C19;">
+              <div style="padding: 11px 14px 7px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.suggArtistsLabel }}</div>
+              <sc-for list="{{ suggArtists }}" as="sg" hint-placeholder-count="3">
+                <div onClick="{{ sg.open }}" style="cursor: pointer; padding: 9px 14px; display: flex; align-items: center; gap: 11px; transition: background .2s ease;" style-hover="background:#171410">
+                  <div style="flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815;">
+                    <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.82); background-color: #1A1815; background-image: {{ sg.imgCss }}; background-size: cover; background-position: center;"></div>
+                  </div>
+                  <span style="font-size: 13.5px;">{{ sg.name }}</span>
+                  <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ sg.statusColor }};"><sc-if value="{{ sg.isLive }}" hint-placeholder-val="{{ false }}"><span style="flex: 0 0 auto; width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span></sc-if>{{ sg.status }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noSuggArtists }}" hint-placeholder-val="{{ false }}">
+            <div style="border-top: 1px solid #1F1C19; padding: 11px 14px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.suggArtistsLabel }}</div>
+              <div style="padding-top: 6px; font-size: 12.5px; color: #857E73;">{{ t.noArtistFound }}</div>
+            </div>
+          </sc-if>
+          <div onClick="{{ submitSearch }}" style="cursor: pointer; border-top: 1px solid #1F1C19; padding: 11px 14px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #C9C0B2; transition: background .2s ease;" style-hover="background:#171410;color:#EDE7DC">{{ t.seeAll }} ↵</div>
+        </div>
+      </sc-if>
+    </div>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* q  —  lignes 5699-5699 */
+    const q = s.query.trim().toLowerCase();
+/* suggArtists  —  lignes 5701-5705 */
+    const suggArtists = q ? roster.filter(a => matchQ(a.name, a.discipline)).slice(0, 4).map(a => ({
+      name: a.name, img: a.portrait, imgCss: this.cssUrl(a.portrait), open: () => this.setState({ page: 'artist', artistId: a.i, suggOpen: false, searchOpen: false }),
+      isLive: a.isLive, status: a.isLive ? t.onNow : a.discipline.toUpperCase(),
+      statusColor: a.isLive ? 'oklch(0.78 0.14 27)' : '#857E73'
+    })) : [];
+/* suggShows  —  lignes 5706-5712 */
+    const suggShows = q ? roster.filter(a => matchQ(a.showTitle)).slice(0, 4).map(a => ({
+      name: a.showTitle, artist: a.name, img: a.showImg, imgCss: this.cssUrl(a.showImg),
+      open: () => this.setState({ page: 'live', artistId: a.i, suggOpen: false, searchOpen: false, watching: a.i, watchKind: 'live', pipClosed: false }),
+      isLive: a.isLive, status: a.isLive ? t.onNow : (fr ? 'REDIFF.' : 'REPLAY'),
+      statusColor: a.isLive ? 'oklch(0.78 0.14 27)' : '#857E73'
+    })) : [];
+
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      query: s.query, draft: s.draft,
+      onQuery: e => {
+        const v = e.target.value;
+        this.setState({ query: v, suggOpen: v.trim().length > 0 });
+        clearTimeout(this._qT);
+        this._qT = setTimeout(() => {
+          const q = v.trim();
+          this.setState(st => ({ liveQuery: q.length >= 3 ? q : '', shown: {}, page: q.length >= 3 && st.page === 'browse' ? 'browse' : st.page }));
+        }, 260);
+      },
+      onSearchFocus: () => this.setState(st => ({ suggOpen: st.query.trim().length > 0 })),
+      onSearchBlur: () => setTimeout(() => this.setState({ suggOpen: false, searchOpen: false }), 160),
+      onSearchKey: e => { if (e.key === 'Enter') this.setState(st => ({ page: 'browse', suggOpen: false, searchOpen: false, filter: 0, liveQuery: st.query.trim(), shown: {} })); if (e.key === 'Escape') this.setState({ suggOpen: false, searchOpen: false }); },
+      submitSearch: () => this.setState(st => ({ page: 'browse', suggOpen: false, searchOpen: false, filter: 0, liveQuery: st.query.trim(), shown: {} })),
+      suggOpen: s.suggOpen && s.query.trim().length > 0,
+      suggArtists, suggShows,
+      hasSuggArtists: suggArtists.length > 0, hasSuggShows: suggShows.length > 0,
+      noSuggArtists: suggArtists.length === 0 && suggShows.length > 0,
+      noSuggShows: suggShows.length === 0 && suggArtists.length > 0,
+      suggEmpty: suggArtists.length === 0 && suggShows.length === 0,
+      searchModal: sideDrawer && s.searchOpen,
+      closeSearch: () => this.setState({ searchOpen: false, suggOpen: false, searchOpen: false }),
+      searchWrapStyle: !sideDrawer
+        ? 'flex: 1 1 140px; min-width: 0; max-width: 380px; position: relative;'
+        : (s.searchOpen
+          ? 'position: fixed; left: 50%; top: 96px; transform: translateX(-50%); width: 560px; max-width: 92vw; z-index: 8900; animation: fadeIn .2s ease both;'
+          : 'display: none;'),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.noArtistFound  t.noShowFound  t.onNow  t.search  t.seeAll  t.suggArtistsLabel  
+    t.suggNothing  t.suggShowsLabel  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    draft  page  query  searchOpen  suggOpen  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    cssUrl, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

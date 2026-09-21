@@ -1,0 +1,104 @@
+<!--
+  Arthome · storefront mobile — account-security
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : account · accTab=security
+  Affiche    : Sécurité : mot de passe, double authentification, clé d'accès, moyens de paiement, sessions actives.
+  Mène vers  : —
+  Contrat    : DELETE /v1/me/devices/{deviceId} · DELETE /v1/me/device-sessions/{sessionId}
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1672–1701
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1672–1701
+     ══════════════════════════════════════════════════════════════════════════ -->
+      <sc-if value="{{ accSecurity }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+            <sc-for list="{{ securityRows }}" as="r" hint-placeholder-count="4">
+              <div style="background: #100F0D; padding: 14px 13px;">
+                <div style="display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+                  <span style="font-size: 14px;">{{ r.label }}</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ r.stateColor }};">{{ r.state }}</span>
+                </div>
+                <div style="padding-top: 5px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ r.hint }}</div>
+                <span onClick="{{ r.action }}" style="display: inline-block; margin-top: 11px; cursor: pointer; padding: 10px 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC;">{{ r.cta }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top: 18px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 10px;">{{ t.sessions }}</div>
+          <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+            <sc-for list="{{ sessions }}" as="ss" hint-placeholder-count="3">
+              <div style="background: #100F0D; padding: 13px; display: flex; align-items: center; gap: 11px;">
+                <span style="flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; background: {{ ss.dot }};"></span>
+                <div style="min-width: 0;">
+                  <div style="font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ss.device }}</div>
+                  <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ ss.meta }}</div>
+                </div>
+                <span style="margin-left: auto; flex: 0 0 auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ ss.ctaColor }};">{{ ss.cta }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (1 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── securityRows  —  calcul dans renderReady()  —  L5310–5323 ── */
+    const securityRows = (fr ? [
+      ['Mot de passe', 'MODIFIÉ IL Y A 4 MOIS', '#8B857C', 'Un mot de passe unique de 12 caractères minimum.', 'Modifier'],
+      ['Double authentification', 'ACTIVÉE ✓', 'oklch(0.7 0.13 150)', 'Application d\u2019authentification · codes de secours générés en mars 2026.', 'Gérer'],
+      ['Clé d\u2019accès (passkey)', 'NON CONFIGURÉE', 'oklch(0.74 0.15 42)', 'Connexion sans mot de passe par empreinte ou Face ID.', 'Ajouter'],
+      ['Moyens de paiement', '2 CARTES ENREGISTRÉES', '#8B857C', 'Visa ···· 4412 · Mastercard ···· 8830', 'Gérer']
+    ] : [
+      ['Password', 'CHANGED 4 MONTHS AGO', '#8B857C', 'A unique password of at least 12 characters.', 'Change'],
+      ['Two-factor authentication', 'ENABLED ✓', 'oklch(0.7 0.13 150)', 'Authenticator app · backup codes generated March 2026.', 'Manage'],
+      ['Passkey', 'NOT SET UP', 'oklch(0.74 0.15 42)', 'Password-free sign-in with fingerprint or Face ID.', 'Add'],
+      ['Payment methods', '2 SAVED CARDS', '#8B857C', 'Visa ···· 4412 · Mastercard ···· 8830', 'Manage']
+    ]).map(([label, state, stateColor, hint, cta]) => ({
+      label, state, stateColor, hint, cta,
+      action: () => this.setState({ accView: 'section', accTab: 'security' })
+    }));
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (1) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2699  sessions: "APPAREILS CONNECTÉS"
+  EN L3152  sessions: "CONNECTED DEVICES"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

@@ -1,0 +1,247 @@
+<!--
+  Arthome · storefront mobile — sheet-cart
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : superposée · cartOpen
+  Affiche    : Le panier en trois étapes : liste, paiement, confirmation. Le panier vit sur le compte.
+  Mène vers  : account-orders, live (onglet boutique)
+  Contrat    : GET /v1/cart · POST /v1/cart/quote · POST /v1/orders/merch
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1988–2062
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1988–2062
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ cartOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ toggleCart }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
+<div style="{{ sheetBase }} background: #0B0A09; border-top: 1px solid #332E28; box-shadow: 0 -24px 60px rgba(0,0,0,0.6); animation: slideUp .26s cubic-bezier(.2,.7,.2,1) both;">
+  <div style="padding: 12px 0 6px; display: flex; justify-content: center;"><span style="width: 38px; height: 3px; background: #332E28;"></span></div>
+  <div style="padding: 6px 16px 14px; display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #1F1C19;">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.cartHead }}</span>
+    <span onClick="{{ toggleCart }}" style="margin-left: auto; cursor: pointer; font-size: 14px; color: #857E73;">✕</span>
+  </div>
+  <sc-if value="{{ cartStepDone }}" hint-placeholder-val="{{ false }}">
+    <div style="padding: 32px 20px 26px; text-align: center;">
+      <div style="width: 40px; height: 40px; margin: 0 auto; border: 1px solid oklch(0.6 0.11 150); display: grid; place-items: center; font-size: 17px; color: oklch(0.78 0.13 150);">✓</div>
+      <div style="padding-top: 14px; font-family: 'Instrument Serif', serif; font-size: 21px;">{{ t.cartDone }}</div>
+      <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.5; color: #857E73; text-wrap: pretty;">{{ t.cartDoneHint }}</div>
+      <div style="padding-top: 16px; display: flex; flex-direction: column; gap: 8px;">
+        <span onClick="{{ seeOrders }}" style="cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600;">{{ t.accOrders }}</span>
+        <span onClick="{{ closeCartDone }}" style="cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2;">{{ t.cartBackToShow }}</span>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ cartStepPay }}" hint-placeholder-val="{{ false }}">
+    <div style="padding: 16px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <span onClick="{{ backToCart }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73;">← {{ t.cartHead }}</span>
+        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ cartItemsLine }}</span>
+      </div>
+      <div style="margin-top: 13px; border: 1px solid #1F1C19; background: #0F0E0C; padding: 13px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.cartCard }}</div>
+        <div style="padding-top: 9px; display: flex; align-items: baseline; gap: 10px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.cartSubtotal }}</span>
+          <span style="margin-left: auto; font-family: 'Instrument Serif', serif; font-size: 24px;">{{ cartSubtotalValue }}</span>
+        </div>
+      </div>
+      <div style="padding-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #6B6459;">{{ t.cartShip }}</div>
+      <div onClick="{{ payCart }}" style="margin-top: 13px; cursor: pointer; padding: 14px; min-height: 44px; box-sizing: border-box;  text-align: center; background: #EDE7DC; color: #0B0A09; font-size: 13.5px; font-weight: 600;">{{ t.cartPay }} {{ cartSubtotalValue }}</div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ cartIsEmpty }}" hint-placeholder-val="{{ true }}">
+    <div style="padding: 30px 20px 26px; text-align: center;">
+      <div style="font-family: 'Instrument Serif', serif; font-size: 21px;">{{ t.cartEmpty }}</div>
+      <div style="padding-top: 8px; font-size: 12.5px; color: #857E73; text-wrap: pretty;">{{ t.cartEmptyHint }}</div>
+      <span onClick="{{ openStoreFromCart }}" style="display: inline-block; margin-top: 15px; cursor: pointer; padding: 12px 18px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2;">{{ t.cartGoStore }}</span>
+    </div>
+  </sc-if>
+  <sc-if value="{{ cartShowList }}" hint-placeholder-val="{{ false }}">
+    <div style="padding: 14px 16px 22px;">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <sc-for list="{{ cartLines }}" as="cl" hint-placeholder-count="2">
+          <div style="display: flex; gap: 11px; align-items: center;">
+            <div style="flex: 0 0 52px; width: 52px; height: 52px; position: relative; overflow: hidden; background: #17140F;">
+              <sc-if value="{{ cl.img }}" hint-placeholder-val="{{ false }}">
+                <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.75) brightness(0.8); background-color: #17140F; background-image: {{ cl.imgCss }}; background-size: cover; background-position: center;"></div>
+              </sc-if>
+            </div>
+            <div style="min-width: 0; flex: 1 1 auto;">
+              <div style="font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ cl.name }}</div>
+              <div style="padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ t.cartFrom }} {{ cl.seller }}</div>
+              <div style="padding-top: 6px; display: flex; align-items: center; gap: 10px;">
+                <span onClick="{{ cl.dec }}" style="cursor: pointer; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid #262320; font-size: 15px; color: #C9C0B2;">−</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #EDE7DC;">{{ cl.qty }}</span>
+                <span onClick="{{ cl.inc }}" style="cursor: pointer; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid #262320; font-size: 15px; color: #C9C0B2;">+</span>
+                <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #EDE7DC;">{{ cl.lineTotal }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top: 16px; border-top: 1px solid #1F1C19; padding-top: 13px; display: flex; align-items: baseline; gap: 10px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.cartSubtotal }}</span>
+        <span style="margin-left: auto; font-family: 'Instrument Serif', serif; font-size: 26px;">{{ cartSubtotalValue }}</span>
+      </div>
+      <div onClick="{{ goCartPay }}" style="margin-top: 13px; cursor: pointer; padding: 14px; min-height: 44px; box-sizing: border-box;  text-align: center; background: #EDE7DC; color: #0B0A09; font-size: 13.5px; font-weight: 600;">{{ t.cartCheckout }} · {{ cartSubtotalValue }}</div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (14 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── cartCount  —  calcul dans renderReady()  —  L5630–5630 ── */
+    const cartCount = s.cartLines.reduce((n, l) => n + l.qty, 0);
+
+/* ── cartOpen  —  clé du modèle rendu  —  L6036–6036 ── */
+      cartOpen: s.cartOpen, cartIsEmpty: cartCount === 0 && s.cartStep === 'list',
+
+/* ── cartShowList  —  clé du modèle rendu  —  L6037–6037 ── */
+      cartShowList: cartCount > 0 && s.cartStep === 'list',
+
+/* ── toggleCart  —  clé du modèle rendu  —  L6038–6038 ── */
+      toggleCart: () => this.setState(st => ({ cartOpen: !st.cartOpen, notifsOpen: false })),
+
+/* ── cartStepPay  —  clé du modèle rendu  —  L6039–6039 ── */
+      cartStepPay: s.cartStep === 'pay' && cartCount > 0, cartStepDone: s.cartStep === 'done',
+
+/* ── goCartPay  —  clé du modèle rendu  —  L6040–6040 ── */
+      goCartPay: () => this.setState({ cartStep: 'pay' }),
+
+/* ── backToCart  —  clé du modèle rendu  —  L6041–6041 ── */
+      backToCart: () => this.setState({ cartStep: 'list' }),
+
+/* ── payCart  —  clé du modèle rendu  —  L6042–6059 ── */
+      payCart: () => {
+        const now = new Date();
+        const mFr = ['janv.', 'févr.', 'mars', 'avril', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'][now.getMonth()];
+        const mEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][now.getMonth()];
+        this.setState(st => ({
+          cartStep: 'done',
+          orders: [{
+            ref: 'ATH-M-' + (2300 + st.orders.length),
+            date: now.getDate() + ' ' + mFr + ' ' + now.getFullYear(),
+            dateEn: mEn + ' ' + now.getDate() + ' ' + now.getFullYear(),
+            seller: (st.cartLines[0] || {}).seller || 'Arthome',
+            status: 'prep', source: 'arthome',
+            lines: st.cartLines.map(l => [l.name, l.name, l.qty, parseInt(l.price, 10)])
+          }].concat(st.orders)
+        }));
+        clearTimeout(this._payT);
+        this._payT = setTimeout(() => this.setState({ cartLines: [] }), 400);
+      },
+
+/* ── closeCartDone  —  clé du modèle rendu  —  L6060–6060 ── */
+      closeCartDone: () => this.setState({ cartOpen: false, cartStep: 'list' }),
+
+/* ── seeOrders  —  clé du modèle rendu  —  L6061–6061 ── */
+      seeOrders: () => this.setState({ cartOpen: false, cartStep: 'list', page: 'account', accView: 'section', accTab: 'orders' }),
+
+/* ── cartItemsLine  —  clé du modèle rendu  —  L6062–6062 ── */
+      cartItemsLine: cartCount + ' ' + (cartCount > 1 ? t.cartItems : t.cartItem),
+
+/* ── cartLines  —  clé du modèle rendu  —  L6063–6073 ── */
+      cartLines: s.cartLines.map((l, i) => ({
+        name: l.name, img: l.img, price: l.price, qty: l.qty, seller: l.seller,
+        lineTotal: (parseInt(l.price, 10) * l.qty) + ' €',
+        inc: () => this.setState(st => { const a = st.cartLines.slice(); a[i] = Object.assign({}, a[i], { qty: a[i].qty + 1 }); return { cartLines: a }; }),
+        dec: () => this.setState(st => {
+          const a = st.cartLines.slice();
+          if (a[i].qty <= 1) a.splice(i, 1); else a[i] = Object.assign({}, a[i], { qty: a[i].qty - 1 });
+          return { cartLines: a };
+        }),
+        drop: () => this.setState(st => { const a = st.cartLines.slice(); a.splice(i, 1); return { cartLines: a }; })
+      })),
+
+/* ── cartSubtotalValue  —  clé du modèle rendu  —  L6074–6074 ── */
+      cartSubtotalValue: s.cartLines.reduce((n, l) => n + parseInt(l.price, 10) * l.qty, 0) + ' €',
+
+/* ── openStoreFromCart  —  clé du modèle rendu  —  L6078–6078 ── */
+      openStoreFromCart: () => this.setState({ page: 'live', tab: 'store', chatOpen: true, cartOpen: false }),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (16) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2341  accOrders: "Mes commandes"
+  EN L2794  accOrders: "My orders"
+
+  FR L2402  cartBackToShow: "Retourner au spectacle"
+  EN L2855  cartBackToShow: "Back to the show"
+
+  FR L2403  cartCard: "Visa ···· 4412"
+  EN L2856  cartCard: "Visa ···· 4412"
+
+  FR L2404  cartCheckout: "Passer commande"
+  EN L2857  cartCheckout: "Checkout"
+
+  FR L2405  cartDone: "Commande confirmée ✓"
+  EN L2858  cartDone: "Order confirmed ✓"
+
+  FR L2406  cartDoneHint: "Reçu envoyé par e-mail · suivi dans « Mon compte »."
+  EN L2859  cartDoneHint: "Receipt sent by email · tracked in “My account”."
+
+  FR L2407  cartEmpty: "Votre panier est vide"
+  EN L2860  cartEmpty: "Your cart is empty"
+
+  FR L2408  cartEmptyHint: "Le merch s’ajoute depuis la boutique d’un live."
+  EN L2861  cartEmptyHint: "Merch is added from a live’s store."
+
+  FR L2409  cartFrom: "VENDU PAR"
+  EN L2862  cartFrom: "SOLD BY"
+
+  FR L2410  cartGoStore: "Ouvrir une boutique"
+  EN L2863  cartGoStore: "Open a store"
+
+  FR L2411  cartHead: "PANIER MERCH"
+  EN L2864  cartHead: "MERCH CART"
+
+  FR L2412  cartItem: "ARTICLE"
+  EN L2865  cartItem: "ITEM"
+
+  FR L2413  cartItems: "ARTICLES"
+  EN L2866  cartItems: "ITEMS"
+
+  FR L2414  cartPay: "Payer"
+  EN L2867  cartPay: "Pay"
+
+  FR L2417  cartShip: "Livraison calculée au paiement"
+  EN L2870  cartShip: "Shipping calculated at checkout"
+
+  FR L2418  cartSubtotal: "SOUS-TOTAL"
+  EN L2871  cartSubtotal: "SUBTOTAL"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

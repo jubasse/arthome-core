@@ -1,0 +1,144 @@
+<!--
+  Arthome · storefront mobile — account-orders
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : account · accTab=orders
+  Affiche    : Mes commandes, y compris celles passées chez un tiers, avec leur référence marchande et leur hôte externe.
+  Mène vers  : live (onglet boutique)
+  Contrat    : GET /v1/me/orders
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1504–1564
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1504–1564
+     ══════════════════════════════════════════════════════════════════════════ -->
+      <sc-if value="{{ accOrders }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <sc-if value="{{ noOrders }}" hint-placeholder-val="{{ false }}">
+            <div style="border: 1px solid #1F1C19; background: #0D0C0A; padding: 26px 18px; text-align: center;">
+              <div style="font-family: 'Instrument Serif', serif; font-size: 20px;">{{ t.emptyOrders }}</div>
+              <div style="padding-top: 8px; font-size: 12.5px; color: #857E73; text-wrap: pretty;">{{ t.emptyOrdersHint }}</div>
+            </div>
+          </sc-if>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <sc-for list="{{ ordersList }}" as="o" hint-placeholder-count="3">
+              <div style="border: 1px solid #1F1C19; background: #0F0E0C; padding: 13px;">
+                <div style="display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; color: #EDE7DC;">{{ o.ref }}</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ o.statusColor }};">{{ o.statusLabel }}</span>
+                </div>
+                <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #6B6459;">{{ t.cartFrom }} {{ o.seller }} · {{ o.placed }}</div>
+                <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ o.soldByColor }};">{{ o.soldBy }}</div>
+                <div style="padding-top: 11px; display: flex; align-items: flex-end; gap: 14px;">
+                  <div onClick="{{ o.toggleLines }}" style="cursor: pointer;">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ t.ordItems }}</div>
+                    <div style="padding-top: 5px; display: flex; align-items: baseline; gap: 7px; font-size: 13.5px; color: #C9C0B2;">
+                      <span>{{ o.itemsLabel }}</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #6B6459;">{{ o.caret }}</span>
+                    </div>
+                  </div>
+                  <div style="margin-left: auto; text-align: right;">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ t.ordTotal }}</div>
+                    <div style="padding-top: 3px; font-family: 'Instrument Serif', serif; font-size: 21px; line-height: 1;">{{ o.total }}</div>
+                  </div>
+                </div>
+                <sc-if value="{{ o.linesOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top: 12px; border-top: 1px solid #16140F; padding-top: 11px; display: flex; flex-direction: column; gap: 6px;">
+                    <sc-for list="{{ o.lines }}" as="ln" hint-placeholder-count="2">
+                      <div style="display: flex; align-items: baseline; gap: 9px;">
+                        <span style="font-size: 12.5px; color: #C9C0B2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ln.name }}</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #6B6459;">{{ ln.qty }}</span>
+                        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #857E73;">{{ ln.price }}</span>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ o.isExternal }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top: 5px; border: 1px solid #1F1C19; background: #0C0B0A; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #857E73; text-wrap: pretty;">{{ t.ordExtNotice }}</div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+                <div style="margin-top: 12px; border-top: 1px solid #16140F; padding-top: 11px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <sc-if value="{{ o.isPhysical }}" hint-placeholder-val="{{ true }}">
+                    <span style="cursor: pointer; padding: 10px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC;">{{ t.ordTrack }}</span>
+                  </sc-if>
+                  <sc-if value="{{ o.isExternal }}" hint-placeholder-val="{{ false }}">
+                    <span style="cursor: pointer; padding: 10px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC;">{{ o.extLabel }} ↗</span>
+                  </sc-if>
+                  <sc-if value="{{ o.isDigital }}" hint-placeholder-val="{{ false }}">
+                    <span style="cursor: pointer; padding: 10px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600;">{{ t.ordDownload }}</span>
+                  </sc-if>
+                  <span style="margin-left: auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73;">{{ t.ordInvoice }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (0 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* Aucun symbole propre : cet écran n'emploie que le noyau commun. */
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (9) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2409  cartFrom: "VENDU PAR"
+  EN L2862  cartFrom: "SOLD BY"
+
+  FR L2472  emptyOrders: "Aucune commande"
+  EN L2925  emptyOrders: "No orders yet"
+
+  FR L2473  emptyOrdersHint: "Le merch acheté dans la boutique d’un live apparaîtra ici, avec son suivi et sa facture."
+  EN L2926  emptyOrdersHint: "Merch bought from a live’s store shows up here, with tracking and invoice."
+
+  FR L2578  ordDownload: "Télécharger"
+  EN L3031  ordDownload: "Download"
+
+  FR L2579  ordExtNotice: "Commande traitée par la boutique de l’artiste. Le suivi, l’échange et le remboursement se font sur son site."
+  EN L3032  ordExtNotice: "Order handled by the artist’s own store. Tracking, exchanges and refunds happen on their site."
+
+  FR L2582  ordInvoice: "Facture"
+  EN L3035  ordInvoice: "Invoice"
+
+  FR L2583  ordItems: "ARTICLES"
+  EN L3036  ordItems: "ITEMS"
+
+  FR L2590  ordTotal: "TOTAL"
+  EN L3043  ordTotal: "TOTAL"
+
+  FR L2591  ordTrack: "Suivre le colis"
+  EN L3044  ordTrack: "Track parcel"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

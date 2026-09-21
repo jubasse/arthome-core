@@ -1,0 +1,136 @@
+<!--
+  ÉCRAN      Discipline — section Rediffusions
+  ROUTE      page === 'category', catTab === 'rep'
+  AFFICHE    Les rediffusions disponibles dans la discipline.
+  MÈNE VERS  replay · artist
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 1973-2030
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — getCategoryScreen
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : catalogue, colsOf, colsTiles, colsWideN, fr, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, subsSel, t, tileCols
+  À LIRE     dépendances non recopiées ici : catRepList, catStep, dateMatch, ovMore, priceMatch
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+    <sc-if value="{{ catShowRep }}" hint-placeholder-val="{{ false }}">
+    <h2 id="cat-rep" style="margin: 48px 0 16px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px; scroll-margin-top: 90px;">{{ t.replaysTitle }}</h2>
+    <sc-if value="{{ catNoReplays }}" hint-placeholder-val="{{ false }}">
+      <div style="border: 1px solid #1F1C19; background: #0D0C0A; padding: 30px 26px; text-align: center;">
+        <div style="font-family: 'Instrument Serif', serif; font-size: 22px;">{{ t.emptyCatReplays }}</div>
+        <div style="padding-top: 8px; font-size: 13.5px; color: #857E73;">{{ t.emptyCatHint }}</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ catHasReplays }}" hint-placeholder-val="{{ false }}">
+    <sc-if value="{{ catTilesView }}" hint-placeholder-val="{{ true }}">
+      <div style="display: grid; grid-template-columns: {{ colsTiles }}; gap: 18px;">
+        <sc-for list="{{ catReplays }}" as="rp" hint-placeholder-count="3">
+          <div onClick="{{ rp.open }}" style="cursor: pointer; border: 1px solid #1F1C19; background: #100F0D; transition: border-color .24s ease;" style-hover="border-color:#4A423A">
+            <div style="position: relative; aspect-ratio: 16/9; overflow: hidden; background: #17140F;">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.6) brightness(0.62); transition: transform .8s cubic-bezier(.2,.7,.2,1); background-color: #1A1815; background-image: {{ rp.imgCss }}; background-size: cover; background-position: center;"></div>
+              <div style="position: absolute; inset: 0; opacity: 0; transform: translateY(8px); transition: opacity .26s ease, transform .34s cubic-bezier(.2,.7,.2,1); background: linear-gradient(to top, rgba(8,7,7,0.95), rgba(8,7,7,0.7)); display: flex; flex-direction: column; justify-content: flex-end; padding: 14px;" style-hover="opacity:1;transform:translateY(0)">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 42);">{{ rp.ovTag }}</div>
+                <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.5; color: #EDE7DC; text-wrap: pretty; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{{ rp.fullDesc }}</div>
+              </div>
+              <div style="position: absolute; left: 12px; top: 12px; background: rgba(11,10,9,0.78); padding: 5px 9px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 42);">{{ rp.countdown }}</div>
+            </div>
+            <div style="padding: 15px;">
+              <div style="font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ rp.title }}</div>
+              <div style="padding-top: 5px; font-size: 12.5px; color: #9B948A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ rp.artist }} · {{ rp.desc }}</div>
+              <div style="padding-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73; white-space: nowrap;">{{ rp.when }}</span>
+                <span onClick="{{ rp.buy }}" style="margin-left: auto; cursor: pointer; padding: 7px 13px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease;" style-hover="background:#221F1B">{{ rp.priceLabel }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ catListView }}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+      <sc-for list="{{ catReplays }}" as="rp" hint-placeholder-count="3">
+        <div onClick="{{ rp.open }}" style="cursor: pointer; background: #0F0E0C; padding: 14px 16px; display: grid; {{ rowGrid5 }} align-items: center; transition: background .24s ease;" style-hover="background:#161310">
+          <div style="{{ rowThumb }} position: relative; aspect-ratio: 16/10; overflow: hidden; background: #17140F;">
+            <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.6) brightness(0.62); transition: transform .8s cubic-bezier(.2,.7,.2,1); background-color: #1A1815; background-image: {{ rp.imgCss }}; background-size: cover; background-position: center;"></div>
+          </div>
+          <div style="min-width: 0;">
+            <div style="font-size: 15px; font-weight: 500;">{{ rp.title }}</div>
+            <div style="padding-top: 4px; font-size: 12.5px; color: #9B948A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ rp.artist }} · {{ rp.desc }}</div>
+          </div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #857E73;">{{ rp.when }}</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: oklch(0.78 0.13 42);">{{ rp.metaLine }}</div>
+          <span style="cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease;" style-hover="background:#221F1B">{{ rp.priceLabel }}</span>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+    </sc-if>
+    <sc-if value="{{ moreCatRep }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 14px; display: flex; justify-content: center;">
+        <span onClick="{{ loadMoreCatRep }}" style="cursor: pointer; padding: 12px 22px; white-space: nowrap; border: 1px solid #332E28; font-size: 13px; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ moreCatRepLabel }}</span>
+      </div>
+    </sc-if>
+    </sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* catPool  —  lignes 6176-6191 */
+    const catPool = catalogue.filter(o => {
+      if (o.cat !== s.catId) return false;
+      if (subsSel.length && !subsSel.some(i => o.subs.indexOf(i) > -1)) return false;
+      if (s.cPrices.length && !s.cPrices.some(k => priceMatch(k, o.price))) return false;
+      if (s.cDate !== 'all' && !dateMatch(s.cDate, o.day)) return false;
+      if (s.cStatus !== 'all' && o.kind !== s.cStatus) return false;
+      if (s.cAlmost && o.kind !== 'replay' && o.soldPct < 80) return false;
+      if (s.cPromo && !o.hasPromo) return false;
+      return true;
+    }).sort((a, b) => {
+      if (s.cSort === 'soon') return a.day - b.day;
+      if (s.cSort === 'pop') return (b.viewers || b.soldPct * 40) - (a.viewers || a.soldPct * 40);
+      if (s.cSort === 'priceUp') return a.price - b.price;
+      if (s.cSort === 'priceDown') return b.price - a.price;
+      return 0;
+    });
+/* catOv  —  lignes 6192-6192 */
+    const catOv = s.catTab === 'ov';
+/* pgCatRep  —  lignes 6200-6200 */
+    const pgCatRep = this.paged('catRep', catRepList, catStep, fr);
+/* mRep  —  lignes 6208-6208 */
+    const mRep = ovMore(pgCatRep, catRepList, 'rep');
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      catTilesView: s.cView === 'tiles', catListView: s.cView === 'list',
+      catReplays: pgCatRep.items.map(o => Object.assign({}, o, {
+        fullDesc: o.desc, desc: o.subLabel, when: o.whenLabel, countdown: t.stReplay
+      })),
+      catHasReplays: catPool.some(o => o.kind === 'replay'),
+      catNoReplays: !catPool.some(o => o.kind === 'replay'),
+      moreCatRep: pgCatRep.hasMore, moreCatRepLabel: mRep.label, loadMoreCatRep: mRep.go,
+      colsTiles: colsOf(tileCols), colsWide: colsOf(colsWideN),
+      rowGrid5, rowGrid5b, rowGrid4, rowGrid4b, rowGridLive, rowThumb, rowStack,
+      catShowRep: catOv || s.catTab === 'rep',
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.emptyCatHint  t.emptyCatReplays  t.replaysTitle  t.stReplay  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    cAlmost  cDate  cPrices  cPromo  cSort  cStatus  cView  catId  catTab  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    paged
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

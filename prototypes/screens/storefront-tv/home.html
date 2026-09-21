@@ -1,0 +1,176 @@
+<!--
+  Écran      : home
+  Route      : page === 'home'
+  Affiche    : Billboard plein cadre (62 % de l'écran) avec aperçu vidéo muet après 4 s, puis les rangées : Reprendre, À l'antenne, Vos places, Ce soir, Parce que vous suivez, Rediffusions qui expirent, affiches, disciplines, artistes.
+  Mène vers  : title · player · book · category · artist · search · tous les écrans par la barre latérale
+  Partagé    : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
+
+  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
+    · L'ordre des rangées est codé dans homeRails() ; le contrat le rend serveur (Rail.kind + ordre du tableau).
+    · previewStartsAfterSec est en dur à 4 000 ms ici ; le contrat le sert (DomainConstants.billboardPreviewDelaySec).
+    · La rangée « Artistes à suivre » emploie artistCard() : le schéma Rail du contrat n'accepte que DateCard.
+
+  ⚠ EXTRACTION VERBATIM. Ne rien corriger ici : l'original
+    `Storefront TV.dc.html` reste la source runnable de la galerie.
+-->
+
+<!-- ═══════════ Balisage — billboard (verbatim, L189-233) ═══════════ -->
+      <sc-if value="{{ pgHome }}" hint-placeholder-val="{{ true }}">
+        <div data-row="1" style="position: relative; z-index: 0; overflow: hidden; width: 1920px; height: 566px;">
+          <img data-img="{{ hero.img }}" alt="" style="position: absolute; left: 0; right: 0; top: 0; bottom: 8px; width: 100%; height: calc(100% - 8px); object-fit: cover; filter: saturate(.7) brightness(.6); transform-origin: 50% 100%; animation: {{ ken }};" />
+          <sc-if value="{{ previewOn }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; inset: 0; overflow: hidden; animation: fadeIn 1.1s ease both;">
+              <img data-img="{{ hero.preview }}" alt="" style="position: absolute; left: 0; right: 0; top: 0; bottom: 8px; width: 100%; height: calc(100% - 8px); object-fit: cover; filter: saturate(.78) brightness(.64); transform-origin: 50% 100%; animation: {{ ken }};" />
+            </div>
+          </sc-if>
+          <div style="position: absolute; inset: 0; background: linear-gradient(90deg, #0B0A09 0%, rgba(11,10,9,.82) 42%, transparent 78%);"></div>
+          <div style="position: absolute; left: -2px; right: -2px; bottom: -3px; height: 443px; background: linear-gradient(180deg, transparent 0%, rgba(11,10,9,.55) 30%, rgba(11,10,9,.92) 54%, #0B0A09 66%, #0B0A09 100%);"></div>
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 26px; background: #0B0A09;"></div>
+          <sc-if value="{{ previewOn }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; right: 60px; top: 60px; padding: 8px 14px; border-radius: 4px; border: 1px solid #4A423A; background: rgba(11,10,9,.62); font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: #9B948A;">{{ t.previewMuted }}</div>
+          </sc-if>
+          <div style="position: absolute; left: 184px; top: 132px; width: 1100px;">
+            <div style="display: flex; align-items: center; gap: 18px;">
+              <sc-if value="{{ hero.isLive }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 4px; border: 1px solid oklch(0.62 0.21 27); background: color-mix(in oklch, oklch(0.62 0.21 27) 14%, transparent); font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.12em; color: oklch(0.72 0.19 27);">
+                  <span style="width: 10px; height: 10px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>{{ t.kOnAir }}
+                </div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.12em; color: #C9C0B2;">{{ hero.viewers }}</div>
+                <sc-if value="{{ hero.ownedLive }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding: 8px 16px; border-radius: 4px; border: 1px solid oklch(0.9 0.07 84); background: color-mix(in oklch, oklch(0.9 0.07 84) 14%, transparent); font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.12em; color: oklch(0.9 0.07 84);">{{ t.yourLiveSeat }}</div>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{ hero.notLive }}" hint-placeholder-val="{{ false }}">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.18em; color: {{ hero.kickerCol }};">{{ hero.kicker }}</div>
+              </sc-if>
+            </div>
+            <div style="padding-top: 22px; font-family: 'Instrument Serif', serif; font-size: 88px; line-height: 0.98; letter-spacing: -0.01em;">{{ hero.title }}</div>
+            <div style="padding-top: 18px; font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.12em; color: #9B948A;">{{ hero.meta }}</div>
+            <div style="padding-top: 20px; max-width: 830px; font-size: 28px; line-height: 1.42; color: #C9C0B2; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-wrap: pretty;">{{ hero.syn }}</div>
+            <div style="padding-top: 40px; display: flex; align-items: center; gap: 28px;">
+              <div tabindex="-1" data-fid="home:hero:primary" data-play="{{ hero.playable }}" onClick="{{ hero.primary }}" style="display: flex; align-items: center; gap: 14px; white-space: nowrap; padding: 20px 38px; border-radius: 4px; background: #EDE7DC; color: #0B0A09; font-size: 26px; font-weight: 600; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), box-shadow .16s ease;" style-focus="transform:translateY(-6px) scale(var(--fs,1.08));box-shadow:0 0 0 3px #EDE7DC, 0 18px 48px rgba(0,0,0,.7)">
+                <div style="width: 16px; height: 20px; background: #0B0A09; clip-path: polygon(0 0, 100% 50%, 0 100%);"></div>{{ hero.primaryLabel }}
+              </div>
+              <sc-if value="{{ hero.hasSecondary }}" hint-placeholder-val="{{ true }}">
+                <div tabindex="-1" data-fid="home:hero:secondary" onClick="{{ hero.secondary }}" style="white-space: nowrap; padding: 20px 38px; border-radius: 4px; border: 1px solid #575047; background: rgba(11,10,9,.5); color: #EDE7DC; font-size: 26px; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), background .16s ease, color .16s ease;" style-focus="background:#EDE7DC;color:#0B0A09;transform:translateY(-6px) scale(var(--fs,1.08));box-shadow:0 18px 48px rgba(0,0,0,.7)">{{ hero.secondaryLabel }}</div>
+              </sc-if>
+              <div tabindex="-1" data-fid="home:hero:info" onClick="{{ hero.info }}" style="white-space: nowrap; padding: 20px 38px; border-radius: 4px; border: 1px solid #4A423A; color: #C9C0B2; font-size: 26px; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), background .16s ease, color .16s ease;" style-focus="background:#EDE7DC;color:#0B0A09;transform:translateY(-6px) scale(var(--fs,1.08));box-shadow:0 18px 48px rgba(0,0,0,.7)">{{ t.more }}</div>
+              <div tabindex="-1" data-fid="home:hero:list" onClick="{{ hero.toggleList }}" style="width: 66px; height: 66px; display: grid; place-items: center; border-radius: 4px; border: 1px solid #4A423A; color: {{ hero.listCol }}; font-size: 32px; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), background .16s ease, color .16s ease;" style-focus="background:#EDE7DC;color:#0B0A09;transform:translateY(-6px) scale(var(--fs,1.08));box-shadow:0 18px 48px rgba(0,0,0,.7)">{{ hero.listGlyph }}</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+<!-- ═══════════ Modèle de vue — billboard (verbatim, L2676-2708) ═══════════ -->
+<script type="text/x-dc-extract">
+    // hero
+    const lives = cat.filter(o => this.st(o) === 'live').sort((a, b) => b.view - a.view);
+    const myLive = lives.filter(o => this.owns(o)).sort((a, b) => a.min - b.min)[0];
+    const myOpen = cat.filter(o => this.owns(o) && this.st(o) === 'soon' && o.min <= 30).sort((a, b) => a.min - b.min)[0];
+    const heroShow = (this.onAir() && myLive) ? myLive
+      : myOpen ? myOpen
+      : (this.onAir() && lives.length) ? lives[0]
+      : (cat.filter(o => this.st(o) === 'soon').sort((a, b) => a.min - b.min)[0] || cat[0]);
+    const heroOwned = this.owns(heroShow), heroLive = this.st(heroShow) === 'live';
+    const inList = s.list.indexOf(heroShow.id) > -1;
+    const hero = {
+      img: this.img(heroShow), preview: U(PIC.crowd), isLive: heroLive, notLive: !heroLive, ownedLive: heroLive && heroOwned,
+      viewers: this.num(heroShow.view) + ' ' + t.viewersSuffix,
+      kicker: (heroOwned && heroLive) ? t.yourLiveSeat
+        : (heroOwned && this.st(heroShow) === 'soon' && heroShow.min <= 30) ? t.kEnterOpen
+        : this.st(heroShow) === 'replay' ? t.kReplayOn
+        : (heroShow.seats > 0 && heroShow.seats < 30 ? t.kLast + ' · ' + heroShow.seats : this.countdown(heroShow.min)),
+      kickerCol: (heroOwned && heroLive) ? LIVE_INK
+        : (heroOwned && this.st(heroShow) === 'soon' && heroShow.min <= 30) ? OK
+        : (heroShow.seats > 0 && heroShow.seats < 30 ? GOLD : ACC),
+      title: this.title(heroShow),
+      meta: [this.catLabel(heroShow.cat), this.durLabel(heroShow.dur), heroShow.ven, (fr ? 'heure locale ' : 'your time ') + this.clock(heroShow.min)].join(' · '),
+      syn: this.syn(heroShow),
+      primaryLabel: heroLive ? (heroOwned ? t.watch : t.book) : (heroOwned ? (heroShow.min <= 30 ? t.enter : t.watch) : t.book),
+      playable: heroOwned ? 'y' : '',
+      primary: () => heroOwned ? this.openPlayer(heroShow) : this.go('book', { pid: heroShow.id, tier: 0, qty: 2 }),
+      hasSecondary: !heroOwned && heroShow.seats > 0,
+      secondaryLabel: t.trailer,
+      secondary: () => this.openPlayer(heroShow),
+      info: () => this.go('title', { pid: heroShow.id }),
+      toggleList: () => this.toggleList(heroShow.id),
+      listGlyph: inList ? '✓' : '+', listCol: inList ? GOLD : '#C9C0B2'
+    };
+</script>
+
+<!-- ═══════════ homeRails() — ordre éditorial des rangées (verbatim, L2561-2588) ═══════════ -->
+<script type="text/x-dc-extract">
+  homeRails() {
+    const t = this.t(), cat = this.catalogue(), out = [];
+    const resume = cat.filter(o => o.prog);
+    if (resume.length) out.push(this.rail('resume', t.rResume, resume.map(o => this.card(o, 'resume')), 'card'));
+    const live = cat.filter(o => this.st(o) === 'live');
+    if (live.length) out.push(this.rail('onair', t.rOnAir, live.map(o => this.card(o, 'onair')), 'card', this.num(live.reduce((n, o) => n + o.view, 0)) + ' ' + t.viewersSuffix, LIVE_INK));
+    else out.push(this.emptyRail('onair', t.rOnAir, t.nothingOnAirShort, t.seeTonight, () => this.go('live')));
+    const mine = cat.filter(o => this.owns(o) && (this.st(o) === 'soon' || this.st(o) === 'live')).sort((a, b) => a.min - b.min);
+    if (mine.length) out.push(this.rail('tickets', t.rTickets, mine.map(o => this.ticketCard(o, 'tickets')), 'card'));
+    const tonight = cat.filter(o => this.st(o) === 'soon' && o.min < 1440).sort((a, b) => a.min - b.min);
+    if (tonight.length) out.push(this.rail('tonight', t.rTonight, tonight.map(o => this.card(o, 'tonight')), 'card'));
+    const f = this.follows();
+    if (f.length) {
+      const a = ARTISTS.filter(x => x.id === f[0])[0];
+      const items = cat.filter(o => o.ar === a.id);
+      if (items.length) out.push(this.rail('because', t.rBecause + ' ' + a.name, items.map(o => this.card(o, 'because')), 'card'));
+    }
+    const exp = cat.filter(o => this.st(o) === 'replay' && o.rep <= 48).sort((a, b) => a.rep - b.rep);
+    if (exp.length) out.push(this.rail('expiring', t.rExpiring, exp.map(o => this.card(o, 'expiring')), 'card', '', ACC));
+    out.push(this.rail('posters', t.rPosters, cat.slice(0, 7).map(o => this.card(o, 'posters')), 'poster'));
+    const discs = this.kid() ? KID_CATS.slice(0, 3) : ['theatre', 'dance', 'comedy'];
+    discs.forEach(d => {
+      const items = cat.filter(o => o.cat === d);
+      if (items.length) out.push(this.rail('d' + d, this.catLabel(d) + (' ' + t.onTheBill), items.map(o => this.card(o, 'd' + d)), 'card'));
+    });
+    out.push(this.rail('artists', t.rArtistsToFollow, ARTISTS.slice(0, 8).map(a => this.artistCard(a, 'hartists')), 'portrait'));
+    return out;
+  }
+</script>
+
+<!-- ═══════════ armPreview() — aperçu vidéo après 4 s (verbatim, L1911-1916) ═══════════ -->
+<script type="text/x-dc-extract">
+  armPreview() {
+    clearTimeout(this.prevT);
+    if (this.state.preview) this.setState({ preview: false });
+    if (this.props.autoplayPreview === false) return;
+    this.prevT = setTimeout(() => { if (this.state.page === 'home') this.setState({ preview: true }); }, 4000);
+  }
+</script>
+
+<!-- ═══════════ CLÉS DE COPIE ═══════════
+  jeton du composant  →  clé i18n (shared/i18n/tv-keymap.json)
+    t.book               → common.actions.book
+    t.enter              → common.actions.enter
+    t.kEnterOpen         → common.status.houseOpen   [majuscules]
+    t.kLast              → common.status.lastSeats   [majuscules]
+    t.kOnAir             → common.status.onAir   [majuscules]
+    t.kReplayOn          → common.status.replayOnline   [majuscules]
+    t.more               → common.actions.more
+    t.nothingOnAirShort  → discovery.nothingOnAirShort
+    t.onTheBill          → discovery.onTheBill
+    t.previewMuted       → states.previewMuted   [majuscules]
+    t.rArtistsToFollow   → discovery.rail.artistsToFollow
+    t.rBecause           → discovery.rail.because
+    t.rExpiring          → discovery.rail.expiring
+    t.rOnAir             → discovery.rail.onAir
+    t.rPosters           → discovery.rail.posters
+    t.rResume            → common.actions.resume
+    t.rTickets           → discovery.rail.yourSeats
+    t.rTonight           → discovery.rail.tonight
+    t.seeTonight         → discovery.seeTonight
+    t.trailer            → common.actions.trailer
+    t.viewersSuffix      → common.units.viewers   [majuscules]
+    t.watch              → common.actions.watch
+    t.yourLiveSeat       → common.status.yourSeat   [majuscules]
+-->
+
+<!-- ═══════════ RENVOIS ═══════════
+  needs/storefront-tv.md → « Budget d'appels par écran » : 1 appel, 60 à 100 cartes, 50 à 90 Ko
+  openapi/storefront.yaml → getHomeScreen (GET /v1/home) → HomeScreen { billboard, rails[] }, fraîcheur 60 s
+  4 appels internes BFF → service, tous parallèles, derrière UN aller-retour de surface.
+  ⚠ needs/storefront-tv.md → Confrontation C2 : trois des neuf rangées ne sont pas exprimables par le schéma Rail.
+  Rangées partagées : _rails.html
+-->

@@ -1,0 +1,249 @@
+{
+  "note": "Studio : régie, programmation, équipe et droits, public et modération, recettes et versements.",
+  "keys": {
+    "common.crew.canInvite": {
+      "fr": "Peut inviter",
+      "en": "Can invite"
+    },
+    "common.crew.channels": {
+      "fr": "chaînes",
+      "en": "channels"
+    },
+    "common.crew.owner": {
+      "fr": "Propriétaire · ne peut être retiré",
+      "en": "Owner · cannot be removed"
+    },
+    "common.crew.runs": {
+      "fr": "directs",
+      "en": "lives"
+    },
+    "enums.crewRole.director": {
+      "fr": "Régie générale",
+      "en": "Show caller"
+    },
+    "enums.crewRole.moderation": {
+      "fr": "Modération",
+      "en": "Moderation"
+    },
+    "enums.crewRole.sound": {
+      "fr": "Régie son",
+      "en": "Sound"
+    },
+    "enums.crewRole.video": {
+      "fr": "Régie vidéo",
+      "en": "Video"
+    },
+    "enums.memberRole.artist": {
+      "fr": "Artiste · propriétaire",
+      "en": "Artist · owner"
+    },
+    "enums.memberRole.coordination": {
+      "fr": "Coordination",
+      "en": "Coordination"
+    },
+    "enums.memberRole.director": {
+      "fr": "Régie générale",
+      "en": "Show caller"
+    },
+    "enums.memberRole.moderation": {
+      "fr": "Modération",
+      "en": "Moderation"
+    },
+    "enums.memberRole.production": {
+      "fr": "Production",
+      "en": "Production"
+    },
+    "enums.memberRole.sound": {
+      "fr": "Régie son",
+      "en": "Sound"
+    },
+    "enums.memberRole.treasury": {
+      "fr": "Trésorerie",
+      "en": "Treasury"
+    },
+    "enums.memberRole.video": {
+      "fr": "Régie vidéo",
+      "en": "Video"
+    },
+    "enums.inboxKind.crew-invite": {
+      "fr": "Invitation d’équipe",
+      "en": "Crew invitation"
+    },
+    "enums.inboxKind.merch-stock": {
+      "fr": "Stock boutique",
+      "en": "Shop stock"
+    },
+    "enums.inboxKind.payout": {
+      "fr": "Versement",
+      "en": "Payout"
+    },
+    "enums.inboxKind.refund": {
+      "fr": "Remboursement",
+      "en": "Refund"
+    },
+    "enums.inboxKind.replay-expiring": {
+      "fr": "Rediffusion qui ferme",
+      "en": "Replay closing"
+    },
+    "enums.inboxKind.report": {
+      "fr": "Signalement",
+      "en": "Report"
+    },
+    "enums.inboxKind.seat-request": {
+      "fr": "Demande de places",
+      "en": "Seat request"
+    },
+    "enums.inboxKind.tech-check": {
+      "fr": "Contrôle technique",
+      "en": "Technical check"
+    },
+    "enums.publicationState.draft": {
+      "fr": "Brouillon",
+      "en": "Draft"
+    },
+    "enums.publicationState.ended": {
+      "fr": "Terminé",
+      "en": "Ended"
+    },
+    "enums.publicationState.live": {
+      "fr": "En direct",
+      "en": "Live"
+    },
+    "enums.publicationState.replay-online": {
+      "fr": "Rediffusion en ligne",
+      "en": "Replay online"
+    },
+    "enums.publicationState.reserve": {
+      "fr": "En réserve",
+      "en": "On hold"
+    },
+    "enums.publicationState.scheduled": {
+      "fr": "Programmé",
+      "en": "Scheduled"
+    },
+    "enums.publicationState.technical": {
+      "fr": "Contrôle technique",
+      "en": "Technical check"
+    },
+    "enums.runState.cancelled": {
+      "fr": "Annulée",
+      "en": "Cancelled"
+    },
+    "enums.runState.idle": {
+      "fr": "Hors antenne",
+      "en": "Off air"
+    },
+    "enums.runState.interrupted": {
+      "fr": "Interrompue",
+      "en": "Interrupted"
+    },
+    "enums.runState.on-air": {
+      "fr": "À l’antenne",
+      "en": "On air"
+    },
+    "enums.runState.postponed": {
+      "fr": "Reportée",
+      "en": "Postponed"
+    },
+    "enums.runState.rehearsal": {
+      "fr": "Répétition",
+      "en": "Rehearsal"
+    },
+    "common.audience.attended": {
+      "fr": "dates suivies",
+      "en": "dates attended"
+    },
+    "enums.audience.adults": {
+      "fr": "Public adulte",
+      "en": "Adults only"
+    },
+    "enums.audience.all-audiences": {
+      "fr": "Tout public",
+      "en": "All audiences"
+    },
+    "enums.audience.family": {
+      "fr": "En famille",
+      "en": "Family"
+    },
+    "enums.audience.young": {
+      "fr": "Jeune public",
+      "en": "Young audiences"
+    },
+    "enums.moderationReason.harassment": {
+      "fr": "Harcèlement",
+      "en": "Harassment"
+    },
+    "enums.moderationReason.insult": {
+      "fr": "Insulte",
+      "en": "Insult"
+    },
+    "enums.moderationReason.off-topic": {
+      "fr": "Hors sujet",
+      "en": "Off topic"
+    },
+    "enums.moderationReason.spam": {
+      "fr": "Spam",
+      "en": "Spam"
+    },
+    "enums.moderationReason.spoiler": {
+      "fr": "Divulgue le spectacle",
+      "en": "Spoiler"
+    },
+    "enums.moderationState.banned": {
+      "fr": "Banni",
+      "en": "Banned"
+    },
+    "enums.moderationState.muted": {
+      "fr": "Réduit au silence",
+      "en": "Muted"
+    },
+    "enums.moderationState.published": {
+      "fr": "Publié",
+      "en": "Published"
+    },
+    "enums.moderationState.removed": {
+      "fr": "Supprimé",
+      "en": "Removed"
+    },
+    "enums.moderationState.reported": {
+      "fr": "Signalé",
+      "en": "Reported"
+    },
+    "common.studio.commission": {
+      "fr": "Commission Arthome",
+      "en": "Arthome commission"
+    },
+    "common.studio.heldNote": {
+      "fr": "Versement retenu tant que l’issue de la date est ouverte.",
+      "en": "Payout held while the date’s outcome is open."
+    },
+    "common.studio.netPayout": {
+      "fr": "Net à verser",
+      "en": "Net payout"
+    },
+    "enums.merchState.on-sale": {
+      "fr": "En vente",
+      "en": "On sale"
+    },
+    "enums.merchState.out-of-stock": {
+      "fr": "Rupture",
+      "en": "Out of stock"
+    },
+    "enums.payoutState.held": {
+      "fr": "Retenu",
+      "en": "Held"
+    },
+    "enums.payoutState.paid": {
+      "fr": "Versé",
+      "en": "Paid"
+    },
+    "enums.payoutState.refunded": {
+      "fr": "Remboursé",
+      "en": "Refunded"
+    },
+    "enums.payoutState.scheduled": {
+      "fr": "Versement programmé",
+      "en": "Payout scheduled"
+    }
+  }
+}

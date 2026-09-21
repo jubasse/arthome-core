@@ -1,0 +1,126 @@
+<!--
+  Arthome · storefront mobile — account-faves
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : account · accTab=faves
+  Affiche    : Mes favoris : artistes suivis avec leur prochaine date et leur bascule d'alerte, puis les spectacles mis de côté.
+  Mène vers  : artist, live
+  Contrat    : ⚠ AUCUN POINT D'ENTRÉE — voir Confrontation C1 · GET /v1/me/watchlist
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1401–1435
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+  Note       : ⚠ ÉCRAN NON SERVI pour sa première moitié (les artistes suivis).
+               La seconde moitié (les spectacles mis de côté) l'est par /v1/me/watchlist.
+               Voir needs/storefront-mobile.md § Confrontation C1.
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1401–1435
+     ══════════════════════════════════════════════════════════════════════════ -->
+      <sc-if value="{{ accFaves }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 10px;">{{ favesCountLabel }}</div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px;">
+            <sc-for list="{{ favArtists }}" as="a" hint-placeholder-count="4">
+              <div onClick="{{ a.open }}" style="cursor: pointer; border: 1px solid #1F1C19; background: #100F0D; padding: 13px; min-height: 44px; box-sizing: border-box;  text-align: center;">
+                <div style="width: 52px; height: 52px; margin: 0 auto; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815;">
+                  <sc-if value="{{ a.img }}" hint-placeholder-val="{{ false }}">
+                    <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.82); background-color: #17140F; background-image: {{ a.imgCss }}; background-size: cover; background-position: center;"></div>
+                  </sc-if>
+                </div>
+                <div style="padding-top: 9px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ a.name }}</div>
+                <div style="padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ a.next }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding-top: 18px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ t.savedShows }}</div>
+          <div style="padding-top: 10px; display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+            <sc-for list="{{ savedShows }}" as="sv" hint-placeholder-count="3">
+              <div onClick="{{ sv.open }}" style="cursor: pointer; background: #0F0E0C; padding: 12px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  display: flex; align-items: center; gap: 11px;">
+                <div style="flex: 0 0 56px; position: relative; aspect-ratio: 16/11; overflow: hidden; background: #17140F;">
+                  <sc-if value="{{ sv.img }}" hint-placeholder-val="{{ false }}">
+                    <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.7); background-color: #17140F; background-image: {{ sv.imgCss }}; background-size: cover; background-position: center;"></div>
+                  </sc-if>
+                </div>
+                <div style="min-width: 0;">
+                  <div style="font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sv.title }}</div>
+                  <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ sv.when }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (2 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── faves  —  calcul dans renderReady()  —  L4371–4371 ── */
+    const faves = (() => {
+
+/* ── favArtists  —  calcul dans renderReady()  —  L5196–5216 ── */
+    const favArtists = roster.slice(0, (s.followedIds || []).length || 5).map((a, i) => {
+      const dates = A.datesOfArtist(a.id);
+      const onAir = dates.filter(d => A.isOnAir(d))[0] || null;
+      const next = dates.filter(d => d.startOffsetMin > 0).sort((x, y) => x.startOffsetMin - y.startOffsetMin)[0] || null;
+      const d = onAir || next;
+      return {
+        name: a.name, img: a.portrait, imgCss: this.cssUrl(a.portrait), portrait: a.portrait, portraitCss: this.cssUrl(a.portrait),
+        next: d ? A.when(d) + ' · ' + A.title(A.show(d.show)) : (fr ? 'Aucune date annoncée' : 'No announced date'),
+        openArtist: () => this.setState({ page: 'artist', artistId: a.i }),
+        openNext: onAir ? (() => this.openLive(a.name)) : (() => this.setState({ page: 'artist', artistId: a.i })),
+        isLiveRow: !!onAir, liveLabel: onAir ? t.onNow : '',
+        liveColor: 'oklch(0.72 0.16 27)',
+        notifyLabel: (s.notifyArtists[i] ? '🔔 ' : '🔕 ') + (fr ? 'ALERTES' : 'ALERTS'),
+        notifyStyle: 'cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.08em; ' +
+          (s.notifyArtists[i] ? 'background: #221F1B; color: #EDE7DC;' : 'border: 1px solid #1F1C19; color: #857E73;'),
+        toggleNotify: () => this.setState(st => {
+          const n = st.notifyArtists.slice(); n[i] = !n[i]; return { notifyArtists: n };
+        }),
+        unfollow: () => this.setState({ accView: 'section', accTab: 'faves' })
+      };
+    }).filter((_, i) => s.unfollowed.indexOf(i) < 0);
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (2) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2573  onNow: "EN DIRECT"
+  EN L3026  onNow: "LIVE NOW"
+
+  FR L2686  savedShows: "SPECTACLES MIS DE CÔTÉ"
+  EN L3139  savedShows: "SAVED SHOWS"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

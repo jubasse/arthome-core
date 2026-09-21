@@ -1,0 +1,237 @@
+<!--
+  ÉCRAN      Discipline — cadre, sommaire et filtres
+  ROUTE      page === 'category'
+  AFFICHE    Une discipline : bandeau, sommaire « sur cette page », sous-genres, son propre panneau de filtres, son enregistrement en recherche, et les cinq onglets de sections.
+  MÈNE VERS  category-live · category-upcoming · category-replays · category-artists · artist · live
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 1674-1693 · 1772-1820 · 2061-2069
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Le rail latéral et le panneau de filtres (1694-1771) sont dans
+             `overlay-filters-rail.html` : ce bloc est recopié à l'identique depuis `browse`.
+             Défaut relevé au temps 3 : `getCategoryScreen` n'accepte ni section, ni curseur, ni
+             filtre — les quatre boutons « Voir plus » de cette page n'ont pas d'opération.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — getCategoryScreen, createSavedSearch
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : SUBS, catalogue, category, cats, roster, s, sideDrawer, subsSel, t
+  À LIRE     dépendances non recopiées ici : catSig, dateMatch, priceMatch
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ isCategory }}" hint-placeholder-val="{{ false }}">
+<div style="animation: fadeIn .3s ease both;">
+  <section style="position: relative; height: 300px; overflow: hidden; background: #131110; border-bottom: 1px solid #1F1C19;">
+    <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.5) contrast(1.1) brightness(0.46); background-color: #1A1815; background-image: {{ category.imgCss }}; background-size: cover; background-position: center;"></div>
+    <div style="position: absolute; inset: 0; background: linear-gradient(to top, #0B0A09 3%, rgba(11,10,9,0.25));"></div>
+    <div style="position: absolute; left: 40px; top: 26px;">
+      <span onClick="{{ goCategories }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #B0A899; background: rgba(11,10,9,0.6); padding: 7px 11px; transition: color .24s ease;" style-hover="color:#EDE7DC">{{ t.backToCats }}</span>
+    </div>
+    <div style="position: absolute; left: 40px; right: 40px; bottom: 26px; max-width: 1360px; display: flex; align-items: flex-end; gap: 24px;">
+      <div style="min-width: 0;">
+        <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 52px; line-height: 1;">{{ category.name }}</h1>
+        <div style="padding-top: 12px; display: flex; align-items: center; gap: 14px;">
+          <sc-if value="{{ category.hasLive }}" hint-placeholder-val="{{ false }}"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: oklch(0.78 0.14 27);">{{ category.liveLabel }}</span></sc-if>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: #B0A899;">{{ category.count }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section style="max-width: 1440px; margin: 0 auto; padding: 20px 40px 0;">
+    <div style="display: grid; grid-template-columns: {{ sideCols }}; gap: 28px; align-items: start;">
+
+      <!-- … le rail latéral et le panneau de filtres (lignes 1694-1771) sont dans overlay-filters-rail.html … -->
+
+      <div style="min-width: 0;">
+    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; padding-bottom: 14px;">
+      <sc-if value="{{ catNotSaved }}" hint-placeholder-val="{{ true }}">
+        <span onClick="{{ catSaveNew }}" title="{{ t.followCatHint }}" style="cursor: pointer; padding: 12px 20px; white-space: nowrap; font-size: 12.5px; border: 1px solid #332E28; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ t.followCat }}</span>
+      </sc-if>
+      <sc-if value="{{ catAlreadySaved }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: center; gap: 10px; border: 1px solid rgba(112,190,140,0.3); background: rgba(112,190,140,0.05); padding: 8px 10px 8px 13px;">
+          <div style="min-width: 0;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: oklch(0.74 0.12 150);">{{ t.savedCatHere }}</div>
+            <sc-if value="{{ catSavedIdle }}" hint-placeholder-val="{{ true }}">
+              <div style="padding-top: 4px; font-size: 13.5px; color: #EDE7DC; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px;">{{ catSavedName }}</div>
+            </sc-if>
+            <sc-if value="{{ catSavedEditing }}" hint-placeholder-val="{{ false }}">
+              <input data-pop="rename" value="{{ catSavedDraft }}" onChange="{{ catSavedInput }}" onKeyDown="{{ catSavedKey }}" title="{{ t.alertRenameHint }}" style="margin-top: 3px; width: 240px; max-width: 100%; box-sizing: border-box; padding: 4px 8px; border: 1px solid rgba(237,231,220,0.5); background: #0B0A09; font-family: inherit; font-size: 13.5px; color: #EDE7DC; outline: none;" />
+            </sc-if>
+          </div>
+          <span onClick="{{ catSavedStartRename }}" title="{{ t.alertRename }}" style="flex: 0 0 auto; cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 11px; color: #857E73; transition: border-color .2s ease, color .2s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">✎</span>
+          <span onClick="{{ catSavedRemove }}" title="{{ t.alertDelete }}" style="flex: 0 0 auto; cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 11px; color: #857E73; transition: border-color .2s ease, color .2s ease;" style-hover="border-color:oklch(0.5 0.14 27);color:oklch(0.78 0.14 27)">🗑</span>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="display: flex; gap: 26px; border-bottom: 1px solid #1F1C19; margin-bottom: 16px; overflow-x: auto;">
+      <sc-for list="{{ catTabs }}" as="tb" hint-placeholder-count="5">
+        <div onClick="{{ tb.pick }}" style="{{ tb.style }}">
+          <span>{{ tb.label }}</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6B6459;">{{ tb.count }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 6px; padding-bottom: 12px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459; padding-right: 2px;">{{ t.viewLabel }}</span>
+      <sc-for list="{{ catViewOptions }}" as="vo" hint-placeholder-count="2">
+        <span onClick="{{ vo.pick }}" style="{{ vo.style }}">{{ vo.label }}</span>
+      </sc-for>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <sc-if value="{{ catHasTokens }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0;">
+          <sc-for list="{{ catTokens }}" as="tk" hint-placeholder-count="2">
+            <span onClick="{{ tk.drop }}" title="{{ tk.title }}" style="{{ tk.style }}" style-hover="border-color:#857E73">{{ tk.label }} ✕</span>
+          </sc-for>
+          <span onClick="{{ clearCatFilters }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73; border-bottom: 1px solid #1F1C19; transition: color .2s ease;" style-hover="color:#EDE7DC">{{ t.clearAll }}</span>
+        </div>
+      </sc-if>
+    </div>
+
+
+
+
+    <div style="margin-top: 30px;">
+      <span onClick="{{ goBrowse }}" style="cursor: pointer; padding: 12px 20px; white-space: nowrap; border: 1px solid #332E28; font-size: 13.5px; color: #C9C0B2; transition: border-color .24s ease;" style-hover="border-color:#4A423A">{{ t.catAll }}</span>
+    </div>
+      </div>
+    </div>
+  </section>
+</div>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* priceDefs  —  lignes 5936-5936 */
+    const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
+/* dateDefs  —  lignes 5937-5937 */
+    const dateDefs = [['tonight', t.dTonight], ['weekend', t.dWeekend], ['d7', t.d7], ['d30', t.d30], ['range', t.dRange]];
+/* statusDefs  —  lignes 5945-5945 */
+    const statusDefs = [['live', t.stLive], ['soon', t.stSoon], ['replay', t.stReplay]];
+/* catFollowEntry  —  lignes 6045-6045 */
+    const catFollowEntry = s.alerts.find(al => al.scope === 'category' && this.alertSig('', al.st) === catSig) || null;
+/* catFilterCount  —  lignes 6175-6175 */
+    const catFilterCount = subsSel.length + s.cPrices.length + (s.cDate !== 'all' ? 1 : 0) + (s.cStatus !== 'all' ? 1 : 0) + (s.cAlmost ? 1 : 0) + (s.cPromo ? 1 : 0);
+/* catPool  —  lignes 6176-6191 */
+    const catPool = catalogue.filter(o => {
+      if (o.cat !== s.catId) return false;
+      if (subsSel.length && !subsSel.some(i => o.subs.indexOf(i) > -1)) return false;
+      if (s.cPrices.length && !s.cPrices.some(k => priceMatch(k, o.price))) return false;
+      if (s.cDate !== 'all' && !dateMatch(s.cDate, o.day)) return false;
+      if (s.cStatus !== 'all' && o.kind !== s.cStatus) return false;
+      if (s.cAlmost && o.kind !== 'replay' && o.soldPct < 80) return false;
+      if (s.cPromo && !o.hasPromo) return false;
+      return true;
+    }).sort((a, b) => {
+      if (s.cSort === 'soon') return a.day - b.day;
+      if (s.cSort === 'pop') return (b.viewers || b.soldPct * 40) - (a.viewers || a.soldPct * 40);
+      if (s.cSort === 'priceUp') return a.price - b.price;
+      if (s.cSort === 'priceDown') return b.price - a.price;
+      return 0;
+    });
+/* catLiveList  —  lignes 6194-6194 */
+    const catLiveList = catPool.filter(o => o.kind === 'live');
+/* catRepList  —  lignes 6196-6196 */
+    const catRepList = catPool.filter(o => o.kind === 'replay');
+/* catArtList  —  lignes 6197-6197 */
+    const catArtList = roster.filter(a => catPool.some(o => o.artistIdx === a.i));
+/* goCatTab  —  lignes 6202-6202 */
+    const goCatTab = k => () => this.setState({ catTab: k, shown: {} });
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      goCategories: this.nav('categories'),
+      /* L'accueil s'arrête aux douze premières disciplines : au-delà, la
+         grille devient un sommaire. La page dédiée les montre toutes. */
+      catAlreadySaved: !!catFollowEntry, catNotSaved: !catFollowEntry,
+      catSaveNew: this.gate(() => this.setState({ saveOpen: true, saveStep: 'ask', saveName: '', saveScope: 'category' })),
+      catSavedName: catFollowEntry ? this.alertName(catFollowEntry, cats, t) : '',
+      catSavedEditing: !!catFollowEntry && s.renameId === catFollowEntry.id,
+      catSavedIdle: !!catFollowEntry && s.renameId !== catFollowEntry.id,
+      catSavedDraft: s.renameDraft,
+      catSavedStartRename: () => { if (catFollowEntry) this.setState({ renameId: catFollowEntry.id, renameDraft: this.alertName(catFollowEntry, cats, t) }); },
+      catSavedInput: e => this.setState({ renameDraft: e.target.value }),
+      catSavedKey: e => {
+        if (e.key === 'Enter') this.setState(st => ({
+          alerts: st.alerts.map(x => catFollowEntry && x.id === catFollowEntry.id ? Object.assign({}, x, { name: st.renameDraft.trim() }) : x),
+          renameId: null, renameDraft: ''
+        }));
+        if (e.key === 'Escape') this.setState({ renameId: null, renameDraft: '' });
+      },
+      catSavedRemove: () => { if (catFollowEntry) this.setState({ deleteId: catFollowEntry.id }); },
+
+      catViewOptions: [['tiles', t.viewTiles], ['list', t.viewList]].map(([k, label]) => ({
+        label, pick: () => this.setState({ cView: k }),
+        style: CHIP + (s.cView === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#1F1C19; color: #9B948A;')
+      })),
+      catTokens: (() => {
+        const out = [];
+        if (subsSel.length) {
+          const names = SUBS[s.catId] || SUBS[0];
+          const picked = subsSel.map(i => names[i]).filter(Boolean);
+          out.push({ label: picked.length === 1 ? picked[0] : t.subgenres + ' (' + picked.length + ')', title: picked.join(' · '), drop: () => this.setState({ subs: [] }) });
+        }
+        if (s.cPrices.length) {
+          const labels = s.cPrices.map(k => (priceDefs.find(p => p[0] === k) || ['', k])[1]);
+          out.push({ label: labels.length === 1 ? labels[0] : t.fPrice + ' (' + labels.length + ')', title: labels.join(' · '), drop: () => this.setState({ cPrices: [] }) });
+        }
+        if (s.cDate !== 'all') out.push({ label: (dateDefs.find(d => d[0] === s.cDate) || ['', ''])[1], drop: () => this.setState({ cDate: 'all' }) });
+        if (s.cStatus !== 'all') out.push({ label: (statusDefs.find(d => d[0] === s.cStatus) || ['', ''])[1], drop: () => this.setState({ cStatus: 'all' }) });
+        const cFlags = [];
+        if (s.cAlmost) cFlags.push({ label: t.almostFull, clear: { cAlmost: false } });
+        if (s.cPromo) cFlags.push({ label: t.promoFilter, clear: { cPromo: false } });
+        if (cFlags.length) out.push({
+          label: cFlags.length === 1 ? cFlags[0].label : t.fMisc + ' (' + cFlags.length + ')',
+          title: cFlags.map(x => x.label).join(' · '),
+          drop: () => this.setState(cFlags.length === 1 ? cFlags[0].clear : { cAlmost: false, cPromo: false })
+        });
+        return out.map(tk => Object.assign(tk, {
+          title: tk.title || tk.label,
+          style: "cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border: 1px solid #332E28; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #C9C0B2; transition: border-color .2s ease;"
+        }));
+      })(),
+      catHasTokens: catFilterCount > 0,
+      clearCatFilters: () => this.setState({ subs: [], cPrices: [], cDate: 'all', cStatus: 'all', cAlmost: false, cPromo: false, cSort: 'auto' }),
+      sideCols: sideDrawer ? 'minmax(0,1fr)' : (s.sideOpen ? '236px minmax(0,1fr)' : '38px minmax(0,1fr)'),
+      catTabs: [
+        ['ov', t.tabOverview, catPool.length],
+        ['live', t.tabCatLive, catLiveList.length],
+        ['up', t.catUpcoming, catPool.filter(o => o.kind === 'upcoming').length],
+        ['art', t.tabCatArtists, catArtList.length],
+        ['rep', t.replaysTitle, catRepList.length]
+      ].map(([k, label, n]) => ({
+        label, count: String(n),
+        pick: goCatTab(k),
+        style: 'cursor: pointer; padding: 12px 2px; display: flex; align-items: baseline; gap: 8px; font-size: 15px; white-space: nowrap; border-bottom: 2px solid ' +
+          (s.catTab === k ? '#EDE7DC' : 'transparent') + '; color: ' + (s.catTab === k ? '#EDE7DC' : '#857E73') + '; transition: color .24s ease, border-color .24s ease;'
+      })),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.alertDelete  t.alertRename  t.alertRenameHint  t.almostFull  t.backToCats  t.catAll  
+    t.catUpcoming  t.clearAll  t.d30  t.d7  t.dRange  t.dTonight  t.dWeekend  t.fMisc  
+    t.fPrice  t.followCat  t.followCatHint  t.p1020  t.p2035  t.p35  t.pFree  t.pU10  
+    t.promoFilter  t.replaysTitle  t.savedCatHere  t.stLive  t.stReplay  t.stSoon  t.subgenres  
+    t.tabCatArtists  t.tabCatLive  t.tabOverview  t.viewLabel  t.viewList  t.viewTiles  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    alerts  cAlmost  cDate  cPrices  cPromo  cSort  cStatus  cView  catId  catTab  
+    renameDraft  renameId  sideOpen  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    alertName, alertSig, gate, nav, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

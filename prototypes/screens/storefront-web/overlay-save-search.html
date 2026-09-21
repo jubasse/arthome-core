@@ -1,0 +1,248 @@
+<!--
+  ÉCRAN      Enregistrer une recherche
+  ROUTE      superposition, sans URL
+  AFFICHE    La modale d'enregistrement : nom optionnel, critères retenus, portée (recherche ou catégorie), canaux d'alerte, puis l'état confirmé.
+  MÈNE VERS  account-alerts · browse · category
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 3131-3209
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — createSavedSearch
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, account, artist, category, cats, followed, fr, mk, roster, s, t
+  À LIRE     dépendances non recopiées ici : artistsAll, groupsOf, heroBase, livesAll, onArtistLive, replaysAll, watched, watchedShow, watchedViewers
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ saveOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeSave }}" style="position: fixed; inset: 0; z-index: 8400; background: rgba(6,5,5,0.78); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .2s ease both;">
+  <div onClick="{{ stopEvt }}" style="width: 460px; max-width: 100%; max-height: calc(100vh - 64px); display: flex; flex-direction: column; border: 1px solid #332E28; background: #0B0A09; animation: riseIn .28s ease both;">
+    <div style="flex: 0 0 auto; padding: 24px 26px; border-bottom: 1px solid #1F1C19;">
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <sc-if value="{{ saveDone }}" hint-placeholder-val="{{ false }}">
+          <span style="flex: 0 0 auto; width: 24px; height: 24px; display: grid; place-items: center; border: 1px solid oklch(0.6 0.11 150); font-size: 12px; color: oklch(0.78 0.13 150);">✓</span>
+        </sc-if>
+        <span style="font-family: 'Instrument Serif', serif; font-size: 25px;">{{ saveHeadTitle }}</span>
+      </div>
+      <div style="padding-top: 10px; font-size: 13px; line-height: 1.55; color: #857E73; text-wrap: pretty;">{{ saveHeadIntro }}</div>
+    </div>
+    <div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px 26px; display: flex; flex-direction: column; gap: 16px;">
+      <sc-if value="{{ saveAsk }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.saveName }}</div>
+          <input value="{{ saveNameValue }}" onChange="{{ onSaveName }}" placeholder="{{ saveNamePlaceholder }}" style="margin-top: 8px; width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #332E28; background: #0F0E0C; font-family: inherit; font-size: 13.5px; color: #EDE7DC; outline: none;" />
+          <div style="padding-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #575047;">{{ t.saveNameHint }}</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ saveShowQuery }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.saveQuery }}</div>
+          <div style="padding-top: 7px; font-size: 14px; color: #EDE7DC;">{{ savedQueryLabel }}</div>
+        </div>
+      </sc-if>
+      <div style="border-top: 1px solid #16140F; padding-top: 15px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.saveFilters }}</div>
+        <sc-if value="{{ savedHasFilters }}" hint-placeholder-val="{{ true }}">
+          <div style="padding-top: 11px; display: flex; flex-direction: column; gap: 11px;">
+            <sc-for list="{{ savedGroups }}" as="sg2" hint-placeholder-count="3">
+              <div style="display: grid; grid-template-columns: 88px minmax(0,1fr); gap: 12px; align-items: baseline;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #575047;">{{ sg2.title }}</span>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                  <sc-for list="{{ sg2.chips }}" as="sc2" hint-placeholder-count="2">
+                    <span style="padding: 4px 9px; border: 1px solid rgba(237,231,220,0.4); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #B0A899;">{{ sc2.label }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ savedNoFilters }}" hint-placeholder-val="{{ false }}">
+          <div style="padding-top: 7px; font-size: 13px; color: #6E675E;">{{ t.saveNoFilters }}</div>
+        </sc-if>
+      </div>
+      <div style="border-top: 1px solid #16140F; padding-top: 15px; display: flex; align-items: baseline; gap: 14px;">
+        <sc-if value="{{ saveShowQuery }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.saveScope }}</div>
+            <div style="padding-top: 7px; font-size: 13.5px; color: #C9C0B2;">{{ savedScope }}</div>
+          </div>
+        </sc-if>
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.sortLabel }}</div>
+          <div style="padding-top: 7px; font-size: 13.5px; color: #C9C0B2;">{{ savedSortLabel }}</div>
+        </div>
+        <div style="margin-left: auto; text-align: right;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.saveChannels }}</div>
+          <div style="padding-top: 7px; display: flex; gap: 6px; justify-content: flex-end;">
+            <span style="padding: 4px 9px; background: #1F1C19; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #EDE7DC;">{{ t.savePush }}</span>
+            <span style="padding: 4px 9px; background: #1F1C19; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #EDE7DC;">{{ t.saveEmail }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="flex: 0 0 auto; border-top: 1px solid #1F1C19; padding: 16px 26px 22px; display: flex; gap: 8px; justify-content: flex-end;">
+      <sc-if value="{{ saveAsk }}" hint-placeholder-val="{{ true }}">
+        <span onClick="{{ closeSave }}" style="cursor: pointer; padding: 11px 18px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ t.saveCancel }}</span>
+        <span onClick="{{ confirmSave }}" style="cursor: pointer; padding: 11px 18px; white-space: nowrap; background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600; transition: background .24s ease;" style-hover="background:oklch(0.94 0.03 80)">{{ t.saveConfirm }}</span>
+      </sc-if>
+      <sc-if value="{{ saveDone }}" hint-placeholder-val="{{ false }}">
+        <span onClick="{{ closeSave }}" style="cursor: pointer; padding: 11px 18px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ t.saveClose }}</span>
+        <span onClick="{{ goManageSearches }}" style="cursor: pointer; padding: 11px 18px; white-space: nowrap; background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600; transition: background .24s ease;" style-hover="background:oklch(0.94 0.03 80)">{{ t.saveManage }}</span>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* trending  —  lignes 5197-5206 */
+    const trending = A.liveNow().slice(0, 6).map(d => {
+      const show = A.show(d.show), art = A.artist(show.artist);
+      const cat = A.label(A.category(show.category)).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US');
+      return mk(A.title(show), art ? art.name : '', A.number(d.viewers),
+        cat + ' · ' + (fr ? 'EN COURS' : 'ON AIR'), A.showImage(show, 900),
+        A.liveNow()[0] === d,
+        A.synopsis(show) || [cat, A.duration(show.runtimeMin), A.venue(d.venue).name].join(' · '));
+    });
+
+    /* Vos artistes suivis, ou à défaut les plus suivis, avec ce qu'ils jouent. */
+/* faves  —  lignes 5207-5227 */
+    const faves = (() => {
+      const followed = (s.follows || []).map(i => roster[i]).filter(Boolean);
+      const pool = followed.length ? followed : roster.slice(0, 5);
+      return pool.slice(0, 5).map(a => ({
+        artist: a.name,
+        initials: a.name.split(/[\s’']+/).map(w => w[0]).filter(Boolean).join('').slice(0, 2).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+        title: a.showTitle,
+        /* Le rouge d'antenne ne sert qu'à l'antenne. */
+        isLive: !!a.isLive, notLive: !a.isLive,
+        nextLabel: a.isLive ? '' : (() => {
+          const next = A.datesOfArtist(a.id).filter(d => d.startOffsetMin > 0)
+            .sort((x, y) => x.startOffsetMin - y.startOffsetMin)[0];
+          return next
+            ? (A.dayLabel(next.startOffsetMin) + ' · ' + A.clock(next.startOffsetMin)).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US')
+            : (fr ? 'AUCUNE DATE' : 'NO DATE');
+        })(),
+        viewersLabel: a.viewers || '',
+        img: a.showImg, imgCss: this.cssUrl(a.showImg)
+      }));
+    })().map(x => Object.assign(x, { open: () => this.openLive(x.artist), openArtist: this.goArtistFrom(x.artist) }));
+
+/* hero  —  lignes 5551-5571 */
+    const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
+      title: s.pick.title,
+      artist: s.pick.artist,
+      blurb: artist.bio,
+      meta: s.pick.kind === 'live' ? s.pick.meta : s.pick.whenLabel,
+      viewersLabel: s.pick.kind === 'live'
+        ? ((s.pick.viewersLabel || watchedViewers || A.number((A.liveNow()[0] || { viewers: 0 }).viewers)) + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING'))
+        : s.pick.whenLabel,
+      priceLabel: s.pick.priceLabel,
+      img: s.pick.img, imgCss: this.cssUrl(s.pick.img)
+    } : (onArtistLive ? {
+      title: A.title(watchedShow),
+      artist: artist.name,
+      blurb: A.synopsis(watchedShow) || artist.bio,
+      meta: [artist.discipline, A.duration(watchedShow.runtimeMin),
+        (watchedShow.subtitles || []).length ? watchedShow.subtitles.join('/') : null]
+        .filter(Boolean).join(' · ').toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+      viewersLabel: (watchedViewers || A.number(0)) + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING'),
+      priceLabel: watched.prices[0].amount ? A.price(watched.prices[0].amount) : (fr ? 'Gratuit' : 'Free'),
+      img: A.showImage(watchedShow, 1600), imgCss: this.cssUrl(A.showImage(watchedShow, 1600))
+    } : heroBase);
+/* qq  —  lignes 5934-5934 */
+    const qq = (s.liveQuery || '').trim().toLowerCase();
+/* savingCat  —  lignes 6071-6071 */
+    const savingCat = s.saveScope === 'category';
+/* savedGroups  —  lignes 6072-6073 */
+    const savedGroups = groupsOf(savingCat ? this.catAlertState() : this.alertState());
+
+/* tabDefs  —  lignes 6074-6074 */
+    const tabDefs = [['best', t.tabBest, livesAll.length + artistsAll.length + replaysAll.length], ['artists', t.tabArtists, artistsAll.length], ['lives', t.tabLives, livesAll.length], ['replays', t.tabReplays, replaysAll.length]];
+/* sortDefs  —  lignes 6082-6082 */
+    const sortDefs = [['auto', qq ? t.sortRelevance : t.sortSoon], ['soon', t.sortSoon], ['pop', t.sortPop], ['priceUp', t.sortPriceUp], ['priceDown', t.sortPriceDown]];
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      saveOpen: s.saveOpen,
+      saveAsk: s.saveStep !== 'done', saveDone: s.saveStep === 'done',
+      saveHeadTitle: s.saveStep === 'done'
+        ? (savingCat ? t.saveCatTitle : t.saveTitle)
+        : (savingCat ? t.saveCatAskTitle : t.saveAskTitle),
+      saveHeadIntro: s.saveStep === 'done' ? t.saveIntro : (savingCat ? t.saveCatAskIntro : t.saveAskIntro),
+      saveShowQuery: !savingCat,
+      closeSave: () => this.setState({ saveOpen: false, saveStep: 'ask' }),
+      stopEvt: e => { if (e && e.stopPropagation) e.stopPropagation(); },
+      goManageSearches: () => this.setState({ saveOpen: false, saveStep: 'ask', page: 'account', accTab: 'alerts' }),
+      savedQueryLabel: s.query.trim() || t.saveNoQuery,
+      savedHasFilters: savedGroups.length > 0, savedNoFilters: savedGroups.length === 0,
+      savedSortLabel: (() => {
+        if (savingCat) {
+          const M = { auto: t.sortSoon, soon: t.sortSoon, pop: t.sortPop, priceUp: t.sortPriceUp, priceDown: t.sortPriceDown };
+          return M[s.cSort] || M.auto;
+        }
+        const defs = qq ? sortDefs : sortDefs.filter(d => d[0] !== 'soon');
+        return ((defs.find(d => d[0] === s.sort) || defs[0]) || ['', ''])[1];
+      })(),
+      savedScope: (tabDefs.find(d => d[0] === s.sTab) || tabDefs[0])[1],
+      saveNameValue: s.saveName,
+      onSaveName: e => this.setState({ saveName: e.target.value }),
+      saveNamePlaceholder: savingCat
+        ? this.alertName({ query: '', st: this.catAlertState() }, cats, t)
+        : this.alertName({ query: s.query.trim(), st: this.alertState() }, cats, t),
+      confirmSave: () => {
+        if (savingCat) {
+          const st2 = this.catAlertState();
+          this.setState(prev => ({
+            saveStep: 'done',
+            alerts: prev.alerts.concat([{
+              id: Date.now(), name: prev.saveName.trim(), query: '', scope: 'category', catId: prev.catId, st: st2,
+              push: true, email: true, active: true,
+              created: new Date().toLocaleDateString(fr ? 'fr-FR' : 'en-GB')
+            }])
+          }));
+          return;
+        }
+        this.setState(st => ({
+        saveStep: 'done', alertCreated: true,
+        recent: [st.query.trim()].concat(st.recent.filter(r => r !== st.query.trim())).filter(Boolean).slice(0, 5),
+        alerts: st.alerts.concat([{
+          id: Date.now(), name: st.saveName.trim(), query: st.query.trim(), st: this.alertState(),
+          push: true, email: true, active: true,
+          created: new Date().toLocaleDateString(fr ? 'fr-FR' : 'en-GB')
+        }])
+        }));
+      },
+      t, hero, trending, faves,
+      /* Le sous-titre suit le contenu du rail : combien sont à l'antenne,
+         combien sont suivis. */
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.saveAskIntro  t.saveAskTitle  t.saveCancel  t.saveCatAskIntro  t.saveCatAskTitle  
+    t.saveCatTitle  t.saveChannels  t.saveClose  t.saveConfirm  t.saveEmail  t.saveFilters  
+    t.saveIntro  t.saveManage  t.saveName  t.saveNameHint  t.saveNoFilters  t.saveNoQuery  
+    t.savePush  t.saveQuery  t.saveScope  t.saveTitle  t.sortLabel  t.sortPop  t.sortPriceDown  
+    t.sortPriceUp  t.sortRelevance  t.sortSoon  t.tabArtists  t.tabBest  t.tabLives  
+    t.tabReplays  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    alerts  cSort  follows  liveQuery  page  pick  query  recent  sTab  saveName  saveOpen  
+    saveScope  saveStep  sort  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    alertName, alertState, catAlertState, cssUrl, goArtistFrom, openLive, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

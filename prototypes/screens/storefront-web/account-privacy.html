@@ -1,0 +1,181 @@
+<!--
+  ÉCRAN      Compte — Confidentialité
+  ROUTE      page === 'account', accTab === 'privacy'
+  AFFICHE    Consentements, cookies, durées de conservation, droits RGPD, documents, contact du délégué à la protection des données.
+  MÈNE VERS  account
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2798-2872
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — updateConsents, requestExport, requestAccountDeletion, contactSupport
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : account, availW, followed, fr, locked, s, t, tickets
+  À LIRE     dépendances non recopiées ici : tierDefs, tierIdx
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <sc-if value="{{ accPrivacy }}" hint-placeholder-val="{{ false }}">
+      <div style="animation: fadeIn .3s ease both; max-width: 760px;">
+        <h2 style="{{ accH2 }} margin: 0 0 18px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.accPrivacy }}</h2>
+
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 12px;">{{ t.privConsents }}</div>
+        <div style="border: 1px solid #1F1C19; background: #100F0D;">
+          <sc-for list="{{ privConsents }}" as="r" hint-placeholder-count="4">
+            <div style="border-bottom: 1px solid #1F1C19; padding: 16px 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+              <div style="min-width: 200px; flex: 1 1 240px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <span style="font-size: 15px;">{{ r.label }}</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ r.stateColor }};">{{ r.state }}</span>
+                </div>
+                <div style="padding-top: 5px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ r.hint }}</div>
+              </div>
+              <span onClick="{{ r.action }}" style="margin-left: auto; flex: 0 0 auto; cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease;" style-hover="background:#221F1B">{{ r.cta }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin-top: 26px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 12px;">{{ t.privCookies }}</div>
+        <div style="border: 1px solid #1F1C19; background: #100F0D;">
+          <sc-for list="{{ privCookieRows }}" as="r" hint-placeholder-count="3">
+            <div style="border-bottom: 1px solid #1F1C19; padding: 16px 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+              <div style="min-width: 200px; flex: 1 1 240px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <span style="font-size: 15px;">{{ r.label }}</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ r.stateColor }};">{{ r.state }}</span>
+                </div>
+                <div style="padding-top: 5px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ r.hint }}</div>
+              </div>
+              <span onClick="{{ r.action }}" style="margin-left: auto; flex: 0 0 auto; cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #262320; font-size: 12.5px; color: #C9C0B2; transition: background .24s ease;" style-hover="background:#221F1B">{{ r.cta }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin-top: 26px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 12px;">{{ t.privRights }}</div>
+        <div style="border: 1px solid #1F1C19; background: #100F0D;">
+          <sc-for list="{{ privRightsRows }}" as="r" hint-placeholder-count="4">
+            <div style="border-bottom: 1px solid #1F1C19; padding: 16px 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+              <div style="min-width: 200px; flex: 1 1 240px;">
+                <div style="font-size: 15px;">{{ r.label }}</div>
+                <div style="padding-top: 5px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ r.hint }}</div>
+              </div>
+              <span onClick="{{ r.action }}" style="margin-left: auto; flex: 0 0 auto; cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: {{ r.ctaColor }}; transition: background .24s ease;" style-hover="background:#221F1B">{{ r.cta }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin-top: 26px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 12px;">{{ t.privDocs }}</div>
+        <div style="border: 1px solid #1F1C19; background: #100F0D;">
+          <sc-for list="{{ privDocRows }}" as="d" hint-placeholder-count="5">
+            <div style="border-bottom: 1px solid #1F1C19; padding: 14px 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;">
+              <span style="font-size: 13.5px; color: #C9C0B2; min-width: 0;">{{ d.label }}</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #575047;">{{ t.privUpdated }} {{ d.date }}</span>
+              <span style="margin-left: auto; flex: 0 0 auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73; border-bottom: 1px solid #1F1C19; transition: color .2s ease;" style-hover="color:#EDE7DC">{{ t.privRead }} ↗</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin-top: 26px; border: 1px solid #1F1C19; background: #0C0B0A; padding: 16px 20px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ t.privRetention }}</div>
+          <div style="padding-top: 9px; font-size: 12.5px; line-height: 1.6; color: #9B948A; text-wrap: pretty;">{{ t.privRetentionText }}</div>
+        </div>
+
+        <div style="margin-top: 16px; border: 1px solid #1F1C19; background: #100F0D; padding: 18px 20px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+          <div style="min-width: 200px; flex: 1 1 260px;">
+            <div style="font-size: 13.5px;">{{ t.privDpo }}</div>
+            <div style="padding-top: 6px; font-size: 12.5px; line-height: 1.5; color: #857E73; text-wrap: pretty; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{{ t.privDpoHint }}</div>
+          </div>
+          <span onClick="{{ helpFromMenu }}" style="margin-left: auto; flex: 0 0 auto; cursor: pointer; padding: 11px 18px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ t.helpCta }}</span>
+        </div>
+      </div>
+      </sc-if>
+
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* tiers  —  lignes 5083-5088 */
+    const tiers = tierDefs.map(([name, price, desc], i) => ({
+      name, price, desc,
+      pick: () => this.setState({ tier: i }),
+      style: 'cursor: pointer; padding: 14px; border: 1px solid ' + (tierIdx === i ? '#EDE7DC' : '#262320') +
+        '; background: ' + (tierIdx === i ? '#141210' : 'transparent') + ';'
+    }));
+/* accStack  —  lignes 5747-5747 */
+    const accStack = availW < 760;
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      accH2: accStack ? 'display: none;' : '',
+      accPrivacy: s.accTab === 'privacy',
+      privConsents: [
+        ['audience', fr ? 'Mesure d’audience' : 'Audience measurement', fr ? 'Nombre de spectateurs et durée de visionnage, agrégés pour les artistes.' : 'Viewer counts and watch time, aggregated for artists.'],
+        ['perso', fr ? 'Recommandations personnalisées' : 'Personalised recommendations', fr ? 'Utilise vos places passées et vos artistes suivis pour classer l’accueil.' : 'Uses your past tickets and followed artists to rank the home page.'],
+        ['partners', fr ? 'Communications des artistes' : 'Artist communications', fr ? 'Les artistes que vous suivez peuvent vous écrire pour leurs prochaines dates.' : 'Artists you follow may email you about upcoming dates.'],
+        ['ads', fr ? 'Mise en avant payante ciblée' : 'Targeted paid promotion', fr ? 'Adapte les mises en avant payantes à vos catégories. Sans ciblage si désactivé.' : 'Tailors paid highlights to your categories. Untargeted if off.']
+      ].map(([k, label, hint]) => {
+        const on = (s.consents || {})[k] !== false && (k === 'ads' ? (s.consents || {}).ads === true : true);
+        return {
+          label, hint,
+          state: on ? t.privOn : t.privOff,
+          stateColor: on ? 'oklch(0.7 0.13 150)' : '#6B6459',
+          cta: on ? (fr ? 'Désactiver' : 'Turn off') : (fr ? 'Activer' : 'Turn on'),
+          action: () => this.setState(st => ({ consents: Object.assign({}, st.consents, { [k]: !on }) }))
+        };
+      }),
+      privCookieRows: [
+        [fr ? 'Cookies essentiels' : 'Essential cookies', fr ? 'Session, panier, langue. Nécessaires au fonctionnement du site.' : 'Session, cart, language. Required for the site to work.', 'locked'],
+        [fr ? 'Mesure statistique' : 'Statistics', fr ? 'Anonymisée, conservée 13 mois maximum.' : 'Anonymised, kept 13 months at most.', 'stats'],
+        [fr ? 'Lecteur vidéo tiers' : 'Third-party player', fr ? 'Qualité adaptative et reprise de lecture entre appareils.' : 'Adaptive quality and cross-device resume.', 'player']
+      ].map(([label, hint, k]) => {
+        const locked = k === 'locked';
+        const on = locked || (s.cookies || {})[k] !== false;
+        return {
+          label, hint,
+          state: locked ? t.privLocked : (on ? t.privOn : t.privOff),
+          stateColor: locked ? '#857E73' : (on ? 'oklch(0.7 0.13 150)' : '#6B6459'),
+          cta: locked ? '—' : (on ? (fr ? 'Refuser' : 'Decline') : (fr ? 'Accepter' : 'Accept')),
+          action: locked ? (() => {}) : (() => this.setState(st => ({ cookies: Object.assign({}, st.cookies, { [k]: !on }) })))
+        };
+      }),
+      privRightsRows: [
+        [fr ? 'Accéder à mes données' : 'Access my data', fr ? 'Archive complète au format JSON, prête sous 48 h.' : 'Full JSON archive, ready within 48h.', t.privRun],
+        [fr ? 'Rectifier mes informations' : 'Correct my information', fr ? 'Nom, adresse e-mail et ville, modifiables depuis Mon profil.' : 'Name, email and city, editable from Profile.', fr ? 'Ouvrir' : 'Open'],
+        [fr ? 'Portabilité' : 'Portability', fr ? 'Vos places et rediffusions achetées, dans un format réutilisable.' : 'Your tickets and purchased replays, in a reusable format.', t.privRun],
+        [fr ? 'Effacer mon compte' : 'Erase my account', fr ? 'Suppression sous 30 jours. Les factures sont conservées par obligation légale.' : 'Deleted within 30 days. Invoices are kept as legally required.', fr ? 'Demander' : 'Request']
+      ].map(([label, hint, cta], i) => ({
+        label, hint, cta,
+        action: i === 1 ? (() => this.setState({ accTab: 'profile' })) : (() => {}),
+        ctaColor: i === 3 ? 'oklch(0.78 0.14 27)' : '#EDE7DC'
+      })),
+      privDocRows: [
+        [fr ? 'Conditions générales d’utilisation' : 'Terms of use', fr ? '12 MARS 2026' : 'MAR 12 2026'],
+        [fr ? 'Politique de confidentialité' : 'Privacy policy', fr ? '12 MARS 2026' : 'MAR 12 2026'],
+        [fr ? 'Politique de cookies' : 'Cookie policy', fr ? '4 FÉVR. 2026' : 'FEB 4 2026'],
+        [fr ? 'Conditions de vente et de billetterie' : 'Ticketing terms', fr ? '20 JANV. 2026' : 'JAN 20 2026'],
+        [fr ? 'Mentions légales' : 'Legal notice', fr ? '20 JANV. 2026' : 'JAN 20 2026']
+      ].map(([label, date]) => ({ label, date })),
+      helpFromMenu: () => this.setState({ accMenuOpen: false, page: 'help', pick: null }),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.accPrivacy  t.helpCta  t.privConsents  t.privCookies  t.privDocs  t.privDpo  
+    t.privDpoHint  t.privLocked  t.privOff  t.privOn  t.privRead  t.privRetention  
+    t.privRetentionText  t.privRights  t.privRun  t.privUpdated  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    accTab  consents  cookies  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

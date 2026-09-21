@@ -1,0 +1,119 @@
+<!--
+  ÉCRAN      Annuaire des artistes
+  ROUTE      page === 'artists'
+  AFFICHE    L'annuaire : filtre par discipline, tri alphabétique ou par abonnés, deux sections (en direct, pas en direct).
+  MÈNE VERS  artist · live
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 1471-1525
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — listArtists
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : artistsList, catalogue, colsOf, colsTiles, colsWideN, disciplineKeys, followLive, followOffline, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, t, tileCols
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ isArtists }}" hint-placeholder-val="{{ false }}">
+<section style="max-width: 1440px; margin: 0 auto; padding: 40px 40px 0; animation: riseIn .4s ease both;">
+  <div style="display: flex; align-items: flex-end; gap: 18px;">
+    <div>
+      <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 52px; line-height: 1;">{{ t.artistsTitle }}</h1>
+      <div style="padding-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: #857E73;">{{ artistsCountLabel }}</div>
+    </div>
+    <div style="margin-left: auto; display: flex; gap: 6px;">
+      <sc-for list="{{ artistSorts }}" as="so" hint-placeholder-count="2">
+        <span onClick="{{ so.pick }}" style="{{ so.style }}">{{ so.label }}</span>
+      </sc-for>
+    </div>
+  </div>
+  <div style="margin-top: 24px; display: flex; flex-wrap: wrap; gap: 8px;">
+    <sc-for list="{{ artistFilters }}" as="af" hint-placeholder-count="6">
+      <span onClick="{{ af.pick }}" style="{{ af.style }}">{{ af.label }}</span>
+    </sc-for>
+  </div>
+  <sc-if value="{{ noArtistsInDiscipline }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top: 24px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 40px 32px; text-align: center;">
+      <div style="font-family: 'Instrument Serif', serif; font-size: 24px;">{{ t.emptyArtists }}</div>
+    </div>
+  </sc-if>
+  <div style="margin-top: 24px; display: grid; grid-template-columns: {{ colsTiles }}; gap: 16px;">
+    <sc-for list="{{ artistsList }}" as="a" hint-placeholder-count="9">
+      <div style="border: 1px solid #1F1C19; background: #100F0D; transition: border-color .24s ease;" style-hover="border-color:#4A423A">
+        <div onClick="{{ a.open }}" style="cursor: pointer; position: relative; aspect-ratio: 16/9; overflow: hidden; background: #17140F;">
+          <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.68) brightness(0.66); transition: transform .8s cubic-bezier(.2,.7,.2,1); background-color: #1A1815; background-image: {{ a.showImgCss }}; background-size: cover; background-position: center;"></div>
+          <div onClick="{{ a.openLiveRow }}" title="{{ a.liveTitle }}" style="position: absolute; left: 12px; top: 12px; display: flex; align-items: center; gap: 7px; background: rgba(11,10,9,0.78); padding: 4px 8px; cursor: {{ a.statusCursor }}; transition: background .24s ease;" style-hover="background:rgba(11,10,9,0.95)">
+            <sc-if value="{{ a.isLive }}" hint-placeholder-val="{{ false }}">
+              <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+            </sc-if>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ a.statusColor }};">{{ a.statusLabel }}</span>
+          </div>
+        </div>
+        <div style="padding: 15px;">
+          <div style="display: flex; align-items: center; gap: 11px;">
+            <div style="flex: 0 0 38px; width: 38px; height: 38px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815; border: 1px solid #2E2A24;">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.82); background-color: #1A1815; background-image: {{ a.portraitCss }}; background-size: cover; background-position: center;"></div>
+            </div>
+            <div style="min-width: 0;">
+              <div onClick="{{ a.open }}" style="cursor: pointer; font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ a.name }}</div>
+              <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73;">{{ a.discipline }} · {{ a.followers }} {{ t.followersShort }}</div>
+            </div>
+          </div>
+          <div style="margin-top: 13px; border-top: 1px solid #1F1C19; padding-top: 13px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #8B857C;">{{ a.metaLine }}</span>
+            <span onClick="{{ a.toggleFollow }}" style="{{ a.followStyle }}">{{ a.followLabel }}</span>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</section>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* artistFilters  —  lignes 5232-5236 */
+    const artistFilters = disciplineKeys.map((label, i) => ({
+      label,
+      pick: () => this.setState(st => ({ artistFilter: st.artistFilter === i ? -1 : i })),
+      style: CHIP + (s.artistFilter === i ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;')
+    }));
+/* artistSorts  —  lignes 5237-5243 */
+    const artistSorts = [['az', t.sortAZ], ['pop', t.sortFollowers]].map(([key, label]) => ({
+      label,
+      pick: () => this.setState({ artistSort: key }),
+      style: CHIP + (s.artistSort === key ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;')
+    }));
+
+    /* ---------- catalogue de recherche ---------- */
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      noArtistsInDiscipline: artistsList.length === 0,
+      colsTiles: colsOf(tileCols), colsWide: colsOf(colsWideN),
+      rowGrid5, rowGrid5b, rowGrid4, rowGrid4b, rowGridLive, rowThumb, rowStack,
+      isArtists: s.page === 'artists', isFollowing: s.page === 'following' && !s.guest,
+      artistsCountLabel: roster.length + ' · ' + t.artistsSub,
+      followLive, followOffline,
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.artistsSub  t.artistsTitle  t.emptyArtists  t.followersShort  t.sortAZ  t.sortFollowers  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    artistFilter  artistSort  guest  page  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

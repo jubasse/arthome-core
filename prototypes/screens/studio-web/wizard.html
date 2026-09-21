@@ -1,0 +1,202 @@
+<!--
+==============================================================================
+  ÉCRAN — wizard — création d'une date
+==============================================================================
+
+  Ce qu'il affiche : quatre décisions (titre, jour, heure, jauge) plus la politique de rediffusion, puis un brouillon ; tout le reste se complète sur la fiche
+
+  Rôles qui l'ouvrent : artist · production
+  Mène vers : event
+
+  Source : mockups/Studio.dc.html
+    balisage        lignes 2132–2207
+    modèle de vue   lignes 3433–3433, 3984–3984, 5345–5428, 6267–6267
+
+  Clés de copie employées :
+    aucune clé i18n directe
+
+  Contrat :
+    besoins   needs/studio-web.md § « Les autres irréversibilités »
+    openapi   openapi/studio.yaml · createDateDraft
+    openapi   openapi/studio.yaml · setDateReplayPolicy
+
+  Relevé d'extraction (défauts vus, non corrigés) :
+    · la politique de rediffusion y est nommée included/sub/unit/off ; shared/helpers.js et le contrat disent included/subscription/unit/none — helpers.stateOf teste littéralement `policy !== 'none'`.
+    · « brouillon enregistré » s'affiche avant tout aller-retour : d'où l'exigence d'un identifiant généré dans le domaine.
+
+  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+-->
+
+<!-- ======================= BALISAGE ======================= -->
+<!-- ···· balisage · Studio.dc.html lignes 2132–2207 ···· -->
+    <sc-if value="{{ isWizard }}" hint-placeholder-val="{{ false }}">
+    <div style="animation: fadeIn .2s ease both;">
+      <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 14px 22px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap;">
+        <div style="min-width: 0;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">NOUVELLE DATE · {{ chan.name }}</div>
+          <div style="padding-top: 7px; font-size: 20px; font-weight: 600; letter-spacing: -0.01em;">{{ wzHeading }}</div>
+        </div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: {{ wzSavedColor }};">{{ wzSaved }}</span>
+          <span onClick="{{ goEvents }}" style="cursor: pointer; padding: 9px 14px; border: 1px solid #2A2F35; font-size: 12.5px; color: #98A0A8; transition: background .18s ease;" style-hover="background:#1A1D21">Quitter</span>
+        </div>
+      </div>
+
+      <div style="padding: 20px 22px 40px; max-width: 720px;">
+
+        <div style="border: 1px solid #23272C; background: #15171A; padding: 16px; display: flex; flex-direction: column; gap: 16px; animation: riseIn .18s ease both;">
+          <div style="font-size: 12.5px; line-height: 1.6; color: #98A0A8; text-wrap: pretty;">{{ wzIntro }}</div>
+
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">TITRE DU SPECTACLE</div>
+            <input value="{{ wzName }}" onChange="{{ onWzName }}" placeholder="{{ wzNamePlaceholder }}" style="margin-top: 7px; width: 100%; padding: 11px 12px; border: 1px solid #2A2F35; background: #0E0F10; font-size: 14px; color: #E6E9EC; outline: none;" />
+          </div>
+
+          <div style="display: grid; grid-template-columns: {{ wzThreeCols }}; gap: 12px;">
+            <div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">DATE</div>
+              <input value="{{ wzDate }}" onChange="{{ onWzDate }}" placeholder="05/09/2026" style="margin-top: 7px; width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid #2A2F35; background: #0E0F10; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #E6E9EC; outline: none;" />
+            </div>
+            <div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">HEURE</div>
+              <input value="{{ wzTime }}" onChange="{{ onWzTime }}" placeholder="20:30" style="margin-top: 7px; width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid #2A2F35; background: #0E0F10; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #E6E9EC; outline: none;" />
+            </div>
+            <div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">PLACES</div>
+              <input value="{{ wzCap }}" onChange="{{ onWzCap }}" placeholder="2000" style="margin-top: 7px; width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid #2A2F35; background: #0E0F10; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #E6E9EC; outline: none;" />
+            </div>
+          </div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.07em; line-height: 1.6; color: #5B636B;">{{ wzCapHint }}</div>
+
+          <div style="border-top: 1px solid #1D2126; padding-top: 15px;">
+            <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: oklch(0.78 0.13 75);">REDIFFUSION · DÉCISION SANS RETOUR</span>
+            </div>
+            <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.6; color: #98A0A8; text-wrap: pretty;">{{ wzReplayWhy }}</div>
+            <div style="padding-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+              <sc-for list="{{ wzReplayOptions }}" as="rp" hint-placeholder-count="4">
+                <div onClick="{{ rp.pick }}" style="{{ rp.style }}" style-hover="border-color:#3A4149">
+                  <div style="min-width: 0; flex: 1 1 200px;">
+                    <div style="font-size: 13.5px; color: #E6E9EC;">{{ rp.label }}</div>
+                    <div style="padding-top: 5px; font-size: 12px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">{{ rp.hint }}</div>
+                  </div>
+                  <span style="{{ rp.tagStyle }}">{{ rp.tag }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; border: 1px solid #23272C; background: #121417; padding: 14px 16px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">CE QUI RESTE À FAIRE SUR LA FICHE</div>
+          <div style="padding-top: 11px; display: flex; gap: 16px; flex-wrap: wrap;">
+            <sc-for list="{{ wzLater }}" as="wl" hint-placeholder-count="5">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #7C858D;">○ {{ wl.label }}</span>
+            </sc-for>
+          </div>
+          <div style="padding-top: 11px; font-size: 12.5px; line-height: 1.55; color: #7C858D; text-wrap: pretty;">{{ wzLaterHint }}</div>
+        </div>
+
+        <div style="margin-top: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="min-width: 0; flex: 1 1 200px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: {{ wzGateColor }};">{{ wzGate }}</span>
+          <span onClick="{{ wzCreate }}" style="{{ wzNextStyle }}">{{ wzNextLabel }}</span>
+        </div>
+
+      </div>
+    </div>
+    </sc-if>
+
+<!-- ===================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+<!-- ···· modèle de vue · Studio.dc.html lignes 3433–3433 ···· -->
+        chan: i, chanOpen: false,
+<!-- ···· modèle de vue · Studio.dc.html lignes 3984–3984 ···· -->
+      wzNamePlaceholder: (evDefs[0] || [])[2] || '',
+<!-- ···· modèle de vue · Studio.dc.html lignes 5345–5428 ···· -->
+        const cap = parseInt(String(s.wzCap === undefined ? '' : s.wzCap).replace(/[^0-9]/g, ''), 10) || 0;
+        const name = (s.wzName === undefined ? '' : s.wzName).trim();
+        const date = (s.wzDate === undefined ? '' : s.wzDate).trim();
+        const time = (s.wzTime === undefined ? '' : s.wzTime).trim();
+        const replay = s.wzReplay || null;
+        const big = cap >= 10000;
+        const ready = !!name && !!date && !!time && cap > 0 && !!replay;
+
+        const replayDefs = [
+          ['included', 'Incluse avec la place', 'Aucun revenu supplémentaire, mais l\u2019argument de vente le plus fort : personne ne rate la date.', 'Comprise'],
+          ['sub', 'Incluse dans l\u2019abonnement', 'Ouverte aux abonnés Arthome, rémunérée au prorata du temps vu.', 'Abonnement'],
+          ['unit', 'Payante à l\u2019unité', 'Moins chère que le direct, achetable sans avoir vu la représentation.', '8 €'],
+          ['off', 'Aucune rediffusion', 'La date n\u2019existe qu\u2019en direct. Impossible à activer ensuite pour cette date.', '—']
+        ];
+
+        return {
+          isWizard: page === 'wizard',
+          wzHeading: name || 'Sans titre',
+          wzSaved: 'BROUILLON ENREGISTRÉ',
+          wzSavedColor: OK,
+          wzThreeCols: vw < 620 ? 'minmax(0,1fr)' : 'repeat(3, minmax(0,1fr))',
+          wzIntro: 'Quatre décisions suffisent à créer la date. Tout le reste — affiche, description, tarifs, régime de tchat, boutique — se complète ensuite sur la fiche, qui indique ce qui manque avant publication.',
+
+          wzName: s.wzName === undefined ? '' : s.wzName,
+          onWzName: e => this.setState({ wzName: e.target.value }),
+          wzDate: s.wzDate === undefined ? '' : s.wzDate,
+          onWzDate: e => this.setState({ wzDate: e.target.value }),
+          wzTime: s.wzTime === undefined ? '' : s.wzTime,
+          onWzTime: e => this.setState({ wzTime: e.target.value }),
+          wzCap: s.wzCap === undefined ? '' : s.wzCap,
+          onWzCap: e => this.setState({ wzCap: e.target.value }),
+          wzCapHint: cap === 0
+            ? 'LA JAUGE DIMENSIONNE L\u2019INFRASTRUCTURE : ELLE PEUT ÊTRE ÉLARGIE PAR PALIERS, JAMAIS RÉDUITE APRÈS LA MISE EN VENTE'
+            : (big
+                ? 'AU-DELÀ DE 10 000 PLACES, L\u2019INFRASTRUCTURE EST PROVISIONNÉE À L\u2019AVANCE : UN PRÉVISIONNEL TRÈS AU-DESSUS DU RÉEL ENTRAÎNE UN MALUS'
+                : cap.toLocaleString('fr-FR') + ' PLACES · ÉLARGISSABLE PAR PALIERS APRÈS LA MISE EN VENTE'),
+
+          wzReplayWhy: 'À trancher maintenant, car le tarif public en dépend : une place qui donne droit à la rediffusion ne se vend pas au même prix. Une fois la rediffusion vendue, elle ne se désactive plus.',
+          wzReplayOptions: replayDefs.map(([k, label, hint, tag]) => {
+            const on = replay === k;
+            return {
+              label, hint, tag,
+              pick: () => this.setState({ wzReplay: k }),
+              style: 'cursor: pointer; padding: 12px 13px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid '
+                + (on ? '#4A535C' : '#23272C') + '; background: ' + (on ? '#1A1D21' : '#121417') + '; transition: border-color .18s ease, background .18s ease;',
+              tagStyle: MONO + 'flex: 0 0 auto; font-size: 9px; letter-spacing: 0.09em; padding: 3px 8px; white-space: nowrap; border: 1px solid '
+                + (on ? '#4A535C' : '#2A2F35') + '; color: ' + (on ? '#E6E9EC' : '#7C858D') + ';'
+            };
+          }),
+
+          wzLater: ['Affiche', 'Description', 'Catégorie et sous-genre', 'Tarifs', 'Régime de tchat', 'Boutique', 'Tests techniques']
+            .map(label => ({ label })),
+          wzLaterHint: 'La date naît en brouillon : rien n\'est visible du public, aucune place n\'est en vente. La publication reste bloquée tant que l\'essentiel manque.',
+
+          wzGate: ready
+            ? 'TOUT EST RENSEIGNÉ · LA DATE SERA CRÉÉE EN BROUILLON'
+            : [!name && 'titre', (!date || !time) && 'date et heure', cap === 0 && 'places', !replay && 'rediffusion']
+                .filter(Boolean).join(' · ').toUpperCase() + ' À RENSEIGNER',
+          wzGateColor: ready ? OK : WARN,
+          wzNextLabel: 'Créer le brouillon',
+          wzNextStyle: 'cursor: ' + (ready ? 'pointer' : 'not-allowed') + '; flex: 0 0 auto; padding: 12px 20px; white-space: nowrap; font-size: 13px; font-weight: 600; '
+            + (ready ? 'background: #E6E9EC; color: #0E0F10;' : 'border: 1px solid #23272C; color: #4A535C;'),
+          wzCreate: () => {
+            if (!ready) return;
+            const MOIS = ['janv.', 'févr.', 'mars', 'avril', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+            const JOURS = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+            const [dd, mm, yy] = date.split(/[\/\-.]/).map(x => parseInt(x, 10));
+            const dt = new Date(yy || 2026, (mm || 1) - 1, dd || 1);
+            const when = (isNaN(dt.getTime()) ? date : JOURS[dt.getDay()] + ' ' + dt.getDate() + ' ' + MOIS[dt.getMonth()]);
+            const REPLAY_META = { included: 'REDIFFUSION COMPRISE', sub: 'REDIFFUSION PAR ABONNEMENT', unit: 'REDIFFUSION À L\'UNITÉ', off: 'AUCUNE REDIFFUSION' };
+            const row = [when, time, name, 'draft', 0, cap, 0, false,
+              'BROUILLON · ' + REPLAY_META[replay] + ' · AFFICHE ET DESCRIPTION MANQUANTES', '—', false, false];
+            this.setState(st => {
+              const list = (st.evNew || []).concat([row]);
+              return {
+                evNew: list,
+                page: 'event',
+                evSel: evDefs.length,
+                evTab: null, evPage: 0,
+                wzName: '', wzDate: '', wzTime: '', wzCap: '', wzReplay: null
+              };
+            });
+          }
+        };
+<!-- ···· modèle de vue · Studio.dc.html lignes 6267–6267 ···· -->
+      goEvents: () => this.setState({ page: 'events' }),
+</script>

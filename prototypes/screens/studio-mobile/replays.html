@@ -1,0 +1,60 @@
+<!--
+  ÉCRAN        replays
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Les rediffusions en ligne, leur politique, leur fenêtre et leur chapitrage.
+  RÔLES        artist · prod · regie
+  MÈNE VERS    aucun (écran terminal)
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBand L475-485 · hasNote L555-557 · hasBlocks L731-791
+               modèle    L2998-3022
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - needs §Confrontation C12 (pas de catalogue au niveau chaîne)
+               - openapi PUT /v1/dates/{dateId}/replay-window
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBand        L475-485
+    hasNote        L555-557
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_replays(c) {
+    const R = this.replaysOf(c);
+    return {
+      pageTitle: 'Rediffusions en ligne',
+      band: this.stats([
+        ['EN LIGNE', String(R.online.length), 'catalogues actifs'],
+        ['VUES', c.num(R.views), 'lectures uniques'],
+        ['EXPIRE BIENTÔT', String(R.expiring.length), R.expiring.length ? R.expiring[0].title + ' · dans ' + R.expiring[0].hours + ' h' : 'aucune fenêtre proche', R.expiring.length ? WARN : OK],
+        [c.canRevenue ? 'RECETTE' : 'ACCÈS VENDUS', c.canRevenue ? c.eur(R.revenue) : c.num(R.views), 'sur la période']
+      ]),
+      note: 'La politique d’accès se décide à la création de la date. Dès la première vente, elle ne se désactive plus : des gens ont payé pour cette rediffusion.',
+      blocks: [
+        this.block('CATALOGUE', 'POLITIQUE · EXPIRATION · VUES', {
+          rows: this.rows(R.rows.length ? R.rows : [
+            { label: 'Aucune rediffusion', hint: 'la fenêtre s’ouvre au salut, une fois la date terminée', value: '—', valueColor: '#4A535C' }
+          ])
+        }),
+        R.chapters.length ? this.block('CHAPITRAGE', R.chapterOf.toUpperCase(), {
+          intro: 'Les repères posés en régie restent attachés à la rediffusion.',
+          rows: this.rows(R.chapters)
+        }) : null
+      ]
+    };
+  }
+
+</script>

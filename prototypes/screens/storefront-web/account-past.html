@@ -1,0 +1,102 @@
+<!--
+  ÉCRAN      Compte — Événements passés
+  ROUTE      page === 'account', accTab === 'past'
+  AFFICHE    L'historique et l'état des rediffusions associées.
+  MÈNE VERS  account
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2417-2447
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — listMyTickets, listMyReplays
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, artist, availW, fr, ownedPast
+  À LIRE     dépendances non recopiées ici : REPLAY
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <sc-if value="{{ accPast }}" hint-placeholder-val="{{ false }}">
+      <div style="animation: fadeIn .3s ease both;">
+        <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px;">
+          <h2 style="{{ accH2 }} margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.accPast }}</h2>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ t.accPast2 }}</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+          <sc-for list="{{ pastEvents }}" as="p" hint-placeholder-count="5">
+            <div style="background: #0F0E0C; padding: 14px 16px; display: grid; {{ rowGrid5b }} align-items: center; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="background:#161310">
+              <div style="{{ rowThumb }} position: relative; aspect-ratio: 16/10; overflow: hidden; background: #17140F;">
+                <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.55) brightness(0.64); background-color: #1A1815; background-image: {{ p.imgCss }}; background-size: cover; background-position: center;"></div>
+              </div>
+              <div style="min-width: 0;">
+                <div onClick="{{ p.action }}" style="cursor: pointer; font-size: 15px; transition: color .2s ease;" style-hover="color:oklch(0.8 0.13 42)">{{ p.title }}</div>
+                <div style="padding-top: 4px; font-size: 12.5px; color: #9B948A;">
+                  <span onClick="{{ p.openArtist }}" style="cursor: pointer; border-bottom: 1px solid #262320; transition: color .2s ease, border-color .2s ease;" style-hover="color:#EDE7DC;border-color:#4A423A">{{ p.artist }}</span>
+                </div>
+              </div>
+              <div style="{{ rowStack }} font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #857E73;">{{ p.date }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: {{ p.replayColor }};">{{ p.replay }}</div>
+              <span onClick="{{ p.action }}" style="cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="background:#221F1B">{{ p.cta }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top: 16px; display: flex; gap: 12px; align-items: center;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6B6459;">{{ t.invoiceNote }}</span>
+          <span style="margin-left: auto; cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #1F1C19; font-size: 12.5px; color: #C9C0B2; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ t.exportInvoices }}</span>
+        </div>
+      </div>
+      </sc-if>
+
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* accStack  —  lignes 5747-5747 */
+    const accStack = availW < 760;
+/* pastEvents  —  lignes 5768-5791 */
+    const pastEvents = ownedPast.map(d => {
+        const show = A.show(d.show), art = A.artist(show.artist);
+        const online = A.stateOf(d) === 'replay';
+        const left = online ? A.replayHoursLeft(d) : 0;
+        return [A.title(show), art ? art.name : '', A.showImage(show, 900),
+          A.longDate(d.startOffsetMin).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+          online ? (left ? (fr ? 'REDIFF. ' : 'REPLAY ') + left + ' H' : (fr ? 'REDIFFUSION' : 'REPLAY'))
+                 : (fr ? 'EXPIRÉE' : 'EXPIRED'),
+          online,
+          online ? (fr ? 'Revoir' : 'Watch again') : (fr ? 'Voir la fiche' : 'See details')];
+      })
+      .map(([title, artist, img, date, replay, live, cta]) => {
+      const ai = artistIndexFor(artist);
+      return {
+        title, artist, img, imgCss: this.cssUrl(img), date, replay, cta,
+        replayColor: live ? 'oklch(0.74 0.15 42)' : '#6B6459',
+        openArtist: () => this.setState({ page: 'artist', artistId: ai }),
+        action: live
+          ? (() => this.setState({ page: 'replay', artistId: ai, replayTitle: title, replayImg: img, replayDuration: '1 h 42', pos: 0, watching: ai, watchKind: 'replay', pipClosed: false }))
+          : (() => this.setState({ page: 'artist', artistId: ai }))
+      };
+    });
+
+    /* Vos artistes suivis, avec leur prochaine date. */
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      accH2: accStack ? 'display: none;' : '',
+      pastEvents: pastEvents,
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.accPast  t.accPast2  t.exportInvoices  t.invoiceNote  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    cssUrl, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

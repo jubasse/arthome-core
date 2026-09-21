@@ -1,0 +1,310 @@
+<!--
+  Arthome · storefront mobile — browse-lives
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : browse · sTab=lives
+  Affiche    : Onglet Directs : les dates en direct et à venir, groupées par spectacle, paginées par pas.
+  Mène vers  : live, artist, sheet-ticket
+  Contrat    : GET /v1/search?tab=lives
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L444–504
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L444–504
+     ══════════════════════════════════════════════════════════════════════════ -->
+  <sc-if value="{{ showLives }}" hint-placeholder-val="{{ false }}">
+    <sc-if value="{{ noLivesTab }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 22px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 30px 20px; text-align: center;">
+        <div style="font-family: 'Instrument Serif', serif; font-size: 21px;">{{ t.emptyResults }}</div>
+        <div style="padding-top: 9px; font-size: 13px; color: #857E73;">{{ t.emptyResultsHint }}</div>
+      </div>
+    </sc-if>
+    <div style="margin-top: 18px; display: flex; flex-direction: column; gap: 10px;">
+      <sc-for list="{{ livesAll }}" as="ev" hint-placeholder-count="6">
+        <div style="border: 1px solid #1F1C19; background: #100F0D;">
+          <div style="padding: 12px; display: flex; gap: 12px;">
+            <div onClick="{{ ev.open }}" style="cursor: pointer; flex: 0 0 96px; position: relative; aspect-ratio: 16/11; overflow: hidden; background: #17140F;">
+              <sc-if value="{{ ev.img }}" hint-placeholder-val="{{ false }}">
+                <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.7); background-color: #17140F; background-image: {{ ev.imgCss }}; background-size: cover; background-position: center;"></div>
+              </sc-if>
+            </div>
+            <div style="min-width: 0; flex: 1 1 auto;">
+              <div onClick="{{ ev.open }}" style="cursor: pointer; font-size: 14px; font-weight: 500;"><span>{{ ev.tHit.pre }}</span><span style="background: rgba(214,178,102,0.2); color: oklch(0.9 0.07 84);">{{ ev.tHit.hit }}</span><span>{{ ev.tHit.post }}</span></div>
+              <div onClick="{{ ev.openArtist }}" style="cursor: pointer; padding-top: 4px; font-size: 12.5px; color: #9B948A;">{{ ev.artist }} · {{ ev.catName }}</div>
+              <div style="padding-top: 7px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap;">
+                <sc-if value="{{ ev.isLiveRow }}" hint-placeholder-val="{{ false }}">
+                  <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+                </sc-if>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ ev.statusColor }};">{{ ev.statusLabel }}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #6B6459;">{{ ev.whenLabel }}</span>
+              </div>
+              <div style="padding-top: 9px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span onClick="{{ ev.buy }}" style="{{ ev.buyStyle }}">{{ ev.priceLabel }}</span>
+                <sc-if value="{{ ev.hasExtra }}" hint-placeholder-val="{{ false }}">
+                  <span onClick="{{ ev.toggleGroup }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #EDE7DC;">{{ ev.extraLabel }}</span>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+          <sc-for list="{{ ev.extra }}" as="ex" hint-placeholder-count="0">
+            <div style="border-top: 1px solid #16140F; background: #0C0B0A; padding: 11px 13px; display: flex; align-items: center; gap: 10px;">
+              <div onClick="{{ ex.open }}" style="cursor: pointer; min-width: 0; font-size: 13px; color: #C9C0B2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ex.title }}</div>
+              <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ ex.whenLabel }}</span>
+              <span onClick="{{ ex.buy }}" style="flex: 0 0 auto; cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #2A2621; font-size: 12px; color: #C9C0B2;">{{ ex.priceLabel }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ moreLives }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 14px; display: flex; justify-content: center;">
+        <span onClick="{{ loadMoreLives }}" style="cursor: pointer; padding: 13px 22px; border: 1px solid #332E28; font-size: 13px; color: #C9C0B2;">{{ moreLivesLabel }}</span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ loadingLives }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 10px; border: 1px solid #1F1C19; background: #100F0D; padding: 12px; display: flex; gap: 12px; animation: skel 1.2s ease-in-out infinite;">
+        <div style="flex: 0 0 96px; aspect-ratio: 16/11; background: #17140F;"></div>
+        <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px; padding-top: 3px;">
+          <div style="height: 13px; width: 68%; background: #1C1A17;"></div>
+          <div style="height: 11px; width: 44%; background: #17140F;"></div>
+          <div style="margin-top: 4px; height: 30px; width: 84px; background: #17140F;"></div>
+        </div>
+      </div>
+    </sc-if>
+  </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (19 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── groupByArtist  —  méthode de classe  —  L4056–4089 ── */
+  groupByArtist(list, fr) {
+    const baseOf = (title) => String(title || '').split(' — ')[0].trim();
+    const order = [];
+    const by = {};
+    list.forEach(o => {
+      const key = o.artistIdx + '§' + baseOf(o.title);
+      if (by[key] === undefined) { by[key] = []; order.push(key); }
+      by[key].push(o);
+    });
+    const open = this.state.groupOpen || {};
+    const out = [];
+    order.forEach(ai => {
+      const group = by[ai].slice().sort((a, b) => a.day - b.day);
+      if (group.length < 2) { out.push(Object.assign({}, group[0], { isGroup: false, extra: [], hasExtra: false })); return; }
+      const isOpen = !!open[ai];
+      out.push(Object.assign({}, group[0], {
+        promoTitle: group[0].title,
+        title: baseOf(group[0].title),
+        tHit: this.splitHit(baseOf(group[0].title), (this.state.liveQuery || '').trim()),
+        isGroup: true,
+        hasExtra: true,
+        extra: isOpen ? group.slice(1) : [],
+        extraLabel: isOpen
+          ? (fr ? 'Replier les dates ▴' : 'Collapse dates ▴')
+          : (fr ? 'Voir plus de dates (' + (group.length - 1) + ') ▾' : 'More dates (' + (group.length - 1) + ') ▾'),
+        datesLabel: group.length + ' ' + (fr ? 'DATES' : 'DATES'),
+        toggleGroup: (e) => {
+          if (e && e.stopPropagation) e.stopPropagation();
+          this.setState(st => ({ groupOpen: Object.assign({}, st.groupOpen, { [ai]: !((st.groupOpen || {})[ai]) }) }));
+        }
+      }));
+    });
+    return out;
+  }
+
+/* ── paged  —  méthode de classe  —  L4091–4113 ── */
+  paged(key, list, step, fr) {
+    const n = (this.state.shown || {})[key] || step;
+    const rest = Math.max(0, list.length - n);
+    const busy = (this.state.loading || {})[key] === true;
+    const start = () => {
+      if ((this.state.loading || {})[key]) return;
+      this.setState(st => ({ loading: Object.assign({}, st.loading, { [key]: true }) }));
+      clearTimeout(this['_pgT_' + key]);
+      this['_pgT_' + key] = setTimeout(() => {
+        this.setState(st => ({
+          shown: Object.assign({}, st.shown, { [key]: ((st.shown || {})[key] || step) + step }),
+          loading: Object.assign({}, st.loading, { [key]: false })
+        }));
+      }, 1000);
+    };
+    return {
+      items: list.slice(0, n),
+      hasMore: rest > 0 && !busy,
+      loading: busy,
+      moreLabel: (fr ? 'Voir plus' : 'Show more') + ' · ' + rest + (fr ? ' restants' : ' left'),
+      loadMore: start
+    };
+  }
+
+/* ── priceDefs  —  calcul dans renderReady()  —  L5338–5338 ── */
+    const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
+
+/* ── dateOk  —  calcul dans renderReady()  —  L5340–5346 ── */
+    const dateOk = (d) => {
+      if (s.fDate === 'all' || s.fDate === 'range') return true;
+      if (s.fDate === 'tonight') return d === 0;
+      if (s.fDate === 'weekend') return d >= 0 && d <= 3;
+      if (s.fDate === 'd7') return d >= 0 && d <= 7;
+      return d >= 0 && d <= 30;
+    };
+
+/* ── passFilters  —  calcul dans renderReady()  —  L5348–5363 ── */
+    const passFilters = (o) => {
+      if (!hit(o)) return false;
+      if (s.fCats.length && s.fCats.indexOf(o.cat) < 0) return false;
+      if (s.fCats.length === 1 && (s.fSubs || []).length && !s.fSubs.some(i => o.subs.indexOf(i) > -1)) return false;
+      if (s.fPrices.length && !s.fPrices.some(k => (priceDefs.find(p => p[0] === k) || [])[2](o.price))) return false;
+      if (s.fStatus !== 'all') {
+        if (s.fStatus === 'live' && o.kind !== 'live') return false;
+        if (s.fStatus === 'soon' && o.kind !== 'upcoming') return false;
+        if (s.fStatus === 'replay' && o.kind !== 'replay') return false;
+      }
+      if (o.kind !== 'replay' && !dateOk(o.day)) return false;
+      if (s.fPromo && !o.hasPromo) return false;
+      if (s.fAlmost && o.kind !== 'replay' && o.soldPct < 80) return false;
+      if (o.kind === 'replay' && s.fExpiring && o.expiresH > 90) return false;
+      return true;
+    };
+
+/* ── sortKey  —  calcul dans renderReady()  —  L5364–5364 ── */
+    const sortKey = s.sort === 'auto' ? (qq ? 'rel' : 'soon') : s.sort;
+
+/* ── sortFn  —  calcul dans renderReady()  —  L5365–5372 ── */
+    const sortFn = (a, b) => {
+      if (sortKey === 'soon') return (a.day < 0 ? 999 : a.day) - (b.day < 0 ? 999 : b.day);
+      if (sortKey === 'pop') return (b.viewers || roster[b.artistIdx].followers.replace(/\D/g, '') / 100) - (a.viewers || roster[a.artistIdx].followers.replace(/\D/g, '') / 100);
+      if (sortKey === 'priceUp') return a.price - b.price;
+      if (sortKey === 'priceDown') return b.price - a.price;
+      const score = o => (o.kind === 'live' ? -100 : 0) + (qq && o.title.toLowerCase().indexOf(qq) === 0 ? -50 : 0) + (qq && o.artist.toLowerCase().indexOf(qq) > -1 ? -20 : 0) + o.idx;
+      return score(a) - score(b);
+    };
+
+/* ── livesAll  —  calcul dans renderReady()  —  L5373–5373 ── */
+    const livesAll = catalogue.filter(o => o.kind !== 'replay' && passFilters(o)).sort(sortFn);
+
+/* ── replaysAll  —  calcul dans renderReady()  —  L5374–5374 ── */
+    const replaysAll = catalogue.filter(o => o.kind === 'replay' && passFilters(o)).sort(sortFn);
+
+/* ── artistsAll  —  calcul dans renderReady()  —  L5375–5396 ── */
+    const artistsAll = roster.filter(a => {
+      if (qq && (a.name + ' ' + a.discipline + ' ' + a.showTitle).toLowerCase().indexOf(qq) < 0) return false;
+      if (s.fCats.length && !catalogue.some(o => o.artistIdx === a.i && s.fCats.indexOf(o.cat) > -1)) return false;
+      if (s.fStatus === 'live' && !a.isLive) return false;
+      if (s.fHasDates && !catalogue.some(o => o.artistIdx === a.i && o.kind === 'upcoming')) return false;
+      return true;
+    }).map(a => {
+      const dates = catalogue.filter(o => o.artistIdx === a.i && o.kind === 'upcoming').sort((x, y) => x.day - y.day);
+      return Object.assign({}, a, {
+        dates: dates.slice(0, 1),
+        datesLabel: dates.length + ' ' + (dates.length > 1 ? t.datesToCome : t.dateToCome),
+        hasDates: dates.length > 0,
+        hasMoreDates: dates.length > 1,
+        moreDatesLabel: (fr ? 'Toutes les dates (' + dates.length + ') →' : 'All dates (' + dates.length + ') →'),
+        toggleDates: (e) => {
+          if (e && e.stopPropagation) e.stopPropagation();
+          this.setState({ page: 'artist', artistId: a.i, suggOpen: false, searchOpen: false });
+        },
+        isLiveRow: a.isLive, liveLabel2: a.isLive ? t.onNow : '',
+        openProfile2: () => this.setState({ page: 'artist', artistId: a.i })
+      });
+    });
+
+/* ── artistsHL  —  calcul dans renderReady()  —  L5398–5401 ── */
+    const artistsHL = artistsAll.map(a => Object.assign({}, a, {
+      nHit: this.splitHit(a.name, qq),
+      sHit: this.splitHit(a.showTitle, qq)
+    }));
+
+/* ── livesGrouped  —  calcul dans renderReady()  —  L5437–5437 ── */
+    const livesGrouped = this.groupByArtist(livesAll, fr);
+
+/* ── replaysGrouped  —  calcul dans renderReady()  —  L5438–5438 ── */
+    const replaysGrouped = this.groupByArtist(replaysAll, fr);
+
+/* ── pgLives  —  calcul dans renderReady()  —  L5439–5439 ── */
+    const pgLives = this.paged('lives', livesGrouped, 10, fr);
+
+/* ── pgReplays  —  calcul dans renderReady()  —  L5440–5440 ── */
+    const pgReplays = this.paged('replays', replaysGrouped, 10, fr);
+
+/* ── pgArtists  —  calcul dans renderReady()  —  L5441–5441 ── */
+    const pgArtists = this.paged('artists', artistsHL, 10, fr);
+
+/* ── livesAll  —  clé du modèle rendu  —  L5675–5675 ── */
+      livesAll: pgLives.items, replaysAll: pgReplays.items, artistsAll: pgArtists.items,
+
+/* ── moreLives  —  clé du modèle rendu  —  L5676–5676 ── */
+      moreLives: pgLives.hasMore, moreLivesLabel: pgLives.moreLabel, loadMoreLives: pgLives.loadMore, loadingLives: pgLives.loading,
+
+/* ── noLivesTab  —  clé du modèle rendu  —  L5682–5682 ── */
+      noLivesTab: s.sTab === 'lives' && livesAll.length === 0,
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (10) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2452  dateToCome: "date à venir"
+  EN L2905  dateToCome: "upcoming date"
+
+  FR L2454  datesToCome: "dates à venir"
+  EN L2907  datesToCome: "upcoming dates"
+
+  FR L2474  emptyResults: "Aucun spectacle pour cette recherche"
+  EN L2927  emptyResults: "No show for this search"
+
+  FR L2475  emptyResultsHint: "Essayez un autre mot, ou retirez les filtres actifs."
+  EN L2928  emptyResultsHint: "Try another word, or clear the active filters."
+
+  FR L2573  onNow: "EN DIRECT"
+  EN L3026  onNow: "LIVE NOW"
+
+  FR L2597  p1020: "10–20 €"
+  EN L3050  p1020: "€10–20"
+
+  FR L2598  p2035: "20–35 €"
+  EN L3051  p2035: "€20–35"
+
+  FR L2599  p35: "> 35 €"
+  EN L3052  p35: "> €35"
+
+  FR L2600  pFree: "GRATUIT"
+  EN L3053  pFree: "FREE"
+
+  FR L2601  pU10: "< 10 €"
+  EN L3054  pU10: "< €10"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

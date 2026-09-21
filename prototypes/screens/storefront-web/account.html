@@ -1,0 +1,152 @@
+<!--
+  ÉCRAN      Compte — cadre et navigation
+  ROUTE      page === 'account'
+  AFFICHE    Le cadre du compte : identité, chiffres, navigation vers les onze sections, et la disposition en colonne ou empilée.
+  MÈNE VERS  les onze sections `account-*`
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2344-2380 · 2908-2924
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Les onze sections ont chacune leur propre balisage, donc leur propre fichier. Elles
+             partagent une seule forme de compte côté contrat (`AccountScreen`).
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — getAccountScreen
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, account, availW, favesCount, fr, pastCount, s, t, upcomingCount
+  À LIRE     dépendances non recopiées ici : navDefs, navRows
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+<section style="max-width: 1440px; margin: 0 auto; padding: 40px 40px 0; animation: riseIn .4s ease both;">
+  <div style="display: flex; align-items: flex-end; gap: 20px;">
+    <div style="width: 76px; height: 76px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815; border: 1px solid #332E24;">
+      <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.85); background-color: #1A1815; background-image: {{ artistPortraitCss }}; background-size: cover; background-position: center;"></div>
+    </div>
+    <div>
+      <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 44px; line-height: 1;">{{ accountName }}</h1>
+      <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; color: #857E73;">{{ accountMeta }}</div>
+    </div>
+    <div style="margin-left: auto; border: 1px solid #1F1C19; background: #100F0D; padding: 14px 18px; display: flex; gap: 28px;">
+      <sc-for list="{{ accountStats }}" as="st" hint-placeholder-count="3">
+        <div>
+          <div style="font-family: 'Instrument Serif', serif; font-size: 26px; line-height: 1;">{{ st.value }}</div>
+          <div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73;">{{ st.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="{{ accGrid }}">
+    <div style="{{ accNavCol }}">
+      <nav style="{{ accNavList }}">
+        <sc-for list="{{ accountNav }}" as="n" hint-placeholder-count="7">
+          <div onClick="{{ n.pick }}" style="{{ n.style }}">
+            <span>{{ n.label }}</span>
+            <span style="{{ accBadgeStyle }}">{{ n.badge }}</span>
+            <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #6B6459;">{{ n.caret }}</span>
+          </div>
+        </sc-for>
+      </nav>
+      <sc-if value="{{ accShowSignOutHere }}" hint-placeholder-val="{{ true }}">
+        <span onClick="{{ toggleSession }}" style="{{ accSignOutStyle }}" style-hover="border-color:#4A423A;color:#EDE7DC">{{ sessionLabel }}</span>
+      </sc-if>
+    </div>
+
+    <div style="{{ accContentStyle }}">
+
+    <sc-if value="{{ accHasTail }}" hint-placeholder-val="{{ false }}">
+      <nav style="display: flex; flex-direction: column;">
+        <sc-for list="{{ accountNavTail }}" as="n" hint-placeholder-count="0">
+          <div onClick="{{ n.pick }}" style="{{ n.style }}">
+            <span>{{ n.label }}</span>
+            <span style="{{ accBadgeStyle }}">{{ n.badge }}</span>
+            <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #6B6459;">{{ n.caret }}</span>
+          </div>
+        </sc-for>
+      </nav>
+    </sc-if>
+    <sc-if value="{{ accStack }}" hint-placeholder-val="{{ false }}">
+      <span onClick="{{ toggleSession }}" style="{{ accSignOutStyle }}" style-hover="border-color:#4A423A;color:#EDE7DC">{{ sessionLabel }}</span>
+    </sc-if>
+  </div>
+</section>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* accStack  —  lignes 5747-5747 */
+    const accStack = availW < 760;
+/* accActiveIdx  —  lignes 5763-5763 */
+    const accActiveIdx = navDefs.findIndex(([id]) => id === s.accTab);
+/* accNavHead  —  lignes 5764-5764 */
+    const accNavHead = (accStack && accActiveIdx >= 0) ? navRows.slice(0, accActiveIdx + 1) : navRows;
+/* accNavTail  —  lignes 5765-5767 */
+    const accNavTail = (accStack && accActiveIdx >= 0) ? navRows.slice(accActiveIdx + 1) : [];
+
+    /* Ce que vous avez déjà vu, et l'état de sa rediffusion. */
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      sessionLabel: s.guest ? t.signIn : t.signOut,
+      toggleSession: () => this.setState(st => ({ guest: !st.guest, menuOpen: false, accMenuOpen: false, page: 'home', pick: null, accTab: 'upcoming' })),
+      accountMeta: [
+        (fr ? 'MEMBRE DEPUIS ' : 'MEMBER SINCE ')
+          + (account.memberSinceOffsetMin != null
+              ? (() => {
+                  const d = A.dateAt(account.memberSinceOffsetMin);
+                  const months = fr
+                    ? ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
+                    : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                  return months[d.getMonth()] + ' ' + d.getFullYear();
+                })()
+              : (fr ? 'cette saison' : 'this season')).toUpperCase(),
+        (((account.devices || [])[0] || {}).city || '').toUpperCase() || null,
+        t.amFormule + ' ' + A.enumLabel('plan', account.plan || 'season').toUpperCase()
+      ].filter(Boolean).join(' · '),
+      accountStats: [
+        { value: String(upcomingCount), label: fr ? 'À VENIR' : 'UPCOMING' },
+        { value: String(pastCount), label: fr ? 'SPECTACLES VUS' : 'SHOWS SEEN' },
+        { value: String(favesCount), label: fr ? 'ARTISTES SUIVIS' : 'ARTISTS FOLLOWED' }
+      ],
+      accountNav: accNavHead, accountNavTail: accNavTail,
+      accStack, accHasTail: accNavTail.length > 0, accShowSignOutHere: !accStack,
+      accGrid: accStack
+        ? 'margin-top: 26px; display: flex; flex-direction: column;'
+        : 'margin-top: 32px; display: grid; grid-template-columns: 224px minmax(0,1fr); gap: 34px; align-items: start;',
+      accNavCol: accStack
+        ? 'display: flex; flex-direction: column;'
+        : 'position: sticky; top: 96px; display: flex; flex-direction: column; gap: 12px;',
+      accNavList: accStack
+        ? 'display: flex; flex-direction: column;'
+        : 'display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;',
+      accBadgeStyle: accStack
+        ? "margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; color: #857E73;"
+        : "margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;",
+      accContentStyle: accStack ? ('min-width: 0;' + (accActiveIdx >= 0 ? ' padding: 18px 0 4px;' : '')) : 'min-width: 0;',
+      accSignOutStyle: accStack
+        ? "margin-top: 22px; cursor: pointer; padding: 12px 16px; text-align: center; white-space: nowrap; border: 1px solid #262320; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73; transition: border-color .24s ease, color .24s ease;"
+        : "cursor: pointer; padding: 11px 14px; text-align: center; white-space: nowrap; border: 1px solid #262320; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73; transition: border-color .24s ease, color .24s ease;",
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.amFormule  t.signIn  t.signOut  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    accTab  guest  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

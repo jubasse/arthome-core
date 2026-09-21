@@ -1,0 +1,88 @@
+<!--
+  Arthome · storefront mobile — sheet-share
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : superposée · shareOpen
+  Affiche    : Le partage : cibles sociales et lien canonique.
+  Mène vers  : —
+  Contrat    : DateCard.canonicalUrl — ⚠ non résoluble en entrée, voir Confrontation C2
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L2122–2140
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+  Note       : ⚠ Le lien produit ici n'est résoluble par aucun point d'entrée : slug et
+               canonicalUrl sont servis en sortie, jamais acceptés en entrée.
+               Voir needs/storefront-mobile.md § Confrontation C2.
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L2122–2140
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ shareOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeShare }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
+<div style="{{ sheetBase }} background: #0B0A09; border-top: 1px solid #332E28; box-shadow: 0 -24px 60px rgba(0,0,0,0.6); animation: slideUp .26s cubic-bezier(.2,.7,.2,1) both;">
+  <div style="padding: 12px 0 6px; display: flex; justify-content: center;"><span style="width: 38px; height: 3px; background: #332E28;"></span></div>
+  <div style="padding: 6px 16px 22px;">
+    <div style="font-family: 'Instrument Serif', serif; font-size: 24px;">{{ t.shareTitle }}</div>
+    <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.5; color: #857E73; text-wrap: pretty;">{{ t.shareBlurb }}</div>
+    <div style="margin-top: 15px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px;">
+      <sc-for list="{{ shareTargets }}" as="s" hint-placeholder-count="4">
+        <span onClick="{{ s.act }}" style="cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  text-align: center; border: 1px solid #262320; font-size: 12.5px; color: #C9C0B2;">{{ s.label }}</span>
+      </sc-for>
+    </div>
+    <div style="margin-top: 14px; border: 1px solid #1F1C19; background: #0F0E0C; padding: 12px; display: flex; align-items: center; gap: 10px;">
+      <span style="min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #857E73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ shareUrl }}</span>
+      <span style="margin-left: auto; flex: 0 0 auto; cursor: pointer; padding: 10px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  background: #221F1B; font-size: 12px; color: #EDE7DC;">{{ t.copy }}</span>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (0 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* Aucun symbole propre : cet écran n'emploie que le noyau commun. */
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (3) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2442  copy: "Copier"
+  EN L2895  copy: "Copy"
+
+  FR L2701  shareBlurb: "Vos amis peuvent regarder l’aperçu gratuitement."
+  EN L3154  shareBlurb: "Friends can watch the free preview."
+
+  FR L2702  shareTitle: "Partager ce live"
+  EN L3155  shareTitle: "Share this live"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

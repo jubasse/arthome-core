@@ -1,0 +1,101 @@
+<!--
+  ÉCRAN        crew / guests
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Les accès ponctuels, qui expirent seuls au tomber du rideau.
+  RÔLES        artist · prod · coord
+  MÈNE VERS    feuilles : crewdate, invite
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBand L475-485 · hasTabs L487-495 · hasNote L555-557 · hasActions L569-575 · hasBlocks L731-791
+               modèle    L2472-2518 · L2619-2633
+  CLÉS DE COPIE
+               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
+               - table ROLES en dur (six personas — libellé, jamais un droit, E6)
+  CONTRAT
+               - needs §« Ce qui distingue cette surface » 2 (un accès ponctuel expire seul)
+               - openapi DELETE /v1/date-access-grants/{grantId}
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBand        L475-485
+    hasTabs        L487-495
+    hasNote        L555-557
+    hasActions     L569-575
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_crew(c) {
+    const s = this.state;
+    const TABS = [['members', 'AFFECTATIONS'], ['matrix', 'MATRICE'], ['guests', 'ACCÈS PONCTUELS'], ['log', 'JOURNAL']];
+    const tab = TABS.some(t => t[0] === s.crewTab) ? s.crewTab : 'members';
+    const q = (s.crewQ || '').trim().toLowerCase();
+
+    const roster = this.crewRoster(c);
+    const dates = this.crewDates(c);
+    const dsel = s.crewDate === undefined ? -1 : s.crewDate;
+    const cur = dsel >= 0 ? dates[Math.min(dsel, dates.length - 1)] : null;
+    const canAssignRegie = c.has('artist') || c.has('prod');
+    const holders = (di, rk) => this.holdersOf(c, di, rk);
+    const gapAt = di => ['regie', 'mod'].filter(rk => holders(di, rk).length === 0).length;
+
+    const filtered = roster.filter(m => !q || (m.name + ' ' + m.mail + ' ' + m.note + ' ' + m.roleKeys.map(k => ROLES[k][0]).join(' ')).toLowerCase().indexOf(q) > -1);
+    const roleF = s.crewRole && s.crewRole !== 'all' ? s.crewRole : null;
+    const shown = roleF ? filtered.filter(m => m.roleKeys.indexOf(roleF) > -1) : filtered;
+
+    /* Un accès ponctuel, c'est un indépendant affecté à une date précise :
+       la liste sort des équipes réelles, et reste vide quand il n'y en a pas. */
+    const guestsBase = this.guestsOf(c.chan.name).concat(s.guestAdd || []);
+    const guests = guestsBase.filter(g => !(s.guestGone || {})[g.name]);
+
+    const out = {
+      pageKicker: 'PLANNING · ' + c.chan.name.toUpperCase(),
+      pageTitle: cur ? cur[0][2] + ' · ' + cur[0][0].replace('.', '') : roster.length + ' personnes sur cette chaîne',
+      pageTabs: this.tabStrip([
+        ['members', 'AFFECTATIONS', String(shown.length)],
+        ['matrix', 'MATRICE'],
+        ['guests', 'ACCÈS PONCTUELS', guests.length ? String(guests.length) : ''],
+        ['log', 'JOURNAL']
+      ], tab, 'crewTab', { crewPage: 0 }),
+      band: this.stats([
+        ['MEMBRES', String(roster.length), 'toutes fonctions'],
+        ['DATES À COUVRIR', String(dates.filter(([r, i], n) => gapAt(n) > 0).length), 'un poste vacant au moins', dates.some((d, n) => gapAt(n) > 0) ? WARN : OK],
+        ['ACCÈS PONCTUELS', String(guests.length), 'expirent seuls'],
+        ['INVITATIONS', String(roster.filter(m => m.pending).length), 'en attente de réponse', roster.some(m => m.pending) ? WARN : INK3]
+      ]),
+      actions: [].concat(
+        this.act(cur ? 'DATE : ' + cur[0][0].replace('.', '').toUpperCase() + ' · ' + c.withZone(cur[0][1]) : 'TOUTES LES DATES DE LA CHAÎNE', () => this.openSheet('crewdate', { crewDates: dates.length })),
+        c.grantable.length ? [this.act('+ INVITER QUELQU’UN', () => this.openSheet('invite'), 'primary')] : []
+      ),
+      note: dates.some((d, n) => gapAt(n) > 0)
+        ? 'Rôles manquants à J-1 : ' + dates.filter((d, n) => gapAt(n) > 0).map(([r, i], n) => r[0].replace('.', '')).join(', ') + '. Une alerte partira vers la coordination.'
+        : ''
+    };
+
+
+    if (tab === 'guests') {
+      out.blocks = [this.block('ACCÈS PONCTUELS', guests.length + (guests.length > 1 ? ' ACCÈS' : ' ACCÈS'), {
+        intro: 'Un accès ponctuel expire seul au tomber du rideau. Rien à révoquer si la date est passée.',
+        rows: this.rows(guests.length ? guests.map(g => {
+          const d = c.evDefs[g.dateIdx] || [];
+          return {
+            label: g.name, hint: g.mail + ' · ' + (d[2] || 'une date') + ' · ' + (d[0] || '').replace('.', ''),
+            pill: c.T(ROLES[g.roleKey][0]), pillColor: ROLES[g.roleKey][1],
+            cta: 'RÉVOQUER MAINTENANT', tone: 'danger',
+            act: () => this.setState(st => ({ guestGone: Object.assign({}, st.guestGone, { [g.name]: 1 }) }))
+          };
+        }) : [{ label: 'Aucun accès ponctuel', hint: 'les renforts d’un soir apparaissent ici' }])
+      })];
+      return out;
+    }
+</script>

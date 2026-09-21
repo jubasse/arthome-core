@@ -1,0 +1,166 @@
+<!--
+  ÉCRAN      Accueil — variante A
+  ROUTE      page === 'home', variante 'a'
+  AFFICHE    L'accueil éditorial : bandeau visiteur, billboard du moment, et une douzaine de carrousels mêlant sélection publique et rangées personnalisées (reprendre, vos places, parce que vous suivez, bientôt complet, ce soir).
+  MÈNE VERS  live · replay · artist · category · browse · plans
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 284-302 · 303-343 · 573-575 · 729-730
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       La variante B est dans `home-variant-b.html` : même route, autre mise en page, pilotée
+             par la propriété `variant` de la maquette. Les six carrousels sont dans
+             `home-rails.html`.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — getHomeScreen, getViewerContext
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, account, artist, fr, ownsHero, roster, s, variant
+  À LIRE     dépendances non recopiées ici : heroBase, onArtistLive, watched, watchedShow, watchedViewers
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div>
+  <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width: 1440px; margin: 0 auto; padding: 18px 40px 0;">
+      <div style="border: 1px solid rgba(214,178,102,0.3); background: rgba(214,178,102,0.05); padding: 14px 18px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: oklch(0.83 0.1 84);">{{ t.guestBadge }}</span>
+        <span style="min-width: 0; font-size: 13.5px; color: #C9C0B2; text-wrap: pretty;">{{ t.guestBanner }}</span>
+        <span onClick="{{ openSignUp }}" style="margin-left: auto; flex: 0 0 auto; cursor: pointer; padding: 10px 16px; white-space: nowrap; background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600; border: 1px solid transparent; transition: background .24s ease;" style-hover="background:oklch(0.94 0.03 80)">{{ t.guestBannerCta }}</span>
+      </div>
+    </div>
+  </sc-if>
+  <div style="max-width: 1440px; margin: 0 auto; padding: 20px 40px 0; display: flex; align-items: center; gap: 12px;">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #857E73;">MISE EN PAGE</span>
+    <div style="display: flex; gap: 6px;">
+      <span onClick="{{ setVarA }}" style="{{ varAStyle }}">ÉDITORIAL</span>
+      <span onClick="{{ setVarB }}" style="{{ varBStyle }}">PROGRAMME</span>
+    </div>
+  </div>
+
+
+  <sc-if value="{{ isVarA }}" hint-placeholder-val="{{ true }}">
+  <div style="animation: riseIn .5s ease both;">
+    <section style="max-width: 1440px; margin: 0 auto; padding: 32px 40px 0;">
+      <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 46px; align-items: end;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px;">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; color: oklch(0.78 0.14 27);">LIVE</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: #857E73;">{{ hero.viewersLabel }}</span>
+          </div>
+          <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 84px; line-height: 0.94; letter-spacing: -0.015em; text-wrap: pretty;">{{ hero.title }}</h1>
+          <p style="margin: 22px 0 0; max-width: 500px; font-size: 15px; line-height: 1.62; color: #9B948A; text-wrap: pretty;">{{ hero.blurb }}</p>
+          <div style="margin-top: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <sc-if value="{{ heroNeedsTicket }}" hint-placeholder-val="{{ true }}">
+              <span onClick="{{ openTicket }}" style="{{ heroBuyStyle }}" style-hover="background:#1B1815;border-color:#4A423A">{{ t.getTicket }} · {{ hero.priceLabel }}</span>
+            </sc-if>
+            <sc-if value="{{ heroHasTicket }}" hint-placeholder-val="{{ false }}">
+              <span style="padding: 14px 22px; white-space: nowrap; border: 1px solid oklch(0.5 0.09 150); background: color-mix(in oklch, oklch(0.7 0.13 150) 12%, transparent); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; color: oklch(0.78 0.12 150);">{{ heroOwnedLabel }}</span>
+            </sc-if>
+            <span onClick="{{ goLive }}" style="cursor: pointer; padding: 14px 26px; white-space: nowrap; border: 1px solid transparent; background: #EDE7DC; color: #0B0A09; font-size: 13.5px; font-weight: 600; transition: background .24s ease;" style-hover="background:oklch(0.94 0.03 80)">{{ t.freePeek }}</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #857E73; letter-spacing: 0.08em;">{{ t.joinAnytime }}</span>
+          </div>
+          <sc-if value="{{ heroPromoLine }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 18px; max-width: 500px; display: flex; align-items: baseline; gap: 12px; border-top: 1px solid rgba(214,178,102,0.24); padding-top: 14px;">
+              <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: oklch(0.83 0.1 84);">{{ lpBadge }}</span>
+              <span style="font-size: 12.5px; line-height: 1.5; color: #9B948A; text-wrap: pretty;">{{ lpNote }}</span>
+            </div>
+          </sc-if>
+        </div>
+        <div onClick="{{ goLive }}" style="cursor: pointer; position: relative; aspect-ratio: 4/3; overflow: hidden; background: #17140F; background-image: repeating-linear-gradient(118deg, rgba(237,231,220,0.05) 0 9px, rgba(0,0,0,0) 9px 20px); border: 1px solid #1F1C19;">
+          <div style="position: absolute; inset: 0; display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: #6B6459; animation: skeleton 1.8s ease-in-out infinite;">AFFICHE</div>
+          <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.8) contrast(1.06) brightness(0.82); background-color: #1A1815; background-image: {{ hero.imgCss }}; background-size: cover; background-position: center;"></div>
+          <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(11,10,9,0.55), rgba(11,10,9,0) 55%);"></div>
+          <div style="position: absolute; left: 14px; top: 14px; display: flex; align-items: center; gap: 7px; background: rgba(11,10,9,0.78); border: 1px solid oklch(0.42 0.12 27); padding: 5px 9px;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; color: oklch(0.78 0.14 27);">{{ t.onNow }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+      <!-- … les six carrousels (lignes 344-572) sont dans home-rails.html et home-rails-personal.html … -->
+
+  </div>
+  </sc-if>
+
+
+</div>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* hero  —  lignes 5551-5571 */
+    const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
+      title: s.pick.title,
+      artist: s.pick.artist,
+      blurb: artist.bio,
+      meta: s.pick.kind === 'live' ? s.pick.meta : s.pick.whenLabel,
+      viewersLabel: s.pick.kind === 'live'
+        ? ((s.pick.viewersLabel || watchedViewers || A.number((A.liveNow()[0] || { viewers: 0 }).viewers)) + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING'))
+        : s.pick.whenLabel,
+      priceLabel: s.pick.priceLabel,
+      img: s.pick.img, imgCss: this.cssUrl(s.pick.img)
+    } : (onArtistLive ? {
+      title: A.title(watchedShow),
+      artist: artist.name,
+      blurb: A.synopsis(watchedShow) || artist.bio,
+      meta: [artist.discipline, A.duration(watchedShow.runtimeMin),
+        (watchedShow.subtitles || []).length ? watchedShow.subtitles.join('/') : null]
+        .filter(Boolean).join(' · ').toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+      viewersLabel: (watchedViewers || A.number(0)) + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING'),
+      priceLabel: watched.prices[0].amount ? A.price(watched.prices[0].amount) : (fr ? 'Gratuit' : 'Free'),
+      img: A.showImage(watchedShow, 1600), imgCss: this.cssUrl(A.showImage(watchedShow, 1600))
+    } : heroBase);
+/* heroIsLive  —  lignes 6227-6229 */
+    const heroIsLive = (s.pick && (s.page === 'live' || s.page === 'artist'))
+      ? s.pick.kind === 'live'
+      : (s.page === 'live' || s.page === 'home' || onArtistLive);
+/* heroPromo  —  lignes 6230-6230 */
+    const heroPromo = this.promoOf(hero.title, hero.priceLabel, fr);
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      heroPromoLine: heroPromo.hasPromo && this.props.heroPromo !== 'aucune' && this.props.heroPromo !== 'bouton',
+      heroBuyStyle: 'cursor: pointer; padding: 14px 26px; white-space: nowrap; border: 1px solid #332E28; font-size: 13.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease, color .24s ease;' +
+        (heroPromo.hasPromo && this.props.heroPromo !== 'aucune'
+          ? ' border-color: rgba(214,178,102,0.42); color: oklch(0.83 0.1 84);'
+          : ''),
+      isHome: s.page === 'home', isBrowse: s.page === 'browse', isArtist: s.page === 'artist',
+      isVarA: variant === 'a', isVarB: variant === 'b',
+      goLive: () => this.openLive((roster[0] || {}).name || ''), goAccount: this.gate(this.nav('account')),
+      setVarA: () => this.setState({ variant: 'a', variantSet: true }), setVarB: () => this.setState({ variant: 'b', variantSet: true }),
+      varAStyle: CHIP + (variant === 'a' ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;'),
+      varBStyle: CHIP + (variant === 'b' ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;'),
+      heroHasTicket: ownsHero, heroNeedsTicket: !ownsHero,
+      heroOwnedLabel: (fr ? 'VOTRE PLACE' : 'YOUR SEAT'),
+      isGuest: s.guest, isMember: !s.guest,
+      openSignUp: () => this.setState({ authOpen: true, authTab: 'up', menuOpen: false }),
+      openTicket: this.openTicketFor(hero.title, hero.priceLabel, fr, { artist: hero.artist, img: hero.img, imgCss: this.cssUrl(hero.img), meta: hero.meta, isLive: heroIsLive }),
+      lpBadge: heroPromo.hasPromo ? heroPromo.promoPct : '',
+      lpNote: heroPromo.hasPromo ? (PROMO_NOTES[heroPromo.promoReason] || ['', ''])[fr ? 0 : 1] : '',
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.freePeek  t.getTicket  t.guestBadge  t.guestBanner  t.guestBannerCta  t.joinAnytime  
+    t.onNow  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    guest  page  pick  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    cssUrl, gate, nav, openLive, openTicketFor, promoOf, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

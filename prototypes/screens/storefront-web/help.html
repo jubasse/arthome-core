@@ -1,0 +1,86 @@
+<!--
+  ÉCRAN      Aide et contact
+  ROUTE      page === 'help'
+  AFFICHE    Les six sujets d'assistance, le formulaire, les horaires et le contact du délégué à la protection des données.
+  MÈNE VERS  account-privacy
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2926-2957
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Incohérence de source : `shared/i18n/storefront.json` porte `support.topic3Hint` sans
+             `support.topic3`.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — contactSupport
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : account, colsOf, s, t, tileCols
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ isHelp }}" hint-placeholder-val="{{ false }}">
+<section style="max-width: 1440px; margin: 0 auto; padding: 40px 40px 0; animation: fadeIn .3s ease both;">
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #857E73;">{{ t.helpSub }}</div>
+  <h1 style="margin: 12px 0 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 52px; line-height: 1;">{{ t.helpTitle }}</h1>
+  <p style="margin: 14px 0 0; max-width: 560px; font-size: 15px; line-height: 1.6; color: #B0A899; text-wrap: pretty;">{{ t.helpIntro }}</p>
+
+  <div style="margin-top: 30px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 12px;">{{ t.helpTopics }}</div>
+  <div style="display: grid; grid-template-columns: {{ colsWide }}; gap: 14px; max-width: 980px;">
+    <sc-for list="{{ helpTopics }}" as="hp" hint-placeholder-count="6">
+      <div style="border: 1px solid #1F1C19; background: #100F0D; padding: 18px; display: flex; flex-direction: column; gap: 8px; transition: border-color .24s ease;" style-hover="border-color:#332E28">
+        <div style="font-size: 15px;">{{ hp.label }}</div>
+        <div style="font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ hp.hint }}</div>
+        <span onClick="{{ hp.go }}" style="margin-top: 6px; align-self: flex-start; cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ t.helpWrite }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="margin-top: 26px; max-width: 980px; display: grid; grid-template-columns: {{ colsHelpFoot }}; gap: 14px;">
+    <div style="border: 1px solid #1F1C19; background: #0C0B0A; padding: 20px;">
+      <div style="font-family: 'Instrument Serif', serif; font-size: 24px; line-height: 1.1;">{{ t.helpContactTitle }}</div>
+      <div style="padding-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; color: #EDE7DC;">{{ t.helpMail }}</div>
+      <div style="padding-top: 10px; font-size: 12.5px; line-height: 1.6; color: #857E73; text-wrap: pretty;">{{ t.helpHours }}</div>
+    </div>
+    <div style="border: 1px solid rgba(214,178,102,0.28); background: rgba(214,178,102,0.04); padding: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: oklch(0.83 0.1 84);">{{ t.helpDpoLabel }}</div>
+      <div style="padding-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; color: #EDE7DC;">{{ t.helpMailDpo }}</div>
+      <div style="padding-top: 10px; font-size: 12.5px; line-height: 1.6; color: #9B948A; text-wrap: pretty;">{{ t.privDpoHint }}</div>
+      <span onClick="{{ goPrivacy }}" style="display: inline-block; margin-top: 14px; cursor: pointer; padding: 9px 15px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ t.accPrivacy }} →</span>
+    </div>
+  </div>
+</section>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      isHelp: s.page === 'help',
+      goPrivacy: () => this.setState({ page: 'account', accTab: 'privacy', pick: null }),
+      colsHelpFoot: colsOf(Math.max(1, Math.min(2, tileCols - 1))),
+      helpTopics: [
+        [t.helpTopic1, t.helpTopic1Hint], [t.helpTopic2, t.helpTopic2Hint], [t.helpTopic3, t.helpTopic3Hint],
+        [t.helpTopic4, t.helpTopic4Hint], [t.helpTopic5, t.helpTopic5Hint], [t.helpTopic6, t.helpTopic6Hint]
+      ].map(([label, hint]) => ({ label, hint, go: () => {} })),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.accPrivacy  t.helpContactTitle  t.helpDpoLabel  t.helpHours  t.helpIntro  t.helpMail  
+    t.helpMailDpo  t.helpSub  t.helpTitle  t.helpTopic1  t.helpTopic1Hint  t.helpTopic2  
+    t.helpTopic2Hint  t.helpTopic3  t.helpTopic3Hint  t.helpTopic4  t.helpTopic4Hint  
+    t.helpTopic5  t.helpTopic5Hint  t.helpTopic6  t.helpTopic6Hint  t.helpTopics  t.helpWrite  
+    t.privDpoHint  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    page  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

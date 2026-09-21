@@ -1,0 +1,139 @@
+<!--
+  Arthome · storefront mobile — sheet-notifications
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : superposée · notifsOpen
+  Affiche    : Le panneau de notifications : entrées lues et non lues, marquage global, renvoi vers les réglages.
+  Mène vers  : artist, live, account-notifs
+  Contrat    : GET/POST /v1/me/notifications
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1960–1986
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1960–1986
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ notifsOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ toggleNotifs }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
+<div style="{{ sheetBase }} background: #0B0A09; border-top: 1px solid #332E28; box-shadow: 0 -24px 60px rgba(0,0,0,0.6); animation: slideUp .26s cubic-bezier(.2,.7,.2,1) both;">
+  <div style="padding: 12px 0 6px; display: flex; justify-content: center;"><span style="width: 38px; height: 3px; background: #332E28;"></span></div>
+  <div style="padding: 6px 16px 14px; display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #1F1C19;">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.notifCenter }}</span>
+    <span onClick="{{ markAllRead }}" style="margin-left: auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73;">{{ t.markRead }}</span>
+  </div>
+  <div style="display: flex; flex-direction: column;">
+    <sc-for list="{{ notifFeed }}" as="n" hint-placeholder-count="4">
+      <div onClick="{{ n.open }}" style="cursor: pointer; border-bottom: 1px solid #16140F; padding: 13px 16px; display: flex; gap: 11px; align-items: center;">
+        <div style="flex: 0 0 46px; position: relative; aspect-ratio: 16/11; overflow: hidden; background: #17140F;">
+          <sc-if value="{{ n.img }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.72); background-color: #17140F; background-image: {{ n.imgCss }}; background-size: cover; background-position: center;"></div>
+          </sc-if>
+        </div>
+        <div style="min-width: 0;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ n.tagColor }};">{{ n.tag }}</div>
+          <div style="padding-top: 5px; font-size: 13px; color: #C9C0B2; text-wrap: pretty;">{{ n.text }}</div>
+          <div style="padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #575047;">{{ n.time }}</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <div onClick="{{ goAccountNotifs }}" style="cursor: pointer; padding: 14px 16px 22px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73;">{{ t.notifSettings }} →</div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (5 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── notifsOpen  —  clé du modèle rendu  —  L5990–5990 ── */
+      notifsOpen: s.notifsOpen,
+
+/* ── toggleNotifs  —  clé du modèle rendu  —  L5991–5991 ── */
+      toggleNotifs: () => this.setState(st => ({ notifsOpen: !st.notifsOpen })),
+
+/* ── markAllRead  —  clé du modèle rendu  —  L5992–5992 ── */
+      markAllRead: () => this.setState({ notifsRead: true }),
+
+/* ── goAccountNotifs  —  clé du modèle rendu  —  L5995–5995 ── */
+      goAccountNotifs: () => this.setState({ page: 'account', accView: 'section', accTab: 'notifs', notifsOpen: false }),
+
+/* ── notifFeed  —  clé du modèle rendu  —  L5999–6032 ── */
+      notifFeed: (() => {
+        const rows = [];
+        A.liveNow().slice(0, 2).forEach(d => {
+          const show = A.show(d.show), art = A.artist(show.artist);
+          rows.push([(art ? art.name : '') + (fr ? ' est en direct — ' : ' is live — ') + A.title(show),
+            (fr ? 'DEPUIS ' : 'FOR ') + A.duration(Math.max(1, -d.startOffsetMin)).toUpperCase(),
+            A.showImage(show, 900), (roster.filter(r => art && r.id === art.id)[0] || {}).i || 0, true]);
+        });
+        A.replays().slice(0, 1).forEach(d => {
+          const show = A.show(d.show), art = A.artist(show.artist);
+          const left = A.replayHoursLeft(d);
+          rows.push([(fr ? 'Votre rediffusion de ' : 'Your replay of ') + A.title(show)
+            + (left ? (fr ? ' expire dans ' : ' expires in ') + left + ' h' : (fr ? ' est en ligne' : ' is online')),
+            (fr ? 'REDIFFUSION' : 'REPLAY'), A.showImage(show, 900),
+            (roster.filter(r => art && r.id === art.id)[0] || {}).i || 0, true]);
+        });
+        A.upcoming().filter(d => {
+          const cap = A.venue(d.venue).capacity;
+          return cap && d.seats.sold / cap > 0.9;
+        }).slice(0, 1).forEach(d => {
+          const show = A.show(d.show), art = A.artist(show.artist), cap = A.venue(d.venue).capacity;
+          rows.push([A.title(show) + ' — ' + (art ? art.name : '') + ' : '
+            + Math.round((d.seats.sold / cap) * 100) + (fr ? ' % des places vendues' : '% of seats sold'),
+            A.when(d).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'), A.showImage(show, 900),
+            (roster.filter(r => art && r.id === art.id)[0] || {}).i || 0, false]);
+        });
+        return rows;
+      })().map(([text, time, img, id, unread]) => ({
+        text, time, img, imgCss: this.cssUrl(img),
+        timeColor: (unread && !s.notifsRead) ? 'oklch(0.78 0.13 42)' : '#6B6459',
+        open: () => this.setState({ page: 'artist', artistId: id, notifsOpen: false }),
+        style: 'cursor: pointer; padding: 12px 15px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  display: flex; gap: 12px; align-items: flex-start; border-bottom: 1px solid #16140F; transition: background .2s ease; ' +
+          ((unread && !s.notifsRead) ? 'background: #12100E;' : 'background: transparent;')
+      })),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (3) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2548  markRead: "TOUT MARQUER COMME LU"
+  EN L3001  markRead: "MARK ALL AS READ"
+
+  FR L2568  notifCenter: "NOTIFICATIONS"
+  EN L3021  notifCenter: "NOTIFICATIONS"
+
+  FR L2570  notifSettings: "Régler mes notifications"
+  EN L3023  notifSettings: "Notification settings"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

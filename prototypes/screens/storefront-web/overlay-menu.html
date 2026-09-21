@@ -1,0 +1,83 @@
+<!--
+  ÉCRAN      Menu mobile
+  ROUTE      superposition, sans URL
+  AFFICHE    Le menu déroulant sous 1000 px : navigation, accès au studio, connexion ou déconnexion.
+  MÈNE VERS  home · browse · categories · artists · following · account
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 3092-3112
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : account, artist, category, s, t
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeMenu }}" style="position: fixed; inset: 0; z-index: 8800; background: rgba(6,5,5,0.72); backdrop-filter: blur(4px); animation: fadeIn .2s ease both;">
+  <div onClick="{{ stopEvt }}" style="position: absolute; right: 0; top: 0; bottom: 0; width: 288px; max-width: 86%; background: #0B0A09; border-left: 1px solid #1F1C19; box-shadow: -24px 0 60px rgba(0,0,0,0.6); overflow-y: auto; animation: slideIn .28s cubic-bezier(.2,.7,.2,1) both;">
+    <div style="padding: 20px 22px; border-bottom: 1px solid #1F1C19; display: flex; align-items: center; gap: 12px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.menuTitle }}</span>
+      <span onClick="{{ closeMenu }}" style="margin-left: auto; cursor: pointer; font-size: 14px; color: #857E73; transition: color .2s ease;" style-hover="color:#EDE7DC">✕</span>
+    </div>
+    <div style="padding: 14px 22px 20px; display: flex; flex-direction: column;">
+      <sc-for list="{{ menuNav }}" as="mn" hint-placeholder-count="5">
+        <span onClick="{{ mn.go }}" style="{{ mn.style }}">{{ mn.label }}</span>
+      </sc-for>
+    </div>
+    <div style="border-top: 1px solid #1F1C19; padding: 16px 22px; display: flex; flex-direction: column; gap: 12px;">
+      <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}">
+        <span onClick="{{ openSignUpMenu }}" style="cursor: pointer; padding: 11px 16px; text-align: center; white-space: nowrap; background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600; border: 1px solid transparent; transition: background .24s ease;" style-hover="background:oklch(0.94 0.03 80)">{{ t.signUp }}</span>
+      </sc-if>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      stopEvt: e => { if (e && e.stopPropagation) e.stopPropagation(); },
+      isGuest: s.guest, isMember: !s.guest,
+      openSignUpMenu: () => this.setState({ authOpen: true, authTab: 'up', menuOpen: false }),
+      menuOpen: s.menuOpen,
+      closeMenu: () => this.setState({ menuOpen: false }),
+      menuNav: [
+        ['home', t.navHome, () => this.setState({ page: 'home', menuOpen: false, pick: null })],
+        ['browse', t.navBrowse, () => this.setState({ page: 'browse', menuOpen: false, pick: null })],
+        ['categories', t.categories, () => this.setState({ page: 'categories', menuOpen: false, pick: null })],
+        ['artists', t.navArtists, () => this.setState({ page: 'artists', menuOpen: false, pick: null })],
+        ['following', t.navFollowing, () => this.setState({ page: 'following', menuOpen: false, pick: null }), true],
+        ['account', t.navTickets, this.gate(() => this.setState({ page: 'account', menuOpen: false, pick: null })), true]
+      ].filter(x => !(x[3] && s.guest)).map(([k, label, go]) => {
+        const on = s.page === k
+          || (k === 'categories' && s.page === 'category')
+          || (k === 'artists' && s.page === 'artist');
+        return {
+          label, go,
+          style: 'cursor: pointer; padding: 11px 0; font-size: 15px; border-bottom: 1px solid #16140F; transition: color .2s ease; color: ' + (on ? '#EDE7DC' : '#9B948A') + ';'
+        };
+      }),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.categories  t.menuTitle  t.navArtists  t.navBrowse  t.navFollowing  t.navHome  
+    t.navTickets  t.signUp  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    guest  menuOpen  page  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    gate, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

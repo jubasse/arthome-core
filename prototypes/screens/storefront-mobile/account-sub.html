@@ -1,0 +1,105 @@
+<!--
+  Arthome · storefront mobile — account-sub
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : account · accTab=sub
+  Affiche    : Mon abonnement : échéance de renouvellement, moyen de paiement, ancienneté, avantages.
+  Mène vers  : plans
+  Contrat    : GET /v1/subscription
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1565–1596
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1565–1596
+     ══════════════════════════════════════════════════════════════════════════ -->
+      <sc-if value="{{ accSub }}" hint-placeholder-val="{{ false }}">
+        <div style="border: 1px solid rgba(214,178,102,0.3); background: rgba(214,178,102,0.04); padding: 16px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: oklch(0.83 0.1 84);">{{ t.subCurrent }}</div>
+          <div style="padding-top: 8px; font-family: 'Instrument Serif', serif; font-size: 26px; line-height: 1;">{{ subName }}</div>
+          <div style="padding-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #EDE7DC;">{{ subPrice }}</div>
+          <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 11px;">
+            <sc-for list="{{ subFacts }}" as="sf" hint-placeholder-count="3">
+              <div style="display: flex; align-items: baseline; gap: 12px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ sf.label }}</span>
+                <span style="margin-left: auto; font-size: 13px; color: #C9C0B2;">{{ sf.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top: 16px; border-top: 1px solid rgba(214,178,102,0.16); padding-top: 14px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ t.subIncluded }}</div>
+            <div style="padding-top: 11px; display: flex; flex-direction: column; gap: 9px;">
+              <sc-for list="{{ subPerks }}" as="sp" hint-placeholder-count="4">
+                <div style="display: flex; align-items: baseline; gap: 9px;">
+                  <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: oklch(0.7 0.13 150);">✓</span>
+                  <span style="min-width: 0; font-size: 13px; line-height: 1.5; color: #C9C0B2; text-wrap: pretty;">{{ sp.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px;">
+            <span onClick="{{ goPlans }}" style="cursor: pointer; padding: 12px 16px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  text-align: center; background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600;">{{ t.subChange }}</span>
+            <span style="cursor: pointer; padding: 12px 16px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  text-align: center; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2;">{{ t.subInvoices }}</span>
+            <span style="cursor: pointer; padding: 12px 16px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  text-align: center; border: 1px solid #262320; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73;">{{ t.subCancel }}</span>
+          </div>
+        </div>
+      </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (1 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── goPlans  —  clé du modèle rendu  —  L6238–6238 ── */
+      goPlans: () => this.setState({ page: 'plans', menuOpen: false, pick: null }),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (5) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2741  subCancel: "Résilier l’abonnement"
+  EN L3194  subCancel: "Cancel subscription"
+
+  FR L2742  subChange: "Changer de formule"
+  EN L3195  subChange: "Change plan"
+
+  FR L2744  subCurrent: "FORMULE ACTUELLE"
+  EN L3197  subCurrent: "CURRENT PLAN"
+
+  FR L2745  subIncluded: "CE QUE VOUS AVEZ AVEC CETTE FORMULE"
+  EN L3198  subIncluded: "WHAT THIS PLAN GIVES YOU"
+
+  FR L2746  subInvoices: "Mes factures"
+  EN L3199  subInvoices: "My invoices"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

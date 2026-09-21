@@ -1,0 +1,160 @@
+<!--
+  ÉCRAN        agenda
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Les gardes de la personne, toutes chaînes confondues, avec les chevauchements.
+  RÔLES        regie · mod
+  MÈNE VERS    écrans : regie
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  pgAgenda L165-232 · hasBlocks L731-791
+               modèle    L2011-2064
+  CLÉS DE COPIE
+               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
+               - table STATES en dur (draft|hidden|sched|tech|live|done|replay — vocabulaire parallèle, D2)
+               - table ROLES en dur (six personas — libellé, jamais un droit, E6)
+  CONTRAT
+               - needs §« Ce qui distingue cette surface » 1 (la racine est une personne)
+               - needs §Confrontation C11 (Duty ne porte pas le fuseau de la salle)
+               - openapi GET /v1/me/duties
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!-- ---- pgAgenda (L165-232) ---- -->
+    <sc-if value="{{ pgAgenda }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1D2126; border: 1px solid #23272C;">
+          <sc-for list="{{ agBand }}" as="k" hint-placeholder-count="4">
+            <div style="background: #121417; padding: 10px 11px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">{{ k.label }}</div>
+              <div style="{{ k.valueStyle }}">{{ k.value }}</div>
+              <div style="padding-top: 2px; font-size: 10.5px; color: #5B636B;">{{ k.hint }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ agHasTonight }}" hint-placeholder-val="{{ true }}">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B; padding: 4px 1px 0 1px;">CE SOIR</div>
+          <sc-for list="{{ agTonight }}" as="g" hint-placeholder-count="1">
+            <div style="border: 1px solid #2A2F35; background: #15171A;">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 11px 12px; border-bottom: 1px solid #1D2126;">
+                <div style="width: 26px; height: 26px; border-radius: 50%; background: #1D2126; background-color: #1A1D21; background-image: {{ g.imgCss }}; background-size: cover; background-position: center;"></div>
+                <div style="min-width: 0; flex: 1 1 auto;">
+                  <div style="font-size: 13px; color: #E6E9EC; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ g.chan }}</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.1em; color: #5B636B;">{{ g.role }}</div>
+                </div>
+                <span style="{{ g.stateStyle }}">{{ g.state }}</span>
+              </div>
+              <div style="padding: 11px 12px; display: flex; flex-direction: column; gap: 7px;">
+                <div style="font-size: 14px; line-height: 1.3; color: #E6E9EC; text-wrap: pretty;">{{ g.title }}</div>
+                <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #E6E9EC;">{{ g.time }}</span>
+                  <sc-if value="{{ g.local }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: oklch(0.72 0.11 235);">{{ g.local }}</span>
+                  </sc-if>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #646C74;">{{ g.dur }}</span>
+                </div>
+              </div>
+              <div onClick="{{ g.open }}" style="{{ g.ctaStyle }}">{{ g.cta }}</div>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <sc-if value="{{ agOverlap }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid oklch(0.78 0.13 75); background: color-mix(in oklch, oklch(0.78 0.13 75) 9%, transparent); padding: 12px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: oklch(0.78 0.13 75);">DEUX GARDES SE RECOUVRENT</div>
+            <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.55; color: #C6CDD4; text-wrap: pretty;">{{ agOverlapText }}</div>
+            <div style="padding-top: 8px; font-size: 12px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">Rien ne vous empêche de tenir les deux : le bandeau de régie affiche les deux flux en permanence, avec une alerte sonore distincte par chaîne.</div>
+          </div>
+        </sc-if>
+
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B; padding: 6px 1px 0 1px;">{{ agAllLabel }}</div>
+        <sc-for list="{{ agRows }}" as="g" hint-placeholder-count="4">
+          <div onClick="{{ g.open }}" style="border: 1px solid #23272C; background: #15171A; padding: 11px 12px; display: flex; flex-direction: column; gap: 7px; cursor: pointer;">
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
+              <div style="min-width: 0; flex: 1 1 auto;">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #5B636B;">{{ g.chan }}</div>
+                <div style="padding-top: 4px; font-size: 13px; line-height: 1.35; color: #E6E9EC; text-wrap: pretty;">{{ g.title }}</div>
+              </div>
+              <span style="{{ g.stateStyle }}">{{ g.state }}</span>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #C6CDD4;">{{ g.when }}</span>
+              <sc-if value="{{ g.local }}" hint-placeholder-val="{{ false }}">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: oklch(0.72 0.11 235);">{{ g.local }}</span>
+              </sc-if>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #646C74;">{{ g.role }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_agenda(c) {
+    const s = this.state;
+    const chansCount = c.channels.length;
+    const week = c.GARDES.length;
+    return {
+      pageTitle: c.tonight.length ? 'Vos gardes, toutes chaînes' : 'Aucune garde ce soir',
+      agBand: this.stats([
+        ['GARDES CE SOIR', String(c.tonight.length), c.tonight.length > 1 ? 'deux flux à tenir' : 'un flux à tenir', c.tonight.length ? LIVE : INK3],
+        ['CHAÎNES', String(chansCount), 'où vous avez un accès'],
+        ['CETTE SEMAINE', String(week), 'dates couvertes'],
+        ['VOTRE FUSEAU', (ZONES[c.myZone] || [])[0], (ZONES[c.myZone] || [])[2]]
+      ]),
+      agHasTonight: c.tonight.length > 0,
+      agTonight: c.tonight.map(g => {
+        const st = STATES[g.st];
+        const loc = c.localOf(g.time, g.chan);
+        const isMod = g.roleKey === 'mod';
+        return {
+          chan: g.chan, img: g.img, imgCss: this.cssUrl(g.img), role: c.T(ROLES[g.roleKey][0]), title: g.title,
+          state: c.T(st[0]), stateStyle: this.pill(st[1]),
+          time: c.withZone(g.time, g.chan), local: loc ? '(' + loc + ' chez vous)' : '', dur: g.dur.toUpperCase(),
+          cta: isMod ? 'OUVRIR LA CONSOLE' : 'OUVRIR LA RÉGIE',
+          ctaStyle: this.btn(g.st === 'live' ? 'primary' : undefined),
+          open: () => this.setState({ chan: g.ci, page: isMod ? 'moderation' : 'regie', sheet: null })
+        };
+      }),
+      agOverlap: c.tonight.length > 1,
+      agOverlapText: c.tonight.map(g => g.chan + ' à ' + c.withZone(g.time, g.chan)).join(' et ') + ' : les deux gardes se recouvrent.',
+      agAllLabel: 'TOUTES VOS DATES · ' + c.GARDES.length,
+      agRows: c.GARDES.map(g => {
+        const st = STATES[g.st];
+        const loc = c.localOf(g.time, g.chan);
+        return {
+          chan: g.chan.toUpperCase(), title: g.title,
+          state: c.T(st[0]), stateStyle: this.pill(st[1]),
+          when: (g.day === 'ce soir' ? 'CE SOIR' : g.day.toUpperCase()) + ' · ' + c.withZone(g.time, g.chan),
+          local: loc ? '(' + loc + ')' : '',
+          role: c.T(ROLES[g.roleKey][0]),
+          open: () => this.setState({ chan: g.ci, page: g.roleKey === 'mod' ? 'moderation' : 'regie', sheet: null })
+        };
+      }),
+      blocks: [
+        this.block('PROFILS D’ENCODAGE MÉMORISÉS', 'SUIVENT VOTRE COMPTE', {
+          intro: 'Vos profils voyagent d’une chaîne à l’autre : le poste change, les réglages restent.',
+          rows: this.rows([
+            { label: 'Salle — fibre dédiée', hint: '1080p · 6 Mb/s · x264 veryfast · audio 2 voies', pill: 'ACTIF', pillColor: OK, cta: 'APPLIQUER À CE SOIR', act: () => this.setState({ page: 'regie' }) },
+            { label: 'Tournée — 4G agrégée', hint: '720p · 3,5 Mb/s · débit plafonné, buffer long', cta: 'APPLIQUER', act: () => this.setState({ page: 'regie' }) },
+            { label: 'Club — captation deux caméras', hint: '1440p · 10 Mb/s · scènes OBS préchargées', cta: 'APPLIQUER', act: () => this.setState({ page: 'regie' }) }
+          ])
+        })
+      ]
+    };
+  }
+
+</script>

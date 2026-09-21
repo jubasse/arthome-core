@@ -1,0 +1,310 @@
+<!--
+  Arthome · storefront mobile — live
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : live
+  Affiche    : Le direct : lecteur, aperçu gratuit verrouillé, chapitres, qualité, et le panneau latéral à deux onglets (tchat / boutique).
+  Mène vers  : artist, sheet-ticket, sheet-share, sheet-cart
+  Contrat    : POST /v1/playback/{dateId}/open · /v1/dates/{dateId}/chat/messages
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1110–1241
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+  Note       : Ce fichier contient TROIS régions, et deux d'entre elles ne sont pas des écrans :
+                 L1110-1166  le lecteur et sa barre d'onglets
+                 L1167-1214  onglet TCHAT du panneau latéral   (state.tab === 'chat')
+                 L1215-1241  onglet BOUTIQUE du panneau latéral (state.tab === 'store')
+               'chat' et 'store' sont des onglets de CET écran, pas des routes : ils partagent
+               son cycle de vie et son canal temps réel. Voir needs/storefront-mobile.md,
+               Inventaire des écrans, « Correction à la liste du chef ».
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1110–1241
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ isLive }}" hint-placeholder-val="{{ false }}">
+<div style="animation: fadeIn .3s ease both;">
+  <div style="position: sticky; top: 58px; z-index: 400; background: #0B0A09;">
+    <div style="position: relative; aspect-ratio: 16/9; overflow: hidden; background: #100F0D; border-bottom: 1px solid #1F1C19;">
+      <sc-if value="{{ hero.img }}" hint-placeholder-val="{{ false }}">
+        <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.8) brightness(0.72); background-color: #17140F; background-image: {{ hero.imgCss }}; background-size: cover; background-position: center;"></div>
+      </sc-if>
+      <div style="position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: 6px; background: rgba(11,10,9,0.78); padding: 4px 8px;">
+        <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.14 27);">{{ hero.viewersLabel }}</span>
+      </div>
+      <div style="position: absolute; right: 10px; top: 10px; display: flex; gap: 6px;">
+        <span onClick="{{ toggleSortMenu }}" style="cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  background: rgba(11,10,9,0.78); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #C9C0B2;">{{ qualityLine }}</span>
+      </div>
+      <sc-if value="{{ locked }}" hint-placeholder-val="{{ true }}">
+        <div style="position: absolute; inset: 0; overflow: hidden; background: rgba(11,10,9,0.72); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px; text-align: center;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: oklch(0.74 0.15 42);">{{ peekLabel }}</div>
+          <div style="font-family: 'Instrument Serif', serif; font-size: 22px; line-height: 1.1;">{{ t.peekTitle }}</div>
+          <span onClick="{{ openTicket }}" style="cursor: pointer; padding: 11px 18px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600;">{{ t.getTicket }}</span>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="padding: 14px 16px 0;">
+    <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 27px; line-height: 1.06;">{{ hero.title }}</h1>
+    <div onClick="{{ goArtistFromLive }}" style="cursor: pointer; padding-top: 8px; display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 13.5px; color: #C9C0B2;">{{ hero.artist }}</span>
+      <span onClick="{{ toggleFollow }}" style="{{ followSmallStyle }}">{{ artistFollowLabel }}</span>
+    </div>
+    <div style="padding-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73;">{{ hero.meta }}</div>
+
+    <sc-if value="{{ lpOn }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 13px; border: 1px solid rgba(214,178,102,0.3); background: rgba(214,178,102,0.05); padding: 12px 13px;">
+        <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: oklch(0.83 0.1 84);">{{ lpBadge }}</span>
+          <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #EDE7DC;">{{ lpPrices }}</span>
+        </div>
+        <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.5; color: #B0A899; text-wrap: pretty;">{{ lpNote }}</div>
+      </div>
+    </sc-if>
+
+    <div style="margin-top: 13px; display: flex; gap: 8px;">
+      <sc-if value="{{ needsTicket }}" hint-placeholder-val="{{ false }}">
+        <span onClick="{{ openTicket }}" style="{{ heroBuyStyle }}">{{ t.getTicket }} · {{ hero.priceLabel }}</span>
+      </sc-if>
+      <sc-if value="{{ hasTicket }}" hint-placeholder-val="{{ false }}">
+        <span style="padding: 12px 15px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; border: 1px solid oklch(0.5 0.09 150); background: color-mix(in oklch, oklch(0.7 0.13 150) 12%, transparent); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: oklch(0.78 0.12 150);">{{ ownedLabel }}</span>
+      </sc-if>
+      <span onClick="{{ openShare }}" style="cursor: pointer; padding: 12px 15px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; border: 1px solid #332E28; font-size: 13px; color: #C9C0B2;">{{ t.share }}</span>
+    </div>
+
+    <div style="margin-top: 18px; display: flex; gap: 18px; border-bottom: 1px solid #1F1C19;">
+      <div onClick="{{ tabChat }}" style="{{ tabChatStyle }}">{{ t.chat }}</div>
+      <div onClick="{{ openStoreFromCart }}" style="{{ tabStoreStyle }}">{{ t.store }}</div>
+    </div>
+
+    <sc-if value="{{ showChat }}" hint-placeholder-val="{{ true }}">
+      <div style="padding-top: 14px;">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; padding-bottom: 12px;">
+          <sc-for list="{{ chatModes }}" as="cm" hint-placeholder-count="3">
+            <span onClick="{{ cm.pick }}" style="{{ cm.style }}">{{ cm.label }}</span>
+          </sc-for>
+        </div>
+        <sc-if value="{{ chatOffMode }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #1F1C19; background: #0D0C0A; padding: 26px 18px; text-align: center;">
+            <div style="font-family: 'Instrument Serif', serif; font-size: 20px;">{{ t.chatOffTitle }}</div>
+            <div style="padding-top: 8px; font-size: 12.5px; color: #857E73; text-wrap: pretty;">{{ t.chatOffBody }}</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ chatHasFeed }}" hint-placeholder-val="{{ true }}">
+          <div style="border: 1px solid #1F1C19; background: #0D0C0A; max-height: 320px; overflow-y: auto; padding: 12px;">
+            <div style="display: flex; flex-direction: column; gap: 11px;">
+              <sc-for list="{{ messages }}" as="msg" hint-placeholder-count="6">
+                <div style="display: flex; gap: 9px; align-items: baseline;">
+                  <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: {{ msg.color }};">{{ msg.user }}</span>
+                  <span style="min-width: 0; font-size: 12.5px; line-height: 1.45; color: #C9C0B2; text-wrap: pretty;">{{ msg.text }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ chatFreeMode }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top: 10px; display: flex; gap: 7px;">
+              <input value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onDraftKey }}" onFocus="{{ chatGate }}" readOnly="{{ chatBlocked }}" placeholder="{{ chatPlaceholder }}" style="{{ chatInputStyle }}" />
+              <span onClick="{{ sendMsg }}" style="{{ chatSendStyle }}">{{ t.send }}</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ chatEmojiMode }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 9px;">
+              <div style="display: flex; gap: 7px; flex-wrap: wrap;">
+                <sc-for list="{{ reactions }}" as="r" hint-placeholder-count="5">
+                  <span onClick="{{ r.send }}" style="cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #262320; font-size: 15px;">{{ r.label }}</span>
+                </sc-for>
+              </div>
+              <div style="display: flex; gap: 7px; flex-wrap: wrap;">
+                <sc-for list="{{ presetPhrases }}" as="p" hint-placeholder-count="4">
+                  <span onClick="{{ p.send }}" style="cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #262320; font-size: 12.5px; color: #C9C0B2;">{{ p.label }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showStore }}" hint-placeholder-val="{{ false }}">
+      <div style="padding-top: 14px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 10px;">{{ t.storeNote }}</div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <sc-for list="{{ merch }}" as="m" hint-placeholder-count="4">
+            <div style="border: 1px solid #1F1C19; background: #100F0D; padding: 12px; display: flex; gap: 12px; align-items: center;">
+              <div style="flex: 0 0 64px; width: 64px; height: 64px; position: relative; overflow: hidden; background: #17140F;">
+                <sc-if value="{{ m.img }}" hint-placeholder-val="{{ false }}">
+                  <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.75) brightness(0.8); background-color: #17140F; background-image: {{ m.imgCss }}; background-size: cover; background-position: center;"></div>
+                </sc-if>
+              </div>
+              <div style="min-width: 0; flex: 1 1 auto;">
+                <div style="font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ m.name }}</div>
+                <div style="padding-top: 4px; font-size: 12px; color: #857E73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ m.desc }}</div>
+                <div style="padding-top: 8px; display: flex; align-items: center; gap: 10px;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #EDE7DC;">{{ m.price }}</span>
+                  <span onClick="{{ m.add }}" style="{{ m.addStyle }}">{{ m.addLabel }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (14 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── reactions  —  calcul dans renderReady()  —  L4587–4590 ── */
+    const reactions = ['👏 Bravo', '🌹', '😂', fr ? 'Magnifique' : 'Beautiful', fr ? 'Encore !' : 'Encore!'].map(label => ({
+      label,
+      send: () => this.setState(st => ({ messages: st.messages.concat([{ user: 'vous', text: label, color: 'oklch(0.72 0.16 42)' }]) }))
+    }));
+
+/* ── heroBase  —  calcul dans renderReady()  —  L4932–4949 ── */
+    const heroBase = (() => {
+      const d = A.liveNow()[0] || A.upcoming()[0];
+      if (!d) return { title: '', artist: '', blurb: '', meta: '', viewersLabel: '', priceLabel: '', img: '' };
+      const show = A.show(d.show), art = A.artist(show.artist), venue = A.venue(d.venue);
+      return {
+        title: A.title(show),
+        artist: art ? art.name : '',
+        blurb: A.synopsis(show) || (venue ? [A.label(A.category(show.category)), venue.name, venue.city].join(' · ') : ''),
+        meta: [A.label(A.category(show.category)), A.duration(show.runtimeMin), (show.subtitles || ['FR']).join('/')]
+          .join(' · ').toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+        viewersLabel: A.isOnAir(d)
+          ? A.number(d.viewers) + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING')
+          : A.when(d).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+        priceLabel: A.price(d.prices[0].amount),
+        img: A.showImage(show, 1200),
+        imgCss: this.cssUrl(A.showImage(show, 1200))
+      };
+    })();
+
+/* ── onArtistLive  —  calcul dans renderReady()  —  L4950–4950 ── */
+    const onArtistLive = (s.page === 'live' || s.page === 'replay') && artist.i !== 3;
+
+/* ── hero  —  calcul dans renderReady()  —  L4951–4977 ── */
+    const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
+      title: s.pick.title,
+      artist: s.pick.artist,
+      blurb: artist.bio,
+      meta: s.pick.kind === 'live' ? s.pick.meta : s.pick.whenLabel,
+      viewersLabel: s.pick.kind === 'live' ? ((artist.viewers || '1 240') + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING')) : s.pick.whenLabel,
+      priceLabel: s.pick.priceLabel,
+      img: s.pick.img, imgCss: this.cssUrl(s.pick.img)
+    } : (onArtistLive ? {
+      title: artist.showTitle,
+      artist: artist.name,
+      blurb: artist.bio,
+      meta: (() => {
+        const d = A.datesOfArtist(artist.id).filter(x => A.isOnAir(x))[0]
+          || A.datesOfArtist(artist.id).filter(x => x.startOffsetMin > 0)[0];
+        const show = d ? A.show(d.show) : null;
+        return [artist.discipline.toUpperCase(), show ? A.duration(show.runtimeMin) : null,
+          show ? (show.subtitles || ['FR']).join('/') : null].filter(Boolean).join(' · ');
+      })(),
+      viewersLabel: (artist.viewers || '') + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING'),
+      priceLabel: (() => {
+        const d = A.datesOfArtist(artist.id).filter(x => A.isOnAir(x))[0]
+          || A.datesOfArtist(artist.id).filter(x => x.startOffsetMin > 0)[0];
+        return d ? A.price(d.prices[0].amount) : '';
+      })(),
+      img: artist.showImg, imgCss: this.cssUrl(artist.showImg)
+    } : heroBase);
+
+/* ── heroBuyStyle  —  clé du modèle rendu  —  L5807–5807 ── */
+      heroBuyStyle: 'cursor: pointer; padding: 14px 26px; white-space: nowrap; border: 1px solid #332E28; font-size: 13.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease, color .24s ease;' +
+
+/* ── isLive  —  clé du modèle rendu  —  L5828–5828 ── */
+      isLive: s.page === 'live', isAccount: s.page === 'account',
+
+/* ── hasTicket  —  clé du modèle rendu  —  L5885–5885 ── */
+      hasTicket: ownsCurrent,
+
+/* ── needsTicket  —  clé du modèle rendu  —  L5888–5888 ── */
+      needsTicket: !ownsCurrent,
+
+/* ── ownedLabel  —  clé du modèle rendu  —  L5889–5889 ── */
+      ownedLabel: (fr ? 'VOTRE PLACE · ' : 'YOUR SEAT · ') + this.seatCode(currentDate),
+
+/* ── peekLabel  —  clé du modèle rendu  —  L5890–5890 ── */
+      peekLabel: fr ? 'APERÇU GRATUIT' : 'FREE PREVIEW',
+
+/* ── artistFollowLabel  —  clé du modèle rendu  —  L5916–5916 ── */
+      artistFollowLabel: artist.followed ? (fr ? 'Suivi ✓' : 'Following ✓') : (fr ? 'Suivre' : 'Follow'),
+
+/* ── openStoreFromCart  —  clé du modèle rendu  —  L6078–6078 ── */
+      openStoreFromCart: () => this.setState({ page: 'live', tab: 'store', chatOpen: true, cartOpen: false }),
+
+/* ── qualityLine  —  clé du modèle rendu  —  L6080–6080 ── */
+      qualityLine: s.quality + ' · 4K ' + (fr ? 'disponible' : 'available'),
+
+/* ── toggleSortMenu  —  clé du modèle rendu  —  L6281–6281 ── */
+      toggleSortMenu: () => this.setState(st => ({ sortOpen: !st.sortOpen })),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (9) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2426  chat: "Tchat"
+  EN L2879  chat: "Chat"
+
+  FR L2433  chatOffBody: "La salle a coupé le tchat pour cette date. Le spectacle continue normalement."
+  EN L2886  chatOffBody: "The venue turned the chat off for this date. The performance carries on as normal."
+
+  FR L2435  chatOffTitle: "Le tchat est désactivé pour ce live"
+  EN L2888  chatOffTitle: "Chat is switched off for this show"
+
+  FR L2503  getTicket: "Prendre ma place"
+  EN L2956  getTicket: "Get my ticket"
+
+  FR L2603  peekTitle: "Aperçu gratuit — il vous reste 4 min 12"
+  EN L3056  peekTitle: "Free preview — 4:12 left"
+
+  FR L2698  send: "Envoyer"
+  EN L3151  send: "Send"
+
+  FR L2700  share: "Partager"
+  EN L3153  share: "Share"
+
+  FR L2732  store: "Boutique"
+  EN L3185  store: "Store"
+
+  FR L2733  storeNote: "BOUTIQUE DE L’ARTISTE — LIVRAISON OU FICHIER"
+  EN L3186  storeNote: "ARTIST STORE — SHIPPED OR DIGITAL"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

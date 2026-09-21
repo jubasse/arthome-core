@@ -1,0 +1,256 @@
+<!--
+  ÉCRAN      Lecteur de rediffusion
+  ROUTE      page === 'replay'
+  AFFICHE    Le lecteur de rediffusion : position, vitesse, chapitres horodatés, fenêtre restante, et la boutique du spectacle.
+  MÈNE VERS  live · artist · overlay-cart
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2071-2164
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — openPlayback, recordPlaybackPosition, listMyReplays
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, account, artist, currentDate, fr, roster, s, t
+  À LIRE     dépendances non recopiées ici : REPLAY, chapterDefs, kinship, ownReplays, polKey, replayPrice
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ isReplay }}" hint-placeholder-val="{{ false }}">
+<section style="max-width: 1440px; margin: 0 auto; padding: 32px 40px 0; animation: riseIn .4s ease both;">
+  <div style="display: grid; grid-template-columns: minmax(0,1fr) 340px; gap: 20px; align-items: start;">
+    <div style="min-width: 0;">
+      <div style="position: relative; aspect-ratio: 16/9; overflow: hidden; background: #100F0D; border: 1px solid #1F1C19;">
+        <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.82) brightness(0.66); background-color: #1A1815; background-image: {{ replayImgCss }}; background-size: cover; background-position: center;"></div>
+        <div style="position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 40%, rgba(11,10,9,0) 30%, rgba(11,10,9,0.55));"></div>
+        <div style="position: absolute; left: 16px; top: 16px; display: flex; gap: 8px;">
+          <span style="background: rgba(11,10,9,0.78); padding: 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 42);">{{ t.replayPage }}</span>
+          <span style="background: rgba(11,10,9,0.78); padding: 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #C9C0B2;">{{ replayDateLabel }}</span>
+        </div>
+        <div onClick="{{ togglePlay }}" style="position: absolute; inset: 0; cursor: pointer; display: grid; place-items: center;">
+          <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(11,10,9,0.62); border: 1px solid #4A423A; display: grid; place-items: center; font-size: 18px; color: #EDE7DC; transition: background .24s ease, transform .24s ease;" style-hover="background:rgba(11,10,9,0.85);transform:scale(1.06)">{{ playIcon }}</div>
+        </div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px; background: linear-gradient(to top, rgba(11,10,9,0.94), rgba(11,10,9,0));">
+          <div onClick="{{ seek }}" style="cursor: pointer; height: 4px; background: #2A2621; position: relative;">
+            <div style="{{ progressStyle }}"></div>
+            <sc-for list="{{ chapterMarks }}" as="cm" hint-placeholder-count="4">
+              <div style="{{ cm.markStyle }}"></div>
+            </sc-for>
+          </div>
+          <div style="padding-top: 10px; display: flex; align-items: center; gap: 12px;">
+            <span onClick="{{ togglePlay }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #EDE7DC;">{{ playIcon }}</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #C9C0B2;">{{ timeLabel }}</span>
+            <div style="margin-left: auto; display: flex; gap: 6px;">
+              <sc-for list="{{ speeds }}" as="sp" hint-placeholder-count="3">
+                <span onClick="{{ sp.pick }}" style="{{ sp.style }}">{{ sp.label }}</span>
+              </sc-for>
+              <sc-for list="{{ qualities }}" as="q" hint-placeholder-count="4">
+                <span onClick="{{ q.pick }}" style="{{ q.style }}">{{ q.label }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: flex-start; gap: 24px; padding-top: 22px;">
+        <div style="flex: 1; min-width: 0;">
+          <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 36px; line-height: 1.05;">{{ replayTitle }}</h1>
+          <div style="padding-top: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <span onClick="{{ goArtist }}" style="cursor: pointer; font-size: 13.5px; color: #C9C0B2; border-bottom: 1px solid #332E28;">{{ artist.name }}</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #857E73;">{{ replayMeta }}</span>
+            <span onClick="{{ openShare }}" style="cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease;" style-hover="border-color:#4A423A">{{ t.share }}</span>
+          </div>
+          <p style="margin: 18px 0 0; max-width: 620px; font-size: 15px; line-height: 1.6; color: #9B948A; text-wrap: pretty;">{{ artist.bio }}</p>
+          <div style="margin-top: 24px;">
+            <span onClick="{{ goLive }}" style="cursor: pointer; padding: 12px 20px; white-space: nowrap; border: 1px solid #332E28; font-size: 13.5px; color: #C9C0B2; transition: border-color .24s ease;" style-hover="border-color:#4A423A">{{ t.watchLive }}</span>
+          </div>
+        </div>
+        <div style="width: 240px; flex: 0 0 240px; border: 1px solid #1F1C19; background: #100F0D; padding: 16px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #6B6459;">{{ t.replayAccess }}</div>
+          <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; color: {{ replayPolicyColor }};">{{ replayPolicyLabel }}</div>
+          <div style="padding-top: 12px; font-size: 12.5px; line-height: 1.55; color: #8B857C; text-wrap: pretty;">{{ replayPolicyHint }}</div>
+          <div style="margin-top: 16px; border-top: 1px solid #1F1C19; padding-top: 14px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #6B6459;">{{ t.replayExpires }}</div>
+            <div style="padding-top: 6px; font-family: 'Instrument Serif', serif; font-size: 26px;">41 h 12</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside style="display: flex; flex-direction: column; height: 660px; border: 1px solid #1F1C19; background: #0D0C0A; overflow: hidden;">
+      <div style="padding: 13px 15px; border-bottom: 1px solid #1F1C19; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ t.chapters }}</div>
+      <div style="flex: 1; overflow-y: auto;">
+        <sc-for list="{{ chapters }}" as="ch" hint-placeholder-count="6">
+          <div onClick="{{ ch.jump }}" style="{{ ch.style }}">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: {{ ch.timeColor }};">{{ ch.time }}</span>
+            <span style="min-width: 0; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ch.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="border-top: 1px solid #1F1C19; padding: 14px 15px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #6B6459; padding-bottom: 10px;">{{ t.store }}</div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <sc-for list="{{ replayMerch }}" as="m" hint-placeholder-count="2">
+            <div style="display: grid; grid-template-columns: 54px 1fr; gap: 11px; align-items: center;">
+              <div style="position: relative; aspect-ratio: 1/1; overflow: hidden; background: #17140F; border: 1px solid #1F1C19;">
+                <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.85); background-color: #1A1815; background-image: {{ m.imgCss }}; background-size: cover; background-position: center;"></div>
+              </div>
+              <div style="min-width: 0;">
+                <div style="font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ m.name }}</div>
+                <div style="padding-top: 4px; display: flex; align-items: center; gap: 8px;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #9B948A;">{{ m.price }}</span>
+                  <span onClick="{{ m.add }}" style="{{ m.addStyle }}" style-hover="background:#221F1B">{{ m.addLabel }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* qualities  —  lignes 5041-5047 */
+    const qualities = ['4K', '1080p', '720p', 'AUTO'].map(label => ({
+      label,
+      pick: () => this.setState({ quality: label }),
+      style: 'cursor: pointer; padding: 5px 9px; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.08em; ' +
+        (s.quality === label ? 'background: oklch(0.68 0.18 42); color: #0B0A09;' : 'background: rgba(11,10,9,0.72); color: #9B948A;')
+    }));
+
+/* merch  —  lignes 5445-5468 */
+    const merch = (() => {
+      const IMG_BY_KIND = { textile: IMG.tshirt, poster: IMG.poster, record: IMG.vinyl, print: IMG.poster };
+      const d = currentDate || this.defaultDate();
+      const items = d ? A.merchOf(A.show(d.show).id) : [];
+      const rows = items.filter(x => x.state === 'on-sale').slice(0, 4).map(x => ({
+        name: x.label, price: A.price(x.price, x.currency), img: IMG_BY_KIND[x.kind] || IMG.tote
+      }));
+      return rows.length ? rows : [{ name: fr ? 'Boutique à venir' : 'Shop coming soon', price: '—', img: IMG.tote }];
+    })().map(m => Object.assign(m, {
+      add: () => this.setState(st => {
+        const lines = st.cartLines.slice();
+        const i = lines.findIndex(l => l.name === m.name);
+        if (i > -1) lines[i] = Object.assign({}, lines[i], { qty: lines[i].qty + 1 });
+        else lines.push({ name: m.name, price: m.price, img: m.img, imgCss: this.cssUrl(m.img), seller: artist.name, qty: 1 });
+        clearTimeout(this._addT);
+        this._addT = setTimeout(() => this.setState({ cartJustAdded: '' }), 1600);
+        return { cartLines: lines, cartOpen: true, cartStep: 'list', cartJustAdded: m.name, notifsOpen: false };
+      }),
+      addLabel: s.cartJustAdded === m.name ? t.cartAdded : t.add,
+      addStyle: 'margin-left: auto; cursor: pointer; padding: 5px 11px; white-space: nowrap; font-size: 12.5px; border: 1px solid ' +
+        (s.cartJustAdded === m.name ? 'oklch(0.6 0.11 150); color: oklch(0.78 0.13 150);' : '#332E28; color: #EDE7DC;') +
+        ' transition: background .24s ease, border-color .24s ease, color .24s ease;'
+    }));
+
+/* pol  —  lignes 5482-5482 */
+    const pol = REPLAY[polKey] || REPLAY.included;
+/* sameDiscipline  —  lignes 5504-5516 */
+    const sameDiscipline = roster
+      .filter(a => a.i !== artist.i)
+      .map(a => ({ a, k: kinship(a) }))
+      .filter(x => x.k > 0)
+      .sort((x, y) => y.k - x.k || (y.a.isLive ? 1 : 0) - (x.a.isLive ? 1 : 0))
+      .slice(0, 4)
+      .map(x => x.a)
+      .map(a => Object.assign({}, a, {
+      dotLabel: a.isLive ? t.onNow : '',
+      showDot: a.isLive,
+      dotColor: 'oklch(0.78 0.14 27)'
+    }));
+
+/* chapterList  —  lignes 5611-5622 */
+    const chapterList = chapterDefs.map(([time, label, at]) => {
+      const active = s.pos >= at && s.pos < at + 0.2;
+      return {
+        time, label, at,
+        jump: () => this.setState({ pos: at }),
+        timeColor: active ? 'oklch(0.78 0.13 42)' : '#857E73',
+        style: 'cursor: pointer; padding: 12px 15px; display: flex; gap: 12px; align-items: baseline; border-bottom: 1px solid #1F1C19; transition: background .24s ease; ' +
+          (active ? 'background: #17140F; color: #EDE7DC;' : 'background: transparent; color: #C9C0B2;')
+      };
+    });
+
+
+/* q  —  lignes 5699-5699 */
+    const q = s.query.trim().toLowerCase();
+/* artistLastLive  —  lignes 6006-6007 */
+    const artistLastLive = artist.lastLive;
+
+/* artistReplays  —  lignes 6009-6015 */
+    const artistReplays = polKey === 'off' ? [] : (ownReplays.length
+      ? ownReplays.map(o => [o.title, o.img, o.whenLabel, o.duration])
+      : [[artist.showTitle, artist.showImg, artistLastLive, '1 h 42']]
+    ).map(([title, img, date, duration]) => ({
+      title, img, imgCss: this.cssUrl(img), date, duration, price: replayPrice,
+      open: () => this.setState({ page: 'replay', artistId: artist.i, replayTitle: title, replayImg: img, replayDuration: duration, pos: 0, watching: artist.i, watchKind: 'replay', pipClosed: false })
+    }));
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      goLive: () => this.openLive((roster[0] || {}).name || ''), goAccount: this.gate(this.nav('account')),
+      replayPolicyLabel: pol[0], replayPolicyColor: pol[1], replayPolicyHint: pol[2],
+      artistReplays, hasReplays: artistReplays.length > 0,
+      sameDiscipline,
+      isReplay: s.page === 'replay',
+      replayTitle: s.replayTitle || artist.showTitle,
+      replayImgCss: this.cssUrl(s.replayImg || artist.showImg),
+      replayDateLabel: t.replayOf + ' ' + artistLastLive,
+      replayMeta: artist.discipline.toUpperCase() + ' · ' + s.replayDuration + ' · ' + s.quality,
+      playIcon: s.playing ? '❙❙' : '▶',
+      togglePlay: () => this.setState(st => ({ playing: !st.playing })),
+      timeLabel: (() => {
+        const d = String(s.replayDuration || '1 h 42');
+        const hm = d.match(/(\d+)\s*h\s*(\d+)?/);
+        const mins = hm ? parseInt(hm[1], 10) * 60 + (hm[2] ? parseInt(hm[2], 10) : 0) : (parseInt(d, 10) || 60);
+        const total = mins * 60;
+        const cur = Math.round(total * s.pos);
+        const fmt = n => {
+          const h = Math.floor(n / 3600), m = Math.floor((n % 3600) / 60), sec = n % 60;
+          return h ? h + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0') : m + ':' + String(sec).padStart(2, '0');
+        };
+        return fmt(cur) + ' / ' + fmt(total);
+      })(),
+      progressStyle: 'position: absolute; left: 0; top: 0; bottom: 0; width: ' + Math.round(s.pos * 100) + '%; background: oklch(0.68 0.18 42);',
+      seek: e => {
+        const r = e.currentTarget.getBoundingClientRect();
+        this.setState({ pos: Math.min(0.999, Math.max(0, (e.clientX - r.left) / r.width)) });
+      },
+      speeds: ['0,75×', '1×', '1,5×'].map(label => ({
+        label,
+        pick: () => this.setState({ speed: label }),
+        style: 'cursor: pointer; padding: 4px 8px; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.06em; transition: background .2s ease; ' +
+          (s.speed === label ? 'background: #EDE7DC; color: #0B0A09;' : 'background: rgba(11,10,9,0.72); color: #9B948A;')
+      })),
+      chapters: chapterList,
+      chapterMarks: chapterList.map(c => ({
+        markStyle: 'position: absolute; top: -3px; left: ' + Math.round(c.at * 100) + '%; width: 1px; height: 10px; background: #857E73;'
+      })),
+      replayMerch: merch.slice(0, 2),
+      openShare: () => this.setState({ shareOpen: true }),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.add  t.cartAdded  t.chapters  t.onNow  t.replayAccess  t.replayExpires  t.replayOf  
+    t.replayPage  t.share  t.store  t.watchLive  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    cartJustAdded  cartLines  page  playing  pos  quality  query  replayDuration  replayImg  
+    replayTitle  speed  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    cssUrl, defaultDate, gate, nav, openLive, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

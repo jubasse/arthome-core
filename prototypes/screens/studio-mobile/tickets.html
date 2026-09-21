@@ -1,0 +1,116 @@
+<!--
+  ÉCRAN        tickets
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Places vendues, liste d'attente, paliers de jauge, contremarques, demandes en cours.
+  RÔLES        artist · prod · tres
+  MÈNE VERS    feuilles : refund
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBand L475-485 · hasDonut L708-729 · hasBlocks L731-791
+               modèle    L2868-2946
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - needs §Les formes de données (paliers, liste d'attente, contremarques)
+               - openapi POST /v1/dates/{dateId}/capacity-tiers
+               - openapi POST /v1/seats/{seatId}/refund
+               - openapi GET /v1/dates/{dateId}/complimentaries
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBand        L475-485
+    hasDonut       L708-729
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_tickets(c) {
+    const s = this.state;
+    const tiers = s.tiers || {};
+    const row = c.evDefs[1];
+    return {
+      pageTitle: 'Ce qui est vendu, ce qui est dû',
+      band: this.stats(c.canRevenue
+        ? [['PLACES VENDUES', c.num(c.M.sold), 'toutes dates ouvertes'], ['RECETTE BRUTE', c.eur(c.M.gross), 'avant commission', OK],
+           ['COMMISSION', c.eur(c.M.commission), c.M.rate + ' % de la recette', WARN], ['RETENU', c.eur(c.M.held), 'issue ouverte', LIVE]]
+        : [['PLACES VENDUES', c.num(c.M.sold), 'toutes dates ouvertes'], ['PLACES RESTANTES', c.num(c.M.available), 'à vendre'],
+           ['LISTE D’ATTENTE', c.num(c.M.waitlist), 'toutes dates'], ['DATES', String(c.M.dates.length), 'au catalogue']]),
+      donut: Object.assign(this.donutOf(
+        c.M.tiers.map((t, i) => ({ label: t.label + ' · ' + c.eur(t.amount), value: t.count, color: [OK, INFO, MUTE, '#4A535C'][i] || '#4A535C' }))
+      ), { label: 'RÉPARTITION PAR TARIF', value: c.num(c.M.sold), caption: 'PLACES' }),
+      blocks: [
+        this.block('LISTE D’ATTENTE PAR DATE', 'FENÊTRE DE PRIORITÉ 2 H', {
+          intro: 'Ouvrir un palier ou sortir une date de réserve prévient la liste dans le même geste. Sans cela la rareté se dissipe avant que les gens ne l’apprennent.',
+          rows: this.rows(c.M.dates.filter(d => d.seats.waitlist > 0).slice(0, 3).map((d, i) => {
+            const show = this.A.show(d.show), cap = this.A.venue(d.venue).capacity;
+            const pct = cap ? Math.round((d.seats.sold / cap) * 100) : 0;
+            const opened = !!tiers['d' + i];
+            const step = Math.max(50, Math.round(cap * 0.12));
+            return {
+              label: this.A.title(show) + ' · ' + this.A.dayLabel(d.startOffsetMin),
+              hint: opened
+                ? c.num(step) + ' places ouvertes · ' + c.num(d.seats.waitlist) + ' personnes prévenues, deux heures de priorité'
+                : c.num(d.seats.sold) + ' / ' + c.num(cap) + ' · ' + c.num(d.seats.waitlist) + ' personnes en attente',
+              pill: opened ? 'PALIER OUVERT' : 'JAUGE ' + pct + ' %', pillColor: opened ? OK : INK3,
+              pct: opened ? Math.min(100, pct + 12) : pct, barColor: opened ? OK : WARN,
+              cta: opened ? '' : 'OUVRIR UN PALIER DE ' + c.num(step),
+              act: () => this.setState(st => ({ tiers: Object.assign({}, st.tiers, { ['d' + i]: 1 }) }))
+            };
+          }).concat(c.M.dates.some(d => d.seats.waitlist > 0) ? [] : [
+            { label: 'Aucune liste d’attente', hint: 'toutes les dates ont encore des places', value: '—', valueColor: '#4A535C' }
+          ]))
+        }),
+        this.block('PALIERS DE JAUGE', 'BORNÉS PAR LA PROVISION TECHNIQUE', {
+          intro: 'Un palier élargit une date existante. Au-delà de 10 000 spectateurs simultanés, l’infrastructure se provisionne à l’avance.',
+          rows: this.rows(c.M.dates.slice(0, 3).map(d => {
+            const show = this.A.show(d.show), cap = this.A.venue(d.venue).capacity;
+            const pct = cap ? Math.round((d.seats.sold / cap) * 100) : 0;
+            const justified = pct >= 80;
+            return {
+              label: this.A.title(show) + ' · ' + this.A.dayLabel(d.startOffsetMin),
+              hint: justified
+                ? 'jauge ' + c.num(cap) + ' · provision technique ' + c.num(Math.round(cap * 1.25))
+                : 'jauge ' + c.num(cap) + ' · remplissage ' + pct + ' %, aucun palier justifié',
+              value: justified ? '+ ' + c.num(Math.max(50, Math.round(cap * 0.12))) : '—',
+              valueColor: justified ? INFO : '#4A535C'
+            };
+          }))
+        }),
+        this.block('CONTREMARQUES', 'ÉMISES / ALLOUÉES', {
+          rows: this.rows([
+            { label: 'Presse', hint: 'critiques et médias partenaires', value: '12 / 20' },
+            { label: 'Partenaires', hint: 'coproducteurs, collectivités', value: '8 / 12' },
+            { label: 'Invités de la compagnie', hint: 'famille, équipe artistique', value: '4 / 8' }
+          ])
+        }),
+        this.block('DEMANDES EN COURS', '3 DEMANDES', {
+          rows: this.rows((() => {
+            const d0 = c.M.dates[0];
+            const dayOf = (d) => Math.floor(d.startOffsetMin / 1440);
+            const d1 = c.M.dates.filter(d => d !== d0 && dayOf(d) !== dayOf(d0))[0] || c.M.dates[1] || d0;
+            if (!d0) return [{ label: 'Aucune demande', hint: 'rien à traiter pour l’instant', value: '—', valueColor: '#4A535C' }];
+            const name = (d) => this.A.title(this.A.show(d.show)) + ', ' + this.A.dayLabel(d.startOffsetMin);
+            const full = d0.prices[0].amount;
+            return [
+              { label: 'Remboursement · 2 places', hint: name(d0) + ' · achat en double', pill: 'À TRAITER', pillColor: WARN, cta: 'REMBOURSER', act: () => this.setState({ sheet: 'refund' }) },
+              { label: 'Transfert de place', hint: 'du ' + this.A.longDate(d0.startOffsetMin) + ' à ' + this.A.clock(d0.startOffsetMin)
+                  + ' vers le ' + this.A.longDate(d1.startOffsetMin) + ' à ' + this.A.clock(d1.startOffsetMin) + ' · même tarif', pill: 'À TRAITER', pillColor: WARN, cta: 'AUTORISER', act: () => this.setState({ sheet: 'refund' }) },
+              { label: 'Litige bancaire · ' + c.eur(full), hint: name(d0) + ' · réponse attendue sous 24 h', pill: 'LITIGE', pillColor: LIVE, cta: 'RÉPONDRE', act: () => this.setState({ sheet: 'refund' }) }
+            ];
+          })())
+        })
+      ]
+    };
+  }
+
+</script>

@@ -1,0 +1,141 @@
+<!--
+  Arthome · storefront mobile — sheet-auth
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : superposée · authOpen
+  Affiche    : Inscription et connexion, deux onglets d'un même formulaire.
+  Mène vers  : toutes les routes gardées
+  Contrat    : architecture/adr-auth.md
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L2142–2170
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L2142–2170
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ authOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeAuth }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
+<div style="{{ sheetBase }} background: #0B0A09; border-top: 1px solid #332E28; box-shadow: 0 -24px 60px rgba(0,0,0,0.6); animation: slideUp .26s cubic-bezier(.2,.7,.2,1) both;">
+  <div style="padding: 12px 0 6px; display: flex; justify-content: center;"><span style="width: 38px; height: 3px; background: #332E28;"></span></div>
+  <div style="padding: 6px 16px 24px;">
+    <div style="font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1.05;">{{ authTitle }}</div>
+    <div style="padding-top: 9px; font-size: 13px; line-height: 1.55; color: #857E73; text-wrap: pretty;">{{ authIntro }}</div>
+    <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px;">
+      <sc-if value="{{ authIsUp }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.authName }}</div>
+          <input placeholder="{{ accountName }}" style="margin-top: 7px; width: 100%; box-sizing: border-box; padding: 13px; border: 1px solid #332E28; background: #0F0E0C; font-family: inherit; font-size: 14px; color: #EDE7DC; outline: none;" />
+        </div>
+      </sc-if>
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.authEmail }}</div>
+        <input placeholder="marie@exemple.fr" style="margin-top: 7px; width: 100%; box-sizing: border-box; padding: 13px; border: 1px solid #332E28; background: #0F0E0C; font-family: inherit; font-size: 14px; color: #EDE7DC; outline: none;" />
+      </div>
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.authPass }}</div>
+        <input type="password" placeholder="••••••••" style="margin-top: 7px; width: 100%; box-sizing: border-box; padding: 13px; border: 1px solid #332E28; background: #0F0E0C; font-family: inherit; font-size: 14px; color: #EDE7DC; outline: none;" />
+      </div>
+      <span onClick="{{ doAuth }}" style="cursor: pointer; padding: 15px; text-align: center; background: #EDE7DC; color: #0B0A09; font-size: 14px; font-weight: 600;">{{ t.authGo }}</span>
+      <span onClick="{{ switchAuth }}" style="cursor: pointer; text-align: center; font-size: 12.5px; color: #857E73;">{{ authSwitch }}</span>
+      <span onClick="{{ closeAuth }}" style="cursor: pointer; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #575047;">{{ t.authAlt }}</span>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (8 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── authOpen  —  clé du modèle rendu  —  L6242–6242 ── */
+      authOpen: s.authOpen, authIsUp: s.authTab === 'up',
+
+/* ── authTitle  —  clé du modèle rendu  —  L6243–6243 ── */
+      authTitle: s.authTab === 'up' ? t.authTitleUp : t.authTitleIn,
+
+/* ── authIntro  —  clé du modèle rendu  —  L6244–6244 ── */
+      authIntro: s.authTab === 'up' ? t.authIntroUp : t.authIntroIn,
+
+/* ── authSwitch  —  clé du modèle rendu  —  L6245–6245 ── */
+      authSwitch: s.authTab === 'up' ? t.authSwitchUp : t.authSwitchIn,
+
+/* ── switchAuth  —  clé du modèle rendu  —  L6249–6249 ── */
+      switchAuth: () => this.setState(st => ({ authTab: st.authTab === 'up' ? 'in' : 'up' })),
+
+/* ── closeAuth  —  clé du modèle rendu  —  L6250–6250 ── */
+      closeAuth: () => this.setState({ authOpen: false }),
+
+/* ── doAuth  —  clé du modèle rendu  —  L6251–6251 ── */
+      doAuth: () => this.setState({ authOpen: false, guest: false }),
+
+/* ── accountName  —  clé du modèle rendu  —  L6437–6437 ── */
+      accountName: account.name,
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (11) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2383  authAlt: "Ou continuer sans compte"
+  EN L2836  authAlt: "Or continue without an account"
+
+  FR L2384  authEmail: "ADRESSE E-MAIL"
+  EN L2837  authEmail: "EMAIL ADDRESS"
+
+  FR L2385  authGo: "Continuer"
+  EN L2838  authGo: "Continue"
+
+  FR L2386  authIntroIn: "Retrouvez vos places, vos alertes et vos rediffusions."
+  EN L2839  authIntroIn: "Get back your tickets, alerts and replays."
+
+  FR L2387  authIntroUp: "Deux minutes, et vous gardez vos places, vos artistes suivis et vos rediffusions."
+  EN L2840  authIntroUp: "Two minutes, and you keep your tickets, the artists you follow and your replays."
+
+  FR L2388  authName: "NOM"
+  EN L2841  authName: "NAME"
+
+  FR L2389  authPass: "MOT DE PASSE"
+  EN L2842  authPass: "PASSWORD"
+
+  FR L2390  authSwitchIn: "Pas encore de compte ? En créer un"
+  EN L2843  authSwitchIn: "No account yet? Create one"
+
+  FR L2391  authSwitchUp: "Déjà un compte ? Se connecter"
+  EN L2844  authSwitchUp: "Already have an account? Sign in"
+
+  FR L2392  authTitleIn: "Se connecter"
+  EN L2845  authTitleIn: "Sign in"
+
+  FR L2393  authTitleUp: "Créer un compte"
+  EN L2846  authTitleUp: "Create an account"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

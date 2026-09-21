@@ -1,0 +1,134 @@
+<!--
+  Écran      : signin
+  Route      : page === 'signin' — appairage d'appareil, intention `signin`
+  Affiche    : QR + code court à six caractères, trois arguments de vente, et un écran qui attend puis bascule seul.
+  Mène vers  : gate (comptes connectés) · home (parcourir sans compte)
+  Partagé    : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
+
+  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
+    · Le code est un littéral de maquette ('H4T9RD') et la validité (« CODE VALABLE 15 MINUTES ») est une chaîne de copie. Le contrat les sert désormais.
+    · Le minuteur de 14 s (signT, L1783) simule l'approbation : il n'y a pas d'interrogation réelle.
+
+  ⚠ EXTRACTION VERBATIM. Ne rien corriger ici : l'original
+    `Storefront TV.dc.html` reste la source runnable de la galerie.
+-->
+
+<!-- ═══════════ Balisage (verbatim, L59-110) ═══════════ -->
+  <sc-if value="{{ pgSignin }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; background: #0B0A09; animation: fadeIn .4s ease both;">
+      <sc-if value="{{ signin.img }}" hint-placeholder-val="{{ false }}"><img data-img="{{ signin.img }}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.62) brightness(.44); transform-origin: 50% 100%; animation: {{ ken }};" /></sc-if>
+      <div style="position: absolute; inset: 0; background: linear-gradient(90deg, #0B0A09 0%, rgba(11,10,9,.9) 46%, rgba(11,10,9,.68) 100%);"></div>
+      <div style="position: absolute; inset: 0; background: linear-gradient(0deg, #0B0A09 0%, transparent 46%);"></div>
+      <div style="position: absolute; left: 184px; top: 150px; width: 1040px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.32em; color: #857E73;">ARTHOME</div>
+        <div style="padding-top: 26px; font-family: 'Instrument Serif', serif; font-size: 88px; line-height: 1.02; text-wrap: pretty;">{{ t.siTitle }}</div>
+        <div style="padding-top: 30px; display: flex; flex-direction: column; gap: 18px;">
+          <sc-for list="{{ signin.lines }}" as="l" hint-placeholder-count="3">
+            <div style="display: flex; gap: 18px; align-items: flex-start;">
+              <div style="flex: 0 0 10px; width: 10px; height: 10px; margin-top: 13px; border-radius: 50%; background: oklch(0.78 0.13 42);"></div>
+              <div style="font-size: 28px; line-height: 1.36; color: #C9C0B2; max-width: 780px;">{{ l.l }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding-top: 48px; display: flex; gap: 22px; flex-wrap: wrap;">
+          <sc-for list="{{ signin.actions }}" as="a" hint-placeholder-count="2">
+            <div tabindex="-1" data-fid="{{ a.fid }}" onClick="{{ a.act }}" style="white-space: nowrap; padding: 20px 32px; border-radius: 4px; border: 1px solid {{ a.border }}; background: {{ a.bg }}; color: {{ a.ink }}; font-size: 26px; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), background .16s ease, color .16s ease, box-shadow .16s ease;" style-focus="background:#EDE7DC;color:#0B0A09;border-color:#EDE7DC;transform:translateY(-6px) scale(var(--fs,1.08));box-shadow:0 18px 48px rgba(0,0,0,.7)">{{ a.label }}</div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="position: absolute; right: 132px; top: 168px; width: 560px;">
+        <div tabindex="-1" data-fid="si:qr" onClick="{{ signin.scan }}" style="padding: 26px; border-radius: 4px; background: #EDE7DC; display: grid; grid-template-columns: repeat(21, 16px); grid-template-rows: repeat(21, 16px); justify-content: center; cursor: pointer; border: 3px solid transparent; transition: transform .3s cubic-bezier(.86,0,.14,1), box-shadow .16s ease;" style-focus="border-color:#EDE7DC;transform:translateY(-6px) scale(var(--fs,1.06));box-shadow:0 18px 48px rgba(0,0,0,.7)">
+          <sc-for list="{{ signin.cells }}" as="q" hint-placeholder-count="441">
+            <div style="width: 16px; height: 16px; background: #0B0A09; opacity: {{ q.o }};"></div>
+          </sc-for>
+        </div>
+        <div style="padding-top: 22px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.14em; color: #857E73;">{{ t.siScan }}</div>
+        <div style="margin-top: 26px; padding: 26px 30px; border-radius: 4px; border: 1px solid #332E28; background: rgba(16,15,13,.86);">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.14em; color: #6B6459;">{{ t.siOrType }}</div>
+          <div style="padding-top: 14px; font-family: 'JetBrains Mono', monospace; font-size: 28px; letter-spacing: 0.06em; color: #C9C0B2;">{{ signin.url }}</div>
+          <div style="padding-top: 14px; font-family: 'JetBrains Mono', monospace; font-size: 56px; letter-spacing: 0.22em; color: #EDE7DC;">{{ signin.code }}</div>
+          <div style="padding-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: #6B6459;">{{ t.codeNote }}</div>
+        </div>
+        <sc-if value="{{ signin.waiting }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top: 26px; display: flex; align-items: center; gap: 16px;">
+            <sc-for list="{{ signin.dots }}" as="d" hint-placeholder-count="3">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: oklch(0.78 0.13 42); animation: waitDot 1.4s infinite; animation-delay: {{ d.delay }};"></div>
+            </sc-for>
+            <div style="font-size: 26px; color: #9B948A;">{{ t.siWait }}</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ signin.done }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top: 26px; display: flex; align-items: center; gap: 16px; animation: riseIn .2s ease both;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid oklch(0.7 0.13 150); display: grid; place-items: center; font-size: 22px; color: oklch(0.7 0.13 150);">✓</div>
+            <div style="font-size: 26px; color: oklch(0.7 0.13 150);">{{ t.siDone }}</div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+<!-- ═══════════ Modèle de vue (verbatim, L3197-3214) ═══════════ -->
+<script type="text/x-dc-extract">
+      signin: {
+        img: U(PIC.lights), cells: this.qr('signin'), code: 'H4T9RD', url: 'arthome.fr/tv',
+        waiting: !s.signinOk, done: s.signinOk,
+        dots: [0, 1, 2].map(i => ({ i: i, delay: (i * 0.18) + 's' })),
+        lines: (fr
+          ? ['Théâtre, danse, opéra, jazz, cirque : les salles diffusent en direct, avec leur billetterie.',
+             'Votre place donne accès au direct et, quand la salle le permet, à la rediffusion.',
+             'Un compte, tous vos écrans : téléviseur, téléphone, ordinateur.']
+          : ['Theatre, dance, opera, jazz, circus: venues broadcast live, with their own ticketing.',
+             'Your seat opens the live stream and, when the venue allows, the replay.',
+             'One account, every screen: TV, phone, computer.']).map((l, i) => ({ i: i, l: l })),
+        scan: () => this.signIn(),
+        actions: [
+          { fid: 'si:in', label: fr ? 'J’ai scanné, continuer' : 'I scanned, continue', act: () => this.signIn(), bg: '#EDE7DC', ink: '#0B0A09', border: '#EDE7DC' },
+          { fid: 'si:back', label: fr ? 'Comptes connectés' : 'Connected accounts', act: () => { clearTimeout(this.signT); this.nav = true; this.setState({ page: 'gate', signinOk: false }); }, bg: 'transparent', ink: '#C9C0B2', border: '#4A423A' },
+          { fid: 'si:anon', label: fr ? 'Parcourir sans compte' : 'Browse without an account', act: () => this.browseAnon(), bg: 'transparent', ink: '#C9C0B2', border: '#4A423A' }
+        ]
+      },
+</script>
+
+<!-- ═══════════ signIn() — bascule à l'approbation (verbatim, L2322-2327) ═══════════ -->
+<script type="text/x-dc-extract">
+  signIn() {
+    if (this.state.page !== 'signin' || this.state.signinOk) return;
+    clearTimeout(this.signT);
+    this.setState({ signinOk: true });
+    setTimeout(() => { this.stack = []; this.nav = true; this.setState({ page: 'gate', signinOk: false }); }, 1100);
+  }
+</script>
+
+<!-- ═══════════ qr() — tramage du QR (verbatim, L2350-2361) ═══════════ -->
+<script type="text/x-dc-extract">
+  qr(seed) {
+    const N = 21, out = [];
+    let h = 0; for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) % 99991;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const finder = (fx, fy) => (x >= fx && x < fx + 7 && y >= fy && y < fy + 7) ? ((x === fx || x === fx + 6 || y === fy || y === fy + 6) || (x >= fx + 2 && x <= fx + 4 && y >= fy + 2 && y <= fy + 4)) : null;
+      let on = finder(0, 0); if (on === null) on = finder(14, 0); if (on === null) on = finder(0, 14);
+      const quiet = (x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12);
+      if (on === null) { on = quiet ? false : (((x * 7 + y * 13 + h + ((x * y) % 11)) % 5) < 2); }
+      out.push({ i: y * N + x, o: on ? 1 : 0 });
+    }
+    return out;
+  }
+</script>
+
+<!-- ═══════════ CLÉS DE COPIE ═══════════
+  jeton du composant  →  clé i18n (shared/i18n/tv-keymap.json)
+    t.codeNote           → ticketing.codeValidity   [majuscules]
+    t.siDone             → common.qr.done
+    t.siOrType           → common.qr.orType   [majuscules]
+    t.siScan             → common.qr.signInTitle   [majuscules]
+    t.siTitle            → account.signIn.title
+    t.siWait             → common.qr.waiting
+-->
+
+<!-- ═══════════ RENVOIS ═══════════
+  needs/storefront-tv.md → « L'appairage d'appareil » — section la plus détaillée du document
+  openapi/storefront.yaml → createPairing (POST /v1/pairings, intent=signin) · pollPairing (GET /v1/pairings/{id})
+  adr-auth.md §3-§5 : seul `signin` est un vrai RFC 8628 ; les quatre autres sont des rendez-vous de transaction.
+  Alphabet du code : 28 symboles ACDEFHJKLMNPQRTUVWXY23456789 (B, S, Z, G retirés). Durée servie : 15 min pour signin.
+  pollPairing fonctionne avec le SEUL jeton d'appareil : c'est ce qui permet le rattachement après redémarrage.
+-->

@@ -1,0 +1,257 @@
+<!--
+  Arthome · storefront mobile — _shell
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : —
+  Affiche    : La coquille : styles, écran de démarrage, en-tête collant avec ses deux pastilles, bandeau visiteur, barre de cinq onglets bas.
+  Mène vers  : les douze routes
+  Contrat    : GET /v1/viewer-context · GET /v1/devices
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1–54, L55–66, L68–68, L69–87, L88–94, L1860–1885, L2295–2299
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+  Note       : Le paysage vit ici, et nulle part ailleurs : shellStyle, navBarStyle, heroStyle,
+               sheetBase et sheetTop sont les seules différences entre portrait et paysage.
+               Aucune branche de balisage n'est conditionnée à l'orientation — vérifié.
+               Les modes d'affichage « tiles » et « list » (state.view, state.followView) sont
+               eux aussi des variantes de style, pas des écrans.
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1–54
+     ══════════════════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #0B0A09; }
+  * { box-sizing: border-box; }
+  a { color: #EDE7DC; text-decoration: none; }
+  a:hover { color: oklch(0.72 0.16 42); }
+  ::-webkit-scrollbar:horizontal { height: 0; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #2A2621; border-radius: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  div { scrollbar-width: none; }
+  @keyframes skel { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+  @keyframes pulseLive { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes slideIn { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+  [data-rail] { -webkit-user-select: none; user-select: none; }
+  [data-rail] img { -webkit-user-drag: none; user-drag: none; pointer-events: none; }
+  [data-rail] > * { scroll-snap-stop: always; }
+  [data-rail] { -webkit-overflow-scrolling: touch; }
+  [data-strip] { -webkit-overflow-scrolling: touch; }
+  [data-strip]::-webkit-scrollbar { display: none; }
+  [data-strip] * { user-select: none; -webkit-user-select: none; }
+  @keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes skeleton { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.9; } }
+  :focus-visible { outline: 2px solid oklch(0.72 0.16 42); outline-offset: 2px; }
+  input:focus-visible { outline-offset: 0; }
+  [data-reveal="0"] { opacity: 0; transform: translateY(16px); }
+  [data-burger] { display: none; }
+  @media (max-width: 1000px) { [data-nav-full] { display: none !important; } [data-burger] { display: grid; } }
+  @media (max-width: 1240px) { [data-hide-md] { display: none; } }
+  @media (max-width: 1080px) { [data-hide-sm] { display: none; } }
+  [data-reveal="1"] { opacity: 1; transform: none; transition: opacity .55s ease, transform .6s cubic-bezier(.2,.7,.2,1); }
+  #om-grain { opacity: 0.4; mix-blend-mode: overlay; background-repeat: repeat; background-size: 200px 200px; background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyMDAnIGhlaWdodD0nMjAwJz48ZmlsdGVyIGlkPSduJz48ZmVUdXJidWxlbmNlIHR5cGU9J2ZyYWN0YWxOb2lzZScgYmFzZUZyZXF1ZW5jeT0nMC45JyBudW1PY3RhdmVzPSczJy8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9JzIwMCcgaGVpZ2h0PScyMDAnIGZpbHRlcj0ndXJsKCNuKScgb3BhY2l0eT0nMC41Jy8+PC9zdmc+"); }
+</style>
+</helmet>
+
+<div style="{{ shellStyle }}">
+
+<div id="om-grain" style="position: fixed; inset: 0; z-index: 9000; pointer-events: none;"></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L55–66
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ booting }}" hint-placeholder-val="{{ false }}">
+  <div style="position: fixed; inset: 0; z-index: 8000; background: #0B0A09; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 0 28px; text-align: center;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; color: #6B6459;">ARTHOME</div>
+    <div style="width: 180px; height: 2px; background: #1F1C19; overflow: hidden;">
+      <div style="width: 40%; height: 100%; background: #4A423A; animation: skel 1.2s infinite;"></div>
+    </div>
+    <div style="font-size: 14px; color: #857E73;">Chargement du catalogue…</div>
+    <sc-if value="{{ bootError }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width: 340px; padding: 10px 12px; border: 1px solid #4A2B2B; background: #1A1212; color: #E0A0A0; font-size: 12.5px; text-wrap: pretty;">{{ bootError }}</div>
+    </sc-if>
+  </div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L68–68
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L69–87
+     ══════════════════════════════════════════════════════════════════════════ -->
+<header style="position: sticky; top: 0; z-index: 500; background: rgba(11,10,9,0.92); border-bottom: 1px solid #1F1C19;">
+  <div style="padding: 0 16px; height: 58px; display: flex; align-items: center; gap: 10px;">
+    <div onClick="{{ goHome }}" style="cursor: pointer; font-family: 'Instrument Serif', serif; font-size: 21px; letter-spacing: 0.02em; line-height: 1;">ARTHOME<span style="color: oklch(0.68 0.18 42);">.</span></div>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+      <span onClick="{{ openSearch }}" title="{{ t.search }}" style="cursor: pointer; position: relative; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #262320;">
+        <span style="position: absolute; left: 15px; top: 14px; width: 12px; height: 12px; border: 1.5px solid #C9C0B2; border-radius: 50%;"></span>
+        <span style="position: absolute; left: 25px; top: 26px; width: 8px; height: 1.5px; background: #C9C0B2; transform: rotate(45deg);"></span>
+      </span>
+      <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}">
+        <span onClick="{{ openSignUp }}" style="cursor: pointer; padding: 10px 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600;">{{ t.signIn }}</span>
+      </sc-if>
+      <sc-if value="{{ isMember }}" hint-placeholder-val="{{ true }}">
+        <span onClick="{{ toggleNotifs }}" style="cursor: pointer; position: relative; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #262320; font-size: 14px; color: #C9C0B2;">✳<sc-if value="{{ unreadNotifs }}" hint-placeholder-val="{{ true }}"><span style="position: absolute; right: -1px; top: -1px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; display: grid; place-items: center; background: oklch(0.62 0.21 27); color: #0B0A09; font-family: 'JetBrains Mono', monospace; font-size: 9px;">{{ notifCount }}</span></sc-if></span>
+        <span onClick="{{ toggleCart }}" style="cursor: pointer; position: relative; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #262320; font-size: 13px; color: #C9C0B2;"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l-1.1 11.2a1.6 1.6 0 0 1-1.6 1.4H8.2a1.6 1.6 0 0 1-1.6-1.4Z"></path><path d="M9 8V6.4a3 3 0 0 1 6 0V8"></path></svg><sc-if value="{{ hasCartItems }}" hint-placeholder-val="{{ false }}"><span style="position: absolute; right: -2px; top: -2px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; display: grid; place-items: center; background: #EDE7DC; color: #0B0A09; font-family: 'JetBrains Mono', monospace; font-size: 9px;">{{ cartCountBadge }}</span></sc-if></span>
+      </sc-if>
+    </div>
+  </div>
+</header>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L88–94
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}">
+  <div style="margin: 12px 16px 0; border: 1px solid rgba(214,178,102,0.3); background: rgba(214,178,102,0.05); padding: 12px 14px;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: oklch(0.83 0.1 84);">{{ t.guestBadge }}</div>
+    <div style="padding-top: 7px; font-size: 13px; line-height: 1.5; color: #C9C0B2; text-wrap: pretty;">{{ t.guestBanner }}</div>
+    <span onClick="{{ openSignUp }}" style="display: inline-block; margin-top: 11px; cursor: pointer; padding: 10px 15px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600;">{{ t.guestBannerCta }}</span>
+  </div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1860–1885
+     ══════════════════════════════════════════════════════════════════════════ -->
+<nav style="{{ navBarStyle }}">
+  <div style="display: grid; grid-template-columns: repeat(5, minmax(0,1fr));">
+    <div onClick="{{ tabHome.go }}" style="{{ tabHome.style }}">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V11a8 8 0 0 1 16 0v9"></path><path d="M2.5 20h19"></path><path d="M9.5 20v-6.5a2.5 2.5 0 0 1 5 0V20"></path></svg>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em;">{{ tabHome.label }}</span>
+    </div>
+    <div onClick="{{ tabBrowse.go }}" style="{{ tabBrowse.style }}">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="M15.4 15.4 21 21"></path></svg>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em;">{{ tabBrowse.label }}</span>
+    </div>
+    <div onClick="{{ tabCats.go }}" style="{{ tabCats.style }}">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7"></rect><rect x="13.5" y="3.5" width="7" height="7"></rect><rect x="3.5" y="13.5" width="7" height="7"></rect><rect x="13.5" y="13.5" width="7" height="7"></rect></svg>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em;">{{ tabCats.label }}</span>
+    </div>
+    <div onClick="{{ tabFollow.go }}" style="{{ tabFollow.style }}">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7.2-4.6-7.2-9.6A4 4 0 0 1 12 7.6a4 4 0 0 1 7.2 2.8C19.2 15.4 12 20 12 20Z"></path></svg>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em;">{{ tabFollow.label }}</span>
+    </div>
+    <div onClick="{{ tabAccount.go }}" style="{{ tabAccount.style }}">
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"></circle><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"></path></svg>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em;">{{ tabAccount.label }}</span>
+    </div>
+  </div>
+</nav>
+
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L2295–2299
+     ══════════════════════════════════════════════════════════════════════════ -->
+</sc-if>
+
+</div>
+
+</x-dc>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (11 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── nav  —  méthode de classe  —  L3977–3977 ── */
+  nav(page) { return () => this.setState({ page, pick: null, ticketOpen: false, shareOpen: false }); }
+
+/* ── cartCount  —  calcul dans renderReady()  —  L5630–5630 ── */
+    const cartCount = s.cartLines.reduce((n, l) => n + l.qty, 0);
+
+/* ── goHome  —  clé du modèle rendu  —  L5830–5830 ── */
+      goHome: this.nav('home'), goBrowse: this.nav('browse'), goArtist: this.nav('artist'),
+
+/* ── toggleNotifs  —  clé du modèle rendu  —  L5991–5991 ── */
+      toggleNotifs: () => this.setState(st => ({ notifsOpen: !st.notifsOpen })),
+
+/* ── unreadNotifs  —  clé du modèle rendu  —  L5993–5993 ── */
+      unreadNotifs: !s.notifsRead,
+
+/* ── notifCount  —  clé du modèle rendu  —  L5994–5994 ── */
+      notifCount: '3',
+
+/* ── cartCountBadge  —  clé du modèle rendu  —  L6034–6034 ── */
+      cartCountBadge: cartCount ? String(cartCount) : '',
+
+/* ── hasCartItems  —  clé du modèle rendu  —  L6035–6035 ── */
+      hasCartItems: cartCount > 0,
+
+/* ── toggleCart  —  clé du modèle rendu  —  L6038–6038 ── */
+      toggleCart: () => this.setState(st => ({ cartOpen: !st.cartOpen, notifsOpen: false })),
+
+/* ── isGuest  —  clé du modèle rendu  —  L6239–6239 ── */
+      isGuest: s.guest, isMember: !s.guest,
+
+/* ── openSignUp  —  clé du modèle rendu  —  L6246–6246 ── */
+      openSignUp: () => this.setState({ authOpen: true, authTab: 'up', menuOpen: false }),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (5) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2504  guestBadge: "VISITEUR"
+  EN L2957  guestBadge: "VISITOR"
+
+  FR L2505  guestBanner: "Vous regardez en visiteur : les aperçus gratuits sont ouverts, la place débloque le spectacle entier."
+  EN L2958  guestBanner: "You are browsing as a guest: free previews are open, a ticket unlocks the whole show."
+
+  FR L2506  guestBannerCta: "Créer un compte"
+  EN L2959  guestBannerCta: "Create an account"
+
+  FR L2690  search: "Rechercher un artiste, un spectacle…"
+  EN L3143  search: "Search an artist, a show…"
+
+  FR L2715  signIn: "Se connecter"
+  EN L3168  signIn: "Sign in"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

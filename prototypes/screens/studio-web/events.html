@@ -1,0 +1,376 @@
+<!--
+==============================================================================
+  ÉCRAN — events — tableau des événements
+==============================================================================
+
+  Ce qu'il affiche : toutes les dates de la chaîne : recherche, filtre multi-états, six clés de tri, pagination à huit
+
+  Rôles qui l'ouvrent : artist · production · director · video · sound
+  Mène vers : event · regie · wizard
+
+  Source : mockups/Studio.dc.html
+    balisage        lignes 1032–1150
+    modèle de vue   lignes 3073–3128, 3823–3900, 4218–4218, 6268–6269, 6274–6275, 6279–6356
+
+  Clés de copie employées :
+    aucune clé i18n directe
+
+  Contrat :
+    besoins   needs/studio-web.md § « Pagination et volumes » → « Tris et filtres à servir »
+    openapi   openapi/studio.yaml · listChannelEvents
+    openapi   openapi/studio.yaml · createDateDraft
+
+  Relevé d'extraction (défauts vus, non corrigés) :
+    · le tri par état suit STATE_ORDER : le contrat sert `orderRank` pour qu'aucune surface ne réinvente cette table.
+
+  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+-->
+
+<!-- ======================= BALISAGE ======================= -->
+<!-- ···· balisage · Studio.dc.html lignes 1032–1150 ···· -->
+    <sc-if value="{{ isEvents }}" hint-placeholder-val="{{ false }}">
+    <div style="animation: fadeIn .2s ease both;">
+      <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 16px 22px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">ÉVÉNEMENTS</div>
+          <div style="padding-top: 7px; font-size: 21px; font-weight: 600; letter-spacing: -0.01em;">{{ eventsCount }}</div>
+        </div>
+        <sc-if value="{{ canCreate }}" hint-placeholder-val="{{ true }}">
+          <span onClick="{{ startWizard }}" style="margin-left: auto; cursor: pointer; padding: 10px 15px; background: #E6E9EC; color: #0E0F10; font-size: 12.5px; font-weight: 600; transition: background .18s ease;" style-hover="background:#ffffff">+ Créer une date</span>
+        </sc-if>
+      </div>
+
+      <div style="border-bottom: 1px solid #1D2126; background: #131518; padding: 10px 22px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+        <input value="{{ evQuery }}" onChange="{{ onEvQuery }}" placeholder="Chercher un titre" style="flex: 0 1 220px; min-width: 140px; padding: 8px 11px; border: 1px solid #2A2F35; background: #0E0F10; font-size: 12.5px; color: #E6E9EC; outline: none;" />
+        <sc-for list="{{ evWhenFilters }}" as="wf" hint-placeholder-count="3">
+          <span onClick="{{ wf.pick }}" style="{{ wf.style }}">{{ wf.label }}</span>
+        </sc-for>
+        <span style="width: 1px; height: 20px; background: #23272C;"></span>
+        <div data-pop="states" style="position: relative; flex: 0 0 auto;">
+          <span onClick="{{ toggleStateMenu }}" style="{{ stateFieldStyle }}">
+            <sc-if value="{{ stateFieldSolo }}" hint-placeholder-val="{{ false }}">
+              <span style="{{ stateFieldPill }}">{{ stateFieldLabel }}</span>
+            </sc-if>
+            <sc-if value="{{ stateFieldMulti }}" hint-placeholder-val="{{ true }}">
+              <span>{{ stateFieldLabel }}</span>
+            </sc-if>
+            <span style="font-size: 9px; color: #7C858D;">{{ stateCaret }}</span>
+          </span>
+          <sc-if value="{{ stateOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; right: 0; top: calc(100% + 5px); z-index: 700; min-width: 214px; border: 1px solid #333941; background: #111316; box-shadow: 0 16px 34px rgba(0,0,0,0.5);">
+              <sc-for list="{{ stateOptions }}" as="so" hint-placeholder-count="7">
+                <div onClick="{{ so.pick }}" style="{{ so.style }}" style-hover="background:#1A1D21">
+                  <span style="{{ so.markStyle }}">{{ so.mark }}</span>
+                  <span style="{{ so.pillStyle }}">{{ so.label }}</span>
+                  <span style="{{ so.countStyle }}">{{ so.count }}</span>
+                </div>
+              </sc-for>
+              <sc-if value="{{ stateHasSel }}" hint-placeholder-val="{{ false }}">
+                <div onClick="{{ clearStates }}" style="cursor: pointer; border-top: 1px solid #1D2126; padding: 9px 11px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #7C858D;" style-hover="color:#E6E9EC">TOUS LES ÉTATS</div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+        <sc-if value="{{ evHasFilter }}" hint-placeholder-val="{{ false }}">
+          <span onClick="{{ clearEvFilters }}" style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #7C858D; border-bottom: 1px solid #23272C;" style-hover="color:#E6E9EC">TOUT EFFACER</span>
+        </sc-if>
+        <span style="margin-left: auto; flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ zoneNoteColor }};">{{ zoneNote }}</span>
+      </div>
+
+      <div style="padding: 16px 22px 30px;">
+        <div style="border: 1px solid #23272C; background: #15171A;">
+          <div style="{{ evHeadStyle }}">
+            <span onClick="{{ evSortCols.date.pick }}" style="{{ evSortCols.date.style }}" style-hover="color:#98A0A8">{{ evSortCols.date.label }}</span>
+            <span onClick="{{ evSortCols.title.pick }}" style="{{ evSortCols.title.style }}" style-hover="color:#98A0A8">{{ evSortCols.title.label }}</span>
+            <span onClick="{{ evSortCols.state.pick }}" style="{{ evSortCols.state.style }}" style-hover="color:#98A0A8">{{ evSortCols.state.label }}</span>
+            <sc-if value="{{ showFillCol }}" hint-placeholder-val="{{ true }}">
+              <span onClick="{{ evSortCols.fill.pick }}" style="{{ evSortCols.fill.style }}" style-hover="color:#98A0A8">{{ evSortCols.fill.label }}</span>
+            </sc-if>
+            <sc-if value="{{ showRevenue }}" hint-placeholder-val="{{ true }}">
+              <span onClick="{{ evSortCols.rev.pick }}" style="{{ evSortCols.rev.style }}" style-hover="color:#98A0A8">{{ evSortCols.rev.label }}</span>
+            </sc-if>
+            <span></span>
+          </div>
+          <sc-if value="{{ evNoMatch }}" hint-placeholder-val="{{ false }}">
+            <div style="padding: 40px 22px; text-align: center;">
+              <div style="font-size: 15px; color: #98A0A8;">Aucune date ne correspond</div>
+              <span onClick="{{ clearEvFilters }}" style="display: inline-block; margin-top: 13px; cursor: pointer; padding: 10px 15px; border: 1px solid #333941; font-size: 12.5px; color: #C6CDD4;" style-hover="background:#1A1D21">Effacer les filtres</span>
+            </div>
+          </sc-if>
+          <sc-for list="{{ eventRows }}" as="e" hint-placeholder-count="8">
+            <div style="{{ e.rowStyle }}" style-hover="background:#191C20">
+              <div style="min-width: 0;">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #E6E9EC; white-space: nowrap;">{{ e.date }}</div>
+                <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #646C74;">{{ e.time }}</div>
+                <sc-if value="{{ e.hasLocal }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding-top: 2px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: oklch(0.72 0.11 235);">{{ e.localTime }}</div>
+                </sc-if>
+              </div>
+              <div onClick="{{ e.open }}" style="cursor: pointer; min-width: 0;">
+                <div style="font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span>{{ e.tHit.pre }}</span><span style="background: rgba(214,178,102,0.22); color: oklch(0.9 0.08 84);">{{ e.tHit.hit }}</span><span>{{ e.tHit.post }}</span></div>
+                <div style="padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #646C74; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span>{{ e.mHit.pre }}</span><span style="background: rgba(214,178,102,0.22); color: oklch(0.9 0.08 84);">{{ e.mHit.hit }}</span><span>{{ e.mHit.post }}</span></div>
+                <sc-if value="{{ e.hasFold }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.04em; color: #98A0A8;">{{ e.fold }}</div>
+                </sc-if>
+              </div>
+              <div style="min-width: 0; display: flex; align-items: flex-start; gap: 5px; flex-wrap: wrap;">
+                <sc-if value="{{ e.isLive }}" hint-placeholder-val="{{ false }}">
+                  <span style="flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+                </sc-if>
+                <span style="{{ e.stateStyle }}">{{ e.state }}</span>
+              </div>
+              <sc-if value="{{ showFillCol }}" hint-placeholder-val="{{ true }}">
+                <div style="text-align: right; min-width: 0;">
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #E6E9EC;">{{ e.fill }}</div>
+                  <div style="padding-top: 5px; height: 3px; background: #1D2126;"><div style="{{ e.barStyle }}"></div></div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ showRevenue }}" hint-placeholder-val="{{ true }}">
+                <div style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: {{ e.revColor }};">{{ e.revenue }}</div>
+              </sc-if>
+              <div style="text-align: right;">
+                <span onClick="{{ e.action }}" style="{{ e.actionStyle }}">{{ e.actionLabel }}</span>
+              </div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ evHasPager }}" hint-placeholder-val="{{ false }}">
+            <div style="border-top: 1px solid #1D2126; padding: 9px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #5B636B;">{{ evPagerLabel }}</span>
+              <div style="margin-left: auto; display: flex; gap: 5px; flex-wrap: wrap;">
+                <sc-for list="{{ evPagerBtns }}" as="pb" hint-placeholder-count="3">
+                  <span onClick="{{ pb.go }}" style="{{ pb.style }}" style-hover="background:#1A1D21">{{ pb.label }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+<!-- ===================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+<!-- ···· modèle de vue · Studio.dc.html lignes 3073–3128 ···· -->
+  agendaOf(channelName) {
+    const A = this.A, D = this.data;
+    if (!A || !D) return [];
+    const channel = (D.cited || D.channels).filter(c => c.name === channelName)[0] || D.channels[0];
+    if (!channel) return [];
+    const MONTHS = ['janv.', 'févr.', 'mars', 'avril', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const DAYS = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];
+    const state = (d) => {
+      if (d.outcome) return 'done';
+      const st = A.stateOf(d);
+      return st === 'live' ? 'live' : st === 'replay' ? 'replay' : st === 'ended' ? 'done' : 'sched';
+    };
+    const rows = channel.dates.map(id => A.date(id)).filter(Boolean).map(d => {
+      const show = A.show(d.show);
+      const venue = A.venue(d.venue);
+      const at = A.dateAt(d.startOffsetMin);
+      const runtime = show.runtimeMin;
+      const sold = Math.max(0, venue.capacity - d.seats.available);
+      const meta = [A.label(A.category(show.category)), A.duration(runtime)].join(' · ').toLocaleUpperCase('fr-FR');
+      return [
+        DAYS[at.getDay()] + ' ' + at.getDate() + ' ' + MONTHS[at.getMonth()],
+        A.clock(d.startOffsetMin).replace(' h ', ':').replace(' h', ':00'),
+        A.title(show), state(d), sold, venue.capacity,
+        d.prices[0].amount,
+        /* « En réserve » = retenue avant publication. Une date complète
+           n'entre pas dans ce cas : elle est publiée et vendue. */
+        (A.publicationOf(d) || {}).state === 'reserve',
+        meta, A.duration(runtime),
+        Math.max(0, -d.startOffsetMin), A.showImage(show, 900), d.id,
+        // Recette brute : source unique, avec la vraie répartition des tarifs.
+        (A.payoutOf(d) || { gross: 0 }).gross
+      ];
+    });
+    /* Les projets retenus avant publication rejoignent l'agenda : une date en
+       réserve doit se voir là où la chaîne lit son calendrier. */
+    (A.draftsOf(channel) || []).filter(x => x.state === 'reserve').forEach(x => {
+      const show = A.show(x.show);
+      const venue = A.venue(x.venue);
+      if (!show || !venue) return;
+      const at = A.dateAt(x.intendedStartOffsetMin);
+      rows.push([
+        DAYS[at.getDay()] + ' ' + at.getDate() + ' ' + MONTHS[at.getMonth()],
+        A.clock(x.intendedStartOffsetMin).replace(' h ', ':').replace(' h', ':00'),
+        /* L'état porte le fait : « hidden » est la réserve, et les deux
+           rendus (agenda et liste d'événements) le lisent au même endroit. */
+        A.title(show), 'hidden', 0, venue.capacity,
+        0, true,
+        [A.label(A.category(show.category)), A.duration(show.runtimeMin)].join(' · ').toLocaleUpperCase('fr-FR'),
+        A.duration(show.runtimeMin), x.intendedStartOffsetMin, A.showImage(show, 900), x.id
+      ]);
+    });
+
+    // À l'antenne d'abord, puis les dates à venir, puis le passé.
+    const rank = (r) => r[3] === 'live' ? 0 : (r[10] > 0 ? 2 : 1);
+    return rows.sort((a, b) => rank(a) - rank(b) || (rank(a) === 2 ? b[10] - a[10] : a[10] - b[10]));
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 3823–3900 ···· -->
+
+    const evQ = (s.evQuery || '').trim().toLowerCase();
+    const PAST = { done: 1, replay: 1 };
+    const MONTH_N = { 'août': 8, 'sept.': 9, 'oct.': 10, 'nov.': 11, 'déc.': 12 };
+    const dayKey = row => {
+      const m = row[0].match(/(\d+)\s+(\S+)/);
+      const mo = m ? (MONTH_N[m[2]] || 9) : 9;
+      const d = m ? parseInt(m[1], 10) : 1;
+      return mo * 100 + d + row[1].replace(':', '') / 10000;
+    };
+    const filtered = evDefs.map((r, i) => r.concat([i])).filter(e => {
+      const st = (s.evOver || {})[e[14]] || e[3];
+      if (evQ && (e[2] + ' ' + e[8]).toLowerCase().indexOf(evQ) < 0) return false;
+      if (s.evWhen === 'next' && PAST[st]) return false;
+      if (s.evWhen === 'past' && !PAST[st]) return false;
+      return stSel.length === 0 || stSel.indexOf(st) > -1;
+    }).sort((a, b) => {
+      const dir = s.evDesc ? -1 : 1;
+      const key = s.evSort || 'date';
+      const stOf = r => STATE_ORDER.indexOf((s.evOver || {})[r[14]] || r[3]);
+      if (key === 'title') return dir * a[2].localeCompare(b[2], 'fr');
+      if (key === 'price') return dir * (a[6] - b[6]);
+      if (key === 'state') return dir * (stOf(a) - stOf(b));
+      if (key === 'fill') return dir * ((a[4] / (a[5] || 1)) - (b[4] / (b[5] || 1)));
+      if (key === 'rev') return dir * ((a[13] || 0) - (b[13] || 0));
+      return dir * (dayKey(a) - dayKey(b));
+    });
+
+    const evNarrow = vw < 820;
+    const evShowFill = !evNarrow;
+    const evShowRev = canRevenue && !evNarrow;
+    const evCols = evNarrow
+      ? '100px minmax(150px,1fr) 96px 78px'
+      : ('104px minmax(200px,1fr) 148px 84px' + (canRevenue ? ' 96px' : '') + ' 84px');
+
+    const eventRows = filtered.map(([date, time, title, st0, sold, cap, price, hidden, meta, dur, poster, tech, dateId, gross, i]) => {
+      const st = (s.evOver || {})[i] || st0;
+      const stDef = STATES[st];
+      const pct = cap ? Math.round((sold / cap) * 100) : 0;
+      const voidLabel = (s.evVoid || {})[i] || '';
+      const rev = voidLabel ? 0 : (gross || 0);
+      const isReady = st === 'ready' || st === 'live';
+      const cut = (txt) => {
+        const src = String(txt || '');
+        if (!evQ) return { pre: src, hit: '', post: '' };
+        const p = src.toLowerCase().indexOf(evQ);
+        if (p < 0) return { pre: src, hit: '', post: '' };
+        return { pre: src.slice(0, p), hit: src.slice(p, p + evQ.length), post: src.slice(p + evQ.length) };
+      };
+      return {
+        date, title, hidden,
+        meta,
+        time: withZone(time),
+        localTime: localOf(time),
+        hasLocal: !!localOf(time),
+        tHit: cut(title), mHit: cut(voidLabel ? voidLabel + ' · ' + meta : meta),
+        hasFold: evNarrow,
+        fold: voidLabel ? voidLabel : (cap ? pct + ' % de la jauge' : 'sans billetterie') + (canRevenue && rev ? '  ·  ' + eur(rev) : ''),
+        state: stDef[0], stateStyle: this.pill(stDef[1]),
+        isLive: st === 'live',
+        fill: voidLabel ? '—' : pct + ' %',
+        barStyle: 'height: 100%; width: ' + (voidLabel ? 0 : pct) + '%; background: ' + (pct >= 90 ? WARN : '#4A535C') + ';',
+        revenue: rev ? eur(rev) : '—',
+        revColor: rev ? '#E6E9EC' : '#4A535C',
+        open: () => this.setState({ page: 'event', evSel: i, evTab: null }),
+        action: () => this.setState({ page: isReady ? 'regie' : 'event', evSel: i, evTab: null }),
+        actionLabel: isReady ? 'Régie' : 'Ouvrir',
+        actionStyle: 'cursor: pointer; padding: 6px 11px; white-space: nowrap; font-size: 12px; border: 1px solid '
+          + (isReady ? '#4A5560; background: #1F252B; color: #E6E9EC;' : '#2A2F35; color: #98A0A8;')
+          + ' ',
+        rowStyle: 'border-top: 1px solid #191C20; padding: 11px 14px; display: grid; grid-template-columns: '
+          + evCols + '; gap: 12px; align-items: center; '
+      };
+    });
+
+    const agenda = evDefs.slice(0, 6).map(([date, time, title, st0, sold, cap, price], i) => {
+      const st = (s.evOver || {})[i] || st0;
+      const stDef = STATES[st];
+<!-- ···· modèle de vue · Studio.dc.html lignes 4218–4218 ···· -->
+      isEvents: page === 'events',
+<!-- ···· modèle de vue · Studio.dc.html lignes 6268–6269 ···· -->
+      startWizard: () => this.setState({ page: 'wizard' }),
+      canCreate: roleOf === 'prod' || roleOf === 'artist',
+<!-- ···· modèle de vue · Studio.dc.html lignes 6274–6275 ···· -->
+      showRevenue: evShowRev,
+      showFillCol: evShowFill,
+<!-- ···· modèle de vue · Studio.dc.html lignes 6279–6356 ···· -->
+      eventsCount: filtered.length + (filtered.length > 1 ? ' dates' : ' date'),
+      /* sélecteur d'états, à choix multiple */
+      stateOpen: !!s.stateOpen,
+      toggleStateMenu: () => this.setState(st => ({ stateOpen: !st.stateOpen })),
+      stateFieldLabel: stSel.length === 0 ? 'TOUS LES ÉTATS'
+        : (stSel.length === 1 ? STATES[stSel[0]][0] : stSel.length + ' ÉTATS'),
+      stateFieldSolo: stSel.length === 1,
+      stateFieldMulti: stSel.length !== 1,
+      stateFieldPill: stSel.length === 1 ? this.pill(STATES[stSel[0]][1]) : '',
+      stateFieldStyle: 'cursor: pointer; flex: 0 0 auto; display: flex; align-items: center; gap: 9px; padding: 8px 11px; border: 1px solid '
+        + (s.stateOpen ? '#4A535C' : (stSel.length ? '#3A4149' : '#2A2F35')) + '; background: #0E0F10; ' + MONO
+        + 'font-size: 9px; letter-spacing: 0.1em; color: ' + (stSel.length ? '#E6E9EC' : '#98A0A8') + '; transition: border-color .18s ease;',
+      stateCaret: s.stateOpen ? '▴' : '▾',
+      stateOptions: STATE_ORDER.map(k => {
+        const on = stSel.indexOf(k) > -1;
+        const n = evDefs.filter((r, i) => ((s.evOver || {})[i] || r[3]) === k).length;
+        return {
+          label: STATES[k][0], count: String(n),
+          mark: on ? '✓' : '',
+          pick: () => this.setState(st => {
+            const cur = st.stateSel || [];
+            return { stateSel: cur.indexOf(k) > -1 ? cur.filter(x => x !== k) : cur.concat([k]) };
+          }),
+          style: 'cursor: pointer; padding: 8px 11px; display: flex; align-items: center; gap: 9px; background: '
+            + (on ? '#1A1D21' : 'transparent') + '; transition: background .16s ease;',
+          pillStyle: MONO + 'flex: 0 0 auto; font-size: 9px; letter-spacing: 0.09em; padding: 3px 7px; white-space: nowrap; color: '
+            + STATES[k][1] + '; border: 1px solid ' + (on ? STATES[k][1] : 'color-mix(in oklch, ' + STATES[k][1] + ' 34%, transparent)')
+            + '; background: ' + (on ? 'color-mix(in oklch, ' + STATES[k][1] + ' 14%, transparent)' : 'transparent') + ';',
+          markStyle: 'flex: 0 0 12px; ' + MONO + 'font-size: 10px; color: ' + (on ? OK : 'transparent') + ';',
+          countStyle: 'margin-left: auto; flex: 0 0 auto; ' + MONO + 'font-size: 9px; letter-spacing: 0.09em; color: ' + (on ? '#98A0A8' : '#5B636B') + ';'
+        };
+      }),
+      clearStates: () => this.setState({ stateSel: [] }),
+      stateHasSel: stSel.length > 0,
+
+      zoneNote: zSame ? 'HEURES EN ' + zAbbr : 'HEURES DE SALLE EN ' + zAbbr + ' · VOTRE FUSEAU ' + ((ZONES[myZone] || [])[0] || ''),
+      zoneNoteColor: zSame ? '#5B636B' : INFO,
+
+      evSortCols: (() => {
+        const key = s.evSort || 'date';
+        const arrow = k => k === key ? (s.evDesc ? ' ↓' : ' ↑') : '';
+        const mk = (k, label, align) => ({
+          label: label + arrow(k),
+          pick: () => this.setState(st => st.evSort === k || (!st.evSort && k === 'date')
+            ? { evSort: k, evDesc: !st.evDesc }
+            : { evSort: k, evDesc: false }),
+          style: 'cursor: pointer; text-align: ' + (align || 'left') + '; color: ' + (k === key ? '#E6E9EC' : '#5B636B') + '; transition: color .18s ease;'
+        });
+        return { date: mk('date', 'DATE'), title: mk('title', 'SPECTACLE'), state: mk('state', 'ÉTAT'),
+                 price: mk('price', 'TARIF', 'right'),
+                 fill: mk('fill', 'JAUGE', 'right'), rev: mk('rev', 'RECETTE', 'right') };
+      })(),
+      evQuery: s.evQuery || '',
+      onEvQuery: e => this.setState({ evQuery: e.target.value }),
+      evWhenFilters: [['all', 'TOUTES'], ['next', 'À VENIR'], ['past', 'PASSÉES']].map(([k, label]) => ({
+        label, pick: () => this.setState({ evWhen: k }), style: this.chip((s.evWhen || 'all') === k)
+      })),
+      evHasFilter: !!evQ || (s.evWhen && s.evWhen !== 'all') || stSel.length > 0,
+      clearEvFilters: () => this.setState({ evQuery: '', evWhen: 'all', stateSel: [] }),
+      evNoMatch: filtered.length === 0,
+      eventRows: evPageRows,
+      evHasPager: evPages > 1,
+      evPagerLabel: evPages > 1 ? (evCur * EV_PER + 1) + '–' + Math.min(eventRows.length, evCur * EV_PER + EV_PER) + ' SUR ' + eventRows.length : '',
+      evPagerBtns: evPages > 1
+        ? [['‹', evCur - 1, false, evCur === 0]]
+            .concat(Array.from({ length: evPages }, (_, n) => [String(n + 1), n, n === evCur, false]))
+            .concat([['›', evCur + 1, false, evCur === evPages - 1]])
+            .map(([label, target, on, off]) => ({
+              label,
+              go: off ? (() => {}) : (() => this.setState({ evPage: Math.max(0, Math.min(evPages - 1, target)) })),
+              style: 'flex: 0 0 auto; min-width: 30px; text-align: center; cursor: ' + (off ? 'default' : 'pointer') + '; padding: 6px 9px; ' + MONO
+                + 'font-size: 9px; letter-spacing: 0.08em; border: 1px solid ' + (on ? '#4A535C' : '#23272C')
+                + '; background: ' + (on ? '#1A1D21' : 'transparent') + '; color: ' + (off ? '#3A4149' : (on ? '#E6E9EC' : '#98A0A8')) + ';'
+            }))
+        : [],
+      evHeadStyle: 'padding: 9px 14px; display: grid; grid-template-columns: '
+        + evCols + '; gap: 12px; ' + MONO + 'font-size: 9px; letter-spacing: 0.12em; color: #5B636B; background: #131518; border-bottom: 1px solid #1D2126;',
+
+</script>

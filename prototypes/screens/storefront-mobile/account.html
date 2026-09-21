@@ -1,0 +1,140 @@
+<!--
+  Arthome · storefront mobile — account
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : account
+  Affiche    : La coquille du compte : portrait, identité, et le menu des onze sections avec leurs pastilles de comptage.
+  Mène vers  : les onze sections du compte
+  Contrat    : GET /v1/me/account
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1299–1348, L1771–1777
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+  Note       : Les onze sections sont dans account-*.html. accView bascule entre 'menu' (ce
+               fichier) et 'section' (les onze autres).
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1299–1348
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+<div style="animation: fadeIn .3s ease both; padding: 18px 16px 0;">
+  <sc-if value="{{ accSectionView }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ accBack }}" style="cursor: pointer; display: flex; align-items: center; gap: 11px; min-height: 44px;">
+      <span style="flex: 0 0 auto; font-size: 15px; color: #857E73;">‹</span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #857E73;">{{ t.accBackToMenu }}</span>
+    </div>
+    <h1 style="margin: 10px 0 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 30px; line-height: 1.05;">{{ accSectionLabel }}</h1>
+  </sc-if>
+
+  <sc-if value="{{ accMenuView }}" hint-placeholder-val="{{ true }}">
+  <div style="display: flex; align-items: center; gap: 13px;">
+    <div style="flex: 0 0 56px; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815; border: 1px solid #332E24;">
+      <sc-if value="{{ artistPortrait }}" hint-placeholder-val="{{ false }}">
+        <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.85); background-color: #17140F; background-image: {{ artistPortraitCss }}; background-size: cover; background-position: center;"></div>
+      </sc-if>
+    </div>
+    <div style="min-width: 0;">
+      <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 28px; line-height: 1;">{{ accountName }}</h1>
+      <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ accountMeta }}</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+    <sc-for list="{{ accountStats }}" as="st" hint-placeholder-count="3">
+      <div style="background: #100F0D; padding: 12px 8px; text-align: center;">
+        <div style="font-family: 'Instrument Serif', serif; font-size: 21px; line-height: 1;">{{ st.value }}</div>
+        <div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #857E73;">{{ st.label }}</div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <div style="{{ accGrid }}">
+    <sc-if value="{{ accMenuView }}" hint-placeholder-val="{{ true }}">
+    <div style="{{ accNavCol }}">
+      <nav style="{{ accNavList }}">
+        <sc-for list="{{ accountNav }}" as="n" hint-placeholder-count="11">
+          <div onClick="{{ n.pick }}" style="{{ n.style }}">
+            <span>{{ n.label }}</span>
+            <span style="{{ accBadgeStyle }}">{{ n.badge }}</span>
+            <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #6B6459;">{{ n.caret }}</span>
+          </div>
+        </sc-for>
+      </nav>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ accSectionView }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ accContentStyle }}">
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1771–1777
+     ══════════════════════════════════════════════════════════════════════════ -->
+
+    <sc-if value="{{ accMenuView }}" hint-placeholder-val="{{ true }}">
+      <span onClick="{{ toggleSession }}" style="{{ accSignOutStyle }}">{{ sessionLabel }}</span>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (4 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── artistPortrait  —  clé du modèle rendu  —  L5825–5825 ── */
+      artistPortrait: artist.portrait, artistPortraitCss: this.cssUrl(artist.portrait),
+
+/* ── sessionLabel  —  clé du modèle rendu  —  L6252–6252 ── */
+      sessionLabel: s.guest ? t.signIn : t.signOut,
+
+/* ── toggleSession  —  clé du modèle rendu  —  L6253–6253 ── */
+      toggleSession: () => this.setState(st => ({ guest: !st.guest, menuOpen: false, accMenuOpen: false, page: 'home', pick: null, accTab: 'upcoming' })),
+
+/* ── accountName  —  clé du modèle rendu  —  L6437–6437 ── */
+      accountName: account.name,
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (3) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2338  accBackToMenu: "MON COMPTE"
+  EN L2791  accBackToMenu: "MY ACCOUNT"
+
+  FR L2715  signIn: "Se connecter"
+  EN L3168  signIn: "Sign in"
+
+  FR L2716  signOut: "Se déconnecter"
+  EN L3169  signOut: "Sign out"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

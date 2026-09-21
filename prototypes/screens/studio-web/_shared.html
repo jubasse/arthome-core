@@ -1,0 +1,210 @@
+<!--
+==============================================================================
+  ÉCRAN — _shared — constantes, dictionnaire EN, horloges, pont de données
+==============================================================================
+
+  Ce qu'il affiche : les jetons de couleur, la table de traduction littérale EN, le décalage d'heure de salle, les tables remplies depuis shared/studio-data.js, et les fabriques communes (chip, pill, barsFrom, hms)
+
+  Rôles qui l'ouvrent : tous
+  Mène vers : tous les écrans
+
+  Source : mockups/Studio.dc.html
+    balisage        aucun — préambule du script
+    modèle de vue   lignes 2349–2354, 2373–2432, 2443–2467, 2468–2508, 3263–3294, 3374–3381
+
+  Clés de copie employées :
+    aucune clé i18n directe
+
+  Contrat :
+    besoins   needs/studio-web.md § « Contraintes propres au studio »
+    openapi   openapi/studio.yaml · getStudioBootstrap (constants, labelCatalog, realtime)
+
+  Relevé d'extraction (défauts vus, non corrigés) :
+    · la copie n'est PAS en clés i18n : `tr(s, en)` traduit des LITTÉRAUX FRANÇAIS par la table EN. Le contrat impose l'inverse (i18n par codes) — à porter, pas à recopier.
+    · shiftTime dérive l'heure de salle d'un décalage figé (utcOffsetMin) : errata D3, le contrat porte un identifiant IANA et un instant UTC.
+    · loadArthome cherche helpers.js, fixtures.js, studio-data.js, catalogue.json, taxonomy.json et i18n/ À CÔTÉ du .html : errata B4, il faut copier shared/ à côté des maquettes.
+
+  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+-->
+
+<!-- ===================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+<!-- ···· modèle de vue · Studio.dc.html lignes 2349–2354 ···· -->
+const OK = 'oklch(0.72 0.14 155)';
+const WARN = 'oklch(0.78 0.13 75)';
+const LIVE = 'oklch(0.7 0.19 27)';
+const INFO = 'oklch(0.72 0.11 235)';
+const MONO = "font-family: 'JetBrains Mono', monospace;";
+
+<!-- ···· modèle de vue · Studio.dc.html lignes 2373–2432 ···· -->
+const EN = {
+  /* navigation et pages */
+  'Boîte': 'Inbox', 'BOÎTE': 'INBOX', 'BOÎTE VIDE': 'INBOX EMPTY',
+  'Mes dates': 'My dates', 'Tableau de bord': 'Dashboard', 'Modération': 'Moderation',
+  'Planning et équipe': 'Schedule & crew', 'Événements': 'Events', 'Diffusion': 'Streaming',
+  'Statistiques': 'Analytics', 'Billetterie': 'Ticketing', 'Boutique': 'Store',
+  'Rediffusions': 'Replays', 'Équipe': 'Crew', 'Versements': 'Payouts', 'Journal': 'Activity log',
+  'Réglages': 'Settings', 'Réglages de la chaîne': 'Channel settings',
+  'Aide et guides': 'Help & guides', 'Mon compte': 'My account',
+  /* rôles */
+  'ARTISTE · PROPRIÉTAIRE': 'ARTIST · OWNER', 'PRODUCTION': 'PRODUCTION', 'RÉGIE': 'TECHNICAL',
+  'MODÉRATION': 'MODERATION', 'COORDINATION': 'COORDINATION', 'TRÉSORERIE': 'FINANCE',
+  'ARTISTE': 'ARTIST', 'RÉGIE ': 'TECHNICAL ',
+  /* états */
+  'BROUILLON': 'DRAFT', 'EN RÉSERVE': 'HELD BACK', 'PROGRAMMÉ': 'SCHEDULED',
+  'TESTS TECHNIQUES': 'TECH REHEARSAL', 'EN DIRECT': 'LIVE', 'TERMINÉ': 'ENDED',
+  'REDIFFUSION EN LIGNE': 'REPLAY ONLINE', 'REDIFFUSION': 'REPLAY', 'À VENIR': 'UPCOMING',
+  'ANNULÉE ET REMBOURSÉE': 'CANCELLED & REFUNDED', 'REPORTÉE · PLACES VALABLES': 'POSTPONED · TICKETS VALID',
+  'INTERROMPUE · AVOIRS ÉMIS': 'INTERRUPTED · CREDITS ISSUED',
+  /* actions courantes */
+  'Ouvrir': 'Open', 'Modifier': 'Edit', 'Renouveler': 'Rotate', 'Émettre': 'Issue',
+  'Rembourser': 'Refund', 'Autoriser': 'Approve', 'Répondre': 'Respond', 'Révoquer': 'Revoke',
+  'Accepter': 'Accept', 'Refuser': 'Decline', 'Marquer lu': 'Mark read', 'Lire ↗': 'Read ↗',
+  'Suivre le colis': 'Track parcel', 'Ouvrir la vente': 'Open sales', 'Ouvrir un palier': 'Add a tier',
+  'Ouvrir la régie': 'Open the desk', 'Ouvrir la console': 'Open the console',
+  'Exporter en CSV': 'Export as CSV', 'Exporter la liste': 'Export the list',
+  'Exporter la période': 'Export this period', 'Exporter vers mon agenda': 'Export to my calendar',
+  'Télécharger les factures': 'Download invoices', 'Contacter le support': 'Contact support',
+  '+ Ajouter un article': '+ Add an item', '+ Inviter': '+ Invite', 'Demander un renfort': 'Request backup',
+  'Lancer un test technique': 'Run a tech rehearsal', 'Tout est prêt': 'All clear',
+  'Prendre en charge': 'Take it', 'Relâcher': 'Release',
+  /* mentions et statuts */
+  'FAIT': 'DONE', 'À FAIRE': 'TO DO', 'REÇU': 'RECEIVED', 'AUCUN': 'NONE',
+  'EN LIGNE': 'ONLINE', 'EN ATTENTE': 'PENDING', 'ACTIF': 'ON', 'INACTIF': 'OFF',
+  'Active': 'On', 'Inactive': 'Off', 'CETTE DATE': 'THIS DATE', 'APPLIQUÉ': 'APPLIED',
+  'ACCÈS PERMANENT': 'PERMANENT ACCESS', 'ACCÈS PONCTUEL': 'ONE-OFF ACCESS',
+  'AFFICHER': 'SHOW', 'MASQUER': 'HIDE', 'TOUT': 'ALL', 'TOUS LES ÉTATS': 'ALL STATES',
+  'PUBLIÉ': 'PUBLISHED', 'SUPPRIMÉ': 'DELETED', 'BANNI': 'BANNED', 'RÉDUIT AU SILENCE': 'MUTED'
+};
+const tr = (s, on) => (on && typeof s === 'string' && EN[s]) ? EN[s] : s;
+
+let ZONES = {};
+/* une heure de salle, rendue dans le fuseau de qui la lit */
+const shiftTime = (hhmm, from, to) => {
+  const zf = ZONES[from] || ZONES['Europe/Paris'];
+  const zt = ZONES[to] || zf;
+  const d = zt[1] - zf[1];
+  if (!d) return null;
+  const m = String(hhmm).match(/(\d{1,2})[:hH](\d{2})/);
+  if (!m) return null;
+  let h = (parseInt(m[1], 10) + d) % 24;
+  if (h < 0) h += 24;
+  const day = parseInt(m[1], 10) + d;
+  return {
+    time: (h < 10 ? '0' : '') + h + 'h' + m[2],
+    abbr: zt[0],
+    shift: day >= 24 ? ' le lendemain' : (day < 0 ? ' la veille' : '')
+  };
+};
+
+<!-- ···· modèle de vue · Studio.dc.html lignes 2443–2467 ···· -->
+
+let DIRECTORY = [];
+
+let DATE_LABELS = [];
+
+let GRANTS = {};
+
+let ROSTER = {};
+
+let AUDIENCE = {};
+
+let LIVE_CHAT = {};
+let CHAN_SETS = {};
+let CHAN_ZONE = {};
+
+const U = id => 'https://images.unsplash.com/' + id + '?auto=format&fit=crop&w=900&q=70';
+const IMG = {
+  ballet: U('photo-1547153760-18fc86324498'),
+  dance: U('photo-1518709268805-4e9042af2176'),
+  curtain: U('photo-1503095396549-807759245b35'),
+  hall: U('photo-1580809361436-42a7ec204889'),
+  smoke: U('photo-1514525253161-7a46d19cd819'),
+  hands: U('photo-1526401281623-3a6c7c1c1e58')
+};
+
+<!-- ···· modèle de vue · Studio.dc.html lignes 2468–2508 ···· -->
+class Component extends DCLogic {
+  mainRef = React.createRef();
+
+  // Les données viennent de fixtures.js par studio-data.js : une seule source
+  // pour les cinq surfaces. Tant qu'elles arrivent, la régie affiche son écran
+  // d'attente plutôt que des tables figées.
+  async loadArthome() {
+    try {
+      const at = (p) => new URL(p, document.baseURI).href;
+      const [helpers, fixtures, bridge] = await Promise.all([
+        import(at('helpers.js')), import(at('fixtures.js')), import(at('studio-data.js'))
+      ]);
+      const get = async (p) => {
+        const res = await fetch(at(p));
+        if (!res.ok) throw new Error(p + ' (' + res.status + ')');
+        return res.json();
+      };
+      const [catalogue, taxonomy, index] = await Promise.all([get('catalogue.json'), get('taxonomy.json'), get('i18n/index.json')]);
+      const strings = await Promise.all(index.files.map(f => get('i18n/' + f.file)));
+      const fx = fixtures.buildFixtures({ catalogue, taxonomy });
+      const A = helpers.createArthome({
+        taxonomy, fixtures: fx, strings, locales: index.locales, i18nFormat: index,
+        locale: (this.props.lang || 'fr')
+      });
+      const D = bridge.buildStudioData(A, fx);
+      DIRECTORY = D.directory; DATE_LABELS = D.dateLabels; ZONES = D.zones; GRANTS = D.grants;
+      ROSTER = D.roster; AUDIENCE = D.audience; LIVE_CHAT = D.liveChat;
+      CHAN_SETS = D.chanSets; CHAN_ZONE = D.channelZone;
+      this.A = A; this.fx = fx; this.data = D;
+      this.setState({ dataReady: true, dataError: null }, () => {
+        if (!this._measure) return;
+        this._measure();
+        requestAnimationFrame(() => this._measure());
+        let tries = 0;
+        clearInterval(this._mt);
+        this._mt = setInterval(() => { this._measure(); if (++tries > 10) clearInterval(this._mt); }, 100);
+      });
+    } catch (e) {
+      this.setState({ dataReady: false, dataError: String(e && e.message || e) });
+    }
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 3263–3294 ···· -->
+  chip(on) {
+    return 'cursor: pointer; padding: 6px 10px; white-space: nowrap; ' + MONO
+      + 'font-size: 9.5px; letter-spacing: 0.1em; border: 1px solid '
+      + (on ? '#E6E9EC; background: #E6E9EC; color: #0E0F10;' : '#2A2F35; color: #98A0A8;')
+      + ' ';
+  }
+
+  pill(color) {
+    return MONO + 'font-size: 9px; letter-spacing: 0.1em; padding: 3px 7px; white-space: nowrap; border: 1px solid '
+      + color.replace('oklch(', 'oklch(').replace(')', ' / 0.4)') + '; color: ' + color + ';';
+  }
+
+  // Barres tirées d'une série de valeurs réelles. Série vide ou toute nulle :
+  // aucune barre, plutôt qu'un historique décoratif à côté d'un zéro.
+  barsFrom(values, tint) {
+    const list = (values || []).filter(v => typeof v === 'number' && isFinite(v));
+    const max = Math.max.apply(null, list.concat([0]));
+    if (!list.length || max <= 0) return [];
+    return list.slice(-14).map((v, i, arr) => ({
+      style: 'flex: 1 1 auto; min-width: 2px; height: ' + Math.max(6, Math.round((v / max) * 100)) + '%; background: '
+        + (i === arr.length - 1 ? tint : '#2A3037') + ';'
+    }));
+  }
+
+  bars(seed, n, tint) {
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const h = 18 + ((seed * (i + 3) * 17) % 82);
+      out.push({ style: 'flex: 1 1 auto; min-width: 2px; height: ' + h + '%; background: ' + (i === n - 1 ? tint : '#2A3037') + ';' });
+    }
+    return out;
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 3374–3381 ···· -->
+  hms(n) {
+    /* Un chapitre posé avant le lever de rideau a un horodatage négatif :
+       le signe se sort du calcul, sinon chaque part le porte. */
+    const sign = n < 0 ? '−' : '';
+    const v = Math.abs(Math.round(n));
+    return sign + [Math.floor(v / 3600), Math.floor((v % 3600) / 60), v % 60]
+      .map(x => (x < 10 ? '0' : '') + x).join(':');
+  }
+</script>

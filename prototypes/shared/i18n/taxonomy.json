@@ -1,0 +1,1753 @@
+{
+  "note": "Taxonomie : familles, disciplines, genres, tags et attributs transverses. Résout les clés déclarées dans taxonomy.json. Réécrit pour la taxonomie v8 : 21 disciplines, 176 sous-genres, 205 tags, attributs structurés.",
+  "keys": {
+    "families.stage": {
+      "fr": "Scène",
+      "en": "Stage"
+    },
+    "families.music": {
+      "fr": "Musique",
+      "en": "Music"
+    },
+    "tags.noise-rock": {
+      "fr": "noise rock",
+      "en": "noise rock"
+    },
+    "tags.math-rock": {
+      "fr": "math rock",
+      "en": "math rock"
+    },
+    "tags.grunge": {
+      "fr": "grunge",
+      "en": "grunge"
+    },
+    "tags.britpop": {
+      "fr": "britpop",
+      "en": "britpop"
+    },
+    "tags.cold-wave": {
+      "fr": "cold wave",
+      "en": "cold wave"
+    },
+    "tags.hardcore": {
+      "fr": "hardcore",
+      "en": "hardcore"
+    },
+    "tags.crust": {
+      "fr": "crust",
+      "en": "crust"
+    },
+    "tags.screamo": {
+      "fr": "screamo",
+      "en": "screamo"
+    },
+    "tags.post-hardcore": {
+      "fr": "post-hardcore",
+      "en": "post-hardcore"
+    },
+    "tags.sludge": {
+      "fr": "sludge",
+      "en": "sludge"
+    },
+    "tags.grindcore": {
+      "fr": "grindcore",
+      "en": "grindcore"
+    },
+    "tags.mathcore": {
+      "fr": "mathcore",
+      "en": "mathcore"
+    },
+    "tags.melodic-metalcore": {
+      "fr": "melodic metalcore",
+      "en": "melodic metalcore"
+    },
+    "tags.death-melodique": {
+      "fr": "death mélodique",
+      "en": "Melodic death"
+    },
+    "tags.death-technique": {
+      "fr": "death technique",
+      "en": "Technical death"
+    },
+    "tags.brutal-death": {
+      "fr": "brutal death",
+      "en": "brutal death"
+    },
+    "tags.black-atmospherique": {
+      "fr": "black atmosphérique",
+      "en": "Atmospheric black"
+    },
+    "tags.blackgaze": {
+      "fr": "blackgaze",
+      "en": "blackgaze"
+    },
+    "tags.funeral-doom": {
+      "fr": "funeral doom",
+      "en": "funeral doom"
+    },
+    "tags.viking-metal": {
+      "fr": "viking metal",
+      "en": "viking metal"
+    },
+    "tags.djent": {
+      "fr": "djent",
+      "en": "djent"
+    },
+    "tags.speed-metal": {
+      "fr": "speed metal",
+      "en": "speed metal"
+    },
+    "tags.glam": {
+      "fr": "glam",
+      "en": "glam"
+    },
+    "tags.metal-alternatif": {
+      "fr": "metal alternatif",
+      "en": "Alternative metal"
+    },
+    "tags.techno-minimale": {
+      "fr": "techno minimale",
+      "en": "Minimal techno"
+    },
+    "tags.acid-techno": {
+      "fr": "acid techno",
+      "en": "acid techno"
+    },
+    "tags.techno-de-detroit": {
+      "fr": "techno de Detroit",
+      "en": "Detroit techno"
+    },
+    "tags.dub-techno": {
+      "fr": "dub techno",
+      "en": "dub techno"
+    },
+    "tags.hard-techno": {
+      "fr": "hard techno",
+      "en": "hard techno"
+    },
+    "tags.tech-house": {
+      "fr": "tech house",
+      "en": "tech house"
+    },
+    "tags.acid-house": {
+      "fr": "acid house",
+      "en": "acid house"
+    },
+    "tags.afro-house": {
+      "fr": "afro house",
+      "en": "afro house"
+    },
+    "tags.disco-house": {
+      "fr": "disco house",
+      "en": "disco house"
+    },
+    "tags.garage-house": {
+      "fr": "garage house",
+      "en": "garage house"
+    },
+    "tags.jungle": {
+      "fr": "jungle",
+      "en": "jungle"
+    },
+    "tags.liquid-drum-et-bass": {
+      "fr": "liquid drum & bass",
+      "en": "liquid drum & bass"
+    },
+    "tags.neurofunk": {
+      "fr": "neurofunk",
+      "en": "neurofunk"
+    },
+    "tags.breakcore": {
+      "fr": "breakcore",
+      "en": "breakcore"
+    },
+    "tags.gabber": {
+      "fr": "gabber",
+      "en": "gabber"
+    },
+    "tags.frenchcore": {
+      "fr": "frenchcore",
+      "en": "frenchcore"
+    },
+    "tags.hardcore-rave": {
+      "fr": "hardcore rave",
+      "en": "hardcore rave"
+    },
+    "tags.psytrance": {
+      "fr": "psytrance",
+      "en": "psytrance"
+    },
+    "tags.progressive-trance": {
+      "fr": "progressive trance",
+      "en": "progressive trance"
+    },
+    "tags.downtempo": {
+      "fr": "downtempo",
+      "en": "downtempo"
+    },
+    "tags.drone": {
+      "fr": "drone",
+      "en": "drone"
+    },
+    "tags.glitch": {
+      "fr": "glitch",
+      "en": "glitch"
+    },
+    "tags.footwork": {
+      "fr": "footwork",
+      "en": "footwork"
+    },
+    "tags.bass-music": {
+      "fr": "bass music",
+      "en": "bass music"
+    },
+    "tags.lo-fi": {
+      "fr": "lo-fi",
+      "en": "lo-fi"
+    },
+    "tags.vaporwave": {
+      "fr": "vaporwave",
+      "en": "vaporwave"
+    },
+    "tags.french-touch": {
+      "fr": "french touch",
+      "en": "french touch"
+    },
+    "tags.electroclash": {
+      "fr": "electroclash",
+      "en": "electroclash"
+    },
+    "tags.phonk": {
+      "fr": "phonk",
+      "en": "phonk"
+    },
+    "tags.plugg": {
+      "fr": "plugg",
+      "en": "plugg"
+    },
+    "tags.rage": {
+      "fr": "rage",
+      "en": "rage"
+    },
+    "tags.uk-drill": {
+      "fr": "UK drill",
+      "en": "UK drill"
+    },
+    "tags.afroswing": {
+      "fr": "afroswing",
+      "en": "afroswing"
+    },
+    "tags.g-funk": {
+      "fr": "g-funk",
+      "en": "g-funk"
+    },
+    "tags.horrorcore": {
+      "fr": "horrorcore",
+      "en": "horrorcore"
+    },
+    "tags.freestyle": {
+      "fr": "freestyle",
+      "en": "freestyle"
+    },
+    "tags.battle-rap": {
+      "fr": "battle rap",
+      "en": "battle rap"
+    },
+    "tags.turntablism": {
+      "fr": "turntablism",
+      "en": "turntablism"
+    },
+    "tags.rap-instrumental": {
+      "fr": "rap instrumental",
+      "en": "Instrumental rap"
+    },
+    "tags.trip-hop": {
+      "fr": "trip-hop",
+      "en": "trip-hop"
+    },
+    "tags.funk-carioca": {
+      "fr": "funk carioca",
+      "en": "funk carioca"
+    },
+    "tags.quiet-storm": {
+      "fr": "quiet storm",
+      "en": "quiet storm"
+    },
+    "tags.philly-soul": {
+      "fr": "philly soul",
+      "en": "philly soul"
+    },
+    "tags.deep-funk": {
+      "fr": "deep funk",
+      "en": "deep funk"
+    },
+    "tags.northern-soul": {
+      "fr": "northern soul",
+      "en": "northern soul"
+    },
+    "tags.gospel-contemporain": {
+      "fr": "gospel contemporain",
+      "en": "Contemporary gospel"
+    },
+    "tags.swing": {
+      "fr": "swing",
+      "en": "swing"
+    },
+    "tags.latin-jazz": {
+      "fr": "latin jazz",
+      "en": "latin jazz"
+    },
+    "tags.spiritual-jazz": {
+      "fr": "spiritual jazz",
+      "en": "spiritual jazz"
+    },
+    "tags.jazz-electrique": {
+      "fr": "jazz électrique",
+      "en": "Electric jazz"
+    },
+    "tags.improvisation-libre": {
+      "fr": "improvisation libre",
+      "en": "Free improvisation"
+    },
+    "tags.fanfare": {
+      "fr": "fanfare",
+      "en": "Brass band"
+    },
+    "tags.jump-blues": {
+      "fr": "jump blues",
+      "en": "jump blues"
+    },
+    "tags.polyphonie": {
+      "fr": "polyphonie",
+      "en": "Polyphony"
+    },
+    "tags.musique-minimaliste": {
+      "fr": "musique minimaliste",
+      "en": "Minimalism"
+    },
+    "tags.musique-spectrale": {
+      "fr": "musique spectrale",
+      "en": "Spectral music"
+    },
+    "tags.musique-repetitive": {
+      "fr": "musique répétitive",
+      "en": "Repetitive music"
+    },
+    "tags.musique-electroacoustique": {
+      "fr": "musique électroacoustique",
+      "en": "Electroacoustic"
+    },
+    "tags.repertoire-lyrique": {
+      "fr": "répertoire lyrique",
+      "en": "Operatic repertoire"
+    },
+    "tags.requiem": {
+      "fr": "requiem",
+      "en": "requiem"
+    },
+    "tags.oratorio": {
+      "fr": "oratorio",
+      "en": "oratorio"
+    },
+    "tags.cantate": {
+      "fr": "cantate",
+      "en": "Cantata"
+    },
+    "tags.gnawa": {
+      "fr": "gnawa",
+      "en": "gnawa"
+    },
+    "tags.touareg": {
+      "fr": "touareg",
+      "en": "Tuareg"
+    },
+    "tags.afro-cubain": {
+      "fr": "afro-cubain",
+      "en": "Afro-Cuban"
+    },
+    "tags.timba": {
+      "fr": "timba",
+      "en": "timba"
+    },
+    "tags.bachata": {
+      "fr": "bachata",
+      "en": "bachata"
+    },
+    "tags.reggaeton": {
+      "fr": "reggaeton",
+      "en": "reggaeton"
+    },
+    "tags.forro": {
+      "fr": "forró",
+      "en": "forró"
+    },
+    "tags.choro": {
+      "fr": "choro",
+      "en": "choro"
+    },
+    "tags.morna": {
+      "fr": "morna",
+      "en": "morna"
+    },
+    "tags.zouk": {
+      "fr": "zouk",
+      "en": "zouk"
+    },
+    "tags.kompa": {
+      "fr": "kompa",
+      "en": "kompa"
+    },
+    "tags.maloya": {
+      "fr": "maloya",
+      "en": "maloya"
+    },
+    "tags.sega": {
+      "fr": "séga",
+      "en": "séga"
+    },
+    "tags.klezmer": {
+      "fr": "klezmer",
+      "en": "klezmer"
+    },
+    "tags.rebetiko": {
+      "fr": "rebetiko",
+      "en": "rebetiko"
+    },
+    "tags.qawwali": {
+      "fr": "qawwali",
+      "en": "qawwali"
+    },
+    "tags.carnatique": {
+      "fr": "carnatique",
+      "en": "Carnatic"
+    },
+    "tags.hindustani": {
+      "fr": "hindustani",
+      "en": "hindustani"
+    },
+    "tags.gamelan": {
+      "fr": "gamelan",
+      "en": "gamelan"
+    },
+    "tags.musique-bretonne": {
+      "fr": "musique bretonne",
+      "en": "Breton music"
+    },
+    "tags.musique-corse": {
+      "fr": "musique corse",
+      "en": "Corsican music"
+    },
+    "tags.polyphonie-georgienne": {
+      "fr": "polyphonie géorgienne",
+      "en": "Georgian polyphony"
+    },
+    "tags.yodel": {
+      "fr": "yodel",
+      "en": "yodel"
+    },
+    "tags.adaptation-litteraire": {
+      "fr": "adaptation littéraire",
+      "en": "Literary adaptation"
+    },
+    "tags.ecriture-de-plateau": {
+      "fr": "écriture de plateau",
+      "en": "Devised writing"
+    },
+    "tags.theatre-gestuel": {
+      "fr": "théâtre gestuel",
+      "en": "Physical theatre"
+    },
+    "tags.mime": {
+      "fr": "mime",
+      "en": "mime"
+    },
+    "tags.commedia-dell-arte": {
+      "fr": "commedia dell’arte",
+      "en": "commedia dell’arte"
+    },
+    "tags.tragedie": {
+      "fr": "tragédie",
+      "en": "Tragedy"
+    },
+    "tags.comedie": {
+      "fr": "comédie",
+      "en": "Comedy"
+    },
+    "tags.farce": {
+      "fr": "farce",
+      "en": "farce"
+    },
+    "tags.monologue": {
+      "fr": "monologue",
+      "en": "monologue"
+    },
+    "tags.spectacle-sans-paroles": {
+      "fr": "spectacle sans paroles",
+      "en": "Wordless performance"
+    },
+    "tags.marionnette-portee": {
+      "fr": "marionnette portée",
+      "en": "Carried puppet"
+    },
+    "tags.theatre-d-ombres": {
+      "fr": "théâtre d’ombres",
+      "en": "Shadow theatre"
+    },
+    "tags.nouveau-cirque": {
+      "fr": "nouveau cirque",
+      "en": "New circus"
+    },
+    "tags.cirque-equestre": {
+      "fr": "cirque équestre",
+      "en": "Equestrian circus"
+    },
+    "tags.trapeze": {
+      "fr": "trapèze",
+      "en": "Trapeze"
+    },
+    "tags.corde-lisse": {
+      "fr": "corde lisse",
+      "en": "Aerial rope"
+    },
+    "tags.tissu-aerien": {
+      "fr": "tissu aérien",
+      "en": "Aerial silks"
+    },
+    "tags.mat-chinois": {
+      "fr": "mât chinois",
+      "en": "Chinese pole"
+    },
+    "tags.roue-cyr": {
+      "fr": "roue Cyr",
+      "en": "Cyr wheel"
+    },
+    "tags.portes-acrobatiques": {
+      "fr": "portés acrobatiques",
+      "en": "Acrobatic lifts"
+    },
+    "tags.close-up": {
+      "fr": "close-up",
+      "en": "close-up"
+    },
+    "tags.mentalisme": {
+      "fr": "mentalisme",
+      "en": "Mentalism"
+    },
+    "tags.clown-blanc": {
+      "fr": "clown blanc",
+      "en": "Whiteface clown"
+    },
+    "tags.bouffon": {
+      "fr": "bouffon",
+      "en": "Bouffon"
+    },
+    "tags.solo": {
+      "fr": "solo",
+      "en": "solo"
+    },
+    "tags.duo": {
+      "fr": "duo",
+      "en": "duo"
+    },
+    "tags.trio": {
+      "fr": "trio",
+      "en": "trio"
+    },
+    "tags.quatuor": {
+      "fr": "quatuor",
+      "en": "Quartet"
+    },
+    "tags.grand-ensemble": {
+      "fr": "grand ensemble",
+      "en": "Large ensemble"
+    },
+    "tags.orchestre": {
+      "fr": "orchestre",
+      "en": "Orchestra"
+    },
+    "tags.a-cappella": {
+      "fr": "a cappella",
+      "en": "a cappella"
+    },
+    "tags.acoustique": {
+      "fr": "acoustique",
+      "en": "Acoustic"
+    },
+    "tags.amplifie": {
+      "fr": "amplifié",
+      "en": "Amplified"
+    },
+    "tags.dj-set": {
+      "fr": "DJ set",
+      "en": "DJ set"
+    },
+    "tags.live-band": {
+      "fr": "live band",
+      "en": "live band"
+    },
+    "tags.set-hardware": {
+      "fr": "set hardware",
+      "en": "Hardware set"
+    },
+    "tags.seul-en-scene": {
+      "fr": "seul en scène",
+      "en": "One-person show"
+    },
+    "tags.lecture-et-mise-en-espace": {
+      "fr": "lecture & mise en espace",
+      "en": "Staged reading"
+    },
+    "tags.recital": {
+      "fr": "récital",
+      "en": "Recital"
+    },
+    "tags.version-concert": {
+      "fr": "version concert",
+      "en": "Concert version"
+    },
+    "tags.cine-concert": {
+      "fr": "ciné-concert",
+      "en": "Film concert"
+    },
+    "tags.concert-commente": {
+      "fr": "concert commenté",
+      "en": "Introduced concert"
+    },
+    "tags.bal-participatif": {
+      "fr": "bal participatif",
+      "en": "Participatory ball"
+    },
+    "tags.plateau-partage": {
+      "fr": "plateau partagé",
+      "en": "Shared bill"
+    },
+    "tags.open-mic": {
+      "fr": "open mic",
+      "en": "open mic"
+    },
+    "tags.scene-ouverte": {
+      "fr": "scène ouverte",
+      "en": "Open stage"
+    },
+    "tags.grande-forme": {
+      "fr": "grande forme",
+      "en": "Large-scale"
+    },
+    "tags.forme-legere": {
+      "fr": "forme légère",
+      "en": "Light form"
+    },
+    "tags.instrumental": {
+      "fr": "instrumental",
+      "en": "instrumental"
+    },
+    "tags.vocal": {
+      "fr": "vocal",
+      "en": "vocal"
+    },
+    "tags.improvise": {
+      "fr": "improvisé",
+      "en": "Improvised"
+    },
+    "tags.experimental": {
+      "fr": "expérimental",
+      "en": "Experimental"
+    },
+    "tags.orchestral": {
+      "fr": "orchestral",
+      "en": "orchestral"
+    },
+    "tags.hybride": {
+      "fr": "hybride",
+      "en": "Hybrid"
+    },
+    "tags.premiere": {
+      "fr": "première",
+      "en": "Premiere"
+    },
+    "tags.avant-premiere": {
+      "fr": "avant-première",
+      "en": "Preview"
+    },
+    "tags.creation": {
+      "fr": "création",
+      "en": "Creation"
+    },
+    "tags.derniere-date": {
+      "fr": "dernière date",
+      "en": "Final date"
+    },
+    "tags.reprise-de-repertoire": {
+      "fr": "reprise de répertoire",
+      "en": "Repertoire revival"
+    },
+    "tags.tournee": {
+      "fr": "tournée",
+      "en": "Tour"
+    },
+    "tags.residence": {
+      "fr": "résidence",
+      "en": "Residency"
+    },
+    "tags.carte-blanche": {
+      "fr": "carte blanche",
+      "en": "carte blanche"
+    },
+    "tags.repetition-ouverte": {
+      "fr": "répétition ouverte",
+      "en": "Open rehearsal"
+    },
+    "tags.captation-d-archive": {
+      "fr": "captation d’archive",
+      "en": "Archive recording"
+    },
+    "tags.festival": {
+      "fr": "festival",
+      "en": "festival"
+    },
+    "tags.plein-air": {
+      "fr": "plein air",
+      "en": "Open air"
+    },
+    "tags.nocturne": {
+      "fr": "nocturne",
+      "en": "Late night"
+    },
+    "tags.after": {
+      "fr": "after",
+      "en": "after"
+    },
+    "tags.salle-historique": {
+      "fr": "salle historique",
+      "en": "Historic venue"
+    },
+    "tags.lieu-patrimonial": {
+      "fr": "lieu patrimonial",
+      "en": "Heritage venue"
+    },
+    "tags.friche": {
+      "fr": "friche",
+      "en": "Industrial venue"
+    },
+    "tags.club": {
+      "fr": "club",
+      "en": "club"
+    },
+    "tags.cabaret": {
+      "fr": "cabaret",
+      "en": "cabaret"
+    },
+    "tags.cafe-theatre": {
+      "fr": "café-théâtre",
+      "en": "café-théâtre"
+    },
+    "tags.chapiteau": {
+      "fr": "chapiteau",
+      "en": "Big top"
+    },
+    "tags.eglise": {
+      "fr": "église",
+      "en": "Church"
+    },
+    "tags.amphitheatre": {
+      "fr": "amphithéâtre",
+      "en": "Amphitheatre"
+    },
+    "tags.hors-les-murs": {
+      "fr": "hors les murs",
+      "en": "Off-site"
+    },
+    "tags.en-appartement": {
+      "fr": "en appartement",
+      "en": "In a flat"
+    },
+    "tags.deambulatoire": {
+      "fr": "déambulatoire",
+      "en": "Walkabout"
+    },
+    "tags.jeune-public": {
+      "fr": "jeune public",
+      "en": "Young audiences"
+    },
+    "tags.tout-public": {
+      "fr": "tout public",
+      "en": "All audiences"
+    },
+    "tags.en-famille": {
+      "fr": "en famille",
+      "en": "Family"
+    },
+    "tags.public-averti": {
+      "fr": "public averti",
+      "en": "Mature audiences"
+    },
+    "tags.scolaire": {
+      "fr": "scolaire",
+      "en": "Schools"
+    },
+    "tags.festif": {
+      "fr": "festif",
+      "en": "Festive"
+    },
+    "tags.planant": {
+      "fr": "planant",
+      "en": "Hypnotic"
+    },
+    "tags.intense": {
+      "fr": "intense",
+      "en": "intense"
+    },
+    "tags.dansant": {
+      "fr": "dansant",
+      "en": "Danceable"
+    },
+    "tags.emouvant": {
+      "fr": "émouvant",
+      "en": "Moving"
+    },
+    "tags.contemplatif": {
+      "fr": "contemplatif",
+      "en": "Contemplative"
+    },
+    "tags.politique": {
+      "fr": "politique",
+      "en": "Political"
+    },
+    "tags.drole": {
+      "fr": "drôle",
+      "en": "Funny"
+    },
+    "tags.sombre": {
+      "fr": "sombre",
+      "en": "Dark"
+    },
+    "tags.virtuose": {
+      "fr": "virtuose",
+      "en": "Virtuosic"
+    },
+    "attributes.audience.all-audiences": {
+      "fr": "Tout public",
+      "en": "All audiences"
+    },
+    "attributes.audience.young": {
+      "fr": "Jeune public",
+      "en": "Young audiences"
+    },
+    "attributes.audience.family": {
+      "fr": "En famille",
+      "en": "Family"
+    },
+    "attributes.audience.adults": {
+      "fr": "Public averti",
+      "en": "Mature audiences"
+    },
+    "attributes.minimumAge.none": {
+      "fr": "Sans limite d’âge",
+      "en": "No age limit"
+    },
+    "attributes.minimumAge.6": {
+      "fr": "À partir de 6 ans",
+      "en": "Ages 6+"
+    },
+    "attributes.minimumAge.12": {
+      "fr": "À partir de 12 ans",
+      "en": "Ages 12+"
+    },
+    "attributes.minimumAge.16": {
+      "fr": "À partir de 16 ans",
+      "en": "Ages 16+"
+    },
+    "attributes.minimumAge.18": {
+      "fr": "Réservé aux adultes",
+      "en": "Adults only"
+    },
+    "attributes.seatingMode.seated": {
+      "fr": "Places assises",
+      "en": "Seated"
+    },
+    "attributes.seatingMode.standing": {
+      "fr": "Debout",
+      "en": "Standing"
+    },
+    "attributes.seatingMode.mixed": {
+      "fr": "Assis et debout",
+      "en": "Seated & standing"
+    },
+    "attributes.intermission.none": {
+      "fr": "Sans entracte",
+      "en": "No interval"
+    },
+    "attributes.intermission.one": {
+      "fr": "Un entracte",
+      "en": "One interval"
+    },
+    "attributes.intermission.two": {
+      "fr": "Deux entractes",
+      "en": "Two intervals"
+    },
+    "attributes.accessibility.wheelchair": {
+      "fr": "Accessible en fauteuil",
+      "en": "Wheelchair accessible"
+    },
+    "attributes.accessibility.sign-language": {
+      "fr": "Interprétation en LSF",
+      "en": "Sign language"
+    },
+    "attributes.accessibility.audio-description": {
+      "fr": "Audiodécrit",
+      "en": "Audio described"
+    },
+    "attributes.accessibility.relaxed": {
+      "fr": "Séance relâchée",
+      "en": "Relaxed performance"
+    },
+    "attributes.accessibility.induction-loop": {
+      "fr": "Boucle magnétique",
+      "en": "Induction loop"
+    },
+    "attributes.accessibility.quiet-room": {
+      "fr": "Espace de repli",
+      "en": "Quiet room"
+    },
+    "attributes.languageDependency.none": {
+      "fr": "Sans paroles",
+      "en": "No spoken word"
+    },
+    "attributes.languageDependency.light": {
+      "fr": "Peu de texte",
+      "en": "Little dialogue"
+    },
+    "attributes.languageDependency.helpful": {
+      "fr": "Texte important",
+      "en": "Dialogue-heavy"
+    },
+    "attributes.venueType.hall": {
+      "fr": "Salle",
+      "en": "Hall"
+    },
+    "attributes.venueType.club": {
+      "fr": "Club",
+      "en": "Club"
+    },
+    "attributes.venueType.church": {
+      "fr": "Église",
+      "en": "Church"
+    },
+    "attributes.venueType.big-top": {
+      "fr": "Chapiteau",
+      "en": "Big top"
+    },
+    "attributes.venueType.industrial": {
+      "fr": "Friche",
+      "en": "Industrial venue"
+    },
+    "attributes.venueType.open-air": {
+      "fr": "Plein air",
+      "en": "Open air"
+    },
+    "attributes.venueType.heritage": {
+      "fr": "Lieu patrimonial",
+      "en": "Heritage venue"
+    },
+    "attributes.venueType.arena": {
+      "fr": "Aréna",
+      "en": "Arena"
+    },
+    "attributes.venueType.stadium": {
+      "fr": "Stade",
+      "en": "Stadium"
+    },
+    "categories.rock": {
+      "fr": "Rock",
+      "en": "Rock"
+    },
+    "genres.rock.classic-rock": {
+      "fr": "rock classique",
+      "en": "Classic rock"
+    },
+    "genres.rock.alternative": {
+      "fr": "rock alternatif",
+      "en": "Alternative rock"
+    },
+    "genres.rock.indie": {
+      "fr": "indie",
+      "en": "Indie"
+    },
+    "genres.rock.punk": {
+      "fr": "punk",
+      "en": "Punk"
+    },
+    "genres.rock.post-punk": {
+      "fr": "post-punk",
+      "en": "Post-punk"
+    },
+    "genres.rock.emo": {
+      "fr": "emo",
+      "en": "Emo"
+    },
+    "genres.rock.garage": {
+      "fr": "garage",
+      "en": "Garage"
+    },
+    "genres.rock.psychedelic": {
+      "fr": "psychédélique",
+      "en": "Psychedelic"
+    },
+    "genres.rock.prog-rock": {
+      "fr": "rock progressif",
+      "en": "Progressive rock"
+    },
+    "genres.rock.hard-rock": {
+      "fr": "hard rock",
+      "en": "Hard rock"
+    },
+    "genres.rock.shoegaze": {
+      "fr": "shoegaze",
+      "en": "Shoegaze"
+    },
+    "genres.rock.post-rock": {
+      "fr": "post-rock",
+      "en": "Post-rock"
+    },
+    "categories.metal": {
+      "fr": "Metal",
+      "en": "Metal"
+    },
+    "genres.metal.heavy": {
+      "fr": "heavy metal",
+      "en": "Heavy metal"
+    },
+    "genres.metal.thrash": {
+      "fr": "thrash",
+      "en": "Thrash"
+    },
+    "genres.metal.death": {
+      "fr": "death metal",
+      "en": "Death metal"
+    },
+    "genres.metal.black": {
+      "fr": "black metal",
+      "en": "Black metal"
+    },
+    "genres.metal.doom-stoner": {
+      "fr": "doom & stoner",
+      "en": "Doom & stoner"
+    },
+    "genres.metal.power": {
+      "fr": "power metal",
+      "en": "Power metal"
+    },
+    "genres.metal.prog-metal": {
+      "fr": "metal progressif",
+      "en": "Progressive metal"
+    },
+    "genres.metal.metalcore": {
+      "fr": "metalcore",
+      "en": "Metalcore"
+    },
+    "genres.metal.deathcore": {
+      "fr": "deathcore",
+      "en": "Deathcore"
+    },
+    "genres.metal.nu-metal": {
+      "fr": "nu metal",
+      "en": "Nu metal"
+    },
+    "genres.metal.symphonic-gothic": {
+      "fr": "metal symphonique & gothique",
+      "en": "Symphonic & gothic metal"
+    },
+    "genres.metal.industrial": {
+      "fr": "metal industriel",
+      "en": "Industrial metal"
+    },
+    "genres.metal.folk-pagan": {
+      "fr": "folk & pagan",
+      "en": "Folk & pagan metal"
+    },
+    "categories.pop": {
+      "fr": "Pop",
+      "en": "Pop"
+    },
+    "genres.pop.synth-pop": {
+      "fr": "synth-pop",
+      "en": "Synth-pop"
+    },
+    "genres.pop.indie-pop": {
+      "fr": "indie pop",
+      "en": "Indie pop"
+    },
+    "genres.pop.dream-pop": {
+      "fr": "dream pop",
+      "en": "Dream pop"
+    },
+    "genres.pop.electropop": {
+      "fr": "électro-pop",
+      "en": "Electropop"
+    },
+    "genres.pop.new-wave": {
+      "fr": "new wave",
+      "en": "New wave"
+    },
+    "genres.pop.urban-pop": {
+      "fr": "pop urbaine",
+      "en": "Urban pop"
+    },
+    "genres.pop.k-pop": {
+      "fr": "K-pop",
+      "en": "K-pop"
+    },
+    "genres.pop.hyperpop": {
+      "fr": "hyperpop",
+      "en": "Hyperpop"
+    },
+    "categories.chanson": {
+      "fr": "Chanson",
+      "en": "Chanson"
+    },
+    "genres.chanson.lyric-chanson": {
+      "fr": "chanson à texte",
+      "en": "Lyric-driven chanson"
+    },
+    "genres.chanson.nouvelle-chanson": {
+      "fr": "nouvelle chanson",
+      "en": "Nouvelle chanson"
+    },
+    "genres.chanson.spoken-word": {
+      "fr": "slam",
+      "en": "Spoken word"
+    },
+    "genres.chanson.jazz-chanson": {
+      "fr": "chanson jazz",
+      "en": "Jazz chanson"
+    },
+    "genres.chanson.folk-chanson": {
+      "fr": "chanson folk",
+      "en": "Folk chanson"
+    },
+    "genres.chanson.theatrical-chanson": {
+      "fr": "chanson théâtrale",
+      "en": "Theatrical chanson"
+    },
+    "categories.folk-country": {
+      "fr": "Folk & country",
+      "en": "Folk & country"
+    },
+    "genres.folk-country.folk": {
+      "fr": "folk",
+      "en": "Folk"
+    },
+    "genres.folk-country.americana": {
+      "fr": "americana",
+      "en": "Americana"
+    },
+    "genres.folk-country.country": {
+      "fr": "country",
+      "en": "Country"
+    },
+    "genres.folk-country.bluegrass": {
+      "fr": "bluegrass",
+      "en": "Bluegrass"
+    },
+    "genres.folk-country.folk-rock": {
+      "fr": "folk-rock",
+      "en": "Folk rock"
+    },
+    "genres.folk-country.north-american-traditional": {
+      "fr": "musique traditionnelle nord-américaine",
+      "en": "North American traditional"
+    },
+    "categories.rap": {
+      "fr": "Rap",
+      "en": "Rap"
+    },
+    "genres.rap.boom-bap": {
+      "fr": "boom bap",
+      "en": "Boom bap"
+    },
+    "genres.rap.hardcore-gangsta": {
+      "fr": "hardcore & gangsta",
+      "en": "Hardcore & gangsta"
+    },
+    "genres.rap.conscious": {
+      "fr": "rap conscient",
+      "en": "Conscious rap"
+    },
+    "genres.rap.lyric-rap": {
+      "fr": "rap à texte",
+      "en": "Lyric-driven rap"
+    },
+    "genres.rap.jazz-rap": {
+      "fr": "jazz rap",
+      "en": "Jazz rap"
+    },
+    "genres.rap.trap": {
+      "fr": "trap",
+      "en": "Trap"
+    },
+    "genres.rap.drill": {
+      "fr": "drill",
+      "en": "Drill"
+    },
+    "genres.rap.cloud-rap": {
+      "fr": "cloud rap",
+      "en": "Cloud rap"
+    },
+    "genres.rap.emo-rap": {
+      "fr": "emo rap",
+      "en": "Emo rap"
+    },
+    "genres.rap.afro-trap": {
+      "fr": "afro-trap",
+      "en": "Afro-trap"
+    },
+    "categories.rnb": {
+      "fr": "R&B",
+      "en": "R&B"
+    },
+    "genres.rnb.contemporary-rnb": {
+      "fr": "R&B contemporain",
+      "en": "Contemporary R&B"
+    },
+    "genres.rnb.neo-soul": {
+      "fr": "neo-soul",
+      "en": "Neo-soul"
+    },
+    "genres.rnb.trap-soul": {
+      "fr": "trap soul",
+      "en": "Trap soul"
+    },
+    "genres.rnb.slow-jam": {
+      "fr": "slow jam",
+      "en": "Slow jam"
+    },
+    "genres.rnb.afro-rnb": {
+      "fr": "afro R&B",
+      "en": "Afro R&B"
+    },
+    "genres.rnb.new-jack-swing": {
+      "fr": "new jack swing",
+      "en": "New jack swing"
+    },
+    "categories.soul-funk": {
+      "fr": "Soul, funk & gospel",
+      "en": "Soul, funk & gospel"
+    },
+    "genres.soul-funk.soul": {
+      "fr": "soul",
+      "en": "Soul"
+    },
+    "genres.soul-funk.motown": {
+      "fr": "Motown",
+      "en": "Motown"
+    },
+    "genres.soul-funk.funk": {
+      "fr": "funk",
+      "en": "Funk"
+    },
+    "genres.soul-funk.p-funk": {
+      "fr": "P-funk",
+      "en": "P-funk"
+    },
+    "genres.soul-funk.disco": {
+      "fr": "disco",
+      "en": "Disco"
+    },
+    "genres.soul-funk.gospel": {
+      "fr": "gospel",
+      "en": "Gospel"
+    },
+    "genres.soul-funk.afrobeat": {
+      "fr": "afrobeat",
+      "en": "Afrobeat"
+    },
+    "categories.electronic": {
+      "fr": "Électro",
+      "en": "Electronic"
+    },
+    "genres.electronic.techno": {
+      "fr": "techno",
+      "en": "Techno"
+    },
+    "genres.electronic.house": {
+      "fr": "house",
+      "en": "House"
+    },
+    "genres.electronic.deep-house": {
+      "fr": "deep house",
+      "en": "Deep house"
+    },
+    "genres.electronic.drum-and-bass": {
+      "fr": "drum & bass",
+      "en": "Drum & bass"
+    },
+    "genres.electronic.dubstep": {
+      "fr": "dubstep",
+      "en": "Dubstep"
+    },
+    "genres.electronic.trance": {
+      "fr": "trance",
+      "en": "Trance"
+    },
+    "genres.electronic.hardstyle": {
+      "fr": "hardstyle",
+      "en": "Hardstyle"
+    },
+    "genres.electronic.ambient": {
+      "fr": "ambient",
+      "en": "Ambient"
+    },
+    "genres.electronic.idm": {
+      "fr": "IDM",
+      "en": "IDM"
+    },
+    "genres.electronic.breakbeat": {
+      "fr": "breakbeat",
+      "en": "Breakbeat"
+    },
+    "genres.electronic.uk-garage": {
+      "fr": "UK garage",
+      "en": "UK garage"
+    },
+    "genres.electronic.synthwave": {
+      "fr": "synthwave",
+      "en": "Synthwave"
+    },
+    "categories.jazz": {
+      "fr": "Jazz",
+      "en": "Jazz"
+    },
+    "genres.jazz.modern-jazz": {
+      "fr": "jazz moderne",
+      "en": "Modern jazz"
+    },
+    "genres.jazz.bebop": {
+      "fr": "bebop",
+      "en": "Bebop"
+    },
+    "genres.jazz.hard-bop": {
+      "fr": "hard bop",
+      "en": "Hard bop"
+    },
+    "genres.jazz.cool-jazz": {
+      "fr": "cool jazz",
+      "en": "Cool jazz"
+    },
+    "genres.jazz.modal-jazz": {
+      "fr": "jazz modal",
+      "en": "Modal jazz"
+    },
+    "genres.jazz.free-jazz": {
+      "fr": "free jazz",
+      "en": "Free jazz"
+    },
+    "genres.jazz.vocal-jazz": {
+      "fr": "jazz vocal",
+      "en": "Vocal jazz"
+    },
+    "genres.jazz.big-band": {
+      "fr": "big band",
+      "en": "Big band"
+    },
+    "genres.jazz.fusion": {
+      "fr": "jazz fusion",
+      "en": "Jazz fusion"
+    },
+    "genres.jazz.nu-jazz": {
+      "fr": "nu jazz",
+      "en": "Nu jazz"
+    },
+    "genres.jazz.gypsy-jazz": {
+      "fr": "jazz manouche",
+      "en": "Gypsy jazz"
+    },
+    "genres.jazz.afro-jazz": {
+      "fr": "afro-jazz",
+      "en": "Afro-jazz"
+    },
+    "categories.blues": {
+      "fr": "Blues",
+      "en": "Blues"
+    },
+    "genres.blues.acoustic-blues": {
+      "fr": "blues acoustique",
+      "en": "Acoustic blues"
+    },
+    "genres.blues.delta-blues": {
+      "fr": "Delta blues",
+      "en": "Delta blues"
+    },
+    "genres.blues.chicago-blues": {
+      "fr": "Chicago blues",
+      "en": "Chicago blues"
+    },
+    "genres.blues.blues-rock": {
+      "fr": "blues rock",
+      "en": "Blues rock"
+    },
+    "genres.blues.boogie": {
+      "fr": "boogie",
+      "en": "Boogie"
+    },
+    "genres.blues.soul-blues": {
+      "fr": "soul blues",
+      "en": "Soul blues"
+    },
+    "genres.blues.gospel-blues": {
+      "fr": "gospel blues",
+      "en": "Gospel blues"
+    },
+    "categories.reggae": {
+      "fr": "Reggae & dub",
+      "en": "Reggae & dub"
+    },
+    "genres.reggae.roots": {
+      "fr": "roots reggae",
+      "en": "Roots reggae"
+    },
+    "genres.reggae.dub": {
+      "fr": "dub",
+      "en": "Dub"
+    },
+    "genres.reggae.dancehall": {
+      "fr": "dancehall",
+      "en": "Dancehall"
+    },
+    "genres.reggae.ska": {
+      "fr": "ska",
+      "en": "Ska"
+    },
+    "genres.reggae.rocksteady": {
+      "fr": "rocksteady",
+      "en": "Rocksteady"
+    },
+    "genres.reggae.ragga": {
+      "fr": "ragga",
+      "en": "Ragga"
+    },
+    "genres.reggae.dub-poetry": {
+      "fr": "dub poetry",
+      "en": "Dub poetry"
+    },
+    "categories.world": {
+      "fr": "Musiques du monde",
+      "en": "World music"
+    },
+    "genres.world.afrobeat-highlife": {
+      "fr": "afrobeat & highlife",
+      "en": "Afrobeat & highlife"
+    },
+    "genres.world.west-african": {
+      "fr": "mbalax & musiques ouest-africaines",
+      "en": "Mbalax & West African"
+    },
+    "genres.world.rai-chaabi": {
+      "fr": "raï & chaâbi",
+      "en": "Raï & chaâbi"
+    },
+    "genres.world.andalusian": {
+      "fr": "musiques andalouses",
+      "en": "Andalusian music"
+    },
+    "genres.world.salsa-cuban": {
+      "fr": "salsa & son cubain",
+      "en": "Salsa & Cuban son"
+    },
+    "genres.world.cumbia": {
+      "fr": "cumbia",
+      "en": "Cumbia"
+    },
+    "genres.world.samba-bossa": {
+      "fr": "samba & bossa nova",
+      "en": "Samba & bossa nova"
+    },
+    "genres.world.flamenco": {
+      "fr": "flamenco",
+      "en": "Flamenco"
+    },
+    "genres.world.fado": {
+      "fr": "fado",
+      "en": "Fado"
+    },
+    "genres.world.celtic": {
+      "fr": "musiques celtiques",
+      "en": "Celtic music"
+    },
+    "genres.world.balkan": {
+      "fr": "musiques balkaniques",
+      "en": "Balkan music"
+    },
+    "genres.world.indian": {
+      "fr": "musiques indiennes",
+      "en": "Indian music"
+    },
+    "genres.world.east-asian": {
+      "fr": "musiques d’Asie de l’Est",
+      "en": "East Asian music"
+    },
+    "categories.classical": {
+      "fr": "Classique",
+      "en": "Classical"
+    },
+    "genres.classical.symphonic": {
+      "fr": "symphonique",
+      "en": "Symphonic"
+    },
+    "genres.classical.chamber": {
+      "fr": "musique de chambre",
+      "en": "Chamber music"
+    },
+    "genres.classical.baroque": {
+      "fr": "baroque",
+      "en": "Baroque"
+    },
+    "genres.classical.sacred": {
+      "fr": "musique sacrée",
+      "en": "Sacred music"
+    },
+    "genres.classical.choral": {
+      "fr": "musique chorale",
+      "en": "Choral music"
+    },
+    "genres.classical.contemporary": {
+      "fr": "musique contemporaine",
+      "en": "Contemporary classical"
+    },
+    "genres.classical.early": {
+      "fr": "musique ancienne",
+      "en": "Early music"
+    },
+    "categories.theatre": {
+      "fr": "Théâtre",
+      "en": "Theatre"
+    },
+    "genres.theatre.repertoire": {
+      "fr": "répertoire classique",
+      "en": "Classical repertoire"
+    },
+    "genres.theatre.contemporary": {
+      "fr": "théâtre contemporain",
+      "en": "Contemporary theatre"
+    },
+    "genres.theatre.documentary": {
+      "fr": "théâtre documentaire",
+      "en": "Documentary theatre"
+    },
+    "genres.theatre.objects-puppetry": {
+      "fr": "théâtre d’objets & marionnettes",
+      "en": "Object & puppet theatre"
+    },
+    "genres.theatre.music-theatre": {
+      "fr": "théâtre musical",
+      "en": "Music theatre"
+    },
+    "genres.theatre.improv": {
+      "fr": "improvisation",
+      "en": "Improvisation"
+    },
+    "genres.theatre.street-theatre": {
+      "fr": "théâtre de rue",
+      "en": "Street theatre"
+    },
+    "categories.dance": {
+      "fr": "Danse",
+      "en": "Dance"
+    },
+    "genres.dance.ballet": {
+      "fr": "ballet classique",
+      "en": "Classical ballet"
+    },
+    "genres.dance.neoclassical": {
+      "fr": "néoclassique",
+      "en": "Neoclassical"
+    },
+    "genres.dance.contemporary": {
+      "fr": "danse contemporaine",
+      "en": "Contemporary dance"
+    },
+    "genres.dance.hip-hop": {
+      "fr": "hip-hop & danses urbaines",
+      "en": "Hip-hop & street dance"
+    },
+    "genres.dance.dance-theatre": {
+      "fr": "danse-théâtre",
+      "en": "Dance theatre"
+    },
+    "genres.dance.percussive": {
+      "fr": "claquettes & danses percussives",
+      "en": "Tap & percussive dance"
+    },
+    "genres.dance.flamenco": {
+      "fr": "flamenco",
+      "en": "Flamenco"
+    },
+    "genres.dance.traditional": {
+      "fr": "danses traditionnelles",
+      "en": "Traditional dance"
+    },
+    "genres.dance.ball": {
+      "fr": "bal",
+      "en": "Ball"
+    },
+    "genres.dance.butoh": {
+      "fr": "butō",
+      "en": "Butoh"
+    },
+    "genres.dance.african-dance": {
+      "fr": "danse africaine",
+      "en": "African dance"
+    },
+    "categories.circus": {
+      "fr": "Cirque",
+      "en": "Circus"
+    },
+    "genres.circus.contemporary": {
+      "fr": "cirque contemporain",
+      "en": "Contemporary circus"
+    },
+    "genres.circus.aerial": {
+      "fr": "aérien",
+      "en": "Aerial"
+    },
+    "genres.circus.acrobatics": {
+      "fr": "acrobatie",
+      "en": "Acrobatics"
+    },
+    "genres.circus.juggling": {
+      "fr": "jonglage",
+      "en": "Juggling"
+    },
+    "genres.circus.balance": {
+      "fr": "équilibre & main à main",
+      "en": "Balance & hand-to-hand"
+    },
+    "genres.circus.magic": {
+      "fr": "magie & illusion",
+      "en": "Magic & illusion"
+    },
+    "genres.circus.clown": {
+      "fr": "clown",
+      "en": "Clown"
+    },
+    "genres.circus.street-arts": {
+      "fr": "arts de la rue",
+      "en": "Street arts"
+    },
+    "categories.comedy": {
+      "fr": "Humour",
+      "en": "Comedy"
+    },
+    "genres.comedy.stand-up": {
+      "fr": "stand-up",
+      "en": "Stand-up"
+    },
+    "genres.comedy.improv": {
+      "fr": "improvisation",
+      "en": "Improvisation"
+    },
+    "genres.comedy.satire": {
+      "fr": "satire & humour politique",
+      "en": "Satire & political comedy"
+    },
+    "genres.comedy.musical-comedy": {
+      "fr": "humour musical",
+      "en": "Musical comedy"
+    },
+    "categories.opera": {
+      "fr": "Opéra",
+      "en": "Opera"
+    },
+    "genres.opera.grand-opera": {
+      "fr": "grand opéra",
+      "en": "Grand opera"
+    },
+    "genres.opera.bel-canto": {
+      "fr": "bel canto",
+      "en": "Bel canto"
+    },
+    "genres.opera.classical-opera": {
+      "fr": "opéra classique",
+      "en": "Classical opera"
+    },
+    "genres.opera.baroque-opera": {
+      "fr": "opéra baroque",
+      "en": "Baroque opera"
+    },
+    "genres.opera.contemporary-opera": {
+      "fr": "opéra contemporain",
+      "en": "Contemporary opera"
+    },
+    "genres.opera.operetta": {
+      "fr": "opérette",
+      "en": "Operetta"
+    },
+    "genres.opera.chamber-opera": {
+      "fr": "opéra de chambre",
+      "en": "Chamber opera"
+    },
+    "categories.musical": {
+      "fr": "Comédie musicale",
+      "en": "Musical theatre"
+    },
+    "genres.musical.original": {
+      "fr": "création originale",
+      "en": "Original creation"
+    },
+    "genres.musical.jukebox": {
+      "fr": "jukebox",
+      "en": "Jukebox musical"
+    },
+    "genres.musical.cabaret-revue": {
+      "fr": "cabaret & revue",
+      "en": "Cabaret & revue"
+    },
+    "genres.musical.rock-opera": {
+      "fr": "rock opera",
+      "en": "Rock opera"
+    },
+    "categories.performance": {
+      "fr": "Performance",
+      "en": "Performance"
+    },
+    "genres.performance.multidisciplinary": {
+      "fr": "pluridisciplinaire",
+      "en": "Multidisciplinary"
+    },
+    "genres.performance.performance-art": {
+      "fr": "art performance",
+      "en": "Performance art"
+    },
+    "genres.performance.sound-performance": {
+      "fr": "performance sonore",
+      "en": "Sound performance"
+    },
+    "genres.performance.digital-arts": {
+      "fr": "arts numériques",
+      "en": "Digital arts"
+    },
+    "genres.performance.immersive": {
+      "fr": "théâtre immersif",
+      "en": "Immersive theatre"
+    },
+    "genres.performance.lecture-performance": {
+      "fr": "conférence-performance",
+      "en": "Lecture performance"
+    },
+    "genres.performance.living-installation": {
+      "fr": "installation vivante",
+      "en": "Living installation"
+    },
+    "genres.performance.dance-performance": {
+      "fr": "danse-performance",
+      "en": "Dance performance"
+    },
+    "genres.pop.mainstream": {
+      "fr": "pop mainstream",
+      "en": "mainstream pop"
+    },
+    "tags.with-big-band": {
+      "fr": "accompagné d’un grand orchestre",
+      "en": "with a big band"
+    }
+  }
+}

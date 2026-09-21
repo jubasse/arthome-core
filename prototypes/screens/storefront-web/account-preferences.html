@@ -1,0 +1,89 @@
+<!--
+  ÉCRAN      Compte — Préférences de lecture
+  ROUTE      page === 'account', accTab === 'prefs'
+  AFFICHE    Qualité, comportement à l'ouverture d'un direct, tchat, réduction des animations, langue de sous-titrage, devise d'affichage.
+  MÈNE VERS  account
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2743-2763
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       La devise d'affichage est retirée du contrat au palier 1 (D-016) ; elle est encore
+             dans ce balisage, qui n'est pas corrigé.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — updatePreferences
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : availW, s
+  À LIRE     dépendances non recopiées ici : prefDefs
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <sc-if value="{{ accPrefs }}" hint-placeholder-val="{{ false }}">
+      <div style="animation: fadeIn .3s ease both; max-width: 760px;">
+        <h2 style="{{ accH2 }} margin: 0 0 18px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.accPrefs }}</h2>
+        <div style="border: 1px solid #1F1C19; background: #100F0D;">
+          <sc-for list="{{ prefRows }}" as="r" hint-placeholder-count="6">
+            <div style="border-bottom: 1px solid #1F1C19; padding: 18px 20px; display: flex; align-items: center; gap: 20px;">
+              <div style="min-width: 0;">
+                <div style="font-size: 15px;">{{ r.label }}</div>
+                <div style="padding-top: 5px; font-size: 12.5px; color: #8B857C; text-wrap: pretty;">{{ r.hint }}</div>
+              </div>
+              <div style="margin-left: auto; flex: 0 0 auto; display: flex; gap: 6px;">
+                <sc-for list="{{ r.options }}" as="o" hint-placeholder-count="3">
+                  <span onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* accStack  —  lignes 5747-5747 */
+    const accStack = availW < 760;
+/* prefRows  —  lignes 5864-5878 */
+    const prefRows = prefDefs.map(([key, label, hint, opts]) => ({
+      label, hint,
+      options: opts.map(([val, oLabel]) => {
+        const on = key === 'lang' ? s.lang === val : s.prefs[key] === val;
+        return {
+          label: oLabel,
+          pick: key === 'lang'
+            ? (() => this.setState({ lang: val }))
+            : (() => this.setState(st => ({ prefs: Object.assign({}, st.prefs, { [key]: val }) }))),
+          style: 'cursor: pointer; padding: 7px 12px; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.08em; ' +
+            (on ? 'background: #EDE7DC; color: #0B0A09;' : 'border: 1px solid #1F1C19; color: #9B948A;')
+        };
+      })
+    }));
+
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      accH2: accStack ? 'display: none;' : '',
+      prefRows: prefRows,
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.accPrefs  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    lang  prefs  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

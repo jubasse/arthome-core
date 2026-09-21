@@ -1,0 +1,1101 @@
+<!--
+==============================================================================
+  ÉCRAN — crew — planning et équipe
+==============================================================================
+
+  Ce qu'il affiche : les membres et leurs rôles, la matrice de couverture par date, les accès ponctuels, le journal des accès, et les fenêtres d'invitation, de changement de rôle et de retrait
+
+  Rôles qui l'ouvrent : artist · production · coordination
+  Mène vers : event (volet équipe) · journal
+
+  Source : mockups/Studio.dc.html
+    balisage        lignes 597–866, 868–976, 978–999, 1001–1016, 1018–1030
+    modèle de vue   lignes 2679–2703, 2886–2929, 3057–3071, 3433–3433, 3985–3985, 3987–3988, 4016–4017, 4019–4214, 4221–4221, 4224–4551
+
+  Clés de copie employées :
+    aucune clé i18n directe
+
+  Contrat :
+    besoins   needs/studio-web.md § « Les rôles et ce qu'ils ouvrent » → « Multiplicité »
+    openapi   openapi/studio.yaml · listChannelMembers
+    openapi   openapi/studio.yaml · inviteMember
+    openapi   openapi/studio.yaml · changeMemberRoles
+    openapi   openapi/studio.yaml · removeMember
+    openapi   openapi/studio.yaml · grantDateAccess
+    openapi   openapi/studio.yaml · revokeDateAccess
+    openapi   openapi/studio.yaml · getDateCrewPane
+    openapi   openapi/studio.yaml · listChannelJournal
+
+  Relevé d'extraction (défauts vus, non corrigés) :
+    · l'affectation d'un membre PERMANENT à un poste de date et l'accès PONCTUEL d'un renfort sont deux échelles distinctes ; la maquette les tient séparées (assign vs guests), le contrat n'a qu'une écriture avec expiresAt obligatoire.
+    · un membre porte un ENSEMBLE de rôles (roleKeys) ; les fixtures n'en portent qu'un.
+    · clés de vue non résolues automatiquement : mxHasPager, mxPagerLabel, mxPagerBtns, mxNoMatch, mxNoMatchLabel, memberRows, crewHasPager, crewPagerLabel, crewPagerBtns, gsHasPager, gsPagerLabel, gsPagerBtns
+
+  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+-->
+
+<!-- ======================= BALISAGE ======================= -->
+<!-- ···· balisage · Studio.dc.html lignes 597–866 ···· -->
+    <sc-if value="{{ isCrew }}" hint-placeholder-val="{{ false }}">
+    <div style="animation: fadeIn .2s ease both;">
+      <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 16px 22px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">PLANNING ET ÉQUIPE · {{ chan.name }}</div>
+        <div style="padding-top: 7px; font-size: 21px; font-weight: 600; letter-spacing: -0.01em;">{{ crewScopeLabel }}</div>
+      </div>
+
+      <div style="border-bottom: 1px solid #1D2126; background: #131518; display: grid; grid-template-columns: repeat(4, minmax(0,1fr));">
+        <sc-for list="{{ crewStats }}" as="st" hint-placeholder-count="4">
+          <div style="border-right: 1px solid #1D2126; padding: 11px 16px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5B636B;">{{ st.label }}</div>
+            <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 19px; font-weight: 500; line-height: 1; color: {{ st.color }};">{{ st.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 11px 22px;">
+        <div data-pop="cdate" style="position: relative; max-width: 360px;">
+          <div onClick="{{ toggleDateMenu }}" style="cursor: pointer; border: 1px solid #23272C; background: #15171A; padding: 8px 10px; display: flex; align-items: center; gap: 10px; transition: border-color .18s ease;" style-hover="border-color:#333941">
+            <sc-if value="{{ dateFieldHasImg }}" hint-placeholder-val="{{ false }}">
+              <div style="flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1D21;">
+                <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.85); background-color: #1A1D21; background-image: {{ dateFieldImgCss }}; background-size: cover; background-position: center;"></div>
+              </div>
+            </sc-if>
+            <div style="min-width: 0; flex: 1 1 auto;">
+              <div style="font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ dateFieldTitle }}</div>
+              <div style="padding-top: 3px; display: flex; align-items: baseline; gap: 8px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #7C858D;">{{ dateFieldSub }}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: {{ dateFieldGapColor }};">{{ dateFieldGap }}</span>
+              </div>
+            </div>
+            <span style="flex: 0 0 auto; font-size: 9px; color: #646C74;">{{ dateCaret }}</span>
+          </div>
+          <sc-if value="{{ dateOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; left: 0; right: 0; top: calc(100% + 5px); z-index: 900; max-height: 320px; overflow-y: auto; border: 1px solid #333941; background: #15171A; box-shadow: 0 16px 40px rgba(0,0,0,0.55); animation: fadeIn .14s ease both;">
+              <sc-for list="{{ dateOptions }}" as="dopt" hint-placeholder-count="7">
+                <div onClick="{{ dopt.pick }}" style="{{ dopt.rowStyle }}" style-hover="background:#1A1D21">
+                  <sc-if value="{{ dopt.hasImg }}" hint-placeholder-val="{{ true }}">
+                    <div style="flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1D21;">
+                      <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.85); background-color: #1A1D21; background-image: {{ dopt.imgCss }}; background-size: cover; background-position: center;"></div>
+                    </div>
+                  </sc-if>
+                  <div style="min-width: 0; flex: 1 1 auto;">
+                    <div style="font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ dopt.title }}</div>
+                    <div style="padding-top: 2px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #646C74;">{{ dopt.sub }}</div>
+                  </div>
+                  <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em; color: {{ dopt.gapColor }};">{{ dopt.gapLabel }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+
+
+      <div data-strip style="border-bottom: 1px solid #1D2126; background: #131518; padding: 0 22px; display: flex; overflow-x: auto; scrollbar-width: none;">
+        <sc-for list="{{ crewTabs }}" as="ct" hint-placeholder-count="4">
+          <div onClick="{{ ct.pick }}" style="{{ ct.style }}">
+            <span>{{ ct.label }}</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: {{ ct.badgeColor }};">{{ ct.badge }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="padding: 16px 22px 30px; display: flex; flex-direction: column; gap: 12px; max-width: 1040px;">
+
+        <sc-if value="{{ hasMissing }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid oklch(0.4 0.09 75 / 0.55); background: #17150F; padding: 13px 14px; display: flex; align-items: center; gap: 11px; flex-wrap: wrap;">
+            <sc-for list="{{ missingRoles }}" as="mr" hint-placeholder-count="1">
+              <span style="{{ mr.style }}">{{ mr.label }}</span>
+            </sc-for>
+            <span style="min-width: 0; flex: 1 1 240px; font-size: 12.5px; line-height: 1.5; color: #C6CDD4; text-wrap: pretty;">{{ missingHint }}</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showSlotLock }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #23272C; background: #121417; padding: 11px 14px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.07em; line-height: 1.6; color: #7C858D; text-wrap: pretty;">{{ slotLockHint }}</div>
+        </sc-if>
+
+        <sc-if value="{{ cwMatrix }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #23272C; background: #15171A;">
+            <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">POSTES TENUS PAR DATE</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #646C74;">RÉG = RÉGIE · MOD = MODÉRATION · CLIC POUR AFFECTER</span>
+            </div>
+            <div style="border-top: 1px solid #191C20; padding: 9px 14px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+              <input value="{{ crewQ }}" onChange="{{ onCrewQ }}" placeholder="Chercher un nom, un e-mail, un rôle…" style="flex: 1 1 220px; min-width: 0; padding: 8px 11px; border: 1px solid #2A2F35; background: #0E0F10; font-size: 13px; color: #E6E9EC; outline: none;" />
+              <sc-if value="{{ crewHasQ }}" hint-placeholder-val="{{ false }}">
+                <span onClick="{{ clearCrewQ }}" style="flex: 0 0 auto; cursor: pointer; padding: 7px 11px; border: 1px solid #2A2F35; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #98A0A8;" style-hover="background:#1A1D21">EFFACER</span>
+              </sc-if>
+            </div>
+            <div style="overflow-x: auto; padding: 12px;">
+              <div style="{{ mxGrid }}">
+                <div style="background: #131518; padding: 9px 11px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">PERSONNE</div>
+                <sc-for list="{{ mxCols }}" as="mc" hint-placeholder-count="5">
+                  <div style="{{ mc.style }}">
+                    <div>{{ mc.label }}</div>
+                    <div style="padding-top: 3px; color: #4A535C;">{{ mc.meta }}</div>
+                  </div>
+                </sc-for>
+                <sc-for list="{{ mxRows }}" as="mr" hint-placeholder-count="4">
+                  <div style="{{ mr.nameStyle }}">
+                    <div style="font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span>{{ mr.nHit.pre }}</span><span style="background: rgba(214,178,102,0.22); color: oklch(0.9 0.08 84);">{{ mr.nHit.hit }}</span><span>{{ mr.nHit.post }}</span></div>
+                    <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.07em; color: #646C74;">{{ mr.hint }}</div>
+                  </div>
+                  <sc-for list="{{ mr.cells }}" as="mcell" hint-placeholder-count="5">
+                    <div style="{{ mcell.cellStyle }}">
+                      <sc-for list="{{ mcell.slots }}" as="msl" hint-placeholder-count="1">
+                        <span onClick="{{ msl.pick }}" title="{{ msl.title }}" style="{{ msl.style }}" style-hover="background:#1E2226">{{ msl.label }}</span>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                </sc-for>
+                <div style="background: #15171A; padding: 8px 11px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #5B636B;">POSTES MANQUANTS</div>
+                <sc-for list="{{ mxGaps }}" as="mg" hint-placeholder-count="5">
+                  <div title="{{ mg.title }}" style="{{ mg.style }}">{{ mg.label }}</div>
+                </sc-for>
+              </div>
+            </div>
+            <sc-if value="{{ mxHasPager }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top: 1px solid #191C20; padding: 9px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #5B636B;">{{ mxPagerLabel }}</span>
+                <div style="margin-left: auto; display: flex; gap: 5px; flex-wrap: wrap;">
+                  <sc-for list="{{ mxPagerBtns }}" as="pb" hint-placeholder-count="3">
+                    <span onClick="{{ pb.go }}" style="{{ pb.style }}" style-hover="background:#1A1D21">{{ pb.label }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ mxNoMatch }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top: 1px solid #191C20; padding: 22px 14px; text-align: center; font-size: 13px; color: #7C858D;">{{ mxNoMatchLabel }}</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ cwMembers }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #23272C; background: #15171A;">
+            <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">MEMBRES DE LA CHAÎNE</span>
+              <sc-if value="{{ crewScoped }}" hint-placeholder-val="{{ false }}">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #646C74;">AFFECTATION SUR CETTE DATE</span>
+              </sc-if>
+              <sc-if value="{{ canManageTeam }}" hint-placeholder-val="{{ true }}">
+              <span onClick="{{ openInvite }}" style="margin-left: auto; cursor: pointer; padding: 8px 13px; white-space: nowrap; background: #E6E9EC; color: #0E0F10; font-size: 12.5px; font-weight: 600; transition: background .18s ease;" style-hover="background:#ffffff">+ Inviter</span>
+              </sc-if>
+            </div>
+            <div style="border-top: 1px solid #191C20; padding: 9px 14px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+              <input value="{{ crewQ }}" onChange="{{ onCrewQ }}" placeholder="Chercher un nom, un e-mail, un rôle…" style="flex: 1 1 220px; min-width: 0; padding: 8px 11px; border: 1px solid #2A2F35; background: #0E0F10; font-size: 13px; color: #E6E9EC; outline: none;" />
+              <sc-if value="{{ crewHasQ }}" hint-placeholder-val="{{ false }}">
+                <span onClick="{{ clearCrewQ }}" style="flex: 0 0 auto; cursor: pointer; padding: 7px 11px; border: 1px solid #2A2F35; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #98A0A8;" style-hover="background:#1A1D21">EFFACER</span>
+              </sc-if>
+              <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #5B636B;">{{ crewCountLine }}</span>
+            </div>
+            <div data-strip style="border-top: 1px solid #191C20; padding: 9px 14px; display: flex; gap: 6px; overflow-x: auto;">
+              <sc-for list="{{ roleFilters }}" as="rf" hint-placeholder-count="5">
+                <span onClick="{{ rf.pick }}" style="{{ rf.style }}" style-hover="background:#1A1D21">{{ rf.label }}</span>
+              </sc-for>
+            </div>
+            <sc-if value="{{ noMemberMatch }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top: 1px solid #191C20; padding: 22px 14px; text-align: center; font-size: 13px; color: #7C858D;">{{ noMemberLabel }}</div>
+            </sc-if>
+            <sc-for list="{{ memberRows }}" as="mb" hint-placeholder-count="6">
+              <div style="border-top: 1px solid #191C20; padding: 11px 14px; display: flex; align-items: center; gap: 11px; flex-wrap: wrap;">
+                <div style="flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #23272C; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #C6CDD4;">{{ mb.initials }}</div>
+                <div style="flex: 1 1 120px; min-width: 0;">
+                  <div style="font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span>{{ mb.nHit.pre }}</span><span style="background: rgba(214,178,102,0.22); color: oklch(0.9 0.08 84);">{{ mb.nHit.hit }}</span><span>{{ mb.nHit.post }}</span></div>
+                  <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #646C74; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span>{{ mb.hHit.pre }}</span><span style="background: rgba(214,178,102,0.22); color: oklch(0.9 0.08 84);">{{ mb.hHit.hit }}</span><span>{{ mb.hHit.post }}</span></div>
+                </div>
+                <div style="flex: 0 0 auto; display: flex; gap: 5px; flex-wrap: wrap;">
+                  <sc-for list="{{ mb.roleChips }}" as="rc2" hint-placeholder-count="1">
+                    <span style="{{ rc2.style }}">{{ rc2.label }}</span>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ mb.pending }}" hint-placeholder-val="{{ false }}">
+                  <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: oklch(0.78 0.13 75);">{{ mb.pendingLabel }}</span>
+                </sc-if>
+                <sc-if value="{{ mb.showState }}" hint-placeholder-val="{{ false }}">
+                  <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: {{ mb.stateColor }};">{{ mb.stateLabel }}</span>
+                </sc-if>
+                <sc-if value="{{ mb.showSlots }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex: 0 0 auto; display: flex; gap: 6px;">
+                    <sc-for list="{{ mb.slots }}" as="sl" hint-placeholder-count="2">
+                      <span onClick="{{ sl.pick }}" title="{{ sl.title }}" style="{{ sl.style }}" style-hover="background:#1A1D21">{{ sl.label }}</span>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ mb.canGrant }}" hint-placeholder-val="{{ true }}">
+                  <div style="flex: 0 0 auto; display: flex; gap: 6px;">
+                    <span onClick="{{ mb.edit }}" title="Changer les rôles" style="cursor: pointer; width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid #2A2F35; font-size: 12px; color: #98A0A8; transition: background .18s ease;" style-hover="background:#1A1D21">✎</span>
+                    <span onClick="{{ mb.remove }}" title="Retirer de la chaîne" style="cursor: pointer; width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid #2A2F35; font-size: 12px; color: #98A0A8; transition: background .18s ease;" style-hover="background:#1A1D21">✕</span>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+            <sc-if value="{{ crewHasPager }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top: 1px solid #191C20; padding: 9px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #5B636B;">{{ crewPagerLabel }}</span>
+                <div style="margin-left: auto; display: flex; gap: 5px; flex-wrap: wrap;">
+                  <sc-for list="{{ crewPagerBtns }}" as="pb" hint-placeholder-count="3">
+                    <span onClick="{{ pb.go }}" style="{{ pb.style }}" style-hover="background:#1A1D21">{{ pb.label }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+            <div style="border-top: 1px solid #191C20; padding: 11px 14px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; line-height: 1.6; color: #5B636B; text-wrap: pretty;">{{ grantHint }}</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ cwGuests }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #23272C; background: #15171A;">
+            <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">ACCÈS LIMITÉS À UNE DATE</span>
+              <span onClick="{{ openGuestInvite }}" style="margin-left: auto; cursor: pointer; padding: 8px 13px; border: 1px solid #333941; font-size: 12.5px; color: #C6CDD4; transition: background .18s ease;" style-hover="background:#1A1D21">+ Créer un accès</span>
+            </div>
+            <div style="border-top: 1px solid #191C20; padding: 9px 14px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+              <input value="{{ crewQ }}" onChange="{{ onCrewQ }}" placeholder="Chercher un nom, une date, un rôle…" style="flex: 1 1 220px; min-width: 0; padding: 8px 11px; border: 1px solid #2A2F35; background: #0E0F10; font-size: 13px; color: #E6E9EC; outline: none;" />
+              <sc-if value="{{ crewHasQ }}" hint-placeholder-val="{{ false }}">
+                <span onClick="{{ clearCrewQ }}" style="flex: 0 0 auto; cursor: pointer; padding: 7px 11px; border: 1px solid #2A2F35; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #98A0A8;" style-hover="background:#1A1D21">EFFACER</span>
+              </sc-if>
+            </div>
+            <sc-if value="{{ noGuests }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top: 1px solid #191C20; padding: 24px 14px; text-align: center; font-size: 12.5px; color: #7C858D;">{{ noGuestsLabel }}</div>
+            </sc-if>
+            <sc-for list="{{ guestRows }}" as="g" hint-placeholder-count="2">
+              <div style="border-top: 1px solid #191C20; padding: 11px 14px; display: flex; align-items: center; gap: 11px; flex-wrap: wrap;">
+                <div style="flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #23272C; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #C6CDD4;">{{ g.initials }}</div>
+                <div style="flex: 1 1 120px; min-width: 0;">
+                  <div style="font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span>{{ g.nHit.pre }}</span><span style="background: rgba(214,178,102,0.22); color: oklch(0.9 0.08 84);">{{ g.nHit.hit }}</span><span>{{ g.nHit.post }}</span></div>
+                  <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #646C74; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span>{{ g.sHit.pre }}</span><span style="background: rgba(214,178,102,0.22); color: oklch(0.9 0.08 84);">{{ g.sHit.hit }}</span><span>{{ g.sHit.post }}</span></div>
+                </div>
+                <span style="{{ g.roleStyle }}">{{ g.role }}</span>
+                <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ g.color }};">{{ g.expiry }}</span>
+                <span onClick="{{ g.revoke }}" style="flex: 0 0 auto; cursor: pointer; padding: 7px 12px; white-space: nowrap; border: 1px solid #2A2F35; font-size: 12px; color: #98A0A8; transition: background .18s ease;" style-hover="background:#1A1D21">Révoquer</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ gsHasPager }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top: 1px solid #191C20; padding: 9px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #5B636B;">{{ gsPagerLabel }}</span>
+                <div style="margin-left: auto; display: flex; gap: 5px; flex-wrap: wrap;">
+                  <sc-for list="{{ gsPagerBtns }}" as="pb" hint-placeholder-count="3">
+                    <span onClick="{{ pb.go }}" style="{{ pb.style }}" style-hover="background:#1A1D21">{{ pb.label }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ cwLog }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #23272C; background: #15171A;">
+            <div style="border-bottom: 1px solid #1D2126; padding: 10px 14px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #5B636B;">JOURNAL DES ACTIONS</span>
+            </div>
+            <sc-if value="{{ noLog }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top: 1px solid #191C20; padding: 24px 14px; text-align: center; font-size: 12.5px; color: #7C858D;">Aucune action enregistrée sur cette date.</div>
+            </sc-if>
+            <sc-for list="{{ logRows }}" as="lg" hint-placeholder-count="6">
+              <div style="border-top: 1px solid #191C20; padding: 11px 14px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+                <span style="flex: 0 0 auto; width: 6px; height: 6px; background: {{ lg.roleColor }};"></span>
+                <span style="flex: 0 0 auto; font-size: 13px; color: #E6E9EC;">{{ lg.who }}</span>
+                <span style="flex: 1 1 200px; min-width: 0; font-size: 13px; color: #98A0A8; text-wrap: pretty;">{{ lg.what }}</span>
+                <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #5B636B;">{{ lg.when }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+      </div>
+    </div>
+    </sc-if>
+<!-- ···· balisage · Studio.dc.html lignes 868–976 ···· -->
+    <sc-if value="{{ inviteOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeInvite }}" style="position: fixed; inset: 0; z-index: 8000; background: rgba(8,9,10,0.78); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .16s ease both;">
+      <div onClick="{{ stopEvt }}" style="width: 460px; max-width: 100%; max-height: calc(100vh - 64px); overflow-y: auto; border: 1px solid #333941; background: #15171A; animation: riseIn .2s ease both;">
+        <div style="border-bottom: 1px solid #1D2126; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+          <div style="font-size: 16px; font-weight: 600;">Inviter sur {{ chan.name }}</div>
+          <span onClick="{{ closeInvite }}" style="margin-left: auto; flex: 0 0 auto; cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid #2A2F35; font-size: 12px; color: #98A0A8; transition: background .18s ease;" style-hover="background:#1A1D21">✕</span>
+        </div>
+        <div style="border-bottom: 1px solid #1D2126; padding: 14px 16px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">NATURE DE L’ACCÈS</div>
+          <div style="padding-top: 10px; display: flex; gap: 7px; flex-wrap: wrap;">
+            <sc-for list="{{ invScopes }}" as="isc" hint-placeholder-count="2">
+              <span onClick="{{ isc.pick }}" style="{{ isc.style }}">{{ isc.label }}</span>
+            </sc-for>
+          </div>
+          <div style="padding-top: 9px; font-size: 12.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">{{ invScopeHint }}</div>
+          <sc-if value="{{ invIsOnce }}" hint-placeholder-val="{{ false }}">
+            <div style="padding-top: 13px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">DATE CONCERNÉE</div>
+              <div style="padding-top: 9px; display: flex; flex-direction: column; gap: 6px;">
+                <sc-for list="{{ invDateOptions }}" as="ido" hint-placeholder-count="3">
+                  <span onClick="{{ ido.pick }}" style="{{ ido.style }}">{{ ido.label }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <div data-strip style="border-bottom: 1px solid #1D2126; padding: 0 16px; display: flex; gap: 18px;">
+          <sc-for list="{{ invModes }}" as="im" hint-placeholder-count="2">
+            <span onClick="{{ im.pick }}" style="{{ im.style }}">{{ im.label }}</span>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ invByAccount }}" hint-placeholder-val="{{ true }}">
+          <div style="padding: 14px 16px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">NOM OU IDENTIFIANT ARTHOME</div>
+            <input value="{{ invQuery }}" onChange="{{ onInvQuery }}" placeholder="@tarek-anwar" style="margin-top: 7px; width: 100%; padding: 11px 12px; border: 1px solid #2A2F35; background: #0E0F10; font-size: 13.5px; color: #E6E9EC; outline: none;" />
+            <div style="padding-top: 8px; font-size: 12px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">{{ directoryHint }}</div>
+            <sc-if value="{{ invNoResult }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 11px; border: 1px solid #23272C; background: #0F1113; padding: 12px; font-size: 12.5px; line-height: 1.55; color: #98A0A8; text-wrap: pretty;">{{ invNoResultLabel }}</div>
+            </sc-if>
+            <sc-if value="{{ invHasQuery }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 11px; border: 1px solid #23272C; background: #0F1113;">
+                <sc-for list="{{ invResults }}" as="ir" hint-placeholder-count="3">
+                  <div onClick="{{ ir.pick }}" style="{{ ir.rowStyle }}" style-hover="background:#191C20">
+                    <div style="flex: 0 0 30px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #23272C; opacity: {{ ir.avatarOpacity }}; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #C6CDD4;">{{ ir.initials }}</div>
+                    <div style="{{ ir.bodyStyle }}">
+                      <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 13px;">{{ ir.name }}</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #646C74;">{{ ir.handle }}</span>
+                      </div>
+                      <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.07em; color: #7C858D; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ir.trade }} · {{ ir.track }}</div>
+                    </div>
+                    <span style="{{ ir.roleStyle }}">{{ ir.role }}</span>
+                    <sc-if value="{{ ir.inChan }}" hint-placeholder-val="{{ false }}">
+                      <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #5B636B;">{{ ir.inChanLabel }}</span>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ invPicked }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 14px; border-top: 1px solid #1D2126; padding-top: 13px;">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">RÔLE SUR CETTE CHAÎNE</div>
+                <div style="padding-top: 9px; display: flex; gap: 7px; flex-wrap: wrap;">
+                  <sc-for list="{{ inviteRoles }}" as="ir2" hint-placeholder-count="3">
+                    <span onClick="{{ ir2.pick }}" style="{{ ir2.style }}">{{ ir2.label }}</span>
+                  </sc-for>
+                </div>
+                <div style="padding-top: 9px; font-size: 12.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">{{ grantHint }}</div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ invByMail }}" hint-placeholder-val="{{ false }}">
+          <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="font-size: 12.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">Pour une personne qui n'a pas encore de compte Arthome. Elle en créera un en acceptant l'invitation.</div>
+            <div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">NOM</div>
+              <input value="{{ invName }}" onChange="{{ onInvName }}" placeholder="{{ invNamePlaceholder }}" style="margin-top: 7px; width: 100%; padding: 11px 12px; border: 1px solid #2A2F35; background: #0E0F10; font-size: 13.5px; color: #E6E9EC; outline: none;" />
+            </div>
+            <div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">ADRESSE E-MAIL</div>
+              <input value="{{ invMail }}" onChange="{{ onInvMail }}" placeholder="nadia@regie-libre.fr" style="margin-top: 7px; width: 100%; padding: 11px 12px; border: 1px solid #2A2F35; background: #0E0F10; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #E6E9EC; outline: none;" />
+            </div>
+            <div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">RÔLE</div>
+              <div style="padding-top: 9px; display: flex; gap: 7px; flex-wrap: wrap;">
+                <sc-for list="{{ inviteRoles }}" as="ir3" hint-placeholder-count="3">
+                  <span onClick="{{ ir3.pick }}" style="{{ ir3.style }}">{{ ir3.label }}</span>
+                </sc-for>
+              </div>
+              <div style="padding-top: 9px; font-size: 12.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">{{ grantHint }}</div>
+            </div>
+          </div>
+        </sc-if>
+        <div style="border-top: 1px solid #1D2126; padding: 13px 16px; display: flex; gap: 8px; justify-content: flex-end;">
+          <span onClick="{{ closeInvite }}" style="cursor: pointer; padding: 11px 16px; white-space: nowrap; border: 1px solid #2A2F35; font-size: 12.5px; color: #98A0A8; transition: background .18s ease;" style-hover="background:#1A1D21">Annuler</span>
+          <sc-if value="{{ invByAccount }}" hint-placeholder-val="{{ true }}">
+            <span onClick="{{ addFromDirectory }}" style="{{ addBtnStyle }}">{{ addBtnLabel }}</span>
+          </sc-if>
+          <sc-if value="{{ invByMail }}" hint-placeholder-val="{{ false }}">
+            <span onClick="{{ sendInvite }}" style="{{ inviteBtnStyle }}">{{ inviteBtnLabel }}</span>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+<!-- ···· balisage · Studio.dc.html lignes 978–999 ···· -->
+    <sc-if value="{{ roleEditOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeRoleEdit }}" style="position: fixed; inset: 0; z-index: 8000; background: rgba(8,9,10,0.78); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .16s ease both;">
+      <div onClick="{{ stopEvt }}" style="width: 420px; max-width: 100%; border: 1px solid #333941; background: #15171A; animation: riseIn .2s ease both;">
+        <div style="border-bottom: 1px solid #1D2126; padding: 14px 16px;">
+          <div style="font-size: 16px; font-weight: 600;">{{ roleEditName }}</div>
+          <div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #7C858D;">{{ roleEditCount }} · {{ roleEditCurrent }}</div>
+        </div>
+        <div style="padding: 14px 16px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">RÔLES SUR CETTE CHAÎNE · PLUSIEURS POSSIBLES</div>
+          <div style="padding-top: 10px; display: flex; gap: 7px; flex-wrap: wrap;">
+            <sc-for list="{{ roleEditRoles }}" as="er" hint-placeholder-count="4">
+              <span onClick="{{ er.pick }}" title="{{ er.title }}" style="{{ er.style }}">{{ er.label }}</span>
+            </sc-for>
+          </div>
+          <div style="padding-top: 11px; font-size: 12.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">{{ grantHint }}</div>
+        </div>
+        <div style="border-top: 1px solid #1D2126; padding: 13px 16px; display: flex; justify-content: flex-end;">
+          <span onClick="{{ closeRoleEdit }}" style="cursor: pointer; padding: 11px 16px; white-space: nowrap; background: #E6E9EC; color: #0E0F10; font-size: 12.5px; font-weight: 600; transition: background .18s ease;" style-hover="background:#ffffff">{{ roleEditDoneLabel }}</span>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+<!-- ···· balisage · Studio.dc.html lignes 1001–1016 ···· -->
+    <sc-if value="{{ guestDropOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ cancelGuestDrop }}" style="position: fixed; inset: 0; z-index: 8000; background: rgba(8,9,10,0.78); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .16s ease both;">
+      <div onClick="{{ stopEvt }}" style="width: 400px; max-width: 100%; border: 1px solid #333941; background: #15171A; padding: 20px; animation: riseIn .2s ease both;">
+        <div style="font-size: 16px; font-weight: 600;">Révoquer l’accès de {{ guestDropName }} ?</div>
+        <div style="margin-top: 13px; border: 1px solid #23272C; background: #0F1113; padding: 12px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">{{ guestDropRole }}</div>
+          <div style="padding-top: 6px; font-size: 13px; color: #C6CDD4;">{{ guestDropScope }}</div>
+        </div>
+        <div style="padding-top: 11px; font-size: 12.5px; line-height: 1.55; color: #7C858D; text-wrap: pretty;">{{ guestDropHint }}</div>
+        <div style="padding-top: 18px; display: flex; gap: 8px; justify-content: flex-end;">
+          <span onClick="{{ cancelGuestDrop }}" style="cursor: pointer; padding: 11px 16px; white-space: nowrap; border: 1px solid #2A2F35; font-size: 12.5px; color: #98A0A8;" style-hover="background:#1A1D21">Annuler</span>
+          <span onClick="{{ confirmGuestDrop }}" style="cursor: pointer; padding: 11px 16px; white-space: nowrap; border: 1px solid oklch(0.5 0.14 27); background: oklch(0.32 0.09 27); font-size: 12.5px; font-weight: 600; color: oklch(0.9 0.06 27);" style-hover="background:oklch(0.4 0.13 27)">Révoquer</span>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+<!-- ···· balisage · Studio.dc.html lignes 1018–1030 ···· -->
+    <sc-if value="{{ dropOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ cancelDrop }}" style="position: fixed; inset: 0; z-index: 8000; background: rgba(8,9,10,0.78); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .16s ease both;">
+      <div onClick="{{ stopEvt }}" style="width: 420px; max-width: 100%; border: 1px solid #333941; background: #15171A; padding: 16px; animation: riseIn .2s ease both;">
+        <div style="font-size: 16px; font-weight: 600;">Retirer {{ dropName }} de la chaîne ?</div>
+        <div style="margin-top: 12px; border: 1px solid #1D2126; background: #0F1113; padding: 11px 12px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.09em; color: #98A0A8;">{{ dropRole }}</div>
+        <div style="padding-top: 11px; font-size: 12.5px; line-height: 1.55; color: #7C858D; text-wrap: pretty;">{{ dropHint }}</div>
+        <div style="padding-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+          <span onClick="{{ cancelDrop }}" style="cursor: pointer; padding: 11px 16px; white-space: nowrap; border: 1px solid #2A2F35; font-size: 12.5px; color: #98A0A8; transition: background .18s ease;" style-hover="background:#1A1D21">Annuler</span>
+          <span onClick="{{ confirmDrop }}" style="cursor: pointer; padding: 11px 16px; white-space: nowrap; border: 1px solid oklch(0.42 0.12 27); background: #1E1413; font-size: 12.5px; font-weight: 600; color: oklch(0.82 0.14 27); transition: background .18s ease;" style-hover="background:#281817">Retirer</span>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+<!-- ===================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+<!-- ···· modèle de vue · Studio.dc.html lignes 2679–2703 ···· -->
+  guestsOf(channelName) {
+    const A = this.A, D = this.data;
+    if (!A || !D) return [];
+    const channel = (D.cited || D.channels).filter(c => c.name === channelName)[0];
+    if (!channel) return [];
+    const rows = this.planningOf(channelName);
+    const out = [];
+    rows.forEach((r, i) => {
+      const date = A.date(r[6]);
+      if (!date) return;
+      A.crewOf(date).forEach(c => {
+        const p = c.person ? A.person(c.person) : null;
+        if (!p || !p.freelance) return;
+        if (out.some(g => g[0] === p.name)) return;
+        out.push([
+          p.name, p.initials,
+          { director: 'regie', video: 'regie', sound: 'regie', moderation: 'mod' }[c.role] || 'regie',
+          i, r[2] + ' · ' + r[0],
+          A.isOnAir(date) ? 'expire au salut + 1 h' : 'prestataire externe',
+          A.isOnAir(date)
+        ]);
+      });
+    });
+    return out;
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 2886–2929 ···· -->
+  accessLogOf(channelName) {
+    const A = this.A, D = this.data;
+    if (!A || !D) return [];
+    const channel = (D.cited || D.channels).filter(c => c.name === channelName)[0];
+    if (!channel) return [];
+    const SHORT = { artist: 'artist', production: 'prod', coordination: 'coord',
+      director: 'regie', video: 'regie', sound: 'regie', moderation: 'mod', treasury: 'tres' };
+    /* Qui invite : la production ou la coordination si la chaîne en a une,
+       sinon le propriétaire. Une compagnie ne s'affecte pas elle-même. */
+    const inviter = channel.members.filter(m => m.role === 'production' || m.role === 'coordination')[0]
+      || channel.members.filter(m => m.canInvite && m.role !== 'artist')[0]
+      || channel.members.filter(m => m.role !== 'artist')[0]
+      || channel.members[0] || { name: channel.name };
+    /* Un journal ne consigne que le passé : l'affectation est datée du moment
+       où la date a été publiée, jamais de son lever de rideau à venir. */
+    const rows = [];
+    channel.dates.map(id => A.date(id)).filter(Boolean).forEach(d => {
+      const pub = A.publicationOf(d);
+      const at = pub ? pub.publishedAtOffsetMin : d.startOffsetMin - 1440;
+      if (at >= 0) return;
+      const title = A.title(A.show(d.show));
+      A.crewOf(d).forEach(cr => {
+        const person = cr.person ? A.person(cr.person) : null;
+        rows.push({
+          at,
+          who: inviter.name,
+          what: 'a affecté ' + cr.name + ' à la ' + A.roleLabel(cr.role).toLowerCase() + ' de ' + title,
+          how: person && person.freelance ? 'accès ponctuel · expire au tomber du rideau' : 'accès permanent',
+          role: SHORT[cr.role] || 'regie'
+        });
+      });
+    });
+    channel.members.slice(1, 3).forEach(mb => {
+      rows.push({
+        at: -mb.joinedDaysAgo * 1440,
+        who: inviter.name,
+        what: 'a donné le rôle ' + A.roleLabel(mb.role) + ' à ' + mb.name,
+        how: 'accès permanent',
+        role: SHORT[mb.role] || 'coord'
+      });
+    });
+    /* Du plus récent au plus ancien, sur l'horodatage lui-même. */
+    return rows.sort((a, b) => b.at - a.at).slice(0, 10);
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 3057–3071 ···· -->
+  planningOf(channelName) {
+    const A = this.A;
+    if (!A) return [];
+    const rows = this.agendaOf(channelName).filter(r => r[3] !== 'done' && r[3] !== 'replay');
+    return rows.map(r => {
+      const date = A.date(r[12]);
+      const crew = date ? A.crewOf(date) : [];
+      const covered = [];
+      crew.forEach(c => {
+        const short = { director: 'regie', video: 'regie', sound: 'regie', moderation: 'mod' }[c.role];
+        if (short && covered.indexOf(short) < 0) covered.push(short);
+      });
+      return [r[0], r[1], r[2], covered, r[3] === 'live', r[11], r[12]];
+    });
+  }
+<!-- ···· modèle de vue · Studio.dc.html lignes 3433–3433 ···· -->
+        chan: i, chanOpen: false,
+<!-- ···· modèle de vue · Studio.dc.html lignes 3985–3985 ···· -->
+      invNamePlaceholder: ((this.data && this.data.directory) || [[]])[0][0] || '',
+<!-- ···· modèle de vue · Studio.dc.html lignes 3987–3988 ···· -->
+      stopEvt: e => { if (e && e.stopPropagation) e.stopPropagation(); },
+      me,
+<!-- ···· modèle de vue · Studio.dc.html lignes 4016–4017 ···· -->
+      openInvite: () => this.setState({ inviteOpen: true, invMode: 'account', invScope: 'staff', invDate: 0, invQuery: '', invPick: null, invMail: '', invName: '', invRole: 'mod' }),
+
+<!-- ···· modèle de vue · Studio.dc.html lignes 4019–4214 ···· -->
+        const chipFor = k => 'cursor: pointer; padding: 8px 12px; white-space: nowrap; ' + MONO
+          + 'font-size: 9.5px; letter-spacing: 0.09em; border: 1px solid ' + ROLES[k][1].replace(')', ' / 0.45)')
+          + '; color: ' + ROLES[k][1] + '; ';
+        const chipOn = k => 'cursor: pointer; padding: 8px 12px; white-space: nowrap; ' + MONO
+          + 'font-size: 9.5px; letter-spacing: 0.09em; border: 1px solid ' + ROLES[k][1]
+          + '; background: ' + ROLES[k][1].replace(')', ' / 0.16)') + '; color: ' + ROLES[k][1] + '; font-weight: 700;';
+
+        const editing = s.roleEdit;
+        const target = editing ? roster.find(m => m.name === editing) : null;
+        const dropping = s.crewDrop;
+        const dropTarget = dropping ? roster.find(m => m.name === dropping) : null;
+
+        return {
+          canManageTeam: grantable.length > 0,
+          inviteOpen: !!s.inviteOpen && grantable.length > 0,
+
+          invScopes: [
+            ['staff', 'MEMBRE PERMANENT', 'Entre au staff de la chaîne. Accès sans limite de durée, affectable à n\'importe quelle date.'],
+            ['once', 'RENFORT POUR UNE DATE', 'N\'entre pas au staff. L\'accès s\'ouvre pour la date choisie et expire au tomber du rideau.']
+          ].map(([k, label, hint]) => ({
+            label, hint,
+            pick: () => this.setState({ invScope: k }),
+            style: 'cursor: pointer; padding: 10px 13px; white-space: nowrap; ' + MONO
+              + 'font-size: 9.5px; letter-spacing: 0.09em; border: 1px solid '
+              + ((s.invScope || 'staff') === k
+                  ? '#E6E9EC; color: #E6E9EC; font-weight: 700; background: #23272C;'
+                  : '#2A2F35; color: #7C858D;')
+          })),
+          invIsStaff: (s.invScope || 'staff') === 'staff',
+          invIsOnce: (s.invScope || 'staff') === 'once',
+          invScopeHint: ((s.invScope || 'staff') === 'once')
+            ? 'N\'entre pas au staff. L\'accès s\'ouvre pour la date choisie et expire au tomber du rideau.'
+            : 'Entre au staff de la chaîne. Accès sans limite de durée, affectable à n\'importe quelle date.',
+          invDateOptions: DATE_LABELS.map((lb, i) => ({
+            label: lb,
+            pick: () => this.setState({ invDate: i }),
+            style: 'cursor: pointer; padding: 9px 12px; display: block; font-size: 12.5px; border: 1px solid '
+              + ((s.invDate === undefined ? 0 : s.invDate) === i
+                  ? '#E6E9EC; color: #E6E9EC; background: #23272C;'
+                  : '#2A2F35; color: #98A0A8;')
+          })),
+          invDateReady: true,
+          invModes: [['account', 'COMPTE ARTHOME'], ['mail', 'PAR E-MAIL']].map(([k, label]) => ({
+            label,
+            pick: () => this.setState({ invMode: k }),
+            style: 'cursor: pointer; padding: 10px 13px; white-space: nowrap; ' + MONO
+              + 'font-size: 9.5px; letter-spacing: 0.09em; border-bottom: 2px solid '
+              + ((s.invMode || 'account') === k ? '#E6E9EC; color: #E6E9EC;' : 'transparent; color: #7C858D;')
+              + ' '
+          })),
+          invByAccount: (s.invMode || 'account') === 'account',
+          invByMail: (s.invMode || 'account') === 'mail',
+
+          invQuery: s.invQuery || '',
+          onInvQuery: e => this.setState({ invQuery: e.target.value, invPick: null }),
+          invHasQuery: (s.invQuery || '').trim().length > 0,
+          invResults: (() => {
+            const q = (s.invQuery || '').trim().toLowerCase().replace('@', '');
+            if (!q) return [];
+            const already = roster.map(m => m.name);
+            return DIRECTORY
+              .filter(d => (d[0] + ' ' + d[2] + ' ' + d[3]).toLowerCase().indexOf(q) > -1)
+              .filter(d => grantable.indexOf(d[4]) > -1)
+              .slice(0, 5)
+              .map(([name, initials, handle, trade, rk, track]) => {
+                const inChan = already.indexOf(name) > -1;
+                return {
+                  name, initials, handle, trade, track,
+                  role: ROLES[rk][0],
+                  roleStyle: MONO + 'font-size: 9px; letter-spacing: 0.09em; padding: 3px 7px; white-space: nowrap; border: 1px solid ' + ROLES[rk][1].replace(')', ' / 0.4)') + '; color: ' + ROLES[rk][1] + ';',
+                  inChan, addable: !inChan,
+                  bodyStyle: 'min-width: 0; flex: 1 1 auto;' + (inChan ? ' opacity: 0.45;' : ''),
+                  avatarOpacity: inChan ? '0.45' : '1',
+                  inChanLabel: inChan ? 'DÉJÀ MEMBRE' : '',
+                  pick: () => { if (!inChan) this.setState({ invPick: name, invRole: rk }); },
+                  rowStyle: 'padding: 10px 12px; display: flex; align-items: center; gap: 10px; border-top: 1px solid #191C20; '
+                    + (inChan ? '' : ' cursor: pointer;')
+                    + (s.invPick === name ? ' background: #1A1D21;' : '')
+                };
+              });
+          })(),
+          invNoResult: (s.invQuery || '').trim().length > 1
+          && DIRECTORY.filter(d => (d[0] + ' ' + d[2] + ' ' + d[3]).toLowerCase().indexOf((s.invQuery || '').trim().toLowerCase().replace('@', '')) > -1).length === 0,
+          invNoResultLabel: 'Aucun compte trouvable ne correspond. Un compte n\'apparaît ici que s\'il s\'est déclaré disponible pour les organisateurs — sinon, invitez-le par e-mail.',
+          invPicked: !!s.invPick,
+          invPickedName: s.invPick || '',
+          directoryHint: 'Cherchez par nom ou par identifiant Arthome. Seuls les comptes qui se sont déclarés disponibles pour les organisateurs apparaissent.',
+          addFromDirectory: () => {
+          const nm = s.invPick;
+          if (!nm) return;
+          const d = DIRECTORY.find(x => x[0] === nm);
+          if (!d) return;
+          this.setState(st => {
+          const once = (st.invScope || 'staff') === 'once';
+          const di = st.invDate === undefined ? 0 : st.invDate;
+          if (once) return {
+            crewGuests: (st.crewGuests || []).concat([{ chan: chan.name, name: d[0], initials: d[1], roleKey: st.invRole || d[4], dateIdx: di }]),
+            inviteOpen: false, invQuery: '', invPick: null
+          };
+          return {
+            crewInvites: (st.crewInvites || []).concat([{ chan: chan.name, name: d[0], mail: d[2], initials: d[1], roleKey: st.invRole || d[4] }]),
+            inviteOpen: false, invQuery: '', invPick: null
+          };
+          });
+          },
+          addBtnLabel: ((s.invScope || 'staff') === 'once') ? 'Ouvrir l\'accès pour cette date' : 'Ajouter au staff',
+          addBtnStyle: 'cursor: pointer; padding: 11px 16px; white-space: nowrap; font-size: 12.5px; font-weight: 600; border: 1px solid '
+          + (s.invPick ? 'transparent; background: #E6E9EC; color: #0E0F10;' : '#23272C; color: #4A535C;')
+          + ' ',
+          closeInvite: () => this.setState({ inviteOpen: false }),
+          invMail: s.invMail || '',
+          onInvMail: e => this.setState({ invMail: e.target.value }),
+          invName: s.invName || '',
+          onInvName: e => this.setState({ invName: e.target.value }),
+          inviteRoles: grantable.map(k => ({
+          label: ROLES[k][0],
+          pick: () => this.setState({ invRole: k }),
+          style: (s.invRole || 'mod') === k ? chipOn(k) : chipFor(k)
+          })),
+          inviteHint: grantHint,
+          inviteBtnLabel: ((s.invScope || 'staff') === 'once') ? 'Ouvrir l\'accès pour cette date' : 'Envoyer l\'invitation',
+          inviteReady: !!(s.invMail || '').trim() && !!(s.invName || '').trim(),
+          inviteBtnStyle: 'cursor: pointer; padding: 11px 16px; white-space: nowrap; font-size: 12.5px; font-weight: 600; border: 1px solid '
+          + ((s.invMail || '').trim() && (s.invName || '').trim() ? 'transparent; background: #E6E9EC; color: #0E0F10;' : '#23272C; color: #4A535C;')
+          + ' ',
+          sendInvite: () => {
+          const mail = (s.invMail || '').trim(), nm = (s.invName || '').trim();
+          if (!mail || !nm) return;
+          const ini = nm.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+          this.setState(st => {
+          const once = (st.invScope || 'staff') === 'once';
+          const di = st.invDate === undefined ? 0 : st.invDate;
+          if (once) return {
+            crewGuests: (st.crewGuests || []).concat([{ chan: chan.name, name: nm, initials: ini, roleKey: st.invRole || 'mod', dateIdx: di }]),
+            inviteOpen: false, invMail: '', invName: ''
+          };
+          return {
+            crewInvites: (st.crewInvites || []).concat([{ chan: chan.name, name: nm, mail, initials: ini, roleKey: st.invRole || 'mod' }]),
+            inviteOpen: false, invMail: '', invName: ''
+          };
+          });
+          },
+
+          roleEditOpen: !!target,
+          roleEditName: target ? target.name : '',
+          roleEditCurrent: target ? target.roleKeys.map(k => SHORT[k].toUpperCase()).join(' + ') : '',
+          roleEditRoles: target ? grantable.map(k => {
+            const on = target.roleKeys.indexOf(k) > -1;
+            const last = on && target.roleKeys.length === 1;
+            return {
+              label: ROLES[k][0],
+              title: last ? 'Un membre garde au moins un rôle. Retirez-le de la chaîne pour lui ôter tout accès.' : '',
+              pick: () => {
+                if (last) return;
+                this.setState(st => {
+                  const cur = (st.crewRoles || {})[target.name];
+                  const base = Array.isArray(cur) && cur.length ? cur.slice() : target.roleKeys.slice();
+                  const next = base.indexOf(k) > -1 ? base.filter(x => x !== k) : base.concat([k]);
+                  return { crewRoles: Object.assign({}, st.crewRoles, { [target.name]: next }) };
+                });
+              },
+              style: (on ? chipOn(k) : chipFor(k)) + (last ? ' opacity: 0.55;' : '')
+            };
+          }) : [],
+          roleEditCount: target ? target.roleKeys.length + (target.roleKeys.length > 1 ? ' RÔLES' : ' RÔLE') : '',
+          roleEditDoneLabel: 'Terminé',
+          closeRoleEdit: () => this.setState({ roleEdit: null }),
+
+          guestDropOpen: !!s.guestDrop,
+          guestDropName: s.guestDrop || '',
+          guestDropScope: (() => {
+            const g = guests.find(x => x.name === s.guestDrop);
+            return g ? g.scope : '';
+          })(),
+          guestDropRole: (() => {
+            const g = guests.find(x => x.name === s.guestDrop);
+            return g ? ROLES[g.roleKey][0] : '';
+          })(),
+          guestDropHint: 'L\'accès se ferme immédiatement. La personne ne rejoint pas cette date et ne réapparaît pas dans le staff.',
+          confirmGuestDrop: () => this.setState(st => ({
+            guestRevoked: (st.guestRevoked || []).concat([st.guestDrop]),
+            guestDrop: null
+          })),
+          cancelGuestDrop: () => this.setState({ guestDrop: null }),
+
+          dropOpen: !!dropTarget,
+          dropName: dropTarget ? dropTarget.name : '',
+          dropRole: dropTarget ? ROLES[dropTarget.roleKey][0] : '',
+          dropHint: 'Le membre perd immédiatement l\'accès à la chaîne. Ses actions passées restent au journal.',
+          confirmDrop: () => this.setState(st => ({
+          crewRemoved: (st.crewRemoved || []).concat([st.crewDrop]),
+          crewRoles: Object.assign({}, st.crewRoles),
+          crewDrop: null
+          })),
+          cancelDrop: () => this.setState({ crewDrop: null })
+        };
+<!-- ···· modèle de vue · Studio.dc.html lignes 4221–4221 ···· -->
+      isCrew: page === 'crew',
+<!-- ···· modèle de vue · Studio.dc.html lignes 4224–4551 ···· -->
+        if (page !== 'crew') return { crewTabs: [], cwMembers: false, cwGuests: false, cwLog: false, cwMatrix: false, memberRows: [], guestRows: [], logRows: [], crewStats: [], dateTabs: [], mxCols: [], mxRows: [], mxGrid: '' };
+        const tab = ['members', 'matrix', 'guests', 'log'].indexOf(s.crewTab) > -1 ? s.crewTab : 'members';
+
+        /* les dates de la chaîne, avec les postes déjà tenus en régie */
+        const dates = this.planningOf(chan.name);
+        const dsel = s.crewDate === undefined ? -1 : s.crewDate;
+        const cur = dsel >= 0 ? dates[dsel] : null;
+        const need = { regie: 'RÉGIE', mod: 'MODÉRATION' };
+
+        /* affectations : par date, une liste de rôles tenus pour chaque personne */
+        const seed = {};
+        dates.forEach((d, i) => {
+          const at = {};
+          d[3].forEach(r => {
+            const who = (roster.find(m => m.roleKeys.indexOf(r) > -1) || {}).name;
+            if (who) at[who] = (at[who] || []).concat([r]);
+          });
+          seed[i] = at;
+        });
+        const assign = Object.assign({}, seed, s.crewAssign || {});
+        const rolesAt = (i, name) => ((assign[i] || {})[name] || []);
+        const assignedAt = i => Object.keys(assign[i] || {}).filter(n => rolesAt(i, n).length > 0);
+        const coveredRoles = i => ['regie', 'mod'].filter(r => assignedAt(i).some(n => rolesAt(i, n).indexOf(r) > -1));
+        const gapAt = i => 2 - coveredRoles(i).length;
+
+        /* la clé de flux ne se délègue que par le propriétaire ou la production */
+        const canAssignRole = r => grantable.indexOf(r) > -1;
+        const locked = ['regie', 'mod'].filter(r => !canAssignRole(r));
+        const lockHint = locked.length
+          ? locked.map(r => SHORT[r]).join(' et ') + (locked.length > 1 ? ' ne s\'affectent pas' : ' ne s\'affecte pas')
+            + ' depuis votre niveau : demandez au propriétaire ou à la production.'
+          : '';
+
+        const toggleRole = (i, name, r) => this.setState(st => {
+          const base = Object.assign({}, seed, st.crewAssign || {});
+          const at = Object.assign({}, base[i] || {});
+          const cur = at[name] || [];
+          at[name] = cur.indexOf(r) > -1 ? cur.filter(x => x !== r) : cur.concat([r]);
+          base[i] = at;
+          return { crewAssign: base };
+        });
+
+        const crQ = (s.crewQ || '').trim().toLowerCase();
+        const pager = (list, per, stateKey) => {
+          const pages = Math.max(1, Math.ceil(list.length / per));
+          const cur = Math.min(s[stateKey] || 0, pages - 1);
+          const btn = (label, target, on, off) => ({
+            label,
+            go: off ? (() => {}) : (() => this.setState({ [stateKey]: Math.max(0, Math.min(pages - 1, target)) })),
+            style: 'flex: 0 0 auto; min-width: 30px; text-align: center; cursor: ' + (off ? 'default' : 'pointer') + '; padding: 6px 9px; ' + MONO
+              + 'font-size: 9px; letter-spacing: 0.08em; border: 1px solid ' + (on ? '#4A535C' : '#23272C')
+              + '; background: ' + (on ? '#1A1D21' : 'transparent') + '; color: ' + (off ? '#3A4149' : (on ? '#E6E9EC' : '#98A0A8')) + ';'
+          });
+          return {
+            items: list.slice(cur * per, cur * per + per),
+            hasPager: pages > 1,
+            label: pages > 1 ? (cur * per + 1) + '–' + Math.min(list.length, cur * per + per) + ' SUR ' + list.length : '',
+            btns: pages > 1
+              ? [btn('‹', cur - 1, false, cur === 0)]
+                  .concat(Array.from({ length: pages }, (_, n) => btn(String(n + 1), n, n === cur, false)))
+                  .concat([btn('›', cur + 1, false, cur === pages - 1)])
+              : []
+          };
+        };
+        const crCut = (txt) => {
+          const src = String(txt || '');
+          if (!crQ) return { pre: src, hit: '', post: '' };
+          const p = src.toLowerCase().indexOf(crQ);
+          if (p < 0) return { pre: src, hit: '', post: '' };
+          return { pre: src.slice(0, p), hit: src.slice(p, p + crQ.length), post: src.slice(p + crQ.length) };
+        };
+
+        const rosterRows = roster
+          .filter(m => dsel < 0 || m.roleKeys.some(k => k !== 'tres'))
+          .filter(m => !crQ || (m.name + ' ' + m.mail + ' ' + m.note + ' ' + m.roleKeys.map(k => ROLES[k][0]).join(' ')).toLowerCase().indexOf(crQ) > -1)
+          .map(m => {
+          const mine = dsel >= 0 ? rolesAt(dsel, m.name) : [];
+          const assigned = mine.length > 0;
+          return {
+            name: m.name, initials: m.initials, mail: m.mail, note: m.note,
+            nHit: crCut(m.name), hHit: crCut(m.mail + ' · ' + m.note),
+            role: ROLES[m.roleKey][0],
+            roleStyle: MONO + 'font-size: 9px; letter-spacing: 0.09em; padding: 3px 7px; white-space: nowrap; border: 1px solid ' + ROLES[m.roleKey][1].replace(')', ' / 0.4)') + '; color: ' + ROLES[m.roleKey][1] + ';',
+            canGrant: m.canGrant, roleKey: m.roleKey, roleKeys: m.roleKeys,
+            roleChips: m.roleKeys.map(k => ({
+              label: ROLES[k][0],
+              style: MONO + 'font-size: 9px; letter-spacing: 0.09em; padding: 3px 7px; white-space: nowrap; border: 1px solid '
+                + ROLES[k][1].replace(')', ' / 0.4)') + '; color: ' + ROLES[k][1] + ';'
+            })),
+            onDate: assigned,
+            showState: dsel >= 0 && !assigned,
+            stateLabel: 'NON AFFECTÉ',
+            stateColor: '#5B636B',
+            /* une personne peut tenir plusieurs rôles sur une même date */
+            showSlots: dsel >= 0,
+            slots: ['regie', 'mod'].map(r => {
+              const on = mine.indexOf(r) > -1;
+              const may = canAssignRole(r);
+              return {
+                label: SHORT[r].toUpperCase(),
+                title: may ? '' : lockHint,
+                pick: () => { if (may) toggleRole(dsel, m.name, r); },
+                style: MONO + 'font-size: 9px; letter-spacing: 0.09em; padding: 6px 10px; white-space: nowrap; '
+                  + (may ? 'cursor: pointer; ' : '')
+                  + 'border: 1px solid '
+                  + (on ? ROLES[r][1] + '; color: ' + ROLES[r][1] + '; font-weight: 700; background: ' + ROLES[r][1].replace(')', ' / 0.16)') + ';'
+                       : (may ? '#333941; color: #98A0A8;' : '#23272C; color: #4A535C;'))
+              };
+            }),
+            pending: m.pending,
+            pendingLabel: m.pending ? 'EN ATTENTE' : '',
+            edit: () => this.setState({ roleEdit: m.name }),
+            remove: () => this.setState({ crewDrop: m.name })
+          };
+        });
+
+        const scopedGuests = guests.filter(g => dsel < 0 || g.dateIdx === dsel);
+
+        /* Le journal des accès dérive des affectations réelles : qui a été mis
+           sur quel poste, pour quelle date. */
+        const LOG = this.accessLogOf(chan.name).map(r => [
+          r.who, r.what, r.how, this.A.dayLabel(r.at) + ' · ' + this.A.clock(r.at), r.role, 'all', null
+        ]);
+
+
+        const missingNow = dsel >= 0 ? ['regie', 'mod'].filter(r => coveredRoles(dsel).indexOf(r) < 0) : [];
+
+        return {
+          dateOpen: !!s.crewDateOpen,
+          toggleDateMenu: () => this.setState(st => ({ crewDateOpen: !st.crewDateOpen })),
+          dateCaret: s.crewDateOpen ? '▲' : '▼',
+          dateFieldImg: cur ? cur[5] : '',
+          dateFieldImgCss: this.cssUrl(cur ? cur[5] : ''),
+          dateFieldHasImg: !!cur,
+          dateFieldTitle: cur ? cur[2] : 'Toutes les dates de la chaîne',
+          dateFieldSub: cur ? (cur[0] + ' · ' + cur[1]) : (dates.length + ' dates programmées'),
+          dateFieldGap: (() => {
+            if (dsel < 0) { const n = dates.filter((d, i) => gapAt(i) > 0).length; return n ? n + ' à couvrir' : 'toutes couvertes'; }
+            const g = gapAt(dsel);
+            return g ? g + ' rôle' + (g > 1 ? 's' : '') + ' manquant' + (g > 1 ? 's' : '') : 'complète';
+          })(),
+          dateFieldGapColor: dsel < 0
+            ? (dates.some((d, i) => gapAt(i) > 0) ? WARN : OK)
+            : (gapAt(dsel) ? WARN : OK),
+          dateOptions: [[-1, 'Toutes les dates de la chaîne', dates.length + ' dates programmées', '']]
+            .concat(dates.map((d, i) => [i, d[2], d[0] + ' · ' + d[1], d[5]]))
+            .map(([i, title, sub, img]) => {
+              const gap = i >= 0 ? gapAt(i) : 0;
+              return {
+                title, sub, img, hasImg: !!img,
+                gapLabel: gap ? String(gap) : (i >= 0 ? '✓' : ''),
+                gapColor: gap ? WARN : OK,
+                pick: () => this.setState({ crewDate: i, crewDateOpen: false }),
+                rowStyle: 'cursor: pointer; padding: 9px 11px; display: flex; align-items: center; gap: 10px; border-top: 1px solid #191C20; background: '
+                  + (dsel === i ? '#1A1D21' : 'transparent') + '; '
+              };
+            }),
+          crewScopeLabel: cur ? cur[2] + ' · ' + cur[0] + ' ' + cur[1] : 'Toutes les dates de la chaîne',
+          crewScoped: !!cur,
+          crewAllDates: !cur,
+
+          crewQ: s.crewQ || '',
+          onCrewQ: e => this.setState({ crewQ: e.target.value, crewPage: 0, mxPage: 0, guestPage: 0 }),
+          clearCrewQ: () => this.setState({ crewQ: '', crewPage: 0, mxPage: 0, guestPage: 0 }),
+          crewHasQ: crQ.length > 0,
+          crewNoMatch: crQ.length > 0 && rosterRows.length === 0,
+          noMemberLabel: crQ ? 'Aucun membre ne correspond à « ' + crQ + ' ».' : 'Aucun membre ne tient ce rôle sur cette chaîne.',
+          crewCountLine: rosterRows.length
+            + (rosterRows.length > 1 ? ' MEMBRES' : ' MEMBRE')
+            + (crQ ? (rosterRows.length > 1 ? ' TROUVÉS' : ' TROUVÉ') : ''),
+          cwMatrix: tab === 'matrix',
+          /* matrice personnes × dates : une case par poste tenu */
+          mxGrid: 'display: grid; grid-template-columns: 210px repeat(' + dates.length + ', minmax(94px, 1fr)); gap: 1px; background: #1D2126; min-width: ' + (210 + dates.length * 100) + 'px;',
+          mxCols: dates.map((d, i) => ({
+            label: d[0].toUpperCase(),
+            meta: d[1],
+            style: 'background: #131518; padding: 9px 8px; text-align: center; ' + MONO
+              + 'font-size: 9px; letter-spacing: 0.07em; color: ' + (i === dsel ? '#E6E9EC' : '#7C858D') + ';'
+          })),
+          ...(() => {
+            const base = roster
+              .filter(m => m.roleKeys.some(k => k === 'regie' || k === 'mod'))
+              .filter(m => !crQ || (m.name + ' ' + m.mail + ' ' + m.note + ' ' + m.roleKeys.map(k => ROLES[k][0]).join(' ')).toLowerCase().indexOf(crQ) > -1);
+            const pg = pager(base, 6, 'mxPage');
+            return {
+              mxHasPager: pg.hasPager, mxPagerLabel: pg.label, mxPagerBtns: pg.btns,
+              mxNoMatch: base.length === 0,
+              mxNoMatchLabel: crQ ? 'Aucune personne ne correspond à « ' + crQ + ' ».' : 'Aucun régisseur ni modérateur sur cette chaîne.'
+            };
+          })(),
+          mxRows: pager(roster
+            .filter(m => m.roleKeys.some(k => k === 'regie' || k === 'mod'))
+            .filter(m => !crQ || (m.name + ' ' + m.mail + ' ' + m.note + ' ' + m.roleKeys.map(k => ROLES[k][0]).join(' ')).toLowerCase().indexOf(crQ) > -1),
+            6, 'mxPage').items.map(m => {
+            const may = ['regie', 'mod'].filter(k => m.roleKeys.indexOf(k) > -1);
+            return {
+              nHit: crCut(m.name),
+              name: m.name,
+              hint: may.map(k => SHORT[k]).join(' + ') + (m.pending ? ' · en attente' : ''),
+              nameStyle: 'background: #15171A; padding: 9px 11px; min-width: 0;',
+              cells: dates.map((d, i) => {
+                const mine = rolesAt(i, m.name);
+                return {
+                  cellStyle: 'padding: 7px 5px; display: flex; align-items: center; justify-content: center; gap: 4px; background: '
+                    + (mine.length ? '#161B17' : '#131518') + ';',
+                  slots: may.map(r => {
+                    const on = mine.indexOf(r) > -1;
+                    const able = canAssignRole(r);
+                    return {
+                      label: r === 'regie' ? 'RÉG' : 'MOD',
+                      title: (able ? '' : lockHint + ' — ') + d[0] + ' · ' + SHORT[r] + (on ? ' · affecté' : ' · libre'),
+                      pick: () => { if (able) toggleRole(i, m.name, r); },
+                      style: MONO + 'font-size: 9px; letter-spacing: 0.05em; padding: 5px 6px; border: 1px solid '
+                        + (on ? ROLES[r][1] + '; background: ' + ROLES[r][1].replace(')', ' / 0.18)') + '; color: ' + ROLES[r][1] + '; font-weight: 700;'
+                             : (able ? '#2A2F35; color: #5B636B;' : '#1F2328; color: #363D44;'))
+                        + (able ? ' cursor: pointer;' : '')
+                        + ' transition: background .16s ease;'
+                    };
+                  })
+                };
+              })
+            };
+          }),
+          /* rappel des postes non couverts, colonne par colonne */
+          mxGaps: dates.map((d, i) => {
+            const miss = ['regie', 'mod'].filter(r => !assignedAt(i).some(n => rolesAt(i, n).indexOf(r) > -1));
+            return {
+              label: miss.length ? miss.map(r => r === 'regie' ? 'RÉG' : 'MOD').join(' ') : '✓',
+              title: miss.length ? d[0] + ' — manque ' + miss.map(r => SHORT[r]).join(' et ') : d[0] + ' — postes couverts',
+              style: 'padding: 8px 6px; text-align: center; ' + MONO + 'font-size: 9px; letter-spacing: 0.06em; background: #131518; color: '
+                + (miss.length ? WARN : OK) + ';'
+            };
+          }),
+          crewTabs: [
+            ['members', cur ? 'Affectations' : 'Membres', String(rosterRows.length)],
+            ['matrix', 'Matrice', ''],
+            ['guests', 'Accès ponctuels', scopedGuests.length ? String(scopedGuests.length) : ''],
+            ['log', 'Journal', '']
+          ].map(([k, label, badge]) => ({
+            label, badge, badgeColor: '#5B636B',
+            pick: () => this.setState({ crewTab: k }),
+            style: 'cursor: pointer; padding: 12px 2px; margin-right: 22px; display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; white-space: nowrap; border-bottom: 2px solid '
+              + (tab === k ? '#E6E9EC' : 'transparent') + '; color: ' + (tab === k ? '#E6E9EC' : '#98A0A8')
+              + '; '
+          })),
+          cwMembers: tab === 'members', cwGuests: tab === 'guests', cwLog: tab === 'log',
+
+          crewStats: (dsel >= 0 ? [
+            ['PERSONNES AFFECTÉES', String(assignedAt(dsel).length), assignedAt(dsel).length ? '#98A0A8' : WARN],
+            ['RÔLES COUVERTS', coveredRoles(dsel).length + ' / 2', gapAt(dsel) ? WARN : OK],
+            ['ACCÈS PONCTUELS', String(scopedGuests.length), '#98A0A8'],
+            ['ÉTAT', gapAt(dsel) ? 'INCOMPLET' : 'COMPLET', gapAt(dsel) ? WARN : OK]
+          ] : [
+            ['DATES À COUVRIR', String(dates.filter((d, i) => gapAt(i) > 0).length), WARN],
+            ['MEMBRES', String(roster.length), '#98A0A8'],
+            ['ACCÈS PONCTUELS', String(guests.length), '#98A0A8'],
+            ['INVITATIONS EN ATTENTE', String(roster.filter(m => m.pending).length), roster.filter(m => m.pending).length ? WARN : '#98A0A8']
+          ]).map(([label, value, color]) => ({ label, value, color })),
+
+          missingRoles: missingNow.map(r => ({
+            label: need[r],
+            style: MONO + 'font-size: 9px; letter-spacing: 0.09em; padding: 3px 7px; white-space: nowrap; border: 1px dashed oklch(0.5 0.1 75); color: ' + WARN + ';'
+          })),
+          hasMissing: missingNow.length > 0,
+          slotLockHint: canAssignRole('regie') ? '' : lockHint,
+          showSlotLock: dsel >= 0 && locked.length > 0,
+          missingHint: missingNow.length
+            ? 'Cette date n\'est pas couverte. Affectez un membre depuis la liste ci-dessous ou créez un accès ponctuel.'
+            : '',
+
+          ...(() => {
+            const shown = (s.crewRole && s.crewRole !== 'all')
+              ? rosterRows.filter(r => r.roleKeys.indexOf(s.crewRole) > -1)
+              : rosterRows;
+            const pg = pager(shown, 6, 'crewPage');
+            return { memberRows: pg.items, crewHasPager: pg.hasPager, crewPagerLabel: pg.label, crewPagerBtns: pg.btns };
+          })(),
+          noMemberMatch: (crQ.length > 0 && rosterRows.length === 0)
+            || ((s.crewRole && s.crewRole !== 'all') && rosterRows.filter(r => r.roleKeys.indexOf(s.crewRole) > -1).length === 0),
+          roleFilters: [['all', 'TOUS', rosterRows.length]]
+            .concat(['artist', 'coord', 'prod', 'regie', 'mod', 'tres']
+              .map(rk => [rk, ROLES[rk][0], rosterRows.filter(r => r.roleKeys.indexOf(rk) > -1).length])
+              .filter(([, , n]) => n > 0))
+            .map(([k, label, n]) => {
+              const on = (s.crewRole || 'all') === k;
+              const col = k === 'all' ? '#98A0A8' : ROLES[k][1];
+              return {
+                label: label + ' ' + n,
+                pick: () => this.setState({ crewRole: k }),
+                style: 'cursor: pointer; padding: 6px 10px; white-space: nowrap; ' + MONO
+                  + 'font-size: 9px; letter-spacing: 0.09em; border: 1px solid '
+                  + (on ? col + '; color: ' + (k === 'all' ? '#E6E9EC' : col) + '; font-weight: 700; background: ' + (k === 'all' ? '#23272C' : col.replace(')', ' / 0.16)')) + ';'
+                       : '#2A2F35; color: #7C858D;')
+              };
+            }),
+          grantHint: grantHint,
+
+          ...(() => {
+            const base = scopedGuests.filter(g => !crQ || (g.name + ' ' + SHORT[g.roleKey] + ' ' + g.scope + ' ' + g.expiry).toLowerCase().indexOf(crQ) > -1);
+            const pg = pager(base, 6, 'guestPage');
+            return { gsHasPager: pg.hasPager, gsPagerLabel: pg.label, gsPagerBtns: pg.btns };
+          })(),
+          guestRows: pager(scopedGuests
+            .filter(g => !crQ || (g.name + ' ' + SHORT[g.roleKey] + ' ' + g.scope + ' ' + g.expiry).toLowerCase().indexOf(crQ) > -1),
+            6, 'guestPage').items
+            .map(g => ({
+            name: g.name, initials: g.initials, scope: g.scope, expiry: g.expiry,
+            nHit: crCut(g.name), sHit: crCut(g.scope),
+            role: ROLES[g.roleKey][0],
+            roleStyle: MONO + 'font-size: 9px; letter-spacing: 0.09em; padding: 3px 7px; white-space: nowrap; border: 1px solid ' + WARN.replace(')', ' / 0.4)') + '; color: ' + WARN + ';',
+            color: '#98A0A8',
+            revoke: () => this.setState({ guestDrop: g.name })
+          })),
+          openGuestInvite: () => this.setState({
+            inviteOpen: true, invMode: 'account', invScope: 'once',
+            invDate: dsel >= 0 ? dsel : 0,
+            invQuery: '', invPick: null, invMail: '', invName: '', invRole: 'mod'
+          }),
+          noGuests: scopedGuests.filter(g => !crQ || (g.name + ' ' + SHORT[g.roleKey] + ' ' + g.scope + ' ' + g.expiry).toLowerCase().indexOf(crQ) > -1).length === 0,
+          noGuestsLabel: crQ ? 'Aucun accès ponctuel ne correspond à « ' + crQ + ' ».' : (cur ? 'Aucun accès ponctuel sur cette date.' : 'Aucun accès ponctuel en cours.'),
+
+          logRows: LOG.filter(e => dsel < 0 || e[6] === dsel).map(([who, plain, detailed, when, rk, scope]) => {
+            const mayDetail = scope === 'all' || (scope === 'ops' && canOps) || (scope === 'money' && canRevenue);
+            return { who, what: (mayDetail && detailed) ? detailed : plain, when, roleColor: ROLES[rk][1] };
+          }),
+          noLog: LOG.filter(e => dsel < 0 || e[6] === dsel).length === 0
+
+        };
+</script>

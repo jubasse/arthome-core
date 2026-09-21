@@ -1,0 +1,349 @@
+<!--
+  Mécanique  : coquille d'application — ce qui entoure les 22 écrans
+  Source     : Storefront TV.dc.html — balisage L42-45 (racine), L46-57 (amorçage),
+               L147-184 (barre latérale), L1175-1203 (bandeaux et zone sûre) ;
+               cycle de vie L1775-1944.
+  Contient   : l'écran d'amorçage (booting/bootError), la barre latérale gauche repliée,
+               le bandeau « connexion perdue », l'indice de sortie, le cadre de zone sûre,
+               et les minuteries transverses (aperçu du billboard à 4 s, veille à 8 min,
+               battement de l'horloge).
+  Barre latérale : huit entrées — Rechercher, Accueil, En direct, Catégories, Artistes,
+               Mes places, Ma liste, Rediffusions — plus l'avatar en haut et la roue
+               crantée du compte en bas.
+
+  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
+    · La barre latérale compte HUIT entrées ; le cahier des charges en annonce dix (Abonnements et Compte manquent à navDef). Voir plans.html.
+    · L'indice de sortie et le bandeau réseau ne dérivent d'aucune donnée servie : ils sont pilotés par l'état local (s.netLost, s.quitHint).
+
+  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
+    `Storefront TV.dc.html` reste la source runnable de la galerie.
+-->
+
+<!-- ═══════════ Racine et amorçage (verbatim, L42-57) ═══════════ -->
+
+<div data-tvwrap="1" style="width: 100%; height: 100vh; min-height: 320px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center;">
+<div data-tvroot="1" style="position: relative; flex: none; width: 1920px; height: 1080px; overflow: hidden; background: #0B0A09; color: #EDE7DC; font-family: Archivo, sans-serif; transform-origin: center center;">
+
+  <sc-if value="{{ booting }}" hint-placeholder-val="{{ true }}">
+    <div style="position: absolute; inset: 0; z-index: 900; background: #0B0A09; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.3em; color: #6B6459;">ARTHOME</div>
+      <div style="width: 320px; height: 3px; background: #1F1C19; overflow: hidden;">
+        <div style="width: 40%; height: 100%; background: #4A423A; animation: skel 1.2s infinite;"></div>
+      </div>
+      <div style="font-size: 26px; color: #857E73;">Chargement du catalogue…</div>
+      <sc-if value="{{ bootError }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width: 900px; padding: 18px 22px; border: 1px solid #4A2B2B; background: #1A1212; color: #E0A0A0; font-size: 22px; text-wrap: pretty;">{{ bootError }}</div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+<!-- ═══════════ Barre latérale (verbatim, L147-184) ═══════════ -->
+  <sc-if value="{{ chromeOn }}" hint-placeholder-val="{{ false }}">
+    <div data-side-rail="1" style="position: absolute; left: 0; top: 0; bottom: 0; width: {{ railW }}; z-index: 60; overflow: hidden; padding: 60px 0 116px; background: {{ railBg }}; transition: width .18s cubic-bezier(.2,.7,.2,1), background .18s ease;">
+      <div style="display: flex; flex-direction: column; gap: 6px; height: 100%; width: 392px; --lab: {{ railLab }};">
+        <div style="display: flex; align-items: center; gap: 22px; padding: 0 0 34px 60px;">
+          <div style="width: 52px; height: 52px; border-radius: 50%; overflow: hidden; position: relative; background: #1F1C19; border: 1px solid #4A423A;">
+            <sc-if value="{{ me.img }}" hint-placeholder-val="{{ false }}"><img data-img="{{ me.img }}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.7) brightness(.86);" /></sc-if>
+          </div>
+          <div style="white-space: nowrap; opacity: var(--lab, 0); transform: translateX({{ railShift }}); transition: opacity .3s cubic-bezier(.86,0,.14,1), transform .42s cubic-bezier(.86,0,.14,1);">
+            <div style="font-size: 24px; color: #C9C0B2;">{{ me.name }}</div>
+            <div style="padding-top: 2px; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: {{ me.tagCol }};">{{ me.tag }}</div>
+          </div>
+        </div>
+        <sc-for list="{{ nav }}" as="n" hint-placeholder-count="9">
+          <div tabindex="-1" data-fid="{{ n.fid }}" data-side="1" onClick="{{ n.go }}" style="display: flex; align-items: center; flex: 0 0 auto; gap: 22px; height: 64px; padding-left: 60px; cursor: pointer; background: {{ n.hoverBg }}; color: {{ n.col }}; border-left: 4px solid {{ n.bar }}; transition: background .16s ease, color .16s ease, border-color .16s ease;">
+            <div style="flex: 0 0 32px; width: 32px; height: 32px; display: grid; place-items: center;">
+              <sc-if value="{{ n.iSearch }}" hint-placeholder-val="{{ false }}"><div style="position: relative; width: 26px; height: 26px;"><div style="position: absolute; left: 0; top: 0; width: 19px; height: 19px; border: 2px solid currentColor; border-radius: 50%;"></div><div style="position: absolute; left: 15px; top: 18px; width: 11px; height: 2px; background: currentColor; transform: rotate(45deg);"></div></div></sc-if>
+              <sc-if value="{{ n.iHome }}" hint-placeholder-val="{{ false }}"><div style="position: relative; width: 30px; height: 27px;"><div style="position: absolute; left: 0; top: 0; width: 30px; height: 14px; background: currentColor; clip-path: polygon(50% 0, 100% 100%, 0 100%);"></div><div style="position: absolute; left: 6px; top: 12px; width: 18px; height: 15px; border: 2px solid currentColor; border-top: none; border-radius: 0 0 2px 2px;"></div></div></sc-if>
+              <sc-if value="{{ n.iLive }}" hint-placeholder-val="{{ false }}"><div style="position: relative; width: 30px; height: 30px; display: grid; place-items: center;"><div style="position: absolute; width: 30px; height: 30px; border-radius: 50%; border: 2px solid currentColor; opacity: .26;"></div><div style="position: absolute; width: 20px; height: 20px; border-radius: 50%; border: 2px solid currentColor; opacity: .55;"></div><div style="width: 11px; height: 11px; border-radius: 50%; background: {{ n.liveDot }};"></div></div></sc-if>
+              <sc-if value="{{ n.iCats }}" hint-placeholder-val="{{ false }}"><div style="width: 26px; height: 26px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px;"><div style="background: currentColor;"></div><div style="background: currentColor; opacity: .5;"></div><div style="background: currentColor; opacity: .5;"></div><div style="background: currentColor;"></div></div></sc-if>
+              <sc-if value="{{ n.iArtists }}" hint-placeholder-val="{{ false }}"><div style="position: relative; width: 30px; height: 28px;"><div style="position: absolute; left: 10px; top: 0; width: 12px; height: 12px; border-radius: 50%; border: 2px solid currentColor;"></div><div style="position: absolute; left: 1px; top: 15px; width: 28px; height: 13px; border: 2px solid currentColor; border-bottom: none; border-radius: 14px 14px 0 0;"></div></div></sc-if>
+              <sc-if value="{{ n.iTickets }}" hint-placeholder-val="{{ false }}"><div style="position: relative; width: 32px; height: 22px; border: 2px solid currentColor; border-radius: 3px;"><div style="position: absolute; left: 20px; top: 2px; bottom: 2px; width: 2px; background: repeating-linear-gradient(180deg, currentColor 0 3px, transparent 3px 6px);"></div><div style="position: absolute; left: 5px; top: 7px; width: 9px; height: 2px; background: currentColor; opacity: .6;"></div></div></sc-if>
+              <sc-if value="{{ n.iList }}" hint-placeholder-val="{{ false }}"><div style="width: 20px; height: 26px; background: currentColor; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 74%, 0 100%);"></div></sc-if>
+              <sc-if value="{{ n.iReplays }}" hint-placeholder-val="{{ false }}"><div style="position: relative; width: 28px; height: 28px; display: grid; place-items: center;"><div style="position: absolute; inset: 0; border: 2px solid currentColor; border-radius: 50%; border-top-color: transparent;"></div><div style="position: absolute; right: 1px; top: 0; width: 9px; height: 9px; background: currentColor; clip-path: polygon(0 0, 100% 0, 100% 100%);"></div><div style="width: 7px; height: 9px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%);"></div></div></sc-if>
+              <sc-if value="{{ n.iAccount }}" hint-placeholder-val="{{ false }}"><div style="position: relative; width: 28px; height: 28px; display: grid; place-items: center;"><div style="position: absolute; inset: 0; border: 4px dashed currentColor; border-radius: 50%;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: currentColor;"></div></div></sc-if>
+            </div>
+            <div style="font-size: 26px; white-space: nowrap; opacity: var(--lab, 0); transform: translateX({{ railShift }}); transition: opacity .3s cubic-bezier(.86,0,.14,1) {{ n.delay }}, transform .42s cubic-bezier(.86,0,.14,1) {{ n.delay }};">{{ n.label }}</div>
+          </div>
+        </sc-for>
+        <div style="flex: 1 1 auto;"></div>
+        <div tabindex="-1" data-fid="nav:account" data-side="1" onClick="{{ goAccount }}" style="display: flex; align-items: center; flex: 0 0 auto; gap: 22px; height: 64px; padding-left: 60px; cursor: pointer; background: {{ accHoverBg }}; color: {{ accCol }}; border-left: 4px solid {{ accBar }}; transition: background .16s ease, color .16s ease, border-color .16s ease;">
+          <div style="flex: 0 0 32px; position: relative; width: 32px; height: 32px; display: grid; place-items: center;">
+            <div style="position: relative; width: 28px; height: 28px; display: grid; place-items: center;"><div style="position: absolute; inset: 0; border: 4px dashed currentColor; border-radius: 50%;"></div><div style="width: 9px; height: 9px; border-radius: 50%; background: currentColor;"></div></div>
+          </div>
+          <div style="font-size: 26px; white-space: nowrap; opacity: var(--lab, 0); transform: translateX({{ railShift }}); transition: opacity .3s cubic-bezier(.86,0,.14,1) {{ railLastDelay }}, transform .42s cubic-bezier(.86,0,.14,1) {{ railLastDelay }};">{{ t.nAccount }}</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+<!-- ═══════════ Bandeaux, indice de sortie, zone sûre (verbatim, L1175-1203) ═══════════ -->
+  <sc-if value="{{ netLost }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; left: 0; right: 0; top: 0; z-index: 200; padding: 22px 60px 22px 184px; background: color-mix(in oklch, oklch(0.62 0.21 27) 18%, #0B0A09); border-bottom: 1px solid oklch(0.62 0.21 27); display: flex; align-items: center; gap: 26px; animation: riseIn .22s ease both;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.12em; color: oklch(0.75 0.19 27);">{{ t.netLostLabel }}</div>
+      <div style="font-size: 26px; color: #EDE7DC;">{{ t.netLostText }}</div>
+    </div>
+  </sc-if>
+
+  <div style="position: absolute; right: 60px; bottom: 26px; z-index: 120; display: flex; align-items: center; gap: 26px; padding: 12px 22px; border-radius: 4px; border: 1px solid #262320; background: #100F0D; pointer-events: none; transform-origin: 100% 100%; overflow: hidden; width: {{ hintW }}; height: {{ hintH }}; opacity: {{ hintOpacity }}; transform: {{ hintShift }}; transition: {{ hintTrans }};">
+    <sc-for list="{{ hints }}" as="h" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 12px; white-space: nowrap;">
+          <div style="min-width: 42px; height: 34px; padding: 0 10px; display: grid; place-items: center; border-radius: 4px; border: 1px solid {{ h.border }}; background: {{ h.bg }}; font-family: 'JetBrains Mono', monospace; font-size: 18px; color: {{ h.keyCol }};">{{ h.key }}</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: #6B6459;">{{ h.label }}</div>
+        </div>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{ quitHint }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; right: 60px; bottom: 60px; z-index: 300; padding: 20px 28px; border-radius: 4px; border: 1px solid #4A423A; background: rgba(16,15,13,.96); font-size: 26px; color: #C9C0B2; animation: riseIn .2s ease both;">{{ t.quitHint }}</div>
+  </sc-if>
+
+  <sc-if value="{{ safeOn }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 60px; z-index: 900; pointer-events: none; border: 1px dashed color-mix(in oklch, oklch(0.78 0.13 42) 60%, transparent);">
+      <div style="position: absolute; left: 0; top: -34px; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: oklch(0.78 0.13 42);">{{ t.safeAreaLabel }}</div>
+    </div>
+  </sc-if>
+</div>
+</div>
+
+</x-dc>
+
+<!-- ═══════════ Cycle de vie et minuteries (verbatim, L1775-1944) ═══════════ -->
+<script type="text/x-dc-extract">
+  // ---------- lifecycle ----------
+  componentDidMount() {
+    this.loadArthome();
+    this.root = document.querySelector('[data-tvroot]');
+    this.onKeyDown = this.keyDown.bind(this);
+    this.onKeyUp = this.keyUp.bind(this);
+    document.addEventListener('keydown', this.onKeyDown, true);
+    document.addEventListener('keyup', this.onKeyUp, true);
+    if (this.state.page === 'signin') this.signT = setTimeout(() => this.signIn(), 14000);
+    this.onMove = (e) => {
+      const rail = document.querySelector('[data-side-rail]');
+      let over = false;
+      if (rail) {
+        const b = rail.getBoundingClientRect();
+        over = e.clientX >= b.left && e.clientX <= b.right && e.clientY >= b.top && e.clientY <= b.bottom;
+      }
+      if (!over) this.railLock = false;
+      if (this.railLock) return;
+      if (over !== this.state.railHover) this.setState({ railHover: over });
+      if (over) {
+        const item = e.target && e.target.closest ? e.target.closest('[data-fid][data-side]') : null;
+        if (item && item !== document.activeElement) this.focusEl(item, true);
+        else if (!item && !String(this.fid || '').indexOf('nav:')) { /* déjà dans la barre */ }
+        else if (!item) {
+          const cur2 = this.fids().filter(n => n.getAttribute('data-fid') === 'nav:' + this.navKey())[0];
+          if (cur2) this.focusEl(cur2, true);
+        }
+      } else if (this.state.railHover || this.state.railOpen) {
+        const nodes = this.fids();
+        const back = (this.contentFid ? nodes.filter(n => n.getAttribute('data-fid') === this.contentFid)[0] : null) || nodes.filter(n => !n.getAttribute('data-side'))[0];
+        if (back) this.focusEl(back, true);
+        this.setState({ railHover: false, railOpen: false, focusFid: null });
+      }
+    };
+    this.live = false;
+    this.onLive = () => { this.live = true; };
+    this.onDead = () => { this.live = false; };
+    document.addEventListener('keydown', this.onLive, true);
+    document.addEventListener('pointerdown', this.onLive, true);
+    document.addEventListener('wheel', this.onLive, true);
+    window.addEventListener('blur', this.onDead);
+    document.addEventListener('mousemove', this.onMove);
+    this.onWheel = (e) => {
+      const s = this.state;
+      if (s.page === 'gate' || s.page === 'signin') return;
+      e.preventDefault();
+      if (s.page === 'ambient') { this.nav = true; this.setState({ page: this.ambBack || 'home' }); return; }
+      this.armIdle();
+      const now = Date.now();
+      const dx = e.deltaX, dy = e.deltaY;
+      const axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      const d = axis === 'x' ? dx : dy;
+      if (!d) return;
+      if (axis !== this.wAxis || (this.wAcc || 0) * d < 0 || now - (this.wAt || 0) > 320) this.wAcc = 0;
+      this.wAxis = axis;
+      this.wAcc = (this.wAcc || 0) + d;
+      if (Math.abs(this.wAcc) < 26 || now - (this.wAt || 0) < 90) return;
+      const dir = axis === 'x' ? (this.wAcc > 0 ? 'right' : 'left') : (this.wAcc > 0 ? 'down' : 'up');
+      this.wAcc = 0; this.wAt = now;
+      if (s.page === 'player') { this.showCtrl(); return; }
+      this.move(dir, false);
+      const a = document.activeElement;
+      if (!a || !a.getAttribute || !a.getAttribute('data-fid')) this.sync();
+    };
+    document.addEventListener('wheel', this.onWheel, { passive: false });
+    this.fitT = () => this.fit();
+    window.addEventListener('resize', this.fitT);
+    const wrap = document.querySelector('[data-tvwrap]');
+    if (window.ResizeObserver) {
+      this.ro = new ResizeObserver(this.fitT);
+      if (wrap) this.ro.observe(wrap);
+    }
+    /* Le cadre se met à l'échelle quand la coquille apparaît, pas au bout d'un
+       délai : le catalogue met plus longtemps à charger à froid qu'à chaud, et
+       [data-tvwrap] ne change pas de taille quand la racine se monte dedans —
+       le ResizeObserver ne se redéclencherait jamais. */
+    if (window.MutationObserver && wrap) {
+      this.mo = new MutationObserver(() => {
+        const root = this.R();
+        if (!root) return;
+        this.fit();
+        if (this.ro) this.ro.observe(root);
+        this.mo.disconnect();
+        this.mo = null;
+      });
+      this.mo.observe(wrap, { childList: true, subtree: true });
+    }
+    this.paintImgs();
+    this.fit();
+    requestAnimationFrame(() => { this.paintImgs(); this.fit(); requestAnimationFrame(() => this.fit()); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.fit());
+    if (this.R() && this.ro) this.ro.observe(this.R());
+    this.timer = setInterval(() => this.beat(), 1000);
+    this.sync(true);
+    this.armPreview();
+    this.armIdle();
+    this.noviceT = setTimeout(() => { if (this.state.novice) this.setState({ novice: false }); }, 30000);
+  }
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.onKeyDown, true);
+    document.removeEventListener('keyup', this.onKeyUp, true);
+    document.removeEventListener('keydown', this.onLive, true);
+    document.removeEventListener('pointerdown', this.onLive, true);
+    document.removeEventListener('wheel', this.onLive, true);
+    window.removeEventListener('blur', this.onDead);
+    document.removeEventListener('mousemove', this.onMove);
+    document.removeEventListener('wheel', this.onWheel);
+    window.removeEventListener('resize', this.fitT);
+    if (this.ro) this.ro.disconnect();
+    if (this.mo) this.mo.disconnect();
+    clearInterval(this.timer); clearTimeout(this.prevT); clearTimeout(this.idleT); clearTimeout(this.hintT); clearTimeout(this.noviceT);
+    clearTimeout(this.ctrlT); clearTimeout(this.leaveT); clearTimeout(this.infoT); clearTimeout(this.payT); clearTimeout(this.okT); clearTimeout(this.netT); clearTimeout(this.signT);
+  }
+  componentDidUpdate(prev) {
+    const was = prev && prev.signedIn === true, now = this.props.signedIn === true;
+    if (was !== now) {
+      const p = this.state.page;
+      if (now && p === 'signin') { this.stack = []; this.nav = true; this.setState({ page: 'gate', signinOk: false }); }
+      else if (!now && (p === 'gate' || p === 'home')) { this.stack = []; this.mem = {}; this.nav = true; this.setState({ page: 'signin', signinOk: false, prof: null }); }
+    }
+    this.paintImgs(); this.sync(this.nav);
+  }
+
+  beat() {
+    const s = this.state;
+    if (s.page === 'player' && s.playing && !this.incident() && !s.ended) {
+      const d = this.dur(this.cur());
+      const np = s.pos + 1;
+      if (np >= d) this.setState({ pos: d, playing: false, ended: true, ctrl: false });
+      else this.setState({ pos: np });
+    }
+    if (s.page === 'ambient' && Date.now() - (this.ambAt || 0) > 7000) {
+      this.ambAt = Date.now();
+      this.setState({ ambIdx: (s.ambIdx + 1) % this.posterPool().length });
+    }
+  }
+  armPreview() {
+    clearTimeout(this.prevT);
+    if (this.state.preview) this.setState({ preview: false });
+    if (this.props.autoplayPreview === false) return;
+    this.prevT = setTimeout(() => { if (this.state.page === 'home') this.setState({ preview: true }); }, 4000);
+  }
+  armIdle() {
+    clearTimeout(this.idleT);
+    this.idleT = setTimeout(() => {
+      if (this.state.page !== 'player' && this.state.page !== 'ambient' && this.state.page !== 'gate') this.enterAmbient();
+    }, 480000);
+  }
+  enterAmbient() { this.ambAt = Date.now(); this.memSave(); this.ambBack = this.state.page; this.nav = true; this.setState({ page: 'ambient' }); }
+
+  paintImgs() {
+    const root = this.R();
+    if (!root) return;
+    const list = root.querySelectorAll('img[data-img]');
+    for (let i = 0; i < list.length; i++) {
+      const el = list[i], v = el.getAttribute('data-img') || '';
+      const want = (v.indexOf('{{') < 0 && v.length > 4) ? v : this.blank();
+      if (el.getAttribute('src') !== want) el.setAttribute('src', want);
+    }
+  }
+  fit() {
+    const wrap = document.querySelector('[data-tvwrap]');
+    const root = this.R();
+    if (!wrap || !root) return;
+    const kw = wrap.clientWidth / 1920, kh = wrap.clientHeight / 1080;
+    const k = Math.min(kw > 0 ? kw : 1, kh > 0 ? kh : 1) || 1;
+    this.scale = k;
+    root.style.transform = k === 1 ? 'none' : 'scale(' + k + ')';
+  }
+
+</script>
+
+<!-- ═══════════ Barre latérale — modèle de vue (verbatim, L2833-2854) ═══════════ -->
+<script type="text/x-dc-extract">
+    // sidebar
+    const railOn = s.railOpen || s.railHover;
+    const liveCount = lives.length;
+    const navDef = [
+      ['search', t.nSearch, 'iSearch', ''], ['home', t.nHome, 'iHome', ''],
+      ['live', t.nLive, 'iLive', ''],
+      ['categories', t.nCats, 'iCats', ''], ['artists', t.nArtists, 'iArtists', ''],
+      ['tickets', t.nTickets, 'iTickets', ''],
+      ['list', t.nList, 'iList', ''],
+      ['replays', t.nReplays, 'iReplays', '']
+    ];
+    const fFid = s.focusFid;
+    const nav = navDef.map(d => {
+      const on = page === d[0] || (d[0] === 'categories' && page === 'category') || (d[0] === 'artists' && page === 'artist');
+      const hov = fFid === 'nav:' + d[0];
+      const e = { fid: 'nav:' + d[0], label: d[1], delay: (railOn ? navDef.indexOf(d) * 24 : 0) + 'ms', go: () => { this.closeRail(); this.go(d[0]); }, hoverBg: hov ? '#221F1B' : 'transparent', col: hov ? '#EDE7DC' : (on ? '#EDE7DC' : '#8B857C'), bar: hov ? '#EDE7DC' : (on ? ACC : 'transparent'), liveDot: liveCount ? LIVE : '#4A423A' };
+      ['iSearch', 'iHome', 'iLive', 'iCats', 'iArtists', 'iTickets', 'iList', 'iReplays', 'iAccount'].forEach(k => { e[k] = (k === d[2]); });
+      return e;
+    });
+    const meProf = s.prof ? PROFILES.filter(x => x.id === s.prof)[0] : PROFILES[0];
+    const personaTag = { 'détenteur de place': fr ? 'PLACES DÉTENUES' : 'SEATS HELD', 'abonné': fr ? 'ABONNÉ' : 'SUBSCRIBER', 'visiteur': fr ? 'VISITEUR' : 'VISITOR', 'profil enfant': fr ? 'PROFIL ENFANT' : 'KIDS PROFILE' }[persona];
+
+</script>
+
+<!-- ═══════════ Coquille — modèle de vue : barre latérale, indices, bandeaux (verbatim, L3196, L3215-3243) ═══════════ -->
+<script type="text/x-dc-extract">
+      chromeOn: ['gate', 'signin', 'player', 'ambient'].indexOf(page) < 0,
+      railW: railOn ? '392px' : '132px',
+      railLab: railOn ? 1 : 0,
+      railShift: railOn ? '0px' : '-16px',
+      railLastDelay: railOn ? (nav.length * 24) + 'ms' : '0ms',
+      railBg: railOn ? 'linear-gradient(90deg,#100F0D 0%,#100F0D 94%,rgba(16,15,13,.82) 100%)' : 'linear-gradient(90deg, rgba(11,10,9,.96) 0%, rgba(11,10,9,.86) 60%, transparent 100%)',
+      hints: hintsVisible ? hints : (this.lastHints || hints),
+      hintOpacity: hintsVisible ? 1 : 0,
+      hintShift: hintsVisible ? 'translateY(0)' : 'translateY(26px)',
+      hintW: (() => {
+        const list = hintsVisible ? hints : (this.lastHints || hints);
+        if (!hintsVisible) return '0px';
+        const w = list.reduce((acc, h) => acc + Math.max(42, 20 + String(h.key).length * 13) + 12 + String(h.label).length * 12.2 + 26, 0);
+        return Math.round(w + 44 - 26) + 'px';
+      })(),
+      hintH: hintsVisible ? '58px' : '0px',
+      hintTrans: (() => {
+        const d = 650;
+        const e = 'cubic-bezier(.86,0,.14,1)';
+        return ['width ' + d + 'ms ' + e, 'height ' + d + 'ms ' + e, 'padding ' + d + 'ms ease', 'opacity ' + d + 'ms ease', 'transform ' + d + 'ms ' + e].join(', ');
+      })(),
+      safeOn: p.safeArea === true, netLost: s.netLost, quitHint: s.quitHint,
+      previewOn: s.preview && page === 'home',
+      hero: hero, fiche: fiche, art: art, liveHero: liveHero, schedule: schedule, head: head,
+      tzNote: fr ? 'HEURES DANS VOTRE FUSEAU · EUROPE/PARIS' : 'TIMES IN YOUR ZONE · EUROPE/PARIS',
+      nav: nav,
+      accHoverBg: s.focusFid === 'nav:account' ? '#221F1B' : 'transparent',
+      accCol: (s.focusFid === 'nav:account' || page === 'account') ? '#EDE7DC' : '#8B857C',
+      accBar: s.focusFid === 'nav:account' ? '#EDE7DC' : (page === 'account' ? ACC : 'transparent'),
+      goAccount: () => { this.closeRail(); this.go('account'); },
+</script>
+
+<!-- ═══════════ RENVOIS ═══════════
+  needs/storefront-tv.md → « États d'erreur et de chargement » (l'amorçage : la TV n'a pas même une langue)
+  openapi/storefront.yaml → getViewerContext (GET /v1/viewer-context) — le budget entier de l'écran boot
+  Voir aussi : _focus-memory.html (this.mem vidé au changement de profil)
+-->

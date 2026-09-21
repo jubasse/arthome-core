@@ -1,0 +1,598 @@
+<!--
+  PIÈCE        _shell — la coquille
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  RÔLE         Ce qui entoure tous les écrans : écran d'amorçage, barre haute (sélecteur de chaîne, compte, boîte), bouton de retour, titre de page, et le contexte que renderReady() passe à chaque page_*.
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  L1-28 · L29-31 · L32-44 · L46-47 · L48-75 · L76-77 · L78-88 · L812-813 · L896-900
+               modèle    L1089-1090 · L1412-1439 · L1440-1498 · L1519-1522 · L1557-1567 · L1568-1890
+  NOTE         renderReady() est recopié EN ENTIER ici. Sa tranche d'onglets (L1626-1632 et L1727-1768) est recopiée une seconde fois dans _tab-bar.html, verbatim : la duplication est voulue, pour qu'un agent qui ouvre _tab-bar.html n'ait rien à aller chercher ailleurs.
+               La bascule portrait/paysage vit ici : const land = (P.orientation) === 'paysage', puis shellStyle, mainStyle, blocksWrapStyle, tabBarStyle, sheetStyle.
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!-- ---- en-tête du document, styles et animations (L1-28) ---- -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #0E0F10; }
+  * { -webkit-tap-highlight-color: transparent; }
+  input, textarea, select { font: inherit; color: inherit; outline: none; border-radius: 0; -webkit-appearance: none; }
+  a { color: #C6CDD4; text-decoration: none; }
+  a:hover { color: #E6E9EC; }
+  [data-strip] { -ms-overflow-style: none; scrollbar-width: none; }
+  [data-strip]::-webkit-scrollbar { display: none; }
+  @keyframes pulseLive { 0%, 100% { opacity: 1; } 50% { opacity: 0.28; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  @keyframes skel { 0% { opacity: 0.35; } 50% { opacity: 0.8; } 100% { opacity: 0.35; } }
+  @keyframes slideUp { from { transform: translateY(26px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+</style>
+</helmet>
+
+<!-- ---- ouverture de la coquille (L29-31) ---- -->
+
+<div style="{{ shellStyle }}">
+
+
+<!-- ---- écran d'amorçage : rien n'est peint avant la réponse (L32-44) ---- -->
+  <sc-if value="{{ booting }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; inset: 0; z-index: 90; background: #0E0F10; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 0 28px; text-align: center;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: #6E7681;">ARTHOME · STUDIO</div>
+      <div style="width: 180px; height: 3px; background: #1D2126; overflow: hidden;">
+        <div style="width: 40%; height: 100%; background: #3A424C; animation: skel 1.2s infinite;"></div>
+      </div>
+      <div style="font-size: 12.5px; color: #8B949E;">Chargement du catalogue et des chaînes…</div>
+      <sc-if value="{{ bootError }}" hint-placeholder-val="{{ false }}">
+        <div style="padding: 11px 13px; border: 1px solid #4A2B2B; background: #1A1212; color: #E0A0A0; font-size: 12px; text-wrap: pretty;">{{ bootError }}</div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+
+<!-- ---- ouverture du rendu prêt (L46-47) ---- -->
+  <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+
+
+<!-- ---- barre haute : chaîne, compte, boîte (L48-75) ---- -->
+
+  <div style="position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 7px; height: 56px; padding: 0 9px; background: #15171A; border-bottom: 1px solid #23272C;">
+    <div onClick="{{ goHome }}" style="min-height: 44px; display: flex; flex-direction: column; justify-content: center; cursor: pointer;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.15em; color: #E6E9EC;">ARTHOME</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.22em; color: #5B636B;">STUDIO</div>
+    </div>
+    <div onClick="{{ openChanSheet }}" style="flex: 1 1 auto; min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 7px; padding: 0 8px; border: 1px solid #23272C; background: #111316; cursor: pointer;">
+      <div style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: #1D2126; background-color: #1A1D21; background-image: {{ chanImgCss }}; background-size: cover; background-position: center;"></div>
+      <div style="min-width: 0; flex: 1 1 auto;">
+        <div style="font-size: 12px; line-height: 1.2; color: #E6E9EC; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ chanName }}</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.1em; color: #5B636B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ chanRole }}</div>
+      </div>
+      <sc-if value="{{ chanLive }}" hint-placeholder-val="{{ true }}">
+        <span style="flex: 0 0 auto; width: 6px; height: 6px; background: oklch(0.7 0.19 27); animation: pulseLive 1.6s infinite;"></span>
+      </sc-if>
+      <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #5B636B;">▾</span>
+    </div>
+    <div onClick="{{ openAccount }}" style="flex: 0 0 auto; width: 40px; min-height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid #23272C; background: #111316; cursor: pointer; color: #98A0A8;">
+      <svg viewBox="0 0 24 24" style="width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.6;"><circle cx="12" cy="8" r="3.4"></circle><path d="M5 20.6c0-3.9 3.1-6.3 7-6.3s7 2.4 7 6.3"></path></svg>
+    </div>
+    <div onClick="{{ goInbox }}" style="{{ inboxBtnStyle }}">
+      <svg viewBox="0 0 24 24" style="width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.6;"><rect x="3" y="5" width="18" height="14"></rect><path d="M3 7.5l9 6 9-6"></path></svg>
+      <sc-if value="{{ inboxCount }}" hint-placeholder-val="{{ true }}">
+        <span style="position: absolute; top: 3px; right: 2px; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; padding: 0 2px; background: oklch(0.78 0.13 75); color: #0E0F10; font-family: 'JetBrains Mono', monospace; font-size: 8.5px; font-weight: 500;">{{ inboxCount }}</span>
+      </sc-if>
+    </div>
+  </div>
+
+
+<!-- ---- ouverture du corps (L76-77) ---- -->
+  <main style="{{ mainStyle }}">
+
+
+<!-- ---- retour et titre de page (L78-88) ---- -->
+    <sc-if value="{{ hasBack }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ backAct }}" style="margin-bottom: 9px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px 0 9px; border: 1px solid #23272C; background: #121417; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.09em; color: #C6CDD4;">{{ backLabel }}</div>
+    </sc-if>
+
+    <div style="display: flex; align-items: baseline; gap: 8px; padding: 0 1px 10px 1px;">
+      <div style="min-width: 0;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">{{ pageKicker }}</div>
+        <div style="padding-top: 3px; font-size: 17px; font-weight: 500; line-height: 1.2; letter-spacing: -0.01em; text-wrap: pretty;">{{ pageTitle }}</div>
+      </div>
+    </div>
+
+
+<!--
+  Ici s'insèrent les blocs propres aux six pages qui en ont un :
+    pgInbox   L89-163    -> inbox.html
+    pgAgenda  L165-232   -> agenda.html
+    pgDash    L234-292   -> dashboard.html
+    pgEvents  L294-352   -> events.html
+    pgEvent   L354-416   -> event.html / event-panes.html
+    pgWizard  L418-473   -> wizard.html
+  puis le balisage générique L475-810 -> _blocks.html
+-->
+
+<!-- ---- fermeture du corps (L812-813) ---- -->
+  </main>
+
+
+<!--
+  Puis la barre d'onglets L814-826 -> _tab-bar.html
+  et la feuille           L828-895 -> _sheet-shell.html
+-->
+
+<!-- ---- fermetures (L896-900) ---- -->
+
+  </sc-if>
+
+</div>
+
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<!--
+  LES PROPRIÉTÉS D'ENTRÉE DE LA SURFACE (L901-902, recopiées telles quelles).
+  C'est ce qu'un agent doit lire en premier : orientation (portrait|paysage), lang (fr|en),
+  persona (les six), secondRole (le cumul de rôles), myZone (fuseau de lecture),
+  onAir, chatRegime, autoMod.
+-->
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:900},&quot;orientation&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;portrait&quot;,&quot;paysage&quot;],&quot;default&quot;:&quot;portrait&quot;,&quot;tsType&quot;:&quot;'portrait' | 'paysage'&quot;,&quot;section&quot;:&quot;Affichage&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;fr&quot;,&quot;en&quot;],&quot;default&quot;:&quot;fr&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Général&quot;},&quot;persona&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;artiste&quot;,&quot;production&quot;,&quot;régie&quot;,&quot;modération&quot;,&quot;coordination&quot;,&quot;trésorerie&quot;],&quot;default&quot;:&quot;artiste&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Général&quot;},&quot;secondRole&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;aucun&quot;,&quot;artiste&quot;,&quot;production&quot;,&quot;régie&quot;,&quot;modération&quot;,&quot;coordination&quot;,&quot;trésorerie&quot;],&quot;default&quot;:&quot;aucun&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Général&quot;},&quot;myZone&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Europe/Paris&quot;,&quot;Europe/London&quot;,&quot;Europe/Lisbon&quot;,&quot;America/New_York&quot;,&quot;America/Montreal&quot;,&quot;Asia/Tokyo&quot;],&quot;default&quot;:&quot;Europe/Paris&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Général&quot;},&quot;onAir&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Antenne&quot;},&quot;chatRegime&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;libre&quot;,&quot;emojis et phrases préparées&quot;,&quot;lecture seule&quot;,&quot;coupé&quot;],&quot;default&quot;:&quot;emojis et phrases préparées&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Antenne&quot;},&quot;autoMod&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Antenne&quot;}}">
+
+<!-- Ouverture de la classe (L1084) -->
+<script type="text/x-dc-fragment">
+class Component extends DCLogic {
+  cssUrl(u) { return u ? 'url("' + u + '")' : 'none'; }
+
+
+  componentDidMount() {
+    this.loadArthome();
+    try { const L = localStorage.getItem('ath.regie.layout'); if (L) this.setState({ rgLayout: L }); } catch (e) {}
+    this._t = setInterval(() => this.setState({ now: Date.now() }), 1000);
+    /* une image dont la source n'est pas résolue est masquée, puis réaffichée au chargement réel */
+    this._imgErr = e => { const el = e.target; if (el && el.tagName === 'IMG') el.style.visibility = 'hidden'; };
+    this._imgOk = e => { const el = e.target; if (el && el.tagName === 'IMG') el.style.visibility = 'visible'; };
+    document.addEventListener('error', this._imgErr, true);
+    document.addEventListener('load', this._imgOk, true);
+    this._esc = e => { if (e.key === 'Escape' && this.state.sheet) this.setState({ sheet: null }); };
+    document.addEventListener('keydown', this._esc);
+    setTimeout(() => this.bindStrips(), 60);
+  }
+
+  componentDidUpdate() {
+    clearTimeout(this._st);
+    this._st = setTimeout(() => this.bindStrips(), 40);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this._t);
+    clearTimeout(this._st);
+    document.removeEventListener('error', this._imgErr, true);
+    document.removeEventListener('load', this._imgOk, true);
+    document.removeEventListener('keydown', this._esc);
+  }
+
+  /* bandes glissables : glisser à la souris, recentrage de l'onglet cliqué, flèches du seul côté utile */
+
+  bindStrips() {
+    const strips = document.querySelectorAll('[data-strip]');
+    strips.forEach(strip => {
+      if (!strip._bound) {
+        strip._bound = true;
+        strip.style.cursor = 'grab';
+        let sx = 0, sl = 0, drag = false, moved = false;
+        strip.addEventListener('mousedown', e => { drag = true; moved = false; sx = e.clientX; sl = strip.scrollLeft; });
+        window.addEventListener('mousemove', e => {
+          if (!drag) return;
+          if (Math.abs(e.clientX - sx) > 4) moved = true;
+          strip.scrollLeft = sl - (e.clientX - sx);
+        });
+        window.addEventListener('mouseup', () => { drag = false; setTimeout(() => { moved = false; }, 60); });
+        strip.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); } }, true);
+        strip.addEventListener('click', e => {
+          const t = e.target.closest ? e.target.closest('[data-chip]') : null;
+          if (!t || moved) return;
+          const r = t.getBoundingClientRect(), c = strip.getBoundingClientRect();
+          strip.scrollTo({ left: strip.scrollLeft + (r.left - c.left) - (c.width - r.width) / 2, behavior: 'smooth' });
+        });
+        const host = strip.parentElement;
+        if (host) {
+          if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+          const mk = side => {
+            const b = document.createElement('div');
+            b.textContent = side === 'l' ? '‹' : '›';
+            b.style.cssText = 'position: absolute; top: 0; ' + (side === 'l' ? 'left: 0;' : 'right: 0;')
+              + ' width: 30px; min-height: 44px; box-sizing: border-box; display: none; align-items: center; justify-content: center;'
+              + ' background: #1A1D21; border: 1px solid #333941; color: #C6CDD4;'
+              + " font-family: 'JetBrains Mono', monospace; font-size: 14px; cursor: pointer; z-index: 12;"
+              + ' box-shadow: 0 0 14px 10px rgba(14,15,16,0.9);';
+            b.addEventListener('click', ev => {
+              ev.stopPropagation();
+              strip.scrollTo({ left: strip.scrollLeft + (side === 'l' ? -1 : 1) * Math.round(strip.clientWidth * 0.7), behavior: 'smooth' });
+            });
+            host.appendChild(b);
+            return b;
+          };
+          strip._edges = { l: mk('l'), r: mk('r') };
+          strip.addEventListener('scroll', () => this.syncEdges(strip), { passive: true });
+        }
+      }
+      this.syncEdges(strip);
+    });
+  }
+
+  syncEdges(strip) {
+    const e = strip._edges;
+    if (!e) return;
+    const host = strip.parentElement;
+    if (!host) return;
+    const max = strip.scrollWidth - strip.clientWidth;
+    const top = Math.round(strip.getBoundingClientRect().top - host.getBoundingClientRect().top + strip.clientHeight / 2 - 22);
+    [e.l, e.r].forEach(b => { b.style.top = Math.max(0, top) + 'px'; });
+    e.l.style.display = strip.scrollLeft > 4 ? 'flex' : 'none';
+    e.r.style.display = strip.scrollLeft < max - 4 ? 'flex' : 'none';
+  }
+
+
+  go(page) { this.setState({ page, sheet: null }); }
+
+  openSheet(kind, extra) { this.setState(Object.assign({ sheet: kind }, extra || {})); }
+
+
+  renderVals() {
+    if (!this.state.dataReady) {
+      const land = (this.props.orientation || 'portrait') === 'paysage';
+      return { booting: true, ready: false, bootError: this.state.dataError || '',
+        shellStyle: 'width: 100%; max-width: ' + (land ? '932px' : '430px')
+          + '; margin: 0 auto; min-height: 100vh; position: relative; overflow-x: hidden;'
+          + " background: #0E0F10; color: #E6E9EC; font-family: 'Archivo', sans-serif; font-size: 13px;" };
+    }
+    return Object.assign({ booting: false, ready: true, bootError: '' }, this.renderReady());
+  }
+
+
+  renderReady() {
+    const s = this.state;
+    const P = this.props;
+    const en = (P.lang || 'fr') === 'en';
+    const T = x => (en && EN[x]) ? EN[x] : x;
+
+    const personaRaw = P.persona || 'artiste';
+    const persona = { 'régie': 'regie', 'modération': 'moderation', 'trésorerie': 'tresorerie' }[personaRaw] || personaRaw;
+    const SECOND = { aucun: null, artiste: 'artist', production: 'prod', coordination: 'coord', 'régie': 'regie', 'modération': 'mod', 'trésorerie': 'tres' };
+    const second = SECOND[P.secondRole || 'aucun'] || null;
+
+    /* chaînes acceptées depuis la boîte : elles entrent réellement au sélecteur */
+    const invState = s.invState || {};
+    const joined = INV_DEFS.filter(v => invState[v[0]] === 'ok');
+
+    const baseSet = (CHAN_SETS[persona] || CHAN_SETS.artiste).slice();
+    joined.forEach(v => { if (!baseSet.some(c => c[0] === v[1])) baseSet.push([v[1], v[3], false, false]); });
+
+    const channels = baseSet.map(([name, rk, isLive, own], i) => ({
+      name, roleKey: rk, own,
+      isLive: isLive && P.onAir !== false,
+      img: CHAN_IMG[name] || IMG.hall,
+      role: T(ROLES[rk][0]),
+      roleColor: ROLES[rk][1],
+      idx: i
+    }));
+    const chan = channels[Math.min(s.chan, channels.length - 1)] || channels[0];
+    const roleOf = chan.roleKey;
+    const roles = [roleOf].concat(second && second !== roleOf ? [second] : []);
+    const has = r => roles.indexOf(r) > -1;
+    /* La personne connectée est un membre réel de la chaîne : celui qui tient le
+       rôle choisi, à défaut le propriétaire. */
+    const me = (() => {
+      const D = this.data;
+      const fallback = { name: chan.name, mail: '', initials: (chan.name || '?').slice(0, 2).toUpperCase() };
+      if (!D) return fallback;
+      const channel = (D.cited || D.channels).filter(x => x.name === chan.name)[0];
+      if (!channel) return fallback;
+      const wanted = { artist: 'artist', prod: 'production', coord: 'coordination',
+        regie: 'director', mod: 'moderation', tres: 'treasury' }[roleOf];
+      const mine = channel.members.filter(x => x.role === wanted)[0] || channel.members[0];
+      return mine
+        ? { name: mine.name, mail: mine.email || '', initials: mine.initials || mine.name.slice(0, 2).toUpperCase() }
+        : fallback;
+    })();
+
+    const myZone = s.myZoneOv || P.myZone || 'Europe/Paris';
+    const zoneOf = name => CHAN_ZONE[name] || 'Europe/Paris';
+    const abbrOf = name => (ZONES[zoneOf(name)] || ZONES['Europe/Paris'])[0];
+    const chanZone = zoneOf(chan.name);
+    const zAbbr = abbrOf(chan.name);
+    const zSame = chanZone === myZone;
+    const withZone = (t, name) => String(t || '').replace(':', 'h') + ' ' + abbrOf(name === undefined ? chan.name : name);
+    const localOf = (t, name) => {
+      const alt = shiftTime(t, zoneOf(name === undefined ? chan.name : name), myZone);
+      return alt ? alt.time + ' ' + alt.abbr + alt.shift : '';
+    };
+
+    /* accès : union des rôles, jamais un rang */
+    const union = roles.reduce((acc, r) => acc.concat(ACCESS[r] || []), []);
+    const allowed = ORDER.filter(p => union.indexOf(p) > -1);
+    const free = ['event', 'wizard', 'regie'].filter(p => roles.some(r => (FREE[r] || []).indexOf(p) > -1));
+    free.push('inbox');
+    const page = (s.page && (allowed.indexOf(s.page) > -1 || free.indexOf(s.page) > -1)) ? s.page : allowed[0];
+
+    const canRevenue = has('artist') || has('prod') || has('tres');
+    const canDecide = has('artist') || has('prod');
+    const grantable = ['artist', 'coord', 'prod', 'regie', 'mod', 'tres'].filter(k => roles.some(r => (GRANTS[r] || []).indexOf(k) > -1));
+
+    const eur = n => Math.round(n).toLocaleString('fr-FR') + ' €';
+    const num = n => Math.round(n).toLocaleString('fr-FR');
+
+    /* ---------- catalogue des dates : douze colonnes, une seule source ---------- */
+    const evRaw = this.agendaOf(chan.name);
+    (s.evNew || []).forEach(n => evRaw.push(n));
+    /* forme canonique : seize colonnes, pour que les colonnes dérivées tombent
+       toujours au même rang, y compris sur les dates créées par l'assistant */
+    evRaw.forEach(r => {
+      if (r[10] === undefined) r[10] = true;
+      if (r[11] === undefined) r[11] = true;
+      if (r[12] === undefined) r[12] = 0;
+      if (r[13] === undefined) r[13] = '';
+      if (r[14] === undefined) r[14] = null;
+      if (r[15] === undefined) r[15] = 0;
+      r.length = 16;
+    });
+    /* les saisies de la fiche réécrivent la colonne concernée : une seule source pour tout l'écran */
+    const EDIT_COL = { day: 0, time: 1, title: 2, cap: 5, price: 6, comment: 8, poster: 10, tests: 11 };
+    const evEdits = s.evEdit || {};
+    const evDefs = evRaw.map((r, i) => {
+      const e = evEdits[i];
+      if (!e) return r;
+      const n = r.slice();
+      Object.keys(EDIT_COL).forEach(k => { if (e[k] !== undefined) n[EDIT_COL[k]] = e[k]; });
+      return n;
+    });
+    const stateAt = i => (s.evOver || {})[i] || evDefs[i][3];
+    const voidAt = i => VOIDS[(s.evVoid || {})[i]] || null;
+
+    /* ---------- boîte : invitations et alertes routées ---------- */
+    const seen = s.seen || {};
+    const ALERT_DEFS = [
+      ['al1', 'regie', 'Débit instable sur ' + ((evDefs[0] || [])[2] || 'la date à venir'), 'passé sous 5 Mb/s pendant 40 s', 'il y a 12 min'],
+      ['al2', 'coord', 'Aucun modérateur affecté au 6 sept.', 'la date est dans 1 jour', 'il y a 1 h'],
+      ['al3', 'prod', ((evDefs[0] || [])[2] || 'La prochaine date') + ' à ' + (evDefs[0] && evDefs[0][5] ? Math.round((evDefs[0][4] / evDefs[0][5]) * 100) : 0) + ' % de la jauge',
+        ((evDefs[0] && evDefs[0][13]) || 0) + ' personnes en liste d’attente', 'ce matin'],
+      ['al4', 'tres', 'Litige bancaire sur ' + ((evDefs[1] || evDefs[0] || [])[2] || 'une date'), '35 € contestés, réponse sous 24 h', 'hier'],
+      ['al5', 'mod', 'File de modération saturée', '14 messages en attente', 'il y a 20 min']
+    ];
+    const myAlerts = ALERT_DEFS.filter(a => roles.indexOf(a[1]) > -1).filter(a => !seen[a[0]]);
+    const openInv = INV_DEFS.filter(v => !invState[v[0]]);
+    const inboxCount = openInv.length + myAlerts.length;
+
+    /* ---------- gardes : dérivées des chaînes où l'accès existe ---------- */
+    const GARDES = channels.reduce((acc, c) => acc.concat(
+      (CHAN_DATES[c.name] || []).map(([title, day, time, st, dur]) => ({
+        chan: c.name, img: c.img, title, day, time, st, dur, roleKey: c.roleKey, ci: c.idx
+      }))
+    ), []);
+    const tonight = GARDES.filter(g => g.day === 'ce soir');
+
+    const M = this.metricsOf(chan.name);
+    const identity = this.identityOf(chan.name);
+    /* Repères de la date à l'antenne : une heure de régie se compte depuis le
+       lever de rideau, jamais sur une horloge écrite en dur. */
+    const airDate = (() => {
+      const A = this.A, D = this.data;
+      if (!A || !D) return null;
+      const c = (D.cited || D.channels).filter(x => x.name === chan.name)[0];
+      if (!c) return null;
+      const dates = c.dates.map(id => A.date(id)).filter(Boolean);
+      return dates.filter(d => A.isOnAir(d))[0] || dates.filter(d => d.startOffsetMin > 0)[0] || dates[0] || null;
+    })();
+    const airClock = (minFromCurtain) => (this.A && airDate)
+      ? this.A.clock(airDate.startOffsetMin + minFromCurtain) : '';
+    const airFill = (this.A && airDate)
+      ? Math.round((airDate.seats.sold / Math.max(1, this.A.venue(airDate.venue).capacity)) * 100) : 0;
+    const airBitrate = (() => {
+      const h = (this.A && airDate) ? this.A.healthOf(airDate) : null;
+      const last = h && h.series.length ? h.series[h.series.length - 1] : null;
+      return last ? (last.bitrateKbps / 1000).toFixed(1).replace('.', ',') + ' Mb/s · 1080p' : '1080p';
+    })();
+    /* Qui reçoit l'alerte d'incident : la production et l'artiste de la chaîne. */
+    const alerted = (() => {
+      const D = this.data;
+      const channel = D ? (D.cited || D.channels).filter(x => x.name === chan.name)[0] : null;
+      if (!channel) return [chan.name];
+      const picked = channel.members
+        .filter(x => x.role === 'production' || x.role === 'coordination' || x.role === 'artist')
+        .slice(0, 2).map(x => x.name);
+      return picked.length ? picked : [channel.members[0].name];
+    })();
+    const land = (P.orientation || 'portrait') === 'paysage';
+    this._land = land;
+    const ctx = { M, s, P, en, T, land, chan, channels, roles, has, me, myZone, zoneOf, abbrOf, zAbbr, zSame, withZone, localOf, identity,
+      airClock, airFill, airBitrate, alerted,
+      allowed, free, page, canRevenue, canDecide, grantable, eur, num, evDefs, stateAt, voidAt, GARDES, tonight,
+      inboxCount, openInv, myAlerts, invState, roleOf, second };
+
+    /* ---------- onglets bas : quatre entrées au plus, dérivées du rôle ---------- */
+    const pref = roles.reduce((acc, r) => acc.concat(TAB_PREF[r] || []), []).filter((v, i, a) => a.indexOf(v) === i);
+    const tabKeys = pref.filter(k => allowed.indexOf(k) > -1 || free.indexOf(k) > -1).slice(0, 4);
+    const badges = {
+      agenda: tonight.length ? String(tonight.length) : '',
+      events: String(evDefs.length),
+      moderation: (() => {
+        const mq = (MOD_CTX[chan.name] || { queue: [] }).queue;
+        const n = mq.filter((x, i) => !(s.modDone || {})[i] && x[4] !== 'decided').length;
+        return n ? String(n) : '';
+      })(),
+      crew: '', dashboard: '', stream: '', regie: '', journal: '', payouts: ''
+    };
+    const tabs = tabKeys.map(k => {
+      const on = page === k || (k === 'events' && (page === 'event' || page === 'wizard'));
+      return {
+        key: k, icon: PAGE_META[k][1], iconPath: iconPath(PAGE_META[k][1]), label: T(TAB_SHORT[k] || PAGE_META[k][0]), badge: badges[k] || '',
+        go: () => this.go(k),
+        style: 'flex: 1 1 0; min-width: 0; min-height: 56px; box-sizing: border-box; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; border-top: 2px solid '
+          + (on ? '#E6E9EC' : 'transparent') + '; background: ' + (on ? '#191C20' : 'transparent') + ';',
+        iconStyle: 'width: 20px; height: 20px; display: block; fill: none; stroke: currentColor; stroke-width: 1.6; color: ' + (on ? '#E6E9EC' : '#5B636B') + ';',
+        labelStyle: MONO + 'font-size: 9px; letter-spacing: 0.09em; text-transform: uppercase; color: ' + (on ? '#E6E9EC' : '#7C858D') + ';'
+      };
+    }).concat([{
+      key: 'more', icon: '#ic-more', iconPath: iconPath('#ic-more'), label: T('Plus'), badge: '',
+      go: () => this.openSheet('more'),
+      style: 'flex: 1 1 0; min-width: 0; min-height: 56px; box-sizing: border-box; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; border-top: 2px solid '
+        + (s.sheet === 'more' ? '#E6E9EC' : 'transparent') + '; background: ' + (s.sheet === 'more' ? '#191C20' : 'transparent') + ';',
+      iconStyle: 'width: 20px; height: 20px; display: block; fill: none; stroke: currentColor; stroke-width: 1.6; color: ' + (s.sheet === 'more' ? '#E6E9EC' : '#5B636B') + ';',
+      labelStyle: MONO + 'font-size: 9px; letter-spacing: 0.09em; text-transform: uppercase; color: ' + (s.sheet === 'more' ? '#E6E9EC' : '#7C858D') + ';'
+    }]);
+
+    ctx.tabKeys = tabKeys;
+    /* d'où l'on vient : une page hors barre d'onglets porte toujours son retour */
+    if (page !== this._page) { this._back = this._page; this._page = page; }
+    let backTo = null;
+    if (tabKeys.indexOf(page) < 0) {
+      const PARENT = { event: 'events', wizard: 'events', regie: 'agenda' };
+      backTo = [this._back, PARENT[page], allowed[0]]
+        .filter(x => x && x !== page && (allowed.indexOf(x) > -1 || free.indexOf(x) > -1))[0] || null;
+    }
+
+    const out = {
+      hasBack: !!backTo,
+      backLabel: backTo ? '‹  ' + T(PAGE_META[backTo][0]).toUpperCase() : '',
+      backAct: () => this.go(backTo || allowed[0]),
+      chanName: chan.name, chanImg: chan.img, chanImgCss: this.cssUrl(chan.img), chanRole: chan.role, chanLive: chan.isLive,
+      inboxCount: inboxCount ? String(inboxCount) : '',
+      inboxBtnStyle: 'flex: 0 0 auto; position: relative; width: 40px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid '
+        + (page === 'inbox' ? '#4A535C' : '#23272C') + '; background: ' + (page === 'inbox' ? '#1A1D21' : '#111316') + '; color: ' + (page === 'inbox' ? '#E6E9EC' : '#98A0A8') + ';',
+      goInbox: () => this.go('inbox'),
+      goHome: () => this.go(allowed[0]),
+      openChanSheet: () => this.openSheet('chan'),
+      openAccount: () => this.openSheet('account'),
+      closeSheet: () => this.setState({ sheet: null }),
+      /* Paysage : la coquille double de large et les blocs se répartissent en
+         deux colonnes au lieu d'une pile qui se parcourt au pouce. Un studio
+         se conduit à deux mains quand l'appareil est couché. */
+      shellStyle: 'width: 100%; max-width: ' + (land ? '932px' : '430px')
+        + '; margin: 0 auto; min-height: 100vh; position: relative; overflow-x: hidden;'
+        + " background: #0E0F10; color: #E6E9EC; font-family: 'Archivo', sans-serif; font-size: 13px;",
+      mainStyle: 'padding: 11px ' + (land ? '14px' : '10px') + ' 92px; animation: fadeIn .2s ease;',
+      /* Paysage : quand un panneau de décision est ouvert, il tient la colonne
+         de gauche — et reste sous les yeux pendant qu'on parcourt le signal à
+         droite. Sans panneau, les blocs se répartissent sur deux colonnes. */
+      workAreaStyle: 'display: block;',
+      blocksWrapStyle: land
+        ? 'padding-top: 10px; column-count: 2; column-gap: 12px;'
+        : 'display: flex; flex-direction: column; padding-top: 10px;',
+      tabBarStyle: 'width: 100%; max-width: ' + (land ? '932px' : '430px')
+        + '; display: flex; background: #15171A; border-top: 1px solid #23272C; pointer-events: auto;',
+      sheetStyle: 'pointer-events: auto; width: 100%; max-width: ' + (land ? '932px' : '430px')
+        + '; max-height: ' + (land ? '92vh' : '86vh')
+        + '; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; background: #15171A; border-top: 1px solid #2A2F35;',
+      tabs,
+      pageKicker: (PAGE_META[page] ? T(PAGE_META[page][0]).toUpperCase() : '') + ' · ' + chan.name.toUpperCase(),
+      pageTitle: '',
+      pgInbox: page === 'inbox', pgAgenda: page === 'agenda', pgDash: page === 'dashboard',
+      pgEvents: page === 'events', pgEvent: page === 'event', pgWizard: page === 'wizard',
+      pgStream: page === 'stream', pgRegie: page === 'regie', pgMod: page === 'moderation',
+      pgCrew: page === 'crew', pgStats: page === 'stats',
+      blocks: [], hasBlocks: false, band: [], pageTabs: [], actions: [], chatRows: [], note: '', hasSearch: false,
+      form: null, matrix: null, bars: [], barsLabel: '', barsNote: '', donut: null, more: null, footer: null,
+      searchValue: '', searchPlaceholder: '', searchCount: '', onSearch: () => {}, clearSearch: () => {},
+      chatLabel: '', chatRate: '', chatRateColor: '#5B636B', filters: [], panel: null,
+      noteStyle: 'margin-top: 10px; border: 1px solid #23272C; background: #121417; padding: 12px; font-size: 12.5px; line-height: 1.55; color: #98A0A8; text-wrap: pretty;'
+    };
+
+    const fn = this['page_' + page];
+    if (fn) Object.assign(out, fn.call(this, ctx));
+    out.hasBlocks = (out.blocks || []).length > 0;
+    out.hasBand = (out.band || []).length > 0;
+    out.hasTabs = (out.pageTabs || []).length > 0;
+    out.hasActions = (out.actions || []).length > 0;
+    out.hasChat = (out.chatRows || []).length > 0;
+    out.hasNote = !!out.note;
+    out.hasFilters = (out.filters || []).length > 0;
+    const fm = out.form;
+    out.hasForm = !!fm;
+    out.formLabel = fm ? fm.label : '';
+    out.formNote = fm ? (fm.note || '') : '';
+    out.formFields = fm ? fm.fields : [];
+    const mx = out.matrix;
+    out.hasMatrix = !!mx;
+    out.matrixRows = mx ? mx.rows : [];
+    out.matrixLegend = mx ? mx.legend : [];
+    out.hasBars = (out.bars || []).length > 0;
+    const dn = out.donut;
+    out.hasDonut = !!dn;
+    out.donutLabel = dn ? dn.label : '';
+    out.donutStyle = dn ? dn.style : '';
+    out.donutValue = dn ? dn.value : '';
+    out.donutCaption = dn ? dn.caption : '';
+    out.donutLegend = dn ? dn.legend : [];
+    const ft = out.footer;
+    out.hasFooterAct = !!ft;
+    out.footerLabel = ft ? ft.label : '';
+    out.footerAct = ft ? ft.act : (() => {});
+    out.footerStyle = (ft ? ft.style : '') + ' margin-top: 10px;';
+    const mo = out.more;
+    out.hasMore = !!mo;
+    out.moreLabel = mo ? mo.label : '';
+    out.moreRange = mo ? mo.range : '';
+    out.moreAct = mo ? mo.act : (() => {});
+    out.moreHasBtn = !!(mo && mo.hasBtn);
+    out.moreLoading = !!(mo && mo.loading);
+    out.moreStyle = this.btn(mo && mo.hasBtn ? undefined : 'dead');
+    const pn = out.panel;
+    out.hasPanel = !!pn;
+    /* Paysage avec un panneau de décision ouvert : il tient la colonne de
+       gauche et reste sous les yeux pendant qu'on parcourt le signal à droite.
+       Sans panneau, les blocs se répartissent sur deux colonnes. */
+    if (this._land && pn) {
+      out.workAreaStyle = 'display: flex; align-items: flex-start; gap: 12px;';
+      out.blocksWrapStyle = 'flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; padding-top: 10px;';
+    }
+    if (pn) {
+      const col = pn.color || '#2A2F35';
+      out.panelStyle = 'margin-top: 10px; border: 1px solid ' + col + '; background: #15171A; animation: riseIn .18s ease;'
+        + (this._land ? ' flex: 0 0 46%; min-width: 0; position: sticky; top: 10px;' : '');
+      out.panelKicker = pn.kicker || '';
+      out.panelKickerStyle = MONO + 'font-size: 9px; letter-spacing: 0.13em; color: ' + (pn.color || '#5B636B') + ';';
+      out.panelDot = !!pn.dot;
+      out.panelDotStyle = 'width: 7px; height: 7px; background: ' + col + '; animation: pulseLive 1.6s infinite;';
+      out.panelPill = pn.pill || '';
+      out.panelPillStyle = pn.pill ? this.pill(pn.pillColor || col) + ' margin-left: auto;' : '';
+      out.panelTitle = pn.title || '';
+      out.panelText = pn.text || '';
+      out.panelHasInput = !!pn.input;
+      out.panelInputLabel = pn.input ? pn.input.label : '';
+      out.panelInputValue = pn.input ? pn.input.value : '';
+      out.onPanelInput = pn.input ? pn.input.onChange : (() => {});
+      out.panelRows = (pn.rows || []).map(r => ({
+        label: r.label, hint: r.hint || '', value: r.value || '',
+        valueStyle: MONO + 'flex: 0 0 auto; font-size: 12.5px; white-space: nowrap; color: ' + (r.valueColor || INK2) + ';'
+      }));
+      out.panelBtns = pn.btns || [];
+      out.panelHasBtns = (pn.btns || []).length > 0;
+    }
+    Object.assign(out, this.sheetVals(ctx));
+    return out;
+  }
+
+  /* ---------- feuilles : toute modale remonte du bas ---------- */
+
+/* ---- fermeture de la classe et du script (L4158-4162) ---- */
+}
+
+
+
+</script>
+</script>

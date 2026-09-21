@@ -1,0 +1,241 @@
+<!--
+  Arthome · storefront mobile — sheet-ticket
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : superposée · ticketOpen
+  Affiche    : La feuille de billetterie : trois paliers de tarif, promotion éventuelle, frais de service, total.
+  Mène vers  : live
+  Contrat    : POST /v1/dates/{dateId}/seat-quote · POST /v1/orders/seats
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L2064–2120
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L2064–2120
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ ticketOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeTicket }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
+<div style="{{ sheetBase }} background: #0B0A09; border-top: 1px solid #332E28; box-shadow: 0 -24px 60px rgba(0,0,0,0.6); animation: slideUp .26s cubic-bezier(.2,.7,.2,1) both;">
+  <div style="position: relative; aspect-ratio: 16/9; overflow: hidden; background: #17140F;">
+    <sc-if value="{{ tkHero.img }}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.75) brightness(0.62); background-color: #17140F; background-image: {{ tkHero.imgCss }}; background-size: cover; background-position: center;"></div>
+    </sc-if>
+    <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(11,10,9,0.95), rgba(11,10,9,0.15));"></div>
+    <span onClick="{{ closeTicket }}" style="position: absolute; right: 12px; top: 12px; cursor: pointer; width: 32px; height: 32px; display: grid; place-items: center; background: rgba(11,10,9,0.7); font-size: 13px; color: #EDE7DC;">✕</span>
+    <div style="position: absolute; left: 16px; right: 16px; bottom: 14px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: oklch(0.74 0.15 42);">{{ tkStatusLabel }}</div>
+      <div style="padding-top: 7px; font-family: 'Instrument Serif', serif; font-size: 26px; line-height: 1.05;">{{ tkHero.title }}</div>
+      <div style="padding-top: 5px; font-size: 12.5px; color: #B0A899;">{{ tkHero.artist }} · {{ tkHero.meta }}</div>
+    </div>
+  </div>
+  <div style="padding: 16px;">
+    <sc-if value="{{ tpOn }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-bottom: 14px; border: 1px solid rgba(214,178,102,0.32); background: rgba(214,178,102,0.05); padding: 13px;">
+        <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: oklch(0.83 0.1 84);">{{ tpReason }}</span>
+          <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #EDE7DC;">{{ tpPrices }}</span>
+        </div>
+        <div style="padding-top: 8px; font-size: 12.5px; line-height: 1.5; color: #B0A899; text-wrap: pretty;">{{ tpNote }}</div>
+        <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.83 0.1 84);">{{ tpSave }}</div>
+      </div>
+    </sc-if>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.chooseTier }}</div>
+    <div style="margin-top: 11px; display: flex; flex-direction: column; gap: 9px;">
+      <sc-for list="{{ tiers }}" as="tier" hint-placeholder-count="3">
+        <div onClick="{{ tier.pick }}" style="{{ tier.style }}">
+          <div style="display: flex; align-items: baseline; gap: 10px;">
+            <span style="font-size: 14.5px;">{{ tier.name }}</span>
+            <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #EDE7DC;">{{ tier.price }}</span>
+          </div>
+          <div style="padding-top: 7px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ tier.hint }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top: 15px; border-top: 1px solid #1F1C19; padding-top: 13px; display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ t.subtotal }}</span>
+        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #C9C0B2;">{{ selectedPrice }}</span>
+      </div>
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ t.fees }}</span>
+        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #C9C0B2;">{{ fees }}</span>
+      </div>
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #857E73;">{{ t.total }}</span>
+        <span style="margin-left: auto; font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1;">{{ total }}</span>
+      </div>
+    </div>
+    <div onClick="{{ confirmTicket }}" style="margin-top: 14px; cursor: pointer; padding: 15px; text-align: center; background: #EDE7DC; color: #0B0A09; font-size: 14px; font-weight: 600;">{{ ticketCta }}</div>
+    <div style="padding: 12px 0 22px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; line-height: 1.6; color: #575047; text-wrap: pretty;">{{ t.ticketFine }}</div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (16 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── PROMO_NOTES  —  constante de module  —  L3289–3295 ── */
+const PROMO_NOTES = {
+  'DERNIÈRE DATE': ['Dernière représentation de la série : les places encore libres passent au tarif réduit jusqu’au lever de rideau.', 'Final performance of the run: remaining seats are discounted until curtain up.'],
+  'SÉANCE COMMENCÉE': ['La représentation a commencé. Le tarif est réduit au prorata du temps restant et vous rejoignez le direct immédiatement.', 'The show has started. The price is reduced pro rata and you join the live straight away.'],
+  'PRÉVENTE': ['Prévente ouverte jusqu’à sept jours avant la date. Le tarif revient ensuite au plein tarif.', 'Pre-sale open until seven days before the date, then the price returns to standard.'],
+  'TARIF DÉCOUVERTE': ['Première diffusion de cet artiste sur Arthome : tarif découverte pour toute la soirée.', 'This artist’s first stream on Arthome: discovery rate for the whole evening.'],
+  'AVANT-PREMIÈRE': ['Avant-première : filage devant public, sans réglages définitifs. Tarif réduit en contrepartie.', 'Preview night: a run-through in front of an audience, settings not final. Reduced price in return.']
+};
+
+/* ── tkFree  —  calcul dans renderReady()  —  L4492–4496 ── */
+    const tkFree = (() => {
+      const raw = (s.ticketFor && s.ticketFor.priceLabel);
+      if (!raw) return false;
+      return /gratuit|free/i.test(String(raw)) || parseFloat(String(raw).replace(',', '.').replace(/[^\d.]/g, '')) === 0;
+    })();
+
+/* ── tierDefs  —  calcul dans renderReady()  —  L4506–4506 ── */
+    const tierDefs = tkFree
+
+/* ── tierIdx  —  calcul dans renderReady()  —  L4523–4523 ── */
+    const tierIdx = Math.min(s.tier, tierDefs.length - 1);
+
+/* ── tiers  —  calcul dans renderReady()  —  L4524–4529 ── */
+    const tiers = tierDefs.map(([name, price, desc], i) => ({
+      name, price, desc,
+      pick: () => this.setState({ tier: i }),
+      style: 'cursor: pointer; padding: 14px; min-height: 44px; box-sizing: border-box;  border: 1px solid ' + (tierIdx === i ? '#EDE7DC' : '#262320') +
+        '; background: ' + (tierIdx === i ? '#141210' : 'transparent') + ';'
+    }));
+
+/* ── heroBase  —  calcul dans renderReady()  —  L4932–4949 ── */
+    const heroBase = (() => {
+      const d = A.liveNow()[0] || A.upcoming()[0];
+      if (!d) return { title: '', artist: '', blurb: '', meta: '', viewersLabel: '', priceLabel: '', img: '' };
+      const show = A.show(d.show), art = A.artist(show.artist), venue = A.venue(d.venue);
+      return {
+        title: A.title(show),
+        artist: art ? art.name : '',
+        blurb: A.synopsis(show) || (venue ? [A.label(A.category(show.category)), venue.name, venue.city].join(' · ') : ''),
+        meta: [A.label(A.category(show.category)), A.duration(show.runtimeMin), (show.subtitles || ['FR']).join('/')]
+          .join(' · ').toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+        viewersLabel: A.isOnAir(d)
+          ? A.number(d.viewers) + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING')
+          : A.when(d).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+        priceLabel: A.price(d.prices[0].amount),
+        img: A.showImage(show, 1200),
+        imgCss: this.cssUrl(A.showImage(show, 1200))
+      };
+    })();
+
+/* ── onArtistLive  —  calcul dans renderReady()  —  L4950–4950 ── */
+    const onArtistLive = (s.page === 'live' || s.page === 'replay') && artist.i !== 3;
+
+/* ── hero  —  calcul dans renderReady()  —  L4951–4977 ── */
+    const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
+      title: s.pick.title,
+      artist: s.pick.artist,
+      blurb: artist.bio,
+      meta: s.pick.kind === 'live' ? s.pick.meta : s.pick.whenLabel,
+      viewersLabel: s.pick.kind === 'live' ? ((artist.viewers || '1 240') + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING')) : s.pick.whenLabel,
+      priceLabel: s.pick.priceLabel,
+      img: s.pick.img, imgCss: this.cssUrl(s.pick.img)
+    } : (onArtistLive ? {
+      title: artist.showTitle,
+      artist: artist.name,
+      blurb: artist.bio,
+      meta: (() => {
+        const d = A.datesOfArtist(artist.id).filter(x => A.isOnAir(x))[0]
+          || A.datesOfArtist(artist.id).filter(x => x.startOffsetMin > 0)[0];
+        const show = d ? A.show(d.show) : null;
+        return [artist.discipline.toUpperCase(), show ? A.duration(show.runtimeMin) : null,
+          show ? (show.subtitles || ['FR']).join('/') : null].filter(Boolean).join(' · ');
+      })(),
+      viewersLabel: (artist.viewers || '') + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING'),
+      priceLabel: (() => {
+        const d = A.datesOfArtist(artist.id).filter(x => A.isOnAir(x))[0]
+          || A.datesOfArtist(artist.id).filter(x => x.startOffsetMin > 0)[0];
+        return d ? A.price(d.prices[0].amount) : '';
+      })(),
+      img: artist.showImg, imgCss: this.cssUrl(artist.showImg)
+    } : heroBase);
+
+/* ── heroIsLive  —  calcul dans renderReady()  —  L5626–5626 ── */
+    const heroIsLive = (s.pick && (s.page === 'live' || s.page === 'artist'))
+
+/* ── tpOn  —  clé du modèle rendu  —  L5811–5811 ── */
+      tpOn: !!s.ticketPromo,
+
+/* ── tpReason  —  clé du modèle rendu  —  L5812–5812 ── */
+      tpReason: s.ticketPromo ? s.ticketPromo.reason : '',
+
+/* ── tpNote  —  clé du modèle rendu  —  L5813–5813 ── */
+      tpNote: s.ticketPromo ? (PROMO_NOTES[s.ticketPromo.key] || ['', ''])[fr ? 0 : 1] : '',
+
+/* ── tpPrices  —  clé du modèle rendu  —  L5814–5814 ── */
+      tpPrices: s.ticketPromo ? (fr ? s.ticketPromo.was + ' €' : '€' + s.ticketPromo.was) + '  →  ' + (fr ? s.ticketPromo.now + ' €' : '€' + s.ticketPromo.now) : '',
+
+/* ── tpSave  —  clé du modèle rendu  —  L5815–5815 ── */
+      tpSave: s.ticketPromo ? (fr ? '−' + (s.ticketPromo.was - s.ticketPromo.now) + ' € par place' : '−€' + (s.ticketPromo.was - s.ticketPromo.now) + ' per seat') : '',
+
+/* ── tkHero  —  clé du modèle rendu  —  L5817–5822 ── */
+      tkHero: {
+        title: (s.ticketFor && s.ticketFor.title) || hero.title,
+        artist: (s.ticketFor && s.ticketFor.artist) || hero.artist,
+        meta: (s.ticketFor && s.ticketFor.meta) || hero.meta,
+        img: (s.ticketFor && s.ticketFor.img) || hero.img
+      },
+
+/* ── tkStatusLabel  —  clé du modèle rendu  —  L5823–5823 ── */
+      tkStatusLabel: (s.ticketFor ? s.ticketFor.isLive : heroIsLive) ? t.onNow : (fr ? 'À VENIR' : 'UPCOMING'),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (6) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2437  chooseTier: "CHOISIR SA PLACE"
+  EN L2890  chooseTier: "CHOOSE YOUR TICKET"
+
+  FR L2489  fees: "Frais de service"
+  EN L2942  fees: "Service fee"
+
+  FR L2573  onNow: "EN DIRECT"
+  EN L3026  onNow: "LIVE NOW"
+
+  FR L2757  subtotal: "Sous-total"
+  EN L3210  subtotal: "Subtotal"
+
+  FR L2768  ticketFine: "PAIEMENT SÉCURISÉ · ANNULATION JUSQU’À 1 H AVANT LE DÉBUT · REDIFFUSION 72 H INCLUSE"
+  EN L3221  ticketFine: "SECURE PAYMENT · CANCEL UP TO 1H BEFORE START · 72H REPLAY INCLUDED"
+
+  FR L2770  total: "Total"
+  EN L3223  total: "Total"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

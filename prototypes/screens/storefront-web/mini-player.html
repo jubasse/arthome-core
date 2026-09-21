@@ -1,0 +1,98 @@
+<!--
+  ÉCRAN      Mini-lecteur persistant
+  ROUTE      superposition, sans URL
+  AFFICHE    Le lecteur réduit qui survit à la navigation entre routes : vignette, titre, progression, retour au direct ou à la rediffusion, fermeture.
+  MÈNE VERS  live · replay
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 3013-3047
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Contrainte Next.js : la lecture survivant au changement de route, le lecteur ne peut
+             pas être démonté entre deux pages et le jeton de lecture ne doit pas être lié à la
+             route.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — openPlayback, renewPlaybackTicket
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : fr, roster, s, t
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ pipVisible }}" hint-placeholder-val="{{ false }}">
+<div style="position: fixed; right: 24px; bottom: 24px; z-index: 8600; width: 288px; border: 1px solid #332E28; background: #0B0A09; box-shadow: 0 24px 60px rgba(0,0,0,0.62); animation: riseIn .28s ease both;">
+  <div onClick="{{ pipReturn }}" style="cursor: pointer; position: relative; aspect-ratio: 16/9; overflow: hidden; background: #17140F;">
+    <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.8) brightness(0.72); background-color: #1A1815; background-image: {{ pipImgCss }}; background-size: cover; background-position: center;"></div>
+    <sc-if value="{{ pipIsLive }}" hint-placeholder-val="{{ true }}">
+      <div style="position: absolute; left: 9px; top: 9px; display: flex; align-items: center; gap: 7px; background: rgba(11,10,9,0.8); padding: 4px 8px;">
+        <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #EDE7DC;">LIVE</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #C9C0B2;">{{ pipViewersShort }}</span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ pipIsReplay }}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; left: 9px; top: 9px; background: rgba(11,10,9,0.8); padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 42);">{{ t.pipReplay }}</div>
+      <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(11,10,9,0.7);">
+        <div style="{{ pipBarStyle }}"></div>
+      </div>
+    </sc-if>
+    <div style="position: absolute; inset: 0; opacity: 0; background: rgba(8,7,7,0.62); display: grid; place-items: center; transition: opacity .22s ease;" style-hover="opacity:1">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #EDE7DC;">{{ pipBackLabel }} →</span>
+    </div>
+  </div>
+  <div style="padding: 11px 12px; display: flex; align-items: center; gap: 10px;">
+    <div onClick="{{ pipReturn }}" style="cursor: pointer; min-width: 0;">
+      <div style="font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ pipTitle }}</div>
+      <sc-if value="{{ pipIsLive }}" hint-placeholder-val="{{ true }}">
+        <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ pipArtist }} · {{ pipViewers }}</div>
+      </sc-if>
+      <sc-if value="{{ pipIsReplay }}" hint-placeholder-val="{{ false }}">
+        <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ pipArtist }} · {{ pipLeftLabel }}</div>
+      </sc-if>
+    </div>
+    <span onClick="{{ pipClose }}" title="{{ t.cancel }}" style="margin-left: auto; flex: 0 0 auto; cursor: pointer; width: 24px; height: 24px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 12.5px; color: #857E73; transition: border-color .2s ease, color .2s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">✕</span>
+  </div>
+</div>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      pipVisible: s.watching !== null && !s.pipClosed && s.page !== (s.watchKind === 'replay' ? 'replay' : 'live'),
+      pipIsLive: s.watchKind !== 'replay',
+      pipIsReplay: s.watchKind === 'replay',
+      pipImgCss: this.cssUrl(s.watching !== null ? (s.watchKind === 'replay' ? (s.replayImg || roster[s.watching].showImg) : roster[s.watching].showImg) : ''),
+      pipTitle: s.watching !== null ? (s.watchKind === 'replay' ? (s.replayTitle || roster[s.watching].showTitle) : roster[s.watching].showTitle) : '',
+      pipArtist: s.watching !== null ? roster[s.watching].name : '',
+      pipViewers: s.watching !== null ? this.liveViewersOf(roster[s.watching]) + (fr ? ' SPECT.' : ' WATCHING') : '',
+      pipViewersShort: s.watching !== null ? this.liveViewersOf(roster[s.watching]) : '',
+      pipBackLabel: s.watchKind === 'replay' ? t.pipBackReplay : t.pipBack,
+      pipBarStyle: 'position: absolute; left: 0; bottom: 0; height: 3px; width: ' + Math.round(s.pos * 100) + '%; background: oklch(0.68 0.18 42);',
+      pipLeftLabel: (() => {
+        const d = String(s.replayDuration || '1 h 42');
+        const hm = d.match(/(\d+)\s*h\s*(\d+)?/);
+        const mins = hm ? parseInt(hm[1], 10) * 60 + (hm[2] ? parseInt(hm[2], 10) : 0) : (parseInt(d, 10) || 60);
+        const left = Math.max(0, Math.round(mins * (1 - s.pos)));
+        return (left >= 60 ? Math.floor(left / 60) + ' h ' + String(left % 60).padStart(2, '0') : left + ' min') + ' ' + t.pipLeft;
+      })(),
+      pipReturn: () => this.setState({ page: s.watchKind === 'replay' ? 'replay' : 'live', pipClosed: false }),
+      pipClose: () => this.setState({ pipClosed: true }),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.cancel  t.pipBack  t.pipBackReplay  t.pipLeft  t.pipReplay  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    page  pipClosed  pos  replayDuration  replayImg  replayTitle  watchKind  watching  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    cssUrl, liveViewersOf, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

@@ -1,0 +1,141 @@
+<!--
+  ÉCRAN      Page d'une date — onglet Tchat
+  ROUTE      page === 'live', tab === 'chat'
+  AFFICHE    Le tchat du direct : fil, régimes (libre, emojis, coupé), saisie verrouillée pour un visiteur ou un non-détenteur, phrases préparées.
+  MÈNE VERS  overlay-auth · overlay-ticket
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2257-2312
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Vocabulaire de régime divergent relevé au temps 1 : la maquette dit `free`,
+             `catalogue.json` et l'i18n disent `open`.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — listChatMessages, sendChatMessage, sendReaction, reportChatMessage
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : catalogue, chatMode, fr, locked, s, t
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <sc-if value="{{ showChat }}" hint-placeholder-val="{{ true }}">
+      <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+        <div style="padding: 10px 14px; border-bottom: 1px solid #1F1C19; display: flex; align-items: center; gap: 6px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ t.chatModeDemo }}</span>
+          <div style="margin-left: auto; display: flex; gap: 4px;">
+            <sc-for list="{{ chatModes }}" as="cm" hint-placeholder-count="3">
+              <span onClick="{{ cm.pick }}" style="{{ cm.style }}">{{ cm.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+        <sc-if value="{{ chatOffMode }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 30px 24px; text-align: center;">
+            <div style="width: 40px; height: 40px; border: 1px solid #332E28; border-radius: 50%; display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #857E73;">✕</div>
+            <div style="font-family: 'Instrument Serif', serif; font-size: 22px; line-height: 1.2;">{{ t.chatOffTitle }}</div>
+            <div style="font-size: 12.5px; line-height: 1.55; color: #8B857C; max-width: 260px; text-wrap: pretty;">{{ t.chatOffHint }}</div>
+            <span onClick="{{ openShare }}" style="cursor: pointer; margin-top: 4px; white-space: nowrap; padding: 8px 14px; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease;" style-hover="border-color:#4A423A">{{ t.share }}</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ chatHasFeed }}" hint-placeholder-val="{{ true }}">
+        <div id="chat-scroll" style="flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 11px;">
+          <sc-for list="{{ messages }}" as="msg" hint-placeholder-count="8">
+            <div style="font-size: 13.5px; line-height: 1.45; animation: fadeIn .3s ease both;">
+              <span style="color: {{ msg.color }}; font-weight: 600;">{{ msg.user }}</span>
+              <span style="color: #857E73;"> · </span>
+              <span style="color: #C9C0B2;">{{ msg.text }}</span>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+        <sc-if value="{{ chatHasFeed }}" hint-placeholder-val="{{ true }}">
+        <div style="border-top: 1px solid #1F1C19; padding: 12px 14px;">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; padding-bottom: 10px;">
+            <sc-for list="{{ reactions }}" as="r" hint-placeholder-count="5">
+              <span onClick="{{ r.send }}" style="cursor: pointer; padding: 5px 9px; border: 1px solid #1F1C19; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease;" style-hover="border-color:#4A423A">{{ r.label }}</span>
+            </sc-for>
+          </div>
+          <sc-if value="{{ chatEmojiMode }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #6B6459; padding-bottom: 8px;">{{ t.phrases }}</div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <sc-for list="{{ presetPhrases }}" as="p" hint-placeholder-count="4">
+                  <span onClick="{{ p.send }}" style="cursor: pointer; padding: 8px 11px; border: 1px solid #1F1C19; background: #110F0D; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease, background .24s ease;" style-hover="border-color:#4A423A;background:#171410">{{ p.label }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ chatFreeMode }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; gap: 8px;">
+            <input value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onDraftKey }}" onFocus="{{ chatGate }}" readOnly="{{ chatBlocked }}" placeholder="{{ chatPlaceholder }}" style="{{ chatInputStyle }}" style-focus="border-color:#4A423A" />
+            <span onClick="{{ sendMsg }}" style="{{ chatSendStyle }}" style-hover="background:#2E2A24">{{ t.send }}</span>
+          </div>
+          </sc-if>
+        </div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* reactions  —  lignes 5141-5147 */
+    const reactions = ['👏 Bravo', '🌹', '😂', fr ? 'Magnifique' : 'Beautiful', fr ? 'Encore !' : 'Encore!'].map(label => ({
+      label,
+      send: () => this.setState(st => ({ messages: st.messages.concat([{ user: 'vous', text: label, color: 'oklch(0.72 0.16 42)' }]) }))
+    }));
+
+    /* Le catalogue public vient de fixtures.js : mêmes artistes, mêmes dates
+       et mêmes tarifs que la régie et que les autres surfaces. */
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      showChat: s.tab === 'chat', showStore: s.tab === 'store',
+      chatModes: [['free', t.chatFree], ['emoji', t.chatEmoji], ['off', t.chatOff]].map(([k, label]) => ({
+        label,
+        pick: () => this.setState({ chatMode: k, chatModeSet: true }),
+        style: 'cursor: pointer; padding: 4px 8px; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.08em; transition: background .2s ease; ' +
+          (chatMode === k ? 'background: #EDE7DC; color: #0B0A09;' : 'border: 1px solid #1F1C19; color: #8B857C;')
+      })),
+      chatFreeMode: chatMode === 'free', chatEmojiMode: chatMode === 'emoji',
+      chatOffMode: chatMode === 'off', chatHasFeed: chatMode !== 'off',
+      presetPhrases: (fr
+        ? ['Bravo, quelle interprétation !', 'Le son est parfait ici', 'Première fois que je les vois en direct', 'Merci pour la rediffusion 🙏']
+        : ['Bravo, what a performance!', 'Sound is perfect here', 'First time seeing them live', 'Thanks for the replay 🙏']
+      ).map(label => ({
+        label,
+        send: () => this.setState(st => ({ messages: st.messages.concat([{ user: 'vous', text: label, color: 'oklch(0.72 0.16 42)' }]) }))
+      })),
+      chatPlaceholder: s.guest ? (fr ? 'Connectez-vous pour écrire' : 'Sign in to chat')
+        : (locked ? (fr ? 'Place requise pour écrire' : 'Ticket required to chat') : (fr ? 'Dire quelque chose…' : 'Say something…')),
+      chatBlocked: s.guest || locked,
+      chatInputStyle: 'flex: 1; min-width: 0; height: 36px; background: #141210; border: 1px solid #1F1C19; font-family: Archivo, sans-serif; font-size: 13.5px; padding: 0 12px; outline: none; color: '
+        + ((s.guest || locked) ? '#857E73; cursor: pointer;' : '#EDE7DC;'),
+      chatSendStyle: 'cursor: pointer; padding: 0 15px; height: 36px; display: grid; place-items: center; background: #221F1B; font-size: 12.5px; transition: background .24s ease; color: '
+        + ((s.guest || locked) ? '#6B6459;' : '#EDE7DC;'),
+      chatGate: () => { if (s.guest) this.setState({ authOpen: true, authTab: 'up' }); else if (locked) this.setState({ ticketOpen: true }); },
+      messages: s.messages,
+      onDraft: e => this.setState({ draft: e.target.value }),
+      onDraftKey: e => { if (e.key === 'Enter') this.sendNow(); },
+      sendMsg: () => this.sendNow(),
+      openShare: () => this.setState({ shareOpen: true }),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.chatEmoji  t.chatFree  t.chatModeDemo  t.chatOff  t.chatOffHint  t.chatOffTitle  
+    t.phrases  t.send  t.share  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    guest  messages  tab  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    sendNow, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

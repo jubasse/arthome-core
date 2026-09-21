@@ -1,0 +1,111 @@
+<!--
+  Arthome · storefront mobile — account-prefs
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : account · accTab=prefs
+  Affiche    : Préférences : langue, qualité par défaut, comportement à l'ouverture d'un direct, tchat, sous-titres, animations, devise.
+  Mène vers  : —
+  Contrat    : PATCH /v1/me/preferences
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1634–1649
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1634–1649
+     ══════════════════════════════════════════════════════════════════════════ -->
+      <sc-if value="{{ accPrefs }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
+          <sc-for list="{{ prefRows }}" as="r" hint-placeholder-count="5">
+            <div style="background: #100F0D; padding: 14px 13px;">
+              <div style="font-size: 14px;">{{ r.label }}</div>
+              <div style="padding-top: 5px; font-size: 12.5px; line-height: 1.5; color: #8B857C; text-wrap: pretty;">{{ r.hint }}</div>
+              <div style="padding-top: 11px; display: flex; gap: 7px; flex-wrap: wrap;">
+                <sc-for list="{{ r.options }}" as="o" hint-placeholder-count="3">
+                  <span onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (3 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── eur  —  calcul dans renderReady()  —  L4505–4505 ── */
+    const eur = n => n === 0 ? (fr ? 'Gratuit' : 'Free') : (fr ? n + ' €' : '€' + n);
+
+/* ── prefDefs  —  calcul dans renderReady()  —  L5249–5265 ── */
+    const prefDefs = fr ? [
+      ['lang', 'Langue de l’interface', 'S’applique aux menus, aux libellés et aux dates.', [['fr', 'FRANÇAIS'], ['en', 'ENGLISH']]],
+      ['quality', 'Qualité par défaut', 'La 4K consomme ~12 Go par heure.', [['auto', 'AUTO'], ['1080p', '1080P'], ['4k', '4K']]],
+      ['start', 'À l\u2019ouverture d\u2019un live', 'Ce que vous voyez en arrivant sur une page live.', [['peek', 'APERÇU'], ['muted', 'SANS SON'], ['off', 'AFFICHE SEULE']]],
+      ['chat', 'Tchat par défaut', 'Peut être replié à tout moment pendant le live.', [['open', 'OUVERT'], ['closed', 'REPLIÉ']]],
+      ['subs', 'Sous-titres', 'Selon la disponibilité fournie par l\u2019artiste.', [['fr', 'FR'], ['en', 'EN'], ['off', 'AUCUN']]],
+      ['reduce', 'Animations réduites', 'Supprime les transitions et le grain animé.', [['off', 'NON'], ['on', 'OUI']]],
+      ['currency', 'Devise', 'Utilisée pour la billetterie et la boutique.', [['eur', 'EUR €'], ['usd', 'USD $'], ['chf', 'CHF']]]
+    ] : [
+      ['lang', 'Interface language', 'Applies to menus, labels and dates.', [['fr', 'FRANÇAIS'], ['en', 'ENGLISH']]],
+      ['quality', 'Default quality', '4K uses about 12 GB per hour.', [['auto', 'AUTO'], ['1080p', '1080P'], ['4k', '4K']]],
+      ['start', 'When opening a live', 'What you get when landing on a live page.', [['peek', 'PREVIEW'], ['muted', 'MUTED'], ['off', 'POSTER ONLY']]],
+      ['chat', 'Default chat state', 'Can be collapsed at any point during the show.', [['open', 'OPEN'], ['closed', 'COLLAPSED']]],
+      ['subs', 'Subtitles', 'Subject to what the artist provides.', [['fr', 'FR'], ['en', 'EN'], ['off', 'NONE']]],
+      ['reduce', 'Reduced motion', 'Removes transitions and animated grain.', [['off', 'NO'], ['on', 'YES']]],
+      ['currency', 'Currency', 'Used for ticketing and the store.', [['eur', 'EUR €'], ['usd', 'USD $'], ['chf', 'CHF']]]
+    ];
+
+/* ── prefRows  —  calcul dans renderReady()  —  L5266–5279 ── */
+    const prefRows = prefDefs.map(([key, label, hint, opts]) => ({
+      label, hint,
+      options: opts.map(([val, oLabel]) => {
+        const on = key === 'lang' ? s.lang === val : s.prefs[key] === val;
+        return {
+          label: oLabel,
+          pick: key === 'lang'
+            ? (() => this.setState({ lang: val }))
+            : (() => this.setState(st => ({ prefs: Object.assign({}, st.prefs, { [key]: val }) }))),
+          style: 'cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.08em; ' +
+            (on ? 'background: #EDE7DC; color: #0B0A09;' : 'border: 1px solid #1F1C19; color: #9B948A;')
+        };
+      })
+    }));
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (0) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  (aucune : cet écran n'emploie aucune clé des tables FR/EN)
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

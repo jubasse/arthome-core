@@ -1,0 +1,145 @@
+<!--
+  ÉCRAN        inbox
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Ce qui attend une réponse : invitations reçues et alertes routées par rôle.
+  RÔLES        artist · prod · regie · mod · coord · tres   (les six)
+  MÈNE VERS    aucun (écran terminal)
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  pgInbox L89-163
+               modèle    L1972-2010
+  CLÉS DE COPIE
+               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
+               - table ROLES en dur (six personas — libellé, jamais un droit, E6)
+  CONTRAT
+               - needs §Les formes de données 7 (les invitations reçues)
+               - openapi GET /v1/inbox
+               - openapi POST /v1/invitations/{invitationId}/response
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!-- ---- pgInbox (L89-163) ---- -->
+    <sc-if value="{{ pgInbox }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1D2126; border: 1px solid #23272C;">
+          <sc-for list="{{ inboxBand }}" as="k" hint-placeholder-count="2">
+            <div style="background: #121417; padding: 10px 11px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.11em; color: #5B636B;">{{ k.label }}</div>
+              <div style="{{ k.valueStyle }}">{{ k.value }}</div>
+              <div style="padding-top: 2px; font-size: 10.5px; color: #5B636B;">{{ k.hint }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B; padding: 4px 1px 0 1px;">INVITATIONS REÇUES</div>
+        <sc-if value="{{ noInv }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #23272C; background: #15171A; padding: 13px; font-size: 12.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">Aucune invitation en attente. Une invitation arrive ici dès qu'une chaîne vous confie un rôle.</div>
+        </sc-if>
+        <sc-for list="{{ invRows }}" as="v" hint-placeholder-count="2">
+          <div style="border: 1px solid #23272C; background: #15171A; animation: riseIn .18s ease;">
+            <div style="display: flex; align-items: center; gap: 9px; padding: 11px 12px; border-bottom: 1px solid #1D2126;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: #1D2126; background-color: #1A1D21; background-image: {{ v.imgCss }}; background-size: cover; background-position: center;"></div>
+              <div style="min-width: 0; flex: 1 1 auto;">
+                <div style="font-size: 13.5px; color: #E6E9EC; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ v.chan }}</div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #5B636B;">{{ v.age }}</div>
+              </div>
+              <span style="{{ v.roleStyle }}">{{ v.role }}</span>
+            </div>
+            <div style="padding: 11px 12px; display: flex; flex-direction: column; gap: 7px;">
+              <div style="font-size: 12.5px; line-height: 1.5; color: #98A0A8; text-wrap: pretty;">{{ v.line }}</div>
+              <div style="display: flex; gap: 7px;">
+                <span style="{{ v.scopeStyle }}">{{ v.scope }}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #646C74; align-self: center;">{{ v.expiry }}</span>
+              </div>
+            </div>
+            <sc-if value="{{ v.pending }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; gap: 1px; background: #1D2126; border-top: 1px solid #1D2126;">
+                <div onClick="{{ v.accept }}" style="flex: 1 1 0; min-height: 44px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #E6E9EC; color: #0E0F10; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; cursor: pointer;">ACCEPTER</div>
+                <div onClick="{{ v.refuse }}" style="flex: 1 1 0; min-height: 44px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #191C20; color: #98A0A8; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; cursor: pointer;">REFUSER</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ v.settled }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ v.settledStyle }}">{{ v.settledLabel }}</div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B; padding: 6px 1px 0 1px;">ALERTES ROUTÉES VERS VOS RÔLES</div>
+        <sc-if value="{{ noAlerts }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #23272C; background: #15171A; padding: 13px; font-size: 12.5px; line-height: 1.5; color: #7C858D; text-wrap: pretty;">Rien à signaler sur vos rôles. Les alertes ne descendent que vers les personnes qui peuvent y répondre.</div>
+        </sc-if>
+        <sc-for list="{{ alertRows }}" as="a" hint-placeholder-count="2">
+          <div style="border: 1px solid #23272C; background: #15171A; padding: 11px 12px; display: flex; flex-direction: column; gap: 8px; animation: riseIn .18s ease;">
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
+              <div style="min-width: 0; flex: 1 1 auto;">
+                <div style="font-size: 13px; line-height: 1.4; color: #E6E9EC; text-wrap: pretty;">{{ a.title }}</div>
+                <div style="padding-top: 3px; font-size: 11.5px; line-height: 1.45; color: #7C858D;">{{ a.hint }}</div>
+              </div>
+              <span style="{{ a.roleStyle }}">{{ a.role }}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #5B636B; flex: 1 1 auto;">{{ a.time }}</span>
+              <div onClick="{{ a.read }}" style="flex: 0 0 auto; min-width: 108px; min-height: 44px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 1px solid #2A2F35; background: #191C20; color: #C6CDD4; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; cursor: pointer;">MARQUER LU</div>
+            </div>
+          </div>
+        </sc-for>
+
+        <div style="border: 1px solid #23272C; background: #121417; padding: 12px; margin-top: 4px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">COMMENT UNE INVITATION CIRCULE</div>
+          <div style="padding-top: 9px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="font-size: 12.5px; line-height: 1.55; color: #98A0A8; text-wrap: pretty;">La personne a déjà un compte Arthome : l'invitation atterrit dans cette boîte, et l'accès s'ouvre à l'instant où elle accepte.</div>
+            <div style="font-size: 12.5px; line-height: 1.55; color: #98A0A8; text-wrap: pretty;">Elle n'en a pas : un e-mail part vers l'adresse saisie, le lien crée le compte, et l'invitation l'attend ici à la première connexion.</div>
+            <div style="font-size: 12.5px; line-height: 1.55; color: #98A0A8; text-wrap: pretty;">Un accès ponctuel expire de lui-même au tomber du rideau. Un refus n'est pas silencieux : la personne qui a invité en est informée.</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_inbox(c) {
+    const s = this.state;
+    const scopeStyle = on => MONO + 'flex: 0 0 auto; display: inline-flex; align-items: center; padding: 3px 6px; font-size: 9px; letter-spacing: 0.09em; border: 1px solid '
+      + (on ? INFO : '#2A2F35') + '; color: ' + (on ? INFO : '#98A0A8') + '; background: ' + (on ? 'color-mix(in oklch, ' + INFO + ' 14%, transparent)' : 'transparent') + ';';
+    return {
+      pageTitle: c.inboxCount ? 'Ce qui attend une réponse de vous' : 'Rien n’attend de réponse',
+      inboxBand: this.stats([
+        ['INVITATIONS', String(c.openInv.length), c.openInv.length ? 'à accepter ou refuser' : 'boîte vide', c.openInv.length ? WARN : INK3],
+        ['ALERTES', String(c.myAlerts.length), 'routées vers vos rôles', c.myAlerts.length ? WARN : INK3]
+      ]),
+      noInv: c.openInv.length === 0,
+      noAlerts: c.myAlerts.length === 0,
+      invRows: [].concat(c.openInv, INV_DEFS.filter(v => c.invState[v[0]])).map(v => {
+        const st = c.invState[v[0]];
+        const perm = v[4] === 'perm';
+        return {
+          id: v[0], chan: v[1], img: CHAN_IMG[v[1]] || IMG.hall, imgCss: this.cssUrl(CHAN_IMG[v[1]] || IMG.hall), age: v[6].toUpperCase(),
+          role: c.T(ROLES[v[3]][0]), roleStyle: this.pill(ROLES[v[3]][1]),
+          line: v[2] + ' vous confie la ' + SHORT[v[3]].toLowerCase() + ' de ' + v[1] + (perm ? ', en accès permanent.' : ' sur une seule date : ' + v[5] + '.'),
+          scope: perm ? 'ACCÈS PERMANENT' : 'ACCÈS PONCTUEL', scopeStyle: scopeStyle(!perm),
+          expiry: v[7].toUpperCase(),
+          pending: !st, settled: !!st,
+          settledLabel: st === 'ok'
+            ? 'ACCÈS OUVERT · LA CHAÎNE EST DANS VOTRE SÉLECTEUR' + (perm ? '' : ' JUSQU’AU TOMBER DU RIDEAU')
+            : 'REFUSÉE · ' + v[2].toUpperCase() + ', QUI A INVITÉ, EN EST PRÉVENU',
+          settledStyle: MONO + 'padding: 12px; border-top: 1px solid #1D2126; font-size: 9.5px; letter-spacing: 0.1em; line-height: 1.6; color: '
+            + (st === 'ok' ? OK : '#7C858D') + '; background: ' + (st === 'ok' ? 'color-mix(in oklch, ' + OK + ' 8%, transparent)' : '#121417') + ';',
+          accept: () => this.setState(st2 => ({ invState: Object.assign({}, st2.invState, { [v[0]]: 'ok' }) })),
+          refuse: () => this.setState(st2 => ({ invState: Object.assign({}, st2.invState, { [v[0]]: 'no' }) }))
+        };
+      }),
+      alertRows: c.myAlerts.map(a => ({
+        title: a[2], hint: a[3], time: a[4].toUpperCase(),
+        role: c.T(ROLES[a[1]][0]), roleStyle: this.pill(ROLES[a[1]][1]),
+        read: () => this.setState(st => ({ seen: Object.assign({}, st.seen, { [a[0]]: 1 }) }))
+      }))
+    };
+  }
+
+</script>

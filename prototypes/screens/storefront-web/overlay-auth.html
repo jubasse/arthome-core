@@ -1,0 +1,81 @@
+<!--
+  ÉCRAN      Authentification
+  ROUTE      superposition, sans URL
+  AFFICHE    Créer un compte ou se connecter : nom, courriel, mot de passe, bascule entre les deux, et « continuer sans compte ».
+  MÈNE VERS  toutes les routes réservées aux membres
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 3062-3090
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Défaut relevé au temps 3 : l'authentification n'a AUCUNE opération dans
+             `openapi/storefront.yaml`. C'est la porte d'entrée du produit.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : s, t
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+<sc-if value="{{ authOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeAuth }}" style="position: fixed; inset: 0; z-index: 8700; background: rgba(6,5,5,0.82); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .2s ease both;">
+  <div onClick="{{ stopEvt }}" style="width: 420px; max-width: 100%; max-height: calc(100vh - 64px); overflow-y: auto; border: 1px solid #332E28; background: #0B0A09; animation: riseIn .28s ease both;">
+    <div style="padding: 26px 28px 22px; border-bottom: 1px solid #1F1C19;">
+      <div style="font-family: 'Instrument Serif', serif; font-size: 30px; line-height: 1.05;">{{ authTitle }}</div>
+      <div style="padding-top: 10px; font-size: 13px; line-height: 1.55; color: #857E73; text-wrap: pretty;">{{ authIntro }}</div>
+    </div>
+    <div style="padding: 22px 28px; display: flex; flex-direction: column; gap: 14px;">
+      <sc-if value="{{ authIsUp }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.authName }}</div>
+          <input placeholder="{{ accountName }}" style="margin-top: 8px; width: 100%; box-sizing: border-box; padding: 11px 13px; border: 1px solid #332E28; background: #0F0E0C; font-family: inherit; font-size: 13.5px; color: #EDE7DC; outline: none;" style-focus="border-color:#4A423A" />
+        </div>
+      </sc-if>
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.authEmail }}</div>
+        <input placeholder="marie@exemple.fr" style="margin-top: 8px; width: 100%; box-sizing: border-box; padding: 11px 13px; border: 1px solid #332E28; background: #0F0E0C; font-family: inherit; font-size: 13.5px; color: #EDE7DC; outline: none;" style-focus="border-color:#4A423A" />
+      </div>
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.authPass }}</div>
+        <input type="password" placeholder="••••••••" style="margin-top: 8px; width: 100%; box-sizing: border-box; padding: 11px 13px; border: 1px solid #332E28; background: #0F0E0C; font-family: inherit; font-size: 13.5px; color: #EDE7DC; outline: none;" style-focus="border-color:#4A423A" />
+      </div>
+      <span onClick="{{ doAuth }}" style="margin-top: 4px; cursor: pointer; padding: 13px; text-align: center; background: #EDE7DC; color: #0B0A09; font-size: 13.5px; font-weight: 600; border: 1px solid transparent; transition: background .24s ease;" style-hover="background:oklch(0.94 0.03 80)">{{ t.authGo }}</span>
+      <span onClick="{{ switchAuth }}" style="cursor: pointer; text-align: center; font-size: 12.5px; color: #857E73; transition: color .2s ease;" style-hover="color:#EDE7DC">{{ authSwitch }}</span>
+      <span onClick="{{ closeAuth }}" style="cursor: pointer; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #575047; transition: color .2s ease;" style-hover="color:#9B948A">{{ t.authAlt }}</span>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      stopEvt: e => { if (e && e.stopPropagation) e.stopPropagation(); },
+      authOpen: s.authOpen, authIsUp: s.authTab === 'up',
+      authTitle: s.authTab === 'up' ? t.authTitleUp : t.authTitleIn,
+      authIntro: s.authTab === 'up' ? t.authIntroUp : t.authIntroIn,
+      authSwitch: s.authTab === 'up' ? t.authSwitchUp : t.authSwitchIn,
+      switchAuth: () => this.setState(st => ({ authTab: st.authTab === 'up' ? 'in' : 'up' })),
+      closeAuth: () => this.setState({ authOpen: false }),
+      doAuth: () => this.setState({ authOpen: false, guest: false }),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.authAlt  t.authEmail  t.authGo  t.authIntroIn  t.authIntroUp  t.authName  t.authPass  
+    t.authSwitchIn  t.authSwitchUp  t.authTitleIn  t.authTitleUp  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    authOpen  authTab  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

@@ -1,0 +1,233 @@
+<!--
+  Arthome · storefront mobile — plans
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : plans
+  Affiche    : Les formules et leurs ouvertures, avec celle du spectateur marquée.
+  Mène vers  : sheet-auth, account
+  Contrat    : GET /v1/plans · GET /v1/subscription
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1779–1804
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1779–1804
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ isPlans }}" hint-placeholder-val="{{ false }}">
+<div style="animation: fadeIn .3s ease both; padding: 18px 16px 0;">
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #857E73;">{{ t.plansSub }}</div>
+  <h1 style="margin: 11px 0 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px; line-height: 1.03;">{{ t.plansTitle }}</h1>
+  <p style="margin: 12px 0 0; font-size: 14px; line-height: 1.6; color: #B0A899; text-wrap: pretty;">{{ t.plansIntro }}</p>
+  <div style="margin-top: 22px; display: flex; flex-direction: column; gap: 12px;">
+    <sc-for list="{{ plans }}" as="pl" hint-placeholder-count="3">
+      <div style="{{ pl.cardStyle }}">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: {{ pl.tagColor }};">{{ pl.tag }}</div>
+        <div style="padding-top: 11px; font-family: 'Instrument Serif', serif; font-size: 27px; line-height: 1;">{{ pl.name }}</div>
+        <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #EDE7DC;">{{ pl.price }}</div>
+        <div style="margin-top: 15px; border-top: 1px solid #1F1C19; padding-top: 14px; display: flex; flex-direction: column; gap: 10px;">
+          <sc-for list="{{ pl.features }}" as="ft" hint-placeholder-count="4">
+            <div style="display: flex; align-items: baseline; gap: 9px;">
+              <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: {{ ft.mark }};">{{ ft.glyph }}</span>
+              <span style="min-width: 0; font-size: 13px; line-height: 1.5; color: {{ ft.color }}; text-wrap: pretty;">{{ ft.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <span onClick="{{ pl.action }}" style="{{ pl.ctaStyle }}">{{ pl.cta }}</span>
+      </div>
+    </sc-for>
+  </div>
+  <p style="margin: 20px 0 0; font-size: 12.5px; line-height: 1.6; color: #857E73; text-wrap: pretty;">{{ t.plansFootnote }}</p>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (6 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── reactions  —  calcul dans renderReady()  —  L4587–4590 ── */
+    const reactions = ['👏 Bravo', '🌹', '😂', fr ? 'Magnifique' : 'Beautiful', fr ? 'Encore !' : 'Encore!'].map(label => ({
+      label,
+      send: () => this.setState(st => ({ messages: st.messages.concat([{ user: 'vous', text: label, color: 'oklch(0.72 0.16 42)' }]) }))
+    }));
+
+/* ── heroBase  —  calcul dans renderReady()  —  L4932–4949 ── */
+    const heroBase = (() => {
+      const d = A.liveNow()[0] || A.upcoming()[0];
+      if (!d) return { title: '', artist: '', blurb: '', meta: '', viewersLabel: '', priceLabel: '', img: '' };
+      const show = A.show(d.show), art = A.artist(show.artist), venue = A.venue(d.venue);
+      return {
+        title: A.title(show),
+        artist: art ? art.name : '',
+        blurb: A.synopsis(show) || (venue ? [A.label(A.category(show.category)), venue.name, venue.city].join(' · ') : ''),
+        meta: [A.label(A.category(show.category)), A.duration(show.runtimeMin), (show.subtitles || ['FR']).join('/')]
+          .join(' · ').toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+        viewersLabel: A.isOnAir(d)
+          ? A.number(d.viewers) + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING')
+          : A.when(d).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'),
+        priceLabel: A.price(d.prices[0].amount),
+        img: A.showImage(show, 1200),
+        imgCss: this.cssUrl(A.showImage(show, 1200))
+      };
+    })();
+
+/* ── onArtistLive  —  calcul dans renderReady()  —  L4950–4950 ── */
+    const onArtistLive = (s.page === 'live' || s.page === 'replay') && artist.i !== 3;
+
+/* ── hero  —  calcul dans renderReady()  —  L4951–4977 ── */
+    const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
+      title: s.pick.title,
+      artist: s.pick.artist,
+      blurb: artist.bio,
+      meta: s.pick.kind === 'live' ? s.pick.meta : s.pick.whenLabel,
+      viewersLabel: s.pick.kind === 'live' ? ((artist.viewers || '1 240') + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING')) : s.pick.whenLabel,
+      priceLabel: s.pick.priceLabel,
+      img: s.pick.img, imgCss: this.cssUrl(s.pick.img)
+    } : (onArtistLive ? {
+      title: artist.showTitle,
+      artist: artist.name,
+      blurb: artist.bio,
+      meta: (() => {
+        const d = A.datesOfArtist(artist.id).filter(x => A.isOnAir(x))[0]
+          || A.datesOfArtist(artist.id).filter(x => x.startOffsetMin > 0)[0];
+        const show = d ? A.show(d.show) : null;
+        return [artist.discipline.toUpperCase(), show ? A.duration(show.runtimeMin) : null,
+          show ? (show.subtitles || ['FR']).join('/') : null].filter(Boolean).join(' · ');
+      })(),
+      viewersLabel: (artist.viewers || '') + ' ' + (fr ? 'SPECTATEURS' : 'WATCHING'),
+      priceLabel: (() => {
+        const d = A.datesOfArtist(artist.id).filter(x => A.isOnAir(x))[0]
+          || A.datesOfArtist(artist.id).filter(x => x.startOffsetMin > 0)[0];
+        return d ? A.price(d.prices[0].amount) : '';
+      })(),
+      img: artist.showImg, imgCss: this.cssUrl(artist.showImg)
+    } : heroBase);
+
+/* ── isPlans  —  clé du modèle rendu  —  L6195–6195 ── */
+      isPlans: s.page === 'plans',
+
+/* ── plans  —  clé du modèle rendu  —  L6197–6237 ── */
+      plans: (() => {
+        const F = (label, on) => ({ label, glyph: on ? '✓' : '—', mark: on ? 'oklch(0.7 0.13 150)' : '#413B34', color: on ? '#C9C0B2' : '#575047' });
+        const cur = s.guest ? 'free' : 'sub';
+        const defs = [
+          ['free', t.planFreeName, t.planFreePrice, t.planFreeTag, '#857E73', [
+            F(fr ? 'Aperçu gratuit de chaque live, sans compte' : 'Free preview of every live, no account', true),
+            F(fr ? 'Tchat en lecture seule' : 'Read-only chat', true),
+            F(fr ? 'Alertes et artistes suivis' : 'Alerts and followed artists', false),
+            F(fr ? 'Spectacle entier' : 'Full show', false),
+            F(fr ? 'Rediffusions' : 'Replays', false)
+          ]],
+          ['unit', t.planUnitName, t.planUnitPrice, t.planUnitTag, '#B0A899', [
+            F(fr ? 'Le spectacle entier, jusqu’au rideau' : 'The whole show, until the curtain', true),
+            F(fr ? 'Tchat actif et réactions' : 'Live chat and reactions', true),
+            F(fr ? 'Alertes, artistes suivis, recherches enregistrées' : 'Alerts, followed artists, saved searches', true),
+            F(fr ? 'Rediffusion 72 h quand l’artiste l’autorise' : '72h replay when the artist allows it', true),
+            F(fr ? 'Catalogue de rediffusions' : 'Replay catalogue', false)
+          ]],
+          ['sub', t.planSubName, t.planSubPrice, t.planSubTag, 'oklch(0.83 0.1 84)', [
+            F(fr ? 'Tout ce que comprend la place à l’unité' : 'Everything in the single ticket', true),
+            F(fr ? 'Catalogue de rediffusions inclus' : 'Replay catalogue included', true),
+            F(fr ? 'Captation 4K quand elle est proposée' : '4K feed when offered', true),
+            F(fr ? '15 % sur la boutique des artistes' : '15% off artist stores', true),
+            F(fr ? 'Places à tarif réduit toute l’année' : 'Reduced ticket prices all year', true)
+          ]]
+        ];
+        return defs.map(([k, name, price, tag, tagColor, features]) => {
+          const isCur = k === cur;
+          const hero = k === 'sub';
+          return {
+            name, price, tag, tagColor, features,
+            cardStyle: 'border: 1px solid ' + (hero ? 'rgba(214,178,102,0.34)' : '#1F1C19') + '; background: ' + (hero ? 'rgba(214,178,102,0.04)' : '#0F0E0C') + '; padding: 22px; display: flex; flex-direction: column; min-width: 0;',
+            cta: isCur ? t.planCurrent : (s.guest ? t.planSignUp : t.planChoose),
+            action: isCur ? (() => {}) : (s.guest ? () => this.setState({ authOpen: true, authTab: 'up' }) : () => this.setState({ page: 'account', accView: 'section', accTab: 'profile' })),
+            ctaStyle: 'margin-top: 20px; cursor: ' + (isCur ? 'default' : 'pointer') + '; padding: 12px 18px; text-align: center; white-space: nowrap; font-size: 12.5px; transition: background .24s ease, border-color .24s ease, color .24s ease; ' +
+              (isCur ? 'border: 1px solid #262320; color: #6B6459;'
+                : hero ? 'background: #EDE7DC; color: #0B0A09; font-weight: 600; border: 1px solid transparent;'
+                : 'border: 1px solid #332E28; color: #C9C0B2;')
+          };
+        });
+      })(),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (16) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2610  planChoose: "Choisir"
+  EN L3063  planChoose: "Choose"
+
+  FR L2611  planCurrent: "Votre formule"
+  EN L3064  planCurrent: "Your plan"
+
+  FR L2612  planFreeName: "Libre"
+  EN L3065  planFreeName: "Free"
+
+  FR L2613  planFreePrice: "Gratuit"
+  EN L3066  planFreePrice: "Free"
+
+  FR L2614  planFreeTag: "SANS COMPTE REQUIS"
+  EN L3067  planFreeTag: "NO ACCOUNT NEEDED"
+
+  FR L2615  planSignUp: "Créer un compte"
+  EN L3068  planSignUp: "Create account"
+
+  FR L2616  planSubName: "Abonnement"
+  EN L3069  planSubName: "Subscription"
+
+  FR L2617  planSubPrice: "14 € / mois"
+  EN L3070  planSubPrice: "€14 / month"
+
+  FR L2618  planSubTag: "LE PLUS CHOISI"
+  EN L3071  planSubTag: "MOST CHOSEN"
+
+  FR L2619  planUnitName: "Place à l’unité"
+  EN L3072  planUnitName: "Single ticket"
+
+  FR L2620  planUnitPrice: "dès 7 €"
+  EN L3073  planUnitPrice: "from €7"
+
+  FR L2621  planUnitTag: "À CHAQUE SPECTACLE"
+  EN L3074  planUnitTag: "PER SHOW"
+
+  FR L2623  plansFootnote: "Les rediffusions restent au choix de l’artiste : incluses dans l’abonnement, achetables à l’unité, ou désactivées. L’information figure sur l’affiche avant l’achat."
+  EN L3076  plansFootnote: "Replays stay the artist’s call: included with the subscription, sold separately, or disabled. It is stated on the poster before you buy."
+
+  FR L2624  plansIntro: "Aucun engagement, aucune formule cachée : vous payez la place, ou l’accès continu."
+  EN L3077  plansIntro: "No commitment, no hidden tier: pay for the ticket, or for continuous access."
+
+  FR L2625  plansSub: "FORMULES ARTHOME"
+  EN L3078  plansSub: "ARTHOME PLANS"
+
+  FR L2626  plansTitle: "Trois façons d’assister"
+  EN L3079  plansTitle: "Three ways to attend"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

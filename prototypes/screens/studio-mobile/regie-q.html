@@ -1,0 +1,203 @@
+<!--
+  ÉCRAN        regie / q
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Les qualités diffusées et les paliers d'encodage.
+  RÔLES        artist · prod · regie
+  MÈNE VERS    écrans : event, moderation
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBand L475-485 · hasTabs L487-495 · hasPanel L509-553 · hasNote L555-557 · hasActions L569-575 · hasBlocks L731-791
+               modèle    L2644-2789 · L2849-2867
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - openapi PUT /v1/dates/{dateId}/run/quality-profile
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBand        L475-485
+    hasTabs        L487-495
+    hasPanel       L509-553
+    hasNote        L555-557
+    hasActions     L569-575
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_regie(c) {
+    const s = this.state;
+    const i = 0;
+    const row = c.evDefs[i];
+    const st = c.stateAt(i);
+    const onAir = st === 'live';
+    const sold = row[4];
+    const price = row[6];
+    const gross = sold * price;
+    const flow = s.incFlow || 'none';
+    const fail = s.rgFail || null;
+    const layout = s.rgLayout || 'balanced';
+    const TABS = [['ov', 'VUE D’ENSEMBLE'], ['chat', 'TCHAT ET MODÉRATION'], ['crew', 'ÉQUIPE ET JOURNAL'], ['q', 'QUALITÉS DIFFUSÉES']];
+    const tab = TABS.some(t => t[0] === s.rgTab) ? s.rgTab : 'ov';
+    const liveRow = (c.evDefs || []).filter(r => r[3] === 'live')[0];
+    const elapsed = onAir ? Math.max(0, Math.round(((liveRow || [])[12] || 0) * 60)) + Math.floor((s.now / 1000) % 60) : 0;
+    const pad = n => (n < 10 ? '0' : '') + n;
+    const chrono = pad(Math.floor(elapsed / 3600)) + ':' + pad(Math.floor((elapsed % 3600) / 60)) + ':' + pad(elapsed % 60);
+    const rate = fail === 'rate' ? 2.1 : (fail === 'lost' ? 0 : 8.9);
+    const wait = s.incMsg === undefined ? 'Un incident technique interrompt la diffusion. Nous revenons dès que possible — votre place reste valable.' : s.incMsg;
+
+    const out = {
+      pageKicker: 'RÉGIE · ' + c.chan.name.toUpperCase(),
+      pageTitle: onAir ? row[2] + ' · à l’antenne' : row[2] + ' · pas encore à l’antenne',
+      pageTabs: this.tabStrip(TABS, tab, 'rgTab'),
+      band: this.stats([
+        ['ÉTAT', fail === 'lost' ? 'FLUX PERDU' : (fail === 'studio' ? 'STUDIO DÉCONNECTÉ' : (onAir ? 'À L’ANTENNE' : 'EN ATTENTE')), fail === 'studio' ? 'la diffusion continue' : (onAir ? 'depuis le lever de rideau' : 'aucun flux'), fail ? LIVE : (onAir ? LIVE : WARN)],
+        ['CHRONOMÈTRE', chrono, 'durée annoncée ' + row[9]],
+        ['DÉBIT MONTANT', String(rate).replace('.', ',') + ' Mb/s', rate >= 7 ? 'stable' : (rate ? 'effondré' : 'aucun paquet reçu'), rate >= 7 ? OK : LIVE],
+        ['SALLE / VOUS', c.zAbbr + (c.zSame ? '' : ' → ' + (ZONES[c.myZone] || [])[0]), c.zSame ? 'même fuseau' : 'décalage à l’écran']
+      ])
+    };
+
+    /* bandeau multi-flux : l'état de chaque chaîne à l'antenne, en permanence */
+    if (c.tonight.length > 1) out.note = 'Deux flux sous votre garde ce soir : ' + c.tonight.map(g => g.chan + ' (' + c.withZone(g.time, g.chan) + ')').join(' et ') + '. Chaque chaîne porte une alerte sonore distincte.';
+
+    /* parcours d'incident : trois temps, écrits dans le modèle */
+    if (flow === 'wait') {
+      out.panel = {
+        color: LIVE, dot: true, kicker: 'ÉCRAN D’ATTENTE DIFFUSÉ', pill: 'LE TEMPS JOUE CONTRE VOUS', pillColor: WARN,
+        title: 'Les spectateurs voient votre message, pas le plateau',
+        text: 'Chaque minute d’attente coûte des spectateurs. Deux issues : reprendre la diffusion, ou escalader vers ceux qui peuvent décider du sort des places.',
+        input: { label: 'MESSAGE AUX SPECTATEURS', value: wait, onChange: e => this.setState({ incMsg: e.target.value }) },
+        rows: [
+          { label: 'Places vendues sur cette date', hint: 'engagées si la date tombe', value: c.num(sold) },
+          c.canRevenue ? { label: 'Recette concernée', hint: 'frais de service compris', value: c.eur(gross) } : { label: 'Montants', hint: 'réservés aux rôles qui répondent des recettes', value: '—' },
+          { label: 'Depuis l’interruption', hint: 'écran d’attente affiché', value: '00:04:12' }
+        ],
+        btns: [
+          this.act('REPRENDRE LA DIFFUSION', () => this.setState({ incFlow: 'none', rgFail: null }), 'primary'),
+          c.canDecide
+            ? this.act('ESCALADER : DÉCIDER DU SORT DES PLACES', () => this.setState({ incFlow: 'decide' }), 'danger')
+            : this.act('SIGNALER À LA PRODUCTION', () => this.setState({ incFlow: 'escalate' }), 'danger')
+        ]
+      };
+    }
+
+    if (flow === 'escalate') {
+      out.panel = {
+        color: WARN, kicker: 'SIGNALEMENT À LA PRODUCTION', pill: 'HORODATÉ', pillColor: WARN,
+        title: 'Reporter ou annuler engage les places vendues',
+        text: 'Ces deux gestes appartiennent à l’artiste et à la production : ils changent ce que la plateforme a promis aux acheteurs. Votre signalement leur arrive avec le relevé technique.',
+        rows: [
+          { label: 'Horodatage', hint: 'heure de salle', value: c.withZone(c.airClock(4)) },
+          { label: 'Nature de la panne', hint: fail === 'studio' ? 'poste de régie déconnecté' : 'flux perdu côté salle', value: fail === 'studio' ? 'STUDIO' : 'FLUX' },
+          { label: 'Relevé de débit', hint: 'dernières 60 secondes', value: String(rate).replace('.', ',') + ' Mb/s' },
+          { label: 'Places concernées', hint: 'sans montant : hors de votre droit d’en connaître', value: c.num(sold) + ' places' }
+        ],
+        btns: [
+          this.act('ENVOYER LE SIGNALEMENT', () => this.setState({ incFlow: 'sent' }), 'primary'),
+          this.act('REVENIR À L’ÉCRAN D’ATTENTE', () => this.setState({ incFlow: 'wait' }))
+        ]
+      };
+    }
+
+    if (flow === 'sent') {
+      out.panel = {
+        color: OK, kicker: 'SIGNALEMENT ENVOYÉ', pill: 'INSCRIT AU JOURNAL', pillColor: OK,
+        title: 'La production est prévenue',
+        text: c.alerted.join(' et ') + ' ont reçu l’alerte avec l’horodatage, la nature de la panne et le relevé de débit. L’écran d’attente reste diffusé jusqu’à leur décision.',
+        rows: [
+          { label: 'Envoyé à', hint: 'production et artiste de la chaîne', value: '2 PERSONNES' },
+          { label: 'Horodatage', hint: 'heure de salle', value: c.withZone(c.airClock(4)) },
+          { label: 'Inscrit au journal', hint: 'catégorie antenne · nominatif', value: 'OUI' }
+        ],
+        btns: [this.act('REPRENDRE LA DIFFUSION', () => this.setState({ incFlow: 'none', rgFail: null }), 'primary')]
+      };
+    }
+
+    if (flow === 'decide') {
+      out.panel = {
+        color: LIVE, kicker: 'DÉCISION · ' + row[2].toUpperCase(), pill: 'CHIFFRÉE SUR CETTE DATE', pillColor: LIVE,
+        title: 'Reporter, annuler, ou poursuivre avec dédommagement',
+        text: 'Les trois options portent sur les ' + c.num(sold) + ' places réellement vendues sur cette date.',
+        rows: [
+          { label: 'Reporter', hint: 'places valables, aucun remboursement · une date de remplacement naît en brouillon', value: 'AUCUN REMB.', valueColor: OK },
+          { label: 'Annuler et rembourser', hint: 'les ' + c.num(sold) + ' places sont remboursées en une opération, frais compris · irréversible', value: c.canRevenue ? c.eur(gross) : c.num(sold) + ' PLACES', valueColor: LIVE },
+          { label: 'Poursuivre avec dédommagement', hint: 'avoir de 30 % émis à tous les détenteurs de place', value: c.canRevenue ? c.eur(gross * 0.3) : '30 %', valueColor: WARN }
+        ],
+        btns: [
+          this.act('REPORTER LA DATE', () => this.setState(st => ({
+            incFlow: 'applied', incChoice: 'report',
+            evVoid: Object.assign({}, st.evVoid, { [i]: 'report' }),
+            evNew: (st.evNew || []).concat([[ 'à définir', row[1], row[2], 'draft', 0, row[5], row[6], false, 'BROUILLON · DATE DE REMPLACEMENT DU ' + row[0].replace('.', '').toUpperCase(), row[9], true, false ]])
+          })), 'primary'),
+          this.act('ANNULER ET REMBOURSER', () => this.setState(st => ({ incFlow: 'applied', incChoice: 'cancel', evVoid: Object.assign({}, st.evVoid, { [i]: 'cancel' }) })), 'danger'),
+          this.act('POURSUIVRE AVEC AVOIR DE 30 %', () => this.setState(st => ({ incFlow: 'applied', incChoice: 'credit', evVoid: Object.assign({}, st.evVoid, { [i]: 'credit' }) }))),
+          this.act('REVENIR À L’ÉCRAN D’ATTENTE', () => this.setState({ incFlow: 'wait' }))
+        ]
+      };
+    }
+
+    if (flow === 'applied') {
+      const ch = s.incChoice;
+      const V = VOIDS[ch] || VOIDS.cancel;
+      out.panel = {
+        color: OK, kicker: 'APPLIQUÉ · ' + V[0], pill: 'JOURNAL HORODATÉ', pillColor: OK,
+        title: ch === 'report' ? 'La date est reportée, les places restent valables' : (ch === 'cancel' ? 'La date est annulée et remboursée' : 'La diffusion continue, un avoir a été émis'),
+        text: ch === 'report'
+          ? 'Une date de remplacement a été créée en brouillon avec la même jauge et les mêmes tarifs. Les détenteurs de place ont été prévenus : leur place est valable sur la nouvelle date.'
+          : (ch === 'cancel'
+              ? 'Les remboursements partent en une opération, frais de service compris. Les détenteurs de place ont été prévenus.'
+              : 'Un avoir de 30 % a été émis à tous les détenteurs de place. La jauge et la recette de cette date sont neutralisées.'),
+        rows: [
+          { label: ch === 'report' ? 'Places reportées' : (ch === 'cancel' ? 'Remboursements émis' : 'Avoirs émis'), hint: 'en une opération', value: c.num(sold) },
+          c.canRevenue
+            ? { label: 'Montant', hint: ch === 'credit' ? 'avoir de 30 %' : 'frais de service compris', value: ch === 'report' ? '—' : c.eur(ch === 'credit' ? gross * 0.3 : gross), valueColor: ch === 'report' ? INK3 : LIVE }
+            : { label: 'Montant', hint: 'hors de votre droit d’en connaître', value: '—' },
+          { label: 'Délai de crédit', hint: 'selon la banque du spectateur', value: '3 À 5 JOURS' },
+          { label: 'Inscrit au journal', hint: 'horodaté et nominatif · ' + c.me.name, value: c.withZone(c.airClock(11)) }
+        ],
+        btns: [
+          this.act('VOIR LA FICHE DE LA DATE', () => this.setState({ page: 'event', evSel: i, evTab: null })),
+          this.act('FERMER L’INCIDENT', () => this.setState({ incFlow: 'none', rgFail: null }))
+        ]
+      };
+    }
+
+    if (flow === 'none') {
+      out.actions = [
+        this.act(fail ? 'PANNE SIMULÉE · REVENIR À LA NORMALE' : 'DÉCLARER UN INCIDENT', () => this.setState({ incFlow: fail ? 'wait' : 'wait', rgFail: fail || 'lost' }), fail ? 'danger' : undefined),
+        this.act('RÉGIME DE TCHAT · ' + ({ free: 'LIBRE', emoji: 'ENCADRÉ', read: 'LECTURE SEULE', off: 'COUPÉ' })[s.chatMode || 'emoji'], () => this.setState({ page: 'moderation', modTab: 'filter' })),
+        this.act('PROFIL DE DIFFUSION · ' + (s.quality || 'AUTO').toUpperCase(), () => this.setState({ rgTab: 'q' }))
+      ];
+    }
+
+
+    if (tab === 'q') {
+      const qs = s.qOff || {};
+      out.blocks = [this.block('QUALITÉS DIFFUSÉES', 'BASCULE RÉELLE PAR PALIER', {
+        intro: 'Chaque palier consomme de l’encodage. Couper les hauts paliers soulage la salle au réseau fragile.',
+        rows: this.rows([['2160', '2160p · 20 Mb/s', 'captation multi-caméras'], ['1440', '1440p · 10 Mb/s', 'fibre dédiée'], ['1080', '1080p · 6 Mb/s', 'le réglage courant'], ['720', '720p · 3,5 Mb/s', 'secours 4G'], ['360', '360p · 1 Mb/s', 'réseaux mobiles lents']].map(([k, label, hint]) => ({
+          label, hint, pill: qs[k] ? 'INACTIF' : 'ACTIF', pillColor: qs[k] ? INK3 : OK,
+          cta: qs[k] ? 'RÉACTIVER' : 'COUPER CE PALIER',
+          act: () => this.setState(st => {
+            const n = Object.assign({}, st.qOff);
+            if (n[k]) delete n[k]; else n[k] = 1;
+            return { qOff: n };
+          })
+        })))
+      })];
+    }
+
+    return out;
+  }
+
+</script>

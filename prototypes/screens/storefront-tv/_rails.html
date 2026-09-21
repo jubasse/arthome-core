@@ -1,0 +1,313 @@
+<!--
+  Mécanique  : rangées (carrousels) — partagées par six écrans
+  Source     : Storefront TV.dc.html — balisage L441-528 (squelettes + rangées),
+               construction L2545-2660 (rail, emptyRail, homeRails, pageRails)
+  Consommé par : home, title, artist, live, category, replays
+  Trois formes de carte : `card` (16/9), `poster` (2/3 vertical), `portrait` (rond).
+  Contient aussi l'état de chargement (squelettes) et les rangées vides avec leur
+  action de sortie d'impasse.
+
+  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
+    · Le compteur de rangée dérive de items.length — littéral parallèle dès que la rangée est paginée (Confrontation C2).
+    · genreInterest() classe les sous-genres depuis seats.sold / viewers / replayViews : classement éditorial calculé sur la surface (incohérence n°6 de needs/).
+
+  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
+    `Storefront TV.dc.html` reste la source runnable de la galerie.
+-->
+
+<!-- ═══════════ Squelettes de chargement et rangées (verbatim, L441-528) ═══════════ -->
+      <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+        <div data-row="1" style="padding-top: 30px;">
+          <div style="padding: 0 0 18px 184px; width: 320px; height: 32px; border-radius: 4px; background: #221F1B; animation: skel 1.2s infinite;"></div>
+          <div style="margin-left: 184px; display: flex; gap: 28px; overflow: hidden;">
+            <sc-for list="{{ skeletons }}" as="k" hint-placeholder-count="6">
+              <div style="flex: 0 0 auto;">
+                <div style="width: 320px; height: 180px; border-radius: 4px; background: #1F1C19; animation: skel 1.2s infinite;"></div>
+                <div style="margin-top: 14px; width: 240px; height: 22px; border-radius: 4px; background: #1A1815; animation: skel 1.2s infinite;"></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasRails }}" hint-placeholder-val="{{ true }}">
+        <sc-for list="{{ rails }}" as="r" hint-placeholder-count="3">
+          <div data-row="1" style="position: relative; z-index: 1; background: #0B0A09; padding-top: 54px;">
+            <div style="display: flex; align-items: baseline; gap: 20px; padding: 0 60px 18px 184px;">
+              <div style="font-size: 30px; font-weight: 600; letter-spacing: -0.01em;">{{ r.label }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: {{ r.noteCol }};">{{ r.note }}</div>
+              <div style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: #6B6459;">{{ r.count }}</div>
+            </div>
+            <sc-if value="{{ r.isCard }}" hint-placeholder-val="{{ true }}">
+              <div data-scroll="x" style="position: relative; margin-left: 132px; display: flex; gap: 34px; overflow: hidden; padding: 18px 0 30px 52px;">
+                <sc-for list="{{ r.items }}" as="c" hint-placeholder-count="6">
+                  <div style="flex: 0 0 auto; width: 320px; color: #857E73; --ring: {{ c.ring }}; animation: cardIn .5s cubic-bezier(.86,0,.14,1) {{ c.delay }} both;" style-focus-within="color:#EDE7DC">
+                    <div tabindex="-1" data-fid="{{ c.fid }}" data-play="{{ c.playable }}" onClick="{{ c.open }}" style="position: relative; width: 320px; height: 180px; border-radius: 4px; overflow: hidden; background: #17140F; border: 3px solid transparent; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), border-color .16s ease, box-shadow .16s ease;" style-focus="transform:translateY(-6px) scale(var(--fs,1.08));border-color:var(--ring,#EDE7DC);box-shadow:0 18px 48px rgba(0,0,0,.7)">
+                      <img data-img="{{ c.img }}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.72) brightness(.68);" />
+                      <sc-if value="{{ c.isLive }}" hint-placeholder-val="{{ false }}">
+                        <div style="position: absolute; left: 12px; top: 12px; display: flex; align-items: center; gap: 9px; padding: 6px 12px; border-radius: 4px; border: 1px solid oklch(0.62 0.21 27); background: color-mix(in oklch, oklch(0.62 0.21 27) 14%, rgba(11,10,9,.72)); font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: oklch(0.75 0.19 27);">
+                          <span style="width: 9px; height: 9px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>{{ c.liveLabel }}
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ c.hasBadge }}" hint-placeholder-val="{{ false }}">
+                        <div style="position: absolute; left: 12px; top: 12px; padding: 6px 12px; border-radius: 4px; border: 1px solid {{ c.badgeCol }}; background: rgba(11,10,9,.74); font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: {{ c.badgeCol }};">{{ c.badge }}</div>
+                      </sc-if>
+                      <sc-if value="{{ c.hasProg }}" hint-placeholder-val="{{ false }}">
+                        <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: rgba(11,10,9,.72);">
+                          <div style="height: 6px; width: {{ c.progW }}; background: #EDE7DC;"></div>
+                        </div>
+                      </sc-if>
+                    </div>
+                    <div style="padding-top: 14px; font-size: 26px; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.title }}</div>
+                    <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: inherit; opacity: .72; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.meta }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ r.isPortrait }}" hint-placeholder-val="{{ false }}">
+              <div data-scroll="x" style="position: relative; margin-left: 132px; display: flex; gap: 46px; overflow: hidden; padding: 18px 0 30px 52px;">
+                <sc-for list="{{ r.items }}" as="c" hint-placeholder-count="6">
+                  <div style="flex: 0 0 auto; width: 180px; text-align: center; color: #857E73; animation: cardIn .5s cubic-bezier(.86,0,.14,1) {{ c.delay }} both;" style-focus-within="color:#EDE7DC">
+                    <div tabindex="-1" data-fid="{{ c.fid }}" onClick="{{ c.open }}" style="width: 160px; height: 160px; margin: 0 auto; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815; border: 3px solid transparent; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), border-color .16s ease, box-shadow .16s ease;" style-focus="transform:translateY(-6px) scale(var(--fs,1.08));border-color:#EDE7DC;box-shadow:0 18px 48px rgba(0,0,0,.7)">
+                      <img data-img="{{ c.img }}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.72) brightness(.84);" />
+                    </div>
+                    <div style="padding-top: 14px; font-size: 26px; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.title }}</div>
+                    <div style="padding-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.12em; color: inherit; opacity: .72;">{{ c.meta }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ r.isPoster }}" hint-placeholder-val="{{ false }}">
+              <div data-scroll="x" style="position: relative; margin-left: 132px; display: flex; gap: 36px; overflow: hidden; padding: 18px 0 30px 52px;">
+                <sc-for list="{{ r.items }}" as="c" hint-placeholder-count="5">
+                  <div style="flex: 0 0 auto; width: 240px; color: #857E73; animation: cardIn .5s cubic-bezier(.86,0,.14,1) {{ c.delay }} both;" style-focus-within="color:#EDE7DC">
+                    <div tabindex="-1" data-fid="{{ c.fid }}" onClick="{{ c.open }}" style="position: relative; width: 240px; height: 360px; border-radius: 4px; overflow: hidden; background: #17140F; border: 3px solid transparent; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), border-color .16s ease, box-shadow .16s ease;" style-focus="transform:translateY(-6px) scale(var(--fs,1.08));border-color:#EDE7DC;box-shadow:0 18px 48px rgba(0,0,0,.7)">
+                      <img data-img="{{ c.poster }}" alt="" style="position: absolute; left: 0; right: 0; top: 0; bottom: 8px; width: 100%; height: calc(100% - 8px); object-fit: cover; filter: saturate(.7) brightness(.66);" />
+                      <div style="position: absolute; left: 0; right: 0; bottom: -1px; padding: 20px 16px 22px; background: linear-gradient(180deg, transparent 0%, rgba(11,10,9,.86) 34%, #0B0A09 72%, #0B0A09 100%);">
+                        <div style="font-family: 'Instrument Serif', serif; font-size: 30px; line-height: 1.06; color: #EDE7DC;">{{ c.title }}</div>
+                        <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 0.1em; color: #C9C0B2;">{{ c.meta }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ r.isEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-left: 184px; margin-right: 60px; padding: 34px 38px; border-radius: 4px; border: 1px solid #2E2A24; background: #100F0D; display: flex; align-items: center; gap: 34px;">
+                <div style="font-size: 26px; color: #9B948A;">{{ r.emptyText }}</div>
+                <div tabindex="-1" data-fid="{{ r.emptyFid }}" onClick="{{ r.emptyGo }}" style="margin-left: auto; padding: 16px 30px; border-radius: 4px; border: 1px solid #4A423A; color: #C9C0B2; font-size: 24px; cursor: pointer; transition: transform .3s cubic-bezier(.86,0,.14,1), background .16s ease, color .16s ease;" style-focus="background:#EDE7DC;color:#0B0A09;transform:translateY(-6px) scale(var(--fs,1.08))">{{ r.emptyCta }}</div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <div style="height: 120px;"></div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+<!-- ═══════════ Fabrique de cartes (verbatim, L2468-2544) ═══════════ -->
+<script type="text/x-dc-extract">
+  // ---------- cards ----------
+  card(o, ns) {
+    const t = this.t(), st = this.st(o), out = this.outcome(o), owned = this.owns(o);
+    const c = {
+      fid: ns + ':' + o.id, id: o.id, img: this.img(o), poster: this.poster(o),
+      title: this.title(o), ring: '#EDE7DC', playable: '', isLive: false, notLive: true,
+      hasBadge: false, badge: '', badgeCol: '#C9C0B2', hasProg: false, progW: '0%',
+      meta: this.catLabel(o.cat) + ' · ' + this.durLabel(o.dur),
+      delay: '0ms',
+      open: () => this.openShow(o)
+    };
+    if (st === 'live') {
+      c.isLive = true; c.notLive = false; c.ring = LIVE;
+      c.liveLabel = this.num(o.view);
+      c.meta = this.catLabel(o.cat) + ' · ' + this.artistOf(o).name;
+      if (owned) { c.playable = 'y'; c.open = () => this.openPlayer(o); }
+      else c.badgeCol = GOLD;
+    } else if (st === 'replay') {
+      c.hasBadge = true; c.badgeCol = ACC; c.badge = t.expiresIn + ' ' + o.rep + ' ' + t.hours;
+      c.meta = this.catLabel(o.cat) + ' · ' + this.artistOf(o).name;
+      if (o.prog) { c.hasProg = true; c.progW = Math.round(o.prog * 100) + '%'; c.meta = this.durLabel(Math.round(o.dur * (1 - o.prog))) + ' ' + t.left; }
+      c.playable = 'y'; c.open = () => this.openPlayer(o);
+    } else if (st === 'soon') {
+      c.meta = this.dayLabel(o.min) + ' · ' + this.clock(o.min) + ' · ' + this.artistOf(o).name;
+      c.hasBadge = true;
+      if (out === 'post') { c.badge = t.oPost; c.badgeCol = ACC; c.ring = ACC; }
+      else if (o.seats === 0) { c.badge = t.kFull + (o.wait ? ' · ' + this.num(o.wait) : ''); c.badgeCol = '#9B948A'; }
+      else if (o.seats < 30) { c.badge = t.kLast + ' · ' + o.seats; c.badgeCol = GOLD; c.ring = GOLD; }
+      else if (owned) { c.badge = t.ownedSeat; c.badgeCol = GOLD; c.ring = GOLD; }
+      else { c.badge = this.countdown(o.min); c.badgeCol = '#C9C0B2'; }
+    } else {
+      c.hasBadge = true; c.badge = out === 'cancel' ? t.oCancel : (out === 'stop' ? t.oStop : t.sEnded);
+      c.badgeCol = out ? LIVE_INK : '#9B948A'; if (out) c.ring = LIVE;
+      c.meta = this.dayLabel(o.min) + ' · ' + this.artistOf(o).name;
+    }
+    return c;
+  }
+  ticketCard(o, ns) {
+    const t = this.t(), c = this.card(o, ns), st = this.st(o), out = this.outcome(o);
+    if (out === 'post') { c.hasBadge = true; c.badge = t.oPost; c.badgeCol = ACC; c.ring = ACC; c.isLive = false; c.notLive = true; }
+    else if (st === 'live') { c.hasBadge = false; c.playable = 'y'; c.open = () => this.openPlayer(o); }
+    else if (st === 'soon' && o.min <= 30) { c.hasBadge = true; c.badge = t.kEnterOpen; c.badgeCol = OK; c.ring = OK; }
+    else if (st === 'soon') { c.hasBadge = true; c.badge = this.countdown(o.min); c.badgeCol = GOLD; c.ring = GOLD; }
+    return c;
+  }
+  artistCard(a, ns) {
+    const t = this.t();
+    const dates = this.catalogue().filter(o => o.ar === a.id && this.st(o) === 'soon').length;
+    return {
+      fid: ns + ':' + a.id, img: A(AVA[a.k]), title: a.name,
+      meta: dates ? dates + ' ' + (dates > 1 ? t.datesUp : t.dateUp) : t.navReplaysUp,
+      open: () => this.go('artist', { art: a.id })
+    };
+  }
+  openShow(o) {
+    if (this.st(o) === 'live' && this.owns(o)) return this.openPlayer(o);
+    this.go('title', { pid: o.id });
+  }
+  openPlayer(o) {
+    this.go('player', { pid: o.id, pos: o.prog ? Math.round(o.prog * o.dur * 60) : (this.st(o) === 'live' ? Math.round(-o.min * 60) : 0), playing: true, ctrl: true, panel: null, ended: false });
+    clearTimeout(this.ctrlT);
+    this.ctrlT = setTimeout(() => { if (this.state.page === 'player' && !this.state.panel) this.hideCtrl(); }, 2600);
+  }
+  toggleList(id) {
+    const l = this.state.list;
+    this.setState({ list: l.indexOf(id) > -1 ? l.filter(x => x !== id) : l.concat([id]) });
+  }
+  toggleFollow(id) {
+    const f = this.follows();
+    this.setState({ follows: f.indexOf(id) > -1 ? f.filter(x => x !== id) : f.concat([id]) });
+  }
+  diagNet() {
+    clearTimeout(this.netT);
+    this.setState({ netLost: true });
+    this.netT = setTimeout(() => this.setState({ netLost: false }), 6000);
+  }
+
+</script>
+
+<!-- ═══════════ Fabrique de rangées (verbatim, L2545-2660) ═══════════ -->
+<script type="text/x-dc-extract">
+  // ---------- rails ----------
+  rail(key, label, items, kind, note, noteCol) {
+    items.forEach((c, i) => { c.delay = Math.min(i, 7) * 34 + 'ms'; });
+    return {
+      key: key, label: label, count: items.length ? this.num(items.length) : '',
+      note: note || '', noteCol: noteCol || '#857E73',
+      items: items, isCard: kind === 'card' && items.length > 0,
+      isPortrait: kind === 'portrait' && items.length > 0, isPoster: kind === 'poster' && items.length > 0,
+      isEmpty: false, emptyText: '', emptyCta: '', emptyFid: key + ':empty', emptyGo: () => this.go('categories')
+    };
+  }
+  emptyRail(key, label, text, cta, go) {
+    const r = this.rail(key, label, [], 'card');
+    r.isEmpty = true; r.emptyText = text; r.emptyCta = cta; r.emptyGo = go; r.count = '';
+    return r;
+  }
+  homeRails() {
+    const t = this.t(), cat = this.catalogue(), out = [];
+    const resume = cat.filter(o => o.prog);
+    if (resume.length) out.push(this.rail('resume', t.rResume, resume.map(o => this.card(o, 'resume')), 'card'));
+    const live = cat.filter(o => this.st(o) === 'live');
+    if (live.length) out.push(this.rail('onair', t.rOnAir, live.map(o => this.card(o, 'onair')), 'card', this.num(live.reduce((n, o) => n + o.view, 0)) + ' ' + t.viewersSuffix, LIVE_INK));
+    else out.push(this.emptyRail('onair', t.rOnAir, t.nothingOnAirShort, t.seeTonight, () => this.go('live')));
+    const mine = cat.filter(o => this.owns(o) && (this.st(o) === 'soon' || this.st(o) === 'live')).sort((a, b) => a.min - b.min);
+    if (mine.length) out.push(this.rail('tickets', t.rTickets, mine.map(o => this.ticketCard(o, 'tickets')), 'card'));
+    const tonight = cat.filter(o => this.st(o) === 'soon' && o.min < 1440).sort((a, b) => a.min - b.min);
+    if (tonight.length) out.push(this.rail('tonight', t.rTonight, tonight.map(o => this.card(o, 'tonight')), 'card'));
+    const f = this.follows();
+    if (f.length) {
+      const a = ARTISTS.filter(x => x.id === f[0])[0];
+      const items = cat.filter(o => o.ar === a.id);
+      if (items.length) out.push(this.rail('because', t.rBecause + ' ' + a.name, items.map(o => this.card(o, 'because')), 'card'));
+    }
+    const exp = cat.filter(o => this.st(o) === 'replay' && o.rep <= 48).sort((a, b) => a.rep - b.rep);
+    if (exp.length) out.push(this.rail('expiring', t.rExpiring, exp.map(o => this.card(o, 'expiring')), 'card', '', ACC));
+    out.push(this.rail('posters', t.rPosters, cat.slice(0, 7).map(o => this.card(o, 'posters')), 'poster'));
+    const discs = this.kid() ? KID_CATS.slice(0, 3) : ['theatre', 'dance', 'comedy'];
+    discs.forEach(d => {
+      const items = cat.filter(o => o.cat === d);
+      if (items.length) out.push(this.rail('d' + d, this.catLabel(d) + (' ' + t.onTheBill), items.map(o => this.card(o, 'd' + d)), 'card'));
+    });
+    out.push(this.rail('artists', t.rArtistsToFollow, ARTISTS.slice(0, 8).map(a => this.artistCard(a, 'hartists')), 'portrait'));
+    return out;
+  }
+  pageRails() {
+    const t = this.t(), s = this.state, p = s.page, cat = this.catalogue();
+    if (p === 'home') return this.homeRails();
+    if (p === 'title') {
+      const o = this.cur(), out = [];
+      const series = cat.filter(x => x.ar === o.ar && x.cat === o.cat && x.id !== o.id);
+      if (series.length) out.push(this.rail('series', t.rSeries, series.map(x => this.card(x, 'series')), 'card'));
+      const same = cat.filter(x => x.ar === o.ar && x.id !== o.id && series.indexOf(x) < 0);
+      if (same.length) out.push(this.rail('same', t.rSame, same.map(x => this.card(x, 'same')), 'card'));
+      const also = cat.filter(x => x.cat === o.cat && x.ar !== o.ar);
+      if (also.length) out.push(this.rail('also', t.rSuggest, also.map(x => this.card(x, 'also')), 'card'));
+      return out;
+    }
+    if (p === 'artist') {
+      const a = ARTISTS.filter(x => x.id === s.art)[0], out = [];
+      const up = cat.filter(o => o.ar === a.id && (this.st(o) === 'soon' || this.st(o) === 'live')).sort((x, y) => x.min - y.min);
+      if (up.length) out.push(this.rail('adates', t.rArtistDates, up.map(o => this.card(o, 'adates')), 'card'));
+      const rep = cat.filter(o => o.ar === a.id && this.st(o) === 'replay');
+      if (rep.length) out.push(this.rail('areplays', t.rArtistReplays, rep.map(o => this.card(o, 'areplays')), 'card'));
+      if (!up.length && !rep.length) out.push(this.emptyRail('anone', t.rArtistDates, t.artistNoDates, t.browseCategories, () => this.go('categories')));
+      return out;
+    }
+    if (p === 'category') {
+      const c = s.cat, out = [];
+      const live = cat.filter(o => o.cat === c && this.st(o) === 'live');
+      if (live.length) out.push(this.rail('clive', t.rCatLive, live.map(o => this.card(o, 'clive')), 'card', '', LIVE_INK));
+      /* Les styles deviennent des rangées, pas un filtre : à la télécommande
+         on descend pour découvrir, au lieu d'ouvrir un panneau puis de penser
+         à le refermer. Les styles les mieux fournis d'abord, la traîne
+         regroupée en fin de page pour ne pas empiler des rangées d'une carte. */
+      const soon = cat.filter(o => o.cat === c && this.st(o) === 'soon').sort((a, b) => a.min - b.min);
+      const byGenre = (GENRES[c] || [])
+        .map(g => ({ id: g.id, items: soon.filter(o => o.gen === g.id) }))
+        .filter(g => g.items.length)
+        .map(g => Object.assign(g, { interest: this.genreInterest(g.items) }))
+        .sort((x, y) => y.interest - x.interest || y.items.length - x.items.length);
+      const strong = byGenre.filter(g => g.items.length >= 2).slice(0, 8);
+      const rest = soon.filter(o => strong.every(g => g.id !== o.gen));
+      if (strong.length > 1) {
+        /* La taxonomie écrit les styles en minuscules, pour un usage en ligne
+           dans une méta (« Pop · synth-pop »). En titre de rangée, la casse
+           se règle ici, au point d'usage — jamais dans la taxonomie. */
+        const asTitle = (x) => x ? x.charAt(0).toLocaleUpperCase(this.fr() ? 'fr-FR' : 'en-US') + x.slice(1) : x;
+        strong.forEach(g => out.push(this.rail('cg:' + g.id, asTitle(this.genLabel(c, g.id)),
+          g.items.map(o => this.card(o, 'cg:' + g.id)), 'card')));
+        if (rest.length) out.push(this.rail('cgrest', t.rOtherStyles,
+          rest.map(o => this.card(o, 'cgrest')), 'card'));
+      } else if (soon.length) {
+        /* Une discipline sans styles distincts garde sa rangée unique : la
+           découper en une seule catégorie n'apprendrait rien. */
+        out.push(this.rail('csoon', t.rCatSoon, soon.map(o => this.card(o, 'csoon')), 'card'));
+      }
+      const rep = cat.filter(o => o.cat === c && this.st(o) === 'replay');
+      if (rep.length) out.push(this.rail('crep', t.rCatReplays, rep.map(o => this.card(o, 'crep')), 'card', '', ACC));
+      const arts = ARTISTS.filter(a => cat.some(o => o.cat === c && o.ar === a.id));
+      if (arts.length) out.push(this.rail('carts', t.rCatArtists, arts.map(a => this.artistCard(a, 'carts')), 'portrait'));
+      if (!live.length && !soon.length && !rep.length) out.push(this.emptyRail('cnone', this.catLabel(c), t.catNoDates, t.seeAllCats, () => this.go('categories')));
+      return out;
+    }
+    if (p === 'replays') {
+      const rep = cat.filter(o => this.st(o) === 'replay');
+      const soon = rep.filter(o => o.rep <= 48), rest = rep.filter(o => o.rep > 48);
+      const out = [];
+      if (soon.length) out.push(this.rail('rsoon', t.rExpiring, soon.map(o => this.card(o, 'rsoon')), 'card', '', ACC));
+      if (rest.length) out.push(this.rail('rall', t.rAllReplays, rest.map(o => this.card(o, 'rall')), 'card'));
+      out.push(this.rail('rposters', t.rPosters, rep.concat(cat.filter(o => this.st(o) === 'soon')).slice(0, 6).map(o => this.card(o, 'rposters')), 'poster'));
+      if (!rep.length) return [this.emptyRail('rnone', t.nReplays, t.noReplay, t.browse, () => this.go('categories'))];
+      return out;
+    }
+    return [];
+  }
+
+</script>
+
+<!-- ═══════════ RENVOIS ═══════════
+  needs/storefront-tv.md → « Les formes de données » (Rail et HomeScreen) et « Confrontation » C2
+  openapi/storefront.yaml → schéma Rail (kind, titleCode, items, nextCursor)
+  ⚠ Confrontation C2 : le schéma Rail du contrat ne peut exprimer ni « Vos places », ni la rangée d'artistes (items = DateCard uniquement), ni la forme affiche ; et il ne porte pas de total.
+-->

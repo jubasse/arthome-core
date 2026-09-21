@@ -1,0 +1,107 @@
+<!--
+  ÉCRAN      Pied de page
+  ROUTE      toutes les routes
+  AFFICHE    Le pied de page : accroche, trois colonnes de liens éditoriaux, mentions légales.
+  MÈNE VERS  browse · categories · artists · plans · help · pages éditoriales statiques
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2989-3012
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Les colonnes ARTISTES et AIDE sont des libellés sans destination dans la maquette.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, artist, currentDate, fr, s, t
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+
+<footer style="margin-top: 72px; border-top: 1px solid #1F1C19; background: #0A0908;">
+  <div style="max-width: 1440px; margin: 0 auto; padding: 46px 40px 30px; display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 40px;">
+    <div>
+      <div style="font-family: 'Instrument Serif', serif; font-size: 24px;">ARTHOME<span style="color: oklch(0.68 0.18 42);">.</span></div>
+      <p style="margin: 12px 0 0; max-width: 300px; font-size: 13.5px; line-height: 1.6; color: #857E73; text-wrap: pretty;">{{ t.footerTag }}</p>
+    </div>
+    <sc-for list="{{ footerCols }}" as="col" hint-placeholder-count="3">
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B645930; color: #6B6459; padding-bottom: 14px;">{{ col.title }}</div>
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <sc-for list="{{ col.links }}" as="l" hint-placeholder-count="4">
+            <span onClick="{{ l.go }}" style="{{ l.style }}" style-hover="color:#EDE7DC">{{ l.label }}</span>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="max-width: 1440px; margin: 0 auto; padding: 0 40px 40px; display: flex; gap: 18px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #4E483F;">
+    <span>© 2026 ARTHOME SAS</span>
+    <span style="margin-left: auto;">{{ t.legal }}</span>
+  </div>
+</footer>
+
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* merch  —  lignes 5445-5468 */
+    const merch = (() => {
+      const IMG_BY_KIND = { textile: IMG.tshirt, poster: IMG.poster, record: IMG.vinyl, print: IMG.poster };
+      const d = currentDate || this.defaultDate();
+      const items = d ? A.merchOf(A.show(d.show).id) : [];
+      const rows = items.filter(x => x.state === 'on-sale').slice(0, 4).map(x => ({
+        name: x.label, price: A.price(x.price, x.currency), img: IMG_BY_KIND[x.kind] || IMG.tote
+      }));
+      return rows.length ? rows : [{ name: fr ? 'Boutique à venir' : 'Shop coming soon', price: '—', img: IMG.tote }];
+    })().map(m => Object.assign(m, {
+      add: () => this.setState(st => {
+        const lines = st.cartLines.slice();
+        const i = lines.findIndex(l => l.name === m.name);
+        if (i > -1) lines[i] = Object.assign({}, lines[i], { qty: lines[i].qty + 1 });
+        else lines.push({ name: m.name, price: m.price, img: m.img, imgCss: this.cssUrl(m.img), seller: artist.name, qty: 1 });
+        clearTimeout(this._addT);
+        this._addT = setTimeout(() => this.setState({ cartJustAdded: '' }), 1600);
+        return { cartLines: lines, cartOpen: true, cartStep: 'list', cartJustAdded: m.name, notifsOpen: false };
+      }),
+      addLabel: s.cartJustAdded === m.name ? t.cartAdded : t.add,
+      addStyle: 'margin-left: auto; cursor: pointer; padding: 5px 11px; white-space: nowrap; font-size: 12.5px; border: 1px solid ' +
+        (s.cartJustAdded === m.name ? 'oklch(0.6 0.11 150); color: oklch(0.78 0.13 150);' : '#332E28; color: #EDE7DC;') +
+        ' transition: background .24s ease, border-color .24s ease, color .24s ease;'
+    }));
+
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      footerCols: this.decorateFooter([
+        { title: fr ? 'PLATEFORME' : 'PLATFORM', links: [
+          [fr ? 'Explorer' : 'Browse', () => this.setState({ page: 'browse', sTab: 'best', pick: null })],
+          [fr ? 'Catégories' : 'Categories', () => this.setState({ page: 'categories', pick: null })],
+          [fr ? 'Artistes' : 'Artists', () => this.setState({ page: 'artists', pick: null })],
+          [fr ? 'Ce soir' : 'Tonight', () => this.setState({ page: 'browse', sTab: 'lives', fDate: 'tonight', filtersOpen: true, pick: null })],
+          [fr ? 'Formules et abonnement' : 'Plans and subscription', () => this.setState({ page: 'plans', pick: null })]
+        ] },
+        { title: fr ? 'ARTISTES' : 'ARTISTS', links: fr ? ['Diffuser sur Arthome', 'Guide OBS', 'Billetterie', 'Boutique & merch'] : ['Stream on Arthome', 'OBS guide', 'Ticketing', 'Store & merch'] },
+        { title: fr ? 'AIDE' : 'HELP', links: fr ? ['Centre d\u2019aide', 'Accessibilité', 'Nous contacter', 'Statut'] : ['Help center', 'Accessibility', 'Contact us', 'Status'] }
+      ])
+    };
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.add  t.cartAdded  t.footerTag  t.legal  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    cartJustAdded  cartLines  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    cssUrl, decorateFooter, defaultDate, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

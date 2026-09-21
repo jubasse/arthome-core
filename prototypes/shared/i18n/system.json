@@ -1,0 +1,77 @@
+{
+  "note": "Transverse aux cinq surfaces : chargement, vides, réseau, erreurs, zone sûre.",
+  "keys": {
+    "common.empty.list": {
+      "fr": "Rien dans Ma liste pour l’instant",
+      "en": "Nothing in My list yet"
+    },
+    "common.empty.live": {
+      "fr": "Aucun spectacle à l’antenne en ce moment",
+      "en": "Nothing on air right now"
+    },
+    "common.empty.search": {
+      "fr": "Aucun résultat",
+      "en": "No results"
+    },
+    "common.empty.tickets": {
+      "fr": "Aucune place pour l’instant",
+      "en": "No seats yet"
+    },
+    "common.error.blackoutBody": {
+      "fr": "Cette date fait exception : {reason}. Les autres dates de ce spectacle restent accessibles.",
+      "en": "This date is an exception: {reason}. The other dates of this show remain available."
+    },
+    "common.error.blackoutTitle": {
+      "fr": "Non diffusé dans votre pays",
+      "en": "Not broadcast in your country"
+    },
+    "common.error.geoBody": {
+      "fr": "La salle ne détient pas les droits de diffusion pour votre territoire.",
+      "en": "The venue does not hold broadcast rights for your territory."
+    },
+    "common.error.geoTitle": {
+      "fr": "Indisponible dans votre pays",
+      "en": "Not available in your country"
+    },
+    "common.error.networkBody": {
+      "fr": "Votre appareil n’atteint plus le réseau. Les serveurs Arthome répondent normalement.",
+      "en": "Your device cannot reach the network. Arthome servers are responding normally."
+    },
+    "common.error.networkTitle": {
+      "fr": "Connexion perdue",
+      "en": "Connection lost"
+    },
+    "common.error.noSeat": {
+      "fr": "Vous n’avez pas de place pour cette date",
+      "en": "You do not have a seat for this date"
+    },
+    "common.error.serverBody": {
+      "fr": "Le problème vient de chez nous, pas de votre connexion. Nous y travaillons.",
+      "en": "The problem is on our side, not your connection. We are working on it."
+    },
+    "common.error.serverTitle": {
+      "fr": "Nos serveurs ne répondent pas",
+      "en": "Our servers are not responding"
+    },
+    "system.geoBody": {
+      "fr": "Les droits de captation de cette date ne couvrent pas votre pays. La rediffusion sera peut-être disponible plus tard.",
+      "en": "The capture rights for this date do not cover your country. A replay may become available later."
+    },
+    "system.geoTitle": {
+      "fr": "Indisponible dans votre pays",
+      "en": "Unavailable in your country"
+    },
+    "system.networkLostBody": {
+      "fr": "Votre téléviseur n’atteint plus le réseau. Les serveurs Arthome répondent normalement.",
+      "en": "Your TV can no longer reach the network. Arthome servers are responding normally."
+    },
+    "system.networkLostTitle": {
+      "fr": "Connexion perdue",
+      "en": "Connection lost"
+    },
+    "system.safeArea": {
+      "fr": "Zone sûre · 60 PX",
+      "en": "Safe area · 60 PX"
+    }
+  }
+}

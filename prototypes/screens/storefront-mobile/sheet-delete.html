@@ -1,0 +1,210 @@
+<!--
+  Arthome · storefront mobile — sheet-delete
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : superposée · deleteId
+  Affiche    : La confirmation de suppression d'une recherche enregistrée.
+  Mène vers  : account-alerts
+  Contrat    : DELETE /v1/me/saved-searches/{savedSearchId}
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L2263–2280
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L2263–2280
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ deleteOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ cancelDelete }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
+<div style="{{ sheetBase }} background: #0B0A09; border-top: 1px solid #332E28; box-shadow: 0 -24px 60px rgba(0,0,0,0.6); animation: slideUp .26s cubic-bezier(.2,.7,.2,1) both;">
+  <div style="padding: 12px 0 6px; display: flex; justify-content: center;"><span style="width: 38px; height: 3px; background: #332E28;"></span></div>
+  <div style="padding: 6px 16px 24px;">
+    <div style="font-family: 'Instrument Serif', serif; font-size: 25px; line-height: 1.06;">{{ deleteTitle }}</div>
+    <div style="margin-top: 13px; border: 1px solid #1F1C19; background: #0F0E0C; padding: 12px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ deleteKind }}</div>
+      <div style="padding-top: 6px; font-size: 13.5px; color: #EDE7DC;">{{ deleteName }}</div>
+    </div>
+    <div style="padding-top: 11px; font-size: 12.5px; line-height: 1.55; color: #857E73; text-wrap: pretty;">{{ t.delIntro }}</div>
+    <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px;">
+      <span onClick="{{ confirmDelete }}" style="cursor: pointer; padding: 14px; min-height: 44px; box-sizing: border-box;  text-align: center; border: 1px solid oklch(0.5 0.14 27); background: oklch(0.32 0.09 27); font-size: 13px; font-weight: 600; color: oklch(0.9 0.06 27);">{{ t.delConfirm }}</span>
+      <span onClick="{{ cancelDelete }}" style="cursor: pointer; padding: 13px; min-height: 44px; box-sizing: border-box;  text-align: center; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2;">{{ t.delCancel }}</span>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (8 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── alertTokens  —  méthode de classe  —  L4211–4232 ── */
+  alertTokens(al, cats, T) {
+    const st = al.st || {};
+    const out = [];
+    (st.fCats || []).forEach(i => { if (cats[i]) out.push(cats[i].name); });
+    if ((st.fCats || []).length === 1) {
+      (st.fSubs || []).forEach(i => {
+        const nm = (SUBS_ALL[this.props.lang === 'en' ? 'en' : 'fr'][st.fCats[0]] || [])[i];
+        if (nm) out.push(nm);
+      });
+    }
+    const P = { free: T.pFree, u10: T.pU10, '1020': T.p1020, '2035': T.p2035, o35: T.p35 };
+    (st.fPrices || []).forEach(k => { if (P[k]) out.push(P[k]); });
+    const D = { tonight: T.dTonight, weekend: T.dWeekend, d7: T.d7, d30: T.d30, range: T.dRange };
+    if (st.fDate && st.fDate !== 'all' && D[st.fDate]) out.push(D[st.fDate]);
+    const S = { live: T.stLive, soon: T.stSoon, replay: T.stReplay };
+    if (st.fStatus && st.fStatus !== 'all' && S[st.fStatus]) out.push(S[st.fStatus]);
+    if (st.fAlmost) out.push(T.almostFull);
+    if (st.fHasDates) out.push(T.hasDates);
+    if (st.fExpiring) out.push(T.expSoon);
+    if (st.fPromo) out.push(T.promoFilter);
+    return out;
+  }
+
+/* ── alertName  —  méthode de classe  —  L4234–4239 ── */
+  alertName(al, cats, T) {
+    if (al.name) return al.name;
+    if (al.query) return al.query;
+    const tk = this.alertTokens(al, cats, T);
+    return tk.length ? tk.join(' · ') : T.alertAll;
+  }
+
+/* ── deleteOpen  —  clé du modèle rendu  —  L5730–5730 ── */
+      deleteOpen: s.deleteId !== null,
+
+/* ── deleteName  —  clé du modèle rendu  —  L5731–5734 ── */
+      deleteName: (() => {
+        const al = s.alerts.find(x => x.id === s.deleteId);
+        return al ? this.alertName(al, cats, t) : '';
+      })(),
+
+/* ── deleteTitle  —  clé du modèle rendu  —  L5735–5738 ── */
+      deleteTitle: (() => {
+        const al = s.alerts.find(x => x.id === s.deleteId);
+        return al && al.scope === 'category' ? t.unfollowCat : t.delTitle;
+      })(),
+
+/* ── deleteKind  —  clé du modèle rendu  —  L5739–5742 ── */
+      deleteKind: (() => {
+        const al = s.alerts.find(x => x.id === s.deleteId);
+        return al && al.scope === 'category' ? t.scopeCategory : t.savedHere;
+      })(),
+
+/* ── cancelDelete  —  clé du modèle rendu  —  L5743–5743 ── */
+      cancelDelete: () => this.setState({ deleteId: null }),
+
+/* ── confirmDelete  —  clé du modèle rendu  —  L5744–5747 ── */
+      confirmDelete: () => this.setState(st => ({
+        alerts: st.alerts.filter(x => x.id !== st.deleteId),
+        deleteId: null, renameId: null, renameDraft: '', alertCreated: false
+      })),
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (25) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2354  alertAll: "Tous les lives"
+  EN L2807  alertAll: "All live shows"
+
+  FR L2371  almostFull: "BIENTÔT COMPLET"
+  EN L2824  almostFull: "ALMOST SOLD OUT"
+
+  FR L2444  d30: "30 JOURS"
+  EN L2897  d30: "30 DAYS"
+
+  FR L2445  d7: "7 JOURS"
+  EN L2898  d7: "7 DAYS"
+
+  FR L2447  dRange: "PLAGE…"
+  EN L2900  dRange: "RANGE…"
+
+  FR L2448  dTonight: "CE SOIR"
+  EN L2901  dTonight: "TONIGHT"
+
+  FR L2449  dWeekend: "CE WEEK-END"
+  EN L2902  dWeekend: "THIS WEEKEND"
+
+  FR L2455  delCancel: "Annuler"
+  EN L2908  delCancel: "Cancel"
+
+  FR L2456  delConfirm: "Supprimer"
+  EN L2909  delConfirm: "Delete"
+
+  FR L2457  delIntro: "Vous ne serez plus alerté pour ces critères. Cette action est définitive."
+  EN L2910  delIntro: "You will no longer be alerted for these criteria. This cannot be undone."
+
+  FR L2458  delTitle: "Supprimer cette recherche ?"
+  EN L2911  delTitle: "Delete this search?"
+
+  FR L2477  expSoon: "EXPIRE SOUS 90 H"
+  EN L2930  expSoon: "EXPIRES < 90H"
+
+  FR L2510  hasDates: "A DES DATES"
+  EN L2963  hasDates: "HAS DATES"
+
+  FR L2597  p1020: "10–20 €"
+  EN L3050  p1020: "€10–20"
+
+  FR L2598  p2035: "20–35 €"
+  EN L3051  p2035: "€20–35"
+
+  FR L2599  p35: "> 35 €"
+  EN L3052  p35: "> €35"
+
+  FR L2600  pFree: "GRATUIT"
+  EN L3053  pFree: "FREE"
+
+  FR L2601  pU10: "< 10 €"
+  EN L3054  pU10: "< €10"
+
+  FR L2643  promoFilter: "TARIF RÉDUIT"
+  EN L3096  promoFilter: "REDUCED"
+
+  FR L2685  savedHere: "RECHERCHE ENREGISTRÉE"
+  EN L3138  savedHere: "SAVED SEARCH"
+
+  FR L2688  scopeCategory: "CATÉGORIE"
+  EN L3141  scopeCategory: "CATEGORY"
+
+  FR L2729  stLive: "EN DIRECT"
+  EN L3182  stLive: "LIVE NOW"
+
+  FR L2730  stReplay: "REDIFFUSION"
+  EN L3183  stReplay: "REPLAY"
+
+  FR L2731  stSoon: "À VENIR"
+  EN L3184  stSoon: "UPCOMING"
+
+  FR L2772  unfollowCat: "Retirer cette catégorie de vos recherches ?"
+  EN L3225  unfollowCat: "Remove this category from your saved searches?"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

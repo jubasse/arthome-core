@@ -1,0 +1,131 @@
+<!--
+  ÉCRAN      Centre de notifications
+  ROUTE      superposition, sans URL
+  AFFICHE    Le panneau de notifications ouvert depuis la cloche : fil, marquage lu, renvoi vers les réglages.
+  MÈNE VERS  artist · account-notifications
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 144-171
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Le badge « non lu » est la seule donnée personnalisée présente sur TOUTES les routes,
+             y compris les pages publiques indexables.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — listNotifications, markNotificationsRead
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, account, artist, fr, locked, roster, s
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <div data-pop="notifs" style="{{ memberOnly }} position: relative;">
+        <span onClick="{{ toggleNotifs }}" style="{{ bellStyle }}">✳</span>
+        <sc-if value="{{ unreadNotifs }}" hint-placeholder-val="{{ true }}">
+          <span style="position: absolute; right: -3px; top: -3px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px; background: oklch(0.62 0.21 27); color: #0B0A09; font-family: 'JetBrains Mono', monospace; font-size: 9px; display: grid; place-items: center; pointer-events: none;">{{ notifCount }}</span>
+        </sc-if>
+        <sc-if value="{{ notifsOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; right: 0; top: 42px; width: 340px; z-index: 620; background: #0D0C0A; border: 1px solid #1F1C19; box-shadow: 0 24px 60px rgba(0,0,0,0.6); animation: riseIn .18s ease both;">
+            <div style="padding: 12px 15px; border-bottom: 1px solid #1F1C19; display: flex; align-items: center; gap: 10px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.notifCenter }}</span>
+              <span onClick="{{ markAllRead }}" style="margin-left: auto; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73; transition: color .2s ease;" style-hover="color:#EDE7DC">{{ t.markRead }}</span>
+            </div>
+            <div style="max-height: 340px; overflow-y: auto;">
+              <sc-for list="{{ notifFeed }}" as="n" hint-placeholder-count="4">
+                <div onClick="{{ n.open }}" style="{{ n.style }}">
+                  <div style="flex: 0 0 42px; width: 42px; height: 42px; overflow: hidden; position: relative; background: #17140F;">
+                    <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.76); background-color: #1A1815; background-image: {{ n.imgCss }}; background-size: cover; background-position: center;"></div>
+                  </div>
+                  <div style="min-width: 0;">
+                    <div style="font-size: 12.5px; line-height: 1.4; text-wrap: pretty;">{{ n.text }}</div>
+                    <div style="padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: {{ n.timeColor }};">{{ n.time }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div onClick="{{ goAccountNotifs }}" style="cursor: pointer; border-top: 1px solid #1F1C19; padding: 11px 15px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #C9C0B2; transition: background .2s ease;" style-hover="background:#171410;color:#EDE7DC">{{ t.notifSettings }} →</div>
+          </div>
+        </sc-if>
+      </div>
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* REPLAY  —  lignes 5469-5479 */
+    const REPLAY = fr ? {
+      included: ['INCLUSE 72 H AVEC LA PLACE', 'oklch(0.7 0.13 150)', 'L\u2019artiste a choisi d\u2019offrir la rediffusion à toute personne ayant acheté sa place, pendant 72 heures après le rideau.'],
+      sub: ['INCLUSE DANS L\u2019ABONNEMENT', 'oklch(0.78 0.13 42)', 'Les rediffusions de cet artiste sont accessibles aux abonnés Arthome, sans limite de durée.'],
+      unit: ['À L\u2019UNITÉ · MOINS CHER QUE LE DIRECT', '#C9C0B2', 'Chaque rediffusion est vendue séparément, à un tarif inférieur à la place en direct.'],
+      off: ['DÉSACTIVÉE PAR L\u2019ARTISTE', '#8B857C', 'Cet artiste ne diffuse qu\u2019en direct : aucune rediffusion n\u2019est enregistrée. Ce choix est fixé avant le live et ne peut pas être modifié après coup.']
+    } : {
+      included: ['INCLUDED · 72H WITH YOUR TICKET', 'oklch(0.7 0.13 150)', 'The artist chose to include the replay for every ticket holder, for 72 hours after the curtain.'],
+      sub: ['INCLUDED WITH SUBSCRIPTION', 'oklch(0.78 0.13 42)', 'This artist\u2019s replays are available to Arthome subscribers, with no time limit.'],
+      unit: ['PER REPLAY · CHEAPER THAN LIVE', '#C9C0B2', 'Each replay is sold separately, below the live ticket price.'],
+      off: ['DISABLED BY THE ARTIST', '#8B857C', 'This artist streams live only: nothing is recorded. The choice is locked before the show and cannot be changed afterwards.']
+    };
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      notifsOpen: s.notifsOpen,
+      toggleNotifs: () => this.setState(st => ({ notifsOpen: !st.notifsOpen })),
+      markAllRead: () => this.setState({ notifsRead: true }),
+      unreadNotifs: !s.notifsRead,
+      notifCount: '3',
+      goAccountNotifs: () => this.setState({ page: 'account', accTab: 'notifs', notifsOpen: false }),
+      bellStyle: 'cursor: pointer; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid ' +
+        (s.notifsOpen ? '#4A423A' : '#332E28') + '; font-size: 12.5px; color: ' + (s.notifsOpen ? '#EDE7DC' : '#C9C0B2') + '; transition: border-color .24s ease, color .24s ease;',
+      /* Les alertes : ce qui se passe réellement sur les artistes suivis. */
+      notifFeed: (() => {
+        const rows = [];
+        A.liveNow().slice(0, 2).forEach(d => {
+          const show = A.show(d.show), art = A.artist(show.artist);
+          rows.push([(art ? art.name : '') + (fr ? ' est en direct — ' : ' is live — ') + A.title(show),
+            (fr ? 'DEPUIS ' : 'FOR ') + A.duration(Math.max(1, -d.startOffsetMin)).toUpperCase(),
+            A.showImage(show, 900), (roster.filter(r => art && r.id === art.id)[0] || {}).i || 0, true]);
+        });
+        A.replays().slice(0, 1).forEach(d => {
+          const show = A.show(d.show), art = A.artist(show.artist);
+          const left = A.replayHoursLeft(d);
+          rows.push([(fr ? 'Votre rediffusion de ' : 'Your replay of ') + A.title(show)
+            + (left ? (fr ? ' expire dans ' : ' expires in ') + left + ' h' : (fr ? ' est en ligne' : ' is online')),
+            (fr ? 'REDIFFUSION' : 'REPLAY'), A.showImage(show, 900),
+            (roster.filter(r => art && r.id === art.id)[0] || {}).i || 0, true]);
+        });
+        A.upcoming().filter(d => {
+          const cap = A.venue(d.venue).capacity;
+          return cap && d.seats.sold / cap > 0.9;
+        }).slice(0, 1).forEach(d => {
+          const show = A.show(d.show), art = A.artist(show.artist), cap = A.venue(d.venue).capacity;
+          rows.push([A.title(show) + ' — ' + (art ? art.name : '') + ' : '
+            + Math.round((d.seats.sold / cap) * 100) + (fr ? ' % des places vendues' : '% of seats sold'),
+            A.when(d).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US'), A.showImage(show, 900),
+            (roster.filter(r => art && r.id === art.id)[0] || {}).i || 0, false]);
+        });
+        return rows;
+      })().map(([text, time, img, id, unread]) => ({
+        text, time, img, imgCss: this.cssUrl(img),
+        timeColor: (unread && !s.notifsRead) ? 'oklch(0.78 0.13 42)' : '#6B6459',
+        open: () => this.setState({ page: 'artist', artistId: id, notifsOpen: false }),
+        style: 'cursor: pointer; padding: 12px 15px; display: flex; gap: 12px; align-items: flex-start; border-bottom: 1px solid #16140F; transition: background .2s ease; ' +
+          ((unread && !s.notifsRead) ? 'background: #12100E;' : 'background: transparent;')
+      })),
+      memberOnly: s.guest ? 'display: none;' : '',
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.markRead  t.notifCenter  t.notifSettings  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    guest  notifsOpen  notifsRead  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    cssUrl, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

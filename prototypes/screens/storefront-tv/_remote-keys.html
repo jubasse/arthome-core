@@ -1,0 +1,161 @@
+<!--
+  Mécanique  : télécommande — les cinq touches, plus les touches couleur et le transport
+  Source     : Storefront TV.dc.html, L2147-2277
+  Rôle       : tout se pilote à cinq touches. « Sur mobile et desktop ces raccourcis n'ont
+               pas lieu d'être : ici, ils sont l'interface. »
+
+  Carte des fonctions :
+    keyDown(e)      aiguillage principal — flèches, OK, Retour, Lecture/Pause, ◀◀ ▶▶, couleurs
+    keyUp(e)        fin d'appui long
+    ensure()        garantit qu'un élément est focalisé (« le focus perdu » est un piège nommé)
+    activate()      OK — active la cible focalisée
+    longOk()        OK maintenu — ouvre l'aide des touches, retire de Ma liste
+    playerArrow()   flèches dans le lecteur
+    playPause()     Lecture/Pause, partout où quelque chose est lisible
+    seek(d, repeat) ◀◀ ▶▶ 10 s, maintien ×4
+    closeInfo() / hideCtrl() / showCtrl()   cycle des contrôles du lecteur (4 s)
+
+  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
+    `Storefront TV.dc.html` reste la source runnable de la galerie.
+-->
+
+<!-- ═══════════ TOUCHES (verbatim, L2147-2277) ═══════════ -->
+<script type="text/x-dc-extract">
+  // ---------- keys ----------
+  keyDown(e) {
+    const k = e.key;
+    const handled = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', ' ', 'Backspace', 'Escape', 'i', 'j', 'l', 'r', 'g', 'y', 'b'];
+    if (handled.indexOf(k) < 0) return;
+    e.preventDefault(); e.stopPropagation();
+    this.armIdle();
+    if (this.state.page === 'ambient') { this.setState({ page: this.ambBack || 'home' }); this.nav = true; return; }
+    if (this.state.page === 'home' && this.state.preview) this.setState({ preview: false });
+    const p = this.state.page;
+    if (k === 'ArrowUp' || k === 'ArrowDown' || k === 'ArrowLeft' || k === 'ArrowRight') {
+      if (p === 'player') { this.playerArrow(k, e.repeat); return; }
+      this.move(k.slice(5).toLowerCase(), e.repeat);
+      return;
+    }
+    if (k === 'Enter') {
+      if (e.repeat) return;
+      clearTimeout(this.okT);
+      this.okLong = false;
+      this.okT = setTimeout(() => { this.okLong = true; this.longOk(); }, 620);
+      return;
+    }
+    if (k === ' ') { this.playPause(); return; }
+    if (k === 'Backspace' || k === 'Escape') { this.back(); return; }
+    if (k === 'i') {
+      if (p === 'player') {
+        if (this.state.panel === 'info') { this.closeInfo(); return; }
+        clearTimeout(this.infoT);
+        this.nav = true; this.setState({ panel: 'info', infoLeaving: false, ctrl: true }); this.showCtrl();
+        return;
+      }
+      const on = !this.state.hintFull;
+      clearTimeout(this.hintT);
+      if (on) this.hintT = setTimeout(() => { if (this.state.hintFull) this.setState({ hintFull: false }); }, 60000);
+      this.setState({ hintFull: on, novice: false });
+      return;
+    }
+    if (k === 'j') { this.seek(-10, e.repeat); return; }
+    if (k === 'l') { this.seek(10, e.repeat); return; }
+    if (this.colorKeys()) {
+      if (k === 'r' && p === 'player') { this.hideCtrl({ panel: null }); this.setState({ chat: !this.state.chat }); return; }
+      if (k === 'g' && p === 'player') { this.setState({ subs: !this.state.subs, panel: 'subs', ctrl: true }); return; }
+      if (k === 'y' && p === 'player') { this.setState({ panel: 'tracks', ctrl: true }); return; }
+      if (k === 'b' && p === 'player') {
+        if (this.state.panel === 'info') { this.closeInfo(); return; }
+        clearTimeout(this.infoT);
+        this.setState({ panel: 'info', infoLeaving: false, ctrl: true });
+        return;
+      }
+      if (k === 'b' && p === 'title') { this.go('dateinfo', { pid: this.state.pid }); return; }
+      if (k === 'b' && p === 'dateinfo') { this.back(); return; }
+    }
+  }
+  keyUp(e) {
+    if (e.key !== 'Enter') return;
+    clearTimeout(this.okT);
+    if (!this.okLong) this.activate();
+    this.okLong = false;
+  }
+  ensure() {
+    const a = document.activeElement;
+    if (a && a.getAttribute && a.getAttribute('data-fid')) return a;
+    const root = this.R();
+    const nodes = root ? this.fids() : [];
+    if (!nodes.length) return null;
+    const byFid = this.fid ? nodes.filter(n => n.getAttribute('data-fid') === this.fid)[0] : null;
+    const byContent = this.contentFid ? nodes.filter(n => n.getAttribute('data-fid') === this.contentFid)[0] : null;
+    const el = byFid || byContent || this.firstOf(nodes);
+    this.focusEl(el, true);
+    return el;
+  }
+  activate() {
+    const s = this.state;
+    if (s.page === 'player' && !s.ctrl && !s.chat && !s.ended) { this.showCtrl(); return; }
+    const el = this.ensure();
+    if (el && el.getAttribute && el.getAttribute('data-fid')) el.click();
+  }
+  longOk() {
+    const el = document.activeElement;
+    if (el && el.getAttribute && el.getAttribute('data-long') === 'remove') {
+      const id = el.getAttribute('data-item');
+      this.setState({ list: this.state.list.filter(x => x !== id) });
+      return;
+    }
+    this.go('help');
+  }
+  playerArrow(k, repeat) {
+    const s = this.state;
+    if (!s.ctrl && !s.chat && !s.ended) {
+      if (k === 'ArrowLeft') { this.seek(-10, repeat); return; }
+      if (k === 'ArrowRight') { this.seek(10, repeat); return; }
+      this.showCtrl(); return;
+    }
+    this.move(k.slice(5).toLowerCase(), repeat);
+  }
+  playPause() {
+    const s = this.state;
+    if (s.page === 'player') { this.setState({ playing: !s.playing }); this.showCtrl(); return; }
+    const el = document.activeElement;
+    if (el && el.getAttribute && el.getAttribute('data-play') === 'y') el.click();
+  }
+  seek(d, repeat) {
+    if (this.state.page !== 'player') return;
+    const step = repeat ? d * 4 : d;
+    const dd = this.dur(this.cur());
+    this.setState({ pos: Math.max(0, Math.min(dd, this.state.pos + step)), seekFlash: step });
+    this.showCtrl();
+  }
+  closeInfo() {
+    if (this.state.panel !== 'info') return;
+    clearTimeout(this.infoT);
+    this.nav = true;
+    this.setState({ panel: null, infoLeaving: true, ctrl: true });
+    this.infoT = setTimeout(() => { if (this.state.panel !== 'info') this.setState({ infoLeaving: false }); }, 320);
+    this.showCtrl();
+  }
+  hideCtrl(extra) {
+    if (!this.state.ctrl) return;
+    clearTimeout(this.leaveT);
+    this.nav = true;
+    this.setState(Object.assign({ ctrl: false, ctrlLeaving: true }, extra || {}));
+    this.leaveT = setTimeout(() => { if (!this.state.ctrl) this.setState({ ctrlLeaving: false }); }, 460);
+  }
+  showCtrl() {
+    clearTimeout(this.ctrlT);
+    clearTimeout(this.leaveT);
+    if (!this.state.ctrl) { this.nav = true; this.setState({ ctrl: true, ctrlLeaving: false }); }
+    const delay = 60000;
+    this.ctrlT = setTimeout(() => { if (this.state.page === 'player') this.hideCtrl({ panel: null }); }, delay);
+  }
+
+</script>
+
+<!-- ═══════════ RENVOIS ═══════════
+  needs/storefront-tv.md → « Contraintes propres à la TV » §1 et §2
+  Prompt - Storefront TV.md → « Raccourcis à honorer »
+  Voir aussi : _color-keys.html (rouge/vert/jaune/bleu), _focus-engine.html (move())
+-->

@@ -1,0 +1,88 @@
+<!--
+  Arthome · storefront mobile — categories
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : categories
+  Affiche    : Les 21 disciplines en tuiles, dans leur rang éditorial servi.
+  Mène vers  : category
+  Contrat    : GET /v1/categories
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L605–625
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L605–625
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ isCategories }}" hint-placeholder-val="{{ false }}">
+<div style="animation: fadeIn .3s ease both; padding: 18px 16px 0;">
+  <h1 style="margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px; line-height: 1.05;">{{ t.allCatsTitle }}</h1>
+  <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ t.allCatsSub }}</div>
+  <div style="margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px;">
+    <sc-for list="{{ allCategories }}" as="cat" hint-placeholder-count="8">
+      <div onClick="{{ cat.open }}" style="cursor: pointer; position: relative; aspect-ratio: 4/3; overflow: hidden; background: #17140F;">
+        <sc-if value="{{ cat.img }}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.6); background-color: #17140F; background-image: {{ cat.imgCss }}; background-size: cover; background-position: center;"></div>
+        </sc-if>
+        <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(8,7,7,0.92), rgba(8,7,7,0.15));"></div>
+        <div style="position: absolute; left: 11px; right: 11px; bottom: 11px;">
+          <div style="font-family: 'Instrument Serif', serif; font-size: 19px; line-height: 1.1;">{{ cat.name }}</div>
+          <sc-if value="{{ cat.hasLive }}" hint-placeholder-val="{{ false }}"><div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: oklch(0.78 0.14 27);">{{ cat.liveLabel }}</div></sc-if>
+          <sc-if value="{{ cat.noLive }}" hint-placeholder-val="{{ false }}"><div style="padding-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #9B948A;">{{ cat.count }}</div></sc-if>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (2 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── isCategories  —  clé du modèle rendu  —  L6084–6084 ── */
+      isCategories: s.page === 'categories', isCategory: s.page === 'category',
+
+/* ── allCategories  —  clé du modèle rendu  —  L6086–6086 ── */
+      allCategories: cats, category, subgenres,
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (2) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2369  allCatsSub: "TOUTES LES DISCIPLINES DU SPECTACLE VIVANT, EN DIRECT DEPUIS LA SALLE."
+  EN L2822  allCatsSub: "EVERY LIVE-PERFORMANCE DISCIPLINE, STREAMED FROM THE ROOM."
+
+  FR L2370  allCatsTitle: "Toutes les catégories"
+  EN L2823  allCatsTitle: "All categories"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

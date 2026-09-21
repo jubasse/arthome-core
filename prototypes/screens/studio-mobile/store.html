@@ -1,0 +1,86 @@
+<!--
+  ÉCRAN        store
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Le catalogue d'articles, les commandes externes et les intégrations marchandes.
+  RÔLES        artist · prod
+  MÈNE VERS    aucun (écran terminal)
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBand L475-485 · hasBlocks L731-791
+               modèle    L2947-2997
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - needs §Les formes de données (source d'un article, commandes externes)
+               - openapi GET /v1/channels/{channelId}/merch-items
+               - openapi PUT /v1/dates/{dateId}/merch-pin
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBand        L475-485
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_store(c) {
+    const s = this.state;
+    const pinned = s.pinned || {};
+    const SRC = { 'Arthome': OK, 'Numérique': INFO, 'Shopify': MUTE, 'WooCommerce': MUTE };
+    /* Les articles viennent du catalogue de la chaîne : un même article porte
+       partout le même stock, les mêmes ventes et le même prix. */
+    const items = c.M.merchItems;
+    const CAT = items.map(x => [x.label, x.kind === 'print' ? 'Numérique' : 'Arthome', x.stock, x.sold, x.id]);
+    const outOfStock = items.filter(x => x.state === 'out-of-stock');
+    return {
+      pageTitle: 'Boutique et merch',
+      band: this.stats([
+        ['ARTICLES', String(CAT.length), 'au catalogue'],
+        ['EN RUPTURE', String(outOfStock.length), outOfStock.length ? outOfStock[0].label : 'aucun article manquant', outOfStock.length ? WARN : OK],
+        ['VENTES', c.canRevenue ? c.eur(c.M.merch) : c.num(items.reduce((n, x) => n + x.sold, 0)), c.canRevenue ? 'sur la période' : 'articles vendus'],
+        ['ÉPINGLÉS', String(Object.keys(pinned).length), 'pendant le direct']
+      ]),
+      blocks: [
+        this.block('CATALOGUE', 'SOURCE · STOCK · VENTES', {
+          rows: this.rows(CAT.map(([label, src, stock, sold, k]) => ({
+            label, hint: (stock < 0 ? 'livrable numérique, sans stock' : (stock === 0 ? 'rupture — retiré de la page publique' : stock + ' en stock')) + ' · ' + sold + (sold > 1 ? ' ventes' : ' vente'),
+            pill: src.toUpperCase(), pillColor: SRC[src],
+            cta: pinned[k] ? 'RETIRER DU DIRECT' : 'ÉPINGLER PENDANT LE DIRECT',
+            act: () => this.setState(st => {
+              const p = Object.assign({}, st.pinned || { affiche: 1 });
+              if (p[k]) delete p[k]; else p[k] = 1;
+              return { pinned: p };
+            })
+          })))
+        }),
+        this.block('COMMANDES ISSUES D’UNE INTÉGRATION', 'SHOPIFY · WOOCOMMERCE', {
+          intro: 'Le suivi, l’échange et le remboursement de ces commandes se font sur le site du marchand. Arthome n’en tient que le compte.',
+          rows: this.rows(items.filter(x => x.kind === 'textile').slice(0, 2).map(x => ({
+            label: x.label + ' · ' + c.num(x.sold) + (x.sold > 1 ? ' commandes' : ' commande'),
+            hint: 'Shopify · ' + (x.state === 'out-of-stock' ? 'en rupture chez le marchand' : c.num(x.stock) + ' en stock'),
+            cta: 'OUVRIR CHEZ LE MARCHAND ↗'
+          })).concat(items.some(x => x.kind === 'textile') ? [] : [
+            { label: 'Aucune commande externe', hint: 'tous les articles sont vendus par Arthome', value: '—', valueColor: '#4A535C' }
+          ]))
+        }),
+        this.block('INTÉGRATIONS DISPONIBLES', '', {
+          rows: this.rows([
+            { label: 'Shopify', hint: 'connectée · 2 articles synchronisés', pill: 'ACTIVE', pillColor: OK },
+            { label: 'WooCommerce', hint: 'connectée · 1 article', pill: 'ACTIVE', pillColor: OK },
+            { label: 'PrestaShop, Drupal, webhooks', hint: 'clé d’API à générer dans les réglages', pill: 'INACTIVE', pillColor: INK3 }
+          ])
+        })
+      ]
+    };
+  }
+
+</script>

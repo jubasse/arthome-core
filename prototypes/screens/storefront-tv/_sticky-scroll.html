@@ -1,0 +1,77 @@
+<!--
+  Mécanique  : défilement collant (« sticky row ») et calage horizontal
+  Source     : Storefront TV.dc.html — fit() L1935-1944, glide() L1993-2007, place() L2008-2025
+  Rôle       : vertical — la rangée focalisée se cale toujours au même endroit de l'écran,
+               les autres glissent sous elle, jamais de saut brutal.
+               horizontal — la carte focalisée reste à gauche après les trois premières,
+               avec un aperçu de la suivante qui dépasse du bord.
+  Note       : ces trois fonctions sont physiquement DANS le moteur de focus du fichier
+               d'origine (place() est appelée par focusEl()). Elles sont recopiées ici
+               parce qu'elles forment une mécanique à part entière ; _focus-engine.html
+               en garde l'exemplaire en place. Les deux fichiers ne divergent pas :
+               ils citent les mêmes lignes.
+
+  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
+    `Storefront TV.dc.html` reste la source runnable de la galerie.
+-->
+
+<!-- ═══════════ fit() — ajustement du cadre (verbatim, L1935-1944) ═══════════ -->
+<script type="text/x-dc-extract">
+  fit() {
+    const wrap = document.querySelector('[data-tvwrap]');
+    const root = this.R();
+    if (!wrap || !root) return;
+    const kw = wrap.clientWidth / 1920, kh = wrap.clientHeight / 1080;
+    const k = Math.min(kw > 0 ? kw : 1, kh > 0 ? kh : 1) || 1;
+    this.scale = k;
+    root.style.transform = k === 1 ? 'none' : 'scale(' + k + ')';
+  }
+
+</script>
+
+<!-- ═══════════ glide() — défilement animé (verbatim, L1993-2007) ═══════════ -->
+<script type="text/x-dc-extract">
+  glide(sc, axis, target, instant) {
+    const max = axis === 'y' ? sc.scrollHeight - sc.clientHeight : sc.scrollWidth - sc.clientWidth;
+    const to = Math.max(0, Math.min(max, target));
+    sc.style.scrollBehavior = 'auto';
+    const set = v => { if (axis === 'y') sc.scrollTop = v; else sc.scrollLeft = v; };
+    const cur = axis === 'y' ? sc.scrollTop : sc.scrollLeft;
+    clearInterval(sc.glideT);
+    if (instant || this.state.reduce || Math.abs(to - cur) < 2) { set(to); return; }
+    const t0 = Date.now();
+    sc.glideT = setInterval(() => {
+      const p = Math.min(1, (Date.now() - t0) / 220);
+      set(cur + (to - cur) * (1 - Math.pow(1 - p, 3)));
+      if (p >= 1) clearInterval(sc.glideT);
+    }, 16);
+  }
+</script>
+
+<!-- ═══════════ place() — calage de l'élément focalisé (verbatim, L2008-2025) ═══════════ -->
+<script type="text/x-dc-extract">
+  place(el, instant) {
+    let n = el.parentElement; const conts = [];
+    while (n && n !== document.body) { if (n.getAttribute && n.getAttribute('data-scroll')) conts.push(n); n = n.parentElement; }
+    conts.forEach(sc => {
+      const scr = sc.getBoundingClientRect();
+      const k = this.scale || 1;
+      if (sc.getAttribute('data-scroll') === 'x') {
+        const r = el.getBoundingClientRect();
+        const rel = sc.scrollLeft + (r.left - scr.left) / k;
+        this.glide(sc, 'x', rel < 2.7 * (r.width / k) ? 0 : rel - 4, instant);
+      } else {
+        const row = el.closest('[data-row]') || el;
+        const r = row.getBoundingClientRect();
+        const rel = sc.scrollTop + (r.top - scr.top) / k;
+        this.glide(sc, 'y', rel < 0.04 * sc.clientHeight ? 0 : rel - 0.278 * sc.clientHeight, instant);
+      }
+    });
+  }
+</script>
+
+<!-- ═══════════ RENVOIS ═══════════
+  needs/storefront-tv.md → « Contraintes propres à la TV »
+  Prompt - Storefront TV.md → « Défilement »
+  Exemplaire en place : _focus-engine.html (L1945-2146)
+-->

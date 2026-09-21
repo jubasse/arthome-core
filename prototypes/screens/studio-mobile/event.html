@@ -1,0 +1,303 @@
+<!--
+  ÉCRAN        event
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      La fiche d'une date : machine à états, liste de contrôle, série, gestes irréversibles.
+  RÔLES        artist · prod · regie
+  MÈNE VERS    feuilles : confirm, del, dup, poster
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  pgEvent L354-416 · hasNote L555-557 · hasForm L610-648 · hasBlocks L731-791
+               modèle    L3512-3582 · L3644-3772
+  CLÉS DE COPIE
+               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
+               - table STATES en dur (draft|hidden|sched|tech|live|done|replay — vocabulaire parallèle, D2)
+  CONTRAT
+               - needs §Les commandes (verrous et transitions sans retour)
+               - openapi GET /v1/dates/{dateId}/sheet
+               - openapi POST /v1/dates/{dateId}/publication/transitions
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!-- ---- pgEvent (L354-416) ---- -->
+    <sc-if value="{{ pgEvent }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="border: 1px solid #2A2F35; background: #15171A;">
+          <div style="display: flex; gap: 11px; padding: 12px;">
+            <div style="flex: 0 0 auto; width: 72px; height: 96px; background: #1D2126; border: 1px solid #23272C; background-color: #1A1D21; background-image: {{ evImgCss }}; background-size: cover; background-position: center;"></div>
+            <div style="min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 6px;">
+              <span style="{{ evStateStyle }}">{{ evStateLabel }}</span>
+              <div style="font-size: 15.5px; font-weight: 500; line-height: 1.25; text-wrap: pretty;">{{ evTitle }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.55; color: #98A0A8;">{{ evWhen }}</div>
+              <sc-if value="{{ evLock }}" hint-placeholder-val="{{ false }}">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: oklch(0.78 0.13 75);">{{ evLock }}</div>
+              </sc-if>
+            </div>
+          </div>
+          <div style="position: relative; border-top: 1px solid #1D2126;">
+            <div data-strip="1" style="display: flex; gap: 5px; overflow-x: auto; padding: 10px 12px;">
+              <sc-for list="{{ evFlow }}" as="f" hint-placeholder-count="7">
+                <span data-chip="1" style="{{ f.style }}">{{ f.label }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <sc-if value="{{ evShowGauge }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #23272C; background: #15171A;">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 11px 12px; border-bottom: 1px solid #1D2126;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B;">AVANT DE PUBLIER</div>
+              <div style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{ evPctColor }};">{{ evPctLabel }}</div>
+            </div>
+            <div style="height: 3px; background: #1D2126;"><div style="{{ evPctBar }}"></div></div>
+            <sc-for list="{{ evChecks }}" as="k" hint-placeholder-count="7">
+              <div style="display: flex; align-items: flex-start; gap: 9px; padding: 10px 12px; border-top: 1px solid #1D2126;">
+                <span style="{{ k.markStyle }}">{{ k.mark }}</span>
+                <div style="min-width: 0; flex: 1 1 auto;">
+                  <div style="{{ k.labelStyle }}">{{ k.label }}</div>
+                  <div style="padding-top: 2px; font-size: 11px; line-height: 1.45; color: #7C858D; text-wrap: pretty;">{{ k.hint }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ evHasMoves }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.13em; color: #5B636B; padding: 2px 1px;">CE QUE CET ÉTAT AUTORISE</div>
+            <sc-for list="{{ evMoves }}" as="m" hint-placeholder-count="2">
+              <div onClick="{{ m.act }}" style="{{ m.style }}">{{ m.label }}</div>
+            </sc-for>
+            <sc-if value="{{ evBlocked }}" hint-placeholder-val="{{ false }}">
+              <div style="border: 1px solid #23272C; background: #121417; padding: 11px 12px; font-size: 12px; line-height: 1.55; color: oklch(0.78 0.13 75); text-wrap: pretty;">{{ evBlocked }}</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <div style="position: relative;">
+          <div data-strip="1" style="display: flex; gap: 6px; overflow-x: auto; padding: 1px 0;">
+            <sc-for list="{{ evTabs }}" as="t" hint-placeholder-count="4">
+              <span data-chip="1" onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasNote        L555-557
+    hasForm        L610-648
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_event(c) {
+    const s = this.state;
+    const i = Math.min(s.evSel === undefined ? 0 : s.evSel, c.evDefs.length - 1);
+    const r = c.evDefs[i];
+    const st = c.stateAt(i);
+    const vd = c.voidAt(i);
+    const loc = c.localOf(r[1]);
+
+    /* la fiche s'écrit : chaque saisie réécrit la donnée, et tout l'écran suit */
+    const E = (s.evEdit || {})[i] || {};
+    const setE = (k, v) => this.setState(st2 => {
+      const m = Object.assign({}, st2.evEdit);
+      m[i] = Object.assign({}, m[i], { [k]: v });
+      return { evEdit: m };
+    });
+    const seedDesc = r[2] + ' — ' + r[8].split(' · ')[0].toLowerCase() + '. Durée annoncée ' + r[9] + ', entracte compris.';
+    const desc = E.desc !== undefined ? E.desc : (st === 'draft' ? '' : seedDesc);
+    const regime = E.regime || CHAT_FROM_PROP[c.P.chatRegime || 'emojis et phrases préparées'] || 'emoji';
+
+    const EV_TABS = [
+      ['public', 'PUBLIC', ['artist', 'prod']],
+      ['tickets', 'BILLETTERIE', ['artist', 'prod', 'tres']],
+      ['chat', 'TCHAT', ['artist', 'prod', 'mod']],
+      ['tech', 'TECHNIQUE', ['artist', 'prod', 'regie', 'coord']],
+      ['crew', 'ÉQUIPE', ['artist', 'prod', 'coord']],
+      ['replay', 'REDIFFUSION', ['artist', 'prod']]
+    ];
+    const own = EV_TABS.filter(t => c.roles.some(x => t[2].indexOf(x) > -1)).map(t => [t[0], t[1]]);
+    const tabList = own.length >= 3 ? [['all', 'VUE D’ENSEMBLE']].concat(own) : own;
+    const tab = (s.evTab && tabList.some(t => t[0] === s.evTab)) ? s.evTab : (tabList[0] || ['public'])[0];
+    const see = k => tab === 'all' || tab === k;
+
+    const checks = [
+      ['Titre et catégorie', 'identifient la date sur la plateforme', true],
+      ['Affiche', 'visuel 16/9, deux mégaoctets maximum', r[10] !== false],
+      ['Description', 'trois lignes minimum sur la page publique', !!desc.trim()],
+      ['Tarifs', 'au moins un tarif actif', r[6] > 0],
+      ['Jauge', 'nombre de places mises en vente', r[5] > 0],
+      ['Tests techniques passés', 'un flux reçu et stable au moins une fois', r[11] !== false],
+      ['Régime de tchat', 'libre, encadré ou désactivé', true]
+    ];
+    const missing = checks.filter(k => !k[2]);
+    const pct = Math.round((checks.filter(k => k[2]).length / checks.length) * 100);
+
+    const MOVES = {
+      draft:  [['hidden', 'Mettre en réserve'], ['sched', 'Publier']],
+      hidden: [['sched', 'Ouvrir la vente']],
+      sched:  [['tech', 'Lancer les tests techniques']],
+      tech:   [['live', 'Passer à l’antenne'], ['sched', 'Arrêter les tests']],
+      live:   [['done', 'Terminer la diffusion']],
+      done:   [['replay', 'Activer la rediffusion']],
+      replay: []
+    };
+    const moves = (c.canDecide && !vd ? (MOVES[st] || []) : []).map(([to, label]) => {
+      const lock = STATE_LOCKED[st + '>' + to] || '';
+      const blocked = to === 'sched' && missing.length > 0;
+      return {
+        label: (blocked ? label.toUpperCase() + ' — ' + missing.length + ' MANQUE' + (missing.length > 1 ? 'S' : '') : label.toUpperCase()),
+        style: this.btn(blocked ? 'dead' : (lock ? 'primary' : undefined)),
+        act: blocked ? (() => {}) : (lock
+          ? (() => this.openSheet('confirm', { moveTo: to, moveIdx: i, moveLabel: label, moveWhy: lock }))
+          : (() => this.setState(st2 => ({ evOver: Object.assign({}, st2.evOver, { [i]: to }) }))))
+      };
+    });
+
+    const series = c.evDefs.map((x, n) => [x, n]).filter(([x]) => x[2] === r[2]);
+    const applied = s.evApplied || {};
+    const blocks = [];
+
+    const chan = (this.data && (this.data.cited || this.data.channels) || []).filter(x => x.name === c.chan.name)[0];
+      const slug = chan ? chan.artist : 'chaine';
+
+    if (series.length > 1) blocks.push(this.block('SÉRIE · ' + r[2].toUpperCase(), series.length + ' DATES', {
+      rows: this.rows(series.map(([x, n]) => {
+        const st2 = c.stateAt(n);
+        const vd2 = c.voidAt(n);
+        return {
+          label: x[0].replace('.', '') + ' · ' + c.withZone(x[1]) + (n === i ? '  ← cette date' : ''),
+          hint: x[5] ? c.num(x[4]) + ' / ' + c.num(x[5]) + ' places' : 'sans billetterie',
+          pill: vd2 ? vd2[0] : c.T(STATES[st2][0]), pillColor: vd2 ? vd2[1] : STATES[st2][1],
+          cta: n === i ? '' : 'OUVRIR CETTE DATE',
+          act: () => this.setState({ evSel: n, evTab: null })
+        };
+      }))
+    }));
+
+    if (series.length > 1 && c.canDecide) blocks.push(this.block('APPLIQUER À TOUTE LA SÉRIE', '', {
+      intro: 'Les tarifs en sont exclus : une fois publiés, ils se verrouillent date par date.',
+      rows: this.rows([['poster', 'Affiche'], ['desc', 'Description'], ['chat', 'Régime de tchat'], ['store', 'Boutique']].map(([k, label]) => ({
+        label, hint: applied[k] ? 'reporté sur les ' + (series.length - 1) + ' autres dates' : 'cette date uniquement',
+        pill: applied[k] ? 'APPLIQUÉ' : 'CETTE DATE', pillColor: applied[k] ? OK : INK3,
+        cta: applied[k] ? '' : 'APPLIQUER À LA SÉRIE',
+        act: () => this.setState(st2 => ({ evApplied: Object.assign({}, st2.evApplied, { [k]: 1 }) }))
+      })).concat([{ label: 'Tarifs et jauge', hint: 'jamais reportés — chaque date engage ses acheteurs', pill: 'EXCLUS', pillColor: WARN }]))
+    }));
+
+    if (c.canDecide) blocks.push(this.block('AGIR SUR CETTE DATE', '', {
+      rows: this.rows([
+        { label: 'Dupliquer', hint: 'reprend l’affiche, la description, les tarifs, la jauge et le régime de tchat', cta: 'DUPLIQUER', act: () => this.openSheet('dup', { dupIdx: i }) },
+        { label: 'Supprimer', hint: r[4] > 0 ? 'impossible : ' + c.num(r[4]) + ' places vendues engagent la plateforme' : 'aucune place vendue, la suppression est possible', cta: r[4] > 0 ? '' : 'SUPPRIMER', tone: 'danger', act: () => this.openSheet('del', { delIdx: i }) }
+      ])
+    }));
+
+    const whenLocked = ['live', 'done', 'replay'].indexOf(st) > -1;
+    const priceLocked = ['sched', 'tech', 'live', 'done', 'replay'].indexOf(st) > -1;
+    const fields = [];
+    let formLabel = '';
+    if ((tab === 'all' || tab === 'public') && c.canDecide) {
+      formLabel = 'MODIFIER LA PAGE PUBLIQUE';
+      fields.push(this.fld({ type: 'text', label: 'TITRE DU SPECTACLE', value: r[2], set: v => setE('title', v),
+        placeholder: (c.evDefs[0] || [])[2] || '', hint: 'Il sert de clé de série : deux dates portant le même titre forment une série.' }));
+      fields.push(this.fld({ type: 'area', label: 'DESCRIPTION PUBLIQUE', value: desc, set: v => setE('desc', v),
+        placeholder: 'Ce que le public lira sur la page de la date.',
+        hint: desc.trim() ? 'Publiée sur la page de la date.' : 'Requise pour publier.', hintColor: desc.trim() ? '#7C858D' : WARN }));
+      fields.push(this.fld({ type: 'text', label: 'ACCROCHE DE LISTE', value: r[8], set: v => setE('comment', v), mono: true,
+        hint: 'Ce que la liste des dates affiche sous le titre.' }));
+      fields.push(this.fld({ type: 'toggle', label: 'AFFICHE 16/9',
+        badge: r[10] === false ? 'MANQUANTE' : 'EN PLACE', badgeColor: r[10] === false ? WARN : OK,
+        toggleLabel: r[10] === false ? 'DÉPOSER UNE AFFICHE' : 'REMPLACER L’AFFICHE', tone: r[10] === false ? 'primary' : undefined,
+        act: () => (r[10] === false ? setE('poster', true) : this.openSheet('poster')),
+        hint: r[10] === false ? 'Deux mégaoctets maximum. Sans affiche, la publication reste verrouillée.' : 'Visuel en place.' }));
+      fields.push(this.fld({ type: 'text', label: 'JOUR', value: r[0], set: v => setE('day', v), mono: true, locked: whenLocked,
+        badge: whenLocked ? 'FIGÉ' : '', badgeColor: WARN,
+        hint: whenLocked ? 'Une date à l’antenne ou jouée ne se déplace pas : le report passe par la décision d’incident.' : '' }));
+      fields.push(this.fld({ type: 'text', label: 'HEURE DE SALLE (' + c.zAbbr + ')', value: r[1], set: v => setE('time', v), mono: true, locked: whenLocked,
+        hint: c.zSame ? '' : 'Chez vous : ' + (c.localOf(r[1]) || '—') + '.' }));
+    }
+    if (tab === 'tickets' && c.canDecide) {
+      formLabel = 'MODIFIER LA BILLETTERIE';
+      fields.push(this.fld({ type: 'text', label: 'PLEIN TARIF (€)', value: r[6], mono: true, locked: priceLocked,
+        set: v => setE('price', Math.max(0, parseInt(String(v).replace(/\D/g, ''), 10) || 0)),
+        badge: priceLocked ? 'VERROUILLÉ' : '', badgeColor: WARN,
+        hint: priceLocked ? 'Les tarifs se verrouillent à la mise en vente : ils engagent les places déjà achetées.' : 'Le tarif réduit suit à 70 % du plein tarif.' }));
+      fields.push(this.fld({ type: 'text', label: 'JAUGE (PLACES)', value: r[5], mono: true, locked: ['live', 'done', 'replay'].indexOf(st) > -1,
+        set: v => setE('cap', Math.max(r[4], parseInt(String(v).replace(/\D/g, ''), 10) || 0)),
+        hint: 'La jauge s’élargit par paliers et ne descend jamais sous les places déjà vendues (' + c.num(r[4]) + ').' }));
+    }
+    if (tab === 'chat' && (c.canDecide || c.has('mod'))) {
+      formLabel = 'RÉGIME DE TCHAT DE CETTE DATE';
+      fields.push(this.fld({ type: 'pick', label: 'RÉGIME', value: regime, options: CHAT_MODES, set: k => setE('regime', k),
+        hint: 'Il ne vaut que pour cette date, et reste modifiable en direct depuis la régie.' }));
+      fields.push(this.fld({ type: 'toggle', label: 'RÉSERVÉ AUX DÉTENTEURS DE PLACE',
+        badge: E.ticketOnly ? 'ACTIF' : '', badgeColor: OK,
+        toggleLabel: E.ticketOnly ? 'DÉSACTIVER' : 'ACTIVER', act: () => setE('ticketOnly', !E.ticketOnly),
+        hint: 'Les visiteurs sans place lisent le tchat sans y écrire.' }));
+    }
+    if (tab === 'tech' && (c.canDecide || c.has('regie'))) {
+      formLabel = 'RÉGLAGES TECHNIQUES DE LA DATE';
+      fields.push(this.fld({ type: 'pick', label: 'PROFIL D’ENCODAGE', value: E.profile || '1080',
+        options: [['720', '720P · 3,5 MB/S'], ['1080', '1080P · 6 MB/S'], ['1440', '1440P · 10 MB/S']],
+        set: k => setE('profile', k), hint: 'Le profil recommandé se déduit du débit mesuré sur la page Diffusion.' }));
+      fields.push(this.fld({ type: 'toggle', label: 'TESTS TECHNIQUES',
+        badge: r[11] === false ? 'NON PASSÉS' : 'PASSÉS', badgeColor: r[11] === false ? WARN : OK,
+        toggleLabel: r[11] === false ? 'MARQUER LES TESTS COMME PASSÉS' : 'ANNULER CE VERDICT',
+        tone: r[11] === false ? 'primary' : undefined, act: () => setE('tests', r[11] === false),
+        hint: 'Un flux reçu et stable au moins une fois. Sans cela, la publication reste verrouillée.' }));
+    }
+
+    return {
+      form: fields.length ? { label: formLabel, note: 'ENREGISTRÉ À LA SAISIE', fields } : null,
+      pageKicker: 'FICHE · ' + c.chan.name.toUpperCase(),
+      pageTitle: r[0].replace('.', '') + ' · ' + c.withZone(r[1]),
+      evImg: r[13] || '', evImgCss: this.cssUrl(r[13] || ''),
+      evTitle: r[2],
+      evWhen: r[0].replace('.', '') + ' · ' + c.withZone(r[1]) + (loc ? ' (' + loc + ' chez vous)' : '') + ' · ' + r[9],
+      evStateLabel: vd ? vd[0] : c.T(STATES[st][0]),
+      evStateStyle: this.pill(vd ? vd[1] : STATES[st][1]),
+      evLock: st === 'sched' ? 'TARIFS VERROUILLÉS' : (st === 'replay' ? 'REDIFFUSION IRRÉVERSIBLE' : ''),
+      evFlow: STATE_ORDER.map(k => {
+        const at = STATE_ORDER.indexOf(st);
+        const n = STATE_ORDER.indexOf(k);
+        const on = n === at;
+        const done = n < at;
+        return {
+          label: c.T(STATES[k][0]),
+          style: MONO + 'flex: 0 0 auto; min-height: 30px; display: inline-flex; align-items: center; padding: 0 8px; font-size: 9px; letter-spacing: 0.09em; white-space: nowrap; border: 1px solid '
+            + (on ? STATES[k][1] : (done ? '#2A2F35' : '#1D2126')) + '; color: ' + (on ? STATES[k][1] : (done ? '#7C858D' : '#4A535C'))
+            + '; background: ' + (on ? 'color-mix(in oklch, ' + STATES[k][1] + ' 14%, transparent)' : 'transparent') + ';'
+        };
+      }),
+      evShowGauge: st === 'draft' || st === 'hidden',
+      evPctLabel: pct + ' %',
+      evPctColor: pct === 100 ? OK : WARN,
+      evPctBar: 'height: 3px; width: ' + pct + '%; background: ' + (pct === 100 ? OK : WARN) + ';',
+      evChecks: checks.map(([label, hint, ok]) => ({
+        label, hint, mark: ok ? '✓' : '○',
+        markStyle: MONO + 'flex: 0 0 auto; font-size: 12px; color: ' + (ok ? OK : WARN) + ';',
+        labelStyle: 'font-size: 13px; line-height: 1.35; color: ' + (ok ? '#C6CDD4' : '#E6E9EC') + ';'
+      })),
+      evHasMoves: moves.length > 0,
+      evMoves: moves,
+      evBlocked: missing.length && (st === 'draft' || st === 'hidden')
+        ? 'Publication verrouillée : il manque ' + missing.map(m => m[0].toLowerCase()).join(', ') + '.'
+        : '',
+      evTabs: tabList.map(([k, label]) => ({
+        label, pick: () => this.setState({ evTab: k }), style: this.chip(tab === k)
+      })),
+      blocks
+    };
+  }
+
+</script>

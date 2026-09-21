@@ -1,0 +1,238 @@
+<!--
+  Mécanique  : moteur de focus (transverse aux 22 écrans)
+  Source     : Storefront TV.dc.html, L1945-2146
+  Rôle       : un seul élément focalisé à l'instant t, déplacement en croix vers le
+               voisin géométrique le plus proche dans l'axe demandé. Aucune diagonale.
+  Pourquoi   : le dossier de passation le désigne comme « la partie à étudier de près
+               avant d'écrire la version react-native-tvos ».
+
+  Carte des fonctions :
+    R()         racine du document, pour les mesures
+    fids()      les cibles focalisables présentes, dans l'ordre du DOM
+    rectOf(n)   géométrie d'une cible
+    navKey()    clé de la barre latérale, pour la traiter à part
+    firstOf()   première cible hors barre latérale
+    mayFocus()  le focus est-il permis dans l'état courant
+    focusEl()   pose le focus et déclenche le placement (→ _sticky-scroll.html)
+    glide()     défilement animé          ─┐ mécanique de défilement collant,
+    place()     calage de l'élément focalisé ┘ détaillée dans _sticky-scroll.html
+    sync()      resynchronise après un rendu
+    move(dir)   déplacement demandé par une touche (→ _remote-keys.html)
+    pick()      ÉLECTION DE LA CIBLE — c'est ici que vit la règle du voisin le plus proche
+
+  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
+    `Storefront TV.dc.html` reste la source runnable de la galerie.
+-->
+
+<!-- ═══════════ MOTEUR DE FOCUS (verbatim, L1945-2146) ═══════════ -->
+<script type="text/x-dc-extract">
+  // ---------- focus engine ----------
+  R() {
+    if (!this._root || !this._root.isConnected) this._root = document.querySelector('[data-tvroot]');
+    return this._root;
+  }
+  fids() {
+    const r = this.R();
+    if (!r) return [];
+    return Array.prototype.slice.call(r.querySelectorAll('[data-fid]')).filter(n => n.getClientRects().length > 0);
+  }
+  rectOf(n) {
+    const b = n.getBoundingClientRect();
+    if (!n.getAttribute('data-side')) return b;
+    const rail = n.closest('[data-side-rail]');
+    if (!rail) return b;
+    const right = rail.getBoundingClientRect().right;
+    return { left: b.left, top: b.top, bottom: b.bottom, right: Math.min(b.right, right), width: Math.min(b.right, right) - b.left, height: b.height };
+  }
+  navKey() {
+    const p = this.state.page;
+    if (p === 'category') return 'categories';
+    if (p === 'artist') return 'artists';
+    if (p === 'title' || p === 'dateinfo' || p === 'book' || p === 'pay') return 'home';
+    if (p === 'player') return 'home';
+    return p;
+  }
+  firstOf(nodes) { return nodes.filter(n => !n.getAttribute('data-side'))[0] || nodes[0]; }
+  mayFocus() {
+    if (!this.live) return false;
+    const a = document.activeElement;
+    if (!a || a === document.body || a === document.documentElement) return true;
+    const root = this.R();
+    return !!(root && root.contains(a));
+  }
+  focusEl(el, instant) {
+    if (!el) return;
+    if (!this.mayFocus()) { this.fid = el.getAttribute('data-fid'); return; }
+    el.focus({ preventScroll: true });
+    this.fid = el.getAttribute('data-fid');
+    const caps = el.getAttribute('data-long') === 'remove' ? 'remove' : '';
+    if (this.state.focusCaps !== caps) this.setState({ focusCaps: caps });
+    const onSide = !!el.getAttribute('data-side');
+    if (!onSide) this.contentFid = this.fid;
+    if (this.state.railOpen !== onSide) this.setState({ railOpen: onSide });
+    const ff = onSide ? this.fid : null;
+    if (this.state.focusFid !== ff) this.setState({ focusFid: ff });
+    this.place(el, instant);
+  }
+  glide(sc, axis, target, instant) {
+    const max = axis === 'y' ? sc.scrollHeight - sc.clientHeight : sc.scrollWidth - sc.clientWidth;
+    const to = Math.max(0, Math.min(max, target));
+    sc.style.scrollBehavior = 'auto';
+    const set = v => { if (axis === 'y') sc.scrollTop = v; else sc.scrollLeft = v; };
+    const cur = axis === 'y' ? sc.scrollTop : sc.scrollLeft;
+    clearInterval(sc.glideT);
+    if (instant || this.state.reduce || Math.abs(to - cur) < 2) { set(to); return; }
+    const t0 = Date.now();
+    sc.glideT = setInterval(() => {
+      const p = Math.min(1, (Date.now() - t0) / 220);
+      set(cur + (to - cur) * (1 - Math.pow(1 - p, 3)));
+      if (p >= 1) clearInterval(sc.glideT);
+    }, 16);
+  }
+  place(el, instant) {
+    let n = el.parentElement; const conts = [];
+    while (n && n !== document.body) { if (n.getAttribute && n.getAttribute('data-scroll')) conts.push(n); n = n.parentElement; }
+    conts.forEach(sc => {
+      const scr = sc.getBoundingClientRect();
+      const k = this.scale || 1;
+      if (sc.getAttribute('data-scroll') === 'x') {
+        const r = el.getBoundingClientRect();
+        const rel = sc.scrollLeft + (r.left - scr.left) / k;
+        this.glide(sc, 'x', rel < 2.7 * (r.width / k) ? 0 : rel - 4, instant);
+      } else {
+        const row = el.closest('[data-row]') || el;
+        const r = row.getBoundingClientRect();
+        const rel = sc.scrollTop + (r.top - scr.top) / k;
+        this.glide(sc, 'y', rel < 0.04 * sc.clientHeight ? 0 : rel - 0.278 * sc.clientHeight, instant);
+      }
+    });
+  }
+  sync(navigated) {
+    const root = this.R();
+    if (!root) return;
+    root.style.setProperty('--fs', String(this.state.reduce ? 1 : (this.props.focusScale || 1.08)));
+    const nodes = this.fids();
+    clearTimeout(this.retryT);
+    if (navigated) {
+      const want = this.restore || this.mem[this.pageKey()];
+      let el = want ? nodes.filter(n => n.getAttribute('data-fid') === want)[0] : null;
+      if (!el) el = nodes.filter(n => !n.getAttribute('data-side'))[0];
+      if (!el) {
+        this.tries = (this.tries || 0) + 1;
+        if (this.tries < 14) { this.retryT = setTimeout(() => this.sync(true), 70); return; }
+        el = nodes[0];
+      }
+      this.tries = 0; this.nav = false; this.restore = null;
+      if (el) this.focusEl(el, true);
+      return;
+    }
+    if (!nodes.length) return;
+    const a = document.activeElement;
+    if (!a || !root.contains(a) || !a.getAttribute || !a.getAttribute('data-fid')) {
+      const byFid = this.fid ? nodes.filter(n => n.getAttribute('data-fid') === this.fid)[0] : null;
+      const byContent = this.contentFid ? nodes.filter(n => n.getAttribute('data-fid') === this.contentFid)[0] : null;
+      this.focusEl(byFid || byContent || this.firstOf(nodes), true);
+    }
+  }
+  move(dir, instant) {
+    if (this.state.hintFull) { clearTimeout(this.hintT); this.setState({ hintFull: false }); }
+    if (this.state.novice) { clearTimeout(this.noviceT); this.setState({ novice: false }); }
+    const cur = document.activeElement;
+    const nodes = this.fids();
+    if (!nodes.length) return;
+    if (!cur || !cur.getAttribute || !cur.getAttribute('data-fid') || nodes.indexOf(cur) < 0) { this.focusEl(this.firstOf(nodes), true); return; }
+    const side = nodes.filter(n => n.getAttribute('data-side'));
+    const content = nodes.filter(n => !n.getAttribute('data-side'));
+    if (cur.getAttribute('data-side')) {
+      if (dir === 'left') return;
+      if (dir === 'right') {
+        const back = this.contentFid ? content.filter(n => n.getAttribute('data-fid') === this.contentFid)[0] : null;
+        this.focusEl(back || content[0], instant);
+        return;
+      }
+      this.pick(cur, side, dir, instant);
+      return;
+    }
+    if (this.pick(cur, content, dir, instant)) return;
+    if (dir === 'left' && side.length) {
+      const cur2 = side.filter(n => n.getAttribute('data-fid') === 'nav:' + this.navKey())[0];
+      if (cur2) { this.focusEl(cur2, instant); return; }
+      const ay = cur.getBoundingClientRect().top;
+      let near = side[0], nb = 1e9;
+      side.forEach(n => { const d = Math.abs(n.getBoundingClientRect().top - ay); if (d < nb) { nb = d; near = n; } });
+      this.focusEl(near, instant);
+    }
+  }
+  pick(cur, pool, dir, instant) {
+    const a = this.rectOf(cur);
+    if (dir === 'down' || dir === 'up') {
+      const cx = a.left + a.width / 2;
+      const cands = [];
+      pool.forEach(n => {
+        if (n === cur) return;
+        const b = this.rectOf(n);
+        const gap = dir === 'down' ? b.top - a.bottom : a.top - b.bottom;
+        if (gap < -6) return;
+        cands.push({ n: n, b: b, gap: Math.max(gap, 0) });
+      });
+      if (!cands.length) return false;
+      const near = Math.min.apply(null, cands.map(c => c.gap));
+      const band = cands.filter(c => c.gap <= near + Math.max(40, a.height * 0.6));
+      let best = band[0], bs = 1e12;
+      band.forEach(c => {
+        const bx = c.b.left + c.b.width / 2;
+        const score = Math.abs(bx - cx) + c.gap * 0.25;
+        if (score < bs) { bs = score; best = c; }
+      });
+      this.focusEl(best.n, instant);
+      return true;
+    }
+    const rail = cur.closest ? cur.closest('[data-scroll="x"]') : null;
+    const sameRow = (n, b) => {
+      if (rail) return !!(n.closest && n.closest('[data-scroll="x"]') === rail);
+      if (n.closest && n.closest('[data-scroll="x"]')) return false;
+      const ov = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+      return ov >= Math.min(a.height, b.height) * 0.5;
+    };
+    let best = null, bs = 1e12;
+    pool.forEach(n => {
+      if (n === cur) return;
+      const b = this.rectOf(n);
+      if ((dir === 'left' || dir === 'right') && !sameRow(n, b)) return;
+      const dx = (b.left + b.width / 2) - (a.left + a.width / 2);
+      const dy = (b.top + b.height / 2) - (a.top + a.height / 2);
+      let prim = 0, cross = 0, ov = 0;
+      if (dir === 'right') { if (b.left < a.right - 6) return; prim = b.left - a.right; ov = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top); cross = Math.abs(dy); }
+      else if (dir === 'left') { if (b.right > a.left + 6) return; prim = a.left - b.right; ov = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top); cross = Math.abs(dy); }
+      else if (dir === 'down') { if (b.top < a.bottom - 6) return; prim = b.top - a.bottom; ov = Math.min(a.right, b.right) - Math.max(a.left, b.left); cross = Math.abs(dx); }
+      else { if (b.bottom > a.top + 6) return; prim = a.top - b.bottom; ov = Math.min(a.right, b.right) - Math.max(a.left, b.left); cross = Math.abs(dx); }
+      const score = Math.max(prim, 0) + cross * 0.55 + (ov > 0 ? 0 : 5000);
+      if (score < bs) { bs = score; best = n; }
+    });
+    if (!best && dir === 'left' && this.state.page === 'player') {
+      const row = pool.filter(n => { const b2 = this.rectOf(n); return n === cur || sameRow(n, b2); });
+      if (row.length > 1) {
+        row.sort((x, y) => this.rectOf(x).left - this.rectOf(y).left);
+        best = row[row.length - 1];
+      }
+    }
+    if (!best && dir === 'right') {
+      const row = pool.filter(n => { const b = this.rectOf(n); return n === cur || sameRow(n, b); });
+      if (row.length > 1) {
+        row.sort((x, y) => this.rectOf(x).left - this.rectOf(y).left);
+        best = row[0];
+      }
+    }
+    if (!best) return false;
+    this.focusEl(best, instant);
+    return true;
+  }
+
+</script>
+
+<!-- ═══════════ RENVOIS ═══════════
+  needs/storefront-tv.md → « Contraintes propres à la TV » §2 (cinq touches)
+  Prompt - Storefront TV.md → « Le cœur du sujet : la télécommande »
+  Consommé par : les 22 écrans, sans exception.
+  Voir aussi : _sticky-scroll.html (glide/place), _focus-memory.html, _remote-keys.html
+-->

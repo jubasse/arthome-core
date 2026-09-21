@@ -1,0 +1,122 @@
+<!--
+  ÉCRAN        stream
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Préparation de l'antenne : ingest, clé de flux, liste de pré-vol, historique des tests.
+  RÔLES        artist · prod · regie
+  MÈNE VERS    aucun (écran terminal)
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBand L475-485 · hasActions L569-575 · hasBlocks L731-791
+               modèle    L3353-3436
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - needs §Les commandes (la clé de flux)
+               - needs §Incohérences 7 (deux débits portant le même nom)
+               - openapi POST /v1/dates/{dateId}/stream-key/reveal
+               - openapi POST /v1/dates/{dateId}/stream-key/rotate
+               - openapi POST /v1/dates/{dateId}/run/technical-check
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBand        L475-485
+    hasActions     L569-575
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_stream(c) {
+    const s = this.state;
+    /* À l'antenne, l'ingest et la liste de pré-vol sont des faits lus dans la
+       régie et la publication ; les bascules locales ne servent qu'à préparer
+       une date qui ne diffuse pas encore. */
+    const A = this.A;
+    const liveDate = c.M.dates.filter(d => A.isOnAir(d))[0] || null;
+    const health = liveDate ? A.healthOf(liveDate) : null;
+    const last = health && health.series.length ? health.series[health.series.length - 1] : null;
+    const check = liveDate ? (A.publicationOf(liveDate) || {}).checklist || {} : {};
+    const airUp = last ? Math.round(last.bitrateKbps / 100) / 10 : null;
+    const up = airUp !== null ? airUp : (s.upTest === undefined ? null : s.upTest);
+    const profileFor = mb => mb === null ? '1080p · 6 Mb/s' : (mb >= 24 ? '2160p · 20 Mb/s' : (mb >= 12 ? '1440p · 10 Mb/s' : (mb >= 7 ? '1080p · 6 Mb/s' : '720p · 3,5 Mb/s')));
+    const pf = [
+      ['pfStream', 'Flux reçu sur le serveur', 'Lancez l’encodeur et attendez la pastille verte de l’ingest.'],
+      ['pfRate', 'Débit montant mesuré', 'Le profil recommandé se déduit de la mesure.'],
+      ['pfAudio', 'Audio présent sur les deux voies', 'Un direct muet est la panne la plus fréquente.'],
+      ['pfPage', 'Affiche et description publiées', 'Sans quoi la date s’affiche mal sur la plateforme.'],
+      ['pfMod', 'Modérateur affecté', 'Au moins une personne sur le poste, ou tchat désactivé.'],
+      ['pfStore', 'Boutique vérifiée', 'Stock et livrables numériques prêts.']
+    ];
+    const done = k => k === 'pfRate' ? up !== null
+      : k === 'pfPage' ? true
+      : k === 'pfMod' ? (check.moderationStaffed || !!s[k])
+      : k === 'pfStore' ? (c.M.merchItems.length > 0 || !!s[k])
+      : (!!liveDate || !!s[k]);
+    const left = pf.filter(([k]) => !done(k)).length;
+    const revealed = !!s.keyShown;
+    const rotated = !!s.keyRotated;
+    return {
+      pageTitle: left ? left + (left > 1 ? ' points à valider' : ' point à valider') + ' avant l’antenne' : 'Prêt pour l’antenne',
+      band: this.stats([
+        ['ÉTAT DU FLUX', (liveDate || s.pfStream) ? 'REÇU' : 'ATTENDU',
+          liveDate ? 'à l’antenne · ' + A.title(A.show(liveDate.show)) : (s.pfStream ? 'ingest eu-ouest' : 'aucun paquet depuis 12 min'),
+          (liveDate || s.pfStream) ? OK : WARN],
+        ['DÉBIT MONTANT', up === null ? '—' : String(up).replace('.', ',') + ' Mb/s',
+          up === null ? 'jamais mesuré' : (liveDate ? 'mesuré sur le direct' : 'mesure de l’instant'),
+          up === null ? INK3 : (up >= 7 ? OK : WARN)],
+        ['PROFIL RECOMMANDÉ', profileFor(up).split(' · ')[0], profileFor(up).split(' · ')[1] || '', INFO],
+        ['PRÉ-VOL', (pf.length - left) + ' / ' + pf.length, left ? 'incomplet' : 'tout est prêt', left ? WARN : OK]
+      ]),
+      actions: [
+        this.act(up === null ? 'MESURER LE DÉBIT MONTANT' : 'REMESURER LE DÉBIT', () => this.setState({ upTest: [4.2, 8.9, 13.4, 26.1][Math.floor(Math.random() * 4)] }), up === null ? 'primary' : undefined),
+        liveDate ? null : this.act(s.pfStream ? 'FLUX REÇU · COUPER LA RÉCEPTION' : 'SIMULER LA RÉCEPTION DU FLUX', () => this.setState({ pfStream: !s.pfStream }))
+      ],
+      blocks: [
+        this.block('SERVEUR D’INGEST', 'EU-OUEST · ROUBAIX', {
+          rows: this.rows([
+            { label: 'Serveur', hint: 'rtmp://ingest-eu-west.arthome.fr/live', cta: 'COPIER L’ADRESSE' },
+            { label: 'Clé de flux', hint: revealed ? (rotated ? 'ath_live_9f2c-41ba-7de0-NOUVELLE' : 'ath_live_4c81-22ef-9ab3-0d17') : 'masquée · elle donne la main sur votre antenne',
+              pill: revealed ? 'VISIBLE' : 'MASQUÉE', pillColor: revealed ? WARN : INK3,
+              cta: revealed ? 'MASQUER' : 'RÉVÉLER', act: () => this.setState({ keyShown: !revealed }) },
+            { label: 'Renouveler la clé', hint: rotated ? 'renouvelée à l’instant · l’ancienne ne diffuse plus' : 'le geste à faire après chaque prestataire : l’ancienne clé cesse aussitôt de diffuser',
+              pill: rotated ? 'RENOUVELÉE' : '', pillColor: OK,
+              cta: rotated ? '' : 'RENOUVELER MAINTENANT', tone: 'danger', act: () => this.setState({ keyRotated: true, keyShown: true }) }
+          ])
+        }),
+        this.block('LISTE DE PRÉ-VOL', left ? left + ' RESTANT' + (left > 1 ? 'S' : '') : 'COMPLÈTE', {
+          rows: this.rows(pf.map(([k, label, hint]) => ({
+            label, hint, pill: done(k) ? 'FAIT' : 'À FAIRE', pillColor: done(k) ? OK : WARN,
+            cta: done(k) || k === 'pfPage' ? '' : 'MARQUER FAIT',
+            act: () => { if (k === 'pfRate') this.setState({ upTest: 8.9 }); else this.setState({ [k]: true }); }
+          })))
+        }),
+        this.block('HISTORIQUE DES TESTS TECHNIQUES', '', {
+          rows: this.rows(c.M.dates.slice(0, 4).map(d => {
+            const h = A.healthOf(d), l = h && h.series.length ? h.series[h.series.length - 1] : null;
+            const crew = (A.crewOf(d).filter(x => x.role === 'video' || x.role === 'director')[0] || {}).name || '';
+            const passed = (A.publicationOf(d) || { checklist: {} }).checklist.technicalCheck;
+            return {
+              label: A.title(A.show(d.show)) + ' · ' + A.dayLabel(d.startOffsetMin),
+              hint: l
+                ? (l.bitrateKbps / 1000).toFixed(1).replace('.', ',') + ' Mb/s, ' + l.droppedPct.toFixed(2).replace('.', ',') + ' % perdues' + (crew ? ' · ' + crew : '')
+                : (passed ? 'contrôle passé' + (crew ? ' · ' + crew : '') : 'jamais testée — la publication reste verrouillée'),
+              pill: l ? (l.droppedPct > 1 ? 'À SURVEILLER' : 'CONCLUANT') : (passed ? 'CONCLUANT' : 'À VENIR'),
+              pillColor: l ? (l.droppedPct > 1 ? WARN : OK) : (passed ? OK : WARN),
+              value: A.dayLabel(d.startOffsetMin).toUpperCase()
+            };
+          }))
+        })
+      ]
+    };
+  }
+
+</script>

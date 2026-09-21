@@ -1,0 +1,113 @@
+<!--
+  ÉCRAN      Compte — Profil
+  ROUTE      page === 'account', accTab === 'profile'
+  AFFICHE    L'identité affichée : nom, pseudo, courriel, téléphone, ville.
+  MÈNE VERS  account
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2697-2742
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — updateProfile
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : availW, s, t
+  À LIRE     dépendances non recopiées ici : profileDefs
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <sc-if value="{{ accProfile }}" hint-placeholder-val="{{ false }}">
+      <div style="animation: fadeIn .3s ease both; max-width: 680px;">
+        <h2 style="{{ accH2 }} margin: 0 0 18px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.accProfile }}</h2>
+        <div style="border: 1px solid #1F1C19; background: #100F0D; padding: 22px; display: flex; flex-direction: column; gap: 18px;">
+          <sc-for list="{{ profileFields }}" as="fl" hint-placeholder-count="5">
+            <div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73; padding-bottom: 8px;">{{ fl.label }}</div>
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <input value="{{ fl.value }}" onChange="{{ fl.onChange }}" style="flex: 1; min-width: 0; height: 40px; background: #141210; border: 1px solid #1F1C19; color: #EDE7DC; font-family: Archivo, sans-serif; font-size: 13.5px; padding: 0 13px; outline: none;" style-focus="border-color:#4A423A" />
+                <span style="flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ fl.hintColor }};">{{ fl.hint }}</span>
+              </div>
+            </div>
+          </sc-for>
+          <div style="display: flex; gap: 10px; border-top: 1px solid #1F1C19; padding-top: 18px;">
+            <span onClick="{{ saveProfile }}" style="cursor: pointer; padding: 12px 20px; white-space: nowrap; border: 1px solid transparent; background: #EDE7DC; color: #0B0A09; font-size: 13.5px; font-weight: 600; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="background:oklch(0.75 0.15 42)">{{ saveLabel }}</span>
+            <span style="cursor: pointer; padding: 12px 20px; white-space: nowrap; border: 1px solid #332E28; font-size: 13.5px; color: #C9C0B2; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="border-color:#4A423A">{{ t.cancel }}</span>
+          </div>
+        </div>
+        <div style="margin-top: 16px; border: 1px solid rgba(214,178,102,0.28); background: rgba(214,178,102,0.04); padding: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+          <div style="min-width: 0; flex: 1 1 300px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: oklch(0.83 0.1 84);">{{ t.studioTag }}</div>
+            <div style="padding-top: 8px; font-family: 'Instrument Serif', serif; font-size: 23px; line-height: 1.15;">{{ t.becomeHost }}</div>
+            <div style="padding-top: 8px; font-size: 13px; line-height: 1.55; color: #9B948A; text-wrap: pretty;">{{ t.studioBlurb }}</div>
+          </div>
+          <span onClick="{{ goStudio }}" style="flex: 0 0 auto; cursor: pointer; padding: 12px 20px; white-space: nowrap; background: #EDE7DC; color: #0B0A09; font-size: 13px; font-weight: 600; border: 1px solid transparent; transition: background .24s ease;" style-hover="background:oklch(0.94 0.03 80)">{{ t.studioCta }}</span>
+        </div>
+
+        <div style="margin-top: 16px; border: 1px solid #1F1C19; background: #0F0E0C; padding: 18px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+          <div style="min-width: 0; flex: 1 1 260px;">
+            <div style="font-size: 13.5px;">{{ t.amHelp }}</div>
+            <div style="padding-top: 6px; font-size: 13px; line-height: 1.5; color: #857E73; text-wrap: pretty;">{{ t.helpBlurb }}</div>
+          </div>
+          <span onClick="{{ helpFromMenu }}" style="flex: 0 0 auto; cursor: pointer; padding: 11px 18px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">{{ t.helpCta }}</span>
+        </div>
+
+        <div style="margin-top: 16px; border: 1px solid #241C1A; background: #100E0D; padding: 18px;">
+          <div style="font-size: 13.5px;">{{ t.dangerTitle }}</div>
+          <div style="padding-top: 6px; font-size: 12.5px; color: #9B948A; max-width: 460px; text-wrap: pretty;">{{ t.dangerBlurb }}</div>
+          <div style="padding-top: 14px; display: flex; gap: 10px;">
+            <span style="cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="border-color:#4A423A">{{ t.exportData }}</span>
+            <span style="cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid oklch(0.42 0.11 27); font-size: 12.5px; color: oklch(0.72 0.16 27); transition: background .24s ease, border-color .24s ease, color .24s ease, opacity .24s ease;" style-hover="background:oklch(0.3 0.08 27)">{{ t.deleteAccount }}</span>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* accStack  —  lignes 5747-5747 */
+    const accStack = availW < 760;
+/* profileFields  —  lignes 5837-5846 */
+    const profileFields = profileDefs.map(([key, label, hint]) => ({
+      label, hint,
+      value: s.profile[key],
+      hintColor: hint.indexOf('✓') > -1 ? 'oklch(0.7 0.13 150)' : '#6B6459',
+      onChange: e => {
+        const v = e.target.value;
+        this.setState(st => ({ profile: Object.assign({}, st.profile, { [key]: v }) }));
+      }
+    }));
+
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      goStudio: () => this.setState({ studioOpen: true }),
+      accH2: accStack ? 'display: none;' : '',
+      helpFromMenu: () => this.setState({ accMenuOpen: false, page: 'help', pick: null }),
+      accProfile: s.accTab === 'profile', accPrefs: s.accTab === 'prefs',
+      profileFields: profileFields,
+      saveProfile: () => { this.setState({ profileSaved: true }); setTimeout(() => this.setState({ profileSaved: false }), 2000); },
+      saveLabel: s.profileSaved ? t.saved : t.save,
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.accProfile  t.amHelp  t.becomeHost  t.cancel  t.dangerBlurb  t.dangerTitle  
+    t.deleteAccount  t.exportData  t.helpBlurb  t.helpCta  t.save  t.saved  t.studioBlurb  
+    t.studioCta  t.studioTag  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    accTab  profile  profileSaved  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

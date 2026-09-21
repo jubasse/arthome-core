@@ -1,0 +1,116 @@
+<!--
+  ÉCRAN        moderation / queue
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      La file des signalements : prise en charge, verdict, préséance entre modérateurs.
+  RÔLES        mod
+  MÈNE VERS    aucun (écran terminal)
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBand L475-485 · hasTabs L487-495 · hasNote L555-557 · hasChat L577-608
+               modèle    L2304-2334 · L2355-2401
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - needs §Confrontation C3 (le bail et la décision partagent un compteur)
+               - openapi POST /v1/moderation/items/{itemId}/claim
+               - openapi POST /v1/moderation/items/{itemId}/verdict
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBand        L475-485
+    hasTabs        L487-495
+    hasNote        L555-557
+    hasChat        L577-608
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_moderation(c) {
+    const s = this.state;
+    const ctx = MOD_CTX[c.chan.name] || { show: '', viewers: 0, rate: 0, queue: [], sanctions: [] };
+    const peer = (ROSTER[c.chan.name] || []).filter(m => m[3] === 'mod' && m[0] !== c.me.name)[0];
+    const peerName = peer ? peer[0] : 'un confrère';
+    const flood = c.P.autoMod !== false && ctx.rate > 60;
+    const done = s.modDone || {};
+    const taken = s.modTaken || {};
+    const left = ctx.queue.filter((q, i) => !done[i] && q[4] !== 'decided').length;
+    const TABS = [['live', 'TCHAT EN DIRECT'], ['queue', 'À VALIDER', String(left), left ? WARN : '#5B636B'], ['filter', 'FILTRE ET RÉGIME'], ['sanct', 'SANCTIONS']];
+    const tab = TABS.some(t => t[0] === s.modTab) ? s.modTab : (flood ? 'queue' : 'live');
+
+    const regime = s.chatMode || CHAT_FROM_PROP[c.P.chatRegime || 'emojis et phrases préparées'] || 'emoji';
+    const HINTS = { free: 'tout le monde écrit, le filtre travaille seul', emoji: 'le compromis des grandes salles', read: 'le public voit sans écrire', off: 'aucun tchat, aucune file' };
+    const REGIMES = CHAT_MODES.map(([k, label]) => [k, label, HINTS[k]]);
+    const sev = s.modSev || 'std';
+    const words = s.banWords || ['idiot', 'nul', 'arnaque', 'remboursez', 'spoiler', 'triche', 'honte', 'scandale'];
+    const sanct = s.modSanct || {};
+    const q = (s.modQ || '').trim().toLowerCase();
+
+    const out = {
+      pageTitle: ctx.viewers ? ctx.show + ' · ' + c.num(ctx.viewers) + ' spectateurs' : 'Aucun direct en cours',
+      pageTabs: this.tabStrip(TABS, tab, 'modTab'),
+      band: this.stats([
+        ['DÉBIT DU TCHAT', ctx.rate ? ctx.rate + ' MSG/MIN' : '—', flood ? 'au-delà du seuil de lecture' : 'lisible message par message', flood ? WARN : OK],
+        ['EN FILE', String(left), left ? 'à valider' : 'rien n’attend', left ? WARN : OK],
+        ['RÉGIME', CHAT_SHORT[regime], 'modifiable en direct', INFO],
+        ['SANCTIONS ACTIVES', String(ctx.sanctions.length + Object.keys(sanct).length), 'muets et bannis']
+      ])
+    };
+
+
+    if (tab === 'queue') {
+      const ico = (glyph, title, act, color) => ({
+        glyph, title, act,
+        style: MONO + 'min-width: 44px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; border: 1px solid '
+          + (color || '#2A2F35') + '; color: ' + (color || '#C6CDD4') + '; background: ' + (color ? 'color-mix(in oklch, ' + color + ' 10%, transparent)' : '#191C20') + ';'
+      });
+      const rule = (i, user, verdict) => () => this.setState(st => ({
+        modDone: Object.assign({}, st.modDone, { [i]: verdict }),
+        modSanct: verdict === 'BANNI' ? Object.assign({}, st.modSanct, { [user]: 'BANNI' })
+          : (verdict === 'RÉDUIT AU SILENCE' ? Object.assign({}, st.modSanct, { [user]: 'MUET 10 MIN' }) : st.modSanct)
+      }));
+      return Object.assign(out, {
+        note: ctx.queue.length ? 'Prendre en charge n’est pas trancher : tant que le confrère n’a pas rendu de verdict, votre sanction s’applique.' : '',
+        chatLabel: 'FILE À VALIDER · ' + (left ? left + ' EN ATTENTE' : 'VIDE'),
+        chatRate: peerName + ' EST EN LIGNE', chatRateColor: MUTE,
+        chatRows: ctx.queue.map(([user, text, why, time, kind], i) => {
+          const mine = taken[i] === 'me';
+          const myVerdict = done[i];
+          const peerRuled = kind === 'decided';
+          const closed = !!myVerdict || peerRuled;
+          const acts = closed ? [] : [
+            ico('✓', 'Publier', rule(i, user, 'PUBLIÉ'), OK),
+            ico('✕', 'Supprimer', rule(i, user, 'SUPPRIMÉ'), LIVE),
+            ico('⊘', 'Réduire au silence', rule(i, user, 'RÉDUIT AU SILENCE'), WARN),
+            ico('⛔', 'Bannir', rule(i, user, 'BANNI'), LIVE),
+            Object.assign(ico(mine ? 'RELÂCHER' : 'PRENDRE EN CHARGE', 'Prise en charge', () => this.setState(st => ({
+              modTaken: Object.assign({}, st.modTaken, { [i]: mine ? null : 'me' })
+            })), mine ? OK : undefined), { style: MONO + 'min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; padding: 0 12px; font-size: 10px; letter-spacing: 0.08em; cursor: pointer; border: 1px solid ' + (mine ? OK : '#2A2F35') + '; color: ' + (mine ? OK : '#C6CDD4') + '; background: #191C20;' })
+          ];
+          return {
+            style: 'padding: 11px 12px; border-bottom: 1px solid #191C20; background: ' + (closed ? '#111316' : (mine ? 'color-mix(in oklch, ' + OK + ' 5%, transparent)' : 'transparent')) + ';',
+            user, userStyle: MONO + 'font-size: 11px; color: ' + INK2 + ';',
+            time,
+            flag: peerRuled ? '' : (mine ? 'VOUS EXAMINEZ' : (kind === 'peer' ? peerName.toUpperCase() + ' EXAMINE' : why)),
+            flagStyle: this.pill(mine ? OK : (kind === 'peer' ? MUTE : WARN)),
+            text, textColor: closed ? '#7C858D' : '#E6E9EC',
+            hasActs: acts.length > 0, acts,
+            verdict: myVerdict
+              ? 'VOTRE VERDICT · ' + myVerdict
+              : (peerRuled ? peerName.toUpperCase() + ' A TRANCHÉ : SUPPRIMÉ — LA LIGNE EST CLOSE SUR SON VERDICT' : ''),
+            verdictStyle: MONO + 'margin-top: 9px; padding: 8px 9px; font-size: 9px; letter-spacing: 0.1em; line-height: 1.6; border: 1px solid '
+              + (myVerdict ? OK : LIVE) + '; color: ' + (myVerdict ? OK : LIVE) + '; background: color-mix(in oklch, ' + (myVerdict ? OK : LIVE) + ' 10%, transparent);'
+          };
+        })
+      });
+    }
+
+</script>

@@ -1,0 +1,180 @@
+<!--
+  ÉCRAN        stats
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Audience et séries, en graphiques ou en liste détaillée.
+  RÔLES        artist · prod · tres
+  MÈNE VERS    aucun (écran terminal)
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBand L475-485 · hasTabs L487-495 · hasFilters L497-505 · hasBars L688-706 · hasDonut L708-729 · hasBlocks L731-791
+               modèle    L3212-3352
+  CLÉS DE COPIE
+               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
+               - table STATES en dur (draft|hidden|sched|tech|live|done|replay — vocabulaire parallèle, D2)
+  CONTRAT
+               - needs §Confrontation C9 (stats est dans navigation et n'a aucun point d'entrée)
+               - openapi — AUCUN point d'entrée (seul stats_csv existe en export)
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBand        L475-485
+    hasTabs        L487-495
+    hasFilters     L497-505
+    hasBars        L688-706
+    hasDonut       L708-729
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_stats(c) {
+    const s = this.state;
+    const tab = s.stTab === 'series' ? 'series' : 'audience';
+    const view = s.stView === 'table' ? 'table' : 'chart';
+    const viewStrip = this.tabStrip([['chart', 'GRAPHIQUES'], ['table', 'LISTE DÉTAILLÉE']], view, 'stView');
+    /* le remplissage se lit dans le catalogue, pas dans une table parallèle */
+    const AUD = c.evDefs.map((r, i) => [r, i]).filter(([r]) => r[4] > 0 && r[5] > 0).map(([r, i]) => ({
+      label: r[0].replace('.', '').split(' ').slice(1).join(' ').toUpperCase(),
+      value: Math.round((r[4] / r[5]) * 100), title: r[2], live: c.stateAt(i) === 'live'
+    }));
+    /* La provenance se répartit sur l'audience réelle de la chaîne, pas sur un
+       total parallèle : le centre du disque doit dire le même nombre que le
+       bandeau au-dessus. */
+    const GEO = (() => {
+      const total = c.M.viewers;
+      const parts = [
+        ['France', 0.7, INFO], ['Belgique et Pays-Bas', 0.15, OK],
+        ['Canada', 0.08, MUTE], ['Reste du monde', 0.07, '#4A535C']
+      ];
+      let placed = 0;
+      return parts.map(([label, share, color], i) => {
+        const value = i === parts.length - 1 ? total - placed : Math.round(total * share);
+        placed += value;
+        return { label, value, color, pct: total ? Math.round((value / total) * 100) : 0 };
+      });
+    })();
+    if (tab === 'audience') {
+      return {
+        pageTitle: 'Qui regarde, et combien de temps',
+        pageTabs: this.tabStrip([['audience', 'AUDIENCE'], ['series', 'COMPARER LES SÉRIES']], tab, 'stTab'),
+        filters: viewStrip,
+        barsLabel: 'REMPLISSAGE PAR DATE',
+        barsNote: 'JAUGE ATTEINTE',
+        bars: view === 'chart' ? this.barsOf(AUD.map(a => ({
+          label: a.label, value: a.value, display: a.value + ' %',
+          color: a.live ? LIVE : (a.value >= 90 ? WARN : OK)
+        }))) : [],
+        donut: view === 'chart' ? Object.assign(this.donutOf(GEO), {
+          label: 'PROVENANCE DES SPECTATEURS',
+          value: c.num(GEO.reduce((a, g) => a + g.value, 0)),
+          caption: 'SPECTATEURS'
+        }) : null,
+        band: this.stats([
+          ['SPECTATEURS UNIQUES', c.num(c.M.viewers), 'sur la période'],
+          ['REMPLISSAGE MOYEN', (c.M.sold + c.M.available ? Math.round((c.M.sold / (c.M.sold + c.M.available)) * 100) : 0) + ' %', 'de la jauge'],
+          ['DATES OUVERTES', String(c.M.dates.length), 'au catalogue'],
+          [c.canRevenue ? 'RECETTE NETTE' : 'PLACES VENDUES', c.canRevenue ? c.eur(c.M.net) : c.num(c.M.sold), c.canRevenue ? 'commission déduite' : 'toutes dates', c.canRevenue ? OK : '#E6E9EC']
+        ]),
+        blocks: view === 'chart' ? [] : [
+          this.block('AUDIENCE PAR DATE', '', {
+            rows: this.rows(c.evDefs.slice(0, 5).map(r => {
+              const pct = r[5] ? Math.round((r[4] / r[5]) * 100) : 0;
+              return {
+                label: r[2] + ' · ' + r[0],
+                hint: r[4] ? c.num(r[4]) + ' spectateurs' : 'pas encore ouverte',
+                value: pct ? pct + ' %' : '—', pct, barColor: pct >= 100 ? WARN : OK
+              };
+            }))
+          }),
+          this.block('PROVENANCE DES SPECTATEURS', '', {
+            rows: this.rows(GEO.map(g => ({
+              label: g.label, hint: c.num(g.value) + ' spectateurs',
+              value: g.pct + ' %', pct: g.pct, barColor: g.color
+            })))
+          })
+        ]
+      };
+    }
+
+    /* comparaison de séries : la première date qui a vendu sert de référence */
+    const titles = {};
+    c.evDefs.forEach((r, i) => { titles[r[2]] = (titles[r[2]] || []).concat([[r, i]]); });
+    const series = Object.keys(titles).filter(k => titles[k].length > 1);
+    const pickTitle = series.indexOf(s.stSerie) > -1 ? s.stSerie : series[0];
+    const list = (titles[pickTitle] || []).slice();
+    const ref = list.find(([r]) => r[4] > 0);
+    const refFill = ref ? ref[0][4] / ref[0][5] : 0;
+    const refRev = ref ? ref[0][4] * ref[0][6] : 0;
+    const sign = n => (n > 0 ? '+ ' : (n < 0 ? '– ' : '')) + Math.abs(Math.round(n));
+    const gaps = list.filter(([r]) => r[4] > 0).map(([r]) => Math.round((r[4] / r[5] - refFill) * 100));
+    const best = list.slice().sort((a, b) => (b[0][4] / b[0][5]) - (a[0][4] / a[0][5]))[0];
+    return {
+      pageTitle: 'La série s’essouffle-t-elle ?',
+      pageTabs: this.tabStrip([['audience', 'AUDIENCE'], ['series', 'COMPARER LES SÉRIES']], tab, 'stTab'),
+      filters: viewStrip,
+      barsLabel: 'LA SÉRIE, DATE PAR DATE',
+      barsNote: pickTitle ? pickTitle.toUpperCase() : '',
+      bars: view === 'chart' ? this.barsOf(list.map(([r, i]) => {
+        const fill = r[5] ? Math.round((r[4] / r[5]) * 100) : 0;
+        const isRef = ref && ref[1] === i;
+        return {
+          label: r[0].replace('.', '').split(' ').slice(1).join(' ').toUpperCase(),
+          value: fill, display: r[4] ? fill + ' %' : '—',
+          color: !r[4] ? '#3A4149' : (isRef ? INK3 : (fill - Math.round(refFill * 100) >= 0 ? OK : WARN))
+        };
+      })) : [],
+      band: this.stats([
+        ['SÉRIES SUIVIES', String(series.length), 'spectacles à plusieurs dates'],
+        ['MEILLEUR REMPLISSAGE', best ? Math.round((best[0][4] / best[0][5]) * 100) + ' %' : '—', best ? best[0][0].replace('.', '') : ''],
+        ['ÉCART MOYEN', gaps.length > 1 ? sign(gaps.slice(1).reduce((a, b) => a + b, 0) / (gaps.length - 1)) + ' PTS' : '—', 'points de jauge'],
+        ['EN RÉSERVE À OUVRIR', String(c.evDefs.filter((r, i) => c.stateAt(i) === 'hidden').length), 'dates masquées', WARN]
+      ]),
+      blocks: [
+        this.block('SÉRIE SUIVIE', String(series.length) + (series.length > 1 ? ' SÉRIES' : ' SÉRIE'), {
+          rows: this.rows(series.map(t => ({
+            label: t, hint: titles[t].length + ' dates',
+            pill: t === pickTitle ? 'SUIVIE' : '', pillColor: OK,
+            cta: t === pickTitle ? '' : 'COMPARER CETTE SÉRIE',
+            act: () => this.setState({ stSerie: t })
+          })))
+        }),
+        this.block('ÉCART À LA PREMIÈRE DATE QUI A VENDU', pickTitle ? pickTitle.toUpperCase() : '', {
+          intro: 'L’écart dit si la rareté a joué ou si la série s’essouffle : c’est ce qui décide d’ouvrir une date de plus ou un palier de jauge.',
+          rows: this.rows(list.map(([r, i], n) => {
+            const st = c.stateAt(i);
+            if (!r[4]) return {
+              label: r[0].replace('.', '') + ' · ' + c.withZone(r[1]),
+              hint: (st === 'hidden' ? 'pas encore ouverte à la vente' : 'ouverte à la vente · aucune vente encore') + ' · jauge ' + c.num(r[5]) + ' places · aucun écart à mesurer',
+              pill: c.T(STATES[st][0]), pillColor: STATES[st][1],
+              cta: st === 'hidden' && c.canDecide ? 'OUVRIR LA VENTE' : '',
+              act: () => this.setState(st2 => ({ evOver: Object.assign({}, st2.evOver, { [i]: 'sched' }) }))
+            };
+            const fill = r[4] / r[5];
+            const rev = r[15] || 0;
+            const dF = Math.round((fill - refFill) * 100);
+            const dR = refRev ? Math.round(((rev - refRev) / refRev) * 100) : 0;
+            const isRef = ref && ref[1] === i;
+            return {
+              label: r[0].replace('.', '') + ' · ' + c.withZone(r[1]),
+              hint: isRef
+                ? 'référence · ' + Math.round(fill * 100) + ' % de la jauge' + (c.canRevenue ? ' · ' + c.eur(rev) : '')
+                : Math.round(fill * 100) + ' % de la jauge' + (c.canRevenue ? ' · ' + c.eur(rev) : '') + '  ·  jauge ' + sign(dF) + ' pts' + (c.canRevenue && refRev ? ' · recette ' + sign(dR) + ' %' : ''),
+              value: isRef ? 'RÉF.' : sign(dF) + ' PTS', valueColor: isRef ? INK3 : (dF >= 0 ? OK : WARN),
+              pct: Math.round(fill * 100), barColor: isRef ? '#4A535C' : (dF >= 0 ? OK : WARN)
+            };
+          }))
+        })
+      ]
+    };
+  }
+
+</script>

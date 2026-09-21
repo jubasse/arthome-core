@@ -1,0 +1,210 @@
+<!--
+  Arthome · storefront mobile — sheet-search
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : superposée · searchOpen
+  Affiche    : La recherche en plein écran : suggestions d'artistes et de spectacles, recherches récentes.
+  Mène vers  : artist, live, browse
+  Contrat    : GET /v1/search
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1886–1958
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L1886–1958
+     ══════════════════════════════════════════════════════════════════════════ -->
+<sc-if value="{{ searchModal }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeSearch }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
+<div style="{{ sheetTop }} background: #0B0A09; border-bottom: 1px solid #332E28; animation: fadeIn .2s ease both;">
+  <div data-pop="sugg" style="padding: 12px 14px 14px; position: relative;">
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <input value="{{ query }}" onChange="{{ onQuery }}" onFocus="{{ onSearchFocus }}" onKeyDown="{{ onSearchKey }}" placeholder="{{ t.search }}" style="flex: 1 1 auto; min-width: 0; height: 44px; background: #141210; border: 1px solid #262320; color: #EDE7DC; font-family: Archivo, sans-serif; font-size: 14px; padding: 0 14px; outline: none;" />
+      <span onClick="{{ closeSearch }}" style="flex: 0 0 auto; cursor: pointer; padding: 13px 12px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #857E73;">{{ t.cancel }}</span>
+    </div>
+    <sc-if value="{{ suggOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 12px; max-height: 62vh; overflow-y: auto; border: 1px solid #1F1C19; background: #0D0C0A;">
+        <sc-if value="{{ suggEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="padding: 16px; font-size: 12.5px; color: #8B857C;">{{ t.suggNothing }}</div>
+        </sc-if>
+        <sc-if value="{{ hasSuggShows }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <div style="padding: 11px 13px 7px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #6B6459;">{{ t.suggShowsLabel }}</div>
+            <sc-for list="{{ suggShows }}" as="sg" hint-placeholder-count="3">
+              <div onClick="{{ sg.open }}" style="cursor: pointer; padding: 10px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  display: flex; align-items: center; gap: 11px;">
+                <div style="flex: 0 0 46px; position: relative; aspect-ratio: 16/11; overflow: hidden; background: #17140F;">
+                  <sc-if value="{{ sg.img }}" hint-placeholder-val="{{ false }}">
+                    <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.72); background-color: #17140F; background-image: {{ sg.imgCss }}; background-size: cover; background-position: center;"></div>
+                  </sc-if>
+                </div>
+                <div style="min-width: 0;">
+                  <div style="font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sg.title }}</div>
+                  <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ sg.artist }}</div>
+                </div>
+                <span style="margin-left: auto; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ sg.statusColor }};">
+                  <sc-if value="{{ sg.isLive }}" hint-placeholder-val="{{ false }}">
+                    <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+                  </sc-if>{{ sg.status }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ hasSuggArtists }}" hint-placeholder-val="{{ true }}">
+          <div style="border-top: 1px solid #1C1A17;">
+            <div style="padding: 11px 13px 7px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #575047;">{{ t.suggArtistsLabel }}</div>
+            <sc-for list="{{ suggArtists }}" as="sg" hint-placeholder-count="3">
+              <div onClick="{{ sg.open }}" style="cursor: pointer; padding: 10px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  display: flex; align-items: center; gap: 11px;">
+                <div style="flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; position: relative; background: #1A1815;">
+                  <sc-if value="{{ sg.img }}" hint-placeholder-val="{{ false }}">
+                    <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.7) brightness(0.82); background-color: #17140F; background-image: {{ sg.imgCss }}; background-size: cover; background-position: center;"></div>
+                  </sc-if>
+                </div>
+                <div style="min-width: 0;">
+                  <div style="font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sg.title }}</div>
+                  <div style="padding-top: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ sg.artist }}</div>
+                </div>
+                <span style="margin-left: auto; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: {{ sg.statusColor }};">
+                  <sc-if value="{{ sg.isLive }}" hint-placeholder-val="{{ false }}">
+                    <span style="width: 5px; height: 5px; border-radius: 50%; background: oklch(0.62 0.21 27); animation: pulseLive 1.6s infinite;"></span>
+                  </sc-if>{{ sg.status }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ hasRecent }}" hint-placeholder-val="{{ false }}">
+          <div style="border-top: 1px solid #1C1A17;">
+            <div style="padding: 11px 13px 7px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: #575047;">{{ t.recent }}</div>
+            <div style="padding: 0 13px 12px; display: flex; gap: 7px; flex-wrap: wrap;">
+              <sc-for list="{{ recentSearches }}" as="rq" hint-placeholder-count="3">
+                <span onClick="{{ rq.pick }}" style="cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  border: 1px solid #262320; font-size: 12.5px; color: #C9C0B2;">{{ rq.label }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <div onClick="{{ submitSearch }}" style="cursor: pointer; border-top: 1px solid #1F1C19; padding: 13px; min-height: 44px; box-sizing: border-box;  font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #C9C0B2;">{{ t.seeAll }} ↵</div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (13 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── matchQ  —  calcul dans renderReady()  —  L5103–5103 ── */
+    const matchQ = (...fields) => !q || fields.some(v => String(v).toLowerCase().indexOf(q) > -1);
+
+/* ── suggArtists  —  calcul dans renderReady()  —  L5104–5110 ── */
+    const suggArtists = q ? roster.filter(a => matchQ(a.name, a.discipline)).slice(0, 4).map(a => ({
+      name: a.name, img: a.portrait, imgCss: this.cssUrl(a.portrait),
+      portrait: a.portrait, portraitCss: this.cssUrl(a.portrait),
+      open: () => this.setState({ page: 'artist', artistId: a.i, suggOpen: false, searchOpen: false }),
+      isLive: a.isLive, status: a.isLive ? t.onNow : a.discipline.toUpperCase(),
+      statusColor: a.isLive ? 'oklch(0.78 0.14 27)' : '#857E73'
+    })) : [];
+
+/* ── suggShows  —  calcul dans renderReady()  —  L5111–5116 ── */
+    const suggShows = q ? roster.filter(a => matchQ(a.showTitle)).slice(0, 4).map(a => ({
+      name: a.showTitle, artist: a.name, img: a.showImg,
+      open: () => this.setState({ page: 'live', artistId: a.i, suggOpen: false, searchOpen: false, watching: a.i, watchKind: 'live', pipClosed: false }),
+      isLive: a.isLive, status: a.isLive ? t.onNow : (fr ? 'REDIFF.' : 'REPLAY'),
+      statusColor: a.isLive ? 'oklch(0.78 0.14 27)' : '#857E73'
+    })) : [];
+
+/* ── recentSearches  —  clé du modèle rendu  —  L5690–5690 ── */
+      recentSearches: s.recent.map(r => ({ label: r, pick: () => this.setState({ query: r, suggOpen: false, searchOpen: false, page: 'browse' }) })),
+
+/* ── hasRecent  —  clé du modèle rendu  —  L5691–5691 ── */
+      hasRecent: !qq && s.recent.length > 0,
+
+/* ── query  —  clé du modèle rendu  —  L5826–5826 ── */
+      query: s.query, draft: s.draft,
+
+/* ── onQuery  —  clé du modèle rendu  —  L5840–5848 ── */
+      onQuery: e => {
+        const v = e.target.value;
+        this.setState({ query: v, suggOpen: v.trim().length > 0 });
+        clearTimeout(this._qT);
+        this._qT = setTimeout(() => {
+          const q = v.trim();
+          this.setState(st => ({ liveQuery: q.length >= 3 ? q : '', shown: {}, page: q.length >= 3 && st.page === 'browse' ? 'browse' : st.page }));
+        }, 260);
+      },
+
+/* ── onSearchFocus  —  clé du modèle rendu  —  L5849–5849 ── */
+      onSearchFocus: () => this.setState(st => ({ suggOpen: st.query.trim().length > 0 })),
+
+/* ── onSearchKey  —  clé du modèle rendu  —  L5851–5851 ── */
+      onSearchKey: e => { if (e.key === 'Enter') this.setState(st => ({ page: 'browse', suggOpen: false, searchOpen: false, filter: 0, liveQuery: st.query.trim(), shown: {} })); if (e.key === 'Escape') this.setState({ suggOpen: false, searchOpen: false }); },
+
+/* ── submitSearch  —  clé du modèle rendu  —  L5852–5852 ── */
+      submitSearch: () => this.setState(st => ({ page: 'browse', suggOpen: false, searchOpen: false, filter: 0, liveQuery: st.query.trim(), shown: {} })),
+
+/* ── suggOpen  —  clé du modèle rendu  —  L5855–5855 ── */
+      suggOpen: s.suggOpen && s.query.trim().length > 0,
+
+/* ── hasSuggArtists  —  clé du modèle rendu  —  L5857–5857 ── */
+      hasSuggArtists: suggArtists.length > 0, hasSuggShows: suggShows.length > 0,
+
+/* ── suggEmpty  —  clé du modèle rendu  —  L5860–5860 ── */
+      suggEmpty: suggArtists.length === 0 && suggShows.length === 0,
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (8) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2400  cancel: "Annuler"
+  EN L2853  cancel: "Cancel"
+
+  FR L2573  onNow: "EN DIRECT"
+  EN L3026  onNow: "LIVE NOW"
+
+  FR L2648  recent: "RECHERCHES RÉCENTES"
+  EN L3101  recent: "RECENT SEARCHES"
+
+  FR L2690  search: "Rechercher un artiste, un spectacle…"
+  EN L3143  search: "Search an artist, a show…"
+
+  FR L2693  seeAll: "Voir tous les résultats"
+  EN L3146  seeAll: "See all results"
+
+  FR L2758  suggArtistsLabel: "ARTISTES"
+  EN L3211  suggArtistsLabel: "ARTISTS"
+
+  FR L2759  suggNothing: "Aucun résultat — essayez « danse », « jazz », « humour »."
+  EN L3212  suggNothing: "Nothing found — try “dance”, “jazz”, “comedy”."
+
+  FR L2760  suggShowsLabel: "SPECTACLES"
+  EN L3213  suggShowsLabel: "SHOWS"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->

@@ -1,0 +1,720 @@
+<!--
+  Arthome · storefront mobile — noyau commun du modèle de vue
+  ══════════════════════════════════════════════════════════════════════════
+  Les 74 symboles que presque tous les fichiers d'écran référencent.
+  Ils sont ici UNE fois et ne sont recopiés dans aucun fichier d'écran.
+  Chaque fichier d'écran en donne la liste qu'il emploie, en pied de fichier.
+
+  Source     : mockups/Storefront Mobile.dc.html
+  Voir aussi : _copy.html (tables FR et EN) · _shell.html (la coquille)
+
+  ⚠ EXTRACTION LITTÉRALE. Rien n'a été corrigé ni reformaté.
+-->
+
+<script type="text/x-arthome-extract" data-part="viewmodel-commun">
+/* ── U  —  constante de module  —  L2301–2301 ── */
+const U = (id, w) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w || 900}&q=70`;
+
+/* ── IMG  —  constante de module  —  L2302–2330 ── */
+const IMG = {
+  ballet: U('photo-1547153760-18fc86324498'),
+  lights: U('photo-1459749411175-04bf5292ceea'),
+  hall: U('photo-1465847899084-d164df4dedc6'),
+  crowd: U('photo-1540039155733-5bb30b53aa14', 1600),
+  piano: U('photo-1465847899084-d164df4dedc6'),
+  dj: U('photo-1470225620780-dba8ba36b745'),
+  smoke: U('photo-1493225457124-a3eb161ffa5f'),
+  mic: U('photo-1478737270239-2f02b77fc618'),
+  dance: U('photo-1518834107812-67b0b7c58434'),
+  opera: U('photo-1580809361436-42a7ec204889'),
+  jazz: U('photo-1415201364774-f6f0bb35f28f'),
+  guitar: U('photo-1510915361894-db8b60106cb1'),
+  hands: U('photo-1540039155733-5bb30b53aa14'),
+  curtain: U('photo-1503095396549-807759245b35'),
+  mic2: U('photo-1585699324551-f6c309eedeca'),
+  aerial: U('photo-1507924538820-ede94a04019d'),
+  portrait: U('photo-1488426862026-3ee34a7d66df', 400),
+  pAna: U('photo-1546961329-78bef0414d7c', 400), pSanhu: U('photo-1531384441138-2736e62e0919', 400),
+  pSud: U('photo-1494790108377-be9c29b29330', 400), pVartan: U('photo-1508186225823-0963cf9ab0de', 400),
+  pKessler: U('photo-1560250097-0b93528c311a', 400), pKarim: U('photo-1526510747491-58f928ec870f', 400),
+  pLeo: U('photo-1507003211169-0a1dd7228f2d', 400), pMaud: U('photo-1522075469751-3a6694fb2f61', 400),
+  pNisha: U('photo-1529626455594-4ff0802cfb7e', 400), pLille: U('photo-1521119989659-a83eee488004', 400),
+  pNord: U('photo-1541101767792-f9b2b1c4f127', 400), pVega: U('photo-1519085360753-af0119f7cbe7', 400),
+  tshirt: U('photo-1521572163474-6864f9cf17ab', 500),
+  poster: U('photo-1513519245088-0e12902e5a38', 500),
+  vinyl: U('photo-1483412033650-1015ddeb83d1', 500),
+  tote: U('photo-1591561954557-26941169b49e', 500)
+};
+
+/* ── ARTIST_NAMES  —  constante de module  —  L3239–3239 ── */
+let ARTIST_NAMES = [];
+
+/* ── artistIndexFor  —  constante de module  —  L3240–3244 ── */
+const artistIndexFor = (text) => {
+  const s = String(text || '');
+  for (let i = 0; i < ARTIST_NAMES.length; i++) if (s.indexOf(ARTIST_NAMES[i]) > -1) return i;
+  return 3;
+};
+
+/* ── PROMO_DEFS  —  constante de module  —  L3246–3255 ── */
+let PROMO_DEFS = {
+  'Nocturnes — acte II': { was: 20, now: 14, live: true, reasonFr: 'SÉANCE COMMENCÉE', reasonEn: 'ALREADY STARTED' },
+  'Nocturnes — acte III': { was: 22, reasonFr: 'DERNIÈRE DATE', reasonEn: 'FINAL DATE' },
+  'Basse Continue': { was: 12, now: 8, live: true, reasonFr: 'SÉANCE COMMENCÉE', reasonEn: 'ALREADY STARTED' },
+  'Basse Continue — édition longue': { was: 26, reasonFr: 'PRÉVENTE', reasonEn: 'PRE-SALE' },
+  'Basse Continue — long set': { was: 26, reasonFr: 'PRÉVENTE', reasonEn: 'PRE-SALE' },
+  'Terre Brûlée': { was: 20, reasonFr: 'TARIF DÉCOUVERTE', reasonEn: 'DISCOVERY RATE' },
+  'Le Cercle de craie': { was: 16, reasonFr: 'AVANT-PREMIÈRE', reasonEn: 'PREVIEW' },
+  'The Chalk Circle': { was: 16, reasonFr: 'AVANT-PREMIÈRE', reasonEn: 'PREVIEW' }
+};
+
+/* ── SUBS_ALL  —  constante de module  —  L3262–3280 ── */
+let SUBS_ALL = { fr: [
+      ['Répertoire classique', 'Contemporain', 'Comédie', 'Tragédie', 'Théâtre documentaire', 'Jeune public', 'Lecture', 'Théâtre d’objets', 'Impro', 'Seul en scène'],
+      ['Ballet classique', 'Néoclassique', 'Danse contemporaine', 'Hip-hop', 'Krump & waacking', 'Danses urbaines', 'Flamenco', 'Danses du monde', 'Bal participatif', 'Butō'],
+      ['Rap & R’n’B', 'Pop', 'Rock', 'Metal & hardcore', 'Électro & techno', 'House & disco', 'Chanson française', 'Folk & americana', 'Musiques du monde', 'Reggae & dub', 'Afrobeats', 'Acoustique & sessions'],
+      ['Stand-up', 'Sketch', 'Improvisation', 'Rodage', 'Humour noir', 'Satire & actualité', 'Duo & troupe', 'Café-théâtre'],
+      ['Symphonique', 'Opéra', 'Musique de chambre', 'Récital piano', 'Baroque', 'Musique sacrée', 'Création contemporaine', 'Lyrique jeune public'],
+      ['Trio & quartet', 'Big band', 'Free jazz', 'Jazz manouche', 'Jazz vocal', 'Soul & funk', 'Latin jazz', 'Club & jam'],
+      ['Aérien', 'Acrobatie', 'Clown', 'Nouveau cirque', 'Jonglage', 'Magie nouvelle', 'Roue Cyr & mât chinois', 'Cabaret'],
+      ['Plein air', 'Nuit blanche', 'Marathon', 'Itinérant', 'Résidence', 'Festival', 'Carte blanche', 'Performance']
+], en: [
+      ['Classical repertoire', 'Contemporary', 'Comedy', 'Tragedy', 'Documentary theatre', 'Young audiences', 'Reading', 'Object theatre', 'Improv', 'One-person show'],
+      ['Classical ballet', 'Neoclassical', 'Contemporary dance', 'Hip-hop', 'Krump & waacking', 'Street dance', 'Flamenco', 'World dance', 'Participatory ball', 'Butoh'],
+      ['Rap & R’n’B', 'Pop', 'Rock', 'Metal & hardcore', 'Electro & techno', 'House & disco', 'Chanson', 'Folk & americana', 'World music', 'Reggae & dub', 'Afrobeats', 'Acoustic sessions'],
+      ['Stand-up', 'Sketch', 'Improv', 'Try-out', 'Dark comedy', 'Satire & topical', 'Duo & troupe', 'Comedy club'],
+      ['Symphonic', 'Opera', 'Chamber music', 'Piano recital', 'Baroque', 'Sacred music', 'New commissions', 'Opera for young audiences'],
+      ['Trio & quartet', 'Big band', 'Free jazz', 'Gypsy jazz', 'Vocal jazz', 'Soul & funk', 'Latin jazz', 'Club & jam'],
+      ['Aerial', 'Acrobatics', 'Clown', 'New circus', 'Juggling', 'New magic', 'Cyr wheel & Chinese pole', 'Cabaret'],
+      ['Open air', 'All-nighter', 'Marathon', 'Touring', 'Residency', 'Festival', 'Carte blanche', 'Performance']
+] };
+
+/* ── PROMO_INK  —  constante de module  —  L3281–3281 ── */
+const PROMO_INK = 'oklch(0.83 0.1 84)';
+
+/* ── BADGE_BY_REASON  —  constante de module  —  L3282–3288 ── */
+const BADGE_BY_REASON = {
+  'PRÉVENTE': ['PRÉVENTE', 'PRE-SALE'],
+  'AVANT-PREMIÈRE': ['AVANT-PREMIÈRE', 'PREVIEW'],
+  'TARIF DÉCOUVERTE': ['DÉCOUVERTE', 'DISCOVERY'],
+  'DERNIÈRE DATE': ['DERNIÈRE DATE', 'FINAL DATE'],
+  'SÉANCE COMMENCÉE': ['TARIF RETARDATAIRE', 'LATE RATE']
+};
+
+/* ── CHIP  —  constante de module  —  L3297–3297 ── */
+const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  min-height: 44px; display: inline-flex; align-items: center; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.1em; border: 1px solid ';
+
+/* ── cssUrl  —  méthode de classe  —  L3470–3470 ── */
+  cssUrl(u) { return u ? 'url("' + u + '")' : 'none'; }
+
+/* ── defaultDate  —  méthode de classe  —  L3475–3479 ── */
+  defaultDate() {
+    const A = this.A;
+    if (!A) return null;
+    return A.liveNow()[0] || A.upcoming()[0] || null;
+  }
+
+/* ── seatCode  —  méthode de classe  —  L3483–3486 ── */
+  seatCode(d) {
+    if (!d) return '';
+    return 'ATH-' + String(Component.hash(d.id) % 9000 + 1000) + '-' + d.id.slice(0, 2).toUpperCase();
+  }
+
+/* ── promoOf  —  méthode de classe  —  L3979–4027 ── */
+  promoOf(title, priceLabel, fr, liveOnly, t) {
+    const d = PROMO_DEFS[title];
+    if (liveOnly && (!d || !d.live)) return { hasPromo: false, pShowBox: false, pShowWas: false };
+    const now = parseFloat(String(priceLabel || '').replace(',', '.').replace(/[^\d.]/g, ''));
+    if (!d || !now || now >= d.was) return { hasPromo: false, pShowBox: false, pShowWas: false };
+    const mode = this.props.promoStyle || 'sobre';
+    const wasTxt = fr ? d.was + ' €' : '€' + d.was;
+    const nowTxt = fr ? now + ' €' : '€' + now;
+    const reason = fr ? d.reasonFr : d.reasonEn;
+    const MONO = "font-family: 'JetBrains Mono', monospace; ";
+    const save = fr ? '−' + (d.was - now) + ' €' : '−€' + (d.was - now);
+    const seal = 'width: 48px; height: 48px; display: grid; place-items: center; background: ' + PROMO_INK + ';';
+    const corner = 'width: 10px; height: 10px; background: ' + PROMO_INK + ';';
+    const badge = 'display: flex; align-items: center; border: 1px solid rgba(214,178,102,0.42); background: rgba(11,10,9,0.7); padding: 4px 8px;';
+    const frame = 'inset: 0; border: 1px solid ' + PROMO_INK + '; pointer-events: none;';
+    const boxes = {
+      sceau: ['position: absolute; right: 10px; top: 10px; ' + seal, 'flex: 0 0 auto; ' + seal],
+      cadre: ['position: absolute; ' + frame, 'display: none;'],
+      coin: ['position: absolute; right: 0; bottom: 0; ' + corner, 'flex: 0 0 auto; ' + corner],
+      chiffre: ['display: none;', 'display: none;'],
+      sobre: ['position: absolute; right: 10px; top: 10px; ' + badge, 'flex: 0 0 auto; ' + badge]
+    }[mode] || ['display: none;', 'display: none;'];
+    const wasLabel = { cadre: reason, coin: wasTxt, chiffre: wasTxt + ' · ' + save, sceau: wasTxt, sobre: wasTxt }[mode];
+    const white = "font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em; color: #EDE7DC; text-decoration: line-through;";
+    const wasStyle = {
+      cadre: MONO + 'font-size: 9px; letter-spacing: 0.1em; color: ' + PROMO_INK + ';',
+      coin: white,
+      chiffre: white,
+      sceau: MONO + 'font-size: 9px; letter-spacing: 0.06em; color: #6B6459; text-decoration: line-through;',
+      sobre: white
+    }[mode];
+    const amberCta = mode === 'coin' || mode === 'chiffre' || mode === 'sobre';
+    return {
+      hasPromo: true,
+      promoWas: wasTxt, promoReason: reason,
+      pShowBox: mode !== 'chiffre',
+      pShowSub: false,
+      pBoxStyle: boxes[0], pBoxStyleAlt: boxes[1],
+      promoPct: mode === 'sobre' ? (BADGE_BY_REASON[d.reasonFr] ? (fr ? BADGE_BY_REASON[d.reasonFr][0] : BADGE_BY_REASON[d.reasonFr][1]) : (fr ? 'PROMOTION' : 'PROMOTION')) : save,
+      pMainStyle: mode === 'sceau'
+        ? MONO + 'font-size: 12.5px; letter-spacing: 0.02em; color: #14100C; font-weight: 600;'
+        : (mode === 'sobre' ? MONO + 'font-size: 9px; letter-spacing: 0.1em; color: ' + PROMO_INK + ';' : 'display: none;'),
+      pAmberCta: amberCta,
+      pSubStyle: 'display: none;',
+      pShowWas: mode !== 'sobre',
+      pWasStyle: wasStyle,
+      promoWasLabel: wasLabel
+    };
+  }
+
+/* ── gate  —  méthode de classe  —  L4029–4034 ── */
+  gate(fn) {
+    return (...args) => {
+      if (this.state.guest) { this.setState({ authOpen: true, authTab: 'up' }); return; }
+      return fn(...args);
+    };
+  }
+
+/* ── openTicketFor  —  méthode de classe  —  L4036–4046 ── */
+  openTicketFor(title, priceLabel, fr, ctx) {
+    const d = PROMO_DEFS[title];
+    const now = parseFloat(String(priceLabel || '').replace(',', '.').replace(/[^\d.]/g, ''));
+    const on = !!d && !!now && now < d.was;
+    return this.gate(() => this.setState({
+      ticketOpen: true,
+      ticketFor: Object.assign({ title, priceLabel }, ctx || {}),
+      tier: /gratuit|free/i.test(String(priceLabel || '')) ? 0 : 1,
+      ticketPromo: on ? { title, reason: fr ? d.reasonFr : d.reasonEn, key: d.reasonFr, was: d.was, now } : null
+    }));
+  }
+
+/* ── splitHit  —  méthode de classe  —  L4048–4054 ── */
+  splitHit(text, q) {
+    const s = String(text || '');
+    if (!q) return { pre: s, hit: '', post: '' };
+    const i = s.toLowerCase().indexOf(q.toLowerCase());
+    if (i < 0) return { pre: s, hit: '', post: '' };
+    return { pre: s.slice(0, i), hit: s.slice(i, i + q.length), post: s.slice(i + q.length) };
+  }
+
+/* ── setState  —  méthode de classe  —  L4145–4158 ── */
+  setState(patch, cb) {
+    const next = typeof patch === 'function' ? null : patch;
+    if (next && next.page !== undefined && next.page !== this.state.page) {
+      const win = (typeof window !== 'undefined') ? window : null;
+      if (win) {
+        setTimeout(() => {
+          win.scrollTo(0, 0);
+          if (win.document && win.document.scrollingElement) win.document.scrollingElement.scrollTop = 0;
+        }, 0);
+      }
+      if (this.state.stuck) next.stuck = false;
+    }
+    return super.setState(patch, cb);
+  }
+
+/* ── openRow  —  méthode de classe  —  L4166–4179 ── */
+  openRow(row) {
+    const pick = { title: row.title, artist: row.artist, img: row.img, priceLabel: row.priceLabel, meta: (row.catName || '').toUpperCase() + ' · ' + row.duration, whenLabel: row.whenLabel, kind: row.kind };
+    if (row.kind === 'live') {
+      this.setState({ page: 'live', artistId: row.artistIdx, pick, ticketOpen: false, shareOpen: false, suggOpen: false, searchOpen: false, watching: row.artistIdx, watchKind: 'live', pipClosed: false });
+      return;
+    }
+    const d = PROMO_DEFS[row.title];
+    const now = parseFloat(String(row.priceLabel || '').replace(',', '.').replace(/[^\d.]/g, ''));
+    const on = !!d && !!now && now < d.was;
+    this.setState({
+      page: 'artist', artistId: row.artistIdx, pick, suggOpen: false, searchOpen: false, ticketOpen: true,
+      ticketPromo: on ? { title: row.title, reason: this.props.lang === 'en' ? d.reasonEn : d.reasonFr, key: d.reasonFr, was: d.was, now } : null
+    });
+  }
+
+/* ── alertSig  —  méthode de classe  —  L4181–4191 ── */
+  alertSig(query, st) {
+    const s = st || {};
+    return [
+      (query || '').trim().toLowerCase(),
+      (s.fCats || []).slice().sort().join(','),
+      (s.fSubs || []).slice().sort((x, y) => x - y).join(','),
+      (s.fPrices || []).slice().sort().join(','),
+      s.fDate || 'all', s.fStatus || 'all',
+      s.fAlmost ? 1 : 0, s.fHasDates ? 1 : 0, s.fExpiring ? 1 : 0, s.fPromo ? 1 : 0
+    ].join('|');
+  }
+
+/* ── alertState  —  méthode de classe  —  L4193–4200 ── */
+  alertState() {
+    const s = this.state;
+    return {
+      fCats: (s.fCats || []).slice(), fSubs: (s.fSubs || []).slice(), fPrices: (s.fPrices || []).slice(),
+      fDate: s.fDate, fStatus: s.fStatus, fAlmost: s.fAlmost, fHasDates: s.fHasDates,
+      fExpiring: s.fExpiring, fPromo: s.fPromo, sTab: s.sTab, sort: s.sort
+    };
+  }
+
+/* ── openLive  —  méthode de classe  —  L4264–4268 ── */
+  openLive(who) {
+    const id = artistIndexFor(who);
+    this.setState({ pick: null });
+    this.setState({ page: 'live', artistId: id, ticketOpen: false, shareOpen: false, suggOpen: false, searchOpen: false, watching: id, watchKind: 'live', pipClosed: false });
+  }
+
+/* ── hashOf  —  calcul dans renderReady()  —  L4285–4285 ── */
+    const hashOf = Component.hash;
+
+/* ── s  —  calcul dans renderReady()  —  L4306–4306 ── */
+    const s = this.state;
+
+/* ── A  —  calcul dans renderReady()  —  L4307–4307 ── */
+    const A = this.A;
+
+/* ── P  —  calcul dans renderReady()  —  L4338–4338 ── */
+    const P = this.props;
+
+/* ── ownedIds  —  calcul dans renderReady()  —  L4344–4344 ── */
+    const ownedIds = (((this.A.fixtures.accounts || [])[0] || { ownedDates: [] }).ownedDates) || [];
+
+/* ── ownsDate  —  calcul dans renderReady()  —  L4345–4345 ── */
+    const ownsDate = (d) => !!d && ownedIds.indexOf(d.id) > -1;
+
+/* ── lockedPref  —  calcul dans renderReady()  —  L4346–4346 ── */
+    const lockedPref = s.lockedSet ? s.locked : (P.freePreview !== 'ouvert');
+
+/* ── t  —  calcul dans renderReady()  —  L4347–4347 ── */
+    const t = s.lang === 'fr' ? FR : EN;
+
+/* ── fr  —  calcul dans renderReady()  —  L4348–4348 ── */
+    const fr = s.lang === 'fr';
+
+/* ── cats  —  calcul dans renderReady()  —  L4396–4410 ── */
+    const cats = A.categoriesOf().map((c, ci) => {
+      const dates = A.datesInCategory(c.id);
+      const live = dates.filter(d => A.isOnAir(d)).length;
+      /* L'image d'une discipline lui appartient : elle ne dépend pas d'une
+         date arbitraire du catalogue. */
+      const img = A.categoryImage(c.id, 900) || (dates[0] ? A.showImage(A.show(dates[0].show), 900) : '');
+      return {
+        i: ci, id: c.id, name: A.label(c), img, imgCss: this.cssUrl(img),
+        count: A.number(dates.length) + ' DATES',
+        /* Le rouge d'antenne ne sert qu'à l'antenne. */
+        hasLive: live > 0, noLive: live === 0,
+        liveLabel: live + (fr ? ' EN DIRECT' : ' LIVE'),
+        open: () => this.setState({ page: 'category', catId: ci, subgenre: -1, subs: [], cPrices: [], cDate: 'all', cStatus: 'all', cAlmost: false, cPromo: false, cSort: 'auto', catTab: 'ov', shown: {} })
+      };
+    });
+
+/* ── SUBS  —  calcul dans renderReady()  —  L4412–4412 ── */
+    const SUBS = SUBS_ALL[fr ? 'fr' : 'en'];
+
+/* ── category  —  calcul dans renderReady()  —  L4413–4413 ── */
+    const category = cats[s.catId] || cats[0];
+
+/* ── subsSel  —  calcul dans renderReady()  —  L4414–4414 ── */
+    const subsSel = s.subs || [];
+
+/* ── filterLabels  —  calcul dans renderReady()  —  L4430–4430 ── */
+    const filterLabels = fr
+
+/* ── filters  —  calcul dans renderReady()  —  L4433–4437 ── */
+    const filters = filterLabels.map((label, i) => ({
+      label,
+      pick: () => this.setState({ filter: i }),
+      style: CHIP + (s.filter === i ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;')
+    }));
+
+/* ── results  —  calcul dans renderReady()  —  L4446–4446 ── */
+    const results = A.fixtures.dates
+
+/* ── account  —  calcul dans renderReady()  —  L4537–4537 ── */
+    const account = (A.fixtures.accounts || [])[0] || { name: 'Camille', plan: 'season' };
+
+/* ── tickets  —  calcul dans renderReady()  —  L4541–4585 ── */
+    const tickets = (() => {
+      const acc = (A.fixtures.accounts || [])[0];
+      const ids = acc ? acc.ownedDates : [];
+      return ids.map(id => A.date(id)).filter(Boolean)
+        .sort((a, b) => {
+          const rank = (d) => A.isOnAir(d) ? 0 : (d.startOffsetMin > 0 ? 1 : 2);
+          return rank(a) - rank(b) || (rank(a) === 2 ? b.startOffsetMin - a.startOffsetMin : a.startOffsetMin - b.startOffsetMin);
+        })
+        .map(d => {
+          const show = A.show(d.show), art = A.artist(show.artist);
+          const live = A.isOnAir(d);
+          const soon = A.isRoomOpen(d);
+          return {
+            title: A.title(show),
+            artist: art ? art.name : '',
+            when: A.when(d),
+            status: live ? (fr ? '● EN DIRECT' : '● LIVE')
+              : soon ? (fr ? 'SALLE OUVERTE' : 'HOUSE OPEN')
+              : d.startOffsetMin > 0 ? (fr ? 'À VENIR' : 'UPCOMING')
+              : (fr ? 'PASSÉE' : 'PAST'),
+            statusColor: live ? 'oklch(0.74 0.15 42)' : (soon ? 'oklch(0.78 0.13 42)' : '#C9C0B2'),
+            code: this.seatCode(d),
+            cta: live || soon ? (fr ? 'Rejoindre' : 'Join') : (fr ? 'Ajouter au calendrier' : 'Add to calendar'),
+            img: A.showImage(show, 900),
+            imgCss: this.cssUrl(A.showImage(show, 900)),
+            desc: A.synopsis(show) || '',
+            action: () => this.openLive(art ? art.name : A.title(show))
+          };
+        });
+    })().map(x => {
+      const ai = artistIndexFor(x.artist);
+      const isNow = /EN DIRECT|● LIVE/.test(x.status);
+      return Object.assign(x, {
+        desc: x.desc || '',
+        isNow,
+        statusText: x.status.replace('● ', ''),
+        cardStyle: isNow
+          ? 'border: 1px solid oklch(0.52 0.11 42); background: #14110E; box-shadow: 0 0 0 1px rgba(214,132,58,0.14), 0 18px 42px rgba(0,0,0,0.4);'
+          : 'border: 1px solid #1F1C19; background: #100F0D;',
+        ctaStyle: 'margin-left: auto; cursor: pointer; padding: 10px 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; font-size: 12.5px; transition: background .24s ease, border-color .24s ease, color .24s ease; ' +
+          (isNow ? 'background: oklch(0.74 0.15 42); color: #14100C; font-weight: 600;' : 'border: 1px solid #332E28; color: #EDE7DC;'),
+        openShow: () => this.openLive(x.artist),
+        openArtist: () => this.setState({ page: 'artist', artistId: ai })
+      });
+    });
+
+/* ── roster  —  calcul dans renderReady()  —  L4595–4635 ── */
+    const roster = (() => {
+      const followed = (s.followedIds || []).map(id => A.artist(id)).filter(Boolean);
+      const live = A.liveNow().map(d => A.artist(A.show(d.show).artist)).filter(Boolean);
+      const others = A.fixtures.artists.slice().sort((a, b) => b.followers - a.followers);
+      const picked = [];
+      followed.concat(live, others).forEach(a => {
+        if (picked.length >= 12 || !a || picked.some(x => x.id === a.id)) return;
+        picked.push(a);
+      });
+      return picked.map((a, i) => {
+        const dates = A.datesOfArtist(a.id).slice().sort((x, y) => x.startOffsetMin - y.startOffsetMin);
+        const onAir = dates.filter(d => A.isOnAir(d))[0] || null;
+        const next = dates.filter(d => d.startOffsetMin > 0)[0] || null;
+        const past = dates.filter(d => d.startOffsetMin < 0).slice(-1)[0] || null;
+        const show = A.show((onAir || next || dates[0] || {}).show);
+        const venue = A.venue((onAir || next || dates[0] || {}).venue);
+        const sub = a.genre ? A.genre(a.category, a.genre) : null;
+        const isLive = !!onAir;
+        const img = show ? A.showImage(show, 900) : '';
+        return {
+          i, id: a.id, name: a.name,
+          discipline: [A.label(A.category(a.category)), sub ? A.label(sub).toLowerCase() : null].filter(Boolean).join(' · '),
+          showImg: img,
+          showImgCss: this.cssUrl(img), img, imgCss: this.cssUrl(img),
+          portrait: A.artistAvatar(a), portraitCss: this.cssUrl(A.artistAvatar(a)),
+          followers: A.number(a.followers), isLive,
+          showTitle: show ? A.title(show) : '', title: show ? A.title(show) : '',
+          lastLive: onAir ? (fr ? 'EN COURS' : 'ON AIR') : (past ? A.longDate(past.startOffsetMin).toUpperCase() : '—'),
+          nextDate: next ? A.longDate(next.startOffsetMin).toUpperCase() : '—',
+          viewers: onAir ? A.number(onAir.viewers) : '',
+          replay: (onAir || next || dates[0] || {}).replayPolicy || 'included',
+          city: venue ? venue.city : '', bio: A.bio(a),
+          followed: s.follows.indexOf(i) > -1,
+          open: () => this.setState({ page: isLive ? 'live' : 'artist', artistId: i, suggOpen: false, searchOpen: false }),
+          openProfile: () => this.setState({ page: 'artist', artistId: i, suggOpen: false, searchOpen: false }),
+          toggleFollow: this.gate(() => this.setState(st => ({
+            follows: st.follows.indexOf(i) > -1 ? st.follows.filter(x => x !== i) : st.follows.concat([i])
+          })))
+        };
+      });
+    })();
+
+/* ── CAT_NAMES  —  calcul dans renderReady()  —  L4655–4655 ── */
+    const CAT_NAMES = cats.map(c => c.name);
+
+/* ── SUB_OF_ARTIST  —  calcul dans renderReady()  —  L4656–4656 ── */
+    const SUB_OF_ARTIST = {};
+
+/* ── byArtist  —  calcul dans renderReady()  —  L4657–4657 ── */
+    const byArtist = {};
+
+/* ── catIndexOf  —  calcul dans renderReady()  —  L4659–4659 ── */
+    const catIndexOf = (id) => Math.max(0, cats.findIndex(c => c.id === id));
+
+/* ── genPool  —  calcul dans renderReady()  —  L4660–4717 ── */
+    const genPool = (() => {
+      const artists = [];
+      const rows = [];
+      /* Un artiste absent du roster s'y ajoute à la volée, comme avant. */
+      const indexOfArtist = (a) => {
+        if (byArtist[a.id] !== undefined) return byArtist[a.id];
+        const i = roster.length + artists.length;
+        byArtist[a.id] = i;
+        const dates = A.datesOfArtist(a.id);
+        const show = A.show((dates[0] || {}).show);
+        const venue = A.venue((dates[0] || {}).venue);
+        const sub = a.genre ? A.genre(a.category, a.genre) : null;
+        const onAir = dates.filter(d => A.isOnAir(d))[0] || null;
+        const img = show ? A.showImage(show, 900) : '';
+        artists.push({
+          i, id: a.id, name: a.name,
+          discipline: [A.label(A.category(a.category)), sub ? A.label(sub).toLowerCase() : null].filter(Boolean).join(' · '),
+          showImg: img,
+          showImgCss: this.cssUrl(img), img, imgCss: this.cssUrl(img),
+          portrait: A.artistAvatar(a), portraitCss: this.cssUrl(A.artistAvatar(a)),
+          followers: A.number(a.followers), isLive: !!onAir,
+          showTitle: show ? A.title(show) : '', title: show ? A.title(show) : '',
+          lastLive: onAir ? (fr ? 'EN COURS' : 'ON AIR') : '—',
+          nextDate: dates.filter(d => d.startOffsetMin > 0)[0] ? A.longDate(dates.filter(d => d.startOffsetMin > 0)[0].startOffsetMin).toUpperCase() : '—',
+          viewers: onAir ? A.number(onAir.viewers) : '',
+          replay: (dates[0] || {}).replayPolicy || 'included',
+          city: venue ? venue.city : '', bio: A.bio(a),
+          open: () => this.setState({ page: onAir ? 'live' : 'artist', artistId: i, suggOpen: false, searchOpen: false }),
+          openProfile: () => this.setState({ page: 'artist', artistId: i, suggOpen: false, searchOpen: false }),
+          toggleFollow: this.gate(() => this.setState(st => ({
+            follows: st.follows.indexOf(i) > -1 ? st.follows.filter(x => x !== i) : st.follows.concat([i])
+          })))
+        });
+        return i;
+      };
+      A.fixtures.dates.forEach(d => {
+        const show = A.show(d.show);
+        const artist = show ? A.artist(show.artist) : null;
+        if (!show || !artist) return;
+        const st = A.stateOf(d);
+        const kind = st === 'live' ? 'live' : (st === 'replay' || st === 'ended' ? 'replay' : 'upcoming');
+        const venue = A.venue(d.venue);
+        const cap = venue ? venue.capacity : 0;
+        const subs = A.genresOf(show.category) || [];
+        const subIdx = Math.max(0, subs.findIndex(x => x.id === show.genre));
+        const ai = indexOfArtist(artist);
+        if (SUB_OF_ARTIST[artist.name] === undefined) SUB_OF_ARTIST[artist.name] = [catIndexOf(show.category), subIdx];
+        rows.push([
+          kind, A.title(show), ai, A.showImage(show, 900),
+          catIndexOf(show.category), d.prices[0].amount,
+          Math.round(d.startOffsetMin / 1440),
+          kind === 'live' ? d.viewers : 0,
+          cap ? Math.round((d.seats.sold / cap) * 100) : 0,
+          A.duration(show.runtimeMin), subIdx
+        ]);
+      });
+      return { artists, rows };
+    })();
+
+/* ── RAW  —  calcul dans renderReady()  —  L4720–4720 ── */
+    const RAW = [];
+
+/* ── MFR  —  calcul dans renderReady()  —  L4721–4721 ── */
+    const MFR = ['JANV.', 'FÉVR.', 'MARS', 'AVRIL', 'MAI', 'JUIN', 'JUIL.', 'AOÛT', 'SEPT.', 'OCT.', 'NOV.', 'DÉC.'];
+
+/* ── MEN  —  calcul dans renderReady()  —  L4722–4722 ── */
+    const MEN = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+/* ── DFR  —  calcul dans renderReady()  —  L4723–4723 ── */
+    const DFR = ['DIM', 'LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'];
+
+/* ── DEN  —  calcul dans renderReady()  —  L4724–4724 ── */
+    const DEN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+/* ── dateAt  —  calcul dans renderReady()  —  L4725–4736 ── */
+    const dateAt = (d, hour) => {
+      const dt = new Date();
+      dt.setDate(dt.getDate() + d);
+      const day = fr ? DFR[dt.getDay()] : DEN[dt.getDay()];
+      const mon = fr ? MFR[dt.getMonth()] : MEN[dt.getMonth()];
+      const stamp = fr ? (day + ' ' + dt.getDate() + ' ' + mon) : (day + ' ' + mon + ' ' + dt.getDate());
+      if (!hour) return stamp;
+      const hh = Math.floor(hour);
+      const mm = Math.round((hour - hh) * 60);
+      const m2 = mm < 10 ? '0' + mm : String(mm);
+      return stamp + (fr ? ' · ' + hh + 'h' + m2 : ' · ' + (hh > 12 ? hh - 12 : hh) + ':' + m2 + (hh >= 12 ? 'PM' : 'AM'));
+    };
+
+/* ── SLOTS  —  calcul dans renderReady()  —  L4737–4737 ── */
+    const SLOTS = [18, 18.5, 19, 19.5, 20, 20.5, 21, 21.5, 22, 22.5];
+
+/* ── dayLabel  —  calcul dans renderReady()  —  L4738–4748 ── */
+    const dayLabel = (d, key) => {
+      const h = SLOTS[hashOf(String(key || '') + d) % SLOTS.length];
+      const hh = Math.floor(h);
+      const mm = h % 1 ? '30' : '00';
+      const fmtFr = hh + 'h' + mm;
+      const fmtEn = (hh - 12) + ':' + mm + 'PM';
+      if (d === 0) return fr ? 'CE SOIR · ' + fmtFr : 'TONIGHT · ' + fmtEn;
+      if (d === 1) return fr ? 'DEMAIN · ' + fmtFr : 'TOMORROW · ' + fmtEn;
+      if (d > 0) return dateAt(d, h);
+      return dateAt(d, 0);
+    };
+
+/* ── subOf  —  calcul dans renderReady()  —  L4749–4755 ── */
+    const subOf = (cat, ai, title, subIdx) => {
+      if (subIdx !== undefined) return subIdx;
+      const nm = (roster[ai] || {}).name;
+      const hit = SUB_OF_ARTIST[nm];
+      if (hit && hit[0] === cat) return hit[1];
+      return hashOf(title) % ((SUBS_ALL.fr[cat] || [1]).length || 1);
+    };
+
+/* ── price$  —  calcul dans renderReady()  —  L4756–4756 ── */
+    const price$ = n => n === 0 ? t.freeLabel : (fr ? n + ' €' : '€' + n);
+
+/* ── seenSlot  —  calcul dans renderReady()  —  L4757–4757 ── */
+    const seenSlot = {};
+
+/* ── liveSeen  —  calcul dans renderReady()  —  L4758–4758 ── */
+    const liveSeen = {};
+
+/* ── catalogue  —  calcul dans renderReady()  —  L4759–4810 ── */
+    const catalogue = RAW.concat(genPool.rows).filter(([kind, title, ai, , , , day]) => {
+      const key = ai + '§' + String(title || '').split(' — ')[0].trim() + '§' + kind + '§' + day;
+      if (seenSlot[key]) return false;
+      seenSlot[key] = 1;
+      return true;
+    }).map((r, k) => {
+      if (r[0] === 'replay' || r[6] !== 0) return r;
+      const ai = r[2];
+      if (!liveSeen[ai]) { liveSeen[ai] = 1; return r; }
+      const c = r.slice();
+      c[6] = 2 + (k % 26);
+      c[7] = 0;
+      return c;
+    }).map(([kind0, title, ai, img, cat, price, day, viewers, soldPct, duration, subIdx], idx) => {
+      const kind = kind0 === 'replay' ? 'replay' : (day === 0 ? 'live' : 'upcoming');
+      const a = roster[ai];
+      const row = {
+        idx, kind, title, img, imgCss: this.cssUrl(img), cat, price, day, viewers, soldPct, duration,
+        subLabel: (SUBS_ALL[fr ? 'fr' : 'en'][cat] || [])[subOf(cat, ai, title, subIdx)] || '',
+        subs: [subOf(cat, ai, title, subIdx)],
+        catName: CAT_NAMES[cat], artist: a.name, artistIdx: ai, portrait: a.portrait,
+        descBare: (() => {
+          const show = A.fixtures.shows.filter(x => A.title(x) === title)[0];
+          return (show && A.synopsis(show)) || [CAT_NAMES[cat], duration].filter(Boolean).join(' · ');
+        })(),
+        desc: (() => {
+          const show = A.fixtures.shows.filter(x => A.title(x) === title)[0];
+          const sub = (SUBS_ALL[fr ? 'fr' : 'en'][cat] || [])[subOf(cat, ai, title, subIdx)] || '';
+          const body = (show && A.synopsis(show)) || [CAT_NAMES[cat], duration].filter(Boolean).join(' · ');
+          return (sub ? sub + ' — ' : '') + body;
+        })(),
+        ovTag: kind === 'live' ? t.ovLive : (kind === 'replay' ? t.ovReplay : t.ovSoon),
+        tHit: this.splitHit(title, (s.liveQuery || '').trim()),
+        aHit: this.splitHit(a.name, (s.liveQuery || '').trim()),
+        priceLabel: kind === 'replay' && price === 0 ? (a.replay === 'sub' ? (fr ? 'Abonnement' : 'Subscription') : t.includedLabel) : price$(price),
+        ...this.promoOf(title, price$(price), fr),
+        whenLabel: dayLabel(day, title),
+        isLiveRow: kind === 'live',
+        statusLabel: kind === 'live' ? t.onNow : (kind === 'replay' ? (fr ? 'REDIFFUSION' : 'REPLAY') : (fr ? 'À VENIR' : 'UPCOMING')),
+        statusColor: kind === 'live' ? 'oklch(0.78 0.14 27)' : (kind === 'replay' ? 'oklch(0.78 0.13 42)' : '#9B948A'),
+        expiresH: 72 + (idx % 5) * 12,
+        metaLine: kind === 'live' ? (viewers.toLocaleString('fr-FR') + (fr ? ' SPECTATEURS' : ' WATCHING'))
+          : (kind === 'replay' ? t.expiresIn + ' ' + (72 + (idx % 5) * 12) + ' H' : soldPct + (fr ? ' % VENDU' : '% SOLD')),
+        soldLabel: soldPct >= 80 ? (fr ? 'BIENTÔT COMPLET' : 'ALMOST SOLD OUT') : '',
+        openArtist: () => this.setState({ page: 'artist', artistId: ai }),
+        open: kind === 'replay'
+          ? (() => this.setState({ page: 'replay', artistId: ai, replayTitle: title, replayImg: img, replayDuration: duration, pos: 0, watching: ai, watchKind: 'replay', pipClosed: false }))
+          : (() => this.openRow(row)),
+        buy: this.openTicketFor(title, price$(price), fr, { artist: a.name, img, meta: kind === 'live' ? CAT_NAMES[cat].toUpperCase() + ' · ' + duration : dayLabel(day, title), isLive: kind === 'live' })
+      };
+      return row;
+    });
+
+/* ── artist  —  calcul dans renderReady()  —  L4846–4846 ── */
+    const artist = roster[s.artistId] || roster[3];
+
+/* ── currentDate  —  calcul dans renderReady()  —  L4850–4853 ── */
+    const currentDate = (() => {
+      const dates = artist ? A.datesOfArtist(artist.id) : [];
+      return dates.filter(d => A.isOnAir(d))[0] || dates.filter(d => d.startOffsetMin > 0)[0] || dates[0] || null;
+    })();
+
+/* ── ownsCurrent  —  calcul dans renderReady()  —  L4854–4854 ── */
+    const ownsCurrent = ownsDate(currentDate);
+
+/* ── locked  —  calcul dans renderReady()  —  L4856–4856 ── */
+    const locked = lockedPref && !ownsCurrent;
+
+/* ── merch  —  calcul dans renderReady()  —  L4859–4881 ── */
+    const merch = (() => {
+      const IMG_BY_KIND = { textile: IMG.tshirt, poster: IMG.poster, record: IMG.vinyl, print: IMG.poster };
+      const d = currentDate || this.defaultDate();
+      const items = d ? A.merchOf(A.show(d.show).id) : [];
+      const rows = items.filter(x => x.state === 'on-sale').slice(0, 4).map(x => ({
+        name: x.label, price: A.price(x.price, x.currency), img: IMG_BY_KIND[x.kind] || IMG.tote
+      }));
+      return rows.length ? rows : [{ name: fr ? 'Boutique à venir' : 'Shop coming soon', price: '—', img: IMG.tote }];
+    })().map(m => Object.assign(m, {
+      add: () => this.setState(st => {
+        const lines = st.cartLines.slice();
+        const i = lines.findIndex(l => l.name === m.name);
+        if (i > -1) lines[i] = Object.assign({}, lines[i], { qty: lines[i].qty + 1 });
+        else lines.push({ name: m.name, price: m.price, img: m.img, seller: artist.name, qty: 1 });
+        clearTimeout(this._addT);
+        this._addT = setTimeout(() => this.setState({ cartJustAdded: '' }), 1600);
+        return { cartLines: lines, cartOpen: true, cartStep: 'list', cartJustAdded: m.name, notifsOpen: false };
+      }),
+      addLabel: s.cartJustAdded === m.name ? t.cartAdded : t.add,
+      addStyle: 'margin-left: auto; cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; font-size: 12.5px; border: 1px solid ' +
+        (s.cartJustAdded === m.name ? 'oklch(0.6 0.11 150); color: oklch(0.78 0.13 150);' : '#332E28; color: #EDE7DC;') +
+        ' transition: background .24s ease, border-color .24s ease, color .24s ease;'
+    }));
+
+/* ── REPLAY  —  calcul dans renderReady()  —  L4883–4893 ── */
+    const REPLAY = fr ? {
+      included: ['INCLUSE 72 H AVEC LA PLACE', 'oklch(0.7 0.13 150)', 'L\u2019artiste a choisi d\u2019offrir la rediffusion à toute personne ayant acheté sa place, pendant 72 heures après le rideau.'],
+      sub: ['INCLUSE DANS L\u2019ABONNEMENT', 'oklch(0.78 0.13 42)', 'Les rediffusions de cet artiste sont accessibles aux abonnés Arthome, sans limite de durée.'],
+      unit: ['À L\u2019UNITÉ · MOINS CHER QUE LE DIRECT', '#C9C0B2', 'Chaque rediffusion est vendue séparément, à un tarif inférieur à la place en direct.'],
+      off: ['DÉSACTIVÉE PAR L\u2019ARTISTE', '#8B857C', 'Cet artiste ne diffuse qu\u2019en direct : aucune rediffusion n\u2019est enregistrée. Ce choix est fixé avant le live et ne peut pas être modifié après coup.']
+    } : {
+      included: ['INCLUDED · 72H WITH YOUR TICKET', 'oklch(0.7 0.13 150)', 'The artist chose to include the replay for every ticket holder, for 72 hours after the curtain.'],
+      sub: ['INCLUDED WITH SUBSCRIPTION', 'oklch(0.78 0.13 42)', 'This artist\u2019s replays are available to Arthome subscribers, with no time limit.'],
+      unit: ['PER REPLAY · CHEAPER THAN LIVE', '#C9C0B2', 'Each replay is sold separately, below the live ticket price.'],
+      off: ['DISABLED BY THE ARTIST', '#8B857C', 'This artist streams live only: nothing is recorded. The choice is locked before the show and cannot be changed afterwards.']
+    };
+
+/* ── q  —  calcul dans renderReady()  —  L5102–5102 ── */
+    const q = s.query.trim().toLowerCase();
+
+/* ── followed  —  calcul dans renderReady()  —  L5118–5118 ── */
+    const followed = roster.filter(a => a.followed).slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+
+/* ── savedShows  —  calcul dans renderReady()  —  L5219–5224 ── */
+    const savedShows = A.upcoming().slice(0, 4).map(d => {
+      const show = A.show(d.show);
+      const img = A.showImage(show, 900);
+      return { title: A.title(show), img, imgCss: this.cssUrl(img), when: A.when(d),
+        open: () => this.openLive(A.title(show)) };
+    });
+
+/* ── sessions  —  calcul dans renderReady()  —  L5325–5333 ── */
+    const sessions = (fr ? [
+      ['MacBook Pro · Lyon', 'CHROME · SESSION ACTUELLE · IL Y A 2 MIN', 'oklch(0.7 0.13 150)', 'CETTE SESSION', '#6B6459'],
+      ['iPhone 15 · Lyon', 'APPLI ARTHOME · IL Y A 3 H', '#8B857C', 'DÉCONNECTER', '#C9C0B2'],
+      ['Apple TV · Salon', 'APPLI TV · HIER, 21:40', '#8B857C', 'DÉCONNECTER', '#C9C0B2']
+    ] : [
+      ['MacBook Pro · Lyon', 'CHROME · CURRENT SESSION · 2 MIN AGO', 'oklch(0.7 0.13 150)', 'THIS SESSION', '#6B6459'],
+      ['iPhone 15 · Lyon', 'ARTHOME APP · 3H AGO', '#8B857C', 'SIGN OUT', '#C9C0B2'],
+      ['Apple TV · Living room', 'TV APP · YESTERDAY, 9:40PM', '#8B857C', 'SIGN OUT', '#C9C0B2']
+    ]).map(([device, meta, dot, cta, ctaColor]) => ({ device, meta, dot, cta, ctaColor }));
+
+/* ── qq  —  calcul dans renderReady()  —  L5336–5336 ── */
+    const qq = (s.liveQuery || '').trim().toLowerCase();
+
+/* ── hit  —  calcul dans renderReady()  —  L5337–5337 ── */
+    const hit = (o) => !qq || (o.title + ' ' + o.artist + ' ' + o.catName).toLowerCase().indexOf(qq) > -1;
+
+/* ── curSig  —  calcul dans renderReady()  —  L5445–5445 ── */
+    const curSig = this.alertSig(s.query, this.alertState());
+
+/* ── savedMatch  —  calcul dans renderReady()  —  L5446–5446 ── */
+    const savedMatch = s.alerts.find(al => this.alertSig(al.query, al.st) === curSig) || null;
+
+/* ── alreadySaved  —  calcul dans renderReady()  —  L5447–5447 ── */
+    const alreadySaved = !!savedMatch;
+
+/* ── subgenres  —  calcul dans renderReady()  —  L5615–5625 ── */
+    const subgenres = (SUBS[s.catId] || SUBS[0]).map((label, i) => ({
+      n: catalogue.filter(o => o.cat === s.catId && o.subs.indexOf(i) > -1).length,
+      label: label.toUpperCase(),
+      pick: () => this.setState(st => {
+        const cur = (st.subs || []).slice();
+        const k = cur.indexOf(i);
+        if (k > -1) cur.splice(k, 1); else cur.push(i);
+        return { subs: cur };
+      }),
+      style: CHIP + (subsSel.indexOf(i) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
+    })).filter(x => x.n > 0);
+
+</script>

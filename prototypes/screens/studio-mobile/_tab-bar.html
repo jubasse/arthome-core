@@ -1,0 +1,165 @@
+<!--
+  PIÈCE        _tab-bar — la barre de quatre onglets, dérivée du rôle
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  RÔLE         La mécanique centrale de cette surface : quatre entrées au plus, choisies par le rôle tenu SUR LA CHAÎNE COURANTE, plus une entrée « Plus » toujours présente.
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  L814-826
+               modèle    L962-1019 (ROLES, SHORT, GRANTS, ACCESS, FREE, ORDER, PAGE_META, TAB_PREF, TAB_SHORT) · L1626-1632 (accès) · L1727-1768 (onglets et retour)
+  NOTE         Les deux tranches de renderReady() sont AUSSI dans _shell.html, verbatim. Duplication voulue.
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+<!--
+  La dérivation, dans cet ordre exact (extraite telle quelle ci-dessous) :
+
+    roles   = rôle tenu sur la chaîne courante  ∪  second rôle éventuel
+    union   = ⋃ ACCESS[r]                         « l'accès est l'union des rôles, jamais un rang »
+    allowed = ORDER filtré par union              ordre canonique, pas l'ordre d'arrivée
+    free    = ⋃ FREE[r]  +  inbox
+    pref    = ⋃ TAB_PREF[r], dédupliqué           ordre de préférence PAR RÔLE
+    tabs    = pref ∩ (allowed ∪ free), 4 au plus  + « Plus »
+
+  ⚠ TAB_PREF n'est pas ORDER tronqué. Pour artist, ORDER∩ACCESS donne
+    dashboard · crew · events · stream, alors que TAB_PREF.artist donne
+    dashboard · events · crew · tickets. Deux différences sur quatre.
+    Voir needs/studio-mobile.md §Confrontation C2.
+
+  ⚠ TAB_PREF.regie contient « regie », qui n'est PAS dans ACCESS.regie : il n'entre dans la
+    barre que par FREE.regie. Voir needs/studio-mobile.md §Confrontation C1 et
+    architecture/corrections-handoff.md E6.
+-->
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!-- ---- la barre, fixée en bas (L814-826) ---- -->
+  <div style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 45; display: flex; justify-content: center; pointer-events: none;">
+    <div style="{{ tabBarStyle }}">
+      <sc-for list="{{ tabs }}" as="t">
+        <div onClick="{{ t.go }}" style="{{ t.style }}">
+          <svg viewBox="0 0 24 24" style="{{ t.iconStyle }}"><path d="{{ t.iconPath }}"></path></svg>
+          <span style="{{ t.labelStyle }}">{{ t.label }}</span>
+          <sc-if value="{{ t.badge }}" hint-placeholder-val="{{ false }}">
+            <span style="position: absolute; top: 6px; right: 12px; min-width: 13px; height: 13px; display: flex; align-items: center; justify-content: center; padding: 0 2px; background: oklch(0.78 0.13 75); color: #0E0F10; font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 500;">{{ t.badge }}</span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+<script type="text/x-dc-fragment">
+/* ---- les tables (L962-1019) ---- */
+const ROLES = {
+  artist: ['ARTISTE · PROPRIÉTAIRE', INK2],
+  prod:   ['PRODUCTION', INFO],
+  regie:  ['RÉGIE', 'oklch(0.7 0.012 240)'],
+  mod:    ['MODÉRATION', MUTE],
+  coord:  ['COORDINATION', WARN],
+  tres:   ['TRÉSORERIE', OK]
+};
+const SHORT = { artist: 'Artiste', prod: 'Production', regie: 'Régie', mod: 'Modération', coord: 'Coordination', tres: 'Trésorerie' };
+let GRANTS = {};
+const ACCESS = {
+  artist: ['dashboard', 'events', 'stream', 'crew', 'stats', 'tickets', 'store', 'replays', 'payouts', 'journal', 'settings', 'help'],
+  prod:   ['dashboard', 'events', 'stream', 'crew', 'stats', 'tickets', 'store', 'replays', 'journal', 'help'],
+  regie:  ['agenda', 'events', 'stream', 'replays', 'help'],
+  mod:    ['agenda', 'moderation', 'help'],
+  coord:  ['crew', 'journal', 'help'],
+  tres:   ['dashboard', 'stats', 'tickets', 'payouts', 'journal', 'help']
+};
+const FREE = {
+  artist: ['event', 'wizard', 'regie'],
+  prod:   ['event', 'wizard', 'regie'],
+  regie:  ['event', 'regie'],
+  coord:  [], mod: [], tres: []
+};
+const ORDER = ['agenda', 'dashboard', 'moderation', 'crew', 'events', 'stream', 'stats', 'tickets', 'store', 'replays', 'payouts', 'journal', 'settings', 'help'];
+const PAGE_META = {
+  agenda:     ['Mes dates', '#ic-agenda'],
+  dashboard:  ['Tableau de bord', '#ic-dash'],
+  moderation: ['Modération', '#ic-mod'],
+  crew:       ['Planning et équipe', '#ic-crew'],
+  events:     ['Événements', '#ic-events'],
+  stream:     ['Diffusion', '#ic-stream'],
+  stats:      ['Statistiques', '#ic-stats'],
+  tickets:    ['Billetterie', '#ic-tickets'],
+  store:      ['Boutique', '#ic-store'],
+  replays:    ['Rediffusions', '#ic-replays'],
+  payouts:    ['Versements', '#ic-payouts'],
+  journal:    ['Journal', '#ic-journal'],
+  settings:   ['Réglages de la chaîne', '#ic-settings'],
+  help:       ['Aide et guides', '#ic-help'],
+  regie:      ['Régie', '#ic-regie'],
+  event:      ['Fiche de la date', '#ic-event'],
+  wizard:     ['Nouvelle date', '#ic-wizard'],
+  inbox:      ['Boîte', '#ic-inbox']
+};
+const TAB_PREF = {
+  artist: ['dashboard', 'events', 'crew', 'tickets'],
+  prod:   ['dashboard', 'events', 'crew', 'stream'],
+  regie:  ['agenda', 'stream', 'regie', 'events'],
+  mod:    ['agenda', 'moderation', 'help'],
+  coord:  ['crew', 'journal', 'help'],
+  tres:   ['dashboard', 'payouts', 'tickets', 'stats']
+};
+const TAB_SHORT = {
+  dashboard: 'Bord', events: 'Dates', crew: 'Équipe', agenda: 'Mes dates', stream: 'Diffusion',
+  regie: 'Régie', moderation: 'Modér.', journal: 'Journal', payouts: 'Versements',
+  tickets: 'Billets', stats: 'Stats', help: 'Aide', store: 'Boutique', replays: 'Rediff.'
+};
+
+/* ---- accès : union des rôles (extrait de renderReady, L1626-1632) ---- */
+    /* accès : union des rôles, jamais un rang */
+    const union = roles.reduce((acc, r) => acc.concat(ACCESS[r] || []), []);
+    const allowed = ORDER.filter(p => union.indexOf(p) > -1);
+    const free = ['event', 'wizard', 'regie'].filter(p => roles.some(r => (FREE[r] || []).indexOf(p) > -1));
+    free.push('inbox');
+    const page = (s.page && (allowed.indexOf(s.page) > -1 || free.indexOf(s.page) > -1)) ? s.page : allowed[0];
+
+
+/* ---- onglets bas et bouton de retour (extrait de renderReady, L1727-1768) ---- */
+    /* ---------- onglets bas : quatre entrées au plus, dérivées du rôle ---------- */
+    const pref = roles.reduce((acc, r) => acc.concat(TAB_PREF[r] || []), []).filter((v, i, a) => a.indexOf(v) === i);
+    const tabKeys = pref.filter(k => allowed.indexOf(k) > -1 || free.indexOf(k) > -1).slice(0, 4);
+    const badges = {
+      agenda: tonight.length ? String(tonight.length) : '',
+      events: String(evDefs.length),
+      moderation: (() => {
+        const mq = (MOD_CTX[chan.name] || { queue: [] }).queue;
+        const n = mq.filter((x, i) => !(s.modDone || {})[i] && x[4] !== 'decided').length;
+        return n ? String(n) : '';
+      })(),
+      crew: '', dashboard: '', stream: '', regie: '', journal: '', payouts: ''
+    };
+    const tabs = tabKeys.map(k => {
+      const on = page === k || (k === 'events' && (page === 'event' || page === 'wizard'));
+      return {
+        key: k, icon: PAGE_META[k][1], iconPath: iconPath(PAGE_META[k][1]), label: T(TAB_SHORT[k] || PAGE_META[k][0]), badge: badges[k] || '',
+        go: () => this.go(k),
+        style: 'flex: 1 1 0; min-width: 0; min-height: 56px; box-sizing: border-box; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; border-top: 2px solid '
+          + (on ? '#E6E9EC' : 'transparent') + '; background: ' + (on ? '#191C20' : 'transparent') + ';',
+        iconStyle: 'width: 20px; height: 20px; display: block; fill: none; stroke: currentColor; stroke-width: 1.6; color: ' + (on ? '#E6E9EC' : '#5B636B') + ';',
+        labelStyle: MONO + 'font-size: 9px; letter-spacing: 0.09em; text-transform: uppercase; color: ' + (on ? '#E6E9EC' : '#7C858D') + ';'
+      };
+    }).concat([{
+      key: 'more', icon: '#ic-more', iconPath: iconPath('#ic-more'), label: T('Plus'), badge: '',
+      go: () => this.openSheet('more'),
+      style: 'flex: 1 1 0; min-width: 0; min-height: 56px; box-sizing: border-box; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; border-top: 2px solid '
+        + (s.sheet === 'more' ? '#E6E9EC' : 'transparent') + '; background: ' + (s.sheet === 'more' ? '#191C20' : 'transparent') + ';',
+      iconStyle: 'width: 20px; height: 20px; display: block; fill: none; stroke: currentColor; stroke-width: 1.6; color: ' + (s.sheet === 'more' ? '#E6E9EC' : '#5B636B') + ';',
+      labelStyle: MONO + 'font-size: 9px; letter-spacing: 0.09em; text-transform: uppercase; color: ' + (s.sheet === 'more' ? '#E6E9EC' : '#7C858D') + ';'
+    }]);
+
+    ctx.tabKeys = tabKeys;
+    /* d'où l'on vient : une page hors barre d'onglets porte toujours son retour */
+    if (page !== this._page) { this._back = this._page; this._page = page; }
+    let backTo = null;
+    if (tabKeys.indexOf(page) < 0) {
+      const PARENT = { event: 'events', wizard: 'events', regie: 'agenda' };
+      backTo = [this._back, PARENT[page], allowed[0]]
+        .filter(x => x && x !== page && (allowed.indexOf(x) > -1 || free.indexOf(x) > -1))[0] || null;
+    }
+
+</script>

@@ -1,0 +1,252 @@
+<!--
+  ÉCRAN      Compte — Recherches enregistrées
+  ROUTE      page === 'account', accTab === 'alerts'
+  AFFICHE    Les recherches enregistrées : critères dépliables, canaux d'alerte, pause, renommage, suppression, et le nombre de correspondances.
+  MÈNE VERS  account
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2489-2572
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       La signature de déduplication (`alertSig`) est calculée côté client dans la maquette ;
+             le contrat la rend au serveur (`criteriaSignature`).
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — listSavedSearches, updateSavedSearch, deleteSavedSearch
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : A, availW, category, cats, fr, ordWide, s, t
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <sc-if value="{{ accAlerts }}" hint-placeholder-val="{{ false }}">
+      <div style="animation: fadeIn .3s ease both; max-width: 860px;">
+        <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 16px;">
+          <h2 style="{{ accH2 }} margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.accAlerts }}</h2>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ t.accAlertsSub }}</span>
+          <span onClick="{{ goBrowse }}" style="margin-left: auto; cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #C9C0B2; transition: border-color .24s ease;" style-hover="border-color:#4A423A">{{ t.newSearch }}</span>
+        </div>
+        <sc-if value="{{ noAlerts }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #1F1C19; background: #0D0C0A; padding: 40px 32px; text-align: center;">
+            <div style="font-family: 'Instrument Serif', serif; font-size: 24px;">{{ t.emptyAlerts }}</div>
+            <div style="padding-top: 10px; font-size: 13.5px; line-height: 1.55; color: #857E73; max-width: 420px; margin: 0 auto; text-wrap: pretty;">{{ t.emptyAlertsHint }}</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ hasAlerts }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <sc-for list="{{ alertsList }}" as="al" hint-placeholder-count="3">
+              <div style="border: 1px solid #1F1C19; background: #0F0E0C; padding: 16px; transition: background .24s ease, border-color .24s ease;" style-hover="background:#161310;border-color:#2A2621">
+                <div style="{{ alHead }}">
+                  <span style="{{ al.kindStyle }}">{{ al.kindLabel }}</span>
+                  <sc-if value="{{ al.notEditing }}" hint-placeholder-val="{{ true }}">
+                    <span style="font-size: 15px; font-weight: 500; min-width: 0;">{{ al.title }}</span>
+                  </sc-if>
+                  <sc-if value="{{ al.editing }}" hint-placeholder-val="{{ false }}">
+                    <input data-pop="rename" value="{{ al.renameDraft }}" onChange="{{ al.onRenameInput }}" onKeyDown="{{ al.onRenameKey }}" title="{{ t.alertRenameHint }}" style="width: 280px; max-width: 100%; box-sizing: border-box; padding: 6px 9px; border: 1px solid rgba(237,231,220,0.5); background: #0B0A09; font-family: inherit; font-size: 15px; font-weight: 500; color: #EDE7DC; outline: none;" />
+                  </sc-if>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ al.stateColor }};">{{ al.stateLabel }}</span>
+                  <span onClick="{{ al.toggleExpand }}" style="{{ alSummary }}" style-hover="color:#EDE7DC">{{ al.summary }} {{ al.caret }}</span>
+                  <sc-if value="{{ alWide }}" hint-placeholder-val="{{ true }}">
+                    <div style="margin-left: auto; flex: 0 0 auto; display: flex; gap: 8px; align-items: center;">
+                    <span onClick="{{ al.toggle }}" style="{{ al.toggleStyle }}">{{ al.toggleLabel }}</span>
+                    <span onClick="{{ al.startRename }}" title="{{ t.alertRename }}" style="cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 11px; color: #857E73; transition: border-color .2s ease, color .2s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">✎</span>
+                    <span onClick="{{ al.remove }}" title="{{ t.alertDelete }}" style="cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 11px; color: #857E73; transition: border-color .2s ease, color .2s ease;" style-hover="border-color:oklch(0.5 0.14 27);color:oklch(0.78 0.14 27)">🗑</span>
+                    </div>
+                  </sc-if>
+                </div>
+
+                <sc-if value="{{ al.expanded }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px; animation: fadeIn .18s ease both;">
+                  <sc-for list="{{ al.groups }}" as="ag" hint-placeholder-count="2">
+                    <div style="display: grid; {{ alGroupCols }} align-items: baseline;">
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #575047;">{{ ag.title }}</span>
+                      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <sc-for list="{{ ag.chips }}" as="tk" hint-placeholder-count="2">
+                          <span style="padding: 4px 9px; border: 1px solid #1F1C19; background: #131110; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #C9C0B2; white-space: nowrap;">{{ tk.label }}</span>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <div style="display: grid; {{ alGroupCols }} align-items: baseline;">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #575047;">{{ t.sortLabel }}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #9B948A;">{{ al.sortLine }}</span>
+                  </div>
+                </div>
+                </sc-if>
+
+                <div style="{{ alFoot }}">
+                  <div style="{{ alFootA }}">
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ t.alertMatches }}</span>
+                      <span style="font-family: 'Instrument Serif', serif; font-size: 16px; line-height: 1;">{{ al.matches }}</span>
+                    </div>
+                    <span style="{{ alCreated }}">{{ t.alertCreatedAt }} {{ al.created }}</span>
+                    <span onClick="{{ al.see }}" style="{{ alFootSee }}" style-hover="background:#1F1C19">{{ al.seeLabel }}</span>
+                  </div>
+                  <div style="{{ alFootB }}">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ t.alertChannels }}</span>
+                    <span onClick="{{ al.togglePush }}" style="{{ al.pushStyle }}">PUSH</span>
+                    <span onClick="{{ al.toggleEmail }}" style="{{ al.emailStyle }}">E-MAIL</span>
+                    <sc-if value="{{ alNarrow }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-left: auto; flex: 0 0 auto; display: flex; gap: 8px; align-items: center;">
+                    <span onClick="{{ al.toggle }}" style="{{ al.toggleStyle }}">{{ al.toggleLabel }}</span>
+                    <span onClick="{{ al.startRename }}" title="{{ t.alertRename }}" style="cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 11px; color: #857E73; transition: border-color .2s ease, color .2s ease;" style-hover="border-color:#4A423A;color:#EDE7DC">✎</span>
+                    <span onClick="{{ al.remove }}" title="{{ t.alertDelete }}" style="cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid #332E28; font-size: 11px; color: #857E73; transition: border-color .2s ease, color .2s ease;" style-hover="border-color:oklch(0.5 0.14 27);color:oklch(0.78 0.14 27)">🗑</span>
+                      </div>
+                    </sc-if>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* accStack  —  lignes 5747-5747 */
+    const accStack = availW < 760;
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      accH2: accStack ? 'display: none;' : '',
+      accAlerts: s.accTab === 'alerts',
+      hasAlerts: s.alerts.length > 0,
+      noAlerts: s.alerts.length === 0,
+      alertsList: s.alerts.map(al => ({
+        title: this.alertName(al, cats, t),
+        groups: (() => {
+          const st = al.st || {};
+          const g = [];
+          const add = (title, labels) => { if (labels.length) g.push({ title, chips: labels.map(label => ({ label })) }); };
+          if (al.query) add(t.saveQuery, [al.query]);
+          add(t.fCats, (st.fCats || []).map(x => cats[x] && cats[x].name).filter(Boolean));
+          add(t.subgenres, (st.fCats || []).length === 1
+            ? (st.fSubs || []).map(i => (SUBS_ALL[fr ? 'fr' : 'en'][st.fCats[0]] || [])[i]).filter(Boolean)
+            : []);
+          const PL = { free: t.pFree, u10: t.pU10, '1020': t.p1020, '2035': t.p2035, o35: t.p35 };
+          add(t.fPrice, (st.fPrices || []).map(k => PL[k]).filter(Boolean));
+          const DL = { tonight: t.dTonight, weekend: t.dWeekend, d7: t.d7, d30: t.d30, range: t.dRange };
+          add(t.fDate, st.fDate && st.fDate !== 'all' && DL[st.fDate] ? [DL[st.fDate]] : []);
+          const SL = { live: t.stLive, soon: t.stSoon, replay: t.stReplay };
+          add(t.fStatus, st.fStatus && st.fStatus !== 'all' && SL[st.fStatus] ? [SL[st.fStatus]] : []);
+          const misc = [];
+          if (st.fAlmost) misc.push(t.almostFull);
+          if (st.fHasDates) misc.push(t.hasDates);
+          if (st.fExpiring) misc.push(t.expSoon);
+          if (st.fPromo) misc.push(t.promoFilter);
+          add(t.fMisc, misc);
+          return g;
+        })(),
+        created: al.created,
+        matches: String(A.datesOfArtist((((this.A.fixtures.accounts || [])[0] || { alerts: [] }).alerts[al.id - 1] || {}).artist || '')
+          .filter(d => A.stateOf(d) !== 'ended').length),
+        stateLabel: al.active ? t.alertActive : t.alertPaused,
+        stateColor: al.active ? 'oklch(0.7 0.13 150)' : '#857E73',
+        toggleStyle: 'cursor: pointer; padding: 4px 9px; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.08em; transition: background .2s ease; ' +
+          (al.active ? 'background: #EDE7DC; color: #0B0A09;' : 'border: 1px solid #332E28; color: #9B948A;'),
+        toggleLabel: al.active ? t.alertPause : t.alertResume,
+        toggle: () => this.setState(st => ({ alerts: st.alerts.map(x => x.id === al.id ? Object.assign({}, x, { active: !x.active }) : x) })),
+        pushStyle: 'cursor: pointer; padding: 4px 9px; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.08em; transition: background .2s ease; ' +
+          (al.push ? 'background: #1F1C19; color: #EDE7DC;' : 'border: 1px solid #332E28; color: #6B6459;'),
+        togglePush: () => this.setState(st => ({ alerts: st.alerts.map(x => x.id === al.id ? Object.assign({}, x, { push: !x.push }) : x) })),
+        emailStyle: 'cursor: pointer; padding: 4px 9px; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.08em; transition: background .2s ease; ' +
+          (al.email ? 'background: #1F1C19; color: #EDE7DC;' : 'border: 1px solid #332E28; color: #6B6459;'),
+        toggleEmail: () => this.setState(st => ({ alerts: st.alerts.map(x => x.id === al.id ? Object.assign({}, x, { email: !x.email }) : x) })),
+        remove: e => { if (e && e.stopPropagation) e.stopPropagation(); this.setState({ deleteId: al.id }); },
+        expanded: !!(s.openAlerts || {})[al.id],
+        collapsed: !(s.openAlerts || {})[al.id],
+        toggleExpand: e => {
+          if (e && e.stopPropagation) e.stopPropagation();
+          this.setState(st => ({ openAlerts: Object.assign({}, st.openAlerts, { [al.id]: !(st.openAlerts || {})[al.id] }) }));
+        },
+        caret: (s.openAlerts || {})[al.id] ? '▴' : '▾',
+        summary: (() => {
+          const st2 = al.st || {};
+          const n = (st2.fCats || []).length + (st2.fSubs || []).length + (st2.fPrices || []).length
+            + (st2.fDate && st2.fDate !== 'all' ? 1 : 0) + (st2.fStatus && st2.fStatus !== 'all' ? 1 : 0)
+            + (st2.fAlmost ? 1 : 0) + (st2.fHasDates ? 1 : 0) + (st2.fExpiring ? 1 : 0) + (st2.fPromo ? 1 : 0);
+          return n + ' ' + (n > 1 ? (fr ? 'FILTRES' : 'FILTERS') : (fr ? 'FILTRE' : 'FILTER'));
+        })(),
+        sortLabel: (() => {
+          const M = { auto: (al.query ? t.sortRelevance : t.sortSoon), soon: t.sortSoon, pop: t.sortPop, priceUp: t.sortPriceUp, priceDown: t.sortPriceDown };
+          return M[(al.st || {}).sort] || M.auto;
+        })(),
+        sortLine: (() => {
+          const SM = { auto: (al.query ? t.sortRelevance : t.sortSoon), soon: t.sortSoon, pop: t.sortPop, priceUp: t.sortPriceUp, priceDown: t.sortPriceDown };
+          const sort = SM[(al.st || {}).sort] || SM.auto;
+          if (al.scope === 'category') return sort;
+          const TM = { best: t.tabBest, lives: t.tabLives, artists: t.tabArtists, replays: t.tabReplays };
+          return sort + ' · ' + (TM[(al.st || {}).sTab] || t.tabBest);
+        })(),
+        kindLabel: al.scope === 'category' ? t.scopeCategory : t.scopeSearch,
+        kindStyle: "flex: 0 0 auto; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; padding: 3px 7px; border: 1px solid " +
+          (al.scope === 'category' ? 'rgba(214,178,102,0.4); color: oklch(0.86 0.09 84);' : '#332E28; color: #857E73;'),
+        seeLabel: al.scope === 'category' ? t.alertSeeCat : t.alertSee,
+        editing: s.renameId === al.id,
+        notEditing: s.renameId !== al.id,
+        startRename: () => this.setState({ renameId: al.id, renameDraft: this.alertName(al, cats, t) }),
+        renameDraft: s.renameDraft,
+        onRenameInput: e => this.setState({ renameDraft: e.target.value }),
+        commitRename: () => this.setState(st => ({
+          alerts: st.alerts.map(x => x.id === al.id ? Object.assign({}, x, { name: st.renameDraft.trim() }) : x),
+          renameId: null, renameDraft: ''
+        })),
+        cancelRename: () => this.setState({ renameId: null, renameDraft: '' }),
+        onRenameKey: e => {
+          if (e.key === 'Enter') this.setState(st => ({
+            alerts: st.alerts.map(x => x.id === al.id ? Object.assign({}, x, { name: st.renameDraft.trim() }) : x),
+            renameId: null, renameDraft: ''
+          }));
+          if (e.key === 'Escape') this.setState({ renameId: null, renameDraft: '' });
+        },
+        see: () => this.applyAlert(al)
+      })),
+      alHead: ordWide
+        ? 'display: flex; align-items: center; gap: 12px; flex-wrap: wrap;'
+        : 'display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap;',
+      alWide: ordWide, alNarrow: !ordWide,
+      alSummary: "cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459; transition: color .2s ease;"
+        + (ordWide ? '' : ' flex: 1 0 100%;'),
+      alFoot: 'margin-top: 14px; border-top: 1px solid #16140F; padding-top: 12px; display: flex; gap: 12px; '
+        + (ordWide ? 'align-items: center;' : 'flex-direction: column; align-items: stretch;'),
+      alFootA: ordWide
+        ? 'display: flex; align-items: center; gap: 16px; flex: 1 1 auto; min-width: 0;'
+        : 'display: flex; align-items: center; gap: 14px; min-width: 0;',
+      alFootB: ordWide
+        ? 'display: flex; align-items: center; gap: 8px; flex: 0 0 auto;'
+        : 'display: flex; align-items: center; gap: 8px; flex-wrap: wrap;',
+      alCreated: "font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #575047; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+        + (ordWide ? '' : ' display: none;'),
+      alFootSee: 'margin-left: auto; flex: 0 0 auto; cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease;',
+      alGroupCols: availW >= 620 ? 'grid-template-columns: 92px minmax(0,1fr); gap: 12px;' : 'grid-template-columns: minmax(0,1fr); gap: 5px;',
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.accAlerts  t.accAlertsSub  t.alertActive  t.alertChannels  t.alertCreatedAt  
+    t.alertDelete  t.alertMatches  t.alertPause  t.alertPaused  t.alertRename  
+    t.alertRenameHint  t.alertResume  t.alertSee  t.alertSeeCat  t.almostFull  t.d30  t.d7  
+    t.dRange  t.dTonight  t.dWeekend  t.emptyAlerts  t.emptyAlertsHint  t.expSoon  t.fCats  
+    t.fDate  t.fMisc  t.fPrice  t.fStatus  t.hasDates  t.newSearch  t.p1020  t.p2035  t.p35  
+    t.pFree  t.pU10  t.promoFilter  t.saveQuery  t.scopeCategory  t.scopeSearch  t.sortLabel  
+    t.sortPop  t.sortPriceDown  t.sortPriceUp  t.sortRelevance  t.sortSoon  t.stLive  
+    t.stReplay  t.stSoon  t.subgenres  t.tabArtists  t.tabBest  t.tabLives  t.tabReplays  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    accTab  alerts  fAlmost  fCats  fDate  fExpiring  fHasDates  fPrices  fPromo  fStatus  
+    fSubs  openAlerts  renameDraft  renameId  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    alertName, applyAlert, setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

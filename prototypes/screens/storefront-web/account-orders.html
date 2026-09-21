@@ -1,0 +1,183 @@
+<!--
+  ÉCRAN      Compte — Commandes
+  ROUTE      page === 'account', accTab === 'orders'
+  AFFICHE    Les commandes de marchandise, y compris le reflet des commandes passées sur la boutique propre de l'artiste, avec leur référence marchand.
+  MÈNE VERS  account
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2573-2657
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  NOTE       Cinq plateformes externes sont nommées dans le modèle de vue : Shopify, WooCommerce,
+             PrestaShop, Drupal Commerce, API.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — listMyOrders
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : availW, fr, ordMid, ordWide, s, t
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <sc-if value="{{ accOrders }}" hint-placeholder-val="{{ false }}">
+      <div style="animation: fadeIn .3s ease both; max-width: 860px;">
+        <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 16px;">
+          <h2 style="{{ accH2 }} margin: 0; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.accOrders }}</h2>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #857E73;">{{ t.accOrdersSub }}</span>
+        </div>
+        <sc-if value="{{ noOrders }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid #1F1C19; background: #0D0C0A; padding: 40px 32px; text-align: center;">
+            <div style="font-family: 'Instrument Serif', serif; font-size: 24px;">{{ t.emptyOrders }}</div>
+            <div style="padding-top: 10px; font-size: 13.5px; line-height: 1.55; color: #857E73; max-width: 420px; margin: 0 auto; text-wrap: pretty;">{{ t.emptyOrdersHint }}</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ hasOrders }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <sc-for list="{{ ordersList }}" as="o" hint-placeholder-count="3">
+              <div style="border: 1px solid #1F1C19; background: #0F0E0C; padding: 16px; transition: background .24s ease, border-color .24s ease;" style-hover="background:#161310;border-color:#2A2621">
+                <div style="{{ ordGrid }}">
+                  <div style="{{ ordHeadCol }}">
+                    <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; color: #EDE7DC;">{{ o.ref }}</span>
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ o.statusColor }};">{{ o.statusLabel }}</span>
+                    </div>
+                    <div style="padding-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6B6459;">{{ t.cartFrom }} {{ o.seller }} · {{ t.ordPlaced }} {{ o.placed }}</div>
+                    <div style="padding-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: {{ o.soldByColor }};">{{ o.soldBy }}</span>
+                      <sc-if value="{{ o.isExternal }}" hint-placeholder-val="{{ false }}">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="padding: 3px 8px; border: 1px solid #1F1C19; background: #131110; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #C9C0B2;">{{ o.platform }}</span>
+                          <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #6B6459;">{{ t.ordExtRef }} {{ o.extRef }}</span>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </div>
+                  <div style="{{ ordFactsRow }}">
+                    <div>
+                      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ t.ordItems }}</div>
+                      <div onClick="{{ o.toggleLines }}" title="{{ t.ordDetail }}" style="cursor: pointer; padding-top: 6px; display: flex; align-items: baseline; gap: 7px; font-size: 13.5px; color: #C9C0B2; transition: color .2s ease;" style-hover="color:#EDE7DC">
+                        <span>{{ o.itemsLabel }}</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #6B6459;">{{ o.caret }}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">{{ t.ordTotal }}</div>
+                      <div style="padding-top: 4px; font-family: 'Instrument Serif', serif; line-height: 1; {{ ordTotalSize }}">{{ o.total }}</div>
+                    </div>
+                  </div>
+                  <div style="{{ ordActions }}">
+                    <sc-if value="{{ o.isPhysical }}" hint-placeholder-val="{{ true }}">
+                      <span style="cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease;" style-hover="background:#1F1C19">{{ t.ordTrack }}</span>
+                    </sc-if>
+                    <sc-if value="{{ o.isExternal }}" hint-placeholder-val="{{ false }}">
+                      <span style="cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid #332E28; font-size: 12.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease;" style-hover="background:#1F1C19;border-color:#4A423A">{{ o.extLabel }} ↗</span>
+                    </sc-if>
+                    <sc-if value="{{ o.isDigital }}" hint-placeholder-val="{{ false }}">
+                      <span style="cursor: pointer; padding: 8px 14px; white-space: nowrap; border: 1px solid transparent; background: #EDE7DC; color: #0B0A09; font-size: 12.5px; font-weight: 600; transition: background .24s ease;" style-hover="background:oklch(0.94 0.03 80)">{{ t.ordDownload }}</span>
+                    </sc-if>
+                    <sc-if value="{{ o.isPhysical }}" hint-placeholder-val="{{ true }}">
+                      <span style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73; border-bottom: 1px solid #1F1C19; transition: color .2s ease;" style-hover="color:#EDE7DC">{{ t.ordInvoice }}</span>
+                    </sc-if>
+                    <sc-if value="{{ o.isDigital }}" hint-placeholder-val="{{ false }}">
+                      <span style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #857E73; border-bottom: 1px solid #1F1C19; transition: color .2s ease;" style-hover="color:#EDE7DC">{{ t.ordInvoice }}</span>
+                    </sc-if>
+                  </div>
+                </div>
+                <sc-if value="{{ o.linesOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 13px; border-top: 1px solid #16140F; padding-top: 11px; display: flex; flex-direction: column; gap: 6px; animation: fadeIn .18s ease both;">
+                  <sc-for list="{{ o.lines }}" as="ln" hint-placeholder-count="2">
+                    <div style="display: flex; align-items: baseline; gap: 10px;">
+                      <span style="font-size: 12.5px; color: #C9C0B2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ln.name }}</span>
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #6B6459;">{{ ln.qty }}</span>
+                      <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #857E73;">{{ ln.price }}</span>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ o.isExternal }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top: 5px; border: 1px solid #1F1C19; background: #0C0B0A; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; color: #857E73; text-wrap: pretty; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{{ t.ordExtNotice }}</div>
+                  </sc-if>
+                </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* accStack  —  lignes 5747-5747 */
+    const accStack = availW < 760;
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      accH2: accStack ? 'display: none;' : '',
+      accOrders: s.accTab === 'orders',
+      ordGrid: ordWide
+        ? 'display: grid; grid-template-columns: minmax(0,1fr) 132px 108px auto; gap: 18px; align-items: baseline;'
+        : (ordMid
+          ? 'display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 14px 18px; align-items: baseline;'
+          : 'display: flex; flex-direction: column; gap: 12px;'),
+      ordHeadCol: ordWide ? 'min-width: 0;' : 'min-width: 0; grid-column: 1 / -1;',
+      ordFactsRow: ordWide
+        ? 'display: contents;'
+        : 'display: flex; align-items: baseline; gap: 26px; flex-wrap: wrap;',
+      ordActions: ordWide
+        ? 'display: flex; gap: 8px; align-items: center;'
+        : (ordMid ? 'display: flex; flex-direction: column; gap: 10px; align-items: flex-end;'
+          : 'display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border-top: 1px solid #16140F; padding-top: 12px;'),
+      ordTotalSize: ordWide ? 'font-size: 24px;' : (ordMid ? 'font-size: 22px;' : 'font-size: 21px;'),
+      hasOrders: s.orders.length > 0, noOrders: s.orders.length === 0,
+      ordersList: s.orders.map(o => {
+        const linesOpen = !!(s.openOrders || {})[o.ref];
+        const PLATFORMS = { shopify: 'Shopify', woocommerce: 'WooCommerce', prestashop: 'PrestaShop', drupal: 'Drupal Commerce', api: 'API' };
+        const isExt = o.status === 'external';
+        const st = { delivered: [t.ordDelivered, 'oklch(0.7 0.13 150)'], shipped: [t.ordShipped, 'oklch(0.78 0.13 42)'],
+          prep: [t.ordPrep, '#C9C0B2'], digital: [t.ordDigital, 'oklch(0.72 0.14 250)'],
+          external: [(fr ? 'CHEZ L’ARTISTE' : 'AT THE ARTIST’S'), '#9B948A'] }[o.status] || [o.status, '#C9C0B2'];
+        const qty = o.lines.reduce((n, l) => n + l[2], 0);
+        return {
+          linesOpen,
+          caret: linesOpen ? '▴' : '▾',
+          toggleLines: e => {
+            if (e && e.stopPropagation) e.stopPropagation();
+            this.setState(st => ({ openOrders: Object.assign({}, st.openOrders, { [o.ref]: !(st.openOrders || {})[o.ref] }) }));
+          },
+          ref: o.ref, seller: o.seller, placed: fr ? o.date : o.dateEn,
+          statusLabel: st[0], statusColor: st[1],
+          isExternal: isExt, isDigital: o.status === 'digital', isPhysical: !isExt && o.status !== 'digital',
+          soldBy: isExt ? t.ordSoldExternal : t.ordSoldArthome,
+          soldByColor: isExt ? '#857E73' : 'oklch(0.7 0.13 150)',
+          platform: PLATFORMS[o.source] || '',
+          extRef: o.extRef || '', extHost: o.extHost || '',
+          extLabel: t.ordExtOpen + ' ' + (o.extHost || ''),
+          itemsLabel: qty + ' ' + (qty > 1 ? t.cartItems : t.cartItem),
+          total: o.lines.reduce((n, l) => n + l[2] * l[3], 0) + ' €',
+          lines: o.lines.map(l => ({ name: fr ? l[0] : l[1], qty: '×' + l[2], price: (l[2] * l[3]) + ' €' })),
+          goStore: () => this.setState({ page: 'live', tab: 'store', chatOpen: true })
+        };
+      }),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.accOrders  t.accOrdersSub  t.cartFrom  t.cartItem  t.cartItems  t.emptyOrders  
+    t.emptyOrdersHint  t.ordDelivered  t.ordDetail  t.ordDigital  t.ordDownload  
+    t.ordExtNotice  t.ordExtOpen  t.ordExtRef  t.ordInvoice  t.ordItems  t.ordPlaced  
+    t.ordPrep  t.ordShipped  t.ordSoldArthome  t.ordSoldExternal  t.ordTotal  t.ordTrack  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    accTab  openOrders  orders  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

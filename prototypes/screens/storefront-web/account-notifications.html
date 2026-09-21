@@ -1,0 +1,105 @@
+<!--
+  ÉCRAN      Compte — Notifications
+  ROUTE      page === 'account', accTab === 'notifs'
+  AFFICHE    Cinq déclencheurs, trois canaux, et les heures calmes avec leur exception.
+  MÈNE VERS  account
+
+  SOURCE     mockups/Storefront Web.dc.html, lignes 2764-2797
+             Extraction stricte : balisage et code recopiés tels quels, rien n'est
+             corrigé. L'original reste la référence et reste intact.
+
+  BESOINS    needs/storefront-web.md
+  CONTRAT    openapi/storefront.yaml — updateNotificationPreferences
+
+  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
+             pour : availW, fr, s
+  À LIRE     dépendances non recopiées ici : notifDefs
+-->
+
+<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+
+      <sc-if value="{{ accNotifs }}" hint-placeholder-val="{{ false }}">
+      <div style="animation: fadeIn .3s ease both; max-width: 760px;">
+        <h2 style="{{ accH2 }} margin: 0 0 18px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px;">{{ t.accNotifs }}</h2>
+        <div style="border: 1px solid #1F1C19; background: #100F0D;">
+          <div style="border-bottom: 1px solid #1F1C19; padding: 12px 20px; display: grid; grid-template-columns: minmax(0,1fr) 64px 64px 64px; gap: 12px; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #6B6459;">
+            <span>{{ t.notifEvent }}</span>
+            <span style="text-align: center;">PUSH</span>
+            <span style="text-align: center;">E-MAIL</span>
+            <span style="text-align: center;">SMS</span>
+          </div>
+          <sc-for list="{{ notifRows }}" as="n" hint-placeholder-count="5">
+            <div style="border-bottom: 1px solid #1F1C19; padding: 15px 20px; display: grid; grid-template-columns: minmax(0,1fr) 64px 64px 64px; gap: 12px; align-items: center;">
+              <div style="min-width: 0;">
+                <div style="font-size: 13.5px;">{{ n.label }}</div>
+                <div style="padding-top: 4px; font-size: 12.5px; color: #8B857C;">{{ n.hint }}</div>
+              </div>
+              <sc-for list="{{ n.cells }}" as="c" hint-placeholder-count="3">
+                <div onClick="{{ c.toggle }}" style="{{ c.wrapStyle }}">
+                  <div style="{{ c.knobStyle }}"></div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top: 16px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 16px 20px; display: flex; align-items: center; gap: 18px;">
+          <div>
+            <div style="font-size: 13.5px;">{{ t.quietHours }}</div>
+            <div style="padding-top: 4px; font-size: 12.5px; color: #8B857C; max-width: 470px; text-wrap: pretty;">{{ t.quietHoursHint }}</div>
+          </div>
+          <span onClick="{{ toggleQuiet }}" style="{{ quietStyle }}">{{ quietLabel }}</span>
+        </div>
+      </div>
+      </sc-if>
+
+
+<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+/* accStack  —  lignes 5747-5747 */
+    const accStack = availW < 760;
+/* notifRows  —  lignes 5892-5907 */
+    const notifRows = notifDefs.map(([key, label, hint]) => ({
+      label, hint,
+      cells: [0, 1, 2].map(ci => {
+        const on = s.notif[key][ci];
+        return {
+          toggle: () => this.setState(st => {
+            const row = st.notif[key].slice(); row[ci] = !row[ci];
+            return { notif: Object.assign({}, st.notif, { [key]: row }) };
+          }),
+          wrapStyle: 'cursor: pointer; justify-self: center; width: 38px; height: 21px; border-radius: 11px; padding: 3px; display: flex; ' +
+            (on ? 'background: oklch(0.68 0.18 42); justify-content: flex-end;' : 'background: #221F1B; justify-content: flex-start;'),
+          knobStyle: 'width: 15px; height: 15px; border-radius: 50%; background: ' + (on ? '#0B0A09' : '#857E73') + ';'
+        };
+      })
+    }));
+
+</script>
+
+<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<script type="text/x-dc-fragment">
+({
+      accH2: accStack ? 'display: none;' : '',
+      accNotifs: s.accTab === 'notifs', accSecurity: s.accTab === 'security',
+      notifRows: notifRows,
+      toggleQuiet: () => this.setState(st => ({ quiet: !st.quiet })),
+      quietLabel: s.quiet ? (fr ? 'ACTIVÉ' : 'ON') : (fr ? 'DÉSACTIVÉ' : 'OFF'),
+      quietStyle: 'margin-left: auto; flex: 0 0 auto; cursor: pointer; padding: 8px 14px; white-space: nowrap; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.1em; ' +
+        (s.quiet ? 'background: #EDE7DC; color: #0B0A09;' : 'border: 1px solid #332E28; color: #9B948A;'),
+})
+</script>
+
+<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!--
+  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+    t.accNotifs  t.notifEvent  t.quietHours  t.quietHoursHint  
+
+  ÉTAT LU (this.state, voir _shared-runtime.html) :
+    accTab  notif  quiet  
+
+  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+    setState
+
+  Les besoins de cet écran sont dans needs/storefront-web.md,
+  son contrat dans openapi/storefront.yaml.
+-->

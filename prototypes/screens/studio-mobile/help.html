@@ -1,0 +1,71 @@
+<!--
+  ÉCRAN        help
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
+  AFFICHE      Intégration OBS, réglages recommandés, règles de la plateforme, support et astreinte.
+  RÔLES        artist · prod · regie · mod · coord · tres   (les six)
+  MÈNE VERS    aucun (écran terminal)
+  SOURCE       prototypes/Studio Mobile.dc.html
+               balisage  hasBlocks L731-791
+               modèle    L3173-3211
+  CLÉS DE COPIE
+               - aucune — libellés français en dur dans le modèle de vue
+  CONTRAT
+               - openapi — AUCUN point d'entrée
+  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+
+  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
+  L'original ne doit jamais être modifié.
+-->
+
+
+<!-- ======================== BALISAGE ======================== -->
+
+<!--
+  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
+  partagé par tous les écrans, et n'est pas recopié ici :
+    hasBlocks      L731-791
+-->
+
+<!-- ====================== MODÈLE DE VUE ===================== -->
+
+<script type="text/x-dc-fragment">
+  page_help(c) {
+    return {
+      pageTitle: 'Aide et guides',
+      blocks: [
+        this.block('INTÉGRATION OBS', 'PAS À PAS', {
+          rows: this.rows([
+            { label: '1 · Serveur et clé', hint: 'Paramètres → Flux → Service « Personnalisé », collez le serveur d’ingest et la clé de la date', value: '' },
+            { label: '2 · Encodeur', hint: 'x264 veryfast en CPU, NVENC si carte dédiée · débit constant', value: '' },
+            { label: '3 · Résolution et images', hint: '1920×1080 en sortie, 25 ou 50 images par seconde, jamais variable', value: '' },
+            { label: '4 · Audio', hint: 'deux voies, 48 kHz, 160 kb/s · vérifiez les deux canaux avant le lever de rideau', value: '' },
+            { label: '5 · Tampon', hint: 'buffer long en 4G agrégée, court en fibre dédiée', value: '' }
+          ])
+        }),
+        this.block('RÉGLAGES RECOMMANDÉS SELON LE DÉBIT', '', {
+          rows: this.rows([
+            { label: 'Moins de 7 Mb/s', hint: '720p · 3,5 Mb/s — mieux vaut net que grand', value: '720P' },
+            { label: '7 à 12 Mb/s', hint: '1080p · 6 Mb/s — le réglage de la plupart des salles', value: '1080P' },
+            { label: '12 à 24 Mb/s', hint: '1440p · 10 Mb/s', value: '1440P' },
+            { label: 'Au-delà de 24 Mb/s', hint: '2160p · 20 Mb/s — réservé aux captations multi-caméras', value: '2160P' }
+          ])
+        }),
+        this.block('RÈGLES DE LA PLATEFORME', '', {
+          rows: this.rows([
+            { label: 'Jauge, rareté et prévisionnel', hint: 'pourquoi le seuil de 10 000 places engage, et comment le réviser', cta: 'LIRE ↗' },
+            { label: 'Rediffusion : ce qui est irrévocable', hint: 'les promesses faites aux acheteurs ne se retirent pas', cta: 'LIRE ↗' },
+            { label: 'Rôles, cumul et accès ponctuels', hint: 'qui peut donner quoi, et ce qui expire tout seul', cta: 'LIRE ↗' },
+            { label: 'Modération : armer plutôt que piloter', hint: 'régler le tchat avant de monter en scène quand on est seul', cta: 'LIRE ↗' }
+          ])
+        }),
+        this.block('SUPPORT', 'DÉLAI DE RÉPONSE ANNONCÉ', {
+          rows: this.rows([
+            { label: 'Écrire au support', hint: 'réponse sous 4 h ouvrées', cta: 'CONTACTER LE SUPPORT' },
+            { label: 'Ligne d’astreinte', hint: 'le jour d’une diffusion, de 17 h à 2 h · +33 1 84 80 00 00', pill: 'OUVERTE', pillColor: OK, cta: 'APPELER' }
+          ])
+        })
+      ]
+    };
+  }
+
+</script>

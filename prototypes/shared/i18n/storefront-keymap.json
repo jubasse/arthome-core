@@ -1,0 +1,1533 @@
+{
+  "note": "Storefront Web + Mobile — short name used in the components ↔ i18n key. Both surfaces share one map: their copy is identical by design. upper: rendered in capitals (styling, not a second translation). Regenerate the FR/EN blocks from i18n/ through this map; never edit copy inside a .dc.html.",
+  "map": {
+    "aboutArtist": {
+      "key": "storefront.aboutArtist"
+    },
+    "accAlerts": {
+      "key": "account.alerts"
+    },
+    "accAlertsSub": {
+      "key": "account.alertsSub",
+      "upper": true
+    },
+    "accBackToMenu": {
+      "key": "account.backToMenu",
+      "upper": true
+    },
+    "accFaves": {
+      "key": "account.faves"
+    },
+    "accNotifs": {
+      "key": "account.notifs"
+    },
+    "accOrders": {
+      "key": "account.orders"
+    },
+    "accOrdersSub": {
+      "key": "account.ordersSub",
+      "upper": true
+    },
+    "accPast": {
+      "key": "account.past"
+    },
+    "accPast2": {
+      "key": "account.past2",
+      "upper": true
+    },
+    "accPrefs": {
+      "key": "account.prefs"
+    },
+    "accPrivacy": {
+      "key": "account.privacy"
+    },
+    "accProfile": {
+      "key": "account.profile"
+    },
+    "accSecurity": {
+      "key": "account.security"
+    },
+    "accUpcoming": {
+      "key": "account.upcoming"
+    },
+    "accUpcoming2": {
+      "key": "account.upcoming2",
+      "upper": true
+    },
+    "activeFilters": {
+      "key": "discovery.filter.activeFilters",
+      "upper": true
+    },
+    "add": {
+      "key": "common.actions.add"
+    },
+    "alertActive": {
+      "key": "account.alerts.alertActive",
+      "upper": true
+    },
+    "alertAll": {
+      "key": "account.alerts.alertAll"
+    },
+    "alertChannels": {
+      "key": "account.alerts.alertChannels",
+      "upper": true
+    },
+    "alertCreatedAt": {
+      "key": "account.alerts.alertCreatedAt",
+      "upper": true
+    },
+    "alertDelete": {
+      "key": "account.alerts.alertDelete",
+      "upper": true
+    },
+    "alertDone": {
+      "key": "account.alerts.alertDone"
+    },
+    "alertHint": {
+      "key": "account.alerts.alertHint"
+    },
+    "alertMatches": {
+      "key": "account.alerts.alertMatches",
+      "upper": true
+    },
+    "alertPause": {
+      "key": "account.alerts.alertPause"
+    },
+    "alertPaused": {
+      "key": "account.alerts.alertPaused",
+      "upper": true
+    },
+    "alertRename": {
+      "key": "account.alerts.alertRename"
+    },
+    "alertRenameHint": {
+      "key": "account.alerts.alertRenameHint"
+    },
+    "alertResume": {
+      "key": "account.alerts.alertResume"
+    },
+    "alertSee": {
+      "key": "account.alerts.alertSee"
+    },
+    "alertSeeCat": {
+      "key": "account.alerts.alertSeeCat"
+    },
+    "allCategories": {
+      "key": "storefront.allCategories",
+      "upper": true
+    },
+    "allCatsSub": {
+      "key": "storefront.allCatsSub",
+      "upper": true
+    },
+    "allCatsTitle": {
+      "key": "storefront.allCatsTitle"
+    },
+    "almostFull": {
+      "key": "storefront.almostFull",
+      "upper": true
+    },
+    "almostGone": {
+      "key": "storefront.almostGone"
+    },
+    "almostGoneSub": {
+      "key": "storefront.almostGoneSub",
+      "upper": true
+    },
+    "alreadySaved": {
+      "key": "account.alerts.alreadySaved"
+    },
+    "amAll": {
+      "key": "hosting.amAll"
+    },
+    "amFormule": {
+      "key": "hosting.amFormule",
+      "upper": true
+    },
+    "amHelp": {
+      "key": "hosting.amHelp"
+    },
+    "amStudio": {
+      "key": "hosting.amStudio"
+    },
+    "artistBio": {
+      "key": "storefront.artistBio"
+    },
+    "artistMeta": {
+      "key": "storefront.artistMeta"
+    },
+    "artistsSub": {
+      "key": "storefront.artistsSub",
+      "upper": true
+    },
+    "artistsTitle": {
+      "key": "storefront.artistsTitle"
+    },
+    "authAlt": {
+      "key": "account.auth.alt"
+    },
+    "authEmail": {
+      "key": "account.auth.email",
+      "upper": true
+    },
+    "authGo": {
+      "key": "account.auth.go"
+    },
+    "authIntroIn": {
+      "key": "account.auth.introIn"
+    },
+    "authIntroUp": {
+      "key": "account.auth.introUp"
+    },
+    "authName": {
+      "key": "account.auth.name",
+      "upper": true
+    },
+    "authPass": {
+      "key": "account.auth.pass",
+      "upper": true
+    },
+    "authSwitchIn": {
+      "key": "account.auth.switchIn"
+    },
+    "authSwitchUp": {
+      "key": "account.auth.switchUp"
+    },
+    "authTitleIn": {
+      "key": "common.actions.signIn"
+    },
+    "authTitleUp": {
+      "key": "account.auth.titleUp"
+    },
+    "avgViewers": {
+      "key": "storefront.avgViewers",
+      "upper": true
+    },
+    "backToArtists": {
+      "key": "storefront.backToArtists",
+      "upper": true
+    },
+    "backToCats": {
+      "key": "storefront.backToCats",
+      "upper": true
+    },
+    "based": {
+      "key": "storefront.based",
+      "upper": true
+    },
+    "becomeHost": {
+      "key": "hosting.becomeHost"
+    },
+    "book": {
+      "key": "common.actions.bookShort"
+    },
+    "cancel": {
+      "key": "common.actions.cancel"
+    },
+    "cartAdded": {
+      "key": "ticketing.cart.added"
+    },
+    "cartBackToShow": {
+      "key": "ticketing.cart.backToShow"
+    },
+    "cartCard": {
+      "key": "ticketing.cart.card"
+    },
+    "cartCheckout": {
+      "key": "ticketing.cart.checkout"
+    },
+    "cartDone": {
+      "key": "ticketing.cart.done"
+    },
+    "cartDoneHint": {
+      "key": "ticketing.cart.doneHint"
+    },
+    "cartEmpty": {
+      "key": "ticketing.cart.empty"
+    },
+    "cartEmptyHint": {
+      "key": "ticketing.cart.emptyHint"
+    },
+    "cartFrom": {
+      "key": "ticketing.cart.from",
+      "upper": true
+    },
+    "cartGoStore": {
+      "key": "ticketing.cart.goStore"
+    },
+    "cartHead": {
+      "key": "ticketing.cart.head",
+      "upper": true
+    },
+    "cartItem": {
+      "key": "ticketing.cart.item",
+      "upper": true
+    },
+    "cartItems": {
+      "key": "ticketing.cart.items",
+      "upper": true
+    },
+    "cartPay": {
+      "key": "ticketing.cart.pay"
+    },
+    "cartPaying": {
+      "key": "ticketing.cart.paying"
+    },
+    "cartRemove": {
+      "key": "ticketing.cart.remove"
+    },
+    "cartShip": {
+      "key": "ticketing.cart.ship"
+    },
+    "cartSubtotal": {
+      "key": "ticketing.cart.subtotal",
+      "upper": true
+    },
+    "cartTitle": {
+      "key": "ticketing.cart.title"
+    },
+    "catAll": {
+      "key": "enums.planOpens.browse"
+    },
+    "catArtists": {
+      "key": "storefront.catArtists"
+    },
+    "catLiveNow": {
+      "key": "storefront.catLiveNow"
+    },
+    "catUpcoming": {
+      "key": "storefront.catUpcoming"
+    },
+    "categories": {
+      "key": "common.nav.categories"
+    },
+    "chapters": {
+      "key": "player.chapters",
+      "upper": true
+    },
+    "chat": {
+      "key": "remote.hint.chat"
+    },
+    "chatCollapse": {
+      "key": "chat.collapse",
+      "upper": true
+    },
+    "chatEmoji": {
+      "key": "chat.emoji",
+      "upper": true
+    },
+    "chatExpand": {
+      "key": "remote.hint.chat",
+      "upper": true
+    },
+    "chatFree": {
+      "key": "chat.free",
+      "upper": true
+    },
+    "chatModeDemo": {
+      "key": "chat.modeDemo",
+      "upper": true
+    },
+    "chatOff": {
+      "key": "chat.off",
+      "upper": true
+    },
+    "chatOffHint": {
+      "key": "chat.offHint"
+    },
+    "chatOffTitle": {
+      "key": "chat.offTitle"
+    },
+    "checkout": {
+      "key": "storefront.checkout"
+    },
+    "chooseTier": {
+      "key": "storefront.chooseTier",
+      "upper": true
+    },
+    "clear": {
+      "key": "storefront.clear"
+    },
+    "clearAll": {
+      "key": "storefront.clearAll"
+    },
+    "collapseSide": {
+      "key": "storefront.collapseSide"
+    },
+    "copy": {
+      "key": "common.actions.copy"
+    },
+    "createAlert": {
+      "key": "account.alerts.createAlert"
+    },
+    "d30": {
+      "key": "discovery.filter.d30",
+      "upper": true
+    },
+    "d7": {
+      "key": "discovery.filter.d7",
+      "upper": true
+    },
+    "dAll": {
+      "key": "discovery.filter.dAll",
+      "upper": true
+    },
+    "dRange": {
+      "key": "discovery.filter.dRange",
+      "upper": true
+    },
+    "dTonight": {
+      "key": "common.time.tonight",
+      "upper": true
+    },
+    "dWeekend": {
+      "key": "discovery.filter.dWeekend",
+      "upper": true
+    },
+    "dangerBlurb": {
+      "key": "account.data.blurb"
+    },
+    "dangerTitle": {
+      "key": "account.data.title"
+    },
+    "dateToCome": {
+      "key": "storefront.dateToCome"
+    },
+    "datesCount": {
+      "key": "common.units.dates",
+      "upper": true
+    },
+    "datesToCome": {
+      "key": "storefront.datesToCome"
+    },
+    "delCancel": {
+      "key": "common.actions.cancel"
+    },
+    "delConfirm": {
+      "key": "account.delete.confirm"
+    },
+    "delIntro": {
+      "key": "account.delete.intro"
+    },
+    "delTitle": {
+      "key": "account.delete.title"
+    },
+    "deleteAccount": {
+      "key": "account.delete.eteAccount"
+    },
+    "emojisOnly": {
+      "key": "player.emojisOnly",
+      "upper": true
+    },
+    "emptyAlerts": {
+      "key": "discovery.search.emptyAlerts"
+    },
+    "emptyAlertsHint": {
+      "key": "discovery.search.emptyAlertsHint"
+    },
+    "emptyArtists": {
+      "key": "discovery.search.emptyArtists"
+    },
+    "emptyCatArtists": {
+      "key": "discovery.search.emptyCatArtists"
+    },
+    "emptyCatHint": {
+      "key": "discovery.search.emptyCatHint"
+    },
+    "emptyCatLive": {
+      "key": "discovery.search.emptyCatLive"
+    },
+    "emptyCatLiveHint": {
+      "key": "discovery.search.emptyCatLiveHint"
+    },
+    "emptyCatReplays": {
+      "key": "discovery.search.emptyCatReplays"
+    },
+    "emptyCatUpcoming": {
+      "key": "discovery.search.emptyCatUpcoming"
+    },
+    "emptyFollowLive": {
+      "key": "discovery.search.emptyFollowLive"
+    },
+    "emptyFollowLiveHint": {
+      "key": "discovery.search.emptyFollowLiveHint"
+    },
+    "emptyOrders": {
+      "key": "discovery.search.emptyOrders"
+    },
+    "emptyOrdersHint": {
+      "key": "discovery.search.emptyOrdersHint"
+    },
+    "emptyResults": {
+      "key": "discovery.search.emptyResults"
+    },
+    "emptyResultsHint": {
+      "key": "discovery.search.emptyResultsHint"
+    },
+    "expAll": {
+      "key": "discovery.filter.expAll",
+      "upper": true
+    },
+    "expSoon": {
+      "key": "discovery.filter.expSoon",
+      "upper": true
+    },
+    "expandSide": {
+      "key": "storefront.expandSide"
+    },
+    "expiresIn": {
+      "key": "common.status.expiresIn",
+      "upper": true
+    },
+    "exportData": {
+      "key": "account.exportData"
+    },
+    "exportInvoices": {
+      "key": "account.exportInvoices"
+    },
+    "fCats": {
+      "key": "common.nav.categories",
+      "upper": true
+    },
+    "fDate": {
+      "key": "common.units.date",
+      "upper": true
+    },
+    "fMisc": {
+      "key": "discovery.filter.fMisc",
+      "upper": true
+    },
+    "fPrice": {
+      "key": "discovery.filter.fPrice",
+      "upper": true
+    },
+    "fStatus": {
+      "key": "discovery.filter.fStatus",
+      "upper": true
+    },
+    "favUpcoming": {
+      "key": "storefront.favUpcoming"
+    },
+    "favUpcomingSub": {
+      "key": "storefront.favUpcomingSub",
+      "upper": true
+    },
+    "fees": {
+      "key": "storefront.fees"
+    },
+    "filtersLabel": {
+      "key": "discovery.filter.filtersLabel",
+      "upper": true
+    },
+    "foldDates": {
+      "key": "storefront.foldDates"
+    },
+    "followCat": {
+      "key": "storefront.followCat"
+    },
+    "followCatHint": {
+      "key": "storefront.followCatHint"
+    },
+    "followersShort": {
+      "key": "storefront.followersShort",
+      "upper": true
+    },
+    "followingCat": {
+      "key": "storefront.followingCat"
+    },
+    "followingEmpty": {
+      "key": "storefront.followingEmpty"
+    },
+    "footerTag": {
+      "key": "storefront.footerTag"
+    },
+    "freeGiveCta": {
+      "key": "storefront.freeGiveCta"
+    },
+    "freeLabel": {
+      "key": "common.plans.free"
+    },
+    "freePeek": {
+      "key": "storefront.freePeek"
+    },
+    "freeSeatCta": {
+      "key": "storefront.freeSeatCta"
+    },
+    "gauge": {
+      "key": "discovery.filter.gauge",
+      "upper": true
+    },
+    "getTicket": {
+      "key": "storefront.getTicket"
+    },
+    "guestBadge": {
+      "key": "enums.badge.visitor",
+      "upper": true
+    },
+    "guestBanner": {
+      "key": "account.guest.banner"
+    },
+    "guestBannerCta": {
+      "key": "account.guest.bannerCta"
+    },
+    "guestChat": {
+      "key": "account.guest.chat"
+    },
+    "guestFollow": {
+      "key": "account.guest.follow"
+    },
+    "guestSave": {
+      "key": "account.guest.save"
+    },
+    "hasDates": {
+      "key": "storefront.hasDates",
+      "upper": true
+    },
+    "helpBlurb": {
+      "key": "support.blurb"
+    },
+    "helpContactTitle": {
+      "key": "support.contactTitle"
+    },
+    "helpCta": {
+      "key": "support.cta"
+    },
+    "helpDpoLabel": {
+      "key": "support.dpoLabel",
+      "upper": true
+    },
+    "helpHours": {
+      "key": "support.hours"
+    },
+    "helpIntro": {
+      "key": "support.intro"
+    },
+    "helpMail": {
+      "key": "support.mail"
+    },
+    "helpMailDpo": {
+      "key": "support.mailDpo"
+    },
+    "helpSub": {
+      "key": "support.sub",
+      "upper": true
+    },
+    "helpTitle": {
+      "key": "support.title"
+    },
+    "helpTopic1": {
+      "key": "support.topic1"
+    },
+    "helpTopic1Hint": {
+      "key": "support.topic1Hint"
+    },
+    "helpTopic2": {
+      "key": "support.topic2"
+    },
+    "helpTopic2Hint": {
+      "key": "support.topic2Hint"
+    },
+    "helpTopic3": {
+      "key": "common.nav.replays"
+    },
+    "helpTopic3Hint": {
+      "key": "support.topic3Hint"
+    },
+    "helpTopic4": {
+      "key": "support.topic4"
+    },
+    "helpTopic4Hint": {
+      "key": "support.topic4Hint"
+    },
+    "helpTopic5": {
+      "key": "support.topic5"
+    },
+    "helpTopic5Hint": {
+      "key": "support.topic5Hint"
+    },
+    "helpTopic6": {
+      "key": "support.topic6"
+    },
+    "helpTopic6Hint": {
+      "key": "support.topic6Hint"
+    },
+    "helpTopics": {
+      "key": "support.topics",
+      "upper": true
+    },
+    "helpWrite": {
+      "key": "support.write"
+    },
+    "hideFilters": {
+      "key": "discovery.filter.hideFilters"
+    },
+    "includedLabel": {
+      "key": "storefront.includedLabel"
+    },
+    "invoiceNote": {
+      "key": "account.invoiceNote",
+      "upper": true
+    },
+    "joinAnytime": {
+      "key": "storefront.joinAnytime",
+      "upper": true
+    },
+    "joinLive": {
+      "key": "storefront.joinLive"
+    },
+    "joined": {
+      "key": "storefront.joined",
+      "upper": true
+    },
+    "lastLive": {
+      "key": "storefront.lastLive",
+      "upper": true
+    },
+    "legal": {
+      "key": "storefront.legal",
+      "upper": true
+    },
+    "liveNow": {
+      "key": "storefront.liveNow",
+      "upper": true
+    },
+    "liveNowBanner": {
+      "key": "storefront.liveNowBanner"
+    },
+    "liveSection": {
+      "key": "storefront.liveSection"
+    },
+    "liveSectionSub": {
+      "key": "storefront.liveSectionSub",
+      "upper": true
+    },
+    "loadMore": {
+      "key": "discovery.search.loadMore"
+    },
+    "markRead": {
+      "key": "storefront.markRead",
+      "upper": true
+    },
+    "menuLang": {
+      "key": "common.filters.language",
+      "upper": true
+    },
+    "menuTitle": {
+      "key": "storefront.menuTitle",
+      "upper": true
+    },
+    "merch": {
+      "key": "storefront.merch"
+    },
+    "mostWatched": {
+      "key": "storefront.mostWatched"
+    },
+    "myTickets": {
+      "key": "storefront.myTickets"
+    },
+    "navArtists": {
+      "key": "common.nav.artists"
+    },
+    "navBrowse": {
+      "key": "common.actions.browse"
+    },
+    "navFollowing": {
+      "key": "common.actions.following"
+    },
+    "navHome": {
+      "key": "common.nav.home"
+    },
+    "navTickets": {
+      "key": "common.nav.tickets"
+    },
+    "newSearch": {
+      "key": "discovery.search.newSearch"
+    },
+    "nextDate": {
+      "key": "storefront.nextDate",
+      "upper": true
+    },
+    "noArtistFound": {
+      "key": "discovery.search.noArtistFound"
+    },
+    "noFee": {
+      "key": "storefront.noFee"
+    },
+    "noFilter": {
+      "key": "discovery.filter.noFilter",
+      "upper": true
+    },
+    "noSavedCatHere": {
+      "key": "account.alerts.noSavedCatHere"
+    },
+    "noShowFound": {
+      "key": "discovery.search.noShowFound"
+    },
+    "notToMiss": {
+      "key": "storefront.notToMiss"
+    },
+    "notToMissSub": {
+      "key": "storefront.notToMissSub",
+      "upper": true
+    },
+    "notifCenter": {
+      "key": "account.notifications.center",
+      "upper": true
+    },
+    "notifEvent": {
+      "key": "account.notifications.event",
+      "upper": true
+    },
+    "notifSettings": {
+      "key": "account.notifications.settings"
+    },
+    "offlineSection": {
+      "key": "storefront.offlineSection"
+    },
+    "offlineSectionSub": {
+      "key": "storefront.offlineSectionSub",
+      "upper": true
+    },
+    "onNow": {
+      "key": "common.nav.live",
+      "upper": true
+    },
+    "ordArthomeNotice": {
+      "key": "account.orders.arthomeNotice"
+    },
+    "ordDelivered": {
+      "key": "account.orders.delivered",
+      "upper": true
+    },
+    "ordDetail": {
+      "key": "account.orders.detail"
+    },
+    "ordDigital": {
+      "key": "account.orders.digital",
+      "upper": true
+    },
+    "ordDownload": {
+      "key": "account.orders.download"
+    },
+    "ordExtNotice": {
+      "key": "account.orders.extNotice"
+    },
+    "ordExtOpen": {
+      "key": "account.orders.extOpen"
+    },
+    "ordExtRef": {
+      "key": "account.orders.extRef",
+      "upper": true
+    },
+    "ordInvoice": {
+      "key": "account.orders.invoice"
+    },
+    "ordItems": {
+      "key": "account.orders.items",
+      "upper": true
+    },
+    "ordNumber": {
+      "key": "account.orders.number",
+      "upper": true
+    },
+    "ordPlaced": {
+      "key": "account.orders.placed",
+      "upper": true
+    },
+    "ordPrep": {
+      "key": "account.orders.prep",
+      "upper": true
+    },
+    "ordShipped": {
+      "key": "account.orders.shipped",
+      "upper": true
+    },
+    "ordSoldArthome": {
+      "key": "account.orders.soldArthome",
+      "upper": true
+    },
+    "ordSoldExternal": {
+      "key": "account.orders.soldExternal",
+      "upper": true
+    },
+    "ordTotal": {
+      "key": "account.orders.total",
+      "upper": true
+    },
+    "ordTrack": {
+      "key": "account.orders.track"
+    },
+    "otherArtists": {
+      "key": "storefront.otherArtists"
+    },
+    "otherDates": {
+      "key": "storefront.otherDates"
+    },
+    "ovLive": {
+      "key": "discovery.overview.live",
+      "upper": true
+    },
+    "ovReplay": {
+      "key": "discovery.overview.replay",
+      "upper": true
+    },
+    "ovSoon": {
+      "key": "discovery.overview.soon",
+      "upper": true
+    },
+    "p1020": {
+      "key": "discovery.filter.price.1020"
+    },
+    "p2035": {
+      "key": "discovery.filter.price.2035"
+    },
+    "p35": {
+      "key": "discovery.filter.price.35"
+    },
+    "pFree": {
+      "key": "common.plans.free",
+      "upper": true
+    },
+    "pU10": {
+      "key": "discovery.filter.price.u10"
+    },
+    "peekBlurb": {
+      "key": "storefront.peekBlurb"
+    },
+    "peekTitle": {
+      "key": "storefront.peekTitle"
+    },
+    "phrases": {
+      "key": "player.phrases",
+      "upper": true
+    },
+    "pipBack": {
+      "key": "player.pipBack"
+    },
+    "pipBackReplay": {
+      "key": "player.pipBackReplay"
+    },
+    "pipLeft": {
+      "key": "player.pipLeft",
+      "upper": true
+    },
+    "pipReplay": {
+      "key": "player.pipReplay",
+      "upper": true
+    },
+    "pipWatching": {
+      "key": "player.pipWatching",
+      "upper": true
+    },
+    "planChoose": {
+      "key": "ticketing.plans.planChoose"
+    },
+    "planCurrent": {
+      "key": "ticketing.plans.planCurrent"
+    },
+    "planFreeName": {
+      "key": "ticketing.plans.planFreeName"
+    },
+    "planFreePrice": {
+      "key": "common.plans.free"
+    },
+    "planFreeTag": {
+      "key": "ticketing.plans.planFreeTag",
+      "upper": true
+    },
+    "planSignUp": {
+      "key": "ticketing.plans.planSignUp"
+    },
+    "planSubName": {
+      "key": "ticketing.plans.planSubName"
+    },
+    "planSubPrice": {
+      "key": "ticketing.plans.planSubPrice"
+    },
+    "planSubTag": {
+      "key": "ticketing.plans.planSubTag",
+      "upper": true
+    },
+    "planUnitName": {
+      "key": "ticketing.plans.planUnitName"
+    },
+    "planUnitPrice": {
+      "key": "ticketing.plans.planUnitPrice"
+    },
+    "planUnitTag": {
+      "key": "ticketing.plans.planUnitTag",
+      "upper": true
+    },
+    "plansCompare": {
+      "key": "ticketing.plans.plansCompare",
+      "upper": true
+    },
+    "plansFootnote": {
+      "key": "ticketing.plans.plansFootnote"
+    },
+    "plansIntro": {
+      "key": "ticketing.plans.plansIntro"
+    },
+    "plansSub": {
+      "key": "ticketing.plans.plansSub",
+      "upper": true
+    },
+    "plansTitle": {
+      "key": "ticketing.plans.plansTitle"
+    },
+    "privConsents": {
+      "key": "account.privacy.consents",
+      "upper": true
+    },
+    "privCookies": {
+      "key": "account.privacy.cookies",
+      "upper": true
+    },
+    "privDocs": {
+      "key": "account.privacy.docs",
+      "upper": true
+    },
+    "privDpo": {
+      "key": "account.privacy.dpo"
+    },
+    "privDpoHint": {
+      "key": "account.privacy.dpoHint"
+    },
+    "privLocked": {
+      "key": "account.privacy.locked",
+      "upper": true
+    },
+    "privManage": {
+      "key": "account.privacy.manage"
+    },
+    "privOff": {
+      "key": "account.privacy.off",
+      "upper": true
+    },
+    "privOn": {
+      "key": "account.privacy.on",
+      "upper": true
+    },
+    "privRead": {
+      "key": "account.privacy.read"
+    },
+    "privRetention": {
+      "key": "account.privacy.retention",
+      "upper": true
+    },
+    "privRetentionText": {
+      "key": "account.privacy.retentionText"
+    },
+    "privRights": {
+      "key": "account.privacy.rights",
+      "upper": true
+    },
+    "privRun": {
+      "key": "account.privacy.run"
+    },
+    "privUpdated": {
+      "key": "account.privacy.updated",
+      "upper": true
+    },
+    "promoBadge": {
+      "key": "storefront.promoBadge",
+      "upper": true
+    },
+    "promoFilter": {
+      "key": "enums.priceTier.reduced",
+      "upper": true
+    },
+    "promoLabel": {
+      "key": "enums.priceTier.reduced",
+      "upper": true
+    },
+    "qualityLabel": {
+      "key": "player.quality",
+      "upper": true
+    },
+    "quietHours": {
+      "key": "account.notifications.quietHours"
+    },
+    "quietHoursHint": {
+      "key": "account.notifications.quietHoursHint"
+    },
+    "recent": {
+      "key": "storefront.recent",
+      "upper": true
+    },
+    "remaining": {
+      "key": "storefront.remaining"
+    },
+    "remind": {
+      "key": "storefront.remind"
+    },
+    "replayAccess": {
+      "key": "storefront.replayAccess",
+      "upper": true
+    },
+    "replayExpires": {
+      "key": "common.status.expiresIn",
+      "upper": true
+    },
+    "replayLabel": {
+      "key": "storefront.replayLabel",
+      "upper": true
+    },
+    "replayNote": {
+      "key": "storefront.replayNote"
+    },
+    "replayOf": {
+      "key": "storefront.replayOf",
+      "upper": true
+    },
+    "replayPage": {
+      "key": "storefront.replayPage"
+    },
+    "replayPolicy": {
+      "key": "storefront.replayPolicy",
+      "upper": true
+    },
+    "replaysTitle": {
+      "key": "common.nav.replays"
+    },
+    "resultLabel": {
+      "key": "discovery.search.resultLabel",
+      "upper": true
+    },
+    "resultsLabel": {
+      "key": "discovery.search.resultsLabel",
+      "upper": true
+    },
+    "save": {
+      "key": "account.alerts.save"
+    },
+    "saveAskIntro": {
+      "key": "account.alerts.saveAskIntro"
+    },
+    "saveAskTitle": {
+      "key": "account.alerts.saveAskTitle"
+    },
+    "saveCancel": {
+      "key": "common.actions.cancel"
+    },
+    "saveCatAskIntro": {
+      "key": "account.alerts.saveCatAskIntro"
+    },
+    "saveCatAskTitle": {
+      "key": "account.alerts.saveCatAskTitle"
+    },
+    "saveCatTitle": {
+      "key": "account.alerts.saveCatTitle"
+    },
+    "saveChannels": {
+      "key": "account.alerts.saveChannels",
+      "upper": true
+    },
+    "saveClose": {
+      "key": "common.actions.close"
+    },
+    "saveConfirm": {
+      "key": "account.alerts.saveConfirm"
+    },
+    "saveEmail": {
+      "key": "account.alerts.saveEmail",
+      "upper": true
+    },
+    "saveFilters": {
+      "key": "account.alerts.saveFilters",
+      "upper": true
+    },
+    "saveIntro": {
+      "key": "account.alerts.saveIntro"
+    },
+    "saveManage": {
+      "key": "account.alerts.saveManage"
+    },
+    "saveName": {
+      "key": "account.alerts.saveName",
+      "upper": true
+    },
+    "saveNameHint": {
+      "key": "account.alerts.saveNameHint"
+    },
+    "saveNoFilters": {
+      "key": "account.alerts.saveNoFilters"
+    },
+    "saveNoQuery": {
+      "key": "account.alerts.saveNoQuery"
+    },
+    "savePush": {
+      "key": "account.alerts.savePush",
+      "upper": true
+    },
+    "saveQuery": {
+      "key": "account.alerts.saveQuery",
+      "upper": true
+    },
+    "saveScope": {
+      "key": "account.alerts.saveScope",
+      "upper": true
+    },
+    "saveTitle": {
+      "key": "account.alerts.saveTitle"
+    },
+    "saved": {
+      "key": "account.alerts.saved"
+    },
+    "savedCatHere": {
+      "key": "account.alerts.savedCatHere",
+      "upper": true
+    },
+    "savedHere": {
+      "key": "account.alerts.savedHere",
+      "upper": true
+    },
+    "savedShows": {
+      "key": "account.alerts.savedShows",
+      "upper": true
+    },
+    "schedule": {
+      "key": "storefront.schedule",
+      "upper": true
+    },
+    "scopeCategory": {
+      "key": "storefront.scopeCategory",
+      "upper": true
+    },
+    "scopeSearch": {
+      "key": "storefront.scopeSearch",
+      "upper": true
+    },
+    "search": {
+      "key": "storefront.search"
+    },
+    "seatsLeft": {
+      "key": "storefront.seatsLeft",
+      "upper": true
+    },
+    "secure": {
+      "key": "storefront.secure"
+    },
+    "seeAll": {
+      "key": "discovery.search.seeAll"
+    },
+    "seeAllBlock": {
+      "key": "discovery.search.seeAllBlock"
+    },
+    "seeAllShort": {
+      "key": "discovery.search.seeAllShort"
+    },
+    "seeArtist": {
+      "key": "storefront.seeArtist"
+    },
+    "seeSaved": {
+      "key": "account.alerts.seeSaved"
+    },
+    "send": {
+      "key": "common.actions.send"
+    },
+    "sessions": {
+      "key": "storefront.sessions",
+      "upper": true
+    },
+    "share": {
+      "key": "common.actions.share"
+    },
+    "shareBlurb": {
+      "key": "storefront.shareBlurb"
+    },
+    "shareTitle": {
+      "key": "storefront.shareTitle"
+    },
+    "showFilters": {
+      "key": "discovery.filter.showFilters"
+    },
+    "shows": {
+      "key": "storefront.shows",
+      "upper": true
+    },
+    "sideAlerts": {
+      "key": "discovery.side.alerts",
+      "upper": true
+    },
+    "sideAlertsNew": {
+      "key": "discovery.side.alertsNew",
+      "upper": true
+    },
+    "sideAlmost": {
+      "key": "discovery.side.almost",
+      "upper": true
+    },
+    "sideCatSaved": {
+      "key": "discovery.side.catSaved",
+      "upper": true
+    },
+    "sideCats": {
+      "key": "common.nav.categories",
+      "upper": true
+    },
+    "sideFollowLive": {
+      "key": "discovery.side.followLive",
+      "upper": true
+    },
+    "sideNoFollowLive": {
+      "key": "discovery.side.noFollowLive"
+    },
+    "sideOther": {
+      "key": "discovery.side.other",
+      "upper": true
+    },
+    "sideRecent": {
+      "key": "discovery.side.recent",
+      "upper": true
+    },
+    "sideSubs": {
+      "key": "discovery.side.subs",
+      "upper": true
+    },
+    "signIn": {
+      "key": "common.actions.signIn"
+    },
+    "signOut": {
+      "key": "common.actions.signOut"
+    },
+    "signUp": {
+      "key": "storefront.signUp"
+    },
+    "sortAZ": {
+      "key": "discovery.filter.sortAZ"
+    },
+    "sortFollowers": {
+      "key": "discovery.filter.sortFollowers",
+      "upper": true
+    },
+    "sortLabel": {
+      "key": "discovery.filter.sortLabel",
+      "upper": true
+    },
+    "sortPop": {
+      "key": "discovery.filter.sortPop",
+      "upper": true
+    },
+    "sortPriceDown": {
+      "key": "discovery.filter.sortPriceDown",
+      "upper": true
+    },
+    "sortPriceUp": {
+      "key": "discovery.filter.sortPriceUp",
+      "upper": true
+    },
+    "sortRelevance": {
+      "key": "discovery.filter.sortRelevance",
+      "upper": true
+    },
+    "sortSoon": {
+      "key": "discovery.filter.sortSoon",
+      "upper": true
+    },
+    "speed": {
+      "key": "player.speed",
+      "upper": true
+    },
+    "sponsored": {
+      "key": "storefront.sponsored",
+      "upper": true
+    },
+    "stAll": {
+      "key": "discovery.filter.stAll",
+      "upper": true
+    },
+    "stLive": {
+      "key": "common.nav.live",
+      "upper": true
+    },
+    "stReplay": {
+      "key": "discovery.filter.stReplay",
+      "upper": true
+    },
+    "stSoon": {
+      "key": "discovery.filter.stSoon",
+      "upper": true
+    },
+    "store": {
+      "key": "storefront.store"
+    },
+    "storeNote": {
+      "key": "storefront.storeNote",
+      "upper": true
+    },
+    "studioBlurb": {
+      "key": "hosting.studioBlurb"
+    },
+    "studioCta": {
+      "key": "hosting.studioCta"
+    },
+    "studioSoonBody": {
+      "key": "hosting.studioSoonBody"
+    },
+    "studioSoonClose": {
+      "key": "hosting.studioSoonClose"
+    },
+    "studioSoonNote": {
+      "key": "hosting.studioSoonNote",
+      "upper": true
+    },
+    "studioSoonTitle": {
+      "key": "hosting.studioSoonTitle"
+    },
+    "studioTag": {
+      "key": "hosting.studioTag",
+      "upper": true
+    },
+    "subCancel": {
+      "key": "ticketing.plans.subCancel"
+    },
+    "subChange": {
+      "key": "ticketing.plans.subChange"
+    },
+    "subCompare": {
+      "key": "ticketing.plans.subCompare"
+    },
+    "subCurrent": {
+      "key": "ticketing.plans.subCurrent",
+      "upper": true
+    },
+    "subIncluded": {
+      "key": "ticketing.plans.subIncluded",
+      "upper": true
+    },
+    "subInvoices": {
+      "key": "ticketing.plans.subInvoices"
+    },
+    "subMethod": {
+      "key": "ticketing.plans.subMethod",
+      "upper": true
+    },
+    "subNone": {
+      "key": "ticketing.plans.subNone"
+    },
+    "subNoneHint": {
+      "key": "ticketing.plans.subNoneHint"
+    },
+    "subRenew": {
+      "key": "ticketing.plans.subRenew",
+      "upper": true
+    },
+    "subSelected": {
+      "key": "ticketing.plans.subSelected",
+      "upper": true
+    },
+    "subSince": {
+      "key": "ticketing.plans.subSince",
+      "upper": true
+    },
+    "subTitle": {
+      "key": "ticketing.plans.subTitle"
+    },
+    "subgenres": {
+      "key": "ticketing.plans.subgenres",
+      "upper": true
+    },
+    "subsSelected": {
+      "key": "ticketing.plans.subsSelected",
+      "upper": true
+    },
+    "subtitlesLabel": {
+      "key": "remote.hint.subtitles",
+      "upper": true
+    },
+    "subtotal": {
+      "key": "ticketing.plans.subtotal"
+    },
+    "suggArtistsLabel": {
+      "key": "common.nav.artists",
+      "upper": true
+    },
+    "suggNothing": {
+      "key": "discovery.search.suggNothing"
+    },
+    "suggShowsLabel": {
+      "key": "discovery.search.suggShowsLabel",
+      "upper": true
+    },
+    "tabArtists": {
+      "key": "common.nav.artists"
+    },
+    "tabBest": {
+      "key": "discovery.filter.tabBest"
+    },
+    "tabCatArtists": {
+      "key": "common.nav.artists"
+    },
+    "tabCatLive": {
+      "key": "common.nav.live"
+    },
+    "tabLives": {
+      "key": "discovery.filter.tabLives"
+    },
+    "tabOverview": {
+      "key": "discovery.filter.tabOverview"
+    },
+    "tabReplays": {
+      "key": "common.nav.replays"
+    },
+    "ticketFine": {
+      "key": "storefront.ticketFine",
+      "upper": true
+    },
+    "tocLabel": {
+      "key": "storefront.tocLabel",
+      "upper": true
+    },
+    "total": {
+      "key": "storefront.total"
+    },
+    "unfollow": {
+      "key": "common.actions.unfollow",
+      "upper": true
+    },
+    "unfollowCat": {
+      "key": "storefront.unfollowCat"
+    },
+    "upcoming": {
+      "key": "storefront.upcoming"
+    },
+    "viewLabel": {
+      "key": "discovery.filter.viewLabel",
+      "upper": true
+    },
+    "viewList": {
+      "key": "discovery.filter.viewList",
+      "upper": true
+    },
+    "viewProfile": {
+      "key": "storefront.viewProfile"
+    },
+    "viewTiles": {
+      "key": "discovery.filter.viewTiles",
+      "upper": true
+    },
+    "viewersShort": {
+      "key": "common.units.viewers",
+      "upper": true
+    },
+    "watchLive": {
+      "key": "storefront.watchLive"
+    },
+    "watchNow": {
+      "key": "storefront.watchNow"
+    },
+    "watchReplay": {
+      "key": "common.actions.replay"
+    },
+    "yourFaves": {
+      "key": "storefront.yourFaves"
+    },
+    "chatOffBody": {
+      "key": "chat.offBody"
+    },
+    "close": {
+      "key": "common.actions.close"
+    }
+  }
+}

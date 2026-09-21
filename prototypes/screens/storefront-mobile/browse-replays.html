@@ -1,0 +1,229 @@
+<!--
+  Arthome · storefront mobile — browse-replays
+  ══════════════════════════════════════════════════════════════════════════
+  Route      : browse · sTab=replays
+  Affiche    : Onglet Rediffusions : les rediffusions disponibles et leur reste de fenêtre.
+  Mène vers  : replay, artist
+  Contrat    : GET /v1/search?tab=replays
+  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L565–601
+  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
+               chaînes de style du modèle de vue (shellStyle, navBarStyle,
+               heroStyle, sheetBase) — voir _shell.html.
+  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-commun.html · _copy.html
+
+
+  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
+    reformatée. L'original n'a pas été modifié. Les incohérences relevées
+    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
+    présentes ici : c'est voulu.
+-->
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BALISAGE — L565–601
+     ══════════════════════════════════════════════════════════════════════════ -->
+  <sc-if value="{{ showReplays }}" hint-placeholder-val="{{ false }}">
+    <sc-if value="{{ noReplaysTab }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 22px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 30px 20px; text-align: center;">
+        <div style="font-family: 'Instrument Serif', serif; font-size: 21px;">{{ t.emptyResults }}</div>
+      </div>
+    </sc-if>
+    <div style="margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px;">
+      <sc-for list="{{ replaysAll }}" as="rp" hint-placeholder-count="6">
+        <div onClick="{{ rp.open }}" style="cursor: pointer; border: 1px solid #1F1C19; background: #100F0D;">
+          <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #17140F;">
+            <sc-if value="{{ rp.img }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; inset: 0; width: 100%; height: 100%; filter: saturate(0.62) brightness(0.64); background-color: #17140F; background-image: {{ rp.imgCss }}; background-size: cover; background-position: center;"></div>
+            </sc-if>
+          </div>
+          <div style="padding: 11px;">
+            <div style="font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span>{{ rp.tHit.pre }}</span><span style="background: rgba(214,178,102,0.2); color: oklch(0.9 0.07 84);">{{ rp.tHit.hit }}</span><span>{{ rp.tHit.post }}</span></div>
+            <div style="padding-top: 4px; font-size: 11.5px; color: #9B948A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ rp.artist }}</div>
+            <div style="padding-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #857E73;">{{ rp.metaLine }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ moreReplays }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 14px; display: flex; justify-content: center;">
+        <span onClick="{{ loadMoreReplays }}" style="cursor: pointer; padding: 13px 22px; border: 1px solid #332E28; font-size: 13px; color: #C9C0B2;">{{ moreReplaysLabel }}</span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ loadingReplays }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 10px; border: 1px solid #1F1C19; background: #100F0D; width: calc(50% - 5px); animation: skel 1.2s ease-in-out infinite;">
+        <div style="aspect-ratio: 16/10; background: #17140F;"></div>
+        <div style="padding: 11px; display: flex; flex-direction: column; gap: 7px;">
+          <div style="height: 12px; width: 76%; background: #1C1A17;"></div>
+          <div style="height: 10px; width: 50%; background: #17140F;"></div>
+        </div>
+      </div>
+    </sc-if>
+  </sc-if>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODÈLE DE VUE — propre à cet écran (12 symboles)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="viewmodel">
+/* ── groupByArtist  —  méthode de classe  —  L4056–4089 ── */
+  groupByArtist(list, fr) {
+    const baseOf = (title) => String(title || '').split(' — ')[0].trim();
+    const order = [];
+    const by = {};
+    list.forEach(o => {
+      const key = o.artistIdx + '§' + baseOf(o.title);
+      if (by[key] === undefined) { by[key] = []; order.push(key); }
+      by[key].push(o);
+    });
+    const open = this.state.groupOpen || {};
+    const out = [];
+    order.forEach(ai => {
+      const group = by[ai].slice().sort((a, b) => a.day - b.day);
+      if (group.length < 2) { out.push(Object.assign({}, group[0], { isGroup: false, extra: [], hasExtra: false })); return; }
+      const isOpen = !!open[ai];
+      out.push(Object.assign({}, group[0], {
+        promoTitle: group[0].title,
+        title: baseOf(group[0].title),
+        tHit: this.splitHit(baseOf(group[0].title), (this.state.liveQuery || '').trim()),
+        isGroup: true,
+        hasExtra: true,
+        extra: isOpen ? group.slice(1) : [],
+        extraLabel: isOpen
+          ? (fr ? 'Replier les dates ▴' : 'Collapse dates ▴')
+          : (fr ? 'Voir plus de dates (' + (group.length - 1) + ') ▾' : 'More dates (' + (group.length - 1) + ') ▾'),
+        datesLabel: group.length + ' ' + (fr ? 'DATES' : 'DATES'),
+        toggleGroup: (e) => {
+          if (e && e.stopPropagation) e.stopPropagation();
+          this.setState(st => ({ groupOpen: Object.assign({}, st.groupOpen, { [ai]: !((st.groupOpen || {})[ai]) }) }));
+        }
+      }));
+    });
+    return out;
+  }
+
+/* ── paged  —  méthode de classe  —  L4091–4113 ── */
+  paged(key, list, step, fr) {
+    const n = (this.state.shown || {})[key] || step;
+    const rest = Math.max(0, list.length - n);
+    const busy = (this.state.loading || {})[key] === true;
+    const start = () => {
+      if ((this.state.loading || {})[key]) return;
+      this.setState(st => ({ loading: Object.assign({}, st.loading, { [key]: true }) }));
+      clearTimeout(this['_pgT_' + key]);
+      this['_pgT_' + key] = setTimeout(() => {
+        this.setState(st => ({
+          shown: Object.assign({}, st.shown, { [key]: ((st.shown || {})[key] || step) + step }),
+          loading: Object.assign({}, st.loading, { [key]: false })
+        }));
+      }, 1000);
+    };
+    return {
+      items: list.slice(0, n),
+      hasMore: rest > 0 && !busy,
+      loading: busy,
+      moreLabel: (fr ? 'Voir plus' : 'Show more') + ' · ' + rest + (fr ? ' restants' : ' left'),
+      loadMore: start
+    };
+  }
+
+/* ── priceDefs  —  calcul dans renderReady()  —  L5338–5338 ── */
+    const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
+
+/* ── dateOk  —  calcul dans renderReady()  —  L5340–5346 ── */
+    const dateOk = (d) => {
+      if (s.fDate === 'all' || s.fDate === 'range') return true;
+      if (s.fDate === 'tonight') return d === 0;
+      if (s.fDate === 'weekend') return d >= 0 && d <= 3;
+      if (s.fDate === 'd7') return d >= 0 && d <= 7;
+      return d >= 0 && d <= 30;
+    };
+
+/* ── passFilters  —  calcul dans renderReady()  —  L5348–5363 ── */
+    const passFilters = (o) => {
+      if (!hit(o)) return false;
+      if (s.fCats.length && s.fCats.indexOf(o.cat) < 0) return false;
+      if (s.fCats.length === 1 && (s.fSubs || []).length && !s.fSubs.some(i => o.subs.indexOf(i) > -1)) return false;
+      if (s.fPrices.length && !s.fPrices.some(k => (priceDefs.find(p => p[0] === k) || [])[2](o.price))) return false;
+      if (s.fStatus !== 'all') {
+        if (s.fStatus === 'live' && o.kind !== 'live') return false;
+        if (s.fStatus === 'soon' && o.kind !== 'upcoming') return false;
+        if (s.fStatus === 'replay' && o.kind !== 'replay') return false;
+      }
+      if (o.kind !== 'replay' && !dateOk(o.day)) return false;
+      if (s.fPromo && !o.hasPromo) return false;
+      if (s.fAlmost && o.kind !== 'replay' && o.soldPct < 80) return false;
+      if (o.kind === 'replay' && s.fExpiring && o.expiresH > 90) return false;
+      return true;
+    };
+
+/* ── sortKey  —  calcul dans renderReady()  —  L5364–5364 ── */
+    const sortKey = s.sort === 'auto' ? (qq ? 'rel' : 'soon') : s.sort;
+
+/* ── sortFn  —  calcul dans renderReady()  —  L5365–5372 ── */
+    const sortFn = (a, b) => {
+      if (sortKey === 'soon') return (a.day < 0 ? 999 : a.day) - (b.day < 0 ? 999 : b.day);
+      if (sortKey === 'pop') return (b.viewers || roster[b.artistIdx].followers.replace(/\D/g, '') / 100) - (a.viewers || roster[a.artistIdx].followers.replace(/\D/g, '') / 100);
+      if (sortKey === 'priceUp') return a.price - b.price;
+      if (sortKey === 'priceDown') return b.price - a.price;
+      const score = o => (o.kind === 'live' ? -100 : 0) + (qq && o.title.toLowerCase().indexOf(qq) === 0 ? -50 : 0) + (qq && o.artist.toLowerCase().indexOf(qq) > -1 ? -20 : 0) + o.idx;
+      return score(a) - score(b);
+    };
+
+/* ── replaysAll  —  calcul dans renderReady()  —  L5374–5374 ── */
+    const replaysAll = catalogue.filter(o => o.kind === 'replay' && passFilters(o)).sort(sortFn);
+
+/* ── replaysGrouped  —  calcul dans renderReady()  —  L5438–5438 ── */
+    const replaysGrouped = this.groupByArtist(replaysAll, fr);
+
+/* ── pgReplays  —  calcul dans renderReady()  —  L5440–5440 ── */
+    const pgReplays = this.paged('replays', replaysGrouped, 10, fr);
+
+/* ── moreReplays  —  clé du modèle rendu  —  L5677–5677 ── */
+      moreReplays: pgReplays.hasMore, moreReplaysLabel: pgReplays.moreLabel, loadMoreReplays: pgReplays.loadMore, loadingReplays: pgReplays.loading,
+
+/* ── noReplaysTab  —  clé du modèle rendu  —  L5684–5684 ── */
+      noReplaysTab: s.sTab === 'replays' && replaysAll.length === 0,
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CLÉS DE COPIE EMPLOYÉES (6) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script type="text/x-arthome-extract" data-part="copy">
+  FR L2474  emptyResults: "Aucun spectacle pour cette recherche"
+  EN L2927  emptyResults: "No show for this search"
+
+  FR L2597  p1020: "10–20 €"
+  EN L3050  p1020: "€10–20"
+
+  FR L2598  p2035: "20–35 €"
+  EN L3051  p2035: "€20–35"
+
+  FR L2599  p35: "> 35 €"
+  EN L3052  p35: "> €35"
+
+  FR L2600  pFree: "GRATUIT"
+  EN L3053  pFree: "FREE"
+
+  FR L2601  pU10: "< 10 €"
+  EN L3054  pU10: "< €10"
+
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
+     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     ══════════════════════════════════════════════════════════════════════════
+     A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
+     DFR, IMG, MEN, MFR, P, PROMO_DEFS
+     PROMO_INK, RAW, REPLAY, SLOTS, SUBS, SUBS_ALL
+     SUB_OF_ARTIST, U, account, alertSig, alertState, alreadySaved
+     artist, artistIndexFor, byArtist, catIndexOf, catalogue, category
+     cats, cssUrl, curSig, currentDate, dateAt, dayLabel
+     defaultDate, filterLabels, filters, followed, fr, gate
+     genPool, hashOf, hit, liveSeen, locked, lockedPref
+     merch, openLive, openRow, openTicketFor, ownedIds, ownsCurrent
+     ownsDate, price$, promoOf, q, qq, results
+     roster, s, savedMatch, savedShows, seatCode, seenSlot
+     sessions, setState, splitHit, subOf, subgenres, subsSel
+     t, tickets
+-->
