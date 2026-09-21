@@ -465,6 +465,25 @@ Aucun appel de service à service, un seul objet à faire tourner, une seule cho
 ce qui compte quand on est seul à l'exploiter. Publier la nouvelle clé **avant** de signer avec,
 retirer l'ancienne **après** la plus longue durée de vie de jeton.
 
+**Pourquoi les deux cadences divergent — la raison, qui manquait.** J'avais écrit ces chiffres
+sans les argumenter ; `backend-contracts` a formulé le mécanisme, et il est contre-intuitif assez
+pour qu'il faille l'écrire, sous peine que quelqu'un « simplifie » en alignant les deux lignes :
+
+> **La fenêtre de grâce doit couvrir le cache du CDN, pas la durée du jeton.** La périphérie met
+> le document JWKS en cache pendant des heures. Publier la nouvelle clé puis signer avec elle
+> soixante secondes plus tard fait rejeter des jetons **parfaitement valides**, par une
+> périphérie qui sert encore l'ancien document et ne connaît pas le nouveau `kid`.
+
+D'où la règle, et elle est chiffrée : le document est servi en **`Cache-Control: max-age=3600`**,
+et **toute fenêtre de grâce est ≥ 2 × max-age**. Les deux cadences respectent ce plancher de 2 h
+(24 h pour les BFF, 7 j pour la lecture et l'appareil) ; ce qui les sépare, c'est la marge
+au-dessus, et elle est délibérée : une périphérie de CDN se réchauffe moins bien qu'un service que
+nous exploitons, et son cache est le seul des quatre que nous ne pouvons pas vider.
+
+Le raisonnement dimensionnant n'est donc **pas** « la plus longue durée de vie de jeton » mais
+**le maximum des deux** : durée de vie du jeton *et* deux fois le `max-age` du document. Porte de
+recette : `definition-of-done.md` §7.6.
+
 **ES256 partout, pas EdDSA.** better-auth signe en EdDSA par défaut ; nous imposons `ES256`.
 Deux raisons vérifiées : `@nestjs/jwt` (jsonwebtoken 9) **ne sait pas** vérifier EdDSA, et la
 périphérie du CDN qui doit vérifier le jeton de lecture s'appuie sur WebCrypto, où le support
@@ -481,28 +500,31 @@ C'est la question explicitement posée. **Deux systèmes de jetons, quatre point
 |---|---|---|
 | **Qui émet** | session : `identity` · jeton interne : le **BFF** | le service d'**entitlement** |
 | **Qui vérifie** | le BFF (session) · chaque service (JWKS) | la **périphérie du CDN** |
-| **Durée** | session 7 j · interne **60 s** | **≤ 60 s** (exigence Q9b de la TV) |
+| **Durée** | session 7 j · interne **60 s** | **120 s**, renouvelé toutes les **45 s**, bail **90 s** |
 | **Porte** | qui vous êtes, vos rôles | ce que vous avez le droit de lire, sur quel appareil |
 | **Algorithme** | **ES256** | **ES256** — même famille, obligatoire pour la périphérie |
-| **Clés** | `kid` `bff-*` | `kid` `play-*` — **même document JWKS**, cadence de rotation **plus lente** |
+| **Clés** | `kid` `bff-*` | `kid` `play-*` — **même document JWKS**, cadence de rotation **plus lente** (§8.1) |
 
 **Quatre points de contact, écrits :**
 
 1. **La rotation est commune, la cadence ne l'est pas.** Même document, même travail, même
-   convention de `kid`. Mais la périphérie du CDN met le JWKS en cache agressivement, parfois des
-   heures : une clé de lecture tourne **tous les 90 jours avec 7 jours de grâce**, quand une clé
-   de BFF tourne tous les 30 jours avec 24 h. Aligner les deux cadences ferait rejeter des jetons
-   valides en périphérie. **C'est le piège principal de cette articulation.**
-2. **La révocation passe par le renouvellement, pas par une liste de refus.** Un jeton de lecture
-   de 60 s ne se révoque pas : on **cesse de le renouveler**. « Déconnecter cet appareil » révoque
-   la `DeviceSession` dans `identity`, qui publie `session.revoked` / `device.revoked` ;
-   l'entitlement consomme l'événement et refuse le renouvellement suivant. **Latence maximale =
-   retard de l'événement + 60 s.** C'est la réponse chiffrée à la question 25 de
-   `storefront-web` (« déconnecter cet appareil coupe-t-il la lecture, et en combien de temps ? »)
-   et à `DeviceSession` de la TV.
-3. **Le bail expire, il ne se ferme pas.** La limite de sessions simultanées repose sur un **bail
-   qui expire**, jamais sur un appel de fin que la TV ou un mobile tué par l'OS ne pourra pas
-   toujours passer. C'est exactement Q9c de la TV et la question 5 de `storefront-mobile`
+   convention de `kid`. Mais la périphérie du CDN met le JWKS en cache agressivement : une clé de
+   lecture tourne **tous les 90 jours avec 7 jours de grâce**, quand une clé de BFF tourne tous
+   les 30 jours avec 24 h. Aligner les deux cadences ferait rejeter des jetons valides en
+   périphérie. **C'est le piège principal de cette articulation**, et le mécanisme exact qui le
+   produit est écrit en **§8.1** — la grâce se dimensionne sur le **cache**, pas sur le jeton.
+2. **La révocation passe par le renouvellement, pas par une liste de refus.** Un jeton de
+   lecture de 120 s ne se révoque pas : on **cesse de le renouveler**. « Déconnecter cet
+   appareil » révoque la `DeviceSession` dans `identity`, qui publie `session.revoked` /
+   `device.revoked` ; l'entitlement consomme l'événement et refuse le renouvellement suivant.
+   **Latence maximale = retard de l'événement + 120 s** — le cas où le jeton vient d'être
+   renouvelé à l'instant de la révocation ; en régime courant, 45 à 75 s. C'est la réponse
+   chiffrée à la question 25 de `storefront-web` (« déconnecter cet appareil coupe-t-il la
+   lecture, et en combien de temps ? ») et à `DeviceSession` de la TV.
+3. **Le bail expire, il ne se ferme pas.** La limite de sessions simultanées repose sur un
+   **bail de 90 s qui expire** — plus court que le jeton, donc renouvelé par le même battement de
+   45 s — jamais sur un appel de fin que la TV ou un mobile tué par l'OS ne pourra pas toujours
+   passer. C'est exactement Q9c de la TV et la question 5 de `storefront-mobile`
    (« qui libère une session tuée ? »). La session de lecture est identifiée par le `device_id`
    de cet ADR, ce qui permet à une personne de **reprendre sa propre session** au lieu d'être
    bloquée par son propre écran fantôme.

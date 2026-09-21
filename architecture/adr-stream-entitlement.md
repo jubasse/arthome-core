@@ -171,18 +171,54 @@ geste. Jamais une erreur réseau, jamais un lecteur qui tourne sans image.
 
 Deux jeux de clés, **jamais le même** :
 
-| Jeu | Usage | Rotation |
-|---|---|---|
-| **session** (BFF → services) | vérifié par JWKS, localement, par chaque service | 24 h, deux clés vivantes, `kid` dans l'en-tête |
-| **lecture** (streaming → CDN) | vérifié à la périphérie | 24 h, deux clés vivantes, `kid` dans l'en-tête |
+| Jeu | Vérifié par | Rotation | Grâce |
+|---|---|---|---|
+| **session / jeton interne** (BFF → services) | chaque service, par JWKS, **en local** | **30 j** | **24 h** |
+| **lecture** (entitlement → CDN) | la **périphérie du CDN** | **90 j** | **7 j** |
 
-**Les séparer est le point.** Une compromission de la clé de lecture ne doit pas donner de session,
-et réciproquement. Le jeu de lecture est en plus **par environnement** : une clé de démonstration
-publique ne signe jamais rien en production.
+Cadences et `kid` fixés par `adr-auth.md` §8.1, qui possède la conception des clés. **Une version
+antérieure de ce document donnait 24 h aux deux jeux : c'était un nombre plausible et faux**, et
+c'est exactement le genre de littéral parallèle que E2 décrit — sur une valeur d'exploitation
+cette fois, pas sur un vocabulaire.
 
-La rotation est **à recouvrement** : la nouvelle clé est publiée, les deux sont acceptées pendant
-une fenêtre au moins égale à la durée de vie maximale d'un jeton (120 s) plus une marge, puis
-l'ancienne est retirée. Sans recouvrement, une rotation coupe toutes les lectures en cours.
+**Les séparer est le point.** Une compromission de la clé de lecture ne doit pas donner de
+session, et réciproquement. Le jeu de lecture est en plus **par environnement** : une clé de
+démonstration publique ne signe jamais rien en production.
+
+### Pourquoi les deux cadences diffèrent — et ce n'est pas un réglage
+
+La rotation est **à recouvrement** : on publie la nouvelle clé, les deux sont acceptées pendant la
+fenêtre de grâce, puis l'ancienne est retirée. La question est de savoir **ce que la grâce doit
+couvrir**, et c'est là que j'avais tort :
+
+> **La fenêtre de grâce doit couvrir le cache du CDN, pas la durée de vie du jeton.**
+
+Une grâce dimensionnée sur les 120 s d'un jeton — ce que ce document disait — ne sert à rien. La
+périphérie met le document JWKS en cache **pendant des heures** : publier la nouvelle clé puis
+signer avec soixante secondes plus tard laisse l'arête servir l'ancien document, et **elle rejette
+alors des jetons parfaitement valides**. Le spectateur voit sa lecture s'arrêter sans raison, et
+la cause est invisible côté serveur — le jeton *est* bon.
+
+D'où une valeur de contrat, due à `backend-contracts` :
+
+```
+Cache-Control: max-age=3600   sur le document JWKS
+grâce  ≥  2 × max-age         pour TOUTE clé, quel que soit son émetteur
+```
+
+La plus courte des deux grâces (24 h) garde donc un facteur 24, délibérément. Et la cadence de
+lecture est plus lente que celle des BFF **pour cette raison précise**, pas par prudence vague :
+c'est elle qui traverse un cache qu'on ne contrôle pas.
+
+**Deux règles d'exploitation qui vont avec, et qui ne se voient qu'en production :**
+
+1. **Une rotation en échec ne retire jamais une clé.** L'assembleur du document JWKS ne fait
+   qu'**unir** ce que les émetteurs publient ; le retrait est une étape **séparée**, conditionnée à
+   la grâce. Un assembleur qui reconstruirait « à l'identique de ce qu'il voit » supprimerait la
+   clé d'un émetteur temporairement muet et **invaliderait tous ses jetons en vol**.
+2. **Aucune clé privée ne figure jamais dans le document publié.** La porte est d'une ligne et se
+   lance après *chaque* publication — un `d` dans un JWK publié, c'est la signature du système
+   donnée au monde (`definition-of-done.md` §7.6, porte J1).
 
 ---
 

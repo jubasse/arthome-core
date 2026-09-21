@@ -1138,10 +1138,19 @@ dans `@arthome/core`, pas dans `utils/`.
 | variable, fonction, méthode, propriété | `camelCase` | `remainingSeats` |
 | classe, interface, type, énumération | `PascalCase` | `BookingWindow` |
 | constante de portée module, réellement constante | `SCREAMING_SNAKE_CASE` | `MAX_CHAT_MESSAGE_LENGTH` |
-| valeur d'une union littérale | `kebab-case` en minuscules | `'followers-only'` |
+| valeur d'une union littérale | `kebab-case` en minuscules | `'read-only'`, `'replay-online'` |
 | booléen | préfixe `is` / `has` / `can` / `should` | `canModerate` |
 | fonction qui rend une promesse | verbe, pas de suffixe `Async` | `fetchBooking` |
-| clé i18n | `domaine.écran.élément` | `chat.composer.placeholder` |
+| clé i18n | segments en `camelCase`, séparés par des points | `chat.collapse`, `account.alerts.alertHint` |
+| clé i18n **d'un libellé d'énumération** | `enums.<nomDeLEnum>.<valeur>` | `enums.chatMode.read-only` |
+
+Les deux dernières lignes sont relevées dans `shared/i18n/storefront.json`, comme les valeurs du
+§5.3 et pour la même raison. La distinction entre les deux **n'est pas cosmétique** : E2 recense
+parmi ses huit champs une **famille de copie `chat.*`** — `chat.free`, `chat.emoji`, `chat.off` —
+qui double `enums.chatMode.*` — `open`, `emoji`, `read-only`, `off` — avec un vocabulaire qui
+diverge dès la première valeur (`free` contre `open`). Un libellé d'énumération qui n'est pas sous
+`enums.` est une table parallèle en devenir : c'est la porte du §5.3 qui le dit, et non la
+vigilance.
 
 **Ce qu'on ne fait pas — [socle] :** pas de préfixe `I` sur les interfaces, pas de suffixe `Type`,
 pas de suffixe `Enum`, pas de `_` privé (TypeScript a `#` et `private`). Ces conventions viennent de
@@ -1163,17 +1172,68 @@ pas ce point et le §6 l'assume.
 projet : la **table littérale parallèle** (`corrections-handoff.md` § E2, commise sur huit champs par
 cinq maquettes malgré un principe explicite).
 
+> **Cette section a elle-même commis la faute qu'elle combat.** Sa première rédaction illustrait la
+> règle avec un `CHAT_MODES = ['open', 'followers-only', 'subscribers-only', 'off']` — un vocabulaire
+> **inventé**, qui n'existe nulle part dans le projet. Le vrai est `open | emoji | read-only | off`.
+> La faute a été trouvée par un autre coéquipier, relisant ce document.
+>
+> Elle est consignée ici plutôt que discrètement corrigée, pour trois raisons. D'abord parce que
+> c'est **la meilleure démonstration possible de la thèse de ce document** : l'auteur de la porte
+> anti-E2 a commis E2 dans le paragraphe qui la décrit, et seule une relecture extérieure l'a vue —
+> un principe écrit ne suffit pas, même à celui qui l'écrit. Ensuite parce qu'elle comptait
+> **double** : `arthome-check-enums` lit ces noms de constantes, donc un exemple faux dans la
+> documentation de la porte est un piège tendu à qui l'implémentera. Enfin parce qu'elle montre le
+> mécanisme de la faute — je n'ai pas contredit une source, **je n'en ai consulté aucune**. La table
+> littérale parallèle ne naît pas d'un désaccord, elle naît d'une reconstitution de mémoire.
+>
+> Les deux exemples ci-dessous sont désormais relevés à la source, et la source est nommée à chaque
+> fois. **C'est la règle de rédaction de cette section** : une valeur d'énumération ne s'écrit pas
+> ici sans son fichier d'origine.
+
 **[socle] La règle :** une union littérale, déclarée **une seule fois**, dans `@arthome/core`.
 
 ```ts
-// @arthome/core — la forme imposée pour toute énumération de frontière
-export const CHAT_MODES = ['open', 'followers-only', 'subscribers-only', 'off'] as const;
+// @arthome/core — la forme imposée pour toute énumération de frontière.
+// Vocabulaire relevé dans proto/arthome/chat/v1/events.proto (enum ChatMode),
+// concordant avec shared/i18n/storefront.json (chatMode.open|emoji|read-only|off)
+// et shared/fixtures.js. Ce n'est pas un exemple : c'est l'énumération réelle.
+export const CHAT_MODES = ['open', 'emoji', 'read-only', 'off'] as const;
 export type ChatMode = (typeof CHAT_MODES)[number];
 ```
 
 Cette forme donne trois choses qu'aucune autre ne donne ensemble : le **type** pour le
 vérificateur, le **tableau des valeurs** pour l'exécution (boucles d'interface, validation, schémas
 zod), et **un seul endroit à changer**.
+
+**Le second exemple est le cas fondateur de la famille**, et il vaut d'être écrit en entier parce
+qu'il montre ce que la porte cherche. `corrections-handoff.md` § D2 : deux tables décrivent la même
+machine à états, et ne se rejoignent qu'en un seul point de la maquette du studio.
+
+| `shared/catalogue.json` → `publicationStates` *(fait autorité)* | `mockups/Studio.dc.html` → `EV_MOVES` *(table parallèle)* |
+|---|---|
+| `draft` | `draft` |
+| `reserve` | `hidden` |
+| `scheduled` | `sched` |
+| `technical` | `tech` |
+| `live` | `live` |
+| `ended` | `done` |
+| `replay-online` | `replay` |
+
+```ts
+// @arthome/core — relevé dans shared/catalogue.json (publicationStates), qui fait
+// autorité sur mockups/Studio.dc.html : il est explicite et c'est lui que porte
+// l'i18n (enums.publicationState.*). `replay-online` dit ce que `replay` ne dit
+// pas — la rediffusion est EN VENTE. Voir corrections-handoff.md § D2.
+export const PUBLICATION_STATES = [
+  'draft', 'reserve', 'scheduled', 'technical', 'live', 'ended', 'replay-online',
+] as const;
+export type PublicationState = (typeof PUBLICATION_STATES)[number];
+```
+
+Ce que cet exemple enseigne, et que la seule règle n'enseigne pas : **les deux tables sont
+lisibles, cohérentes et fonctionnelles chacune de son côté.** Rien ne plante. Le coût n'apparaît
+qu'au moment où deux personnes — ou deux agents — lisent chacun la sienne et écrivent deux
+contrats. C'est pourquoi la détection ne peut pas être laissée à la relecture.
 
 **[socle] `enum` est interdit.** Quatre raisons, dans l'ordre :
 
@@ -1202,13 +1262,26 @@ E2 prouve qu'écrire la règle ne suffit pas. Ce qu'il faut, c'est détecter **l
 valeur d'énumération ailleurs que là où elle est déclarée**. C'est mécanisable et bon marché :
 
 > Un script `tools/check-enum-literals.mjs`, dans `arthome-core`, qui :
-> 1. importe depuis `@arthome/core` toutes les constantes dont le nom se termine par un pluriel
->    déclaré (`CHAT_MODES`, `REPLAY_POLICIES`, `PUBLICATION_STATES`, `MODERATION_STATES`,
->    `CURRENCIES`, …) et collecte l'ensemble de leurs valeurs ;
+> 1. importe depuis `@arthome/core` **toutes** les constantes exportées qui sont des tableaux de
+>    chaînes `as const`, sans en connaître la liste à l'avance, et collecte l'ensemble de leurs
+>    valeurs ;
 > 2. parcourt les fichiers source du dépôt (`src/**`, `app/**`), hors le module de déclaration, hors
 >    `**/generated/**`, hors les fichiers de test ;
 > 3. signale toute chaîne littérale appartenant à cet ensemble ;
 > 4. sort en code 1 avec fichier, ligne et valeur.
+
+**Le point 1 se découvre, il ne s'énumère pas**, et c'est délibéré. Une première rédaction de ce
+paragraphe donnait la liste en dur — `CHAT_MODES`, `REPLAY_POLICIES`, `PUBLICATION_STATES`,
+`MODERATION_STATES`, `CURRENCIES` — ce qui aurait été **une table parallèle de plus** : la liste des
+énumérations, recopiée à côté des énumérations. Le script lit ce que `@arthome/core` exporte
+réellement ; une énumération nouvelle est couverte le jour où elle est déclarée, sans que personne
+ait à penser à l'inscrire quelque part.
+
+Un exemple de ce que la liste en dur aurait coûté, et il n'est pas théorique : `MODERATION_STATES`
+au singulier **conflait trois axes que `proto/arthome/chat/v1/events.proto` sépare** — `MessageState`
+(l'état du message), `ModerationItemState` (la nature de la ligne de file, où vit `reported`) et
+`ModerationVerdict` (la sanction). C'est exactement l'écart E3, reproduit par un nom de constante
+inventé au lieu d'être relevé.
 
 Les exceptions légitimes — un test qui construit une donnée, un plan de correspondance i18n — sont
 listées dans un `tools/enum-literals.allow.json` **versionné**, chaque ligne portant sa raison. Le

@@ -277,7 +277,7 @@ bout :
 
 ```
 POST /orders/seats                      bff-storefront   traceparent créé
-  └─ ticketing.PurchaseSeat             gRPC             traceparent en Metadata
+  └─ POST /v1/orders/seats → ticketing  HTTP/JSON        traceparent en en-tête
        └─ TRANSACTION
             ├─ UPDATE date_sales SET seats_available = seats_available - 1   (invariant)
             ├─ INSERT seat (seat_code émis par le serveur)

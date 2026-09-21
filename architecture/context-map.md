@@ -544,7 +544,10 @@ Deux jetons, deux durées, deux vérificateurs, **jamais interchangeables**.
 puis émet un jeton signé court qui porte : `sub` (compte), `pro` (profil), `did` (appareil),
 `chn[]` (chaînes accessibles) et `rol[]` (rôles effectifs par chaîne) pour le studio, `scope`,
 `exp`, et le `traceparent`. Chaque service vérifie par JWKS, en local, sans réseau à chaud (jeu de
-clés mis en cache, rotation toutes les 24 h avec deux clés vivantes et un `kid` dans l'en-tête).
+clés mis en cache, `kid` dans l'en-tête, **cadences de rotation fixées par `adr-auth.md` §8.1** —
+30 j / grâce 24 h pour les deux BFF, 90 j / grâce 7 j pour le jeton de lecture et le
+`device_token`. Les « 24 h avec deux clés vivantes » que portait une version antérieure de ce
+paragraphe étaient un nombre plausible et faux : voir §7.0 et `adr-stream-entitlement.md` §3.4.
 
 **Trois précisions que les surfaces ont exigées :**
 
@@ -805,12 +808,13 @@ surcouches partagées par tous ses écrans.
 
 **Total général : 60 lectures + 132 écritures = 192 méthodes synchrones BFF → service.**
 
-### 10.3 Ce que ce compte pèse — et ce qu'il ne tranche pas
+### 10.3 Ce que ce compte pesait, et comment le transport a été tranché
 
-Je donne le compte ; **le transport est tranché par `backend-contracts`**, comme la mission le
-prévoit. Voici la matière de sa décision, pesée honnêtement.
+J'ai donné le compte et la matière ; **`backend-contracts` a tranché**, comme la mission le
+prévoit. La pesée est conservée telle que je l'avais écrite — elle explique pourquoi la décision
+n'allait pas de soi — et la décision est consignée à la fin.
 
-**Ce qui plaide pour gRPC.**
+**Ce qui plaidait pour gRPC.**
 192 méthodes typées, décrites une fois. Les schémas Protobuf existent déjà pour les événements et
 l'outillage `buf` est déjà en place : le générateur de clients est gratuit. Un appel BFF → service
 a un **délai** (`deadline`) qui traverse et se propage, ce qu'HTTP/JSON n'offre pas nativement —
@@ -818,7 +822,7 @@ et sur le chemin critique de `OpenPlayback` (budget ≤ 1 s dans un budget total
 première image), ce n'est pas un confort. Les lectures groupées (surcouches par lot d'identifiants)
 sont exactement ce que gRPC fait bien.
 
-**Ce que gRPC coûte à une personne seule.**
+**Ce que gRPC coûtait à une personne seule.**
 `h2c` à configurer dans Traefik (le proxy doit parler HTTP/2 en clair vers les services, ou il faut
 du TLS interne). Pas de `curl` : déboguer un appel demande `grpcurl` ou la réflexion, et la
 réflexion ne doit pas être exposée en production. Des sondes distinctes : `grpc-health-check` au
@@ -827,12 +831,26 @@ est non documenté, et le défaut coupe les appels en vol à chaque déploiement
 de charge côté client (`round_robin` + `max_connection_age_ms`), parce qu'un Service ClusterIP
 épingle un seul pod.
 
-**Ma recommandation, non contraignante.** gRPC pour les **60 lectures** — c'est là que le typage,
-le délai et les lots paient, et c'est le chemin chaud. HTTP/JSON décrit en OpenAPI pour la
-**poignée de commandes où un humain devra lire la requête en clair** : les webhooks Stripe (qui ne
-sont pas des appels BFF), les exports, et les parcours d'authentification. Mais 132 écritures ne
-sont pas une poignée : si l'on choisit un seul transport, c'est gRPC, et le coût d'exploitation
-ci-dessus est le prix à écrire dans l'ADR.
+**Ma recommandation était gRPC pour les 60 lectures. `backend-contracts` a tranché l'inverse, et
+il a raison — je consigne le résultat et les deux arguments qui m'avaient échappé.**
+
+> **Décision : HTTP/JSON décrit en OpenAPI 3.1, pas de gRPC.**
+
+Ce qui a emporté la décision n'est pas le compte de 192, mais **1 et 4** :
+
+- **profondeur de chaîne : 1, par construction.** Ma propre règle — aucun appel entre services —
+  fait qu'un délai n'a **personne à qui se propager**. Or la propagation du `deadline` était mon
+  meilleur argument pour gRPC ; il tombe de lui-même. Pire, `nestjs-grpc` établit que **Nest ne
+  coupe jamais un handler unaire** : le délai gRPC n'arrête pas le destinataire, c'est le même
+  travail à la main qu'en HTTP ;
+- **fan-out maximal : 4**, et tous parallèles. On n'est pas dans le régime où le typage d'un
+  transport binaire paie.
+
+Et un argument qui touche directement ce que ce document défend depuis le début : gRPC ferait
+passer de **deux à trois** les déclarations manuscrites de chaque vocabulaire fermé — l'union dans
+`@arthome/core`, le proto d'événement, **plus** un proto de service. Soit **+50 % de surface
+exposée à E2**, la faute dominante du projet, pour un gain de latence que le fan-out ne justifie
+pas. J'avais listé le coût d'exploitation au paragraphe précédent ; c'est celui-là qui manquait.
 
 ---
 
