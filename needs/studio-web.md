@@ -1198,3 +1198,223 @@ clôture.
     à l'aveugle.
 13. **`GET /changes?since=` est-il ouvert au BFF studio ?**
 14. **Un GET des réglages de chaîne**, et le porteur du bloc « diffusion par défaut ».
+
+---
+
+# Dashboard et stats — relevé pour le contrat
+
+> Relevé de maquette, pas conception. Ce que `Studio.dc.html` porte réellement, et **« absent »**
+> là où elle ne dit rien. Lu par `rg` puis `sed`, jamais en entier.
+> Destiné à `backend-contracts` pour écrire les deux chemins manquants.
+
+## 1. Les six indicateurs de `dashboard`
+
+Un seul gabarit : **libellé · valeur · unité · variation · une barre par point de série**. La
+variation n'est **pas** un champ : elle est dérivée de la série (`trendOf`) — moyenne de la
+première moitié contre la seconde, **rien affiché sous 4 points** ni sous 0,1 % d'écart, exprimée
+en % sauf pour le remplissage qui est en **points**. La barre en sparkline prend les **14 derniers
+points**.
+
+| # | Libellé | Ce qu'il mesure, dans la maquette | Série portée | Portée par le rôle |
+|---|---|---|---|---|
+| 1 | `VENTES BOUTIQUE` | somme `vendus × prix` sur tous les articles des spectacles de la chaîne | **par article**, pas temporelle — commodité de maquette | `canRevenue` |
+| 2 | `ABONNÉS GAGNÉS` | `channel.followersGained30d` — un compteur **figé à 30 jours** | **absente** (tableau vide) | tout le monde |
+| 3 | `REDIFFUSIONS VUES` | somme de `replayViews` sur les dates de la chaîne | **une valeur par date**, chronologique | tout le monde |
+| 4 | `TAUX DE REMPLISSAGE` | moyenne des `(jauge − restantes) / jauge` sur les dates | une valeur par date, en % | `canOps` |
+| 5 | `MESSAGES MODÉRÉS` | nombre d'entrées de file sur les dates de la chaîne | une valeur par date | `roleOf === 'mod'` |
+| 6 | `SIGNAL MOYEN` | `100 − dropped%` moyen, en % | dérivée de la série de santé de **la première date seulement** | `roleOf === 'regie'` |
+
+**Période.** Un sélecteur commun à `dashboard` et `stats` : `7 J · 30 J · 90 J · SAISON ·
+PERSONNALISÉ`, le dernier ouvrant deux champs `DU`/`AU` et un résumé « 94 jours · 7 dates » — donc
+le contrat doit rendre, pour une plage libre, **le nombre de jours et le nombre de dates
+couvertes**. Quatre indicateurs sur six sont des **cumuls** qui suivent la période (1, 2, 3, 5),
+deux sont des **moyennes** (4, 6). La maquette applique un coefficient par période
+(`7j: 0,22 · 30j: 1 · 90j: 2,7 · saison: 4,4`) : c'est une commodité de fixture, mais elle
+établit que les valeurs sont **bornées par la période**.
+
+**Trois incohérences de la maquette, à trancher et non à recopier :**
+
+- l'indicateur 2 multiplie par le coefficient de période un compteur **déjà figé à 30 jours** ;
+- l'indicateur 5 porte l'unité littérale **« sur 30 j »** alors qu'un sélecteur de période existe ;
+- les séries 1 et 6 ne sont pas temporelles (par article, et une seule date). **La granularité
+  réelle de la série, dans la maquette, est « une valeur par date ».** Une granularité par jour
+  n'y figure nulle part : si le contrat la veut, c'est une décision, pas un relevé.
+
+### Le rôle change **la liste**, pas le contenu
+
+C'est net, et c'est le même mécanisme que partout ailleurs dans le studio : la tuile est **retirée**
+du tableau, pas vidée. Conséquence directe de la table d'accès :
+
+| Persona | Tuiles réellement affichées |
+|---|---|
+| `artist`, `production` | 1, 2, 3, 4 — **quatre** |
+| `treasury` | 1, 2, 3 — **trois** (pas `canOps`) |
+
+**Les tuiles 5 et 6 ne sont jamais affichées.** Elles testent `roleOf === 'mod'` et
+`roleOf === 'regie'` — le rôle **principal**, pas l'union avec le second rôle —, or ni `mod` ni
+`regie` n'ouvrent `dashboard`. Deux tuiles sur six sont mortes en l'état. À trancher : soit
+`dashboard` s'ouvre à ces deux rôles, soit les deux tuiles disparaissent. **La maquette ne le dit
+pas.**
+
+### Un septième bloc, distinct des tuiles
+
+`RECETTE PAR DATE` : les **six dernières dates**, une barre proportionnelle et le brut par date,
+avec un total en tête. Affiché sous `canRevenue`. Le brut par date est celui du versement
+(`payout.gross`). **Le total est codé en dur dans la maquette** (`140 496 €` × coefficient) et ne
+dérive pas des six lignes : la maquette ne dit donc pas si c'est la somme des lignes affichées ou
+le total de la chaîne sur la période. **Absent.**
+
+## 2. Les rappels et le décompte de la prochaine date
+
+### Le décompte — carte « PROCHAINE DATE » / « À L'ANTENNE »
+
+Une seule carte, qui bascule sur l'état de la première date de l'agenda :
+
+- **hors antenne** : affiche, titre, `jour · heure de salle (heure chez vous) · durée`, pastille
+  d'état, décompte `J j HH:MM` ou `HH:MM:SS` sous le libellé `AVANT LE LEVER DE RIDEAU`, et un
+  bloc `PLACES VENDUES — N / M places` avec le pourcentage de jauge (seuil d'alerte à **90 %**) ;
+- **à l'antenne** : le même bloc, pastille rouge pulsée, décompte `HH:MM:SS` **depuis** le lever de
+  rideau sous `DEPUIS LE LEVER DE RIDEAU`.
+
+Actions : `Ouvrir la régie` sous `canTech`, `Voir la date` sous `canOpenRecord`. Le bloc places est
+sous `canOps || canRevenue`.
+
+Le décompte se calcule contre l'instant de début de la date. *(La maquette vise un 20 h 30 codé en
+dur avec une durée de 130 min ; c'est une commodité de fixture, les autres champs de la carte
+viennent bien de la date.)*
+
+### Les rappels — bloc « À TRAITER »
+
+Trois à cinq lignes, chacune : **texte · méta · pastille de gravité · page de destination · portée
+de rôle**. La ligne est cliquable **seulement si la page de destination est ouverte à la personne**.
+Leur composition exacte :
+
+| Origine | Texte | Méta | Va vers | Portée |
+|---|---|---|---|---|
+| brouillon ou réserve incomplet | « *Titre* — il manque le tarif et le contrôle technique : la date reste en réserve » | `ÉVÉNEMENT · <état>` | `event` | `canOps` |
+| contrôle technique non passé | « Contrôle technique non passé pour *Titre* · *jour* » | `RÉGIE · <compte à rebours>` | `regie` | `canOps` |
+| aucun modérateur affecté | « Aucun modérateur affecté à *Titre* · *jour* » | `ÉQUIPE · <compte à rebours>` | `crew` | `canOps` |
+| date proche du complet | « *Titre* du *jour* à N % de la jauge » | `BILLETTERIE` | `events` | `canRevenue` |
+| file de modération | « N messages retenus par le filtre attendent une décision » | `MODÉRATION · <titre à l'antenne>` | `regie` | tout le monde |
+
+Les deux premières sont exclusives (la seconde ne sort que si le contrôle est passé), et la boucle
+est plafonnée à **deux** lignes issues des listes de contrôle. La méta porte un **compte à rebours**
+jusqu'au lever de rideau, donc un instant, pas une phrase.
+
+**Ce que je relève** : c'est une liste **routée**, exactement comme la boîte — nature, gravité,
+cible et portée de rôle décidées ailleurs que dans l'application. La maquette ne dit ni son ordre
+de tri ni son plafond global. **Absent.**
+
+### Le reste du `dashboard`, déjà servi
+
+`PROCHAINES DATES` : les **six** prochaines dates — jour, mois, titre, heure, pastille d'état,
+pourcentage de jauge —, un lien « tout voir » vers `events`, et « + Créer une date » sous
+`roleOf ∈ {artist, production}`. Rien de nouveau : voir §4.
+
+## 3. Les axes de `stats`
+
+Deux onglets. Titre variable : « Audience et recettes » sous `canRevenue`, « **Audience** » sinon.
+Export `CSV` dans les deux.
+
+### Onglet `audience`
+
+**Bandeau, quatre chiffres** — `SPECTATEURS UNIQUES` · `REMPLISSAGE MOYEN` (%) · `DATES OUVERTES` ·
+`RECETTE NETTE` (retiré sans `canRevenue`).
+
+Deux réserves de relevé :
+- `SPECTATEURS UNIQUES` est, dans la maquette, une somme sur les dates de
+  `max(spectateurs en direct, places vendues) + vues de rediffusion`. Ce n'est **pas** un décompte
+  d'individus uniques, malgré le libellé. **La définition d'un spectateur unique est absente** ;
+- `DATES OUVERTES` compte **toutes** les dates de la chaîne, sans filtre d'état, malgré le libellé.
+
+**Trois blocs :**
+
+1. `REMPLISSAGE PAR DATE` — histogramme, **six** dates, valeur = pourcentage de jauge atteint,
+   sous-titre = places vendues ou « pas encore ouverte ». Seuil visuel à 100 %.
+2. `AUDIENCE PAR DATE` — six dates, titre, jour + état, barre de remplissage, et une valeur
+   libellée « N spect. » qui est en réalité **le nombre de places vendues**. Le libellé et la
+   donnée divergent dans la maquette ; c'est à trancher, pas à recopier.
+3. `PROVENANCE DES SPECTATEURS` — anneau à **cinq segments nommés** : *Page d'accueil Arthome ·
+   Recherche interne · Partage sur les réseaux · Lien direct de la compagnie · Mise en avant
+   payante*, avec le total de spectateurs au centre. **Les cinq libellés sont la seule chose que la
+   maquette apporte : les valeurs y sont codées en dur (38 / 24 / 21 / 12 / 5) et aucune source
+   d'attribution n'existe dans `shared/`, `fixtures.js` ni `catalogue.json`.** C'est le seul
+   indicateur de `stats` qui demande une donnée que le système ne produit nulle part aujourd'hui.
+
+### Onglet `series` — « comparer les dates d'une série »
+
+La forme exacte, qui est la partie la moins devinable :
+
+**Groupement.** Les dates sont groupées par **titre de spectacle**, et les états `draft` et
+`technical` sont **exclus** du groupement. Seuls les groupes de **plus d'une date** sont des séries.
+*(Le groupement par titre est une commodité de maquette : le domaine a un `show`, et c'est
+`showId` qui est la clé juste.)* S'il n'existe aucune série, le bloc le dit et invite à dupliquer
+une date — donc l'état « aucune série » est un cas servi, pas un vide.
+
+**Référence.** Ce n'est **pas** la première date du groupe : c'est **la première qui a vendu au
+moins une place**, à défaut la première. Toute la comparaison s'y rapporte.
+
+**Bandeau, quatre chiffres** — `SÉRIES SUIVIES` (nombre de spectacles à plusieurs dates) ·
+`MEILLEUR REMPLISSAGE` (% + titre du spectacle) · `ÉCART MOYEN` (en **points**, entre la référence
+et les suivantes, toutes séries confondues ; « pas encore mesurable » si aucune date suivante n'a
+vendu) · `DÉCISION EN ATTENTE` (nombre de dates **en réserve**).
+
+**Deux blocs :**
+
+1. un sélecteur de série (une pastille par titre) ;
+2. `ÉCART À LA PREMIÈRE DATE` — une ligne par date du groupe, portant : jour + heure, pourcentage
+   de jauge, recette si `canRevenue`, **l'écart de remplissage en points** et **l'écart de recette
+   en pourcentage** par rapport à la référence, la barre teintée selon le signe, la pastille
+   d'état, et une action d'ouverture.
+   **Cas particulier explicite** : une date sans aucune vente n'affiche **aucun écart** — « il n'y
+   a pas d'écart à mesurer, c'est une décision à prendre, pas un déclin ». Elle affiche alors sa
+   jauge et, si elle est en réserve et que la personne est `artist` ou `production`, l'action
+   « Ouvrir la vente ».
+
+Ce que le contrat doit donc porter pour cet onglet : **le groupement, la référence retenue, et les
+deux écarts — calculés**, pas les ingrédients. Le choix de la référence (« la première qui a
+vendu ») est une règle de domaine, et deux surfaces la réimplémenteraient différemment.
+
+## 4. Ce qui est déjà servi — à ne pas redemander
+
+C'est la règle 2, et la liste est longue. **La plus grande partie de `dashboard` est une
+recomposition de collections déjà servies depuis le lot 2.**
+
+| Ce que l'écran montre | Déjà servi par | Reste-t-il quelque chose ? |
+|---|---|---|
+| `PROCHAINES DATES` (6 lignes) | `getChannelAgenda` / `listChannelEvents` → `EventsRow` : `title`, `startsAt`, `displayState` (+ `validUntil`), `fillRateBps`, `seatsSold`, `orderRank` | **rien**, sauf ci-dessous |
+| carte « prochaine date » : titre, heure, état, places vendues, % de jauge | même `EventsRow` | il manque **`capacityTotal`** : la carte affiche « N / M places », et `EventsRow` ne porte que `seatsSold` et `fillRateBps`. **Un champ, pas un chemin** |
+| décompte avant / depuis le lever de rideau | `EventsRow.startsAt` + `displayStateValidUntil` + `ws:pulse.serverTime` | **rien** — il se calcule localement, comme le contrat le prescrit déjà |
+| `RECETTE PAR DATE` | `listPayouts` → `PayoutLine.grossTtc` par date | seulement la **définition du total** en tête (voir §1) |
+| KPI `REDIFFUSIONS VUES` | `listChannelReplays` → `views` par rediffusion | l'agrégat sur la période, et la série |
+| rappel « contrôle technique non passé » | `Publication.checklist` (`technical_check_passed`) et `getChannelStreamSettings.recentChecks` / `preflightPending` | l'**agrégation en liste routée** au niveau chaîne |
+| rappel « aucun modérateur affecté » | `getDateCrewPane.missingRoles` et `StudioCounters.datesToCover` | idem |
+| rappel « messages retenus » | `StudioCounters.moderationPending` | idem |
+| rappel « il manque le tarif » | `Publication.checklist` (`at_least_one_active_price`) | idem |
+| `DÉCISION EN ATTENTE` (dates en réserve) | `listChannelEvents?state=reserve` → `page.totalItems` | **rien** |
+| `REMPLISSAGE PAR DATE` et `AUDIENCE PAR DATE` | `EventsRow.fillRateBps` + `seatsSold`, six dates | **rien, en l'état** : la maquette alimente « N spect. » avec les places vendues. Un vrai décompte de spectateurs serait une donnée nouvelle, pas un réarrangement |
+| répartition par tarif | `getChannelTicketing.byTier` | **rien** — et c'est sur `tickets`, pas sur `stats` |
+| listes d'attente, contremarques, demandes en cours | `getChannelTicketing` | **rien** |
+| pastille de pré-vol | `getChannelStreamSettings.preflightPending` | **rien** |
+| invalidation au changement de période | `/v1/changes` | **rien** |
+
+### Ce qui reste donc réellement à écrire
+
+1. **Les six tuiles agrégées sur une période**, chacune avec sa série (granularité **par date** dans
+   la maquette) — la variation étant **dérivée** de la série et donc jamais servie.
+2. **La liste « à traiter »**, routée et bornée, avec nature, gravité, cible et portée de rôle.
+   Tous ses ingrédients existent ; c'est l'agrégation au niveau chaîne qui n'a pas de porteur.
+3. **Les agrégats de comparaison de série** — groupement, référence retenue, écart en points et
+   écart en pourcentage — parce que la règle de référence est du domaine.
+4. **La provenance des spectateurs** : cinq catégories nommées, et **aucune source**. C'est le seul
+   point des deux écrans qui demande une donnée qui n'existe nulle part.
+5. **`capacityTotal` sur `EventsRow`** — un champ.
+6. **Les bornes d'une plage personnalisée** : nombre de jours et nombre de dates couvertes.
+
+### Les cinq points où la maquette ne dit rien — « absent »
+
+- la granularité temporelle d'une série (elle est **par date**, jamais par jour) ;
+- la définition d'un « spectateur unique » ;
+- le total de `RECETTE PAR DATE` : somme des lignes affichées, ou total de la chaîne ;
+- l'ordre de tri et le plafond de la liste « à traiter » ;
+- si `dashboard` doit s'ouvrir à `mod` et `regie`, sans quoi deux des six tuiles sont mortes.
