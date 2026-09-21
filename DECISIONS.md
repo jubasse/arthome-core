@@ -612,7 +612,7 @@ called service, it adds no network hop.
 
 ## The English pass — 22 September 2026
 
-### D-027 — The navigation vocabulary diverged, and `team` left without a record
+### D-027 — The navigation vocabulary diverged, and the contract must move
 
 **Found by `studio-web`, then verified rather than believed.** It reported that `team` had
 disappeared from the studio's navigation vocabulary and that a reader of this journal could not
@@ -631,16 +631,53 @@ green.
 
 **The direction is not open**: critical rule 2 says any value displayed twice comes from
 `@arthome/core`. So the contract follows the domain, or the domain changes and the contract follows
-— never one of each. Which name wins is `backend-domain` and `backend-contracts`' to settle on the
+— never one of each. Which name wins was `backend-domain` and `backend-contracts`' to settle on the
 evidence, not mine to guess.
 
-**And the record `studio-web` asked for, which is the part that was actually missing.** `team` was
-removed from the contract because E6 established it is a **dead page** — absent from the access
-table of all six personas, with the line that has it absorbed by `crew` itself dead code. That is a
-good reason. It had simply never been written down, so the removal read as an accident.
+**The ruling, from `backend-domain`, with the reason I did not have.**
 
-*A decision taken in passing is indistinguishable from an oversight. That is what this journal is
-for, and it failed here.*
+`moderation-page` wins and **the contract moves**. The reason is not aesthetic: `'moderation'` is
+**already a member of `MEMBER_ROLES`** (`people.ts:24`). Two closed vocabularies cannot share a
+value here, because `arthome-check-enums` discovers *values*, not *vocabularies* — a file writing
+`'moderation'` would be attributed to whichever vocabulary declared it first, and the gate would
+either flag a legitimate use or wave through an illegitimate one. The same disambiguation is applied
+visibly elsewhere: `DATE_PANES` carries `pane-tickets`, `pane-chat`, `pane-crew`, `pane-replay`
+because `tickets`, `crew` and `replays` are navigation entries; `CREW_ROLES` carries `crew-director`
+rather than `director`; `AUDIENCE_SANCTIONS` carries `none-sanction`. Moving *core* instead would
+collide with `MemberRole`.
+
+**And `team` comes back, making 15 on both sides — which retracts what this entry first said.**
+
+### D-027b — Retraction: I wrote a good-sounding reason for a removal that was wrong
+
+The paragraph this replaces claimed `team` had been removed because E6 established it is a **dead
+page**, and called that "a good reason". It is not, and I should not have written it.
+
+**E6's finding was about the mockup**: `team` is absent from the access table of the six personas
+*in `studio-data.js`*, with the line that has it absorbed by `crew` itself dead code. That is a
+**mockup defect**. Treating it as grounds to drop the concept from the **contract** is the fault the
+mission forbids on its first page — letting the state of a prototype dictate the structure of an API.
+
+**`team` and `crew` are two different pages, and the distinction is already written down in `core`.**
+`crew` is the per-**date** crew: who is on the run desk tonight, `CREW_ROLES`, `DateAccessGrant`,
+expiry served as an instant. `team` is the per-**channel** membership: who belongs to this channel,
+`MEMBER_ROLES`, `grants`, invitations. `CREW_ROLES`' own doc comment carries the consequence —
+*"two scales, two lifecycles: confusing them would turn revoking a stand-in into exclusion from the
+channel."* Collapsing the vocabulary to 14 erases exactly that.
+
+**What this failure was.** I was asked why a decision had no record. Rather than find out, I
+reconstructed a reason that fitted the facts I had, and it fitted well enough to stand. A journal
+that exists because *a plausible claim gets copied and never reread* had just produced one — in the
+entry complaining that a decision was taken without a record.
+
+*A decision taken in passing is indistinguishable from an oversight. A reason invented afterwards is
+worse than both, because it stops anyone looking.*
+
+**One more thing `backend-domain` found while translating**, and it belongs here: the French comment
+above `NAVIGATION_ENTRIES` read *"les quatorze entrées de navigation"* while the list has held
+fifteen. Stale prose, not a disagreement with the contract. It now reads "The studio's navigation
+entries", with no number — a count written beside the list it counts is a parallel table waiting to
+happen.
 
 ### D-028 — A repository-wide rewrite is a stop-the-world operation
 
