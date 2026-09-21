@@ -169,6 +169,40 @@ function matchesGlob(file, pattern) {
 
 const isAllowed = (file) => ALLOWED.some((p) => matchesGlob(file, p));
 
+// ------------------------------------------------------------------ provenance
+// A LINE THAT ALREADY EXISTS IN THE READ-ONLY SOURCE IS NOT OURS TO TRANSLATE.
+//
+// The screen extractions under prototypes/screens/ are line-range slices of the
+// five mockups, and the mockups carry the DESIGNER'S OWN comments, in French.
+// Those come out in the slice. Judging them by shape flagged 27 files whose
+// authored prose was already English — the second false positive of this gate,
+// and the same mistake as the first: reading a line without asking who wrote it.
+//
+// Exempting prototypes/screens/ wholesale would have exempted the authored
+// headers too, which are the part worth checking. So provenance decides: the
+// line is skipped if and only if it appears verbatim in a source file.
+const SOURCE_GLOBS = ['prototypes/*.dc.html', 'prototypes/shared/**'];
+let sourceLines = null;
+
+function sourceLineSet(files) {
+  if (sourceLines) return sourceLines;
+  sourceLines = new Set();
+  for (const f of files) {
+    if (!SOURCE_GLOBS.some((g) => matchesGlob(f, g))) continue;
+    let text;
+    try {
+      text = fs.readFileSync(path.join(CWD, f), 'utf8');
+    } catch {
+      continue;
+    }
+    for (const line of text.split('\n')) {
+      const t = line.trim();
+      if (t.length > 12) sourceLines.add(t);
+    }
+  }
+  return sourceLines;
+}
+
 // ------------------------------------------------------------ prose extraction
 /** Markdown minus its fenced code blocks: a code sample is not prose. */
 function proseOfMarkdown(text) {
@@ -288,8 +322,12 @@ for (const file of files) {
   checked += 1;
 
   const lines = prose ? proseOfMarkdown(text) : commentsOfSource(text, ext);
+  // Inside prototypes/, a line lifted verbatim from a mockup is the designer's,
+  // not ours. Checked by provenance, never assumed from the directory.
+  const src = file.startsWith('prototypes/') ? sourceLineSet(files) : null;
   const words = new Map(); // word -> first line
   for (const [n, line] of lines) {
+    if (src && src.has(line.trim())) continue;
     for (const m of line.matchAll(FRENCH_RE)) {
       const w = m[1].toLowerCase();
       if (!words.has(w)) words.set(w, n);
