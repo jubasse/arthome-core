@@ -15,7 +15,14 @@
  * facture sur la surface la plus contrainte du projet.
  */
 
+// Vague 1 — le socle.
 export * from './kernel/index.js';
 export * from './vocabulary/index.js';
 export * from './money/index.js';
 export * from './time/index.js';
+
+// Vague 2 — ce qui se lit et ce qui s'affiche.
+export * from './taxonomy/index.js';
+export * from './media/index.js';
+export * from './format/index.js';
+export * from './i18n/index.js';
