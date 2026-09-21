@@ -1,1323 +1,1292 @@
-# Besoins — storefront mobile (React Native)
+# Needs — storefront mobile (React Native)
 
-> Surface : storefront mobile, React Native, portrait et paysage, cinq onglets bas.
-> Auteur unique de ce fichier. Rédigé au temps 1. La section **Confrontation** prévue par D-007
-> sera ajoutée ici au temps 3.
+> Surface: storefront mobile, React Native, portrait and landscape, five bottom tabs.
+> Sole author of this file. Written at time 1. The **Confrontation** section required by D-007
+> was added at time 3.
 >
-> Ce document exprime **ce que le contrat doit porter ou garantir**. Il ne décrit aucun écran :
-> les maquettes sont la conception. Les identifiants sont en anglais, la rédaction en français.
+> This document states **what the contract must carry or guarantee**. It describes no screen:
+> the mockups are the design.
 >
-> Sources lues : `shared/helpers.js` (en entier), `shared/catalogue.json`, `shared/fixtures.js`
-> (sections dates, comptes, tchat, boutique), `shared/taxonomy.json`, `shared/i18n/`,
-> `mockups/Storefront Mobile.dc.html` (lu par fragments, jamais en entier),
+> Sources read: `shared/helpers.js` (in full), `shared/catalogue.json`, `shared/fixtures.js`
+> (dates, accounts, chat and store sections), `shared/taxonomy.json`, `shared/i18n/`,
+> `mockups/Storefront Mobile.dc.html` (read in fragments, never whole),
 > `architecture/corrections-handoff.md`, `DECISIONS.md`.
 >
-> Skills chargées, conformément à D-001 (aucun orchestrateur React Native n'existe) :
-> `react-core`, `react-native-best-practices`, `react-server-state`. Aucune ne contredit une
-> décision du projet ; trois de leurs constats **contraignent le contrat** et sont repris aux
-> sections « Hors ligne, arrière-plan et reprise » et « Contraintes propres à React Native ».
+> Skills loaded, per D-001 (no React Native orchestrator exists): `react-core`,
+> `react-native-best-practices`, `react-server-state`. None contradicts a project decision;
+> three of their findings **constrain the contract** and are carried into "Offline, background
+> and resume" and "Constraints specific to React Native".
+>
+> *Translated from French in full at the project lead's decision that everything technical is
+> English from now on. Nothing was rewritten in the process.*
 
 ---
 
-## Inventaire des écrans
+## Screen inventory
 
-### Correction à la liste du chef
+### Correction to the lead's list
 
-La liste transmise comptait seize écrans. La lecture de la maquette en donne **douze**. Quatre
-entrées n'étaient pas des écrans :
+The list I was handed counted sixteen screens. Reading the mockup gives **twelve**. Four entries
+were not screens at all:
 
-| Entrée de la liste | Ce que c'est réellement | Preuve |
+| Entry on the list | What it actually is | Evidence |
 |---|---|---|
-| `tiles` | un **mode d'affichage**, `view: 'tiles' \| 'list'` | état initial `view: 'tiles', followView: 'tiles'` |
-| `list` | l'autre valeur du même mode | `view === 'list'` |
-| `chat` | un **onglet du panneau latéral** de `live` | `tab: 'chat' \| 'store'` |
-| `store` | l'autre onglet du même panneau | `goStore: () => setState({ page: 'live', tab: 'store' })` |
+| `tiles` | a **display mode**, `view: 'tiles' \| 'list'` | initial state `view: 'tiles', followView: 'tiles'` |
+| `list` | the other value of that same mode | `view === 'list'` |
+| `chat` | a **tab of the side panel** of `live` | `tab: 'chat' \| 'store'` |
+| `store` | the other tab of that same panel | `goStore: () => setState({ page: 'live', tab: 'store' })` |
 
-La distinction n'est pas cosmétique pour le contrat : un mode d'affichage change la **densité**
-d'une liste (donc la taille de page demandée, cf. « Pagination et volumes ») sans changer la forme
-servie ; un onglet de panneau partage le **cycle de vie et le canal temps réel** de l'écran qui le
-porte, et ne peut donc pas être servi par une lecture indépendante.
+The distinction is not cosmetic as far as the contract goes: a display mode changes the **density**
+of a list (hence the page size requested — see "Pagination and volumes") without changing the shape
+served; a panel tab shares the **lifecycle and the realtime channel** of the screen that carries it,
+and therefore cannot be served by an independent read.
 
-### Les douze routes
+### The twelve routes
 
-| Route | Introduit | Renvoi si rien de neuf |
+| Route | Introduces | Cross-reference where nothing is new |
 |---|---|---|
-| `home` | `DateSummary`, `ArtistSummary`, rails bornés, le point de reprise, la bannière invité | — |
-| `browse` | recherche plein texte, facettes, tri, **défilement infini**, `SavedSearch` | — |
-| `categories` | la taxonomie complète (21 disciplines en 2 univers, rang éditorial) | — |
-| `category` | facettes restreintes à une discipline, sous-genres, quatre sections ancrées (`ov`/`live`/`up`/`rep`/`art`) | formes : `DateSummary`, `ArtistSummary` |
-| `artists` | tri par nom ou par audience, filtre par discipline | forme : `ArtistSummary` |
-| `artist` | `ArtistDetail`, la politique de rediffusion, la série de dates, la boutique, la feuille de billetterie | — |
-| `live` | `PlaybackGrant`, `LiveSession`, `ChatMessage`, `MerchItem`, l'aperçu gratuit, l'incident en cours | — |
-| `replay` | `ResumePoint`, chapitres, vitesse, qualité | reste : `live` |
-| `plans` | `Plan` et ses ouvertures | — |
-| `following` | rien de neuf : `ArtistSummary` scindé en « en direct » / « pas en direct » | formes de `home` |
-| `account` | la coquille de onze sous-écrans (`accView: 'menu' \| 'section'`) | — |
-| `help` | six sujets d'aide, purement éditoriaux ; aucune donnée métier | aucun besoin propre |
+| `home` | `DateSummary`, `ArtistSummary`, bounded rails, the resume point, the guest banner | — |
+| `browse` | full-text search, facets, sorting, **infinite scroll**, `SavedSearch` | — |
+| `categories` | the whole taxonomy (21 disciplines across 2 universes, editorial rank) | — |
+| `category` | facets narrowed to one discipline, sub-genres, four anchored sections (`ov`/`live`/`up`/`rep`/`art`) | shapes: `DateSummary`, `ArtistSummary` |
+| `artists` | sort by name or by audience, filter by discipline | shape: `ArtistSummary` |
+| `artist` | `ArtistDetail`, the replay policy, the run of dates, the store, the ticketing sheet | — |
+| `live` | `PlaybackGrant`, `LiveSession`, `ChatMessage`, `MerchItem`, the free preview, the current incident | — |
+| `replay` | `ResumePoint`, chapters, speed, quality | otherwise: `live` |
+| `plans` | `Plan` and what it opens | — |
+| `following` | nothing new: `ArtistSummary` split into "live" / "not live" | shapes from `home` |
+| `account` | the shell of eleven sub-screens (`accView: 'menu' \| 'section'`) | — |
+| `help` | six help topics, purely editorial; no domain data | no need of its own |
 
-### La section Compte — onze sous-écrans
+### The Account section — eleven sub-screens
 
-Confirmés dans `navDefs` : `upcoming` · `past` · `faves` · `alerts` · `orders` · `sub` ·
+Confirmed in `navDefs`: `upcoming` · `past` · `faves` · `alerts` · `orders` · `sub` ·
 `profile` · `prefs` · `notifs` · `security` · `privacy`.
 
-| Sous-écran | Introduit | Renvoi |
+| Sub-screen | Introduces | Cross-reference |
 |---|---|---|
-| `upcoming` | mes places à venir | `DateSummary` + `PlaybackGrant` |
-| `past` | mes places passées, avec le reste de fenêtre de rediffusion | `DateSummary` |
-| `faves` | artistes suivis + bascule d'alerte **par artiste** | `ArtistSummary` |
-| `alerts` | `SavedSearch` : renommer, activer, supprimer, canaux | — |
-| `orders` | `Order`, y compris la **commande passée chez un tiers** | — |
-| `sub` | `Subscription` : échéance, moyen, ancienneté | `Plan` |
-| `profile` | `Profile` : nom affiché, identifiant public, courriel vérifié, téléphone, ville | — |
-| `prefs` | `Preferences` : langue, qualité, comportement à l'ouverture d'un live, tchat, sous-titres, animations, devise | — |
-| `notifs` | `NotificationPrefs` : 5 déclencheurs × 3 canaux + heures calmes | — |
-| `security` | mot de passe, 2FA, clé d'accès, moyens de paiement, **sessions actives** | `Device` |
-| `privacy` | `Consent` (4 finalités) + cookies (2 catégories) + export et suppression | — |
+| `upcoming` | my upcoming seats | `DateSummary` + `PlaybackGrant` |
+| `past` | my past seats, with what is left of the replay window | `DateSummary` |
+| `faves` | followed artists + an alert toggle **per artist** | `ArtistSummary` |
+| `alerts` | `SavedSearch`: rename, activate, delete, channels | — |
+| `orders` | `Order`, including the **order placed with a third party** | — |
+| `sub` | `Subscription`: renewal date, payment method, seniority | `Plan` |
+| `profile` | `Profile`: display name, public handle, verified email, phone, city | — |
+| `prefs` | `Preferences`: language, quality, behaviour when opening a live, chat, subtitles, motion, currency | — |
+| `notifs` | `NotificationPrefs`: 5 triggers × 3 channels + quiet hours | — |
+| `security` | password, 2FA, passkey, payment methods, **active sessions** | `Device` |
+| `privacy` | `Consent` (4 purposes) + cookies (2 categories) + export and deletion | — |
 
-### Les surfaces superposées — elles portent des commandes, pas des écrans
+### The overlay surfaces — they carry commands, not screens
 
-Feuilles et panneaux qui n'ont pas de route mais **écrivent** : billetterie (`ticketOpen`),
-partage (`shareOpen`), authentification (`authOpen`, deux onglets), panier (`cartOpen`, trois
-étapes `list` → `pay` → `done`), notifications (`notifsOpen`), filtres (`filtersOpen`), tri
-(`sortOpen`), enregistrement d'une recherche (`saveOpen`, deux étapes), confirmation de
-suppression (`deleteId`), menu (`menuOpen`), recherche (`searchOpen`), annonce Studio
-(`studioOpen`, purement éditorial).
+Sheets and panels that have no route but do **write**: ticketing (`ticketOpen`), share
+(`shareOpen`), authentication (`authOpen`, two tabs), cart (`cartOpen`, three steps
+`list` → `pay` → `done`), notifications (`notifsOpen`), filters (`filtersOpen`), sort
+(`sortOpen`), saving a search (`saveOpen`, two steps), delete confirmation (`deleteId`), menu
+(`menuOpen`), search (`searchOpen`), Studio announcement (`studioOpen`, purely editorial).
 
-Plus une surface **transverse et persistante** : le **mini-lecteur** (`watching`, `watchKind`,
-`pipClosed`). Il survit à la navigation entre routes. C'est la seule chose de cette surface qui
-tienne un flux ouvert pendant que l'utilisateur navigue ailleurs — voir « Le temps réel » et
-« Hors ligne, arrière-plan et reprise ».
+Plus one **cross-cutting, persistent** surface: the **mini-player** (`watching`, `watchKind`,
+`pipClosed`). It survives navigation between routes. It is the only thing on this surface that
+holds a stream open while the user browses elsewhere — see "Realtime" and "Offline, background and
+resume".
 
 ---
 
-## Les formes de données
+## The data shapes
 
-Chaque forme apparaît une fois, avec ses écrans consommateurs et **ce que `shared/` n'en porte
-pas**. Rappel de la règle du dossier : `shared/` fait autorité sur le vocabulaire et les règles,
-jamais sur les formes.
+Each shape appears once, with the screens that consume it and **what `shared/` does not carry
+about it**. Recall the handoff rule: `shared/` is authoritative on vocabulary and rules, never on
+shapes.
 
-### 1. `DateSummary` — la forme de travail de la surface
+### 1. `DateSummary` — the workhorse shape of this surface
 
-**Consommée par** : `home` (tous les rails), `browse`, `category`, `artist`, `following`,
-`account/upcoming`, `account/past`, les suggestions de recherche, le mini-lecteur.
+**Consumed by**: `home` (every rail), `browse`, `category`, `artist`, `following`,
+`account/upcoming`, `account/past`, the search suggestions, the mini-player.
 
-Elle porte l'identité de la date, son spectacle, son artiste, sa salle, ses places, son prix
-d'appel, sa politique de rediffusion, son mode de tchat, son issue éventuelle, ses droits de
-diffusion, son compteur de spectateurs, sa position dans une tournée ou une résidence.
+It carries the identity of the date, its show, its artist, its venue, its seats, its entry price,
+its replay policy, its chat mode, its outcome if any, its broadcast rights, its viewer count, and
+its position within a tour or a residency.
 
-**Ce que le contrat doit trancher, et que `shared/` ne tranche pas :**
+**What the contract must settle, and `shared/` does not:**
 
-- **L'état n'est pas un champ, c'est une dérivation temporelle.** `helpers.stateOf()` calcule
-  `scheduled | live | replay | ended` à partir de `startsAt`, de la durée et de la fenêtre de
-  rediffusion. La décision « aucune valeur calculée deux fois » interdit de le recalculer côté
-  client — mais un état figé servi à 14 h 02 est **faux à 14 h 03**, et sur mobile l'application
-  peut dormir huit heures avec cette réponse en cache. Ma demande : le contrat porte **les bornes**
-  (`startsAt`, `runtimeMin`, `replay.expiresAt`, `roomOpensAt`) **et** l'état calculé au moment du
-  service, accompagné de l'instant où cet état cesse d'être vrai. Le client n'invente rien : il
-  sait seulement quand redemander.
-- **Instants ISO en UTC, pas décalages.** D7 : `startOffsetMin`, `atMin`,
-  `rescheduledToOffsetMin` sont des commodités de maquette. Sur le fil : `startsAt`, `endsAt`,
-  `expiresAt`, `rescheduledTo`, en chaînes ISO UTC.
-- **Fuseau IANA, pas décalage figé.** D3. Mais voir la contrainte Hermes plus bas : je demande
-  **en plus** le décalage calculé par le serveur *pour cet instant-là*.
-- **Le média est un identifiant, pas une URL.** `helpers.imageUrl(kind, key, width)` compose déjà
-  l'URL depuis une recette. Le contrat doit porter l'identifiant et laisser le client demander la
-  largeur qu'il affiche. Sur mobile c'est le premier poste de trafic d'une liste.
-- **Absents de `shared/`, nécessaires au contrat** : version de l'enregistrement (pour une
-  invalidation ciblée), instant de dernière modification, nullabilité explicite de chaque champ
-  optionnel, et un **identifiant public stable** (slug) — voir `Deeplink` plus bas.
+- **State is not a field, it is a derivation over time.** `helpers.stateOf()` computes
+  `scheduled | live | replay | ended` from `startsAt`, the runtime and the replay window. The
+  "no value computed twice" decision forbids recomputing it on the client — but a frozen state
+  served at 14:02 is **wrong at 14:03**, and on mobile the app may sleep eight hours holding that
+  response in cache. What I ask: the contract carries **the bounds** (`startsAt`, `runtimeMin`,
+  `replay.expiresAt`, `roomOpensAt`) **and** the state as computed at service time, together with
+  the instant at which that state stops being true. The client invents nothing: it only knows when
+  to ask again.
+- **ISO instants in UTC, not offsets.** D7: `startOffsetMin`, `atMin` and
+  `rescheduledToOffsetMin` are mockup conveniences. On the wire: `startsAt`, `endsAt`,
+  `expiresAt`, `rescheduledTo`, as ISO strings in UTC.
+- **IANA zone, not a frozen offset.** D3. But see the Hermes constraint further down: I ask **in
+  addition** for the offset computed by the server *for that particular instant*.
+- **Media is an identifier, not a URL.** `helpers.imageUrl(kind, key, width)` already composes the
+  URL from a recipe. The contract must carry the identifier and let the client ask for the width it
+  actually displays. On mobile this is the single largest traffic item in a list.
+- **Absent from `shared/`, required by the contract**: a record version (for targeted
+  invalidation), a last-modified instant, explicit nullability on every optional field, and a
+  **stable public identifier** (slug) — see `Deeplink` below.
 
 ### 2. `DateDetail`
 
-**Consommée par** : `artist` (feuille de billetterie), `live`, `replay`.
+**Consumed by**: `artist` (ticketing sheet), `live`, `replay`.
 
-Ajoute au résumé : synopsis, distribution, équipe de régie, chapitres, ligne de langue, autres
-dates de la même série, articles de boutique, trois paliers de prix
-(`full` / `reduced` / `support`), frais, incident en cours, et le texte de l'incident.
+Adds to the summary: synopsis, cast, run crew, chapters, the language line, the other dates in the
+same run, store items, three price tiers (`full` / `reduced` / `support`), fees, the current
+incident, and the incident's text.
 
-- **La ligne de langue est une règle, pas un champ.** `languageLine()` compose « Joué en français ·
-  Sous-titres FR, EN ». `isUnderstandable()` répond « ce spectacle est-il suivable avec les langues
-  que je comprends ». Le contrat doit porter les **ingrédients** (`spokenLanguage[]`,
-  `subtitles[]`, `surtitles[]`, `languageDependency`) et laisser `@arthome/core` composer.
-  Vocabulaire réel de `languageDependency` : **`none | helpful | essential`** (D1) —
-  `light` n'existe pas, `essential` est la valeur dont dépend la règle la plus visible.
-- **Les prix sont des montants canoniques.** Trois paliers, chacun en centimes entiers + code
-  devise. `fixtures.js` les porte en unités entières d'euros : c'est une commodité de maquette de
-  plus, à ne pas transporter.
+- **The language line is a rule, not a field.** `languageLine()` composes "Performed in French ·
+  Subtitles FR, EN". `isUnderstandable()` answers "can I follow this show with the languages I
+  know?". The contract must carry the **ingredients** (`spokenLanguage[]`, `subtitles[]`,
+  `surtitles[]`, `languageDependency`) and let `@arthome/core` compose. The real vocabulary of
+  `languageDependency` is **`none | helpful | essential`** (D1) — `light` does not exist, and
+  `essential` is the value the most visible rule on the surface depends on.
+- **Prices are canonical amounts.** Three tiers, each in integer minor units plus a currency code.
+  `fixtures.js` carries them as whole euros: one more mockup convenience, not to be transported.
 
 ### 3. `ArtistSummary` / `ArtistDetail`
 
-**Consommées par** : `artists`, `artist`, `following`, `account/faves`, `home`, `category`.
+**Consumed by**: `artists`, `artist`, `following`, `account/faves`, `home`, `category`.
 
-Résumé : identité, avatar, discipline, genre, audience, pays, « en direct en ce moment »,
-prochaine date, dernier direct. Détail : biographie bilingue, dates à venir groupées, dates
-passées, rediffusions, politique de rediffusion, boutique, autres artistes de la discipline.
+Summary: identity, avatar, discipline, genre, audience, country, "live right now", next date, last
+live. Detail: bilingual biography, upcoming dates grouped, past dates, replays, replay policy,
+store, other artists in the discipline.
 
-- **« En direct en ce moment » est une dérivation temporelle** de la même famille que l'état d'une
-  date : même traitement, mêmes bornes.
-- **La politique de rediffusion est portée par la date, affichée sur l'artiste.** La maquette la
-  lit sur l'artiste (`artist.replay`) ; `shared/` la porte sur la date (`date.replay.policy`). Si
-  un artiste a deux dates de politiques différentes, la fiche artiste ment. Le contrat doit dire
-  si une politique par défaut existe au niveau de l'artiste ou de la chaîne, ou si la fiche doit
-  n'afficher qu'une agrégation honnête.
+- **"Live right now" is a derivation over time**, of the same family as a date's state: same
+  treatment, same bounds.
+- **The replay policy is carried by the date and displayed on the artist.** The mockup reads it off
+  the artist (`artist.replay`); `shared/` carries it on the date (`date.replay.policy`). If an
+  artist has two dates under two different policies, the artist page lies. The contract must say
+  whether a default policy exists at artist or channel level, or whether the page must display only
+  an honest aggregate.
 
-### 4. `Taxonomy` — l'artefact de référence
+### 4. `Taxonomy` — the reference artefact
 
-**Consommée par** : `categories`, `category`, les facettes de `browse`, l'étiquetage de toute
-carte.
+**Consumed by**: `categories`, `category`, the facets of `browse`, the labelling of every card.
 
-21 disciplines réparties en 2 univers, 176 genres, 205 étiquettes, avec un **rang éditorial**
-(`rank`) qu'aucune surface n'a le droit de recalculer.
+21 disciplines across 2 universes, 176 genres, 205 tags, with an **editorial rank** (`rank`) that
+no surface has the right to recompute.
 
-- **Besoin propre au mobile** : c'est la donnée la plus volumineuse et la plus stable de la
-  surface — **59,5 Ko bruts, 8,4 Ko gzip** mesurés sur `taxonomy.json`. Elle doit être servie
-  comme un **artefact versionné immuable**, adressé par version, avec un cache très long, et
-  **embarquée au build** comme repli — exactement le régime déjà décidé pour l'i18n. Sans cela,
-  un premier démarrage hors ligne ne peut afficher aucune étiquette.
-- Elle doit pouvoir être servie **par tranche** : le mobile n'a besoin ni du vocabulaire studio ni
-  des tables de touches TV.
+- **A need specific to mobile**: this is the largest and the most stable piece of data on the
+  surface — **59.5 KB raw, 8.4 KB gzipped**, measured on `taxonomy.json`. It must be served as a
+  **versioned immutable artefact**, addressed by version, with a very long cache, and **embedded at
+  build time** as a fallback — exactly the regime already decided for i18n. Without it, a first
+  launch offline can display no label at all.
+- It must be servable **by slice**: mobile needs neither the studio vocabulary nor the TV key maps.
 
 ### 5. `Money`
 
-Centimes entiers + code devise ISO. Consommée partout où un prix s'affiche.
+Integer minor units plus an ISO currency code. Consumed wherever a price is displayed.
 
-- Le contrat ne porte **jamais** un symbole ni une position de symbole : `helpers.price()` les
-  dérive du code, et cette dérivation appartient à `@arthome/core`.
+- The contract **never** carries a symbol or a symbol position: `helpers.price()` derives them from
+  the code, and that derivation belongs to `@arthome/core`.
 
-### 6. `Plan` et `Subscription`
+### 6. `Plan` and `Subscription`
 
-**Consommées par** : `plans`, `account/sub`, et — indirectement — tout écran de lecture, puisque
-la formule conditionne l'accès.
+**Consumed by**: `plans`, `account/sub`, and — indirectly — every playback screen, since the plan
+conditions access.
 
-`catalogue.json` fait autorité : `free`, `pass`, `premium`, avec `priceMonth`, `opens[]` et
-`seatDiscount`. Les neuf ouvertures : `browse`, `trailers`, `free-dates`, `replays`, `no-ads`,
+`catalogue.json` is authoritative: `free`, `pass`, `premium`, with `priceMonth`, `opens[]` and
+`seatDiscount`. The nine openings: `browse`, `trailers`, `free-dates`, `replays`, `no-ads`,
 `one-live-month`, `all-lives`, `multi-screen`, `archive`.
 
-- **`multi-screen` est une contrainte d'exécution, pas une ligne de marketing.** « Deux écrans à la
-  fois » impose un décompte serveur des lectures simultanées. Voir `LiveSession`.
-- `Subscription` (échéance, moyen de paiement, ancienneté) **n'existe nulle part dans `shared/`** :
-  la maquette l'affiche en littéral. Forme à créer.
+- **`multi-screen` is a runtime constraint, not a marketing line.** "Two screens at once" requires
+  a server-side count of concurrent playbacks. See `LiveSession`.
+- `Subscription` (renewal date, payment method, seniority) **exists nowhere in `shared/`**: the
+  mockup displays it as a literal. A shape to be created.
 
-### 7. `PlaybackGrant` — le droit de lire, forme manquante et décisive
+### 7. `PlaybackGrant` — the right to watch, a missing and decisive shape
 
-**Consommée par** : `live`, `replay`, `account/upcoming`, `account/past`, toute carte qui propose
-« Regarder ».
+**Consumed by**: `live`, `replay`, `account/upcoming`, `account/past`, and every card that offers
+"Watch".
 
-`helpers.isWatchable(account, date)` répond à la question en croisant quatre choses : la
-possession d'une place (`account.ownedDates`), l'état de la date, la politique de rediffusion, et
-la disponibilité territoriale (`availableIn`).
+`helpers.isWatchable(account, date)` answers the question by crossing four things: holding a seat
+(`account.ownedDates`), the state of the date, the replay policy, and territorial availability
+(`availableIn`).
 
-**C'est une commodité de maquette et elle ne survit pas au mobile.** Elle suppose que le client
-détient la liste complète des places du compte. Je ne peux pas transporter ni garder à jour
-`ownedDates` en entier : il grandit, il change quand l'application dort, et la décision
-territoriale n'appartient pas au client.
+**That is a mockup convenience and it does not survive mobile.** It assumes the client holds the
+account's complete list of seats. I can neither transport nor keep `ownedDates` current in full: it
+grows, it changes while the app sleeps, and the territorial decision does not belong to the client.
 
-**Ma demande** : un droit de lecture **par date**, servi par le backend, portant au minimum :
-autorisé ou non ; la raison du refus quand il l'est (pas de place / hors territoire / hors fenêtre
-de rediffusion / formule insuffisante / limite d'écrans atteinte) ; l'instant d'expiration du
-droit ; et l'action de repli proposée (acheter une place, voir les autres dates, s'abonner).
+**What I ask**: a right to watch **per date**, served by the backend, carrying at minimum: allowed
+or not; the reason for refusal when it is refused (no seat / out of territory / outside the replay
+window / insufficient plan / concurrent-screen limit reached); the instant at which the right
+expires; and the proposed fallback action (buy a seat, see the other dates, subscribe).
 
-Ce droit doit être **revérifié au démarrage de la lecture**, jamais hérité d'une lecture de
-catalogue : le pays du spectateur peut changer entre les deux (déplacement, itinérance, réseau
-d'entreprise), et sur mobile ce délai se compte en heures.
+That right must be **re-checked when playback starts**, never inherited from a catalogue read: the
+viewer's country can change between the two (travel, roaming, corporate network), and on mobile
+that interval is measured in hours.
 
-### 8. `LiveSession` — la session de lecture
+### 8. `LiveSession` — the playback session
 
-**Consommée par** : `live`, `replay`, le mini-lecteur.
+**Consumed by**: `live`, `replay`, the mini-player.
 
-Absente de `shared/`. Nécessaire dès lors que `multi-screen` limite le nombre d'écrans simultanés.
+Absent from `shared/`. Required as soon as `multi-screen` caps the number of concurrent screens.
 
-**Ma demande, et c'est le besoin le plus propre à ma surface** : une session de lecture ouverte
-explicitement, entretenue par un battement, et **expirée par le serveur au bout d'un délai**. La
-raison est le cycle de vie : le système d'exploitation tue une application mobile sans préavis et
-sans lui laisser le temps de fermer quoi que ce soit. Une session qui ne se ferme que sur un
-événement du client laisse un écran fantôme, et l'utilisateur se voit refuser sa propre seconde
-lecture. Le délai d'expiration doit être **court au regard de la limite**, et le contrat doit
-permettre au client de **reprendre** une session qu'il a lui-même laissée derrière lui, identifiée
-par l'appareil.
+**What I ask, and this is the need most specific to my surface**: a playback session opened
+explicitly, kept alive by a heartbeat, and **expired by the server after a delay**. The reason is
+the lifecycle: the operating system kills a mobile app without warning and without giving it time
+to close anything. A session that only closes on a client event leaves a ghost screen, and the user
+is refused their own second playback. The expiry delay must be **short relative to the limit**, and
+the contract must let the client **reclaim** a session it left behind itself, identified by the
+device.
 
-Elle porte aussi : les variantes de qualité disponibles et leur débit, la piste de sous-titres,
-et l'instant serveur (voir « horloge » plus bas).
+It also carries: the available quality variants and their bitrate, the subtitle track, and the
+server instant (see "clock" below).
 
 ### 9. `ResumePoint`
 
-**Consommée par** : `replay`, le rail « Reprendre » (`discovery.rail.resume` existe déjà dans le
-vocabulaire partagé), `account/past`, le mini-lecteur.
+**Consumed by**: `replay`, the "Resume" rail (`discovery.rail.resume` already exists in the shared
+vocabulary), `account/past`, the mini-player.
 
-`fixtures.js` la porte comme `{ dateId, positionSec }`. Le contrat doit y ajouter l'instant de la
-dernière écriture et l'appareil d'origine — sans quoi deux appareils qui lisent la même
-rediffusion se marchent dessus silencieusement.
+`fixtures.js` carries it as `{ dateId, positionSec }`. The contract must add the instant of the
+last write and the originating device — without which two devices playing the same replay overwrite
+each other silently.
 
 ### 10. `ChatMessage`
 
-**Consommée par** : l'onglet tchat de `live`.
+**Consumed by**: the chat tab of `live`.
 
-`fixtures.js` : identifiant, date, spectateur, auteur, rôle, position, état
-(`ok | removed | muted | banned`), texte bilingue, langue de rédaction.
+`fixtures.js`: id, date, viewer, author, role, position, state (`ok | removed | muted | banned`),
+bilingual text, authoring language.
 
-- **La position d'un message est une position dans le média, pas une heure d'envoi.** `atMin` est
-  relatif au lever de rideau. C'est la bonne règle et elle doit être portée telle quelle, en
-  secondes depuis le début, **en plus** de l'instant absolu — parce qu'une reprise de lecture en
-  rediffusion doit pouvoir rejouer le tchat au bon endroit.
-- Trois modes de tchat côté date (`open | read-only | emoji | off`) et un mode côté spectateur
-  (préférence). Le contrat doit dire lequel l'emporte. La maquette laisse le spectateur choisir
-  `free | emoji | off` par-dessus le mode de la date, ce qui n'a de sens que dans le sens
-  restrictif.
-- D6 reste ouvert : l'état du **message** et l'état de la **personne dans la chaîne** sont deux
-  échelles non reliées. Ma surface n'affiche qu'une pastille : il ne peut y avoir qu'un
-  propriétaire de la vérité.
+- **A message's position is a position in the media, not a send time.** `atMin` is relative to
+  curtain-up. That is the right rule and it must be carried as such, in seconds from the start,
+  **in addition to** the absolute instant — because a replay resumed part-way must be able to
+  replay the chat at the right place.
+- Three chat modes on the date side (`open | read-only | emoji | off`) and one mode on the viewer
+  side (a preference). The contract must say which wins. The mockup lets the viewer pick
+  `free | emoji | off` on top of the date's mode, which only makes sense in the restrictive
+  direction.
+- D6 remains open: the state of the **message** and the state of the **person within the channel**
+  are two unrelated scales. My surface displays only one badge: there can be only one owner of the
+  truth.
 
 ### 11. `MerchItem`, `CartLine`, `Order`
 
-**Consommées par** : l'onglet boutique de `live`, `artist`, le panier, `account/orders`.
+**Consumed by**: the store tab of `live`, `artist`, the cart, `account/orders`.
 
-`MerchItem` : identifiant, spectacle, chaîne, libellé, nature, prix, stock, état
-(`on-sale | out-of-stock`).
+`MerchItem`: id, show, channel, label, kind, price, stock, state (`on-sale | out-of-stock`).
 
-`Order` porte une distinction que je n'ai vue nulle part ailleurs dans le dossier et qui est
-structurante : **la commande peut ne pas être la nôtre**. Quatre plateformes tierces sont
-nommées (`shopify`, `woocommerce`, `prestashop`, `drupal`) plus un mode `api`, avec une référence
-marchande et un hôte externes, et un texte qui dit explicitement que « le suivi, l'échange et le
-remboursement se font sur le site de l'artiste ».
+`Order` carries a distinction I have seen nowhere else in the handoff and which is structural:
+**the order may not be ours**. Four third-party platforms are named (`shopify`, `woocommerce`,
+`prestashop`, `drupal`) plus an `api` mode, with an external merchant reference and host, and a
+text that says explicitly that "tracking, exchange and refund happen on the artist's own site".
 
-**Ma demande** : le contrat doit distinguer une commande **exécutée par la plateforme** d'un
-**reflet en lecture seule** d'une commande tenue ailleurs, et dire ce qu'il garantit du second —
-fraîcheur, complétude, et ce qui se passe quand l'hôte externe ne répond pas. Le mobile est la
-surface où ce reflet sera le plus souvent consulté hors ligne.
+**What I ask**: the contract must distinguish an order **executed by the platform** from a
+**read-only reflection** of an order held elsewhere, and say what it guarantees about the latter —
+freshness, completeness, and what happens when the external host does not answer. Mobile is the
+surface where that reflection will most often be consulted offline.
 
-### 12. `SavedSearch` — la recherche enregistrée
+### 12. `SavedSearch`
 
-**Consommée par** : `browse`, `category`, `account/alerts`, le panneau de notifications.
+**Consumed by**: `browse`, `category`, `account/alerts`, the notifications panel.
 
-C'est la forme la plus exigeante de la surface, et elle n'existe pas dans `shared/`. Elle porte
-un nom, une portée (`search` ou `category`), la discipline visée, la requête textuelle, **l'état
-complet du filtre** (disciplines, sous-genres, tranches de prix, fenêtre de date, statut,
-« bientôt complet », « a des dates », « expire bientôt », « en promotion »), le tri, deux canaux
-d'alerte, un interrupteur d'activité et une date de création.
+This is the most demanding shape on the surface, and it does not exist in `shared/`. It carries a
+name, a scope (`search` or `category`), the discipline targeted, the text query, **the complete
+filter state** (disciplines, sub-genres, price bands, date window, status, "almost sold out", "has
+dates", "expiring soon", "on promotion"), the sort, two alert channels, an active switch and a
+creation date.
 
-**Ce que le contrat doit garantir** : une représentation du filtre **stable et versionnée**. Une
-recherche enregistrée survit à des mois et à des montées de version de l'application ; si la
-grammaire du filtre change, une recherche enregistrée hier doit soit se rejouer à l'identique,
-soit dire honnêtement qu'elle ne le peut plus. Une sérialisation opaque de l'état d'écran, comme
-celle de la maquette, ne le permet pas.
+**What the contract must guarantee**: a **stable and versioned** representation of the filter. A
+saved search survives months and app version upgrades; if the filter grammar changes, a search
+saved yesterday must either replay identically or say honestly that it no longer can. An opaque
+serialisation of screen state, like the mockup's, does not allow that.
 
-**Conséquence propre au mobile** : l'alerte est le point d'entrée d'une notification poussée. Le
-contrat doit donc relier la recherche enregistrée à la notification qu'elle déclenche, et la
-notification doit porter de quoi ouvrir le bon écran **sans réseau au moment de l'ouverture**
-(voir `Deeplink`).
+**A consequence specific to mobile**: the alert is the entry point of a push notification. The
+contract must therefore tie the saved search to the notification it triggers, and the notification
+must carry enough to open the right screen **with no network at the moment of opening** (see
+`Deeplink`).
 
-### 13. `Notification` et `NotificationPrefs`
+### 13. `Notification` and `NotificationPrefs`
 
-**Consommées par** : le panneau de notifications, `account/notifs`, `account/faves`.
+**Consumed by**: the notifications panel, `account/notifs`, `account/faves`.
 
-Cinq déclencheurs, chacun avec une règle chiffrée déjà écrite dans la maquette : un artiste suivi
-passe en direct (« dès l'ouverture du flux ») ; rappel avant un direct pour lequel j'ai une place
-(« 30 minutes avant ») ; nouvelle date annoncée (« dès la mise en vente ») ; un événement
-enregistré est bientôt complet (« à partir de 85 % des places vendues ») ; fin de disponibilité
-d'une rediffusion (« 6 heures avant expiration »).
+Five triggers, each with a numeric rule already written in the mockup: a followed artist goes live
+("the moment the stream opens"); a reminder before a live I hold a seat for ("30 minutes before");
+a new date announced ("as soon as tickets open"); a saved event is almost sold out ("from 85% of
+seats sold"); a replay is about to expire ("6 hours before expiry").
 
-Trois canaux par déclencheur, plus des **heures calmes** globales. Plus une bascule d'alerte
-**par artiste suivi**, indépendante.
+Three channels per trigger, plus global **quiet hours**. Plus an independent alert toggle **per
+followed artist**.
 
-**Ma demande** : ces cinq seuils sont des **règles de domaine**, pas des textes d'interface. Ils
-doivent vivre dans `@arthome/core` et être servis, pas recopiés dans chaque surface — sinon le web
-dira 30 minutes, la TV 15, et le mobile aura raison par hasard. Et le troisième canal n'est nommé
-nulle part : voir « Incohérences relevées ».
+**What I ask**: those five thresholds are **domain rules**, not interface copy. They must live in
+`@arthome/core` and be served, not recopied into each surface — otherwise the web will say 30
+minutes, the TV 15, and mobile will be right by accident. And the third channel is named nowhere:
+see "Inconsistencies found".
 
 ### 14. `Preferences`, `Profile`, `Device`, `Consent`
 
-- `Preferences` : langue d'interface, qualité par défaut, comportement à l'ouverture d'un direct
-  (`peek | muted | off`), état du tchat, sous-titres, animations réduites, devise. Elles doivent
-  **suivre le compte**, pas l'appareil — sauf la qualité, qui dépend du réseau de l'appareil.
-  Le contrat doit trancher lesquelles sont par compte et lesquelles par appareil.
-- `Profile` : nom affiché (visible dans le tchat), **identifiant public** (`arthome.live/@…`),
-  courriel avec son état de vérification, téléphone, ville, ancienneté, numéro de membre.
-- `Device` / `Session` : nature, libellé, ville, dernière activité, « cet appareil », et la
-  commande de déconnexion à distance. `helpers.devicesOf()` existe et porte déjà la règle ;
-  la maquette mobile ne l'emploie pas (voir « Incohérences »).
-- `Consent` : quatre finalités (`audience`, `perso`, `partners`, `ads`) et deux catégories de
-  traceurs (`stats`, `player`), dont une catégorie essentielle non désactivable. Plus l'export
-  des données et la suppression du compte.
+- `Preferences`: interface language, default quality, behaviour when opening a live
+  (`peek | muted | off`), chat state, subtitles, reduced motion, currency. They must **follow the
+  account**, not the device — except quality, which depends on the device's network. The contract
+  must settle which are per account and which are per device.
+- `Profile`: display name (visible in chat), **public handle** (`arthome.live/@…`), email with its
+  verification state, phone, city, seniority, member number.
+- `Device` / `Session`: kind, label, city, last activity, "this device", and the remote sign-out
+  command. `helpers.devicesOf()` exists and already carries the rule; the mobile mockup does not
+  use it (see "Inconsistencies").
+- `Consent`: four purposes (`audience`, `perso`, `partners`, `ads`) and two tracker categories
+  (`stats`, `player`), one of which is essential and cannot be switched off. Plus data export and
+  account deletion.
 
 ### 15. `Incident`
 
-Quatre natures : `hold-screen`, `postponed`, `cancelled`, `interrupted`, chacune avec un message
-rédigé bilingue dans `catalogue.json`. Trois issues de date : `cancelled`, `postponed`,
-`interrupted`, avec leurs conséquences commerciales déjà écrites (annulée et remboursée ·
-reportée, places valables · interrompue, avoirs émis).
+Four kinds: `hold-screen`, `postponed`, `cancelled`, `interrupted`, each with a bilingual message
+written in `catalogue.json`. Three date outcomes: `cancelled`, `postponed`, `interrupted`, with
+their commercial consequences already written (cancelled and refunded · postponed, seats still
+valid · interrupted, credits issued).
 
-Un incident doit arriver **en temps réel** sur un écran de lecture ouvert, et **au réveil** sur un
-écran qui dormait. Voir la section suivante.
+An incident must arrive **in realtime** on an open playback screen, and **on wake** on a screen
+that was asleep. See the next section.
 
-### 16. `Deeplink` — forme transverse, propre au mobile
+### 16. `Deeplink` — a cross-cutting shape, specific to mobile
 
-La maquette expose deux identifiants publics : `arthome.live/vartan/nocturnes-ii` pour une date
-partagée, `arthome.live/@marie.j` pour un profil.
+The mockup exposes two public identifiers: `arthome.live/vartan/nocturnes-ii` for a shared date,
+`arthome.live/@marie.j` for a profile.
 
-**Ma demande** : un identifiant public stable, résoluble en un seul appel, **sans catalogue en
-cache**. C'est la forme d'entrée de trois parcours que seul le mobile connaît : l'ouverture depuis
-une notification poussée, l'ouverture depuis un lien partagé, et la reprise à froid après une mise
-à mort par le système. Dans les trois cas l'application démarre sans rien, et le premier appel
-doit rendre de quoi peindre l'écran cible en entier.
+**What I ask**: a stable public identifier, resolvable in a single call, **with no catalogue in
+cache**. It is the entry shape of three journeys only mobile knows: opening from a push
+notification, opening from a shared link, and a cold resume after the OS kills the app. In all
+three the app starts with nothing, and the first call must return enough to paint the target screen
+in full.
 
-### 17. `Page<T>` — l'enveloppe de pagination
+### 17. `Page<T>` — the pagination envelope
 
-`{ items[], nextCursor, prevCursor, servedAt }`. Voir « Pagination et volumes ».
+`{ items[], nextCursor, prevCursor, servedAt }`. See "Pagination and volumes".
 
 ---
 
-## Les commandes
+## The commands
 
-Chaque commande qui écrit, avec son effet et ce que le contrat doit garantir. La colonne
-**« file hors ligne »** est le besoin propre à ma surface : elle dit si la commande peut être mise
-en attente sur l'appareil et rejouée au retour du réseau.
+Every command that writes, with its effect and what the contract must guarantee. The **"offline
+queue"** column is the need specific to my surface: it says whether the command can be held on the
+device and replayed when the network returns.
 
-| Commande | Effet | File hors ligne | Garantie demandée |
+| Command | Effect | Offline queue | Guarantee asked |
 |---|---|---|---|
-| Acheter une place (palier choisi) | crée une possession, débite | **jamais** | idempotence stricte ; la clé est générée **avant** l'envoi et **persistée** ; le droit de lecture doit être immédiatement conséquent |
-| Payer le panier | crée un `Order` | **jamais** | idem ; le panier doit être vidé par la réponse, pas par une temporisation locale |
-| Ajouter / modifier / retirer une ligne de panier | modifie le panier | oui | le contrat doit dire **où vit le panier** : sur l'appareil ou sur le compte. S'il vit sur le compte, il faut une résolution de conflit entre deux appareils ; s'il vit sur l'appareil, il ne survit pas à une réinstallation et la maquette ment |
-| Suivre / ne plus suivre un artiste | modifie `followedArtists` | oui | commutative, rejouable ; l'état final l'emporte, pas la succession |
-| Basculer l'alerte d'un artiste | modifie une préférence par artiste | oui | idem |
-| Créer une recherche enregistrée | crée une `SavedSearch` | oui | idempotence par clé, sinon un rejeu crée deux alertes identiques |
-| Renommer / activer / supprimer une recherche | modifie une `SavedSearch` | oui | une suppression rejouée sur une entrée déjà supprimée doit réussir, pas échouer |
-| Basculer un canal d'alerte | modifie une `SavedSearch` | oui | idem |
-| Envoyer un message de tchat | publie un message modéré | **jamais** | un message rejoué dix minutes plus tard n'a plus de sens : il doit être **abandonné**, pas mis en file. Le contrat doit dire si le serveur horodate ou si le client fournit sa position |
-| Marquer les notifications comme lues | modifie un état de lecture | oui | monotone : on ne dé-lit pas |
-| Modifier le profil | écrit `Profile` | oui | concurrence à trancher : dernier écrivain, ou version optimiste ? |
-| Modifier les préférences | écrit `Preferences` | oui | idem, champ par champ plutôt que document entier |
-| Modifier les préférences de notification et les heures calmes | écrit `NotificationPrefs` | oui | idem |
-| Modifier consentements et cookies | écrit `Consent` | **non** | un consentement a une valeur probatoire : il doit être horodaté par le serveur, avec la version du texte acceptée |
-| Déconnecter un appareil / une session | révoque | **non** | c'est une commande de sécurité : elle doit échouer bruyamment plutôt que d'être rejouée à l'aveugle |
-| S'inscrire / se connecter | crée une session | **non** | hors périmètre de ce fichier, traité par `adr-auth` |
-| Changer de formule | modifie `Subscription` | **non** | engage de l'argent |
-| Exporter mes données / supprimer mon compte | déclenche un traitement long | **non** | asynchrone : le contrat doit rendre un accusé et un moyen de suivre, pas une réponse immédiate |
-| Poser une position de lecture | écrit un `ResumePoint` | oui | **la plus fréquente de toutes** : voir la cadence demandée plus bas |
-| Ouvrir / entretenir / fermer une session de lecture | crée et maintient `LiveSession` | **non** | expiration serveur obligatoire, cf. `LiveSession` |
-| Partager | ne modifie rien côté serveur | — | mais doit produire un lien résoluble, cf. `Deeplink` |
+| Buy a seat (chosen tier) | creates a holding, charges | **never** | strict idempotency; the key is generated **before** the send and **persisted**; the right to watch must follow immediately |
+| Pay the cart | creates an `Order` | **never** | likewise; the cart must be emptied by the response, not by a local timer |
+| Add / change / remove a cart line | changes the cart | yes | the contract must say **where the cart lives**: on the device or on the account. On the account, conflict resolution between two devices is needed; on the device, it does not survive a reinstall and the mockup lies |
+| Follow / unfollow an artist | changes `followedArtists` | yes | commutative, replayable; the final state wins, not the sequence |
+| Toggle an artist's alert | changes a per-artist preference | yes | likewise |
+| Create a saved search | creates a `SavedSearch` | yes | idempotency by key, otherwise a replay creates two identical alerts |
+| Rename / activate / delete a search | changes a `SavedSearch` | yes | a delete replayed on an already-deleted entry must succeed, not fail |
+| Toggle an alert channel | changes a `SavedSearch` | yes | likewise |
+| Send a chat message | publishes a moderated message | **never** | a message replayed ten minutes later no longer means anything: it must be **dropped**, not queued. The contract must say whether the server timestamps it or the client supplies its position |
+| Mark notifications read | changes a read state | yes | monotonic: one does not un-read |
+| Edit the profile | writes `Profile` | yes | concurrency to be settled: last writer, or optimistic version? |
+| Edit preferences | writes `Preferences` | yes | likewise, field by field rather than whole document |
+| Edit notification preferences and quiet hours | writes `NotificationPrefs` | yes | likewise |
+| Change consents and cookies | writes `Consent` | **no** | a consent has evidential value: it must be timestamped by the server, with the version of the text accepted |
+| Sign a device or session out | revokes | **no** | this is a security command: it must fail loudly rather than be replayed blind |
+| Sign up / sign in | creates a session | **no** | out of scope for this file, handled by `adr-auth` |
+| Change plan | changes `Subscription` | **no** | commits money |
+| Export my data / delete my account | starts a long-running job | **no** | asynchronous: the contract must return an acknowledgement and a way to follow it, not an immediate answer |
+| Record a playback position | writes a `ResumePoint` | yes | **the most frequent of all**: see the cadence asked below |
+| Open / keep alive / close a playback session | creates and maintains `LiveSession` | **no** | server expiry mandatory, see `LiveSession` |
+| Share | changes nothing server-side | — | but must produce a resolvable link, see `Deeplink` |
 
-### Deux besoins transverses sur les commandes
+### Two cross-cutting needs on commands
 
-**L'idempotence compte doublement ici.** Un réseau mobile ne tombe pas franchement : il bascule du
-Wi-Fi au cellulaire au milieu d'une requête, et le client ne sait pas si l'écriture a abouti. La
-clé `Idempotency-Key` doit donc être **générée avant l'envoi et écrite sur le disque avant**, pas
-en mémoire : une mise à mort par le système entre l'envoi et la réponse ne doit pas produire un
-second achat au redémarrage. Le contrat doit aussi dire **combien de temps** une clé reste valide
-côté serveur — une file hors ligne peut rejouer une écriture plusieurs heures plus tard.
+**Idempotency counts double here.** A mobile network does not fail cleanly: it switches from Wi-Fi
+to cellular in the middle of a request, and the client does not know whether the write landed. The
+`Idempotency-Key` must therefore be **generated before the send and written to disk before it**,
+not held in memory: an OS kill between send and response must not produce a second purchase on
+restart. The contract must also say **how long** a key stays valid server-side — an offline queue
+may replay a write several hours later.
 
-**L'horloge du client ne peut pas arbitrer.** Toute stratégie de résolution de conflit fondée sur
-un horodatage fourni par le téléphone est fausse : l'horloge d'un mobile dérive, saute au
-changement de fuseau, et l'utilisateur peut la régler. Si le contrat veut un « dernier écrivain
-gagne », le rang doit venir du serveur — un numéro de version, pas une date du client.
+**The client's clock cannot arbitrate.** Any conflict-resolution strategy based on a timestamp
+supplied by the phone is wrong: a mobile clock drifts, jumps on timezone change, and its owner can
+set it. If the contract wants "last writer wins", the rank must come from the server — a version
+number, not a client date.
 
 ---
 
-## Le temps réel
+## Realtime
 
-Ce qui change pendant qu'un écran est ouvert, et la fraîcheur que le contrat doit garantir. La
-valeur de N n'est pas de mon ressort ; ce qui l'est, c'est de dire quelles classes existent et
-qu'elles n'ont pas la même exigence.
+What changes while a screen is open, and the freshness the contract must guarantee. The value of N
+is not mine to set; what is mine is to say which classes exist and that they do not share one
+requirement.
 
-| Ce qui change | Où | Exigence |
+| What changes | Where | Requirement |
 |---|---|---|
-| Compteur de spectateurs | une de `home`, cartes de rails, `live`, mini-lecteur | la moins exigeante : une valeur vieille de quelques dizaines de secondes ne trompe personne. **Mais elle est affichée sur des dizaines de cartes à la fois** — voir la contrainte de lot plus bas |
-| Bascule d'état d'une date (`scheduled` → `live` → `replay` → `ended`) | partout | la plus exigeante : elle change le bouton d'action. Un spectateur qui appuie sur « Regarder » trois secondes après la fin doit recevoir une erreur honnête, pas un lecteur vide |
-| Ouverture de salle (30 minutes avant) | `artist`, `account/upcoming`, notification | dérivable des bornes si `roomOpensAt` est servi |
-| Places restantes, complet, liste d'attente | `artist`, feuille de billetterie, `browse` | exigeante au moment de l'achat, tolérante ailleurs. Le contrat doit garantir que **la vérité est au moment de la commande**, pas à l'affichage |
-| Messages de tchat | onglet tchat de `live` | flux continu tant que l'écran est au premier plan |
-| Incident (attente, interruption, report, annulation) | `live`, `replay`, `account/upcoming` | **doit interrompre**, y compris un écran de lecture en cours et un écran qui dormait |
-| Expiration d'une rediffusion | `replay`, `account/past`, notification | dérivable de `expiresAt` |
-| Stock d'un article de boutique | onglet boutique de `live`, `artist` | tolérante ; la vérité est au paiement |
+| Viewer count | `home` billboard, rail cards, `live`, mini-player | the least demanding: a value a few tens of seconds old misleads nobody. **But it is displayed on dozens of cards at once** — see the batch constraint below |
+| A date's state flipping (`scheduled` → `live` → `replay` → `ended`) | everywhere | the most demanding: it changes the action button. A viewer who taps "Watch" three seconds after the end must get an honest error, not an empty player |
+| Room opening (30 minutes before) | `artist`, `account/upcoming`, notification | derivable from the bounds if `roomOpensAt` is served |
+| Seats left, sold out, waiting list | `artist`, ticketing sheet, `browse` | demanding at the moment of purchase, tolerant elsewhere. The contract must guarantee that **the truth is at order time**, not at display time |
+| Chat messages | chat tab of `live` | a continuous stream while the screen is in the foreground |
+| Incident (hold screen, interruption, postponement, cancellation) | `live`, `replay`, `account/upcoming` | **must interrupt**, including a playback screen in progress and a screen that was asleep |
+| A replay expiring | `replay`, `account/past`, notification | derivable from `expiresAt` |
+| Store item stock | store tab of `live`, `artist` | tolerant; the truth is at payment |
 
-### Les trois besoins que cela pose au contrat
+### The three needs this places on the contract
 
-**Un seul canal par écran, jamais un par élément.** Une liste virtualisée affiche une vingtaine de
-cartes et en garde autant en mémoire tampon ; chacune porte un compteur de spectateurs. Vingt
-abonnements, c'est vingt réveils du processeur et une batterie vidée. Le contrat doit permettre de
-s'abonner à **un lot d'identifiants** sur un canal unique, et de modifier ce lot quand la fenêtre
-de défilement bouge — sans rouvrir le canal.
+**One channel per screen, never one per item.** A virtualised list displays about twenty cards and
+buffers as many again; each carries a viewer count. Twenty subscriptions means twenty CPU wake-ups
+and a drained battery. The contract must allow subscribing to **a batch of identifiers** over a
+single channel, and changing that batch as the scroll window moves — without reopening the channel.
 
-**Le canal doit pouvoir être suspendu et repris, pas seulement ouvert et fermé.** Quand
-l'application passe en arrière-plan, le bon comportement n'est pas de fermer (on perdrait la
-reprise) ni de laisser ouvert (le système le coupera de toute façon). Le contrat doit offrir une
-**reprise depuis un point** : « voici où j'en étais, dis-moi ce qui a changé depuis ». Sans cela,
-la reprise est un rechargement complet.
+**The channel must be suspendable and resumable, not merely open or closed.** When the app goes to
+the background, the right behaviour is neither to close (we would lose the resume point) nor to
+leave it open (the OS will cut it anyway). The contract must offer a **resume from a point**: "here
+is where I was, tell me what changed since". Without it, resuming is a full reload.
 
-**Le temps réel et la lecture ne sont pas le même canal.** Le mini-lecteur survit à la navigation :
-il faut un flux de lecture qui continue pendant que l'écran affiche autre chose, et un canal
-d'écran qui suit la navigation. Les deux ne peuvent pas partager un cycle de vie.
+**Realtime and playback are not the same channel.** The mini-player survives navigation: we need a
+playback stream that continues while the screen shows something else, and a screen channel that
+follows navigation. The two cannot share a lifecycle.
 
 ---
 
-## Hors ligne, arrière-plan et reprise
+## Offline, background and resume
 
-**C'est la section où ma surface apporte ce qu'aucune autre n'apportera.** Le web a un onglet qui
-reste chargé ; la TV a une alimentation secteur et un réseau stable. Le mobile a un processus que
-le système tue, un réseau qui tombe pour de vrai, et une application qu'on rouvre huit heures plus
-tard sur le même écran.
+**This is the section where my surface contributes what no other will.** The web has a tab that
+stays loaded; the TV has mains power and a stable network. Mobile has a process the OS kills, a
+network that really does drop, and an app reopened eight hours later on the same screen.
 
-### Les six transitions que le contrat doit survivre
+### The six transitions the contract must survive
 
-1. **Premier plan → arrière-plan.** L'utilisateur reçoit un appel, change d'application. Les
-   canaux temps réel vont être coupés par le système, les requêtes en vol vont être annulées.
-2. **Arrière-plan → premier plan, quelques secondes plus tard.** Presque rien n'a changé. Tout
-   recharger est un gâchis pur.
-3. **Arrière-plan → premier plan, huit heures plus tard.** Tout ce qui portait un état temporel
-   est faux. Le catalogue affiché est périmé, les places « à venir » sont passées, les
-   rediffusions ont expiré.
-4. **Mise à mort par le système, puis relance à froid.** Toute mémoire vive est perdue. Ce qui
-   n'a pas été écrit sur le disque n'existe plus.
-5. **Relance à froid depuis une notification ou un lien partagé.** L'application démarre
-   directement sur un écran profond, sans catalogue, sans taxonomie en mémoire, parfois sans
-   réseau.
-6. **Bascule Wi-Fi ↔ cellulaire.** Elle se produit au milieu d'une requête, sans transition
-   propre. Toute écriture en vol est dans un état indéterminé.
+1. **Foreground → background.** The user takes a call, switches apps. Realtime channels are about
+   to be cut by the OS, in-flight requests about to be cancelled.
+2. **Background → foreground, seconds later.** Almost nothing has changed. Reloading everything is
+   pure waste.
+3. **Background → foreground, eight hours later.** Everything carrying a temporal state is wrong.
+   The catalogue on screen is stale, the "upcoming" seats are past, the replays have expired.
+4. **Killed by the OS, then cold relaunch.** All volatile memory is gone. Whatever was not written
+   to disk no longer exists.
+5. **Cold relaunch from a notification or a shared link.** The app starts directly on a deep
+   screen, with no catalogue, no taxonomy in memory, sometimes no network.
+6. **Wi-Fi ↔ cellular switch.** It happens mid-request, with no clean transition. Any in-flight
+   write is in an indeterminate state.
 
-### Besoin n° 1 — chaque réponse doit dire quand elle a été produite et jusqu'à quand elle vaut
+### Need 1 — every response must say when it was produced and how long it holds
 
-C'est la demande la plus structurante de ce document.
+This is the most structural ask in this document.
 
-Au retour d'arrière-plan, le client doit décider **seul** quoi rafraîchir. Il ne peut le faire que
-si chaque réponse porte deux choses : l'**instant serveur** auquel elle a été produite, et la
-**durée au-delà de laquelle elle ne doit plus être affichée sans avertissement**.
+On return from the background, the client must decide **on its own** what to refresh. It can only
+do that if every response carries two things: the **server instant** at which it was produced, and
+the **duration beyond which it must not be displayed without warning**.
 
-L'instant serveur résout en outre le problème de l'horloge : tout compte à rebours affiché
-(« il reste 42 min », « l'aperçu se termine dans 4 min 12 », « la rediffusion expire dans 6 h »)
-doit être calculé contre l'horloge du serveur, pas contre celle du téléphone. Sans instant
-serveur, une horloge décalée de vingt minutes fait mentir tous les écrans de la surface — et
-l'utilisateur qui vient de changer de fuseau est exactement celui qui ouvre l'application dans un
+The server instant also solves the clock problem: every countdown displayed ("42 min left", "the
+preview ends in 4:12", "the replay expires in 6 h") must be computed against the server's clock,
+not the phone's. Without a server instant, a clock twenty minutes out makes every screen on the
+surface lie — and the user who has just changed timezone is exactly the one opening the app on a
 train.
 
-### Besoin n° 2 — le curseur doit survivre à une nuit, ou le contrat doit offrir un delta
+### Need 2 — the cursor must survive a night, or the contract must offer a delta
 
-Constat technique vérifié, et c'est le plus coûteux du lot. La bibliothèque de cache serveur
-retenue pour cette famille de clients rafraîchit une liste à défilement infini **page par page,
-depuis la première, en séquence**. Une liste de quarante pages parcourue la veille produit donc,
-au retour au premier plan, **quarante allers-retours enchaînés** avant que le premier pixel ne
-soit à jour. Sur un réseau cellulaire, c'est inacceptable ; en itinérance, c'est facturé.
+A verified technical finding, and the most expensive of the lot. The server-cache library chosen
+for this family of clients refreshes an infinite-scroll list **page by page, from the first, in
+sequence**. A forty-page list scrolled yesterday therefore produces, on return to the foreground,
+**forty chained round trips** before the first pixel is up to date. On a cellular network that is
+unacceptable; on roaming it is billed.
 
-Deux issues, dont le contrat doit en choisir au moins une :
+Two ways out, and the contract must choose at least one:
 
-- **un curseur qui reste valide longtemps** — plusieurs heures au minimum — de sorte que le client
-  puisse borner le nombre de pages gardées et recharger seulement celles qu'il affiche ;
-- **une lecture de delta** : « voici mon curseur et l'instant de ma dernière lecture, dis-moi ce
-  qui a changé ».
+- **a cursor that stays valid for a long time** — several hours at minimum — so the client can cap
+  the number of pages it keeps and reload only those it displays;
+- **a delta read**: "here is my cursor and the instant of my last read, tell me what changed".
 
-La seconde est de loin préférable pour ma surface, et elle sert aussi le besoin n° 1 : une
-application réveillée demande ce qui a changé, pas tout.
+The second is by far preferable for my surface, and it also serves need 1: a woken app asks what
+changed, not for everything.
 
-Corollaire : le client doit pouvoir **revenir en arrière** dans une liste dont il a jeté les
-premières pages. Le curseur doit donc être **bidirectionnel**.
+Corollary: the client must be able to **go back** in a list whose first pages it has discarded. The
+cursor must therefore be **bidirectional**.
 
-### Besoin n° 3 — la revalidation au retour au premier plan est une rafale, pas une requête
+### Need 3 — revalidation on return to the foreground is a burst, not a request
 
-Les mécanismes automatiques de revalidation de cette famille de bibliothèques écoutent des
-événements de navigateur qui **n'existent pas** en React Native : la reprise de focus et la
-détection de connexion doivent être rebranchées à la main sur le cycle de vie de l'application et
-sur l'état du réseau. La conséquence pour le contrat n'est pas un détail d'implémentation : au
-moment précis où l'application revient au premier plan, **toutes les lectures observées se
-revalident en même temps**. Un écran de compte en affiche facilement une demi-douzaine ; une page
-de catégorie autant.
+The automatic revalidation mechanisms of this family of libraries listen for browser events that
+**do not exist** in React Native: focus resumption and connectivity detection must be rewired by
+hand onto the app lifecycle and the network state. The consequence for the contract is not an
+implementation detail: at the precise moment the app returns to the foreground, **every observed
+read revalidates at once**. An account screen easily shows half a dozen; a category page as many.
 
-Le contrat doit donc offrir, au choix : une **lecture groupée** (plusieurs ressources en un
-appel), ou un point d'entrée « **qu'est-ce qui a changé depuis T ?** » qui rende une liste
-d'invalidations plutôt que les données. Sans l'un des deux, chaque retour au premier plan est une
-rafale que la limitation de débit finira par refuser — et refuser une rafale au retour au premier
-plan, c'est refuser l'ouverture de l'application.
+The contract must therefore offer one of two things: a **batched read** (several resources in one
+call), or an endpoint answering "**what changed since T?**" that returns a list of invalidations
+rather than the data. Without one of the two, every return to the foreground is a burst that rate
+limiting will eventually refuse — and refusing a burst on return to the foreground is refusing to
+let the app open.
 
-### Besoin n° 4 — la reprise de lecture, trois cas distincts
+### Need 4 — resuming playback, three distinct cases
 
-**Direct.** On ne reprend pas un direct, on le rejoint là où il en est. La position se calcule
-depuis l'instant de début et l'horloge serveur. Le contrat doit dire si un direct rejoint en cours
-est servi depuis le début (ce que la maquette suggère : « le spectacle a commencé il y a 18
-minutes, rejoignez-le où il en est ») ou depuis le bord du direct, et si la fenêtre de rattrapage
-existe avant la fin.
+**Live.** One does not resume a live, one joins it where it is. The position is computed from the
+start instant and the server clock. The contract must say whether a live joined part-way is served
+from the beginning (what the mockup suggests: "the show started 18 minutes ago, join it where it
+is") or from the live edge, and whether a catch-up window exists before the end.
 
-**Rediffusion.** La position est un `ResumePoint`. Deux questions pour le contrat : **à quelle
-cadence** le client l'écrit — c'est la commande la plus fréquente de la surface, et l'écrire à
-chaque seconde sur un réseau cellulaire est déraisonnable — et **ce qui se passe** quand
-l'application est tuée entre deux écritures. Ma demande : une écriture à intervalle raisonnable,
-**plus une écriture forcée au passage en arrière-plan**, et un contrat qui accepte une position
-légèrement antérieure plutôt que de perdre la reprise.
+**Replay.** The position is a `ResumePoint`. Two questions for the contract: **at what cadence**
+the client writes it — it is the most frequent command on the surface, and writing it every second
+over cellular is unreasonable — and **what happens** when the app is killed between two writes.
+What I ask: a write at a reasonable interval, **plus a forced write when going to the background**,
+and a contract that accepts a slightly earlier position rather than lose the resume point.
 
-**Aperçu gratuit.** La maquette accorde un budget d'aperçu (4 min 12 dans le texte, 252 secondes
-dans l'état). Ce budget **ne peut pas être compté par le client** : une application réinstallée,
-ou simplement tuée, remettrait le compteur à zéro. Il doit être décompté par le serveur, par
-compte ou par appareil selon ce que le contrat décide, et le droit de lecture doit porter ce qu'il
-en reste. C'est la seule façon de rendre l'aperçu honnête sur mobile.
+**Free preview.** The mockup grants a preview budget (4:12 in the copy, 252 seconds in the state).
+That budget **cannot be counted by the client**: a reinstalled app, or simply a killed one, would
+reset the counter. It must be decremented by the server, per account or per device as the contract
+decides, and the right to watch must carry what is left of it. That is the only way to make the
+preview honest on mobile.
 
-### Besoin n° 5 — ce qui doit survivre à une mise à mort, et ce qui ne doit pas
+### Need 5 — what must survive a kill, and what must not
 
-**Doit survivre, donc doit être écrit sur le disque** : le panier (ou l'identifiant du panier
-serveur) ; la clé d'idempotence d'une écriture en vol ; la file des commandes hors ligne ; la
-position de lecture ; le brouillon de message de tchat ; le filtre et le tri en cours ; la
-recherche enregistrée en train d'être nommée ; le curseur de la liste consultée ; le dernier écran
-et son argument.
+**Must survive, therefore must be written to disk**: the cart (or the server cart's identifier);
+the idempotency key of an in-flight write; the offline command queue; the playback position; the
+chat message draft; the current filter and sort; the saved search being named; the cursor of the
+list being browsed; the last screen and its argument.
 
-**Ne doit pas survivre, ou doit survivre chiffré** : le jeton de session — et le contrat doit dire
-sa durée de vie et le mécanisme de renouvellement, parce qu'une application rouverte après une
-semaine trouvera un jeton mort et ne doit pas pour autant renvoyer l'utilisateur à un écran de
-connexion s'il existe un moyen de le renouveler silencieusement.
+**Must not survive, or must survive encrypted**: the session token — and the contract must state
+its lifetime and the renewal mechanism, because an app reopened after a week will find a dead token
+and must not for that reason send the user back to a sign-in screen if there is a way to renew it
+silently.
 
-**Ne doit jamais survivre** : le droit de lecture. Il expire, il dépend du territoire, il dépend de
-la limite d'écrans. Un droit relu depuis le disque est un droit faux.
+**Must never survive**: the right to watch. It expires, it depends on the territory, it depends on
+the screen limit. A right re-read from disk is a false right.
 
-### Besoin n° 6 — ce que l'application montre vraiment sans réseau
+### Need 6 — what the app really shows without a network
 
-**Aucun téléchargement de spectacle n'apparaît dans la maquette mobile.** Le seul mot
-« télécharger » qui s'y trouve concerne une facture de commande. Je le signale parce que c'est
-contre-intuitif pour une application mobile de spectacle, et que le chef voudra peut-être
-trancher : s'il n'y a pas de lecture hors ligne, alors hors ligne signifie **catalogue en cache,
-en lecture seule**, et rien d'autre.
+**No show download appears anywhere in the mobile mockup.** The only occurrence of "download" in it
+concerns an order invoice. I flag it because it is counter-intuitive for a mobile performing-arts
+app, and the lead may want to settle it: if there is no offline playback, then offline means
+**cached catalogue, read only**, and nothing else.
 
-Dans ce cas, le contrat doit permettre à l'application d'afficher, sans réseau : le dernier
-catalogue vu, mes places, mes commandes, mes artistes suivis, mes recherches enregistrées — chacun
-**avec sa date de fraîcheur visible**. Et l'enveloppe d'erreur doit permettre de dire « c'est
-vieux » sans dire « c'est cassé ».
+In that case the contract must let the app display, with no network: the last catalogue seen, my
+seats, my orders, my followed artists, my saved searches — each **with its freshness date visible**.
+And the error envelope must allow saying "this is old" without saying "this is broken".
 
-Ce qui n'est **pas** consultable hors ligne doit être annoncé comme tel plutôt que d'échouer : un
-droit de lecture, un stock, des places restantes, un compteur de spectateurs.
+What is **not** consultable offline must be announced as such rather than fail: a right to watch, a
+stock level, seats remaining, a viewer count.
 
-### Besoin n° 7 — le premier démarrage hors ligne doit rendre quelque chose
+### Need 7 — the first launch offline must render something
 
-La maquette pose un écran de démarrage bloquant qui n'affiche qu'un message d'erreur brut si le
-chargement échoue. Sur mobile, ce cas est courant : première ouverture dans le métro, après une
-mise à jour depuis le magasin.
+The mockup puts up a blocking boot screen that displays nothing but a raw error message if loading
+fails. On mobile that case is common: first opening on the underground, after a store update.
 
-La décision d'un **instantané i18n embarqué au build** couvre déjà la copie. Je demande le même
-régime pour **la taxonomie**, et pour la même raison : sans elle, aucune étiquette de discipline
-ne peut s'afficher, et l'écran d'accueil est illisible même si le catalogue est en cache.
+The decision to embed an **i18n snapshot at build time** already covers the copy. I ask for the
+same regime for **the taxonomy**, and for the same reason: without it no discipline label can be
+displayed, and the home screen is illegible even if the catalogue is cached.
 
-Mesures : le sous-ensemble i18n utile au mobile (storefront + taxonomie + système, deux langues,
-1 126 clés) pèse **117 Ko bruts / 25 Ko gzip** ; une seule langue en pèse environ 54 Ko bruts.
-`taxonomy.json` pèse **59,5 Ko bruts / 8,4 Ko gzip**. L'instantané embarqué complet et bilingue
-approche donc 177 Ko bruts — assez pour peser sur le temps de démarrage s'il est chargé d'un bloc.
-**Ma demande** : le contrat doit servir ces artefacts **par langue et par surface**, pas en un
-dictionnaire unique, pour que l'instantané embarqué puisse n'emporter que ce qui sert.
+Measurements: the i18n subset useful to mobile (storefront + taxonomy + system, two languages,
+1,126 keys) weighs **117 KB raw / 25 KB gzipped**; a single language weighs about 54 KB raw.
+`taxonomy.json` weighs **59.5 KB raw / 8.4 KB gzipped**. A complete bilingual embedded snapshot
+therefore approaches 177 KB raw — enough to weigh on start-up time if loaded in one block.
+**What I ask**: the contract must serve these artefacts **per language and per surface**, not as a
+single dictionary, so the embedded snapshot can carry only what it uses.
 
 ---
 
-## Pagination et volumes
+## Pagination and volumes
 
-La décision est posée : **curseur** pour le storefront, tri déterministe, départage par
-identifiant. Ce que ma surface y ajoute :
+The decision is settled: **cursor** for the storefront, deterministic sort, tie-broken by
+identifier. What my surface adds:
 
-**La taille de page est décidée par le client, et elle change en cours de route.** En paysage la
-coquille double de largeur et la grille passe de une à plusieurs colonnes : la même liste affiche
-deux à quatre fois plus d'éléments par écran. Le contrat doit donc accepter une **taille de page
-variable et bornée**, fournie par le client à chaque page.
+**Page size is decided by the client, and it changes mid-course.** In landscape the shell doubles
+in width and the grid goes from one to several columns: the same list shows two to four times more
+items per screen. The contract must therefore accept a **variable, bounded page size**, supplied by
+the client with every page.
 
-**La taille de page ne peut pas faire partie de l'identité du curseur.** Sinon, une rotation en
-cours de liste invalide le curseur et réémet des éléments déjà servis, ou en saute. Le curseur doit
-désigner une **position dans l'ordre**, pas un rang multiplié par une taille de page.
+**Page size cannot be part of the cursor's identity.** Otherwise a rotation mid-list invalidates the
+cursor and re-emits items already served, or skips some. The cursor must designate a **position in
+the ordering**, not a rank multiplied by a page size.
 
-**Le curseur doit être bidirectionnel.** Une liste virtualisée borne ce qu'elle garde en mémoire,
-et le rafraîchissement d'une liste infinie repart de la première page : sans possibilité de
-remonter, une liste longue est soit gardée en entier — au prix de la mémoire — soit irrécupérable
-au retour en arrière.
+**The cursor must be bidirectional.** A virtualised list caps what it keeps in memory, and
+refreshing an infinite list restarts from the first page: with no way back, a long list is either
+kept whole — at the cost of memory — or unrecoverable when the user scrolls back.
 
-**Une carte doit être rendable sans seconde requête.** La virtualisation monte et démonte des
-éléments en continu pendant le défilement ; si une carte déclenche un appel pour compléter ce qui
-lui manque, un défilement rapide produit une tempête de requêtes et un défilement lent produit des
-cartes vides. Tout ce qu'affiche une carte doit être dans la page qui l'a servie.
+**A card must be renderable without a second request.** Virtualisation mounts and unmounts items
+continuously while scrolling; if a card triggers a call to complete what it lacks, fast scrolling
+produces a request storm and slow scrolling produces empty cards. Everything a card displays must
+be in the page that served it.
 
-**Les listes de cette surface ne sont pas toutes infinies.** Les rails de l'accueil, les sections
-d'une discipline, les dates d'un artiste sont des listes **bornées** que la maquette pagine par
-pas avec un bouton « Voir plus · N restants » — elle connaît donc le **reste**. Le contrat doit
-dire s'il rend un total, un « il y en a d'autres », ou rien : les trois donnent trois interfaces
-différentes, et seul le premier permet d'annoncer le reste. Seul `browse` est à défilement infini.
+**Not every list on this surface is infinite.** The home rails, the sections of a discipline, an
+artist's dates are **bounded** lists that the mockup pages in steps with a "Show more · N left"
+button — so it knows the **remainder**. The contract must say whether it returns a total, a "there
+are more", or nothing: the three produce three different interfaces, and only the first allows
+announcing the remainder. Only `browse` is infinite scroll.
 
-**Volumes de référence constatés** : 21 disciplines, 176 genres, 205 étiquettes ; une trentaine de
-salles ; un catalogue de dates généré dont la taille n'est pas bornée par les fixtures. Les
-facettes de `browse` se combinent librement (disciplines × sous-genres × cinq tranches de prix ×
-cinq fenêtres de date × trois statuts × quatre drapeaux) : le contrat doit dire si une combinaison
-qui ne rend rien est une réponse vide normale ou une erreur, et si le nombre de résultats est
-connu avant la première page.
+**Reference volumes observed**: 21 disciplines, 176 genres, 205 tags; about thirty venues; a
+generated date catalogue whose size the fixtures do not bound. The `browse` facets combine freely
+(disciplines × sub-genres × five price bands × five date windows × three statuses × four flags): the
+contract must say whether a combination that returns nothing is a normal empty response or an
+error, and whether the result count is known before the first page.
 
-**Le poids d'une page compte plus ici qu'ailleurs.** Sur un réseau cellulaire, une page de
-catalogue est facturée. Deux demandes : que l'image soit un identifiant dimensionnable plutôt
-qu'une URL figée, et que le contrat permette de demander une **forme réduite** d'une carte — la
-grille en paysage affiche plus de cartes mais pas plus d'informations par carte.
+**Page weight matters more here than elsewhere.** On a cellular network, a page of catalogue is
+billed. Two asks: that the image be a resizable identifier rather than a frozen URL, and that the
+contract allow requesting a **reduced form** of a card — the landscape grid shows more cards but no
+more information per card.
 
 ---
 
-## États d'erreur et de chargement
+## Error and loading states
 
-Le vocabulaire est **déjà écrit dans `shared/i18n/system.json`**, et il tranche une distinction que
-l'enveloppe d'erreur doit rendre possible :
+The vocabulary is **already written in `shared/i18n/system.json`**, and it settles a distinction the
+error envelope must make possible:
 
-- « Votre appareil n'atteint plus le réseau. **Les serveurs Arthome répondent normalement.** »
-- « Le problème vient de chez nous, **pas de votre connexion.** Nous y travaillons. »
+- "Your device cannot reach the network. **Arthome servers are responding normally.**"
+- "The problem is on our side, **not your connection.** We are working on it."
 
-**Ce que cela exige du contrat.** Un code applicatif ne suffit pas : le premier cas est celui où
-**aucune réponse n'est jamais arrivée**, et seul le client peut le constater. Le second est une
-réponse serveur en bonne et due forme. L'enveloppe doit donc distinguer, de façon exploitable sans
-lire un texte :
+**What that demands of the contract.** An application code is not enough: the first case is the one
+where **no response ever arrived**, and only the client can observe it. The second is a
+fully-formed server response. The envelope must therefore distinguish, in a way usable without
+reading any text:
 
-- une panne du serveur, annoncée par le serveur lui-même ;
-- un refus métier (pas de place, hors territoire, fenêtre fermée, formule insuffisante, limite
-  d'écrans atteinte) — chacun avec ses **paramètres** et son **action de repli** ;
-- une limitation de débit, avec le délai avant nouvelle tentative — sans quoi une rafale de
-  revalidation au retour au premier plan se transforme en boucle ;
-- une expiration de session, qui doit être distinguable d'un refus de droit : la première se
-  renouvelle silencieusement, la seconde s'affiche.
+- a server failure, announced by the server itself;
+- a domain refusal (no seat, out of territory, window closed, insufficient plan, screen limit
+  reached) — each with its **parameters** and its **fallback action**;
+- rate limiting, with the delay before retrying — without which a revalidation burst on return to
+  the foreground turns into a loop;
+- a session expiry, which must be distinguishable from a rights refusal: the first renews
+  silently, the second is displayed.
 
-Et le client ajoute, seul, un cinquième état : **pas de réseau**. Il ne doit jamais être présenté
-comme une panne de la plateforme.
+And the client adds, on its own, a fifth state: **no network**. It must never be presented as a
+platform failure.
 
-**Le blackout territorial a sa propre forme.** `common.error.blackoutBody` est paramétré par la
-raison (`{reason}`), et le texte promet que « les autres dates de ce spectacle restent
-accessibles ». L'erreur doit donc porter la raison **et** de quoi tenir cette promesse : les autres
-dates. Une erreur qui promet une issue sans la porter oblige le client à une seconde requête
-au pire moment.
+**The territorial blackout has a shape of its own.** `common.error.blackoutBody` is parameterised by
+the reason (`{reason}`), and the copy promises that "the other dates of this show remain available".
+The error must therefore carry the reason **and** the means to keep that promise: the other dates.
+An error that promises a way out without carrying it forces the client into a second request at the
+worst possible moment.
 
-**Les états vides ne sont pas des erreurs.** `common.empty.list`, `.live`, `.search`, `.tickets`
-existent déjà. Une liste vide est une réponse réussie.
+**Empty states are not errors.** `common.empty.list`, `.live`, `.search`, `.tickets` already exist.
+An empty list is a successful response.
 
-**Un état supplémentaire, propre au mobile, que les autres surfaces n'auront pas.** Une lecture
-peut être **en attente de réseau** : ni en cours, ni en erreur, ni servie. L'utilisateur doit voir
-la différence entre « on charge » et « on attend que tu retrouves du réseau ». Rien à demander au
-backend pour cela — sauf de ne pas obliger le client à inventer une erreur pour l'exprimer.
+**One extra state, specific to mobile, that the other surfaces will not have.** A read can be
+**waiting for the network**: neither in progress, nor in error, nor served. The user must see the
+difference between "we are loading" and "we are waiting for you to find signal again". Nothing to
+ask the backend for here — except not to force the client to invent an error in order to express
+it.
 
-**La trace doit revenir au client.** La décision porte déjà un identifiant de trace dans
-l'enveloppe. Sur mobile c'est le seul lien exploitable entre « mon application a planté » et un
-journal serveur : l'utilisateur ne peut pas ouvrir une console. Il doit pouvoir lire ou copier cet
-identifiant depuis l'écran d'erreur.
+**The trace must come back to the client.** The decision already puts a trace identifier in the
+envelope. On mobile that is the only usable link between "my app crashed" and a server log: the
+user cannot open a console. They must be able to read or copy that identifier from the error
+screen.
 
 ---
 
-## Contraintes propres à React Native
+## Constraints specific to React Native
 
-Seulement celles qui contraignent le contrat.
+Only those that constrain the contract.
 
-### 1. zod — mesure, comme demandé
+### 1. zod — the measurement, as asked
 
-Mesuré sur **zod 4.6.5**, empaqueté avec esbuild en mode production, sur un schéma réaliste
-(une page de catalogue : date, spectacle, salle, places, trois paliers de prix, politique de
-rediffusion, droits, curseur).
+Measured on **zod 4.6.5**, bundled with esbuild in production mode, against a realistic schema
+(one page of catalogue: date, show, venue, seats, three price tiers, replay policy, rights,
+cursor).
 
-| Entrée | Élagage actif | Minifié | Gzip |
+| Entry point | Tree-shaking on | Minified | Gzipped |
 |---|---|---|---|
-| `import { z } from "zod"` (classique) | oui | **446 Ko** | **93 Ko** |
-| `import { z } from "zod"` (classique) | non | 446 Ko | 93 Ko |
-| `import * as z from "zod/mini"` | oui | **22 Ko** | **7,5 Ko** |
-| `import * as z from "zod/mini"` | non | 421 Ko | 85 Ko |
-| plancher : `z.string()` seul, entrée classique | oui | 446 Ko | 93 Ko |
-| plancher : `z.string()` seul, `zod/mini` | oui | 9,6 Ko | 3,6 Ko |
+| `import { z } from "zod"` (classic) | yes | **446 KB** | **93 KB** |
+| `import { z } from "zod"` (classic) | no | 446 KB | 93 KB |
+| `import * as z from "zod/mini"` | yes | **22 KB** | **7.5 KB** |
+| `import * as z from "zod/mini"` | no | 421 KB | 85 KB |
+| floor: `z.string()` alone, classic entry | yes | 446 KB | 93 KB |
+| floor: `z.string()` alone, `zod/mini` | yes | 9.6 KB | 3.6 KB |
 
-**Trois constats, dont deux sont des demandes.**
+**Three findings, two of which are asks.**
 
-- **L'entrée classique ne s'élague pas.** Un seul `z.string()` coûte le paquet entier. La raison est
-  identifiée : l'entrée classique rend joignables **64 fichiers de traduction** des messages
-  d'erreur, soit 341 Ko de source sur environ 850 Ko au total. Pour un projet dont la décision est
-  **i18n par codes avec instantané embarqué**, ces 64 tables sont du poids mort intégral : nous
-  n'afficherons jamais un message d'erreur rédigé par zod.
-- **L'économie de `zod/mini` dépend entièrement de l'élagage du paquet.** Sans élagage — et
-  l'empaqueteur de React Native ne l'active pas par défaut — `zod/mini` retombe à 85 Ko gzip, c'est-à-dire
-  au niveau de l'entrée classique. Le gain de 93 Ko à 7,5 Ko n'est pas acquis : il est
-  **conditionnel**.
-- **Demande au paquet de contrats.** `@arthome/contracts` doit exposer une **entrée `mini`** et
-  n'importer zod que par des chemins profonds, jamais par un fichier baril qui réexporte tout.
-  Sans cela, le choix de l'entrée est confisqué au client mobile, et la décision « zod valide tout »
-  coûte 93 Ko gzip de bundle à la surface la plus contrainte du projet. Je ne conteste pas la
-  décision : je demande qu'elle soit livrée sous une forme que le mobile puisse payer.
+- **The classic entry point does not tree-shake.** A single `z.string()` costs the entire package.
+  The cause is identified: the classic entry makes **64 translation files** of the error messages
+  reachable, that is 341 KB of source out of roughly 850 KB in total. For a project whose decision
+  is **i18n by codes with an embedded snapshot**, those 64 tables are dead weight in full: we will
+  never display an error message written by zod.
+- **The saving from `zod/mini` depends entirely on the bundler tree-shaking.** Without it — and the
+  React Native bundler does not enable it by default — `zod/mini` falls back to 85 KB gzipped, that
+  is to say the level of the classic entry. The gain from 93 KB to 7.5 KB is not acquired: it is
+  **conditional**.
+- **An ask directed at the contracts package.** `@arthome/contracts` must expose a **`mini` entry
+  point** and must import zod only through deep paths, never through a barrel file that re-exports
+  everything. Without that, the choice of entry point is confiscated from the mobile client, and the
+  "zod validates everything" decision costs 93 KB gzipped of bundle to the most constrained surface
+  in the project. I am not contesting the decision: I am asking that it be delivered in a form
+  mobile can afford.
 
-### 2. Formatage côté client — la dépendance `Intl` n'est pas acquise
+### 2. Client-side formatting — the `Intl` dependency is not a given
 
-La décision est : montants en unité canonique, formatage côté client. Bonne nouvelle vérifiée :
-`helpers.js` formate **sans `Intl`** — `price`, `number`, `compact`, `clock`, `dayLabel`,
-`longDate`, `duration`, `timecode` sont tous écrits à la main, avec les noms de jours et de mois en
-dur dans les deux langues. Le portage vers `@arthome/core` peut donc rester sans `Intl`, ce qui est
-exactement ce qu'il faut : le moteur JavaScript de React Native n'offre pas partout une
-implémentation `Intl` complète, et le polyfill coûte plusieurs centaines de kilo-octets.
+The decision is: amounts in canonical units, formatting on the client. Good news, verified:
+`helpers.js` formats **without `Intl`** — `price`, `number`, `compact`, `clock`, `dayLabel`,
+`longDate`, `duration`, `timecode` are all written by hand, with day and month names hard-coded in
+both languages. The port to `@arthome/core` can therefore stay free of `Intl`, which is exactly
+what is needed: the React Native JavaScript engine does not offer a complete `Intl` implementation
+everywhere, and the polyfill costs several hundred kilobytes.
 
-**Ce que cela contraint dans le contrat** : le code devise ISO doit voyager, jamais un symbole ni
-une position de symbole ; et le contrat ne doit **jamais** supposer que le client sait formater une
-devise qu'il ne connaît pas. Si un jour un marché non prévu apparaît, c'est `@arthome/core` qui
-doit être mis à jour, pas le contrat qui doit se mettre à envoyer des chaînes déjà formatées.
+**What that constrains in the contract**: the ISO currency code must travel, never a symbol nor a
+symbol position; and the contract must **never** assume the client knows how to format a currency
+it does not know. If an unforeseen market ever appears, it is `@arthome/core` that must be updated,
+not the contract that must start sending pre-formatted strings.
 
-### 3. Fuseaux horaires — IANA, plus le décalage calculé
+### 3. Timezones — IANA, plus the computed offset
 
-D3 impose un identifiant IANA et un instant UTC, et la règle d'affichage est bonne : heure du
-spectateur d'abord, heure de salle ensuite quand elle diffère.
+D3 mandates an IANA identifier and a UTC instant, and the display rule is right: the viewer's time
+first, the venue's time second when it differs.
 
-**La contrainte** : la base de fuseaux complète n'est pas garantie côté client React Native, et
-l'embarquer coûte cher en bundle. **Ma demande** : le contrat porte l'identifiant IANA *et* le
-décalage en minutes **calculé par le serveur pour l'instant de cette date-là**. Ce n'est pas un
-retour au décalage figé de D3 : c'est une valeur **servie**, recalculée à chaque service, jamais
-stockée. Cela respecte « aucune valeur calculée deux fois » — le calcul a lieu une fois, côté
-serveur — et cela évite d'embarquer une base de fuseaux dans cinq applications.
+**The constraint**: the complete timezone database is not guaranteed on the React Native client,
+and embedding it is expensive in bundle terms. **What I ask**: the contract carries the IANA
+identifier *and* the offset in minutes **computed by the server for that date's instant**. This is
+not a return to D3's frozen offset: it is a **served** value, recomputed at every service, never
+stored. It respects "no value computed twice" — the computation happens once, server-side — and it
+avoids embedding a timezone database in five applications.
 
-### 4. Listes virtualisées — deux conséquences déjà dites, une troisième
+### 4. Virtualised lists — two consequences already stated, and a third
 
-Rappel : une carte doit être complète dans sa page, et un compteur temps réel ne peut pas être une
-requête par carte. Troisième conséquence : **le nombre d'éléments gardés en mémoire est borné**,
-donc le contrat ne peut pas supposer que le client détient tout ce qu'il a déjà lu. Toute
-opération qui suppose « le client a déjà la liste » — par exemple un calcul de droit à partir des
-places possédées — est fausse sur cette surface.
+A reminder: a card must be complete within its page, and a realtime counter cannot be one request
+per card. Third consequence: **the number of items kept in memory is bounded**, so the contract
+cannot assume the client holds everything it has already read. Any operation that assumes "the
+client already has the list" — for instance computing a right from the seats held — is false on
+this surface.
 
-### 5. Le coût d'un réveil
+### 5. The cost of a wake-up
 
-Chaque canal ouvert, chaque sondage, chaque notification silencieuse réveille le processeur. Trois
-demandes déjà formulées plus haut, rassemblées ici parce qu'elles sont toutes de nature mobile :
-abonnement **par lot d'identifiants** sur un canal unique ; **reprise depuis un point** plutôt que
-rechargement ; **lecture groupée ou delta** au retour au premier plan.
+Every open channel, every poll, every silent notification wakes the processor. Three asks already
+made above, gathered here because all three are mobile in nature: subscription **by batch of
+identifiers** over a single channel; **resume from a point** rather than reload; **batched read or
+delta** on return to the foreground.
 
-### 6. Mise à mort par le système — la clé d'idempotence avant l'envoi
+### 6. Killed by the OS — the idempotency key before the send
 
-Déjà dit dans « Les commandes », répété ici parce que c'est la contrainte la plus spécifiquement
-mobile du document : la clé doit être écrite sur le disque **avant** que la requête parte. C'est le
-seul moyen qu'un achat interrompu par une mise à mort ne devienne pas deux achats au redémarrage.
-Le contrat doit en conséquence garantir une **fenêtre de validité de la clé** assez longue pour
-couvrir une relance — et dire ce qu'il rend quand la clé est rejouée : la réponse d'origine, pas un
-conflit.
+Already said under "The commands", repeated here because it is the most specifically mobile
+constraint in this document: the key must be written to disk **before** the request leaves. It is
+the only way an interrupted purchase does not become two purchases on restart. The contract must
+consequently guarantee a **validity window for the key** long enough to cover a relaunch — and say
+what it returns when the key is replayed: the original response, not a conflict.
 
-### 7. Volume de données consommé — une préférence l'annonce déjà
+### 7. Data volume consumed — a preference already announces it
 
-La maquette annonce « la 4K consomme environ 12 Go par heure » et laisse choisir une qualité par
-défaut. Le contrat de lecture doit donc porter les **variantes disponibles et leur débit**, pour
-deux raisons : que le client puisse honorer la préférence, et qu'il puisse avertir avant de lancer
-une lecture coûteuse sur un réseau cellulaire. Une lecture qui négocie sa qualité toute seule ne
-permet ni l'un ni l'autre.
+The mockup announces "4K uses about 12 GB per hour" and lets the user choose a default quality. The
+playback contract must therefore carry the **available variants and their bitrate**, for two
+reasons: so the client can honour the preference, and so it can warn before starting an expensive
+playback over cellular. A playback that negotiates its own quality allows neither.
 
-### 8. Deux listes de dimensions différentes pour la même donnée
+### 8. Two lists of different dimensions for the same data
 
-Le passage en paysage élargit la coquille et multiplie les colonnes. Cela n'a aucune conséquence
-de mise en page pour le contrat — mais deux conséquences déjà énoncées : **taille de page
-variable** et **curseur indépendant de la taille de page**. Je les rappelle ici parce qu'elles sont
-la seule raison pour laquelle l'orientation figure dans ce document.
+Switching to landscape widens the shell and multiplies the columns. That has no layout consequence
+for the contract — but two consequences already stated: **variable page size** and a **cursor
+independent of page size**. I restate them here because they are the only reason orientation
+appears in this document at all.
 
 ---
 
-## Incohérences relevées
+## Inconsistencies found
 
-Écarts rencontrés **en plus** des vingt-sept déjà consignés dans `corrections-handoff.md`. Je ne
-les applique pas. Sept des onze sont la même faute — une table littérale parallèle à `shared/` —
-c'est-à-dire exactement ce que D2 décrit pour les états de publication, et ce que le principe
-n° 1 du dossier interdit.
+Discrepancies met **in addition to** the twenty-seven already recorded in
+`corrections-handoff.md`. I do not apply them. Seven of the eleven are the same fault — a literal
+table running parallel to `shared/` — that is to say exactly what D2 describes for the publication
+states, and what principle no. 1 of the handoff forbids.
 
-1. **Les formules sont une table parallèle.** La maquette mobile affiche trois formules nommées
-   `free` / `unit` / `sub`, à « Gratuit » / « dès 7 € » / « 14 € par mois ». `catalogue.json`
-   déclare `free` / `pass` / `premium` à 0 / 12 / 24 par mois, avec `opens[]` et `seatDiscount`.
-   La maquette n'appelle **jamais** `A.plans()` : vérifié, zéro occurrence. Le contrat doit suivre
+1. **The plans are a parallel table.** The mobile mockup displays three plans named
+   `free` / `unit` / `sub`, at "Free" / "from €7" / "€14 per month". `catalogue.json` declares
+   `free` / `pass` / `premium` at 0 / 12 / 24 per month, with `opens[]` and `seatDiscount`. The
+   mockup **never** calls `A.plans()`: verified, zero occurrences. The contract must follow
    `catalogue.json`.
 
-2. **Le vocabulaire des formules déborde la donnée.** `i18n/storefront.json` porte six valeurs
-   `enums.plan.*` — `free`, `pass`, `premium`, `monthly`, `season`, `none` — alors que
-   `catalogue.json.plans` n'en déclare que trois. `monthly`, `season` et `none` ne sont référencés
-   par aucune donnée. Soit le vocabulaire anticipe des formules non écrites, soit il est mort ;
-   le contrat doit trancher avant de figer l'énumération.
+2. **The plan vocabulary overruns the data.** `i18n/storefront.json` carries six `enums.plan.*`
+   values — `free`, `pass`, `premium`, `monthly`, `season`, `none` — while `catalogue.json.plans`
+   declares only three. `monthly`, `season` and `none` are referenced by no data at all. Either the
+   vocabulary anticipates plans that were never written, or it is dead; the contract must settle it
+   before freezing the enumeration.
 
-3. **La politique de rediffusion est une troisième table parallèle.** La maquette emploie `sub` et
-   `off` là où l'énumération partagée dit `subscription` et `none`. Elle ajoute même une cinquième
-   valeur de pilotage, `artiste`, qui signifie « prends celle de l'artiste » et n'appartient pas au
-   vocabulaire.
+3. **The replay policy is a third parallel table.** The mockup uses `sub` and `off` where the shared
+   enumeration says `subscription` and `none`. It even adds a fifth steering value, `artiste`,
+   meaning "take the artist's own", which belongs to no vocabulary.
 
-4. **La fenêtre de rediffusion est dite trois fois, différemment.** `fixtures.js` en génère cinq
-   valeurs (24, 41, 48, 72 et 96 heures) ; le texte de la maquette affirme « 72 h » en dur dans la
-   description de la politique incluse ; la règle de notification annonce « 6 heures avant
-   expiration ». La durée doit venir de `replay.windowHours`, jamais d'une chaîne de copie — or
-   c'est bien la **copie** qui porte ici la valeur, ce qui la rend intraduisible et infalsifiable.
+4. **The replay window is stated three times, differently.** `fixtures.js` generates five values
+   (24, 41, 48, 72 and 96 hours); the mockup's copy asserts "72 h" hard-coded in the description of
+   the included policy; the notification rule announces "6 hours before expiry". The duration must
+   come from `replay.windowHours`, never from a string of copy — and yet here it is the **copy**
+   that carries the value, which makes it untranslatable and unfalsifiable.
 
-5. **Les devises ne s'accordent pas.** La préférence de devise offre `eur` / `usd` / `chf` ;
-   `catalogue.json.billingMarkets` déclare `eur` / `chf` / `cad`. `usd` n'existe nulle part
-   ailleurs ; `cad` manque à l'écran. À rapprocher de D4 : un seul marché est réellement exercé
-   par le générateur, donc aucune de ces listes n'a jamais été éprouvée.
+5. **The currencies do not agree.** The currency preference offers `eur` / `usd` / `chf`;
+   `catalogue.json.billingMarkets` declares `eur` / `chf` / `cad`. `usd` exists nowhere else; `cad`
+   is missing from the screen. To be read alongside D4: only one market is actually exercised by the
+   generator, so none of these lists has ever been tested.
 
-6. **Deux remises, sur deux assiettes différentes, et aucune ne correspond.** L'écran d'abonnement
-   promet « 15 % sur la boutique des artistes ». `catalogue.json` porte `seatDiscount` — une remise
-   sur les **places** — à 0,1 pour `pass` et 0,2 pour `premium`. Ni le taux ni l'assiette ne
-   coïncident.
+6. **Two discounts, on two different bases, and neither matches.** The subscription screen promises
+   "15% off artist stores". `catalogue.json` carries `seatDiscount` — a discount on **seats** — at
+   0.1 for `pass` and 0.2 for `premium`. Neither the rate nor the base coincides.
 
-7. **Le tchat mobile n'est pas branché sur `shared/`.** La maquette tient huit messages littéraux
-   dans son état et en ajoute au hasard toutes les 4,2 secondes ; elle n'appelle jamais
-   `A.chatOf(date)` — vérifié, zéro occurrence. Conséquence pour le contrat : les quatre états de
-   message (`ok`, `removed`, `muted`, `banned`) **n'ont jamais été éprouvés sur cette surface**. La
-   modération vue du spectateur mobile reste à concevoir, pas à observer.
+7. **Mobile chat is not wired to `shared/`.** The mockup holds eight literal messages in its state
+   and adds more at random every 4.2 seconds; it never calls `A.chatOf(date)` — verified, zero
+   occurrences. Consequence for the contract: the four message states (`ok`, `removed`, `muted`,
+   `banned`) **have never been exercised on this surface**. Moderation as the mobile viewer sees it
+   remains to be designed, not observed.
 
-8. **Le troisième canal de notification n'est nommé nulle part.** La grille de préférences offre
-   trois canaux par déclencheur mais aucun en-tête ne les nomme. Les deux seuls noms de canal du
-   dossier sont `PUSH` et `E-MAIL`, dans les recherches enregistrées. Le profil suggère le
-   troisième sans le dire : le champ téléphone porte la mention « pour les SMS de rappel ». À
-   trancher, parce qu'un canal SMS a un coût et une réglementation propres.
+8. **The third notification channel is named nowhere.** The preferences grid offers three channels
+   per trigger but no header names them. The only two channel names in the handoff are `PUSH` and
+   `E-MAIL`, in the saved searches. The profile hints at the third without saying it: the phone
+   field carries the note "for SMS reminders". To be settled, because an SMS channel has a cost and
+   a regulation of its own.
 
-9. **L'abonnement du compte est entièrement littéral.** Échéance de renouvellement, moyen de
-   paiement et ancienneté sont écrits en dur ; aucun des trois n'existe dans `fixtures.accounts`,
-   qui ne porte que `memberSinceOffsetMin` et `plan`. La forme `Subscription` est à créer de
-   toutes pièces.
+9. **The account's subscription is entirely literal.** Renewal date, payment method and seniority
+   are hard-coded; none of the three exists in `fixtures.accounts`, which carries only
+   `memberSinceOffsetMin` and `plan`. The `Subscription` shape has to be created from scratch.
 
-10. **Deux notions d'aperçu sous des noms voisins.** `catalogue.json.time.previewIdleSec` vaut 4 et
-    n'est employé nulle part dans la maquette mobile ; le budget d'aperçu réellement affiché vaut
-    252 secondes et n'a aucune source partagée — il est écrit à la fois dans l'état et dans le
-    texte français de la copie. Deux valeurs sans propriétaire.
+10. **Two notions of preview under neighbouring names.** `catalogue.json.time.previewIdleSec` is 4
+    and is used nowhere in the mobile mockup; the preview budget actually displayed is 252 seconds
+    and has no shared source — it is written both in the state and in the French copy. Two values
+    with no owner.
 
-11. **Appareils et sessions sont traités comme deux choses.** L'écran de sécurité affiche trois
-    sessions littérales, alors que `fixtures.accounts[].devices` existe et que `helpers.devicesOf()`
-    les rend déjà avec leur nature, leur libellé bilingue, leur ville et leur dernière activité.
-    Le contrat doit dire si un appareil et une session sont la même chose — la réponse détermine
-    ce que fait le bouton « Déconnecter ».
+11. **Devices and sessions are treated as two things.** The security screen displays three literal
+    sessions, while `fixtures.accounts[].devices` exists and `helpers.devicesOf()` already renders
+    them with their kind, their bilingual label, their city and their last activity. The contract
+    must say whether a device and a session are the same thing — the answer determines what the
+    "Sign out" button does.
 
-**Remarque générale, qui vaut avertissement pour le temps 3.** J'ai vérifié l'emploi de seize
-fonctions de `shared/helpers.js` dans la maquette mobile : **quatorze ne sont jamais appelées** —
-`isWatchable`, `availableIn`, `rightsNote`, `languageLine`, `hasLanguageBarrier`, `seatsLabel`,
-`progressOf`, `viewersOf`, `messageState`, `devicesOf`, `alertsOf`, `resumeOf`, `plans`, et `chatOf`
-(point 7 ci-dessus). Les deux seules réellement employées sont `isRoomOpen` et `replayHoursLeft`.
-La surface
-mobile exerce donc beaucoup moins de règles partagées que le storefront web ne le fera. Cela
-signifie que, pour cette surface, les droits territoriaux, la barrière de langue, les places
-restantes, la reprise de lecture, les appareils et les abonnements **n'ont pas été éprouvés à
-l'écran** : le contrat les concernant doit être conçu, pas observé. Je le signale parce que c'est
-exactement le genre de silence qu'on prend pour un accord.
+**A general remark, which stands as a warning for time 3.** I checked the use of sixteen
+`shared/helpers.js` functions in the mobile mockup: **fourteen are never called** — `isWatchable`,
+`availableIn`, `rightsNote`, `languageLine`, `hasLanguageBarrier`, `seatsLabel`, `progressOf`,
+`viewersOf`, `messageState`, `devicesOf`, `alertsOf`, `resumeOf`, `plans`, and `chatOf` (point 7
+above). The only two actually used are `isRoomOpen` and `replayHoursLeft`. The mobile surface
+therefore exercises far fewer shared rules than the web storefront will. It means that, for this
+surface, territorial rights, the language barrier, seats remaining, playback resumption, devices and
+subscriptions **have never been exercised on screen**: the contract covering them must be
+**designed, not observed**. I flag it because it is exactly the kind of silence that gets mistaken
+for agreement.
 
 ---
 
-## Ce que je ne peux pas obtenir seul — questions au backend
+## What I cannot obtain on my own — questions to the backend
 
-Onze questions, par ordre d'impact sur ma surface. Les quatre premières bloquent la conception du
-client ; les autres la contraignent.
+Eleven questions, in order of impact on my surface. The first four block the design of the client;
+the others constrain it.
 
-1. **L'état d'une date est-il servi, dérivé, ou les deux ?** Je demande les deux : les bornes
-   (`startsAt`, `runtimeMin`, `roomOpensAt`, `replay.expiresAt`) **et** l'état au moment du service
-   accompagné de l'instant où il cesse d'être vrai. Si le contrat ne sert que l'état, une
-   application réveillée après une nuit affiche des états faux et ne sait pas qu'ils le sont. S'il
-   ne sert que les bornes, le client recalcule et viole « aucune valeur calculée deux fois ».
+1. **Is a date's state served, derived, or both?** I ask for both: the bounds (`startsAt`,
+   `runtimeMin`, `roomOpensAt`, `replay.expiresAt`) **and** the state at service time together with
+   the instant at which it stops being true. If the contract serves only the state, an app woken
+   after a night displays false states and does not know it. If it serves only the bounds, the
+   client recomputes and violates "no value computed twice".
 
-2. **Chaque réponse portera-t-elle un instant serveur et une durée de validité ?** Sans instant
-   serveur, tout compte à rebours de ma surface est à la merci d'une horloge de téléphone qui
-   dérive ou saute. Sans durée de validité, le client ne peut pas décider seul quoi rafraîchir au
-   retour d'arrière-plan, et rafraîchira tout.
+2. **Will every response carry a server instant and a validity duration?** Without a server instant,
+   every countdown on my surface is at the mercy of a phone clock that drifts or jumps. Without a
+   validity duration, the client cannot decide on its own what to refresh on return from the
+   background, and will refresh everything.
 
-3. **Un curseur reste-t-il valide plusieurs heures, ou y aura-t-il une lecture de delta ?** C'est
-   la question la plus coûteuse du document. Sans réponse favorable, un retour au premier plan sur
-   une liste longue produit des dizaines d'allers-retours enchaînés sur un réseau cellulaire. Une
-   lecture « qu'est-ce qui a changé depuis T ? » réglerait du même coup la rafale de revalidation
-   décrite au besoin n° 3.
+3. **Does a cursor stay valid for several hours, or will there be a delta read?** This is the most
+   expensive question in the document. Without a favourable answer, a return to the foreground on a
+   long list produces dozens of chained round trips over cellular. A "what changed since T?" read
+   would at the same stroke settle the revalidation burst described in need 3.
 
-4. **Le droit de lecture est-il une forme de premier ordre, servie par date ?** `helpers.isWatchable`
-   suppose que le client détient toutes les places du compte : c'est intenable sur mobile. J'ai
-   besoin d'un droit par date, avec sa raison de refus, son expiration et son action de repli — et
-   revérifié au démarrage de la lecture, pas hérité du catalogue.
+4. **Is the right to watch a first-class shape, served per date?** `helpers.isWatchable` assumes the
+   client holds all the account's seats: untenable on mobile. I need a right per date, with its
+   refusal reason, its expiry and its fallback action — and re-checked when playback starts, not
+   inherited from the catalogue.
 
-5. **Comment `multi-screen` est-il décompté, et qui libère une session tuée ?** Le système
-   d'exploitation tue une application sans préavis ; une session qui ne se ferme que sur un
-   événement du client laisse un écran fantôme et bloque l'utilisateur sur son propre compte. Je
-   demande une session de lecture à battement, avec **expiration serveur** et possibilité de
-   reprendre sa propre session identifiée par l'appareil.
+5. **How is `multi-screen` counted, and who releases a killed session?** The operating system kills
+   an app without warning; a session that only closes on a client event leaves a ghost screen and
+   locks the user out of their own account. I ask for a playback session with a heartbeat, with
+   **server-side expiry** and the ability to reclaim one's own session identified by the device.
 
-6. **Le budget d'aperçu gratuit est-il compté côté serveur ?** S'il est compté côté client, une
-   réinstallation — ou une simple mise à mort — le remet à zéro. Et est-il par compte, par
-   appareil, ou par date ?
+6. **Is the free preview budget counted server-side?** If it is counted on the client, a reinstall —
+   or simply a kill — resets it. And is it per account, per device, or per date?
 
-7. **Quelles commandes acceptent d'être mises en file hors ligne, et combien de temps une clé
-   d'idempotence reste-t-elle valide ?** J'ai proposé un classement dans « Les commandes » ; il
-   demande à être confirmé. La durée de validité de la clé est l'inconnue qui décide si une file
-   hors ligne est utilisable : une file qui rejoue deux heures plus tard une clé expirée crée des
-   doublons.
+7. **Which commands accept being queued offline, and how long does an idempotency key stay valid?**
+   I proposed a classification under "The commands"; it needs confirming. The key's validity window
+   is the unknown that decides whether an offline queue is usable at all: a queue that replays an
+   expired key two hours later creates duplicates.
 
-8. **Où vit le panier : sur l'appareil ou sur le compte ?** S'il vit sur le compte, il faut une
-   résolution de conflit entre deux appareils. S'il vit sur l'appareil, il ne survit pas à une
-   réinstallation, et la maquette — qui affiche un panier persistant dans l'en-tête — le laisse
-   croire.
+8. **Where does the cart live: on the device or on the account?** On the account, conflict
+   resolution between two devices is needed. On the device, it does not survive a reinstall, and the
+   mockup — which shows a persistent cart in the header — suggests otherwise.
 
-9. **Une commande passée chez un tiers est-elle un reflet en lecture seule, et que garantit-on de
-   sa fraîcheur ?** Quatre plateformes externes sont nommées. Le mobile est la surface où ce reflet
-   sera le plus souvent consulté hors ligne : il faut savoir ce qu'on promet quand l'hôte externe
-   ne répond pas.
+9. **Is an order placed with a third party a read-only reflection, and what is guaranteed about its
+   freshness?** Four external platforms are named. Mobile is the surface where that reflection will
+   most often be consulted offline: we need to know what we promise when the external host does not
+   answer.
 
-10. **Les cinq seuils de notification sont-ils des règles de domaine servies, ou des constantes
-    recopiées par surface ?** « 30 minutes avant », « 85 % des places », « 6 heures avant
-    expiration ». Recopiées, elles divergeront. Et quel est le **troisième canal** ?
+10. **Are the five notification thresholds served domain rules, or constants recopied per surface?**
+    "30 minutes before", "85% of seats", "6 hours before expiry". Recopied, they will diverge. And
+    what is the **third channel**?
 
-11. **`@arthome/contracts` exposera-t-il une entrée `mini` de zod, sans fichier baril ?** Mesure à
-    l'appui : 93 Ko gzip en entrée classique, 7,5 Ko en entrée `mini` élaguée, et 85 Ko si
-    l'élagage n'est pas actif. Je ne rouvre pas la décision zod ; je demande qu'elle soit livrée
-    sous une forme que la surface la plus contrainte du projet puisse payer.
+11. **Will `@arthome/contracts` expose a `mini` entry point for zod, with no barrel file?** With the
+    measurement behind it: 93 KB gzipped on the classic entry, 7.5 KB on a tree-shaken `mini` entry,
+    and 85 KB if tree-shaking is not on. I am not reopening the zod decision; I am asking that it be
+    delivered in a form the most constrained surface in the project can afford.
 
-**Deux questions subsidiaires, moins urgentes mais à ne pas perdre.**
+**Two subsidiary questions, less urgent but not to be lost.**
 
-- **Le contrat portera-t-il le décalage horaire calculé par le serveur, en plus de l'identifiant
-  IANA ?** Sans lui, chaque application embarque une base de fuseaux. Avec lui, la règle de D3 est
-  respectée et le calcul n'a lieu qu'une fois.
-- **La taxonomie sera-t-elle servie comme un artefact versionné immuable, par langue et par
-  surface ?** 59,5 Ko bruts pour la taxonomie, 117 Ko pour l'i18n bilingue du storefront : un
-  instantané embarqué qui emporterait tout pèserait sur le démarrage de l'application.
+- **Will the contract carry the timezone offset computed by the server, in addition to the IANA
+  identifier?** Without it, every application embeds a timezone database. With it, D3's rule is
+  respected and the computation happens only once.
+- **Will the taxonomy be served as a versioned immutable artefact, per language and per surface?**
+  59.5 KB raw for the taxonomy, 117 KB for the storefront's bilingual i18n: an embedded snapshot
+  carrying everything would weigh on the app's start-up.
 
 ---
 
 # Confrontation
 
-> Temps 3. J'ai lu `answers-to-surfaces.md`, `context-map.md`, `realtime.md`, `transport.md`,
-> `critical-rules.md`, `DECISIONS.md` et surtout `openapi/storefront.yaml` — mon contrat. Je
-> conteste sur pièces : chaque reproche cite le document, la section ou la ligne.
+> Time 3. I read `answers-to-surfaces.md`, `context-map.md`, `realtime.md`, `transport.md`,
+> `critical-rules.md`, `DECISIONS.md` and above all `openapi/storefront.yaml` — my contract. I
+> contest on evidence: every complaint cites the document, the section or the line.
 >
-> L'index des réponses annonce mes treize questions tenues. **Onze le sont réellement**, et
-> plusieurs le sont mieux que je ne demandais. Deux ne le sont pas, et j'ajoute trois défauts
-> que l'index ne pouvait pas voir parce qu'ils ne répondent à aucune de mes questions : ils
-> répondent à mes **écrans**.
+> The index of answers claims all thirteen of my questions are met. **Eleven actually are**, and
+> several are met better than I asked. Two are not, and I add three defects the index could not
+> see because they answer none of my questions: they answer my **screens**.
+>
+> **Recorded after the fact, at the lead's notice, without touching the argument below.** Three
+> of the five grievances were settled after this section was written: `openPlayback` now declares
+> that `deviceId` carries resumption and returns the same `sessionId`; `ActivePlaybackSession`
+> gained `deviceId` and `isCurrentDevice`; and `following` has a real read. The zod finding in the
+> body of this document produced **D-012** and, one level deeper, `@arthome/core` now has two
+> package entry points so a surface that needs only the rules pulls in no zod at all. The
+> reasoning is left exactly as it was written — it is why those changes happened.
 
 ---
 
-## 1. Ce qui est satisfait — bref, parce que c'est l'essentiel
+## 1. What is satisfied — briefly, because it is the greater part
 
-Mes trois besoins structurants sont devenus des règles du projet, et je le dis avant de taper.
+My three structural needs became project rules, and I say so before I start hitting.
 
-**`servedAt` et `validUntil`** sont la **règle critique n° 9** (`critical-rules.md`), reprises sur
-`EnvelopeMeta` (`storefront.yaml` l. 3536) avec la formulation que j'avais demandée : « un décompte
-se calcule contre `servedAt`, jamais contre l'horloge du client ». `degraded[]` s'y ajoute, que je
-n'avais pas demandé et qui règle le cas « la surcouche par spectateur a échoué, la carte est servie
-quand même ».
+**`servedAt` and `validUntil`** are **critical rule no. 9** (`critical-rules.md`), carried on
+`EnvelopeMeta` (`storefront.yaml` l. 3536) with the wording I had asked for: "a countdown is
+computed against `servedAt`, never against the client's clock". `degraded[]` comes with it, which I
+had not asked for and which settles the case "the per-viewer overlay failed, the card is served
+anyway".
 
-**Le bail de lecture** (`PlaybackTicket`, l. 4589) : 90 s de bail, 120 s de jeton, renouvellement à
-45 s, et la phrase exacte que je cherchais — « `releasePlayback` accélère, **rien n'en dépend** ».
-Mon argument sur l'écran fantôme est cité comme le motif du choix. `qualityCap` est **déclaré**,
-donc je ne proposerai pas « 4K » quand l'appareil est plafonné ; `drmSystem` est choisi par le
-serveur, ce qui m'épargne de deviner sur des appareils que je ne peux pas tester.
+**The playback lease** (`PlaybackTicket`, l. 4589): 90 s lease, 120 s token, renewal at 45 s, and
+the exact sentence I was looking for — "`releasePlayback` speeds things up, **nothing depends on
+it**". My ghost-screen argument is cited as the reason for the choice. `qualityCap` is **declared**,
+so I will not offer "4K" when the device is capped; `drmSystem` is chosen by the server, which
+spares me guessing on devices I cannot test.
 
-**La pagination** : trois demandes, trois accordées, et mieux rédigées que les miennes. Le curseur
-(l. 3367) est opaque sur `(created_at, id)`, **bidirectionnel**, **indépendant de la taille de
-page** — « ce qui est exactement ce qu'une rotation d'écran produit » —, valide 24 h, avec
-`CURSOR_TOO_OLD` et `params.maxAgeHours` (l. 3500). `CursorPageInfo` (l. 3568) porte
-`approximateTotal` **borné** et `totalIsLowerBound`, ce qui rend « Voir plus · N restants » honnête
-sans promettre un comptage qu'un index ne donne pas. Et `emptyReason` + `emptyActionCode` : l'état
-vide n'est pas une erreur, et il porte une issue.
+**Pagination**: three asks, three granted, and better written than mine. The cursor (l. 3367) is
+opaque over `(created_at, id)`, **bidirectional**, **independent of page size** — "which is exactly
+what a screen rotation produces" — valid 24 h, with `CURSOR_TOO_OLD` and `params.maxAgeHours`
+(l. 3500). `CursorPageInfo` (l. 3568) carries a **bounded** `approximateTotal` and
+`totalIsLowerBound`, which makes "Show more · N left" honest without promising a count an index
+cannot give. And `emptyReason` + `emptyActionCode`: the empty state is not an error, and it carries
+a way out.
 
-**Le temps réel** : `counters:subscribe` par **lot d'identifiants**, lot remplacé sans rouvrir le
-canal, tick **différentiel** (`realtime.md` §2.1) — ma demande mot pour mot. Une seule connexion,
-multiplexage par salle. Et §2.4 tranche dans le bon sens : les transitions programmées ne sont
-**pas** poussées, le contrat livre les instants et la surface programme la bascule localement.
+**Realtime**: `counters:subscribe` by **batch of identifiers**, the batch replaced without
+reopening the channel, a **differential** tick (`realtime.md` §2.1) — my ask word for word. One
+connection, multiplexed by room. And §2.4 settles it the right way: scheduled transitions are **not**
+pushed, the contract delivers the instants and the surface schedules the flip locally.
 
-**Le reste, en vrac** : `WatchVerdict` comme forme de premier ordre, `advisory: true` sur la carte
-et opposable à l'ouverture, `validUntil` ≤ 60 s, **jamais sur disque** · idempotence UUIDv7
-« générée **et persistée avant l'envoi** », 24 h, rejeu = réponse d'origine + `Idempotency-Replayed`
-(l. 3353) · `DomainConstants` (l. 3705) sert mes trois seuils — `reminderLeadMinutes` 30,
-`scarcityThresholdBps` 8500, `replayExpiryWarningHours` 6 · `SavedSearch` (l. 4878) avec
-`criteriaVersion`, `criteriaSignature` et `stale`, sur des **identifiants stables et jamais des
-indices de tableau**, plus `newMatchesSinceLastVisit` qui m'économise dix comptages à l'ouverture ·
-`VenueClock` IANA + décalage servi · `Money { amountMinor, currencyCode }` · `Device.sessions[]`,
-qui tranche enfin l'ambiguïté que j'avais relevée · `traceId` recopiable depuis l'écran d'erreur,
-avec mon argument cité · `LabelArtifactRef` et `taxonomyArtifact` par tranche et par surface ·
-l'entrée `mini` de zod (**D-012**).
+**The rest, in brief**: `WatchVerdict` as a first-class shape, `advisory: true` on the card and
+binding at open, `validUntil` ≤ 60 s, **never on disk** · UUIDv7 idempotency "generated **and
+persisted before the send**", 24 h, replay = the original response + `Idempotency-Replayed`
+(l. 3353) · `DomainConstants` (l. 3705) serves my three thresholds — `reminderLeadMinutes` 30,
+`scarcityThresholdBps` 8500, `replayExpiryWarningHours` 6 · `SavedSearch` (l. 4878) with
+`criteriaVersion`, `criteriaSignature` and `stale`, over **stable identifiers and never array
+indices**, plus `newMatchesSinceLastVisit` which saves me ten count queries on open · `VenueClock`
+IANA + served offset · `Money { amountMinor, currencyCode }` · `Device.sessions[]`, which finally
+settles the ambiguity I had raised · `traceId` copyable from the error screen, with my argument
+cited · `LabelArtifactRef` and `taxonomyArtifact` per slice and per surface · the `mini` entry point
+for zod (**D-012**).
 
-Et deux gains que je n'avais pas vus : `quietHours.bypassWhenTicketHeld` (l. 4934) — « on ne rate
-pas un spectacle qu'on a payé parce qu'il commence à 23 h 15 » —, et `availability.fillRateBps`
-qui sert le **taux** et non la capacité, coupant court au calcul en double.
+And two gains I had not seen: `quietHours.bypassWhenTicketHeld` (l. 4934) — "you do not miss a show
+you paid for because it starts at 23:15" — and `availability.fillRateBps`, which serves the **rate**
+rather than the capacity, cutting short the double computation.
 
-**`/v1/me/progress/{dateId}` (l. 1601) reprend ma demande à la virgule** : battement de 30 à 60 s,
-**écriture forcée au passage en arrière-plan**, écriture tardive acceptée même après
-`releasePlayback`, dernier écrivain gagne **avec un rang serveur**, et l'absence de clé
-d'idempotence justifiée plutôt que subie. Je n'ai rien à redire.
-
----
-
-## 2. Ce qui ne l'est pas
-
-### C1 — Un de mes cinq onglets bas n'est servi par aucune lecture
-
-**C'est l'écran non servi.** `following` est l'un des cinq onglets permanents de ma surface, et
-`account/faves` en est la projection dans le compte. Aucun des cinquante-trois points d'entrée de
-`openapi/storefront.yaml` ne rend l'ensemble des artistes qu'un spectateur suit.
-
-Le constat, vérifié trois fois :
-
-- `/v1/artists` (l. 460) accepte `categoryId`, `sort` et `liveOnly`. **Pas de `followedOnly`.**
-- `AccountScreen` (l. 4993) porte profil, abonnement, avoirs, moyens de paiement, sécurité,
-  appareils, préférences, préférences de notification, consentements, suppression. **Aucun suivi.**
-- `/v1/me/follows/{artistId}` (l. 2354) est un **PUT et un DELETE**. La commande existe, la lecture
-  n'existe pas.
-- Recherche de `followedOnly`, `faves`, `favoris`, `followedArtists` sur `storefront.yaml` **et**
-  sur les treize documents de `architecture/` : **zéro occurrence**.
-
-**L'objection prévisible ne tient pas.** `Rail.kind` (l. 4192) contient `followed`, donc l'accueil
-porte une rangée « parce que vous suivez ». Mais un rail est une liste de `DateCard` **bornée et
-composée par le serveur**, et ma page Suivi a deux sections : les artistes suivis **en direct**, et
-les artistes suivis **qui ne le sont pas**, « classés par nom · dernier live ». Un artiste suivi
-**qui n'a aucune date annoncée n'a aucune `DateCard`** — il est donc invisible d'un rail, alors
-qu'il est précisément le contenu de ma seconde section. Une rangée d'accueil ne sert pas un écran.
-
-**Et le contrat se contredit lui-même sur ce point.** `CursorPageInfo.emptyReason` (l. 3595) porte
-la valeur **`no_followed_artist_live`**. Un code d'état vide a été écrit pour une liste qu'aucun
-point d'entrée ne sait produire. C'est la preuve interne que l'écran a été pensé puis perdu.
-
-**Le parcours précis, deux fois cassé.** Onglet « Suivi » : je n'ai rien à appeler, et je ne peux
-pas peindre. Compte → « Mes favoris (N) » : le N n'est calculable par aucun appel. Et la bascule
-d'alerte **par artiste suivi**, qui est un contrôle de cet écran, n'a ni lecture ni écriture —
-`/v1/me/reminders/{dateId}` (l. 2427) pose un rappel **par date**, ce qui est une autre notion :
-un rappel est une promesse datée sur une date précise, une alerte d'artiste est un abonnement
-permanent à ses annonces. Le déclencheur `newEvent` (« nouvelle date annoncée par un artiste
-suivi ») existe pourtant dans `NotificationPreferences`, mais rien ne permet de le régler artiste
-par artiste comme ma surface le propose.
-
-**Ce que je demande** : `GET /v1/me/follows`, paginé au curseur, rendant pour chaque entrée un
-`ArtistSummary` plus `nextDate: DateCard | null`, `lastLiveAt` et `alertsEnabled` — les trois
-choses que ma page affiche et que rien d'autre ne porte. Plus `followedCount` dans `AccountScreen`
-(voir C5). Plus une écriture d'alerte par artiste, ou la décision explicite que suivre et être
-alerté sont le même geste — auquel cas `/v1/me/follows/{artistId}` doit le dire, car sa
-description affirme aujourd'hui l'inverse (« **Suivre et être alerté sont deux réglages** »,
-l. 2360) sans offrir le second.
-
-### C2 — Aucun point d'entrée ne résout un lien public : trois ouvertures à froid sont cassées
-
-Le contrat **sert** un identifiant public partout : `DateCard.slug` et `DateCard.canonicalUrl`
-(l. 3968 et 3956, « servie, jamais construite par la surface »), `ArtistSummary.slug` (l. 4286),
-`NotificationEntry.deepLink` (l. 4921). Et il ne l'accepte **nulle part** : `DateId` (l. 3402) et
-`ArtistId` (l. 3411) sont `format: uuid`. Les cinq occurrences de `slug` dans le fichier sont
-toutes en sortie. Il n'existe ni `GET /v1/dates/by-slug/{slug}`, ni `GET /v1/resolve?url=`.
-`/v1/account-deep-link` (l. 2117) va dans l'autre sens : il **produit** un lien vers le compte.
-
-C'était la **forme 16** de mes besoins, nommée « un identifiant public stable, résoluble en un seul
-appel, **sans catalogue en cache** ». Elle n'a pas été traitée, et elle n'était pas une de mes
-treize questions — c'est pourquoi l'index ne la voit pas.
-
-**Les trois parcours, tous propres au mobile :**
-
-1. **Notification poussée.** « Compagnie Verticale passe en direct », 20 h 58. L'application a été
-   tuée depuis des heures. L'utilisateur tape la notification : je démarre à froid avec une URL
-   `https://arthome.fr/fr/d/nuit-blanche-2026-09-21` et **rien d'autre**. Je ne peux pas l'ouvrir.
-   C'est le parcours qui justifie l'existence même des notifications.
-2. **Lien partagé.** Un ami envoie l'URL par messagerie. Même impasse.
-3. **Relance après une mise à mort sur un écran profond.** J'ai persisté « dernier écran et son
-   argument », comme mon besoin n° 5 le prévoit. Si j'ai persisté un UUID, il n'est pas partageable
-   et il n'est pas ce que la notification transporte ; si j'ai persisté l'URL, je ne sais pas la
-   résoudre.
-
-**Et le trou dépasse ma surface.** `DateCard.canonicalUrl` précise que c'est « ce que la TV encode
-dans un QR pour l'action Partager, puisqu'il n'y a ni presse-papiers ni messagerie utile sur un
-téléviseur ». Le téléphone qui scanne ce QR est **le mien**, et il ne sait pas l'ouvrir. Le
-parcours de partage de la TV s'arrête sur mon écran d'accueil.
-
-**Ce que je demande** : un point d'entrée de résolution, prenant une URL canonique ou un couple
-(type, slug), rendant le `DateCard` ou l'`ArtistSummary` complet, **accessible sans session**
-(un lien partagé s'ouvre souvent en visiteur) et **en un seul aller-retour**.
-
-### C3 — `/v1/changes` ne couvre pas le scénario des huit heures, sur trois points
-
-Ma question 3 était « la plus coûteuse du document ». La réponse est excellente sur le principe —
-`/v1/changes` rend « une liste d'invalidations, **pas les données** », une requête au lieu de
-douze — et incomplète sur trois détails qui décident de son utilité réelle.
-
-**(a) Aucune fenêtre de rétention n'est énoncée.** `realtime.md` §5 borne la reprise WebSocket à
-« 30 minutes ou 5 000 événements par flux », ce qui est parfaitement dimensionné pour un hoquet de
-réseau et **inutile pour mon cas** : huit heures d'arrière-plan sont deux ordres de grandeur
-au-delà. Le §5 ajoute « la reprise WebSocket couvre les minutes ; la lecture HTTP couvre les
-heures » — mais cette phrase est écrite à propos du **journal durable du studio dans Kafka**, dans
-un paragraphe sur la console de régie, et **ne dit rien de `/changes`**. Ni le point d'entrée
-(l. 238) ni `ChangeFeed` (l. 3858) ne disent jusqu'où `since` peut remonter. Si la réponse à
-`since = maintenant − 8 h` est `complete: false`, alors « recharge tout » sur un réseau cellulaire
-est **exactement** le coût que ma question existait pour éviter, et je l'aurai payé en une requête
-au lieu de quarante — ce qui est un progrès, mais pas la réponse.
-
-**(b) Le vocabulaire d'étiquettes est plus étroit que ce que le canal temps réel transporte.** La
-salle `viewer:{profileId}` (`realtime.md` §2) porte « badge de notifications, droits recalculés
-après un achat, **panier modifié ailleurs**, révocation ». `ChangeFeed.invalidated` (l. 3870) porte
-huit étiquettes : `date:{id}`, `date:{id}:availability`, `artist:{id}`, `category:{id}`,
-`account:tickets`, `account:orders`, `account:subscription`, `home:rails`.
-
-**Ni le panier ni les notifications n'y figurent.** Or ce sont les deux pastilles de mon en-tête,
-présentes sur **tous** mes écrans, et le panier « vit sur le compte » (`Cart`, l. 4444) — donc le
-web peut le modifier pendant que mon application dort. Au retour après huit heures le canal
-WebSocket est mort depuis longtemps : `/changes` est mon **seul** chemin, et il ne peut pas me dire
-que mon panier a changé. Manquent aussi `account:saved-searches`, `account:watchlist`,
-`account:preferences` et `account:devices` — un appareil révoqué depuis le web doit m'atteindre.
-
-**(c) `since` est un instant unique, alors que je détiens N réponses à N instants différents.**
-Mon accueil date de T1, mon compte de T2, ma catégorie de T3. Un seul `since` m'oblige à envoyer
-**le plus ancien**, ce qui maximise l'ensemble de changements rendu et donc la probabilité de
-`complete: false`. C'est une pénalité mécanique, et elle frappe d'autant plus fort que
-l'application est restée longtemps fermée — c'est-à-dire précisément dans le cas visé.
-
-**Ce que je demande** : une fenêtre de rétention **énoncée dans le contrat** et alignée sur la
-durée de vie du curseur (24 h) ; les six étiquettes manquantes au vocabulaire ; et un `since`
-acceptable **par étiquette**, pour ne pas faire payer à l'accueil la vétusté du compte.
-
-### C4 — La reprise de sa propre session de lecture est promise dans l'index, absente du contrat
-
-`answers-to-surfaces.md`, mobile Q5, écrit : « tu peux **reprendre ta propre session** identifiée
-par l'appareil ». Je ne la trouve pas.
-
-`POST /v1/playback/{dateId}/open` (l. 1395) prend bien un `deviceId` dans son corps, mais **sa
-description ne dit nulle part** qu'un `open` sur un `deviceId` détenant déjà un bail sur la même
-date le récupère ou le remplace. Et `ActivePlaybackSession` (l. 4719), servie avec le refus
-`CONCURRENT_LIMIT_REACHED` « pour que la surface propose d'en libérer une », porte `sessionId`,
-`deviceLabel`, `city` et `openedAt` — **pas `deviceId`**, pas de `isCurrentDevice`. Je ne peux donc
-pas reconnaître laquelle des sessions listées est la mienne. Deux téléphones d'un même foyer
-étiquetés « Téléphone » sont indiscernables.
-
-**Le parcours précis.** Le système tue l'application à la dixième seconde d'un bail de 90 s.
-L'utilisateur retape l'icône aussitôt — c'est le geste le plus courant après une disparition
-inexpliquée. `PlaybackTicket` est `Cache-Control: no-store`, et le contrat a raison de l'exiger :
-je n'ai donc **plus le `sessionId`**, et je ne peux ni renouveler ni libérer. Je rappelle `open`,
-je reçois `CONCURRENT_LIMIT_REACHED`, et je dois afficher à l'utilisateur une liste où je lui
-demande de libérer **son propre téléphone, sans pouvoir le lui désigner**.
-
-**Et ce n'est pas un désagrément, c'est un blocage.** `ViewerContext` porte
-`concurrentStreamsAllowed`, et les exemples du contrat lui-même le fixent : ligne 219 et ligne 645,
-`plan: { tier: pass, ..., concurrentStreamsAllowed: 1 }`. Un abonné `pass` — la formule médiane,
-donc la plus répandue — est donc **verrouillé hors de son propre appareil pendant quatre-vingts
-secondes** après chaque mise à mort du système, sans issue qu'il puisse comprendre.
-
-Le bail à 90 s est la bonne réponse et je l'ai obtenue. **Ce qui manque est le dernier mètre**, et
-il est d'autant plus regrettable que le reste du raisonnement est juste.
-
-**Ce que je demande** : que `open` sur un `deviceId` détenant déjà un bail sur la **même date**
-le **reprenne** — même session, bail prolongé, pas de refus —, et que `ActivePlaybackSession` porte
-`deviceId` et `isCurrentDevice` pour que le refus reste lisible dans les autres cas.
-
-### C5 — Le menu du compte coûte six appels pour six pastilles, et l'en-tête deux de plus à froid
-
-`transport.md` l. 31 annonce « appels internes **par écran** : 1 à 4, tous parallèles ». C'est
-l'éventail du BFF vers les services, et il est bon. **Ce n'est pas ce que je paie.** Le nombre
-d'allers-retours **du client vers le BFF** n'est budgété nulle part, et c'est le seul qui se compte
-en latence cellulaire — à 150 ms d'aller-retour, quatre appels font six cents millisecondes avant
-que le premier écran soit juste.
-
-**Le menu du compte.** `AccountScreen` (l. 4993) se présente comme « **un** agrégat pour les onze
-sections » et tient magnifiquement cette promesse sur le **contenu**. Mais le menu affiche un
-**effectif par section** — à venir, passés, favoris, recherches enregistrées, commandes,
-notifications non lues — et `AccountScreen` **n'en porte aucun**. Pour peindre six pastilles je
-dois appeler `/v1/me/account`, `/v1/me/tickets?window=upcoming`, `/v1/me/tickets?window=past`,
-`/v1/me/saved-searches`, `/v1/me/orders` et `/v1/me/notifications` : **six allers-retours**, et le
-septième — les favoris — n'existe pas du tout (C1). Un agrégat qui évite dix appels de contenu et
-en impose six de comptage n'a gagné que la moitié de son pari.
-
-**L'en-tête, à chaque démarrage à froid.** Deux pastilles y vivent sur **tous** mes écrans : les
-notifications non lues et le panier. `ViewerContext` (l. 3810) est explicitement « le budget entier
-de l'écran d'amorçage » et porte deviceId, profils, compte, formule, préférences, constantes,
-catalogue de libellés, taxonomie et point d'entrée temps réel — **mais ni `unreadCount` ni le
-nombre de lignes du panier**. Un démarrage à froid complet coûte donc `POST /v1/devices` (premier
-lancement) + `GET /v1/viewer-context` + `GET /v1/home` + `GET /v1/me/notifications` +
-`GET /v1/cart` = **cinq allers-retours** avant que mon premier écran soit entièrement juste, dont
-deux uniquement pour deux nombres.
-
-**Ce que je demande** : un objet `counts` sur `AccountScreen`, et `unreadNotifications` +
-`cartLineCount` sur `ViewerContext`. Ce sont des compteurs déjà projetés — `unreadCount` est
-d'ailleurs déjà servi comme « global, pas celui de la page » par `/v1/me/notifications` (l. 2702),
-donc la valeur existe. Le coût serveur est nul, le gain client est de quatre allers-retours sur le
-parcours le plus fréquent de l'application.
+**`/v1/me/progress/{dateId}` (l. 1601) reproduces my ask to the comma**: a 30-to-60 s heartbeat, a
+**forced write when going to the background**, a late write accepted even after `releasePlayback`,
+last writer wins **with a server rank**, and the absence of an idempotency key justified rather
+than merely suffered. I have nothing to add.
 
 ---
 
-## 3. Ce qui est satisfait autrement — et si ça me va
+## 2. What is not
 
-### S1 — La langue n'est servie que sur la fiche : ça ne me va qu'à moitié
+### C1 — One of my five bottom tabs is served by no read at all
 
-`DateCard` porte `languageDependency` (l. 4079) avec le vocabulaire **`none | helpful | essential`**
-— D1 appliqué, `light` écarté, ma remontée du temps 1 tenue. Mais `spokenLanguages`,
-`subtitleLanguages` et `surtitleLanguages` ne sont que sur `DateDetail` (l. 4109-4111).
+**This is the unserved screen.** `following` is one of the five permanent tabs of my surface, and
+`account/faves` is its projection inside the account. None of the fifty-three endpoints in
+`openapi/storefront.yaml` returns the set of artists a viewer follows.
 
-Conséquence : une **carte** ne peut pas afficher « Joué en français · Sous-titres FR, EN », et
-`isUnderstandable(spectacle, mes langues)` n'est pas évaluable sur une liste. Or ce n'est pas un
-détail de fiche : c'est un élément de **décision** — un spectateur qui ne parle pas français écarte
-une carte sur cette ligne, et la barrière de langue est la règle la plus visible de la surface
-(c'est le raisonnement de `helpers.js` lui-même : « ce qui gêne réellement un spectateur de
-spectacle vivant n'est pas le droit mais la compréhension »).
+The finding, checked three times:
 
-Sur les **facettes**, en revanche, la conception est bonne et je n'ai rien à redire : `Facet`
-(l. 4313) est générique, « jamais une énumération de facettes au contrat », donc une facette de
-langue peut apparaître sans changement de contrat. **Ça me va pour la recherche, pas pour la
-carte.** Trois tableaux de codes ISO à deux lettres coûtent quelques dizaines d'octets.
+- `/v1/artists` (l. 460) accepts `categoryId`, `sort` and `liveOnly`. **No `followedOnly`.**
+- `AccountScreen` (l. 4993) carries profile, subscription, credits, payment methods, security,
+  devices, preferences, notification preferences, consents, deletion. **No follows.**
+- `/v1/me/follows/{artistId}` (l. 2354) is a **PUT and a DELETE**. The command exists, the read does
+  not.
+- Searching for `followedOnly`, `faves`, `favoris`, `followedArtists` across `storefront.yaml`
+  **and** the thirteen documents in `architecture/`: **zero occurrences**.
 
-### S2 — Le troisième canal est `in_app`, pas SMS : ça me va
+**The predictable objection does not hold.** `Rail.kind` (l. 4192) contains `followed`, so the home
+screen carries a "because you follow" row. But a rail is a **bounded, server-composed** list of
+`DateCard`, and my Following page has two sections: followed artists who are **live**, and followed
+artists who are **not**, "sorted by name · last live". A followed artist **with no announced date
+has no `DateCard`** — so they are invisible from a rail, while being precisely the content of my
+second section. A home row does not serve a screen.
 
-J'avais relevé que rien ne nommait le troisième canal et que le profil suggérait le SMS (« pour les
-SMS de rappel »). Le contrat tranche `push | email | in_app` (`SavedSearch.channels` l. 4906,
-`NotificationPreferences.triggers` l. 4930), avec mon propre argument — coût par message,
-réglementation propre, prestataire de plus, valeur non éprouvée. **C'est le bon choix.** Une
-conséquence à consigner : le champ téléphone du profil perd la justification qu'il affichait, et
-`phoneVerified` reste dans `AccountScreen` sans usage déclaré.
+**And the contract contradicts itself on this point.** `CursorPageInfo.emptyReason` (l. 3595)
+carries the value **`no_followed_artist_live`**. An empty-state code was written for a list no
+endpoint knows how to produce. That is the internal proof that the screen was thought about and
+then lost.
 
-### S3 — Le mode de tchat : résolu par recadrage, et mieux
+**The precise journey, broken twice.** "Following" tab: I have nothing to call, and I cannot paint.
+Account → "My favourites (N)": the N is computable by no call. And the alert toggle **per followed
+artist**, which is a control on that screen, has neither read nor write —
+`/v1/me/reminders/{dateId}` (l. 2427) sets a reminder **per date**, which is a different notion: a
+reminder is a dated promise about one specific date, an artist alert is a standing subscription to
+their announcements. The `newEvent` trigger ("new date announced by a followed artist") does exist
+in `NotificationPreferences`, but nothing allows setting it artist by artist as my surface offers.
 
-Ma question était « le mode de la date ou la préférence du spectateur, lequel l'emporte ? ». Le
-contrat ne la tranche pas, il la dissout : `chatMode` sur la date (`open | emoji | read_only | off`)
-est le **régime**, et `ViewerPreferences.account.chatOpenByDefault` est une préférence de
-**panneau**. Ce sont deux choses, et ma maquette les confondait. **Ça me va, et c'est plus propre
-que ce que je décrivais.**
+**What I ask**: `GET /v1/me/follows`, cursor-paginated, returning for each entry an `ArtistSummary`
+plus `nextDate: DateCard | null`, `lastLiveAt` and `alertsEnabled` — the three things my page
+displays and nothing else carries. Plus `followedCount` in `AccountScreen` (see C5). Plus a
+per-artist alert write, or the explicit decision that following and being alerted are the same
+gesture — in which case `/v1/me/follows/{artistId}` must say so, since its description currently
+asserts the opposite ("**Following and being alerted are two settings**", l. 2360) without offering
+the second.
 
-### S4 — `nature` n'a pas de membre pour « pas de réseau » : réserve
+### C2 — No endpoint resolves a public link: three cold openings are broken
 
-`Error.nature` (l. 3613) vaut `refused | unavailable | offline_forbidden`, et
-`offline_forbidden` est une trouvaille : un refus **local, jamais émis par le serveur**, au
-vocabulaire « pour que la surface n'ait qu'une seule forme d'erreur à rendre ». C'est exactement
-l'esprit de ma demande.
+The contract **serves** a public identifier everywhere: `DateCard.slug` and `DateCard.canonicalUrl`
+(l. 3968 and 3956, "served, never built by the surface"), `ArtistSummary.slug` (l. 4286),
+`NotificationEntry.deepLink` (l. 4921). And it accepts one **nowhere**: `DateId` (l. 3402) and
+`ArtistId` (l. 3411) are `format: uuid`. All five occurrences of `slug` in the file are outbound.
+There is no `GET /v1/dates/by-slug/{slug}`, no `GET /v1/resolve?url=`. `/v1/account-deep-link`
+(l. 2117) goes the other way: it **produces** a link to the account.
 
-Mais il signifie « **cette commande** est interdite hors ligne », pas « **cette lecture** attend le
-réseau ». Mon cinquième état — celui où aucune réponse n'est jamais arrivée, que le client est seul
-à pouvoir constater, et qui ne doit surtout pas s'afficher comme une panne de la plateforme —
-n'a pas de nom. Chaque surface va l'inventer. C'est la faute que la **règle critique n° 15**
-décrit : « une constante d'exploitation a un document propriétaire ; ailleurs on y renvoie, jamais
-on ne la recopie ». Demande minime : ajouter `network_unreachable` au vocabulaire, marqué
-client-seul comme l'est déjà `offline_forbidden`.
+This was **shape 16** of my needs, named "a stable public identifier, resolvable in a single call,
+**with no catalogue in cache**". It was not addressed, and it was not one of my thirteen questions —
+which is why the index does not see it.
 
-### S5 — Le débit n'est servi nulle part : réserve, et c'est la même faute
+**The three journeys, all specific to mobile:**
 
-`qualityCap` est un plafond, `ViewerPreferences.device.defaultQuality` est une préférence
-(`auto | low | medium | high`), `dataSaver` est un booléen. **Rien ne porte le débit d'une variante
-ni une estimation de consommation.** Or ma surface affiche « la 4K consomme environ 12 Go par
-heure » pour justifier ce réglage, et `DomainConstants` (l. 3705) ne porte pas ce nombre. Il
-finira donc codé en dur sur ma surface, puis recopié différemment sur la TV — c'est le onzième
-exemplaire de la faute que j'ai cataloguée onze fois au temps 1, et elle est interdite par la règle
-critique n° 15. Demande : un débit ou une consommation approximative par variante dans
-`PlaybackTicket`, ou une constante de domaine.
+1. **Push notification.** "Compagnie Verticale is going live", 20:58. The app has been killed for
+   hours. The user taps the notification: I start cold with a URL
+   `https://arthome.fr/fr/d/nuit-blanche-2026-09-21` and **nothing else**. I cannot open it. That is
+   the journey that justifies the very existence of notifications.
+2. **Shared link.** A friend sends the URL by message. Same dead end.
+3. **Relaunch after a kill on a deep screen.** I persisted "the last screen and its argument", as my
+   need 5 requires. If I persisted a UUID, it is not shareable and it is not what the notification
+   carries; if I persisted the URL, I do not know how to resolve it.
 
-### S6 — Un refus territorial sans issue vers les autres dates
+**And the hole reaches beyond my surface.** `DateCard.canonicalUrl` states that it is "what the TV
+encodes into a QR code for the Share action, since a television has neither a clipboard nor a usable
+messaging app". The phone that scans that QR code is **mine**, and it does not know how to open it.
+The TV's share journey stops on my home screen.
 
-`rights.reasonCode` est un **code** (`co_production | broadcaster | festival`, l. 4066) et non une
-phrase : ma remontée est tenue, et la fuite d'i18n de `shared/` est corrigée. `WatchVerdict` porte
-`reasonParams` pour « le territoire, la formule requise, l'instant d'expiration ».
+**What I ask**: a resolution endpoint, taking a canonical URL or a (type, slug) pair, returning the
+complete `DateCard` or `ArtistSummary`, **accessible without a session** (a shared link often opens
+as a guest) and **in a single round trip**.
 
-Mais ma copie promet, mot pour mot : « Cette date fait exception : {raison}. **Les autres dates de
-ce spectacle restent accessibles.** » Et `fallbackAction` (l. 3930) vaut
-`buy_seat | join_waitlist | subscribe | watch_preview | see_replay_policy | none` : **aucun code ne
-dit « voir les autres dates »**. `DateDetail.seriesDates` existe (l. 4136) mais n'est pas joignable
-depuis un refus reçu sur une carte. Mon besoin disait : « une erreur qui promet une issue sans la
-porter oblige le client à une seconde requête au pire moment ». C'est le cas ici. Demande : un
-`see_other_dates` au vocabulaire, et les identifiants de la série dans `reasonParams`.
+### C3 — `/v1/changes` does not cover the eight-hour scenario, on three counts
+
+My question 3 was "the most expensive in the document". The answer is excellent in principle —
+`/v1/changes` returns "a list of invalidations, **not the data**", one request instead of twelve —
+and incomplete on three details that decide its real usefulness.
+
+**(a) No retention window is stated.** `realtime.md` §5 bounds the WebSocket resume to "30 minutes
+or 5,000 events per stream", which is perfectly sized for a network hiccup and **useless for my
+case**: eight hours in the background is two orders of magnitude beyond it. §5 adds "the WebSocket
+resume covers minutes; the HTTP read covers hours" — but that sentence is written about the
+**durable studio journal in Kafka**, in a paragraph about the run desk console, and **says nothing
+about `/changes`**. Neither the endpoint (l. 238) nor `ChangeFeed` (l. 3858) says how far back
+`since` may reach. If the answer to `since = now − 8 h` is `complete: false`, then "reload
+everything" over cellular is **exactly** the cost my question existed to avoid, and I will have paid
+it in one request instead of forty — which is progress, but not the answer.
+
+**(b) The tag vocabulary is narrower than what the realtime channel carries.** The
+`viewer:{profileId}` room (`realtime.md` §2) carries "notification badge, rights recomputed after a
+purchase, **cart modified elsewhere**, revocation". `ChangeFeed.invalidated` (l. 3870) carries eight
+tags: `date:{id}`, `date:{id}:availability`, `artist:{id}`, `category:{id}`, `account:tickets`,
+`account:orders`, `account:subscription`, `home:rails`.
+
+**Neither the cart nor the notifications appear there.** Yet those are the two badges in my header,
+present on **all** my screens, and the cart "lives on the account" (`Cart`, l. 4444) — so the web
+can change it while my app sleeps. On returning after eight hours the WebSocket channel has long
+been dead: `/changes` is my **only** path, and it cannot tell me my cart changed. Also missing:
+`account:saved-searches`, `account:watchlist`, `account:preferences` and `account:devices` — a
+device revoked from the web must reach me.
+
+**(c) `since` is a single instant, while I hold N responses at N different instants.** My home
+screen dates from T1, my account from T2, my category page from T3. A single `since` forces me to
+send **the oldest**, which maximises the change set returned and therefore the probability of
+`complete: false`. It is a mechanical penalty, and it bites harder the longer the app has been
+closed — that is to say, precisely in the case it targets.
+
+**What I ask**: a retention window **stated in the contract** and aligned with the cursor's lifetime
+(24 h); the six missing tags added to the vocabulary; and a `since` acceptable **per tag**, so the
+home screen does not pay for the staleness of the account.
+
+### C4 — Reclaiming one's own playback session is promised in the index and absent from the contract
+
+`answers-to-surfaces.md`, mobile Q5, writes: "you can **reclaim your own session** identified by the
+device". I cannot find it.
+
+`POST /v1/playback/{dateId}/open` (l. 1395) does take a `deviceId` in its body, but **its
+description nowhere says** that an `open` from a `deviceId` already holding a lease on the same date
+recovers or replaces it. And `ActivePlaybackSession` (l. 4719), served with the
+`CONCURRENT_LIMIT_REACHED` refusal "so the surface can offer to release one", carries `sessionId`,
+`deviceLabel`, `city` and `openedAt` — **not `deviceId`**, no `isCurrentDevice`. So I cannot
+recognise which of the listed sessions is mine. Two phones in one household labelled "Phone" are
+indistinguishable.
+
+**The precise journey.** The OS kills the app at the tenth second of a 90 s lease. The user taps the
+icon again immediately — the commonest gesture after an unexplained disappearance. `PlaybackTicket`
+is `Cache-Control: no-store`, and the contract is right to require it: I therefore **no longer have
+the `sessionId`**, and I can neither renew nor release. I call `open` again, I receive
+`CONCURRENT_LIMIT_REACHED`, and I have to show the user a list asking them to release **their own
+phone, without being able to point at it**.
+
+**And this is not an annoyance, it is a block.** `ViewerContext` carries
+`concurrentStreamsAllowed`, and the contract's own examples fix it: line 219 and line 645,
+`plan: { tier: pass, ..., concurrentStreamsAllowed: 1 }`. A `pass` subscriber — the middle plan,
+therefore the commonest — is thus **locked out of their own device for eighty seconds** after every
+OS kill, with no way out they can understand.
+
+The 90 s lease is the right answer and I got it. **What is missing is the last metre**, and it is
+all the more regrettable because the rest of the reasoning is sound.
+
+**What I ask**: that `open` from a `deviceId` already holding a lease on the **same date**
+**reclaim** it — same session, lease extended, no refusal — and that `ActivePlaybackSession` carry
+`deviceId` and `isCurrentDevice` so the refusal stays legible in the other cases.
+
+### C5 — The account menu costs six calls for six badges, and the header two more on cold start
+
+`transport.md` l. 31 announces "internal calls **per screen**: 1 to 4, all parallel". That is the
+BFF's fan-out to the services, and it is good. **That is not what I pay.** The number of round trips
+**from the client to the BFF** is budgeted nowhere, and it is the only one measured in cellular
+latency — at 150 ms per round trip, four calls make six hundred milliseconds before the first screen
+is correct.
+
+**The account menu.** `AccountScreen` (l. 4993) presents itself as "**one** aggregate for the eleven
+sections" and keeps that promise magnificently on **content**. But the menu displays a **count per
+section** — upcoming, past, favourites, saved searches, orders, unread notifications — and
+`AccountScreen` **carries none of them**. To paint six badges I must call `/v1/me/account`,
+`/v1/me/tickets?window=upcoming`, `/v1/me/tickets?window=past`, `/v1/me/saved-searches`,
+`/v1/me/orders` and `/v1/me/notifications`: **six round trips**, and the seventh — favourites — does
+not exist at all (C1). An aggregate that avoids ten content calls and imposes six counting calls has
+won only half its bet.
+
+**The header, on every cold start.** Two badges live there on **all** my screens: unread
+notifications and the cart. `ViewerContext` (l. 3810) is explicitly "the entire budget of the boot
+screen" and carries deviceId, profiles, account, plan, preferences, constants, label catalogue,
+taxonomy and the realtime entry point — **but neither `unreadCount` nor the cart's line count**. A
+complete cold start therefore costs `POST /v1/devices` (first launch) + `GET /v1/viewer-context` +
+`GET /v1/home` + `GET /v1/me/notifications` + `GET /v1/cart` = **five round trips** before my first
+screen is entirely correct, two of them for two numbers alone.
+
+**What I ask**: a `counts` object on `AccountScreen`, and `unreadNotifications` + `cartLineCount` on
+`ViewerContext`. These are already-projected counters — `unreadCount` is in fact already served as
+"global, not the page's" by `/v1/me/notifications` (l. 2702), so the value exists. The server cost is
+nil, the client gain is four round trips on the most frequent journey in the application.
 
 ---
 
-## 4. Mon avertissement du temps 1, confronté
+## 3. What is satisfied by other means — and whether that suits me
 
-J'avais vérifié que **quatorze des seize fonctions** de `shared/helpers.js` ne sont jamais appelées
-par ma maquette, et écrit que leur contrat devait être « **conçu, pas observé** ». Voici ce qui a
-été conçu, et mon verdict.
+### S1 — Language is served on the detail page only: that suits me only halfway
 
-| Fonction jamais exercée | Ce qui a été conçu | Verdict |
+`DateCard` carries `languageDependency` (l. 4079) with the vocabulary
+**`none | helpful | essential`** — D1 applied, `light` dropped, my time-1 finding upheld. But
+`spokenLanguages`, `subtitleLanguages` and `surtitleLanguages` appear only on `DateDetail`
+(l. 4109–4111).
+
+Consequence: a **card** cannot display "Performed in French · Subtitles FR, EN", and
+`isUnderstandable(show, my languages)` cannot be evaluated over a list. And that is not a detail of
+the detail page: it is a **decision** input — a viewer who does not speak French discards a card on
+that line, and the language barrier is the most visible rule on the surface (that is `helpers.js`'s
+own reasoning: "what really gets in a live-performance viewer's way is not the rights but the
+understanding").
+
+On **facets**, by contrast, the design is right and I have nothing to say: `Facet` (l. 4313) is
+generic, "never an enumeration of facets in the contract", so a language facet can appear with no
+change of contract. **That suits me for search, not for the card.** Three arrays of two-letter ISO
+codes cost a few tens of bytes.
+
+### S2 — The third channel is `in_app`, not SMS: that suits me
+
+I had noted that nothing named the third channel and that the profile hinted at SMS ("for SMS
+reminders"). The contract settles on `push | email | in_app` (`SavedSearch.channels` l. 4906,
+`NotificationPreferences.triggers` l. 4930), with my own argument — cost per message, its own
+regulation, one more vendor, value never tested. **It is the right choice.** One consequence to
+record: the profile's phone field loses the justification it displayed, and `phoneVerified` remains
+in `AccountScreen` with no declared use.
+
+### S3 — Chat mode: resolved by reframing, and better
+
+My question was "the date's mode or the viewer's preference — which wins?". The contract does not
+settle it, it dissolves it: `chatMode` on the date (`open | emoji | read_only | off`) is the
+**regime**, and `ViewerPreferences.account.chatOpenByDefault` is a **panel** preference. They are
+two things, and my mockup conflated them. **That suits me, and it is cleaner than what I
+described.**
+
+### S4 — `nature` has no member for "no network": a reservation
+
+`Error.nature` (l. 3613) is `refused | unavailable | offline_forbidden`, and `offline_forbidden` is
+an inspired addition: a **local refusal, never emitted by the server**, in the vocabulary "so the
+surface has only one shape of error to render". That is exactly the spirit of my ask.
+
+But it means "**this command** is forbidden offline", not "**this read** is waiting for the
+network". My fifth state — the one where no response ever arrived, which only the client can
+observe, and which must above all not display as a platform failure — has no name. Every surface
+will invent one. That is the fault **critical rule no. 15** describes: "an operational constant has
+one owning document; elsewhere you refer to it, never copy it". A minimal ask: add
+`network_unreachable` to the vocabulary, marked client-only as `offline_forbidden` already is.
+
+### S5 — Bitrate is served nowhere: a reservation, and it is the same fault
+
+`qualityCap` is a ceiling, `ViewerPreferences.device.defaultQuality` is a preference
+(`auto | low | medium | high`), `dataSaver` is a boolean. **Nothing carries a variant's bitrate or
+an estimate of consumption.** Yet my surface displays "4K uses about 12 GB per hour" to justify that
+setting, and `DomainConstants` (l. 3705) does not carry that number. It will therefore end up
+hard-coded on my surface, then recopied differently on the TV — the eleventh instance of the fault I
+catalogued eleven times at time 1, and one forbidden by critical rule no. 15. Ask: a bitrate or an
+approximate consumption per variant in `PlaybackTicket`, or a domain constant.
+
+### S6 — A territorial refusal with no way through to the other dates
+
+`rights.reasonCode` is a **code** (`co_production | broadcaster | festival`, l. 4066) and not a
+sentence: my finding is upheld, and `shared/`'s i18n leak is fixed. `WatchVerdict` carries
+`reasonParams` for "the territory, the plan required, the expiry instant".
+
+But my copy promises, word for word: "This date is an exception: {reason}. **The other dates of this
+show remain available.**" And `fallbackAction` (l. 3930) is
+`buy_seat | join_waitlist | subscribe | watch_preview | see_replay_policy | none`: **no code says
+"see the other dates"**. `DateDetail.seriesDates` exists (l. 4136) but is not reachable from a
+refusal received on a card. My need said: "an error that promises a way out without carrying it
+forces the client into a second request at the worst possible moment". That is the case here. Ask: a
+`see_other_dates` in the vocabulary, and the run's identifiers in `reasonParams`.
+
+---
+
+## 4. My time-1 warning, confronted
+
+I had verified that **fourteen of the sixteen functions** in `shared/helpers.js` are never called by
+my mockup, and written that their contract had to be "**designed, not observed**". Here is what was
+designed, and my verdict.
+
+| Function never exercised | What was designed | Verdict |
 |---|---|---|
-| `isWatchable` | `WatchVerdict`, dix codes de refus, `fallbackAction`, `validUntil` ≤ 60 s | **tient** |
-| `availableIn`, `rightsNote` | `rights.scope` / `blackoutCountries` / `reasonCode` + `OUT_OF_TERRITORY` avec `reasonParams` | **tient, sauf l'issue** (S6) |
-| `languageLine`, `hasLanguageBarrier` | `languageDependency` sur la carte, les langues sur la fiche seule | **tient à moitié** (S1) |
-| `seatsLabel`, `isSoldOut` | `availability` : `seatsAvailable`, `waitlistCount`, `fillRateBps`, `soldOut` | **tient, et mieux** |
-| `progressOf` | `liveEdgeSec` + `startsAt` + `runtimeMin`, dérivé contre `servedAt` | **tient** |
-| `viewersOf` | `viewers` nullable — « absent, jamais zéro » — plus `counters:tick` différentiel | **tient** |
-| `devicesOf` | `Device` + `sessions[]`, appareil et session enfin distingués ; ma remarque citée en `context-map.md` l. 610 | **tient** |
-| `alertsOf` | `NotificationEntry` + `SavedSearch` + `newMatchesSinceLastVisit` | **tient, sauf l'alerte par artiste** (C1) |
-| `resumeOf` | `resumePoint`, `viewerProgress`, `/v1/me/progress` avec sa cadence | **tient entièrement** |
-| `plans` | `Plan`, `Subscription`, `concurrentStreamsAllowed` servi | **tient** |
-| `messageState`, `chatOf` | `badge` **dérivé** par `moderationBadgeOf`, préséance écrite, trois axes séparés côté modèle, messages retirés filtrés à la source | **conçu, non éprouvé** |
+| `isWatchable` | `WatchVerdict`, ten refusal codes, `fallbackAction`, `validUntil` ≤ 60 s | **holds** |
+| `availableIn`, `rightsNote` | `rights.scope` / `blackoutCountries` / `reasonCode` + `OUT_OF_TERRITORY` with `reasonParams` | **holds, except the way out** (S6) |
+| `languageLine`, `hasLanguageBarrier` | `languageDependency` on the card, the languages on the detail page only | **holds halfway** (S1) |
+| `seatsLabel`, `isSoldOut` | `availability`: `seatsAvailable`, `waitlistCount`, `fillRateBps`, `soldOut` | **holds, and better** |
+| `progressOf` | `liveEdgeSec` + `startsAt` + `runtimeMin`, derived against `servedAt` | **holds** |
+| `viewersOf` | `viewers` nullable — "absent, never zero" — plus a differential `counters:tick` | **holds** |
+| `devicesOf` | `Device` + `sessions[]`, device and session finally distinguished; my remark cited in `context-map.md` l. 610 | **holds** |
+| `alertsOf` | `NotificationEntry` + `SavedSearch` + `newMatchesSinceLastVisit` | **holds, except the per-artist alert** (C1) |
+| `resumeOf` | `resumePoint`, `viewerProgress`, `/v1/me/progress` with its cadence | **holds entirely** |
+| `plans` | `Plan`, `Subscription`, `concurrentStreamsAllowed` served | **holds** |
+| `messageState`, `chatOf` | `badge` **derived** by `moderationBadgeOf`, precedence written down, three axes kept separate model-side, removed messages filtered at source | **designed, not exercised** |
 
-**Onze tiennent, deux tiennent à moitié, une reste ouverte.** Et `context-map.md` l. 967 marque
-`chat` **provisoire** en citant explicitement ma vérification — « aucun écran n'a jamais exercé la
-modération vue du spectateur ; un contrat conçu et non observé ne se fige pas ». C'est la bonne
-réponse à mon avertissement : ne pas prétendre qu'il est levé. **Je maintiens l'avertissement sur
-la modération seule, et je le lève sur les dix autres.**
+**Eleven hold, two hold halfway, one remains open.** And `context-map.md` l. 967 marks `chat`
+**provisional**, citing my verification explicitly — "no screen has ever exercised moderation as the
+viewer sees it; a contract that is designed and not observed is not frozen". That is the right
+answer to my warning: not to claim it lifted. **I maintain the warning on moderation alone, and I
+lift it on the other ten.**
 
 ---
 
-## 5. Les questions sans réponse
+## 5. The questions with no answer
 
-Sept, par ordre d'impact.
+Seven, in order of impact.
 
-1. **Jusqu'où `since` peut-il remonter sur `/v1/changes` ?** Aucune fenêtre n'est écrite. À huit
-   heures, est-ce `complete: false` ? (C3a) — **bloquant pour la conception du cache client**.
-2. **Un `open` sur un `deviceId` qui détient déjà un bail sur la même date le reprend-il ?** (C4)
-   — bloquant pour un abonné `pass`, dont le contrat fixe lui-même `concurrentStreamsAllowed: 1`.
-3. **Quelle est la limite d'écrans de `free` ?** `multi_screen` n'est dans les `opens[]` que de
-   `premium`, les exemples fixent `pass` à 1, et `free` n'est illustré nulle part.
-4. **Suivre et être alerté : un geste ou deux ?** `/v1/me/follows/{artistId}` affirme que ce sont
-   deux réglages et n'offre que le premier. (C1)
-5. **Le débit par variante, ou une consommation approximative ?** (S5)
-6. **`network_unreachable` au vocabulaire de `nature` ?** (S4)
-7. **`see_other_dates` au vocabulaire de `fallbackAction` ?** (S6)
+1. **How far back can `since` reach on `/v1/changes`?** No window is written down. At eight hours,
+   is it `complete: false`? (C3a) — **blocking for the design of the client cache**.
+2. **Does an `open` from a `deviceId` already holding a lease on the same date reclaim it?** (C4) —
+   blocking for a `pass` subscriber, for whom the contract itself sets
+   `concurrentStreamsAllowed: 1`.
+3. **What is the screen limit for `free`?** `multi_screen` is in the `opens[]` of `premium` only,
+   the examples fix `pass` at 1, and `free` is illustrated nowhere.
+4. **Following and being alerted: one gesture or two?** `/v1/me/follows/{artistId}` asserts they are
+   two settings and offers only the first. (C1)
+5. **Bitrate per variant, or an approximate consumption?** (S5)
+6. **`network_unreachable` in the `nature` vocabulary?** (S4)
+7. **`see_other_dates` in the `fallbackAction` vocabulary?** (S6)
 
-Les questions 4 à 7 sont des ajouts de vocabulaire, pas des changements de forme : elles coûtent
-une ligne chacune et évitent que cinq surfaces inventent cinq réponses.
+Questions 4 to 7 are vocabulary additions, not changes of shape: they cost one line each and stop
+five surfaces from inventing five answers.

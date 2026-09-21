@@ -1,1448 +1,1406 @@
-# Besoins — storefront TV (react-native-tvos)
+# Needs — storefront TV (react-native-tvos)
 
-> Surface : téléviseurs connectés, box opérateur, consoles, clés HDMI. 1920 × 1080,
-> pilotage à cinq touches, distance de lecture trois mètres, parc hétérogène,
-> mémoire comptée. Le studio n'existe pas ici : la TV est une surface de
-> spectateur.
+> Surface: connected televisions, operator set-top boxes, games consoles, HDMI
+> sticks. 1920 × 1080, driven with five keys, read from three metres away,
+> a highly heterogeneous fleet, memory counted. The studio does not exist here:
+> the TV is a spectator surface, nothing else.
 >
-> Ce document exprime **ce que le contrat doit porter ou garantir**. Il ne décrit
-> aucune mise en page : la maquette `Storefront TV.dc.html` et
-> `Prompt - Storefront TV.md` sont la conception et font foi.
+> This document states **what the contract must carry or guarantee**. It
+> describes no layout: the `Storefront TV.dc.html` mockup and
+> `Prompt - Storefront TV.md` are the design, and they are authoritative.
 >
-> Sources lues : cahier des charges TV intégral, `README.md`, `streaming.md`,
-> `shared/helpers.js` (en entier), `taxonomy.json`, `catalogue.json`, `fixtures.js`
-> (sections dates / comptes / tchat / publications), `i18n/` dont `tv-keymap.json`,
-> `architecture/corrections-handoff.md`, `DECISIONS.md`. Maquette lue par fragments.
+> Sources read: the full TV specification, `README.md`, `streaming.md`,
+> `shared/helpers.js` (in full), `taxonomy.json`, `catalogue.json`, `fixtures.js`
+> (dates / accounts / chat / publications sections), `i18n/` including
+> `tv-keymap.json`, `architecture/corrections-handoff.md`, `DECISIONS.md`. The
+> mockup was read in fragments.
 >
-> Skills chargées (D-001, faute d'orchestrateur React Native) :
-> `react-native-tv-best-practices` (principale), `react-native-best-practices`,
-> `react-server-state`, `react-core`. Aucune ne contredit une décision du projet ;
-> une seule la **précise** de façon contraignante — voir *Le coût de zod*.
+> Skills loaded (D-001, in the absence of a React Native orchestrator):
+> `react-native-tv-best-practices` (the main one), `react-native-best-practices`,
+> `react-server-state`, `react-core`. None contradicts a project decision; one
+> **sharpens** one in a binding way — see *What zod costs*.
 
 ---
 
-## Inventaire des écrans
+## Screen inventory
 
-Vingt-deux écrans. Les colonnes disent où chacun **introduit** quelque chose ;
-un écran sans introduction est servi par une forme déjà décrite ailleurs
-(D-006 : couverture exhaustive, rédaction dédupliquée).
+Twenty-two screens. The columns say where each one **introduces** something; a
+screen that introduces nothing is served by a shape already described elsewhere
+(D-006: exhaustive coverage, deduplicated writing).
 
-| Écran | Rôle | Introduit une forme | Introduit une commande | Temps réel | Appels |
+| Screen | Role | Introduces a shape | Introduces a command | Real time | Calls |
 |---|---|---|---|---|---|
-| `boot` (pré-écran) | amorçage, avant toute langue connue | `ViewerContext` | — | — | **1** |
-| `gate` | choix du profil à l'ouverture | `ProfileSummary` | `selectProfile` (local) | — | 0 |
-| `signin` | connexion par appairage | `DevicePairing` | `createPairing`, `cancelPairing` | attente du verdict | 1 + attente |
-| `home` | billboard + carrousels | `HomeScreen`, `Rail`, `DateCard` | `toggleList` | compteur, passage à l'antenne | **1** |
-| `search` | clavier à l'écran + résultats vivants | `SearchResults` | — (lecture) | — | 1 par état de requête |
-| `live` | direct du moment + grille horaire du soir | `LiveScreen`, `ScheduleSlot` | — | compteur, bascule d'état | **1** |
-| `categories` | les 21 disciplines, groupées par univers | `CategoryTile` | — | — | **1** |
-| `category` | une discipline, en rangées de sous-genres | `CategoryScreen` | — | — | **1** |
-| `artists` | grille de portraits | `ArtistCard` | — | — | 1 + curseur |
-| `artist` | fiche d'un artiste | `ArtistDetail` | `followArtist` / `unfollow` | — | **1** |
-| `title` | fiche d'une date ou d'un spectacle | `DateDetail` | `toggleList`, `share` | compteur si à l'antenne | **1** |
-| `book` | tarif et nombre de places | — (dérive de `DateDetail`) | `refreshAvailability` | jauge | 0 ou 1 |
-| `pay` | QR + code court, écran d'attente | `DevicePairing` (même forme) | `createPairing` | attente du verdict | 1 + attente |
-| `confirm` | issue du parcours d'achat | `PairingOutcome` | — | — | **0** |
-| `player` | lecteur plein écran | `PlaybackTicket`, `Chapter`, `Track`, `ChatMessage`, `IncidentState` | `renewPlaybackTicket`, `saveProgress`, `sendReaction`, `releasePlayback` | **incident, tchat, compteur, latence** | **1** + renouvellements |
-| `dateinfo` | informations sur la date, depuis le lecteur | — (dérive de `PlaybackTicket`) | — | — | **0** |
-| `tickets` | mes places | `TicketCard` | `cancelBooking` | salle ouverte, issue | **1** |
-| `list` | ma liste | — (`DateCard`) | `toggleList` | — | **1** |
-| `replays` | rediffusions, celles qui expirent d'abord | — (`DateCard`) | — | fenêtre restante | **1** |
-| `plans` | abonnements | `PlanCard` | `createPairing` (intention `plan`) | — | **1** |
-| `account` | identité, abonnement, moyens de paiement, appareils, réglages | `AccountScreen`, `DeviceSession`, `ViewerPreferences` | `revokeDevice`, `updatePreferences`, `signOutProfile` | — | **1** |
-| `help` | aide des touches | — (embarquée) | — | — | **0** |
-| `ambient` | veille après 8 min d'inactivité hors lecture | — (réemploi des affiches en main) | — | — | **0** |
+| `boot` (pre-screen) | start-up, before any language is known | `ViewerContext` | — | — | **1** |
+| `gate` | profile selection on opening | `ProfileSummary` | `selectProfile` (local) | — | 0 |
+| `signin` | sign-in by device pairing | `DevicePairing` | `createPairing`, `cancelPairing` | waiting for the verdict | 1 + wait |
+| `home` | billboard + carousels | `HomeScreen`, `Rail`, `DateCard` | `toggleList` | viewer count, going on air | **1** |
+| `search` | on-screen keyboard + live results | `SearchResults` | — (read) | — | 1 per query state |
+| `live` | what is on air + tonight's schedule grid | `LiveScreen`, `ScheduleSlot` | — | viewer count, state flip | **1** |
+| `categories` | the 21 disciplines, grouped by universe | `CategoryTile` | — | — | **1** |
+| `category` | one discipline, as sub-genre rows | `CategoryScreen` | — | — | **1** |
+| `artists` | grid of portraits | `ArtistCard` | — | — | 1 + cursor |
+| `artist` | an artist's page | `ArtistDetail` | `followArtist` / `unfollow` | — | **1** |
+| `title` | a date's or a show's page | `DateDetail` | `toggleList`, `share` | viewer count if on air | **1** |
+| `book` | price tier and number of seats | — (derived from `DateDetail`) | `refreshAvailability` | seat gauge | 0 or 1 |
+| `pay` | QR + short code, waiting screen | `DevicePairing` (same shape) | `createPairing` | waiting for the verdict | 1 + wait |
+| `confirm` | outcome of a purchase journey | `PairingOutcome` | — | — | **0** |
+| `player` | full-screen player | `PlaybackTicket`, `Chapter`, `Track`, `ChatMessage`, `IncidentState` | `renewPlaybackTicket`, `saveProgress`, `sendReaction`, `releasePlayback` | **incident, chat, viewer count, latency** | **1** + renewals |
+| `dateinfo` | information about the date, from the player | — (derived from `PlaybackTicket`) | — | — | **0** |
+| `tickets` | my seats | `TicketCard` | `cancelBooking` | house open, outcome | **1** |
+| `list` | my list | — (`DateCard`) | `toggleList` | — | **1** |
+| `replays` | replays, the ones expiring first | — (`DateCard`) | — | remaining window | **1** |
+| `plans` | subscriptions | `PlanCard` | `createPairing` (intent `plan`) | — | **1** |
+| `account` | identity, subscription, payment methods, devices, settings | `AccountScreen`, `DeviceSession`, `ViewerPreferences` | `revokeDevice`, `updatePreferences`, `signOutProfile` | — | **1** |
+| `help` | key help | — (embedded) | — | — | **0** |
+| `ambient` | screensaver after 8 min idle outside playback | — (reuses posters already in hand) | — | — | **0** |
 
-**Écrans de second rang, qui ne sont pas des pages mais consomment du contrat** :
-panneaux du lecteur (chapitres, sous-titres, pistes et qualité, tchat,
-informations), écran d'incident, écran de fin de spectacle avec la boutique du
-spectacle. Sur TV une modale *est* une page, mais aucun de ces panneaux ne doit
-déclencher un appel : tout est livré avec le `PlaybackTicket`.
+**Second-rank screens, which are not pages but do consume the contract**: the
+player's panels (chapters, subtitles, tracks and quality, chat, information), the
+incident screen, and the end-of-show screen with the show's shop. On a TV a modal
+*is* a page, but none of these panels may trigger a call: everything ships with
+the `PlaybackTicket`.
 
-**Écrans absents de la maquette et pourtant déclarés** : `plans`. Le cahier des
-charges et la barre latérale le prévoient ; la maquette n'expose que huit entrées
-et aucune page d'abonnements, alors que l'intention de paiement `plan` existe bien
-dans le parcours de confirmation. Voir *Incohérences relevées*, point 2.
+**Screens absent from the mockup yet declared**: `plans`. The specification and
+the sidebar both provide for it; the mockup exposes only eight entries and no
+subscriptions page, even though the `plan` payment intent does exist in the
+confirmation journey. See *Inconsistencies found*, point 2.
 
-**Réglages de démonstration qui sont en réalité des états du contrat.** La maquette
-expose douze props. Sept sont de la donnée servie, pas un réglage d'auteur :
+**Demo settings that are really contract state.** The mockup exposes twelve
+props. Seven of them are served data, not an author's switch:
 
-| Prop | Ce que c'est réellement |
+| Prop | What it really is |
 |---|---|
-| `profile` | le profil sélectionné sur cet appareil, et ses droits (dont le catalogue filtré du profil enfant) |
-| `signedIn` | l'existence d'une session d'appareil |
-| `onAir` | dérivé de l'état des dates servies, jamais un booléen d'application |
-| `chatMode` | **propriété de la date** (`open`, `emoji`, `read-only`, `off`), décidée en régie |
-| `replayPolicy` | **propriété de la date** (`included`, `subscription`, `unit`, `none`) + fenêtre en heures |
-| `incident` | **état poussé par le plan de contrôle** (aucun, écran d'attente, reportée, annulée) |
-| `lang` | la langue d'interface du profil, et le repli i18n embarqué |
+| `profile` | the profile selected on this device, and its entitlements (including the child profile's filtered catalogue) |
+| `signedIn` | whether a device session exists |
+| `onAir` | derived from the state of the dates served, never an application boolean |
+| `chatMode` | **a property of the date** (`open`, `emoji`, `read-only`, `off`), decided in the gallery |
+| `replayPolicy` | **a property of the date** (`included`, `subscription`, `unit`, `none`) + the window in hours |
+| `incident` | **state pushed by the control plane** (none, hold screen, postponed, cancelled) |
+| `lang` | the profile's interface language, and the embedded i18n fallback |
 
-Les cinq autres (`heroMotion`, `autoplayPreview`, `focusScale`, `remote`,
-`safeArea`) sont de la présentation ou une préférence locale, sauf
-`autoplayPreview` qui est une **préférence de profil** persistée côté serveur
-(voir `updatePreferences`).
+The other five (`heroMotion`, `autoplayPreview`, `focusScale`, `remote`,
+`safeArea`) are presentation or a local preference — except `autoplayPreview`,
+which is a **profile preference** persisted server-side (see
+`updatePreferences`).
 
 ---
 
-## Les formes de données
+## The data shapes
 
-### La règle qui commande tout : la carte doit se suffire
+### The rule that governs everything: a card must be self-sufficient
 
-À trois mètres, une carte porte six informations au maximum, et chacune d'elles
-est une **pastille dérivée de la donnée**, jamais un littéral. Le contrat doit
-donc livrer, sur la carte elle-même, tout ce qui alimente une pastille — sans
-quoi la TV devra soit faire un second appel, soit recalculer, soit inventer.
+At three metres a card carries six pieces of information at most, and each of
+them is a **badge derived from the data**, never a literal. The contract must
+therefore deliver, on the card itself, everything that feeds a badge — otherwise
+the TV will have to make a second call, recompute, or invent.
 
-Mais la même carte ne doit **pas** porter le synopsis, la distribution, la
-biographie ni le jeu de médias complet : sur une TV à 1 Go, une rangée virtualisée
-qui garde des objets gras en mémoire provoque des évictions d'images et des
-rechargements en boucle pendant la navigation au doigt. D'où **deux tailles
-explicitement nommées et disjointes**, et l'interdiction pour la petite de porter
-les champs de la grande.
+But that same card must **not** carry the synopsis, the cast, the biography or
+the full media set: on a 1 GB TV, a virtualized row that keeps fat objects in
+memory causes image evictions and reload loops while the viewer is navigating
+with their thumb. Hence **two explicitly named, disjoint sizes**, and a ban on
+the small one carrying the large one's fields.
 
-### `DateCard` — la projection universelle
+### `DateCard` — the universal projection
 
-C'est la forme la plus servie de toute la surface : elle est le contenu de chaque
-rangée d'accueil, de chaque grille, de chaque résultat de recherche.
+This is the most-served shape on the whole surface: it is the content of every
+home row, every grid, every search result.
 
-Ce qu'elle doit porter, et pourquoi :
+What it must carry, and why:
 
-- **identité** : identifiant de la date, identifiant du spectacle, identifiant de
-  l'artiste, identifiant de la discipline et du sous-genre ;
-- **titre et nom d'artiste** déjà dans la langue du spectateur (règle `content()`
-  de `helpers.js` : on rend la langue du lecteur quand elle existe, on retombe sur
-  l'autre sinon — la langue de jeu se dit ailleurs) ;
-- **instant de début en chaîne ISO UTC**, plus l'**identifiant de zone IANA de la
-  salle**. Jamais un décalage en minutes, jamais une heure murale formatée. La TV
-  compose les deux horloges (heure du spectateur d'abord, heure de salle en second
-  quand elle diffère) ;
-- **durée** en minutes ;
-- **état** dans le vocabulaire unique retenu au contrat, et **issue** si elle
-  existe (`cancelled`, `postponed`, `interrupted`), plus la **nouvelle date** en
-  cas de report. L'issue prime sur l'état à l'affichage : le contrat doit livrer
-  les deux, pas un état pré-fusionné ;
-- **jauge** : places disponibles et liste d'attente. Ce sont deux nombres, et le
-  libellé (« 86 places » / « Complet » / « Liste d'attente · 340 ») se dérive ;
-- **politique de rediffusion** + **fenêtre en heures** + **heures restantes**
-  quand la rediffusion est en ligne. Les heures restantes sont une valeur
-  décroissante : elles se **dérivent** de l'instant de fin et de la fenêtre, donc
-  le contrat livre les deux entrées, pas le résultat. Ce point est directement la
-  règle « aucune valeur calculée deux fois » : si le serveur livrait le nombre
-  d'heures, il serait faux dès la minute suivante ;
-- **droits** : le contenu est-il diffusable dans le territoire du spectateur, et
-  sinon le **code** de raison ;
-- **accès du spectateur** : détient-il une place, peut-il lancer la lecture
-  maintenant, et sinon **pourquoi** (pas de place, salle pas encore ouverte, hors
-  territoire, abonnement requis, aucune rediffusion). C'est le champ le plus
-  coûteux du contrat — voir la question Q6 ;
-- **reprise** : position en secondes si le profil a commencé cette date ;
-- **compteur de spectateurs**, présent **seulement** si la date est à l'antenne.
-  Jamais zéro : la règle du dossier interdit « 0 EN DIRECT », donc le champ doit
-  être absent et non nul ;
-- **médias** : un descripteur de visuel en 16/9 et un en affiche 2/3, chacun
-  **déjà décliné aux tailles réellement affichées**. Pas une recette d'URL avec un
-  gabarit de largeur. Motif de mémoire, pas de confort : un fond 4K décodé pour
-  une vignette coûte autant qu'un plein écran, et c'est le premier levier de
-  pression mémoire d'une UI TV.
+- **identity**: the date id, the show id, the artist id, the discipline and
+  sub-genre ids;
+- **title and artist name** already in the viewer's language (the `content()`
+  rule in `helpers.js`: render the reader's language when it exists, fall back to
+  the other one otherwise — the performed language is stated elsewhere);
+- **start instant as an ISO UTC string**, plus the **venue's IANA zone id**.
+  Never an offset in minutes, never a formatted wall-clock time. The TV composes
+  the two clocks (the viewer's time first, the venue's time second when it
+  differs);
+- **runtime** in minutes;
+- **state** in the single vocabulary the contract settles on, and the **outcome**
+  if there is one (`cancelled`, `postponed`, `interrupted`), plus the **new date**
+  when postponed. The outcome overrides the state on display: the contract must
+  deliver both, not a pre-merged state;
+- **seat gauge**: seats available and waiting list. These are two numbers, and
+  the label ("86 seats" / "Sold out" / "Waiting list · 340") is derived;
+- **replay policy** + **window in hours** + **hours remaining** when the replay
+  is online. Hours remaining is a decreasing value: it is **derived** from the
+  end instant and the window, so the contract delivers the two inputs, not the
+  result. This is directly the "no value computed twice" rule: if the server
+  delivered the hour count, it would be wrong one minute later;
+- **rights**: is the content broadcastable in the viewer's territory, and if not,
+  the reason **code**;
+- **viewer access**: does the viewer hold a seat, can they start playback now,
+  and if not **why** (no seat, house not yet open, out of territory, subscription
+  required, no replay). This is the most expensive field in the contract — see
+  question Q6;
+- **resume**: position in seconds if the profile has started this date;
+- **viewer count**, present **only** when the date is on air. Never zero: the
+  handoff rule forbids "0 LIVE", so the field must be absent rather than null;
+- **media**: one 16/9 visual descriptor and one 2/3 poster descriptor, each
+  **already rendered at the sizes actually displayed**. Not a URL recipe with a
+  width placeholder. A memory reason, not a comfort one: a 4K backdrop decoded
+  for a thumbnail costs as much as a full-screen one, and it is the primary
+  memory-pressure lever of a TV UI.
 
-Ce que `DateCard` ne doit **pas** porter : synopsis, distribution, biographie,
-liste des autres dates, prix détaillés par tarif, et surtout aucune donnée de
-billetterie (montants vendus, recette). Le jeu de démonstration actuel expose
-`prices[].sold`, `prices[].revenue`, `seats.sold`, `publication` et `publishedBy`
-sur l'objet que lit le storefront — voir *Incohérences relevées*, point 5.
+What `DateCard` must **not** carry: synopsis, cast, biography, the list of other
+dates, per-tier prices, and above all no ticketing data (amounts sold, revenue).
+The current demonstration data set exposes `prices[].sold`, `prices[].revenue`,
+`seats.sold`, `publication` and `publishedBy` on the object the storefront reads
+— see *Inconsistencies found*, point 5.
 
 ### `DateDetail`
 
-`DateCard` plus : synopsis complet, distribution, langue parlée, sous-titres,
-surtitres, **dépendance à la langue** (`none | helpful | essential` — le
-vocabulaire réel, cf. errata D1), attributs transverses (public, âge minimum,
-placement, entracte, accessibilité, type de salle), salle avec sa ville et son
-pays, prix par tarif en **unité canonique + code devise**, remise d'abonnement
-applicable, et la **politique de rediffusion en clair avant l'achat** — c'est
-elle qui justifie l'écart de tarif, le dossier en fait un principe.
+`DateCard` plus: the full synopsis, the cast, the spoken language, subtitles,
+surtitles, **language dependency** (`none | helpful | essential` — the real
+vocabulary, cf. erratum D1), cross-cutting attributes (audience, minimum age,
+seating, intermission, accessibility, venue type), the venue with its city and
+country, per-tier prices in **canonical unit + currency code**, the applicable
+subscription discount, and the **replay policy in plain sight before purchase** —
+it is what justifies the price difference, and the handoff makes it a principle.
 
-S'y ajoutent trois rangées de `DateCard` **composées par le serveur** : les autres
-dates de la série, les autres dates du même artiste, et une suggestion dans la
-même discipline. Elles font partie de la même réponse (budget d'un appel).
+To which are added three `DateCard` rows **composed by the server**: the other
+dates in the run, the other dates by the same artist, and a suggestion in the
+same discipline. They are part of the same response (a one-call budget).
 
-### `Rail` et `HomeScreen`
+### `Rail` and `HomeScreen`
 
-Une rangée porte : un identifiant stable (la mémoire de focus s'y accroche), un
-**code de titre** ou un titre paramétré (« Parce que vous suivez {artiste} » —
-la recommandation est nommée, jamais anonyme : le paramètre est donc dans le
-contrat), un **compte total**, une forme de carte (`wide`, `poster`, `portrait`),
-une éventuelle couleur d'état sémantique exprimée en **code** et non en couleur,
-et la première page de ses cartes avec son curseur.
+A row carries: a stable id (focus memory hangs off it), a **title code** or a
+parameterized title ("Because you follow {artist}" — the recommendation is named,
+never anonymous, so the parameter belongs in the contract), a **total count**, a
+card form (`wide`, `poster`, `portrait`), an optional semantic state colour
+expressed as a **code** rather than a colour, and the first page of its cards
+with its cursor.
 
-Le **compte total** n'est pas décoratif : chaque rangée affiche un compteur à
-droite de son titre. Si la rangée est paginée, `items.length` est faux — le
-compteur serait un littéral parallèle. Le contrat doit donc porter `total` dans
-l'enveloppe de page.
+The **total count** is not decorative: every row displays a counter to the right
+of its title. If the row is paginated, `items.length` is wrong — the counter
+would be a parallel literal. The contract must therefore carry `total` in the
+page envelope.
 
-`HomeScreen` = un billboard (une `DateDetail` allégée : de quoi afficher le
-kicker, le titre, trois lignes de synopsis, la métadonnée, et deux ou trois
-actions) + la liste ordonnée des rangées. **L'ordre des rangées appartient au
-serveur.** Le cahier des charges le fixe (reprendre, à l'antenne, vos places, ce
-soir, parce que vous suivez, rediffusions qui expirent, deux à trois rangées par
-discipline, affiches, artistes à suivre) : c'est une règle éditoriale, elle ne se
-recalcule pas sur cinq surfaces.
+`HomeScreen` = one billboard (a lightened `DateDetail`: enough to show the
+kicker, the title, three lines of synopsis, the metadata, and two or three
+actions) + the ordered list of rows. **The order of the rows belongs to the
+server.** The specification fixes it (resume, on air, your seats, tonight,
+because you follow, replays expiring soon, two or three rows per discipline,
+posters, artists to follow): that is an editorial rule, and it is not recomputed
+on five surfaces.
 
 ### `CategoryTile`
 
-Vingt et une disciplines, dans le **rang éditorial déclaré par `taxonomy.json`**
-(`rank`, du plus grand public au plus pointu, familles mêlées), avec leur famille
-(`music`, `stage`), leur code i18n, leur nombre de dates et leur nombre de dates à
-l'antenne. Aucune surface ne réordonne.
+Twenty-one disciplines, in the **editorial rank declared by `taxonomy.json`**
+(`rank`, from the most mainstream to the most specialist, families intermixed),
+with their family (`music`, `stage`), their i18n code, their date count and their
+count of dates on air. No surface reorders.
 
-Vingt et une tuiles ne tiennent pas sur un écran comme neuf. Deux issues, et c'est
-au contrat de trancher : soit il porte les 21 avec leur famille et leur rang, et
-la TV les groupe en deux blocs parcourus verticalement ; soit il porte en plus une
-**sélection éditoriale courte de tête de page**, écrite comme une règle et servie,
-jamais codée en dur. Je demande la première par défaut et la seconde comme champ
-optionnel — voir Q5.
+Twenty-one tiles do not fit on a screen the way nine do. Two ways out, and it is
+for the contract to choose: either it carries the 21 with their family and rank
+and the TV groups them into two vertically traversed blocks; or it additionally
+carries a **short editorial selection for the top of the page**, written as a
+rule and served, never hard-coded. I ask for the first by default and the second
+as an optional field — see Q5.
 
 ### `CategoryScreen`
 
-Un hero choisi par le serveur (une date à l'antenne, sinon la prochaine, sinon une
-rediffusion) et des **rangées par sous-genre déjà choisies et déjà ordonnées par
-le serveur**. La maquette calcule aujourd'hui un « intérêt » par sous-genre à
-partir des spectateurs, des vues de rediffusion et des places vendues, puis
-retient les sous-genres à deux dates ou plus et regroupe la traîne. C'est un
-classement éditorial calculé sur une surface : la règle « aucune valeur calculée
-deux fois » l'interdit, et les places vendues n'ont rien à faire sur un client
-public. Le serveur doit livrer les rangées faites.
+A hero chosen by the server (a date on air, failing that the next one, failing
+that a replay) and **sub-genre rows already chosen and already ordered by the
+server**. The mockup currently computes an "interest" score per sub-genre from
+viewer counts, replay views and seats sold, then keeps the sub-genres with two or
+more dates and groups the tail. That is an editorial ranking computed on a
+surface: the "no value computed twice" rule forbids it, and seats sold have no
+business on a public client. The server must deliver the rows already made.
 
-**Conséquence structurante** : à cinq touches, un filtre à facettes est
-inutilisable — on ne peut pas ouvrir un panneau, cocher trois cases et penser à le
-refermer. La TV transforme donc les facettes en rangées. Elle **ne consomme pas
-l'API de facettes** du catalogue. C'est une divergence de forme, pas de contenu,
-et elle justifie que le BFF storefront serve deux modèles de lecture pour la même
-discipline.
+**A structural consequence**: with five keys, a faceted filter is unusable — you
+cannot open a panel, tick three boxes and remember to close it again. So the TV
+turns facets into rows. It **does not consume the catalogue's facet API**. This
+is a divergence of shape, not of content, and it justifies the storefront BFF
+serving two read models for the same discipline.
 
 ### `ArtistCard` / `ArtistDetail`
 
-Carte : identifiant, nom, portrait déjà dimensionné, discipline, nombre
-d'abonnés, **nombre de dates à venir**, et l'état de suivi du profil. Fiche :
-biographie dans la langue du spectateur, visuel de billboard, rangée des dates à
-venir, rangée des rediffusions, état de suivi.
+Card: id, name, an already-sized portrait, discipline, follower count,
+**number of upcoming dates**, and the profile's follow state. Page: biography in
+the viewer's language, billboard visual, a row of upcoming dates, a row of
+replays, follow state.
 
 ### `TicketCard`
 
-`DateCard` plus : le tarif détenu, l'instant d'ouverture de salle (dérivé de
-`startsAt` et de la constante d'ouverture — 30 minutes aujourd'hui, qui doit venir
-du contrat et non d'une constante recopiée cinq fois), et pour chaque issue ce que
-le spectateur doit en faire : nouvelle date pour un report, **montant et délai
-de crédit** pour un remboursement, **montant de l'avoir** pour une interruption.
-Ces montants sont en unité canonique ; le délai (« 3 à 5 jours ouvrés ») est une
-politique : un **code**, pas une phrase.
+`DateCard` plus: the tier held, the house-opening instant (derived from
+`startsAt` and the opening constant — 30 minutes today, which must come from the
+contract and not from a constant copied five times), and for each outcome what
+the viewer is supposed to do about it: the new date for a postponement, **amount
+and credit delay** for a refund, **credit-note amount** for an interruption.
+These amounts are in canonical units; the delay ("3 to 5 business days") is a
+policy: a **code**, not a sentence.
 
-L'ordre d'affichage est une règle : à l'antenne et salle ouverte d'abord, puis à
-venir (un report figure à sa nouvelle date), puis rediffusions disponibles, puis
-issues fermées, puis passées. Elle appartient au domaine.
+The display order is a rule: on air and house open first, then upcoming (a
+postponement appears at its new date), then available replays, then closed
+outcomes, then past. It belongs to the domain.
 
 ### `PlaybackTicket`
 
-La forme la plus critique de la surface, et celle qui doit arriver **en un seul
-aller-retour**. Elle porte :
+The most critical shape on the surface, and the one that must arrive in **a
+single round trip**. It carries:
 
-- l'**URL de manifeste** et le **jeton de lecture signé**, court, avec son instant
-  d'expiration et l'intervalle de renouvellement attendu ;
-- le **protocole et le système de DRM retenus pour cet appareil**, choisis par le
-  serveur à partir d'un descripteur d'appareil que la TV envoie. La TV ne choisit
-  pas : le parc impose HLS + FairPlay sur tvOS et DASH + Widevine ailleurs, avec
-  PlayReady sur certaines références, et un client qui devine se trompera ;
-- le **plafond de qualité** que le niveau de sécurité matériel autorise. Une clé
-  HDMI d'entrée de gamme n'offre que du Widevine logiciel, plafonné en SD : le
-  serveur doit dégrader proprement plutôt que refuser la lecture, et la TV doit
-  savoir qu'elle a été plafonnée pour ne pas proposer « 4K » dans le panneau de
-  qualité ;
-- les **chapitres posés en régie** (position en secondes + code de vocabulaire) ;
-- les **pistes de sous-titres et audio disponibles**, dont description audio, avec
-  leurs codes de langue ;
-- le **régime de tchat de la date** ;
-- l'**état d'incident courant** ;
-- la **position de reprise** du profil ;
-- pour un direct : la **position du bord du direct** et la **latence mesurée**.
-  La barre affiche la portion écoulée et la latence, et le bouton « Revenir au
-  direct » n'apparaît que si le spectateur a reculé — les deux se dérivent du
-  bord, qui doit donc être servi ;
-- pour la fin de spectacle : la disponibilité et la durée de la rediffusion, la
-  **prochaine date de la série**, et l'existence d'une boutique du spectacle.
+- the **manifest URL** and the **signed playback token**, short-lived, with its
+  expiry instant and the expected renewal interval;
+- the **protocol and DRM system chosen for this device**, picked by the server
+  from a device descriptor the TV sends. The TV does not choose: the fleet
+  imposes HLS + FairPlay on tvOS and DASH + Widevine elsewhere, with PlayReady on
+  some SKUs, and a client that guesses will get it wrong;
+- the **quality cap** that the hardware security level allows. An entry-level
+  HDMI stick offers only software Widevine, capped at SD: the server must degrade
+  gracefully rather than refuse playback, and the TV must know it has been capped
+  so that it does not offer "4K" in the quality panel;
+- the **chapters laid down in the gallery** (position in seconds + vocabulary
+  code);
+- the **available subtitle and audio tracks**, including audio description, with
+  their language codes;
+- the **date's chat mode**;
+- the **current incident state**;
+- the profile's **resume position**;
+- for a live: the **live-edge position** and the **measured latency**. The bar
+  shows the elapsed portion and the latency, and the "Back to live" button only
+  appears if the viewer has rewound — both derive from the edge, which must
+  therefore be served;
+- for the end of the show: replay availability and duration, the **next date in
+  the run**, and whether a show shop exists.
 
-Aucun de ces éléments ne justifie un appel séparé : un panneau de sous-titres qui
-met 600 ms à se remplir est un défaut visible à trois mètres.
+None of these warrants a separate call: a subtitle panel that takes 600 ms to
+fill is a defect visible from three metres.
 
 ### `ChatMessage`
 
-Identifiant, identifiant de la date, pseudonyme d'auteur, rôle, texte, langue du
-texte, et **position dans le média** — pas l'heure d'envoi. C'est la forme que
-`fixtures.js` porte déjà (`atMin` relatif au début du spectacle) et elle est juste :
-sur une rediffusion, un message doit réapparaître au moment du spectacle où il a
-été écrit, pas à l'heure où on le regarde.
+Id, date id, author handle, role, text, text language, and **position in the
+media** — not the send time. That is the shape `fixtures.js` already carries
+(`atMin`, relative to the start of the show) and it is right: on a replay, a
+message must reappear at the point in the show where it was written, not at the
+time you happen to be watching.
 
-La TV **ne doit jamais recevoir** un message retiré ou masqué. La modération est
-un état côté `chat` ; la surface publique reçoit le flux déjà filtré. Le studio
-voit les quatre états, la TV en voit un.
+The TV **must never receive** a removed or hidden message. Moderation is a state
+on the `chat` side; the public surface receives the already-filtered stream. The
+studio sees the four states, the TV sees one.
 
-### `DevicePairing` et `PairingOutcome`
+### `DevicePairing` and `PairingOutcome`
 
-Voir la section dédiée.
+See the dedicated section.
 
 ### `ViewerContext`, `ProfileSummary`, `ViewerPreferences`, `DeviceSession`
 
-`ViewerContext` est la réponse d'amorçage : les profils connectés sur **cet
-appareil** (jusqu'à cinq), les droits du profil sélectionné, ses préférences, la
-version du catalogue de libellés, et les constantes de domaine que la TV dérive
-(ouverture de salle, délai d'aperçu du billboard, seuils de rareté). Une
-constante recopiée sur cinq surfaces finira par diverger.
+`ViewerContext` is the start-up response: the profiles signed in on **this
+device** (up to five), the selected profile's entitlements, its preferences, the
+label catalogue version, and the domain constants the TV derives from (house
+opening, billboard preview delay, scarcity thresholds). A constant copied onto
+five surfaces will end up diverging.
 
-`ProfileSummary` : identifiant, nom, avatar dimensionné, type de profil, et pour
-un profil enfant la **liste des disciplines autorisées**. Le filtrage du catalogue
-enfant se fait **côté serveur** : sinon la TV d'un enfant télécharge le catalogue
-adulte pour le masquer.
+`ProfileSummary`: id, name, sized avatar, profile type, and for a child profile
+the **list of allowed disciplines**. Filtering the child catalogue happens
+**server-side**: otherwise a child's TV downloads the adult catalogue in order to
+hide it.
 
-`ViewerPreferences` : langue d'interface, sous-titres par défaut, taille de
-sous-titres, description audio, réduction des animations, aperçu vidéo
-automatique. Question ouverte : ces préférences sont-elles portées par le profil
-(et suivent le spectateur d'un téléviseur à l'autre) ou par l'appareil (et
-restent dans le salon) ? La réduction des animations et la taille des
-sous-titres plaident pour l'appareil, la langue pour le profil. Voir Q8.
+`ViewerPreferences`: interface language, subtitles on by default, subtitle size,
+audio description, reduced motion, automatic video preview. An open question: are
+these preferences carried by the profile (and follow the viewer from one
+television to another) or by the device (and stay in the living room)? Reduced
+motion and subtitle size argue for the device, language for the profile. See Q8.
 
-`DeviceSession` : identifiant, type d'appareil (`tv`, `mobile`, `tablet`,
-`desktop`, `stick`, `console`, `box`), libellé, ville, dernière activité, et
-« est-ce cet appareil ». La page compte permet de déconnecter un appareil à
-distance : c'est une commande, et elle doit invalider les jetons de lecture en
-cours de cet appareil, pas seulement sa session.
+`DeviceSession`: id, device kind (`tv`, `mobile`, `tablet`, `desktop`, `stick`,
+`console`, `box`), label, city, last activity, and "is this the current device".
+The account page allows signing a device out remotely: that is a command, and it
+must invalidate that device's in-flight playback tokens, not only its session.
 
-### Règles transverses de forme
+### Cross-cutting shape rules
 
-1. **Instants ISO en UTC + identifiant de zone IANA.** Jamais un décalage figé :
-   une date programmée dans six mois s'afficherait à la mauvaise heure après un
-   changement d'heure. La TV compose les deux horloges.
-2. **Montants en unité canonique entière + code devise.** Le formatage est de la
-   présentation, il se fait sur la TV avec sa langue.
-3. **i18n par codes.** Aucune phrase dans une réponse d'API, enveloppe d'erreur
-   comprise. Une seule exception assumée : le **message d'incident écrit par la
-   régie**, qui est du contenu rédigé et non un libellé — il voyage donc avec sa
-   langue, comme un synopsis. Le code de raison de géo-blocage, lui, doit être un
-   code : le jeu actuel porte des libellés rédigés.
-4. **Vocabulaires fermés, avec un comportement défini pour une valeur inconnue.**
-   Voir *Contraintes propres à la TV*, point 5. C'est la contrainte la plus
-   spécifique à cette surface.
-5. **Additif seulement.** Un champ retiré casse un parc que je ne peux pas mettre
-   à jour.
+1. **ISO instants in UTC + IANA zone id.** Never a frozen offset: a date
+   scheduled six months out would display at the wrong time after a clock change.
+   The TV composes the two clocks.
+2. **Amounts as an integer canonical unit + currency code.** Formatting is
+   presentation; it happens on the TV, in its language.
+3. **i18n by codes.** No sentence in an API response, error envelope included.
+   One deliberate exception: the **incident message written by the gallery**,
+   which is authored content and not a label — so it travels with its language,
+   like a synopsis. The geo-blocking reason code, by contrast, must be a code:
+   the current data set carries authored labels.
+4. **Closed vocabularies, with a defined behaviour for an unknown value.** See
+   *TV-specific constraints*, point 5. It is the constraint most specific to this
+   surface.
+5. **Additive only.** A removed field breaks a fleet I cannot update.
 
 ---
 
-## Les commandes
+## The commands
 
-Toutes portent `Idempotency-Key`. Toutes répondent par l'**enveloppe d'erreur
-unique** : code, paramètres, identifiant de trace.
+All carry `Idempotency-Key`. All answer with the **single error envelope**: code,
+params, trace id.
 
-**Règle propre à la TV : une commande renvoie l'état projeté, pas un accusé.**
-Un `204` oblige la TV à refaire un appel pour repeindre l'écran, donc à payer un
-second aller-retour sur un réseau domestique médiocre, donc à afficher un écran
-qui se remplit en deux temps. Chaque commande ci-dessous renvoie la ou les cartes
-qu'elle modifie.
+**A TV-specific rule: a command returns the projected state, not an
+acknowledgement.** A `204` forces the TV to make another call to repaint the
+screen, therefore to pay a second round trip on a mediocre home network,
+therefore to show a screen that fills in two stages. Every command below returns
+the card or cards it changes.
 
-| Commande | Effet | Renvoie | Notes propres à la TV |
+| Command | Effect | Returns | TV-specific notes |
 |---|---|---|---|
-| `createPairing` | ouvre un appairage pour une intention | `DevicePairing` | cœur de la surface, section dédiée |
-| `cancelPairing` | ferme un appairage en attente | — | déclenchée par Retour ; la TV quitte souvent sans attendre |
-| `bookSeat` | réserve n places à un tarif | `TicketCard` + `DateCard` à jour | **n'est jamais appelée par la TV** : elle passe par l'appairage |
-| `joinWaitlist` | inscrit sur liste d'attente | `TicketCard` + `DateCard` | idem, par appairage |
-| `cancelBooking` | annule une place | `TicketCard` + `DateCard` | la maquette annonce « annulation jusqu'à 1 h avant » : c'est une **règle de domaine** qui doit venir du contrat, pas d'une mention d'écran |
-| `subscribe` / `changePlan` | souscrit ou change de formule | `AccountScreen` | par appairage |
-| `addPaymentMethod` | enregistre un moyen de paiement | `AccountScreen` | par appairage ; la TV n'affiche les moyens qu'en lecture |
-| `buyMerch` | achète un article de la boutique | — | par appairage, depuis l'écran de fin de spectacle |
-| `toggleList` | ajoute ou retire de Ma liste | `DateCard` à jour | retrait par appui long sur OK ; doit être instantané à l'écran et réconcilié ensuite |
-| `followArtist` / `unfollowArtist` | suit un artiste | `ArtistCard` à jour | **déclenche les notifications** : le contrat doit dire si suivre crée un abonnement de notification ou si c'est un second réglage |
-| `saveProgress` | enregistre la position de lecture | — | voir fréquence ci-dessous |
-| `sendReaction` | envoie une réaction pendant un direct | quota restant | voir limite de débit ci-dessous |
-| `renewPlaybackTicket` | renouvelle le jeton de lecture | `PlaybackTicket` partiel | voir *Le temps réel* |
-| `releasePlayback` | libère une session simultanée | — | **ne peut pas être garantie** : un téléviseur se débranche |
-| `revokeDevice` | déconnecte un appareil | `AccountScreen` | doit invalider aussi ses jetons de lecture |
-| `signOutProfile` | déconnecte un profil de cet appareil | `ViewerContext` | « les autres comptes restent connectés » : la déconnexion est **par profil**, pas par appareil |
-| `updatePreferences` | change une préférence | `ViewerPreferences` | portée à trancher (Q8) |
+| `createPairing` | opens a pairing for an intent | `DevicePairing` | the heart of the surface; dedicated section |
+| `cancelPairing` | closes a pending pairing | — | triggered by Back; the TV often leaves without waiting |
+| `bookSeat` | books n seats at a tier | updated `TicketCard` + `DateCard` | **never called by the TV**: it goes through the pairing |
+| `joinWaitlist` | joins the waiting list | `TicketCard` + `DateCard` | same, via the pairing |
+| `cancelBooking` | cancels a seat | `TicketCard` + `DateCard` | the mockup announces "cancel up to 1 h before": that is a **domain rule** that must come from the contract, not from a line of screen copy |
+| `subscribe` / `changePlan` | subscribes or changes plan | `AccountScreen` | via the pairing |
+| `addPaymentMethod` | saves a payment method | `AccountScreen` | via the pairing; the TV displays methods read-only |
+| `buyMerch` | buys an item from the shop | — | via the pairing, from the end-of-show screen |
+| `toggleList` | adds to or removes from My list | updated `DateCard` | removal by long-pressing OK; must be instant on screen and reconciled afterwards |
+| `followArtist` / `unfollowArtist` | follows an artist | updated `ArtistCard` | **triggers notifications**: the contract must say whether following creates a notification subscription or whether that is a second setting |
+| `saveProgress` | records the playback position | — | see the rate discussion below |
+| `sendReaction` | sends a reaction during a live | remaining quota | see the rate limit below |
+| `renewPlaybackTicket` | renews the playback token | partial `PlaybackTicket` | see *Real time* |
+| `releasePlayback` | releases a concurrent session | — | **cannot be guaranteed**: a television gets unplugged |
+| `revokeDevice` | signs a device out | `AccountScreen` | must also invalidate that device's playback tokens |
+| `signOutProfile` | signs a profile out of this device | `ViewerContext` | "the other accounts stay signed in": sign-out is **per profile**, not per device |
+| `updatePreferences` | changes a preference | `ViewerPreferences` | scope to be settled (Q8) |
 
-### Trois commandes méritent un débit explicite dans le contrat
+### Three commands deserve an explicit rate in the contract
 
-**`saveProgress`.** La rangée « Reprendre » est la première de l'accueil, et une
-reprise fausse se voit. Mais une TV qui écrit sa position toutes les cinq secondes
-pendant trois heures produit 2 000 écritures par spectacle et par foyer. Il faut
-que le contrat fixe la cadence (je propose : sur pause, sur sortie, sur fin, et
-un battement long — 30 à 60 s), et surtout qu'il accepte une **écriture tardive
-en arrière-plan** : la TV peut être coupée à tout moment, la dernière position
-écrite doit être prise même si elle arrive après un `releasePlayback`.
+**`saveProgress`.** The "Resume" row is the first on the home screen, and a wrong
+resume point shows. But a TV that writes its position every five seconds for
+three hours produces 2,000 writes per show per household. The contract must fix
+the cadence (I propose: on pause, on exit, on end, and a long heartbeat — 30 to
+60 s), and above all it must accept a **late background write**: the TV can be
+cut off at any moment, and the last position written must be taken even if it
+arrives after a `releasePlayback`.
 
-**`sendReaction`.** Le tchat est en lecture seule sur TV, mais les réactions
-écrivent. Six emojis, choisis à la croix directionnelle, sur un direct qui peut
-réunir des milliers de spectateurs. Il faut une **limite de débit déclarée dans
-le contrat** — pas seulement appliquée — parce que la TV doit *désactiver* la
-commande plutôt que la laisser échouer : une action inerte est proscrite par le
-dossier, mais une action qui échoue silencieusement est pire. Je demande : un
-quota par spectateur et par date, renvoyé avec la réponse (combien il en reste,
-quand il se recharge), et une seule réaction en vol à la fois.
+**`sendReaction`.** Chat is read-only on TV, but reactions write. Six emoji,
+chosen with the D-pad, on a live that may gather thousands of viewers. There must
+be a **rate limit declared in the contract** — not merely enforced — because the
+TV must *disable* the control rather than let it fail: an inert action is
+forbidden by the handoff, but an action that fails silently is worse. I ask for:
+a quota per viewer per date, returned with the response (how many are left, when
+it recharges), and a single reaction in flight at a time.
 
-**La recherche.** Ce n'est pas une commande mais elle a le même problème. Le
-clavier à l'écran produit un caractère par pression de touche et les résultats
-vivent en direct, sans bouton « Valider ». Sans discipline, c'est une requête par
-lettre. Ce que j'impose côté client : pas de requête sous deux caractères,
-anti-rebond d'environ 250–300 ms, une seule requête en vol avec annulation de la
-précédente. Ce que je demande au contrat : que la requête soit **annulable** et
-qu'elle réponde en moins de 200 ms, faute de quoi le retour visuel de la frappe
-décroche de la frappe.
+**Search.** It is not a command but it has the same problem. The on-screen
+keyboard produces one character per key press and the results are live, with no
+"Submit" button. Without discipline, that is one request per letter. What I
+impose on the client side: no request below two characters, a debounce of roughly
+250–300 ms, a single request in flight with cancellation of the previous one.
+What I ask of the contract: that the request be **cancellable** and answer in
+under 200 ms, failing which the visual feedback of typing decouples from the
+typing.
 
-### Une commande qui n'existe pas et qui devrait
+### A command that does not exist and should
 
-L'action **Partager** est présente sur la fiche d'une date. Aucune commande ne la
-sert, et dans la maquette elle mène par erreur à l'écran de paiement. Sur TV,
-partager ne peut pas vouloir dire copier un lien : il n'y a pas de presse-papiers
-utile ni de messagerie. La seule forme sensée est un **QR vers la page publique de
-la date** — donc une URL canonique servie par le contrat, pas construite par la
-surface. Voir Q10.
+The **Share** action is present on a date's page. No command serves it, and in
+the mockup it wrongly leads to the payment screen. On a TV, sharing cannot mean
+copying a link: there is no useful clipboard and no messaging app. The only
+sensible form is a **QR to the date's public page** — hence a canonical URL served
+by the contract, not built by the surface. See Q10.
 
 ---
 
-## L'appairage d'appareil
+## Device pairing
 
-C'est la section la plus importante du document, et la plus spécifique à cette
+This is the most important section of the document, and the most specific to this
 surface.
 
-### Le constat : une primitive, pas quatre — et il y en a cinq
+### The finding: one primitive, not four — and there are five
 
-Le cahier des charges annonce quatre parcours par QR + code court : se connecter,
-acheter une place, s'abonner, acheter de la marchandise. La maquette en expose en
-réalité **cinq intentions** de paiement et de connexion :
+The specification announces four QR + short-code journeys: sign in, buy a seat,
+subscribe, buy merchandise. The mockup in fact exposes **five intents** for
+payment and sign-in:
 
-| Intention | Déclenchée depuis | Ce que la TV attend en retour |
+| Intent | Triggered from | What the TV expects back |
 |---|---|---|
-| `signin` | `signin`, `gate` (ajouter un compte) | un profil de plus sur cet appareil, et la session |
-| `seat` | `book` → `pay` | la place réservée, et la date à jour |
-| `plan` | `plans` | l'abonnement actif, et les droits recalculés |
-| `payment-method` | `account` | le moyen de paiement enregistré |
-| `merch` | écran de fin de spectacle | l'achat confirmé |
+| `signin` | `signin`, `gate` (add an account) | one more profile on this device, and the session |
+| `seat` | `book` → `pay` | the seat booked, and the date updated |
+| `plan` | `plans` | the active subscription, and recomputed entitlements |
+| `payment-method` | `account` | the payment method saved |
+| `merch` | end-of-show screen | the purchase confirmed |
 
-Plus un sixième cas qui **n'en est pas un** et qu'il ne faut pas confondre : le QR
-de la page compte, qui renvoie vers la gestion du compte sur téléphone. Celui-là
-est un **renvoi**, pas un appairage : rien n'attend, l'écran ne bascule pas. Le
-contrat doit distinguer les deux, sinon on implémentera une attente là où il n'y
-en a pas.
+Plus a sixth case that **is not one**, and must not be conflated: the account
+page's QR, which hands the viewer off to account management on their phone. That
+one is a **hand-off**, not a pairing: nothing waits, the screen does not flip. The
+contract must distinguish the two, or we will implement a wait where there is
+none.
 
-Les cinq vrais parcours partagent exactement la même mécanique : un code court
-affiché sur un écran, repris sur un autre appareil, un écran qui attend et
-bascule seul. C'est le **device flow OAuth (RFC 8628)**, et le dossier l'a déjà
-identifié comme tel. Conçu cinq fois, il sera implémenté cinq fois.
+The five real journeys share exactly the same mechanism: a short code shown on one
+screen, picked up on another device, and a screen that waits then flips by itself.
+That is the **OAuth device flow (RFC 8628)**, and the handoff already identified
+it as such. Designed five times, it will be implemented five times.
 
-### Ce que je demande : une commande, une intention
+### What I ask for: one command, one intent
 
 ```
 createPairing(intent, payload?, deviceDescriptor) → DevicePairing
 ```
 
-- `intent` : l'une des cinq valeurs ci-dessus ;
-- `payload` : ce que l'intention exige — pour `seat`, l'identifiant de la date, le
-  tarif et le nombre de places ; pour `plan`, l'identifiant de la formule ; pour
-  `merch`, l'article ; vide pour `signin` et `payment-method` ;
-- `deviceDescriptor` : ce que la TV sait d'elle-même, et qui doit servir à nommer
-  l'appareil dans la liste des appareils connectés.
+- `intent`: one of the five values above;
+- `payload`: what the intent requires — for `seat`, the date id, the tier and the
+  number of seats; for `plan`, the plan id; for `merch`, the item; empty for
+  `signin` and `payment-method`;
+- `deviceDescriptor`: what the TV knows about itself, which must serve to name
+  the device in the list of connected devices.
 
-`DevicePairing` porte, dans la forme de RFC 8628 :
+`DevicePairing` carries, in the shape of RFC 8628:
 
-- `pairingId` — l'identifiant opaque que la TV **persiste sur l'appareil** ;
-- `userCode` — six caractères ;
-- `verificationUri` — l'adresse courte à taper (`arthome.fr/tv` dans la maquette) ;
-- `verificationUriComplete` — l'URI encodée dans le QR, code déjà inclus, pour que
-  le téléphone n'ait rien à saisir ;
-- `expiresAt` — instant ISO ;
-- `pollInterval` — le rythme minimal de vérification.
+- `pairingId` — the opaque id the TV **persists on the device**;
+- `userCode` — six characters;
+- `verificationUri` — the short address to type (`arthome.fr/tv` in the mockup);
+- `verificationUriComplete` — the URI encoded in the QR, code already included, so
+  that the phone has nothing to type;
+- `expiresAt` — an ISO instant;
+- `pollInterval` — the minimum polling rhythm.
 
-**Le QR et le code court sont deux vues du même appairage, pas deux mécanismes.**
-Le contrat en livre les deux formes ; la TV n'en fabrique aucune.
+**The QR and the short code are two views of the same pairing, not two
+mechanisms.** The contract delivers both forms; the TV fabricates neither.
 
-### L'alphabet du code : c'est une exigence de contrat, pas de design
+### The code alphabet: this is a contract requirement, not a design one
 
-Six caractères lus à trois mètres sur un écran, puis tapés sur un téléphone. Les
-codes de la maquette (`H4T9RD`, `K7QM2P`) mélangent chiffres et lettres, avec les
-confusions classiques : `0`/`O`, `1`/`I`/`L`, `5`/`S`, `8`/`B`. Ce n'est pas une
-question de police de caractères : quelle que soit la typographie, un spectateur
-qui tape `O` au lieu de `0` échoue et recommence, et sur TV recommencer coûte un
-retour au début du parcours.
+Six characters read from three metres on a screen, then typed on a phone. The
+mockup's codes (`H4T9RD`, `K7QM2P`) mix digits and letters, with the classic
+confusions: `0`/`O`, `1`/`I`/`L`, `5`/`S`, `8`/`B`. This is not a typeface
+question: whatever the typography, a viewer who types `O` instead of `0` fails and
+starts over, and on a TV starting over costs a return to the beginning of the
+journey.
 
-Le contrat doit donc **déclarer l'alphabet**, pas le laisser à chaque client.
-Un alphabet de 23 à 26 symboles non ambigus sur six positions donne de l'ordre de
-10^8 combinaisons. C'est assez pour un code éphémère, et trop peu pour être
-laissé sans défense : il faut un plafond de tentatives par code et par adresse, un
-verrouillage après échecs, et l'unicité du code **parmi les appairages en cours
-seulement** — un code doit pouvoir être réutilisé une fois expiré, sinon l'espace
-s'épuise.
+The contract must therefore **declare the alphabet**, not leave it to each client.
+An alphabet of 23 to 26 unambiguous symbols over six positions gives on the order
+of 10^8 combinations. That is enough for an ephemeral code, and too little to be
+left undefended: there must be an attempt ceiling per code and per address, a
+lockout after failures, and code uniqueness **among in-flight pairings only** — a
+code must be reusable once expired, or the space runs out.
 
-### La durée de validité : quinze minutes, mais pour quoi ?
+### The validity period: fifteen minutes, but for what?
 
-La maquette annonce « CODE VALABLE 15 MINUTES ». Cette valeur n'existe nulle part
-dans `shared/` : c'est un littéral de maquette, et le contrat doit se l'approprier.
+The mockup announces "CODE VALID FOR 15 MINUTES". That value exists nowhere in
+`shared/`: it is a mockup literal, and the contract must take ownership of it.
 
-Je conteste qu'une seule durée convienne aux cinq intentions. Quinze minutes pour
-une connexion est raisonnable : le spectateur cherche son téléphone, se connecte,
-peut-être fait une 2FA. Quinze minutes pour un **paiement** est long : pendant ce
-temps la date peut se remplir, et l'écran de réservation affichait une jauge qui
-n'est plus vraie. Je demande une durée **par intention**, servie dans la réponse
-(`expiresAt`) et jamais codée sur la surface — de sorte que la TV n'ait rien à
-savoir et que la politique reste modifiable sans revue de magasin.
+I dispute that a single duration suits all five intents. Fifteen minutes for a
+sign-in is reasonable: the viewer looks for their phone, signs in, perhaps does a
+2FA. Fifteen minutes for a **payment** is long: in that time the date can fill up,
+and the booking screen was showing a seat gauge that is no longer true. I ask for
+a duration **per intent**, served in the response (`expiresAt`) and never coded on
+the surface — so that the TV has nothing to know and the policy stays changeable
+without a store review.
 
-À la maquette de la TV près d'un point, qui est juste et qu'il faut garder :
-**l'écran d'attente ne montre pas de compte à rebours.** Un décompte anxiogène
-pousse à abandonner. Le contrat porte `expiresAt` ; la TV s'en sert pour savoir
-quand renoncer, pas pour l'afficher.
+The TV mockup is right on one point, which must be kept: **the waiting screen
+shows no countdown.** An anxiety-inducing countdown pushes people to give up. The
+contract carries `expiresAt`; the TV uses it to know when to give up, not to
+display it.
 
-### Comment la TV apprend que c'est fait
+### How the TV learns it is done
 
-Trois mécanismes possibles, et c'est au backend de trancher (Q1) :
+Three possible mechanisms, and it is for the backend to decide (Q1):
 
-1. **Interrogation périodique**, conforme à RFC 8628, avec `pollInterval` et la
-   réponse `slow_down`. Simple, sans état de connexion à maintenir, robuste à une
-   coupure Wi-Fi passagère. Mais la latence perçue est celle de l'intervalle.
-2. **Le canal temps réel existant**, celui du tchat et des incidents. Meilleure
-   latence, mais pendant la connexion la TV **n'a pas encore de session** : le
-   canal devrait accepter une identité d'appareil, ce qui élargit sa surface.
-3. **Un flux serveur dédié** sur la durée de l'appairage.
+1. **Periodic polling**, compliant with RFC 8628, with `pollInterval` and the
+   `slow_down` response. Simple, no connection state to maintain, robust to a
+   transient Wi-Fi drop. But the perceived latency is the interval.
+2. **The existing real-time channel**, the one for chat and incidents. Better
+   latency, but during sign-in the TV **does not yet have a session**: the channel
+   would have to accept a device identity, which widens its surface.
+3. **A dedicated server stream** for the lifetime of the pairing.
 
-Mon exigence, quelle que soit la réponse : **la TV bascule en deux secondes au
-plus** après la fin du parcours sur le téléphone. Au-delà, le spectateur pense
-que ça n'a pas marché et il recommence — ce qui crée un second appairage pour le
-même achat. Et la TV ne doit jamais interroger plus vite que `pollInterval` : le
-contrat doit pouvoir la ralentir, parce que quelques milliers de téléviseurs qui
-attendent tous un paiement sont une charge que le serveur doit pouvoir modérer.
+My requirement, whatever the answer: **the TV flips within two seconds at most**
+after the journey ends on the phone. Beyond that the viewer thinks it did not work
+and starts over — which creates a second pairing for the same purchase. And the TV
+must never poll faster than `pollInterval`: the contract must be able to slow it
+down, because a few thousand televisions all waiting on a payment are a load the
+server must be able to moderate.
 
-### Le cycle de vie, et les quatre issues
+### The life cycle, and the four outcomes
 
 `pending` → `approved` | `denied` | `expired` | `cancelled`.
 
-Les quatre doivent être **distinguables par un code**, parce que la TV dit quatre
-choses différentes : « réessayez », « vous avez refusé sur votre téléphone », « le
-code a expiré, en voici un autre », « vous avez annulé ». Un seul code d'échec
-produirait un message faux trois fois sur quatre.
+All four must be **distinguishable by a code**, because the TV says four different
+things: "try again", "you declined on your phone", "the code expired, here is
+another", "you cancelled". A single failure code would produce a wrong message
+three times out of four.
 
-À quoi s'ajoute une cinquième issue, propre aux intentions d'achat :
-`approved_with_failure` — le téléphone a bien terminé mais l'achat a échoué
-(complet entre-temps, paiement refusé). Le contrat doit la porter distinctement,
-parce que la TV ne doit pas afficher « Votre place est réservée ».
+To which is added a fifth outcome, specific to the purchase intents:
+`approved_with_failure` — the phone did finish but the purchase failed (sold out
+in the meantime, payment declined). The contract must carry it distinctly,
+because the TV must not display "Your seat is booked".
 
-### Si le téléphone abandonne
+### If the phone gives up
 
-Trois cas, trois comportements attendus du contrat :
+Three cases, three behaviours expected of the contract:
 
-- **le téléphone ne vient jamais** : l'appairage expire ; la TV le sait par
-  `expired` et propose un nouveau code sans repartir du début du parcours (le
-  tarif et le nombre de places choisis à la télécommande doivent survivre, c'est
-  le travail pénible) ;
-- **le spectateur quitte l'écran sur la TV** (Retour) : la TV appelle
-  `cancelPairing`. Si elle n'y arrive pas — réseau coupé — l'appairage doit
-  expirer seul ;
-- **l'application TV redémarre** : c'est le cas qu'on oublie. La TV a persisté
-  `pairingId` ; elle doit pouvoir **se rattacher** à l'appairage en cours plutôt
-  que d'en ouvrir un second. Sans cela, un téléviseur qui a redémarré pendant que
-  le spectateur payait affichera l'accueil pendant que le paiement aboutit dans le
-  vide.
+- **the phone never comes**: the pairing expires; the TV learns this from
+  `expired` and offers a new code without restarting the journey from the
+  beginning (the tier and seat count chosen with the remote must survive — that is
+  the tedious work);
+- **the viewer leaves the screen on the TV** (Back): the TV calls
+  `cancelPairing`. If it cannot — network cut — the pairing must expire on its
+  own;
+- **the TV app restarts**: this is the case people forget. The TV has persisted
+  `pairingId`; it must be able to **reattach** to the pairing in progress rather
+  than open a second one. Without that, a television that restarted while the
+  viewer was paying will show the home screen while the payment completes into
+  the void.
 
-### Ce que porte l'issue
+### What the outcome carries
 
-Pour chaque intention, `PairingOutcome` doit livrer **le résultat, pas un accusé**,
-et il doit être assez complet pour que l'écran de confirmation s'affiche **sans
-un seul appel de plus**. Pour `seat` : la place créée, la date à jour, et de quoi
-écrire la ligne « Rendez-vous [jour] à [heure] chez vous ; la salle ouvre 30
-minutes avant » — donc l'instant et la zone, pas la phrase. Pour `plan` : les
-droits recalculés, parce qu'ils conditionnent immédiatement la lecture. Pour
-`payment-method` : le moyen enregistré en lecture seule. Pour `signin` : le profil
-ajouté et la session.
+For each intent, `PairingOutcome` must deliver **the result, not an
+acknowledgement**, and it must be complete enough for the confirmation screen to
+render **without a single further call**. For `seat`: the seat created, the
+updated date, and enough to write the line "See you [day] at [time], your local
+time; the house opens 30 minutes before" — so the instant and the zone, not the
+sentence. For `plan`: the recomputed entitlements, because they condition playback
+immediately. For `payment-method`: the saved method, read-only. For `signin`: the
+profile added and the session.
 
-### Deux points que la TV seule peut voir
+### Two points only the TV can see
 
-**Un téléviseur est partagé.** Le téléphone qui approuve n'est pas forcément
-celui du profil qui a lancé l'appairage : dans un salon, c'est un cas courant, pas
-un cas limite. L'appairage doit donc être **lié au profil qui l'a ouvert**, et le
-contrat doit dire ce qui se passe si le téléphone est connecté sous une autre
-identité : refus avec un code distinct, ou bascule du profil sur la TV ? Les deux
-se défendent ; il faut choisir (Q2).
+**A television is shared.** The phone that approves is not necessarily the one
+belonging to the profile that started the pairing: in a living room that is a
+common case, not an edge case. The pairing must therefore be **bound to the
+profile that opened it**, and the contract must say what happens if the phone is
+signed in under another identity: refusal with a distinct code, or switching the
+profile on the TV? Both are defensible; a choice has to be made (Q2).
 
-**La connexion n'a pas de session.** Pour l'intention `signin`, la TV appelle
-`createPairing` sans être authentifiée. Il lui faut donc une **identité
-d'appareil** obtenue au premier lancement, ou bien des points d'entrée anonymes où
-le code est le seul secret. La première option est meilleure — elle permet de
-nommer l'appareil dans « appareils connectés », de le révoquer, et de limiter le
-débit par appareil plutôt que par adresse — mais elle crée une notion
-supplémentaire. À trancher (Q3).
-
----
-
-## Le temps réel
-
-Quatre besoins seulement, et ils n'ont pas la même urgence. Les confondre coûterait
-un canal permanent là où un instant servi suffit.
-
-| Besoin | Tolérance | Mécanisme |
-|---|---|---|
-| **État d'incident** | ≤ 2 s | **poussé, obligatoire** |
-| Issue d'un appairage | ≤ 2 s | poussé ou interrogé (Q1) |
-| Messages de tchat | ≤ 2 s | poussé, plafonné |
-| Compteur de spectateurs | 10 à 30 s | poussé au fil du flux, ou interrogé |
-| Passage à l'antenne, ouverture de salle, expiration d'une rediffusion | — | **dérivé, aucun appel** |
-| Jauge de places | 30 à 60 s à l'affichage | dérivé, corrigé par la commande |
-
-### Ce qui n'a pas besoin de temps réel, et pourquoi c'est une exigence
-
-Un téléviseur reste allumé des heures sur le même écran. Entre-temps, une date
-passe à l'antenne, une salle ouvre, une rediffusion expire. La tentation est de
-pousser ces transitions. **Il ne faut pas** : si le contrat livre les instants
-(début, fin, fenêtre de rediffusion) et les constantes (ouverture de salle), la
-TV dérive l'état localement, à la seconde, sans un seul appel. C'est exactement ce
-que fait déjà `stateOf()` dans `helpers.js`, et c'est la raison pour laquelle le
-contrat doit porter des **instants et pas des libellés** — une réponse qui livre
-« PROGRAMMÉ » est périmée en vol ; une réponse qui livre un instant ne l'est jamais.
-
-La conséquence pratique : un mode veille qui tourne huit heures ne fait **aucune**
-requête, et une TV posée sur l'accueil ne rafraîchit que ce qui bouge vraiment.
-
-### L'incident est le seul besoin non négociable
-
-Quand la régie diffuse un écran d'attente, le spectateur regarde une image figée
-en se demandant si le problème vient de chez lui ou de la salle. Le dossier en
-fait un principe : jamais de spinner muet. Le plan de contrôle publie l'état, le
-lecteur pose le voile par-dessus la vidéo intacte — `streaming.md` le dit
-explicitement, et c'est la bonne solution : basculer le flux amont serait lent.
-
-Ce que l'état doit porter : le genre (écran d'attente, reportée, annulée,
-interrompue), le **message écrit par la régie** avec sa langue, l'instant, et ce
-que ça implique pour la place. Quand l'incident se résout, l'état change et le
-lecteur retire le voile — la TV ne doit pas avoir à redemander un
-`PlaybackTicket`, sinon la reprise se paie d'un rechargement de flux.
-
-### Le tchat : plafonné à la source
-
-Une date à forte audience produit plus de messages que la TV n'en affiche —
-elle en montre moins d'une dizaine. Une TV ne peut pas absorber un flux à haut
-débit pour en jeter 95 % : chaque message rejeté a coûté du parsing et de
-l'allocation sur un appareil qui décode déjà de la vidéo.
-
-Je demande donc un **plafond appliqué côté serveur** : N messages par seconde
-maximum sur le canal servi à la TV, avec une sélection faite en amont, et un
-historique de rattrapage court à l'entrée (20 messages, pas davantage). Et le flux
-est **déjà modéré** : aucun message retiré ne doit atteindre la surface.
-
-### Ce que le lecteur exige du jeton de lecture
-
-`streaming.md` pose le mécanisme : `@arthome/core` dit si la place est valide, le
-service `streaming` demande un jeton court au fournisseur, le client le renouvelle
-tant que la place tient, le CDN refuse tout ce qui n'est pas signé. Ce que cela
-exige de **mon** lecteur, concrètement :
-
-1. **Renouveler sans coupure.** Le jeton doit être renouvelé avant expiration, et
-   le renouvellement doit produire une URL que le lecteur peut adopter **sans
-   redémarrer la lecture**. Un jeton dont le renouvellement force un rechargement
-   de manifeste produit un micro-gel toutes les N minutes, visible sur un plan
-   fixe de théâtre. C'est une contrainte sur la **forme** du jeton (dans une
-   requête signée, pas dans le chemin), pas sur sa durée.
-2. **Échouer en disant pourquoi.** Si le renouvellement est refusé, la TV doit
-   distinguer « votre place a expiré », « la limite d'écrans simultanés est
-   atteinte », « vous avez été déconnecté depuis un autre appareil » et « nos
-   serveurs ne répondent pas ». Quatre messages différents à l'écran, donc quatre
-   codes dans l'enveloppe.
-3. **Un intervalle de renouvellement court.** C'est le renouvellement qui porte la
-   limite de sessions simultanées : si un autre appareil prend la place, la TV ne
-   l'apprendra qu'au renouvellement suivant. Au-delà d'une minute, on regarde un
-   flux auquel on n'a plus droit. Je demande ≤ 60 s.
-4. **Une libération par expiration, pas par commande.** `releasePlayback` ne peut
-   pas être garantie : un téléviseur se débranche, une box se coupe. La limite de
-   sessions simultanées doit donc reposer sur un **bail qui expire faute de
-   renouvellement**, et non sur une libération explicite. Sinon un foyer se retrouve
-   bloqué par des sessions fantômes, et la seule issue visible pour le spectateur
-   sera « déconnecter un appareil » dans la page compte.
-5. **Un seul flux à la fois.** Un décodeur de téléviseur ne décode souvent qu'un
-   flux haute définition : l'aperçu vidéo du billboard et la lecture ne peuvent
-   pas coexister. Conséquence de contrat : l'aperçu du billboard doit être servi
-   en **rendition légère** et déclaré comme tel, et la TV doit pouvoir le démonter
-   avant d'ouvrir le lecteur.
-
-### Un seul canal, pas quatre
-
-La TV ne doit ouvrir qu'**un canal temps réel**, multiplexé par sujet, et le
-refermer en quittant le lecteur. Quatre connexions (incident, tchat, compteur,
-appairage) coûtent quatre reconnexions à chaque hoquet de Wi-Fi domestique et
-quatre fois la mémoire de tampon. Si le canal ne peut pas servir l'appairage faute
-de session, alors l'appairage passe par interrogation — mais les trois autres
-partagent un canal.
+**Sign-in has no session.** For the `signin` intent, the TV calls `createPairing`
+without being authenticated. It therefore needs a **device identity** obtained at
+first launch, or anonymous endpoints where the code is the only secret. The first
+option is better — it makes it possible to name the device under "connected
+devices", to revoke it, and to rate-limit per device rather than per address — but
+it creates one more notion. To be settled (Q3).
 
 ---
 
-## Budget d'appels par écran
+## Real time
 
-### La règle
+Only four needs, and they are not equally urgent. Conflating them would cost a
+permanent channel where a served instant is enough.
 
-**Un écran = un aller-retour. Deux au maximum, et jamais pour peindre la même
-zone de l'écran.**
-
-Trois raisons, dont une seule est esthétique :
-
-1. À trois mètres, un écran qui se remplit par morceaux est illisible : on ne
-   balaie pas une télévision du regard comme un téléphone à trente centimètres.
-2. Le Wi-Fi d'un téléviseur est le pire du foyer — appareil au fond du salon,
-   souvent en 2,4 GHz. Chaque requête supplémentaire est une occasion de plus de
-   caler, et certains systèmes TV tuent une requête bloquée au bout de quelques
-   secondes sans prévenir.
-3. Un téléviseur ne travaille pas en arrière-plan entre deux sessions : **chaque
-   ouverture est un démarrage à froid** qui paie l'addition complète. Le budget de
-   démarrage sur une clé d'entrée de gamme est de l'ordre de 5 s, dont le contrat
-   ne doit pas consommer la moitié.
-
-### Ce que le contrat doit empêcher, et qui se produit aujourd'hui
-
-La maquette charge **l'intégralité du catalogue** et filtre côté client. Les
-chiffres, mesurés sur le jeu déterministe de `fixtures.js` :
-
-| Entité | Volume | Poids JSON |
+| Need | Tolerance | Mechanism |
 |---|---|---|
-| dates | **1 814** | **1,79 Mo** |
-| spectacles | 1 315 | ~1,1 Mo |
-| artistes | 213 | — |
-| salles | 69 | — |
-| public (tchat) | 934 | — |
-| une date | — | ~890 octets |
+| **Incident state** | ≤ 2 s | **pushed, mandatory** |
+| Pairing outcome | ≤ 2 s | pushed or polled (Q1) |
+| Chat messages | ≤ 2 s | pushed, capped |
+| Viewer count | 10 to 30 s | pushed along with the stream, or polled |
+| Going on air, house opening, replay expiry | — | **derived, no call** |
+| Seat gauge | 30 to 60 s on display | derived, corrected by the command |
 
-1,8 Mo de JSON à parser et à garder en mémoire sur un appareil qui dispose de
-300 à 500 Mo pour tout, vidéo comprise, c'est un plantage ou une éviction d'images
-en boucle. C'est acceptable dans une maquette ; c'est la chose que le contrat doit
-rendre impossible.
+### What does not need real time, and why that is a requirement
 
-**Règle : la TV ne filtre jamais le catalogue.** Elle demande un modèle de lecture
-déjà composé, déjà ordonné, déjà tronqué. Toutes les compositions que la maquette
-fait aujourd'hui côté client — les rangées d'accueil, la grille du soir, les
-rangées par sous-genre, le classement de Mes places, le choix du billboard, le
-filtrage du profil enfant — appartiennent au serveur.
+A television stays on the same screen for hours. Meanwhile a date goes on air, a
+house opens, a replay expires. The temptation is to push these transitions.
+**It must be resisted**: if the contract delivers the instants (start, end, replay
+window) and the constants (house opening), the TV derives the state locally, to
+the second, without a single call. That is exactly what `stateOf()` already does
+in `helpers.js`, and it is the reason the contract must carry **instants and not
+labels** — a response that delivers "SCHEDULED" is stale in flight; a response
+that delivers an instant never is.
 
-### Le budget, écran par écran
+The practical consequence: a screensaver that runs for eight hours makes **no**
+request, and a TV sitting on the home screen refreshes only what actually moves.
 
-| Écran | Appels | Ce que cela exige du contrat |
+### The incident is the only non-negotiable need
+
+When the gallery broadcasts a hold screen, the viewer stares at a frozen image
+wondering whether the problem is at their end or at the venue's. The handoff makes
+it a principle: never a silent spinner. The control plane publishes the state, the
+player lays the veil over the untouched video — `streaming.md` says so explicitly,
+and it is the right solution: switching the upstream feed would be slow.
+
+What the state must carry: the kind (hold screen, postponed, cancelled,
+interrupted), the **message written by the gallery** with its language, the
+instant, and what it means for the seat. When the incident resolves, the state
+changes and the player lifts the veil — the TV must not have to ask for a new
+`PlaybackTicket`, or resumption costs a stream reload.
+
+### Chat: capped at the source
+
+A high-audience date produces more messages than the TV displays — it shows fewer
+than ten. A TV cannot absorb a high-rate stream in order to throw away 95% of it:
+every rejected message has cost parsing and allocation on a device that is already
+decoding video.
+
+So I ask for a **cap enforced server-side**: N messages per second at most on the
+channel served to the TV, with the selection made upstream, and a short catch-up
+history on join (20 messages, no more). And the stream is **already moderated**:
+no removed message may reach the surface.
+
+### What the player requires of the playback token
+
+`streaming.md` sets out the mechanism: `@arthome/core` says whether the seat is
+valid, the `streaming` service asks the provider for a short token, the client
+renews it as long as the seat holds, the CDN refuses anything unsigned. What that
+requires of **my** player, concretely:
+
+1. **Renew without a break.** The token must be renewed before expiry, and the
+   renewal must produce a URL the player can adopt **without restarting
+   playback**. A token whose renewal forces a manifest reload produces a micro-
+   freeze every N minutes, visible on a static theatre shot. That is a constraint
+   on the **shape** of the token (in a signed request, not in the path), not on
+   its duration.
+2. **Fail by saying why.** If the renewal is refused, the TV must distinguish
+   "your seat has expired", "the concurrent-screen limit is reached", "you were
+   signed out from another device" and "our servers are not responding". Four
+   different messages on screen, therefore four codes in the envelope.
+3. **A short renewal interval.** It is the renewal that carries the concurrent-
+   session limit: if another device takes the slot, the TV will only learn it at
+   the next renewal. Beyond a minute, you are watching a stream you no longer have
+   a right to. I ask for ≤ 60 s.
+4. **Release by expiry, not by command.** `releasePlayback` cannot be guaranteed:
+   a television gets unplugged, a set-top box gets cut off. The concurrent-session
+   limit must therefore rest on a **lease that expires for want of renewal**, not
+   on an explicit release. Otherwise a household ends up blocked by phantom
+   sessions, and the only visible way out for the viewer will be "sign a device
+   out" on the account page.
+5. **One stream at a time.** A television decoder often decodes only one high-
+   definition stream: the billboard's video preview and playback cannot coexist.
+   Contract consequence: the billboard preview must be served as a **light
+   rendition** and declared as such, and the TV must be able to tear it down
+   before opening the player.
+
+### One channel, not four
+
+The TV must open only **one real-time channel**, multiplexed by topic, and close
+it on leaving the player. Four connections (incident, chat, viewer count, pairing)
+cost four reconnections at every home Wi-Fi hiccup and four times the buffer
+memory. If the channel cannot serve the pairing for want of a session, then the
+pairing goes by polling — but the other three share a channel.
+
+---
+
+## Per-screen call budget
+
+### The rule
+
+**One screen = one round trip. Two at most, and never to paint the same area of
+the screen.**
+
+Three reasons, only one of which is aesthetic:
+
+1. At three metres, a screen that fills in pieces is illegible: you do not scan a
+   television the way you scan a phone at thirty centimetres.
+2. A television's Wi-Fi is the worst in the household — a device at the back of
+   the living room, often on 2.4 GHz. Every additional request is one more chance
+   to stall, and some TV systems kill a stuck request after a few seconds without
+   warning.
+3. A television does not work in the background between sessions: **every opening
+   is a cold start** that pays the full bill. The start-up budget on an entry-level
+   stick is on the order of 5 s, and the contract must not consume half of it.
+
+### What the contract must prevent, and which happens today
+
+The mockup loads **the entire catalogue** and filters client-side. The figures,
+measured on the deterministic data set from `fixtures.js`:
+
+| Entity | Volume | JSON weight |
 |---|---|---|
-| `boot` | **1** | `ViewerContext` complet : profils de l'appareil, droits, préférences, constantes de domaine, version du catalogue de libellés. Les libellés eux-mêmes viennent de l'instantané embarqué — le contrôle de version ne bloque pas l'affichage |
-| `gate` | **0** | les profils sont arrivés à l'amorçage |
-| `home` | **1** | billboard + 10 à 13 rangées, 6 à 8 cartes visibles chacune, curseur par rangée. 60 à 100 cartes ≈ 50 à 90 Ko : tenable. La composition et l'ordre sont serveur |
-| `live` | **1** | le direct en tête + la grille du soir **déjà groupée par heure locale du spectateur**. Le groupement dépend du fuseau : la TV l'envoie, le serveur groupe |
-| `categories` | **1** | les 21 tuiles avec famille, rang, nombre de dates et nombre de directs. **Pas un appel par tuile** |
-| `category` | **1** | hero + rangées de sous-genres déjà choisies et ordonnées |
-| `artists` | **1** + curseur | 213 artistes : une première page suffit à remplir la grille |
-| `artist` | **1** | fiche + dates à venir + rediffusions, dans la même réponse |
-| `title` | **1** | fiche + série + même artiste + suggestions. **Appelé en pré-chargement** (voir ci-dessous), donc il doit être bon marché et porter une validation de cache |
-| `book` | **0 ou 1** | la date est déjà en main. Un seul appel légitime : rafraîchir la jauge et le prix avant de montrer un total |
-| `pay` | **1** + attente | `createPairing`, puis l'attente |
-| `confirm` | **0** | tout vient de `PairingOutcome`. C'est l'exigence la plus stricte du parcours : une confirmation qui charge est une confirmation qu'on ne croit pas |
-| `player` | **1** + renouvellements | `PlaybackTicket` complet. Chapitres, pistes, régime de tchat, incident, reprise, bord du direct : **tout dans la même réponse**. Budget : échange de droit et de jeton ≤ 1 s, sur un budget total de ~10 s jusqu'à la première image |
-| `dateinfo` | **0** | dérivé du `PlaybackTicket` |
-| `tickets` | **1** | déjà ordonné par le serveur |
-| `list`, `replays` | **1** chacun | curseur |
-| `plans` | **1** | trois formules, leurs droits, la remise sur les places |
-| `account` | **1** | identité, abonnement, moyen de paiement, appareils, préférences |
-| `search` | 1 par état de requête | voir plus bas |
-| `help` | **0** | embarqué |
-| `ambient` | **0** | réemploi des affiches déjà en main. Ce mode tourne des heures : il ne doit rien demander |
+| dates | **1,814** | **1.79 MB** |
+| shows | 1,315 | ~1.1 MB |
+| artists | 213 | — |
+| venues | 69 | — |
+| audience (chat) | 934 | — |
+| one date | — | ~890 bytes |
 
-### Pré-chargement : oui, mais borné
+1.8 MB of JSON to parse and hold in memory on a device that has 300 to 500 MB for
+everything, video included, is a crash or an image-eviction loop. That is
+acceptable in a mockup; it is the thing the contract must make impossible.
 
-Le confort TV veut qu'on précharge la fiche de la carte focalisée pour que OK
-ouvre instantanément. Mais un pré-chargement agressif sur un appareil à mémoire
-contrainte provoque exactement ce qu'il prétend éviter : images en cache + JSON +
-tampon vidéo, puis éviction et rechargement.
+**Rule: the TV never filters the catalogue.** It asks for a read model already
+composed, already ordered, already truncated. Every composition the mockup
+currently does client-side — the home rows, the evening grid, the sub-genre rows,
+the ordering of My seats, the billboard choice, the child-profile filtering —
+belongs to the server.
 
-Ma position : **au plus l'élément focalisé, et seulement après stabilisation du
-focus** (le spectateur qui maintient une touche traverse une rangée en une
-seconde ; précharger chaque carte traversée serait vingt requêtes pour rien). Ce
-que cela exige du contrat : que `title` soit bon marché, et qu'il porte de quoi
-valider un cache — sans quoi le pré-chargement se paie deux fois.
+### The budget, screen by screen
 
-### Fraîcheur : elle appartient au contrat, pas aux cinq surfaces
+| Screen | Calls | What it requires of the contract |
+|---|---|---|
+| `boot` | **1** | a complete `ViewerContext`: the device's profiles, entitlements, preferences, domain constants, label catalogue version. The labels themselves come from the embedded snapshot — the version check does not block rendering |
+| `gate` | **0** | the profiles arrived at start-up |
+| `home` | **1** | billboard + 10 to 13 rows, 6 to 8 visible cards each, a cursor per row. 60 to 100 cards ≈ 50 to 90 KB: sustainable. Composition and order are server-side |
+| `live` | **1** | what is on air at the top + the evening grid **already grouped by the viewer's local hour**. The grouping depends on the time zone: the TV sends it, the server groups |
+| `categories` | **1** | the 21 tiles with family, rank, date count and live count. **Not one call per tile** |
+| `category` | **1** | hero + sub-genre rows already chosen and ordered |
+| `artists` | **1** + cursor | 213 artists: a first page is enough to fill the grid |
+| `artist` | **1** | page + upcoming dates + replays, in the same response |
+| `title` | **1** | page + run + same artist + suggestions. **Called speculatively** (see below), so it must be cheap and carry a cache validator |
+| `book` | **0 or 1** | the date is already in hand. One legitimate call: refresh the gauge and the price before showing a total |
+| `pay` | **1** + wait | `createPairing`, then the wait |
+| `confirm` | **0** | everything comes from `PairingOutcome`. This is the strictest requirement of the journey: a confirmation that loads is a confirmation you do not believe |
+| `player` | **1** + renewals | a complete `PlaybackTicket`. Chapters, tracks, chat mode, incident, resume, live edge: **all in the same response**. Budget: entitlement and token exchange ≤ 1 s, within a total budget of ~10 s to first frame |
+| `dateinfo` | **0** | derived from the `PlaybackTicket` |
+| `tickets` | **1** | already ordered by the server |
+| `list`, `replays` | **1** each | cursor |
+| `plans` | **1** | three plans, their entitlements, the seat discount |
+| `account` | **1** | identity, subscription, payment method, devices, preferences |
+| `search` | 1 per query state | see below |
+| `help` | **0** | embedded |
+| `ambient` | **0** | reuses posters already in hand. This mode runs for hours: it must ask for nothing |
 
-Si le contrat ne dit pas combien de temps une réponse reste bonne, cinq surfaces
-inventeront cinq politiques et la TV inventera la pire, faute de pouvoir mesurer.
-Je demande une **indication de fraîcheur par modèle de lecture**, que la TV mappe
-directement sur la fraîcheur de son cache client :
+### Prefetching: yes, but bounded
 
-| Modèle | Fraîcheur demandée |
+TV comfort wants the focused card's page prefetched so that OK opens instantly.
+But aggressive prefetching on a memory-constrained device causes exactly what it
+claims to avoid: cached images + JSON + video buffer, then eviction and reload.
+
+My position: **at most the focused item, and only after the focus has settled**
+(a viewer holding a key crosses a row in one second; prefetching every card
+crossed would be twenty requests for nothing). What that requires of the contract:
+that `title` be cheap, and that it carry something to validate a cache — without
+which the prefetch is paid for twice.
+
+### Freshness: it belongs to the contract, not to the five surfaces
+
+If the contract does not say how long a response stays good, five surfaces will
+invent five policies and the TV will invent the worst one, having no way to
+measure. I ask for a **freshness hint per read model**, which the TV maps directly
+onto its client cache freshness:
+
+| Model | Freshness asked for |
 |---|---|
-| taxonomie, disciplines | 24 h |
+| taxonomy, disciplines | 24 h |
 | `category`, `artist`, `plans` | 5 min |
 | `home`, `tickets`, `list`, `replays` | 60 s |
 | `live` | 15 s |
 | `account` | 5 min |
-| `PlaybackTicket` | jamais mis en cache |
+| `PlaybackTicket` | never cached |
 
-### Le corollaire : les commandes renvoient l'état
+### The corollary: commands return the state
 
-Déjà dit dans *Les commandes*, mais c'est ici qu'il pèse : une commande qui ne
-renvoie rien transforme chaque action en **deux** allers-retours et fait repeindre
-l'écran en deux temps. Sur TV, c'est la différence entre une application et un
-site affiché en grand.
+Already said under *The commands*, but this is where it bites: a command that
+returns nothing turns every action into **two** round trips and repaints the
+screen in two stages. On a TV, that is the difference between an application and a
+website shown large.
 
 ---
 
-## Pagination et volumes
+## Pagination and volumes
 
-**Curseur partout** (décision projet), tri déterministe avec départage par
-identifiant. Trois précisions que la surface impose :
+**Cursors everywhere** (project decision), deterministic sort with an id
+tie-break. Three refinements the surface imposes:
 
-**1. La taille de page n'est pas la même selon la forme.** Une rangée horizontale
-en montre six à huit et doit pouvoir avancer sans à-coup : 20 par page convient.
-Une grille (recherche, artistes, Ma liste) en montre davantage : 30. La taille doit
-donc être un **paramètre de requête avec un maximum serveur**, pas une constante
-figée par surface — sinon la TV paiera le format du web ou du mobile.
+**1. Page size is not the same for every shape.** A horizontal row shows six to
+eight and must be able to advance without a jolt: 20 per page suits it. A grid
+(search, artists, My list) shows more: 30. Page size must therefore be a **request
+parameter with a server maximum**, not a constant frozen per surface — otherwise
+the TV will pay for the web's or the mobile's format.
 
-**2. L'enveloppe de page doit porter un total.** Chaque rangée affiche un compteur
-à côté de son titre. Avec une page de 20 sur une rangée de 60, `items.length` est
-faux et le compteur devient un littéral parallèle — exactement ce que le principe
-n°1 du dossier interdit. `total` (ou une borne déclarée telle) est donc une
-exigence, pas un confort.
+**2. The page envelope must carry a total.** Every row displays a counter beside
+its title. With a page of 20 on a row of 60, `items.length` is wrong and the
+counter becomes a parallel literal — exactly what principle no. 1 of the handoff
+forbids. `total` (or a bound declared as such) is therefore a requirement, not a
+comfort.
 
-**3. Les volumes réels, mesurés.**
+**3. The real volumes, measured.**
 
-| Ensemble | Volume |
+| Set | Volume |
 |---|---|
-| disciplines | 21 (14 Musique, 7 Scène) |
-| sous-genres | 176 |
-| étiquettes | 205 |
-| dates | 1 814 |
-| spectacles | 1 315 |
-| artistes | 213 |
-| salles | 69 |
-| profils par appareil | 5 au maximum |
-| appareils par compte | 1 à 4 observés, sans plafond déclaré |
+| disciplines | 21 (14 Music, 7 Stage) |
+| sub-genres | 176 |
+| tags | 205 |
+| dates | 1,814 |
+| shows | 1,315 |
+| artists | 213 |
+| venues | 69 |
+| profiles per device | 5 at most |
+| devices per account | 1 to 4 observed, no declared ceiling |
 
-Seuls les 21 tuiles de disciplines sont servies intégralement, parce que c'est un
-écran entier et un ensemble borné. Tout le reste est paginé.
+Only the 21 discipline tiles are served in full, because that is a whole screen
+and a bounded set. Everything else is paginated.
 
-**4. Ce que la virtualisation exige du contrat.** Une rangée TV est virtualisée :
-seules quelques cartes existent en mémoire à un instant donné, et l'usage veut
-qu'on garde des identifiants dans les éléments de liste et qu'on aille chercher le
-détail à la demande. Cela confirme la séparation `DateCard` / `DateDetail` et
-interdit à la carte de grossir : chaque champ ajouté à `DateCard` est multiplié par
-le nombre de cartes gardées en mémoire, sur toutes les rangées.
+**4. What virtualization requires of the contract.** A TV row is virtualized: only
+a few cards exist in memory at any instant, and the practice is to keep ids in the
+list items and fetch the detail on demand. This confirms the `DateCard` /
+`DateDetail` separation and forbids the card from growing: every field added to
+`DateCard` is multiplied by the number of cards held in memory, across all rows.
 
-**5. Le tchat.** Historique de rattrapage court à l'entrée (20 messages), puis flux
-plafonné. Pas de pagination remontante : personne ne remonte un tchat de direct à
-la télécommande.
+**5. Chat.** A short catch-up history on join (20 messages), then a capped stream.
+No backward pagination: nobody scrolls back through a live chat with a remote.
 
-**6. Le mode veille.** Il itère sur des affiches. Il doit réemployer celles déjà en
-main — une réserve de huit suffit — et **ne rien demander**. Un mode ambiant qui
-pagine est un mode ambiant qui réveille le Wi-Fi toutes les sept secondes pendant
-la nuit.
+**6. Screensaver mode.** It iterates over posters. It must reuse the ones already
+in hand — a pool of eight is enough — and **ask for nothing**. An ambient mode that
+paginates is an ambient mode that wakes the Wi-Fi every seven seconds all night.
 
 ---
 
-## États d'erreur et de chargement
+## Error and loading states
 
-### La distinction que l'enveloppe doit porter
+### The distinction the envelope must carry
 
-Le dossier l'impose et la copie de la TV l'applique déjà : le message doit
-distinguer « **votre** connexion » de « **nos** serveurs ». Un client ne peut pas
-faire cette distinction depuis un délai d'attente : les deux se ressemblent.
+The handoff requires it and the TV copy already applies it: the message must
+distinguish "**your** connection" from "**our** servers". A client cannot make
+that distinction from a timeout: the two look alike.
 
-Ce que j'en tire pour le contrat :
+What I draw from this for the contract:
 
-- un échec **de transport** (pas de réponse, DNS, socket) est interprété par la TV
-  comme « votre connexion » ;
-- **toute** réponse du système, y compris en surcharge, doit porter l'enveloppe
-  d'erreur avec son code et son identifiant de trace — c'est ce qui permet de dire
-  « nos serveurs ». Une passerelle qui renvoie une page d'erreur brute rend la
-  distinction impossible : la TV affichera « votre connexion » alors que c'est
-  faux, et le spectateur ira redémarrer sa box.
+- a **transport** failure (no response, DNS, socket) is read by the TV as "your
+  connection";
+- **every** response from the system, including under load, must carry the error
+  envelope with its code and its trace id — that is what makes it possible to say
+  "our servers". A gateway that returns a raw error page makes the distinction
+  impossible: the TV will display "your connection" when that is false, and the
+  viewer will go and reboot their router.
 
-Cette contrainte remonte donc jusqu'à la passerelle d'infrastructure, pas
-seulement au BFF.
+This constraint therefore reaches all the way up to the infrastructure gateway,
+not just the BFF.
 
-### Les codes d'erreur que cette surface doit savoir distinguer
+### The error codes this surface must be able to tell apart
 
-Chacun produit un écran différent. Un code générique en produirait un faux.
+Each produces a different screen. A generic code would produce a wrong one.
 
-| Situation | Ce que la TV doit dire |
+| Situation | What the TV must say |
 |---|---|
-| pas de place pour cette date | dit **avant** l'ouverture du lecteur, jamais après |
-| salle pas encore ouverte | avec le temps restant, dérivé |
-| hors territoire | en clair, **avec la raison** |
-| abonnement requis | avec ce que la formule ouvre |
-| aucune rediffusion pour cette date | distinct de « rediffusion expirée » |
-| rediffusion expirée | distinct du précédent |
-| complet | distinct de « liste d'attente » |
-| limite d'écrans simultanés atteinte | avec la possibilité de libérer |
-| place expirée pendant la lecture | distinct d'une erreur réseau |
-| appairage expiré / refusé / annulé | trois messages distincts |
-| achat approuvé mais échoué | ne jamais afficher « réservée » |
+| no seat for this date | said **before** the player opens, never after |
+| house not yet open | with the time remaining, derived |
+| out of territory | in plain words, **with the reason** |
+| subscription required | with what the plan opens |
+| no replay for this date | distinct from "replay expired" |
+| replay expired | distinct from the previous one |
+| sold out | distinct from "waiting list" |
+| concurrent-screen limit reached | with the option to free one |
+| seat expired during playback | distinct from a network error |
+| pairing expired / denied / cancelled | three distinct messages |
+| purchase approved but failed | never display "booked" |
 
-### Le géo-blocage
+### Geo-blocking
 
-`rights.scope` et la liste de territoires suffisent à décider ; la **raison** doit
-être un code, pas une phrase. Le jeu actuel porte des libellés rédigés en français
-et en anglais dans la donnée (`blackoutReasons`), alors que tout le reste passe par
-`enums.*`. C'est une fuite d'i18n : voir *Incohérences relevées*, point 4.
+`rights.scope` and the territory list are enough to decide; the **reason** must be
+a code, not a sentence. The current data set carries labels authored in French and
+English inside the data (`blackoutReasons`), whereas everything else goes through
+`enums.*`. That is an i18n leak: see *Inconsistencies found*, point 4.
 
-### L'amorçage : le cas où la TV n'a rien, pas même une langue
+### Start-up: the case where the TV has nothing, not even a language
 
-Il existe un instant, avant la première réponse, où la TV ne connaît ni le profil,
-ni la langue, ni les libellés. Si l'appel d'amorçage échoue, elle doit quand même
-afficher un message lisible — pas un code brut, pas un écran vide.
+There is a moment, before the first response, when the TV knows neither the
+profile, nor the language, nor the labels. If the start-up call fails, it must
+still display a legible message — not a raw code, not a blank screen.
 
-C'est ce qui rend l'**instantané i18n embarqué au build obligatoire**, et pas
-seulement souhaitable. Mesuré sur le jeu actuel : les trois fichiers que le
-storefront charge (`storefront`, `taxonomy`, `system`) représentent **1 126 clés,
-54 Ko bruts, 15,6 Ko compressés** pour une langue. C'est négligeable devant le
-bundle, et c'est la seule chose qui garantit qu'aucun code brut n'atteindra jamais
-l'écran — ce qui compte d'autant plus ici qu'une revue de magasin TV est lente et
-qu'un défaut de libellé resterait affiché des semaines.
+That is what makes the **build-time embedded i18n snapshot mandatory**, and not
+merely desirable. Measured on the current data set: the three files the storefront
+loads (`storefront`, `taxonomy`, `system`) amount to **1,126 keys, 54 KB raw,
+15.6 KB compressed** for one language. That is negligible against the bundle, and
+it is the only thing that guarantees no raw code will ever reach the screen —
+which matters all the more here, because a TV store review is slow and a label
+defect would stay on screen for weeks.
 
-Le catalogue servi dynamiquement se superpose ensuite, par artefacts versionnés
-immuables. Il ne doit **jamais** bloquer le premier rendu.
+The dynamically served catalogue then layers on top, through immutable versioned
+artifacts. It must **never** block the first render.
 
-### Chargement et vide
+### Loading and empty
 
-Les squelettes et les états vides sont de la présentation et n'appellent rien du
-contrat, à une exception près : l'**action qui sort de l'impasse** (« Voir les
-catégories », « Parcourir ») est un choix éditorial. Elle doit être un **code
-d'action** servi avec l'état vide, pas une phrase, et pas une constante recopiée
-sur cinq surfaces.
+Skeletons and empty states are presentation and require nothing of the contract,
+with one exception: the **action that gets you out of the dead end** ("See the
+categories", "Browse") is an editorial choice. It must be an **action code** served
+with the empty state, not a sentence, and not a constant copied across five
+surfaces.
 
-### Rejeu et idempotence
+### Replay and idempotence
 
-Un téléviseur perd le réseau plus souvent qu'un téléphone. Toute commande rejouée
-après un hoquet doit être sûre : c'est l'objet de `Idempotency-Key`, et c'est
-particulièrement vrai des commandes déclenchées par appairage, où le téléphone et
-la TV peuvent tous deux relancer.
+A television loses the network more often than a phone. Any command replayed after
+a hiccup must be safe: that is the purpose of `Idempotency-Key`, and it is
+especially true of pairing-triggered commands, where both the phone and the TV can
+retry.
 
 ---
 
-## Contraintes propres à la TV
+## TV-specific constraints
 
-Seulement celles qui contraignent le contrat.
+Only those that constrain the contract.
 
-### 1. Aucune saisie au-delà de six caractères
+### 1. No text entry beyond six characters
 
-Tout ce qui demande à écrire passe par l'appairage. Cela vide de la surface :
-l'inscription, le mot de passe, la 2FA, la carte bancaire, l'adresse de livraison
-de la boutique, l'écriture dans le tchat, le formulaire de support. Le contrat
-n'a donc **aucune commande d'écriture de texte libre** à servir à la TV, sauf la
-recherche — et la recherche n'écrit rien.
+Anything that requires writing goes through the pairing. That empties the surface
+of: sign-up, password, 2FA, card details, the shop's delivery address, writing in
+chat, the support form. The contract therefore has **no free-text write command**
+to serve the TV, except search — and search writes nothing.
 
-Corollaire souvent oublié : la **recherche vocale** est prévue par le cahier des
-charges. Si elle est retenue, elle produit une chaîne comme le clavier et emprunte
-le même point d'entrée. Rien de nouveau au contrat, mais il faut le confirmer
-plutôt que de l'inventer plus tard.
+An often-forgotten corollary: **voice search** is provided for in the
+specification. If it is kept, it produces a string just as the keyboard does and
+uses the same endpoint. Nothing new for the contract, but it needs confirming
+rather than inventing later.
 
-### 2. Cinq touches : les facettes deviennent des rangées
+### 2. Five keys: facets become rows
 
-Déjà dit sous `CategoryScreen`, répété ici parce que c'est la divergence de forme
-la plus structurante entre la TV et le web : **la TV ne consomme pas l'API de
-facettes.** Elle consomme des rangées composées. Le BFF storefront doit donc servir
-deux modèles de lecture pour le même contenu, et c'est un choix assumé, pas un
-accident.
+Already said under `CategoryScreen`, repeated here because it is the most
+structural divergence of shape between the TV and the web: **the TV does not
+consume the facet API.** It consumes composed rows. The storefront BFF must
+therefore serve two read models for the same content, and that is a deliberate
+choice, not an accident.
 
-### 3. Trois mètres : un aller-retour, six informations
+### 3. Three metres: one round trip, six pieces of information
 
-Le budget d'appels en découle (section dédiée), et le plafond de six informations
-par carte borne `DateCard`. Ce n'est pas une contrainte esthétique déguisée : un
-champ de plus sur la carte est un champ de plus × le nombre de cartes gardées en
-mémoire.
+The call budget follows from it (dedicated section), and the ceiling of six pieces
+of information per card bounds `DateCard`. This is not an aesthetic constraint in
+disguise: one more field on the card is one more field × the number of cards held
+in memory.
 
-### 4. Mémoire comptée
+### 4. Memory counted
 
-Chiffres de référence : beaucoup d'appareils du parc ont 1 à 1,5 Go **au total**,
-dont l'application reçoit 300 à 500 Mo ; un décodage 4K en consomme 100 à 200 à
-lui seul. Trois exigences en découlent, toutes portées par le contrat :
+Reference figures: many devices in the fleet have 1 to 1.5 GB **in total**, of
+which the application gets 300 to 500 MB; a 4K decode consumes 100 to 200 on its
+own. Three requirements follow, all carried by the contract:
 
-- **médias en renditions déclarées**, aux tailles réellement affichées — pas de
-  gabarit de largeur que le client remplit ;
-- **cartes maigres**, détails à la demande ;
-- **tailles de page bornées côté serveur**, pour qu'un paramètre client ne puisse
-  pas demander 500 éléments.
+- **media as declared renditions**, at the sizes actually displayed — not a width
+  placeholder for the client to fill in;
+- **lean cards**, details on demand;
+- **page sizes bounded server-side**, so that a client parameter cannot ask for
+  500 items.
 
-### 5. Parc hétérogène : le vocabulaire fermé doit tolérer l'inconnu
+### 5. A heterogeneous fleet: the closed vocabulary must tolerate the unknown
 
-C'est la contrainte la plus spécifique de cette surface, et elle est de premier
-ordre.
+This is the constraint most specific to this surface, and it is first-order.
 
-Une revue de magasin TV est lente, et le parc se met à jour mal : une version
-publiée aujourd'hui tournera encore dans des salons dans un an. Le jour où le
-catalogue gagne une 22ᵉ discipline, une nouvelle issue de date, un nouveau régime
-de tchat ou un nouveau droit d'abonnement, **les téléviseurs anciens le
-recevront**.
+A TV store review is slow, and the fleet updates badly: a version published today
+will still be running in living rooms a year from now. The day the catalogue gains
+a 22nd discipline, a new date outcome, a new chat mode or a new subscription
+entitlement, **the old televisions will receive it**.
 
-Or la validation stricte par énumération **rejette** une valeur inconnue. Un
-schéma qui refuse un membre de vocabulaire inédit ne dégrade pas l'affichage d'une
-carte : il fait échouer la validation de la **page entière**, et la TV n'affiche
-plus rien. Une date ajoutée avec une nouvelle valeur d'issue viderait l'accueil
-d'une partie du parc.
+Now, strict enum validation **rejects** an unknown value. A schema that refuses an
+unheard-of vocabulary member does not degrade the display of one card: it fails
+validation of the **whole page**, and the TV displays nothing at all. A date added
+with a new outcome value would empty the home screen on part of the fleet.
 
-**Exigence** : pour chaque vocabulaire fermé, le contrat doit déclarer le
-comportement attendu devant une valeur inconnue — et ce comportement doit être
-« conserver la valeur brute et la traiter comme neutre », jamais « rejeter ».
-Concrètement, côté client, les énumérations transportées sont validées de façon
-tolérante et l'i18n retombe sur un libellé générique plutôt que sur un code brut.
-Cela ne dispense pas de valider : cela déplace la sévérité du **membre** vers la
-**forme**.
+**Requirement**: for each closed vocabulary, the contract must declare the
+expected behaviour in the face of an unknown value — and that behaviour must be
+"keep the raw value and treat it as neutral", never "reject". Concretely, on the
+client side, transported enumerations are validated leniently and i18n falls back
+to a generic label rather than to a raw code. This does not excuse skipping
+validation: it moves the strictness from the **member** to the **shape**.
 
-C'est la seule chose de ce document qui, si elle est mal faite, produit un écran
-noir chez des gens qui ne peuvent rien y faire.
+It is the only thing in this document that, done badly, produces a black screen
+for people who can do nothing about it.
 
-### 6. Le coût de zod, mesuré
+### 6. What zod costs, measured
 
-Mesure demandée explicitement. Réalisée sur **zod 4.6.5**, agrégée par esbuild
-(`--bundle --minify --format=esm`), puis compressée en `gzip -9`. Le jeu de
-schémas « réaliste » reprend les DTO TV de ce document : une page curseur de
-cartes de date, avec identifiants, instants ISO, quatre énumérations, montants et
-URL.
+A measurement explicitly asked for. Run on **zod 4.6.5**, bundled by esbuild
+(`--bundle --minify --format=esm`), then compressed with `gzip -9`. The "realistic"
+schema set uses the TV DTOs from this document: a cursor page of date cards, with
+ids, ISO instants, four enumerations, amounts and URLs.
 
-| Forme d'import | Minifié | Compressé |
+| Import shape | Minified | Compressed |
 |---|---|---|
-| `import { z } from 'zod'` — **un** schéma trivial | 453 056 o | **92 097 o** |
-| `import { z } from 'zod'` — 3 schémas, ~20 champs | 453 677 o | **92 364 o** |
-| `import { object, string } from 'zod'` — un schéma | 84 276 o | 24 732 o |
-| `import * as z from 'zod/mini'` — un schéma trivial | 12 379 o | **4 440 o** |
-| `import * as z from 'zod/mini'` — 3 schémas, ~20 champs | 22 996 o | **7 682 o** |
+| `import { z } from 'zod'` — **one** trivial schema | 453,056 B | **92,097 B** |
+| `import { z } from 'zod'` — 3 schemas, ~20 fields | 453,677 B | **92,364 B** |
+| `import { object, string } from 'zod'` — one schema | 84,276 B | 24,732 B |
+| `import * as z from 'zod/mini'` — one trivial schema | 12,379 B | **4,440 B** |
+| `import * as z from 'zod/mini'` — 3 schemas, ~20 fields | 22,996 B | **7,682 B** |
 
-Trois lectures, et elles changent une décision de conditionnement :
+Three readings, and they change a packaging decision:
 
-1. **Le coût est fixe, pas marginal.** Entre un schéma trivial et vingt champs
-   répartis sur trois schémas, l'écart est de 267 octets compressés. Ajouter des
-   DTO ne coûte rien ; **importer `z` coûte tout**. On ne peut donc pas « limiter
-   le nombre de schémas sur la TV » pour réduire la facture : ça ne marchera pas.
-2. **L'espace de noms `z` est le coupable.** Le même schéma via des imports nommés
-   tombe de 92 Ko à 24,7 Ko compressés. C'est un cas d'école d'import barillet, et
-   il se corrige sans changer de bibliothèque.
-3. **`zod/mini` divise par vingt.** 4,4 Ko contre 92 Ko compressés à l'entrée, et
-   7,7 Ko contre 92,4 Ko sur un jeu réaliste.
+1. **The cost is fixed, not marginal.** Between a trivial schema and twenty fields
+   spread over three schemas, the difference is 267 compressed bytes. Adding DTOs
+   costs nothing; **importing `z` costs everything**. So one cannot "limit the
+   number of schemas on the TV" to cut the bill: it will not work.
+2. **The `z` namespace is the culprit.** The same schema via named imports drops
+   from 92 KB to 24.7 KB compressed. It is a textbook barrel import, and it is
+   fixable without changing library.
+3. **`zod/mini` divides by twenty.** 4.4 KB against 92 KB compressed at the
+   entry point, and 7.7 KB against 92.4 KB on a realistic set.
 
-92 Ko compressés — plus de 450 Ko à analyser et à compiler au démarrage — sur une
-clé HDMI dont le budget de démarrage à froid est de quelques secondes, c'est une
-dépense que rien ne justifie : la TV ne fait que **décoder** des réponses. Elle n'a
-besoin ni des messages d'erreur riches, ni de la surface complète de l'API. Et les
-messages laconiques de `zod/mini` (« Invalid input ») ne sont pas une perte ici,
-puisque la décision « i18n par codes » interdit de toute façon d'afficher un
-message de bibliothèque.
+92 KB compressed — more than 450 KB to parse and compile at start-up — on an HDMI
+stick whose cold-start budget is a few seconds, is an expense nothing justifies:
+the TV only **decodes** responses. It needs neither the rich error messages nor
+the full API surface. And `zod/mini`'s terse messages ("Invalid input") are no
+loss here, since the "i18n by codes" decision forbids displaying a library message
+anyway.
 
-**Ce que je demande**, sans remettre en cause la décision « zod valide tout,
-l'OpenAPI est généré depuis zod » :
+**What I ask for**, without questioning the "zod validates everything, the OpenAPI
+is generated from zod" decision:
 
-- que `@arthome/contracts` expose une **entrée alternative sans barillet** pour les
-  clients contraints — la même source de schémas, exportée par symboles nommés ou
-  en `zod/mini` — et que le générateur d'OpenAPI, qui tourne côté outillage, garde
-  la forme complète ;
-- ou, à défaut, que les applications aient l'interdiction écrite d'importer `z`
-  et l'obligation d'importer les symboles utilisés.
+- that `@arthome/contracts` expose an **alternative barrel-free entry point** for
+  constrained clients — the same schema source, exported as named symbols or in
+  `zod/mini` — and that the OpenAPI generator, which runs on the tooling side,
+  keep the full form;
+- or, failing that, that applications be under a written ban on importing `z` and
+  an obligation to import the symbols they use.
 
-La décision n'est pas contredite ; c'est son **conditionnement** qui doit tenir
-compte de la surface la plus contrainte. C'est exactement ce que cette mesure
-était censée établir.
+The decision is not contradicted; it is its **packaging** that must account for the
+most constrained surface. That is exactly what this measurement was meant to
+establish.
 
-### 7. Un appareil partagé, des profils individuels
+### 7. A shared device, individual profiles
 
-La TV n'a pas de « l'utilisateur » : elle a un salon. Trois conséquences de
-contrat :
+The TV has no "the user": it has a living room. Three contract consequences:
 
-- les droits sont portés par le **profil**, jamais par l'appareil ;
-- le catalogue du profil enfant est filtré **côté serveur** ;
-- la déconnexion est **par profil** — « les autres comptes restent connectés ».
-  Révoquer l'appareil est une commande distincte, et elle vit dans la page compte.
+- entitlements are carried by the **profile**, never by the device;
+- the child profile's catalogue is filtered **server-side**;
+- sign-out is **per profile** — "the other accounts stay signed in". Revoking the
+  device is a separate command, and it lives on the account page.
 
-### 8. Le lecteur et le jeton signé
+### 8. The player and the signed token
 
-Traité sous *Le temps réel*. Le point qui remonte le plus haut : le
-`PlaybackTicket` doit porter le protocole, le système de DRM et le plafond de
-qualité **choisis par le serveur pour cet appareil**. Un parc qui va de la clé
-HDMI à faible sécurité matérielle au boîtier haut de gamme ne se sert pas d'un
-seul paquet de flux, et un client qui devine se trompera sur les appareils que je
-ne peux pas tester.
+Covered under *Real time*. The point that reaches highest: the `PlaybackTicket`
+must carry the protocol, the DRM system and the quality cap **chosen by the server
+for this device**. A fleet that ranges from a low-hardware-security HDMI stick to a
+high-end box is not served by a single stream package, and a client that guesses
+will get it wrong on the devices I cannot test.
 
 ---
 
-## Incohérences relevées
+## Inconsistencies found
 
-Relevées en lisant `shared/` et la maquette TV. **Aucune n'est appliquée** ; elles
-sont signalées. Les sept écarts de la famille D de `corrections-handoff.md` sont
-connus et non répétés ici, à l'exception de D1 que j'ai effectivement rencontré
-(`languageDependency` : le vocabulaire déclaré `none | light | helpful` ne contient
-pas `essential`, qui est pourtant la valeur dont dépend `hasLanguageBarrier` et que
-cinq spectacles portent ; `light` n'est employé nulle part).
+Found while reading `shared/` and the TV mockup. **None is applied**; they are
+reported. The seven family-D discrepancies in `corrections-handoff.md` are known
+and not repeated here, except D1, which I did actually run into
+(`languageDependency`: the declared vocabulary `none | light | helpful` does not
+contain `essential`, which is nevertheless the value `hasLanguageBarrier` depends
+on and which five shows carry; `light` is used nowhere).
 
-**1. Trois vocabulaires d'abonnement, disjoints — et une règle qui tombe en
-silence.** C'est l'écart le plus sérieux que j'aie trouvé, et il n'est pas dans
-l'errata.
+**1. Three disjoint subscription vocabularies — and a rule that fails
+silently.** This is the most serious discrepancy I found, and it is not in the
+errata.
 
-| Source | Valeurs | Prix |
+| Source | Values | Prices |
 |---|---|---|
 | `catalogue.json` → `plans[]` | `free`, `pass`, `premium` | 0, 12, 24 |
 | `catalogue.json` → `accounts[].plan` | `season`, `monthly`, `none` | — |
-| maquette TV, page compte | `saison`, `mecene` | 14, 39 |
+| TV mockup, account page | `saison`, `mecene` | 14, 39 |
 
-`i18n/storefront.json` traduit les **six** identifiants, ce qui masque le
-problème. Conséquence directe : `helpers.planOf(account)` fait
-`plans().filter(p => p.id === account.plan)[0] || plans()[0]` — aucun compte ne
-correspond jamais, **tous retombent sur `free`**. La page compte et la page
-abonnements de la TV afficheraient donc la mauvaise formule pour tout le monde, et
-les droits `opens[]` qui conditionnent l'accès à la lecture seraient ceux de la
-formule gratuite. Un seul vocabulaire doit faire foi au contrat.
+`i18n/storefront.json` translates **all six** identifiers, which masks the
+problem. The direct consequence: `helpers.planOf(account)` does
+`plans().filter(p => p.id === account.plan)[0] || plans()[0]` — no account ever
+matches, so **they all fall back to `free`**. The TV's account page and
+subscriptions page would therefore display the wrong plan for everyone, and the
+`opens[]` entitlements that condition playback access would be those of the free
+plan. One vocabulary must be authoritative in the contract.
 
-**2. La page `plans` est déclarée et absente.** Le cahier des charges TV décrit une
-page Abonnements (§9) et une barre latérale à dix entrées dont « Abonnements » et
-« Compte » (§ structure). La maquette n'expose que huit entrées de navigation et
-aucune page d'abonnements — alors que l'intention de paiement `plan` existe bien
-dans l'écran de confirmation. Un parcours d'achat sans point de départ.
+**2. The `plans` page is declared and absent.** The TV specification describes a
+Subscriptions page (§9) and a sidebar with ten entries including "Subscriptions"
+and "Account" (§ structure). The mockup exposes only eight navigation entries and
+no subscriptions page — even though the `plan` payment intent does exist on the
+confirmation screen. A purchase journey with no starting point.
 
-**3. Le décalage du spectateur n'existe pas dans la donnée.** La maquette TV
-calcule l'heure de salle par `venue.utcOffsetMin - fx.geography.viewerUtcOffsetMin`.
-Ce second champ **n'existe nulle part** dans `catalogue.json` ni dans
-`fixtures.js` : il vaut donc 0, et « l'heure à la salle » est en réalité calculée
-contre UTC, pas contre le spectateur. L'écart est dans la maquette et non dans
-`shared/`, mais il démontre une lacune de contrat : **la surface n'a aucune entrée
-pour le fuseau du spectateur**, alors que la règle « deux fuseaux » est un principe
-du dossier. La TV doit envoyer son identifiant de zone IANA et recevoir celui de
-la salle.
+**3. The viewer's offset does not exist in the data.** The TV mockup computes the
+venue time as `venue.utcOffsetMin - fx.geography.viewerUtcOffsetMin`. That second
+field **exists nowhere** in `catalogue.json` or `fixtures.js`: it is therefore 0,
+and "venue time" is in fact computed against UTC, not against the viewer. The
+discrepancy is in the mockup and not in `shared/`, but it demonstrates a contract
+gap: **the surface has no input for the viewer's time zone**, whereas the "two
+clocks" rule is a handoff principle. The TV must send its IANA zone id and receive
+the venue's.
 
-**4. Les raisons de géo-blocage sont rédigées, pas codées.**
-`geography.rightsPolicy.blackoutReasons[]` porte `label` et `labelEn` — du texte
-rédigé dans la donnée — alors que tout le reste du vocabulaire passe par
-`enums.*` et `A.enumLabel()`. `helpers.blackoutReason()` lit d'ailleurs ces champs
-directement. C'est une fuite d'i18n dans le modèle, et elle est exactement du
-genre que la décision « i18n par codes » existe pour interdire.
+**4. Geo-blocking reasons are authored, not coded.**
+`geography.rightsPolicy.blackoutReasons[]` carries `label` and `labelEn` — text
+authored inside the data — whereas all the rest of the vocabulary goes through
+`enums.*` and `A.enumLabel()`. `helpers.blackoutReason()` indeed reads those fields
+directly. It is an i18n leak in the model, and exactly the kind the "i18n by
+codes" decision exists to forbid.
 
-**5. L'objet public d'une date porte des données de billetterie et de studio.**
-Une date générée expose `prices[].sold`, `prices[].revenue`, `seats.sold`,
-`publication` et `publishedBy`. C'est cohérent pour un générateur qui construit
-studio-d'abord, mais ce sont des recettes et des références de régie sur l'objet
-que lit un client public. Le contrat du storefront ne doit pas les porter.
+**5. A date's public object carries ticketing and studio data.** A generated date
+exposes `prices[].sold`, `prices[].revenue`, `seats.sold`, `publication` and
+`publishedBy`. That is coherent for a generator that builds studio-first, but
+these are revenues and gallery references on the object a public client reads. The
+storefront contract must not carry them.
 
-**6. Le classement éditorial des sous-genres est calculé sur la surface.** La page
-discipline de la TV ordonne ses rangées par un « intérêt » qu'elle calcule
-elle-même à partir de `viewers`, `replayViews` et `seats.sold`. C'est un classement
-éditorial produit par un client — contre « aucune valeur calculée deux fois » — et
-il s'appuie sur une donnée de billetterie (point 5). Le serveur doit livrer
-l'ordre.
+**6. The editorial ranking of sub-genres is computed on the surface.** The TV's
+discipline page orders its rows by an "interest" score it computes itself from
+`viewers`, `replayViews` and `seats.sold`. That is an editorial ranking produced
+by a client — against "no value computed twice" — and it relies on ticketing data
+(point 5). The server must deliver the order.
 
-**7. `devices` a deux formes sous un seul nom.** `catalogue.json` déclare
-`accounts[].devices` comme un **nombre** (3, 2, 1, 1) ; `fixtures.js` le remplace
-par une **liste** d'objets. `helpers.devicesOf()` ne fonctionne que sur la seconde.
-Deux formes sous un identifiant, ce qui est précisément le genre de collision que
-le portage doit trancher.
+**7. `devices` has two shapes under one name.** `catalogue.json` declares
+`accounts[].devices` as a **number** (3, 2, 1, 1); `fixtures.js` replaces it with a
+**list** of objects. `helpers.devicesOf()` only works on the second. Two shapes
+under one identifier, which is precisely the kind of collision the port must
+settle.
 
-**8. La durée de validité du code n'existe que dans une chaîne de copie.**
-« CODE VALABLE 15 MINUTES » est un libellé d'interface. Aucune donnée partagée ne
-porte cette durée, et le code affiché est un littéral (`H4T9RD`, `K7QM2P`). La
-durée est une politique : elle appartient au contrat, servie dans la réponse
-d'appairage.
+**8. The code validity period exists only in a copy string.** "CODE VALID FOR 15
+MINUTES" is an interface label. No shared data carries that duration, and the
+displayed code is a literal (`H4T9RD`, `K7QM2P`). The duration is a policy: it
+belongs to the contract, served in the pairing response.
 
-**9. L'alphabet du code court n'est déclaré nulle part**, et les deux codes de la
-maquette contiennent des glyphes confusables (`0`/`O`, `1`/`I`, `5`/`S`, `8`/`B`).
-Voir la section appairage : c'est une exigence de contrat.
+**9. The short code's alphabet is declared nowhere**, and the mockup's two codes
+contain confusable glyphs (`0`/`O`, `1`/`I`, `5`/`S`, `8`/`B`). See the pairing
+section: it is a contract requirement.
 
-**10. L'action Partager ne mène nulle part.** Sur la fiche d'une date, elle est
-câblée vers l'écran de paiement. Sans conséquence de conception, mais elle révèle
-qu'**aucune commande de partage n'a jamais été définie** — et sur TV, partager ne
-peut raisonnablement vouloir dire qu'un QR vers l'URL publique de la date, donc une
-URL canonique servie par le contrat.
+**10. The Share action leads nowhere.** On a date's page it is wired to the
+payment screen. Of no design consequence, but it reveals that **no share command
+was ever defined** — and on a TV, sharing can reasonably only mean a QR to the
+date's public URL, hence a canonical URL served by the contract.
 
-**11. Ouverture de salle et délai d'aperçu sont des constantes de donnée.**
-`roomOpensBeforeMin: 30` et `previewIdleSec: 4` vivent dans `catalogue.json`, ce
-qui est juste. La maquette TV, elle, recopie 30 minutes dans plusieurs libellés et
-480 000 ms pour la veille. Ces constantes doivent arriver par le contrat
-(`ViewerContext`), sinon elles divergeront entre cinq surfaces le jour où l'une
-d'elles change.
+**11. House opening and preview delay are data constants.**
+`roomOpensBeforeMin: 30` and `previewIdleSec: 4` live in `catalogue.json`, which is
+right. The TV mockup, though, copies 30 minutes into several labels and 480,000 ms
+for the screensaver. These constants must arrive through the contract
+(`ViewerContext`), or they will diverge across five surfaces the day one of them
+changes.
 
 ---
 
-## Ce que je ne peux pas obtenir seul
+## What I cannot obtain on my own
 
-Questions adressées au backend. Chacune bloque une décision de ma surface.
+Questions addressed to the backend. Each one blocks a decision on my surface.
 
-**Q1 — Comment la TV apprend-elle qu'un appairage a abouti ?** Interrogation
-périodique conforme à RFC 8628, canal temps réel partagé, ou flux dédié ? Mon
-exigence est la bascule en deux secondes au plus et un rythme d'interrogation que
-le serveur puisse ralentir. Si c'est le canal temps réel, il doit accepter une
-identité d'**appareil** — car pendant la connexion, la TV n'a pas encore de
-session. *Bloque : l'architecture de l'écran d'attente, et le budget de connexions
-de la surface.*
+**Q1 — How does the TV learn that a pairing has completed?** RFC 8628-compliant
+periodic polling, the shared real-time channel, or a dedicated stream? My
+requirement is a flip within two seconds at most and a polling rhythm the server
+can slow down. If it is the real-time channel, it must accept a **device**
+identity — because during sign-in the TV does not yet have a session. *Blocks: the
+architecture of the waiting screen, and the surface's connection budget.*
 
-**Q2 — Un téléviseur est partagé : à quoi l'appairage est-il lié ?** Si le
-téléphone qui scanne est connecté sous une autre identité que le profil qui a
-ouvert l'appairage sur la TV — cas courant dans un salon — que se passe-t-il ?
-Refus avec un code distinct, ou bascule du profil sur la TV ? *Bloque : le
-comportement de `pay` et de `signin`, et le message affiché.*
+**Q2 — A television is shared: what is the pairing bound to?** If the phone that
+scans is signed in under a different identity from the profile that opened the
+pairing on the TV — a common case in a living room — what happens? Refusal with a
+distinct code, or switching the profile on the TV? *Blocks: the behaviour of `pay`
+and `signin`, and the message displayed.*
 
-**Q3 — La TV a-t-elle une identité d'appareil avant toute session ?** Il lui en
-faut une pour ouvrir un appairage de connexion, pour se nommer dans « appareils
-connectés », pour être révoquée, et pour porter une limite de débit. Est-ce une
-notion du contrat, ou les points d'entrée d'appairage sont-ils anonymes avec le
-code pour seul secret ? *Bloque : le premier lancement, et `revokeDevice`.*
+**Q3 — Does the TV have a device identity before any session?** It needs one to
+open a sign-in pairing, to name itself under "connected devices", to be revoked,
+and to carry a rate limit. Is that a notion in the contract, or are the pairing
+endpoints anonymous with the code as the only secret? *Blocks: first launch, and
+`revokeDevice`.*
 
-**Q4 — Quelle durée de validité, et par quoi est-elle portée ?** Une durée unique
-pour les cinq intentions, ou une durée par intention ? Quinze minutes pour un
-paiement me paraît long : la jauge affichée à la réservation n'est plus vraie.
-Dans tous les cas, elle doit être servie et non codée. *Bloque : le comportement de
-renouvellement et le message d'expiration.*
+**Q4 — What validity period, and what carries it?** A single duration for all five
+intents, or one per intent? Fifteen minutes for a payment seems long to me: the
+gauge shown at booking is no longer true. In every case it must be served, not
+coded. *Blocks: renewal behaviour and the expiry message.*
 
-**Q5 — Les 21 disciplines : le contrat porte-t-il une sélection éditoriale de tête
-de page ?** Le rang de `taxonomy.json` suffit à ordonner, mais 21 tuiles ne
-tiennent pas sur un écran comme 9. Soit la TV groupe par univers et se parcourt
-verticalement, soit le contrat porte en plus une sélection courte, **écrite comme
-une règle et servie**. Je préfère la première, avec la seconde en champ optionnel.
-*Bloque : la forme de `categories`.*
+**Q5 — The 21 disciplines: does the contract carry an editorial top-of-page
+selection?** The rank in `taxonomy.json` is enough to order them, but 21 tiles do
+not fit on a screen the way 9 do. Either the TV groups by universe and is
+traversed vertically, or the contract additionally carries a short selection,
+**written as a rule and served**. I prefer the first, with the second as an
+optional field. *Blocks: the shape of `categories`.*
 
-**Q6 — Les champs par spectateur rendent-ils une rangée non mutualisable ?** La
-carte doit porter « détient une place », « peut regarder maintenant » et « position
-de reprise », sinon la TV ne peut pas respecter le principe « ne jamais proposer
-une place à qui l'a déjà » — et l'apprendre exigerait un second appel, ce que mon
-budget interdit. Mais ces champs sont propres au spectateur, donc une rangée
-composée n'est plus mutualisable en périphérie. Trois issues : accepter un cache
-par spectateur ; séparer un corps public et une surcouche fine par spectateur (au
-prix d'un second aller-retour que je refuse par défaut) ; ou composer au BFF avec
-un cache court. Laquelle ? *Bloque : la forme de `DateCard` et tout le budget
-d'appels.*
+**Q6 — Do per-viewer fields make a row non-shareable?** The card must carry "holds
+a seat", "can watch now" and "resume position", otherwise the TV cannot honour the
+principle "never offer a seat to someone who already has one" — and learning it
+would require a second call, which my budget forbids. But those fields are
+specific to the viewer, so a composed row is no longer cacheable at the edge.
+Three ways out: accept a per-viewer cache; split a public body and a thin
+per-viewer overlay (at the cost of a second round trip, which I refuse by
+default); or compose at the BFF with a short cache. Which one? *Blocks: the shape
+of `DateCard` and the whole call budget.*
 
-**Q7 — Qui compose les rangées, et où ?** Les rangées d'accueil, la grille du soir
-groupée par heure **locale du spectateur**, les rangées par sous-genre déjà
-ordonnées, le classement de Mes places : je demande que tout cela vienne fait. Cela
-suppose des modèles de lecture projetés là où le BFF les lit — ou un BFF qui
-compose à la volée. Le dossier annonce que l'usage de gRPC se décidera sur preuve,
-en comptant les appels synchrones BFF → service : voici ma contribution au compte.
-En lecture, si les modèles sont projetés, la TV n'en exige **aucun**. *Bloque :
-`home`, `live`, `category`, `tickets`.*
+**Q7 — Who composes the rows, and where?** The home rows, the evening grid grouped
+by the **viewer's local hour**, the already-ordered sub-genre rows, the ordering of
+My seats: I ask for all of it to arrive ready-made. That presupposes read models
+projected where the BFF reads them — or a BFF that composes on the fly. The handoff
+states that the use of gRPC will be decided on evidence, by counting the
+synchronous BFF → service calls: here is my contribution to the count. On reads, if
+the models are projected, the TV requires **none**. *Blocks: `home`, `live`,
+`category`, `tickets`.*
 
-**Q8 — Les préférences sont-elles portées par le profil ou par l'appareil ?**
-Langue d'interface, sous-titres par défaut, taille des sous-titres, description
-audio, réduction des animations, aperçu vidéo automatique. La taille des
-sous-titres et la réduction des animations dépendent du téléviseur et de la pièce ;
-la langue dépend de la personne. Une seule portée, ou deux ? *Bloque :
-`updatePreferences` et `ViewerContext`.*
+**Q8 — Are preferences carried by the profile or by the device?** Interface
+language, subtitles on by default, subtitle size, audio description, reduced
+motion, automatic video preview. Subtitle size and reduced motion depend on the
+television and the room; language depends on the person. One scope, or two?
+*Blocks: `updatePreferences` and `ViewerContext`.*
 
-**Q9 — Le jeton de lecture : quelle forme, quel intervalle, quelle libération ?**
-Trois points précis : (a) le renouvellement produit-il une URL adoptable **sans
-redémarrer la lecture** ? (b) l'intervalle est-il assez court — ≤ 60 s — pour que
-la limite de sessions simultanées soit effective ? (c) la libération d'une session
-repose-t-elle sur un bail qui expire, plutôt que sur un appel de fin que la TV ne
-pourra pas toujours passer ? *Bloque : l'architecture du lecteur.*
+**Q9 — The playback token: what shape, what interval, what release?** Three precise
+points: (a) does the renewal produce a URL adoptable **without restarting
+playback**? (b) is the interval short enough — ≤ 60 s — for the concurrent-session
+limit to be effective? (c) does releasing a session rest on a lease that expires,
+rather than on an end-of-playback call the TV will not always be able to make?
+*Blocks: the player's architecture.*
 
-**Q10 — Quelle URL canonique pour partager une date ?** Sur TV, partager ne peut
-être qu'un QR vers la page publique. Cette URL doit être servie par le contrat et
-non construite par la surface. Existe-t-elle ? *Bloque : l'action Partager, qui
-n'est aujourd'hui câblée nulle part.*
+**Q10 — What canonical URL for sharing a date?** On a TV, sharing can only be a QR
+to the public page. That URL must be served by the contract and not built by the
+surface. Does it exist? *Blocks: the Share action, which today is wired nowhere.*
 
-**Q11 — Quel plafond de débit sur le tchat servi à une TV, et quel quota de
-réactions ?** Je demande un plafond appliqué **côté serveur** — la TV ne peut pas
-absorber un flux pour en jeter 95 % — et un quota de réactions **renvoyé dans la
-réponse**, pour que la TV désactive le contrôle au lieu de le laisser échouer.
-*Bloque : le panneau de tchat du lecteur.*
+**Q11 — What rate cap on the chat served to a TV, and what reaction quota?** I ask
+for a cap enforced **server-side** — the TV cannot absorb a stream in order to
+throw away 95% of it — and a reaction quota **returned in the response**, so that
+the TV disables the control instead of letting it fail. *Blocks: the player's chat
+panel.*
 
-**Q12 — Le contrat déclare-t-il le comportement attendu devant une valeur
-d'énumération inconnue ?** C'est la question dont dépend la survie du parc : une
-validation stricte fait échouer une page entière quand le catalogue gagne une
-22ᵉ discipline ou une nouvelle issue. J'ai besoin que le contrat écrive
-« conserver et traiter comme neutre », et que la sévérité porte sur la forme et
-non sur le membre. *Bloque : la stratégie de validation client, et indirectement
-la question zod.*
+**Q12 — Does the contract declare the expected behaviour in the face of an unknown
+enumeration value?** This is the question the fleet's survival depends on: strict
+validation fails a whole page when the catalogue gains a 22nd discipline or a new
+outcome. I need the contract to write "keep and treat as neutral", and the
+strictness to bear on the shape and not on the member. *Blocks: the client
+validation strategy, and indirectly the zod question.*
 
-**Q13 — `@arthome/contracts` peut-il exposer une entrée sans barillet pour les
-clients contraints ?** Mesure à l'appui : `import { z } from 'zod'` coûte 92 Ko
-compressés (453 Ko à analyser au démarrage) et ce coût est **fixe** ; les mêmes
-schémas via `zod/mini` coûtent 7,7 Ko. Sur la surface la plus contrainte du projet,
-c'est la différence entre un démarrage à froid confortable et un démarrage
-laborieux — pour une bibliothèque dont la TV n'utilise que le décodage. La décision
-« zod partout » n'est pas contestée ; c'est le **conditionnement** que je demande à
-adapter. *Bloque : le budget de démarrage de la surface.*
+**Q13 — Can `@arthome/contracts` expose a barrel-free entry point for constrained
+clients?** With the measurement to back it: `import { z } from 'zod'` costs 92 KB
+compressed (453 KB to parse at start-up) and that cost is **fixed**; the same
+schemas via `zod/mini` cost 7.7 KB. On the most constrained surface of the project,
+that is the difference between a comfortable cold start and a laborious one — for a
+library of which the TV uses only the decoding. The "zod everywhere" decision is
+not disputed; it is the **packaging** I am asking to adapt. *Blocks: the surface's
+start-up budget.*
 
-**Q14 — Les constantes de domaine sont-elles servies ?** Ouverture de salle
-(30 min), délai d'aperçu du billboard (4 s), seuil de « dernières places », délai
-d'annulation d'une réservation (« jusqu'à 1 h avant »), délai de crédit d'un
-remboursement (« 3 à 5 jours ouvrés »). Toutes sont aujourd'hui recopiées dans des
-libellés d'écran. Si elles ne viennent pas du contrat, elles divergeront entre cinq
-surfaces. *Bloque : `ViewerContext`, `tickets`, `book`.*
+**Q14 — Are the domain constants served?** House opening (30 min), billboard
+preview delay (4 s), the "last seats" threshold, the booking cancellation deadline
+("up to 1 h before"), the refund credit delay ("3 to 5 business days"). All of them
+are today copied into screen labels. If they do not come from the contract, they
+will diverge across five surfaces. *Blocks: `ViewerContext`, `tickets`, `book`.*
 
 ---
 
 ## Confrontation
 
-> Temps 3. Lu : `answers-to-surfaces.md`, `adr-auth.md`, `adr-stream-entitlement.md`,
+> Time 3. Read: `answers-to-surfaces.md`, `adr-auth.md`, `adr-stream-entitlement.md`,
 > `context-map.md` §10, `data-model.md` §3.2, `events.md`, `realtime.md`, `transport.md`,
-> `critical-rules.md`, `openapi/storefront.yaml` (5 072 lignes), `DECISIONS.md`.
+> `critical-rules.md`, `openapi/storefront.yaml` (5,072 lines), `DECISIONS.md`.
 >
-> Verdict d'ensemble : **mes quatorze questions sont répondues, aucune esquivée**, et plusieurs le
-> sont mieux que je ne le demandais. Je conteste **quatre points**, dont trois produisent un défaut
-> visible à l'écran et un quatrième qui casse le parc à retardement. Mon budget d'appels **tient**.
+> Overall verdict: **my fourteen questions are answered, none dodged**, and several are answered
+> better than I asked. I dispute **four points**, three of which produce a defect visible on
+> screen and a fourth that breaks the fleet on a delay. My call budget **holds**.
 
-### Ce qui est satisfait
+### What is satisfied
 
-Bref, parce que c'est long et que l'essentiel est ailleurs.
+Briefly, because it is long and the substance is elsewhere.
 
-- **L'appairage.** Primitive unique, cinq intentions, `signin` seul vrai RFC 8628 et les quatre
-  autres en rendez-vous de transaction : l'analyse est reprise et améliorée. Les cinq issues y
-  sont, `approved_with_failure` comprise. `pollPairing` fonctionne **avec le seul jeton
-  d'appareil**, donc le rattachement après redémarrage marche par construction. `cancelPairing`
-  rejouée rend l'issue d'origine. L'alphabet est déclaré (28 symboles, `B`, `S`, `Z`, `G` retirés),
-  la durée est **par intention et servie**, le plafond de débit est par `device_id` et non par
-  adresse — le NAT d'un salon était le bon argument. `PAIRING_IDENTITY_MISMATCH` sans bascule
-  implicite de profil. Et `account-deep-link` est **séparé par le nom**, pas par une option : la
-  distinction renvoi / appairage que je demandais est gravée.
-- **Le maintien de jauge.** `SeatHold` est posé **à l'ouverture** de l'appairage, `seats_available`
-  est servi **net des holds actifs**, et l'expiration republie
-  `ticketing.date_sales.availability_changed.v1` (`data-model.md` §3.2, points 1 et 2). L'invariant
-  « un seul instant porté par les deux objets » est écrit. C'est l'argument qui manquait à mes cinq
-  minutes, et il est meilleur que le mien : je raisonnais sur l'affichage, il raisonne sur
-  l'engagement.
-- **Le lecteur.** `POST /v1/playback/{dateId}/open` porte tout : protocole, DRM, plafond de
-  qualité choisis par le serveur depuis `capabilities`, chapitres, pistes, régime de tchat,
-  incident, reprise, bord du direct. Jeton 120 s, renouvellement 45 s, bail 90 s qui **expire**,
-  `edgeRenewalMode: query_token` et « rien qui forcerait un rechargement de manifeste ».
-  `CONCURRENT_LIMIT_REACHED` porte la liste des sessions actives. `Cache-Control: no-store`. Mes
-  quatre exigences du §*Le temps réel* sont tenues, la troisième avec marge.
-- **La tolérance à l'inconnu.** Règle critique n° 10, et elle est **appliquée** : 59
-  `x-arthome-vocabulary` sur les champs de réponse contre 25 `enum:` tous situés en requête,
-  paramètre ou en-tête. Une discipline tenue sur 5 072 lignes, avec **une** exception (voir C4).
-- **Le reste.** `EnvelopeMeta` avec `servedAt`/`validUntil`/`degraded` ; `DomainConstants` servies
-  (les onze) ; `emptyReason` + `emptyActionCode` au lieu d'une phrase ; `canonicalUrl` servie et
-  explicitement destinée au QR de partage ; `reasonCode` de géo-blocage en **code** ; `viewers`
-  absent et jamais zéro ; `rights.reasonCode` codé ; aucun champ de billetterie ni de régie sur
-  `DateCard` ; `ETag` sur la fiche pour que mon pré-chargement ne se paie pas deux fois ;
-  quota de réactions **dans la réponse** ; plafond de tchat à 2 msg/s pour la TV ; toutes les
-  commandes rendent l'état projeté. D-012 acte l'entrée sans barillet.
+- **The pairing.** One primitive, five intents, `signin` the only true RFC 8628 and the other four
+  as transaction rendezvous: the analysis is taken up and improved on. The five outcomes are
+  there, `approved_with_failure` included. `pollPairing` works **with the device token alone**, so
+  reattachment after a restart works by construction. A replayed `cancelPairing` returns the
+  original outcome. The alphabet is declared (28 symbols, `B`, `S`, `Z`, `G` removed), the
+  duration is **per intent and served**, the rate cap is per `device_id` rather than per address —
+  the NAT of a living room was the right argument. `PAIRING_IDENTITY_MISMATCH` with no implicit
+  profile switch. And `account-deep-link` is **separated by name**, not by an option: the
+  hand-off / pairing distinction I asked for is written in.
+- **The seat hold.** `SeatHold` is placed **when the pairing opens**, `seats_available` is served
+  **net of active holds**, and expiry republishes
+  `ticketing.date_sales.availability_changed.v1` (`data-model.md` §3.2, points 1 and 2). The
+  invariant "a single instant carried by both objects" is written down. It is the argument my five
+  minutes were missing, and it is better than mine: I was reasoning about the display, it reasons
+  about the commitment.
+- **The player.** `POST /v1/playback/{dateId}/open` carries everything: protocol, DRM, quality cap
+  chosen by the server from `capabilities`, chapters, tracks, chat mode, incident, resume, live
+  edge. A 120 s token, 45 s renewal, a 90 s lease that **expires**, `edgeRenewalMode: query_token`
+  and "nothing that would force a manifest reload". `CONCURRENT_LIMIT_REACHED` carries the list of
+  active sessions. `Cache-Control: no-store`. My four requirements from *Real time* are met, the
+  third with margin.
+- **Tolerance of the unknown.** Critical rule no. 10, and it is **applied**: 59
+  `x-arthome-vocabulary` on response fields against 25 `enum:`, all of them in a request,
+  parameter or header. A discipline held over 5,072 lines, with **one** exception (see C4).
+- **The rest.** `EnvelopeMeta` with `servedAt`/`validUntil`/`degraded`; `DomainConstants` served
+  (all eleven); `emptyReason` + `emptyActionCode` instead of a sentence; `canonicalUrl` served and
+  explicitly intended for the share QR; the geo-blocking `reasonCode` as a **code**; `viewers`
+  absent and never zero; `rights.reasonCode` coded; no ticketing or gallery field on `DateCard`;
+  an `ETag` on the date page so that my prefetch is not paid for twice; the reaction quota **in
+  the response**; a chat cap of 2 msg/s for the TV; every command returning the projected state.
+  D-012 records the barrel-free entry point.
 
-### Ce qui n'est pas satisfait
+### What is not satisfied
 
-#### C1 — La page `replays` n'est pas servie. Vingt et un écrans sur vingt-deux.
+#### C1 — The `replays` page is not served. Twenty-one screens out of twenty-two.
 
-**Sur pièces.** `openapi/storefront.yaml` n'expose aucun point d'entrée public de rediffusions.
-Le seul chemin portant le mot est `/v1/me/replays` (ligne 2226) : `tags: [account]`,
-`summary: Mes rediffusions`, `x-arthome-upstream: [ticketing, catalog, streaming]`,
+**On the evidence.** `openapi/storefront.yaml` exposes no public replays endpoint. The only path
+carrying the word is `/v1/me/replays` (line 2226): `tags: [account]`,
+`summary: My replays`, `x-arthome-upstream: [ticketing, catalog, streaming]`,
 `'401': Unauthorized`.
 
-**Pourquoi ce n'est pas la même chose.** « Rediffusions » est la **huitième entrée de ma barre
-latérale**, et c'est une page de découverte, au même titre que « En direct » ou « Catégories ».
-Elle n'est pas préfixée « Mes », contrairement à « Mes places » et « Ma liste » qui le sont
-explicitement. Son contenu est le catalogue des rediffusions en ligne, ordonné par fenêtre
-restante croissante — « qui expirent bientôt » d'abord —, pas les rediffusions que je détiens.
+**Why it is not the same thing.** "Replays" is the **eighth entry in my sidebar**, and it is a
+discovery page, just like "Live" or "Categories". It is not prefixed "My", unlike "My seats" and
+"My list", which explicitly are. Its content is the catalogue of replays online, ordered by
+increasing remaining window — "expiring soon" first — not the replays I hold.
 
-Trois conséquences, toutes visibles :
+Three consequences, all visible:
 
-1. **Un visiteur non connecté reçoit 401 sur une entrée de menu permanente.** Le profil `visiteur`
-   est l'un des quatre du contrat. Sur TV, la barre latérale est toujours là : on ne peut pas
-   masquer une entrée selon la session sans que le menu change de taille sous le focus, ce qui
-   casse la mémoire de focus.
-2. **Même connecté, ce n'est pas le bon contenu.** `/v1/me/replays` remonte de `ticketing` : il
-   rend ce que j'ai acheté. Ma page rend ce qui est **en vente ou inclus**, y compris des
-   rediffusions que je n'ai jamais vues — c'est une page de découverte, c'est son intérêt.
-3. **`/v1/search?tab=replays` ne s'y substitue pas**, et sur trois points : `q` est
-   `minLength: 2` donc il n'y a pas de recherche vide ; l'unité paginée est le **spectacle**
-   (`ShowGroup`), pas la date ; or une fenêtre de rediffusion expire **par date**, et regrouper
-   par spectacle rend le tri « qui expire d'abord » impossible à exprimer.
+1. **A signed-out visitor gets a 401 on a permanent menu entry.** The `visitor` profile is one of
+   the contract's four. On a TV the sidebar is always there: you cannot hide an entry depending on
+   the session without the menu changing size under the focus, which breaks focus memory.
+2. **Even signed in, it is not the right content.** `/v1/me/replays` comes up from `ticketing`: it
+   returns what I have bought. My page returns what is **on sale or included**, including replays
+   I have never seen — it is a discovery page, that is the point of it.
+3. **`/v1/search?tab=replays` is no substitute**, on three counts: `q` is `minLength: 2`, so there
+   is no empty search; the paginated unit is the **show** (`ShowGroup`), not the date; and a
+   replay window expires **per date**, so grouping by show makes the "expiring first" sort
+   impossible to express.
 
-**Ce que je demande.** Un `GET /v1/replays`, public, cursor, `items: DateCard[]`, trié par
-`replay.expiresAt` croissant, avec le même `CursorPageInfo`. C'est le jumeau de `/v1/live` : une
-page de découverte sur un état de date. Le coût est d'un modèle de lecture que `catalog` projette
-déjà pour le rail `replay_expiring` de l'accueil — la matière existe, il lui manque une porte.
+**What I ask for.** A `GET /v1/replays`, public, cursor-based, `items: DateCard[]`, sorted by
+`replay.expiresAt` ascending, with the same `CursorPageInfo`. It is the twin of `/v1/live`: a
+discovery page over a date state. The cost is one read model that `catalog` already projects for
+the home screen's `replay_expiring` rail — the material exists, it is missing a door.
 
-#### C2 — `Rail` ne peut exprimer que six de mes neuf rangées d'accueil, et ne porte pas son compteur
+#### C2 — `Rail` can express only six of my nine home rows, and does not carry its counter
 
-C'est la contestation la plus lourde, parce qu'elle touche l'écran le plus regardé de la surface.
+This is the heaviest objection, because it touches the most-watched screen on the surface.
 
-**Sur pièces.** Le schéma `Rail` porte exactement cinq propriétés : `id`, `titleCode`, `kind`,
-`items`, `nextCursor`. `kind` a sept valeurs :
+**On the evidence.** The `Rail` schema carries exactly five properties: `id`, `titleCode`, `kind`,
+`items`, `nextCursor`. `kind` has seven values:
 `[resume, live_now, upcoming_tonight, followed, editorial, category, replay_expiring]`.
-`items` est typé `array of DateCard`, sans alternative. `Rail` n'est référencé qu'une fois, dans
+`items` is typed `array of DateCard`, with no alternative. `Rail` is referenced once, in
 `HomeScreen.rails`.
 
-**Trois rangées du cahier des charges n'ont pas de place.**
+**Three rows from the specification have nowhere to go.**
 
-| Rangée (ordre imposé par le cahier des charges) | `kind` disponible | Exprimable ? |
+| Row (order imposed by the specification) | `kind` available | Expressible? |
 |---|---|---|
-| 1. Reprendre | `resume` | oui |
-| 2. À l'antenne en ce moment | `live_now` | oui |
-| **3. Vos places** | — | **non** : aucun `kind` |
-| 4. Ce soir sur Arthome | `upcoming_tonight` | oui |
-| 5. Parce que vous suivez *[artiste]* | `followed` | oui |
-| 6. Rediffusions qui expirent bientôt | `replay_expiring` | oui |
-| 7. Deux à trois rangées par discipline | `category` | oui |
-| **8. Affiches** (format 2/3 vertical) | — | **non** : aucune forme de carte déclarée |
-| **9. Artistes à suivre** (portraits ronds) | — | **non** : `items` n'accepte que `DateCard` |
+| 1. Resume | `resume` | yes |
+| 2. On air right now | `live_now` | yes |
+| **3. Your seats** | — | **no**: no `kind` |
+| 4. Tonight on Arthome | `upcoming_tonight` | yes |
+| 5. Because you follow *[artist]* | `followed` | yes |
+| 6. Replays expiring soon | `replay_expiring` | yes |
+| 7. Two or three rows per discipline | `category` | yes |
+| **8. Posters** (2/3 vertical format) | — | **no**: no card form declared |
+| **9. Artists to follow** (round portraits) | — | **no**: `items` accepts only `DateCard` |
 
-La rangée 9 est la plus nette : `ArtistSummary` **existe** au contrat (ligne 4279) mais aucune
-rangée ne peut la porter. La rangée 3 n'a pas de `kind` — et `editorial` ne convient pas, puisque
-c'est précisément la rangée qui n'est pas éditoriale mais personnelle, et que son comportement est
-propre (la carte devient « Entrer dans la salle » trente minutes avant le lever de rideau). La
-rangée 8 est la moins grave : `MediaSet` porte `wide` **et** `poster`, donc la TV pourrait choisir
-l'affiche — mais elle choisirait sur quoi ? Sur l'identifiant de rangée, c'est-à-dire sur une
-constante recopiée dans la surface. C'est un littéral parallèle, et le principe n° 1 l'interdit.
+Row 9 is the clearest: `ArtistSummary` **exists** in the contract (line 4279) but no row can carry
+it. Row 3 has no `kind` — and `editorial` does not fit, since it is precisely the row that is not
+editorial but personal, and its behaviour is its own (the card becomes "Enter the house" thirty
+minutes before curtain). Row 8 is the least serious: `MediaSet` carries `wide` **and** `poster`, so
+the TV could pick the poster — but pick it on what basis? On the row id, that is to say on a
+constant copied into the surface. That is a parallel literal, and principle no. 1 forbids it.
 
-**Et ce n'est pas cosmétique.** Le cahier des charges est explicite sur le motif : *« la variété de
-format est ce qui empêche l'écran de ressembler à un tableur »*. Neuf rangées de cartes 16/9
-identiques, c'est exactement l'écueil n° 1 de mon document — « le site en grand ».
+**And this is not cosmetic.** The specification is explicit about the reason: *"the variety of
+format is what stops the screen looking like a spreadsheet"*. Nine rows of identical 16/9 cards is
+exactly pitfall no. 1 of my document — "the website shown large".
 
-**Le compteur manque aussi.** Chaque rangée affiche un effectif à droite de son titre. `Rail` ne
-porte ni `total`, ni `approximateTotal`, ni `CursorPageInfo` — alors que `CursorPageInfo` porte
-`approximateTotal` et `totalIsLowerBound`, et que toutes les listes paginées du contrat en
-bénéficient. Une rangée servie en tranche de vingt sur soixante ne peut donc afficher que
-`items.length`, soit **vingt**, soit un chiffre faux. C'était écrit noir sur blanc dans ma section
-*Pagination et volumes* : « `total` est une exigence, pas un confort ». Il est tombé entre les
-mailles parce que `Rail` n'utilise pas l'enveloppe de page commune.
+**The counter is missing too.** Every row displays a count to the right of its title. `Rail`
+carries neither `total`, nor `approximateTotal`, nor `CursorPageInfo` — whereas `CursorPageInfo`
+carries `approximateTotal` and `totalIsLowerBound`, and every paginated list in the contract
+benefits from it. A row served as a slice of twenty out of sixty can therefore only display
+`items.length`, that is **twenty**, or a wrong figure. It was written in black and white in my
+*Pagination and volumes* section: "`total` is a requirement, not a comfort". It fell through the
+cracks because `Rail` does not use the common page envelope.
 
-**Ce que je demande**, dans l'ordre de gravité :
-1. `Rail.total` (ou l'adoption de `CursorPageInfo`) — sans quoi le compteur est un littéral ;
-2. `items` en union discriminée `DateCard | ArtistSummary`, avec un `itemKind` porté par la
-   rangée — sinon la rangée d'artistes n'existe pas ;
-3. `kind: my_seats` ajouté au vocabulaire ;
-4. une forme de carte déclarée par la rangée (`cardForm: wide | poster | portrait`) — c'est un
-   choix éditorial, il appartient au serveur comme l'ordre des rangées.
+**What I ask for**, in order of severity:
+1. `Rail.total` (or adopting `CursorPageInfo`) — without it the counter is a literal;
+2. `items` as a discriminated union `DateCard | ArtistSummary`, with an `itemKind` carried by the
+   row — otherwise the artists row does not exist;
+3. `kind: my_seats` added to the vocabulary;
+4. a card form declared by the row (`cardForm: wide | poster | portrait`) — that is an editorial
+   choice, and it belongs to the server just as the row order does.
 
-Les quatre sont additifs et n'ont d'effet sur aucune autre surface.
+All four are additive and affect no other surface.
 
-#### C3 — La course entre `cancelPairing` et `decidePairing` peut orpheliner un achat réel
+#### C3 — The race between `cancelPairing` and `decidePairing` can orphan a real purchase
 
-C'est le cas que le chef m'a demandé de chercher, et il existe.
+This is the case the lead asked me to look for, and it exists.
 
-**Sur pièces.** Deux affirmations du contrat, prises ensemble :
+**On the evidence.** Two statements of the contract, taken together:
 
-- `POST /v1/pairings/{pairingId}/decision`, description d'`outcomeRef` : *« le pointeur opaque vers
-  ce que le parcours normal du téléphone a produit — **posé par le BFF après que `ticketing` a
-  exécuté**, avec sa propre `Idempotency-Key` »*. L'exécution précède donc la décision.
-- Le même point d'entrée, première vérification : *« l'appairage est `pending` et non expiré »*.
-  Un appairage `cancelled` ne l'est plus, et la réponse est `410 Gone`.
+- `POST /v1/pairings/{pairingId}/decision`, the description of `outcomeRef`: *"the opaque pointer
+  to what the phone's normal journey produced — **placed by the BFF after `ticketing` has
+  executed**, with its own `Idempotency-Key`"*. Execution therefore precedes the decision.
+- The same endpoint, first check: *"the pairing is `pending` and not expired"*. A `cancelled`
+  pairing no longer is, and the response is `410 Gone`.
 
-**La séquence.** Le spectateur choisit son tarif, la TV affiche le QR. Il scanne, paie sur son
-téléphone. Pendant que le paiement s'exécute, il appuie sur **Retour** — la touche la plus
-sollicitée d'une télécommande, et mon propre contrat de surface dit que Retour remonte d'un niveau
-depuis n'importe quel écran. La TV envoie `DELETE /v1/pairings/{id}`. Trois instants : `ticketing`
-a encaissé ; le `DELETE` arrive ; `decision` arrive et reçoit `410`.
+**The sequence.** The viewer picks their tier, the TV shows the QR. They scan, they pay on their
+phone. While the payment is executing, they press **Back** — the most used key on a remote, and my
+own surface contract says that Back goes up one level from any screen. The TV sends
+`DELETE /v1/pairings/{id}`. Three instants: `ticketing` has taken the money; the `DELETE` arrives;
+`decision` arrives and gets a `410`.
 
-**Résultat : la place est achetée et payée, et aucun des deux écrans ne le dit.** Le téléphone
-affiche un échec (`410`), la TV est revenue à l'écran de réservation. L'argent est parti.
+**Result: the seat is bought and paid for, and neither screen says so.** The phone shows a failure
+(`410`), the TV is back on the booking screen. The money is gone.
 
-Le contrat traite bien l'ordre inverse — « Annulé, ou déjà tranché : un second appel rend l'issue
-d'origine » couvre le cas où l'approbation précède l'annulation. C'est **cet ordre-là** qui n'est
-pas couvert, et c'est le plus probable des deux : l'exécution du paiement dure des secondes,
-l'appui sur Retour est instantané.
+The contract does handle the reverse order — "Cancelled, or already decided: a second call returns
+the original outcome" covers the case where approval precedes cancellation. It is **that order**
+which is not covered, and it is the more likely of the two: executing the payment takes seconds,
+pressing Back is instantaneous.
 
-**Trois remarques qui aggravent le cas plutôt qu'elles ne l'atténuent.**
+**Three remarks that aggravate the case rather than soften it.**
 
-- Mon propre document a écrit « la TV quitte souvent sans attendre la réponse », et le contrat l'a
-  repris tel quel dans la description de `cancelPairing`. Nous avons donc tous les deux vu que la
-  TV annule vite ; ni l'un ni l'autre n'a regardé ce qui se passait en face.
-- Le rattrapage existe mais n'est pas armé : `/v1/changes` porte bien `account:tickets`, mais rien
-  au contrat ne dit que la TV doit l'interroger après un appairage abandonné — et sur l'accueil,
-  elle n'a aucune raison de le faire.
-- Le `SeatHold` ne protège pas ici : il garantit la jauge, pas la réconciliation d'un paiement déjà
-  passé.
+- My own document wrote "the TV often leaves without waiting for the response", and the contract
+  carried it over verbatim into the description of `cancelPairing`. So we both saw that the TV
+  cancels fast; neither of us looked at what was happening on the other side.
+- The recovery path exists but is not armed: `/v1/changes` does carry `account:tickets`, but
+  nothing in the contract says the TV must poll it after an abandoned pairing — and on the home
+  screen it has no reason to.
+- `SeatHold` offers no protection here: it guarantees the gauge, not the reconciliation of a
+  payment that has already gone through.
 
-**Ce que je demande.** Que `cancelPairing` **n'annule pas un appairage dont l'exécution est
-engagée**. Concrètement : un état intermédiaire — l'appairage devient non annulable dès que le
-téléphone entre dans le parcours de paiement — et un `DELETE` sur cet état qui répond `409` avec
-un code explicite, la TV restant alors sur l'écran d'attente au lieu de partir. C'est la même
-famille de garde que `PAIRING_IDENTITY_MISMATCH` : elle protège l'argent contre un geste
-d'interface. À défaut, il faut écrire qui gagne la course, et ce que devient l'achat qui perd.
+**What I ask for.** That `cancelPairing` **not cancel a pairing whose execution is engaged**.
+Concretely: an intermediate state — the pairing becomes non-cancellable as soon as the phone
+enters the payment journey — and a `DELETE` on that state answering `409` with an explicit code,
+the TV then staying on the waiting screen instead of leaving. It is the same family of guard as
+`PAIRING_IDENTITY_MISMATCH`: it protects money against a gesture of the interface. Failing that,
+it must be written down who wins the race, and what becomes of the purchase that loses.
 
-#### C4 — `Error.nature` est le seul `enum` dur d'une réponse, et c'est le pire endroit
+#### C4 — `Error.nature` is the only hard `enum` on a response, and it is in the worst place
 
-**Sur pièces.** Sur 5 072 lignes, la règle critique n° 10 est tenue avec une rigueur que je tiens à
-saluer : 59 vocabulaires fermés de réponse en `x-arthome-vocabulary`, 25 `enum:` **tous** en
-requête, paramètre ou en-tête. Une exception, ligne 3616 :
+**On the evidence.** Over 5,072 lines, critical rule no. 10 is held with a rigour I want to
+acknowledge: 59 closed response vocabularies as `x-arthome-vocabulary`, 25 `enum:` **all** in a
+request, parameter or header. One exception, line 3616:
 
 ```
 nature:
@@ -1450,118 +1408,115 @@ nature:
   enum: [refused, unavailable, offline_forbidden]
 ```
 
-`Error.nature` est `required` dans `Error`, qui est `required` dans `ErrorEnvelope`, qui est le
-corps de **toutes** les réponses d'erreur du contrat.
+`Error.nature` is `required` in `Error`, which is `required` in `ErrorEnvelope`, which is the body
+of **every** error response in the contract.
 
-**Pourquoi ça compte plus qu'ailleurs.** Si une quatrième nature apparaît — `degraded`,
-`rate_limited`, `needs_reauth` — un téléviseur d'une version antérieure, appliquant le contrat tel
-qu'il est écrit, rejette l'enveloppe. Il ne perd pas une carte : il perd sa capacité à **lire les
-erreurs**, c'est-à-dire précisément au moment où quelque chose ne va déjà pas. Le défaut se
-manifeste en cascade, sur le chemin de récupération, et sur un parc que je ne peux pas mettre à
-jour. C'est le scénario exact que la règle n° 10 existe pour empêcher, à l'endroit où il fait le
-plus de dégâts.
+**Why it matters more here than elsewhere.** If a fourth nature appears — `degraded`,
+`rate_limited`, `needs_reauth` — a television on an earlier version, applying the contract as
+written, rejects the envelope. It does not lose a card: it loses its ability to **read errors**,
+that is to say precisely at the moment when something is already going wrong. The defect shows up
+as a cascade, on the recovery path, and on a fleet I cannot update. It is the exact scenario rule
+no. 10 exists to prevent, at the place where it does the most damage.
 
-**Ce que je demande.** Un `x-arthome-vocabulary` comme les 59 autres, et une nature inconnue
-traitée comme `unavailable` (réessayable) plutôt que comme rien. La correction coûte une ligne.
+**What I ask for.** An `x-arthome-vocabulary` like the other 59, and an unknown nature treated as
+`unavailable` (retryable) rather than as nothing. The fix costs one line.
 
-### Ce qui est satisfait autrement, et si ça me va
+### What is satisfied differently, and whether that suits me
 
-- **Q1, l'appairage par interrogation et non par le canal.** J'avais laissé les trois mécanismes
-  ouverts en demandant ≤ 2 s. Le choix retenu est l'interrogation, avec une **décroissance servie**
-  (2 s pendant soixante secondes, puis 5 s), au motif que faire entrer une identité d'appareil dans
-  l'espace de noms WebSocket au moment de `signin` élargirait sa surface d'attaque. **Cela me va,
-  et l'argument est meilleur que le mien** : je pesais la latence, il pèse la surface d'attaque, et
-  la décroissance servie me donne les deux secondes là où elles comptent — la première minute. Un
-  point de vigilance : l'intervalle est servi, donc il faut que ma surface le **relise à chaque
-  réponse** et non le capture à la création. Le contrat le dit ; c'est à moi de le tenir.
-- **Q6, la mutualisation.** Ma troisième issue est retenue — composition au BFF, corps public en
-  cache Redis court, surcouches fusionnées par **lot d'identifiants**. Ajout que je n'avais pas
-  demandé et qui vaut mieux que ce que je demandais : `EnvelopeMeta.degraded`, qui nomme les
-  surcouches non composées. Une surcouche qui échoue **dégrade** la carte au lieu de couler
-  l'écran. C'est exactement le bon compromis pour trois mètres : mieux vaut une carte sans badge
-  de progression qu'un écran vide.
-- **La détention d'une place n'est pas un champ.** `viewerRelations` porte `inWatchlist`,
-  `reminderSet`, `followsArtist` — pas `owned`. La détention se déduit de
-  `watchVerdict.reasonCode != NO_SEAT`. **Ça passe**, parce que le vocabulaire de refus est le même
-  des deux côtés et que `fallbackAction` me donne l'action sans que j'aie à la choisir. Mais c'est
-  une déduction, et le principe n° 3 du dossier (« une place détenue ouvre le spectacle, ne jamais
-  proposer une place à qui l'a déjà ») mériterait mieux qu'une inférence par la négative. Je le
-  signale sans en faire une contestation : si la rangée « Vos places » obtient son `kind` (C2), la
-  question se referme d'elle-même.
-- **Q12 et la validation.** La règle est posée au niveau projet et appliquée dans l'OpenAPI, mais
-  la traduction en zod reste à écrire — `answers-to-surfaces` le dit lui-même : « un `z.enum()` nu
-  ne le fait pas ». Avec D-012 et l'entrée `zod/mini`, cela tombe sur `@arthome/contracts` au
-  palier 1. **Ça me va**, à une condition : que ce soit un **test**, pas une convention. Un schéma
-  qui rejette une valeur inconnue passe toutes les revues et casse en production six mois plus
-  tard.
-- **`previewUrl` est nu.** `HomeScreen.billboard.previewUrl` est une URL sans métadonnée. J'avais
-  demandé que l'aperçu du billboard soit servi en **rendition légère et déclaré comme tel**, parce
-  qu'un décodeur de téléviseur ne décode souvent qu'un flux haute définition et que l'aperçu doit
-  être démonté avant d'ouvrir le lecteur. Servir une URL sans hauteur ni débit me laisse deviner.
-  **C'est mineur et je m'en accommode** — je peux traiter tout `previewUrl` comme démontable
-  d'office — mais une hauteur déclarée coûterait un champ et m'éviterait de plafonner à l'aveugle
-  sur les appareils que je ne peux pas tester.
+- **Q1, pairing by polling rather than by the channel.** I had left the three mechanisms open while
+  asking for ≤ 2 s. The choice made is polling, with a **served decay** (2 s for sixty seconds,
+  then 5 s), on the grounds that bringing a device identity into the WebSocket namespace at
+  `signin` time would widen its attack surface. **That suits me, and the argument is better than
+  mine**: I was weighing latency, it weighs attack surface, and the served decay gives me the two
+  seconds where they count — the first minute. One point to watch: the interval is served, so my
+  surface must **re-read it on every response** and not capture it at creation. The contract says
+  so; holding to it is on me.
+- **Q6, cacheability.** My third way out is the one adopted — composition at the BFF, a public
+  body in a short Redis cache, overlays merged by **batch of ids**. An addition I had not asked for
+  and which is better than what I did ask for: `EnvelopeMeta.degraded`, which names the overlays
+  that could not be composed. An overlay that fails **degrades** the card instead of sinking the
+  screen. That is exactly the right trade-off at three metres: better a card without a progress
+  badge than an empty screen.
+- **Holding a seat is not a field.** `viewerRelations` carries `inWatchlist`, `reminderSet`,
+  `followsArtist` — not `owned`. Holding is inferred from `watchVerdict.reasonCode != NO_SEAT`.
+  **That passes**, because the refusal vocabulary is the same on both sides and `fallbackAction`
+  gives me the action without my having to choose it. But it is an inference, and principle no. 3
+  of the handoff ("a held seat opens the show, never offer a seat to someone who already has one")
+  deserves better than an inference by negation. I note it without making it an objection: if the
+  "Your seats" row gets its `kind` (C2), the question closes by itself.
+- **Q12 and validation.** The rule is set at project level and applied in the OpenAPI, but the
+  translation into zod remains to be written — `answers-to-surfaces` says so itself: "a bare
+  `z.enum()` does not do it". With D-012 and the `zod/mini` entry point, that lands on
+  `@arthome/contracts` at stage 1. **That suits me**, on one condition: that it be a **test**, not
+  a convention. A schema that rejects an unknown value passes every review and breaks in
+  production six months later.
+- **`previewUrl` is bare.** `HomeScreen.billboard.previewUrl` is a URL with no metadata. I had
+  asked for the billboard preview to be served as a **light rendition and declared as such**,
+  because a television decoder often decodes only one high-definition stream and the preview must
+  be torn down before opening the player. Serving a URL with no height or bitrate leaves me
+  guessing. **It is minor and I can live with it** — I can treat every `previewUrl` as tearable
+  down by default — but a declared height would cost one field and would spare me capping blind on
+  devices I cannot test.
 
-### Mon budget d'appels : il tient
+### My call budget: it holds
 
-Le chef me signale que `backend-domain` annonce « 1 à 4 appels par écran ». **Ce n'est pas le même
-axe, et il n'y a pas de conflit.** `context-map.md` §10.1 compte les appels **synchrones
-BFF → service**, internes, *« tous parallèles »*, derrière **une seule** requête de surface. Mon
-budget comptait les allers-retours **surface → BFF**. Les deux tiennent ensemble, et le document le
-dit explicitement : *« le compte que `storefront-tv` annonçait est donc confirmé »*.
+The lead points out that `backend-domain` announces "1 to 4 calls per screen". **That is not the
+same axis, and there is no conflict.** `context-map.md` §10.1 counts the **synchronous
+BFF → service** calls, internal, *"all parallel"*, behind **a single** surface request. My budget
+counted **surface → BFF** round trips. The two hold together, and the document says so explicitly:
+*"the count `storefront-tv` announced is therefore confirmed"*.
 
-Vérification écran par écran, contre les chemins réellement publiés :
+Screen-by-screen verification, against the paths actually published:
 
-| Écran | Budget annoncé | Chemin servi | Verdict |
+| Screen | Budget announced | Path served | Verdict |
 |---|---|---|---|
 | `boot` | 1 | `GET /v1/viewer-context` | ✅ |
-| `gate` | 0 | profils dans `ViewerContext` | ✅ |
-| `signin` | 1 + attente | `POST /v1/pairings` + interrogation | ✅ |
-| `home` | 1 | `GET /v1/home` | ✅ (4 appels internes parallèles, 1 à 2 en régime établi) |
-| `search` | 1 par état | `GET /v1/search`, annulable, ≤ 200 ms | ✅ |
-| `live` | 1 | `GET /v1/live`, groupement horaire **serveur** | ✅ |
+| `gate` | 0 | profiles in `ViewerContext` | ✅ |
+| `signin` | 1 + wait | `POST /v1/pairings` + polling | ✅ |
+| `home` | 1 | `GET /v1/home` | ✅ (4 parallel internal calls, 1 to 2 in steady state) |
+| `search` | 1 per state | `GET /v1/search`, cancellable, ≤ 200 ms | ✅ |
+| `live` | 1 | `GET /v1/live`, **server-side** hour grouping | ✅ |
 | `categories` | 1 | `GET /v1/categories` | ✅ |
 | `category` | 1 | `GET /v1/categories/{id}` | ✅ |
-| `artists` | 1 + curseur | `GET /v1/artists` | ✅ |
+| `artists` | 1 + cursor | `GET /v1/artists` | ✅ |
 | `artist` | 1 | `GET /v1/artists/{id}` | ✅ |
-| `title` | 1 | `GET /v1/dates/{id}`, avec `ETag` | ✅ |
-| `book` | 0 ou 1 | `GET /v1/dates/{id}/availability` | ✅ |
-| `pay` | 1 + attente | `POST /v1/pairings` | ✅ |
-| `confirm` | **0** | `PairingOutcome` complet | ✅ **confirmé, 0 appel interne** |
-| `player` | **1** | `POST /v1/playback/{id}/open` | ✅ **1 appel interne, budget ≤ 1 s** |
-| `dateinfo` | 0 | dérivé du `PlaybackTicket` | ✅ |
+| `title` | 1 | `GET /v1/dates/{id}`, with `ETag` | ✅ |
+| `book` | 0 or 1 | `GET /v1/dates/{id}/availability` | ✅ |
+| `pay` | 1 + wait | `POST /v1/pairings` | ✅ |
+| `confirm` | **0** | complete `PairingOutcome` | ✅ **confirmed, 0 internal calls** |
+| `player` | **1** | `POST /v1/playback/{id}/open` | ✅ **1 internal call, budget ≤ 1 s** |
+| `dateinfo` | 0 | derived from the `PlaybackTicket` | ✅ |
 | `tickets` | 1 | `GET /v1/me/tickets` | ✅ |
 | `list` | 1 | `GET /v1/me/watchlist` | ✅ |
-| `replays` | 1 | **aucun chemin public** | ❌ **C1** |
+| `replays` | 1 | **no public path** | ❌ **C1** |
 | `plans` | 1 | `GET /v1/plans` | ✅ |
 | `account` | 1 | `GET /v1/me/account` | ✅ |
-| `help` | 0 | embarqué | ✅ |
-| `ambient` | **0** | affiches en main, aucune transition poussée | ✅ **confirmé par `realtime.md` §2.4** |
+| `help` | 0 | embedded | ✅ |
+| `ambient` | **0** | posters in hand, no pushed transition | ✅ **confirmed by `realtime.md` §2.4** |
 
-**Vingt et un écrans sur vingt-deux au budget annoncé. Un seul n'est pas servi.**
+**Twenty-one screens out of twenty-two at the announced budget. Only one is not served.**
 
-Deux acquis que je tiens à consigner parce qu'ils étaient les plus fragiles :
+Two wins I want on the record, because they were the most fragile:
 
-- **La veille à zéro appel est explicitement défendue.** `realtime.md` §2.4 refuse de pousser les
-  transitions d'état et livre les instants à la place, avec la conclusion écrite :
-  *« un mode veille qui tourne huit heures ne fait aucune requête »*. C'était le point que je
-  craignais de perdre le premier, parce qu'il est contre-intuitif : on pousse par réflexe.
-- **`confirm` à zéro appel est tenu par la forme, pas par une promesse.** `PairingOutcome` porte
-  `ticket`, `order`, `subscription` et, pour `signin`, un `viewerContext` complet — *« la TV n'a
-  pas à réamorcer »*. C'est plus que ce que je demandais.
+- **The zero-call screensaver is explicitly defended.** `realtime.md` §2.4 refuses to push state
+  transitions and delivers the instants instead, with the conclusion written out:
+  *"a screensaver that runs for eight hours makes no request"*. That was the point I feared losing
+  first, because it is counter-intuitive: pushing is the reflex.
+- **`confirm` at zero calls is held by the shape, not by a promise.** `PairingOutcome` carries
+  `ticket`, `order`, `subscription` and, for `signin`, a complete `viewerContext` — *"the TV does
+  not have to re-bootstrap"*. That is more than I asked for.
 
-### Les questions qui restent
+### The questions that remain
 
-1. **Qui gagne la course de C3, et que devient l'achat qui perd ?** C'est la seule des quatre dont
-   la réponse engage de l'argent réel.
-2. **`GET /v1/replays` est-il ajouté, ou la page est-elle retirée de ma barre latérale ?** Les deux
-   sont des réponses acceptables — mais pas le silence, parce qu'une entrée de menu qui répond 401
-   à un visiteur est pire que pas d'entrée.
-3. **Comment la rangée d'artistes de l'accueil est-elle servie ?** `ArtistSummary` existe et aucune
-   rangée ne peut le porter. Si la réponse est « la TV fait un second appel pour cette rangée », je
-   la conteste d'avance : ce serait le seul écran à deux allers-retours, et pour la rangée la moins
-   importante des neuf.
-4. **La tolérance à l'énumération inconnue sera-t-elle un test ?** La règle est écrite, l'OpenAPI
-   l'applique ; il manque le garde-fou qui empêchera un `z.enum()` de rentrer au palier 1. Je
-   demande un test de contrat qui envoie une valeur inédite dans chaque vocabulaire fermé et vérifie
-   que la réponse est **rendue**, pas rejetée.
+1. **Who wins the C3 race, and what becomes of the purchase that loses?** It is the only one of the
+   four whose answer involves real money.
+2. **Is `GET /v1/replays` added, or is the page removed from my sidebar?** Both are acceptable
+   answers — but not silence, because a menu entry that answers 401 to a visitor is worse than no
+   entry.
+3. **How is the home screen's artists row served?** `ArtistSummary` exists and no row can carry it.
+   If the answer is "the TV makes a second call for that row", I dispute it in advance: it would be
+   the only screen at two round trips, and for the least important of the nine rows.
+4. **Will tolerance of unknown enumeration values be a test?** The rule is written, the OpenAPI
+   applies it; what is missing is the guard rail that will stop a `z.enum()` getting in at stage 1.
+   I ask for a contract test that sends an unheard-of value into every closed vocabulary and checks
+   that the response is **rendered**, not rejected.

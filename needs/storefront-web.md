@@ -1,1117 +1,1068 @@
-# Besoins — storefront web (Next.js)
+# Needs — storefront web (Next.js)
 
-> Surface : **Storefront Web**, Next.js, 1440 px. Catalogue de billetterie **public et
-> indexable** : le rendu serveur et la stabilité des URL ne sont pas des préférences
-> d'implémentation, ce sont des contraintes de contrat.
+> Surface: **Storefront Web**, Next.js, 1440 px. A **public, indexable** ticketing catalogue:
+> server rendering and URL stability are not implementation preferences, they are contract
+> constraints.
 >
-> Sources lues : `README.md` (corrigé), `shared/helpers.js` (intégral), `shared/catalogue.json`,
-> `shared/taxonomy.json`, `shared/fixtures.js` (extraits), `shared/i18n/*` (intégral pour
-> `storefront.json`, `system.json`, `index.json`), `mockups/Storefront Web.dc.html` (lu par
-> fragments : routeur, état du composant, modèles de vue, jamais en entier),
+> Sources read: `README.md` (corrected), `shared/helpers.js` (in full), `shared/catalogue.json`,
+> `shared/taxonomy.json`, `shared/fixtures.js` (excerpts), `shared/i18n/*` (in full for
+> `storefront.json`, `system.json`, `index.json`), `mockups/Storefront Web.dc.html` (read in
+> fragments: router, component state, view models — never in full),
 > `architecture/corrections-handoff.md`.
 >
-> Ce document **exprime des besoins**. Il ne redécrit aucune maquette : la maquette est la
-> conception. Tout ce qui suit change ce que le contrat doit porter ou garantir.
+> This document **states needs**. It does not re-describe any mockup: the mockup is the design.
+> Everything below changes what the contract must carry or guarantee.
 
 ---
 
-## Inventaire des écrans
+## Screen inventory
 
-### Routes de premier niveau — douze, vérifiées dans le routeur de la maquette
+### Top-level routes — twelve, verified against the mockup's router
 
-Le routeur de `Storefront Web.dc.html` ne connaît que douze valeurs de `page` :
+The router in `Storefront Web.dc.html` knows exactly twelve values of `page`:
 `home · live · browse · categories · category · artists · artist · replay · plans · following ·
-account · help`. Le chef en avait relevé douze : le compte est exact, rien ne manque à ce niveau.
+account · help`. The lead had listed twelve: the count is right, nothing is missing at this level.
 
-| Route | Ce qu'elle sert | Rédigée en détail |
+| Route | What it serves | Written up in detail |
 |---|---|---|
-| `home` | accueil éditorial : carrousels mêlant sélection publique et rails personnalisés | §Formes, §Temps réel |
-| `browse` | **l'explorateur** : recherche plein texte + facettes + quatre onglets de résultats (`best`, `lives`, `replays`, `artists`) | §Formes, §Pagination |
-| `categories` | les **21 disciplines**, groupées par les deux univers (`music`, `stage`), dans le rang éditorial `rank` | renvoi : lecture de taxonomie seule |
-| `category` | une discipline : cinq onglets (`ov` vue d'ensemble, `live`, `up` à venir, `rep` rediffusions, `art` artistes), ses sous-genres, son propre jeu de filtres, son enregistrement en recherche | §Formes, §Pagination |
-| `artists` | annuaire : filtre discipline, tri `az` / `followers`, deux sections (en direct / pas en direct) | renvoi : même forme que `browse` onglet `artists` |
-| `artist` | fiche artiste : bio, dates à venir, dates passées, rediffusions, audience moyenne, abonnés | §Formes |
-| `live` | **la page d'une date** : lecteur, aperçu gratuit verrouillé, tchat, boutique du spectacle, achat de place, partage, informations | §Formes, §Commandes, §Temps réel |
-| `replay` | lecteur de rediffusion : chapitres, vitesse, position reprise, fenêtre restante | §Formes, §Hors ligne |
-| `plans` | les formules d'abonnement et leur comparatif | §Formes — **vocabulaire en conflit, voir Incohérences** |
-| `following` | artistes suivis et leurs prochaines dates | renvoi : `ArtistSummary` + `DateCard`, rien de neuf |
-| `help` | aide et contact : six sujets, formulaire, contact DPO | §Commandes |
-| `account` | **onze sections**, ci-dessous | §Formes, §Commandes |
+| `home` | editorial home: carousels mixing a public selection with personalised rails | §Shapes, §Real time |
+| `browse` | **the explorer**: full-text search + facets + four result tabs (`best`, `lives`, `replays`, `artists`) | §Shapes, §Pagination |
+| `categories` | the **21 disciplines**, grouped by the two universes (`music`, `stage`), in the editorial `rank` order | cross-reference: taxonomy read only |
+| `category` | one discipline: five tabs (`ov` overview, `live`, `up` upcoming, `rep` replays, `art` artists), its sub-genres, its own filter set, its save-as-search | §Shapes, §Pagination |
+| `artists` | directory: discipline filter, `az` / `followers` sort, two sections (live / not live) | cross-reference: same shape as `browse`, `artists` tab |
+| `artist` | artist page: bio, upcoming dates, past dates, replays, average audience, followers | §Shapes |
+| `live` | **the page of a date**: player, locked free preview, chat, show store, seat purchase, sharing, information | §Shapes, §Commands, §Real time |
+| `replay` | replay player: chapters, speed, resume position, remaining window | §Shapes, §Offline |
+| `plans` | the subscription plans and their comparison | §Shapes — **conflicting vocabulary, see Inconsistencies** |
+| `following` | followed artists and their upcoming dates | cross-reference: `ArtistSummary` + `DateCard`, nothing new |
+| `help` | help and contact: six topics, form, DPO contact | §Commands |
+| `account` | **eleven sections**, below | §Shapes, §Commands |
 
-### `account` — onze sections, une seule forme de compte
+### `account` — eleven sections, one single account shape
 
-`upcoming` (places à venir) · `past` (passés et rediffusions) · `faves` (artistes suivis +
-spectacles mis de côté) · `alerts` (**recherches enregistrées**) · `orders` (commandes merch) ·
-`sub` (abonnement, factures, moyen de paiement) · `profile` · `prefs` (préférences de lecture) ·
-`notifs` (réglages de notification + heures calmes) · `security` (mot de passe, 2FA, passkey,
-moyens de paiement, appareils connectés) · `privacy` (consentements, cookies, conservation,
-droits RGPD, DPO).
+`upcoming` (upcoming seats) · `past` (past events and replays) · `faves` (followed artists +
+saved shows) · `alerts` (**saved searches**) · `orders` (merch orders) · `sub` (subscription,
+invoices, payment method) · `profile` · `prefs` (playback preferences) · `notifs` (notification
+settings + quiet hours) · `security` (password, 2FA, passkey, payment methods, connected
+devices) · `privacy` (consents, cookies, retention, GDPR rights, DPO).
 
-**Ces onze sections partagent une seule et même forme de compte.** Elles ne justifient pas onze
-appels ni onze schémas : elles justifient **un** agrégat `Account` servi en une fois par le BFF,
-plus quatre listes paginées indépendantes (`tickets`, `orders`, `savedSearches`,
-`notifications`). Seules `alerts`, `orders` et `privacy` introduisent des formes que rien
-d'autre ne porte ; les huit autres sont des projections.
+**These eleven sections share one and the same account shape.** They do not justify eleven calls
+nor eleven schemas: they justify **one** `Account` aggregate served in a single call by the BFF,
+plus four independent paginated lists (`tickets`, `orders`, `savedSearches`, `notifications`).
+Only `alerts`, `orders` and `privacy` introduce shapes that nothing else carries; the other eight
+are projections.
 
-### Superpositions — pas des routes, mais elles ont leur contrat
+### Overlays — not routes, but they have their own contract
 
-Elles n'ont pas d'URL dans la maquette, et **c'est un problème à trancher** (voir §Contraintes
-Next.js) :
+They have no URL in the mockup, and **that is a problem to settle** (see §Next.js constraints):
 
-- **panier**, popover à trois temps : `cart` → `pay` → `done` ;
-- **achat de place** (modale de tarifs), **authentification** (créer un compte / se connecter /
-  continuer sans compte), **partage**, **centre de notifications**, **suggestions de recherche**
-  (saisie anticipée), **enregistrement d'une recherche**, **menu de tri**, **menu mobile** ;
-- **mini-lecteur persistant** : la lecture survit à la navigation entre routes (`watching`,
-  `watchKind`, `pipClosed`). C'est une contrainte de contrat, pas de mise en page — voir
-  §Contraintes Next.js.
+- **cart**, a three-step popover: `cart` → `pay` → `done`;
+- **seat purchase** (tier modal), **authentication** (create an account / sign in / continue
+  without an account), **sharing**, **notification centre**, **search suggestions**
+  (type-ahead), **save a search**, **sort menu**, **mobile menu**;
+- **persistent mini-player**: playback survives navigation between routes (`watching`,
+  `watchKind`, `pipClosed`). That is a contract constraint, not a layout one — see §Next.js
+  constraints.
 
-### Pages de pied de page — à servir, sans modèle de données propre
+### Footer pages — to be served, with no data model of their own
 
-`CGV` · `confidentialité` · `accessibilité` · `presse` · `statut` · `centre d'aide` ·
-`diffuser sur Arthome` · `guide OBS` · `billetterie (artistes)` · `boutique & merch (artistes)`.
-Contenu éditorial bilingue, indexable, sans session. Une seule exigence de contrat : **le statut
-de service doit être lisible sans session et sans dépendre des mêmes services** que le reste —
-sinon la page de statut tombe avec ce qu'elle décrit.
+`terms` · `privacy policy` · `accessibility` · `press` · `status` · `help centre` ·
+`stream on Arthome` · `OBS guide` · `ticketing (for artists)` · `store & merch (for artists)`.
+Bilingual editorial content, indexable, session-free. One contract requirement only: **the
+service status page must be readable without a session and without depending on the same
+services** as everything else — otherwise the status page goes down with what it describes.
 
 ---
 
-## Les formes de données
+## Data shapes
 
-Chaque forme est décrite une fois, avec la liste de ses écrans consommateurs. La règle
-« aucune valeur calculée deux fois » impose que tout ce qui est marqué **[dérivé]** soit servi
-par le contrat, jamais recalculé par la surface.
+Each shape is described once, with the list of screens that consume it. The rule "no value
+computed twice" means everything marked **[derived]** must be served by the contract, never
+recomputed by the surface.
 
-### 1. `DateCard` — la carte d'une date. **La forme la plus consommée du produit**
+### 1. `DateCard` — the card of a date. **The most consumed shape in the product**
 
-Consommée par : `home` (tous les rails), `browse`, `category`, `artist`, `following`,
-`account/upcoming`, `account/past`, les suggestions de recherche, le panneau de notifications.
+Consumed by: `home` (every rail), `browse`, `category`, `artist`, `following`,
+`account/upcoming`, `account/past`, search suggestions, the notification panel.
 
-Elle doit porter, au minimum :
+It must carry, at minimum:
 
-- identité : `dateId`, `showId`, `artistId`, `venueId`, `slug` de chacun **[stable, indexable]** ;
-- temps : **instant UTC ISO 8601** de début, `runtimeMin`, identifiant de zone **IANA** de la
-  salle (`Europe/Paris`) — jamais un décalage figé en minutes (errata D3, D7) ;
-- état **[dérivé]** : `scheduled | live | replay | ended`, plus `roomOpen` (la salle ouvre
-  `roomOpensBeforeMin` = 30 min avant) et `progress` pour un direct en cours ;
-- issue **[dérivée, prioritaire sur tout le reste]** : `null | postponed | cancelled |
-  interrupted`, avec la date de report quand elle existe ;
-- jauge : `seatsAvailable`, `waitlist`, et **le taux de remplissage** — la surface affiche
-  « bientôt complet » à partir d'un seuil, ce seuil est une règle du domaine, pas un littéral
-  d'interface ;
-- tarif : **le tarif le plus bas** en unité canonique (centimes + code devise), et la liste des
-  paliers quand la carte ouvre l'achat ;
-- promotion **[dérivée]** : voir forme 6 ;
-- rediffusion : `policy` (`included | subscription | unit | none`), `windowHours`, et
-  **`replayHoursLeft` [dérivé]** quand l'état est `replay` ;
-- droits : `worldwide | restricted`, et si restreint, le **code de motif** (`co-production |
-  broadcaster | festival`) — jamais la phrase ;
-- langue : `spokenLanguage[]`, `subtitles[]`, `surtitles[]`, `languageDependency` ;
-- audience : `viewers` quand l'état est `live` — et **uniquement alors** (principe : jamais
-  « 0 EN DIRECT ») ;
-- taxonomie : `categoryId`, `genreId`, `tagIds[]` ;
-- médias : visuel large **et** affiche 3:4, avec dimensions intrinsèques connues.
+- identity: `dateId`, `showId`, `artistId`, `venueId`, and a `slug` for each **[stable,
+  indexable]**;
+- time: the **ISO 8601 UTC instant** of the start, `runtimeMin`, the venue's **IANA** zone
+  identifier (`Europe/Paris`) — never a frozen offset in minutes (errata D3, D7);
+- state **[derived]**: `scheduled | live | replay | ended`, plus `roomOpen` (the house opens
+  `roomOpensBeforeMin` = 30 min before) and `progress` for a live in flight;
+- outcome **[derived, takes priority over everything else]**: `null | postponed | cancelled |
+  interrupted`, with the rescheduled date when one exists;
+- capacity: `seatsAvailable`, `waitlist`, and **the fill rate** — the surface shows "almost sold
+  out" past a threshold, and that threshold is a domain rule, not an interface literal;
+- price: **the lowest price** in canonical units (minor units + currency code), and the list of
+  tiers when the card opens a purchase;
+- promotion **[derived]**: see shape 6;
+- replay: `policy` (`included | subscription | unit | none`), `windowHours`, and
+  **`replayHoursLeft` [derived]** when the state is `replay`;
+- rights: `worldwide | restricted`, and if restricted, the **reason code** (`co-production |
+  broadcaster | festival`) — never the sentence;
+- language: `spokenLanguage[]`, `subtitles[]`, `surtitles[]`, `languageDependency`;
+- audience: `viewers` when the state is `live` — and **only then** (the principle: never
+  "0 LIVE NOW");
+- taxonomy: `categoryId`, `genreId`, `tagIds[]`;
+- media: a wide visual **and** a 3:4 poster, with known intrinsic dimensions.
 
-**Trois besoins que cette forme impose au contrat :**
+**Three needs this shape imposes on the contract:**
 
-1. **L'état d'une date change sans requête.** Une carte rendue au serveur à 20 h 29 affiche
-   « salle ouverte » ; à 20 h 31 elle doit dire « en direct ». Le contrat doit porter les
-   **instants de bascule** (ouverture de salle, début, fin, expiration de rediffusion) pour que
-   la surface puisse programmer le changement sans re-solliciter le serveur. Servir un libellé
-   d'état sans son instant d'expiration rend toute page rendue au serveur fausse au bout de
-   quelques minutes.
-2. **Le tarif d'une date en cours n'est pas constant.** Le tarif « séance commencée » est réduit
-   *au prorata du temps restant*. C'est une valeur qui dépend de l'instant de lecture : elle
-   doit venir du contrat avec sa date de validité, ou être recalculable par `@arthome/core` à
-   partir de paramètres servis. Elle ne peut pas être une chaîne figée.
-3. **Deux fuseaux, dont un inconnu du serveur.** L'heure du spectateur d'abord, l'heure de salle
-   en second quand elle diffère. Le serveur ne connaît pas la zone du spectateur au premier
-   rendu. Le contrat doit donc porter **l'instant UTC et la zone IANA de la salle**, et rien
-   d'autre : c'est la seule forme qui laisse la surface résoudre les deux heures sans
-   contradiction entre rendu serveur et rendu client.
+1. **The state of a date changes without a request.** A card server-rendered at 20:29 says
+   "house open"; at 20:31 it must say "live". The contract must carry the **transition
+   instants** (house opening, start, end, replay expiry) so the surface can schedule the change
+   without going back to the server. Serving a state label without its expiry instant makes any
+   server-rendered page wrong within minutes.
+2. **The price of a date in flight is not constant.** The "already started" rate is reduced
+   *pro rata to the time remaining*. It is a value that depends on the instant it is read: it
+   must come from the contract with its validity date, or be recomputable by `@arthome/core`
+   from served parameters. It cannot be a frozen string.
+3. **Two time zones, one of which the server does not know.** The viewer's time first, the venue
+   time second when it differs. The server does not know the viewer's zone on the first render.
+   The contract must therefore carry **the UTC instant and the venue's IANA zone**, and nothing
+   else: that is the only shape which lets the surface resolve both times without a contradiction
+   between server render and client render.
 
-### 2. `ShowDetail` — le spectacle
+### 2. `ShowDetail` — the show
 
-Consommée par : `live`, `artist`, `replay`, les modales d'achat.
+Consumed by: `live`, `artist`, `replay`, the purchase modals.
 
-Titre, synopsis, distribution, **dans les deux langues quand elles existent** (`title` /
-`titleEn` — la règle est de rendre la langue du *lecteur*, pas celle de la salle), durée,
-discipline, sous-genre, étiquettes, attributs, politique de rediffusion, visuel et affiche,
-`contentLanguage`.
+Title, synopsis, cast, **in both languages where they exist** (`title` / `titleEn` — the rule is
+to render the *reader's* language, not the venue's), runtime, discipline, sub-genre, tags,
+attributes, replay policy, wide visual and poster, `contentLanguage`.
 
-**Besoin** : le contrat doit dire quelle langue est disponible pour chaque champ traduit, pas
-seulement quelle langue est demandée. La surface bascule de langue sans recharger : elle a
-besoin des deux versions, ou d'un moyen de les obtenir sans perdre l'état.
+**Need**: the contract must say which language is available for each translated field, not only
+which language was requested. The surface switches language without reloading: it needs both
+versions, or a way to get them without losing state.
 
 ### 3. `ArtistSummary` / `ArtistDetail`
 
-Consommée par : `artists`, `artist`, `following`, `browse` (onglet `artists`), `home` (rail
-« artistes que vous pourriez suivre »), fiche d'une date.
+Consumed by: `artists`, `artist`, `following`, `browse` (`artists` tab), `home` ("artists you
+might follow" rail), the page of a date.
 
-Nom, avatar, discipline, ville, pays, **nombre d'abonnés**, biographie bilingue, date d'arrivée
-sur la plateforme, **audience moyenne**, dernier direct, `isLive` **[dérivé]**, `isFollowed`
-**[dépend de la session]**, dates à venir, rediffusions disponibles.
+Name, avatar, discipline, city, country, **follower count**, bilingual biography, date joined,
+**average audience**, last live, `isLive` **[derived]**, `isFollowed` **[session-dependent]**,
+upcoming dates, available replays.
 
-**Besoin** : `followers` et `avgViewers` sont des compteurs agrégés qui s'affichent sur quatre
-écrans. Ils ne doivent exister qu'à un seul endroit, avec une fraîcheur déclarée. Un compteur
-d'abonnés faux de 3 % n'est pas grave ; un compteur qui diffère entre la fiche et la liste l'est.
+**Need**: `followers` and `avgViewers` are aggregate counters shown on four screens. They must
+exist in one place only, with a declared freshness. A follower count that is 3% wrong does not
+matter; a counter that differs between the artist page and the list does.
 
 ### 4. `VenueRef`
 
-Consommée partout où une date apparaît. Nom, ville, pays, région, **zone IANA**, capacité,
-type de salle.
+Consumed everywhere a date appears. Name, city, country, region, **IANA zone**, capacity, venue
+type.
 
-**Besoin** : `utcOffsetMin` doit disparaître du contrat (errata D3). La capacité est nécessaire
-au taux de remplissage — mais ce taux étant **[dérivé]**, la surface n'a pas besoin de la
-capacité : elle a besoin du taux. Servir la capacité et laisser calculer, c'est recréer la
-valeur composée à deux endroits que le projet interdit.
+**Need**: `utcOffsetMin` must disappear from the contract (errata D3). Capacity is needed for the
+fill rate — but since that rate is **[derived]**, the surface does not need the capacity: it
+needs the rate. Serving the capacity and letting the surface compute recreates exactly the
+two-places-one-value fault the project forbids.
 
 ### 5. `PriceTier`
 
-Vocabulaire fermé, tranché par `shared` : **`full | reduced | support`** (`enums.priceTier`).
-Montant en unité canonique + code devise. Chaque palier a un libellé par code i18n et un
-descriptif.
+Closed vocabulary, settled by `shared`: **`full | reduced | support`** (`enums.priceTier`).
+Amount in canonical units + currency code. Each tier has a label by i18n code and a description.
 
-**Besoin** : le prix payé n'est pas le prix du palier. Le récapitulatif d'achat porte
-`palier + frais de service + remise d'abonnement − promotion = total`. **Les quatre lignes
-doivent venir du contrat**, calculées par le serveur, jamais recomposées par la surface — c'est
-exactement le cas « un total de commande composé à deux endroits » que le dossier cite comme
-défaut typique. Le storefront web affiche un frais de service par place ; son barème est une
-règle métier, pas une constante d'interface.
+**Need**: the price paid is not the tier price. The purchase summary carries
+`tier + service fee + subscription discount − promotion = total`. **All four lines must come
+from the contract**, computed server-side, never recomposed by the surface — this is exactly the
+"an order total composed in two places" case the handoff names as the typical fault. The web
+storefront shows a service fee per seat; its schedule is a business rule, not an interface
+constant.
 
 ### 6. `Promotion`
 
-Cinq motifs relevés, avec des règles distinctes : `pre-sale` (jusqu'à J-7), `preview-night`
-(avant-première), `discovery-rate` (première diffusion d'un artiste), `final-date` (dernière de
-série, jusqu'au lever de rideau), `late-rate` (séance commencée, **au prorata**).
+Five reasons found, with distinct rules: `pre-sale` (up to D-7), `preview-night`,
+`discovery-rate` (an artist's first stream), `final-date` (last of a run, until curtain up),
+`late-rate` (already started, **pro rata**).
 
-Une promotion porte : le motif (code), le prix barré, le prix courant, **la fenêtre de validité**,
-et une note explicative par code i18n.
+A promotion carries: the reason (a code), the struck-through price, the current price, **the
+validity window**, and an explanatory note by i18n code.
 
-**Besoin** : une promotion n'est jamais décorative — elle change le prix payé. Elle doit être
-**attachée à la date côté serveur**, avec sa fenêtre, et le prix courant doit être celui que la
-commande acceptera. Un prix promotionnel affiché puis refusé au paiement est le pire défaut
-possible sur une billetterie. Corollaire : la commande d'achat doit **rejeter** un prix attendu
-qui ne correspond plus, avec un code d'erreur distinct de « échec de paiement ».
+**Need**: a promotion is never decorative — it changes the price paid. It must be **attached to
+the date server-side**, with its window, and the current price must be the one the command will
+accept. A promotional price displayed and then refused at payment is the worst possible fault on
+a ticketing platform. Corollary: the purchase command must **reject** an expected price that no
+longer matches, with an error code distinct from "payment failed".
 
-### 7. `TaxonomyRef` et facettes
+### 7. `TaxonomyRef` and facets
 
-2 univers, **21 disciplines**, **176 sous-genres**, **205 étiquettes**, 7 groupes d'attributs.
-La taxonomie est une donnée de référence : quasi immuable, partagée par les cinq surfaces,
-volumineuse (≈ 400 entrées avec leurs libellés).
+2 universes, **21 disciplines**, **176 sub-genres**, **205 tags**, 7 attribute groups. The
+taxonomy is reference data: near-immutable, shared by all five surfaces, bulky (≈ 400 entries
+with their labels).
 
-**Trois besoins :**
+**Three needs:**
 
-1. **Le rang éditorial `rank` fait autorité et aucune surface ne réordonne.** Il doit être servi
-   avec la taxonomie.
-2. **Les valeurs de filtre doivent être des identifiants stables**, jamais des indices de tableau.
-   La maquette filtre sur `fCats: [1]`, `fSubs: [0, 1]` — des positions. C'est une commodité de
-   maquette qui ne survit ni à une URL partageable, ni à une recherche enregistrée, ni à
-   l'insertion d'une discipline. Le contrat doit porter `categoryId`, `genreId`, `tagId`.
-3. **Les facettes ne doivent pas être énumérées dans le contrat.** La surface web expose
-   aujourd'hui neuf filtres (discipline, sous-genre, tarif, date, statut, bientôt complet, a des
-   dates, en promotion, expire bientôt), là où la taxonomie déclare sept groupes d'attributs
-   facetables de plus (`audience`, `minimumAge`, `seatingMode`, `intermission`, `accessibility`,
-   `venueType`, `languageDependency`). Si les filtres sont écrits un par un dans le schéma,
-   ajouter « accessible en fauteuil » est un changement de contrat. **Besoin : une forme de
-   facette générique** — identifiant de facette, valeurs, effectifs — plus un jeu de filtres
-   *structurés* (intervalle de prix, intervalle de dates) qui, eux, ne sont pas des énumérations.
+1. **The editorial `rank` is authoritative and no surface re-orders.** It must be served with the
+   taxonomy.
+2. **Filter values must be stable identifiers**, never array indices. The mockup filters on
+   `fCats: [1]`, `fSubs: [0, 1]` — positions. That is a mockup convenience which survives
+   neither a shareable URL, nor a saved search, nor the insertion of a discipline. The contract
+   must carry `categoryId`, `genreId`, `tagId`.
+3. **Facets must not be enumerated in the contract.** The web surface exposes nine filters today
+   (discipline, sub-genre, price, date, status, almost sold out, has dates, on promotion, expiring
+   soon), where the taxonomy declares seven further facetable attribute groups (`audience`,
+   `minimumAge`, `seatingMode`, `intermission`, `accessibility`, `venueType`,
+   `languageDependency`). If the filters are written one by one in the schema, adding
+   "wheelchair accessible" is a contract change. **Need: a generic facet shape** — facet id,
+   values, counts — plus a set of *structured* filters (price range, date range) which are not
+   enumerations at all.
 
-### 8. `SearchResultPage` — et le problème du regroupement
+### 8. `SearchResultPage` — and the grouping problem
 
-Consommée par : `browse`, `category`, `artist`, `following`.
+Consumed by: `browse`, `category`, `artist`, `following`.
 
-La surface **ne rend pas une liste plate de dates**. Elle regroupe les dates d'un même spectacle
-sous une seule carte : « 3 DATES · voir plus de dates (2) ». Le regroupement se fait sur
-(artiste, spectacle) et se replie/déplie côté client.
+The surface **does not render a flat list of dates**. It groups the dates of the same show under
+a single card: "3 DATES · more dates (2)". The grouping is on (artist, show) and collapses and
+expands client-side.
 
-**C'est le besoin le plus structurant de la page de recherche**, et il est en tension directe
-avec la décision « storefront = curseur » :
+**This is the most structural need of the search page**, and it is in direct tension with the
+"storefront = cursor" decision:
 
-- si l'API pagine des **dates**, le client ne peut pas regrouper correctement : la deuxième date
-  d'un spectacle peut tomber dans la page suivante, et la carte se dédouble ;
-- si l'API pagine des **spectacles** avec leurs dates imbriquées, le regroupement est juste, mais
-  le filtre « ce week-end » porte sur une date, pas sur un spectacle, et le tri « bientôt » doit
-  être celui de la *première date retenue*, pas du spectacle.
+- if the API paginates **dates**, the client cannot group correctly: the second date of a show
+  may fall on the next page, and the card duplicates;
+- if the API paginates **shows** with their dates nested, the grouping is right, but the "this
+  weekend" filter applies to a date, not a show, and the "soon" sort must be that of the *first
+  matching date*, not of the show.
 
-**Besoin : le contrat doit trancher l'unité de pagination de la recherche**, et servir, pour
-chaque groupe, la date représentative retenue **et** le nombre total de dates du groupe qui
-satisfont les filtres. Sans ce second nombre, le libellé « voir plus de dates (2) » est faux dès
-qu'un filtre est actif.
+**Need: the contract must settle the pagination unit of search**, and serve, for each group, the
+representative date chosen **and** the total number of dates in the group that satisfy the
+filters. Without that second number, "more dates (2)" is wrong as soon as a filter is active.
 
-### 9. `Ticket` — une place détenue
+### 9. `Ticket` — a held seat
 
-Consommée par : `account/upcoming`, `account/past`, `home` (rail « vos places »), `live` (la
-pastille « VOTRE PLACE · ATH-…»).
+Consumed by: `account/upcoming`, `account/past`, `home` ("your seats" rail), `live` (the
+"YOUR SEAT · ATH-…" badge).
 
-`ticketId`, date, spectacle, artiste, **code de place**, palier acheté, état **[dérivé]**
-(`upcoming | house-open | live | past`), accès rediffusion et sa fenêtre, facture, droit
-d'annulation et son échéance.
+`ticketId`, date, show, artist, **seat code**, tier purchased, state **[derived]**
+(`upcoming | house-open | live | past`), replay access and its window, invoice, cancellation
+right and its deadline.
 
-**Besoin, trois fois :**
+**Three needs, not one:**
 
-1. **Le code de place s'affiche sur le web, le mobile et la TV.** Il doit être **émis par le
-   serveur**, jamais dérivé d'un identifiant côté client. La maquette le calcule par hachage —
-   commodité de maquette qui, portée telle quelle, donnerait trois codes différents pour la même
-   place si une surface change de fonction de hachage.
-2. **« Une place détenue ouvre le spectacle. »** Principe n°3 du dossier. La forme doit donc
-   permettre de répondre, sans second appel : *cette personne peut-elle lancer la lecture de
-   cette date, maintenant ?* La réponse combine détention, état de la date, fenêtre de
-   rediffusion, droits territoriaux et formule d'abonnement. C'est une règle de `@arthome/core`,
-   mais ses **entrées** doivent toutes être dans la réponse.
-3. **L'annulation a une échéance** (« annulation jusqu'à 1 h avant le début »). L'échéance doit
-   être servie comme un instant, pas comme une phrase.
+1. **The seat code is shown on web, mobile and TV.** It must be **issued by the server**, never
+   derived from an identifier client-side. The mockup computes it by hashing — a mockup
+   convenience which, ported as is, would give three different codes for the same seat as soon as
+   one surface changes its hash function.
+2. **"A held seat opens the show."** Principle 3 of the handoff. The shape must therefore allow
+   the question to be answered without a second call: *can this person start playback of this
+   date, now?* The answer combines holding, the state of the date, the replay window, territorial
+   rights and the subscription plan. It is an `@arthome/core` rule, but all its **inputs** must
+   be in the response.
+3. **Cancellation has a deadline** ("cancel up to 1 h before the start"). The deadline must be
+   served as an instant, not as a sentence.
 
-### 10. `Order` — et le fait qu'une commande peut ne pas être la nôtre
+### 10. `Order` — and the fact that an order may not be ours
 
-Consommée par : `account/orders`, `cart` (étape `done`).
+Consumed by: `account/orders`, `cart` (`done` step).
 
-`orderRef`, date de commande, vendeur, lignes (libellé, quantité, prix unitaire, total), total,
-état, facture, suivi.
+`orderRef`, order date, seller, lines (label, quantity, unit price, total), total, state,
+invoice, tracking.
 
-**Le besoin que rien d'autre ne porte** : la maquette distingue `source: arthome | shopify |
-woocommerce | prestashop | drupal | api`, avec `extRef` (référence marchand) et `extHost`
-(domaine de la boutique de l'artiste), et l'avertissement : *« Commande traitée par la boutique
-de l'artiste. Le suivi, l'échange et le remboursement se font sur son site. »*
+**The need nothing else carries**: the mockup distinguishes `source: arthome | shopify |
+woocommerce | prestashop | drupal | api`, with `extRef` (merchant reference) and `extHost` (the
+artist's own shop domain), and the warning: *"Order handled by the artist's shop. Tracking,
+exchange and refund happen on their site."*
 
-**Donc : la liste des commandes du spectateur est une vue fusionnée sur plusieurs sources de
-commerce, dont certaines ne sont pas les nôtres.** Cela change trois choses dans le contrat :
+**So: the viewer's order list is a merged view over several commerce sources, some of which are
+not ours.** That changes three things in the contract:
 
-- l'état d'une commande a deux vocabulaires : le nôtre (`prep | shipped | delivered | digital`)
-  et celui, opaque, d'une boutique externe (`external`) ;
-- une commande externe n'a **ni facture, ni suivi, ni remboursement** chez nous : la forme doit
-  l'assumer explicitement plutôt que de servir des champs vides ;
-- la réconciliation avec l'artiste et la commission ne peuvent pas porter sur ce que nous n'avons
-  pas encaissé.
+- an order state has two vocabularies: ours (`prep | shipped | delivered | digital`) and the
+  opaque one of an external shop (`external`);
+- an external order has **no invoice, no tracking and no refund** with us: the shape must own
+  that explicitly rather than serve empty fields;
+- reconciliation with the artist and the commission cannot cover what we never collected.
 
-### 11. `CartLine` et `CartQuote`
+### 11. `CartLine` and `CartQuote`
 
-Consommée par : le popover panier (trois temps).
+Consumed by: the cart popover (three steps).
 
-**Correction à la mission** : dans la maquette web, **le panier ne porte que de la marchandise**
-(`ticketing.cart.head` = « Panier merch », les lignes ne sont créées que par la boutique d'un
-spectacle). L'achat d'une place est un parcours **séparé**, en modale, immédiat, hors panier.
-Je n'invente pas un panier mixte que la conception ne montre pas — mais je signale l'écart au
-chef (voir Incohérences) parce qu'il change la nature de la commande.
+**Correction to the brief**: in the web mockup, **the cart carries merchandise only**
+(`ticketing.cart.head` = "Merch cart"; lines are created only by a show's store). Buying a seat
+is a **separate** journey, in a modal, immediate, outside the cart. I am not inventing a mixed
+cart the design does not show — but I am flagging the divergence to the lead (see
+Inconsistencies) because it changes the nature of the command.
 
-Ce que le panier impose quand même :
+What the cart imposes regardless:
 
-- **une commande n'est pas mono-vendeur** : chaque ligne porte son vendeur (la chaîne de
-  l'artiste). Un panier à deux artistes est deux expéditions, deux commissions, potentiellement
-  deux TVA ;
-- **les frais de port sont calculés au paiement**, pas à l'ajout (`« Livraison calculée au
-  paiement »`). Le contrat a donc besoin d'une commande de **devis de panier** distincte de la
-  commande de paiement : sous-total, port, remise d'abonnement (15 % sur les boutiques pour les
-  abonnés), total ;
-- **le stock est réel** (`on-sale | out-of-stock`) : un article peut devenir indisponible entre
-  l'ajout et le paiement. Le devis doit pouvoir invalider une ligne.
+- **an order is not single-seller**: each line carries its seller (the artist's channel). A cart
+  with two artists is two shipments, two commissions, potentially
+  two VAT rates;
+- **shipping is computed at payment**, not on add ("Shipping calculated at checkout"). The
+  contract therefore needs a **cart quote** command distinct from the payment command: subtotal,
+  shipping, subscription discount (15% off stores for subscribers), total;
+- **stock is real** (`on-sale | out-of-stock`): an item can become unavailable between the add
+  and the payment. The quote must be able to invalidate a line.
 
 ### 12. `MerchItem`
 
-`id`, spectacle, chaîne vendeuse, libellé, `kind` (`poster | print | textile | record`), prix,
-devise, stock, état.
+`id`, show, selling channel, label, `kind` (`poster | print | textile | record`), price,
+currency, stock, state.
 
-**Deux manques à combler dans le contrat** : (a) il n'y a **aucune variante** — un t-shirt sans
-taille ; (b) `label` n'existe qu'en français, aucun `labelEn`. Une boutique bilingue sur un
-catalogue indexable dans deux langues ne peut pas s'en tenir là.
+**Two gaps for the contract to fill**: (a) there are **no variants at all** — a t-shirt with no
+size; (b) `label` exists only in French, with no `labelEn`. A bilingual store on a catalogue
+indexed in two languages cannot stop there.
 
-### 13. `SavedSearch` — les recherches enregistrées
+### 13. `SavedSearch` — saved searches
 
-Consommée par : `account/alerts`, `browse` (bouton « enregistrer cette recherche » et l'état
-« déjà enregistrée »), `category` (enregistrer la discipline), le rail latéral « mes recherches
-liées ».
+Consumed by: `account/alerts`, `browse` ("save this search" button and the "already saved"
+state), `category` (save the discipline), the "my related searches" side rail.
 
-Porte : nom libre (optionnel), **portée** (`search | category`) et la discipline quand la portée
-est une catégorie, les mots-clés, **l'état complet des filtres**, l'onglet et le tri, les canaux
-d'alerte (`push`, `email`), l'état actif/en pause, la date de création, et **le nombre de
-correspondances** (`account.alerts.alertMatches`).
+Carries: a free-text name (optional), **scope** (`search | category`) and the discipline when the
+scope is a category, the keywords, **the full filter state**, the tab and the sort, the alert
+channels (`push`, `email`), the active/paused state, the creation date, and **the number of
+matches** (`account.alerts.alertMatches`).
 
-**Trois besoins :**
+**Three needs:**
 
-1. **Une recherche enregistrée est une requête persistée, pas une chaîne.** Le contrat doit
-   porter une forme de critères stable, versionnée : si le vocabulaire des filtres change, les
-   recherches enregistrées d'hier doivent continuer à s'exécuter ou se signaler périmées.
-2. **La déduplication « déjà enregistrée » est une signature de critères.** La maquette la
-   calcule côté client. Elle s'affiche sur deux écrans (`browse` et `category`) et détermine une
-   écriture : c'est donc une valeur de `@arthome/core`, normalisée une fois, jamais deux.
-3. **Le compteur de correspondances suppose que le serveur ré-exécute la recherche.** Dix
-   recherches enregistrées par compte, un compteur chacune, sur la page Compte : c'est dix
-   requêtes de comptage. À trancher : compteur temps réel, compteur périodique daté, ou
-   compteur « nouvelles depuis votre dernière visite » — les trois ont un coût très différent.
+1. **A saved search is a persisted query, not a string.** The contract must carry a stable,
+   versioned criteria shape: if the filter vocabulary changes, yesterday's saved searches must
+   still run, or declare themselves stale.
+2. **The "already saved" deduplication is a criteria signature.** The mockup computes it
+   client-side. It appears on two screens (`browse` and `category`) and it decides a write: so it
+   is an `@arthome/core` value, normalised once, never twice.
+3. **The match counter assumes the server re-runs the search.** Ten saved searches per account,
+   one counter each, on the Account page: that is ten counting queries. To settle: a real-time
+   counter, a dated periodic counter, or a "new since your last visit" counter — the three cost
+   very different amounts.
 
 ### 14. `Notification`
 
-Consommée par : le centre de notifications (en-tête), `account/notifs`.
+Consumed by: the notification centre (header), `account/notifs`.
 
-Type d'événement (`live-start | date-soon | new-date | almost-full | replay-available`), sujet
-(artiste ou date), instant, lu/non lu, visuel, action de destination.
+Event type (`live-start | date-soon | new-date | almost-full | replay-available`), subject
+(artist or date), instant, read/unread, visual, destination action.
 
-**Besoin** : le badge « non lu » s'affiche en permanence dans l'en-tête, sur toutes les routes.
-Il est donc **la donnée personnalisée présente sur chaque page**, y compris les pages publiques
-indexables. Voir §Contraintes Next.js : c'est lui qui interdit de rendre l'en-tête dans la
-coquille statique.
+**Need**: the "unread" badge shows permanently in the header, on every route. It is therefore
+**the personalised datum present on every page**, including the public indexable ones. See
+§Next.js constraints: it is what forbids rendering the header inside the static shell.
 
-### 15. `Plan` et `Subscription`
+### 15. `Plan` and `Subscription`
 
-`planId`, prix mensuel, droits ouverts (`opens[]`), remise sur les places (`seatDiscount`), et
-pour l'abonnement en cours : depuis quand, prochain prélèvement, moyen de paiement, factures.
+`planId`, monthly price, entitlements opened (`opens[]`), seat discount (`seatDiscount`), and for
+the current subscription: since when, next charge, payment method, invoices.
 
-**Besoin** : `opens[]` **conditionne l'accès à la lecture** et la remise conditionne le prix
-affiché. La décision d'accès est du domaine ; mais les droits de la formule courante doivent
-être dans la réponse de toute page qui propose de regarder, sinon la surface fait un second appel
-sur le chemin critique de la lecture.
+**Need**: `opens[]` **conditions playback access** and the discount conditions the displayed
+price. The access decision belongs to the domain; but the current plan's entitlements must be in
+the response of any page that offers to watch, otherwise the surface makes a second call on the
+critical path to playback.
 
-### 16. `Device` et `Session`
+### 16. `Device` and `Session`
 
-Appareils connectés (type : `tv | mobile | tablet | desktop | box | console | stick`, libellé,
-ville, dernière activité, session courante), sessions actives avec navigateur et horodatage.
+Connected devices (kind: `tv | mobile | tablet | desktop | box | console | stick`, label, city,
+last activity, current session), active sessions with browser and timestamp.
 
-**Besoin** : « déconnecter cet appareil » doit produire un effet **observable sur l'appareil
-visé**, pas seulement dans la liste. C'est une écriture qui doit se propager — voir §Commandes.
-Le droit « deux écrans à la fois » (`multi-screen`) de la formule Premium implique par ailleurs
-un **compte de lectures concurrentes**, donc une donnée de session côté lecture.
+**Need**: "sign out this device" must produce an effect **observable on the targeted device**,
+not only in the list. It is a write that must propagate — see §Commands. The Premium plan's "two
+screens at once" entitlement (`multi-screen`) also implies a **concurrent playback count**, and
+therefore a session datum on the playback side.
 
 ### 17. `Profile`, `Preferences`, `NotificationPrefs`, `Consents`
 
-Profil (nom, pseudo, courriel, téléphone, ville). Préférences de lecture : qualité, **ce que l'on
-voit en arrivant sur un direct** (`peek | muted | off`), tchat ouvert/fermé, réduction des
-animations, langue de sous-titrage, devise d'affichage. Notifications : cinq familles × trois
-canaux, plus les **heures calmes** (aucune notification entre 23 h et 9 h, sauf début d'un direct
-pour lequel j'ai une place). Consentements : audience, personnalisation, partenaires, publicité.
-Cookies : mesure, lecteur tiers, et un bloc « essentiel » non désactivable.
+Profile (name, handle, email, phone, city). Playback preferences: quality, **what you see on
+landing on a live** (`peek | muted | off`), chat open/closed, reduced motion, subtitle language,
+display currency. Notifications: five families × three channels, plus **quiet hours** (no
+notification between 23:00 and 09:00, except the start of a live I hold a seat for). Consents:
+audience, personalisation, partners, advertising. Cookies: measurement, third-party player, and
+an "essential" block that cannot be turned off.
 
-**Besoins** : (a) la **devise d'affichage** est une préférence de compte alors que la devise de
-facturation est une propriété du marché de la date — les deux ne peuvent pas être la même valeur
-(errata D4) ; (b) la règle des heures calmes a une **exception conditionnée à la détention d'une
-place** : c'est une règle métier du service de notification, pas un réglage d'interface ; (c) les
-consentements doivent être **horodatés et versionnés** — un consentement sans version ni date ne
-vaut rien juridiquement, et `account.privacy.updated` est déjà affiché.
+**Needs**: (a) the **display currency** is an account preference whereas the billing currency is
+a property of the date's market — the two cannot be the same value (errata D4); (b) the quiet
+hours rule has an **exception conditioned on holding a seat**: that is a business rule of the
+notification service, not an interface setting; (c) consents must be **timestamped and
+versioned** — a consent with no version and no date is legally worthless, and
+`account.privacy.updated` is already on screen.
 
-### 18. `PlaybackGrant` — le droit de lire
+### 18. `PlaybackGrant` — the right to watch
 
-Consommée par : `live`, `replay`, le mini-lecteur.
+Consumed by: `live`, `replay`, the mini-player.
 
-**Besoin** : la lecture est signée en périphérie de CDN (`streaming.md`). La surface a besoin
-d'un jeton de lecture à durée limitée, d'une échéance, et d'une manière de le **renouveler sans
-interrompre la lecture**. Trois cas particuliers au storefront web :
+**Need**: playback is signed at the CDN edge (`streaming.md`). The surface needs a time-limited
+playback token, a deadline, and a way to **renew it without interrupting playback**. Three cases
+specific to the web storefront:
 
-1. **L'aperçu gratuit** : le non-détenteur voit les premières minutes puis le verrou. Le décompte
-   (252 s dans la maquette, 5 minutes annoncées dans la copie) doit être **imposé par le jeton**,
-   pas par le client. Un aperçu que l'on prolonge en rechargeant la page n'est pas un aperçu.
-2. **Le mini-lecteur** survit à la navigation. Le jeton ne doit pas être ré-émis à chaque
-   changement de route, sinon la lecture se coupe à chaque clic.
-3. **Le blocage territorial** est un refus de lecture, pas un échec technique : il a son propre
-   code et son motif.
+1. **The free preview**: a non-holder sees the first few minutes, then the lock. The countdown
+   (252 s in the mockup, "the first 5 minutes" in the copy) must be **enforced by the token**,
+   not by the client. A preview you extend by reloading the page is not a preview.
+2. **The mini-player** survives navigation. The token must not be re-issued on every route
+   change, or playback cuts on every click.
+3. **A territorial block is a refusal to play**, not a technical failure: it has its own code and
+   its own reason.
 
 ### 19. `ChatMessage`
 
-Auteur, texte, état (`ok | removed | muted | banned`), instant, couleur d'auteur.
-Régime du tchat par date : **`open | emoji | off | read-only`** (`enums.chatMode`).
+Author, text, state (`ok | removed | muted | banned`), instant, author colour.
+Chat mode per date: **`open | emoji | off | read-only`** (`enums.chatMode`).
 
-**Besoins** : (a) le tchat est **modéré** : un message peut être retiré après publication, donc
-l'état d'un message déjà affiché doit pouvoir changer ; (b) l'écriture est fermée à trois
-conditions distinctes — visiteur sans compte, détenteur sans place, régime `read-only`/`off` —
-et la surface doit **dire laquelle**, donc le refus porte un code, pas un booléen ; (c) le régime
-`emoji` restreint l'envoi à un vocabulaire fermé de réactions et de phrases préparées : c'est une
-validation serveur, pas un clavier restreint.
+**Needs**: (a) chat is **moderated**: a message can be removed after publication, so the state of
+an already-displayed message must be able to change; (b) writing is closed under three distinct
+conditions — visitor with no account, account holder with no seat, `read-only`/`off` mode — and
+the surface must **say which**, so the refusal carries a code, not a boolean; (c) the `emoji`
+mode restricts sending to a closed vocabulary of reactions and prepared phrases: that is server
+validation, not a restricted keyboard.
 
-### 20. `ReplayChapter` et `ResumePoint`
+### 20. `ReplayChapter` and `ResumePoint`
 
-Chapitres posés en régie : identifiant de vocabulaire de chapitre + minute. Point de reprise :
-date, position, instant de dernière lecture.
+Chapters set from the control room: chapter-vocabulary identifier + minute. Resume point: date,
+position, instant of last playback.
 
-**Besoin** : le point de reprise alimente le rail « Reprendre » de l'accueil **et** la position
-d'ouverture du lecteur, sur trois surfaces. Il doit être écrit par le client à intervalle
-raisonnable et lu comme une donnée de compte — c'est une écriture fréquente, à faible valeur
-unitaire : elle appelle un traitement séparé du reste des commandes (pas d'idempotence stricte,
-tolérance à la perte).
+**Need**: the resume point feeds the home page's "Resume" rail **and** the player's opening
+position, on three surfaces. It must be written by the client at a reasonable interval and read
+as account data — it is a frequent write of low unit value: it calls for handling separate from
+the other commands (no strict idempotency, tolerant of loss).
 
-### 21. `Incident` et `Outcome`
+### 21. `Incident` and `Outcome`
 
-`kind` : `hold-screen | postponed | interrupted | cancelled`. Résolution, instant, message
-éditorial bilingue.
+`kind`: `hold-screen | postponed | interrupted | cancelled`. Resolution, instant, bilingual
+editorial message.
 
-**Besoin** : principe n°4 du dossier — « les états d'issue priment sur tout le reste ». Le
-contrat doit donc les porter **sur la carte**, pas seulement sur la fiche : une date annulée qui
-apparaît dans un rail doit se présenter comme annulée. Et chaque issue emporte une conséquence
-distincte pour le spectateur, déjà rédigée : remboursement intégral (3 à 5 jours ouvrés), avoir
-sur le compte Arthome, place valable sans démarche à la nouvelle date. **Ce sont trois
-mécanismes financiers différents**, et le contrat doit dire lequel s'applique et où le spectateur
-le retrouve.
+**Need**: principle 4 of the handoff — "outcome states take priority over everything else". The
+contract must therefore carry them **on the card**, not only on the detail page: a cancelled date
+appearing in a rail must present itself as cancelled. And each outcome carries a distinct
+consequence for the viewer, already written: full refund (3 to 5 business days), a credit on the
+Arthome account, a seat that remains valid with no action at the new date. **These are three
+different financial mechanisms**, and the contract must say which one applies and where the
+viewer finds it.
 
 ### 22. `Invoice`
 
-Factures d'abonnement et de commandes, exportables, **conservées 10 ans**
+Subscription and order invoices, exportable, **retained for 10 years**
 (`account.invoiceNote`, `account.privacy.retentionText`).
 
-**Besoin** : c'est la seule exception à la règle « jamais de chaîne formatée transportée » — un
-document de facturation porte des montants formatés et figés. Le contrat doit le dire, et servir
-un document, pas un modèle à recomposer.
+**Need**: this is the one exception to the rule "no formatted string ever travels" — a billing
+document carries formatted, frozen amounts. The contract must say so, and serve a document, not
+a template to recompose.
 
 ---
 
-## Les commandes
+## Commands
 
-Toute commande porte `Idempotency-Key`. Toute réponse d'erreur suit l'enveloppe unique
-(code, paramètres, identifiant de trace). Les commandes sont regroupées par garantie exigée.
+Every command carries `Idempotency-Key`. Every error response follows the single envelope (code,
+params, trace id). Commands are grouped by the guarantee they require.
 
-### A. Commandes d'argent — idempotence stricte, effet observable immédiat
+### A. Money commands — strict idempotency, immediately observable effect
 
-| Commande | Effet attendu | Garanties propres |
+| Command | Expected effect | Specific guarantees |
 |---|---|---|
-| `purchaseSeat` | une place détenue pour une date, à un palier | **Un double clic ne crée jamais deux places.** Le prix attendu (palier + promotion + remise) est envoyé et **vérifié** : s'il a changé, refus avec un code distinct de l'échec de paiement. Rejet distinct si la jauge est épuisée entre l'affichage et la validation. |
-| `contributeFreeSeat` | place gratuite + contribution libre à la compagnie | Montant **ouvert**, saisi par le spectateur. Minimum et maximum sont des règles du domaine, pas des attributs d'un champ de saisie. |
-| `joinWaitlist` | inscription en liste d'attente | Idempotente par nature : deux envois laissent une inscription. Doit dire le **rang** ou refuser de le dire, mais pas rester muette. |
-| `cancelSeat` | annulation d'une place | **Échéance : 1 h avant le début.** Le refus après échéance a son propre code. Emporte un remboursement. |
-| `quoteCart` | devis : sous-total, port, remise d'abonnement, total | Lecture, mais **le devis doit être opposable** : le total présenté est celui qui sera débité. Durée de validité explicite. |
-| `checkoutCart` | commande de marchandise | Idempotence stricte. Peut échouer partiellement (une ligne en rupture) : le contrat doit dire si la commande est refusée en bloc ou amputée. |
-| `subscribe` / `changePlan` / `cancelSubscription` | formule d'abonnement | Effet **immédiatement visible** sur les droits de lecture et sur les prix affichés : un changement de formule change la remise sur toutes les cartes de la session. |
+| `purchaseSeat` | one held seat for a date, at a tier | **A double click never creates two seats.** The expected price (tier + promotion + discount) is sent and **verified**: if it has changed, refusal with a code distinct from a payment failure. A distinct refusal if capacity runs out between display and confirmation. |
+| `contributeFreeSeat` | free seat + open contribution to the company | An **open** amount, entered by the viewer. Minimum and maximum are domain rules, not attributes of an input field. |
+| `joinWaitlist` | waitlist registration | Idempotent by nature: two sends leave one registration. Must state the **rank** or refuse to state it, but not stay silent. |
+| `cancelSeat` | cancel a seat | **Deadline: 1 h before the start.** A refusal after the deadline has its own code. Carries a refund. |
+| `quoteCart` | quote: subtotal, shipping, subscription discount, total | A read, but **the quote must be binding**: the total shown is the one that will be charged. Explicit validity period. |
+| `checkoutCart` | merchandise order | Strict idempotency. May fail partially (one line out of stock): the contract must say whether the order is refused wholesale or trimmed. |
+| `subscribe` / `changePlan` / `cancelSubscription` | subscription plan | An **immediately visible** effect on playback entitlements and on displayed prices: a plan change changes the discount on every card in the session. |
 
-**Le besoin commun** : ces sept commandes changent ce qu'affichent des pages déjà rendues. Le
-contrat doit dire, pour chacune, **quelles lectures deviennent fausses** — c'est la condition
-pour que la surface invalide juste ce qu'il faut (voir §Contraintes Next.js).
+**The shared need**: these seven commands change what already-rendered pages display. The
+contract must say, for each of them, **which reads become wrong** — that is the condition for the
+surface to invalidate exactly what it must (see §Next.js constraints).
 
-### B. Commandes de relation — idempotence par intention
+### B. Relationship commands — idempotency by intent
 
-`followArtist` / `unfollowArtist` · `addToWatchlist` / `removeFromWatchlist` (« ma liste ») ·
-`setReminder` (« me rappeler ») · `saveSearch` · `renameSearch` · `pauseSearch` / `resumeSearch`
-· `deleteSearch` · `setSearchChannels` (push, courriel) · `saveCategory` (recherche de portée
-catégorie).
+`followArtist` / `unfollowArtist` · `addToWatchlist` / `removeFromWatchlist` ("my list") ·
+`setReminder` ("remind me") · `saveSearch` · `renameSearch` · `pauseSearch` / `resumeSearch` ·
+`deleteSearch` · `setSearchChannels` (push, email) · `saveCategory` (a category-scoped search).
 
-Elles sont **déclaratives** : « suivi » est un état, pas un incrément. Deux envois du même
-« suivre » laissent un seul suivi. Le contrat doit donc les exprimer comme des **mises en état**,
-pas comme des bascules — une bascule sur un réseau douteux inverse le résultat.
+They are **declarative**: "followed" is a state, not an increment. Two sends of the same "follow"
+leave one follow. The contract must therefore express them as **state assignments**, not as
+toggles — a toggle on a flaky network inverts the result.
 
-**`setReminder` a un besoin propre** : le rappel est annoncé à 30 minutes avant le lever de
-rideau. Un rappel est une promesse datée : si la date est reportée, le rappel doit suivre le
-report, et si elle est annulée, le rappel doit être annulé et non envoyé à vide.
+**`setReminder` has a need of its own**: the reminder is announced 30 minutes before curtain up.
+A reminder is a dated promise: if the date is postponed, the reminder must follow the
+postponement, and if it is cancelled, the reminder must be cancelled and not fired into the void.
 
-### C. Commandes de compte et de sécurité
+### C. Account and security commands
 
 `signUp` · `signIn` · `signOut` · `signOutDevice` · `changePassword` · `enable2FA` /
 `regenerateBackupCodes` · `addPasskey` · `addPaymentMethod` / `removePaymentMethod` ·
 `updateProfile` · `updatePreferences` · `updateNotificationPrefs` · `setQuietHours` ·
 `updateConsents` · `updateCookiePrefs`.
 
-**`signOutDevice` est la seule qui doit se propager hors de la session courante** : déconnecter
-un téléviseur depuis le web doit couper la lecture sur ce téléviseur. Le contrat doit dire au
-bout de combien de temps, et ce que voit l'appareil déconnecté.
+**`signOutDevice` is the only one that must propagate outside the current session**: signing a
+television out from the web must cut playback on that television. The contract must say after how
+long, and what the signed-out device sees.
 
-**`updateConsents`** doit horodater et versionner. Et le consentement « publicité » est à `false`
-par défaut dans la maquette : ce défaut est une décision, pas un réglage — il appartient au
-contrat.
+**`updateConsents`** must timestamp and version. And the "advertising" consent is `false` by
+default in the mockup: that default is a decision, not a setting — it belongs to the contract.
 
-### D. Commandes de données personnelles — RGPD
+### D. Personal-data commands — GDPR
 
 `exportMyData` · `exportInvoices` · `deleteAccount` · `contactDPO`.
 
-**`deleteAccount` a une conséquence métier écrite** : *« La suppression annule les places non
-utilisées. »* C'est donc une commande **financière** autant que personnelle : elle déclenche des
-remboursements, elle touche des versements d'artistes potentiellement déjà calculés, et elle se
-heurte à la conservation comptable de 10 ans des factures. Elle ne peut pas être synchrone et
-elle ne peut pas être totale.
+**`deleteAccount` has a written business consequence**: *"Deletion cancels unused seats."* It is
+therefore a **financial** command as much as a personal one: it triggers refunds, it touches
+artist payouts that may already be computed, and it collides with the ten-year accounting
+retention of invoices. It cannot be synchronous and it cannot be total.
 
-`exportMyData` et `exportInvoices` sont **asynchrones** : la surface doit pouvoir suivre une
-demande en cours et récupérer un document quand il est prêt.
+`exportMyData` and `exportInvoices` are **asynchronous**: the surface must be able to follow a
+request in progress and collect a document when it is ready.
 
-### E. Commandes de lecture et de tchat
+### E. Playback and chat commands
 
-`sendChatMessage` · `sendReaction` (régime `emoji`) · `reportMessage` · `recordPlaybackPosition`
-· `openPlayback` (obtention du jeton) · `renewPlayback`.
+`sendChatMessage` · `sendReaction` (`emoji` mode) · `reportMessage` · `recordPlaybackPosition` ·
+`openPlayback` (obtaining the token) · `renewPlayback`.
 
-`sendChatMessage` : besoin d'une **limitation de débit exprimée dans le contrat** (un code
-d'erreur dédié, avec le délai d'attente en paramètre), parce que la surface doit désactiver la
-saisie proprement plutôt que d'enchaîner les refus.
+`sendChatMessage`: needs a **rate limit expressed in the contract** (a dedicated error code, with
+the wait time as a parameter), because the surface must disable the input cleanly instead of
+stacking up refusals.
 
-`recordPlaybackPosition` : écriture fréquente, tolérante à la perte. Elle ne doit **pas** passer
-par le même régime d'idempotence que l'achat — sinon la clé d'idempotence devient un coût par
-minute de lecture, par spectateur.
+`recordPlaybackPosition`: a frequent write, tolerant of loss. It must **not** go through the same
+idempotency regime as a purchase — otherwise the idempotency key becomes a cost per minute of
+playback, per viewer.
 
-### F. Commande d'assistance
+### F. Support command
 
-`contactSupport` : six sujets (`ticketing-refund`, `playback-quality`, `replay`,
-`store-shipping`, `account-signin`, `personal-data`), message libre. Réponse annoncée sous 24 h
-ouvrées, *« les demandes liées à un live en cours sont traitées en priorité »*.
+`contactSupport`: six topics (`ticketing-refund`, `playback-quality`, `replay`,
+`store-shipping`, `account-signin`, `personal-data`), free-text message. A reply announced within
+24 business hours, *"requests about a live in progress are handled first"*.
 
-**Besoin** : le sujet route le message vers un interlocuteur, et la priorité dépend de l'état
-d'une date. Le contrat doit donc accepter un **contexte** (date, place, commande) attaché à la
-demande, sans quoi la priorisation annoncée est impossible.
-
----
-
-## Le temps réel
-
-Trois régimes distincts, à ne pas confondre — ils n'ont ni le même coût ni la même garantie.
-
-### Régime 1 — poussé, sous la seconde. Seulement sur la page d'une date en direct
-
-| Donnée | Latence acceptable | Pourquoi |
-|---|---|---|
-| Messages de tchat | < 1 s | C'est une conversation. Au-delà, les réponses arrivent avant les questions. |
-| Changement d'état d'un message (retiré, auteur réduit au silence) | < 2 s | Un message retiré qui reste affiché est un échec de modération. |
-| Incident en cours (`hold-screen`, interruption) | < 2 s | Principe n°6 : jamais de spinner muet. L'écran d'attente doit arriver avant que le spectateur conclue que c'est sa connexion. |
-| Bascule `roomOpen` → `live` → `ended` | < 2 s | Le bouton « rejoindre » doit exister quand la salle ouvre. |
-
-### Régime 2 — rafraîchi, de l'ordre de la dizaine de secondes
-
-| Donnée | Latence acceptable | Écrans |
-|---|---|---|
-| Compteur de spectateurs | 10 à 30 s | `live`, cartes de `home`, `browse`, `category`, `artist`. **Il s'affiche sur des cartes de liste** : un compteur par carte, sur une grille de douze, ne peut pas être un abonnement par carte. |
-| Jauge (`seatsAvailable`, « bientôt complet », « complet ») | 15 à 60 s | Mêmes écrans. Une date affichée disponible puis refusée à l'achat est acceptable une fois ; systématiquement, non. |
-| Liste d'attente | 60 s | `live`, cartes. |
-| Tarif « séance commencée » (prorata) | 60 s | Il décroît avec le temps. |
-| Badge de notifications non lues | 30 à 60 s | En-tête, **toutes les routes**. |
-
-**Le besoin structurant ici** : ces valeurs vivent sur des **cartes de liste**, pas sur une page
-de détail. Le contrat doit permettre de rafraîchir **un lot** de compteurs pour un lot
-d'identifiants, en un appel, et non d'ouvrir une souscription par carte. Sans cela, une grille
-de douze cartes ouvre douze canaux.
-
-### Régime 3 — à l'échéance, sans requête
-
-Ce qui change à un instant **connu d'avance** ne doit jamais être interrogé : il doit être servi
-avec son échéance, et la surface programme le changement.
-
-- ouverture de salle (T−30 min), début, fin de représentation ;
-- **expiration de la fenêtre de rediffusion** (`replayHoursLeft`, jusqu'à 200 h) ;
-- expiration d'une promotion (`pre-sale` à J-7, `final-date` au lever de rideau) ;
-- échéance d'annulation d'une place (T−1 h) ;
-- fin du décompte d'aperçu gratuit ;
-- validité d'un devis de panier, d'un jeton de lecture, d'un code d'achat.
-
-**Besoin : chaque valeur dont la validité expire doit voyager avec son instant d'expiration.**
-C'est la seule manière de rendre au serveur une page qui restera juste. C'est aussi ce qui
-permet de choisir une durée de cache : une page dont le prochain changement est dans 4 heures
-n'a pas le même régime qu'une page dont le prochain changement est dans 90 secondes.
-
-### Ce qui n'a pas besoin d'être temps réel, et qu'il faut se retenir de rendre tel
-
-Nombre d'abonnés d'un artiste, audience moyenne, nombre de correspondances d'une recherche
-enregistrée, stock de marchandise (l'état `on-sale`/`out-of-stock` suffit, le nombre exact non),
-position de lecture d'un autre appareil.
+**Need**: the topic routes the message to a person, and the priority depends on the state of a
+date. The contract must therefore accept a **context** (date, seat, order) attached to the
+request, without which the announced prioritisation cannot be honoured.
 
 ---
 
-## Hors ligne et reprise
+## Real time
 
-Le storefront web n'est pas une application hors ligne. Mais **quatre choses doivent survivre à
-une perte de réseau ou à un rechargement**, et ce sont des exigences de contrat, pas
-d'implémentation.
+Three distinct regimes, not to be confused — they have neither the same cost nor the same
+guarantee.
 
-1. **Le panier.** Il est monté avant le paiement, par ajouts successifs depuis la boutique d'un
-   direct, potentiellement sur plusieurs sessions. **Besoin : le panier est-il une donnée de
-   compte ou une donnée de navigateur ?** S'il est côté compte, il se retrouve sur le mobile et
-   la TV et il survit à tout ; s'il est local, il ne survit pas à un changement d'appareil et
-   il faut le dire. La question est adressée au backend.
+### Regime 1 — pushed, sub-second. Only on the page of a live date
 
-2. **Un achat en vol.** Réseau coupé entre l'envoi et la réponse : la surface ne sait pas si la
-   place existe. **Besoin : la même `Idempotency-Key` rejouée doit rendre le résultat de la
-   première tentative**, pas une erreur de doublon — c'est la différence entre « rejeu sûr » et
-   « rejeu refusé », et seule la première permet à la surface de proposer « réessayer ».
-
-3. **La position de lecture.** Perdue en cas de coupure si elle n'est écrite qu'à la fin. Besoin
-   d'une écriture périodique, et d'une tolérance au conflit entre appareils (la maquette annonce
-   explicitement « reprise de lecture entre appareils »). Dernier écrit gagne est acceptable ici,
-   mais il faut le décider.
-
-4. **L'état de recherche.** Requête, filtres, tri, onglet, page atteinte. Il doit vivre **dans
-   l'URL** : c'est la condition d'un lien partageable, d'un retour arrière juste, et d'un rendu
-   serveur. Conséquence de contrat déjà notée : les valeurs de filtre doivent être des
-   identifiants stables et courts.
-
-**Le brouillon de message de tchat** mérite une mention : il est perdu à chaque navigation dans
-la maquette. C'est acceptable — mais alors le contrat n'a rien à en dire, et c'est une décision.
-
-### Les quatre familles d'erreur, et la distinction que la surface doit pouvoir faire
-
-`shared/i18n/system.json` les a déjà nommées, et le principe n°6 les impose :
-
-| Famille | Message | Ce que la surface doit pouvoir dire |
+| Datum | Acceptable latency | Why |
 |---|---|---|
-| **Réseau du spectateur** | « Votre appareil n'atteint plus le réseau. Les serveurs Arthome répondent normalement. » | le problème vient de vous |
-| **Nos serveurs** | « Le problème vient de chez nous, pas de votre connexion. » | le problème vient de nous |
-| **Droits territoriaux** | « Non diffusé dans votre pays » + le motif | ni l'un ni l'autre : c'est un droit |
-| **Autorisation** | « Vous n'avez pas de place pour cette date » | ni l'un ni l'autre : c'est un achat manquant |
+| Chat messages | < 1 s | It is a conversation. Beyond that, answers arrive before questions. |
+| Message state change (removed, author muted) | < 2 s | A removed message that stays on screen is a moderation failure. |
+| Incident in progress (`hold-screen`, interruption) | < 2 s | Principle 6: never a silent spinner. The hold screen must arrive before the viewer concludes it is their own connection. |
+| `roomOpen` → `live` → `ended` transition | < 2 s | The "join" button must exist when the house opens. |
 
-**Besoin : l'enveloppe d'erreur doit permettre cette distinction à la lecture du code seul.**
-Un 500 générique ne la permet pas, et un 403 sans motif non plus. Les codes doivent séparer au
-minimum : indisponibilité de service, refus de droit territorial (avec le motif en paramètre),
-absence de titre d'accès, jauge épuisée, prix périmé, échéance dépassée, limitation de débit.
+### Regime 2 — refreshed, on the order of tens of seconds
+
+| Datum | Acceptable latency | Screens |
+|---|---|---|
+| Viewer counter | 10 to 30 s | `live`, and cards on `home`, `browse`, `category`, `artist`. **It appears on list cards**: one counter per card, on a grid of twelve, cannot be one subscription per card. |
+| Capacity (`seatsAvailable`, "almost sold out", "sold out") | 15 to 60 s | Same screens. A date shown as available and then refused at purchase is acceptable once; systematically, no. |
+| Waitlist | 60 s | `live`, cards. |
+| "Already started" price (pro rata) | 60 s | It decreases with time. |
+| Unread notification badge | 30 to 60 s | Header, **every route**. |
+
+**The structural need here**: these values live on **list cards**, not on a detail page. The
+contract must allow a **batch** of counters to be refreshed for a batch of identifiers, in one
+call, rather than opening one subscription per card. Without that, a grid of twelve cards opens
+twelve channels.
+
+### Regime 3 — on expiry, with no request
+
+Anything that changes at an instant **known in advance** must never be polled: it must be served
+with its deadline, and the surface schedules the change.
+
+- house opening (T−30 min), start, end of performance;
+- **replay window expiry** (`replayHoursLeft`, up to 200 h);
+- promotion expiry (`pre-sale` at D-7, `final-date` at curtain up);
+- a seat's cancellation deadline (T−1 h);
+- the end of the free-preview countdown;
+- the validity of a cart quote, a playback token, a purchase code.
+
+**Need: every value whose validity expires must travel with its expiry instant.** That is the
+only way to server-render a page that will stay right. It is also what makes a cache duration
+choosable: a page whose next change is in 4 hours is not in the same regime as a page whose next
+change is in 90 seconds.
+
+### What does not need to be real time, and must be resisted as such
+
+An artist's follower count, average audience, the match count of a saved search, merchandise
+stock (the `on-sale`/`out-of-stock` state is enough, the exact number is not), the playback
+position on another device.
 
 ---
 
-## Pagination et volumes
+## Offline and recovery
 
-Décision de cadre : **storefront = curseur, défilement infini, tri déterministe avec départage
-par identifiant.** Ce que la surface web exige en plus, ou en tension :
+The web storefront is not an offline application. But **four things must survive a network loss
+or a reload**, and these are contract requirements, not implementation ones.
 
-| Liste | Régime | Pas | Volume attendu | Besoin propre |
+1. **The cart.** It is built up before payment, by successive adds from a live's store,
+   potentially across several sessions. **Need: is the cart account data or browser data?** If it
+   is account-side, it reappears on mobile and TV and survives everything; if it is local, it
+   does not survive a change of device and that has to be said. The question is addressed to the
+   backend.
+
+2. **A purchase in flight.** The network drops between the send and the response: the surface
+   does not know whether the seat exists. **Need: the same `Idempotency-Key` replayed must return
+   the result of the first attempt**, not a duplicate error — that is the difference between a
+   "safe replay" and a "refused replay", and only the first lets the surface offer "try again".
+
+3. **The playback position.** Lost on a drop if it is only written at the end. It needs a
+   periodic write, and a tolerance for conflict between devices (the mockup explicitly announces
+   "cross-device resume"). Last writer wins is acceptable here, but it has to be decided.
+
+4. **The search state.** Query, filters, sort, tab, page reached. It must live **in the URL**:
+   that is the condition for a shareable link, a correct back navigation, and a server render.
+   Contract consequence already noted: filter values must be stable, short identifiers.
+
+**The chat message draft** deserves a mention: it is lost on every navigation in the mockup. That
+is acceptable — but then the contract has nothing to say about it, and that is a decision.
+
+### The four error families, and the distinction the surface must be able to make
+
+`shared/i18n/system.json` has already named them, and principle 6 requires them:
+
+| Family | Message | What the surface must be able to say |
+|---|---|---|
+| **The viewer's network** | "Your device can no longer reach the network. Arthome's servers are responding normally." | the problem is on your side |
+| **Our servers** | "The problem is on our side, not with your connection." | the problem is on our side |
+| **Territorial rights** | "Not available in your country" + the reason | neither: it is a rights matter |
+| **Authorisation** | "You do not have a seat for this date" | neither: it is a missing purchase |
+
+**Need: the error envelope must make this distinction readable from the code alone.** A generic
+500 does not, and neither does a 403 with no reason. The codes must separate, at minimum: service
+unavailability, territorial-rights refusal (with the reason as a parameter), missing entitlement,
+capacity exhausted, stale price, deadline passed, rate limit.
+---
+
+## Pagination and volumes
+
+Framing decision: **storefront = cursor, infinite scroll, deterministic sort with an identifier
+tie-break.** What the web surface additionally requires, or puts under tension:
+
+| List | Regime | Step | Expected volume | Specific need |
 |---|---|---|---|---|
-| Résultats de `browse` (lives) | curseur | **12 groupes** | quelques centaines à quelques milliers de dates | Pagination sur des **groupes**, pas des dates. Voir forme 8. |
-| Résultats de `browse` (replays) | curseur | 12 groupes | idem | |
-| Résultats de `browse` (artists) | curseur | 12 | ordre de la centaine | tri `az` et `followers` |
-| `category` — vue d'ensemble | tranche fixe | **8 par section** | 5 sections | Pas de pagination : une vue d'ensemble se borne. |
-| `category` — onglets `live`/`up`/`rep`/`art` | curseur | 12 | dizaines à centaines | |
-| Rails de `home` | tranche fixe | 5 à 12 | une douzaine de rails | **Aucune pagination.** Un rail est un extrait. |
-| `categories` | pas de pagination | 21 | fixe | Tout tient. |
-| Dates d'un artiste | tranche + « toutes les dates (N) » | 1 visible, N annoncé | dizaines | Le **N doit être servi**. |
-| Tchat d'un direct | fenêtre glissante + queue temps réel | ~50 à l'ouverture | milliers par direct | Un historique borné, pas un défilement infini vers le passé. |
-| `account/upcoming` et `past` | curseur | ~20 | dizaines | |
-| `account/orders` | curseur | ~20 | quelques dizaines | fusionne plusieurs sources (forme 10) |
-| `account/alerts` | pas de pagination | 10 dans la maquette | quelques dizaines | Plafond à décider. |
-| Notifications | curseur | ~20 | centaines | Un badge « non lu » **global** en plus. |
-| Appareils / sessions | pas de pagination | 3 à 10 | fixe | |
+| `browse` results (lives) | cursor | **12 groups** | a few hundred to a few thousand dates | Pagination over **groups**, not dates. See shape 8. |
+| `browse` results (replays) | cursor | 12 groups | same | |
+| `browse` results (artists) | cursor | 12 | on the order of a hundred | `az` and `followers` sorts |
+| `category` — overview | fixed slice | **8 per section** | 5 sections | No pagination: an overview is bounded. |
+| `category` — `live`/`up`/`rep`/`art` tabs | cursor | 12 | tens to hundreds | |
+| `home` rails | fixed slice | 5 to 12 | about a dozen rails | **No pagination.** A rail is an excerpt. |
+| `categories` | no pagination | 21 | fixed | It all fits. |
+| An artist's dates | slice + "all dates (N)" | 1 shown, N announced | tens | The **N must be served**. |
+| A live's chat | sliding window + real-time tail | ~50 on entry | thousands per live | A bounded history, not infinite scroll into the past. |
+| `account/upcoming` and `past` | cursor | ~20 | tens | |
+| `account/orders` | cursor | ~20 | a few tens | merges several sources (shape 10) |
+| `account/alerts` | no pagination | 10 in the mockup | a few tens | Ceiling to be decided. |
+| Notifications | cursor | ~20 | hundreds | Plus a **global** "unread" badge. |
+| Devices / sessions | no pagination | 3 to 10 | fixed | |
 
-### Le point de friction, à trancher
+### The friction point, to be settled
 
-**La surface affiche « Voir plus · N restants ».** Un curseur ne donne pas de reste. Trois
-sorties possibles, et il faut en choisir une explicitement :
+**The surface shows "Show more · N left".** A cursor does not give a remainder. Three possible
+ways out, and one must be chosen explicitly:
 
-1. servir un **effectif total approximatif** à côté du curseur (ce que fait naturellement un
-   moteur de recherche à facettes, et Arthome en a un) ;
-2. changer la copie pour « voir plus » sans nombre, et perdre une information que la conception
-   a jugée utile ;
-3. servir seulement un « il reste des résultats » booléen.
+1. serve an **approximate total count** alongside the cursor (what a faceted search engine does
+   naturally, and Arthome has one);
+2. change the copy to "show more" with no number, and lose information the design judged useful;
+3. serve only a boolean "there are more results".
 
-La première est la seule compatible avec la conception, et elle est gratuite si la recherche
-passe par le moteur de recherche — **c'est une question au backend, pas une décision de
-surface**.
+The first is the only one compatible with the design, and it is free if search goes through the
+search engine — **that is a question for the backend, not a surface decision**.
 
-**Les effectifs de facettes posent la même question** : afficher « Danse (42) » à côté d'un
-filtre suppose un comptage par facette, sur la requête courante, à chaque frappe.
+**Facet counts raise the same question**: showing "Dance (42)" next to a filter assumes a count
+per facet, over the current query, on every keystroke.
 
 ---
 
-## États d'erreur et de chargement
+## Error and loading states
 
-Ce qui relève du contrat, et non de la mise en page.
+What belongs to the contract, and not to layout.
 
-1. **Squelettes, jamais de page blanche** (principe n°7) : la surface doit pouvoir rendre une
-   carte *avant* d'avoir ses compteurs. **Besoin : séparer ce qui peut être rendu au serveur
-   tout de suite (titre, visuel, date, tarif de base) de ce qui arrive ensuite (compteur de
-   spectateurs, jauge, promotion en cours, état personnalisé).** Si les deux arrivent dans la
-   même réponse, la page entière attend la partie volatile — et le référencement paie pour du
-   temps réel dont le robot n'a rien à faire.
+1. **Skeletons, never a blank page** (principle 7): the surface must be able to render a card
+   *before* it has its counters. **Need: separate what can be server-rendered straight away
+   (title, visual, date, base price) from what arrives afterwards (viewer counter, capacity,
+   current promotion, personalised state).** If both arrive in the same response, the whole page
+   waits for the volatile part — and indexing pays for real time the crawler has no use for.
 
-2. **États vides explicites, avec une action qui sort de l'impasse** (principe n°8). Quinze
-   états vides distincts sont rédigés dans `shared/i18n` — aucun n'est générique. **Besoin : la
-   réponse doit dire *pourquoi* la liste est vide** : aucun résultat pour la requête, aucun
-   résultat avec ces filtres, rien dans cette discipline pour l'instant, aucun artiste suivi en
-   direct, aucune commande. Une liste vide sans motif oblige la surface à deviner, et à se
-   tromper.
+2. **Explicit empty states, with an action that breaks the deadlock** (principle 8). Fifteen
+   distinct empty states are written in `shared/i18n` — none of them is generic. **Need: the
+   response must say *why* the list is empty**: no result for the query, no result with these
+   filters, nothing in this discipline yet, no followed artist live, no orders. An empty list
+   with no reason forces the surface to guess, and to guess wrong.
 
-3. **Les actions inertes sont proscrites** (principe n°10). Toute commande doit rendre soit un
-   effet, soit un code d'erreur exploitable. Aucune ne peut rendre un succès vide.
+3. **Inert actions are forbidden** (principle 10). Every command must return either an effect or
+   an actionable error code. None may return an empty success.
 
-4. **L'échec partiel doit être exprimable.** Une page `live` dont le tchat est indisponible n'est
-   pas une page en erreur : le spectacle continue. **Besoin : un même écran doit pouvoir
-   composer des réponses dont certaines ont échoué**, chacune avec son code, sans que l'échec
-   d'une région emporte la page. C'est ce qui permet d'afficher « le tchat est momentanément
-   indisponible » au lieu de perdre le direct.
+4. **Partial failure must be expressible.** A `live` page whose chat is unavailable is not a page
+   in error: the show goes on. **Need: one screen must be able to compose responses some of
+   which failed**, each with its own code, without one region's failure taking down the page.
+   That is what lets us display "chat is temporarily unavailable" instead of losing the live.
 
-5. **Le chargement initial du catalogue est un état de premier ordre.** La maquette porte un
-   écran d'amorçage avec sa propre erreur. Sur une page indexable, cet état ne doit **jamais**
-   être ce que voit un robot.
+5. **The initial catalogue load is a first-class state.** The mockup carries a boot screen with
+   its own error. On an indexable page, that state must **never** be what a crawler sees.
 
 ---
 
-## Contraintes propres à Next.js
+## Next.js-specific constraints
 
-Seulement celles qui contraignent le contrat. J'ai chargé `nextjs-how-to` d'abord, comme demandé.
-**Signalement exigé par cette skill** : trois de ses lignes de routage indiquent « aucune skill
-installée » pour l'accès aux données, le choix de bibliothèque d'authentification et le cache —
-ce document ne s'appuie donc pas sur une skill spécialisée pour ces trois sujets, seulement sur
-la documentation embarquée et sur les règles de l'orchestrateur. Aucune skill ne contredit les
-décisions du projet.
+Only those that constrain the contract. I loaded `nextjs-how-to` first, as instructed.
+**Disclosure required by that skill**: three of its routing rows read "none installed" for the
+data-access boundary, the choice of authentication library and caching — so this document does
+not rely on a specialised skill for those three subjects, only on the bundled documentation and
+on the router's own rules. No skill contradicts the project's decisions.
 
-### 1. Le robot ne voit pas la coquille statique
+### 1. The crawler does not see the static shell
 
-Sous le modèle « Cache Components », **les robots d'indexation contournent la coquille
-pré-rendue et reçoivent un rendu dynamique complet**, détecté à l'agent utilisateur. Sur un
-catalogue de billetterie dont l'indexation est décisive, cela a une conséquence de contrat
-directe :
+Under the "Cache Components" model, **crawlers bypass the prerendered shell and receive a full
+dynamic render**, detected by user agent. On a ticketing catalogue where indexing is decisive,
+that has a direct contract consequence:
 
-> **Le chemin de lecture non authentifié d'une page de catalogue doit être complet, autonome et
-> à latence bornée.** Il ne peut pas dépendre d'un préchauffage, d'un cache local d'instance, ni
-> d'un second aller-retour pour compléter la page.
+> **The unauthenticated read path of a catalogue page must be complete, self-sufficient and
+> bounded in latency.** It cannot depend on a warm-up, on a per-instance local cache, or on a
+> second round trip to complete the page.
 
-Concrètement : une page de date, une page d'artiste, une page de discipline doivent être servies
-**en un appel**, sans session, avec tout ce qui est indexable — et la personnalisation arrive
-ensuite, séparément.
+Concretely: a date page, an artist page and a discipline page must be served **in one call**,
+without a session, with everything indexable — and personalisation arrives afterwards,
+separately.
 
-### 2. La coquille statique ne peut pas lire la session — et l'en-tête en a besoin
+### 2. The static shell cannot read the session — and the header needs it
 
-Dans une fonction mise en cache, ni les cookies, ni les en-têtes, ni les paramètres de route ne
-sont lisibles : ils doivent être extraits à l'extérieur et passés en arguments, où ils entrent
-dans la clé de cache. Or l'en-tête du storefront porte, sur **toutes** les routes : le badge de
-notifications non lues, le compteur du panier, l'état de session (visiteur / connecté / abonné),
-et les artistes suivis.
+Inside a cached function, neither cookies, nor headers, nor route params are readable: they must
+be extracted outside and passed as arguments, where they join the cache key. Yet the storefront
+header carries, on **every** route: the unread notification badge, the cart count, the session
+state (visitor / signed in / subscriber), and the followed artists.
 
-**Besoin de contrat : les lectures publiques et les lectures personnalisées doivent être
-séparables.** Un modèle de lecture qui mélange « la date » et « est-ce que *vous* la suivez » ne
-peut être mis en cache ni pour le robot, ni pour deux personnes différentes. La séparation
-demandée :
+**Contract need: public reads and personalised reads must be separable.** A read model that
+mixes "the date" with "do *you* follow it" can be cached neither for the crawler nor across two
+different people. The separation asked for:
 
-- **public, cacheable, indexable** : la date, le spectacle, l'artiste, la salle, la taxonomie, les
-  tarifs de base, la politique de rediffusion ;
-- **volatile, public** : compteur de spectateurs, jauge, promotion en cours ;
-- **personnel** : détention d'une place, suivi, liste, panier, notifications, droits de formule,
-  point de reprise.
+- **public, cacheable, indexable**: the date, the show, the artist, the venue, the taxonomy, base
+  prices, the replay policy;
+- **volatile, public**: viewer counter, capacity, current promotion;
+- **personal**: seat held, follows, list, cart, notifications, plan entitlements, resume point.
 
-C'est la même séparation qui rend possibles les squelettes (§États) — elle sert deux besoins à
-la fois.
+It is the same separation that makes skeletons possible (§States) — it serves two needs at once.
 
-### 3. L'invalidation doit avoir une clé, et un signal
+### 3. Invalidation needs a key, and a signal
 
-Le modèle de cache de Next 16 invalide par **étiquette**, avec deux appels distincts :
-`updateTag` quand la personne doit voir sa propre écriture immédiatement, `revalidateTag(tag,
-profil)` quand une légère obsolescence est acceptable — et ce second appel **saute délibérément
-le re-rendu immédiat**. Le second argument n'est pas optionnel.
+Next 16's cache model invalidates by **tag**, with two distinct calls: `updateTag` when the
+person must see their own write immediately, `revalidateTag(tag, profile)` when slight staleness
+is acceptable — and that second call **deliberately skips the immediate re-render**. The second
+argument is not optional.
 
-Deux besoins en découlent, et ils sont adressés au backend :
+Two needs follow, and they are addressed to the backend:
 
-1. **Une clé d'invalidation par ressource.** Après `purchaseSeat`, la surface doit invalider : la
-   date (jauge), les places du compte, l'accueil personnalisé. Elle a besoin de savoir **quelles
-   étiquettes** correspondent, et ces étiquettes ne peuvent pas être inventées par la surface —
-   sinon le mobile et la TV en inventeront d'autres.
-2. **Un signal pour ce que la surface n'a pas écrit elle-même.** Une date passe en direct, une
-   promotion expire, un artiste publie une rediffusion : aucune commande du web n'en est la
-   cause. Sans signal, la page reste fausse jusqu'à l'expiration du cache. **Question : le
-   storefront reçoit-il une notification de changement (canal serveur, webhook), ou doit-il se
-   contenter d'une durée de fraîcheur ?** Kafka étant réservé à l'inter-services, le BFF est le
-   seul point possible.
+1. **One invalidation key per resource.** After `purchaseSeat`, the surface must invalidate: the
+   date (capacity), the account's seats, the personalised home. It needs to know **which tags**
+   correspond, and those tags cannot be invented by the surface — otherwise mobile and TV will
+   invent others.
+2. **A signal for what the surface did not write itself.** A date goes live, a promotion expires,
+   an artist publishes a replay: no web command caused any of it. Without a signal, the page
+   stays wrong until the cache expires. **Question: does the storefront receive a change
+   notification (server channel, webhook), or must it settle for a freshness duration?** Kafka
+   being reserved for inter-service traffic, the BFF is the only possible point.
 
-### 4. Aucune entrée de cache ne survit à un déploiement
+### 4. No cache entry survives a deployment
 
-La clé de cache inclut l'identifiant de build. Un déploiement vide donc tout, et la première
-minute après une mise en ligne voit passer l'intégralité du trafic de lecture vers le BFF.
-**Besoin : les lectures publiques doivent être des modèles de lecture servis, pas des
-compositions coûteuses.** C'est un argument de plus, indépendant, en faveur de la projection des
-modèles de lecture là où le BFF les lit.
+The cache key includes the build id. A deployment therefore empties everything, and the first
+minute after a release sends the entire read traffic through to the BFF. **Need: public reads
+must be served read models, not expensive compositions.** This is one more independent argument
+for projecting the read models where the BFF reads them.
 
-### 5. Toute commande est un point d'entrée POST public
+### 5. Every command is a public POST entry point
 
-Une action serveur est une route POST publique : la redirection de la page ne la protège pas, et
-la couche de proxy ne peut pas servir de frontière d'autorisation (quatre contournements connus).
-**Besoin : chaque commande doit être autorisable seule**, à partir de la session et de ses seuls
-arguments — jamais « parce que la page qui l'appelle était protégée ». Concrètement, chaque
-commande d'écriture porte l'identifiant de la ressource visée et le contrat dit quelle propriété
-est vérifiée (cette place est-elle la vôtre, cette recherche enregistrée est-elle la vôtre, ce
-message est-il le vôtre).
+A server action is a public POST route: the page's redirect does not protect it, and the proxy
+layer cannot serve as the authorisation boundary (four known bypasses). **Need: every command
+must be authorisable on its own**, from the session and its own arguments alone — never "because
+the page that calls it was protected". Concretely, every write command carries the identifier of
+the resource it targets, and the contract says which ownership property is checked (is this seat
+yours, is this saved search yours, is this message yours).
+Corollary on idempotency: **the key must be generated server-side when the form is rendered**,
+not client-side — otherwise it is forgeable, and two tabs produce the same key for two different
+purchases.
 
-Corollaire sur l'idempotence : **la clé doit être engendrée côté serveur au moment où le
-formulaire est rendu**, pas côté client — sinon elle est falsifiable et deux onglets produisent
-la même clé pour deux achats différents.
+### 6. URLs, indexing, and what is missing today
 
-### 6. Les URL, l'indexation et ce qui manque aujourd'hui
+- **There is no canonical URL for a date.** The mockup addresses the `live` page by artist, and
+  resolves "the current date" on arrival (live first, otherwise the next one). Yet a date is what
+  you share, what you bookmark, what a reminder and a notification point at, what gets indexed.
+  **Need: a public identifier and a stable `slug` per date and per show**, without which sharing,
+  notifications, reminders and indexing all point at "the next date", which changes.
+- **The overlays have no URL.** Cart, purchase, authentication, sharing. At minimum the purchase
+  must be addressable: it is the target of a reminder and of a campaign link.
+- **Two languages, two trees.** The API returns codes, the surface resolves them. Indexing needs
+  one URL per language and cross-linked alternates. **Need: `slug`s must exist per language**, or
+  be language-neutral — but the decision must be taken once, not per surface.
+- **Filters must fit in a short, stable URL.** See shape 7.
 
-- **Il n'existe pas d'URL canonique pour une date.** La maquette adresse la page `live` par
-  artiste, et résout « la date courante » à l'arrivée (en direct d'abord, sinon la prochaine).
-  Or une date est ce que l'on partage, ce que l'on met en favori, ce vers quoi pointe un rappel
-  et une notification, ce que l'on indexe. **Besoin : un identifiant public et un `slug` stable
-  par date et par spectacle**, sans quoi le partage, les notifications, les rappels et le
-  référencement pointent tous vers « la prochaine date », qui change.
-- **Les superpositions n'ont pas d'URL.** Panier, achat, authentification, partage. Au minimum
-  l'achat doit être adressable : c'est la cible d'un rappel et d'un lien de campagne.
-- **Deux langues, deux arborescences.** L'API rend des codes, la surface les résout. Pour
-  l'indexation il faut une URL par langue et des liens alternatifs croisés. **Besoin : les
-  `slug` doivent exister par langue**, ou être neutres — mais la décision doit être prise une
-  fois, pas par surface.
-- **Les filtres doivent tenir dans une URL courte et stable.** Voir forme 7.
+### 7. The server render does not know the viewer's time zone
 
-### 7. Le rendu serveur ne connaît pas le fuseau du spectateur
+"The viewer's time first" is a principle. The server cannot honour it on the first render without
+being wrong half the time, and a time rendered on the server then corrected on the client is a
+visible divergence. **A need already stated in shape 1, repeated here because Next is what makes
+it binding: the contract carries a UTC instant and an IANA zone, never a formatted time nor an
+offset.** Resolving the viewer's time is the client's job; the venue time, by contrast, is
+server-rendered and stays right.
 
-« L'heure du spectateur d'abord » est un principe. Le serveur ne peut pas l'honorer au premier
-rendu sans se tromper une fois sur deux, et une heure rendue au serveur puis corrigée au client
-est une divergence visible. **Besoin déjà énoncé en forme 1, répété ici parce que c'est Next qui
-le rend contraignant : le contrat porte un instant UTC et une zone IANA, jamais une heure
-formatée ni un décalage.** La résolution de l'heure du spectateur est du ressort du client ;
-l'heure de salle, elle, est rendue au serveur et reste juste.
+### 8. The mini-player survives navigation
 
-### 8. Le mini-lecteur survit à la navigation
-
-La lecture continue quand on change de page. Cela impose une hiérarchie où le lecteur n'est pas
-démonté entre deux routes. Ce qui touche le contrat : **le jeton de lecture ne doit pas être lié
-à la route**, et son renouvellement ne doit pas dépendre d'un montage de page.
+Playback continues when you change page. That forces a hierarchy where the player is not
+unmounted between two routes. What touches the contract: **the playback token must not be bound
+to the route**, and its renewal must not depend on a page mount.
 
 ### 9. Images
 
-Les visuels sont distants. **Besoin : dimensions intrinsèques et hôte stable dans le contrat.**
-Sans dimensions, la mise en page saute au chargement — ce qui coûte en référencement autant qu'en
-confort. Sans hôte connu d'avance, l'optimisation d'image de Next refuse le domaine.
+The visuals are remote. **Need: intrinsic dimensions and a stable host in the contract.** Without
+dimensions, the layout jumps on load — which costs as much in indexing as in comfort. Without a
+host known in advance, Next's image optimisation refuses the domain.
 
-### 10. La montée de version de zod est un changement de contrat
+### 10. A zod major upgrade is a contract change
 
-Rappel du dossier, qui pèse ici : zod est une dépendance d'exécution partagée par sept services
-et cinq applications, épinglée. Sur la surface web, elle valide aussi les entrées de formulaire.
-**Besoin : un échec de validation doit se traduire en code i18n**, jamais en message anglais de
-zod — sinon l'internationalisation fuit dès la première erreur de formulaire, et c'est le
-formulaire de paiement qui la fait fuir en premier.
-
----
-
-## Ce que je ne peux pas obtenir seul → questions au backend
-
-Par ordre d'impact sur le contrat.
-
-### Pagination, recherche, facettes
-
-1. **Quelle est l'unité de pagination de la recherche : la date ou le spectacle ?** La surface
-   regroupe les dates d'un même spectacle sous une carte unique et annonce « N dates ». Paginer
-   des dates casse le regroupement aux frontières de page ; paginer des spectacles rend le tri
-   « bientôt » et le filtre « ce week-end » ambigus. Cette question détermine la forme de
-   `SearchResultPage` et, avec elle, la page la plus utilisée du produit.
-2. **Le curseur peut-il être accompagné d'un effectif total, même approximatif ?** La copie dit
-   « Voir plus · N restants ». Si la réponse est non, la conception doit changer ; si c'est oui,
-   dire quelle précision est garantie.
-3. **Les effectifs par facette sont-ils servis, et sur quelle requête ?** « Danse (42) » à côté
-   d'un filtre suppose un comptage sur la requête courante, recalculé à chaque changement.
-4. **Comment le contrat exprime-t-il les facettes : énumérées ou génériques ?** Sept groupes
-   d'attributs sont déclarés dans la taxonomie et jamais exercés (voir Incohérences). Si les
-   filtres sont écrits un par un, chacun d'eux sera un changement de contrat.
-
-### Cache et fraîcheur — la question la plus urgente pour Next
-
-5. **Quelle est la clé d'invalidation d'une ressource, et qui la nomme ?** La surface doit
-   invalider ses lectures après une écriture et à la réception d'un changement. Si chaque surface
-   invente ses étiquettes, elles divergeront.
-6. **Le storefront est-il notifié des changements qu'il n'a pas causés** (une date passe en
-   direct, une promotion expire, une rediffusion est publiée), ou doit-il se contenter d'une
-   durée de fraîcheur ? Kafka étant interdit hors inter-services, la réponse passe forcément par
-   le BFF.
-7. **Quelle fraîcheur le BFF garantit-il par famille de lecture ?** Catalogue, jauge, compteur de
-   spectateurs, promotion : j'ai proposé des latences en §Temps réel, mais ce sont des besoins,
-   pas des engagements.
-8. **Le rafraîchissement des compteurs volatils peut-il être groupé** — un appel pour douze
-   identifiants — plutôt qu'un canal par carte ?
-
-### Argent, commandes, idempotence
-
-9. **Une `Idempotency-Key` rejouée rend-elle le résultat de la première tentative, ou une
-   erreur ?** Seule la première réponse permet à la surface de proposer « réessayer » après une
-   coupure. C'est la différence entre une reprise sûre et une place perdue.
-10. **Le prix envoyé avec l'achat est-il vérifié côté serveur, et le refus a-t-il un code
-    distinct de l'échec de paiement ?** Avec cinq motifs de promotion dont un calculé au prorata
-    du temps écoulé, l'écart entre le prix affiché et le prix valide est structurel, pas
-    accidentel.
-11. **Quel est le barème des frais de service, et à quel niveau s'applique-t-il** — par place,
-    par commande, par vendeur ? La surface affiche une ligne « frais de service » dans le
-    récapitulatif.
-12. **La remise d'abonnement sur les places (`seatDiscount`) et la remise de 15 % sur les
-    boutiques : qui les calcule, et se cumulent-elles avec une promotion ?** Trois écrans
-    affichent un prix remisé ; si la règle de cumul n'est pas dans le domaine, elle sera écrite
-    trois fois.
-13. **Le panier est-il une donnée de compte ou de navigateur ?** S'il est côté compte, il doit
-    suivre sur mobile et TV ; s'il est local, la conception doit le dire au spectateur.
-14. **Le devis de panier est-il opposable, et pour combien de temps ?** Les frais de port sont
-    calculés au paiement : il y a donc un instant où le total est fixé, et il faut savoir lequel.
-15. **Une commande de marchandise à deux vendeurs : une commande ou deux ?** Deux expéditions,
-    deux commissions, éventuellement deux marchés de facturation. La réponse change la forme
-    `Order` et les versements.
-
-### Boutique et commerce externe
-
-16. **Comment le storefront lit-il les commandes passées sur une boutique externe** (Shopify,
-    WooCommerce, PrestaShop, Drupal, API) ? La section « Mes commandes » les affiche à côté des
-    nôtres, avec une référence marchand et un domaine. S'agit-il d'une synchronisation, d'un lien
-    déclaratif posé par l'artiste, ou d'une reprise ponctuelle ? Le point est absent de la carte
-    des contextes, comme la boutique elle-même (errata C8).
-17. **La marchandise a-t-elle des variantes ?** Un t-shirt sans taille n'est pas vendable. Et
-    `label` n'existe qu'en français.
-
-### Billetterie et accès
-
-18. **Qui émet le code de place, et sous quelle forme ?** Il s'affiche à l'identique sur trois
-    surfaces : il ne peut pas être dérivé côté client.
-19. **La règle « une place détenue ouvre le spectacle » : quelles entrées la surface reçoit-elle
-    pour la trancher sans second appel ?** Détention, état de la date, fenêtre de rediffusion,
-    droits territoriaux, droits de formule — cinq entrées, un seul verdict.
-20. **L'aperçu gratuit est-il imposé par le jeton de lecture** (durée, non renouvelable pour un
-    même spectateur), ou seulement par le client ? Dans le second cas, il suffit de recharger la
-    page.
-21. **La limite « deux écrans à la fois » de la formule Premium : qui la compte, et que voit le
-    troisième écran ?**
-22. **Une place annulée, remboursée ou créditée : comment le spectateur retrouve-t-il son
-    argent ?** Trois issues, trois mécanismes distincts déjà rédigés (remboursement sous 3 à
-    5 jours, avoir sur le compte Arthome, place valable à la nouvelle date). L'avoir sur compte
-    est une monnaie interne — elle n'apparaît nulle part ailleurs dans le dossier.
-
-### Compte, notifications, données personnelles
-
-23. **Le compteur de correspondances d'une recherche enregistrée : temps réel, périodique, ou
-    « nouvelles depuis votre dernière visite » ?** Dix recherches par compte, un compteur chacune,
-    sur une seule page.
-24. **Une recherche enregistrée est une requête persistée : comment survit-elle à une évolution
-    du vocabulaire de filtres ?** Elle doit s'exécuter encore, ou se signaler périmée.
-25. **« Déconnecter cet appareil » coupe-t-il la lecture en cours sur cet appareil, et en combien
-    de temps ?**
-26. **La suppression de compte annule les places non utilisées.** Elle est donc financière :
-    remboursements, versements d'artistes potentiellement déjà calculés, conservation comptable
-    de 10 ans des factures. Quel est le périmètre réel de la suppression, et quel est son délai ?
-27. **Les exports (données, factures) sont-ils asynchrones, et comment la surface suit-elle une
-    demande en cours ?**
-28. **Le tchat a-t-il une limitation de débit exprimée dans le contrat**, avec un délai d'attente
-    en paramètre ? Sans cela la surface ne peut qu'enchaîner les refus.
-
-### Transverses
-
-29. **La devise d'affichage choisie par le spectateur et la devise de facturation d'une date
-    peuvent-elles différer ?** L'errata D4 note que le multi-devise est déclaré mais jamais
-    exercé ; la préférence de compte existe pourtant dans l'interface.
-30. **Quelle latence le catalogue de libellés servi dynamiquement garantit-il au rendu
-    serveur ?** Le storefront web résout les codes i18n **au serveur** pour être indexable. Si
-    le catalogue est un appel réseau sur le chemin de rendu, il devient une dépendance critique
-    de chaque page publique. L'instantané embarqué au build est le repli obligatoire — mais alors
-    une correction de coquille n'est visible sur le web qu'au prochain déploiement, et le besoin
-    qui motivait le catalogue dynamique (mobile et TV) ne concerne pas cette surface.
+A reminder from the handoff, which weighs here: zod is a runtime dependency shared by seven
+services and five applications, pinned. On the web surface it also validates form input.
+**Need: a validation failure must translate into an i18n code**, never into zod's English
+message — otherwise internationalisation leaks on the first form error, and it is the payment
+form that leaks first.
 
 ---
 
-## Incohérences relevées
+## What I cannot get on my own → questions for the backend
 
-Aucune n'a été appliquée. Les sept de la famille **D** de `corrections-handoff.md` ont été
-rencontrées comme annoncé et sont traitées ci-dessus (vocabulaire `languageDependency`, deux
-vocabulaires d'état de publication, fuseaux gelés, marché unique, formule de versement, deux
-niveaux de sanction, décalages en minutes). Ce qui suit est **en plus**.
+In order of impact on the contract.
 
-1. **Le panier du storefront web ne porte pas de places.** La mission décrit un panier portant
-   « des places **et** de la marchandise, avec frais de port ». Dans la maquette, les lignes de
-   panier ne sont créées que par la boutique d'un spectacle (`ticketing.cart.head` = « Panier
-   merch », `ticketing.cart.emptyHint` = « Le merch s'ajoute depuis la boutique d'un live »), et
-   l'achat d'une place est un parcours séparé, en modale, sans passage par le panier. Les frais
-   de port sont bien là, sur la marchandise. **L'écart change la nature de la commande** : soit
-   le contrat prévoit une commande mixte que la conception ne montre pas, soit il prévoit deux
-   commandes distinctes. À trancher par le chef.
+### Pagination, search, facets
 
-2. **Trois vocabulaires de formules, incompatibles.** `catalogue.json` déclare `free` (0),
-   `pass` (12 €), `premium` (24 €). L'i18n déclare six valeurs : `free`, `pass`, `premium`,
-   `monthly`, `season`, `none`. La page `plans` du web en affiche trois autres : `free`, `unit`
-   (« place à l'unité, dès 7 € »), `sub` (« abonnement, 14 € / mois »). Et le compte de
-   référence porte `plan: "season"`, qui n'existe dans aucune des listes de `plans`. Le contrat
-   doit fixer un seul jeu, et distinguer ce qui est une **formule** de ce qui est un **mode
-   d'achat** (la place à l'unité n'est pas un abonnement).
+1. **What is the pagination unit of search: the date or the show?** The surface groups the dates
+   of one show under a single card and announces "N dates". Paginating dates breaks the grouping
+   at page boundaries; paginating shows makes the "soon" sort and the "this weekend" filter
+   ambiguous. This question determines the shape of `SearchResultPage` and, with it, the most
+   used page in the product.
+2. **Can the cursor be accompanied by a total count, even an approximate one?** The copy says
+   "Show more · N left". If the answer is no, the design has to change; if yes, say what accuracy
+   is guaranteed.
+3. **Are per-facet counts served, and over which query?** "Dance (42)" next to a filter assumes a
+   count over the current query, recomputed on every change.
+4. **How does the contract express facets: enumerated or generic?** Seven attribute groups are
+   declared in the taxonomy and never exercised (see Inconsistencies). If the filters are written
+   one by one, each of them will be a contract change.
 
-3. **Les droits de formule ne coïncident pas non plus.** `catalogue.json` utilise neuf valeurs
-   d'`opens[]` (`browse`, `trailers`, `free-dates`, `replays`, `no-ads`, `one-live-month`,
-   `all-lives`, `multi-screen`, `archive`), alors que `corrections-handoff.md` C7 n'en cite que
-   six. Ce n'est pas un écart du dossier mais une imprécision de la note : les neuf sont bien
-   dans la donnée.
+### Caching and freshness — the most urgent question for Next
 
-4. **`chatMode` : `open` ou `free` ?** `catalogue.json` et l'i18n disent `open | emoji | off |
-   read-only` ; la maquette web tient une table parallèle `free | emoji | off`. C'est
-   exactement le défaut D2 (deux vocabulaires pour la même machine à états), sur un autre champ.
-   Le vocabulaire de `catalogue.json` doit faire autorité.
+5. **What is a resource's invalidation key, and who names it?** The surface must invalidate its
+   reads after a write and on receiving a change. If each surface invents its own tags, they will
+   diverge.
+6. **Is the storefront notified of changes it did not cause** (a date goes live, a promotion
+   expires, a replay is published), or must it settle for a freshness duration? Kafka being
+   forbidden outside inter-service traffic, the answer necessarily goes through the BFF.
+7. **What freshness does the BFF guarantee per read family?** Catalogue, capacity, viewer
+   counter, promotion: I proposed latencies in §Real time, but those are needs, not commitments.
+8. **Can the refresh of volatile counters be batched** — one call for twelve identifiers —
+   rather than one channel per card?
 
-5. **Le sous-genre : un ou plusieurs ?** `taxonomy.json` déclare le sous-genre « optionnel,
-   **multiple**, vocabulaire fermé ». `catalogue.json` porte un champ `genre` **singulier**, et
-   `helpers.js` le lit au singulier — mais le filtre de recherche du web est multi-sélection.
-   Le contrat doit trancher la multiplicité réelle.
+### Money, commands, idempotency
 
-6. **Le champ `attributes` d'une date porte en fait des étiquettes.** Les valeurs observées sont
-   `revival`, `new-creation`, `opening-night`, `open-air`, `archive` — c'est-à-dire des *tags*
-   au sens de `tagPolicy` (« a tag sits on the date as readily as on the show »), et non des
-   valeurs des sept groupes d'`attributes` de la taxonomie. Collision de nom entre deux notions
-   distinctes, à corriger au portage.
+9. **Does a replayed `Idempotency-Key` return the result of the first attempt, or an error?** Only
+   the first answer lets the surface offer "try again" after a drop. It is the difference between
+   a safe recovery and a lost seat.
+10. **Is the price sent with the purchase verified server-side, and does the refusal have a code
+    distinct from a payment failure?** With five promotion reasons, one of them computed pro rata
+    to elapsed time, the gap between the displayed price and the valid price is structural, not
+    accidental.
+11. **What is the service-fee schedule, and at what level does it apply** — per seat, per order,
+    per seller? The surface shows a "service fee" line in the summary.
+12. **The subscription seat discount (`seatDiscount`) and the 15% store discount: who computes
+    them, and do they stack with a promotion?** Three screens show a discounted price; if the
+    stacking rule is not in the domain, it will be written three times.
+13. **Is the cart account data or browser data?** If it is account-side, it must follow onto
+    mobile and TV; if it is local, the design has to tell the viewer.
+14. **Is the cart quote binding, and for how long?** Shipping is computed at payment: there is
+    therefore an instant at which the total is fixed, and we need to know which.
+15. **A merchandise order with two sellers: one order or two?** Two shipments, two commissions,
+    possibly two billing markets. The answer changes the `Order` shape and the payouts.
 
-7. **Six des sept groupes d'attributs sont déclarés et jamais portés.** `minimumAge`,
-   `seatingMode`, `intermission`, `accessibility`, `venueType` ne sont posés par aucun
-   spectacle, aucune date, aucune salle ; seul `audience` l'est, et par une règle grossière
-   (cirque et comédie musicale → `family`, tout le reste → `all-audiences`). Même piège que D4 :
-   une intention déclarée dans la donnée, jamais éprouvée par un écran. `accessibility` en
-   particulier est une promesse d'accessibilité affichée nulle part.
+### Store and external commerce
 
-8. **Les étiquettes ne sont portées par aucun spectacle de référence.** `shows[].tags` est vide
-   partout dans `catalogue.json` ; seules les fixtures générées en posent. Les 205 étiquettes
-   existent donc comme vocabulaire, sans aucun usage éprouvé — ce qui affaiblit la navigation
-   latérale par pastilles que `tagPolicy` décrit.
+16. **How does the storefront read orders placed on an external shop** (Shopify, WooCommerce,
+    PrestaShop, Drupal, API)? The "My orders" section shows them beside ours, with a merchant
+    reference and a domain. Is this a synchronisation, a declarative link set by the artist, or a
+    one-off import? The point is absent from the context map, as is the store itself (errata C8).
+17. **Does merchandise have variants?** A t-shirt with no size is not sellable. And `label`
+    exists only in French.
 
-9. **`i18n/index.json` déclare des effectifs de clés faux** : 243 annoncées pour
-   `storefront.json` (671 réelles), 627 pour `taxonomy.json` (437 réelles). Sans conséquence
-   pour l'outil de compilation, qui vérifie contre le plan de correspondance et non contre ces
-   nombres — mais un fichier d'index qui ment sur son contenu se recopiera dans un contrat.
+### Ticketing and access
 
-10. **Le libellé de marchandise n'existe qu'en français.** `merchPool` ne porte pas de
-    `labelEn`, et la maquette utilise le même champ pour les deux langues. Sur un catalogue
-    bilingue indexé dans les deux langues, c'est une lacune de donnée, pas de traduction.
+18. **Who issues the seat code, and in what form?** It is displayed identically on three
+    surfaces: it cannot be derived client-side.
+19. **The "a held seat opens the show" rule: which inputs does the surface receive to settle it
+    without a second call?** Holding, the state of the date, the replay window, territorial
+    rights, plan entitlements — five inputs, one verdict.
+20. **Is the free preview enforced by the playback token** (duration, non-renewable for the same
+    viewer), or only by the client? In the second case, reloading the page
+    is enough to extend it.
+21. **The Premium plan's "two screens at once" limit: who counts it, and what does the third
+    screen see?**
+22. **A cancelled, refunded or credited seat: how does the viewer get their money back?** Three
+    outcomes, three distinct mechanisms already written (refund within 3 to 5 days, a credit on
+    the Arthome account, a seat valid at the new date). The account credit is an internal
+    currency — it appears nowhere else in the handoff.
 
-11. **La capacité de salle sert de base au taux de remplissage, et la maquette la contredit.**
-    Le taux est calculé à partir de `venue.capacity`, mais le libellé « places restantes » y
-    applique une constante de 2000 places indépendante de la salle. Commodité de maquette, mais
-    elle montre que le taux de remplissage et le nombre de places restantes sont aujourd'hui
-    deux valeurs indépendantes : le contrat doit n'en servir qu'une source.
+### Account, notifications, personal data
 
+23. **The match counter of a saved search: real time, periodic, or "new since your last visit"?**
+    Ten searches per account, one counter each, on a single page.
+24. **A saved search is a persisted query: how does it survive a change in the filter
+    vocabulary?** It must still run, or declare itself stale.
+25. **Does "sign out this device" cut playback in progress on that device, and how quickly?**
+26. **Account deletion cancels unused seats.** It is therefore financial: refunds, artist payouts
+    possibly already computed, the ten-year accounting retention of invoices. What is the real
+    scope of the deletion, and what is its delay?
+27. **Are exports (data, invoices) asynchronous, and how does the surface follow a request in
+    progress?**
+28. **Does chat have a rate limit expressed in the contract**, with a wait time as a parameter?
+    Without it the surface can only stack up refusals.
+
+### Cross-cutting
+
+29. **Can the display currency chosen by the viewer and the billing currency of a date differ?**
+    Errata D4 notes that multi-currency is declared but never exercised; the account preference
+    nevertheless exists in the interface.
+30. **What latency does the dynamically served label catalogue guarantee at server render?** The
+    web storefront resolves its i18n codes **on the server** in order to be indexable. If the
+    catalogue is a network call on the render path, it becomes a critical dependency of every
+    public page. The build-time snapshot is the mandatory fallback — but then a typo fix is only
+    visible on the web at the next deployment, and the need that motivated the dynamic catalogue
+    (mobile and TV) does not concern this surface.
+
+---
+
+## Inconsistencies found
+
+None has been applied. The seven in family **D** of `corrections-handoff.md` were encountered as
+announced and are handled above (`languageDependency` vocabulary, two publication-state
+vocabularies, frozen time zones, a single market, the payout formula, two levels of sanction,
+offsets in minutes). What follows is **in addition**.
+
+1. **The web storefront's cart does not carry seats.** The brief describes a cart carrying
+   "seats **and** merchandise, with shipping". In the mockup, cart lines are created only by a
+   show's store (`ticketing.cart.head` = "Merch cart", `ticketing.cart.emptyHint` = "Merch is
+   added from a live's store"), and buying a seat is a separate journey, in a modal, with no cart
+   involved. Shipping is indeed there, on the merchandise. **The divergence changes the nature of
+   the command**: either the contract provides for a mixed order the design does not show, or it
+   provides for two distinct orders. For the lead to settle.
+
+2. **Three plan vocabularies, mutually incompatible.** `catalogue.json` declares `free` (0),
+   `pass` (€12), `premium` (€24). The i18n declares six values: `free`, `pass`, `premium`,
+   `monthly`, `season`, `none`. The web's `plans` page shows three others: `free`, `unit`
+   ("single seat, from €7"), `sub` ("subscription, €14 / month"). And the reference account
+   carries `plan: "season"`, which exists in none of the `plans` lists. The contract must fix a
+   single set, and distinguish what is a **plan** from what is a **purchase mode** (a single seat
+   is not a subscription).
+
+3. **The plan entitlements do not line up either.** `catalogue.json` uses nine `opens[]` values
+   (`browse`, `trailers`, `free-dates`, `replays`, `no-ads`, `one-live-month`, `all-lives`,
+   `multi-screen`, `archive`), whereas `corrections-handoff.md` C7 cites only six. That is not a
+   divergence in the handoff but an imprecision in the note: all nine really are in the data.
+
+4. **`chatMode`: `open` or `free`?** `catalogue.json` and the i18n say `open | emoji | off |
+   read-only`; the web mockup keeps a parallel table `free | emoji | off`. That is exactly the D2
+   fault (two vocabularies for the same state machine), on another field. The `catalogue.json`
+   vocabulary must be authoritative.
+
+5. **Sub-genre: one or several?** `taxonomy.json` declares the sub-genre "optional, **multiple**,
+   closed vocabulary". `catalogue.json` carries a **singular** `genre` field, and `helpers.js`
+   reads it as singular — yet the web's search filter is multi-select. The contract must settle
+   the real cardinality.
+
+6. **A date's `attributes` field actually carries tags.** The values observed are `revival`,
+   `new-creation`, `opening-night`, `open-air`, `archive` — that is, *tags* in the sense of
+   `tagPolicy` ("a tag sits on the date as readily as on the show"), and not values of the
+   taxonomy's seven `attributes` groups. A name collision between two distinct notions, to be
+   fixed at porting time.
+
+7. **Six of the seven attribute groups are declared and never carried.** `minimumAge`,
+   `seatingMode`, `intermission`, `accessibility`, `venueType` are set by no show, no date and no
+   venue; only `audience` is, and by a crude rule (circus and musical → `family`, everything else
+   → `all-audiences`). The same trap as D4: an intention declared in the data, never exercised by
+   a screen. `accessibility` in particular is an accessibility promise displayed nowhere.
+
+8. **No reference show carries any tag.** `shows[].tags` is empty throughout `catalogue.json`;
+   only the generated fixtures set any. The 205 tags therefore exist as a vocabulary with no
+   exercised use — which weakens the lateral pill navigation that `tagPolicy` describes.
+
+9. **`i18n/index.json` declares wrong key counts**: 243 announced for `storefront.json` (671
+   actual), 627 for `taxonomy.json` (437 actual). With no consequence for the compilation tool,
+   which checks against the key map and not against those numbers — but an index file that lies
+   about its own contents will be copied into a contract.
+
+10. **The merchandise label exists only in French.** `merchPool` carries no `labelEn`, and the
+    mockup uses the same field for both languages. On a bilingual catalogue indexed in both
+    languages, that is a data gap, not a translation gap.
+
+11. **Venue capacity is the basis of the fill rate, and the mockup contradicts it.** The rate is
+    computed from `venue.capacity`, but the "seats left" label applies a constant of 2000 seats
+    independent of the venue. A mockup convenience — but it shows that the fill rate and the
+    number of seats left are currently two independent values: the contract must serve only one
+    source for them.
 ---
 
 ## Confrontation
 
-> **Temps 3.** L'offre est écrite ; je la conteste sur pièces. Documents lus :
-> `answers-to-surfaces.md` (mes 30 questions), `context-map.md`, `data-model.md`, `events.md`,
+> **Round 3.** The offer is written; I am contesting it on the evidence. Documents read:
+> `answers-to-surfaces.md` (my 30 questions), `context-map.md`, `data-model.md`, `events.md`,
 > `realtime.md`, `transport.md`, `critical-rules.md`, `adr-auth.md`, `adr-payments.md`,
 > `adr-stream-entitlement.md`, `openapi/storefront.yaml`, `DECISIONS.md`.
 >
-> Le contrat est bon. Il est même meilleur que ce que je demandais sur une dizaine de points, et
-> je le dis ci-dessous. Mais **trois trous l'empêchent de faire tourner ma surface**, et deux
-> d'entre eux touchent la raison d'être du storefront web : être indexable, et encaisser.
+> The contract is good. It is even better than what I asked for on about ten points, and I say so
+> below. But **three holes stop it running my surface**, and two of them go to the very reason
+> the web storefront exists: being indexable, and taking money.
 
 ---
 
-### Ce qui est satisfait — bref, parce que c'est l'essentiel du volume
+### What is satisfied — briefly, because it is most of the volume
 
-Mes **30 questions ont toutes une réponse** (`answers-to-surfaces.md`, section « storefront web »),
-et aucune n'est une esquive. Les points où le contrat fait exactement ce que je demandais :
+**All 30 of my questions have an answer** (`answers-to-surfaces.md`, "storefront web" section),
+and none of them dodges. The points where the contract does exactly what I asked:
 
-- **L'unité de pagination de la recherche est le spectacle**, avec la date représentative *et*
-  `matchingDatesCount` (`ShowGroup`). C'était ma première question structurante ; elle est tranchée
-  dans le bon sens, avec la précision qui manquait — « le filtre *ce week-end* s'applique **avant**
-  le regroupement ». Le libellé « voir plus de dates (2) » est enfin vrai sous filtre.
-- **L'effectif approximatif existe et déclare sa garantie** (`CursorPageInfo.approximateTotal` +
-  `totalIsLowerBound`, exact jusqu'à 10 000). « Voir plus · N restants » devient honnête sans
-  promettre un comptage qu'un index ne donne pas. Je n'attendais pas que la tension curseur/reste
-  soit résolue si proprement.
-- **Les facettes sont génériques** (`Facet { facetId, values[{id, count}] }` + `StructuredFilter`),
-  comptées sur la requête courante, **dans la même réponse**. Ajouter « accessible en fauteuil »
-  n'est plus un changement de contrat.
-- **Chaque valeur périssable voyage avec son instant** : `displayStateValidUntil`, `roomOpensAt`,
+- **The pagination unit of search is the show**, with the representative date *and*
+  `matchingDatesCount` (`ShowGroup`). That was my first structural question; it is settled the
+  right way, with the precision that was missing — "the *this weekend* filter applies **before**
+  the grouping". The label "more dates (2)" is finally true under a filter.
+- **The approximate count exists and declares its guarantee** (`CursorPageInfo.approximateTotal`
+  + `totalIsLowerBound`, exact up to 10,000). "Show more · N left" becomes honest without
+  promising a count an index does not give. I did not expect the cursor/remainder tension to be
+  resolved this cleanly.
+- **Facets are generic** (`Facet { facetId, values[{id, count}] }` + `StructuredFilter`), counted
+  over the current query, **in the same response**. Adding "wheelchair accessible" is no longer a
+  contract change.
+- **Every perishable value travels with its instant**: `displayStateValidUntil`, `roomOpensAt`,
   `replay.expiresAt`, `promotion.validUntil`, `PriceTier.validUntil`, `cancelDeadline`,
-  `EnvelopeMeta.servedAt` / `validUntil`. C'était mon deuxième besoin structurant. Il est tenu
-  partout, et `realtime.md` §2.4 en tire la bonne conclusion : ces transitions **ne passent pas**
-  par le canal.
-- **Idempotence** : clé rejouée → réponse d'origine, `Idempotency-Replayed` en en-tête, 24 h
-  (`transport.md` §5.4). C'est la différence entre reprise sûre et place perdue, et elle est
-  tranchée du bon côté.
-- **`PRICE_STALE`** distinct de l'échec de paiement, avec le prix courant en paramètre, et
-  `expectedTotal` obligatoire sur `purchaseSeat`. `SOLD_OUT`, `SEAT_EXPIRED`, `PAYMENT_DECLINED`
-  existent aussi. L'écart structurel entre prix affiché et prix valide est traité comme structurel.
-- **Le code de place est émis par le serveur** (`TicketCard.seatCode`), le barème de frais de
-  service est servi (`DateDetail.serviceFee.perSeat`), le non-cumul remise/promotion est une règle
-  de `@arthome/core` (D-017), le panier est sur le compte avec un **rang serveur** par ligne, le
-  devis est opposable 15 minutes et le port est calculé **au devis**.
-- **`canonicalUrl` servie, jamais construite** : c'est le manque de premier ordre que j'avais
-  relevé (« il n'existe pas d'URL canonique pour une date »), et il est comblé, avec `slug` par
-  langue.
-- **`x-arthome-invalidates` est déclaré opération par opération.** Je demandais « qui nomme les
-  clés » ; j'obtiens mieux : chaque écriture dit ce qu'elle périme.
-- **`emptyReason` + `emptyActionCode` dans `CursorPageInfo`.** Je demandais un motif de vide ;
-  j'obtiens motif **et** action qui sort de l'impasse.
-- **`WatchVerdict` avec `advisory: true`** et le même vocabulaire de refus des deux côtés. Deux
-  sites d'évaluation, une implémentation. C'est la meilleure réponse possible à ma question 19.
-- **`degraded[]` dans l'enveloppe** : une surcouche qui échoue dégrade la carte au lieu de couler
-  l'écran. C'est exactement l'échec partiel que je demandais à pouvoir exprimer (§États, point 4).
+  `EnvelopeMeta.servedAt` / `validUntil`. That was my second structural need. It is honoured
+  throughout, and `realtime.md` §2.4 draws the right conclusion: those transitions **do not go**
+  over the channel.
+- **Idempotency**: replayed key → original response, `Idempotency-Replayed` header, 24 h
+  (`transport.md` §5.4). That is the difference between a safe recovery and a lost seat, and it
+  is settled on the right side.
+- **`PRICE_STALE`** distinct from a payment failure, with the current price as a parameter, and
+  `expectedTotal` mandatory on `purchaseSeat`. `SOLD_OUT`, `SEAT_EXPIRED` and `PAYMENT_DECLINED`
+  exist too. The structural gap between displayed price and valid price is treated as structural.
+- **The seat code is issued by the server** (`TicketCard.seatCode`), the service-fee schedule is
+  served (`DateDetail.serviceFee.perSeat`), the no-stacking rule for discount and promotion is an
+  `@arthome/core` rule (D-017), the cart lives on the account with a **server rank** per line,
+  the quote is binding for 15 minutes and shipping is computed **at the quote**.
+- **`canonicalUrl` served, never constructed**: that is the first-order gap I had flagged ("there
+  is no canonical URL for a date"), and it is filled, with a `slug` per language.
+- **`x-arthome-invalidates` is declared operation by operation.** I asked "who names the keys";
+  I get better: every write says what it makes stale.
+- **`emptyReason` + `emptyActionCode` in `CursorPageInfo`.** I asked for a reason for emptiness;
+  I get a reason **and** the action that breaks the deadlock.
+- **`WatchVerdict` with `advisory: true`** and the same refusal vocabulary on both sides. Two
+  evaluation sites, one implementation. That is the best possible answer to my question 19.
+- **`degraded[]` in the envelope**: an overlay that fails degrades the card instead of sinking the
+  screen. That is exactly the partial failure I asked to be able to express (§States, point 4).
 
-Sur le nombre d'allers-retours, le compte annoncé se vérifie **écran par écran, côté surface** :
-`home` 1 appel, `browse` 1, `categories` 1, `category` 1, `artists` 1, `artist` 1,
-`plans` 1, `account` 1 (+1 par liste paginée ouverte), panier 1 par étape, achat 2 avant paiement,
-`live` 3 (fiche, lecteur, tchat) — et les trois sont séquentiels par nature, pas par maladresse.
-**Le budget est tenu.** La mise en lot des compteurs (`counters:subscribe { dateIds }`, tick
-différentiel) répond précisément à ce que je réclamais : jamais un canal par carte.
+On the number of round trips, the announced count checks out **screen by screen, from the surface
+side**: `home` 1 call, `browse` 1, `categories` 1, `category` 1, `artists` 1, `artist` 1, `plans`
+1, `account` 1 (+1 per paginated list opened), cart 1 per step, purchase 2 before payment, `live`
+3 (detail, player, chat) — and those three are sequential by nature, not by clumsiness. **The
+budget holds.** Batching the counters (`counters:subscribe { dateIds }`, differential tick)
+answers precisely what I was asking for: never one channel per card.
 
 ---
 
-### Ce qui ne l'est pas
+### What is not
 
-#### ❶ Tout le catalogue est derrière une session — et ma surface existe pour être indexée
+#### ❶ The whole catalogue sits behind a session — and my surface exists to be indexed
 
-**Sur pièces.** `openapi/storefront.yaml`, l. 102-105 :
+**On the evidence.** `openapi/storefront.yaml`, l. 102-105:
 
 ```yaml
 security:
@@ -1119,295 +1070,290 @@ security:
   - bearerToken: []
 ```
 
-Cette exigence globale n'est surchargée que **quatre fois** dans tout le fichier : `/v1/devices`
-(`security: []`), `/v1/viewer-context` et les trois chemins d'appairage (qui ajoutent
-`deviceToken`). Tout le reste en hérite. Donc **`/v1/home`, `/v1/search`, `/v1/dates/{dateId}`,
-`/v1/categories`, `/v1/categories/{categoryId}`, `/v1/artists`, `/v1/artists/{artistId}` et
-`/v1/plans` exigent une session authentifiée ou un jeton porteur.** `/v1/home` liste d'ailleurs
-`401` explicitement.
+That global requirement is overridden **four times** in the whole file: `/v1/devices`
+(`security: []`), `/v1/viewer-context` and the three pairing paths (which add `deviceToken`).
+Everything else inherits it. So **`/v1/home`, `/v1/search`, `/v1/dates/{dateId}`,
+`/v1/categories`, `/v1/categories/{categoryId}`, `/v1/artists`, `/v1/artists/{artistId}` and
+`/v1/plans` require an authenticated session or a bearer token.** `/v1/home` even lists `401`
+explicitly.
 
-**Trois conséquences, et elles sont graves.**
+**Three consequences, and they are serious.**
 
-1. **Un robot d'indexation n'a ni cookie ni jeton porteur.** Il n'exécute pas de `POST
-   /v1/devices` pour s'en fabriquer un, et il ne le ferait pas même s'il le pouvait. Le rendu
-   serveur d'une page de date, d'artiste ou de discipline ne peut donc produire **que** la page
-   d'erreur d'authentification. Un catalogue de billetterie public dont aucune fiche n'est
-   lisible sans compte n'est pas indexable — c'est-à-dire qu'il ne remplit pas la fonction pour
-   laquelle cette surface a été choisie en Next.js. Le `README.md` §2 la définit exactement
-   ainsi : « Référencement et rendu serveur décisifs : c'est un catalogue de billetterie ».
-2. **Le mode visiteur n'a pas de contrat.** La maquette en fait un état de premier ordre :
-   `account.guest.banner` (« Vous regardez en visiteur : les aperçus gratuits sont ouverts, la
-   place débloque le spectacle entier »), `account.auth.alt` (« Ou continuer sans compte »), et
-   quatre portes distinctes (`guest.chat`, `guest.follow`, `guest.save`, `guest.bannerCta`). Le
-   contrat reconnaît pourtant la notion : `ViewerContext.signedIn: boolean` et
-   `currentProfileId: null` l'admettent, et `deviceToken` existe. **Mais `deviceToken` n'est
-   accepté sur aucun chemin de catalogue.** Un visiteur enregistré ne peut donc pas voir la
-   page d'accueil.
-3. **`GET /v1/changes` exige aussi une session** (`401` listé) et n'accepte que
-   `scope: profile | device`. Voir ❸.
+1. **A crawler has neither a cookie nor a bearer token.** It does not run a `POST /v1/devices` to
+   manufacture one, and it would not do so even if it could. The server render of a date page, an
+   artist page or a discipline page can therefore produce **nothing but** the authentication
+   error page. A public ticketing catalogue where no page is readable without an account is not
+   indexable — that is, it does not perform the function for which this surface was chosen in
+   Next.js. `README.md` §2 defines it in exactly those terms: "Indexing and server rendering are
+   decisive: this is a ticketing catalogue."
+2. **Guest mode has no contract.** The mockup makes it a first-class state:
+   `account.guest.banner` ("You are browsing as a guest: free previews are open, a ticket unlocks
+   the whole show"), `account.auth.alt` ("Or continue without an account"), and four distinct
+   gates (`guest.chat`, `guest.follow`, `guest.save`, `guest.bannerCta`). The contract does
+   recognise the notion: `ViewerContext.signedIn: boolean` and `currentProfileId: null` admit it,
+   and `deviceToken` exists. **But `deviceToken` is accepted on no catalogue path.** A registered
+   visitor therefore cannot see the home page.
+3. **`GET /v1/changes` also requires a session** (`401` listed) and accepts only
+   `scope: profile | device`. See ❸.
 
-**Ce n'est pas une omission de détail** : c'est la seule chose que `nextjs-how-to` signale comme
-piège spécifique de ma pile — *« Bots and crawlers bypass the shell entirely — detected by user
-agent and rendered dynamically »*. Le chemin du robot est le chemin **dynamique**, donc le chemin
-qui appelle le BFF. S'il exige une session, il n'y a pas de repli.
+**This is not a detail overlooked**: it is the one thing `nextjs-how-to` flags as the trap
+specific to my stack — *"Bots and crawlers bypass the shell entirely — detected by user agent and
+rendered dynamically"*. The crawler's path is the **dynamic** path, therefore the path that calls
+the BFF. If that path requires a session, there is no fallback.
 
-**Ce que je demande** : que les huit chemins de catalogue déclarent `security: []` — ou au minimum
-acceptent `deviceToken` **et** l'absence totale d'authentification — et que le contrat écrive ce
-qu'une réponse anonyme contient (sans `watchVerdict`, sans `viewerRelations`, sans
-`viewerProgress`). Ce n'est pas un aménagement : sans cela, le rendu serveur de ma surface n'a
-rien à rendre.
+**What I am asking for**: that the eight catalogue paths declare `security: []` — or at minimum
+accept `deviceToken` **and** the complete absence of authentication — and that the contract write
+down what an anonymous response contains (no `watchVerdict`, no `viewerRelations`, no
+`viewerProgress`). This is not an accommodation: without it, my surface's server render has
+nothing to render.
 
-#### ❷ Aucun pas de confirmation de paiement — le web ne peut pas encaisser
+#### ❷ No payment confirmation step — the web cannot take money
 
-**Sur pièces.** `adr-payments.md` §2 :
+**On the evidence.** `adr-payments.md` §2:
 
-| storefront web | **Payment Element** (Stripe.js) | rend le prix, la 3-D Secure et les moyens locaux sans que la carte touche notre domaine |
+| storefront web | **Payment Element** (Stripe.js) | renders the price, 3-D Secure and local payment methods without the card touching our domain |
 
-et §(état de commande) : `awaiting_action` ← « 3-D Secure en cours » ← `requires_action`. Le
-vocabulaire est repris dans le contrat : `Order.state` vaut
+and §(order state): `awaiting_action` ← "3-D Secure in progress" ← `requires_action`. The
+vocabulary is carried over into the contract: `Order.state` is
 `[pending, awaiting_action, processing, paid, failed, refunded, partially_refunded, disputed]`.
 
-**Mais aucune opération ne permet d'atteindre cet état, ni d'en sortir.**
-`POST /v1/orders/seats` ne répond que `201` avec `order.state: paid` ;
-`POST /v1/orders/merch` idem ; `PUT /v1/subscription` idem. Aucune des trois ne rend de
-`clientSecret`, de `paymentIntentRef`, de `nextAction`, ni d'URL de retour ; aucune ne déclare de
-réponse `202`. Le Payment Element de Stripe **exige** un `client_secret` produit côté serveur, et
-`confirmPayment()` **exige** un `return_url` pour la redirection 3-D Secure.
+**But no operation makes it possible to reach that state, or to leave it.**
+`POST /v1/orders/seats` only answers `201` with `order.state: paid`; `POST /v1/orders/merch` the
+same; `PUT /v1/subscription` the same. None of the three returns a `clientSecret`, a
+`paymentIntentRef`, a `nextAction` or a return URL; none declares a `202` response. Stripe's
+Payment Element **requires** a `client_secret` produced server-side, and `confirmPayment()`
+**requires** a `return_url` for the 3-D Secure redirect.
 
-Ce n'est pas un raffinement : en Europe, l'authentification forte du payeur est obligatoire sur une
-part significative des paiements par carte. Un parcours d'achat qui ne prévoit pas
-`requires_action` **échoue en production sur des paiements parfaitement valides**, et il échoue
-silencieusement — la commande reste `awaiting_action` et rien ne la reprend.
+This is not a refinement: in Europe, strong customer authentication is mandatory on a significant
+share of card payments. A purchase journey that does not provide for `requires_action` **fails in
+production on perfectly valid payments**, and it fails silently — the order stays
+`awaiting_action` and nothing picks it up.
 
-**Et le corollaire, sur le même écran** : `AccountScreen.paymentMethods[]` est **en lecture seule**
-et il n'existe **aucune commande** pour ajouter ou retirer un moyen de paiement depuis le web.
-L'intention `payment-method` existe pour l'appairage TV (`adr-auth.md` §4), c'est-à-dire que la
-seule surface capable d'enregistrer une carte est celle qui n'a pas de clavier. La section
-`security` du compte affiche pourtant « Moyens de paiement · 2 CARTES ENREGISTRÉES · **Gérer** ».
+**And the corollary, on the same screen**: `AccountScreen.paymentMethods[]` is **read-only** and
+there is **no command** to add or remove a payment method from the web. The `payment-method`
+intent exists for TV pairing (`adr-auth.md` §4) — that is, the only surface able to register a
+card is the one with no keyboard. The account's `security` section nevertheless shows "Payment
+methods · 2 SAVED CARDS · **Manage**".
 
-#### ❸ Le flux d'invalidation qui alimente `revalidateTag` n'existe pas dans le contrat
+#### ❸ The invalidation feed that drives `revalidateTag` does not exist in the contract
 
-C'était ma question 6, et la réponse est « oui, par le BFF » — ce que j'avais anticipé et ce qui
-est juste. Mais **la moitié serveur de cette réponse n'a pas d'opération.**
+That was my question 6, and the answer is "yes, through the BFF" — which I had anticipated and
+which is right. But **the server half of that answer has no operation.**
 
-`realtime.md` §5.2 écrit :
+`realtime.md` §5.2 writes:
 
-> « Pour le rendu serveur de Next, le BFF expose **en plus** un flux d'invalidations par étiquette
-> que le serveur Next consomme pour appeler `revalidateTag`. »
+> "For Next's server render, the BFF **additionally** exposes a per-tag invalidation feed that
+> the Next server consumes in order to call `revalidateTag`."
 
-Ce flux **n'existe nulle part dans `openapi/storefront.yaml`**. Le seul mécanisme livré est
-`GET /v1/changes`, et ses trois propriétés le disqualifient pour cet usage :
+That feed **exists nowhere in `openapi/storefront.yaml`**. The only mechanism delivered is
+`GET /v1/changes`, and three of its properties disqualify it for this use:
+- it requires a session (`401` listed);
+- its `scope` is `profile` or `device` — **the Next server is neither**. It renders pages for
+  everybody and for nobody;
+- it is a **pull** (`?since=`), not a push. A render server is not going to poll an endpoint every
+  second to find out whether a date has gone live.
 
-- il exige une session (`401` listé) ;
-- son `scope` vaut `profile` ou `device` — **le serveur Next n'est ni l'un ni l'autre**. Il rend
-  des pages pour tout le monde et pour personne ;
-- il est en **tirage** (`?since=`), pas en poussée. Un serveur de rendu ne va pas interroger un
-  point de terminaison toutes les secondes pour savoir si une date est passée en direct.
-
-**Pire, la contradiction est interne au contrat.** Le vocabulaire de `ChangeFeed.invalidated`
-déclare huit étiquettes :
+**Worse, the contradiction is internal to the contract.** The `ChangeFeed.invalidated` vocabulary
+declares eight tags:
 
 ```
 date:{id} · date:{id}:availability · artist:{id} · category:{id}
 account:tickets · account:orders · account:subscription · home:rails
 ```
 
-Or l'union de tous les `x-arthome-invalidates` du fichier est :
+Yet the union of all the `x-arthome-invalidates` in the file is:
 
 ```
 account:cart · account:devices · account:orders · account:profile
 account:subscription · account:tickets · date:{dateId}:availability · home:rails
 ```
 
-**Les deux listes ne coïncident pas, dans les deux sens :**
+**The two lists do not match, in either direction:**
 
-- `account:cart`, `account:devices` et `account:profile` sont **émis** par des écritures mais
-  **absents** du vocabulaire du flux. Le panier modifié sur un autre appareil — cas que
-  `realtime.md` §2 prévoit explicitement sur la salle `viewer:{profileId}` — n'invalide donc
-  jamais rien côté serveur Next ;
-- **`date:{id}`, `artist:{id}` et `category:{id}` sont au vocabulaire et ne sont émis par
-  aucune opération.** Ce sont précisément les trois étiquettes des pages **publiques et
-  indexables**, donc les trois seules que le rendu serveur a besoin d'invalider. Elles ont un nom
-  et aucun producteur déclaré.
+- `account:cart`, `account:devices` and `account:profile` are **emitted** by writes but
+  **absent** from the feed vocabulary. A cart modified on another device — a case `realtime.md`
+  §2 explicitly provides for on the `viewer:{profileId}` room — therefore never invalidates
+  anything on the Next server;
+- **`date:{id}`, `artist:{id}` and `category:{id}` are in the vocabulary and are emitted by no
+  operation.** Those are precisely the three tags of the **public, indexable** pages, and
+  therefore the only three the server render needs to invalidate. They have a name and no
+  declared producer.
 
-Autrement dit : le cas exact que ma question 6 posait — *une date passe en direct, une promotion
-expire, un artiste publie une rediffusion, et le storefront n'en est pas la cause* — a reçu une
-réponse de principe, un nom d'étiquette, et aucun mécanisme.
+Put another way: the exact case my question 6 raised — *a date goes live, a promotion expires, an
+artist publishes a replay, and the storefront did not cause any of it* — received an answer in
+principle, a tag name, and no mechanism.
 
-**Ce que je demande** : une opération nommée, non authentifiée par session (le serveur de rendu
-s'authentifie par un secret de service, pas par un cookie de spectateur), qui pousse ou expose les
-étiquettes **publiques** ; et l'alignement des deux listes, dans le même fichier.
+**What I am asking for**: a named operation, not authenticated by session (the render server
+authenticates with a service secret, not with a viewer's cookie), that pushes or exposes the
+**public** tags; and the alignment of the two lists, in the same file.
 
-#### ❹ Cinq écrans — ou moitiés d'écran — ne sont pas servis
+#### ❹ Five screens — or half-screens — are not served
 
-**(a) `following` — la page entière n'a aucun point d'entrée.**
-Elle affiche les artistes suivis, leurs prochaines dates, et la section « Suivis en direct »
-(`discovery.side.followLive`, `discovery.search.emptyFollowLive`). Or :
+**(a) `following` — the whole page has no entry point.**
+It shows the followed artists, their upcoming dates, and the "Followed, live now" section
+(`discovery.side.followLive`, `discovery.search.emptyFollowLive`). Yet:
 
-- `/v1/me/follows/{artistId}` n'expose que `PUT` et `DELETE` — **il n'y a pas de collection**
-  `GET /v1/me/follows` ;
-- `/v1/artists` accepte `categoryId`, `sort` et `liveOnly`, **pas `followedOnly`** ;
-- `AccountScreen` ne porte pas la liste des suivis ;
-- `HomeScreen.rails[].kind` contient bien `followed`, mais c'est **une rangée de l'accueil**, pas
-  une page : elle n'a ni tri, ni bascule d'affichage, ni retrait sur place, ni ses états vides.
+- `/v1/me/follows/{artistId}` exposes only `PUT` and `DELETE` — **there is no collection**
+  `GET /v1/me/follows`;
+- `/v1/artists` accepts `categoryId`, `sort` and `liveOnly`, **not `followedOnly`**;
+- `AccountScreen` does not carry the list of follows;
+- `HomeScreen.rails[].kind` does contain `followed`, but that is **a home page rail**, not a
+  page: it has no sort, no view toggle, no unfollow in place, and none of its empty states.
 
-Le seul moyen actuel de peindre cette page est de parcourir `/v1/artists` en entier et de filtrer
-sur `followedByViewer` côté client — c'est-à-dire exactement ce que le contrat interdit ailleurs,
-et à juste titre (`Rail`, note : « la maquette charge 1 814 dates et filtre côté client, ce que le
-contrat doit rendre impossible »).
+The only way to paint this page today is to walk `/v1/artists` in full and filter on
+`followedByViewer` client-side — that is, exactly what the contract forbids elsewhere, and
+rightly so (`Rail`, note: "the mockup loads 1,814 dates and filters client-side, which the
+contract must make impossible").
 
-**(b) `account/faves` est servie à moitié.** « Mes favoris » porte deux collections : les
-**artistes suivis** et les **spectacles mis de côté** (`account.alerts.savedShows`). La seconde a
-`/v1/me/watchlist` ; la première est le même trou qu'en (a).
+**(b) `account/faves` is half served.** "My favourites" carries two collections: the **followed
+artists** and the **saved shows** (`account.alerts.savedShows`). The second has
+`/v1/me/watchlist`; the first is the same hole as in (a).
 
-**(c) `account/security` est en lecture seule.** `AccountScreen.security` rend
-`{ twoFactorEnabled, passkeyCount, hasPassword }`. Les quatre lignes de l'écran ont chacune une
-action — *modifier* le mot de passe, *gérer* la 2FA, *ajouter* une clé d'accès, *gérer* les moyens
-de paiement — et **aucune n'a d'opération**. `adr-auth.md` §7 place ces fonctions chez `identity`
-via better-auth, ce qui est un bon choix ; mais le document ne dit nulle part **comment la surface
-web les atteint**, alors que `critical-rules.md` n°1 pose qu'un service n'est appelé que par le
-BFF. Le contrat que le chef me désigne comme le mien est muet sur quatre actions d'un écran que
-j'ai énuméré.
+**(c) `account/security` is read-only.** `AccountScreen.security` returns
+`{ twoFactorEnabled, passkeyCount, hasPassword }`. The four rows of the screen each have an
+action — *change* the password, *manage* 2FA, *add* a passkey, *manage* payment methods — and
+**none has an operation**. `adr-auth.md` §7 places those functions in `identity` via better-auth,
+which is a good choice; but the document nowhere says **how the web surface reaches them**, while
+`critical-rules.md` rule 1 states that a service is only ever called by the BFF. The contract the
+lead points to as mine is silent on four actions of a screen I enumerated.
 
-**(d) L'authentification elle-même n'a pas de contrat sur ma surface.** Créer un compte, se
-connecter par courriel et mot de passe, se connecter par Google ou Facebook, se déconnecter,
-réinitialiser un mot de passe : aucune opération dans `openapi/storefront.yaml`. Les seuls chemins
-d'identité livrés sont l'appairage d'appareil (le parcours TV) et
-`DELETE /v1/me/device-sessions/{sessionId}`. La modale d'authentification du web est la **porte
-d'entrée** du produit ; elle n'est pas dans le contrat du produit.
+**(d) Authentication itself has no contract on my surface.** Create an account, sign in with
+email and password, sign in with Google or Facebook, sign out, reset a password: no operation in
+`openapi/storefront.yaml`. The only identity paths delivered are device pairing (the TV journey)
+and `DELETE /v1/me/device-sessions/{sessionId}`. The web's authentication modal is the **front
+door** of the product; it is not in the product's contract.
 
-Je comprends l'intention — better-auth monte ses propres routes. Mais alors le contrat doit
-**dire** où elles sont montées, sous quel domaine (la portée du cookie de session en dépend, et
-avec elle la capacité du serveur Next à lire la session), et comment elles se composent avec le
-BFF. Sinon trois surfaces feront trois hypothèses.
+I understand the intent — better-auth mounts its own routes. But then the contract must **say**
+where they are mounted, under which domain (the session cookie's scope depends on it, and with it
+the Next server's ability to read the session), and how they compose with the BFF. Otherwise three
+surfaces will make three assumptions.
 
-**(e) `category` filtrée n'est pas servie.** `GET /v1/categories/{categoryId}` n'accepte que
-`categoryId`, `Surface` et `Traceparent` : **ni `section`, ni `cursor`, ni `limit`, ni filtre, ni
-sous-genre.** Or la réponse porte `sections[].nextCursor` et `facets[]`, et sa description
-annonce : « Les quatre autres sections portent chacune leur curseur ». **Aucune opération
-n'accepte ce curseur.** Les quatre boutons « Voir plus » de la page ne mènent nulle part, et le
-panneau de filtres propre à la discipline (tarif, date, statut, bientôt complet, en promotion,
-tri, sous-genre) n'a aucun paramètre où se poser.
+**(e) A filtered `category` is not served.** `GET /v1/categories/{categoryId}` accepts only
+`categoryId`, `Surface` and `Traceparent`: **no `section`, no `cursor`, no `limit`, no filter, no
+sub-genre.** Yet the response carries `sections[].nextCursor` and `facets[]`, and its description
+announces: "The four other sections each carry their own cursor." **No operation accepts that
+cursor.** The page's four "Show more" buttons lead nowhere, and the discipline's own filter panel
+(price, date, status, almost sold out, on promotion, sort, sub-genre) has no parameter to land in.
 
-Le même défaut touche l'accueil : `Rail.nextCursor` existe et **aucune opération ne le consomme**.
-Trois curseurs servis, zéro consommateur.
+The same fault hits the home page: `Rail.nextCursor` exists and **no operation consumes it**.
+Three cursors served, zero consumers.
 
-#### ❺ Le rendu serveur ne tient pas — et je reconnais que je ne l'avais pas posé en question
+#### ❺ The server render does not hold — and I acknowledge I never put it as a question
 
-C'était ma contrainte Next.js n°2, pas l'une de mes 30 questions : **les lectures publiques et
-personnalisées doivent être séparables**, parce qu'une fonction mise en cache par Next ne peut lire
-ni cookies, ni en-têtes, ni `searchParams`. Le contrat ne m'a donc rien refusé — il n'a pas été
-interrogé. Je le remonte maintenant parce que c'est la question 4 du chef, et la réponse est non.
+This was my Next.js constraint number 2, not one of my 30 questions: **public and personalised
+reads must be separable**, because a function cached by Next can read neither cookies, nor
+headers, nor `searchParams`. The contract therefore refused me nothing — it was not asked. I am
+raising it now because it is the lead's question 4, and the answer is no.
 
-**Sur pièces** : `DateCard` porte dans le **même objet** le corps public (titre, instants, jauge,
-tarifs, droits) **et** trois surcouches par spectateur — `watchVerdict`, `viewerRelations`,
+**On the evidence**: `DateCard` carries in the **same object** the public body (title, instants,
+capacity, prices, rights) **and** three per-viewer overlays — `watchVerdict`, `viewerRelations`,
 `viewerProgress`. `HomeScreen.rails[].items`, `CategoryScreen.sections[].items`,
-`ShowGroup.representativeDate`, `ArtistDetail.upcomingDates` et `listMyReplays` renvoient tous des
-`DateCard`. Il n'existe **aucune variante publique**, aucun paramètre qui demande d'omettre les
-surcouches, aucun en-tête `Vary` ni `Cache-Control` déclaré.
+`ShowGroup.representativeDate`, `ArtistDetail.upcomingDates` and `listMyReplays` all return
+`DateCard`s. There is **no public variant**, no parameter asking for the overlays to be omitted,
+and no declared `Vary` or `Cache-Control` header.
 
-`answers-to-surfaces.md` Q6 (storefront TV) répond bien à cette famille de problème — « composer au
-BFF avec un cache court : le corps public en cache Redis, la surcouche fusionnée à la requête ».
-**C'est la bonne réponse au problème du BFF, et ce n'est pas une réponse au mien.** Elle produit,
-côté client, une réponse unique qui varie par spectateur. Pour Next, deux issues seulement :
+`answers-to-surfaces.md` Q6 (storefront TV) does answer this family of problem — "compose at the
+BFF with a short cache: the public body in a Redis cache, the overlay merged at request time".
+**That is the right answer to the BFF's problem, and it is not an answer to mine.** On the client
+side it produces a single response that varies per viewer. For Next, there are only two outcomes:
 
-- mettre cette réponse en cache → **on sert à un visiteur l'état personnel d'un autre**. C'est une
-  fuite, pas un compromis ;
-- ne rien mettre en cache sur les routes indexables → chaque visite et chaque passage de robot
-  traverse le BFF de bout en bout, et le gain de la coquille pré-rendue est nul.
+- cache that response → **we serve one visitor another visitor's personal state**. That is a leak,
+  not a trade-off;
+- cache nothing on the indexable routes → every visit and every crawl traverses the BFF end to
+  end, and the prerendered shell buys nothing at all.
 
-L'`ETag` de `GET /v1/dates/{dateId}` aggrave le point plutôt qu'il ne l'aide : le corps variant par
-spectateur, le validateur varie avec lui, et le pré-chargement mutualisé qu'il promet à la TV ne
-vaut pas pour un cache partagé.
+The `ETag` on `GET /v1/dates/{dateId}` makes the point worse rather than better: since the body
+varies per viewer, the validator varies with it, and the shared prefetch it promises the TV does
+not hold for a shared cache.
 
-**Ce que je demande** est petit et mécanique : que les chemins de catalogue acceptent une **lecture
-anonyme**, dont le contrat déclare qu'elle omet `watchVerdict`, `viewerRelations` et
-`viewerProgress` et qu'elle est **identique pour tous les appelants non authentifiés**. C'est
-`degraded[]` élevé au rang de mode explicite — la forme existe déjà, il lui manque d'être
-demandable. Avec ❶ et ❸, cela referme les trois trous d'un coup.
+**What I am asking for** is small and mechanical: that the catalogue paths accept an **anonymous
+read**, which the contract declares omits `watchVerdict`, `viewerRelations` and `viewerProgress`
+and is **identical for every unauthenticated caller**. That is `degraded[]` raised to an explicit
+mode — the shape already exists, it just cannot be requested. Together with ❶ and ❸, that closes
+all three holes at once.
 
-#### ❻ Les petites choses, vérifiables en une minute chacune
+#### ❻ The small things, each verifiable in a minute
 
-1. **`/v1/search` perd un tri.** `sort: [relevance, soon, popularity, price_asc]` — il manque
-   `price_desc`, alors que `shared/i18n/storefront.json` porte
-   `discovery.filter.sortPriceDown | Prix ↓` et que la maquette l'expose dans la même liste que les
-   quatre autres. Quatre tris sur cinq.
-2. **`filters` est un `{ type: string }` sans grammaire.** C'est le paramètre le plus important de
-   l'écran le plus utilisé, et le seul du fichier qui ne soit pas typé. L'OpenAPI étant **généré
-   depuis zod**, une chaîne libre signifie que zod ne valide rien. Trois surfaces le sérialiseront
-   de trois façons, et `SavedSearch.criteria` (`additionalProperties: true`) ne les départagera
-   pas — alors même que `criteriaSignature` est produite par `normalizeSearchCriteria()` dans
-   `@arthome/core`, donc qu'une forme normalisée **existe déjà**. Il faut la publier.
-3. **Le budget d'aperçu gratuit n'est nulle part.** `WatchVerdict.previewSecondsLeft` donne le
-   **reste** ; `DomainConstants` ne porte pas le **total**. Le compte à rebours « il vous reste
-   4 min 12 » a donc un reste et pas de total, et le libellé de la copie dit « les 5 premières
-   minutes ». `critical-rules.md` n°15 exige qu'une constante d'exploitation ait un document
-   propriétaire : celle-ci n'en a pas.
-4. **Deux codes d'erreur annoncés et jamais nommés.** `cancelSeat` : « le refus après échéance
-   porte son propre code » — le code n'existe dans aucune liste. `quoteSeat` : « minimum et maximum
-   [de la contribution libre] sont des règles du domaine, et le refus porte son propre code » —
-   idem. Un code non nommé sera inventé trois fois.
-5. **L'adresse du devis et celle du paiement peuvent diverger.** `quoteCart` calcule le port sur
-   `{ shippingCountryCode, shippingPostalCode }` ; `checkoutCart` reçoit un `shippingAddress`
-   complet et rien ne dit qu'il doit correspondre. Un devis « opposable » dont l'adresse change
-   entre-temps n'est plus opposable, et aucun code de refus ne couvre ce cas.
-6. **`emptyReason` porte sept valeurs** pour une quinzaine d'états vides rédigés dans `shared/i18n`.
-   Manquent au moins : aucun artiste **suivi** (distinct de `no_followed_artist_live`), panier vide,
-   aucune recherche enregistrée, et les trois vides de la page discipline que la copie distingue
-   (`emptyCatLive`, `emptyCatUpcoming`, `emptyCatReplays`) là où `nothing_in_category_yet` les
-   confond.
-7. **La langue de sous-titrage préférée a disparu.** `ViewerPreferences.account` porte
-   `subtitlesDefault: boolean` ; la maquette porte `prefs.subs: 'fr'`, une **langue**. Activer les
-   sous-titres et choisir leur langue sont deux réglages.
+1. **`/v1/search` loses a sort.** `sort: [relevance, soon, popularity, price_asc]` — `price_desc`
+   is missing, while `shared/i18n/storefront.json` carries
+   `discovery.filter.sortPriceDown | Prix ↓` and the mockup exposes it in the same list as the
+   other four. Four sorts out of five.
+2. **`filters` is a `{ type: string }` with no grammar.** It is the most important parameter of
+   the most used screen, and the only one in the file that is not typed. Since the OpenAPI is
+   **generated from zod**, a free string means zod validates nothing. Three surfaces will
+   serialise it three ways, and `SavedSearch.criteria` (`additionalProperties: true`) will not
+   arbitrate between them — even though `criteriaSignature` is produced by
+   `normalizeSearchCriteria()` in `@arthome/core`, so a normalised shape **already exists**. It
+   needs publishing.
+3. **The free-preview budget is nowhere.** `WatchVerdict.previewSecondsLeft` gives the
+   **remainder**; `DomainConstants` does not carry the **total**. The "4 min 12 left" countdown
+   therefore has a remainder and no total, and the copy says "the first 5 minutes".
+   `critical-rules.md` rule 15 requires an operational constant to have an owning document: this
+   one has none.
+4. **Two error codes announced and never named.** `cancelSeat`: "a refusal after the deadline
+   carries its own code" — that code exists in no list. `quoteSeat`: "minimum and maximum [of the
+   open contribution] are domain rules, and the refusal carries its own code" — likewise. A code
+   that is not named will be invented three times.
+5. **The quote's address and the payment's address can diverge.** `quoteCart` computes shipping
+   from `{ shippingCountryCode, shippingPostalCode }`; `checkoutCart` receives a full
+   `shippingAddress` and nothing says it must match. A "binding" quote whose address changes in
+   between is no longer binding, and no refusal code covers that case.
+6. **`emptyReason` carries seven values** for some fifteen empty states written in `shared/i18n`.
+   Missing at least: no artist **followed** (distinct from `no_followed_artist_live`), empty cart,
+   no saved search, and the three empties of the discipline page which the copy distinguishes
+   (`emptyCatLive`, `emptyCatUpcoming`, `emptyCatReplays`) where `nothing_in_category_yet`
+   conflates them.
+7. **The preferred subtitle language has disappeared.** `ViewerPreferences.account` carries
+   `subtitlesDefault: boolean`; the mockup carries `prefs.subs: 'fr'`, a **language**. Turning
+   subtitles on and choosing their language are two settings.
 
 ---
 
-### Ce qui est satisfait autrement que demandé — et si ça me va
+### What is satisfied otherwise than asked — and whether that suits me
 
-| Ce que je demandais | Ce que j'obtiens | Verdict |
+| What I asked for | What I get | Verdict |
 |---|---|---|
-| Un compteur de correspondances par recherche enregistrée | **« Nouvelles depuis votre dernière visite »**, poussé par le *percolator*, remis à zéro à la lecture (Q23) | **Mieux.** Dix recherches coûtent zéro requête de comptage au lieu de dix. Je retire ma question. |
-| Savoir si le prix est vérifié à l'achat | `PRICE_STALE` **plus** `expectedTotal` obligatoire dans le corps | **Mieux** : le contrat rend le défaut impossible à ignorer, au lieu de le signaler après coup. |
-| Un motif de liste vide | Motif **et** `emptyActionCode` | **Mieux** — sous réserve du point ❻.6. |
-| Que `decideWatch` me donne de quoi peindre sans second appel | Deux sites d'évaluation, `advisory: true`, **même vocabulaire de refus** des deux côtés | **Mieux.** Le drapeau `advisory` est la précision qui empêche la surface de croire qu'elle décide. |
-| Qui nomme les clés d'invalidation | `x-arthome-invalidates` **par opération** | **Mieux** dans le principe — inutilisable en l'état, voir ❸. |
-| La devise d'affichage comme préférence (Q29) | **Retirée** (D-016), retrait déclaré réversible | **Ça me va, et je ne conteste pas.** L'argument est juste : afficher un prix converti qu'on ne peut pas débiter est un mensonge, et D4 montre qu'aucune règle n'a été éprouvée sur deux taux. **Une conséquence à écrire quand même** : ma surface est celle où un visiteur suisse ou canadien atterrit depuis un moteur de recherche, et la page indexée affichera un prix en euros à tout le monde — y compris dans les données structurées qu'un moteur lit. Ce n'est pas un défaut, c'est un fait à assumer explicitement plutôt qu'à découvrir. |
-| Deux commandes, places et marchandise | **D-011 : deux commandes distinctes** | **Ça me va** — c'est ce que j'avais vérifié contre l'instruction du chef, et le contrat suit la conception plutôt que l'intention. |
-| Que le catalogue de libellés ne soit pas sur le chemin de rendu | Le web résout ses codes **depuis l'instantané embarqué au build** (Q30) | **Ça me va, avec sa conséquence assumée** : le catalogue dynamique ne sert jamais le web, et une coquille attend un déploiement. C'est cohérent — le besoin qui le motivait était mobile et TV. |
-| Le port au devis | Calculé au devis sur pays + code postal, opposable 15 min, **groupé par vendeur** | **Mieux** — sous réserve de ❻.5. |
+| A match counter per saved search | **"New since your last visit"**, pushed by the *percolator*, reset on read (Q23) | **Better.** Ten searches cost zero counting queries instead of ten. I withdraw my question. |
+| To know whether the price is verified at purchase | `PRICE_STALE` **plus** a mandatory `expectedTotal` in the body | **Better**: the contract makes the fault impossible to ignore, instead of reporting it after the fact. |
+| A reason for an empty list | Reason **and** `emptyActionCode` | **Better** — subject to point ❻.6. |
+| That `decideWatch` give me enough to paint without a second call | Two evaluation sites, `advisory: true`, **the same refusal vocabulary** on both | **Better.** The `advisory` flag is the precision that stops the surface believing it decides. |
+| Who names the invalidation keys | `x-arthome-invalidates` **per operation** | **Better** in principle — unusable as it stands, see ❸. |
+| The display currency as a preference (Q29) | **Withdrawn** (D-016), the withdrawal declared reversible | **That suits me, and I am not contesting it.** The argument is right: showing a converted price you cannot charge is a lie, and D4 shows no rule has ever been exercised on two rates. **One consequence to write down anyway**: my surface is the one where a Swiss or Canadian visitor lands from a search engine, and the indexed page will show a price in euros to everybody — including in the structured data an engine reads. That is not a defect, it is a fact to own explicitly rather than discover. |
+| Two commands, seats and merchandise | **D-011: two distinct commands** | **That suits me** — it is what I verified against the lead's instruction, and the contract follows the design rather than the intention. |
+| That the label catalogue not be on the render path | The web resolves its codes **from the build-time snapshot** (Q30) | **That suits me, with its owned consequence**: the dynamic catalogue never serves the web, and a typo waits for a deployment. It is coherent — the need that motivated it was mobile and TV. |
+| Shipping at the quote | Computed at the quote from country + postcode, binding for 15 min, **grouped per seller** | **Better** — subject to ❻.5. |
 
 ---
 
-### Les questions restées sans réponse
+### Questions left unanswered
 
-Aucune de mes 30 questions n'est sans réponse — `answers-to-surfaces.md` tient sa promesse. Les
-questions ci-dessous sont **nouvelles**, nées de la lecture de l'offre :
+None of my 30 questions is unanswered — `answers-to-surfaces.md` keeps its promise. The questions
+below are **new**, born of reading the offer:
 
-1. **Que reçoit exactement un robot d'indexation ?** (❶) Quelle authentification, quel corps, quels
-   champs omis, quelle fraîcheur. Tant que ce n'est pas écrit, le rendu serveur de ma surface est
-   une intention.
-2. **Où sont montées les routes d'authentification, sous quel domaine, et comment le serveur Next
-   lit-il la session ?** (❹d) La portée du cookie décide de tout : si le cookie est posé par
-   `identity` sur un autre domaine que le BFF, le serveur Next ne le voit pas et aucune page
-   personnalisée ne se rend côté serveur.
-3. **Quelle opération rend le `client_secret` et l'URL de retour du paiement, et quelle opération
-   reprend une commande restée `awaiting_action` ?** (❷)
-4. **Quelle opération ajoute ou retire un moyen de paiement depuis le web ?** (❷)
-5. **Quelle opération consomme `Rail.nextCursor` et `CategoryScreen.sections[].nextCursor` ?** Et
-   par quels paramètres la page discipline filtre-t-elle ? (❹e)
-6. **Qui émet `date:{id}`, `artist:{id}` et `category:{id}` ?** Aucune opération ne les déclare, et
-   ce sont les trois seules qui comptent pour une page publique mise en cache. (❸)
-7. **Existe-t-il une collection des artistes suivis**, ou un `followedOnly` sur `/v1/artists` ? (❹a)
-8. **Le total de l'aperçu gratuit est-il une constante de domaine servie**, et où ? (❻.3)
-9. **Quelle est la grammaire publiée du paramètre `filters`**, et est-ce la même forme que
-   `SavedSearch.criteria` ? (❻.2)
+1. **What exactly does a crawler receive?** (❶) Which authentication, which body, which fields
+   omitted, which freshness. Until that is written, my surface's server render is an intention.
+2. **Where are the authentication routes mounted, under which domain, and how does the Next
+   server read the session?** (❹d) The cookie's scope decides everything: if the cookie is set by
+   `identity` on a different domain from the BFF, the Next server does not see it and no
+   personalised page renders server-side.
+3. **Which operation returns the `client_secret` and the payment's return URL, and which
+   operation resumes an order left in `awaiting_action`?** (❷)
+4. **Which operation adds or removes a payment method from the web?** (❷)
+5. **Which operation consumes `Rail.nextCursor` and `CategoryScreen.sections[].nextCursor`?** And
+   through which parameters does the discipline page filter? (❹e)
+6. **Who emits `date:{id}`, `artist:{id}` and `category:{id}`?** No operation declares them, and
+   they are the only three that matter for a cached public page. (❸)
+7. **Is there a collection of followed artists**, or a `followedOnly` on `/v1/artists`? (❹a)
+8. **Is the free-preview total a served domain constant**, and where? (❻.3)
+9. **What is the published grammar of the `filters` parameter**, and is it the same shape as
+   `SavedSearch.criteria`? (❻.2)
 
 ---
 
-### Une incohérence de source, repérée en chemin
+### One source inconsistency, spotted along the way
 
-À ajouter aux onze déjà relevées, parce qu'elle sera rencontrée au portage :
-**`shared/i18n/storefront.json` porte `support.topic3Hint` sans `support.topic3`.** Le troisième
-sujet du formulaire d'aide — celui des rediffusions — a son texte d'aide et pas son libellé, alors
-que les cinq autres ont les deux. Le contrat côté serveur est juste (`topic: enum [..., replay,
-...]`) ; c'est la copie qui manque.
+To be added to the eleven already listed, because it will be met at porting time:
+**`shared/i18n/storefront.json` carries `support.topic3Hint` without `support.topic3`.** The third
+topic of the help form — the one about replays — has its hint text and not its label, while the
+other five have both. The server-side contract is right (`topic: enum [..., replay, ...]`); it is
+the copy that is missing.

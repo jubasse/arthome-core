@@ -1,997 +1,969 @@
-# Besoins — studio mobile (Angular + Ionic + Capacitor)
+# Needs — studio mobile (Angular + Ionic + Capacitor)
 
-> Ce que le contrat doit porter et garantir pour l'outil de garde. Aucune description d'écran :
-> les maquettes sont la conception. Ce document dit **ce dont la surface a besoin**, et pourquoi
-> la coquille native et la situation de garde rendent certains besoins non négociables.
+> What the contract must carry and guarantee for the duty tool. No screen descriptions: the
+> mockups *are* the design. This document states **what the surface needs**, and why the native
+> shell and the duty situation make some needs non-negotiable.
 >
-> Sources lues : `mockups/Studio Mobile.dc.html` (par fragments), `shared/helpers.js`,
+> Sources read: `mockups/Studio Mobile.dc.html` (in fragments), `shared/helpers.js`,
 > `shared/studio-data.js`, `shared/catalogue.json`, `shared/fixtures.js`, `shared/i18n/studio.json`,
 > `README.md` §7, `streaming.md`, `architecture/corrections-handoff.md`.
 >
-> Orchestrateurs chargés avant toute décision : `ionic-capacitor-how-to`, puis `angular-how-to`
-> (D-001). Aucune de leurs règles ne contredit une décision du projet ; là où elles pèsent sur le
-> contrat, elles sont citées.
+> Orchestrators loaded before any decision: `ionic-capacitor-how-to`, then `angular-how-to`
+> (D-001). None of their rules contradicts a project decision; where they bear on the contract,
+> they are cited.
 
 ---
 
-## Inventaire des écrans
+## Screen inventory
 
-**Même arbre que le studio web.** Le relevé du chef est exact et complet. Je le confirme et le
-complète ci-dessous ; je ne redécris pas les écrans que le studio web couvrira.
+**Same tree as the studio web.** The lead's survey is accurate and complete. I confirm and extend
+it below; I do not re-describe the screens the studio web will cover.
 
 ### Pages
 
 `agenda` · `dashboard` · `moderation` · `crew` · `events` · `stream` · `stats` · `tickets` ·
 `store` · `replays` · `payouts` · `journal` · `settings` · `help` · `regie` · `event` · `wizard` ·
-`inbox` — dix-huit, dont quatorze au menu (`ORDER`) et quatre hors menu.
+`inbox` — eighteen, of which fourteen are in the menu (`ORDER`) and four are not.
 
-La distinction entre les deux familles n'est pas cosmétique, elle est portée par deux tables
-distinctes de la maquette et elle commande l'autorisation :
+The distinction between the two families is not cosmetic. It is carried by two separate tables in
+the mockup and it governs authorization:
 
-| Famille | Table | Ce que c'est |
+| Family | Table | What it is |
 |---|---|---|
-| Pages de menu | `ACCESS[role]` | ce qu'un rôle **ouvre**, et ce qui peuple la barre et la feuille |
-| Pages contextuelles | `FREE[role]` | `event`, `wizard`, `regie` — atteintes **depuis** une autre page, jamais listées |
-| Boîte | en dur | `inbox` est ajoutée à `FREE` pour tous, sans condition de rôle |
+| Menu pages | `ACCESS[role]` | what a role **opens**, and what fills the bar and the sheet |
+| Contextual pages | `FREE[role]` | `event`, `wizard`, `regie` — reached **from** another page, never listed |
+| Inbox | hardcoded | `inbox` is added to `FREE` for everyone, with no role condition |
 
-### Sous-onglets relevés
+### Sub-tabs found
 
-| Page | Sous-onglets | Origine |
+| Page | Sub-tabs | Origin |
 |---|---|---|
-| `moderation` | `live` · `queue` · `filter` · `sanct` | fixes |
-| `crew` | `members` · `matrix` · `guests` · `log` | fixes |
-| `regie` | `ov` · `chat` · `crew` · `q` | fixes |
-| **`event`** | `public` · `tickets` · `chat` · `tech` · `crew` · `replay` | **dérivés du rôle** |
-| `events` | `à venir` / `passé` | scission temporelle, pas des onglets |
-| `stats` | `audience` / `series`, chacun en graphique ou en table | fixes |
+| `moderation` | `live` · `queue` · `filter` · `sanct` | fixed |
+| `crew` | `members` · `matrix` · `guests` · `log` | fixed |
+| `regie` | `ov` · `chat` · `crew` · `q` | fixed |
+| **`event`** | `public` · `tickets` · `chat` · `tech` · `crew` · `replay` | **role-derived** |
+| `events` | `upcoming` / `past` | a temporal split, not tabs |
+| `stats` | `audience` / `series`, each as a chart or a table | fixed |
 
-**Le sixième cas est le plus important et manquait au relevé.** Les six onglets de la fiche de date
-portent chacun une liste de rôles (`public` : artist, prod — `tickets` : artist, prod, tres —
-`chat` : artist, prod, mod — `tech` : artist, prod, regie, coord — `crew` : artist, prod, coord —
-`replay` : artist, prod). Une septième entrée, « vue d'ensemble », n'apparaît que si trois onglets
-au moins sont ouverts à la personne. **Un écran de détail dont la découpe même dépend des droits
-effectifs** : ce n'est pas seulement la navigation racine qui doit connaître les droits avant de
-peindre, c'est aussi chaque fiche.
+**The sixth case is the most important one, and it was missing from the survey.** Each of the six
+tabs on the date record carries its own list of roles (`public`: artist, prod — `tickets`: artist,
+prod, tres — `chat`: artist, prod, mod — `tech`: artist, prod, regie, coord — `crew`: artist, prod,
+coord — `replay`: artist, prod). A seventh entry, "overview", appears only when at least three tabs
+are open to the person. **A detail screen whose very division depends on effective rights**: it is
+not only the root navigation that must know the rights before painting, it is every record too.
 
-### Feuilles de dialogue
+### Dialog sheets
 
-Recensées, parce que chacune est un point de commande et non un ornement : `more` (le reste des
-pages), `chan` (sélecteur de chaîne), `account` (compte et fuseau de lecture), `states`, `sort`,
-`move` (transition d'état), `dup`, `del`, `banword`, `mute`, `crewdate`, `slot`, `role`, `invite`,
-`refund`, `slug`, `danger`, `confirm`.
+Listed, because each one is a command point and not an ornament: `more` (the remaining pages),
+`chan` (channel picker), `account` (account and reading timezone), `states`, `sort`, `move` (state
+transition), `dup`, `del`, `banword`, `mute`, `crewdate`, `slot`, `role`, `invite`, `refund`,
+`slug`, `danger`, `confirm`.
 
 ### Six personas
 
-`artist` · `prod` · `regie` · `mod` · `coord` · `tres`. **Ce sont six projections de huit rôles
-réels** (`memberRoles` : artist, production, coordination, director, video, sound, moderation,
-treasury). Voir « Incohérences relevées », point 3 : la projection n'est pas sûre pour
-l'autorisation.
+`artist` · `prod` · `regie` · `mod` · `coord` · `tres`. **These are six projections of eight real
+roles** (`memberRoles`: artist, production, coordination, director, video, sound, moderation,
+treasury). See "Inconsistencies found", point 3: the projection is not safe for authorization.
 
 ---
 
-## Ce qui distingue cette surface du studio web
+## What sets this surface apart from the studio web
 
-Cinq différences. Aucune n'est une question de taille d'écran ; toutes les cinq changent ce que le
-contrat doit porter.
+Five differences. None of them is a matter of screen size; all five change what the contract must
+carry.
 
-### 1. La racine n'est pas une chaîne, c'est une personne
+### 1. The root is not a channel, it is a person
 
-Le studio web s'ouvre sur une chaîne et y reste. Le studio mobile s'ouvre sur `agenda` — « **vos
-gardes, toutes chaînes** » — pour les rôles `regie` et `mod`. Cet écran agrège, **toutes chaînes
-confondues**, les dates que la personne doit tenir : titre, chaîne, rôle qu'elle y tient, jour,
-heure de salle **et** heure chez elle, état de la date, durée annoncée. Il détecte de surcroît les
-**gardes qui se recouvrent** (« deux flux à tenir ce soir »).
+The studio web opens on a channel and stays there. The studio mobile opens on `agenda` — "**your
+duties, all channels**" — for the `regie` and `mod` roles. That screen aggregates, **across every
+channel**, the dates the person has to hold: title, channel, the role they hold there, day, venue
+time **and** their own local time, date state, announced runtime. It also detects **overlapping
+duties** ("two streams to hold tonight").
 
-**Ce que le contrat doit porter** : un modèle de lecture **centré sur la personne, pas sur la
-chaîne**. Une seule requête doit rendre l'intégralité des gardes de la personne sur une fenêtre
-temporelle, avec pour chacune l'identifiant de chaîne, l'identifiant de date, le rôle tenu **sur
-cette chaîne-là**, l'instant de lever de rideau et le fuseau IANA de la salle. Sans cela, l'écran
-d'accueil de l'outil de garde exige N requêtes, une par chaîne, sur le réseau d'une salle.
+**What the contract must carry**: a read model **centred on the person, not on the channel**. One
+single request must return the person's duties in full over a time window, each carrying the
+channel identifier, the date identifier, the role held **on that particular channel**, the
+curtain-up instant and the venue's IANA timezone. Without it, the home screen of the duty tool
+costs N requests, one per channel, on a venue's network.
 
-Le chevauchement doit être **calculé une seule fois** : c'est une règle de domaine (deux gardes se
-recouvrent si leurs fenêtres antenne se chevauchent, fenêtre = lever de rideau − ouverture des
-portes → fin annoncée). Elle appartient à `@arthome/core`, pas à deux surfaces.
+The overlap must be **computed once**: it is a domain rule (two duties overlap when their on-air
+windows overlap, window = curtain-up − doors open → announced end). It belongs in `@arthome/core`,
+not in two surfaces.
 
-### 2. Quatre onglets au plus, dérivés du rôle — donc les droits avant le premier rendu
+### 2. Four tabs at most, derived from the role — so rights before the first paint
 
-La barre du bas se calcule ainsi, dans cet ordre exact :
+The bottom bar is computed like this, in exactly this order:
 
 ```
-roles      = rôle tenu sur la chaîne courante  ∪  second rôle éventuel
-union      = ⋃ ACCESS[r] pour r ∈ roles          « l'accès est l'union des rôles, jamais un rang »
-allowed    = ORDER filtré par union              ordre canonique, pas l'ordre d'arrivée
+roles      = role held on the current channel  ∪  optional second role
+union      = ⋃ ACCESS[r] for r ∈ roles           "access is the union of roles, never a rank"
+allowed    = ORDER filtered by union             canonical order, not arrival order
 free       = ⋃ FREE[r] + inbox
-pref       = ⋃ TAB_PREF[r], dédupliqué           ordre de préférence par rôle
-tabs       = pref ∩ (allowed ∪ free), 4 au plus  + une entrée « Plus » toujours présente
+pref       = ⋃ TAB_PREF[r], deduplicated         per-role preference order
+tabs       = pref ∩ (allowed ∪ free), 4 at most  + a "More" entry, always present
 ```
 
-Trois conséquences pour le contrat, et elles sont lourdes :
+Three consequences for the contract, and they are heavy:
 
-**a. Les droits effectifs doivent arriver avant la première peinture.** L'application ne peut pas
-dessiner sa navigation puis la corriger : la barre d'onglets est la carte mentale de la personne en
-garde, et une barre qui change sous le pouce pendant un direct est une faute. Il faut donc **une
-ressource d'amorçage unique**, lue avant l'activation de la première route, qui porte : le compte,
-**toutes** les chaînes où la personne a un accès, et pour chacune le **jeu de rôles effectif**.
-Une lecture par chaîne est exclue — changer de chaîne recalcule toute la navigation, et un aller-
-retour réseau entre le geste et la barre repeinte est inacceptable en garde.
+**a. Effective rights must arrive before the first paint.** The app cannot draw its navigation and
+then correct it: the tab bar is the mental map of a person on duty, and a bar that shifts under the
+thumb during a live show is a fault. So there must be **a single bootstrap resource**, read before
+the first route activates, carrying: the account, **all** the channels where the person has access,
+and for each one the **effective role set**. One read per channel is out of the question —
+switching channel recomputes the whole navigation, and a network round trip between the gesture and
+the repainted bar is unacceptable on duty.
 
-**b. `ACCESS`/`FREE` sont de l'autorisation, `TAB_PREF`/`ORDER` sont de la présentation.**
-L'autorisation vient du contrat et ne se devine pas côté client. L'ordre de préférence, lui, est
-une table de présentation — mais elle doit être **partagée avec le studio web**, qui ordonne le
-même menu : elle vit donc dans `@arthome/core` et non dans le dépôt de l'application. Aucune valeur
-calculée deux fois.
+**b. `ACCESS`/`FREE` are authorization, `TAB_PREF`/`ORDER` are presentation.** Authorization comes
+from the contract and is never guessed client-side. The preference order, on the other hand, is a
+presentation table — but it must be **shared with the studio web**, which orders the same menu: so
+it lives in `@arthome/core`, not in the app's repository. No value computed twice.
 
-**c. Les droits changent pendant que l'application est ouverte.** Une invitation acceptée ajoute une
-chaîne au sélecteur ; un accès ponctuel **expire seul au tomber du rideau** ; un rôle peut être
-retiré. Le contrat doit permettre à l'application d'**apprendre que sa navigation est périmée** —
-un numéro de version des droits, porté sur chaque réponse et poussé sur le canal temps réel. Sans
-lui, la personne garde un onglet qui ouvre un 403, et le découvre en pleine garde.
+**c. Rights change while the app is open.** An accepted invitation adds a channel to the picker; a
+one-off access **expires on its own at curtain-down**; a role can be removed. The contract must let
+the app **learn that its navigation is stale** — a rights version number, carried on every response
+and pushed over the real-time channel. Without it, the person keeps a tab that opens a 403, and
+discovers it mid-duty.
 
-### 3. La redaction par le rôle n'est pas un masquage d'affichage
+### 3. Role-based redaction is not display masking
 
-Deux prédicats gouvernent des pans entiers de contenu :
+Two predicates govern entire swathes of content:
 
-- **`canRevenue`** = artist ∨ prod ∨ tres. Décide si les **montants existent**. La maquette est
-  explicite et le dit à l'écran : « hors de votre droit d'en connaître ». Un régisseur qui escalade
-  un incident voit « 340 places concernées », jamais la recette.
-- **`canDecide`** = artist ∨ prod. Décide des gestes qui engagent les acheteurs : publier, reporter,
-  annuler, dédommager, dupliquer, supprimer, appliquer à la série.
+- **`canRevenue`** = artist ∨ prod ∨ tres. Decides whether **amounts exist at all**. The mockup is
+  explicit and says so on screen: "outside your right to know". A show caller escalating an
+  incident sees "340 seats affected", never the revenue.
+- **`canDecide`** = artist ∨ prod. Governs the gestures that bind the buyers: publish, postpone,
+  cancel, compensate, duplicate, delete, apply to the series.
 
-**Ce que le contrat doit garantir** : un champ interdit est **absent de la charge utile**, jamais
-présent et nul. La nuance est décisive sur mobile : la charge utile est en clair dans le WebView,
-inspectable, et survit dans le cache HTTP du téléphone. Un montant « masqué à l'affichage » est un
-montant livré.
+**What the contract must guarantee**: a forbidden field is **absent from the payload**, never
+present and null. The distinction is decisive on mobile: the payload is in clear in the WebView,
+inspectable, and it survives in the phone's HTTP cache. An amount "hidden at display time" is an
+amount delivered.
 
-Corollaire moins évident : **une clé de tri sur un champ absent doit être refusée**, pas ignorée.
-La page `events` trie sur six clés, dont `rev` (recette). Un tri accepté silencieusement sur un
-champ redacté trahit l'ordre des valeurs qu'il n'a pas le droit de montrer.
+A less obvious corollary: **a sort key on an absent field must be refused**, not ignored. The
+`events` page sorts on six keys, one of which is `rev` (revenue). A sort silently accepted on a
+redacted field betrays the order of the values it is not allowed to show.
 
-### 4. Le régisseur en salle n'est pas au même endroit que le flux
+### 4. The show caller in the venue is not where the stream is
 
-C'est la différence la plus spécifiquement mobile, et la maquette en fait un bloc entier — « deux
-pannes à ne pas confondre » :
+This is the most specifically mobile difference, and the mockup devotes a whole block to it — "two
+failures not to confuse":
 
-| Ce qui se passe | Ce que l'application doit dire | Ce qu'elle doit **surtout** ne pas faire |
+| What is happening | What the app must say | What it must **above all** not do |
 |---|---|---|
-| La salle n'envoie plus rien | « flux perdu » — relancer l'encodeur | — |
-| **Le téléphone a perdu le réseau** | « je ne sais plus » — **la diffusion continue, ne coupez pas** | annoncer que le flux est perdu |
-| Le débit s'effondre | « descendre d'un palier » | — |
+| The venue is sending nothing | "feed lost" — restart the encoder | — |
+| **The phone lost the network** | "I no longer know" — **the broadcast continues, do not cut** | announce that the feed is lost |
+| Bitrate collapses | "step down one tier" | — |
 
-Un studio web est sur le réseau du bureau ; un studio mobile est sur la 4G d'une salle en sous-sol.
-**L'application ne doit jamais inférer l'état du flux de l'état de sa propre connexion.**
+A studio web sits on the office network; a studio mobile sits on the 4G of a basement venue.
+**The app must never infer the stream's state from the state of its own connection.**
 
-**Ce que le contrat doit porter** : chaque mesure d'antenne voyage avec l'**instant où elle a été
-mesurée à l'ingest**. L'application affiche alors « débit 8,9 Mb/s, mesuré il y a 3 s » ou
-« dernière mesure il y a 2 min » — ce qui est une information honnête — au lieu de « 0 Mb/s », qui
-est un mensonge. `streaming.md` pose déjà la règle pour la TV et le web : « masquer ce qui n'est pas
-mesuré plutôt qu'afficher zéro : un zéro se lit *parfait*, pas *non mesuré* ». Sur mobile, la même
-règle doit couvrir un troisième cas : *mesuré, mais je n'ai pas pu le recevoir*.
+**What the contract must carry**: every on-air measurement travels with the **instant it was
+measured at the ingest**. The app can then display "bitrate 8.9 Mb/s, measured 3 s ago" or "last
+measurement 2 min ago" — which is honest information — instead of "0 Mb/s", which is a lie.
+`streaming.md` already states the rule for TV and web: "hide what is not measured rather than show
+zero: a zero reads as *perfect*, not as *not measured*". On mobile, the same rule must cover a
+third case: *measured, but I could not receive it*.
 
-### 5. Deux réglages suivent la personne, pas la chaîne
+### 5. Two settings follow the person, not the channel
 
-La maquette l'écrit deux fois : la **disposition de régie** (« par personne, pas par chaîne — votre
-choix suit votre compte ») et les **profils d'encodage** (« vos profils voyagent d'une chaîne à
-l'autre : le poste change, les réglages restent »).
+The mockup writes it twice: the **run-desk layout** ("per person, not per channel — your choice
+follows your account") and the **encoding profiles** ("your profiles travel from one channel to the
+next: the post changes, the settings stay").
 
-La maquette les range pourtant dans `localStorage`. Sur la coquille native c'est faux deux fois : le
-stockage est lié à l'origine (un changement de schéma l'orpheline), le système peut le vider, et il
-ne voyage d'aucune façon d'un appareil à l'autre — donc il ne « suit » aucun compte.
+Yet the mockup keeps them in `localStorage`. On the native shell that is wrong twice over: the
+storage is bound to the origin (a scheme change orphans it), the OS may clear it, and it travels in
+no way from one device to another — so it "follows" no account at all.
 
-**Ce que le contrat doit porter** : une petite ressource de **préférences d'interface par compte**,
-lue à l'amorçage et écrite par commande. Deux entrées identifiées aujourd'hui (disposition de régie,
-profils d'encodage nommés), une troisième probable (le fuseau de lecture, voir plus bas). Elle doit
-être **additive et tolérante** : une clé inconnue d'une version de l'application ne doit ni la faire
-échouer ni être effacée à la prochaine écriture — sinon la version mobile en revue de magasin écrase
-les réglages posés depuis le studio web.
-
----
-
-## Les formes de données
-
-`shared/` fait autorité sur le vocabulaire et les règles, pas sur les formes. Ce que je demande ici
-est ce qui manque, pas ce qui existe.
-
-### Ce que toute réponse doit porter
-
-- **Instants ISO 8601 en UTC**, jamais de décalage en minutes (D7). Chaque date porte en outre le
-  **fuseau IANA de sa salle** (D3) : la maquette affiche systématiquement l'heure de salle **et**
-  l'heure de la personne, et la saisie de l'assistant se fait en heure de salle.
-- **Un numéro de version par agrégat lu** (date, publication, message de modération, membre,
-  versement). C'est ce qui permet à une commande d'être conditionnelle plutôt qu'aveugle — voir
-  « Les commandes ».
-- **Un instant de fraîcheur par modèle de lecture** (`asOf`), distinct de la version. En garde, on a
-  besoin de savoir de quand date ce qu'on regarde, pas seulement s'il a changé.
-- **Les champs d'audit qui manquent à `shared/`** : qui a décidé, quand, depuis quelle surface.
-  La maquette promet partout « horodaté et nominatif » — journal de modération, journal des accès,
-  journal de la chaîne, incidents. La promesse n'a aujourd'hui aucun champ derrière elle.
-
-### Modèles de lecture propres à cette surface
-
-Je les nomme et je dis ce qu'ils portent ; les modèles partagés avec le studio web (date,
-publication, versement, statistiques, boutique, rediffusion) sont de son ressort.
-
-**1. L'amorçage** — une requête, avant la première route. Compte ; liste complète des chaînes avec,
-par chaîne : identifiant, nom, visuel, **rôles effectifs**, fuseau IANA de la salle, drapeau « à
-l'antenne en ce moment », propriété (`own`) ; la table `grants` **projetée sur les rôles de la
-personne** (ce que *cette personne* peut attribuer, pas la table générale) ; les préférences
-d'interface ; la version des droits ; le compteur de boîte. Petite, mise en cache, revalidable.
-
-**2. Les gardes** — décrit en §1 plus haut. Fenêtre paramétrable (ce soir / la semaine), toutes
-chaînes.
-
-**3. La file de modération** — un élément porte : l'identifiant du **message**, l'identifiant de la
-**personne** du public qui l'a écrit, le texte, le motif de signalement (`moderationReasons`), le
-nombre de signalements, l'instant, **et la position dans le média** (voir plus bas), plus l'état de
-prise en charge : libre, pris par moi, pris par un confrère nommé, **tranché** (avec le verdict et
-le nom de qui a tranché). Cet état de prise en charge n'existe nulle part dans `shared/` et c'est
-le cœur de l'écran.
-
-**4. L'ancrage média du tchat.** `streaming.md` §5 l'exige déjà pour la rediffusion : un message
-porte **sa position dans le média**, pas seulement son heure d'envoi. La régie mobile en a un second
-usage : le chronomètre de garde se compte **depuis le lever de rideau**, et le journal de modération
-horodate en heure de salle relative à l'antenne. Un message sans position média rend le journal de
-modération illisible à la relecture d'une rediffusion.
-
-**5. Les mesures d'antenne** — série temporelle courte : débit montant, latence, images perdues,
-spectateurs, **chacune avec son instant de mesure** et, conformément à `streaming.md`, **absente si
-non mesurable pour le protocole d'entrée** (le *jitter* et les paquets perdus n'existent pas en
-RTMP). Sur mobile, la série doit pouvoir être demandée **courte** : la garde a besoin des trois
-dernières minutes, pas de l'historique du direct.
-
-**6. La personne du public** — le public d'une chaîne est une **collection interrogeable par
-elle-même**, pas une projection du tchat. La console de sanctions cherche « un spectateur dans
-l'audience, même sans avoir écrit ». Elle porte : pseudonyme, état de sanction, dates suivies,
-nombre de messages, ancienneté, qualité d'abonné.
-
-**7. Les invitations reçues** — portent un **périmètre** (permanent ou une seule date), la date
-concernée le cas échéant, qui invite, le rôle proposé, et une **expiration** (« expire à la date »,
-« expire dans 6 jours »). Une invitation acceptée doit faire entrer la chaîne au sélecteur **sans
-rechargement** : c'est un changement de droits, donc un incrément de la version des droits.
-
-**8. Les créneaux d'une date** — pour la matrice équipe : par date, par poste (`regie`, `mod`), la
-**liste** des personnes affectées (plusieurs sont possibles), et si le créneau est **hors de la main
-de qui regarde**. L'affectation du créneau régie est réservée à artist ∨ prod pour une raison que le
-contrat doit rendre explicite : **c'est elle qui donne la clé de flux**.
-
-### Ce que `shared/` ne porte pas et dont j'ai besoin
-
-- **La cause d'un incident.** `catalogue.incidentMessages` connaît quatre entrées — `hold-screen`,
-  `postponed`, `cancelled`, `interrupted` — qui sont des **issues**, pas des causes. La régie mobile
-  en distingue trois de plus, qui n'existent dans aucun vocabulaire : *flux perdu côté salle*,
-  *poste de régie déconnecté*, *débit effondré*. Il faut un vocabulaire fermé de causes, distinct du
-  vocabulaire d'issues.
-- **La source d'un article de boutique.** La maquette affiche Arthome / Shopify / WooCommerce /
-  numérique et l'infère de `merch.kind`, ce qui est faux (`print` est un programme imprimé, pas un
-  livrable numérique). Il manque un champ de source, et pour les commandes externes, l'adresse vers
-  laquelle sortir (« ouvrir chez le marchand »).
-- **L'épinglage d'un article pendant le direct** : une commande de studio qui change ce que le
-  storefront affiche en direct. Aucune forme aujourd'hui.
-- **La provision technique d'une jauge** : la maquette parle d'un seuil de 10 000 spectateurs
-  simultanés au-delà duquel l'infrastructure se provisionne à l'avance, avec un malus si le
-  prévisionnel dépasse le réel, et de **paliers** qui élargissent une jauge sans jamais la réduire
-  après mise en vente. Rien dans `shared/`.
-- **La fenêtre de priorité de liste d'attente** (2 h) et le fait qu'ouvrir un palier prévient la
-  liste « dans le même geste ».
-- **Les contremarques** (presse, partenaires, invités) : émises / allouées, par catégorie.
+**What the contract must carry**: a small **per-account interface preferences** resource, read at
+bootstrap and written by command. Two entries identified today (run-desk layout, named encoding
+profiles), a third likely (the reading timezone, see below). It must be **additive and tolerant**:
+a key unknown to one version of the app must neither make it fail nor be erased on the next write —
+otherwise the mobile version sitting in store review overwrites settings made from the studio web.
 
 ---
 
-## Les commandes
+## Data shapes
 
-Toutes portent `Idempotency-Key`. Chez moi la règle compte doublement : un réseau mobile rejoue, et
-un utilisateur qui ne voit pas de réponse appuie deux fois.
+`shared/` is authoritative on vocabulary and rules, not on shapes. What I ask for here is what is
+missing, not what already exists.
 
-### Inventaire
+### What every response must carry
 
-| Domaine | Commandes |
+- **ISO 8601 instants in UTC**, never an offset in minutes (D7). Every date additionally carries
+  **its venue's IANA timezone** (D3): the mockup systematically shows the venue time **and** the
+  person's own time, and the wizard's input is given in venue time.
+- **A version number per aggregate read** (date, publication, moderation item, member, payout).
+  That is what lets a command be conditional rather than blind — see "Commands".
+- **A freshness instant per read model** (`asOf`), distinct from the version. On duty you need to
+  know how old what you are looking at is, not only whether it changed.
+- **The audit fields `shared/` lacks**: who decided, when, from which surface. The mockup promises
+  "timestamped and named" everywhere — moderation log, access log, channel journal, incidents. As
+  of today the promise has no field behind it.
+
+### Read models specific to this surface
+
+I name them and say what they carry; the models shared with the studio web (date, publication,
+payout, statistics, store, replay) are its business.
+
+**1. The bootstrap** — one request, before the first route. Account; the complete list of channels
+with, per channel: identifier, name, artwork, **effective roles**, venue IANA timezone, an "on air
+right now" flag, ownership (`own`); the `grants` table **projected onto the person's roles** (what
+*this person* can assign, not the general table); the interface preferences; the rights version;
+the inbox counter. Small, cacheable, revalidatable.
+
+**2. Duties** — described in §1 above. Configurable window (tonight / the week), all channels.
+
+**3. The moderation queue** — an item carries: the **message** identifier, the identifier of the
+**audience member** who wrote it, the text, the report reason (`moderationReasons`), the report
+count, the instant, **and the position in the media** (see below), plus the claim state: free,
+claimed by me, claimed by a named colleague, **settled** (with the verdict and the name of whoever
+settled it). That claim state exists nowhere in `shared/` and it is the heart of the screen.
+
+**4. Media anchoring of chat.** `streaming.md` §5 already requires it for replay: a message carries
+**its position in the media**, not only its send time. The mobile run desk has a second use for it:
+the duty stopwatch counts **from curtain-up**, and the moderation log timestamps in venue time
+relative to the broadcast. A message without a media position makes the moderation log unreadable
+when replaying a recording.
+
+**5. On-air measurements** — a short time series: upstream bitrate, latency, dropped frames,
+viewers, **each with its measurement instant** and, per `streaming.md`, **absent when not
+measurable for the ingest protocol** (jitter and lost packets do not exist over RTMP). On mobile
+the series must be requestable **short**: duty needs the last three minutes, not the history of the
+whole show.
+
+**6. The audience member** — a channel's audience is a **collection queryable in its own right**,
+not a projection of the chat. The sanctions console searches for "a spectator in the audience, even
+one who never wrote". It carries: handle, sanction state, dates attended, message count, seniority,
+subscriber status.
+
+**7. Received invitations** — they carry a **scope** (permanent, or a single date), the date
+concerned where applicable, who is inviting, the proposed role, and an **expiry** ("expires at the
+date", "expires in 6 days"). An accepted invitation must bring the channel into the picker
+**without a reload**: it is a rights change, therefore a rights-version increment.
+
+**8. A date's crew slots** — for the crew matrix: per date, per post (`regie`, `mod`), the **list**
+of assigned people (several are possible), and whether the slot is **out of the viewer's hands**.
+Assigning the run-desk slot is restricted to artist ∨ prod for a reason the contract must make
+explicit: **it is what grants the stream key**.
+
+### What `shared/` does not carry and I need
+
+- **The cause of an incident.** `catalogue.incidentMessages` knows four entries — `hold-screen`,
+  `postponed`, `cancelled`, `interrupted` — which are **outcomes**, not causes. The mobile run desk
+  distinguishes three more, which exist in no vocabulary: *feed lost at the venue*, *run desk
+  disconnected*, *bitrate collapsed*. A closed vocabulary of causes is needed, distinct from the
+  vocabulary of outcomes.
+- **The source of a store item.** The mockup displays Arthome / Shopify / WooCommerce / digital and
+  infers it from `merch.kind`, which is wrong (`print` is a printed programme, not a digital
+  deliverable). A source field is missing, and for external orders, the address to go out to ("open
+  at the merchant").
+- **Pinning an item during the live show**: a studio command that changes what the storefront
+  displays live. No shape today.
+- **The technical provisioning of a capacity.** The mockup speaks of a threshold of 10,000
+  simultaneous viewers beyond which infrastructure is provisioned in advance, with a penalty if the
+  forecast exceeds the real figure, and of **tiers** that widen a capacity without ever shrinking it
+  once on sale. Nothing in `shared/`.
+- **The waitlist priority window** (2 h) and the fact that opening a tier notifies the list "in the
+  same gesture".
+- **Complimentary tickets** (press, partners, guests): issued / allocated, by category.
+
+---
+
+## Commands
+
+All of them carry `Idempotency-Key`. Here the rule counts twice over: a mobile network replays, and
+a user who sees no response taps again.
+
+### Inventory
+
+| Domain | Commands |
 |---|---|
-| Publication | transition d'état ; dupliquer une date ; supprimer une date ; appliquer à la série ; modifier un champ de la fiche |
-| Billetterie | ouvrir un palier de jauge ; rembourser ; autoriser un transfert de place ; répondre à un litige bancaire |
-| Modération | prendre en charge / relâcher ; publier ; supprimer ; réduire au silence (avec durée) ; bannir ; lever une sanction ; ajouter/retirer un terme au dictionnaire ; changer le régime de tchat, la sévérité du filtre, le mode lent, la réserve aux détenteurs de place |
-| Antenne | déclarer un incident ; diffuser l'écran d'attente et son message ; reprendre la diffusion ; escalader vers la production ; reporter / annuler et rembourser / poursuivre avec dédommagement ; changer le profil de diffusion |
-| Diffusion | révéler la clé de flux ; **renouveler la clé de flux** |
-| Équipe | inviter ; changer les rôles d'un membre ; retirer un membre ; affecter / retirer d'un créneau ; révoquer un accès ponctuel ; accepter / refuser une invitation |
-| Trésorerie | demander le changement de compte bancaire ; générer un export comptable |
-| Chaîne | modifier l'identité publique ; changer les valeurs par défaut de diffusion ; transférer la propriété ; supprimer la chaîne |
-| Boutique | épingler / retirer un article pendant le direct |
-| Compte | changer le fuseau de lecture ; enregistrer une préférence d'interface ; se déconnecter |
+| Publication | state transition; duplicate a date; delete a date; apply to the series; edit a field on the record |
+| Ticketing | open a capacity tier; refund; authorize a seat transfer; answer a bank dispute |
+| Moderation | claim / release; publish; remove; mute (with a duration); ban; lift a sanction; add/remove a dictionary term; change the chat regime, the filter severity, slow mode, ticket-holders-only |
+| On air | declare an incident; broadcast the hold screen and its message; resume the broadcast; escalate to production; postpone / cancel and refund / continue with compensation; change the broadcast profile |
+| Streaming | reveal the stream key; **rotate the stream key** |
+| Crew | invite; change a member's roles; remove a member; assign to / remove from a slot; revoke a one-off access; accept / decline an invitation |
+| Treasury | request a bank account change; generate an accounting export |
+| Channel | edit the public identity; change the broadcast defaults; transfer ownership; delete the channel |
+| Store | pin / unpin an item during the live show |
+| Account | change the reading timezone; save an interface preference; sign out |
 
-### Trois régimes, et il faut les nommer dans le contrat
+### Three regimes, and the contract must name them
 
-**a. Commandes conditionnelles — la majorité des gestes de garde.** Elles portent la **version de
-l'agrégat** sur laquelle la décision a été prise, et le serveur **refuse** si elle a changé. Le cas
-canonique est le verdict de modération : deux modérateurs sont sur la même file, et la maquette est
-formelle — « la ligne est close sur son verdict ». Le second verdict ne doit pas écraser le premier,
-il doit être **refusé avec le verdict qui a gagné et le nom de qui l'a rendu**, pour que l'écran le
-dise. Un rejeu idempotent aveugle produirait exactement le contraire.
+**a. Conditional commands — most duty gestures.** They carry the **aggregate version** the decision
+was made against, and the server **refuses** if it has changed. The canonical case is the
+moderation verdict: two moderators are on the same queue, and the mockup is categorical — "the line
+is closed on their verdict". The second verdict must not overwrite the first, it must be **refused
+with the winning verdict and the name of whoever rendered it**, so the screen can say so. A blind
+idempotent replay would produce exactly the opposite.
 
-**b. Prises en charge — des baux, pas des écritures.** « Prendre en charge » n'est pas trancher. Une
-prise en charge doit **expirer d'elle-même** : un modérateur dont le téléphone s'éteint ne doit pas
-geler la file. Donc une durée de bail explicite, renouvelée tant que la personne est présente, et
-libérée par le serveur à l'expiration. Une prise en charge ne se met **jamais** en file hors ligne :
-rejouée à la reconnexion, elle réclamerait une ligne que quelqu'un d'autre a déjà traitée.
+**b. Claims — leases, not writes.** "Claiming" is not settling. A claim must **expire on its own**:
+a moderator whose phone dies must not freeze the queue. So an explicit lease duration, renewed
+while the person is present, and released by the server on expiry. A claim is **never** queued
+offline: replayed on reconnection, it would claim a line somebody else has already handled.
 
-**c. Commandes à double détente.** Trois gestes ne s'appliquent pas immédiatement et créent un
-**état d'attente** que le contrat doit porter :
+**c. Two-step commands.** Three gestures do not apply immediately and create a **pending state**
+the contract must carry:
 
-- **le changement de compte bancaire** — part au propriétaire pour contre-signature, et **suspend le
-  virement en cours** le temps de la signature ;
-- **le transfert de propriété de la chaîne** — double validation ;
-- **l'invitation** — en attente jusqu'à la réponse de l'invité, et visible comme telle dans la liste
-  des membres.
+- **the bank account change** — it goes to the owner for countersignature, and **suspends the
+  payout in flight** until it is signed;
+- **the channel ownership transfer** — double validation;
+- **the invitation** — pending until the invitee answers, and visible as such in the member list.
 
-### Les gardes que le serveur doit poser, et dont il doit dire la raison
+### The guards the server must set, and whose reason it must state
 
-L'application ne peut pas les vérifier seule, et ne doit pas essayer :
+The app cannot check them on its own, and must not try:
 
-- supprimer une date est **impossible si des places sont vendues** ;
-- supprimer une chaîne est **impossible tant qu'une date est en vente ou qu'un versement est dû** ;
-- publier est **bloqué tant qu'il manque un élément** de la liste de contrôle — et le refus doit
-  nommer **lesquels**, en paramètres du code d'erreur, puisque l'écran les compte (« publier —
-  3 manques ») ;
-- la publication est **verrouillée tant que le contrôle technique n'est pas passé** ;
-- deux transitions sont **sans retour** et exigent une confirmation dont le texte vient du contrat :
-  `draft|reserve → scheduled` (la publication engage le tarif affiché) et `ended → replay-online`
-  (des spectateurs ont payé pour la rediffusion) ;
-- les **tarifs se verrouillent à la mise en vente**, l'**horaire** à l'antenne ;
-- « appliquer à la série » **exclut les tarifs et la jauge** — jamais reportés, chaque date engage
-  ses acheteurs.
+- deleting a date is **impossible once seats are sold**;
+- deleting a channel is **impossible while a date is on sale or a payout is due**;
+- publishing is **blocked while a checklist item is missing** — and the refusal must name **which
+  ones**, as parameters of the error code, since the screen counts them ("publish — 3 missing");
+- publication is **locked until the technical check has passed**;
+- two transitions are **one-way** and require a confirmation whose text comes from the contract:
+  `draft|reserve → scheduled` (publishing commits the displayed price) and `ended → replay-online`
+  (spectators have paid for the replay);
+- **prices lock on going on sale**, the **time** locks on going on air;
+- "apply to the series" **excludes prices and capacity** — never carried over, each date binds its
+  own buyers.
 
-Ces verrous vivent dans `@arthome/core` et sont **rendus par le contrat**, pas recalculés par
-l'application. La maquette les recalcule depuis l'état ; ce serait une seconde implémentation de la
-règle, donc une divergence garantie.
+These locks live in `@arthome/core` and are **served by the contract**, not recomputed by the app.
+The mockup recomputes them from the state; that would be a second implementation of the rule, hence
+a guaranteed divergence.
 
-### Une commande qui mérite son propre traitement : la clé de flux
+### One command that deserves its own treatment: the stream key
 
-C'est un secret affiché sur un téléphone, dans une salle, souvent devant un prestataire. Le contrat
-doit garantir : la clé **n'est jamais dans une charge utile de liste** ; sa révélation est une
-**commande distincte, auditée et nominative** ; son renouvellement est immédiat et l'ancienne
-**cesse aussitôt de diffuser** ; et l'affectation du créneau régie — qui donne accès à la clé — est
-réservée à artist ∨ prod. Sur mobile, ajouter : la clé ne doit pas se retrouver dans le cache HTTP
-ni dans un instantané d'application pris par le système au passage en arrière-plan.
+It is a secret displayed on a phone, in a venue, often in front of a contractor. The contract must
+guarantee: the key is **never in a list payload**; revealing it is a **distinct, audited, named
+command**; rotation is immediate and the old key **stops broadcasting at once**; and assigning the
+run-desk slot — which grants access to the key — is restricted to artist ∨ prod. On mobile, add:
+the key must not end up in the HTTP cache, nor in an app snapshot taken by the OS when going to the
+background.
 
 ---
 
-## Le temps réel en situation de garde
+## Real time on duty
 
-### Qui a besoin de quoi, et à quelle latence
+### Who needs what, and at what latency
 
-| Flux | Pour qui | Latence acceptable | Nature |
+| Stream | For whom | Acceptable latency | Nature |
 |---|---|---|---|
-| File de modération | `mod` | **seconde** | ajouts, retraits, prises en charge, verdicts |
-| Tchat en direct | `mod`, `regie` | seconde | ajouts, avec état par message |
-| Débit du tchat (msg/min) | `mod` | ~5 s | mesure agrégée, pas déduite du flux de messages |
-| Mesures d'antenne | `regie` | ~5 s | échantillons datés |
-| État d'incident | tous les rôles de la chaîne | **immédiate** | l'écran d'attente est un voile |
-| Présence des équipiers | `regie`, `mod` | ~10 s | « modérateur en ligne » / « aucun sur le poste » |
-| Gardes et alertes | tous | minute | et par notification quand l'application est fermée |
-| Version des droits | tous | immédiate | invalide la navigation |
+| Moderation queue | `mod` | **one second** | additions, removals, claims, verdicts |
+| Live chat | `mod`, `regie` | one second | additions, with per-message state |
+| Chat rate (msg/min) | `mod` | ~5 s | an aggregate measurement, not inferred from the message stream |
+| On-air measurements | `regie` | ~5 s | timestamped samples |
+| Incident state | every role on the channel | **immediate** | the hold screen is a veil |
+| Crew presence | `regie`, `mod` | ~10 s | "moderator online" / "nobody on the post" |
+| Duties and alerts | everyone | one minute | and by notification when the app is closed |
+| Rights version | everyone | immediate | invalidates the navigation |
 
-Le canal est celui du projet : diffusion par l'adaptateur Socket.IO sur Redis, Kafka restant le
-journal durable pour la modération et l'audit. Je n'ai pas de besoin qui remette cela en cause.
+The channel is the project's: broadcast through the Socket.IO adapter on Redis, Kafka remaining the
+durable log for moderation and audit. I have no need that calls this into question.
 
-### Ce que la garde ajoute comme exigences
+### What duty adds as requirements
 
-**1. Un abonnement multi-chaînes.** Un régisseur peut avoir **deux flux sous sa garde le même
-soir** ; un modérateur peut couvrir plusieurs chaînes. Le canal doit donc être **par personne**, et
-porter les événements de toutes les chaînes où elle a un accès, chacun étiqueté de son identifiant
-de chaîne. Un abonnement par chaîne multiplierait les connexions sur un réseau mobile déjà fragile.
+**1. A multi-channel subscription.** A show caller can have **two streams under their watch the
+same evening**; a moderator can cover several channels. The channel must therefore be **per
+person**, and carry the events of every channel where they have access, each tagged with its
+channel identifier. One subscription per channel would multiply connections on an already fragile
+mobile network.
 
-**2. Un seuil de bascule qui dépend d'une mesure serveur.** Au-delà de **60 messages par minute**,
-la console cesse de montrer le tchat message par message et bascule sur la file. Ce seuil est une
-règle du domaine ; la mesure sur laquelle il s'applique doit être **définie dans le contrat** —
-fenêtre glissante, unité, fréquence de rafraîchissement. Aujourd'hui la maquette la calcule à partir
-du nombre de messages divisé par les heures écoulées, et l'appelle « msg/min » (voir Incohérences,
-point 6).
+**2. A switchover threshold that depends on a server-side measurement.** Beyond **60 messages per
+minute**, the console stops showing the chat message by message and switches to the queue. That
+threshold is a domain rule; the measurement it applies to must be **defined in the contract** —
+sliding window, unit, refresh rate. Today the mockup computes it from the message count divided by
+the hours elapsed, and calls it "msg/min" (see Inconsistencies, point 6).
 
-**3. Une reprise, pas un rejeu.** Voir la section suivante : c'est la conséquence la plus lourde de
-l'arrière-plan mobile.
+**3. A resume, not a replay.** See the next section: it is the heaviest consequence of mobile
+backgrounding.
 
-**4. Une visibilité de la concurrence.** L'écran de file montre « *X* examine », « *X* a tranché ».
-Cela suppose que les prises en charge et les verdicts des autres arrivent sur le même canal, avec le
-**nom** de qui agit. C'est une exigence de contrat, pas d'affichage : sans elle, deux modérateurs
-travaillent en aveugle l'un de l'autre et se marchent dessus à chaque ligne.
+**4. Visibility of concurrency.** The queue screen shows "*X* is examining", "*X* has settled".
+That assumes other people's claims and verdicts arrive on the same channel, with the **name** of
+whoever is acting. It is a contract requirement, not a display one: without it, two moderators work
+blind to each other and collide on every line.
 
-**5. Un effet rétroactif à propager.** Ajouter un terme au dictionnaire « s'applique
-rétroactivement : les messages déjà publiés qui le contiennent repassent en file ». C'est un
-retraitement serveur qui produit un lot de nouveaux éléments de file. Le contrat doit dire s'il est
-synchrone (la commande répond avec le nombre de messages repassés en file) ou asynchrone (la file
-grossit toute seule quelques secondes plus tard) — les deux sont défendables, l'ambiguïté ne l'est
-pas.
+**5. A retroactive effect to propagate.** Adding a term to the dictionary "applies retroactively:
+already published messages containing it go back into the queue". That is a server-side
+reprocessing that produces a batch of new queue items. The contract must say whether it is
+synchronous (the command answers with the number of messages requeued) or asynchronous (the queue
+grows on its own a few seconds later) — both are defensible, the ambiguity is not.
 
 ---
 
-## Hors ligne, arrière-plan et reprise
+## Offline, background and resume
 
-C'est la section où le studio mobile diverge le plus du studio web, et elle se résume à une
-question : **qu'est-ce qui se met en file, qu'est-ce qui se refuse ?**
+This is the section where the studio mobile diverges most from the studio web, and it comes down to
+one question: **what gets queued, and what gets refused?**
 
-### La règle que je propose
+### The rule I propose
 
-> **Une commande se met en file hors ligne si et seulement si elle porte sur un objet nommé et que
-> sa signification ne dépend pas de l'instant où elle s'applique. Tout le reste se refuse.**
+> **A command is queued offline if and only if it bears on a named object and its meaning does not
+> depend on the instant it is applied. Everything else is refused.**
 
-### Ce qui se refuse — et pourquoi le refus est le bon comportement
+### What gets refused — and why refusal is the right behaviour
 
-| Commande | Pourquoi elle ne se rejoue pas |
+| Command | Why it does not replay |
 |---|---|
-| Publier, reporter, annuler et rembourser, dédommager | la décision est **chiffrée sur l'état du moment** — places vendues, recette. Rejouée trois minutes plus tard, elle décide sur des faits périmés |
-| Mettre une rediffusion en ligne | sans retour, et met en vente |
-| Diffuser l'écran d'attente, changer son message | c'est une **diffusion vers les spectateurs**. Rejouée après la reprise, elle coupe une antenne qui va bien |
-| Renouveler la clé de flux | effet immédiat sur l'ingest ; un rejeu coupe une diffusion en cours |
-| Ouvrir un palier de jauge | prévient la liste d'attente et engage l'infrastructure |
-| Prendre en charge une ligne de file | c'est un bail : rejoué, il réclame une ligne déjà traitée |
-| Changer le compte bancaire, transférer, supprimer la chaîne | double détente, et irréversibles |
+| Publish, postpone, cancel and refund, compensate | the decision is **priced against the state of the moment** — seats sold, revenue. Replayed three minutes later, it decides on stale facts |
+| Put a replay online | one-way, and it puts it on sale |
+| Broadcast the hold screen, change its message | it is a **broadcast to the spectators**. Replayed after recovery, it cuts a broadcast that is fine |
+| Rotate the stream key | immediate effect on the ingest; a replay cuts a live broadcast |
+| Open a capacity tier | it notifies the waitlist and commits infrastructure |
+| Claim a queue line | it is a lease: replayed, it claims a line already handled |
+| Change the bank account, transfer, delete the channel | two-step, and irreversible |
 
-Le refus doit être **explicite et distinct d'une erreur réseau** : « ce geste ne peut pas être
-préparé hors ligne » n'est pas « ça n'a pas marché, réessayez ». En garde, la différence décide si
-l'on réessaie ou si l'on décroche le téléphone d'astreinte.
+The refusal must be **explicit and distinct from a network error**: "this gesture cannot be
+prepared offline" is not "it did not work, try again". On duty, the difference decides whether you
+retry or pick up the on-call phone.
 
-**Le filet de sécurité correspondant existe déjà et doit être dans le contrat** : le réglage de
-chaîne « écran d'attente automatique si le flux se perd plus de 15 s ». C'est **la** réponse juste
-au cas « le régisseur est injoignable » — une règle serveur, pas un comportement d'application. Elle
-doit être portée par le contrat comme une valeur par défaut de chaîne, et son déclenchement doit
-produire un événement d'incident au même titre qu'un déclenchement manuel.
+**The matching safety net already exists and must be in the contract**: the channel setting
+"automatic hold screen if the feed is lost for more than 15 s". That is **the** right answer to the
+"the show caller is unreachable" case — a server rule, not an app behaviour. It must be carried by
+the contract as a channel default, and its firing must produce an incident event on the same
+footing as a manual trigger.
 
-### Ce qui se met en file
+### What gets queued
 
-Deux familles seulement, et toutes deux conditionnelles :
+Two families only, and both conditional:
 
-- **Les verdicts de modération sur un message nommé** (publier, supprimer) — idempotents par nature,
-  et **refusés si un confrère a tranché entre-temps**. Le rejeu n'écrase rien ; il découvre.
-- **Les sanctions sur une personne nommée** (réduire au silence avec durée, bannir, lever) — de même.
-  Une sanction **portée sur la personne** survit à la reconnexion sans ambiguïté, contrairement à
-  une sanction déduite d'un message.
+- **Moderation verdicts on a named message** (publish, remove) — idempotent by nature, and
+  **refused if a colleague settled in the meantime**. The replay overwrites nothing; it discovers.
+- **Sanctions on a named person** (mute with a duration, ban, lift) — likewise. A sanction **borne
+  by the person** survives reconnection without ambiguity, unlike a sanction inferred from a
+  message.
 
-Ces deux familles sont précisément celles où la maquette écrit que « prendre en charge n'est pas
-trancher : tant que le confrère n'a pas rendu de verdict, **votre sanction s'applique** ». C'est
-l'aveu que le verdict porte sur l'objet, pas sur la session.
+These two families are precisely the ones where the mockup writes that "claiming is not settling:
+until the colleague has rendered a verdict, **your sanction applies**". That is the admission that
+the verdict bears on the object, not on the session.
 
-### Le retour d'arrière-plan
+### Returning from the background
 
-Le système suspend le WebView ; la connexion temps réel meurt **sans événement de fermeture propre**.
-Au réveil, l'application doit **se resynchroniser, pas rejouer**.
+The OS suspends the WebView; the real-time connection dies **with no clean close event**. On wake,
+the app must **resynchronise, not replay**.
 
-**Ce que le contrat doit offrir** : un **curseur de reprise** par canal. « Donne-moi tout ce qui est
-arrivé sur cette chaîne depuis *ce curseur* », avec trois réponses possibles :
+**What the contract must offer**: a **resume cursor** per channel. "Give me everything that has
+happened on this channel since *this cursor*", with three possible answers:
 
-1. voici les événements manqués ;
-2. **le trou est trop grand, recharge le modèle de lecture entier** — réponse explicite, jamais un
-   silence ;
-3. le curseur n'est plus valide (droits changés, chaîne quittée).
+1. here are the events you missed;
+2. **the gap is too large, reload the whole read model** — an explicit answer, never a silence;
+3. the cursor is no longer valid (rights changed, channel left).
 
-Sans la deuxième réponse, le modérateur revient sur une file à laquelle il manque dix messages, et
-rien ne le lui dit.
+Without the second answer, the moderator comes back to a queue missing ten messages, and nothing
+tells them so.
 
-**Ionic aggrave le problème, et il faut le savoir en écrivant le contrat.** Sous `ion-router-outlet`
-une page reste dans le DOM après qu'on l'a quittée : elle est réaffichée telle quelle au retour. Le
-contrat doit donc offrir une lecture **bon marché de fraîcheur** — une version par modèle de lecture,
-interrogeable sans rapatrier le contenu — pour que le retour sur une page se solde par « rien n'a
-changé » et non par un rechargement complet sur la 4G d'une salle.
+**Ionic makes the problem worse, and that must be known when writing the contract.** Under
+`ion-router-outlet` a page stays in the DOM after you navigate away: it is redisplayed as-is on
+return. So the contract must offer a **cheap freshness read** — a version per read model, queryable
+without pulling the content back — so that returning to a page ends in "nothing has changed" rather
+than a full reload on a venue's 4G.
 
-### L'horloge
+### The clock
 
-Le chronomètre de garde, la durée d'une réduction au silence, l'expiration d'une fenêtre de
-rediffusion (« expire dans 41 h »), la fenêtre de priorité de liste d'attente (2 h), l'expiration
-d'un accès ponctuel : tout cela est compté sur un téléphone dont l'horloge dérive en veille et est
-réglable par son porteur.
+The duty stopwatch, the length of a mute, the expiry of a replay window ("expires in 41 h"), the
+waitlist priority window (2 h), the expiry of a one-off access: all of it is counted on a phone
+whose clock drifts in standby and is settable by its holder.
 
-**Ce que le contrat doit garantir** : tout est un **instant**, jamais une durée restante calculée
-par le serveur et envoyée telle quelle. L'application dérive ses décomptes d'un instant serveur et
-d'un décalage mesuré. C'est exactement ce que D7 impose déjà — c'est ici que ça compte le plus.
+**What the contract must guarantee**: everything is an **instant**, never a remaining duration
+computed by the server and sent as-is. The app derives its countdowns from a server instant and a
+measured offset. That is exactly what D7 already imposes — and this is where it matters most.
 
 ---
 
-## La coquille native : Capacitor
+## The native shell: Capacitor
 
-Vérifié contre `@capacitor/core` 8.5.2 et `@ionic/angular` 9 via `ionic-capacitor-how-to`. Ce qui
-suit ne concerne pas l'apparence — les jetons Arthome via les variables CSS d'Ionic sont hors de mon
-périmètre, comme indiqué.
+Verified against `@capacitor/core` 8.5.2 and `@ionic/angular` 9 through `ionic-capacitor-how-to`.
+What follows is not about appearance — the Arthome tokens through Ionic's CSS variables are outside
+my scope, as stated.
 
-### Les origines
+### The origins
 
-L'application est **servie depuis le téléphone**, pas depuis un serveur :
+The app is **served from the phone**, not from a server:
 
-| Plateforme | Origine que le BFF reçoit |
+| Platform | Origin the BFF receives |
 |---|---|
 | Android | `https://localhost` |
 | iOS | `capacitor://localhost` |
-| Développement | l'origine du serveur de développement |
+| Development | the dev server's origin |
 
-**Ce que le contrat doit garantir** : la liste d'autorisation CORS du BFF studio contient les **deux
-chaînes littérales**, plus les origines de développement. Une entrée `localhost` nue n'en couvre
-aucune. `Access-Control-Allow-Origin: *` est **illégal** avec des requêtes créditées : l'origine
-doit être renvoyée telle quelle. Et `capacitor://` est un schéma non standard : un cadre serveur qui
-normalise l'en-tête `Origin` par un analyseur d'URL le rejettera — la vérification doit porter sur
-la chaîne littérale.
+**What the contract must guarantee**: the studio BFF's CORS allow-list contains **both literal
+strings**, plus the development origins. A bare `localhost` entry covers neither.
+`Access-Control-Allow-Origin: *` is **illegal** with credentialed requests: the origin must be
+echoed back verbatim. And `capacitor://` is a non-standard scheme: a server framework that
+normalizes the `Origin` header through a URL parser will reject it — the check must be against the
+literal string.
 
-Le schéma Android ne doit **jamais** être changé : il change l'origine, orpheline tout ce qui est
-stocké dessous, et se lit comme une déconnexion massive et silencieuse de tous les utilisateurs à la
-mise à jour.
+The Android scheme must **never** be changed: it changes the origin, orphans everything stored
+under it, and reads as a mass, silent sign-out of every user on update.
 
-### La session : le point où le studio mobile ne peut pas faire comme le studio web
+### The session: where the studio mobile cannot do what the studio web does
 
-iOS 14 et au-delà bloquent les cookies tiers par défaut, et une page servie depuis
-`capacitor://localhost` qui appelle le BFF **est en contexte tiers**. Le studio web tient sa session
-par cookie ; **le studio mobile ne le peut pas**, sauf à passer par `WKAppBoundDomains` — dix
-domaines au maximum, et qui verrouille la navigation de l'application entière.
+iOS 14 and later block third-party cookies by default, and a page served from
+`capacitor://localhost` calling the BFF **is a third-party context**. The studio web holds its
+session in a cookie; **the studio mobile cannot**, short of going through `WKAppBoundDomains` — ten
+domains maximum, and it locks down navigation for the whole app.
 
-**Ce que le contrat doit offrir** : une **session porteuse de jeton** pour la coquille native, à
-côté de la session par cookie du web. Concrètement, ce que je demande à `adr-auth.md` :
+**What the contract must offer**: a **bearer-token session** for the native shell, alongside the
+web's cookie session. Concretely, what I ask of `adr-auth.md`:
 
-- un jeton de rafraîchissement lié à l'appareil, conservé dans `@capacitor/preferences` (magasin
-  natif : `UserDefaults` / `SharedPreferences`), **jamais dans `localStorage`** — que le système peut
-  vider et qu'un changement d'origine orpheline ;
-- un jeton d'accès court, échangé par le BFF contre le jeton signé de service comme prévu ;
-- une **révocation par appareil**, parce que l'appareil est un téléphone qui se perd, et que la
-  personne qui le tient est en garde sur des chaînes qui ne lui appartiennent pas ;
-- le comportement attendu au **retour d'arrière-plan avec un jeton expiré** : rafraîchir
-  silencieusement, ou exiger une réauthentification ? En garde, une réauthentification au mauvais
-  moment est une faute. La réponse doit être écrite, pas implicite.
+- a device-bound refresh token, kept in `@capacitor/preferences` (native store: `UserDefaults` /
+  `SharedPreferences`), **never in `localStorage`** — which the OS can clear and which an origin
+  change orphans;
+- a short access token, exchanged by the BFF for the signed service token as planned;
+- **per-device revocation**, because the device is a phone that gets lost, and the person holding
+  it is on duty on channels that are not theirs;
+- the expected behaviour on **returning from the background with an expired token**: refresh
+  silently, or require re-authentication? On duty, a re-authentication at the wrong moment is a
+  fault. The answer must be written down, not implicit.
 
-### Les liens profonds : les cinq sorties vers un navigateur externe
+### Deep links: the five exits to an external browser
 
-L'application quitte sa coquille dans cinq cas, tous relevés dans la maquette :
+The app leaves its shell in five cases, all found in the mockup:
 
-| Sortie | Ce qu'elle fait | Ce qui doit être garanti au retour |
+| Exit | What it does | What must be guaranteed on return |
 |---|---|---|
-| **`arthome.fr/compte`** | identité, **moyens de paiement**, places achetées — « le compte est partagé avec le site public » | l'application doit **relire son amorçage** : le nom, l'adresse, la langue peuvent avoir changé |
-| **OAuth** (Google, Facebook) et 2FA | connexion | échange de code, état opaque, session posée dans le magasin natif |
-| **Onboarding du compte de versement** (Stripe Connect) | le prestataire impose son propre parcours web | l'état du compte a changé côté prestataire : l'application doit **redemander**, jamais croire l'URL |
-| **Page publique** d'une date, **documentation** de la plateforme | lecture seule | rien à rapatrier |
-| **Site du marchand** (Shopify, WooCommerce) | « le suivi, l'échange et le remboursement se font sur le site du marchand » | rien à rapatrier, mais l'application doit savoir qu'elle n'en tient que le compte |
+| **`arthome.fr/compte`** | identity, **payment methods**, purchased seats — "the account is shared with the public site" | the app must **re-read its bootstrap**: name, address and language may have changed |
+| **OAuth** (Google, Facebook) and 2FA | sign-in | code exchange, opaque state, session written to the native store |
+| **Payout account onboarding** (Stripe Connect) | the provider imposes its own web flow | the account state has changed on the provider's side: the app must **ask again**, never believe the URL |
+| **Public page** of a date, platform **documentation** | read-only | nothing to bring back |
+| **Merchant site** (Shopify, WooCommerce) | "tracking, exchange and refund happen on the merchant's site" | nothing to bring back, but the app must know it only keeps the count |
 
-**Ce que le contrat doit garantir sur ces retours** — et c'est le point le plus spécifiquement
-Capacitor de tout ce document :
+**What the contract must guarantee on those returns** — and this is the most specifically Capacitor
+point in the whole document:
 
-1. **Une adresse de retour déclarée par l'application**, sous la forme d'un lien universel
-   (`applinks` iOS / App Links Android) vers un domaine du projet, qui rouvre l'application. Le
-   backend doit accepter cette adresse comme redirection légitime et la valider strictement — une
-   liste blanche, pas un motif.
-2. **Un état opaque, à usage unique et de courte durée**, émis par le backend avant le départ et
-   vérifié au retour. Il ne doit **rien porter de signifiant** : sur mobile, l'URL de retour
-   transite par le système, peut être journalisée, et peut être ouverte par une autre application.
-3. **Le retour ne doit jamais être la source de vérité.** Le système a pu tuer l'application pendant
-   le passage au navigateur : au retour, le WebView est une page neuve, l'état de l'application est
-   perdu, et seul le lien profond et le magasin natif subsistent. Donc : le lien profond dit
-   **où** aller et **quel** état reprendre ; c'est le backend qui dit **ce qui a changé**. Un
-   paiement confirmé par un paramètre d'URL est un paiement confirmé par le client.
-4. **Un parcours de reprise doit être rejouable.** Si l'application est tuée entre le départ et le
-   retour, la personne doit pouvoir reprendre là où elle en était depuis la boîte ou l'écran
-   concerné, sans redémarrer le parcours. Cela suppose que l'état d'attente soit **côté serveur**
-   (« demande de changement de compte en attente de signature », « connexion du compte de versement
-   en cours »), pas dans la mémoire de l'application.
-5. `allowNavigation` sert **uniquement** à autoriser la redirection d'authentification à revenir
-   dans le WebView. Ce n'est ni un contrôle CORS ni une frontière de sécurité, et il ne doit pas
-   servir à contourner une liste d'autorisation mal réglée.
+1. **A return address declared by the app**, in the form of a universal link (`applinks` on iOS /
+   App Links on Android) to a project domain, which reopens the app. The backend must accept that
+   address as a legitimate redirect and validate it strictly — an allow-list, not a pattern.
+2. **An opaque, single-use, short-lived state**, issued by the backend before departure and
+   verified on return. It must carry **nothing meaningful**: on mobile the return URL transits
+   through the OS, can be logged, and can be opened by another app.
+3. **The return must never be the source of truth.** The OS may have killed the app during the trip
+   to the browser: on return the WebView is a fresh page, the app's state is gone, and only the deep
+   link and the native store remain. So: the deep link says **where** to go and **which** state to
+   resume; it is the backend that says **what changed**. A payment confirmed by a URL parameter is
+   a payment confirmed by the client.
+4. **A resumption flow must be replayable.** If the app is killed between departure and return, the
+   person must be able to pick up where they were from the inbox or the screen concerned, without
+   restarting the flow. That requires the pending state to be **server-side** ("bank account change
+   awaiting signature", "payout account connection in progress"), not in the app's memory.
+5. `allowNavigation` serves **only** to let the authentication redirect come back into the WebView.
+   It is neither a CORS control nor a security boundary, and it must not be used to work around a
+   badly configured allow-list.
 
-Une sixième sortie, plus discrète : la **ligne d'astreinte** (« appeler »). C'est une navigation
-`tel:` depuis le WebView — elle ne revient pas, mais elle doit être prévue comme une ouverture
-native et non comme un lien.
+A sixth, quieter exit: the **on-call line** ("call"). That is a `tel:` navigation from the WebView —
+it does not come back, but it must be planned as a native open and not as a link.
 
-### Téléversements et téléchargements
+### Uploads and downloads
 
-Deux charges binaires existent, et toutes deux sont contraintes par la coquille :
+Two binary payloads exist, and both are constrained by the shell:
 
-- **L'affiche d'une date** : visuel 16/9, deux mégaoctets au maximum.
-- **Les exports comptables** : journal des ventes en CSV, grand livre FEC, écritures Sage/Cegid,
-  factures groupées en PDF — « fichiers générés à la demande ».
+- **A date's artwork**: 16:9 image, two megabytes maximum.
+- **Accounting exports**: sales journal as CSV, FEC general ledger, Sage/Cegid entries, grouped
+  invoices as PDF — "files generated on demand".
 
-Le piège : si `CapacitorHttp` est activé pour contourner CORS — il est **désactivé par défaut**, et
-il faut le dire, parce que la croyance inverse est répandue — alors sur natif le corps d'une requête
-ne peut être **qu'une chaîne ou du JSON**. `FormData`, `Blob` et `ArrayBuffer` sont web seulement.
-Un téléversement multipart cesse silencieusement de fonctionner sur l'appareil tout en marchant dans
-le navigateur.
+The trap: if `CapacitorHttp` is enabled to work around CORS — it is **disabled by default**, and
+that needs saying, because the opposite belief is widespread — then on native a request body can be
+**only a string or JSON**. `FormData`, `Blob` and `ArrayBuffer` are web-only. A multipart upload
+silently stops working on the device while continuing to work in the browser.
 
-**Ce que le contrat doit offrir**, et qui est robuste dans les deux cas :
+**What the contract must offer**, and which is robust either way:
 
-- **Téléversement** : une commande JSON qui rend une **adresse de dépôt signée et de courte durée**,
-  puis un dépôt direct. Aucun multipart depuis le WebView.
-- **Téléchargement** : un export est un **travail asynchrone** — il faut le dire, un FEC n'est pas
-  une réponse HTTP — qui rend, une fois prêt, une **adresse signée de courte durée**, utilisable par
-  un transfert natif **sans cookie de session**. Un export protégé par cookie est intéléchargeable
-  sur la coquille native.
-- Dans les deux cas, l'expiration de l'adresse signée doit être assez longue pour une 4G de salle et
-  assez courte pour ne pas être un jeton d'accès déguisé. La valeur est à trancher, pas à deviner.
+- **Upload**: a JSON command returning a **signed, short-lived deposit address**, then a direct
+  deposit. No multipart from the WebView.
+- **Download**: an export is an **asynchronous job** — that needs saying, an FEC is not an HTTP
+  response — which, once ready, returns a **short-lived signed address**, usable by a native
+  transfer **without a session cookie**. An export protected by a cookie is undownloadable on the
+  native shell.
+- In both cases the signed address's expiry must be long enough for a venue's 4G and short enough
+  not to be an access token in disguise. The value is to be decided, not guessed.
 
 ### Notifications
 
-La garde doit pouvoir être réveillée application fermée : « file de modération saturée »,
-« aucun modérateur affecté à J-1 », « débit instable », « litige bancaire sous 24 h ». La maquette
-route déjà chaque alerte **vers un rôle** et annonce une **alerte sonore distincte par chaîne**.
+Duty must be wakeable with the app closed: "moderation queue saturated", "no moderator assigned at
+D-1", "unstable bitrate", "bank dispute within 24 h". The mockup already routes each alert **to a
+role** and announces **a distinct sound alert per channel**.
 
-**Ce que le contrat doit porter** : un enregistrement d'appareil par compte (jeton FCM, plateforme,
-version, langue) ; un routage d'alerte **par rôle et par chaîne** décidé côté serveur ; une charge
-utile qui porte l'identifiant de chaîne, l'identifiant de date et la page à ouvrir, **de sorte que
-l'ouverture de la notification pose l'application sur la bonne chaîne, la bonne page et le bon
-sous-onglet** — le même mécanisme de lien profond que ci-dessus, appliqué à l'interne.
+**What the contract must carry**: a per-account device registration (FCM token, platform, version,
+language); alert routing **by role and by channel** decided server-side; a payload carrying the
+channel identifier, the date identifier and the page to open, **so that opening the notification
+lands the app on the right channel, the right page and the right sub-tab** — the same deep-link
+mechanism as above, applied internally.
 
-Et une règle qui découle de la redaction : **une notification ne porte jamais un montant** si le
-rôle destinataire n'a pas `canRevenue`. Une notification s'affiche sur un écran verrouillé.
+And a rule that follows from redaction: **a notification never carries an amount** if the
+destination role does not have `canRevenue`. A notification shows on a locked screen.
 
-### Ce que le contrat n'a pas à porter mais que je note pour mémoire
+### What the contract need not carry, noted for the record
 
-- Aucun agent de service (`service worker`) sur la coquille native : le WebView sert déjà le paquet
-  localement, un agent ajoute une seconde couche de cache périmée. S'il existe pour une version web
-  du studio, il doit être enregistré **seulement** sur la plateforme web.
-- `android/` et `ios/` sont des projets natifs générés **mais versionnés**.
-- Point non résolu, à vérifier sur un appareil réel avant de s'y fier : `capacitor://localhost` est-il
-  un **contexte sécurisé** dans WKWebView ? Cela conditionne Web Crypto et `getUserMedia`. Voir la
-  question 8 au backend : le retour de régie WebRTC/WHEP est le point exposé.
-
----
-
-## Pagination et volumes
-
-La décision du projet s'applique : **studio = page + total**, tri déterministe avec départage par
-identifiant. Ce que la surface ajoute :
-
-### Les totaux comptent plus que les pages
-
-La barre d'onglets porte des pastilles (`agenda` : gardes ce soir, `events` : dates,
-`moderation` : messages en file), la boîte porte un compteur, la bande de statistiques d'un écran
-affiche « en file : 14 », « invitations : 2 », « dates à couvrir : 3 ». **Aucun de ces nombres ne
-doit exiger de rapatrier une page.** Le contrat doit les porter dans l'amorçage et les tenir à jour
-par le canal temps réel. Sinon la barre du bas coûte cinq requêtes à chaque ouverture.
-
-### Les volumes observés
-
-| Collection | Page en maquette | Volume réel plausible |
-|---|---|---|
-| Dates d'une chaîne | 6 | dizaines à centaines par saison |
-| Membres d'une équipe | 4 | dizaines |
-| File de modération | 5 (plafonnée) | **des centaines pendant un direct saturé** |
-| Tchat en direct | tout | des milliers |
-| Public d'une chaîne | tout, cherchable | des milliers |
-| Journal, gardes | 12, tout | dizaines |
-
-Des pages petites, donc, et c'est délibéré : un pouce ne parcourt pas cent lignes.
-
-### La tension qu'il faut arbitrer : la file de modération n'est pas une page
-
-Une file de modération **grandit pendant qu'on la lit**. Une pagination par décalage y double des
-lignes et en saute d'autres — mécaniquement, pas exceptionnellement. Le tchat en direct a le même
-problème.
-
-Je **n'ouvre pas** la décision « studio = page + total ». Je signale qu'elle ne peut pas s'appliquer
-telle quelle à deux collections vivantes, et je propose la distinction la plus étroite possible :
-
-- **Collections stables** — dates, membres, versements, rediffusions, journal, boutique, accès
-  ponctuels, public : **page + total**, comme décidé ;
-- **Collections vivantes** — file de modération, tchat en direct : **curseur** pour remonter dans
-  l'historique, **canal temps réel** pour la tête, **total séparé** pour la pastille.
-
-À trancher par le chef. Si la décision est « page + total partout », le contrat doit alors dire ce
-qui se passe quand une ligne est insérée entre deux pages — et l'application devra vivre avec.
-
-### Le tri
-
-`events` trie sur six clés : date, titre, état, tarif, jauge, recette — avec direction. Deux
-exigences : l'état trie selon l'**ordre canonique de la machine à états**, pas alphabétiquement
-(c'est une donnée du domaine, pas de la surface) ; et le tri par recette est **refusé** aux rôles
-sans `canRevenue`, comme dit plus haut.
-
-`events` porte aussi une scission temporelle (à venir / passé) et un filtre multi-états. Les deux
-doivent être des paramètres du contrat, pas un filtrage après rapatriement — la scission « passé »
-porte sur l'ensemble de l'historique de la chaîne.
+- No service worker on the native shell: the WebView already serves the bundle locally, a worker
+  adds a second, stale cache layer. If one exists for a web version of the studio, it must be
+  registered **only** on the web platform.
+- `android/` and `ios/` are generated native projects **but they are committed**.
+- Unresolved, to be checked on a real device before relying on it: is `capacitor://localhost` a
+  **secure context** in WKWebView? That governs Web Crypto and `getUserMedia`. See question 8 to
+  the backend: the WebRTC/WHEP run-desk return feed is the exposed point.
 
 ---
 
-## États d'erreur et de chargement
+## Pagination and volumes
 
-### L'enveloppe
+The project decision applies: **studio = page + total**, deterministic sort with an identifier
+tie-break. What the surface adds:
 
-Celle du projet : code, paramètres, identifiant de trace. **i18n par codes**, avec instantané
-embarqué au build comme repli obligatoire. C'est vital ici et il faut le dire crûment : **une revue
-de magasin est lente**. Si un code d'erreur nouveau arrive du backend avant que l'application ne
-soit mise à jour, la personne en garde doit voir une phrase, pas `moderation.verdict.conflict`. Le
-repli embarqué et le catalogue servi dynamiquement (C6) sont, sur mobile, une **condition
-d'exploitation**, pas une commodité.
+### Totals matter more than pages
 
-### La distinction qui manque à l'enveloppe, et que la garde exige
+The tab bar carries badges (`agenda`: duties tonight, `events`: dates, `moderation`: messages in
+the queue), the inbox carries a counter, a screen's stat band displays "in queue: 14",
+"invitations: 2", "dates to cover: 3". **None of those numbers may require pulling a page.** The
+contract must carry them in the bootstrap and keep them up to date over the real-time channel.
+Otherwise the bottom bar costs five requests on every launch.
 
-Trois natures d'échec, aujourd'hui indistinguables :
+### Observed volumes
 
-| Nature | Ce que la personne doit faire | Exemple |
+| Collection | Page size in the mockup | Plausible real volume |
 |---|---|---|
-| **Refusé** — le serveur a dit non, définitivement | ne pas réessayer, comprendre pourquoi | un confrère a tranché ; il manque trois éléments pour publier |
-| **Indisponible** — le réseau a dit non | réessayer, ou préparer hors ligne si c'est permis | 4G de sous-sol |
-| **Impossible hors ligne** — refus local, avant tout envoi | attendre le réseau, ou escalader | annuler et rembourser |
+| A channel's dates | 6 | tens to hundreds per season |
+| A crew's members | 4 | tens |
+| Moderation queue | 5 (capped) | **hundreds during a saturated live show** |
+| Live chat | all | thousands |
+| A channel's audience | all, searchable | thousands |
+| Journal, duties | 12, all | tens |
 
-Le contrat doit porter cette nature explicitement dans l'enveloppe. Sans elle, l'application ne peut
-pas choisir entre « réessayer », « expliquer » et « décrocher le téléphone d'astreinte », et c'est
-précisément la décision que la garde doit prendre en dix secondes.
+Small pages, then, and deliberately so: a thumb does not scroll a hundred rows.
 
-### Les codes que je demande, au-delà des génériques
+### The tension to arbitrate: a moderation queue is not a page
 
-- droits périmés / accès révoqué / chaîne quittée ;
-- déjà tranché par *X* (avec le verdict, en paramètre) ;
-- prise en charge perdue ou expirée ;
-- curseur de reprise trop ancien — recharge complète exigée ;
-- publication bloquée : liste des éléments manquants en paramètres ;
-- suppression refusée : places vendues (avec le nombre) ;
-- transition verrouillée, avec la raison ;
-- versement suspendu : changement de compte en attente de signature ;
-- palier de jauge refusé : provision technique ;
-- clé de flux : renouvellement pendant un direct.
+A moderation queue **grows while you read it**. Offset pagination duplicates rows and skips others
+— mechanically, not exceptionally. Live chat has the same problem.
 
-### Le chargement
+I am **not reopening** the "studio = page + total" decision. I am pointing out that it cannot apply
+as-is to two living collections, and I propose the narrowest possible distinction:
 
-Le premier rendu doit attendre **une seule chose** : l'amorçage. La maquette le fait déjà — elle
-refuse de rendre quoi que ce soit avant que la couche de données ait répondu, « les tables ne sont
-jamais lues à vide ». C'est le bon comportement, et il impose sa contrainte au contrat : **l'amorçage
-doit être petit et rapide**, parce que rien n'est peint tant qu'il n'est pas là. Tout le reste —
-mesures, file, statistiques — arrive après, par écran.
+- **Stable collections** — dates, members, payouts, replays, journal, store, one-off accesses,
+  audience: **page + total**, as decided;
+- **Living collections** — moderation queue, live chat: **cursor** to go back through history,
+  **real-time channel** for the head, **a separate total** for the badge.
 
-L'échec de l'amorçage est un écran d'échec à part entière, avec l'identifiant de trace : c'est le
-seul moment où la personne peut encore lire un numéro et le dicter au support.
+For the lead to arbitrate. If the decision is "page + total everywhere", the contract must then say
+what happens when a row is inserted between two pages — and the app will have to live with it.
+
+### Sorting
+
+`events` sorts on six keys: date, title, state, price, capacity, revenue — with a direction. Two
+requirements: state sorts by the **canonical order of the state machine**, not alphabetically (it
+is domain data, not surface data); and sorting by revenue is **refused** to roles without
+`canRevenue`, as said above.
+
+`events` also carries a temporal split (upcoming / past) and a multi-state filter. Both must be
+contract parameters, not filtering after retrieval — the "past" split covers the channel's entire
+history.
 
 ---
 
-## Incohérences relevées
+## Error and loading states
 
-Au-delà de D2 et D6, que je confirme et précise, huit points relevés dans mes sources. Je ne les
-applique pas.
+### The envelope
 
-**1. D2, aggravé sur ma surface.** La maquette du studio mobile porte **la même table parallèle** que
-celle du studio web (`draft | hidden | sched | tech | live | done | replay`) — et va plus loin :
-elle porte en plus **ses propres libellés français en dur** et une table de traduction anglaise
-maison, au lieu de passer par `enums.publicationState.*` qui existe et est traduit. Deux
-vocabulaires parallèles **et** deux i18n parallèles. Le contrat fixe les noms de `catalogue.json`,
-comme tranché.
+The project's: code, parameters, trace identifier. **i18n by codes**, with a build-embedded
+snapshot as the mandatory fallback. That is vital here and it needs saying bluntly: **a store
+review is slow**. If a new error code arrives from the backend before the app is updated, the
+person on duty must see a sentence, not `moderation.verdict.conflict`. The embedded fallback and
+the dynamically served catalogue (C6) are, on mobile, an **operating condition**, not a
+convenience.
 
-**2. D6, et il y a un quatrième vocabulaire.** Recensement complet sur mes sources :
+### The distinction the envelope lacks, and that duty demands
 
-| Source | Valeurs | Porte sur |
+Three natures of failure, today indistinguishable:
+
+| Nature | What the person must do | Example |
 |---|---|---|
-| `catalogue.json.messageStates` | `ok` `removed` `muted` `banned` | le message |
-| `fixtures.js` `audience[].state` | `ok` `muted` `banned` | la personne |
-| `fixtures.js` `moderation[].state` | **`reported`** `removed` `muted` `banned` | la ligne de file |
-| `studio-data.js` | `ok` `held` | la régie |
+| **Refused** — the server said no, definitively | do not retry, understand why | a colleague settled it; three items are missing to publish |
+| **Unavailable** — the network said no | retry, or prepare offline if allowed | basement 4G |
+| **Impossible offline** — a local refusal, before any send | wait for the network, or escalate | cancel and refund |
+
+The contract must carry that nature explicitly in the envelope. Without it the app cannot choose
+between "retry", "explain" and "pick up the on-call phone", and that is precisely the decision duty
+has to make in ten seconds.
+
+### The codes I ask for, beyond the generic ones
+
+- rights stale / access revoked / channel left;
+- already settled by *X* (with the verdict, as a parameter);
+- claim lost or expired;
+- resume cursor too old — full reload required;
+- publication blocked: the list of missing items as parameters;
+- deletion refused: seats sold (with the count);
+- transition locked, with the reason;
+- payout suspended: account change awaiting signature;
+- capacity tier refused: technical provisioning;
+- stream key: rotation during a live show.
+
+### Loading
+
+The first paint must wait for **one thing only**: the bootstrap. The mockup already does this — it
+refuses to render anything before the data layer has answered, "the tables are never read empty".
+That is the right behaviour, and it imposes its constraint on the contract: **the bootstrap must be
+small and fast**, because nothing is painted until it is there. Everything else — measurements,
+queue, statistics — arrives afterwards, screen by screen.
+
+A bootstrap failure is a failure screen in its own right, with the trace identifier: it is the only
+moment when the person can still read a number out to support.
+
+---
+
+## Inconsistencies found
+
+Beyond D2 and D6, which I confirm and refine, eight points found in my sources. I do not apply
+them.
+
+**1. D2, made worse on my surface.** The studio mobile mockup carries **the same parallel table**
+as the studio web's (`draft | hidden | sched | tech | live | done | replay`) — and goes further: it
+additionally carries **its own hardcoded French labels** and a home-made English translation table,
+instead of going through `enums.publicationState.*`, which exists and is translated. Two parallel
+vocabularies **and** two parallel i18n tables. The contract fixes the `catalogue.json` names, as
+decided.
+
+**2. D6, and there is a fourth vocabulary.** Full census across my sources:
+
+| Source | Values | Bears on |
+|---|---|---|
+| `catalogue.json.messageStates` | `ok` `removed` `muted` `banned` | the message |
+| `fixtures.js` `audience[].state` | `ok` `muted` `banned` | the person |
+| `fixtures.js` `moderation[].state` | **`reported`** `removed` `muted` `banned` | the queue line |
+| `studio-data.js` | `ok` `held` | the run desk |
 | `i18n/studio.json` `enums.moderationState` | **`published`** `removed` `muted` `banned` `reported` | ? |
 
-Deux remarques qui s'ajoutent à D6. D'abord `reported` n'est **pas une sanction** : c'est un état de
-triage, et il occupe le même champ que des sanctions — c'est pour cela que la file se construit en
-filtrant `state === 'reported'`, ce qui n'est pas un filtre d'état mais un filtre de nature.
-Ensuite l'i18n dit `published` là où `catalogue.json` dit `ok` : **la table de traduction ne
-correspond exactement à aucun des quatre vocabulaires**. Il faut séparer trois axes — la nature de
-la ligne (signalée / tranchée), l'état du message, l'état de la personne — et non les empiler dans
-un champ.
+Two remarks on top of D6. First, `reported` is **not a sanction**: it is a triage state, and it
+occupies the same field as sanctions — which is why the queue is built by filtering
+`state === 'reported'`, which is not a state filter but a nature filter. Second, the i18n table
+says `published` where `catalogue.json` says `ok`: **the translation table matches none of the four
+vocabularies exactly**. Three axes must be separated — the nature of the line (reported / settled),
+the state of the message, the state of the person — rather than stacked into one field.
 
-**3. La projection en six personas n'est pas sûre pour l'autorisation.** `studio-data.js` rabat
-`director`, `video` et `sound` sur un seul `regie`. Or `grants` les distingue : `director` peut
-inviter `video` et `sound` ; `video` et `sound` ne peuvent inviter personne. Autoriser sur le rôle
-court accorde à un régisseur son un droit d'invitation qu'il n'a pas. **Le contrat doit porter le
-rôle réel et les droits effectifs ; les six personas sont de la présentation.**
+**3. The six-persona projection is not safe for authorization.** `studio-data.js` collapses
+`director`, `video` and `sound` into a single `regie`. Yet `grants` distinguishes them: `director`
+can invite `video` and `sound`; `video` and `sound` can invite nobody. Authorizing on the short
+role grants a sound engineer an invitation right they do not have. **The contract must carry the
+real role and the effective rights; the six personas are presentation.**
 
-**4. `TAB_PREF` nomme une page que `ACCESS` refuse.** `TAB_PREF.regie` contient `regie`, absent de
-`ACCESS.regie` ; cela ne fonctionne que parce que `FREE.regie` le rattrape. Une table de préférence
-qui nomme une page que la table d'accès ne donne pas est un piège : le jour où `FREE` change, un
-onglet disparaît sans qu'on comprenne pourquoi. Les onglets doivent se dériver d'**une seule** liste
-de pages ouvertes.
+**4. `TAB_PREF` names a page that `ACCESS` refuses.** `TAB_PREF.regie` contains `regie`, absent
+from `ACCESS.regie`; it only works because `FREE.regie` catches it. A preference table that names a
+page the access table does not grant is a trap: the day `FREE` changes, a tab disappears and nobody
+understands why. Tabs must derive from **one single** list of open pages.
 
-**5. L'état affiché d'une date est une composition de trois champs, et aucun ne la porte.**
-`publication.state` ne connaît ni `cancelled`, ni `postponed`, ni `interrupted` : ces trois-là vivent
-sur `date.outcome` et sur `run.state`. La maquette les affiche pourtant **par-dessus** l'état de
-publication (« annulée et remboursée », « reportée · places valables », « interrompue · avoirs
-émis »). Le contrat doit dire lequel de ces champs fait foi pour la pastille, ou exposer un état
-dérivé unique — sinon chaque surface composera à sa manière.
+**5. A date's displayed state is a composition of three fields, and none of them carries it.**
+`publication.state` knows neither `cancelled`, nor `postponed`, nor `interrupted`: those three live
+on `date.outcome` and on `run.state`. Yet the mockup displays them **over** the publication state
+("cancelled and refunded", "postponed · seats still valid", "interrupted · credits issued"). The
+contract must say which of those fields is authoritative for the badge, or expose a single derived
+state — otherwise every surface will compose it its own way.
 
-**6. Le débit du tchat est mesuré dans une unité, comparé dans une autre.** `studio-data` /
-la maquette calculent `nombre de messages ÷ heures écoulées` et l'étiquettent « MSG/MIN » ; le seuil
-qui fait basculer la console est à **60 msg/min**. Une fenêtre, une unité et une fréquence de
-rafraîchissement doivent être fixées par le contrat.
+**6. The chat rate is measured in one unit and compared in another.** `studio-data` / the mockup
+compute `message count ÷ hours elapsed` and label it "MSG/MIN"; the threshold that flips the
+console is at **60 msg/min**. A window, a unit and a refresh rate must be fixed by the contract.
 
-**7. Deux débits différents portent le même nom.** L'écran de diffusion mêle le débit **mesuré à
-l'ingest** (série de santé, observation serveur) et un bouton « mesurer le débit montant » qui
-mesure la liaison **du téléphone**. Le téléphone n'est pas l'encodeur : il est dans la salle, parfois
-sur un autre réseau. Le contrat doit distinguer une mesure serveur d'une mesure soumise par un
-client, et dire laquelle alimente la liste de pré-vol.
+**7. Two different bitrates carry the same name.** The streaming screen mixes the bitrate
+**measured at the ingest** (health series, a server observation) with a "measure upstream bitrate"
+button that measures **the phone's** link. The phone is not the encoder: it is in the venue,
+sometimes on another network. The contract must distinguish a server measurement from a
+client-submitted one, and say which one feeds the pre-flight checklist.
 
-**8. La liste de pré-vol mélange des faits serveur et des cases à cocher locales.** Quatre entrées
-sont des faits (`publication.checklist` : contrôle technique, chapitres, modérateur affecté,
-politique de rediffusion) ; deux sont des bascules locales (« marquer fait »). Une liste qui bloque
-la publication ne peut pas avoir de cases que le client coche pour lui-même. Elle doit être
-**entièrement serveur**, chaque entrée portant sa raison et son état.
+**8. The pre-flight checklist mixes server facts with local checkboxes.** Four entries are facts
+(`publication.checklist`: technical check, chapters, moderator assigned, replay policy); two are
+local toggles ("mark done"). A list that blocks publication cannot have boxes the client ticks for
+itself. It must be **entirely server-side**, each entry carrying its reason and its state.
 
-**9. Le fuseau de lecture de la personne n'a pas de porteur.** La maquette le prend en propriété
-d'entrée et le laisse modifier dans la feuille « Mon compte ». Or il change l'affichage de **toutes**
-les heures de toutes les chaînes. C'est un réglage de compte, au même titre que les deux autres
-relevés en §5 — mais contrairement à eux, il est partagé avec le storefront, où le même compte
-achète des places. Où vit-il ?
+**9. The person's reading timezone has no owner.** The mockup takes it as an input property and
+lets it be changed from the "My account" sheet. Yet it changes the display of **every** time on
+**every** channel. It is an account setting, on the same footing as the two found in §5 — but
+unlike them, it is shared with the storefront, where the same account buys seats. Where does it
+live?
 
 ---
 
-## Ce que je ne peux pas obtenir seul — questions au backend
+## What I cannot get on my own — questions to the backend
 
-**1. La session sur la coquille native.** Le studio web tient sa session par cookie ; le studio
-mobile ne le peut pas (`capacitor://localhost` est un contexte tiers sur iOS). Le BFF studio
-offre-t-il une **session porteuse de jeton** à côté de la session par cookie, avec jeton de
-rafraîchissement lié à l'appareil, révocation par appareil, et un comportement écrit pour le retour
-d'arrière-plan avec jeton expiré ? Sans réponse, la surface n'a pas d'authentification.
-→ `adr-auth.md`
+**1. The session on the native shell.** The studio web holds its session in a cookie; the studio
+mobile cannot (`capacitor://localhost` is a third-party context on iOS). Does the studio BFF offer
+a **bearer-token session** alongside the cookie session, with a device-bound refresh token,
+per-device revocation, and a written behaviour for returning from the background with an expired
+token? Without an answer, the surface has no authentication. → `adr-auth.md`
 
-**2. Le retour depuis un navigateur externe.** Cinq parcours sortent de l'application (compte
-partagé `arthome.fr/compte`, OAuth, onboarding du compte de versement chez le prestataire, page
-publique, site du marchand). Quelle adresse de retour le backend accepte-t-il, sous quelle forme
-d'état opaque, et **quelle ressource l'application interroge-t-elle au retour pour savoir ce qui a
-changé** ? Je pose comme acquis que rien de signifiant ne doit voyager dans l'URL de retour ; je
-demande la ressource de reprise. → `adr-auth.md`, `adr-payments.md`
+**2. The return from an external browser.** Five flows leave the app (the shared
+`arthome.fr/compte` account, OAuth, payout account onboarding at the provider, the public page, the
+merchant site). Which return address does the backend accept, in what form of opaque state, and
+**which resource does the app query on return to learn what changed**? I take it as given that
+nothing meaningful may travel in the return URL; I am asking for the resumption resource.
+→ `adr-auth.md`, `adr-payments.md`
 
-**3. Les droits effectifs en une requête.** L'amorçage que je décris — compte, toutes les chaînes
-avec les rôles effectifs par chaîne, les `grants` projetés, les préférences, la version des droits,
-les compteurs — est-il un modèle de lecture du BFF studio ? Et **comment l'application apprend-elle
-que ses droits ont changé** pendant qu'elle est ouverte (invitation acceptée, rôle retiré, accès
-ponctuel expiré au tomber du rideau) ? → `context-map.md`, l'OpenAPI du BFF studio
+**3. Effective rights in one request.** Is the bootstrap I describe — account, all channels with
+effective roles per channel, projected `grants`, preferences, rights version, counters — a read
+model of the studio BFF? And **how does the app learn that its rights have changed** while it is
+open (invitation accepted, role removed, one-off access expired at curtain-down)?
+→ `context-map.md`, the studio BFF's OpenAPI
 
-**4. Le régime hors ligne des commandes.** Je propose : se met en file ce qui porte sur un objet
-nommé et ne dépend pas de l'instant — verdicts sur un message, sanctions sur une personne, et rien
-d'autre ; tout le reste se refuse localement. Le backend valide-t-il ce découpage ? Et accepte-t-il
-que ces commandes soient **conditionnelles** (version de l'agrégat, refus si un confrère a tranché)
-plutôt qu'idempotentes aveugles ? → `realtime.md`, `critical-rules.md`
+**4. The offline regime of commands.** I propose: queued are the ones that bear on a named object
+and do not depend on the instant — verdicts on a message, sanctions on a person, and nothing else;
+everything else is refused locally. Does the backend endorse that split? And does it accept that
+those commands be **conditional** (aggregate version, refused if a colleague settled) rather than
+blindly idempotent? → `realtime.md`, `critical-rules.md`
 
-**5. Le curseur de reprise.** Au retour d'arrière-plan, l'application doit pouvoir demander « tout
-ce qui est arrivé depuis ce curseur » et recevoir, le cas échéant, un **« trop ancien, recharge
-tout »** explicite. Ce mécanisme existe-t-il dans le plan temps réel, par chaîne et par personne ?
-Et le canal peut-il être **par personne, multi-chaînes**, plutôt qu'un abonnement par chaîne ?
+**5. The resume cursor.** On returning from the background, the app must be able to ask for
+"everything that happened since this cursor" and receive, where applicable, an explicit **"too old,
+reload everything"**. Does that mechanism exist in the real-time plan, per channel and per person?
+And can the channel be **per person, multi-channel**, rather than one subscription per channel?
 → `realtime.md`
 
-**6. La concurrence sur la file de modération.** Trois mécanismes sont à confirmer : le **bail** de
-prise en charge (durée, renouvellement, libération automatique) ; le **refus du second verdict** avec
-le nom de qui a tranché ; et la **propagation nominative** des prises en charge et des verdicts aux
-autres modérateurs. Qui possède ces trois-là — `chat`, ou un contexte de modération distinct ? La
-question croise D6 : le message appartient à `chat`, la personne bannie d'une chaîne appartient à
-qui ? → `context-map.md`, D6
+**6. Concurrency on the moderation queue.** Three mechanisms need confirming: the claim **lease**
+(duration, renewal, automatic release); the **refusal of the second verdict** with the name of
+whoever settled; and the **named propagation** of claims and verdicts to the other moderators. Who
+owns those three — `chat`, or a separate moderation context? The question crosses D6: the message
+belongs to `chat`, but who does a person banned from a channel belong to? → `context-map.md`, D6
 
-**7. La pagination d'une collection vivante.** « Studio = page + total » est une décision, et je ne
-la rouvre pas. Je signale qu'une file de modération grossit pendant qu'on la lit et qu'une
-pagination par décalage y double et y saute des lignes mécaniquement. Curseur pour les deux
-collections vivantes (file, tchat) et page + total partout ailleurs, ou bien une autre réponse ?
-→ arbitrage du chef, puis `critical-rules.md`
+**7. Pagination of a living collection.** "Studio = page + total" is a decision, and I am not
+reopening it. I am pointing out that a moderation queue grows while you read it and that offset
+pagination duplicates and skips rows mechanically. Cursor for the two living collections (queue,
+chat) and page + total everywhere else, or some other answer? → the lead's arbitration, then
+`critical-rules.md`
 
-**8. Le retour de régie WebRTC/WHEP sur la coquille native.** `streaming.md` prévoit un retour de
-régie sous la seconde en WHEP. Deux inconnues : est-ce **attendu sur le studio mobile** ou réservé
-au studio web ? Et si oui, `capacitor://localhost` est-il un contexte sécurisé dans WKWebView —
-ce qui conditionne `RTCPeerConnection`, et la mesure de latence bout-en-bout par
-`RTCPeerConnection.getStats()` que `streaming.md` nomme explicitement ? Cela demande une
-vérification sur appareil réel avant d'être promis. → `adr-stream-entitlement.md`, `streaming.md`
+**8. The WebRTC/WHEP run-desk return feed on the native shell.** `streaming.md` plans a sub-second
+run-desk return feed over WHEP. Two unknowns: is it **expected on the studio mobile** or reserved
+for the studio web? And if so, is `capacitor://localhost` a secure context in WKWebView — which
+governs `RTCPeerConnection`, and the end-to-end latency measurement through
+`RTCPeerConnection.getStats()` that `streaming.md` names explicitly? This needs verification on a
+real device before being promised. → `adr-stream-entitlement.md`, `streaming.md`
 
-**9. Les binaires : affiche et exports.** Je demande un **téléversement par adresse de dépôt signée**
-obtenue par une commande JSON (pas de multipart depuis le WebView) et un **export en travail
-asynchrone** rendant une adresse signée de courte durée, utilisable **sans cookie de session** par un
-transfert natif. Le backend suit-il, et quelles durées de validité ? → l'OpenAPI du BFF studio
+**9. Binaries: artwork and exports.** I ask for an **upload by signed deposit address** obtained
+through a JSON command (no multipart from the WebView) and an **export as an asynchronous job**
+returning a short-lived signed address, usable **without a session cookie** by a native transfer.
+Does the backend follow, and with what validity durations? → the studio BFF's OpenAPI
 
-**10. Les notifications.** Routage d'alerte **par rôle et par chaîne** décidé côté serveur,
-enregistrement d'appareil par compte, charge utile portant chaîne + date + page cible. Et la règle
-de redaction s'applique-t-elle à la charge utile de notification — c'est-à-dire, un montant est-il
-exclu d'une notification destinée à un rôle sans `canRevenue` ? Une notification s'affiche sur un
-écran verrouillé. → `notifications`, `adr-auth.md`
+**10. Notifications.** Alert routing **by role and by channel** decided server-side, per-account
+device registration, payload carrying channel + date + target page. And does the redaction rule
+apply to the notification payload — that is, is an amount excluded from a notification destined for
+a role without `canRevenue`? A notification shows on a locked screen. → `notifications`,
+`adr-auth.md`
 
-**11. Le fuseau de lecture et les préférences de compte.** Trois réglages suivent la personne et non
-la chaîne : fuseau de lecture, disposition de régie, profils d'encodage. Le premier est partagé avec
-le storefront (même compte). Qui les possède — `identity`, ou une ressource de préférences au BFF ?
-Et la ressource est-elle **additive** (une clé inconnue d'une version mobile survit à une écriture) ?
+**11. The reading timezone and account preferences.** Three settings follow the person and not the
+channel: reading timezone, run-desk layout, encoding profiles. The first is shared with the
+storefront (same account). Who owns them — `identity`, or a preferences resource at the BFF? And is
+the resource **additive** (does a key unknown to a mobile version survive a write)?
 → `context-map.md`
 
-**12. Le vocabulaire manquant des causes d'incident.** `catalogue.incidentMessages` porte quatre
-**issues** (`hold-screen`, `postponed`, `cancelled`, `interrupted`). La régie mobile distingue trois
-**causes** qui n'existent nulle part : flux perdu côté salle, poste de régie déconnecté, débit
-effondré. Peut-on avoir un vocabulaire fermé de causes, séparé des issues ? Et le déclenchement
-automatique de l'écran d'attente (règle de chaîne « si le flux se perd plus de 15 s ») produit-il un
-incident de même nature qu'un déclenchement manuel ? → `data-model.md`, `streaming.md`
+**12. The missing vocabulary of incident causes.** `catalogue.incidentMessages` carries four
+**outcomes** (`hold-screen`, `postponed`, `cancelled`, `interrupted`). The mobile run desk
+distinguishes three **causes** that exist nowhere: feed lost at the venue, run desk disconnected,
+bitrate collapsed. Can we have a closed vocabulary of causes, separate from the outcomes? And does
+the automatic hold screen (the channel rule "if the feed is lost for more than 15 s") produce an
+incident of the same nature as a manual trigger? → `data-model.md`, `streaming.md`
 
-**13. Ce que `shared/` ne porte pas et que je ne peux pas inventer.** La provision technique d'une
-jauge et son seuil de 10 000 spectateurs simultanés ; les paliers de jauge et le fait qu'ils ne se
-réduisent jamais après mise en vente ; la fenêtre de priorité de liste d'attente (2 h) ; les
-contremarques par catégorie ; la source d'un article de boutique et les commandes issues d'une
-intégration externe ; l'épinglage d'un article pendant le direct. Six formes absentes, toutes
-affichées par la maquette. Lesquelles entrent au contrat du palier 1 ?
-→ `data-model.md`, `context-map.md` (C8)
+**13. What `shared/` does not carry and I cannot invent.** The technical provisioning of a capacity
+and its threshold of 10,000 simultaneous viewers; capacity tiers and the fact that they never
+shrink once on sale; the waitlist priority window (2 h); complimentary tickets by category; the
+source of a store item and orders coming from an external integration; pinning an item during the
+live show. Six missing shapes, all of them displayed by the mockup. Which ones enter the tier-1
+contract? → `data-model.md`, `context-map.md` (C8)
 
 ---
 
 # Confrontation
 
-> Temps 3. Lecture de `answers-to-surfaces.md`, `adr-auth.md`, `context-map.md`, `data-model.md`,
-> `events.md`, `realtime.md`, `transport.md`, `critical-rules.md`, `openapi/studio.yaml` et
-> `DECISIONS.md`. **Sur pièces** : l'index des réponses est une promesse, le YAML est la preuve.
-> Chaque contestation ci-dessous est vérifiable par une ligne du contrat, citée.
+> Round 3. Read: `answers-to-surfaces.md`, `adr-auth.md`, `context-map.md`, `data-model.md`,
+> `events.md`, `realtime.md`, `transport.md`, `critical-rules.md`, `openapi/studio.yaml` and
+> `DECISIONS.md`. **On the evidence**: the answer index is a promise, the YAML is the proof. Every
+> objection below is verifiable against a line of the contract, cited.
 
 ---
 
-## Ce qui est satisfait
+## What is satisfied
 
-Court, parce que c'est massif. Sur mes treize questions, l'essentiel est tenu — et plusieurs fois
-mieux que ce que je demandais.
+Short, because it is substantial. On my thirteen questions the essentials hold — and several times
+better than what I asked for.
 
-**L'amorçage existe et il est meilleur que ma demande.** `GET /v1/bootstrap` porte la personne,
-**toutes** ses chaînes avec `roles` au vocabulaire à huit, `assignableRoles` **matérialisés**,
-`dateGrants` avec leur instant d'expiration, `rightsVersion`, `counters`, `constants`,
-`labelCatalog` et `realtime`. Et `datePanes` par chaîne **plus** `openPanes` par date : les volets
-de la fiche que j'avais trouvés dérivés du rôle sont servis, pas déduits.
+**The bootstrap exists and it is better than my request.** `GET /v1/bootstrap` carries the person,
+**all** their channels with `roles` in the eight-value vocabulary, `assignableRoles`
+**materialized**, `dateGrants` with their expiry instant, `rightsVersion`, `counters`, `constants`,
+`labelCatalog` and `realtime`. And `datePanes` per channel **plus** `openPanes` per date: the
+record panes I had found to be role-derived are served, not inferred.
 
-**La session native est tranchée dans mon sens.** `adr-auth.md` §2.2 : « `capacitor://localhost`
-est un **contexte tiers sur iOS 14+** → le cookie est mort », jeton porteur dans
-`@capacitor/preferences`, jamais `localStorage`, rafraîchissement silencieux au retour
-d'arrière-plan. §6.6 reprend mot pour mot les deux chaînes littérales de CORS et la comparaison
-sur la chaîne brute. §6.4 adopte intégralement les cinq sorties : liste blanche de chaînes
-littérales, état opaque à usage unique de 10 minutes, **état d'attente côté serveur**, et ma
-phrase telle quelle — *un paiement confirmé par un paramètre d'URL est un paiement confirmé par le
-client*.
+**The native session is decided my way.** `adr-auth.md` §2.2: "`capacitor://localhost` is a
+**third-party context on iOS 14+** → the cookie is dead", bearer token in
+`@capacitor/preferences`, never `localStorage`, silent refresh on returning from the background.
+§6.6 takes over word for word the two literal CORS strings and the raw-string comparison. §6.4
+adopts the five exits in full: an allow-list of literal strings, a single-use opaque state of 10
+minutes, **pending state on the server side**, and my sentence as it stands — *a payment confirmed
+by a URL parameter is a payment confirmed by the client*.
 
-**Le reste, en une ligne chacun.** Les trois natures d'erreur (`refused` / `unavailable` /
-`offline_forbidden`) sont dans l'enveloppe et dans `critical-rules.md` §8. La file hors ligne est
-bornée à mes deux familles. Les baux de prise en charge existent. Le second verdict est refusé
-**avec le gagnant**. Les trois axes de modération sont séparés. Mes deux exceptions de pagination
-sont accordées (D-010) avec `pendingCount` séparé pour la pastille. `resume:too_old` existe. Le
-canal est **par personne**, multi-chaînes. `measuredAt` est à l'ingest. Le dépôt signé est à
-15 min, l'export à 60. Le vocabulaire de causes d'incident existe, séparé des issues, avec
-`IncidentTrigger.AUTO`. Et `critical-rules.md` §9 grave mon exigence d'horloge : « un décompte se
-calcule contre `servedAt`, jamais contre l'horloge du client ».
+**The rest, one line each.** The three error natures (`refused` / `unavailable` /
+`offline_forbidden`) are in the envelope and in `critical-rules.md` §8. The offline queue is
+bounded to my two families. Claim leases exist. The second verdict is refused **with the winner**.
+The three moderation axes are separated. My two pagination exceptions are granted (D-010) with a
+separate `pendingCount` for the badge. `resume:too_old` exists. The channel is **per person**,
+multi-channel. `measuredAt` is at the ingest. The signed deposit is 15 min, the export 60. The
+vocabulary of incident causes exists, separate from the outcomes, with `IncidentTrigger.AUTO`. And
+`critical-rules.md` §9 engraves my clock requirement: "a countdown is computed against `servedAt`,
+never against the client's clock".
 
-Je n'y reviens pas. Ce qui suit est ce qui ne tient pas.
+I will not come back to it. What follows is what does not hold.
 
 ---
 
-## Ce qui n'est pas satisfait
+## What is not satisfied
 
-Douze points. Les quatre premiers sont graves : chacun casse un mécanisme que le contrat déclare
-par ailleurs tenir.
+Twelve points. The first four are serious: each one breaks a mechanism the contract elsewhere
+claims to uphold.
 
-### C1 — Quatre de mes dix-huit pages n'ont aucun porteur de droit, dont la page de garde
+### C1 — Four of my eighteen pages have no rights carrier, including the duty page
 
-`EffectiveRights.navigation` a un vocabulaire **fermé** de quatorze entrées :
+`EffectiveRights.navigation` has a **closed** vocabulary of fourteen entries:
 
 ```
 [agenda, dashboard, moderation, crew, events, stream, stats, tickets, store,
  replays, payouts, journal, settings, help]
 ```
 
-Mes quatre pages contextuelles — `regie`, `wizard`, `event`, `inbox` — n'y sont pas, et **aucun
-autre champ ne les autorise**. `canOps`, `canTech` et `canDecideOutcome` existent, mais aucun
-texte du contrat ne dit qu'ils ouvrent `regie` ou `wizard`.
+My four contextual pages — `regie`, `wizard`, `event`, `inbox` — are not in it, and **no other
+field authorizes them**. `canOps`, `canTech` and `canDecideOutcome` exist, but no text in the
+contract says they open `regie` or `wizard`.
 
-**La conséquence est mesurable** : la barre du bas d'un régisseur ne peut pas contenir `regie` —
-sa page de garde, celle qu'il ouvre quand le flux tombe. Elle contiendrait `agenda`, `stream`,
-`events` et rien d'autre.
+**The consequence is measurable**: a show caller's bottom bar cannot contain `regie` — their duty
+page, the one they open when the feed drops. It would contain `agenda`, `stream`, `events` and
+nothing else.
 
-Et le chemin par lequel on y est arrivé mérite d'être dit. J'avais signalé, et l'errata a retenu
-en **E6**, que « `TAB_PREF.regie` nomme une page que `ACCESS` refuse ». La résolution a été de
-**retirer la page du vocabulaire** plutôt que de réconcilier les deux tables. On a supprimé la
-destination principale de la garde pour faire disparaître l'incohérence qui la signalait.
+And the path by which we got here deserves stating. I had flagged, and the errata recorded as
+**E6**, that "`TAB_PREF.regie` names a page that `ACCESS` refuses". The resolution was to **remove
+the page from the vocabulary** rather than reconcile the two tables. **The duty's main destination
+was deleted to remove the inconsistency that flagged it.**
 
-Ce n'est pas un oubli de chemins : `/v1/dates/{dateId}/run`, `/run/state`, `/run/health-samples`,
-`/incidents`, `/stream-key/*` existent tous et servent la régie très bien. C'est **le droit** qui
-manque, pas la donnée.
+This is not a matter of missing paths: `/v1/dates/{dateId}/run`, `/run/state`,
+`/run/health-samples`, `/incidents`, `/stream-key/*` all exist and serve the run desk very well. It
+is **the right** that is missing, not the data.
 
-### C2 — La barre de quatre onglets ne se dérive pas de `navigation`, et la preuve est arithmétique
+### C2 — The four-tab bar does not derive from `navigation`, and the proof is arithmetic
 
-`navigation` est décrite comme servie « dans l'**ordre canonique** ». C'est `ORDER`. Or la barre
-n'est pas `ORDER` tronqué à quatre : c'est `TAB_PREF`, un ordre **par rôle**, différent.
+`navigation` is described as served "in **canonical order**". That is `ORDER`. But the bar is not
+`ORDER` truncated to four: it is `TAB_PREF`, a **per-role** order, and a different one.
 
-Pour `artist`, `ORDER ∩ ACCESS` donne dans l'ordre :
+For `artist`, `ORDER ∩ ACCESS` gives, in order:
 
 ```
 dashboard · crew · events · stream · stats · tickets · store · replays · payouts · journal · settings · help
-        ↑ les quatre premières : dashboard, crew, events, stream
+        ↑ the first four: dashboard, crew, events, stream
 TAB_PREF.artist                 : dashboard, events, crew, tickets
 ```
 
-**Deux différences sur quatre.** Prendre les quatre premières entrées de `navigation` met
-`stream` dans la barre d'un artiste et en sort `tickets` — la billetterie, ce qu'un artiste
-regarde le plus. Pour `prod`, `regie` et `tres`, l'écart est du même ordre.
+**Two differences out of four.** Taking the first four entries of `navigation` puts `stream` in an
+artist's bar and drops `tickets` — ticketing, what an artist looks at most. For `prod`, `regie` and
+`tres`, the gap is of the same order.
 
-J'avais demandé que `TAB_PREF` vive dans `@arthome/core`, parce que le studio web ordonne le même
-menu et que `critical-rules.md` §2 l'impose — « toute valeur affichée deux fois vient de
-`@arthome/core` : deux *appels* sont permis, deux *implémentations* jamais ». Recherche faite sur
-tout le dépôt : **`TAB_PREF` n'apparaît qu'une seule fois**, dans `corrections-handoff.md`, comme
-l'errata E6. Elle n'est ni dans le contrat, ni nommée comme appartenant au domaine. Deux surfaces
-vont donc l'implémenter deux fois, et c'est exactement le cas que la règle 2 interdit.
+I had asked for `TAB_PREF` to live in `@arthome/core`, because the studio web orders the same menu
+and `critical-rules.md` §2 requires it — "every value displayed twice comes from `@arthome/core`:
+two *calls* are allowed, two *implementations* never". Searched across the whole repository:
+**`TAB_PREF` appears exactly once**, in `corrections-handoff.md`, as errata E6. It is neither in
+the contract, nor named as belonging to the domain. Two surfaces are therefore going to implement
+it twice, and that is exactly the case rule 2 forbids.
 
-### C3 — L'optimistic lock de la modération confond le bail et la décision, et annule la file hors ligne
+### C3 — The moderation optimistic lock conflates the lease with the decision, and cancels the offline queue
 
-C'est ma contestation la plus grave, et elle se démontre avec les **exemples du contrat
-lui-même**.
+This is my most serious objection, and it is demonstrated with the contract's **own examples**.
 
 ```
 POST /moderation/items/{id}/claim    → data: { state: claimed,  …, version: 2 }
@@ -999,266 +971,259 @@ DELETE /moderation/items/{id}/claim  → data: { state: reported, …, version: 
 POST /moderation/items/{id}/verdict  ← body: { verdict: mute, …, expectedVersion: 2 }
 ```
 
-Poser puis relâcher un bail — **sans rien trancher** — fait passer la version de 1 à 3. Donc :
+Taking then releasing a lease — **without settling anything** — moves the version from 1 to 3. So:
 
-> Un modérateur lit la file à `version: 1`. Le réseau tombe. Il tranche ; le verdict part en file
-> hors ligne avec `expectedVersion: 1`. Pendant ce temps un confrère prend la ligne en charge
-> puis la relâche, **sans verdict**. À la reconnexion, le verdict est refusé.
+> A moderator reads the queue at `version: 1`. The network drops. They settle; the verdict goes
+> into the offline queue with `expectedVersion: 1`. Meanwhile a colleague claims the line and
+> releases it, **with no verdict**. On reconnection, the verdict is refused.
 
-La file hors ligne est **la seule concession accordée au mobile**, et le bail la vide de son
-contenu. Sur un direct à 60 messages par minute, les lignes changent de bail sans arrêt.
+The offline queue is **the only concession granted to mobile**, and the lease hollows it out. On a
+live show running at 60 messages a minute, lines change lease constantly.
 
-Le défaut est plus profond qu'un compteur mal placé. La règle réelle de la maquette est une
-**supersession** : « prendre en charge n'est pas trancher — tant que le confrère n'a pas rendu de
-verdict, **votre sanction s'applique** ». Un verdict doit donc être **accepté** pendant qu'un
-autre tient le bail. Un compteur unique ne peut pas exprimer « refuse si tranché, accepte si
-seulement réclamé ».
+The defect runs deeper than a misplaced counter. The mockup's real rule is a **supersession**:
+"claiming is not settling — until the colleague has rendered a verdict, **your sanction applies**".
+A verdict must therefore be **accepted** while someone else holds the lease. A single counter
+cannot express "refuse if settled, accept if merely claimed".
 
-Et le contrat se contredit sur ce point : le **seul** 409 documenté sur `/verdict` est
-`MODERATION_ALREADY_SETTLED`. De deux choses l'une — soit `expectedVersion` est réellement
-vérifié, et il manque un `STATE_CONFLICT` non documenté qui refusera des verdicts légitimes ;
-soit il ne l'est pas, et `expectedVersion` est décoratif alors que le contrat en fait sa garantie
-de conditionnalité.
+And the contract contradicts itself here: the **only** documented 409 on `/verdict` is
+`MODERATION_ALREADY_SETTLED`. Either `expectedVersion` really is checked, and an undocumented
+`STATE_CONFLICT` is missing that will refuse legitimate verdicts; or it is not, and
+`expectedVersion` is decorative while the contract makes it its guarantee of conditionality.
 
-**Correctif demandé** : conditionner le verdict sur l'**axe du règlement** — `settledAt` nul, ou
-un `decisionVersion` que **seul un verdict incrémente** — et laisser `version` porter le bail.
-Deux axes séparés, ce qui est précisément la doctrine que le contrat applique déjà, et bien, aux
-trois états de modération.
+**Fix requested**: condition the verdict on the **settlement axis** — `settledAt` being null, or a
+`decisionVersion` that **only a verdict increments** — and let `version` carry the lease. Two
+separate axes, which is precisely the doctrine the contract already applies, and applies well, to
+the three moderation states.
 
-### C4 — `RIGHTS_VERSION_STALE` est inémettable, et c'est exactement le cas de la transition
+### C4 — `RIGHTS_VERSION_STALE` cannot be emitted, and that is exactly the transition case
 
-Le contrat pose la doctrine en toutes lettres : trois codes distincts — `FORBIDDEN`,
-`RIGHTS_VERSION_STALE`, `CHANNEL_ACCESS_REVOKED` — « parce que la personne doit savoir s'il faut
-recharger, appeler, ou renoncer ». La réponse porte `X-Arthome-Rights-Version`.
+The contract states the doctrine in so many words: three distinct codes — `FORBIDDEN`,
+`RIGHTS_VERSION_STALE`, `CHANNEL_ACCESS_REVOKED` — "because the person must know whether to
+reload, to call, or to give up". The response carries `X-Arthome-Rights-Version`.
 
-Mais **aucun paramètre de requête ne porte la version que le client détient**. La liste complète
-des paramètres réutilisables du document est : `Traceparent`, `Surface`, `IdempotencyKey`,
-`ChannelId`, `DateId`, `Page`, `PageSize`, `SortBy`, `SortDir`, `Cursor`, `Limit`. Rien d'autre.
+But **no request parameter carries the version the client holds**. The complete list of reusable
+parameters in the document is: `Traceparent`, `Surface`, `IdempotencyKey`, `ChannelId`, `DateId`,
+`Page`, `PageSize`, `SortBy`, `SortDir`, `Cursor`, `Limit`. Nothing else.
 
-Le serveur ne peut donc pas distinguer « tu n'as jamais eu ce droit » de « tu l'avais il y a deux
-cents millisecondes ». Deux des trois codes sont hors d'atteinte, et il ne reste que `FORBIDDEN` —
-c'est-à-dire l'indistinction que les trois codes existaient pour supprimer.
+The server therefore cannot distinguish "you never had this right" from "you had it two hundred
+milliseconds ago". Two of the three codes are out of reach, and only `FORBIDDEN` remains — that is,
+the very indistinction the three codes existed to remove.
 
-**C'est précisément la question posée** : un événement arrive pendant une transition. Sous
-`ion-router-outlet` la page est déjà poussée, la requête est déjà partie. Elle revient en 403. Si
-le code est `FORBIDDEN`, l'application renvoie l'opérateur à l'accueil comme s'il n'avait jamais
-eu le droit ; si c'est `RIGHTS_VERSION_STALE`, elle recharge l'amorçage et **retrouve sa place**.
-La différence, en garde, est entre « je continue » et « j'ai perdu mon écran ».
+**This is exactly the question put to me**: an event arrives during a transition. Under
+`ion-router-outlet` the page is already pushed, the request has already left. It comes back a 403.
+If the code is `FORBIDDEN`, the app sends the operator back to the home screen as though they never
+had the right; if it is `RIGHTS_VERSION_STALE`, it reloads the bootstrap and **finds its place
+again**. On duty, the difference is between "I carry on" and "I lost my screen".
 
-Il manque un en-tête de requête — `If-Rights-Version`, symétrique de celui de la réponse.
+A request header is missing — `If-Rights-Version`, symmetric with the response one.
 
-**Et il y a deux horloges de révocation, pas une.** `realtime.md` §3 : « le serveur fait quitter
-les salles d'une chaîne perdue **sans attendre une reconnexion** » — immédiat. Le préambule de
-`studio.yaml` : « la fraîcheur maximale de l'autorisation est de **60 secondes**, durée du jeton
-interne frappé par le BFF ». Pendant une minute, la console est muette mais la commande passe
-encore. Laquelle fait foi à l'écran ? Le contrat ne le dit pas, et un modérateur qui voit sa file
-se figer pendant que ses verdicts aboutissent ne comprendra ni l'un ni l'autre.
+**And there are two revocation clocks, not one.** `realtime.md` §3: "the server makes the client
+leave the rooms of a lost channel **without waiting for a reconnection**" — immediate. The preamble
+of `studio.yaml`: "the maximum staleness of authorization is **60 seconds**, the lifetime of the
+internal token minted by the BFF". For a minute, the console is mute but the command still goes
+through. Which one is authoritative on screen? The contract does not say, and a moderator who
+watches their queue freeze while their verdicts succeed will understand neither.
 
-### C5 — Quatre commandes exigent un `reauthToken` que rien n'émet
+### C5 — Four commands require a `reauthToken` that nothing issues
 
-`stream-key/reveal`, `stream-key/rotate`, `ownership-transfer` et la suppression de chaîne
-déclarent `required: [reauthToken]`. **Aucun point d'entrée du BFF studio ne le frappe.**
-`adr-auth.md` §6.1 renvoie au plugin `one-time-token` de better-auth — un détail d'implémentation
-d'`identity`, pas un contrat de surface. Le contrat exige un jeton qu'il n'offre pas.
+`stream-key/reveal`, `stream-key/rotate`, `ownership-transfer` and channel deletion declare
+`required: [reauthToken]`. **No studio BFF endpoint mints it.** `adr-auth.md` §6.1 defers to
+better-auth's `one-time-token` plugin — an implementation detail of `identity`, not a surface
+contract. The contract requires a token it does not offer.
 
-Et la question de fond n'est pas tranchée pour la coquille native : **par quel facteur ?**
-Renouveler la clé de flux est le geste d'urgence du régisseur — « le geste à faire après chaque
-prestataire », et celui qu'on fait quand on soupçonne une clé fuitée pendant un direct. Si la
-réauthentification est un mot de passe à taper dans une salle noire, à une main, la garantie se
-paie en antenne noire. Si c'est la biométrie de l'appareil, il faut le dire, et dire ce qui se
-passe quand elle échoue.
+And the underlying question is not settled for the native shell: **by what factor?** Rotating the
+stream key is the show caller's emergency gesture — "the gesture to make after every contractor",
+and the one you make when you suspect a key has leaked during a live show. If re-authentication is
+a password to be typed in a dark venue, one-handed, the guarantee is paid for in dead air. If it is
+the device's biometrics, that needs saying, along with what happens when it fails.
 
-### C6 — Aucune gestion d'appareil, aucune révocation, aucune déconnexion
+### C6 — No device management, no revocation, no sign-out
 
-La réponse à ma question 1 promet « **révocation par appareil** ». Le contrat du studio n'offre
-ni `/me/sessions`, ni `/me/devices`, ni révocation, **ni déconnexion**. La feuille « Mon compte »
-de la maquette porte pourtant « SE DÉCONNECTER », et c'est la seule sortie qu'un opérateur a.
+The answer to my question 1 promises **per-device revocation**. The studio contract offers neither
+`/me/sessions`, nor `/me/devices`, nor revocation, **nor sign-out**. Yet the mockup's "My account"
+sheet carries "SIGN OUT", and it is the only exit an operator has.
 
-`adr-auth.md` §6.5 ne donne la révocation d'appareil qu'au **téléviseur partagé** — `Device` et
-`DeviceSession` sont les notions de l'appairage RFC 8628, pas celles d'une session porteuse de
-jeton sur un téléphone. Sans notion d'appareil attachée à la session mobile, « révoquer ce
-téléphone » n'a pas de référent.
+`adr-auth.md` §6.5 grants device revocation only to the **shared television** — `Device` and
+`DeviceSession` are the notions of RFC 8628 pairing, not those of a bearer-token session on a
+phone. With no device notion attached to the mobile session, "revoke this phone" has no referent.
 
-Ce que cela vaut concrètement : un téléphone oublié dans une salle ouvre une console de
-modération et la révélation d'une clé de flux **sur des chaînes qui n'appartiennent pas à son
-porteur** — un indépendant intervient sur plusieurs chaînes, c'est la prémisse de toute cette
-surface. Le contrat n'offre aucun geste, ni à la personne, ni au propriétaire de la chaîne.
+What that is worth concretely: a phone left behind in a venue opens a moderation console and the
+revelation of a stream key **on channels that do not belong to its holder** — a freelancer works
+across several channels, which is the premise of this entire surface. The contract offers no
+gesture, neither to the person nor to the channel owner.
 
-### C7 — Aucun enregistrement de jeton de notification
+### C7 — No notification token registration
 
-Ma question 10 est répondue « routage par rôle et par chaîne décidé côté serveur, enregistrement
-d'appareil par compte, charge utile portant chaîne + date + page cible ». Le routage serveur est
-acquis — `escalate` rend `routedToRoles`. Mais il n'existe **ni point d'entrée ni schéma** pour
-déclarer un jeton FCM : recherche faite sur `push`, `fcm`, `apns`, `deviceToken` dans
-`studio.yaml`, aucune occurrence hors du préambule sur la redaction.
+My question 10 is answered with "routing by role and by channel decided server-side, per-account
+device registration, payload carrying channel + date + target page". Server-side routing is secured
+— `escalate` returns `routedToRoles`. But there is **neither an endpoint nor a schema** to declare
+an FCM token: searched for `push`, `fcm`, `apns`, `deviceToken` in `studio.yaml`, no occurrence
+outside the preamble on redaction.
 
-Sans lui, la garde ne peut pas être réveillée application fermée. C'est la moitié de la raison
-d'être d'un outil de garde : « file de modération saturée », « aucun modérateur affecté à J-1 »,
-« débit instable » sont des alertes qui arrivent quand l'application n'est pas au premier plan.
-La redaction des montants dans la charge utile est promise ; la charge utile n'a pas de
-destinataire.
+Without it, duty cannot be woken with the app closed. That is half the reason a duty tool exists:
+"moderation queue saturated", "no moderator assigned at D-1", "unstable bitrate" are alerts that
+arrive when the app is not in the foreground. Redaction of amounts in the payload is promised; the
+payload has no addressee.
 
-### C8 — `GET /changes` n'existe que sur le BFF storefront
+### C8 — `GET /changes` exists only on the storefront BFF
 
-`realtime.md` §5.2 décrit exactement le mécanisme dont j'ai besoin :
+`realtime.md` §5.2 describes exactly the mechanism I need:
 
 ```
 GET /changes?since=<servedAt>&scope=… → { invalidated: [...], servedAt, complete: bool }
 ```
 
-Il rend **une liste d'invalidations, pas les données**, et `complete: false` signifie « recharge
-tout » — la même honnêteté que `resume:too_old`. Le document l'attribue à « un besoin propre au
-storefront mobile ».
+It returns **a list of invalidations, not the data**, and `complete: false` means "reload
+everything" — the same honesty as `resume:too_old`. The document attributes it to "a need specific
+to the storefront mobile".
 
-Il est dans `openapi/storefront.yaml`. Il n'est **pas** dans `openapi/studio.yaml`.
+It is in `openapi/storefront.yaml`. It is **not** in `openapi/studio.yaml`.
 
-C'est pourtant le besoin que j'avais nommé, et pour une raison qui n'existe que chez moi : sous
-`ion-router-outlet`, une page **reste dans le DOM** après qu'on l'a quittée et se réaffiche telle
-quelle au retour. Il faut une lecture bon marché de fraîcheur, sinon chaque retour sur une page
-est soit un affichage périmé, soit un rechargement complet sur la 4G d'une salle. Le studio a
-`servedAt` et `rightsVersion` par réponse, mais rien qui dise en un appel « voici ce qui a
-changé » pour les six lectures d'un écran. Le mécanisme est écrit, motivé, spécifié par un autre —
-et non branché chez moi.
+Yet it is the need I named, and for a reason that exists only here: under `ion-router-outlet`, a
+page **stays in the DOM** after you leave it and is redisplayed as-is on return. A cheap freshness
+read is required, otherwise every return to a page is either a stale display or a full reload on a
+venue's 4G. The studio has `servedAt` and `rightsVersion` per response, but nothing that says in
+one call "here is what changed" for a screen's six reads. The mechanism is written, motivated,
+specified by someone else — and not wired up here.
 
-### C9 — Deux pages sont nommées dans `navigation` et n'ont aucun point d'entrée
+### C9 — Two pages are named in `navigation` and have no endpoint
 
-`dashboard` et `stats` figurent dans le vocabulaire de `navigation` et dans l'exemple servi par
-l'amorçage. Il n'existe dans `studio.yaml` **ni chemin, ni schéma** qui les serve : la liste
-complète des schémas ne contient aucun agrégat de mesure, et la seule trace de statistiques est
-`stats_csv` comme type d'export comptable.
+`dashboard` and `stats` appear in the `navigation` vocabulary and in the example served by the
+bootstrap. There exists in `studio.yaml` **neither a path nor a schema** that serves them: the
+complete schema list contains no measurement aggregate, and the only trace of statistics is
+`stats_csv` as an accounting export kind.
 
-Ce n'est pas une page secondaire. **`dashboard` est la première entrée de `TAB_PREF` pour
-`artist`, `prod` et `tres`** — l'onglet par défaut de trois personas sur six. Tel quel, trois
-personas ouvrent l'application sur un écran que le contrat ne remplit pas.
+This is not a secondary page. **`dashboard` is the first entry of `TAB_PREF` for `artist`, `prod`
+and `tres`** — the default tab of three personas out of six. As it stands, three personas open the
+app on a screen the contract does not fill.
 
-### C10 — Le motif « un appel par volet » n'est implémenté que pour un volet sur six
+### C10 — The "one call per pane" pattern is implemented for one pane out of six
 
-`GET /dates/{dateId}/sheet` sert `openPanes`, et sert mieux que ma demande : **par date** plutôt
-que par chaîne. La description pose le motif : « un appel pour la fiche, puis **un appel par volet
-ouvert, chez son propriétaire** », avec mon propre argument en justification — « un modérateur
-doit pouvoir charger le volet `chat` **sans** charger la fiche entière, sinon la billetterie
-transite pour rien ».
+`GET /dates/{dateId}/sheet` serves `openPanes`, and serves better than my request: **per date**
+rather than per channel. The description states the pattern: "one call for the record, then **one
+call per open pane, at its owner**", with my own argument as the justification — "a moderator must
+be able to load the `chat` pane **without** loading the whole record, otherwise ticketing travels
+for nothing".
 
-Seul `/v1/dates/{dateId}/panes/tickets` existe. Il n'y a pas de volet `chat`, `tech`, `crew`,
-`replay` ni `public`.
+Only `/v1/dates/{dateId}/panes/tickets` exists. There is no `chat`, `tech`, `crew`, `replay` or
+`public` pane.
 
-L'argument est donc **défait par sa propre mise en œuvre** : un `mod` dont le seul volet est
-`chat` doit appeler `/sheet` — ne serait-ce que pour apprendre quels volets lui sont ouverts —
-puis n'a nulle part où aller. Des chemins voisins existent (`/dates/{id}/crew`, `/run`,
-`/chat-policy`, `/replay-policy`) et couvrent peut-être la matière, mais alors le motif annoncé
-est faux et la surface ne sait pas quel chemin appeler pour quel volet.
+The argument is therefore **defeated by its own implementation**: a `mod` whose only pane is `chat`
+has to call `/sheet` — if only to learn which panes are open to them — and then has nowhere to go.
+Neighbouring paths exist (`/dates/{id}/crew`, `/run`, `/chat-policy`, `/replay-policy`) and may
+cover the material, but then the announced pattern is false and the surface does not know which
+path to call for which pane.
 
-### C11 — `Duty` ne porte pas le fuseau de la salle
+### C11 — `Duty` does not carry the venue timezone
 
-`DateSheet` porte `venueClock { venueTimezone, venueUtcOffsetMin }`. `Duty` porte `dateId`,
+`DateSheet` carries `venueClock { venueTimezone, venueUtcOffsetMin }`. `Duty` carries `dateId`,
 `channelId`, `channelName`, `title`, `crewRole`, `startsAt`, `runState`, `overlapsWith`,
-`accessExpiresAt` — et pas le fuseau.
+`accessExpiresAt` — and not the timezone.
 
-Or l'écran de garde, qui est l'**écran d'accueil de cette surface**, affiche pour chaque garde
-l'heure de salle **et** l'heure de la personne. C'est la doctrine du dossier (« heure du
-spectateur d'abord, heure de salle en second »), c'est D3, c'est E7 — et c'est un besoin explicite
-de mon document, cité dans la réponse qui m'est faite.
+Yet the duty screen, which is **this surface's home screen**, displays for each duty the venue time
+**and** the person's own time. That is the handover's doctrine ("the spectator's time first, the
+venue's time second"), it is D3, it is E7 — and it is an explicit need of my document, quoted in
+the answer given to me.
 
-Rendre l'heure de salle sur la liste de gardes demande donc un appel par garde : **exactement le
-N+1 que l'amorçage existe pour tuer**, et sur le seul écran qu'un régisseur ouvre en arrivant dans
-une salle. Manque aussi `runtimeMin`, que la ligne affiche (« durée annoncée »). La **règle** est
-sauve — `overlapsWith` est servi et calculé dans `@arthome/core`, ce qui est juste — mais pas
-l'affichage.
+Rendering the venue time on the duties list therefore costs one call per duty: **exactly the N+1
+the bootstrap exists to kill**, and on the one screen a show caller opens on arriving at a venue.
+`runtimeMin` is missing too, which the row displays ("announced runtime"). The **rule** is safe —
+`overlapsWith` is served and computed in `@arthome/core`, which is right — but the display is not.
 
-### C12 — Sept trous d'écran, nommés
+### C12 — Seven screen holes, named
 
-Moins graves, mais chacun est une page ou un geste de la maquette sans contrepartie :
+Less serious, but each one is a page or a gesture of the mockup with no counterpart:
 
-| Manque | Ce qui existe à la place |
+| Missing | What exists instead |
 |---|---|
-| **Matrice équipe** — créneaux par date × poste sur N dates | `/dates/{id}/crew`, un appel par date |
-| **Journal des accès** (distinct du journal de chaîne) | `/channels/{id}/journal` seulement |
-| **Catalogue de rediffusions** au niveau chaîne | `/dates/{id}/replay-window`, par date |
-| **Transfert de place** et **litige bancaire** — deux des trois « demandes en cours » | `/seats/{id}/refund` seulement |
-| **Profils d'encodage** nommés, qui « voyagent d'une chaîne à l'autre » | `encodingProfileName`, une chaîne — rien ne stocke les profils |
-| **Déconnexion** | rien |
-| **`help`** | rien, et rien ne dit que c'est un artefact statique |
+| **Crew matrix** — slots per date × post across N dates | `/dates/{id}/crew`, one call per date |
+| **Access log** (distinct from the channel journal) | `/channels/{id}/journal` only |
+| **Replay catalogue** at channel level | `/dates/{id}/replay-window`, per date |
+| **Seat transfer** and **bank dispute** — two of the three "pending requests" | `/seats/{id}/refund` only |
+| **Named encoding profiles**, which "travel from one channel to the next" | `encodingProfileName`, a string — nothing stores the profiles |
+| **Sign-out** | nothing |
+| **`help`** | nothing, and nothing says it is a static artifact |
 
 ---
 
-## Ce qui est satisfait autrement, et si ça me va
+## What is satisfied differently, and whether that works for me
 
-**WHEP → LL-HLS (D-019) : ça me va, et c'est mieux que ma demande.** Je demandais qu'on ne
-promette pas ce qui n'est pas mesuré ; le contrat va plus loin en servant `monitorPath`
-(`whep | ll_hls`) dans l'état du run, donc l'application **annonce** la latence qu'elle a au lieu
-de la promettre. Je maintiens la réserve telle que D-019 l'écrit : la mesure sur appareil réel
-reste à faire, et elle conditionne aussi **Web Crypto** — donc tout ce qu'on voudrait un jour
-chiffrer côté client.
+**WHEP → LL-HLS (D-019): works for me, and it is better than my request.** I asked that nothing be
+promised that is not measured; the contract goes further by serving `monitorPath`
+(`whep | ll_hls`) in the run state, so the app **announces** the latency it has instead of
+promising it. I keep the reservation as D-019 writes it: the measurement on a real device is still
+to be done, and it also governs **Web Crypto** — hence anything we might one day want to encrypt
+client-side.
 
-**La battue de vie (`ws:pulse`) est une meilleure réponse que la mienne.** Je demandais que chaque
-mesure porte son instant de mesure, pour que l'application puisse dire « mesuré il y a 3 s » au
-lieu de « 0 Mb/s ». Le contrat le fait (`measuredAt` à l'ingest) **et** ajoute un mécanisme que je
-n'avais pas proposé : plus de pulse pendant 15 s = je suis sourd ; pulse sans échantillon depuis
-30 s = la salle n'envoie plus. Deux états, deux écrans, aucune inférence — et le même pulse porte
-`serverTime` comme horloge de référence et `seq` comme point de reprise. Trois de mes besoins
-réglés par un seul mécanisme. Accepté sans réserve.
+**The heartbeat (`ws:pulse`) is a better answer than mine.** I asked that every measurement carry
+its measurement instant, so the app could say "measured 3 s ago" instead of "0 Mb/s". The contract
+does that (`measuredAt` at the ingest) **and** adds a mechanism I had not proposed: no pulse for
+15 s = I am deaf; a pulse arriving with no health sample for 30 s = the venue is no longer sending.
+Two states, two screens, no inference — and the same pulse carries `serverTime` as the reference
+clock and `seq` as the resume point. Three of my needs settled by a single mechanism. Accepted
+without reservation.
 
-**`deviceUpKbps` contre `ingestUpKbps` : mon incohérence 7 est réglée.** Deux noms distincts, et
-la phrase qui tranche — « seul `ingestUpKbps` alimente la liste de pré-vol ». Le téléphone n'est
-pas l'encodeur, et le contrat le dit maintenant.
+**`deviceUpKbps` versus `ingestUpKbps`: my inconsistency 7 is settled.** Two distinct names, and
+the sentence that decides it — "only `ingestUpKbps` feeds the pre-flight checklist". The phone is
+not the encoder, and the contract now says so.
 
-**La liste de pré-vol passe de quatre à sept éléments**, dont deux deviennent des avertissements
-non bloquants. Mon incohérence 8 visait l'inverse — je demandais qu'elle soit entièrement
-serveur ; elle l'est, et elle est de surcroît plus juste que ce que je signalais.
+**The pre-flight checklist goes from four items to seven**, two of which become non-blocking
+warnings. My inconsistency 8 aimed the other way — I asked for it to be entirely server-side; it
+is, and it is moreover more accurate than what I flagged.
 
-**Les trois axes de modération (E3/D6).** `ModerationItemState` = `reported | claimed | settled`,
-état du message = `published | removed`, sanction de personne = `none | muted | banned`, et la
-pastille unique **dérivée** par `moderationBadgeOf` avec une préséance servie. `reported` a quitté
-le champ des sanctions, exactement comme demandé — et la description du schéma reprend mon
-diagnostic : « c'est pour cela que la file se construisait en filtrant `state === 'reported'`, ce
-qui n'est pas un filtre d'état mais un filtre de nature ». Accepté.
+**The three moderation axes (E3/D6).** `ModerationItemState` = `reported | claimed | settled`,
+message state = `published | removed`, person sanction = `none | muted | banned`, and the single
+badge **derived** by `moderationBadgeOf` with a served precedence. `reported` has left the
+sanctions field, exactly as asked — and the schema description takes up my diagnosis: "that is why
+the queue was built by filtering `state === 'reported'`, which is not a state filter but a nature
+filter". Accepted.
 
-**Deux ajouts que je n'avais pas demandés et qui sont justes.** `atMediaSec` sur la ligne de file
-— l'ancrage média porté jusque dans la modération, ce qui rend le journal relisible sur une
-rediffusion. Et `origin: human_verdict | retroactive_filter | author_sanctioned`, qui permet au
-journal de distinguer un reclassement automatique d'une décision humaine.
+**Two additions I had not asked for, and which are right.** `atMediaSec` on the queue line — media
+anchoring carried all the way into moderation, which makes the log readable again over a replay.
+And `origin: human_verdict | retroactive_filter | author_sanctioned`, which lets the journal
+distinguish an automatic requeue from a human decision.
 
-**Mon filet de sécurité est devenu une règle serveur.** `holdScreenAutoAfterSec: 15` est servi
-dans les constantes, et son déclenchement produit un incident de même nature qu'un déclenchement
-manuel, marqué `IncidentTrigger.AUTO`. C'est mieux que ce que je demandais : je proposais que la
-règle existe, le contrat la sert **et** la rend auditable.
+**My safety net became a server rule.** `holdScreenAutoAfterSec: 15` is served in the constants,
+and its firing produces an incident of the same nature as a manual trigger, marked
+`IncidentTrigger.AUTO`. That is better than what I asked for: I proposed that the rule exist, the
+contract serves it **and** makes it auditable.
 
-**Les constantes servies règlent mon incohérence 6 à moitié.** `chatBurstThresholdPerMinute: 60`
-est servi, donc le seuil ne sera pas recopié sur deux surfaces. Il manque la **fenêtre** de la
-mesure — voir les questions.
+**The served constants settle half of my inconsistency 6.** `chatBurstThresholdPerMinute: 60` is
+served, so the threshold will not be copied onto two surfaces. The measurement **window** is
+missing — see the questions.
 
-**Le fuseau de lecture** est logé dans `AccountPreferences` d'`identity`, **même champ que le
-storefront**. Je demandais qui le possède ; la réponse est plus forte que la question, et elle
-règle mon incohérence 9.
+**The reading timezone** lives in `identity`'s `AccountPreferences`, **the same field as the
+storefront's**. I asked who owns it; the answer is stronger than the question, and it settles my
+inconsistency 9.
 
-**`critical-rules.md` §9** grave mon exigence d'horloge en règle critique du projet : « un
-décompte se calcule contre `servedAt`, jamais contre l'horloge du client ». Je demandais un
-comportement d'application ; c'est devenu une règle de contrat.
+**`critical-rules.md` §9** engraves my clock requirement as a critical rule of the project: "a
+countdown is computed against `servedAt`, never against the client's clock". I asked for an app
+behaviour; it became a contract rule.
 
-**L'escalade : à moitié.** `routedToRoles: [artist, production]` est servi, le routage est
-serveur, et le geste existe pour les rôles sans `canDecideOutcome` — c'était mon besoin. Deux
-réserves : la maquette annonce « **2 personnes** ont reçu l'alerte », et des **libellés de rôle**
-ne disent pas combien d'humains ont été joints ; et le corps de la commande ne porte qu'un `note`
-en texte libre, alors que la maquette promet que « le signalement leur arrive avec le relevé
-technique ». Si le relevé est attaché côté serveur depuis l'incident, c'est bien — mais il faut
-l'écrire, sinon la surface tentera de le mettre dans la note.
+**Escalation: half.** `routedToRoles: [artist, production]` is served, the routing is server-side,
+and the gesture exists for roles without `canDecideOutcome` — that was my need. Two reservations:
+the mockup announces "**2 people** received the alert", and **role labels** do not say how many
+humans were reached; and the command body carries only a free-text `note`, whereas the mockup
+promises that "the report reaches them with the technical reading". If the reading is attached
+server-side from the incident, that is fine — but it needs writing down, otherwise the surface will
+try to stuff it into the note.
 
 ---
 
-## Les questions sans réponse
+## The unanswered questions
 
 | # | Question |
 |---|---|
-| **a** | Sous quelle forme le client déclare-t-il la version de droits qu'il détient ? Sans en-tête de requête, `RIGHTS_VERSION_STALE` est inémettable (C4). |
-| **b** | Des deux horloges de révocation — canal immédiat, HTTP à 60 s — laquelle fait foi à l'écran ? |
-| **c** | Qui frappe le `reauthToken` des quatre commandes sensibles, et **par quel facteur** sur un téléphone en salle ? |
-| **d** | Révocation d'appareil et déconnexion : quel point d'entrée du BFF studio ? |
-| **e** | Enregistrement du jeton de notification : quel point d'entrée, et la charge utile porte-t-elle bien `channelId` + `dateId` + page cible ? |
-| **f** | `regie`, `wizard`, `event`, `inbox` : quel champ porte leur droit ? `canTech` et `canOps` sont-ils prévus pour cela, ou faut-il élargir `navigation` ? |
-| **g** | `TAB_PREF` : où vit-elle, puisque deux surfaces l'affichent et que `critical-rules.md` §2 interdit deux implémentations ? |
-| **h** | Le verdict est conditionnel **sur quel axe** exactement, et quels 409 le contrat documente-t-il au-delà de `MODERATION_ALREADY_SETTLED` ? |
-| **i** | `dashboard` et `stats` : reportés à un palier nommé, ou omis ? Ils sont dans `navigation` et en tête de `TAB_PREF` pour trois personas. |
-| **j** | Les cinq volets de fiche sans point d'entrée : servis par les chemins voisins — et lesquels — ou à écrire ? |
-| **k** | Quelle est la **fenêtre** de mesure du débit du tchat ? Le seuil est servi, la fenêtre non — et c'est la moitié qui manquait à mon incohérence 6. |
-| **l** | `GET /changes` sur le BFF studio : accordé ou refusé ? Le cache de page d'Ionic en dépend. |
-| **m** | L'escalade : le relevé technique est-il attaché côté serveur depuis l'incident, et le nombre de personnes réellement jointes est-il rendu ? |
+| **a** | In what form does the client declare the rights version it holds? Without a request header, `RIGHTS_VERSION_STALE` cannot be emitted (C4). |
+| **b** | Of the two revocation clocks — the channel's immediate one, HTTP's 60 s — which is authoritative on screen? |
+| **c** | Who mints the `reauthToken` of the four sensitive commands, and **by what factor** on a phone in a venue? |
+| **d** | Device revocation and sign-out: which studio BFF endpoint? |
+| **e** | Notification token registration: which endpoint, and does the payload really carry `channelId` + `dateId` + target page? |
+| **f** | `regie`, `wizard`, `event`, `inbox`: which field carries their right? Are `canTech` and `canOps` meant for that, or must `navigation` be widened? |
+| **g** | `TAB_PREF`: where does it live, given that two surfaces display it and `critical-rules.md` §2 forbids two implementations? |
+| **h** | The verdict is conditional **on which axis** exactly, and which 409s does the contract document beyond `MODERATION_ALREADY_SETTLED`? |
+| **i** | `dashboard` and `stats`: deferred to a named tier, or omitted? They are in `navigation` and at the head of `TAB_PREF` for three personas. |
+| **j** | The five record panes with no endpoint: served by the neighbouring paths — and which ones — or still to be written? |
+| **k** | What is the measurement **window** for the chat rate? The threshold is served, the window is not — and that is the half my inconsistency 6 was missing. |
+| **l** | `GET /changes` on the studio BFF: granted or refused? Ionic's page cache depends on it. |
+| **m** | Escalation: is the technical reading attached server-side from the incident, and is the number of people actually reached returned? |
