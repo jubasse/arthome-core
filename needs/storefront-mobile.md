@@ -941,3 +941,383 @@ client ; les autres la contraignent.
 - **La taxonomie sera-t-elle servie comme un artefact versionné immuable, par langue et par
   surface ?** 59,5 Ko bruts pour la taxonomie, 117 Ko pour l'i18n bilingue du storefront : un
   instantané embarqué qui emporterait tout pèserait sur le démarrage de l'application.
+
+---
+
+# Confrontation
+
+> Temps 3. J'ai lu `answers-to-surfaces.md`, `context-map.md`, `realtime.md`, `transport.md`,
+> `critical-rules.md`, `DECISIONS.md` et surtout `openapi/storefront.yaml` — mon contrat. Je
+> conteste sur pièces : chaque reproche cite le document, la section ou la ligne.
+>
+> L'index des réponses annonce mes treize questions tenues. **Onze le sont réellement**, et
+> plusieurs le sont mieux que je ne demandais. Deux ne le sont pas, et j'ajoute trois défauts
+> que l'index ne pouvait pas voir parce qu'ils ne répondent à aucune de mes questions : ils
+> répondent à mes **écrans**.
+
+---
+
+## 1. Ce qui est satisfait — bref, parce que c'est l'essentiel
+
+Mes trois besoins structurants sont devenus des règles du projet, et je le dis avant de taper.
+
+**`servedAt` et `validUntil`** sont la **règle critique n° 9** (`critical-rules.md`), reprises sur
+`EnvelopeMeta` (`storefront.yaml` l. 3536) avec la formulation que j'avais demandée : « un décompte
+se calcule contre `servedAt`, jamais contre l'horloge du client ». `degraded[]` s'y ajoute, que je
+n'avais pas demandé et qui règle le cas « la surcouche par spectateur a échoué, la carte est servie
+quand même ».
+
+**Le bail de lecture** (`PlaybackTicket`, l. 4589) : 90 s de bail, 120 s de jeton, renouvellement à
+45 s, et la phrase exacte que je cherchais — « `releasePlayback` accélère, **rien n'en dépend** ».
+Mon argument sur l'écran fantôme est cité comme le motif du choix. `qualityCap` est **déclaré**,
+donc je ne proposerai pas « 4K » quand l'appareil est plafonné ; `drmSystem` est choisi par le
+serveur, ce qui m'épargne de deviner sur des appareils que je ne peux pas tester.
+
+**La pagination** : trois demandes, trois accordées, et mieux rédigées que les miennes. Le curseur
+(l. 3367) est opaque sur `(created_at, id)`, **bidirectionnel**, **indépendant de la taille de
+page** — « ce qui est exactement ce qu'une rotation d'écran produit » —, valide 24 h, avec
+`CURSOR_TOO_OLD` et `params.maxAgeHours` (l. 3500). `CursorPageInfo` (l. 3568) porte
+`approximateTotal` **borné** et `totalIsLowerBound`, ce qui rend « Voir plus · N restants » honnête
+sans promettre un comptage qu'un index ne donne pas. Et `emptyReason` + `emptyActionCode` : l'état
+vide n'est pas une erreur, et il porte une issue.
+
+**Le temps réel** : `counters:subscribe` par **lot d'identifiants**, lot remplacé sans rouvrir le
+canal, tick **différentiel** (`realtime.md` §2.1) — ma demande mot pour mot. Une seule connexion,
+multiplexage par salle. Et §2.4 tranche dans le bon sens : les transitions programmées ne sont
+**pas** poussées, le contrat livre les instants et la surface programme la bascule localement.
+
+**Le reste, en vrac** : `WatchVerdict` comme forme de premier ordre, `advisory: true` sur la carte
+et opposable à l'ouverture, `validUntil` ≤ 60 s, **jamais sur disque** · idempotence UUIDv7
+« générée **et persistée avant l'envoi** », 24 h, rejeu = réponse d'origine + `Idempotency-Replayed`
+(l. 3353) · `DomainConstants` (l. 3705) sert mes trois seuils — `reminderLeadMinutes` 30,
+`scarcityThresholdBps` 8500, `replayExpiryWarningHours` 6 · `SavedSearch` (l. 4878) avec
+`criteriaVersion`, `criteriaSignature` et `stale`, sur des **identifiants stables et jamais des
+indices de tableau**, plus `newMatchesSinceLastVisit` qui m'économise dix comptages à l'ouverture ·
+`VenueClock` IANA + décalage servi · `Money { amountMinor, currencyCode }` · `Device.sessions[]`,
+qui tranche enfin l'ambiguïté que j'avais relevée · `traceId` recopiable depuis l'écran d'erreur,
+avec mon argument cité · `LabelArtifactRef` et `taxonomyArtifact` par tranche et par surface ·
+l'entrée `mini` de zod (**D-012**).
+
+Et deux gains que je n'avais pas vus : `quietHours.bypassWhenTicketHeld` (l. 4934) — « on ne rate
+pas un spectacle qu'on a payé parce qu'il commence à 23 h 15 » —, et `availability.fillRateBps`
+qui sert le **taux** et non la capacité, coupant court au calcul en double.
+
+**`/v1/me/progress/{dateId}` (l. 1601) reprend ma demande à la virgule** : battement de 30 à 60 s,
+**écriture forcée au passage en arrière-plan**, écriture tardive acceptée même après
+`releasePlayback`, dernier écrivain gagne **avec un rang serveur**, et l'absence de clé
+d'idempotence justifiée plutôt que subie. Je n'ai rien à redire.
+
+---
+
+## 2. Ce qui ne l'est pas
+
+### C1 — Un de mes cinq onglets bas n'est servi par aucune lecture
+
+**C'est l'écran non servi.** `following` est l'un des cinq onglets permanents de ma surface, et
+`account/faves` en est la projection dans le compte. Aucun des cinquante-trois points d'entrée de
+`openapi/storefront.yaml` ne rend l'ensemble des artistes qu'un spectateur suit.
+
+Le constat, vérifié trois fois :
+
+- `/v1/artists` (l. 460) accepte `categoryId`, `sort` et `liveOnly`. **Pas de `followedOnly`.**
+- `AccountScreen` (l. 4993) porte profil, abonnement, avoirs, moyens de paiement, sécurité,
+  appareils, préférences, préférences de notification, consentements, suppression. **Aucun suivi.**
+- `/v1/me/follows/{artistId}` (l. 2354) est un **PUT et un DELETE**. La commande existe, la lecture
+  n'existe pas.
+- Recherche de `followedOnly`, `faves`, `favoris`, `followedArtists` sur `storefront.yaml` **et**
+  sur les treize documents de `architecture/` : **zéro occurrence**.
+
+**L'objection prévisible ne tient pas.** `Rail.kind` (l. 4192) contient `followed`, donc l'accueil
+porte une rangée « parce que vous suivez ». Mais un rail est une liste de `DateCard` **bornée et
+composée par le serveur**, et ma page Suivi a deux sections : les artistes suivis **en direct**, et
+les artistes suivis **qui ne le sont pas**, « classés par nom · dernier live ». Un artiste suivi
+**qui n'a aucune date annoncée n'a aucune `DateCard`** — il est donc invisible d'un rail, alors
+qu'il est précisément le contenu de ma seconde section. Une rangée d'accueil ne sert pas un écran.
+
+**Et le contrat se contredit lui-même sur ce point.** `CursorPageInfo.emptyReason` (l. 3595) porte
+la valeur **`no_followed_artist_live`**. Un code d'état vide a été écrit pour une liste qu'aucun
+point d'entrée ne sait produire. C'est la preuve interne que l'écran a été pensé puis perdu.
+
+**Le parcours précis, deux fois cassé.** Onglet « Suivi » : je n'ai rien à appeler, et je ne peux
+pas peindre. Compte → « Mes favoris (N) » : le N n'est calculable par aucun appel. Et la bascule
+d'alerte **par artiste suivi**, qui est un contrôle de cet écran, n'a ni lecture ni écriture —
+`/v1/me/reminders/{dateId}` (l. 2427) pose un rappel **par date**, ce qui est une autre notion :
+un rappel est une promesse datée sur une date précise, une alerte d'artiste est un abonnement
+permanent à ses annonces. Le déclencheur `newEvent` (« nouvelle date annoncée par un artiste
+suivi ») existe pourtant dans `NotificationPreferences`, mais rien ne permet de le régler artiste
+par artiste comme ma surface le propose.
+
+**Ce que je demande** : `GET /v1/me/follows`, paginé au curseur, rendant pour chaque entrée un
+`ArtistSummary` plus `nextDate: DateCard | null`, `lastLiveAt` et `alertsEnabled` — les trois
+choses que ma page affiche et que rien d'autre ne porte. Plus `followedCount` dans `AccountScreen`
+(voir C5). Plus une écriture d'alerte par artiste, ou la décision explicite que suivre et être
+alerté sont le même geste — auquel cas `/v1/me/follows/{artistId}` doit le dire, car sa
+description affirme aujourd'hui l'inverse (« **Suivre et être alerté sont deux réglages** »,
+l. 2360) sans offrir le second.
+
+### C2 — Aucun point d'entrée ne résout un lien public : trois ouvertures à froid sont cassées
+
+Le contrat **sert** un identifiant public partout : `DateCard.slug` et `DateCard.canonicalUrl`
+(l. 3968 et 3956, « servie, jamais construite par la surface »), `ArtistSummary.slug` (l. 4286),
+`NotificationEntry.deepLink` (l. 4921). Et il ne l'accepte **nulle part** : `DateId` (l. 3402) et
+`ArtistId` (l. 3411) sont `format: uuid`. Les cinq occurrences de `slug` dans le fichier sont
+toutes en sortie. Il n'existe ni `GET /v1/dates/by-slug/{slug}`, ni `GET /v1/resolve?url=`.
+`/v1/account-deep-link` (l. 2117) va dans l'autre sens : il **produit** un lien vers le compte.
+
+C'était la **forme 16** de mes besoins, nommée « un identifiant public stable, résoluble en un seul
+appel, **sans catalogue en cache** ». Elle n'a pas été traitée, et elle n'était pas une de mes
+treize questions — c'est pourquoi l'index ne la voit pas.
+
+**Les trois parcours, tous propres au mobile :**
+
+1. **Notification poussée.** « Compagnie Verticale passe en direct », 20 h 58. L'application a été
+   tuée depuis des heures. L'utilisateur tape la notification : je démarre à froid avec une URL
+   `https://arthome.fr/fr/d/nuit-blanche-2026-09-21` et **rien d'autre**. Je ne peux pas l'ouvrir.
+   C'est le parcours qui justifie l'existence même des notifications.
+2. **Lien partagé.** Un ami envoie l'URL par messagerie. Même impasse.
+3. **Relance après une mise à mort sur un écran profond.** J'ai persisté « dernier écran et son
+   argument », comme mon besoin n° 5 le prévoit. Si j'ai persisté un UUID, il n'est pas partageable
+   et il n'est pas ce que la notification transporte ; si j'ai persisté l'URL, je ne sais pas la
+   résoudre.
+
+**Et le trou dépasse ma surface.** `DateCard.canonicalUrl` précise que c'est « ce que la TV encode
+dans un QR pour l'action Partager, puisqu'il n'y a ni presse-papiers ni messagerie utile sur un
+téléviseur ». Le téléphone qui scanne ce QR est **le mien**, et il ne sait pas l'ouvrir. Le
+parcours de partage de la TV s'arrête sur mon écran d'accueil.
+
+**Ce que je demande** : un point d'entrée de résolution, prenant une URL canonique ou un couple
+(type, slug), rendant le `DateCard` ou l'`ArtistSummary` complet, **accessible sans session**
+(un lien partagé s'ouvre souvent en visiteur) et **en un seul aller-retour**.
+
+### C3 — `/v1/changes` ne couvre pas le scénario des huit heures, sur trois points
+
+Ma question 3 était « la plus coûteuse du document ». La réponse est excellente sur le principe —
+`/v1/changes` rend « une liste d'invalidations, **pas les données** », une requête au lieu de
+douze — et incomplète sur trois détails qui décident de son utilité réelle.
+
+**(a) Aucune fenêtre de rétention n'est énoncée.** `realtime.md` §5 borne la reprise WebSocket à
+« 30 minutes ou 5 000 événements par flux », ce qui est parfaitement dimensionné pour un hoquet de
+réseau et **inutile pour mon cas** : huit heures d'arrière-plan sont deux ordres de grandeur
+au-delà. Le §5 ajoute « la reprise WebSocket couvre les minutes ; la lecture HTTP couvre les
+heures » — mais cette phrase est écrite à propos du **journal durable du studio dans Kafka**, dans
+un paragraphe sur la console de régie, et **ne dit rien de `/changes`**. Ni le point d'entrée
+(l. 238) ni `ChangeFeed` (l. 3858) ne disent jusqu'où `since` peut remonter. Si la réponse à
+`since = maintenant − 8 h` est `complete: false`, alors « recharge tout » sur un réseau cellulaire
+est **exactement** le coût que ma question existait pour éviter, et je l'aurai payé en une requête
+au lieu de quarante — ce qui est un progrès, mais pas la réponse.
+
+**(b) Le vocabulaire d'étiquettes est plus étroit que ce que le canal temps réel transporte.** La
+salle `viewer:{profileId}` (`realtime.md` §2) porte « badge de notifications, droits recalculés
+après un achat, **panier modifié ailleurs**, révocation ». `ChangeFeed.invalidated` (l. 3870) porte
+huit étiquettes : `date:{id}`, `date:{id}:availability`, `artist:{id}`, `category:{id}`,
+`account:tickets`, `account:orders`, `account:subscription`, `home:rails`.
+
+**Ni le panier ni les notifications n'y figurent.** Or ce sont les deux pastilles de mon en-tête,
+présentes sur **tous** mes écrans, et le panier « vit sur le compte » (`Cart`, l. 4444) — donc le
+web peut le modifier pendant que mon application dort. Au retour après huit heures le canal
+WebSocket est mort depuis longtemps : `/changes` est mon **seul** chemin, et il ne peut pas me dire
+que mon panier a changé. Manquent aussi `account:saved-searches`, `account:watchlist`,
+`account:preferences` et `account:devices` — un appareil révoqué depuis le web doit m'atteindre.
+
+**(c) `since` est un instant unique, alors que je détiens N réponses à N instants différents.**
+Mon accueil date de T1, mon compte de T2, ma catégorie de T3. Un seul `since` m'oblige à envoyer
+**le plus ancien**, ce qui maximise l'ensemble de changements rendu et donc la probabilité de
+`complete: false`. C'est une pénalité mécanique, et elle frappe d'autant plus fort que
+l'application est restée longtemps fermée — c'est-à-dire précisément dans le cas visé.
+
+**Ce que je demande** : une fenêtre de rétention **énoncée dans le contrat** et alignée sur la
+durée de vie du curseur (24 h) ; les six étiquettes manquantes au vocabulaire ; et un `since`
+acceptable **par étiquette**, pour ne pas faire payer à l'accueil la vétusté du compte.
+
+### C4 — La reprise de sa propre session de lecture est promise dans l'index, absente du contrat
+
+`answers-to-surfaces.md`, mobile Q5, écrit : « tu peux **reprendre ta propre session** identifiée
+par l'appareil ». Je ne la trouve pas.
+
+`POST /v1/playback/{dateId}/open` (l. 1395) prend bien un `deviceId` dans son corps, mais **sa
+description ne dit nulle part** qu'un `open` sur un `deviceId` détenant déjà un bail sur la même
+date le récupère ou le remplace. Et `ActivePlaybackSession` (l. 4719), servie avec le refus
+`CONCURRENT_LIMIT_REACHED` « pour que la surface propose d'en libérer une », porte `sessionId`,
+`deviceLabel`, `city` et `openedAt` — **pas `deviceId`**, pas de `isCurrentDevice`. Je ne peux donc
+pas reconnaître laquelle des sessions listées est la mienne. Deux téléphones d'un même foyer
+étiquetés « Téléphone » sont indiscernables.
+
+**Le parcours précis.** Le système tue l'application à la dixième seconde d'un bail de 90 s.
+L'utilisateur retape l'icône aussitôt — c'est le geste le plus courant après une disparition
+inexpliquée. `PlaybackTicket` est `Cache-Control: no-store`, et le contrat a raison de l'exiger :
+je n'ai donc **plus le `sessionId`**, et je ne peux ni renouveler ni libérer. Je rappelle `open`,
+je reçois `CONCURRENT_LIMIT_REACHED`, et je dois afficher à l'utilisateur une liste où je lui
+demande de libérer **son propre téléphone, sans pouvoir le lui désigner**.
+
+**Et ce n'est pas un désagrément, c'est un blocage.** `ViewerContext` porte
+`concurrentStreamsAllowed`, et les exemples du contrat lui-même le fixent : ligne 219 et ligne 645,
+`plan: { tier: pass, ..., concurrentStreamsAllowed: 1 }`. Un abonné `pass` — la formule médiane,
+donc la plus répandue — est donc **verrouillé hors de son propre appareil pendant quatre-vingts
+secondes** après chaque mise à mort du système, sans issue qu'il puisse comprendre.
+
+Le bail à 90 s est la bonne réponse et je l'ai obtenue. **Ce qui manque est le dernier mètre**, et
+il est d'autant plus regrettable que le reste du raisonnement est juste.
+
+**Ce que je demande** : que `open` sur un `deviceId` détenant déjà un bail sur la **même date**
+le **reprenne** — même session, bail prolongé, pas de refus —, et que `ActivePlaybackSession` porte
+`deviceId` et `isCurrentDevice` pour que le refus reste lisible dans les autres cas.
+
+### C5 — Le menu du compte coûte six appels pour six pastilles, et l'en-tête deux de plus à froid
+
+`transport.md` l. 31 annonce « appels internes **par écran** : 1 à 4, tous parallèles ». C'est
+l'éventail du BFF vers les services, et il est bon. **Ce n'est pas ce que je paie.** Le nombre
+d'allers-retours **du client vers le BFF** n'est budgété nulle part, et c'est le seul qui se compte
+en latence cellulaire — à 150 ms d'aller-retour, quatre appels font six cents millisecondes avant
+que le premier écran soit juste.
+
+**Le menu du compte.** `AccountScreen` (l. 4993) se présente comme « **un** agrégat pour les onze
+sections » et tient magnifiquement cette promesse sur le **contenu**. Mais le menu affiche un
+**effectif par section** — à venir, passés, favoris, recherches enregistrées, commandes,
+notifications non lues — et `AccountScreen` **n'en porte aucun**. Pour peindre six pastilles je
+dois appeler `/v1/me/account`, `/v1/me/tickets?window=upcoming`, `/v1/me/tickets?window=past`,
+`/v1/me/saved-searches`, `/v1/me/orders` et `/v1/me/notifications` : **six allers-retours**, et le
+septième — les favoris — n'existe pas du tout (C1). Un agrégat qui évite dix appels de contenu et
+en impose six de comptage n'a gagné que la moitié de son pari.
+
+**L'en-tête, à chaque démarrage à froid.** Deux pastilles y vivent sur **tous** mes écrans : les
+notifications non lues et le panier. `ViewerContext` (l. 3810) est explicitement « le budget entier
+de l'écran d'amorçage » et porte deviceId, profils, compte, formule, préférences, constantes,
+catalogue de libellés, taxonomie et point d'entrée temps réel — **mais ni `unreadCount` ni le
+nombre de lignes du panier**. Un démarrage à froid complet coûte donc `POST /v1/devices` (premier
+lancement) + `GET /v1/viewer-context` + `GET /v1/home` + `GET /v1/me/notifications` +
+`GET /v1/cart` = **cinq allers-retours** avant que mon premier écran soit entièrement juste, dont
+deux uniquement pour deux nombres.
+
+**Ce que je demande** : un objet `counts` sur `AccountScreen`, et `unreadNotifications` +
+`cartLineCount` sur `ViewerContext`. Ce sont des compteurs déjà projetés — `unreadCount` est
+d'ailleurs déjà servi comme « global, pas celui de la page » par `/v1/me/notifications` (l. 2702),
+donc la valeur existe. Le coût serveur est nul, le gain client est de quatre allers-retours sur le
+parcours le plus fréquent de l'application.
+
+---
+
+## 3. Ce qui est satisfait autrement — et si ça me va
+
+### S1 — La langue n'est servie que sur la fiche : ça ne me va qu'à moitié
+
+`DateCard` porte `languageDependency` (l. 4079) avec le vocabulaire **`none | helpful | essential`**
+— D1 appliqué, `light` écarté, ma remontée du temps 1 tenue. Mais `spokenLanguages`,
+`subtitleLanguages` et `surtitleLanguages` ne sont que sur `DateDetail` (l. 4109-4111).
+
+Conséquence : une **carte** ne peut pas afficher « Joué en français · Sous-titres FR, EN », et
+`isUnderstandable(spectacle, mes langues)` n'est pas évaluable sur une liste. Or ce n'est pas un
+détail de fiche : c'est un élément de **décision** — un spectateur qui ne parle pas français écarte
+une carte sur cette ligne, et la barrière de langue est la règle la plus visible de la surface
+(c'est le raisonnement de `helpers.js` lui-même : « ce qui gêne réellement un spectateur de
+spectacle vivant n'est pas le droit mais la compréhension »).
+
+Sur les **facettes**, en revanche, la conception est bonne et je n'ai rien à redire : `Facet`
+(l. 4313) est générique, « jamais une énumération de facettes au contrat », donc une facette de
+langue peut apparaître sans changement de contrat. **Ça me va pour la recherche, pas pour la
+carte.** Trois tableaux de codes ISO à deux lettres coûtent quelques dizaines d'octets.
+
+### S2 — Le troisième canal est `in_app`, pas SMS : ça me va
+
+J'avais relevé que rien ne nommait le troisième canal et que le profil suggérait le SMS (« pour les
+SMS de rappel »). Le contrat tranche `push | email | in_app` (`SavedSearch.channels` l. 4906,
+`NotificationPreferences.triggers` l. 4930), avec mon propre argument — coût par message,
+réglementation propre, prestataire de plus, valeur non éprouvée. **C'est le bon choix.** Une
+conséquence à consigner : le champ téléphone du profil perd la justification qu'il affichait, et
+`phoneVerified` reste dans `AccountScreen` sans usage déclaré.
+
+### S3 — Le mode de tchat : résolu par recadrage, et mieux
+
+Ma question était « le mode de la date ou la préférence du spectateur, lequel l'emporte ? ». Le
+contrat ne la tranche pas, il la dissout : `chatMode` sur la date (`open | emoji | read_only | off`)
+est le **régime**, et `ViewerPreferences.account.chatOpenByDefault` est une préférence de
+**panneau**. Ce sont deux choses, et ma maquette les confondait. **Ça me va, et c'est plus propre
+que ce que je décrivais.**
+
+### S4 — `nature` n'a pas de membre pour « pas de réseau » : réserve
+
+`Error.nature` (l. 3613) vaut `refused | unavailable | offline_forbidden`, et
+`offline_forbidden` est une trouvaille : un refus **local, jamais émis par le serveur**, au
+vocabulaire « pour que la surface n'ait qu'une seule forme d'erreur à rendre ». C'est exactement
+l'esprit de ma demande.
+
+Mais il signifie « **cette commande** est interdite hors ligne », pas « **cette lecture** attend le
+réseau ». Mon cinquième état — celui où aucune réponse n'est jamais arrivée, que le client est seul
+à pouvoir constater, et qui ne doit surtout pas s'afficher comme une panne de la plateforme —
+n'a pas de nom. Chaque surface va l'inventer. C'est la faute que la **règle critique n° 15**
+décrit : « une constante d'exploitation a un document propriétaire ; ailleurs on y renvoie, jamais
+on ne la recopie ». Demande minime : ajouter `network_unreachable` au vocabulaire, marqué
+client-seul comme l'est déjà `offline_forbidden`.
+
+### S5 — Le débit n'est servi nulle part : réserve, et c'est la même faute
+
+`qualityCap` est un plafond, `ViewerPreferences.device.defaultQuality` est une préférence
+(`auto | low | medium | high`), `dataSaver` est un booléen. **Rien ne porte le débit d'une variante
+ni une estimation de consommation.** Or ma surface affiche « la 4K consomme environ 12 Go par
+heure » pour justifier ce réglage, et `DomainConstants` (l. 3705) ne porte pas ce nombre. Il
+finira donc codé en dur sur ma surface, puis recopié différemment sur la TV — c'est le onzième
+exemplaire de la faute que j'ai cataloguée onze fois au temps 1, et elle est interdite par la règle
+critique n° 15. Demande : un débit ou une consommation approximative par variante dans
+`PlaybackTicket`, ou une constante de domaine.
+
+### S6 — Un refus territorial sans issue vers les autres dates
+
+`rights.reasonCode` est un **code** (`co_production | broadcaster | festival`, l. 4066) et non une
+phrase : ma remontée est tenue, et la fuite d'i18n de `shared/` est corrigée. `WatchVerdict` porte
+`reasonParams` pour « le territoire, la formule requise, l'instant d'expiration ».
+
+Mais ma copie promet, mot pour mot : « Cette date fait exception : {raison}. **Les autres dates de
+ce spectacle restent accessibles.** » Et `fallbackAction` (l. 3930) vaut
+`buy_seat | join_waitlist | subscribe | watch_preview | see_replay_policy | none` : **aucun code ne
+dit « voir les autres dates »**. `DateDetail.seriesDates` existe (l. 4136) mais n'est pas joignable
+depuis un refus reçu sur une carte. Mon besoin disait : « une erreur qui promet une issue sans la
+porter oblige le client à une seconde requête au pire moment ». C'est le cas ici. Demande : un
+`see_other_dates` au vocabulaire, et les identifiants de la série dans `reasonParams`.
+
+---
+
+## 4. Mon avertissement du temps 1, confronté
+
+J'avais vérifié que **quatorze des seize fonctions** de `shared/helpers.js` ne sont jamais appelées
+par ma maquette, et écrit que leur contrat devait être « **conçu, pas observé** ». Voici ce qui a
+été conçu, et mon verdict.
+
+| Fonction jamais exercée | Ce qui a été conçu | Verdict |
+|---|---|---|
+| `isWatchable` | `WatchVerdict`, dix codes de refus, `fallbackAction`, `validUntil` ≤ 60 s | **tient** |
+| `availableIn`, `rightsNote` | `rights.scope` / `blackoutCountries` / `reasonCode` + `OUT_OF_TERRITORY` avec `reasonParams` | **tient, sauf l'issue** (S6) |
+| `languageLine`, `hasLanguageBarrier` | `languageDependency` sur la carte, les langues sur la fiche seule | **tient à moitié** (S1) |
+| `seatsLabel`, `isSoldOut` | `availability` : `seatsAvailable`, `waitlistCount`, `fillRateBps`, `soldOut` | **tient, et mieux** |
+| `progressOf` | `liveEdgeSec` + `startsAt` + `runtimeMin`, dérivé contre `servedAt` | **tient** |
+| `viewersOf` | `viewers` nullable — « absent, jamais zéro » — plus `counters:tick` différentiel | **tient** |
+| `devicesOf` | `Device` + `sessions[]`, appareil et session enfin distingués ; ma remarque citée en `context-map.md` l. 610 | **tient** |
+| `alertsOf` | `NotificationEntry` + `SavedSearch` + `newMatchesSinceLastVisit` | **tient, sauf l'alerte par artiste** (C1) |
+| `resumeOf` | `resumePoint`, `viewerProgress`, `/v1/me/progress` avec sa cadence | **tient entièrement** |
+| `plans` | `Plan`, `Subscription`, `concurrentStreamsAllowed` servi | **tient** |
+| `messageState`, `chatOf` | `badge` **dérivé** par `moderationBadgeOf`, préséance écrite, trois axes séparés côté modèle, messages retirés filtrés à la source | **conçu, non éprouvé** |
+
+**Onze tiennent, deux tiennent à moitié, une reste ouverte.** Et `context-map.md` l. 967 marque
+`chat` **provisoire** en citant explicitement ma vérification — « aucun écran n'a jamais exercé la
+modération vue du spectateur ; un contrat conçu et non observé ne se fige pas ». C'est la bonne
+réponse à mon avertissement : ne pas prétendre qu'il est levé. **Je maintiens l'avertissement sur
+la modération seule, et je le lève sur les dix autres.**
+
+---
+
+## 5. Les questions sans réponse
+
+Sept, par ordre d'impact.
+
+1. **Jusqu'où `since` peut-il remonter sur `/v1/changes` ?** Aucune fenêtre n'est écrite. À huit
+   heures, est-ce `complete: false` ? (C3a) — **bloquant pour la conception du cache client**.
+2. **Un `open` sur un `deviceId` qui détient déjà un bail sur la même date le reprend-il ?** (C4)
+   — bloquant pour un abonné `pass`, dont le contrat fixe lui-même `concurrentStreamsAllowed: 1`.
+3. **Quelle est la limite d'écrans de `free` ?** `multi_screen` n'est dans les `opens[]` que de
+   `premium`, les exemples fixent `pass` à 1, et `free` n'est illustré nulle part.
+4. **Suivre et être alerté : un geste ou deux ?** `/v1/me/follows/{artistId}` affirme que ce sont
+   deux réglages et n'offre que le premier. (C1)
+5. **Le débit par variante, ou une consommation approximative ?** (S5)
+6. **`network_unreachable` au vocabulaire de `nature` ?** (S4)
+7. **`see_other_dates` au vocabulaire de `fallbackAction` ?** (S6)
+
+Les questions 4 à 7 sont des ajouts de vocabulaire, pas des changements de forme : elles coûtent
+une ligne chacune et évitent que cinq surfaces inventent cinq réponses.

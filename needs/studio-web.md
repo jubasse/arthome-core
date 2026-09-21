@@ -804,3 +804,397 @@ Aucune de ces incohérences n'a été appliquée : elles sont signalées, pas tr
 29. **Quelle est la granularité de la lecture d'une fiche de date ?** Un appel par volet, ou un
     appel avec une projection dictée par les droits ? De cette réponse dépend tout le découpage
     des lectures du studio.
+
+---
+
+# Confrontation
+
+> Temps 3. Lu : `answers-to-surfaces.md`, `context-map.md`, `data-model.md`, `events.md`,
+> `realtime.md`, `adr-payments.md`, `adr-stream-entitlement.md`, `transport.md`,
+> `critical-rules.md`, `DECISIONS.md`, et `openapi/studio.yaml` en entier.
+> Les renvois ci-dessous sont vérifiables ligne à ligne.
+
+## La battue de vie existe
+
+`realtime.md` §4 : `ws:pulse` toutes les 5 s sur les deux espaces de noms, et la discrimination est
+celle que je demandais — **plus de pulse pendant 15 s = je suis sourd ; pulse sans échantillon de
+santé depuis 30 s = la salle n'envoie plus**. Deux états, deux écrans, aucune inférence. Elle est
+servie à l'amorçage (`StudioBootstrap.realtime.pulseIntervalSec`), elle porte `serverTime` comme
+horloge de référence et `seq` comme point de reprise, et elle a un seuil d'exploitation nommé
+(`ws_pulse_gap_seconds` p99 > 15 s, avec le bon commentaire : « les deux studios vont afficher *je
+ne sais plus* à tort, ce qui est le pire résultat possible »).
+
+S'y ajoute une réponse que je n'avais pas demandée et qui est meilleure que ma question : l'écran
+d'attente automatique après 15 s de flux perdu est une **règle serveur**, portée comme valeur par
+défaut de chaîne, et son déclenchement produit un incident au même titre qu'un déclenchement
+manuel (`IncidentTrigger.AUTO`). C'est la bonne réponse au cas que je n'avais pas su poser : le
+régisseur injoignable — ou le régisseur qui est précisément celui qui a perdu le réseau.
+
+**Ce point est clos. Il n'y a rien à contester dessus.**
+
+---
+
+## Ce qui est satisfait
+
+Bref, parce que c'est l'essentiel du document et que le contester serait malhonnête.
+
+| Besoin | Où | Verdict |
+|---|---|---|
+| huit rôles, jamais six | préambule `studio.yaml`, `EffectiveRights.roles` | tenu, mot pour mot |
+| `canRevenue` décide du **contenu** | préambule, `EventsRow.grossRevenue`, `RunConsole.grossRevenue`, salle `channel:{id}:revenue` | tenu, **et étendu au canal** — ce que je n'avais pas pensé à demander |
+| tri sur un champ absent **refusé** | `SORT_KEY_FORBIDDEN` | ajouté par l'offre ; c'est la faille que ma formulation laissait |
+| deux échelles d'accès séparées | `ChannelMembership` / `DateAccessGrant`, expiration **en instant** | tenu (mais voir H) |
+| `order_rank` avec l'état | `Publication.orderRank` | tenu |
+| verrou sur le couple `from > to` | `PublicationTransition` | tenu, incohérence 6 corrigée |
+| refus avec la promesse engagée | `TRANSITION_IRREVERSIBLE` + `promiseCode` | tenu |
+| tentative de marche arrière journalisée | `listChannelJournal`, description | tenu — j'avais posé la question, la réponse est oui |
+| conditionnel + versionné | `expectedVersion` partout, `STATE_CONFLICT` | tenu |
+| porte de publication servie en identifiants | `PublicationChecklistItem`, neuf ids, `blocking` | tenu, et mieux : sept bloquants + deux avertissements |
+| bail de prise en charge | `claimExpiresAt` | tenu |
+| refus du second verdict **avec le gagnant** | `MODERATION_ALREADY_SETTLED` + `settledBy` + `verdict` | tenu |
+| reclassement rétroactif asynchrone, distinguable | `reprocessing`, `origin: retroactive_filter` | tenu |
+| sanction = un **instant**, jamais une étiquette | `muteUntil`, `sanctionExpiresAt` | tenu |
+| recherche du public y compris muets | `searchAudience`, `present` | tenu |
+| métriques nullables, absence signifiante | `HealthSample`, `jitterMs`/`lostPackets` omis en RTMP, `measuredAt` à l'ingest | tenu, et le commentaire « un zéro se lit *parfait* » est le bon |
+| voie de retour servie | `RunConsole.monitorPath` | tenu |
+| « accroc amorti » ≠ « publieur parti » | `afterGracePeriod`, deux champs | tenu |
+| écran d'attente = contenu, pas clé i18n | `LocalizedText` | tenu |
+| chapitres en position média | `atMediaSec` | tenu |
+| correctif idempotent, `seq` par flux | `realtime.md` §3.1 | tenu — et motivé par Angular sans zone, explicitement |
+| canal **par personne**, multi-chaînes | `realtime.md` §3 | tenu |
+| `resume:too_old` | `realtime.md` §5 | tenu ; c'est `studio-mobile` qui l'a obtenu, il me sert autant |
+| seuil 10 000, provision, 72 h, malus | `DateSalesPane.technicalProvision` + `constants` | tenu, en **données** |
+| palier + liste d'attente en une commande | `openCapacityTier` | tenu |
+| bornes de saison servies | `constants.seasonBounds` | tenu |
+| double signature bancaire = agrégat | `BankChangeRequest`, suspend le virement | tenu |
+| TVA ventilée par marché, commission sur le HT | `PayoutLine.vat[]`, `grossHt`, `commissionRateBps` | **meilleur que ma demande** |
+| un solde par devise | `balances[]` | tenu |
+| exports asynchrones, adresse signée | `requestChannelExport` / `getChannelExport` | tenu |
+| identifiants dans le domaine | UUIDv7, `createDateDraft` | tenu ; le brouillon du `wizard` tient |
+| file et tchat au curseur | `listModerationQueue`, `listStudioChatMessages` | tenu (D-010) |
+| `pendingCount` séparé de la page | `CursorPageInfo.pendingCount` | tenu — la pastille ne se compte pas sur la page chargée |
+
+---
+
+## Ce qui ne l'est pas
+
+### A — Cinq entrées de navigation sont déclarables et **ne sont servies par aucune opération**
+
+`EffectiveRights.navigation` a un vocabulaire fermé de quatorze valeurs
+(`studio.yaml:3999`). Cinq d'entre elles n'apparaissent **nulle part ailleurs** dans le document
+qu'à cet endroit :
+
+| Entrée | Rôles qui l'ouvrent | Ce qui manque | Ce que ça coûte |
+|---|---|---|---|
+| `dashboard` | `artist`, `production`, `treasury` | tout : les six indicateurs et leurs séries, les rappels, le décompte de la prochaine date | **c'est la page d'atterrissage de trois personas sur six** |
+| `stats` | `artist`, `production`, `treasury` | tout : remplissage par date, audience par date, provenance, et l'onglet « comparer les dates d'une série » | l'export `stats_csv` existe : on peut **exporter une statistique qu'on ne peut pas lire** |
+| `stream` | `artist`, `production`, `director`/`video`/`sound` | la page : serveur d'ingest, débit montant mesuré, profil recommandé, liste de pré-vol, historique des tests | **une des cinq seules entrées d'une régie**, et la pastille `preflightBadge` n'a aucune source dans `StudioCounters` |
+| `replays` | `artist`, `production`, régie | la liste : en ligne / archivées, vues, revenu, fenêtre restante | `reopenReplayWindow` permet de **rouvrir une fenêtre qu'on ne peut pas voir** |
+| `tickets` (niveau chaîne) | `artist`, `production`, `treasury` | la page agrégée : répartition par tarif toutes dates, liste d'attente par date, contremarques par catégorie, **demandes en cours** (remboursement, transfert de place, litige bancaire) | les commandes existent (`refundSeat`, `issueComplimentary`), la collection qu'elles traitent n'existe pas |
+
+Ce n'est pas un oubli de détail : c'est **un tiers de la navigation**. Le contrat autorise le BFF à
+servir `dashboard` à un artiste, et l'application n'a rien à appeler. Deux corollaires précis :
+
+- **`stream` est la seule page de travail d'un `director` avec `events` et `replays`.** Retirer
+  deux des trois lui laisse un tableau d'événements.
+- **`replays` est ouvert à la régie** et à personne d'autre côté technique : c'est là qu'on voit
+  qu'une fenêtre ferme dans vingt-quatre heures, ce que `inboxPool` annonce déjà (`replay-expiring`).
+
+Deux entrées de plus sont **à moitié servies** : `settings` a un `PATCH /channels/{id}/identity` et
+**aucun GET** — l'écran n'a rien à lire avant d'écrire — et le bloc « diffusion par défaut, appliqué
+aux nouvelles dates » n'a pas de porteur ; `store` a son catalogue mais pas le bloc « intégration
+marchande, une seule à la fois ».
+
+### B — Cinq des six volets de la fiche de date n'existent pas
+
+`DateSheet.openPanes` a pour vocabulaire `[public, tickets, chat, tech, crew, replay]`. Une seule
+opération de volet est écrite : `GET /v1/dates/{dateId}/panes/tickets`.
+
+Le motif est pourtant énoncé deux fois, et c'est **mon argument qui y est cité** : *« un modérateur
+doit pouvoir charger le volet `chat` sans charger la fiche entière, sinon la billetterie transite
+pour rien »*. Le volet `chat` n'existe pas. Concrètement :
+
+- un `moderation` ouvre une fiche, reçoit `openPanes: [chat]`, et **ne peut appeler aucun volet** ;
+- un `coordination` reçoit `openPanes: [tech, crew]` — **aucun des deux n'existe** ;
+- un `director` reçoit `openPanes: [tech]` — inexistant. La réponse 29 nomme pourtant les quatre
+  propriétaires : `tickets → ticketing`, `chat → chat`, `tech → streaming`, `crew → identity`.
+
+La règle est écrite, la mécanique est décrite, un seul des quatre chemins est posé.
+
+### C — La présence de l'équipe est **poussée sans jamais être servie**
+
+Trois documents la promettent et aucun ne la donne :
+
+- `realtime.md` §8 : « présence de l'équipe | studio | ~10 s | **poussé** » ;
+- `realtime.md` §3 : la salle `channel:{id}` porte « présence de l'équipe » ;
+- `context-map.md` §10.1 : l'écran `regie` compte **trois** appels internes, dont
+  `identity.GetChannelPresence`.
+
+**Aucune opération du BFF ne l'expose**, `RunConsole` ne la porte pas, et la liste « à re-demander »
+de `realtime.md` §5.1 ne la mentionne pas. Un différentiel sans instantané n'est pas un contrat :
+une console ouverte à 21 h 40 affiche zéro personne en ligne et le restera jusqu'à ce que quelqu'un
+arrive ou parte.
+
+Ce n'est pas cosmétique. La confirmation de coupure est littéralement *« couper met fin à la
+diffusion pour N spectateurs · **M autres personnes en ligne** »* — c'est le garde-fou du geste le
+plus destructeur de la régie, dans un studio explicitement **sans verrou**, et il est vide.
+
+### D — La courbe de santé « se re-demande » et n'est demandable nulle part
+
+`realtime.md` §5.1, colonne « à jeter » : *« toute mesure de flux antérieure à la reconnexion. Une
+courbe de débit **se re-demande**, elle ne se rejoue pas. »*
+
+`/v1/dates/{dateId}/run/health-samples` est **POST seul** (`submitHealthSample`), et
+`RunConsole.lastSample` est **un** échantillon. Il n'existe aucune lecture de la série.
+
+Conséquence, sur trois chemins qui arrivent tous les soirs : après un `resume:too_old`, après une
+reconnexion, ou simplement en ouvrant la console au milieu d'un direct, la courbe de débit et le
+**pic de spectateurs avec son heure** sont inobtenables. Deux documents de la même offre se
+contredisent, et c'est celui qui promet qui n'a pas d'opération.
+
+### E — `displayState` est servi au storefront et **pas** au studio
+
+`context-map.md` §5 (E4) : *« le contrat sert une quatrième valeur, dérivée et unique :
+`displayState` … C'est la seule valeur que les cartes affichent, et **personne ne la recompose**. »*
+
+Compte : **13 occurrences dans `storefront.yaml`, 0 dans `studio.yaml`.**
+
+Or c'est le studio qui a trois axes à réconcilier, pas le storefront. Le tableau des événements,
+l'agenda, les gardes et le tableau de bord affichent tous le composé — y compris les libellés
+d'issue qui **remplacent** l'état (`ANNULÉE ET REMBOURSÉE`, `REPORTÉE · PLACES VALABLES`,
+`INTERROMPUE · AVOIRS ÉMIS`). `EventsRow` sert `state` + `orderRank` + `outcome` et laisse le client
+les composer.
+
+C'est exactement la seconde implémentation que la règle critique n°2 interdit — et elle est laissée
+à la surface où une erreur n'est pas une carte mal étiquetée mais une régie qui se trompe d'écran.
+
+### F — L'événement pendant une transition : **sûr, et l'écran ment quand même**
+
+C'est ma question, et la réponse est à moitié là.
+
+**La moitié qui est là — la sûreté — est complète.** `expectedVersion` sur toute transition,
+`STATE_CONFLICT` avec l'état **et** la version courants, `TRANSITION_IRREVERSIBLE` avec la promesse,
+`acknowledgedPromiseCode` obligatoire sur un passage sans retour, `Idempotency-Key` obligatoire, et
+la tentative journalisée. Rien ne se corrompt, jamais. Je n'ai aucune réserve là-dessus.
+
+**La moitié qui manque — la fraîcheur — est entièrement absente, et quatre faits l'établissent :**
+
+1. `events.md` §4.2 ne contient **aucun** `catalog.publication.state_changed.v1`. Il y a
+   `date.drafted`, `date.scheduled` et `publication.engaged`. Donc `draft → reserve`,
+   `scheduled → technical`, `technical → scheduled` et `ended → replay-online` **ne produisent aucun
+   événement** ;
+2. la salle `channel:{id}` porte « état d'antenne, incidents, présence de l'équipe, ventes,
+   chapitres » — **pas l'état de publication** ;
+3. ni `DateSheet` ni `EventsRow` ne portent de `validUntil` — la règle critique n°9 ne s'applique
+   donc pas à eux ;
+4. le `GET /changes?since=` de `realtime.md` §5.2 est écrit pour le **storefront mobile** et
+   n'existe pas dans `studio.yaml`.
+
+Le scénario, précisément. 18 h 04. A et B sont tous deux sur la fiche de « Nuit blanche »,
+version 7, état `draft`. A publie : version 8, `scheduled`, tarifs engagés, **sans retour**.
+
+> **L'écran de B continue d'afficher BROUILLON, avec ses deux transitions offertes — « Mettre en
+> réserve » et « Publier » — indéfiniment.**
+
+B clique « Publier », croyant franchir le premier une porte irréversible, et l'apprend par un
+message d'erreur. Rien n'est cassé. Mais B vient de tenter d'engager un tarif public, la tentative
+part au journal à son nom, et il découvre après coup qu'elle était déjà engagée. Et le tableau
+`listChannelEvents` de B compte toujours cette date sous `BROUILLON` dans le filtre d'états, pour
+tout le monde qui ne recharge pas.
+
+**Ce que je demande est petit, et la machinerie existe déjà.** Un `catalog.publication.state_changed.v1`
+(`from`, `to`, `version`, `actor`) routé vers `channel:{id}` comme un correctif ordinaire
+`{ entity: "publication", id, op: "upsert", seq, patch }` — la forme est déjà spécifiée en
+`realtime.md` §3.1, seule l'entité manque à la liste.
+
+Avec **une précision** que l'offre rend nécessaire : `offeredTransitions` est « calculée pour cet
+opérateur ». Un correctif qui porterait le nouvel état sans recalculer les transitions **pour le
+destinataire** laisserait un bouton périmé — le même défaut, déplacé d'un cran. Le correctif doit
+donc soit porter les transitions du destinataire, soit être un marqueur « relis cette entité » pour
+cette entité-là seulement.
+
+### G — Les motifs de modération sont une **table parallèle** — celle que le contrat reproche aux maquettes
+
+| `shared/catalogue.json` `moderationReasons` (authored, et le seul que l'i18n résout) | `studio.yaml`, `settleModerationItem` et `sanctionAudienceMember` |
+|---|---|
+| `spam` | `spam` |
+| `insult` | — |
+| `spoiler` | — |
+| `off-topic` | `off_topic` |
+| `harassment` | `harassment` |
+| — | `hate` |
+| — | `filter` |
+
+Deux motifs authorés disparaissent, deux inventés apparaissent. **`spoiler` — « Divulgue le
+spectacle » — est le seul motif propre au spectacle vivant**, il est traduit dans
+`shared/i18n/studio.json` (`enums.moderationReason.spoiler`), et il n'a plus d'émetteur. `insult`
+est employé par les fixtures.
+
+Et `filter` n'est pas un motif : c'est une **origine**. Le contrat porte déjà l'origine ailleurs et
+correctement (`origin: human_verdict | retroactive_filter`) ; la mettre aussi dans `reason` donne
+deux axes à un champ — précisément le reproche que l'offre adresse à `reported` dans les sanctions
+et à `postponed` dans `run.state`.
+
+La règle critique n°10 (« une valeur d'énumération inconnue est conservée brute et traitée comme
+neutre ») ne sauve rien ici : le problème n'est pas qu'on reçoive `spoiler` sans le comprendre,
+c'est que **plus personne ne pourra l'émettre**.
+
+Le préambule de `studio.yaml` dit : *« les tables parallèles des deux maquettes de studio ne sont
+jamais reprises »*. Ici c'est le contrat qui tient une table parallèle contre `shared/`, sur le seul
+enum dont `shared/` fait autorité sans ambiguïté — il n'avait aucun concurrent.
+
+### H — `crew` n'a aucune lecture d'affectation, et les deux échelles d'accès sont reconfondues à l'écriture
+
+Trois défauts qui se cumulent sur la même page, celle du persona `coordination` — dont la
+navigation entière est `crew · journal · help`.
+
+1. **`/v1/dates/{dateId}/crew` est POST seul.** Aucun GET. L'onglet **matrice** (dates × postes,
+   « postes couverts », « manque RÉGIE et MODÉRATION ») et la liste « CE SOIR — pré-vol à passer sur
+   chaque flux » n'ont aucun chemin de lecture. `listDuties` donne **mes** gardes ;
+   `EffectiveRights.dateGrants` donne **mes** accès. Ni l'un ni l'autre ne donne la couverture de la
+   chaîne. Sans elle, `coordination` a une page sur trois qui fonctionne.
+2. **Aucune liste des accès ponctuels d'une chaîne.** `revokeDateAccess` révoque par `grantId` —
+   un identifiant qu'aucune lecture ne donne. L'onglet « accès ponctuels » n'a pas de source.
+3. **`expiresAt` est requis sur `grantDateAccess`.** Le préambule dit que les deux échelles ne
+   doivent jamais être confondues ; l'unique endpoint d'écriture impose l'échelle **ponctuelle** aux
+   deux. Affecter un membre permanent de la chaîne au poste `sound` d'une date exige donc d'inventer
+   un instant d'expiration pour quelqu'un qui ne part pas.
+
+Et ce n'est pas isolé : `moderator_assigned` est l'un des neuf éléments de la liste de contrôle,
+`datesToCover` est un compteur servi. **Les deux se calculent sur une couverture que le studio ne
+peut jamais lire.**
+
+### I — Un modérateur hors antenne n'a aucune surface d'écriture
+
+`filterSeverity`, `slowModeSec`, `holdersOnly` et `retroactiveFilter` vivent tous les quatre sur
+`PUT /v1/dates/{dateId}/chat-policy` — **par date**, avec l'`expectedVersion` d'une date.
+
+Hors antenne, il n'y a pas de date à désigner. Et la maquette dit exactement le contraire, en toutes
+lettres : *« le dictionnaire, la sévérité et les sanctions restent modifiables hors antenne — ils
+s'appliqueront au prochain direct »*. Le dictionnaire est correctement au niveau chaîne
+(`/v1/channels/{id}/moderation/banned-words`) ; la sévérité, le mode lent et la réserve aux
+détenteurs ne le sont pas.
+
+Il manque un régime de tchat **par défaut de chaîne**, et la règle d'héritage qui dit ce qu'une
+nouvelle date en reprend. C'est aussi le porteur naturel du bloc « diffusion par défaut » de
+`settings`, qui n'en a pas.
+
+### J — `agenda` et `inbox` sont des écrans de **personne**, rangés dans un tableau de **chaîne**
+
+`EffectiveRights.navigation` est par chaîne. Mais `agenda` est servi par `GET /v1/me/duties`, qui
+est **par personne** et explicitement « toutes chaînes confondues » ; `inbox` par `GET /v1/inbox`,
+de même — et la description dit « ouverte à tout le monde, quel que soit le rôle ».
+
+Une personne sur trois chaînes reçoit donc la même entrée trois fois — ou zéro fois. **C'est zéro
+dans l'exemple du contrat lui-même** (`studio.yaml:2445`) :
+
+```
+roles: [video]
+navigation: [events, stream, replays, help]
+```
+
+`agenda` est absent, alors que la table des six personas donne à `regie` exactement
+`agenda · events · stream · replays · help`. Pour un `moderation`, la même omission laisse
+`moderation · help`. **La page d'atterrissage des deux personas de terrain est soit dupliquée, soit
+perdue, selon la lecture — et rien ne dit laquelle.** Le compteur `dutiesTonight` est pourtant
+servi, ce qui suppose que les gardes comptent.
+
+Le correctif est petit : une `navigation` au niveau personne à côté de celle au niveau chaîne.
+
+---
+
+## Combien d'allers-retours
+
+Le compte est bon dans l'ensemble, et je le dis avant de critiquer : l'amorçage en **un** appel, qui
+porte l'identité, toutes les chaînes avec leurs droits effectifs, les constantes de domaine, le
+catalogue de libellés et les compteurs, est exactement ce qu'il fallait. Rien n'est peint avant lui,
+et il est petit. Trois réserves.
+
+**1. La fiche de date : 1 + 1 par volet ouvert, soit sept appels pour un artiste.** J'ai demandé le
+service par volet et je le maintiens — un `moderation` fait 2 appels au lieu de 7, et la
+billetterie ne transite jamais pour rien. Mais le cas fréquent est l'artiste, et c'est le pire :
+sept allers-retours pour un écran, contre les « 1 à 3 par écran » que `context-map.md` §10.1 annonce
+pour le studio. Ce que j'accepterais sans rien perdre : `GET /dates/{id}/sheet?panes=public,tickets`,
+composé au BFF pour **les volets demandés seulement**. Le nombre suit alors le rôle au lieu de
+suivre le maximum, et la garantie « un volet fermé n'est jamais chargé » est intacte.
+
+**2. La régie : quatre appels avant de peindre, sur l'écran où le temps compte le plus.**
+`context-map.md` compte trois appels **internes** ; depuis l'application c'est
+`GET /run` + `GET /moderation/queue` + `GET /chat/messages` + la présence (qui n'existe pas).
+`RunConsole` agrège déjà le protocole, l'échelle de qualités, l'incident, les chapitres et le débit
+de tchat : y ajouter la présence et les N derniers échantillons de santé — qui manquent tous les
+deux, voir C et D — ramènerait la console à **deux**.
+
+**3. Le studio n'a pas de `/changes`.** Le storefront reçoit une liste d'invalidations en un appel
+au retour au premier plan. Le studio, qui est l'application qu'on laisse ouverte deux heures pendant
+qu'une autre personne modifie les mêmes objets, n'a rien. C'est le même besoin, sur la surface où
+il est le plus aigu.
+
+---
+
+## Ce qui est satisfait autrement, et si ça me va
+
+**`live` et `ended` retirés de la commande de transition — meilleur que ce que je demandais, et je
+l'adopte.** *« La publication ne commande pas l'antenne, elle l'apprend »* : seul `streaming` sait
+si le flux entre, et `Publication` reste l'agrégat d'un seul contexte. Une conséquence à écrire
+quelque part, parce qu'elle n'est nulle part : la fiche de date offre « Passer à l'antenne » et
+« Terminer la diffusion » comme des boutons, et ils vont désormais à `PUT /run/state`, pas à
+`/publication/transitions`. `offeredTransitions` ne les contiendra **jamais**. La fiche doit le
+savoir, sinon deux boutons disparaissent sans que personne comprenne pourquoi.
+
+**Le journal reste en page + total avec période obligatoire — j'avais tort, l'argument est
+meilleur que le mien.** Le filtre de période est la vraie affordance ; le curseur m'aurait coûté les
+numéros de page que je réclamais par ailleurs. Rien à ajouter.
+
+**`run.state` perd `postponed` et `cancelled`** — juste, et la phrase est la bonne : une régie n'a
+pas d'état « annulée », elle a un plateau qui n'envoie rien.
+
+**La sévérité de filtre en `low | medium | high`** est un cinquième vocabulaire par rapport aux deux
+que j'avais relevés — mais il est unique, canonique et anglais, et les miens étaient locaux à la
+maquette. Accepté sans réserve.
+
+**`team` a disparu du vocabulaire de navigation.** C'est la bonne décision et elle va dans le sens
+de mon incohérence n°1. Mais elle n'est écrite nulle part : ni dans `answers-to-surfaces.md`, ni
+dans `DECISIONS.md`. `studio-mobile` peut encore porter un écran `team`. **Une ligne suffirait.**
+
+**La TVA, les versements et la devise** sont plus rigoureux que ma demande :
+`grossTtc → vat[] par marché → grossHt → commission sur le HT → net`, un solde par devise, jamais
+agrégé, et l'avertissement en tête de l'ADR. Je n'ai rien à ajouter, sauf ceci : `PayoutLine` porte
+la ventilation, mais l'écran porte aussi un **rapprochement** (« places encaissées », « rapproché
+avec le relevé », « écart à expliquer ») et un bloc **litiges**.
+`closeReconciliationPeriod` est un POST sans GET, et rien ne liste les litiges : on clôt une période
+dont on ne peut pas lire l'écart, alors que l'offre elle-même dit qu'un écart non expliqué bloque la
+clôture.
+
+---
+
+## Les questions sans réponse
+
+1. **`catalog.publication.state_changed.v1` : existera-t-il, et atteindra-t-il `channel:{id}` ?**
+   Et son correctif porte-t-il `offeredTransitions` recalculées **pour le destinataire** ?
+2. **Quelle lecture pour la série de santé**, et sur quelle fenêtre ? `realtime.md` §5.1 dit qu'elle
+   « se re-demande » ; aucune opération ne la sert.
+3. **Quelle opération expose `identity.GetChannelPresence` ?** `context-map.md` §10.1 la compte,
+   `studio.yaml` ne la publie pas.
+4. **Cinq entrées de navigation, cinq opérations manquantes** — `dashboard`, `stats`, `stream`,
+   `replays`, `tickets` au niveau chaîne. Sont-elles à écrire, ou à **retirer du vocabulaire**
+   jusqu'à ce qu'elles existent ? Servir une entrée qu'aucun appel ne suit est pire que ne pas la
+   servir.
+5. **Les cinq volets manquants** — `public`, `chat`, `tech`, `crew`, `replay`.
+6. **`displayState` pour le studio : servi, ou le studio est-il autorisé à le recomposer ?**
+   La règle critique n°2 dit non.
+7. **`moderationReason` : `spoiler` et `insult` reviennent-ils, et `filter` quitte-t-il `reason`
+   pour `origin` ?**
+8. **Un régime de tchat par défaut au niveau chaîne**, et la règle d'héritage d'une nouvelle date.
+9. **Une lecture de la couverture d'équipe par date**, une liste des accès ponctuels d'une chaîne,
+   et `expiresAt` peut-il être nul pour un membre permanent affecté à un poste ?
+10. **Une `navigation` au niveau personne** pour `agenda` et `inbox` — ou la règle qui dit comment
+    les lire dans un tableau par chaîne.
+11. **Le contrat WebSocket sera-t-il lisible par une machine ?** zod valide tout, l'OpenAPI est
+    généré, et la surface au budget de latence le plus serré n'a que de la prose. Une AsyncAPI, ou
+    des messages Protobuf, éviteraient que cinq surfaces retapent `{ entity, id, op, seq, patch }`
+    à la main.
+12. **Une lecture du rapprochement et des litiges**, sans laquelle `closeReconciliationPeriod` clôt
+    à l'aveugle.
+13. **`GET /changes?since=` est-il ouvert au BFF studio ?**
+14. **Un GET des réglages de chaîne**, et le porteur du bloc « diffusion par défaut ».
