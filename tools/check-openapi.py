@@ -213,6 +213,64 @@ def check(fn):
                 if not ok:
                     err(fn, f"R15 response {c} without EnvelopeMeta (hence without servedAt) — {oid}")
 
+    # ------------------------------------------------------------------ R16–R19
+    #
+    # Four rules that share one property: they are INVISIBLE AT THE LINE LEVEL and
+    # obvious at the parse level. Every one of them was found by parsing a document
+    # that fifteen green rules had just declared conformant, and two of the defects
+    # had been shipping a half-sentence since the document was first written —
+    # because everyone was reading YAML instead of reading what YAML parses to.
+    #
+    # That is why they live here rather than in a reviewer's eye.
+
+    PROSE = ("description", "summary", "x-arthome-idempotency-exemption",
+             "x-arthome-fanout-exception")
+
+    def scan(node, path, parent_type=None):
+        if isinstance(node, list):
+            for i, v in enumerate(node):
+                scan(v, f"{path}/{i}", parent_type)
+            return
+        if not isinstance(node, dict):
+            return
+        typ = node.get("type")
+        for k, v in node.items():
+            # R16 — a vocabulary member is a string. An unquoted YAML scalar is a
+            # TYPE DECISION MADE BY THE PARSER: `off`, `on`, `yes` and `no` are
+            # booleans under YAML 1.1, so `[open, emoji, read_only, off]` declares
+            # three modes and a `False`. `null` is admitted only where the schema's
+            # own `type` admits it.
+            if k in ("enum", "x-arthome-vocabulary") and isinstance(v, list):
+                for m in v:
+                    if isinstance(m, str):
+                        continue
+                    if m is None and isinstance(typ, list) and "null" in typ:
+                        continue
+                    err(fn, f"R16 non-string member {m!r} — quote it — {path}/{k}")
+            if isinstance(k, str):
+                # R17 — a mapping key that reads like prose is a scalar the parser
+                # cut in half. A comma inside an unquoted scalar in a FLOW mapping
+                # ends it: `{ description: Cache validator, so the TV … }` parses as
+                # the value `Cache validator` plus a junk key mapped to null.
+                # A fragment can land here WITHOUT a space — `{ description: a token,
+                # short-lived. }` leaves the key `short-lived.` — so the trailing
+                # full stop alone is enough to convict.
+                if (" " in k or k.endswith(".")) and not k.startswith("/"):
+                    err(fn, f"R17 prose promoted to a mapping key — quote the scalar — {path}: {k[:60]!r}")
+                if k in PROSE:
+                    # R18 — a prose value that carries its own quotation marks.
+                    # Perfect in the YAML, corrupted in every generated client.
+                    if isinstance(v, str):
+                        s = v.strip()
+                        if len(s) > 1 and s[0] == s[-1] and s[0] in "\"'":
+                            err(fn, f"R18 value carries its own quotation marks — {path}/{k}")
+                    # R19 — a prose key whose value is not a string at all.
+                    elif v is not None:
+                        err(fn, f"R19 {k} is not a string ({type(v).__name__}) — {path}/{k}")
+            scan(v, f"{path}/{k}", typ)
+
+    scan(d, "")
+
     print(f"{fn}: {len(d.get('paths',{}))} paths, {len(ops)} operations, "
           f"{len(d.get('components',{}).get('schemas',{}))} schemas")
 
