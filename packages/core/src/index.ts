@@ -37,3 +37,7 @@ export * from './ticketing/index.js';
 export * from './moderation/index.js';
 export * from './notification/index.js';
 export * from './search/index.js';
+
+// Vague 5 — les deux qui composent le plus, donc les dernieres des regles.
+export * from './entitlement/index.js';
+export * from './payout/index.js';
