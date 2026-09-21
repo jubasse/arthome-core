@@ -30,10 +30,10 @@
 //
 // See DECISIONS.md and tools/language.allow.json.
 
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { execFileSync } from 'node:child_process';
 
 const CWD = process.cwd();
 const args = process.argv.slice(2);
@@ -125,7 +125,10 @@ const FRENCH = [
   'valeur',
   'valeurs',
 ];
-const FRENCH_RE = new RegExp(`(?<![\\p{L}\\p{N}_-])(${FRENCH.join('|')})(?![\\p{L}\\p{N}_-])`, 'giu');
+const FRENCH_RE = new RegExp(
+  `(?<![\\p{L}\\p{N}_-])(${FRENCH.join('|')})(?![\\p{L}\\p{N}_-])`,
+  'giu',
+);
 
 // How many DISTINCT French words a file must show before it is reported.
 // Three, because two is reachable by accident — `fait` in a French show title,
@@ -240,7 +243,13 @@ const MARKERS = {
   // In HTML, `//` is not a comment (`https://`, a CSS value) and `#` is a
   // colour or a fragment. Only the SGML comment counts — plus `/* */`, which
   // appears inside <style> and <script>.
-  '.html': { line: [], block: [['<!--', '-->'], ['/*', '*/']] },
+  '.html': {
+    line: [],
+    block: [
+      ['<!--', '-->'],
+      ['/*', '*/'],
+    ],
+  },
   // JSON has no comments at all. Its prose lives in the named keys below.
   '.json': { line: [], block: [] },
 };
@@ -356,7 +365,7 @@ if (reported.length) {
   }
   console.error(
     '\n  Everything committed is written in English: documentation, comments, and the\n' +
-      '  messages a gate prints. French survives only as the product\'s own vocabulary\n' +
+      "  messages a gate prints. French survives only as the product's own vocabulary\n" +
       '  and as the verbatim copy of the read-only handoff — both in\n' +
       '  tools/language.allow.json, each with its reason. Translate the file; do not\n' +
       '  add an entry there to make this pass.',

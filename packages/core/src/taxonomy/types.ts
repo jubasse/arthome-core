@@ -1,6 +1,11 @@
 /**
- * The taxonomy: 2 universes, 21 disciplines, 176 sub-genres, 205 tags,
- * 7 attribute groups.
+ * The taxonomy: universes, disciplines, sub-genres, tags, attribute groups.
+ *
+ * ⚠ THE AUTHORITATIVE COUNTS AND THE VOCABULARY ARE IN
+ * `prototypes/shared/taxonomy.json`, and nowhere else. This comment deliberately
+ * states no figure: `docs/taxonomy.md`'s tag list is ILLUSTRATIVE (196 of 205),
+ * and a count written here would be a parallel table on the one thing this
+ * module exists to keep single.
  *
  * ⚠ THIS MODULE DOES NOT CARRY THE DATA. The taxonomy is served as an
  * IMMUTABLE VERSIONED ARTEFACT — `/taxonomy/{locale}/v{N}.json` — per language
@@ -30,7 +35,7 @@ export interface Genre {
  * A discipline: mandatory, single, closed vocabulary.
  *
  * A discipline is a FORM — never a language, a period or a country. That is the
- * distinction `Taxonomie - projet.md` works to protect, and which the TV brief
+ * distinction `docs/taxonomy.md` works to protect, and which the TV brief
  * had lost by calling "concerts" a discipline and "ballet" something other than
  * a sub-genre of dance (B2).
  */

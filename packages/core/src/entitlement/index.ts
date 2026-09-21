@@ -66,7 +66,7 @@ export const WatchDenialReason = {
   NOT_PUBLISHED: 'not-published',
 } as const;
 
-/** The action that GETS OUT OF THE DEAD END — an empty state with no way out is banned. */
+/** The action ya t'il un meilleur serveur que tomcat pour springthat GETS OUT OF THE DEAD END — an empty state with no way out is banned. */
 export const WATCH_FALLBACK_ACTIONS = [
   'buy-seat',
   'subscribe',

@@ -1,514 +1,515 @@
-# ADR — Encaissement, commission, TVA, versements
+# ADR — Taking money, commission, VAT, payouts
 
-**Statut** : **accepté** — modèle fiscal tranché par **D-015**, devise d'affichage par **D-016**,
-quatre arbitrages secondaires par **D-017**.
-**Date** : 21 septembre 2026. **Auteur** : `backend-domain`.
-**Portée** : `ticketing` (encaisse), `payouts` (calcule le droit), Stripe Connect en **mode test**.
-
----
-
-> ## ⚠ Avertissement — à lire avant tout le reste
->
-> **Le modèle fiscal décrit au §5 est une recommandation d'architecture. Ce n'est pas un avis
-> fiscal, et il doit être validé par un conseil avant tout encaissement réel.**
->
-> Qui doit la TVA, sur quelle assiette et qui en est redevable sont des **questions de droit**.
-> Elles dépendent du statut réel d'Arthome (assujetti ou non, seuils, pays d'établissement), du
-> statut des artistes (assujettis ou non, établis en France ou non) et du guichet unique pour les
-> ventes hors France. Aucun de ces faits n'est connu à la date de ce document.
->
-> **Le risque est nul aujourd'hui** : Stripe tourne en mode test, aucun argent réel ne circule.
-> C'est précisément pour cela que la décision est prise maintenant — elle est **réversible sur le
-> fond**. Ce qui ne l'est pas, c'est la **forme** : voir l'encadré du §5.0.
+**Status**: **accepted** — tax model settled by **D-015**, display currency by **D-016**,
+four secondary arbitrations by **D-017**.
+**Date**: 21 September 2026. **Author**: `backend-domain`.
+**Scope**: `ticketing` (takes the money), `payouts` (computes the entitlement), Stripe Connect in
+**test mode**.
 
 ---
 
-## 1. Le contexte, et ce que le dossier fixe déjà
+> ## ⚠ Warning — read before anything else
+>
+> **The tax model described in §5 is an architecture recommendation. It is not tax advice, and it
+> must be validated by counsel before any real money is taken.**
+>
+> Who owes the VAT, on what base and who is liable for it are **questions of law**. They depend on
+> Arthome's actual status (registered or not, thresholds, country of establishment), on the
+> artists' status (registered or not, established in France or not) and on the one-stop shop for
+> sales outside France. None of those facts is known as of this document's date.
+>
+> **The risk today is nil**: Stripe runs in test mode, no real money moves. That is precisely why
+> the decision is taken now — it is **reversible in substance**. What is not reversible is the
+> **shape**: see the box in §5.0.
 
-`shared/catalogue.json` fixe trois paramètres commerciaux, et ils font autorité :
+---
+
+## 1. The context, and what the file already fixes
+
+`shared/catalogue.json` fixes three commercial parameters, and they are authoritative:
 
 ```
 commissionRate    0.12          payoutDelayDays   14
-billingMarkets    eur (TVA 5,5 %) · chf (2,6 %) · cad (14,975 %, live: false)
+billingMarkets    eur (VAT 5.5%) · chf (2.6%) · cad (14.975%, live: false)
 ```
 
-Ce qui fait également autorité dans `shared/`, et qu'on porte tel quel :
-l'arrondi se fait **à l'unité mineure, sur chaque composante prise séparément** ; un versement est
-**retenu** (`held`) tant qu'une issue est ouverte — reportée ou interrompue — et **remboursé**
-(`refunded`) si la date est annulée.
+What is also authoritative in `shared/`, and what we port as it stands:
+rounding happens **to the minor unit, on each component taken separately**; a payout is
+**withheld** (`held`) while an outcome is open — postponed or interrupted — and **refunded**
+(`refunded`) if the date is cancelled.
 
-**Ce qui ne fait PAS autorité**, et c'est le piège le plus coûteux du dossier (D5) : la formule
-`net = brut − 12 % − TVA(brut)` de `fixtures.js`. Elle *ressemble* à une règle métier éprouvée —
-elle en a la place, le ton et la précision à l'euro. Elle n'en est pas une : elle produit un nombre
-plausible pour une maquette. §5 l'instruit.
+**What is NOT authoritative**, and it is the most expensive trap in the file (D5): `fixtures.js`'s
+`net = gross − 12% − VAT(gross)` formula. It *looks* like a proven business rule — it has the
+place, the tone and the to-the-euro precision of one. It is not: it produces a plausible number
+for a mockup. §5 examines it.
 
-**Aucun argent réel ne circule.** Stripe en mode test, gratuit. Cela rend les décisions de ce
-document **réversibles sur le fond** et **non réversibles sur la forme** : ce qui se grave
-maintenant, c'est la structure des données et la frontière des contextes.
+**No real money moves.** Stripe in test mode, free. That makes this document's decisions
+**reversible in substance** and **not reversible in shape**: what gets carved now is the structure
+of the data and the boundary between contexts.
 
 ---
 
-## 2. Périmètre PCI — évité, et comment
+## 2. PCI scope — avoided, and how
 
-**Aucun numéro de carte ne transite par Arthome, jamais.**
+**No card number ever passes through Arthome.**
 
-| Surface | Mécanisme | Motif |
+| Surface | Mechanism | Reason |
 |---|---|---|
-| storefront web | **Payment Element** (Stripe.js) | rend le prix, la 3-D Secure et les moyens locaux sans que la carte touche notre domaine |
-| storefront mobile | **Checkout hébergé**, ouvert dans un navigateur système | pas de SDK natif de carte à intégrer, et la 3-D Secure fonctionne |
-| **storefront TV** | **jamais** | la TV n'accepte aucune saisie au-delà de six caractères : tout paiement passe par **l'appairage d'appareil** (`context-map.md` §8), donc par le téléphone, donc par l'une des deux lignes ci-dessus |
-| studio (compte de versement) | **Connect Onboarding hébergé** | la conformité du bénéficiaire est celle de Stripe |
+| storefront web | **Payment Element** (Stripe.js) | renders the price, 3-D Secure and local payment methods without the card touching our domain |
+| storefront mobile | **Hosted Checkout**, opened in a system browser | no native card SDK to integrate, and 3-D Secure works |
+| **storefront TV** | **never** | the TV accepts no input beyond six characters: every payment goes through **device pairing** (`context-map.md` §8), hence through the phone, hence through one of the two lines above |
+| studio (payout account) | **hosted Connect Onboarding** | the beneficiary's compliance is Stripe's |
 
-Conséquence : **SAQ-A**, le périmètre le plus étroit. C'est aussi ce qui rend la démonstration
-publique possible sans engager quoi que ce soit.
+Consequence: **SAQ-A**, the narrowest scope. It is also what makes the public demonstration possible
+without committing to anything.
 
-### 2.1 Deux vérifications d'identité, qui n'ont rien à voir — à écrire une fois pour toutes
+### 2.1 Two identity checks that have nothing to do with each other — written down once and for all
 
-Elles sont confondues à peu près systématiquement, et la confusion coûte cher parce qu'elle fait
-croire qu'une seule suffit.
+They are conflated more or less systematically, and the confusion is expensive because it makes
+people believe one of them is enough.
 
-| | Porte sur | Qui la fait | Ce qu'elle sert |
+| | Bears on | Who does it | What it is for |
 |---|---|---|---|
-| **KYB / KYC de Connect** | **l'ARTISTE** — identité et entreprise du compte connecté | Stripe, dans son parcours d'inscription hébergé | pouvoir **verser** de l'argent à quelqu'un, et savoir à qui |
-| **Localisation fiscale** | **le SPECTATEUR** — pays, subdivision, code postal, preuves | **nous**, à l'instant de la vente (§5.0) | savoir **quel taux** appliquer et pouvoir le **justifier dix ans** |
+| **Connect KYB / KYC** | **the ARTIST** — identity and business of the connected account | Stripe, in its hosted onboarding flow | being able to **pay** money to somebody, and knowing to whom |
+| **Tax location** | **the VIEWER** — country, subdivision, postal code, evidence | **us**, at the instant of the sale (§5.0) | knowing **which rate** to apply and being able to **justify it for ten years** |
 
-La première est de la conformité **bénéficiaire**, déléguée et hors de notre périmètre. La seconde
-est de la conformité **fiscale**, et elle est **irréversible** : personne ne la fait à notre place,
-et un fait non capturé à la vente n'existe plus. Avoir l'une ne donne rien de l'autre.
+The first is **beneficiary** compliance, delegated and outside our scope. The second is **tax**
+compliance, and it is **irreversible**: nobody does it for us, and a fact not captured at the sale
+no longer exists. Having one gives you nothing of the other.
 
 ---
 
-## 3. Le modèle Stripe Connect retenu
+## 3. The Stripe Connect model adopted
 
-**Décision : `destination charges` sur le compte plateforme — sans `on_behalf_of` — avec
-`application_fee_amount`. Comptes connectés en Express.**
+**Decision: `destination charges` on the platform account — without `on_behalf_of` — with
+`application_fee_amount`. Connected accounts on Express.**
 
 ```
 PaymentIntent
-  ├─ créé sur le compte PLATEFORME               nous sommes le marchand d'enregistrement
-  ├─ transfer_data.destination = acct_<chaîne>   le net part vers l'artiste
-  └─ application_fee_amount   = commission + TVA due par la plateforme
+  ├─ created on the PLATFORM account             we are the merchant of record
+  ├─ transfer_data.destination = acct_<channel>  the net goes to the artist
+  └─ application_fee_amount   = commission + VAT owed by the platform
 ```
 
-**`on_behalf_of` est retiré, et c'est une correction, pas un réglage.** Il fait de l'artiste le
-**marchand d'enregistrement** — il fixe le règlement, la devise et le rattachement fiscal sur le
-compte connecté. Or tout le modèle commissionnaire du §5 repose sur l'affirmation inverse : c'est
-**Arthome** qui fournit la prestation au spectateur. Le garder aurait mis la configuration Stripe
-en contradiction frontale avec le modèle fiscal qu'elle est censée exécuter — et c'est le genre de
-contradiction qu'aucun test ne rattrape, parce que les deux moitiés fonctionnent séparément.
+**`on_behalf_of` is removed, and that is a correction, not a setting.** It makes the artist the
+**merchant of record** — it fixes settlement, currency and tax attachment on the connected account.
+But the whole commissionnaire model of §5 rests on the opposite assertion: it is **Arthome** that
+supplies the service to the viewer. Keeping it would have put the Stripe configuration in head-on
+contradiction with the tax model it is supposed to execute — and that is the kind of contradiction
+no test catches, because both halves work separately.
 
-**Le coût, à écrire plutôt qu'à découvrir** : Stripe **exige** `on_behalf_of` dès que le compte
-connecté sort de la région du compte plateforme. Une chaîne **suisse ou canadienne** ne peut donc
-pas être servie par ce montage — elle devra être traitée autrement (compte plateforme local, ou
-`separate charges and transfers`) **ou attendre**. `catalogue.json` déclare précisément ces deux
-marchés (`chf`, `cad`), et D4 a montré qu'aucun n'a jamais été exercé : la limite est donc théorique
-aujourd'hui et réelle au premier artiste non européen.
+**The cost, written down rather than discovered**: Stripe **requires** `on_behalf_of` as soon as
+the connected account leaves the platform account's region. So a **Swiss or Canadian** channel
+cannot be served by this arrangement — it will have to be handled otherwise (a local platform
+account, or `separate charges and transfers`) **or wait**. `catalogue.json` declares precisely those
+two markets (`chf`, `cad`), and D4 showed neither has ever been exercised: the limit is therefore
+theoretical today and real at the first non-European artist.
 
-**Pourquoi ce modèle et pas les deux autres.**
+**Why this model and not the other two.**
 
-| Modèle | Pourquoi écarté |
+| Model | Why it is ruled out |
 |---|---|
-| **Direct charges** | l'artiste devient marchand d'enregistrement : nous perdons le contrôle du remboursement, de l'avoir et de la politique d'annulation — or les trois sont rédigés dans notre copie, affichés sur nos trois storefronts, et exécutés par nos commandes. Et le litige bancaire irait à l'artiste, qui n'a ni les preuves ni l'écran pour y répondre. |
-| **Separate charges & transfers** | plus souple pour un panier multi-vendeurs, mais il nous oblige à tenir nous-mêmes un grand livre de transferts — exactement ce que la règle « Stripe reste la source de vérité du mouvement d'argent » interdit. |
-| **Destination charges** ✓ | un paiement, un transfert, une commission, et Stripe tient le livre. |
+| **Direct charges** | the artist becomes merchant of record: we lose control of refunds, of credit notes and of the cancellation policy — yet all three are written in our copy, shown on our three storefronts, and executed by our commands. And a chargeback would go to the artist, who has neither the evidence nor the screen to answer it. |
+| **Separate charges & transfers** | more flexible for a multi-seller basket, but it forces us to keep a transfer ledger ourselves — exactly what the "Stripe remains the source of truth for the movement of money" rule forbids. |
+| **Destination charges** ✓ | one payment, one transfer, one commission, and Stripe keeps the book. |
 
-**La conséquence structurante, et elle remonte jusqu'au modèle de données** : un
-`destination charge` n'admet **qu'une seule destination**. Donc **une commande de marchandise est
-mono-vendeur**, et un panier contenant les articles de deux chaînes **se scinde en deux commandes
-au paiement**, chacune avec son port, sa commission et son versement. C'est la réponse à
-`storefront-web` Q15, et elle a deux justifications indépendantes : le modèle de paiement et le
-fait qu'un panier à deux artistes est de toute façon deux expéditions.
+**The structuring consequence, and it reaches all the way into the data model**: a
+`destination charge` allows **only one destination**. So **a merchandise order is single-seller**,
+and a basket containing two channels' items **splits into two orders at payment**, each with its own
+shipping, commission and payout. That is the answer to `storefront-web` Q15, and it has two
+independent justifications: the payment model, and the fact that a basket from two artists is two
+shipments anyway.
 
-**Express plutôt que Standard** : l'inscription est hébergée (indispensable au parcours
-`studio-mobile`, qui sort vers un navigateur externe et revient par lien universel), le tableau de
-bord du bénéficiaire est fourni, et la plateforme garde la main sur les litiges — ce qu'elle doit,
-puisqu'elle est marchand d'enregistrement.
+**Express rather than Standard**: onboarding is hosted (essential to `studio-mobile`'s journey,
+which leaves for an external browser and comes back by universal link), the beneficiary's dashboard
+is provided, and the platform keeps control of disputes — which it must, since it is merchant of
+record.
 
 ---
 
-## 4. Un port, deux adaptateurs, et le factice par défaut
+## 4. One port, two adapters, and the fake one by default
 
-**Décision structurante, et elle est à moi** : le domaine ne connaît pas Stripe.
+**A structuring decision, and it is mine**: the domain does not know Stripe.
 
 ```
 @arthome/core  →  PaymentPort      authorize · capture · refund · quote
                   ConnectPort      createAccount · onboardingLink · accountStatus · transfer
                   WebhookPort      verifySignature · parse
-                  LedgerPort       listBalanceTransactions   (réconciliation)
+                  LedgerPort       listBalanceTransactions   (reconciliation)
 
 ticketing / payouts
-   ├── FakePaymentAdapter     PAR DÉFAUT — déterministe, aucun réseau, aucune clé
-   └── StripeTestAdapter      Stripe en mode test
+   ├── FakePaymentAdapter     BY DEFAULT — deterministic, no network, no key
+   └── StripeTestAdapter      Stripe in test mode
 ```
 
-**Pourquoi le factice est le défaut et non l'inverse.** La démonstration publique du palier 0 et
-toute la suite de tests doivent tourner **sans clé et sans réseau**. Un adaptateur factice par
-défaut garantit qu'un clone du dépôt fonctionne au premier `docker compose up` ; un adaptateur
-Stripe par défaut garantit l'inverse. Et l'adaptateur factice **simule les échecs** : carte
-refusée, 3-D Secure abandonnée, webhook en retard, webhook désordonné, litige bancaire. Ce sont
-ces chemins-là qu'on ne teste jamais autrement.
+**Why the fake one is the default and not the other way round.** Milestone 0's public demonstration
+and the whole test suite must run **with no key and no network**. A fake adapter by default
+guarantees that a clone of the repository works on the first `docker compose up`; a Stripe adapter
+by default guarantees the opposite. And the fake adapter **simulates the failures**: card declined,
+3-D Secure abandoned, late webhook, out-of-order webhook, chargeback. Those are the paths nobody
+ever tests otherwise.
 
-**Aucun identifiant propre à Stripe ne traverse le domaine.** `payment_intent_ref` est une chaîne
-opaque pour `@arthome/core` ; seul l'adaptateur sait la lire. C'est la même discipline que pour
-les ports média de `streaming.md`.
+**No Stripe-specific identifier crosses the domain.** `payment_intent_ref` is an opaque string to
+`@arthome/core`; only the adapter knows how to read it. It is the same discipline as for
+`streaming.md`'s media ports.
 
 ---
 
-## 5. La TVA — la question que D5 laissait ouverte, instruite et non supposée
+## 5. VAT — the question D5 left open, researched and not assumed
 
-### 5.0 Le seul choix réellement irréversible, isolé
+### 5.0 The only genuinely irreversible choice, isolated
 
-Avant d'entrer dans le débat fiscal, il faut séparer ce qui se rejoue de ce qui ne se rejoue pas.
-C'est la distinction qui compte le plus dans ce document.
+Before entering the tax debate, we must separate what can be redone from what cannot. It is the
+distinction that matters most in this document.
 
-> **Le modèle fiscal est un calcul : il se refait. La forme des données est une structure : elle
-> ne se refait pas.**
+> **The tax model is a computation: it can be redone. The shape of the data is a structure: it
+> cannot.**
 >
-> **Le seul choix réellement irréversible de tout ce chapitre est de capturer — ou non — la
-> localisation fiscale de l'acheteur, ses preuves, et le taux appliqué à la vente.**
+> **The only genuinely irreversible choice in this whole chapter is whether or not to capture the
+> buyer's tax location, its evidence, and the rate applied at the sale.**
 
 ```
-irréversible   la LOCALISATION FISCALE de l'acheteur, ses PREUVES,
-               et le TAUX APPLIQUÉ conservé sur la ligne          ← ce qu'on grave
-réversible     quel taux, quelle assiette, quel redevable         ← ce qui se recalcule
+irreversible   the buyer's TAX LOCATION, its EVIDENCE,
+               and the RATE APPLIED, kept on the line          ← what gets carved
+reversible     which rate, which base, which liable party      ← what gets recomputed
 ```
 
-**Et la forme est plus exigeante que je ne l'avais écrite.** J'avais gravé une ventilation clée sur
-le **marché de facturation**. C'est insuffisant, et la raison est arithmétique plutôt
-qu'argumentative :
+**And the shape is more demanding than I had written it.** I had carved a breakdown keyed on the
+**billing market**. That is insufficient, and the reason is arithmetic rather than argumentative:
 
-| Juridiction | Pourquoi un marché — ni même un pays — ne suffit pas |
+| Jurisdiction | Why a market — or even a country — is not enough |
 |---|---|
-| **États-Unis** | environ **9 000 juridictions** (État, comté, ville). Un pays ne permet **aucun** calcul ; le **code postal** est indispensable, et les lois *marketplace facilitator* obligent la plateforme à collecter dans **46 États plus le district de Columbia**, quelle que soit sa position contractuelle |
-| **Union européenne** | **deux éléments de preuve non contradictoires** sont obligatoires pour une vente B2C — adresse de facturation, adresse IP, pays de la banque, pays de la carte SIM. Et **Stripe Tax privilégie une adresse unique** au lieu de les comparer : la règle de preuve **ne peut pas lui être déléguée** |
-| **Royaume-Uni** | l'arrêt **Derby Quad contre HMRC** a jugé que l'exonération des places de théâtre **ne s'étend pas** au direct diffusé. Le taux dépend donc du couple **juridiction × nature de la prestation**, jamais d'une constante par marché |
+| **United States** | roughly **9,000 jurisdictions** (state, county, city). A country allows **no** computation at all; the **postal code** is essential, and *marketplace facilitator* laws oblige the platform to collect in **46 states plus the District of Columbia**, whatever its contractual position |
+| **European Union** | **two non-contradictory pieces of evidence** are mandatory for a B2C sale — billing address, IP address, bank country, SIM card country. And **Stripe Tax favours a single address** rather than comparing them: the evidence rule **cannot be delegated to it** |
+| **United Kingdom** | the **Derby Quad v HMRC** decision held that the theatre-ticket exemption **does not extend** to a streamed live show. So the rate depends on the pair **jurisdiction × nature of the supply**, never on a per-market constant |
 
-**Un marché de facturation est une notion de PRIX** — dans quelle devise on vend. **Ce n'est pas
-une notion de TAXE**, et les confondre était ma faute. `market_id` est retiré de la ligne de TVA
-(numéro réservé) et remplacé par `jurisdiction_code`, `jurisdiction_level` et `supply_kind`.
+**A billing market is a PRICING notion** — which currency we sell in. **It is not a TAX notion**, and
+conflating the two was my fault. `market_id` is removed from the VAT line (number reserved) and
+replaced by `jurisdiction_code`, `jurisdiction_level` and `supply_kind`.
 
-**Ce que la commande porte désormais** — et c'est la forme à graver :
+**What the order now carries** — and this is the shape to carve:
 
 ```
 BuyerTaxLocation   country · subdivision · postal_code · city
                    evidence[]  { kind, country, subdivision, source, collected_at }
-                   evidence_conflicting        ← deux preuves qui se contredisent : on l'assume
+                   evidence_conflicting        ← two pieces that contradict each other: we own it
 VatLine            jurisdiction_code · jurisdiction_level · supply_kind
-                   rate_bps  ← LE TAUX APPLIQUÉ AU MOMENT DE LA VENTE, pas le taux courant
+                   rate_bps  ← THE RATE APPLIED AT THE MOMENT OF THE SALE, not the current rate
 ```
 
-**Trois raisons de ne pas s'en remettre au `Customer` de Stripe**, et aucune n'est une préférence :
-la facture se conserve **dix ans** quand l'objet Stripe ne vit que tant qu'on reste chez Stripe ;
-il faut le taux **historique**, pas le taux courant ; et l'obligation de conservation porte sur
-**six éléments** — date, preuves de localisation, nature du produit, taux applicable, montant de
-TVA, total. C'est notre registre qui doit les porter.
+**Three reasons not to rely on Stripe's `Customer`**, and none is a preference: the invoice is kept
+for **ten years** while the Stripe object only lives as long as we stay with Stripe; we need the
+**historical** rate, not the current one; and the retention obligation covers **six items** — date,
+location evidence, nature of the product, applicable rate, VAT amount, total. It is our own register
+that must carry them.
 
-**Et la conséquence sur le mot « irréversible » est plus dure que ce que j'avais écrit.** Je disais
-que reconstruire l'assiette de chaque ligne passée « n'est plus une migration, c'est une
-reconstitution comptable ». Avec la localisation fiscale, ce serait **impossible** : une adresse de
-facturation, une adresse IP et un pays de carte au moment d'une vente d'il y a deux ans
-**n'existent nulle part** si on ne les a pas capturés. On ne reconstitue pas un fait daté qu'on n'a
-pas enregistré.
+**And the consequence for the word "irreversible" is harsher than what I had written.** I said that
+rebuilding the base of every past line "is no longer a migration, it is an accounting
+reconstruction". With the tax location, it would be **impossible**: a billing address, an IP address
+and a card country at the moment of a sale two years ago **exist nowhere** if we did not capture
+them. You do not reconstruct a dated fact you never recorded.
 
-Pourquoi ce n'est pas un détail de modélisation :
+Why this is not a modelling detail:
 
-- **La ventilation est juste dans les deux modèles fiscaux.** Un modèle à taux unique produit
-  simplement une ventilation **à une ligne**. Elle ne présume donc de rien, et elle survit à un
-  changement d'avis du conseil fiscal — de même que la localisation de l'acheteur, qui est un
-  **fait**, pas une conséquence du modèle retenu.
-- **Un champ `vat_amount` scalaire unique aurait figé le défaut.** Le jour où l'on découvre qu'il
-  faut ventiler — parce qu'un second marché s'ouvre, ou parce que le taux est celui de l'acheteur —
-  il faut **reconstruire l'assiette de chaque ligne passée**, sur des versements déjà payés et des
-  factures conservées dix ans. Ce n'est plus une migration, c'est une reconstitution comptable.
-- **Et c'est exactement le champ que la fixture invitait à écrire.** `fixtures.js` produit un seul
-  nombre, au taux de `billingMarkets[0]`, et il est plausible à l'euro près. C'est le piège
-  « forme contre règle » dans sa forme la plus coûteuse : **la fixture fait autorité sur la règle,
-  jamais sur la forme**, et ici la forme était le seul enjeu durable.
+- **The breakdown is correct under both tax models.** A single-rate model simply produces a
+  **one-line** breakdown. So it presumes nothing, and it survives the tax counsel changing their
+  mind — just as the buyer's location does, being a **fact** and not a consequence of the model
+  adopted.
+- **A single scalar `vat_amount` field would have frozen the defect.** The day we discover we must
+  break it down — because a second market opens, or because the rate is the buyer's — we would have
+  to **rebuild the base of every past line**, on payouts already paid and invoices kept for ten
+  years. That is no longer a migration, it is an accounting reconstruction.
+- **And it is exactly the field the fixture invited us to write.** `fixtures.js` produces a single
+  number, at `billingMarkets[0]`'s rate, and it is plausible to the euro. It is the "shape against
+  rule" trap in its most expensive form: **a fixture is authoritative on the rule, never on the
+  shape**, and here the shape was the only lasting stake.
 
-`studio-web` a trouvé la contradiction entre la fixture et l'écran des versements ; c'est cette
-trouvaille qui a rendu la ventilation visible avant qu'il ne soit trop tard.
+`studio-web` found the contradiction between the fixture and the payouts screen; it is that finding
+that made the breakdown visible before it was too late.
 
-### 5.1 Ce que les deux sources disent, et pourquoi elles ne peuvent pas avoir raison ensemble
+### 5.1 What the two sources say, and why they cannot both be right
 
-| Source | Affirmation |
+| Source | Assertion |
 |---|---|
-| `fixtures.js` | `vat = round(gross × vatRate)` avec **un seul taux** (`billingMarkets[0]`), appliqué au **brut de billetterie**, et **retranché du net de l'artiste** |
-| maquette des versements du studio | *« le taux applicable est celui du **pays de l'acheteur** »*, avec une **ventilation par marché** |
+| `fixtures.js` | `vat = round(gross × vatRate)` with **a single rate** (`billingMarkets[0]`), applied to the **ticketing gross**, and **deducted from the artist's net** |
+| the studio's payouts mockup | *"the applicable rate is that of the **buyer's country**"*, with a **breakdown by market** |
 
-`studio-web` a trouvé la contradiction ; D4 ajoute que le multi-devise est **déclaré et jamais
-exercé** — `fixtures.js` prend `billingMarkets[0]` pour toutes les dates et tous les versements.
-Donc : **aucun écran n'a jamais affiché deux devises, aucune règle n'a jamais été éprouvée sur deux
-taux.** Ce que `shared/` porte ici est une intention, pas une règle.
+`studio-web` found the contradiction; D4 adds that multi-currency is **declared and never
+exercised** — `fixtures.js` takes `billingMarkets[0]` for every date and every payout. So: **no
+screen has ever displayed two currencies, and no rule has ever been tested against two rates.**
+What `shared/` carries here is an intention, not a rule.
 
-### 5.2 Les trois questions distinctes, qu'il faut séparer pour répondre
+### 5.2 The three distinct questions, which must be separated to be answered
 
-1. **Qui fournit la prestation au spectateur** — Arthome, ou l'artiste ?
-2. **Quelle est l'assiette** — le billet, ou la commission de 12 % ?
-3. **Qui est redevable** — la plateforme, ou l'artiste ?
+1. **Who supplies the service to the viewer** — Arthome, or the artist?
+2. **What is the base** — the ticket, or the 12% commission?
+3. **Who is liable** — the platform, or the artist?
 
-Elles ne se répondent pas ensemble, et la formule de la fixture n'en tranche aucune.
+They are not answered together, and the fixture's formula settles none of them.
 
-### 5.3 Deux modèles cohérents, et un seul est compatible avec la conception
+### 5.3 Two coherent models, and only one is compatible with the design
 
-**Modèle A — Arthome agit en son nom propre (« commissionnaire »).**
-Le spectateur contracte avec Arthome, qui est réputé recevoir puis fournir la prestation.
-- Assiette : **le billet entier**.
-- Taux : celui du **pays du spectateur**, pour une prestation culturelle à distance (l'assistance
-  *virtuelle* à un événement culturel est taxée au lieu de consommation depuis le 1ᵉʳ janvier 2025).
-- Redevable : **Arthome**.
-- L'artiste fournit une prestation **à Arthome**, facturée par auto-facturation.
+**Model A — Arthome acts in its own name ("commissionnaire").**
+The viewer contracts with Arthome, which is deemed to receive and then supply the service.
+- Base: **the whole ticket**.
+- Rate: that of the **viewer's country**, for a cultural service at a distance (*virtual* attendance
+  at a cultural event has been taxed at the place of consumption since 1 January 2025).
+- Liable party: **Arthome**.
+- The artist supplies a service **to Arthome**, billed by self-billing.
 
-**Modèle B — Arthome agit comme intermédiaire transparent.**
-Le spectateur contracte avec l'artiste ; Arthome ne facture que son service.
-- Assiette : **la commission de 12 %** seulement ; l'artiste doit la TVA sur le billet.
-- Redevable de la TVA sur le billet : **l'artiste**.
+**Model B — Arthome acts as a transparent intermediary.**
+The viewer contracts with the artist; Arthome bills only its service.
+- Base: **the 12% commission** only; the artist owes the VAT on the ticket.
+- Liable for the VAT on the ticket: **the artist**.
 
-**La conception impose le modèle A, et l'impose clairement.** Six indices convergents :
-Arthome affiche le prix, encaisse, émet la facture, tient la politique d'annulation (« jusqu'à 1 h
-avant »), exécute le remboursement et émet l'avoir. Le spectateur ne contracte jamais avec
-l'artiste, ne voit jamais son nom sur un moyen de paiement, et ne s'adresse jamais à lui pour un
-remboursement. **Ce sont les marques d'un commissionnaire, pas d'un intermédiaire transparent.**
+**The design imposes model A, and imposes it clearly.** Six converging indications:
+Arthome displays the price, takes the money, issues the invoice, holds the cancellation policy ("up
+to 1 h before"), executes the refund and issues the credit note. The viewer never contracts with
+the artist, never sees their name on a payment method, and never approaches them for a refund.
+**Those are the marks of a commissionnaire, not of a transparent intermediary.**
 
-**Et le droit l'impose aussi — ce n'est donc pas un choix de commodité, c'est la seule lecture
-cohérente des faits.** Trois juridictions, vérifiées, et elles convergent :
+**And the law imposes it too — so this is not a choice of convenience, it is the only coherent
+reading of the facts.** Three jurisdictions, verified, and they converge:
 
-| | Ce qui s'applique |
+| | What applies |
 |---|---|
-| **Union européenne** | l'**article 28** attrape **sur les faits**, pas sur la rédaction du contrat. Une plateforme qui affiche le prix, encaisse, facture et rembourse est réputée recevoir puis fournir la prestation, quoi qu'elle écrive dans ses conditions |
-| **États-Unis** | les lois ***marketplace facilitator*** obligent la plateforme à **collecter et reverser** dans **46 États plus le district de Columbia**, **quelle que soit sa position contractuelle**. Le modèle B n'y est pas une option : il est inapplicable |
-| **Royaume-Uni** | HMRC **n'a pas aligné** ses règles sur celles de l'UE : le fournisseur y est taxé **par établissement**. C'est la juridiction où les deux modèles divergent le plus, et où il faudra un avis |
+| **European Union** | **article 28** catches **on the facts**, not on how the contract is worded. A platform that displays the price, takes the money, invoices and refunds is deemed to receive and then supply the service, whatever it writes in its terms |
+| **United States** | ***marketplace facilitator*** laws oblige the platform to **collect and remit** in **46 states plus the District of Columbia**, **whatever its contractual position**. Model B is not an option there: it is inapplicable |
+| **United Kingdom** | HMRC **has not aligned** its rules with the EU's: the supplier is taxed there **by establishment**. It is the jurisdiction where the two models diverge most, and where counsel will be needed |
 
-Et le montage est exactement celui qu'une plateforme comparable décrit dans un document déposé
-auprès d'un régulateur : le formulaire **10-Q d'Eventbrite** (SEC) énonce que *« the Company is the
-merchant of record… remitting these amounts collected, less the Company's fees, to the event
-creator »*. Ce n'est pas une autorité juridique, mais c'est la preuve que le montage est **courant
-et assumé publiquement** par un acteur du même métier.
+And the arrangement is exactly the one a comparable platform describes in a document filed with a
+regulator: **Eventbrite's 10-Q** (SEC) states that *"the Company is the merchant of record…
+remitting these amounts collected, less the Company's fees, to the event creator"*. That is not
+legal authority, but it is evidence that the arrangement is **common and publicly owned** by a
+company in the same trade.
 
-**L'avertissement en tête du document reste entier.** « La seule lecture cohérente des faits » n'est
-pas « validé » : le statut d'assujetti d'Arthome, celui des artistes, les seuils et le guichet
-unique restent à instruire par un conseil. Ce qui change, c'est qu'on ne choisit plus entre deux
-modèles — **on constate lequel s'applique**, et on l'écrit.
+**The warning at the top of the document stands in full.** "The only coherent reading of the facts"
+is not "validated": Arthome's registration status, the artists', the thresholds and the one-stop
+shop all remain to be researched by counsel. What changes is that we are no longer choosing between
+two models — **we are observing which one applies**, and writing it down.
 
-### 5.4 La recommandation, et la formule
+### 5.4 The recommendation, and the formula
 
 ```
-gross_ttc     le prix affiché au spectateur — TTC, convention B2C
-vat[]         UNE LIGNE PAR MARCHÉ : { market, rate, base, amount }
-              taux = celui du pays du SPECTATEUR ; redevable = Arthome
+gross_ttc     the price shown to the viewer — tax-inclusive, B2C convention
+vat[]         ONE LINE PER JURISDICTION:
+              { jurisdiction_code, jurisdiction_level, supply_kind, rate_bps, base, amount }
+              rate = that of the VIEWER's jurisdiction; liable party = Arthome
 gross_ht      = gross_ttc − Σ vat.amount
-commission    = roundMinor(gross_ht × 0,12)        ← ASSIETTE HT, pas TTC
+commission    = roundMinor(gross_ht × 0.12)        ← BASE IS NET OF TAX, not gross
 net           = gross_ht − commission
 ```
 
-**Pourquoi la commission porte sur le HT et non sur le TTC.** Sur le TTC, la rémunération de la
-plateforme **varierait avec le pays de l'acheteur** — 12 % d'un billet vendu en Suisse ne serait
-pas la même chose que 12 % du même billet vendu en France. Une commission est le prix d'un
-service ; elle n'a aucune raison de suivre un taux de TVA étranger. Sur le HT, les 12 % annoncés
-aux artistes sont **les mêmes partout**, ce qui est la seule promesse tenable.
+> **Corrected while translating.** This block said "ONE LINE PER MARKET: { market, rate, base,
+> amount }" — the shape §5.0 above explicitly withdraws. It was the last place in the document
+> where a billing market still stood in for a jurisdiction, and it is exactly the sentence a reader
+> looking for the formula would have found. The French let it pass because "marché" and
+> "juridiction" read alike in a code block; English does not.
 
-**Écart avec la fixture, assumé et documenté** : la fixture calcule sur le TTC et applique un taux
-unique. Les deux sont corrigés au portage (palier 1), et le test de non-régression correspondant
-est l'un de ceux que le README cite comme « les règles qui font mal ».
+**Why the commission is taken on the net of tax and not on the gross.** On the gross, the
+platform's remuneration **would vary with the buyer's country** — 12% of a ticket sold in
+Switzerland would not be the same thing as 12% of the same ticket sold in France. A commission is
+the price of a service; it has no reason to follow a foreign VAT rate. On the net of tax, the 12%
+announced to artists is **the same everywhere**, which is the only tenable promise.
 
-### 5.5 L'arbitrage rendu, et la réserve qui l'accompagne
+**Divergence from the fixture, owned and documented**: the fixture computes on the gross and
+applies a single rate. Both are corrected at porting time (milestone 1), and the corresponding
+regression test is one of those the README calls "the rules that hurt".
 
-**Le modèle A est acté par D-015**, avec la commission sur le HT, sur les six indices convergents
-du §5.3. La forme, elle, est gravée et ne dépend pas de l'issue de la validation juridique — §5.0.
+### 5.5 The arbitration returned, and the reservation that goes with it
 
-> **Mais le modèle A reste une recommandation d'architecture, pas un avis fiscal.**
-> Qui doit la TVA, sur quelle assiette et qui en est redevable sont des questions de droit, et
-> elles dépendent du statut réel d'Arthome (assujetti ou non, seuils, pays d'établissement), du
-> statut des artistes (assujettis ou non, français ou non) et du guichet unique pour les ventes
-> hors France. **Elles doivent être validées par un conseil avant tout encaissement réel.**
+**Model A is adopted by D-015**, with the commission on the net of tax, on §5.3's six converging
+indications. The shape is carved and does not depend on the outcome of the legal validation — §5.0.
 
-**Multi-devise (D4, `studio-web` Q10)** : le solde d'une chaîne est présenté **dans la devise de
-son compte connecté**, et une chaîne qui vend dans deux devises a **deux soldes**, jamais un solde
-converti. Motif : convertir, c'est introduire un taux de change, donc une date de change, donc un
-écart de réconciliation qu'on ne saurait pas expliquer. Stripe tient un solde par devise ; on le
-reflète, on ne l'agrège pas.
+> **But model A remains an architecture recommendation, not tax advice.**
+> Who owes the VAT, on what base and who is liable for it are questions of law, and they depend on
+> Arthome's actual status (registered or not, thresholds, country of establishment), on the
+> artists' status (registered or not, French or not) and on the one-stop shop for sales outside
+> France. **They must be validated by counsel before any real money is taken.**
 
-### 5.6 La devise d'affichage est retirée au palier 1 (D-016)
+**Multi-currency (D4, `studio-web` Q10)**: a channel's balance is presented **in its connected
+account's currency**, and a channel that sells in two currencies has **two balances**, never a
+converted one. Reason: converting introduces an exchange rate, hence an exchange date, hence a
+reconciliation gap nobody could explain. Stripe keeps one balance per currency; we mirror it, we do
+not aggregate it.
 
-`storefront-web` Q29 demandait si la devise d'affichage choisie par le spectateur et la devise de
-facturation d'une date peuvent différer. **Elles le peuvent en théorie, et le contrat ne les
-confond pas** — mais la préférence **disparaît des écrans au palier 1**.
+### 5.6 The display currency is removed at milestone 1 (D-016)
 
-**Motif** : afficher un prix converti qu'on ne peut pas débiter est un mensonge, et D4 a montré
-qu'**aucune règle n'a jamais été éprouvée sur deux taux** — trois marchés sont déclarés, un seul
-est exercé par le générateur. Les prix s'affichent donc dans la **devise du marché de facturation
-de la date**, formatés côté client selon la locale.
+`storefront-web` Q29 asked whether the display currency chosen by the viewer and a date's billing
+currency can differ. **They can in theory, and the contract does not conflate them** — but the
+preference **disappears from the screens at milestone 1**.
 
-**Le retrait est réversible**, et voici exactement ce qu'il faudra écrire pour revenir dessus :
+**Reason**: showing a converted price we cannot charge is a lie, and D4 showed that **no rule has
+ever been tested against two rates** — three markets are declared, one is exercised by the
+generator. So prices are shown in the **currency of the date's billing market**, formatted
+client-side according to the locale.
 
-| À trancher | Pourquoi ça bloque aujourd'hui |
+**The removal is reversible**, and here is exactly what will have to be written to come back to it:
+
+| To settle | Why it blocks today |
 |---|---|
-| **source du taux** | un taux inventé est un prix inventé |
-| **date de change** | celui du jour de l'affichage, de la commande, ou du versement ? Les trois donnent trois montants |
-| **arrondi** | à quelle unité, et dans quel sens — le spectateur ou la plateforme |
-| **qui porte l'écart** | entre le converti affiché et le débité réel, quelqu'un paie la différence |
+| **rate source** | an invented rate is an invented price |
+| **exchange date** | the day of display, of the order, or of the payout? All three give three amounts |
+| **rounding** | to what unit, and in which direction — the viewer's or the platform's |
+| **who bears the gap** | between the converted price shown and the amount actually charged, somebody pays the difference |
 
-Tant que ces quatre lignes ne sont pas écrites, la préférence ne peut produire qu'un affichage
-**indicatif** — et un prix indicatif sur une billetterie est le pire défaut possible, celui que
-`storefront-web` nomme lui-même à propos des promotions.
-
----
-
-## 6. L'avoir de compte — une monnaie interne, et sa conséquence comptable
-
-`storefront-web` l'a relevé : l'avoir (`credited`) apparaît dans la copie — *« interrompue, avoirs
-émis »* — et **nulle part ailleurs dans le dossier**. Ce n'est pas un détail : c'est un **passif**.
-
-```
-Credit  { account_id, channel_id, amount, origin: interrupted_date, expires_at: +12 mois }
-```
-
-**Le piège, et il faut l'écrire avant de le rencontrer.** Quand un spectateur paie avec un avoir,
-Stripe reçoit **moins**. Mais l'artiste de la date achetée doit être payé **en entier** : il n'est
-pour rien dans l'incident d'un autre spectacle. La plateforme finance donc cette part **sur ses
-propres fonds**.
-
-**La règle recommandée, qui borne le risque** : un avoir est **émis pour une issue
-`interrupted`** et **redéployable sur la même chaîne seulement**. La retenue de versement déjà en
-place sur cette chaîne couvre alors l'engagement : on retient ce qu'on devra re-verser. Un avoir
-utilisable partout exigerait une provision de trésorerie qu'un projet solo ne tiendra pas.
-
-La restriction est **réversible** (on peut l'élargir plus tard) ; l'ignorer ne l'est pas — on
-découvrirait le trou à la première réconciliation.
+Until those four lines are written, the preference can only produce an **indicative** display — and
+an indicative price on a box office is the worst possible defect, the one `storefront-web` names
+itself about promotions.
 
 ---
 
-## 7. Les webhooks : les règles de Kafka, appliquées à un système qu'on ne contrôle pas
+## 6. The account credit note — an internal currency, and its accounting consequence
 
-Un webhook Stripe est un événement d'intégration dont on ne possède ni le producteur, ni l'ordre,
-ni le nombre de livraisons. Les quatre disciplines sont donc les mêmes, plus une.
+`storefront-web` spotted it: the credit note (`credited`) appears in the copy — *"interrupted,
+credits issued"* — and **nowhere else in the file**. That is not a detail: it is a **liability**.
+
+```
+Credit  { account_id, channel_id, amount, origin: interrupted_date, expires_at: +12 months }
+```
+
+**The trap, and it must be written before meeting it.** When a viewer pays with a credit, Stripe
+receives **less**. But the artist of the date bought must be paid **in full**: they had nothing to
+do with another show's incident. So the platform funds that share **out of its own money**.
+
+**The recommended rule, which bounds the risk**: a credit note is **issued for an `interrupted`
+outcome** and is **redeployable on the same channel only**. The payout withholding already in place
+on that channel then covers the commitment: we withhold what we will have to pay out again. A credit
+usable anywhere would require a cash provision a solo project will not hold.
+
+The restriction is **reversible** (it can be widened later); ignoring it is not — we would discover
+the hole at the first reconciliation.
+
+---
+
+## 7. Webhooks: Kafka's rules, applied to a system we do not control
+
+A Stripe webhook is an integration event whose producer, ordering and delivery count we do not own.
+So the four disciplines are the same, plus one.
 
 ### 7.1 Signature
 
-Vérification **sur le corps brut**, avant tout parsage — donc `rawBody: true` à la création de
-l'application et un contrôleur qui lit le tampon, jamais l'objet déjà désérialisé. Un corps
-reformaté invalide la signature. Tolérance d'horloge de 5 minutes ; au-delà, rejet.
+Verification **on the raw body**, before any parsing — hence `rawBody: true` when creating the
+application, and a controller that reads the buffer, never the already-deserialised object. A
+reformatted body invalidates the signature. Clock tolerance of 5 minutes; beyond that, rejection.
 
 ### 7.2 Idempotence
 
-`event.id` inséré dans `processed_stripe_event` **dans la transaction de l'écriture métier**, avec
-`orIgnore().returning('id')` : aucune ligne rendue, on saute. Stripe rejoue jusqu'à trois jours.
-C'est exactement la règle du consommateur idempotent, et elle ne change pas parce que le producteur
-est externe.
+`event.id` inserted into `processed_stripe_event` **inside the business write's transaction**, with
+`orIgnore().returning('id')`: no row returned, we skip. Stripe replays for up to three days. It is
+exactly the idempotent consumer's rule, and it does not change because the producer is external.
 
-### 7.3 Livraison désordonnée
+### 7.3 Out-of-order delivery
 
-**Stripe ne garantit aucun ordre.** `payment_intent.succeeded` peut arriver après
-`charge.refunded`. Deux disciplines :
+**Stripe guarantees no ordering.** `payment_intent.succeeded` can arrive after `charge.refunded`.
+Two disciplines:
 
-1. **Le webhook écrit un fait, il ne décide jamais.** Il enregistre « Stripe dit que l'intention X
-   est dans l'état Y à l'instant T », et le domaine réagit.
-2. **Une transition n'est appliquée que si elle avance.** Chaque état Stripe porte un rang ;
-   un événement dont le rang est inférieur à l'état courant est journalisé et **ignoré**. Quand le
-   doute subsiste, on **relit l'objet chez Stripe** plutôt que de croire la charge utile — c'est
-   d'ailleurs ce que Stripe recommande, et c'est la seule façon d'être juste sur un désordre.
+1. **A webhook records a fact, it never decides.** It records "Stripe says intent X is in state Y at
+   instant T", and the domain reacts.
+2. **A transition is applied only if it moves forward.** Each Stripe state carries a rank; an event
+   whose rank is below the current state is logged and **ignored**. When doubt remains, we **re-read
+   the object from Stripe** rather than believe the payload — which is also what Stripe recommends,
+   and it is the only way to be right about an out-of-order delivery.
 
-### 7.4 Rejeu et échecs
+### 7.4 Replay and failures
 
-Un webhook non traitable **n'est jamais acquitté en silence** : réponse 2xx (pour que Stripe
-arrête de rejouer) **et** ligne dans une DLQ applicative avec la charge utile brute, plus une
-alerte. Répondre 5xx pendant une heure fait basculer l'endpoint en échec chez Stripe, et on perd
-tout le reste.
+A webhook that cannot be processed is **never acknowledged in silence**: a 2xx response (so Stripe
+stops replaying) **and** a row in an application DLQ with the raw payload, plus an alert. Answering
+5xx for an hour flips the endpoint into a failed state at Stripe, and we lose everything else.
 
-### 7.5 La cinquième discipline, propre à un système externe
+### 7.5 The fifth discipline, specific to an external system
 
-**La réconciliation est la seule vérité.** On ne reconstruit jamais le grand livre de Stripe :
-une tâche quotidienne lit `balance_transactions` et **compare** à `payout_ledger`. Tout écart
-produit `payouts.reconciliation.discrepancy_found.v1`, routé vers le rôle `treasury`, et
-**une période ne se clôt pas avec un écart non expliqué**.
+**Reconciliation is the only truth.** We never rebuild Stripe's ledger: a daily job reads
+`balance_transactions` and **compares** it to `payout_ledger`. Any gap produces
+`payouts.reconciliation.discrepancy_found.v1`, routed to the `treasury` role, and **a period does
+not close with an unexplained gap**.
 
-C'est ce qui rend acceptable de ne pas être parfait sur les webhooks : un événement manqué se voit
-à la réconciliation du lendemain, pas six mois plus tard.
+That is what makes it acceptable not to be perfect on the webhooks: a missed event shows up at the
+next day's reconciliation, not six months later.
 
 ---
 
-## 8. Les états de commande face aux états Stripe
+## 8. Our order states against Stripe's states
 
-| Notre état | Déclencheur | État Stripe correspondant |
+| Our state | Trigger | Corresponding Stripe state |
 |---|---|---|
-| `pending` | commande créée, intention créée | `requires_payment_method` · `requires_confirmation` |
-| `awaiting_action` | 3-D Secure en cours | `requires_action` |
-| `processing` | confirmée, en cours | `processing` |
-| **`paid`** | **`payment_intent.succeeded` reçu et vérifié** | `succeeded` |
-| `failed` | échec définitif | `canceled` · dernier `last_payment_error` |
-| `refunded` / `partially_refunded` | remboursement confirmé | `charge.refunded` |
-| `disputed` | litige bancaire ouvert | `charge.dispute.created` |
+| `pending` | order created, intent created | `requires_payment_method` · `requires_confirmation` |
+| `awaiting_action` | 3-D Secure in progress | `requires_action` |
+| `processing` | confirmed, in progress | `processing` |
+| **`paid`** | **`payment_intent.succeeded` received and verified** | `succeeded` |
+| `failed` | final failure | `canceled` · last `last_payment_error` |
+| `refunded` / `partially_refunded` | refund confirmed | `charge.refunded` |
+| `disputed` | chargeback opened | `charge.dispute.created` |
 
-**Trois règles qui ne se négocient pas :**
+**Three rules that are not negotiable:**
 
-1. **Notre état n'avance jamais sur un retour de navigateur.** `studio-mobile` le formule
-   parfaitement, et cela vaut pour le spectateur : *« un paiement confirmé par un paramètre d'URL
-   est un paiement confirmé par le client »*. Le retour dit **où** aller ; le backend dit **ce qui
-   a changé**.
-2. **La place est créée à `paid`, jamais avant.** Entre `pending` et `paid`, la jauge porte un
-   **`SeatHold`** qui décrémente `seats_available` : sans lui, deux spectateurs achètent la
-   dernière place ; sans expiration, un panier abandonné gèle une place pour toujours.
-   **Et le hold n'a pas de durée à lui : il expire à l'instant exact où expire l'intention d'achat
-   qui l'a créé** — 15 min pour un paiement web ou mobile, **5 min pour un appairage TV**, celle
-   de l'appairage. C'est ce qui empêche la jauge affichée sur un téléviseur d'être fausse pendant
-   toute l'attente du téléphone (`data-model.md` §3.2).
-3. **Le prix est vérifié à la confirmation**, pas seulement à l'affichage. Refus `PRICE_STALE`,
-   **distinct** de l'échec de paiement, avec le prix courant en paramètre. Avec cinq motifs de
-   promotion dont un calculé au prorata du temps écoulé, l'écart entre le prix affiché et le prix
-   valide est **structurel**.
+1. **Our state never advances on a browser return.** `studio-mobile` puts it perfectly, and it holds
+   for the viewer too: *"a payment confirmed by a URL parameter is a payment confirmed by the
+   client"*. The return says **where** to go; the backend says **what has changed**.
+2. **The seat is created at `paid`, never before.** Between `pending` and `paid`, the capacity
+   carries a **`SeatHold`** that decrements `seats_available`: without it, two viewers buy the last
+   seat; without an expiry, an abandoned basket freezes a seat forever.
+   **And the hold has no duration of its own: it expires at the exact instant the purchase intent
+   that created it expires** — 15 min for a web or mobile payment, **5 min for a TV pairing**, the
+   pairing's. That is what stops the capacity shown on a television being wrong for the whole time
+   the phone is awaited (`data-model.md` §3.2).
+3. **The price is verified at confirmation**, not only at display time. Refusal `PRICE_STALE`,
+   **distinct** from a payment failure, with the current price as a parameter. With five promotion
+   reasons, one of them computed pro rata of the time elapsed, the gap between the price displayed
+   and the valid price is **structural**.
 
 ---
 
-## 9. Les cas d'issue, et ce que le spectateur retrouve
+## 9. The outcome cases, and what the viewer gets back
 
-Une issue déclarée dans le studio (`catalog.date.outcome_declared.v1`) produit quatre conséquences
-sans qu'aucun service n'en appelle un autre.
+An outcome declared in the studio (`catalog.date.outcome_declared.v1`) produces four consequences
+without any service calling another.
 
-| Issue | Argent | Versement | Ce que le spectateur voit, et où |
+| Outcome | Money | Payout | What the viewer sees, and where |
 |---|---|---|---|
-| **`cancelled`** | **remboursement intégral** vers le moyen d'origine | `refunded` | montant + **code de délai** dans « Mes places » — jamais la phrase « 3 à 5 jours ouvrés », qui est une politique |
-| **`postponed`** | **aucun mouvement** | `held` jusqu'à la nouvelle date | « place valable, aucune démarche », la place suit, le rappel se déplace |
-| **`interrupted`** | **avoir** sur le compte (§6) | `held` puis ajusté | montant de l'avoir, et où l'utiliser |
-| annulation par le spectateur | remboursement si avant l'échéance servie | déduit du brut | échéance servie comme un **instant** |
-| litige bancaire | fonds retenus par Stripe | `held` | rien côté spectateur ; le studio répond depuis l'écran `payouts`, sous 24 h |
+| **`cancelled`** | **full refund** to the original method | `refunded` | amount + a **period code** in "My tickets" — never the sentence "3 to 5 working days", which is a policy |
+| **`postponed`** | **no movement** | `held` until the new date | "seat valid, nothing to do", the seat follows, the reminder moves |
+| **`interrupted`** | **credit note** on the account (§6) | `held` then adjusted | the credit's amount, and where to use it |
+| cancellation by the viewer | refund if before the served deadline | deducted from the gross | deadline served as an **instant** |
+| chargeback | funds held by Stripe | `held` | nothing on the viewer's side; the studio answers from the `payouts` screen, within 24 h |
 
-**Le remboursement rembourse aussi la commission.** Un remboursement intégral rend
-`refund_application_fee: true` : nous ne gardons pas 12 % d'un spectacle qui n'a pas eu lieu. Ce
-n'est pas seulement décent, c'est ce que la copie promet.
+**A refund refunds the commission too.** A full refund passes `refund_application_fee: true`: we do
+not keep 12% of a performance that did not happen. That is not merely decent, it is what the copy
+promises.
 
-**La suppression de compte est une commande financière** (`storefront-web` Q26) : elle annule les
-places non utilisées, donc elle rembourse, donc elle touche des versements peut-être déjà calculés,
-et elle se heurte à la conservation comptable de dix ans. Elle est **asynchrone, avec un délai de
-grâce de 30 jours**, et elle **anonymise** au lieu de supprimer. Le déroulé complet est dans
-`data-model.md` §7.5.
-
----
-
-## 10. Ce que je ne construis pas, et pourquoi
-
-Pour la section « ce que je n'ai délibérément pas construit » que le README réclame :
-
-- **aucune facturation de TVA transfrontalière réelle** : le guichet unique, les seuils et les
-  déclarations sont du travail de comptable, pas d'architecte. La **forme** les accueille ;
-- **aucun paiement différé, aucun échelonnement, aucun portefeuille** ;
-- **aucun modèle de commande mixte** places + marchandise (D-011) : aucune maquette ne la montre,
-  et la graver serait mettre au contrat une intention que rien n'a éprouvée ;
-- **aucune reconstruction du grand livre Stripe** : c'est un choix, pas un manque. On réconcilie.
+**Deleting an account is a financial command** (`storefront-web` Q26): it cancels unused seats, so
+it refunds, so it touches payouts that may already be computed, and it runs into the ten-year
+accounting retention. It is **asynchronous, with a 30-day grace period**, and it **anonymises**
+instead of deleting. The full sequence is in `data-model.md` §7.5.
 
 ---
 
-## 11. Les arbitrages, rendus
+## 10. What I am not building, and why
 
-Tous tranchés le 21 septembre 2026. **Rien ne reste ouvert dans ce document, sauf la validation
-juridique du §5 — qui n'est pas un arbitrage de projet.**
+For the "what I deliberately did not build" section the README asks for:
 
-| Point | Décision | Référence |
+- **no real cross-border VAT filing**: the one-stop shop, the thresholds and the returns are an
+  accountant's work, not an architect's. The **shape** accommodates them;
+- **no deferred payment, no instalments, no wallet**;
+- **no mixed order model** for seats + merchandise (D-011): no mockup shows one, and carving it
+  would be putting an untested intention into the contract;
+- **no reconstruction of Stripe's ledger**: that is a choice, not a gap. We reconcile.
+
+---
+
+## 11. The arbitrations, returned
+
+All settled on 21 September 2026. **Nothing remains open in this document, except the legal
+validation of §5 — which is not a project arbitration.**
+
+| Point | Decision | Reference |
 |---|---|---|
-| Modèle fiscal, commission sur le HT | **modèle commissionnaire**, acté — et **la seule lecture cohérente des faits**, pas un choix de commodité (§5.3) | **D-015** |
-| `on_behalf_of` | **retiré** : il ferait de l'artiste le marchand d'enregistrement, en contradiction avec le modèle (§3) | — |
-| Clé de la ventilation de TVA | **la juridiction**, pas le marché ; localisation d'acheteur avec preuves (§5.0) | — |
-| Devise d'affichage | **retirée au palier 1**, réversible (§5.6) | **D-016** |
-| Portée de l'avoir | **la chaîne émettrice** — borne l'engagement de trésorerie | **D-017** |
-| Commande de marchandise | **mono-vendeur**, le panier se scinde au paiement | **D-017** |
-| Remise et promotion | **pas de cumul** : la plus favorable au spectateur | **D-017** |
-| Troisième canal de notification | **`in_app`**, pas `sms` | **D-017** |
-| Frais de service | **par place**, barème servi — jamais une constante d'écran | ce document, `data-model.md` §3.1 |
+| Tax model, commission on the net of tax | **commissionnaire model**, adopted — and **the only coherent reading of the facts**, not a choice of convenience (§5.3) | **D-015** |
+| `on_behalf_of` | **removed**: it would make the artist merchant of record, contradicting the model (§3) | — |
+| Key of the VAT breakdown | **the jurisdiction**, not the market; buyer location with its evidence (§5.0) | — |
+| Display currency | **removed at milestone 1**, reversible (§5.6) | **D-016** |
+| Scope of the credit note | **the issuing channel** — bounds the cash commitment | **D-017** |
+| Merchandise order | **single-seller**, the basket splits at payment | **D-017** |
+| Discount and promotion | **no stacking**: the one most favourable to the viewer | **D-017** |
+| Third notification channel | **`in_app`**, not `sms` | **D-017** |
+| Service fee | **per seat**, schedule served — never a screen constant | this document, `data-model.md` §3.1 |

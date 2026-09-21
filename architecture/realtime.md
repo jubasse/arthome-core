@@ -1,455 +1,453 @@
-# Temps réel
+# Realtime
 
-> Canaux WebSocket, événements qui y transitent, passage à l'échelle de l'adaptateur Redis.
-> Socket.IO côté NestJS, adaptateur Redis pour la diffusion entre nœuds.
+> WebSocket channels, the events that travel on them, scaling the Redis adapter.
+> Socket.IO on the NestJS side, Redis adapter for broadcasting between nodes.
 >
-> **La frontière que `streaming.md` pose et qu'on tient : Kafka est le journal durable —
-> modération, audit, rejeu, historique. Redis assure la diffusion aux clients connectés.
-> Confondre les deux est l'erreur classique.**
+> **The boundary `streaming.md` sets and that we keep: Kafka is the durable journal —
+> moderation, audit, replay, history. Redis handles broadcast to connected clients.
+> Confusing the two is the classic error.**
 
 ---
 
-## 1. Deux passerelles, deux espaces de noms, une connexion par client
+## 1. Two gateways, two namespaces, one connection per client
 
 ```
 bff-storefront  ──►  namespace /storefront
 bff-studio      ──►  namespace /studio
 ```
 
-**Un client n'ouvre qu'une connexion.** `storefront-tv` l'exige et le motif est bon : quatre
-connexions (incident, tchat, compteur, appairage) coûtent quatre reconnexions à chaque hoquet de
-Wi-Fi domestique et quatre fois la mémoire de tampon. Le multiplexage se fait par **salle**, pas
-par connexion.
+**A client opens only one connection.** `storefront-tv` requires it and the reason is good: four
+connections (incident, chat, counter, pairing) cost four reconnections on every hiccup of a home
+Wi-Fi network and four times the buffer memory. Multiplexing is done by **room**, not by
+connection.
 
-**Les deux espaces de noms sont deux passerelles distinctes**, dans les deux BFF, parce qu'ils
-n'ont ni la même authentification (cookie contre porteur), ni le même modèle d'abonnement
-(par spectateur contre par personne multi-chaînes), ni la même redaction.
+**The two namespaces are two distinct gateways**, in the two BFFs, because they share neither the
+same authentication (cookie against bearer), nor the same subscription model (per viewer against
+per person across channels), nor the same redaction.
 
-**L'authentification se fait à la poignée de main**, dans un intergiciel d'espace de noms posé en
-`afterInit`, jamais dans une garde de passerelle : `handleConnection` ne fait tourner ni garde, ni
-tuyau, ni intercepteur, ni filtre — une garde `@UseGuards` sur la passerelle laisserait la
-connexion ouverte. Le principal est posé sur `socket.data`, et l'autorisation **par message** se
-fait dans une garde WS qui lit `socket.data`.
+**Authentication happens at the handshake**, in a namespace middleware installed in `afterInit`,
+never in a gateway guard: `handleConnection` runs no guard, no pipe, no interceptor and no filter —
+a `@UseGuards` on the gateway would leave the connection open. The principal is placed on
+`socket.data`, and **per-message** authorisation happens in a WS guard that reads `socket.data`.
 
-**L'intergiciel se pose par espace de noms** : un `server.use()` dans un adaptateur personnalisé ne
-couvre que `/`.
+**The middleware is installed per namespace**: a `server.use()` in a custom adapter covers only `/`.
 
 ---
 
-## 2. `/storefront` — les salles
+## 2. `/storefront` — the rooms
 
-| Salle | Qui la rejoint | Ce qui y transite | Latence |
+| Room | Who joins it | What travels there | Latency |
 |---|---|---|---|
-| `date:{id}:state` | toute surface affichant cette date | incident levé/résolu, issue déclarée, **bascule d'antenne réelle** (le flux entre ou sort) | **≤ 2 s** |
-| `date:{id}:chat` | le lecteur, panneau tchat ouvert | messages, changements d'état de message, régime de tchat | ≤ 2 s, **plafonné à la source** |
-| `date:{id}:counters` | le lecteur et les cartes visibles | compteur de spectateurs, jauge, liste d'attente, tarif « séance commencée » | 10 à 30 s |
-| `viewer:{profileId}` | toujours | badge de notifications, droits recalculés après un achat, panier modifié ailleurs, révocation, **`playback:stop`** (voir ci-dessous) | ≤ 2 s |
+| `date:{id}:state` | any surface showing this date | incident raised/resolved, outcome declared, **the real on-air switch** (the feed comes in or it goes) | **≤ 2 s** |
+| `date:{id}:chat` | the player, chat panel open | messages, message state changes, chat policy | ≤ 2 s, **capped at the source** |
+| `date:{id}:counters` | the player and the visible cards | viewer counter, capacity, waiting list, "show already started" price | 10 to 30 s |
+| `viewer:{profileId}` | always | notification badge, rights recomputed after a purchase, basket changed elsewhere, revocation, **`playback:stop`** (see below) | ≤ 2 s |
 
-**`playback:stop` est une courtoisie, pas un contrôle.** Quand un droit cesse — appareil
-déconnecté, profil déconnecté, abonnement échu, issue `interrupted` —, le canal pousse un signal
-demandant au client d'arrêter la lecture **immédiatement**, au lieu d'attendre le refus du
-renouvellement suivant. Il rend instantané le cas visible : quelqu'un déconnecte un téléviseur
-depuis son compte et regarde l'écran s'arrêter.
+**`playback:stop` is a courtesy, not a control.** When an entitlement ends — device disconnected,
+profile disconnected, subscription lapsed, `interrupted` outcome — the channel pushes a signal
+asking the client to stop playback **immediately**, instead of waiting for the next renewal to be
+refused. It makes the visible case instant: somebody disconnects a television from their account
+and watches the screen stop.
 
-> **Ce signal n'est pas une frontière de sécurité.** Un client modifié l'ignore, et la périphérie
-> du CDN continue de servir jusqu'à l'expiration du jeton en main — **la garantie reste 120 s**
-> (`adr-stream-entitlement.md` §3.3). Le contrat doit le dire ainsi : ce document rejette « toute
-> heuristique contournable » comme réponse de sécurité, et il serait incohérent de présenter
-> ensuite un signal client comme une protection.
+> **That signal is not a security boundary.** A modified client ignores it, and the CDN edge keeps
+> serving until the token in hand expires — **the guarantee remains 120 s**
+> (`adr-stream-entitlement.md` §3.3). The contract must say it that way: this document rejects "any
+> bypassable heuristic" as a security answer, and it would be incoherent to then present a
+> client-side signal as a protection.
 
-**L'issue d'un appairage ne passe PAS par ce canal.** J'avais posé une salle
-`device:{deviceId}`, rejoignable avant toute session ; `adr-auth.md` §5.3 la refuse et **son
-argument l'emporte** : faire entrer une identité d'appareil dans l'espace de noms WebSocket au
-moment de `signin` élargirait sa surface d'attaque pour gagner quelques centaines de
-millisecondes. L'appairage se lit donc par **interrogation RFC 8628**, avec un `pollInterval`
-servi à 2 s pendant les 60 premières secondes puis 5 s — décroissance servie, donc modérable, et
-trente requêtes au plus par appairage. **L'espace de noms `/storefront` n'accepte qu'une session,
-jamais une identité d'appareil nue.**
+**A pairing's outcome does NOT go through this channel.** I had proposed a `device:{deviceId}` room,
+joinable before any session; `adr-auth.md` §5.3 refuses it and **its argument wins**: bringing a
+device identity into the WebSocket namespace at `signin` time would widen its attack surface to
+gain a few hundred milliseconds. So a pairing is read by **RFC 8628 polling**, with a
+`pollInterval` served at 2 s for the first 60 seconds then 5 s — a served decay, hence tunable, and
+thirty requests at most per pairing. **The `/storefront` namespace accepts only a session, never a
+bare device identity.**
 
-### 2.1 Un abonnement par **lot d'identifiants**, jamais un par carte
+### 2.1 One subscription per **batch of identifiers**, never one per card
 
-C'est la contrainte que `storefront-mobile` et `storefront-web` remontent toutes deux, et elle est
-structurante. Une liste virtualisée affiche une vingtaine de cartes et en garde autant en tampon ;
-chacune porte un compteur de spectateurs. **Vingt abonnements, c'est vingt réveils du processeur
-et une batterie vidée** ; une grille de douze cartes qui ouvrirait douze canaux est absurde.
+This is the constraint `storefront-mobile` and `storefront-web` both raise, and it is structuring.
+A virtualised list shows a couple of dozen cards and buffers as many again; each carries a viewer
+counter. **Twenty subscriptions means twenty CPU wake-ups and a drained battery**; a grid of twelve
+cards opening twelve channels is absurd.
 
-Le protocole :
+The protocol:
 
 ```
-→ counters:subscribe   { dateIds: [...] }     remplace le lot, ne l'ajoute pas
-← counters:snapshot    { [dateId]: {...} }    immédiatement, pour peindre
-← counters:tick        { [dateId]: {...} }    toutes les 10 à 15 s, DIFFÉRENTIEL
+→ counters:subscribe   { dateIds: [...] }     replaces the batch, does not add to it
+← counters:snapshot    { [dateId]: {...} }    immediately, so you can paint
+← counters:tick        { [dateId]: {...} }    every 10 to 15 s, DIFFERENTIAL
 ```
 
-Le lot se **remplace** quand la fenêtre de défilement bouge, **sans rouvrir le canal**. Et le tick
-est différentiel : seuls les identifiants dont une valeur a bougé sont émis. Sur une grille stable,
-le canal est silencieux.
+The batch is **replaced** when the scroll window moves, **without reopening the channel**. And the
+tick is differential: only identifiers whose value has moved are emitted. On a stable grid, the
+channel is silent.
 
-**Ce que cette salle ne porte PAS, et c'est délibéré** : l'**ouverture de salle** et l'**expiration
-d'une rediffusion**. Ce sont des transitions à instant **connu d'avance**, donc dérivables sans
-requête — voir §2.4, qui porte l'argument. Une version antérieure de ce tableau les listait ici :
-c'était l'unique ligne à contredire §2.4 et §8, et c'est celle qu'on aurait lue en cherchant le
-contenu d'une salle.
+**What this room does NOT carry, and it is deliberate**: the **room opening** and the **expiry of a
+replay**. Those are transitions whose instant is **known in advance**, hence derivable without a
+request — see §2.4, which carries the argument. An earlier version of this table listed them here:
+it was the one line contradicting §2.4 and §8, and it is the one a reader would have found while
+looking up a room's contents.
 
-La « bascule d'antenne » reste, mais au sens strict : `run.state_changed` est un **fait
-technique** que rien ne permet de prévoir — le flux entre ou il n'entre pas. `displayState` bascule
-alors de `room_open` à `live` chez le client, qui en dérive le reste.
+The "on-air switch" stays, but in the strict sense: `run.state_changed` is a **technical fact**
+nothing allows you to predict — the feed comes in or it does not. `displayState` then flips from
+`room_open` to `live` at the client, which derives the rest.
 
-### 2.2 Le plafond du tchat est appliqué **à la source**
+### 2.2 The chat ceiling is enforced **at the source**
 
-`storefront-tv` a raison et son argument vaut pour les trois storefronts : une TV ne peut pas
-absorber un flux à haut débit pour en jeter 95 %, chaque message rejeté ayant coûté du parsing et
-de l'allocation sur un appareil qui décode déjà de la vidéo.
+`storefront-tv` is right and its argument holds for all three storefronts: a TV cannot absorb a
+high-rate stream in order to throw 95% of it away, each rejected message having cost parsing and
+allocation on a device that is already decoding video.
 
-| Surface | Plafond servi | Rattrapage à l'entrée |
+| Surface | Ceiling served | Catch-up on entry |
 |---|---|---|
 | TV | **2 msg/s** | 20 messages |
 | mobile | 6 msg/s | 50 messages |
 | web | 10 msg/s | 50 messages |
 
-La sélection est faite en amont (le plus récent, et les messages d'équipe toujours). **Aucun
-message retiré n'atteint une surface publique** : la modération est un état côté `chat`, et le flux
-servi est déjà filtré. Le studio voit les deux états, le spectateur en voit un.
+The selection is made upstream (the most recent, and crew messages always). **No removed message
+reaches a public surface**: moderation is a state on the `chat` side, and the stream served is
+already filtered. The studio sees both states, the viewer sees one.
 
-**Pas de pagination remontante sur un tchat de direct** : personne ne remonte un tchat à la
-télécommande, et sur les trois surfaces c'est une fenêtre glissante, pas un défilement infini vers
-le passé. L'historique complet se lit sur la **rediffusion**, rejoué par `at_media_sec`.
+**No backward pagination on a live chat**: nobody scrolls a chat back with a remote control, and on
+all three surfaces it is a sliding window, not an infinite scroll into the past. The full history is
+read on the **replay**, replayed by `at_media_sec`.
 
-### 2.3 Le quota de réactions voyage avec la réponse
+### 2.3 The reaction quota travels with the response
 
-`sendReaction` rend le quota restant et l'instant de recharge. Motif exprimé par `storefront-tv` et
-il est juste : la surface doit **désactiver** le contrôle plutôt que le laisser échouer — une
-action inerte est proscrite par le dossier, mais une action qui échoue en silence est pire. Une
-seule réaction en vol à la fois.
+`sendReaction` returns the remaining quota and the recharge instant. The reason `storefront-tv`
+gives is right: the surface must **disable** the control rather than let it fail — an inert action
+is banned by the file, but an action that fails in silence is worse. One reaction in flight at a
+time.
 
-### 2.4 Ce qui ne passe **pas** par le canal, et pourquoi c'est une exigence
+### 2.4 What does **not** go through the channel, and why that is a requirement
 
-Un téléviseur reste allumé des heures sur le même écran. Entre-temps, une date passe à l'antenne,
-une salle ouvre, une rediffusion expire. **La tentation est de pousser ces transitions ; il ne faut
-pas.** Le contrat livre les **instants** (ouverture de salle, début, fin, fenêtre de rediffusion,
-expiration de promotion, échéance d'annulation, fin du décompte d'aperçu) et les **constantes**, et
-la surface programme le changement localement, à la seconde, sans un seul appel.
+A television stays on for hours on the same screen. In the meantime a date goes on air, a room
+opens, a replay expires. **The temptation is to push those transitions; it must be resisted.** The
+contract delivers the **instants** (room opening, start, end, replay window, promotion expiry,
+cancellation deadline, end of the preview countdown) and the **constants**, and the surface
+schedules the change locally, to the second, without a single call.
 
-C'est exactement ce que `displayStateOf` fait déjà dans `@arthome/core` — une règle, deux sites
-d'évaluation, aucune réimplémentation. Et c'est la raison pour laquelle le contrat porte des
-instants et non des libellés : une réponse qui livre « PROGRAMMÉ » est périmée en vol ; une réponse
-qui livre un instant ne l'est jamais.
+That is exactly what `displayStateOf` already does in `@arthome/core` — one rule, two evaluation
+sites, no reimplementation. And it is why the contract carries instants and not labels: a response
+that delivers "SCHEDULED" is stale in flight; a response that delivers an instant never is.
 
-**Conséquence pratique** : un mode veille qui tourne huit heures ne fait **aucune** requête, et une
-TV posée sur l'accueil ne rafraîchit que ce qui bouge vraiment.
+**Practical consequence**: a standby mode running for eight hours makes **no** request, and a TV
+sitting on the home screen refreshes only what actually moves.
 
 ---
 
-## 3. `/studio` — l'abonnement est **par personne**, pas par page
+## 3. `/studio` — the subscription is **per person**, not per page
 
-C'est la différence la plus structurante avec le storefront, et les deux spécialistes du studio
-l'ont demandée indépendamment.
+This is the most structuring difference from the storefront, and both studio specialists asked for
+it independently.
 
-Un régisseur ou un modérateur indépendant peut être **de garde sur plusieurs directs le même
-soir** ; la maquette affiche un bandeau de tous les flux du soir, signale le chevauchement et
-annonce « une alerte sonore distincte par chaîne ». **Un canal ouvert seulement sur la chaîne
-affichée manquerait l'incident de l'autre.** Et sur un réseau mobile déjà fragile, un abonnement
-par chaîne multiplierait les connexions.
+A freelance run-desk operator or moderator may be **on duty across several live shows the same
+evening**; the mockup shows a banner of all the evening's feeds, flags the overlap and announces "a
+distinct alert sound per channel". **A channel open only on the displayed channel would miss the
+other one's incident.** And on an already fragile mobile network, one subscription per channel
+would multiply the connections.
 
-À la connexion, la passerelle fait rejoindre :
+On connection, the gateway joins:
 
-| Salle | Contenu |
+| Room | Contents |
 |---|---|
-| `person:{personId}` | version des droits, boîte, invitations, gardes, alertes routées |
-| `channel:{id}` — **une par chaîne accessible** | état d'antenne, incidents, présence de l'équipe, ventes, chapitres, **état de publication d'une date** (§3.3) |
-| `channel:{id}:decide` — pour `artist ∨ production` | le même correctif de publication, **avec les transitions offertes recalculées** (§3.3) |
-| `channel:{id}:moderation` | file : entrée, prise en charge, relâche, verdict, sanction, reclassement rétroactif |
-| `channel:{id}:chat` | messages du direct en cours, avec leur état |
-| `channel:{id}:health` | échantillons de santé, 1 à 2 s |
+| `person:{personId}` | rights version, inbox, invitations, duties, routed alerts |
+| `channel:{id}` — **one per accessible channel** | on-air state, incidents, crew presence, sales, chapters, **a date's publication state** (§3.3) |
+| `channel:{id}:decide` — for `artist ∨ production` | the same publication correction, **with the offered transitions recomputed** (§3.3) |
+| `channel:{id}:moderation` | the queue: entry, claim, release, verdict, sanction, retroactive reclassification |
+| `channel:{id}:chat` | messages from the live show in progress, with their state |
+| `channel:{id}:health` | health samples, 1 to 2 s |
 
-**Les salles se recalculent quand la version des droits change**, et le serveur fait quitter les
-salles d'une chaîne perdue **sans attendre une reconnexion** : c'est ce qui évite qu'une personne
-dont l'accès ponctuel a expiré au tomber du rideau continue à voir une file.
+**The rooms are recomputed when the rights version changes**, and the server makes you leave the
+rooms of a lost channel **without waiting for a reconnection**: that is what stops a person whose
+one-off access expired at curtain-down from carrying on seeing a queue.
 
-### 3.1 Chaque message est un **correctif idempotent**, jamais « recharge tout »
+### 3.1 Every message is an **idempotent correction**, never "reload everything"
 
-Exigence d'Angular sans zone, et elle est réelle : la détection de changement est déclenchée par
-l'écriture d'un signal, donc un message poussé doit atterrir dans un magasin d'entités identifié.
-Un flux qui dit « quelque chose a changé, recharge » condamnerait la console à tout recharger
-toutes les deux secondes, **en plein arbitrage de file**.
+A requirement of zoneless Angular, and it is real: change detection is triggered by writing to a
+signal, so a pushed message must land in an identified entity store. A stream that says "something
+changed, reload" would condemn the console to reloading everything every two seconds, **in the
+middle of settling a queue**.
 
-Forme imposée à tout message de ces deux espaces de noms :
+The shape imposed on every message of these two namespaces:
 
 ```
 { entity: "moderation_item", id: "...", op: "upsert" | "remove",
   seq: 41287, channelId: "...", patch: { ... } }
 ```
 
-`seq` est **monotone par flux et par chaîne**. C'est le point de reprise.
+`seq` is **monotonic per stream and per channel**. It is the resume point.
 
-### 3.2 La visibilité de la concurrence est une exigence de contrat
+### 3.2 Visibility of concurrency is a contract requirement
 
-L'écran de file montre « X examine », « X a tranché ». Cela suppose que **les prises en charge et
-les verdicts des autres arrivent sur le même canal, avec le nom de qui agit**. Sans cela, deux
-modérateurs travaillent en aveugle l'un de l'autre et se marchent dessus à chaque ligne.
+The queue screen shows "X is reviewing", "X has settled". That assumes **other people's claims and
+verdicts arrive on the same channel, with the name of whoever acts**. Without it, two moderators
+work blind to each other and tread on each other's toes at every row.
 
-Trois mécanismes, confirmés :
+Three mechanisms, confirmed:
 
-1. **La prise en charge est un bail** (`claim_expires_at`), renouvelé tant que la personne est
-   présente, libéré par le serveur à l'expiration. Un modérateur qui ferme son navigateur ne gèle
-   pas une ligne pendant tout le direct.
-2. **Le second verdict est refusé**, et le refus **transporte la décision gagnante** — auteur et
-   verdict — pour que l'écran dise la vérité au lieu d'un échec.
-3. **La propagation est nominative.**
+1. **Claiming is a lease** (`claim_expires_at`), renewed while the person is present, released by
+   the server on expiry. A moderator who closes their browser does not freeze a row for the whole
+   live show.
+2. **The second verdict is refused**, and the refusal **carries the winning decision** — author and
+   verdict — so the screen tells the truth instead of showing a failure.
+3. **Propagation is by name.**
 
-### 3.3 L'état de publication, et le piège du bouton périmé
+### 3.3 Publication state, and the stale-button trap
 
-**Le défaut corrigé.** La salle ne portait pas l'état de publication, et aucun événement ne
-naissait des transitions. Un second opérateur voyait BROUILLON indéfiniment sur une date déjà
-publiée, avec ses deux transitions offertes — et découvrait l'engagement en cliquant. La sûreté
-était complète, **la fraîcheur était entièrement absente** (`needs/studio-web.md` §F).
+**The defect corrected.** The room did not carry the publication state, and no event was born of
+the transitions. A second operator saw DRAFT indefinitely on a date that was already published,
+with its two offered transitions — and discovered the commitment by clicking. The safety was
+complete, **the freshness was entirely absent** (`needs/studio-web.md` §F).
 
-Le correctif est la forme ordinaire du §3.1 :
+The correction is §3.1's ordinary shape:
 
 ```
 { entity: "publication", id: "<dateId>", op: "upsert", seq, channelId,
   patch: { state, orderRank, version, irreversible, changedBy } }
 ```
 
-**Mais un correctif qui porterait le nouvel état sans recalculer `offeredTransitions` laisserait un
-bouton périmé — le même défaut, déplacé d'un cran.** `studio-web` a raison, et ce n'est pas un
-détail : `offeredTransitions` est « calculée **pour cet opérateur** », donc elle ne peut pas voyager
-telle quelle dans une diffusion.
+**But a correction that carried the new state without recomputing `offeredTransitions` would leave a
+stale button — the same defect, moved one notch along.** `studio-web` is right, and it is not a
+detail: `offeredTransitions` is "computed **for this operator**", so it cannot travel as it stands
+in a broadcast.
 
-**La réponse réutilise la mécanique déjà en place au §3.4** — une salle par classe de droit, filtrée
-à l'émission — parce que les transitions ne dépendent pas de la personne mais de `canDecide`
-(`artist ∨ production`), donc il n'y a que **deux** classes :
+**The answer reuses the mechanism already in place in §3.4** — one room per rights class, filtered
+at emission — because the transitions do not depend on the person but on `canDecide`
+(`artist ∨ production`), so there are only **two** classes:
 
-| Salle | Qui la rejoint | `patch.offeredTransitions` |
+| Room | Who joins it | `patch.offeredTransitions` |
 |---|---|---|
-| `channel:{id}` | tous les membres | **absent** — ces rôles n'ont aucun bouton de transition à périmer |
-| `channel:{id}:decide` | `artist ∨ production` | **présent**, recalculé pour la classe destinataire |
+| `channel:{id}` | all members | **absent** — those roles have no transition button to go stale |
+| `channel:{id}:decide` | `artist ∨ production` | **present**, recomputed for the recipient class |
 
-Deux émissions, aucun calcul par personne, aucun bouton périmé. Et si un jour les transitions
-dépendaient d'autre chose que de `canDecide`, le repli est écrit : le correctif devient un
-**marqueur « relis cette entité »** pour cette entité-là seulement — jamais un « recharge tout »,
-qui condamnerait la console en plein arbitrage de file.
+Two emissions, no per-person computation, no stale button. And if one day the transitions depended
+on something other than `canDecide`, the fallback is written: the correction becomes a **"re-read
+this entity" marker** for that entity alone — never a "reload everything", which would condemn the
+console in the middle of settling a queue.
 
-### 3.4 La redaction s'applique au canal aussi
+### 3.4 Redaction applies to the channel too
 
-`canRevenue` décide du **contenu** des messages poussés, pas de leur affichage. Une régie qui
-recevrait la recette dans un message de canal et ne l'afficherait pas est une fuite. Les salles
-`channel:{id}` sont donc **filtrées à l'émission, par rôle** — concrètement, deux salles par
-chaîne : `channel:{id}` et `channel:{id}:revenue`, la seconde n'étant rejointe que par les rôles
-qui en ont le droit.
+`canRevenue` decides the **content** of pushed messages, not their display. A run desk that received
+the revenue in a channel message and did not show it is a leak. So the `channel:{id}` rooms are
+**filtered at emission, by role** — concretely, two rooms per channel: `channel:{id}` and
+`channel:{id}:revenue`, the second joined only by the roles entitled to it.
 
 ---
 
-## 4. La battue de vie — le besoin que `studio-web` déclare bloquant
+## 4. The heartbeat — the need `studio-web` declares blocking
 
-> « Il faut distinguer *la salle n'envoie plus* de *mon poste a perdu le réseau*. Ce sont deux
-> écrans opposés : dans le premier on bascule l'écran d'attente, dans le second **il ne faut
-> surtout rien couper** — la diffusion continue pour les spectateurs. »
+> "We must tell *the venue has stopped sending* apart from *my workstation has lost the network*.
+> Those are two opposite screens: in the first you switch to the standby screen, in the second
+> **you must above all cut nothing** — the broadcast continues for the viewers."
 
-L'application ne peut pas faire la différence seule : **l'absence de message est identique dans les
-deux cas.** `studio-mobile` le redit autrement — un studio web est sur le réseau du bureau, un
-studio mobile est sur la 4G d'une salle en sous-sol — et en fait un bloc entier de son document.
+The application cannot tell the difference on its own: **the absence of a message is identical in
+both cases.** `studio-mobile` says the same thing differently — a studio web is on the office
+network, a studio mobile is on the 4G of a basement venue — and makes a whole block of its document
+out of it.
 
-**La réponse, et elle sert trois besoins d'un coup :**
+**The answer, and it serves three needs at once:**
 
 ```
 ← ws:pulse  { serverTime: "2026-09-21T20:31:04.118Z", seq: 41287, lag: { health: 1.2 } }
-            toutes les 5 secondes, sur les deux espaces de noms
+            every 5 seconds, on both namespaces
 ```
 
-1. **Le silence devient diagnostiquable.** Plus de `ws:pulse` pendant 15 s = **c'est moi qui suis
-   sourd**. Un `ws:pulse` qui arrive sans échantillon de santé depuis 30 s = **c'est la salle qui
-   n'envoie plus**. Deux états, deux écrans, aucune inférence.
-2. **`serverTime` est l'horloge de référence de toutes les surfaces.** Le chronomètre de garde, la
-   durée d'une réduction au silence, « la rediffusion expire dans 41 h », la fenêtre de priorité de
-   liste d'attente, l'expiration d'un accès ponctuel, le décompte d'aperçu gratuit : tout se compte
-   contre `serverTime` et un décalage mesuré, jamais contre l'horloge du téléphone — qui dérive en
-   veille, saute au changement de fuseau, et est réglable par son porteur.
-3. **`seq` donne le point de reprise** sans message supplémentaire.
+1. **Silence becomes diagnosable.** No `ws:pulse` for 15 s = **I am the one who is deaf**. A
+   `ws:pulse` arriving with no health sample for 30 s = **the venue has stopped sending**. Two
+   states, two screens, no inference.
+2. **`serverTime` is the reference clock for every surface.** The duty stopwatch, the length of a
+   mute, "the replay expires in 41 h", the waiting list's priority window, the expiry of a one-off
+   access, the free-preview countdown: everything is counted against `serverTime` and a measured
+   offset, never against the phone's clock — which drifts in sleep, jumps on a time zone change,
+   and can be set by its owner.
+3. **`seq` gives the resume point** with no extra message.
 
-**C'est aussi la réponse au filet de sécurité que `studio-mobile` réclame** : le réglage de chaîne
-« écran d'attente automatique si le flux se perd plus de 15 s » est une **règle serveur**, portée
-par le contrat comme valeur par défaut de chaîne, et son déclenchement produit un incident au même
-titre qu'un déclenchement manuel (`IncidentTrigger.AUTO`). C'est la bonne réponse au cas « le
-régisseur est injoignable » : elle ne dépend pas d'un poste de régie qui pourrait être celui qui a
-perdu le réseau.
+**It is also the answer to the safety net `studio-mobile` asks for**: the channel setting "automatic
+standby screen if the feed is lost for more than 15 s" is a **server rule**, carried by the contract
+as a channel default, and its firing produces an incident just as a manual trigger does
+(`IncidentTrigger.AUTO`). That is the right answer to the "the run-desk operator is unreachable"
+case: it does not depend on a run-desk workstation which might be the one that lost the network.
 
 ---
 
-## 5. Reprise : trois réponses possibles, jamais un silence
+## 5. Resume: three possible answers, never a silence
 
-Le système suspend le WebView d'une application mobile ; la connexion meurt **sans événement de
-fermeture propre**. Au réveil, l'application doit **se resynchroniser, pas rejouer**.
+The system suspends a mobile application's WebView; the connection dies **with no clean close
+event**. On waking, the application must **resynchronise, not replay**.
 
 ```
 → resume  { channelId?, streams: { chat: 41200, moderation: 8812, journal: 3301 } }
 ```
 
-Trois réponses, et **la deuxième est celle qui manque toujours** :
+Three answers, and **the second is the one that is always missing**:
 
-| Réponse | Sens | Ce que le client fait |
+| Answer | Meaning | What the client does |
 |---|---|---|
-| `resume:events` | voici ce que tu as manqué | applique les correctifs dans l'ordre |
-| **`resume:too_old`** | **le trou est trop grand, recharge le modèle entier** | recharge — et il le SAIT |
-| `resume:invalid` | le curseur n'est plus valide : droits changés, chaîne quittée | recharge l'amorçage |
+| `resume:events` | here is what you missed | applies the corrections in order |
+| **`resume:too_old`** | **the gap is too large, reload the whole model** | reloads — and it KNOWS it |
+| `resume:invalid` | the cursor is no longer valid: rights changed, channel left | reloads the bootstrap |
 
-Sans `resume:too_old`, « le modérateur revient sur une file à laquelle il manque dix messages, et
-rien ne le lui dit ». C'est le mot de `studio-mobile`, et c'est exactement le défaut.
+Without `resume:too_old`, "the moderator comes back to a queue missing ten messages, and nothing
+tells them". That is `studio-mobile`'s phrasing, and it is exactly the defect.
 
-**La fenêtre de reprise est bornée** : 30 minutes ou 5 000 événements par flux, selon ce qui arrive
-en premier, tenu dans un `Stream` Redis par salle. Au-delà, `resume:too_old`. Le journal durable
-reste dans Kafka : une console rouverte à 21 h 40 doit pouvoir **rejouer depuis 20 h 30** — le
-journal du direct, la file, les chapitres et les incidents sont des **lectures durables**, pas des
-restes de mémoire tampon. La reprise WebSocket couvre les minutes ; la lecture HTTP couvre les
-heures.
+**The resume window is bounded**: 30 minutes or 5,000 events per stream, whichever comes first, held
+in a Redis `Stream` per room. Beyond that, `resume:too_old`. The durable journal stays in Kafka: a
+console reopened at 21:40 must be able to **replay from 20:30** — the live show's journal, the
+queue, the chapters and the incidents are **durable reads**, not leftovers in a memory buffer. The
+WebSocket resume covers minutes; the HTTP read covers hours.
 
-### 5.1 Ce qu'on re-demande, ce qu'on reprend, ce qu'on jette
+### 5.1 What is re-requested, what is resumed, what is thrown away
 
 | | |
 |---|---|
-| **à re-demander** (durée de vie longue) | état d'antenne, incident en cours, file **avec ses prises en charge**, sanctions actives, chapitres posés, journal du direct depuis le lever de rideau, **état de publication et transitions offertes**, **présence de l'équipe** (§5.3), **série de santé** (§5.3) |
-| **à reprendre depuis le dernier `seq`** | tchat, journal — ce sont des flux ordonnés |
-| **à jeter** | toute mesure de flux antérieure à la reconnexion. Une courbe de débit se re-demande, elle ne se rejoue pas |
+| **to re-request** (long-lived) | on-air state, current incident, the queue **with its claims**, active sanctions, chapters posted, the live show's journal since curtain-up, **publication state and offered transitions**, **crew presence** (§5.3 — ⚠ not served today), **health series** (§5.3 — ⚠ not served today) |
+| **to resume from the last `seq`** | chat, journal — those are ordered streams |
+| **to throw away** | any feed measurement predating the reconnection. A bitrate curve is re-requested, it is not replayed — **and today it cannot be re-requested at all: see §5.3** |
 
-### 5.2 Le mobile, le retour au premier plan, et la rafale
+### 5.2 Mobile, returning to the foreground, and the burst
 
-Un autre besoin, propre au storefront mobile : au retour au premier plan, **toutes les lectures
-observées se revalident en même temps** — les mécanismes automatiques de revalidation écoutent des
-événements de navigateur qui n'existent pas en React Native et doivent être rebranchés à la main.
-Un écran de compte en affiche une demi-douzaine ; une page de catégorie autant.
+Another need, specific to the storefront mobile: on returning to the foreground, **every observed
+read revalidates at the same time** — the automatic revalidation mechanisms listen for browser
+events that do not exist in React Native and must be rewired by hand. An account screen shows half
+a dozen; a category page as many.
 
-**Refuser une rafale au retour au premier plan, c'est refuser l'ouverture de l'application.**
-Le contrat offre donc, en HTTP et non sur le canal :
+**Refusing a burst on return to the foreground is refusing to open the application.**
+So the contract offers, over HTTP and not on the channel:
 
 ```
-GET /changes?since=<servedAt>&scope=<profil|chaîne>
+GET /changes?since=<servedAt>&scope=<profile|channel>
 → { invalidated: ["date:xxx", "account:tickets", "home:rails"], servedAt, complete: bool }
 ```
 
-Il rend **une liste d'invalidations, pas les données**. Le client décide alors quoi recharger, et
-en une requête au lieu de douze. `complete: false` signifie « trop de changements, recharge tout » —
-la même honnêteté que `resume:too_old`.
+It returns **a list of invalidations, not the data**. The client then decides what to reload, and in
+one request instead of twelve. `complete: false` means "too many changes, reload everything" — the
+same honesty as `resume:too_old`.
 
-C'est aussi la réponse à `storefront-web` Q6 : le storefront **est** notifié des changements qu'il
-n'a pas causés, et le chemin passe par le BFF, Kafka étant interdit hors inter-services. Pour le
-rendu serveur de Next, le BFF expose en plus un **flux d'invalidations par étiquette** que le
-serveur Next consomme pour appeler `revalidateTag`. Les étiquettes sont **nommées par le
-contrat**, jamais inventées par une surface — sinon le mobile et la TV en inventeront d'autres.
+It is also the answer to `storefront-web` Q6: the storefront **is** notified of changes it did not
+cause, and the path goes through the BFF, Kafka being forbidden outside inter-service use. For
+Next's server rendering, the BFF additionally exposes a **stream of invalidations by tag** which the
+Next server consumes to call `revalidateTag`. The tags are **named by the contract**, never invented
+by a surface — otherwise mobile and the TV will invent others.
 
-### 5.3 Un différentiel sans instantané n'est pas un contrat
+### 5.3 A differential without a snapshot is not a contract
 
-Deux promesses de ce document n'avaient **aucune lecture** en face, et `studio-web` l'a établi sur
-les deux. Le défaut est le même : on pousse un différentiel et on n'expose jamais l'état initial.
-Une console ouverte à 21 h 40 n'a alors **rien** à peindre, et le restera jusqu'au prochain
-changement.
+Two of this document's promises had **no read** facing them, and `studio-web` established it on
+both. The defect is the same: a differential is pushed and the initial state is never exposed. A
+console opened at 21:40 then has **nothing** to paint, and stays that way until the next change.
 
-| Promesse | Où elle était écrite | Ce qui manquait |
+| Promise | Where it was written | What was missing |
 |---|---|---|
-| **présence de l'équipe** | §8 (« poussé ~10 s »), la salle `channel:{id}`, et `identity.GetChannelPresence` comptée dans les trois appels internes de `regie` (`context-map.md` §10.1) | aucune opération de BFF ne l'exposait, `RunConsole` ne la portait pas |
-| **série de santé** | §5.1, colonne « à jeter » : *« une courbe de débit **se re-demande** »* | la série n'était demandable nulle part — le point d'entrée est en écriture seule, et seul le dernier échantillon était servi |
+| **crew presence** | §8 ("pushed ~10 s"), the `channel:{id}` room, and `identity.GetChannelPresence` counted among `run desk`'s three internal calls (`context-map.md` §10.1) | no BFF operation exposed it, `RunConsole` did not carry it |
+| **health series** | §5.1, the "throw away" column: *"a bitrate curve **is re-requested**"* | the series was requestable nowhere — the endpoint is write-only, and only the last sample was served |
 
-**Ce que le contrat doit porter, et c'est une exigence, pas une préférence :**
+**⚠ STATE ON 22 SEPTEMBER 2026: STILL NOT SERVED.** Verified against `openapi/studio.yaml`:
+`RunConsole` carries `lastSample` — a single `HealthSample` — and no presence field; the only
+`present` in the document belongs to `AudienceMember` and means presence **on the live show**, which
+is a viewer's, not a crew member's; and `/v1/dates/{dateId}/run/health-samples` is **POST-only**.
+So the two promises are still promises. Every place in this document that states them now says so
+(§5.1, §8), because a document that promises what the contract does not serve is worse in English
+than in French: it reads more confidently.
 
-1. **Toute salle qui diffuse un différentiel expose un instantané.** C'est la règle générale que
-   ces deux cas font apparaître, et elle vaut pour les suivantes.
-2. **La présence est une lecture** : qui est en ligne sur cette chaîne, avec son rôle et son
-   instant de dernière activité. Ce n'est pas cosmétique — la confirmation de coupure est
-   littéralement *« couper met fin à la diffusion pour N spectateurs · **M autres personnes en
-   ligne** »*, c'est le garde-fou du geste le plus destructeur de la régie, **dans un studio
-   explicitement sans verrou**, et il était vide.
-3. **La série de santé est une lecture bornée** : une fenêtre paramétrable (par défaut les trois
-   dernières minutes — `studio-mobile` la demandait **courte**), avec le **pic de spectateurs et
-   son heure**, qui se dérive de la série et n'est donc obtenable que par elle. Trois chemins la
-   traversent tous les soirs : après un `resume:too_old`, après une reconnexion, ou simplement en
-   ouvrant la console au milieu d'un direct.
+**What the contract must carry, and it is a requirement, not a preference:**
 
-**Les deux lectures sont comptées dans mon inventaire** (`context-map.md` §10.1 :
-`identity.GetChannelPresence`, `streaming.GetHealthSeries`) — ce sont les **opérations de BFF** qui
-manquaient, et elles appartiennent à `backend-contracts`. Signalé.
+1. **Any room broadcasting a differential exposes a snapshot.** That is the general rule these two
+   cases bring out, and it holds for the ones that follow.
+2. **Presence is a read**: who is online on this channel, with their role and their last-activity
+   instant. It is not cosmetic — the cut confirmation is literally *"cutting ends the broadcast for
+   N viewers · **M other people online**"*, it is the guard rail on the most destructive act in the
+   run desk, **in a studio explicitly without a lock**, and it was empty.
+3. **The health series is a bounded read**: a configurable window (by default the last three minutes
+   — `studio-mobile` asked for it **short**), with the **peak viewer count and its time**, which is
+   derived from the series and is therefore obtainable only through it. Three paths cross it every
+   evening: after a `resume:too_old`, after a reconnection, or simply opening the console in the
+   middle of a live show.
+
+**Both reads are counted in my inventory** (`context-map.md` §10.1: `identity.GetChannelPresence`,
+`streaming.GetHealthSeries`) — they are the **BFF operations** that were missing, and they belong to
+`backend-contracts`. Reported, and still open.
 
 ---
 
-## 6. Passage à l'échelle de l'adaptateur Redis
+## 6. Scaling the Redis adapter
 
-### 6.1 Le montage
+### 6.1 The wiring
 
-`@socket.io/redis-adapter`, branché dans un `IoAdapter` étendu, `server.adapter(createAdapter(pub,
-sub))` dans `createIOServer`, et `useWebSocketAdapter()` **après la connexion des clients Redis et
-avant `listen()`** — un appel plus tard est ignoré en silence.
+`@socket.io/redis-adapter`, plugged into an extended `IoAdapter`, `server.adapter(createAdapter(pub,
+sub))` inside `createIOServer`, and `useWebSocketAdapter()` **after the Redis clients have connected
+and before `listen()`** — a later call is silently ignored.
 
-**L'adaptateur relaie les diffusions, pas les requêtes de sondage.** Il faut donc, au choix :
-**une affinité de session à Traefik**, ou des **clients en transport `websocket` seul**. Les deux
-storefronts natifs et le studio mobile peuvent imposer `transports: ['websocket']` ; le web ne le
-peut pas toujours, donc l'affinité reste nécessaire. C'est un des quatre arguments pour la
-passerelle d'infrastructure (`context-map.md` §9).
+**The adapter relays broadcasts, not polling requests.** So you need either **session affinity at
+Traefik**, or clients on **`websocket` transport only**. The two native storefronts and the studio
+mobile can impose `transports: ['websocket']`; the web cannot always, so affinity stays necessary.
+It is one of the four arguments for the infrastructure gateway (`context-map.md` §9).
 
-**Redis est un usage à part entière**, distinct des trois autres : sessions (au BFF seulement),
-cache par service, **adaptateur Socket.IO**, BullMQ interne à un service. L'instance de
-l'adaptateur n'est **jamais** celle de BullMQ (qui exige `noeviction`) ni celle du cache.
+**Redis is a use in its own right**, distinct from the other three: sessions (at the BFF only),
+per-service cache, **Socket.IO adapter**, BullMQ internal to a service. The adapter's instance is
+**never** BullMQ's (which requires `noeviction`) nor the cache's.
 
-### 6.2 Le vrai risque, nommé
+### 6.2 The real risk, named
 
-Un composant **sans état se réplique** : toute la mémoire des passerelles est dans Redis (salles,
-présence) et dans Kafka (journal). Ajouter une réplique suffit.
+A **stateless component replicates**: all the gateways' memory is in Redis (rooms, presence) and in
+Kafka (the journal). Adding a replica is enough.
 
-**Le danger est ailleurs, et il est double :**
+**The danger is elsewhere, and it is twofold:**
 
-1. **Le fan-out d'un direct très suivi.** 20 000 spectateurs dans `date:{id}:chat`, répartis sur N
-   nœuds : l'adaptateur relaie **chaque message à chaque nœud**, qui l'écrit ensuite sur chacune de
-   ses sockets. Le coût croît en N × messages, et le canal pub/sub de Redis devient le goulot.
-2. **La passerelle qui devient épaisse.** Si elle acquiert un état local, un cache métier ou une
-   règle, elle cesse de se répliquer : c'est un monolithe distribué — tout le couplage d'un
-   monolithe, plus la latence du réseau.
+1. **The fan-out of a heavily watched live show.** 20,000 viewers in `date:{id}:chat`, spread over N
+   nodes: the adapter relays **every message to every node**, which then writes it to each of its
+   sockets. The cost grows as N × messages, and Redis's pub/sub channel becomes the bottleneck.
+2. **The gateway becoming thick.** If it acquires local state, a business cache or a rule, it stops
+   replicating: that is a distributed monolith — all of a monolith's coupling, plus network latency.
 
-### 6.3 Les mesures qui déclenchent une action
+### 6.3 The measures that trigger an action
 
-| Mesure | Seuil | Geste |
+| Measure | Threshold | Action |
 |---|---|---|
-| `socketio_broadcast_lag_ms` p99, émission → client témoin | **> 500 ms sur 30 s** | activer les plafonds par salle (§2.2), puis **bander** la salle de tchat en `date:{id}:chat#0..7` — l'ordre est rétabli côté client par `(at_media_sec, seq)`, il n'est pas porté par la salle |
-| `redis_pubsub_channel_bytes_per_sec` sur le canal de l'adaptateur | **> 20 Mo/s** | passer à `@socket.io/redis-streams-adapter` (qui donne en plus la reprise d'état), ou bander |
-| `ws_connections_per_node` | **> 15 000** | ajouter une réplique |
-| `ws_reconnects_per_minute` | **> 5 % des connexions** | l'affinité de session est cassée au proxy — ce n'est pas un problème d'application |
-| `ws_pulse_gap_seconds` p99 | **> 15 s** | la passerelle est saturée : les deux studios vont afficher « je ne sais plus » à tort, ce qui est le pire résultat possible |
+| `socketio_broadcast_lag_ms` p99, emission → witness client | **> 500 ms over 30 s** | turn on the per-room ceilings (§2.2), then **shard** the chat room into `date:{id}:chat#0..7` — order is restored client-side by `(at_media_sec, seq)`, it is not carried by the room |
+| `redis_pubsub_channel_bytes_per_sec` on the adapter's channel | **> 20 MB/s** | move to `@socket.io/redis-streams-adapter` (which additionally gives connection state recovery), or shard |
+| `ws_connections_per_node` | **> 15,000** | add a replica |
+| `ws_reconnects_per_minute` | **> 5% of connections** | session affinity is broken at the proxy — that is not an application problem |
+| `ws_pulse_gap_seconds` p99 | **> 15 s** | the gateway is saturated: both studios are about to show "I no longer know" wrongly, which is the worst possible outcome |
 
-**Le bandage n'est permis que là où l'ordre est rétabli en lecture.** Le tchat, oui : un message
-porte `at_media_sec` et `seq`. La file de modération, **non** : l'ordre d'arbitrage y est un
-invariant, et la file d'un direct saturé se compte en centaines, pas en dizaines de milliers.
+**Sharding is permitted only where order is restored on read.** The chat, yes: a message carries
+`at_media_sec` and `seq`. The moderation queue, **no**: the order of settlement is an invariant
+there, and a saturated live show's queue is counted in hundreds, not in tens of thousands.
 
 ---
 
-## 7. Ce qui ne doit surtout pas passer par le canal
+## 7. What must above all not go through the channel
 
-| Donnée | Où elle passe | Motif |
+| Data | Where it goes | Reason |
 |---|---|---|
-| l'issue d'un paiement | **HTTP**, dans la réponse de la commande | une commande rend l'état projeté, pas un accusé ; et un paiement confirmé par un message est un paiement confirmé par le client |
-| le jeton de lecture et son renouvellement | **HTTP**, sur le chemin critique | il doit échouer avec un code exploitable, et son budget est ≤ 1 s |
-| la position de lecture | **HTTP**, écriture tolérante à la perte | une écriture par tranche de 30 à 60 s ne mérite pas un canal |
-| la clé de flux | **HTTP**, `Cache-Control: no-store` | un secret ne transite pas sur un canal multiplexé partagé par une salle |
-| les mesures de santé à la seconde | **Redis → canal**, jamais Kafka | un échantillon par seconde et par direct dans un journal durable est du gâchis |
-| le compteur de spectateurs à la seconde | **Redis → canal** ; seul l'agrégat à la minute entre dans Kafka | idem |
+| a payment's outcome | **HTTP**, in the command's response | a command returns the projected state, not a receipt; and a payment confirmed by a message is a payment confirmed by the client |
+| the playback token and its renewal | **HTTP**, on the critical path | it must fail with an actionable code, and its budget is ≤ 1 s |
+| the playback position | **HTTP**, a loss-tolerant write | one write every 30 to 60 s does not deserve a channel |
+| the stream key | **HTTP**, `Cache-Control: no-store` | a secret does not travel over a multiplexed channel shared by a room |
+| per-second health measurements | **Redis → channel**, never Kafka | one sample per second per live show in a durable log is waste |
+| the per-second viewer counter | **Redis → channel**; only the per-minute aggregate enters Kafka | same |
 
 ---
 
-## 8. Latences promises, par besoin
+## 8. Latencies promised, by need
 
-Récapitulatif opposable, que `backend-contracts` peut reprendre tel quel.
+A binding summary, which `backend-contracts` can take as it stands.
 
-| Besoin | Surface | Latence | Mécanisme |
+| Need | Surface | Latency | Mechanism |
 |---|---|---|---|
-| incident levé / résolu | storefront ×3, studio | **≤ 2 s** | poussé, **non négociable** — le voile client en dépend |
-| issue de date déclarée | storefront ×3, studio | ≤ 2 s | poussé |
-| issue d'appairage | TV | **≤ 2 s** | **interrogation RFC 8628**, `pollInterval` servi à 2 s puis 5 s — **pas le canal** (`adr-auth.md` §5.3) |
-| message de tchat | storefront, studio | ≤ 2 s | poussé, plafonné à la source |
-| état d'un message (retiré, auteur sanctionné) | storefront, studio | ≤ 2 s | poussé |
-| file de modération | studio | **≤ 1 s** | poussé, nominatif |
-| état d'antenne | studio | immédiat | poussé |
-| mesures de santé | studio | 1 à 2 s | poussé, avec `measured_at` |
-| présence de l'équipe | studio | ~10 s | poussé |
-| version des droits | studio | immédiat | poussé — elle invalide la navigation |
-| compteur de spectateurs | storefront ×3 | 10 à 30 s | poussé par lot, différentiel |
-| jauge, liste d'attente | storefront ×3 | 15 à 60 s | poussé par lot ; **la vérité est au moment de la commande**, pas à l'affichage |
-| badge de notifications | storefront | 30 à 60 s | poussé sur `viewer:{id}` |
-| `playback:stop` après révocation d'un droit | storefront ×3 | ≤ 2 s | poussé — **courtoisie, pas frontière de sécurité** : la garantie reste 120 s |
-| ventes pendant un direct | studio | 10 à 30 s | poussé, salle `:revenue` |
-| passage à l'antenne, ouverture de salle, expiration de rediffusion | **toutes** | — | **dérivé, aucun appel** |
-| jauge affichée sur une page rendue au serveur | web | — | dérivé de `validUntil` |
+| incident raised / resolved | storefront ×3, studio | **≤ 2 s** | pushed, **non-negotiable** — the client-side veil depends on it |
+| date outcome declared | storefront ×3, studio | ≤ 2 s | pushed |
+| pairing outcome | TV | **≤ 2 s** | **RFC 8628 polling**, `pollInterval` served at 2 s then 5 s — **not the channel** (`adr-auth.md` §5.3) |
+| chat message | storefront, studio | ≤ 2 s | pushed, capped at the source |
+| a message's state (removed, author sanctioned) | storefront, studio | ≤ 2 s | pushed |
+| moderation queue | studio | **≤ 1 s** | pushed, by name |
+| on-air state | studio | immediate | pushed |
+| health measurements | studio | 1 to 2 s | pushed, with `measured_at` |
+| crew presence | studio | ~10 s | pushed — **⚠ not served today, and it has no snapshot: see §5.3** |
+| rights version | studio | immediate | pushed — it invalidates the navigation |
+| viewer counter | storefront ×3 | 10 to 30 s | pushed in batches, differential |
+| capacity, waiting list | storefront ×3 | 15 to 60 s | pushed in batches; **the truth is at command time**, not at display time |
+| notification badge | storefront | 30 to 60 s | pushed on `viewer:{id}` |
+| `playback:stop` after an entitlement is revoked | storefront ×3 | ≤ 2 s | pushed — **courtesy, not a security boundary**: the guarantee remains 120 s |
+| sales during a live show | studio | 10 to 30 s | pushed, `:revenue` room |
+| going on air, room opening, replay expiry | **all** | — | **derived, no call** |
+| capacity shown on a server-rendered page | web | — | derived from `validUntil` |

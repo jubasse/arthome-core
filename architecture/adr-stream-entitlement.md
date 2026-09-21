@@ -1,405 +1,401 @@
-# ADR — L'accès au direct
+# ADR — Access to the live show
 
-**Statut** : accepté. **Date** : 21 septembre 2026. **Auteur** : `backend-domain`.
-**Portée** : `streaming`, la périphérie du CDN, et les trois storefronts.
-**Maturité** : **provisoire** — le fournisseur média n'est pas choisi, et ses capacités déclarées
-changeront la forme du jeton. La *mécanique* ci-dessous, elle, ne dépend d'aucun fournisseur.
-
----
-
-## 1. Ce qu'il faut tenir, formulé comme une exigence
-
-> **Changer d'adresse IP et vider ses cookies ne doit rien changer.
-> Un lien partagé ne doit pas ouvrir le direct à qui n'a pas de droit.**
-
-Et la contrainte qui élimine d'emblée la moitié des réponses habituelles :
-
-> **Toute heuristique fondée sur l'adresse IP ou sur un cookie est contournable et ne compte pas
-> comme réponse.** Une IP se partage dans un foyer et change en itinérance ; un cookie se copie.
-> Ni l'un ni l'autre ne porte un droit.
-
-Ce qui traite réellement le partage, c'est **la limite de sessions simultanées**, tenue par le plan
-de contrôle, avec révocation. Pas l'adresse.
+**Status**: accepted. **Date**: 21 September 2026. **Author**: `backend-domain`.
+**Scope**: `streaming`, the CDN edge, and the three storefronts.
+**Maturity**: **provisional** — the media provider has not been chosen, and its declared
+capabilities will change the token's shape. The *mechanism* below depends on no provider.
 
 ---
 
-## 2. Le problème que le CDN crée
+## 1. What must hold, stated as a requirement
 
-Un CDN devant le LL-HLS signifie que **ce n'est plus notre serveur média qui sert les segments**.
-La vérification « cette personne détient une place » ne peut donc plus se faire à la lecture : au
-moment où un segment part, aucun de nos processus n'est dans la boucle.
+> **Changing IP address and clearing your cookies must change nothing.
+> A shared link must not open the live show to someone with no entitlement.**
+
+And the constraint that rules out half the usual answers up front:
+
+> **Any heuristic based on an IP address or on a cookie is bypassable and does not count as an
+> answer.** An IP is shared in a household and changes while roaming; a cookie is copied. Neither
+> carries an entitlement.
+
+What actually deals with sharing is **the concurrent-session limit**, held by the control plane,
+with revocation. Not the address.
+
+---
+
+## 2. The problem the CDN creates
+
+A CDN in front of the LL-HLS means **it is no longer our media server that serves the segments**.
+So the "this person holds a seat" check can no longer happen at playback time: at the moment a
+segment goes out, none of our processes is in the loop.
 
 ```
-@arthome/core       dit si le droit est valide
-service streaming   émet un jeton court contre ce droit
-client              renouvelle le jeton tant que le droit tient
-CDN                 refuse tout ce qui n'est pas signé
+@arthome/core       says whether the entitlement is valid
+streaming service   issues a short token against that entitlement
+client              renews the token while the entitlement holds
+CDN                 refuses anything that is not signed
 ```
 
-Le port `PlaybackProvider` doit exposer cette capacité **explicitement** : un fournisseur futur
-sans URL signées casserait la règle métier sans qu'on s'en aperçoive.
+The `PlaybackProvider` port must expose this capability **explicitly**: a future provider with no
+signed URLs would break the business rule with nobody noticing.
 
 ---
 
-## 3. Les quatre pièces
+## 3. The four pieces
 
-### 3.1 Le jeton de lecture — signé, court, renouvelé pendant la diffusion
+### 3.1 The playback token — signed, short, renewed during the broadcast
 
-Émis par `streaming`, **contre un droit vérifié**, jamais contre une session.
+Issued by `streaming`, **against a verified entitlement**, never against a session.
 
 ```
 claims
   sub   profileId          did   deviceId
   dat   dateId             sid   playbackSessionId
-  qmax  plafond de qualité que le niveau de sécurité matériel autorise
-  scope full | preview     jti   identifiant unique, pour la révocation
-  exp   +120 s             kid   dans l'en-tête, pour la rotation
+  qmax  the quality ceiling the hardware security level allows
+  scope full | preview     jti   unique identifier, for revocation
+  exp   +120 s             kid   in the header, for rotation
 ```
 
-**Durée : 120 secondes. Intervalle de renouvellement : 45 secondes.**
+**Lifetime: 120 seconds. Renewal interval: 45 seconds.**
 
-`storefront-tv` Q9(b) exigeait « ≤ 60 s », et son exigence est satisfaite — mais **elle porte sur
-l'intervalle de renouvellement, pas sur la durée du jeton**, et il faut distinguer les deux sous
-peine d'écrire une garantie fausse (ce que j'avais fait : voir l'encadré du §3.3) :
+`storefront-tv` Q9(b) required "≤ 60 s", and its requirement is met — but **it bears on the renewal
+interval, not on the token's lifetime**, and the two must be told apart on pain of writing a false
+guarantee (which is what I did: see the box in §3.3):
 
-| | Borné par | Valeur |
+| | Bounded by | Value |
 |---|---|---|
-| délai avant que **le client** apprenne qu'il n'a plus le droit | l'**intervalle** | ≤ 45 s |
-| délai avant que **la périphérie cesse de servir** des segments | la **durée du jeton** | jusqu'à 120 s |
+| time before **the client** learns it no longer has the entitlement | the **interval** | ≤ 45 s |
+| time before **the edge stops serving** segments | the **token's lifetime** | up to 120 s |
 
-C'est le renouvellement qui porte la limite de sessions simultanées, donc c'est bien l'intervalle
-qui doit rester court — au-delà d'une minute, la limite ne limite plus rien. Mais il ne borne que
-ce que le client sait, jamais ce que le CDN sert.
+It is the renewal that carries the concurrent-session limit, so it is indeed the interval that must
+stay short — beyond a minute, the limit limits nothing. But it bounds only what the client knows,
+never what the CDN serves.
 
-**Le renouvellement ne doit pas redémarrer la lecture.** C'est une contrainte sur la **forme** du
-jeton, pas sur sa durée : un jeton dans le **chemin** forcerait un rechargement de manifeste et
-produirait un micro-gel toutes les N minutes, visible sur un plan fixe de théâtre. Donc :
+**Renewal must not restart playback.** That is a constraint on the token's **shape**, not on its
+lifetime: a token in the **path** would force a manifest reload and produce a micro-freeze every N
+minutes, visible on a static theatre shot. So:
 
-> **Jamais de jeton dans le chemin d'une URL.** Il vit dans une requête signée ou dans un cookie
-> signé, et le chemin du manifeste comme celui des segments reste stable.
+> **Never a token in a URL path.** It lives in a signed request or in a signed cookie, and the
+> manifest path, like the segment paths, stays stable.
 
-**Le refus de renouvellement porte un code, et quatre codes distincts sont nécessaires** — la TV
-affiche quatre messages différents :
+**A renewal refusal carries a code, and four distinct codes are necessary** — the TV shows four
+different messages:
 
-| Code | Ce que la surface dit |
+| Code | What the surface says |
 |---|---|
-| `SEAT_EXPIRED` | votre place a expiré |
-| `CONCURRENT_LIMIT_REACHED` | la limite d'écrans simultanés est atteinte |
-| `SIGNED_OUT_ELSEWHERE` | vous avez été déconnecté depuis un autre appareil |
-| `SERVICE_UNAVAILABLE` | nos serveurs ne répondent pas |
+| `SEAT_EXPIRED` | your seat has expired |
+| `CONCURRENT_LIMIT_REACHED` | the concurrent-screen limit has been reached |
+| `SIGNED_OUT_ELSEWHERE` | you were signed out from another device |
+| `SERVICE_UNAVAILABLE` | our servers are not responding |
 
-Un code générique en produirait un faux trois fois sur quatre.
+A generic code would produce a wrong one three times out of four.
 
-**Ce que le jeton emporte en plus, et pourquoi c'est ici** : le protocole et le système de DRM
-**choisis par le serveur pour cet appareil**, et le **plafond de qualité** que son niveau de
-sécurité matériel autorise. Le parc impose HLS + FairPlay sur tvOS et DASH + Widevine ailleurs,
-avec PlayReady sur certaines références ; **un client qui devine se trompe**, et il se trompe sur
-les appareils qu'on ne peut pas tester. Une clé HDMI d'entrée de gamme n'offre que du Widevine
-logiciel, plafonné en SD : le serveur **dégrade proprement** plutôt que de refuser la lecture, et
-la TV **sait** qu'elle a été plafonnée pour ne pas proposer « 4K » dans son panneau de qualité.
+**What else the token carries, and why it belongs here**: the protocol and the DRM system **chosen
+by the server for this device**, and the **quality ceiling** its hardware security level allows.
+The fleet imposes HLS + FairPlay on tvOS and DASH + Widevine elsewhere, with PlayReady on certain
+models; **a client that guesses gets it wrong**, and it gets it wrong on the devices we cannot test.
+A low-end HDMI stick offers only software Widevine, capped at SD: the server **degrades cleanly**
+rather than refusing playback, and the TV **knows** it has been capped so it does not offer "4K" in
+its quality panel.
 
-**Le DRM sert ici au tiérage d'appareil et de qualité, pas à une promesse anti-copie.** §7 le dit
-franchement.
+**DRM serves device and quality tiering here, not an anti-copy promise.** §7 says so plainly.
 
-### 3.2 La vérification à la périphérie du CDN — manifeste **et** segments
+### 3.2 Verification at the CDN edge — manifest **and** segments
 
-> **Une URL de segment ne doit pas fuir seule.**
+> **A segment URL must not leak on its own.**
 
-Signer le manifeste et laisser les segments ouverts, c'est ne rien signer : il suffit de recopier
-un lien de segment. La signature porte donc sur un **préfixe de chemin**, avec une expiration :
+Signing the manifest and leaving the segments open is signing nothing: copying one segment link is
+enough. So the signature bears on a **path prefix**, with an expiry:
 
 ```
-/playback/{dateId}/{sessionScope}/*     signé, expire avec le jeton
+/playback/{dateId}/{sessionScope}/*     signed, expires with the token
   ├── master.m3u8
   ├── {rendition}/index.m3u8
-  └── {rendition}/seg-000123.m4s        couvert par la MÊME signature de préfixe
+  └── {rendition}/seg-000123.m4s        covered by the SAME prefix signature
 ```
 
-Deux mécanismes, **déclarés par une capacité du port** parce qu'ils ne sont pas également
-disponibles partout :
+Two mechanisms, **declared by a port capability** because they are not equally available
+everywhere:
 
-| Mécanisme | Où | Renouvellement |
+| Mechanism | Where | Renewal |
 |---|---|---|
-| **cookies signés** de préfixe | navigateur (storefront web, studio web) | un appel même-origine repose le cookie : **zéro changement d'URL, zéro interruption** |
-| **signature en paramètre de requête**, chemin stable | lecteurs natifs (TV, mobile) | le lecteur ré-appose le jeton courant sur chaque requête via son filtre de requêtes |
+| **signed cookies** on a prefix | browser (storefront web, studio web) | a same-origin call re-sets the cookie: **zero URL change, zero interruption** |
+| **signature in a query parameter**, stable path | native players (TV, mobile) | the player re-applies the current token to each request through its request filter |
 
-**Le cas dur, et il faut le nommer** : `AVPlayer` sur tvOS ne partage pas les cookies du WebView et
-n'offre pas de filtre de requêtes générique. La réponse est `AVAssetResourceLoaderDelegate`, qui
-intercepte les requêtes du lecteur et y appose l'en-tête ou le paramètre courant. C'est du travail
-de surface, et **c'est le point à valider sur un appareil réel avant de promettre quoi que ce
-soit** : `PlaybackProvider` doit donc déclarer `supportsSignedCookies` et
-`supportsQueryTokenRenewal`, et le `PlaybackTicket` dire lequel s'applique à cet appareil.
+**The hard case, and it must be named**: `AVPlayer` on tvOS does not share the WebView's cookies
+and offers no generic request filter. The answer is `AVAssetResourceLoaderDelegate`, which
+intercepts the player's requests and applies the current header or parameter to them. That is
+surface work, and **it is the point to validate on a real device before promising anything**: so
+`PlaybackProvider` must declare `supportsSignedCookies` and `supportsQueryTokenRenewal`, and the
+`PlaybackTicket` must say which one applies to this device.
 
-**Les chemins de flux sont aléatoires et non prédictibles** — `streaming.md` le pose pour le mode
-démonstration, et cela vaut partout : un chemin devinable est une signature en moins.
+**Stream paths are random and unpredictable** — `streaming.md` states it for the demonstration
+mode, and it holds everywhere: a guessable path is one signature less.
 
-### 3.3 La limite de sessions simultanées — **c'est elle qui traite le partage**
+### 3.3 The concurrent-session limit — **this is what deals with sharing**
 
-Tenue par le plan de contrôle, **par droit** (le compte et sa formule), pas par appareil ni par
-adresse.
+Held by the control plane, **per entitlement** (the account and its plan), not per device and not
+per address.
 
 ```
 PlaybackSession   { id, accountId, profileId, deviceId, dateId,
                     leaseExpiresAt = now + 90 s }
 ```
 
-**Le bail expire faute de renouvellement. Il ne se libère pas par une commande.**
-C'est la décision la plus importante de cette section, et elle vient de deux surfaces
-indépendamment :
+**The lease expires for want of renewal. It is not released by a command.**
+This is the most important decision in this section, and it comes from two surfaces independently:
 
-- `storefront-tv` : *« `releasePlayback` ne peut pas être garantie : un téléviseur se débranche,
-  une box se coupe »* ;
-- `storefront-mobile` : *« le système d'exploitation tue une application sans préavis et sans lui
-  laisser le temps de fermer quoi que ce soit. Une session qui ne se ferme que sur un événement du
-  client laisse un écran fantôme, et l'utilisateur se voit refuser sa propre seconde lecture. »*
+- `storefront-tv`: *"`releasePlayback` cannot be guaranteed: a television gets unplugged, a set-top
+  box loses power"*;
+- `storefront-mobile`: *"the operating system kills an application without warning and without
+  giving it time to close anything. A session that only closes on a client event leaves a ghost
+  screen, and the user is refused their own second playback."*
 
-Donc : **bail de 90 s, renouvelé toutes les 45 s par le renouvellement du jeton.** `releasePlayback`
-existe et accélère la libération quand le client y arrive, mais **rien n'en dépend**. Un foyer ne
-peut pas se retrouver bloqué par des sessions fantômes.
+So: **a 90 s lease, renewed every 45 s by the token renewal.** `releasePlayback` exists and speeds
+the release up when the client manages it, but **nothing depends on it**. A household cannot end up
+locked out by ghost sessions.
 
-**Le client peut reprendre sa propre session**, identifiée par `deviceId` : rouvrir le lecteur sur
-le même appareil réutilise le bail au lieu d'en ouvrir un second.
+**The client can resume its own session**, identified by `deviceId`: reopening the player on the
+same device reuses the lease instead of opening a second one.
 
-**Au-delà du plafond** (`PLAN_OPENING_MULTI_SCREEN` : 2 écrans en Premium, 1 sinon), le
-renouvellement est refusé avec `CONCURRENT_LIMIT_REACHED` **et la liste des sessions actives** —
-appareil, ville, instant d'ouverture — pour que la surface propose d'en **libérer une**. Un refus
-nu laisserait le spectateur sans issue, ce que le principe n°8 du dossier interdit.
+**Beyond the ceiling** (`PLAN_OPENING_MULTI_SCREEN`: 2 screens on Premium, 1 otherwise), the renewal
+is refused with `CONCURRENT_LIMIT_REACHED` **and the list of active sessions** — device, city,
+opening instant — so the surface can offer to **release one**. A bare refusal would leave the viewer
+with no way out, which the file's principle no. 8 forbids.
 
-**Ce que voit le troisième écran** (`storefront-web` Q21) : un refus explicite, la liste, et un
-geste. Jamais une erreur réseau, jamais un lecteur qui tourne sans image.
+**What the third screen sees** (`storefront-web` Q21): an explicit refusal, the list, and an action.
+Never a network error, never a player spinning with no picture.
 
-#### La fenêtre d'exposition réelle est de 120 s, pas de 60 s — et j'avais écrit 60
+#### The real exposure window is 120 s, not 60 s — and I had written 60
 
-C'est le défaut le plus grave que la revue adverse a trouvé chez moi (`skeptic.md` K3), parce
-qu'il porte sur **une garantie de sécurité, chiffrée et publiée aux cinq surfaces**.
+This is the gravest defect the adversarial review found in my work (`skeptic.md` K3), because it
+bears on **a security guarantee, numbered and published to five surfaces**.
 
-> **La révocation ne révoque pas un jeton : elle refuse le renouvellement suivant.** La fenêtre
-> pendant laquelle la périphérie continue de servir des segments est donc la durée de vie du
-> **jeton en main**, soit **jusqu'à 120 s** — et non l'intervalle de renouvellement.
+> **Revocation does not revoke a token: it refuses the next renewal.** The window during which the
+> edge keeps serving segments is therefore the lifetime of the **token in hand**, that is **up to
+> 120 s** — and not the renewal interval.
 
 ```
-révocation à T                                     jeton en main, émis à T−ε
+revocation at T                                    token in hand, issued at T−ε
   │                                                  │
-  ├── renouvellement à T+45 s : REFUSÉ               ├── mais il reste valide jusqu'à T−ε+120 s
-  │   le client sait                                 │   et le CDN, lui, ne sait rien
-  └──────────────────────── exposition réelle ───────┘
-       cas favorable  ~45 s        cas défavorable  ~120 s        régime courant  45 à 75 s
+  ├── renewal at T+45 s: REFUSED                     ├── but it stays valid until T−ε+120 s
+  │   the client knows                               │   and the CDN knows nothing
+  └──────────────────────── real exposure ───────────┘
+       best case  ~45 s           worst case  ~120 s           typical  45 to 75 s
 ```
 
-Un client qui ignore le refus — ou qui, plus simplement, ne s'arrête pas — continue de tirer des
-segments **signés valides**. La signature de préfixe expire avec le jeton (§3.2), pas avec la
-décision.
+A client that ignores the refusal — or that, more simply, does not stop — keeps pulling segments
+that are **validly signed**. The prefix signature expires with the token (§3.2), not with the
+decision.
 
-**Comment l'erreur s'est produite, parce qu'elle est instructive.** `storefront-tv` Q9(b) demandait
-« ≤ 60 s », et j'ai recopié 60 comme si c'était la garantie obtenue. Or son exigence portait sur
-l'**intervalle de renouvellement** — c'est lui qui borne le délai avant que le *client* apprenne le
-refus — et pas sur la durée d'exposition côté CDN. **J'ai choisi le nombre qui faisait plaisir à la
-question**, et il s'est propagé dans quatre documents. C'est la règle critique 15 — une constante à
-deux propriétaires et deux valeurs — appliquée cette fois à une garantie de sécurité. Un seul
-document était juste : `adr-auth.md:520`.
+**How the error happened, because it is instructive.** `storefront-tv` Q9(b) asked for "≤ 60 s", and
+I copied 60 as if it were the guarantee obtained. But its requirement bore on the **renewal
+interval** — that is what bounds the delay before the *client* learns of the refusal — and not on
+the exposure time at the CDN. **I picked the number that pleased the question**, and it propagated
+into four documents. That is critical rule 15 — a constant with two owners and two values — applied
+this time to a security guarantee. One document alone was right: `adr-auth.md:520`.
 
-**Ce que le contrat doit servir**, et c'est à `backend-contracts` de le porter : la valeur exposée
-n'est pas « 60 », c'est **`playbackCutWithinSec = 120`**, accompagnée de la valeur courante
-attendue (45 à 75 s). Et le test d'intégration doit mesurer **l'arrêt de la lecture**, pas le refus
-du renouvellement : un test qui constate le refus à 45 s passe au vert sans avoir vérifié ce que la
-phrase promet. **Une garantie fausse avec un test vert est pire qu'une garantie absente.**
+**What the contract must serve**, and it is for `backend-contracts` to carry it: the value exposed
+is not "60", it is **`playbackCutWithinSec = 120`**, accompanied by the expected typical value (45
+to 75 s). And the integration test must measure **playback stopping**, not the renewal being
+refused: a test that observes the refusal at 45 s goes green without having verified what the
+sentence promises. **A false guarantee with a green test is worse than no guarantee.**
 
-#### L'arbitrage rendu : le jeton reste à 120 s
+#### The arbitration returned: the token stays at 120 s
 
-**Décision : on ne raccourcit pas le jeton.** Trois raisons, et la première est la bonne.
+**Decision: we do not shorten the token.** Three reasons, and the first is the right one.
 
-1. **Le défaut n'a jamais été la fenêtre, c'était la promesse** — et elle est réparée. Doubler la
-   fréquence de renouvellement sur le chemin le plus chaud du système pour faire correspondre un
-   mécanisme à une phrase que quelqu'un avait mal écrite serait payer très cher une erreur de
-   rédaction.
-2. **120 s sur un spectacle de deux heures font 1,6 % de la séance.**
-3. **La propriété de sécurité qui compte est tenue à l'ÉMISSION, pas à la révocation.**
-   *Un lien partagé n'ouvre pas le direct à qui n'a pas de droit* : cela se joue quand le jeton est
-   émis contre un droit vérifié. La révocation traite un tout autre cas — un droit qui a **existé
-   puis cessé** : abonnement échu, appareil déconnecté, limite d'écrans franchie, remboursement.
-   Aucun ne justifie de doubler la charge du chemin chaud.
+1. **The defect was never the window, it was the promise** — and that is repaired. Doubling the
+   renewal frequency on the hottest path in the system in order to make a mechanism match a sentence
+   somebody had written badly would be paying very dearly for a drafting error.
+2. **120 s on a two-hour performance is 1.6% of the show.**
+3. **The security property that matters is held at ISSUANCE, not at revocation.**
+   *A shared link does not open the live show to someone with no entitlement*: that is settled when
+   the token is issued against a verified entitlement. Revocation deals with an entirely different
+   case — an entitlement that **existed and then ceased**: a lapsed subscription, a disconnected
+   device, a screen limit crossed, a refund. None of those justifies doubling the load on the hot
+   path.
 
-**Une addition pour le cas visible, et elle est étiquetée honnêtement.** Quand quelqu'un déconnecte
-un appareil depuis son compte et regarde l'écran s'arrêter, 120 s sont longues. Le canal temps réel
-existant pousse donc, sur `viewer:{profileId}` et `device:{deviceId}`, un signal demandant au
-client d'**arrêter la lecture immédiatement**.
+**One addition for the visible case, and it is labelled honestly.** When somebody disconnects a
+device from their account and watches the screen stop, 120 s is a long time. So the existing
+realtime channel pushes, on `viewer:{profileId}` and `device:{deviceId}`, a signal asking the client
+to **stop playback immediately**.
 
-> **⚠ Ce signal n'est PAS une frontière de sécurité.** Un client modifié l'ignore ; la périphérie
-> continue de servir jusqu'à 120 s ; **la garantie reste 120 s**. C'est une **courtoisie qui rend
-> le cas courant instantané**, jamais un contrôle.
+> **⚠ That signal is NOT a security boundary.** A modified client ignores it; the edge keeps serving
+> for up to 120 s; **the guarantee remains 120 s**. It is a **courtesy that makes the common case
+> instant**, never a control.
 
-Le dire ainsi n'est pas de la prudence rédactionnelle : ce document rejette d'emblée « toute
-heuristique IP ou cookie » parce qu'elle est contournable, et il serait incohérent de présenter
-ensuite un signal client comme une protection. Un mécanisme qu'un attaquant peut ignorer se mesure
-au confort qu'il apporte, pas à la sécurité qu'il n'apporte pas.
+Saying it that way is not drafting caution: this document rejects "any IP or cookie heuristic" up
+front because it is bypassable, and it would be incoherent to then present a client-side signal as a
+protection. A mechanism an attacker can ignore is measured by the comfort it brings, not by the
+security it does not.
 
-**Ce qui rouvrirait la décision — un seuil, pas une intention.** Si l'on mesure que le
-renouvellement à 45 s coûte **moins de 5 % du temps processeur du service `streaming` en pointe**
-et **moins de 2 % de latence ajoutée au p95 de `OpenPlayback`**, alors raccourcir le jeton à 60 s
-devient gratuit et la fenêtre tombe de 120 à 60 s. **Tant que ce n'est pas mesuré, on ne touche à
-rien** — c'est exactement l'erreur qu'on vient de corriger, dans l'autre sens.
+**What would reopen the decision — a threshold, not an intention.** If we measure that renewing at
+45 s costs **less than 5% of the `streaming` service's CPU time at peak** and **less than 2% of
+added latency on `OpenPlayback`'s p95**, then shortening the token to 60 s becomes free and the
+window falls from 120 to 60 s. **Until that is measured, we change nothing** — which is exactly the
+error we have just corrected, in the other direction.
 
-**Révocation immédiate, deux chemins :**
-- `identity.device.revoked.v1` consommé par `streaming` → les baux de cet appareil passent à
-  `revoked`. **Fenêtre d'exposition réelle : jusqu'à 120 s** — voir l'encadré ci-dessous ;
-- issue `interrupted` déclarée → les baux de la date sont révoqués avec `DATE_INTERRUPTED`, **à la
-  fin du renouvellement en cours**, pas par une coupure brutale : un flux coupé sans explication
-  est exactement ce que le principe n°6 interdit.
+**Immediate revocation, two paths:**
+- `identity.device.revoked.v1` consumed by `streaming` → that device's leases move to `revoked`.
+  **Real exposure window: up to 120 s** — see the box above;
+- an `interrupted` outcome declared → the date's leases are revoked with `DATE_INTERRUPTED`, **at
+  the end of the renewal in progress**, not by an abrupt cut: a feed cut with no explanation is
+  exactly what principle no. 6 forbids.
 
-### 3.4 La rotation des clés
+### 3.4 Key rotation
 
-Deux jeux de clés, **jamais le même** :
+Two key sets, **never the same one**:
 
-| Jeu | Vérifié par | Rotation | Grâce |
+| Set | Verified by | Rotation | Grace |
 |---|---|---|---|
-| **session / jeton interne** (BFF → services) | chaque service, par JWKS, **en local** | **30 j** | **24 h** |
-| **lecture** (entitlement → CDN) | la **périphérie du CDN** | **90 j** | **7 j** |
+| **session / internal token** (BFF → services) | each service, by JWKS, **locally** | **30 d** | **24 h** |
+| **playback** (entitlement → CDN) | the **CDN edge** | **90 d** | **7 d** |
 
-Cadences et `kid` fixés par `adr-auth.md` §8.1, qui possède la conception des clés. **Une version
-antérieure de ce document donnait 24 h aux deux jeux : c'était un nombre plausible et faux**, et
-c'est exactement le genre de littéral parallèle que E2 décrit — sur une valeur d'exploitation
-cette fois, pas sur un vocabulaire.
+Cadences and `kid` are fixed by `adr-auth.md` §8.1, which owns the key design. **An earlier version
+of this document gave 24 h to both sets: that was a plausible number and a wrong one**, and it is
+exactly the kind of parallel literal E2 describes — on an operational value this time, not on a
+vocabulary.
 
-**Les séparer est le point.** Une compromission de la clé de lecture ne doit pas donner de
-session, et réciproquement. Le jeu de lecture est en plus **par environnement** : une clé de
-démonstration publique ne signe jamais rien en production.
+**Separating them is the point.** A compromise of the playback key must not yield a session, and the
+reverse. The playback set is additionally **per environment**: a public demonstration key never
+signs anything in production.
 
-### Pourquoi les deux cadences diffèrent — et ce n'est pas un réglage
+### Why the two cadences differ — and it is not a setting
 
-La rotation est **à recouvrement** : on publie la nouvelle clé, les deux sont acceptées pendant la
-fenêtre de grâce, puis l'ancienne est retirée. La question est de savoir **ce que la grâce doit
-couvrir**, et c'est là que j'avais tort :
+Rotation is **overlapping**: the new key is published, both are accepted during the grace window,
+then the old one is withdrawn. The question is **what the grace must cover**, and that is where I
+was wrong:
 
-> **La fenêtre de grâce doit couvrir le cache du CDN, pas la durée de vie du jeton.**
+> **The grace window must cover the CDN cache, not the token's lifetime.**
 
-Une grâce dimensionnée sur les 120 s d'un jeton — ce que ce document disait — ne sert à rien. La
-périphérie met le document JWKS en cache **pendant des heures** : publier la nouvelle clé puis
-signer avec soixante secondes plus tard laisse l'arête servir l'ancien document, et **elle rejette
-alors des jetons parfaitement valides**. Le spectateur voit sa lecture s'arrêter sans raison, et
-la cause est invisible côté serveur — le jeton *est* bon.
+A grace sized on a token's 120 s — which is what this document said — is useless. The edge caches
+the JWKS document **for hours**: publishing the new key and then signing with it sixty seconds later
+leaves the edge serving the old document, and **it then rejects perfectly valid tokens**. The viewer
+sees their playback stop for no reason, and the cause is invisible server-side — the token *is*
+good.
 
-D'où une valeur de contrat, due à `backend-contracts` :
+Hence a contract value, owed by `backend-contracts`:
 
 ```
-Cache-Control: max-age=3600   sur le document JWKS
-grâce  ≥  2 × max-age         pour TOUTE clé, quel que soit son émetteur
+Cache-Control: max-age=3600   on the JWKS document
+grace  ≥  2 × max-age         for EVERY key, whoever issues it
 ```
 
-La plus courte des deux grâces (24 h) garde donc un facteur 24, délibérément. Et la cadence de
-lecture est plus lente que celle des BFF **pour cette raison précise**, pas par prudence vague :
-c'est elle qui traverse un cache qu'on ne contrôle pas.
+The shorter of the two graces (24 h) therefore keeps a factor of 24, deliberately. And the playback
+cadence is slower than the BFFs' **for that precise reason**, not out of vague caution: it is the
+one that crosses a cache we do not control.
 
-**Deux règles d'exploitation qui vont avec, et qui ne se voient qu'en production :**
+**Two operational rules that go with it, and that only show up in production:**
 
-1. **Une rotation en échec ne retire jamais une clé.** L'assembleur du document JWKS ne fait
-   qu'**unir** ce que les émetteurs publient ; le retrait est une étape **séparée**, conditionnée à
-   la grâce. Un assembleur qui reconstruirait « à l'identique de ce qu'il voit » supprimerait la
-   clé d'un émetteur temporairement muet et **invaliderait tous ses jetons en vol**.
-2. **Aucune clé privée ne figure jamais dans le document publié.** La porte est d'une ligne et se
-   lance après *chaque* publication — un `d` dans un JWK publié, c'est la signature du système
-   donnée au monde (`definition-of-done.md` §7.6, porte J1).
+1. **A failed rotation never withdraws a key.** The JWKS document's assembler only **unions** what
+   the issuers publish; withdrawal is a **separate** step, conditioned on the grace. An assembler
+   that rebuilt "exactly what it sees" would delete a temporarily silent issuer's key and
+   **invalidate all its tokens in flight**.
+2. **No private key ever appears in the published document.** The gate is one line and runs after
+   *every* publication — a `d` in a published JWK is the system's signature handed to the world
+   (`definition-of-done.md` §7.6, gate J1).
 
 ---
 
-## 4. L'aperçu gratuit — imposé par le jeton, pas par le client
+## 4. The free preview — enforced by the token, not by the client
 
-Le non-détenteur voit les premières minutes puis le verrou. **Un aperçu que l'on prolonge en
-rechargeant la page n'est pas un aperçu** (`storefront-web` Q20), et une application réinstallée
-remettrait un compteur client à zéro (`storefront-mobile` Q6).
+A non-holder sees the first few minutes and then the lock. **A preview you extend by reloading the
+page is not a preview** (`storefront-web` Q20), and a reinstalled application would reset a
+client-side counter to zero (`storefront-mobile` Q6).
 
 ```
-PreviewBudget  (accountId, dateId) → secondsUsed        décompté SERVEUR
+PreviewBudget  (accountId, dateId) → secondsUsed        counted down SERVER-SIDE
 ```
 
-Le jeton d'un non-détenteur est émis avec `scope: preview` et
-`exp = min(now + 120 s, now + secondsLeft)`. Quand le budget est épuisé, le renouvellement est
-refusé avec `PREVIEW_EXHAUSTED`, et la surface pose son verrou — avec l'action qui sort de
-l'impasse, jamais un écran mort.
+A non-holder's token is issued with `scope: preview` and
+`exp = min(now + 120 s, now + secondsLeft)`. When the budget is exhausted, renewal is refused with
+`PREVIEW_EXHAUSTED`, and the surface puts up its lock — with the action that gets out of the dead
+end, never a dead screen.
 
-**La portée est le compte, pas l'appareil** : sinon un foyer à quatre appareils obtient quatre
-aperçus. Et le budget est **servi** dans le verdict de droit, pour que la surface puisse afficher
-le décompte sans le compter elle-même.
+**The scope is the account, not the device**: otherwise a household with four devices gets four
+previews. And the budget is **served** in the entitlement verdict, so the surface can show the
+countdown without counting it itself.
 
 ---
 
-## 5. Ce que `streaming` doit savoir pour décider — et pourquoi il le sait
+## 5. What `streaming` must know in order to decide — and why it knows it
 
-`decideWatch` a cinq entrées, qui appartiennent à trois contextes. **Aucun appel synchrone entre
-services n'étant permis**, `streaming` tient une **projection locale** alimentée par Kafka :
+`decideWatch` has five inputs, belonging to three contexts. **No synchronous call between services
+being permitted**, `streaming` keeps a **local projection** fed by Kafka:
 
-| Entrée | Source | Arrive par |
+| Input | Source | Arrives via |
 |---|---|---|
-| possession d'une place | `ticketing` | `ticketing.seat.activated.v1` / `.cancelled` |
-| formule et `opens[]`, plafond d'écrans | `ticketing` | `ticketing.subscription.changed.v1` |
-| état de la date et ses bornes | `catalog` | `catalog.date.scheduled.v1` / `.rescheduled` / `.outcome_declared` |
-| politique et fenêtre de rediffusion | `catalog` | `catalog.date.replay_policy_set.v1` |
-| droits territoriaux | `catalog` | `catalog.date.rights_changed.v1` |
+| holding a seat | `ticketing` | `ticketing.seat.activated.v1` / `.cancelled` |
+| plan and `opens[]`, screen ceiling | `ticketing` | `ticketing.subscription.changed.v1` |
+| the date's state and its bounds | `catalog` | `catalog.date.scheduled.v1` / `.rescheduled` / `.outcome_declared` |
+| replay policy and window | `catalog` | `catalog.date.replay_policy_set.v1` |
+| territorial rights | `catalog` | `catalog.date.rights_changed.v1` |
 
-C'est **la seule projection du système qui porte une autorité** — les sept autres
-(`data-model.md` §4) alimentent un affichage, celle-ci décide d'un droit — et elle est assumée
-parce que les deux alternatives sont pires : un appel synchrone entre services est interdit, et un
-droit décidé par le BFF n'a aucune autorité — il ne produit pas de jeton.
+This is **the only projection in the system that carries authority** — the seven others
+(`data-model.md` §4) feed a display, this one decides an entitlement — and it is owned because both
+alternatives are worse: a synchronous call between services is forbidden, and an entitlement decided
+by the BFF has no authority — it produces no token.
 
-**Fraîcheur tolérée : ≤ 5 s.** Au-delà, l'alerte `read_model_staleness_seconds` de
-`context-map.md` §11 se déclenche. Et le pays du spectateur est **résolu à chaque ouverture**, pas
-projeté : il change entre deux lectures (déplacement, itinérance, réseau d'entreprise), et sur
-mobile ce délai se compte en heures.
+**Freshness tolerated: ≤ 5 s.** Beyond that, `context-map.md` §11's `read_model_staleness_seconds`
+alert fires. And the viewer's country is **resolved at every opening**, not projected: it changes
+between two reads (travel, roaming, corporate network), and on mobile that gap is measured in hours.
 
-**Le droit est revérifié au démarrage de la lecture, jamais hérité du catalogue.** Le verdict servi
-sur une carte est **indicatif et non opposable**, et le contrat le déclare tel.
+**The entitlement is re-checked when playback starts, never inherited from the catalogue.** The
+verdict served on a card is **indicative and not binding**, and the contract says so.
 
 ---
 
-## 6. L'ingestion — l'autre bout du même problème
+## 6. Ingest — the other end of the same problem
 
-Le droit de **lire** et le droit de **diffuser** sont deux choses, mais la discipline est la même :
-une vérification synchrone **avant** d'accepter quoi que ce soit.
+The right to **watch** and the right to **broadcast** are two things, but the discipline is the same:
+a synchronous check **before** accepting anything.
 
-| Mécanisme | Rôle |
+| Mechanism | Role |
 |---|---|
-| **authentification HTTP externe** du serveur média → API NestJS | **synchrone, AVANT acceptation du flux** : jeton, session, propriétaire, expiration, quota |
-| crochets `runOnOnline` / `runOnOffline` / `runOnRead` | **cycle de vie seulement** : ils signalent l'état, ils ne décident de rien |
-| métriques Prometheus | surveiller et couper, **jamais autoriser** |
+| the media server's **external HTTP authentication** → NestJS API | **synchronous, BEFORE the feed is accepted**: token, session, owner, expiry, quota |
+| `runOnOnline` / `runOnOffline` / `runOnRead` hooks | **lifecycle only**: they report state, they decide nothing |
+| Prometheus metrics | monitor and cut, **never authorise** |
 
-**Les crochets ne servent pas à autoriser** — `streaming.md` est explicite, et le motif est concret :
-`runOnConnect` est un événement de cycle de vie, donc **un flux peut entrer avant d'être refusé**.
+**The hooks are not for authorising** — `streaming.md` is explicit, and the reason is concrete:
+`runOnConnect` is a lifecycle event, so **a feed can get in before being refused**.
 
-**La clé de flux est un secret affiché sur un téléphone, dans une salle, souvent devant un
-prestataire.** D'où quatre garanties, déjà posées dans `data-model.md` §5.2 : jamais dans une
-charge utile de liste, révélation par une commande distincte et auditée, renouvellement immédiat
-avec arrêt instantané de l'ancienne, et `Cache-Control: no-store` — la clé ne doit se retrouver ni
-dans le cache HTTP du téléphone ni dans un instantané d'application pris par le système au passage
-en arrière-plan.
+**The stream key is a secret displayed on a phone, in a venue, often in front of a contractor.**
+Hence four guarantees, already stated in `data-model.md` §5.2: never in a list payload, revealed by
+a distinct and audited command, rotated immediately with the old one stopping instantly, and
+`Cache-Control: no-store` — the key must end up neither in the phone's HTTP cache nor in an
+application snapshot the system takes when it goes to the background.
 
 ---
 
-## 7. La limite assumée
+## 7. The limit we own
 
-> **Rien de ce qui précède n'empêche un enregistrement d'écran.**
+> **Nothing above prevents a screen recording.**
 
-Un spectateur qui filme son téléviseur, ou qui capture son écran avec un logiciel, obtient une
-copie. Aucune signature de segment, aucune limite de sessions et aucune rotation de clé n'y change
-quoi que ce soit : ces mécanismes protègent **l'accès**, pas la **copie**.
+A viewer who films their television, or who captures their screen with software, gets a copy. No
+segment signature, no session limit and no key rotation changes that: those mechanisms protect
+**access**, not **copying**.
 
-Seul un **DRM** avec chemin média protégé et sortie contrôlée (HDCP) le ferait, et encore : contre
-une caméra pointée sur un écran, rien ne le fait.
+Only **DRM** with a protected media path and controlled output (HDCP) would do it, and even then:
+against a camera pointed at a screen, nothing does.
 
-**Le DRM est hors de proportion ici**, et pour trois raisons qu'on peut écrire :
+**DRM is out of proportion here**, for three reasons we can write down:
 
-1. **Le coût.** Une licence Widevine/PlayReady/FairPlay, un serveur de licences, un empaquetage
-   chiffré par rendition et un plan de test sur un parc de téléviseurs hétérogène — pour une
-   plateforme de spectacle vivant tenue par une personne seule.
-2. **Le rendement.** La valeur d'une captation de spectacle vivant est très largement dans
-   l'instant : le direct, le tchat, le public. Une copie basse définition d'un plan fixe de théâtre
-   n'entame ni la billetterie ni la rediffusion.
-3. **Le vrai risque n'est pas la copie, c'est le partage de compte** — et c'est exactement ce que
-   la limite de sessions simultanées traite, sans DRM et sans heuristique d'adresse.
+1. **The cost.** A Widevine/PlayReady/FairPlay licence, a licence server, encrypted packaging per
+   rendition and a test plan across a heterogeneous television fleet — for a live-performance
+   platform run by one person.
+2. **The return.** The value of a live-performance capture is very largely in the moment: the live
+   show, the chat, the audience. A low-definition copy of a static theatre shot dents neither the
+   box office nor the replay.
+3. **The real risk is not copying, it is account sharing** — and that is exactly what the
+   concurrent-session limit deals with, without DRM and without an address heuristic.
 
-**Ce qu'on garde du DRM malgré tout** : le champ `drm_system` et le plafond `qmax` du
-`PlaybackTicket`. Ils ne sont pas là pour empêcher la copie ; ils sont là parce que **le parc
-l'exige** — un lecteur qui devine son système de DRM se trompe, et une clé HDMI qui n'a que du
-Widevine logiciel doit recevoir du SD plutôt qu'un refus.
+**What we keep of DRM anyway**: the `PlaybackTicket`'s `drm_system` field and its `qmax` ceiling.
+They are not there to prevent copying; they are there because **the fleet requires them** — a player
+that guesses its DRM system gets it wrong, and an HDMI stick with only software Widevine must
+receive SD rather than a refusal.
 
-C'est ce genre d'arbitrage — **une architecture composable, instanciée au minimum viable, avec un
-paragraphe expliquant ce qui n'a délibérément pas été déployé et pourquoi** — que `streaming.md`
-demande d'écrire, et qui envoie un signal plus fort qu'une tentative inachevée de tout monter.
+It is this kind of judgement — **a composable architecture, instantiated at the minimum viable
+level, with a paragraph explaining what has deliberately not been deployed and why** — that
+`streaming.md` asks to be written, and that sends a stronger signal than an unfinished attempt to
+stand everything up.

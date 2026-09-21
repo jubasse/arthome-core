@@ -1,14 +1,19 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "_comment": [
-    "Verification de types du paquet, tests compris. La CONSTRUCTION est dans",
-    "tsconfig.build.json : elle seule emet, et elle exclut les tests.",
-    "lib.json porte isolatedDeclarations et stableTypeOrdering — les deux options",
-    "qui rendent les .d.ts publies lisibles par TypeScript 6 comme par 7."
+    "Type-checking for the package, tests included. The BUILD is in",
+    "tsconfig.build.json: that one alone emits, and it excludes the tests.",
+    "lib.json carries isolatedDeclarations and stableTypeOrdering — the two options",
+    "that make the published .d.ts readable by TypeScript 6 and by 7 alike.",
+    "",
+    "vitest.config.ts is in `include` on purpose: it is TypeScript this package owns,",
+    "and typescript-eslint's project service refuses to lint a file no tsconfig claims",
+    "('not found by the project service'). It is excluded from the BUILD, not from the",
+    "type check — a config file that nothing type-checks is a config file that drifts."
   ],
   "extends": "@arthome/tooling/tsconfig/lib.json",
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "types/**/*.d.ts", "vitest.config.ts"]
 }
