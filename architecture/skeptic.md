@@ -1,203 +1,201 @@
-# Revue adverse de l'architecture
+# Adversarial review of the architecture
 
-> **Auteur** : `skeptic`, sixième et dernier regard. **Date** : 21 septembre 2026.
-> Lu sans les angles morts des sept autres : `architecture/*`, `openapi/*`, `proto/*`,
-> `needs/*` (y compris les Confrontations en cours d'écriture), `DECISIONS.md`, et
-> `shared/` du dossier de passation.
+> **Author**: `skeptic`, sixth and last pass. **Date**: 21 September 2026.
+> Read without the blind spots of the other seven: `architecture/*`, `openapi/*`, `proto/*`,
+> `needs/*` (including the Confrontations being written as I read), `DECISIONS.md`, and
+> `shared/` from the handoff folder.
 >
-> **Ce que je ne refais pas.** Les cinq surfaces écrivent leur Confrontation en ce moment
-> même et couvrent déjà les manques d'écran : `storefront-tv` C1–C4, `storefront-web`
-> ❶–❻, `storefront-mobile` C1–C5, `studio-web` A–J. Je ne les répète pas. Ce document ne
-> porte que ce qu'une surface ne peut pas voir : les frontières entre contextes, le dos
-> des contrats, et les nombres qui ont été recopiés.
+> **What I do not redo.** The five surfaces are writing their Confrontation right now and
+> already cover the screen-level gaps: `storefront-tv` C1–C4, `storefront-web` ❶–❻,
+> `storefront-mobile` C1–C5, `studio-web` A–J. I do not repeat them. This document carries
+> only what a surface cannot see: the boundaries between contexts, the back of the
+> contracts, and the numbers that were copied.
 >
-> **Méthode.** Chaque attaque cite le fichier et la ligne. Les capacités de fournisseur
-> sont vérifiées en ligne aujourd'hui, jamais de mémoire — ma connaissance interne
-> s'arrête en mai 2026.
+> **Method.** Every attack cites the file and the line. Vendor capabilities are verified
+> online today, never from memory — my internal knowledge stops in May 2026.
 
 ---
 
-## Ce qui casse
+## What breaks
 
-Classé par gravité. Le critère : un invariant faux, une donnée perdue, une garantie servie
-au contrat qui n'est pas tenue.
+Ordered by severity. The test: a false invariant, lost data, or a guarantee served in the
+contract that is not held.
 
 ---
 
-### K1 — `on_behalf_of` fait de l'artiste le marchand d'enregistrement, et détruit le fondement de D-015
+### K1 — `on_behalf_of` makes the artist the merchant of record, and destroys the foundation of D-015
 
-**La gravité : c'est de l'argent et du droit, et la preuve est chez Stripe.**
+**The severity: this is money and law, and the proof is Stripe's own.**
 
-`adr-payments.md` §3, lignes 72–78 :
+`adr-payments.md` §3, lines 72–78:
 
 ```
 PaymentIntent
-  ├─ créé sur le compte PLATEFORME               (nous sommes le marchand d'enregistrement)
-  ├─ on_behalf_of        = acct_<chaîne>          (règlement, devise et rattachement fiscal)
+  ├─ created on the PLATFORM account             (we are the merchant of record)
+  ├─ on_behalf_of        = acct_<channel>         (settlement, currency, tax attachment)
 ```
 
-Les deux lignes se contredisent. Vérifié aujourd'hui sur `docs.stripe.com/connect/charges`,
-section *« Indirect charges using the on_behalf_of parameter »*, citation exacte :
+The two lines contradict each other. Verified today on `docs.stripe.com/connect/charges`,
+section *"Indirect charges using the on_behalf_of parameter"*, exact quote:
 
-> **« To make the connected account the business of record for the payment, use the
-> `on_behalf_of` parameter. »**
+> **"To make the connected account the business of record for the payment, use the
+> `on_behalf_of` parameter."**
 
-Et sur `docs.stripe.com/connect/merchant-of-record`, section *« Define the merchant of
-record »*, citation exacte :
+And on `docs.stripe.com/connect/merchant-of-record`, section *"Define the merchant of
+record"*, exact quote:
 
-> « **Indirect charges using the `on_behalf_of` parameter:** The merchant of record is the
+> "**Indirect charges using the `on_behalf_of` parameter:** The merchant of record is the
 > **connected account**. […] **Indirect charges without using the `on_behalf_of`
-> parameter:** The merchant of record is the **platform**. »
+> parameter:** The merchant of record is the **platform**."
 
-La même page définit le MoR comme *« the legal entity responsible for facilitating the sale
-[…] that handles any applicable regulations and liabilities, **including sales taxes** »*.
-Et `charges.md` précise que `on_behalf_of` *« Uses the connected account's statement
-descriptor »* et *« Uses the connected account's address and phone number (rather than the
-platform's) on the customer's statement »*.
+The same page defines the MoR as *"the legal entity responsible for facilitating the sale
+[…] that handles any applicable regulations and liabilities, **including sales taxes**"*.
+And `charges.md` states that `on_behalf_of` *"Uses the connected account's statement
+descriptor"* and *"Uses the connected account's address and phone number (rather than the
+platform's) on the customer's statement"*.
 
-**Trois conséquences, toutes dans le document lui-même :**
+**Three consequences, all of them inside the document itself:**
 
-1. **Le modèle A de §5.3 perd ses indices.** D-015 est acté sur « six indices convergents »,
-   dont *« le spectateur […] ne voit jamais son nom [de l'artiste] sur un moyen de
-   paiement »* (§5.3, ligne 204). Avec `on_behalf_of`, le relevé bancaire du spectateur porte
-   le descripteur de l'artiste, son adresse et son téléphone. L'indice est inversé **par notre
-   propre configuration**.
-2. **`destination charges` est retenu contre `direct charges` au motif que ce dernier ferait
-   de l'artiste le marchand d'enregistrement** (§3, ligne 84). Avec `on_behalf_of`, on obtient
-   exactement le résultat qu'on écartait — en gardant le passif : la même page Stripe ajoute
-   *« if a connected account's balance becomes negative, your platform is ultimately
-   responsible for covering any losses »*.
-3. **Et on ne peut pas simplement retirer le paramètre pour les marchés déclarés.**
-   `charges.md` : *« Destination charges support cross-region funds flows […] only in certain
-   regions. For other regions, the platform and connected account must be in the same region
-   **unless using `on_behalf_of`** »*. Or `shared/catalogue.json` `geography.billingMarkets`
-   déclare `eur`, `chf`, `cad`. Une chaîne suisse ou canadienne **oblige** donc à
-   `on_behalf_of`, donc rend l'artiste MoR, donc bascule ces ventes-là en modèle B —
-   pendant que les ventes en zone euro restent en modèle A. **Deux modèles fiscaux dans la
-   même table de versements, décidés par la géographie du compte connecté.**
+1. **Model A in §5.3 loses its evidence.** D-015 is settled on "six converging indications",
+   one of which is *"the viewer […] never sees [the artist's] name on a payment method"*
+   (§5.3, line 204). With `on_behalf_of`, the viewer's bank statement carries the artist's
+   descriptor, address and phone number. The indication is inverted **by our own
+   configuration**.
+2. **`destination charges` is chosen over `direct charges` on the grounds that the latter
+   would make the artist the merchant of record** (§3, line 84). With `on_behalf_of` we get
+   exactly the outcome we were avoiding — while keeping the liability: the same Stripe page
+   adds *"if a connected account's balance becomes negative, your platform is ultimately
+   responsible for covering any losses"*.
+3. **And we cannot simply drop the parameter for the declared markets.** `charges.md`:
+   *"Destination charges support cross-region funds flows […] only in certain regions. For
+   other regions, the platform and connected account must be in the same region **unless
+   using `on_behalf_of`**"*. `shared/catalogue.json` `geography.billingMarkets` declares
+   `eur`, `chf`, `cad`. A Swiss or Canadian channel therefore **forces** `on_behalf_of`,
+   which makes the artist the MoR, which flips those sales into model B — while euro-zone
+   sales stay in model A. **Two tax models in the same payout table, decided by the
+   geography of the connected account.**
 
-Ce n'est pas une impossibilité de D-015 : le modèle A reste atteignable, `on_behalf_of` en
-moins. C'est une **incompatibilité entre D-015 et le §3 du même document**, et elle est
-invisible parce que les deux paragraphes sont à quatre pages d'écart.
+This is not an impossibility for D-015: model A remains reachable, minus `on_behalf_of`. It
+is an **incompatibility between D-015 and §3 of the same document**, and it is invisible
+because the two paragraphs are four pages apart.
 
 ---
 
-### K2 — La TVA est ventilée par **marché de facturation**, mais le taux retenu est celui du **pays du spectateur** — et ce pays n'est enregistré nulle part
+### K2 — VAT is broken down by **billing market**, but the rate chosen is that of the **viewer's country** — and that country is recorded nowhere
 
-**La gravité : c'est le seul choix que `adr-payments.md` §5.0 déclare irréversible, et il
-est fait sur la mauvaise clé.**
+**The severity: this is the one choice `adr-payments.md` §5.0 declares irreversible, and it
+is made on the wrong key.**
 
-`adr-payments.md` §5.0, lignes 140–147 :
+`adr-payments.md` §5.0, lines 140–147:
 
-> **« Le seul choix réellement irréversible de tout ce chapitre est de porter — ou non — une
-> ventilation de TVA par marché. »**
+> **"The only genuinely irreversible choice in this whole chapter is whether or not to carry
+> a VAT breakdown by market."**
 
-`adr-payments.md` §5.4, ligne 212 : `taux = celui du pays du SPECTATEUR`.
+`adr-payments.md` §5.4, line 212: `rate = that of the VIEWER's country`.
 
-La forme gravée, `proto/arthome/ticketing/v1/events.proto:116-124` :
+The form that gets set in stone, `proto/arthome/ticketing/v1/events.proto:116-124`:
 
 ```proto
 message VatLine {
-  // « eur », « chf », « cad ».
+  // "eur", "chf", "cad".
   string market_id = 1;
   uint32 rate_bps = 2;
   ...
 }
 ```
 
-`data-model.md:757` : `vat_breakdown[] { market_id, rate, base_minor, amount_minor }`.
+`data-model.md:757`: `vat_breakdown[] { market_id, rate, base_minor, amount_minor }`.
 
-**La clé est le marché — trois valeurs. La règle est le pays — vingt-sept rien que dans
-`eur`.** Un spectateur français (5,5 %) et un spectateur belge règlent tous deux dans le
-marché `eur`, à deux taux différents. Une ventilation dont la clé est `market_id` ne peut
-pas porter deux lignes `eur` sans que `market_id` cesse d'être une clé.
+**The key is the market — three values. The rule is the country — twenty-seven inside `eur`
+alone.** A French viewer (5.5%) and a Belgian viewer both settle in the `eur` market, at two
+different rates. A breakdown keyed on `market_id` cannot carry two `eur` lines without
+`market_id` ceasing to be a key.
 
-**Et le fait qui décide du taux n'est publié nulle part.** `OrderPaid`
-(`proto/arthome/ticketing/v1/events.proto:223-251`) est l'événement qui porte « la matière du
-droit à versement » vers `payouts`. Il porte `gross_ttc`, `vat[]`, `service_fee`, `discount`,
-`credit_applied`, `payment_intent_ref` — **et aucun pays d'acheteur**. Les deux seuls champs
-`country` de tout `proto/` sont celui de l'artiste (`catalog`) et celui du compte à
-l'inscription (`identity`) — et `adr-stream-entitlement.md:264` dit lui-même qu'un pays
-stocké est faux : *« le pays du spectateur est résolu à chaque ouverture, pas projeté : il
-change entre deux lectures »*. Côté HTTP, `countryCode` n'apparaît que sur l'adresse de
-**livraison** de la marchandise (`openapi/storefront.yaml:1280`), sur la salle (3993) et sur
-l'artiste (4288).
+**And the fact that decides the rate is published nowhere.** `OrderPaid`
+(`proto/arthome/ticketing/v1/events.proto:223-251`) is the event that carries "the raw
+material of the payout entitlement" to `payouts`. It carries `gross_ttc`, `vat[]`,
+`service_fee`, `discount`, `credit_applied`, `payment_intent_ref` — **and no buyer
+country**. The only two `country` fields in all of `proto/` are the artist's (`catalog`) and
+the account's at registration (`identity`) — and `adr-stream-entitlement.md:264` says itself
+that a stored country is wrong: *"the viewer's country is resolved at every open, not
+projected: it changes between two viewings"*. On the HTTP side, `countryCode` appears only
+on the merchandise **shipping** address (`openapi/storefront.yaml:1280`), on the venue
+(3993) and on the artist (4288).
 
-**Le document décrit exactement ce défaut, puis le commet un cran plus bas.** §5.0,
-lignes 154–157 :
+**The document describes this exact defect, then commits it one level down.** §5.0,
+lines 154–157:
 
-> « Un champ `vat_amount` scalaire unique aurait figé le défaut. Le jour où l'on découvre
-> qu'il faut ventiler — **parce que le taux est celui de l'acheteur** — il faut reconstruire
-> l'assiette de chaque ligne passée […]. Ce n'est plus une migration, c'est une reconstitution
-> comptable. »
+> "A single scalar `vat_amount` field would have frozen the defect. The day we discover we
+> have to break it down — **because the rate is the buyer's** — we have to rebuild the
+> taxable base of every past line […]. That is no longer a migration, it is an accounting
+> reconstruction."
 
-Remplacez « scalaire unique » par « par marché » : le paragraphe reste vrai mot pour mot. Et
-la reconstitution sera **impossible**, pas seulement coûteuse, puisque le pays n'a jamais été
-écrit.
+Replace "single scalar" with "by market": the paragraph stays true word for word. And the
+reconstruction will be **impossible**, not merely expensive, since the country was never
+written down.
 
 ---
 
-### K3 — « Déconnecter cet appareil coupe la lecture en ≤ 60 s » est faux, et le 60 est servi au contrat
+### K3 — "signing out this device stops playback within ≤ 60 s" is false, and the 60 is served in the contract
 
-**La gravité : une garantie de sécurité, chiffrée, publiée aux cinq surfaces, contredite par
-l'ADR qui possède le mécanisme.**
+**The severity: a security guarantee, with a number, published to all five surfaces, and
+contradicted by the ADR that owns the mechanism.**
 
-Le jeton de lecture vit **120 s** et se renouvelle toutes les **45 s**
-(`adr-stream-entitlement.md:56,59`). La signature de préfixe du CDN *« expire avec le jeton »*
-(§3.2, ligne 103). La révocation ne révoque pas le jeton : elle **refuse le renouvellement
-suivant** (§3.3, ligne 163).
+The playback token lives **120 s** and is renewed every **45 s**
+(`adr-stream-entitlement.md:56,59`). The CDN prefix signature *"expires with the token"*
+(§3.2, line 103). Revocation does not revoke the token: it **refuses the next renewal**
+(§3.3, line 163).
 
-Donc la fenêtre pendant laquelle un flux continue d'être servi par la périphérie est la durée
-de vie du **jeton en main**, soit jusqu'à **120 s** — pas l'intervalle de renouvellement. Un
-client qui ignore le refus (ou qui, tout simplement, ne s'arrête pas) continue de tirer des
-segments signés valides.
+So the window during which a stream keeps being served by the edge is the lifetime of the
+token **already in hand**, i.e. up to **120 s** — not the renewal interval. A client that
+ignores the refusal (or that simply does not stop) keeps pulling valid signed segments.
 
-**Un seul document le dit juste.** `adr-auth.md:520` :
+**Exactly one document gets it right.** `adr-auth.md:520`:
 
-> « **Latence maximale = retard de l'événement + 120 s** — le cas où le jeton vient d'être
-> renouvelé à l'instant de la révocation ; en régime courant, 45 à 75 s. »
+> "**Maximum latency = event lag + 120 s** — the case where the token was renewed at the
+> very instant of revocation; in steady state, 45 to 75 s."
 
-**Cinq endroits disent 60 s** :
+**Five places say 60 s**:
 
-| Où | Ce qui est écrit |
+| Where | What is written |
 |---|---|
-| `adr-stream-entitlement.md:164` | « Effet visible au prochain renouvellement, **≤ 60 s** » |
-| `context-map.md:559` | « Effet visible à la lecture : ≤ 60 s » |
-| `data-model.md:75` | « effet visible ≤ 60 s » |
-| `answers-to-surfaces.md:89` (réponse à `storefront-web` Q25) | « **Oui, ≤ 60 s** » |
-| `definition-of-done.md:286` | « la seule façon de vérifier la latence **≤ 60 s** » |
+| `adr-stream-entitlement.md:164` | "Visible effect at the next renewal, **≤ 60 s**" |
+| `context-map.md:559` | "Visible effect on playback: ≤ 60 s" |
+| `data-model.md:75` | "visible effect ≤ 60 s" |
+| `answers-to-surfaces.md:89` (answer to `storefront-web` Q25) | "**Yes, ≤ 60 s**" |
+| `definition-of-done.md:286` | "the only way to verify the **≤ 60 s** latency" |
 
-Et le contrat **sert le nombre** : `openapi/storefront.yaml:3011`,
-`data: { devices: [], playbackCutWithinSec: 60 }`, sous une description qui promet
-*« Un effet observable sur l'appareil visé, en 60 secondes au plus »* (ligne 2976).
+And the contract **serves the number**: `openapi/storefront.yaml:3011`,
+`data: { devices: [], playbackCutWithinSec: 60 }`, under a description promising *"An
+observable effect on the targeted device, within 60 seconds at most"* (line 2976).
 
-**Pourquoi ça casse et ne gêne pas.** `definition-of-done.md:286` fait écrire un test
-d'intégration dont l'énoncé est « la latence ≤ 60 s ». Ce test passera : il constatera que le
-**renouvellement** est refusé au bout de 45 s. Il n'aura pas mesuré ce que la phrase promet,
-qui est l'arrêt de la lecture. **Une garantie fausse avec un test vert est pire qu'une
-garantie absente.**
+**Why this breaks rather than hurts.** `definition-of-done.md:286` makes someone write an
+integration test whose title is "latency ≤ 60 s". That test will pass: it will observe that
+the **renewal** is refused after 45 s. It will not have measured what the sentence promises,
+which is playback stopping. **A false guarantee with a green test is worse than no guarantee
+at all.**
 
-C'est la règle critique 15 violée sur une constante de sécurité : la constante a deux
-propriétaires et deux valeurs, et c'est la mauvaise qui a été recopiée quatre fois — parce
-que c'est celle qui satisfait l'exigence de `storefront-tv` (`needs/storefront-tv.md:653` :
-*« Au-delà d'une minute, on regarde un flux auquel on n'a plus droit. Je demande ≤ 60 s »*).
-**Le nombre plausible a été choisi parce qu'il faisait plaisir à la question.**
+This is critical rule 15 violated on a security constant: the constant has two owners and
+two values, and the wrong one was copied four times — because it is the one that satisfies
+`storefront-tv`'s requirement (`needs/storefront-tv.md:653`: *"Beyond a minute, you are
+watching a stream you no longer have the right to. I ask for ≤ 60 s"*). **The plausible
+number was chosen because it pleased the question.**
 
 ---
 
-### K4 — Deux vocabulaires d'événements parallèles, et seize types d'agrégat sur trente n'ont pas de sujet
+### K4 — Two parallel event vocabularies, and sixteen of thirty aggregate types have no topic
 
-**La gravité : c'est la clé de routage de toute l'architecture événementielle, et elle est
-déclarée deux fois, différemment.**
+**The severity: this is the routing key of the entire event architecture, and it is declared
+twice, differently.**
 
-`events.md` §1.3 pose que l'en-tête `type` vaut `<context>.<aggregate>.<event>.v<N>` et qu'il
-« route le handler dans un sujet multi-types ». `proto/` suit cette forme
-(`DateSalesAvailabilityChanged`, `SeatActivated`, `DeviceRevoked`…).
+`events.md` §1.3 establishes that the `type` header is
+`<context>.<aggregate>.<event>.v<N>` and that it "routes the handler inside a multi-type
+topic". `proto/` follows that form (`DateSalesAvailabilityChanged`, `SeatActivated`,
+`DeviceRevoked`…).
 
-**`context-map.md` et `data-model.md` utilisent une seconde forme, qui n'existe dans aucun
-schéma :**
+**`context-map.md` and `data-model.md` use a second form, which exists in no schema:**
 
-| `events.md` + `proto/` (autorité) | `context-map.md` / `data-model.md` |
+| `events.md` + `proto/` (authority) | `context-map.md` / `data-model.md` |
 |---|---|
 | `ticketing.date_sales.availability_changed.v1` | `ticketing.date_availability_changed` (CM:348, DM:538,543) |
 | `ticketing.seat.activated.v1` | `ticketing.seat_activated` (DM:547) |
@@ -210,23 +208,23 @@ schéma :**
 | `streaming.run.state_changed.v1` | `streaming.run_state_changed` (CM:348) |
 | `payouts.payout.state_changed.v1` | `payouts.payout_state_changed` (DM:551) |
 
-Dix-huit occurrences au total. C'est E2 dans sa définition exacte — une table littérale
-parallèle — commise sur la seule valeur dont dépend l'arrivée d'un message chez son handler.
+Eighteen occurrences in total. This is E2 by its exact definition — a parallel literal table
+— committed on the one value that decides whether a message reaches its handler.
 
-**Pire : un des noms ne désigne rien.** `data-model.md:547` alimente
-`entitlement_projection` — la projection qui décide du droit de lire — par
-`catalog.date_published`. Cet événement **n'existe ni dans `events.md` §4.2, ni dans
-`proto/arthome/catalog/v1/events.proto`**. Le catalogue porte `date.drafted` et
-`date.scheduled` ; il n'y a pas de `date.published`. L'exemple canonique de `events.md` §1.1
-(ligne 20) utilise d'ailleurs lui aussi `type = "catalog.date.published.v1"` — un type absent
-de son propre catalogue quinze lignes plus bas.
+**Worse: one of the names denotes nothing.** `data-model.md:547` feeds
+`entitlement_projection` — the projection that decides the right to watch — from
+`catalog.date_published`. That event **exists neither in `events.md` §4.2 nor in
+`proto/arthome/catalog/v1/events.proto`**. The catalogue carries `date.drafted` and
+`date.scheduled`; there is no `date.published`. The canonical example in `events.md` §1.1
+(line 20) likewise uses `type = "catalog.date.published.v1"` — a type absent from its own
+catalogue fifteen lines further down.
 
-**Et le tableau des sujets est incomplet d'un facteur deux.** `events.md` §1.1 pose la règle :
-`aggregatetype` → sujet, un sujet **par type d'agrégat**, et conclut « **14 sujets**, pas
-quatre-vingts ». Appliquée au catalogue du §4, la règle produit **30 types d'agrégat**.
-Seize n'ont aucun sujet déclaré :
+**And the topic table is short by a factor of two.** `events.md` §1.1 states the rule:
+`aggregatetype` → topic, one topic **per aggregate type**, and concludes "**14 topics**, not
+eighty". Applied to the §4 catalogue, the rule yields **30 aggregate types**. Sixteen have no
+declared topic:
 
-| Contexte | Types d'agrégat sans sujet |
+| Context | Aggregate types with no topic |
 |---|---|
 | `identity` | `artist`, `date_access`, `rights_version` |
 | `catalog` | **`publication`** |
@@ -234,528 +232,523 @@ Seize n'ont aucun sujet déclaré :
 | `streaming` | `incident`, `replay`, `chapter`, `viewer_count` |
 | `chat` | `date_chat_policy`, `audience` |
 | `payouts` | `bank_change`, `reconciliation` |
-| `notifications` | `delivery` — **le contexte n'a aucun sujet du tout** |
+| `notifications` | `delivery` — **the context has no topic at all** |
 
-Les deux en gras sont les plus coûteux :
+The two in bold are the expensive ones:
 
-- **`ticketing.seat`** porte `seat.activated`, l'événement qui crée le droit de lire
-  (`entitlement_projection`). Aucun sujet, donc aucune clé, aucun nombre de partitions, aucun
-  `groupId`, et aucun canal AsyncAPI — alors que `definition-of-done.md` §3.1 génère les
-  canaux **depuis ce tableau**.
-- **`catalog.publication`** porte `publication.engaged`, qui verrouille les tarifs chez
-  `ticketing` et le régime de tchat chez `chat`. S'il vit sur son propre sujet avec
-  `publication_id` pour clé, il **perd son ordre relatif** avec `catalog.date.scheduled`, qui
-  est clé `date_id`. C'est exactement l'argument que `events.md` §1.1 (lignes 26–29) donne
-  pour refuser un sujet par événement : *« un consommateur pourrait appliquer une issue avant
-  la publication qui la crée »*. La règle est écrite, puis l'agrégat qui la viole est publié.
+- **`ticketing.seat`** carries `seat.activated`, the event that creates the right to watch
+  (`entitlement_projection`). No topic, therefore no key, no partition count, no `groupId`,
+  and no AsyncAPI channel — while `definition-of-done.md` §3.1 generates the channels
+  **from that table**.
+- **`catalog.publication`** carries `publication.engaged`, which locks prices in `ticketing`
+  and the chat regime in `chat`. If it lives on its own topic keyed by `publication_id`, it
+  **loses its relative order** with `catalog.date.scheduled`, which is keyed by `date_id`.
+  That is precisely the argument `events.md` §1.1 (lines 26–29) gives for refusing one topic
+  per event: *"a consumer could apply an outcome before the publication that creates it"*.
+  The rule is written, then the aggregate that violates it is published.
 
-Enfin, `context-map.md:889` mesure le retard sur un sujet nommé
-`arthome.ticketing.seat_order`, dix-septième nom qui n'est dans aucune des deux listes.
-
----
-
-### K5 — `signOutProfile` ne coupe aucune lecture, et rien ne le dit
-
-**La gravité : le cas d'usage qui a justifié la séparation `Device` / `DeviceSession` n'est
-pas servi.**
-
-`context-map.md` §7.1 et `data-model.md` §1.3 distinguent deux gestes :
-
-- **révoquer l'appareil** → supprime le `Device`, toutes ses sessions **et ses baux de
-  lecture**, publie `identity.device.revoked.v1`, que `streaming` consomme ;
-- **déconnecter un profil** → ferme une `DeviceSession`, *« les autres comptes restent
-  connectés »*.
-
-`openapi/storefront.yaml:3014-3032`, `signOutProfile` : `x-arthome-upstream: [identity]`,
-réponse = `ViewerContext`. **Aucun événement, aucune mention de la lecture.** Le catalogue
-d'événements ne contient aucun `identity.device_session.closed` ; `DeviceRevoked`
-(`proto/arthome/identity/v1/events.proto:105`) ne porte que `device_id` et `account_id` —
-**il n'y a pas de grain « profil »**. `streaming` n'a donc aucun moyen d'apprendre qu'un
-profil a été déconnecté d'un appareil.
-
-**Conséquence, sur le téléviseur partagé qui est le motif même de la coupe.** Cinq profils sur
-le téléviseur du salon. Quelqu'un regarde sous votre profil. Vous faites « déconnecter ce
-profil » depuis le web. Le bail `PlaybackSession (account, profile, device, date)` continue de
-se renouveler toutes les 45 s contre `entitlement_projection`, qui ne connaît ni les sessions
-ni les appareils. **La lecture ne s'arrête pas.** Et comme `concurrentStreamsAllowed` vaut 1
-hors `premium` (`openapi/storefront.yaml:645`), vous restez bloqué sur votre propre compte —
-le défaut exact que `storefront-mobile` Q5 et `storefront-tv` Q9c demandaient d'éviter. La
-seule issue est `revokeDevice`, qui déconnecte les cinq profils.
-
-**Et `adr-auth.md:518-519` entretient la confusion** en écrivant que « Déconnecter cet
-appareil » révoque la `DeviceSession`, qui publie `session.revoked` / `device.revoked` :
-`session.revoked` n'existe nulle part, et les deux gestes y sont confondus dans la phrase même
-qui prétend les articuler.
+Finally, `context-map.md:889` measures lag on a topic named `arthome.ticketing.seat_order`,
+a seventeenth name that appears in neither list.
 
 ---
 
-### K6 — `plan.opens[]` est écrit en `snake_case` au contrat et en `kebab-case` dans la source qui fait autorité
+### K5 — `signOutProfile` stops no playback, and nothing says so
 
-**La gravité : c'est le vocabulaire qui conditionne le droit de lire, et `adr-auth.md` §7.1
-qualifie lui-même sa corruption de « défaut d'autorisation, pas défaut d'affichage ».**
+**The severity: the use case that justified splitting `Device` from `DeviceSession` is not
+served.**
 
-`shared/catalogue.json`, `plans[]` (source déclarée faisant autorité par `data-model.md` §0 :
-*« `shared/` fait autorité sur les règles et le vocabulaire »*) :
+`context-map.md` §7.1 and `data-model.md` §1.3 distinguish two gestures:
+
+- **revoke the device** → deletes the `Device`, all its sessions **and its playback
+  leases**, publishes `identity.device.revoked.v1`, which `streaming` consumes;
+- **sign out a profile** → closes a `DeviceSession`, *"the other accounts stay signed in"*.
+
+`openapi/storefront.yaml:3014-3032`, `signOutProfile`: `x-arthome-upstream: [identity]`,
+response = `ViewerContext`. **No event, no mention of playback.** The event catalogue
+contains no `identity.device_session.closed`; `DeviceRevoked`
+(`proto/arthome/identity/v1/events.proto:105`) carries only `device_id` and `account_id` —
+**there is no profile grain**. `streaming` therefore has no way of learning that a profile
+was signed out of a device.
+
+**Consequence, on the shared television that is the very reason for the split.** Five
+profiles on the living-room TV. Someone is watching under your profile. You choose "sign out
+this profile" from the web. The `PlaybackSession (account, profile, device, date)` lease
+keeps renewing every 45 s against `entitlement_projection`, which knows nothing about
+sessions or devices. **Playback does not stop.** And since `concurrentStreamsAllowed` is 1
+outside `premium` (`openapi/storefront.yaml:645`), you stay locked out of your own account —
+the exact defect `storefront-mobile` Q5 and `storefront-tv` Q9c asked us to avoid. The only
+way out is `revokeDevice`, which signs out all five profiles.
+
+**And `adr-auth.md:518-519` compounds the confusion** by writing that "sign out this device"
+revokes the `DeviceSession`, which publishes `session.revoked` / `device.revoked`:
+`session.revoked` exists nowhere, and the two gestures are conflated in the very sentence
+that claims to articulate them.
+
+---
+
+### K6 — `plan.opens[]` is written in `snake_case` in the contract and in `kebab-case` in the authoritative source
+
+**The severity: this is the vocabulary that gates the right to watch, and `adr-auth.md` §7.1
+itself calls its corruption "an authorization defect, not a display defect".**
+
+`shared/catalogue.json`, `plans[]` (the source declared authoritative by `data-model.md` §0:
+*"`shared/` is authoritative on rules and vocabulary"*):
 
 ```json
 "opens": ["browse","trailers","free-dates","replays","no-ads","one-live-month"]
 "opens": ["browse","trailers","free-dates","replays","no-ads","all-lives","multi-screen","archive"]
 ```
 
-`data-model.md:759` reprend fidèlement le kebab : « `free-dates`, `no-ads`,
-`one-live-month`, `all-lives`, `multi-screen` ».
+`data-model.md:759` faithfully reproduces the kebab: "`free-dates`, `no-ads`,
+`one-live-month`, `all-lives`, `multi-screen`".
 
-`openapi/storefront.yaml:643` et le vocabulaire fermé correspondant :
+`openapi/storefront.yaml:643` and the matching closed vocabulary:
 
 ```yaml
 opens: [browse, trailers, free_dates, replays, one_live_month]
 x-arthome-vocabulary: [all_lives, archive, browse, free_dates, multi_screen, no_ads, one_live_month, replays, trailers]
 ```
 
-`adr-stream-entitlement.md:234` écrit de son côté `PLAN_OPENING_MULTI_SCREEN`.
+`adr-stream-entitlement.md:234` writes `PLAN_OPENING_MULTI_SCREEN` on its side.
 
-Trois orthographes pour une valeur dont dépend `decideWatch`. Un
-`opens.includes('multi-screen')` sur une charge utile qui porte `multi_screen` rend `false`
-en silence : **tout le monde retombe à un écran**, ce qui est exactement la forme de E1 que
-`adr-auth.md` §7.1 décrit (`helpers.planOf()` faisant retomber tous les comptes sur `free`).
-Le contrat a corrigé le vocabulaire des **formules** et réintroduit le défaut sur celui des
-**ouvertures**.
+Three spellings for one value that `decideWatch` depends on. An
+`opens.includes('multi-screen')` against a payload carrying `multi_screen` returns `false`
+silently: **everyone falls back to one screen**, which is exactly the shape of E1 that
+`adr-auth.md` §7.1 describes (`helpers.planOf()` dropping every account back to `free`). The
+contract fixed the **plan** vocabulary and reintroduced the defect in the **openings** one.
 
-Même faute, plus discrète, sur le motif de restriction territoriale :
-`shared/catalogue.json` `blackoutReasons` déclare `co-production` ;
-`data-model.md:212`, `proto` et `openapi` portent `co_production`.
+Same fault, quieter, on the territorial restriction reason: `shared/catalogue.json`
+`blackoutReasons` declares `co-production`; `data-model.md:212`, `proto` and `openapi` carry
+`co_production`.
 
-> `studio-web` §G a trouvé la même faute sur `moderationReason` (`spoiler` et `insult`
-> supprimés, `hate` et `filter` inventés). Je confirme sa mesure sur
-> `proto/arthome/chat/v1/events.proto:64-71` et j'ajoute que **ce n'est pas un cas isolé** :
-> c'est un motif, sur au moins trois vocabulaires, et il court de `shared/` jusqu'au `.proto`.
+> `studio-web` §G found the same fault on `moderationReason` (`spoiler` and `insult`
+> removed, `hate` and `filter` invented). I confirm the measurement on
+> `proto/arthome/chat/v1/events.proto:64-71` and add that **this is not an isolated case**:
+> it is a pattern, across at least three vocabularies, and it runs from `shared/` all the way
+> into the `.proto`.
 
 ---
 
-### K7 — Le journal du studio n'a pas de contexte propriétaire, et le BFF le compose depuis cinq services avec `page + total`
+### K7 — The studio journal has no owning context, and the BFF composes it from five services with `page + total`
 
-**La gravité : c'est une jointure au moment de la requête, paginée par décalage, sur
-l'artefact que le studio conserve 24 mois — et elle franchit la ligne que
-`definition-of-done.md` §8 trace pour les BFF.**
+**The severity: this is a query-time join, offset-paginated, over the artifact the studio
+keeps for 24 months — and it crosses the line `definition-of-done.md` §8 draws for BFFs.**
 
-`openapi/studio.yaml:3113-3128` :
+`openapi/studio.yaml:3113-3128`:
 
 ```yaml
 operationId: listChannelJournal
 x-arthome-upstream: [identity, catalog, chat, streaming, payouts]
 ```
 
-Réponse : `items: JournalEntry[]` + `page: OffsetPageInfo`, avec dans l'exemple
-`totalItems: 812, totalPages: 41` (ligne 3172).
+Response: `items: JournalEntry[]` + `page: OffsetPageInfo`, with `totalItems: 812,
+totalPages: 41` in the example (line 3172).
 
-**Ce total ne peut pas exister.** Il faut compter, par période et par nature, les entrées de
-cinq services distincts, **puis** appliquer la projection par rôle (« la nature `money` est
-absente sans `canRevenue` », ligne 3153), **puis** trier l'union, **puis** en extraire la
-page 3. Aucun des cinq ne connaît le total des quatre autres, et le BFF n'a pas le droit de
-tenir une table (`definition-of-done.md` §8 : *« Si un BFF acquiert une table qu'il écrit
-lui-même […] il a franchi la ligne »*).
+**That total cannot exist.** You would have to count, by period and by nature, the entries of
+five distinct services, **then** apply the role projection ("the `money` nature is absent
+without `canRevenue`", line 3153), **then** sort the union, **then** extract page 3. None of
+the five knows the totals of the other four, and the BFF is not allowed to hold a table
+(`definition-of-done.md` §8: *"If a BFF acquires a table it writes itself […] it has crossed
+the line"*).
 
-**Personne ne possède cet agrégat.** `context-map.md:947` dit seulement que *« le journal
-d'audit nominatif sur 24 mois que le studio exige est une table, pas un magasin
-d'événements »* — sans nommer le contexte. `data-model.md` n'en définit aucun agrégat ;
-`data-model.md` §4, le tableau des modèles de lecture, ne le contient pas ;
-`data-model.md:918` en fixe la rétention (24 mois) sans dire où. **Une table de 24 mois avec
-une rétention, une purge et un export, et pas de propriétaire.**
+**Nobody owns this aggregate.** `context-map.md:947` only says that *"the named 24-month
+audit journal the studio requires is a table, not an event store"* — without naming the
+context. `data-model.md` defines no aggregate for it; `data-model.md` §4, the read-model
+table, does not contain it; `data-model.md:918` fixes its retention (24 months) without
+saying where. **A 24-month table with a retention, a purge and an export, and no owner.**
 
-Et c'est le seul écran du système qui contredit frontalement `data-model.md` §4 :
-*« aucun écran n'est servi par une jointure au moment de la requête »*.
-
----
-
-## Ce qui gêne
+And it is the one screen in the system that directly contradicts `data-model.md` §4: *"no
+screen is served by a join at request time"*.
 
 ---
 
-### G1 — Le fan-out maximal est 5, pas 4 — et la décision de transport repose sur 4
+## What hurts
 
-`transport.md:47-48` :
+---
 
-> **« Le nombre qui tranche n'est donc pas 192. C'est 1 — la profondeur, et 4 — le fan-out
-> parallèle maximal d'un écran. »**
+### G1 — Maximum fan-out is 5, not 4 — and the transport decision rests on 4
 
-Compté sur les documents livrés (`x-arthome-upstream`, qui existe précisément pour rendre la
-règle vérifiable — `definition-of-done.md` R7) :
+`transport.md:47-48`:
 
-| Document | Opérations | Répartition du fan-out |
+> **"The number that decides is therefore not 192. It is 1 — the depth — and 4 — the maximum
+> parallel fan-out of a screen."**
+
+Counted on the delivered documents (`x-arthome-upstream`, which exists precisely to make the
+rule verifiable — `definition-of-done.md` R7):
+
+| Document | Operations | Fan-out distribution |
 |---|---|---|
 | `openapi/storefront.yaml` | 67 | 1:50 · 2:6 · 3:4 · 4:6 · **5:1** |
 | `openapi/studio.yaml` | 63 | 1:58 · 2:2 · 3:2 · **5:1** |
 
-Les deux à cinq :
+The two at five:
 
-- `getDateDetail` (`openapi/storefront.yaml:660`) — `[catalog, ticketing, identity, streaming,
-  chat]`, alors que `context-map.md:864` compte l'écran `title` à **4**, et que
-  `date_detail_public` est déjà déclaré alimenté par `chat.date_chat_policy_changed`
-  (`data-model.md:539`). Le volet `chat` est donc appelé **et** projeté ;
-- `listChannelJournal` (K7), alors que `context-map.md:862` annonce « studio : 1 à 3 ».
+- `getDateDetail` (`openapi/storefront.yaml:660`) — `[catalog, ticketing, identity,
+  streaming, chat]`, while `context-map.md:864` counts the `title` screen at **4**, and
+  `date_detail_public` is already declared to be fed by `chat.date_chat_policy_changed`
+  (`data-model.md:539`). The `chat` pane is therefore both called **and** projected;
+- `listChannelJournal` (K7), while `context-map.md:862` announces "studio: 1 to 3".
 
-Le seuil `bff_upstream_calls_per_request p95 > 4` (`context-map.md` §11a,
-`definition-of-done.md` §8, `transport.md` §6) est donc **franchi au jour de la livraison**,
-et son geste prescrit est « le modèle de lecture manque ». La décision HTTP contre gRPC reste
-bonne — le fan-out de 5 ne la retourne pas — mais **la phrase qui la justifie est fausse**, et
-c'est elle qu'on relira dans six mois.
+The threshold `bff_upstream_calls_per_request p95 > 4` (`context-map.md` §11a,
+`definition-of-done.md` §8, `transport.md` §6) is therefore **crossed on delivery day**, and
+its prescribed action is "the read model is missing". The HTTP-over-gRPC decision stands —
+a fan-out of 5 does not overturn it — but **the sentence that justifies it is false**, and
+that is the sentence someone will re-read in six months.
 
-Sur la profondeur 1, en revanche, l'attaque que le chef me demandait ne tient pas : voir
-`R2` plus bas.
+On depth 1, on the other hand, the attack the lead asked me to make does not land: see `R2`
+below.
 
-### G2 — `adr-auth.md` §8.1 annonce trois émetteurs, en liste quatre, et promet « un seul objet à faire tourner »
+### G2 — `adr-auth.md` §8.1 announces three issuers, lists four, and promises "a single object to rotate"
 
-`adr-auth.md:454` : *« Il contient les clés publiques des **trois** émetteurs »*. Le tableau
-qui suit immédiatement (lignes 457–461) en porte **quatre** : `bff-sf`, `bff-st`, `play`,
-`dev`. `context-map.md:573` dit quatre, `definition-of-done.md:536` (porte J2) vérifie
-`length == 4`.
+`adr-auth.md:454`: *"It contains the public keys of the **three** issuers"*. The table that
+immediately follows (lines 457–461) carries **four**: `bff-sf`, `bff-st`, `play`, `dev`.
+`context-map.md:573` says four; `definition-of-done.md:536` (gate J2) checks `length == 4`.
 
-Et `adr-auth.md:464` : *« un seul objet à faire tourner, une seule chose à surveiller »* —
-alors que `definition-of-done.md` §7.6 a **tranché l'inverse** : « quatre rotations
-indépendantes, un assembleur sans secret », en démontrant qu'un travail unique détenant quatre
-clés privées « crée une cible qui n'existe pas encore ». L'ADR de l'auth porte encore
-l'argument que la définition de fini a réfuté.
+And `adr-auth.md:464`: *"a single object to rotate, a single thing to watch"* — while
+`definition-of-done.md` §7.6 has **settled the opposite**: "four independent rotations, one
+secretless assembler", demonstrating that a single job holding four private keys "creates a
+target that does not yet exist". The auth ADR still carries the argument the definition of
+done refuted.
 
-### G3 — `realtime.md` se contredit sur ce qui transite dans `date:{id}:state`
+### G3 — `realtime.md` contradicts itself on what transits `date:{id}:state`
 
-- `realtime.md:43` : la salle porte « incident levé/résolu, issue déclarée, **bascule
-  d'antenne, ouverture de salle, expiration de rediffusion** » ;
-- `realtime.md:105-107` (§2.4) : *« une date passe à l'antenne, une salle ouvre, une
-  rediffusion expire. **La tentation est de pousser ces transitions ; il ne faut pas.** »* ;
-- `realtime.md:366` (§8) : « passage à l'antenne, ouverture de salle, expiration de
-  rediffusion | toutes | — | **dérivé, aucun appel** ».
+- `realtime.md:43`: the room carries "incident raised/resolved, outcome declared, **going on
+  air, room opening, replay expiry**";
+- `realtime.md:105-107` (§2.4): *"a date goes on air, a room opens, a replay expires. **The
+  temptation is to push those transitions; we must not.**"*;
+- `realtime.md:366` (§8): "going on air, room opening, replay expiry | all | — | **derived,
+  no call**".
 
-Trois sections, deux réponses. §2.4 porte l'argument (un téléviseur en veille huit heures ne
-doit faire aucune requête) ; c'est la ligne 43 qui est l'outlier, et c'est la seule que
-`backend-contracts` lira s'il cherche le contenu d'une salle.
+Three sections, two answers. §2.4 carries the argument (a TV idle for eight hours must make
+no request); line 43 is the outlier, and it is the only one `backend-contracts` will read if
+they go looking for the contents of a room.
 
-### G4 — `definition-of-done.md` §6 impose une porte fondée sur une fracture que D-014 a rétractée
+### G4 — `definition-of-done.md` §6 imposes a gate based on a fracture D-014 retracted
 
-`definition-of-done.md:367-371` :
+`definition-of-done.md:367-371`:
 
-> « **C1 mérite une précision, parce qu'il est le seul qui traverse la fracture TypeScript.**
-> Le client est consommé par un dépôt en **TS 6.0.x** (Angular 22) **et** par des dépôts en
-> **TS 7.x** (React 19.3). Il compile donc **deux fois** […]. Un client généré qui n'est
-> lisible que par l'un des deux n'est pas fini. »
+> "**C1 deserves a note, because it is the only one that crosses the TypeScript fracture.**
+> The client is consumed by one repository on **TS 6.0.x** (Angular 22) **and** by
+> repositories on **TS 7.x** (React 19.3). It therefore compiles **twice** […]. A generated
+> client readable by only one of the two is not done."
 
-D-014 dit le contraire, explicitement : *« La conclusion s'inverse. Il n'y a pas de fracture
-entre dépôts : il y a un **plafond unique à TS 6.0.x sur les sept** »*, et
-`code-conventions.md:103` : *« la fracture TypeScript 6 / 7 n'est pas une contrainte
-présente »*. Les portes 6 et 7 de `code-conventions.md` §8.1 portent sur les `.d.ts` de
-`@arthome/core` et `@arthome/contracts` — **pas** sur le client généré des surfaces, qui
-n'existe que dans des dépôts en TS 6.0.3.
+D-014 says the opposite, explicitly: *"The conclusion inverts. There is no fracture between
+repositories: there is a **single ceiling at TS 6.0.x across all seven**"*, and
+`code-conventions.md:103`: *"the TypeScript 6 / 7 fracture is not a present constraint"*.
+Gates 6 and 7 of `code-conventions.md` §8.1 apply to the `.d.ts` of `@arthome/core` and
+`@arthome/contracts` — **not** to the surfaces' generated client, which exists only in
+repositories on TS 6.0.3.
 
-La ligne fait donc d'une revue de service la vérification d'un état qui n'existe pas. C'est
-E2 appliqué à une décision : un raisonnement plausible, rétracté ailleurs, laissé en place ici.
+So the line turns a service review into a check on a state that does not exist. This is E2
+applied to a decision: plausible reasoning, retracted elsewhere, left standing here.
 
-### G5 — `transport.md` §7 remonte un défaut déjà corrigé
+### G5 — `transport.md` §7 reports a defect that has already been fixed
 
-`transport.md:264-269` : *« `events.md` §6 dessine le flux vertical avec
-`ticketing.PurchaseSeat gRPC traceparent en Metadata`. […] **Je ne touche pas au fichier
-d'un coéquipier** — à arbitrer par le chef. »*
+`transport.md:264-269`: *"`events.md` §6 draws the vertical flow with
+`ticketing.PurchaseSeat gRPC traceparent in Metadata`. […] **I do not touch a teammate's
+file** — for the lead to arbitrate."*
 
-`events.md:279-281` porte aujourd'hui `POST /orders/seats` / `HTTP/JSON` / `traceparent en
-en-tête`. La correction a été faite ; la remontée est restée. Un arbitrage est en attente sur
-un défaut qui n'existe plus.
+`events.md:279-281` today carries `POST /orders/seats` / `HTTP/JSON` / `traceparent in
+header`. The correction was made; the report stayed. An arbitration is pending on a defect
+that no longer exists.
 
-### G6 — Deux des cinq seuils de notification n'ont aucun porteur
+### G6 — Two of the five notification thresholds have no owner
 
-`context-map.md:289-291` nomme les cinq seuils qui « vivent dans `@arthome/core` » :
-« 30 minutes avant », « 85 % des places », « 6 heures avant expiration », « **file au-delà de
-dix messages** », « **poste non affecté à J-1** ».
+`context-map.md:289-291` names the five thresholds that "live in `@arthome/core`":
+"30 minutes before", "85% of seats", "6 hours before expiry", "**queue beyond ten
+messages**", "**role unassigned at D-1**".
 
-Servis : `reminderLeadMinutes`, `scarcityThresholdBps`, `replayExpiryWarningHours`
-(`openapi/storefront.yaml:3712-3734`). Les constantes du studio
-(`openapi/studio.yaml:4085-4110`) portent `technicalProvisionThreshold`,
+Served: `reminderLeadMinutes`, `scarcityThresholdBps`, `replayExpiryWarningHours`
+(`openapi/storefront.yaml:3712-3734`). The studio constants
+(`openapi/studio.yaml:4085-4110`) carry `technicalProvisionThreshold`,
 `provisionRevisionHours`, `chatBurstThresholdPerMinute`, `holdScreenAutoAfterSec`,
-`seasonBounds` — **ni le seuil de file, ni le délai d'affectation**. Deux sur cinq sans
-document propriétaire : règle critique 15.
+`seasonBounds` — **neither the queue threshold nor the assignment deadline**. Two of five
+with no owning document: critical rule 15.
 
-> `storefront-web` ❻.3 a trouvé la même chose sur le **total** de l'aperçu gratuit
-> (`previewSecondsLeft` sert le reste, rien ne sert le total). Je confirme : `grep -rn` sur
-> `architecture/`, `openapi/` et `proto/` ne donne aucune occurrence d'un plafond d'aperçu.
-> `decideWatch` en a pourtant besoin en entrée (`context-map.md:382`) et
-> `definition-of-done.md:233` fait tester « le budget d'aperçu à 0 ».
+> `storefront-web` ❻.3 found the same thing on the free-preview **total**
+> (`previewSecondsLeft` serves the remainder, nothing serves the total). I confirm: `grep -rn`
+> across `architecture/`, `openapi/` and `proto/` returns no occurrence of a preview cap.
+> `decideWatch` needs it as an input (`context-map.md:382`) and `definition-of-done.md:233`
+> requires testing "the preview budget at 0".
 
-### G7 — « La seule duplication de donnée du système » est annoncée trois fois, et il y en a au moins huit
+### G7 — "the only data duplication in the system" is announced three times, and there are at least eight
 
-`context-map.md:414` : *« C'est le seul endroit du système où j'accepte de dupliquer une
-donnée de `ticketing` »*. `data-model.md:555` : *« `entitlement_projection` est la seule
-duplication que j'assume à contrecœur »*. `adr-stream-entitlement.md:259` : *« C'est **la
-seule duplication de donnée que j'assume dans tout le système** »*.
+`context-map.md:414`: *"This is the only place in the system where I accept duplicating a
+`ticketing` value"*. `data-model.md:555`: *"`entitlement_projection` is the only duplication
+I accept, reluctantly"*. `adr-stream-entitlement.md:259`: *"This is **the only data
+duplication I accept in the whole system**"*.
 
-Le tableau de `data-model.md` §4 en liste sept autres : `date_card_public` (jauge, tarifs et
-promotions de `ticketing` copiés dans `catalog`), `date_detail_public`, `channel_agenda` et
-`events_table` (recette de `ticketing` dans `catalog`), `artist_counters` (compteurs
-d'`identity` et de `streaming` dans `catalog`), `channel_dues` (faits de `ticketing` et de
-`payouts` dans `identity`), `payout_ledger`, plus les trois éléments projetés de la liste de
-contrôle de publication (`data-model.md:263-266`).
+The table in `data-model.md` §4 lists seven others: `date_card_public` (`ticketing`'s
+availability, prices and promotions copied into `catalog`), `date_detail_public`,
+`channel_agenda` and `events_table` (`ticketing`'s revenue inside `catalog`),
+`artist_counters` (`identity` and `streaming` counters inside `catalog`), `channel_dues`
+(`ticketing` and `payouts` facts inside `identity`), `payout_ledger`, plus the three
+projected items of the publication checklist (`data-model.md:263-266`).
 
-La distinction qu'on veut faire est réelle — `entitlement_projection` est la seule qui porte
-une **autorité**, pas seulement un affichage — mais elle n'est écrite nulle part, et la phrase
-telle quelle est fausse. Elle sera citée pour refuser la huitième projection légitime.
+The distinction being drawn is real — `entitlement_projection` is the only one that carries
+**authority**, not just display — but it is written nowhere, and the sentence as it stands is
+false. It will be quoted to refuse the eighth legitimate projection.
 
-### G8 — Le contrat expose la forme d'un moteur de recherche
+### G8 — The contract exposes the shape of a search engine
 
-`answers-to-surfaces.md:46` (réponse à `storefront-web` Q2) :
+`answers-to-surfaces.md:46` (answer to `storefront-web` Q2):
 
-> « **Oui.** `track_total_hits: 10000` sur OpenSearch, et le contrat déclare la garantie :
-> **exact jusqu'à 10 000, "au moins 10 000" au-delà**. »
+> "**Yes.** `track_total_hits: 10000` on OpenSearch, and the contract declares the guarantee:
+> **exact up to 10,000, 'at least 10,000' beyond**."
 
-`track_total_hits` est le nom d'un paramètre Lucene, et 10 000 en est le défaut. La garantie
-servie au client (`CursorPageInfo.approximateTotal` + `totalIsLowerBound`) est la bonne forme
-— c'est le **nombre** et sa provenance qui fuient. Si l'on passe un jour à un moteur dont la
-sémantique de total est différente, la ligne du contrat qui dit « au moins 10 000 » devient
-une promesse faite au nom d'un fournisseur qui n'est plus là. Le remède tient en une ligne :
-servir le seuil comme une constante de domaine plutôt que le graver dans la prose.
-
----
-
-## Ce qui est une préférence, et que j'assume comme telle
-
-1. **J'aurais ajouté un `groupId` au tableau des sujets d'`events.md` §3.** Le piège du
-   `groupId` partagé de `@nestjs/microservices` est correctement identifié (`events.md:73-75`,
-   `definition-of-done.md:201-204`), et la porte AsyncAPI le vérifie à l'exécution. Mais la
-   table qui fait autorité sur les sujets ne porte pas les groupes, donc la porte compare un
-   document à un autre document. C'est une préférence : la porte est bonne.
-
-2. **Le maintien de KafkaJS me gêne plus qu'il ne gêne `backend-domain`, et je n'ai pas
-   d'argument décisif.** Vérifié aujourd'hui sur npm : `kafkajs@2.2.4`,
-   `time.modified = 2023-02-27`, `dist-tags = { latest: 2.2.4, beta: 2.3.0-beta.3 }`. Le
-   constat d'`events.md` §2 est exact à la date près. Le raisonnement — une pause de groupe à
-   chaque déploiement est une gêne d'exploitation sur une plateforme dont le pic est un
-   spectacle du soir — tient. Ma préférence irait quand même au transport `confluentinc` pour
-   les consommateurs, parce que le signal de bascule écrit (« rééquilibrage > 30 s ») ne se
-   mesure qu'en production et qu'on ne réécrit pas un transport personnalisé un soir de
-   direct. **C'est une préférence, pas une objection.**
-
-3. **`x-arthome-upstream` devrait être une porte, pas une annotation.** La règle R7 vérifie
-   que le champ est **non vide** (`definition-of-done.md:130`), pas qu'il est **≤ 4**. Ajouter
-   la borne aurait attrapé G1 à l'écriture. C'est une ligne de Python, et c'est une préférence
-   parce que le seuil est déjà une alerte d'exploitation.
+`track_total_hits` is the name of a Lucene parameter, and 10,000 is its default. The
+guarantee served to the client (`CursorPageInfo.approximateTotal` + `totalIsLowerBound`) is
+the right shape — it is the **number** and its provenance that leak. If we ever move to an
+engine whose total semantics differ, the contract line saying "at least 10,000" becomes a
+promise made in the name of a vendor who is no longer there. The remedy is one line: serve
+the threshold as a domain constant instead of carving it into prose.
 
 ---
 
-## Ce qui résiste
+## What is a preference, and I own it as one
 
-J'ai attaqué ces points et ils tiennent. Le dire a autant de valeur que le reste : ça dit où
-ne pas revenir.
+1. **I would have added a `groupId` to the topic table in `events.md` §3.** The shared
+   `groupId` trap in `@nestjs/microservices` is correctly identified (`events.md:73-75`,
+   `definition-of-done.md:201-204`), and the AsyncAPI gate checks it at runtime. But the
+   table that is authoritative on topics does not carry the groups, so the gate compares one
+   document to another document. This is a preference: the gate is good.
 
-### R1 — OpenSearch : l'argument d'origine est mort, le choix survit, et pour une meilleure raison
+2. **Keeping KafkaJS bothers me more than it bothers `backend-domain`, and I have no
+   decisive argument.** Verified today on npm: `kafkajs@2.2.4`,
+   `time.modified = 2023-02-27`, `dist-tags = { latest: 2.2.4, beta: 2.3.0-beta.3 }`. The
+   observation in `events.md` §2 is accurate to the day. The reasoning — a group pause on
+   every deployment is an operational nuisance on a platform whose peak is an evening
+   performance — holds. My own preference would still go to the `confluentinc` transport for
+   consumers, because the written switch signal ("rebalance > 30 s") is only measurable in
+   production and nobody rewrites a custom transport on the evening of a live show. **This is
+   a preference, not an objection.**
 
-**L'attaque.** `README.md:290-298` du dossier d'origine retient OpenSearch sur trois
-arguments et écarte Meilisearch sur **un seul** : *« Meilisearch serait meilleur en qualité de
-recherche par heure investie, mais n'a pas de connecteur Kafka Connect officiel. »* Or
-`context-map.md:135-141` établit que le connecteur *sink* **n'est pas utilisable ici** — le
-document indexé compose trois contextes, aucun connecteur ne fait cette jointure. L'argument
-qui écartait Meilisearch est donc mort, et la comparaison se rouvre.
+3. **`x-arthome-upstream` should be a gate, not an annotation.** Rule R7 checks that the
+   field is **non-empty** (`definition-of-done.md:130`), not that it is **≤ 4**. Adding the
+   bound would have caught G1 at writing time. It is one line of Python, and it is a
+   preference because the threshold is already an operational alert.
 
-**Le verdict : elle se rouvre, et OpenSearch gagne quand même — sur un argument que personne
-n'a écrit.**
+---
 
-`context-map.md:143-147` fonde le déclenchement d'alerte d'une recherche enregistrée sur une
-**requête inversée**, « c'est exactement ce que fait un *percolator* OpenSearch ». C'est la
-pièce maîtresse de la réponse à `storefront-web` Q23 (`answers-to-surfaces.md:86`), de
-`saved_search_percolator` (`data-model.md:542`), de `SavedSearchMatched`
-(`proto/arthome/catalog/v1/events.proto:255`) et du fait que dix recherches enregistrées
-coûtent **zéro** requête de comptage à l'ouverture de la page Compte.
+## What holds up
 
-J'ai vérifié en ligne aujourd'hui que la capacité existe réellement, parce qu'elle est
-héritée d'Elasticsearch 7.10 et aurait pu être abandonnée au fork :
-`docs.opensearch.org/latest/mappings/supported-field-types/percolator/` et
-`docs.opensearch.org/latest/query-dsl/specialized/percolate/` — **le type de champ
-`percolator` et la requête `percolate` existent dans OpenSearch courant** (avec un garde-fou :
-`search.allow_expensive_queries` doit rester à `true`). **Meilisearch n'a pas d'équivalent** :
-sa `facetDistribution` compte des documents, et l'agrégation au sens large reste une demande
-ouverte depuis 2020 (`github.com/meilisearch/meilisearch/issues/1083`).
+I attacked these points and they hold. Saying so is worth as much as the rest: it tells you
+where not to come back.
 
-Et un fait postérieur au dossier joue dans le même sens : Meilisearch a adopté depuis un
-**double licenciement**, Community Edition en MIT et une Enterprise Edition sous Business
-Source License. La ligne « licence Apache 2.0, réellement libre » d'OpenSearch en sort
-renforcée, pas affaiblie.
+### R1 — OpenSearch: the original argument is dead, the choice survives, and for a better reason
 
-**Le raisonnement est-il honnête ou rétrospectif ?** *Il est rétrospectif dans la forme et
-juste dans le fond.* Le dossier d'origine a retenu le bon moteur pour un motif qui s'est
-révélé faux ; `context-map.md` a démoli ce motif sans rouvrir la comparaison — ce qui est un
-manque — mais a simultanément introduit le motif qui la tranche vraiment. **Il faut réécrire
-la justification, pas la décision.** C'est le percolator qui tient OpenSearch, pas Kafka
+**The attack.** `README.md:290-298` of the original handoff keeps OpenSearch on three
+arguments and rules out Meilisearch on **one**: *"Meilisearch would be better on search
+quality per hour invested, but has no official Kafka Connect connector."* Yet
+`context-map.md:135-141` establishes that the *sink* connector **is not usable here** — the
+indexed document composes three contexts, and no connector performs that join. The argument
+that ruled out Meilisearch is therefore dead, and the comparison reopens.
+
+**The verdict: it reopens, and OpenSearch still wins — on an argument nobody wrote down.**
+
+`context-map.md:143-147` grounds saved-search alerting in an **inverted query**, "which is
+exactly what an OpenSearch *percolator* does". This is the keystone of the answer to
+`storefront-web` Q23 (`answers-to-surfaces.md:86`), of `saved_search_percolator`
+(`data-model.md:542`), of `SavedSearchMatched`
+(`proto/arthome/catalog/v1/events.proto:255`) and of the fact that ten saved searches cost
+**zero** counting queries when the Account page opens.
+
+I verified online today that the capability genuinely exists, because it is inherited from
+Elasticsearch 7.10 and could have been dropped at the fork:
+`docs.opensearch.org/latest/mappings/supported-field-types/percolator/` and
+`docs.opensearch.org/latest/query-dsl/specialized/percolate/` — **the `percolator` field type
+and the `percolate` query exist in current OpenSearch** (with one caveat:
+`search.allow_expensive_queries` must stay `true`). **Meilisearch has no equivalent**: its
+`facetDistribution` counts documents, and aggregation in the broader sense has been an open
+request since 2020 (`github.com/meilisearch/meilisearch/issues/1083`).
+
+And one fact postdating the handoff pushes the same way: Meilisearch has since moved to
+**dual licensing**, a Community Edition under MIT and an Enterprise Edition under the
+Business Source License. OpenSearch's "Apache 2.0, genuinely free" line comes out stronger,
+not weaker.
+
+**Is the reasoning honest or retrospective?** *It is retrospective in form and right in
+substance.* The original handoff picked the right engine for a reason that turned out to be
+false; `context-map.md` demolished that reason without reopening the comparison — which is a
+gap — but simultaneously introduced the reason that actually settles it. **The justification
+needs rewriting, not the decision.** It is the percolator that holds OpenSearch up, not Kafka
 Connect.
 
-### R2 — La profondeur de chaîne **est** 1, y compris dans le cas que le chef soupçonnait
+### R2 — Chain depth **is** 1, including in the case the lead suspected
 
-Le chef demandait : *« un BFF qui appelle un service qui consulte un modèle de lecture projeté
-par un autre contexte, est-ce encore une profondeur de 1 ? »*
+The lead asked: *"a BFF calling a service that reads a read model projected by another
+context — is that still a depth of 1?"*
 
-**Oui, et sans ambiguïté.** La profondeur mesure les **appels synchrones** qu'un délai doit
-traverser. Un modèle de lecture projeté est une **table locale du service appelé**, alimentée
-hors requête par Kafka. `catalog` lisant `date_card_public` ne parle à personne ; `streaming`
-lisant `entitlement_projection` ne parle à personne. L'argument de `transport.md` §2.1 ne
-dépend pas de l'origine de la donnée, seulement du nombre de sauts réseau. Il n'y a pas un
-seul point du système où un service en appelle un autre — je l'ai cherché dans `context-map.md`
-§10, `transport.md` §5 et les deux OpenAPI, et il n'y en a pas.
+**Yes, unambiguously.** Depth measures the **synchronous calls** a deadline has to cross. A
+projected read model is a **local table of the called service**, fed outside the request by
+Kafka. `catalog` reading `date_card_public` talks to nobody; `streaming` reading
+`entitlement_projection` talks to nobody. The argument in `transport.md` §2.1 does not depend
+on where the data came from, only on the number of network hops. There is not one point in
+the system where a service calls another — I looked in `context-map.md` §10, `transport.md`
+§5 and both OpenAPI documents, and there is none.
 
-La contrepartie que `transport.md` §5.3 écrit — `x-arthome-deadline` en instant absolu,
-vérifié par le service avant transaction et entre les unités d'un traitement itératif — est
-la bonne, et l'argument qui l'accompagne (`nestjs-grpc` : Nest ne coupe jamais un handler
-unaire, donc le `deadline` gRPC n'arrête pas le destinataire non plus) est exact.
+The counterpart written in `transport.md` §5.3 — `x-arthome-deadline` as an absolute
+instant, checked by the service before opening a transaction and between the units of an
+iterative job — is the right one, and the argument accompanying it (`nestjs-grpc`: Nest never
+cancels a unary handler, so a gRPC `deadline` does not stop the callee either) is accurate.
 
-**La décision HTTP/JSON tient. Seul le fan-out de 4 est faux (G1), et il ne la retourne pas.**
+**The HTTP/JSON decision holds. Only the fan-out of 4 is false (G1), and it does not overturn
+it.**
 
-### R3 — Les deux OpenAPI passent réellement les quinze règles
+### R3 — Both OpenAPI documents genuinely pass the fifteen rules
 
-`definition-of-done.md:148-149` affirme : *« `openapi/storefront.yaml` (55 chemins,
-67 opérations, 57 schémas) et `openapi/studio.yaml` (59 chemins, 63 opérations, 34 schémas)
-passent les quinze règles »*. J'ai réimplémenté les contrôles mécanisables et les ai lancés.
+`definition-of-done.md:148-149` claims: *"`openapi/storefront.yaml` (55 paths, 67 operations,
+57 schemas) and `openapi/studio.yaml` (59 paths, 63 operations, 34 schemas) pass the fifteen
+rules"*. I reimplemented the mechanizable checks and ran them.
 
-| Contrôle | Résultat |
+| Check | Result |
 |---|---|
-| comptes annoncés | **exacts**, 55/67/57 et 59/63/34 |
-| R2 — aucun `nullable` | 0 occurrence dans les deux |
-| R3 — tout `$ref` résout, aucun `$ref` externe | 0 non résolu, 0 externe |
-| R4 — `operationId` présent, `lowerCamelCase`, unique | aucun manquant |
-| R5 — `summary` **et** `description` | aucun manquant |
-| R7 — `x-arthome-upstream` non vide | aucun manquant |
-| R8/R9 — exemple sur chaque corps de requête et chaque 2xx | aucun manquant |
-| R11 — `Idempotency-Key` sur chaque écriture hors allowlist | aucun manquant |
-| R12 — `traceparent` sur chaque opération | aucun manquant |
-| R13 — aucun `labelFr`/`labelEn`/`messageFr`/`messageEn` | 0 occurrence |
-| R14 — aucun vocabulaire fermé figé en `enum` **de sortie** | 0 dans les schémas de réponse ; 104 `x-arthome-vocabulary` |
-| R15 — toute 2xx compose `EnvelopeMeta` | aucun manquant |
+| announced counts | **exact**, 55/67/57 and 59/63/34 |
+| R2 — no `nullable` | 0 occurrences in either |
+| R3 — every `$ref` resolves, no external `$ref` | 0 unresolved, 0 external |
+| R4 — `operationId` present, `lowerCamelCase`, unique | none missing |
+| R5 — `summary` **and** `description` | none missing |
+| R7 — `x-arthome-upstream` non-empty | none missing |
+| R8/R9 — example on every request body and every 2xx | none missing |
+| R11 — `Idempotency-Key` on every write outside the allowlist | none missing |
+| R12 — `traceparent` on every operation | none missing |
+| R13 — no `labelFr`/`labelEn`/`messageFr`/`messageEn` | 0 occurrences |
+| R14 — no closed vocabulary frozen as an **output** `enum` | 0 in response schemas; 104 `x-arthome-vocabulary` |
+| R15 — every 2xx composes `EnvelopeMeta` | none missing |
 
-C'est rare, et c'est le genre de chose qu'un document affirme sans l'avoir lancé. Ici l'
-affirmation est vraie. **La seule exception connue est celle que `storefront-tv` C4 a
-trouvée** (`Error.nature`, le seul `enum` dur d'une réponse) — et elle échappe à R14 parce que
-le schéma est celui de l'**enveloppe**, pas d'une charge utile. La règle est bonne, le
-vérificateur a un angle mort d'une ligne.
+That is rare, and it is the kind of thing a document asserts without having run it. Here the
+assertion is true. **The one known exception is the one `storefront-tv` C4 found**
+(`Error.nature`, the only hard `enum` in a response) — and it escapes R14 because the schema
+belongs to the **envelope**, not to a payload. The rule is good; the checker has a one-line
+blind spot.
 
-### R4 — Le contrat de l'outbox avec Debezium est juste dans le détail qui coûte cher
+### R4 — The outbox contract with Debezium is right in the details that cost money
 
-`data-model.md` §7.3 (lignes 859–890). J'ai cherché l'erreur classique et elle n'y est pas :
+`data-model.md` §7.3 (lines 859–890). I went looking for the classic mistake and it is not
+there:
 
-- `payload bytea` **déjà encadré** par le sérialiseur du registre, avec
-  `binary.handling.mode=bytes` + `value.converter=ByteArrayConverter` — sans quoi Debezium
-  produit du JSON encadré qu'aucun consommateur Protobuf ne lit. C'est exact, et c'est le
-  piège n°1 du routeur d'outbox ;
-- `REPLICA IDENTITY DEFAULT` suffit **parce que la table est en insertion seule** — le
-  raisonnement est donné, pas seulement la conclusion ;
-- le nettoyage passe **après** confirmation de position du connecteur ;
-- `tracecontext` injecté **à l'écriture**, avec la raison (le relais tourne hors de la
-  requête) ;
-- le slot non consommé qui retient le WAL, avec un seuil (`confirmed_flush_lsn > 1 Go`).
+- `payload bytea` **already framed** by the registry serializer, with
+  `binary.handling.mode=bytes` + `value.converter=ByteArrayConverter` — without which
+  Debezium emits framed JSON that no Protobuf consumer can read. That is correct, and it is
+  the outbox router's number-one trap;
+- `REPLICA IDENTITY DEFAULT` suffices **because the table is insert-only** — the reasoning is
+  given, not just the conclusion;
+- cleanup runs **after** the connector confirms its position;
+- `tracecontext` injected **at write time**, with the reason (the relay runs outside the
+  request);
+- the unconsumed slot that retains WAL, with a threshold (`confirmed_flush_lsn > 1 GB`).
 
-Et la distinction `commit()` après transaction pour les événements **domaine** contre ligne
-d'outbox **dans** la transaction pour les événements d'**intégration**
-(`context-map.md:951-955`) est posée explicitement comme « la faute la plus coûteuse du
-modèle ». Rien à redire.
+And the distinction between `commit()` after the transaction for **domain** events versus an
+outbox row **inside** the transaction for **integration** events (`context-map.md:951-955`)
+is stated explicitly as "the most expensive mistake in the model". Nothing to add.
 
-### R5 — Le bail qui expire, et non la commande qui libère
+### R5 — The lease that expires rather than the command that releases
 
-`adr-stream-entitlement.md` §3.3 et `data-model.md` §5.4. J'ai cherché le cas où le bail de
-90 s renouvelé toutes les 45 s laisse un écran fantôme ou bloque un foyer, et il n'y en a pas :
-la reprise de sa propre session par `deviceId` couvre le redémarrage, et `releasePlayback`
-existe sans que rien n'en dépende. Deux surfaces l'ont demandé indépendamment et la réponse
-est la bonne. **Seul le chiffre de la révocation est faux (K3), pas le mécanisme.**
+`adr-stream-entitlement.md` §3.3 and `data-model.md` §5.4. I looked for the case where a 90 s
+lease renewed every 45 s leaves a ghost screen or locks out a household, and there is none:
+resuming your own session by `deviceId` covers restarts, and `releasePlayback` exists without
+anything depending on it. Two surfaces asked for this independently and the answer is the
+right one. **Only the revocation number is wrong (K3), not the mechanism.**
 
-### R6 — La vérification en ligne d'`adr-auth.md` est réelle, pas décorative
+### R6 — The online verification in `adr-auth.md` is real, not decorative
 
-J'ai recontrôlé les faits datés parce qu'un tableau « vérifié en ligne » est exactement le
-genre d'artefact qu'on fabrique :
+I re-checked the dated facts, because a table labelled "verified online" is exactly the kind
+of artifact people manufacture:
 
-- `better-auth` : `npm view better-auth version` → **1.7.5**. Conforme ;
-- **CVE-2026-45337 existe et est décrite exactement** : publiée le 15 juillet 2026, CVSS 3.1
-  = 7,6 (HIGH), affecte 1.6.0 → 1.6.11, *« the deviceAuthorization plugin treats any
+- `better-auth`: `npm view better-auth version` → **1.7.5**. Matches;
+- **CVE-2026-45337 exists and is described accurately**: published 15 July 2026, CVSS 3.1 =
+  7.6 (HIGH), affects 1.6.0 → 1.6.11, *"the deviceAuthorization plugin treats any
   authenticated session as the owner of any pending device code […] POST /device/approve and
-  POST /device/deny short-circuit when userId is unset »*. L'ADR dit « corrigé en 1.6.11 » :
-  exact. Seule imprécision, sans conséquence : « il y a trois mois » vaut deux ;
-- `kafkajs` : 2.2.4, dernière publication 2023-02-27. Exact.
+  POST /device/deny short-circuit when userId is unset"*. The ADR says "fixed in 1.6.11":
+  correct. The only imprecision, harmless: "three months ago" is two;
+- `kafkajs`: 2.2.4, last published 2023-02-27. Correct.
 
-Et la décision qui en découle — **écrire nous-mêmes la garde de propriété au BFF**
-(§6.3), parce que c'est précisément la ligne qui a cédé chez l'éditeur — est la bonne
-conclusion, pas la conclusion confortable. Le spike S3 qui l'éprouve est nommé « le test qui
-doit exister avant n'importe quelle ligne de production ».
+And the decision that follows — **writing the ownership guard ourselves at the BFF** (§6.3),
+because that is precisely the line that gave way at the vendor — is the right conclusion, not
+the comfortable one. The S3 spike that exercises it is named "the test that must exist before
+any line of production code".
 
-### R7 — L'aveu d'E2 de `definition-of-done.md` §7.6 est délibéré, et j'ai eu tort de le prendre pour un résidu
+### R7 — The E2 admission in `definition-of-done.md` §7.6 is deliberate, and I was wrong to read it as a leftover
 
-`definition-of-done.md:507-515` garde la phrase fausse — « retirer l'ancienne après la plus
-longue durée de vie de jeton » — **et écrit pourquoi il la garde** : *« Je le laisse écrit :
-une puce se recopie hors de son contexte, et c'est ainsi que la règle 15 se viole. »* J'ai
-d'abord compté ça comme une quatrième occurrence de la faute. C'en est l'antidote, et le
-raisonnement dimensionnant qui la remplace — `max(durée de vie du jeton, 2 × max-age du
-document)` avec `max-age=3600` — est juste : la grâce couvre le cache d'une périphérie qu'on
-ne peut pas vider, pas la durée d'un jeton. C'est le meilleur paragraphe du dossier sur E2.
+`definition-of-done.md:507-515` keeps the false sentence — "remove the old key after the
+longest token lifetime" — **and writes down why it keeps it**: *"I am leaving it written: a
+bullet gets copied out of its context, and that is how rule 15 gets violated."* I first
+counted this as a fourth occurrence of the fault. It is the antidote, and the sizing
+reasoning that replaces it — `max(token lifetime, 2 × document max-age)` with
+`max-age=3600` — is right: the grace window covers the cache of an edge we cannot flush, not
+the lifetime of a token. It is the best paragraph in the folder on E2.
 
-**À nuancer quand même** : `adr-auth.md:466` porte encore la phrase fausse **sans** le
-marqueur, corrigée seulement deux paragraphes plus bas. Un lecteur pressé prend la première.
+**One qualification even so**: `adr-auth.md:466` still carries the false sentence **without**
+the marker, corrected only two paragraphs later. A hurried reader takes the first.
 
-### R8 — Les contextes « provisoires » : l'aveu tient, l'un des quatre a un invariant qui ne tient pas
+### R8 — The "provisional" contexts: the admission holds, one of the four has an invariant that does not
 
-Le chef demandait si un contrat conçu et non observé est seulement plausible. Ma réponse est
-plus favorable que je ne l'attendais :
+The lead asked whether a contract designed but never observed is even plausible. My answer is
+more favourable than I expected:
 
-- **`chat`** : l'invariant structurant — trois axes (`MessageState`, `ModerationItemState`,
-  `AudienceSanction`) au lieu d'un champ empilé, pastille dérivée par `moderationBadgeOf` avec
-  une préséance écrite — est **plus solide** que ce que les maquettes exerçaient, et il est
-  fondé sur un défaut réel (`reported`, un état de triage logé dans le champ des sanctions).
-  Il tient sans avoir été observé parce qu'il est démontré, pas deviné. `storefront-mobile`
-  arrive à la même conclusion (« conçu, non éprouvé », avertissement maintenu sur la modération
-  seule, levé sur les dix autres fonctions) ;
-- **`streaming`** : la nullabilité des métriques avec `measured_at` par échantillon et la
-  distinction « non mesuré » / « mesuré à zéro » est la bonne, et elle vient d'une exigence de
-  `streaming.md`. Le `PlaybackTicket` est honnêtement marqué provisoire parce que le
-  fournisseur média n'est pas choisi ;
-- **`payouts`** : l'aveu « la forme est sûre, le modèle fiscal ne l'est pas » est
-  exactement inversé par K1 et K2 — **c'est la forme qui est fausse, et le modèle qui est
-  rattrapable.** C'est le seul des quatre où le provisoire porte sur la mauvaise moitié ;
-- **`notifications`** : sans sujet Kafka du tout (K4), mais ses invariants (heures calmes
-  conditionnées à la détention d'une place, redaction d'un montant selon `canRevenue`,
-  routage décidé côté serveur) sont des règles métier réelles et vérifiables.
-
----
-
-## Ce que je n'ai pas pu juger, et pourquoi
-
-1. **Le modèle fiscal lui-même.** Qui doit la TVA, sur quelle assiette, qui est redevable :
-   ce sont des questions de droit, et l'avertissement en tête d'`adr-payments.md` a raison de
-   le dire. Je n'ai jugé que ce qui est jugeable sans conseil fiscal : la **cohérence interne**
-   entre D-015 et la configuration Stripe (K1) et entre D-015 et la forme des données (K2).
-   Sur ces deux points-là, il n'y a pas besoin d'un avocat.
-
-2. **Les mesures de bundle de D-012** (93 Ko contre 7,5 Ko gzip). Deux agents ont mesuré
-   indépendamment et convergent à 1 Ko près ; la réserve est déjà consignée (esbuild sur un
-   schéma isolé, élagage non actif par défaut sur l'empaqueteur React Native). Je n'ai pas
-   d'empaqueteur ici et je n'aurais rien ajouté.
-
-3. **Les maquettes.** La consigne interdit de les ouvrir en entier et je ne les ai pas
-   ouvertes. Tout ce que j'affirme sur la conception vient de `shared/` (`catalogue.json`
-   relu intégralement sur les vocabulaires que je conteste) et des cinq `needs/`. Là où une
-   surface affirme ce que sa maquette montre, je l'ai cru.
-
-4. **Le percolator à l'échelle.** J'ai vérifié qu'il **existe** dans OpenSearch (R1). Je n'ai
-   aucun ordre de grandeur sur le nombre de recherches enregistrées attendu, et
-   `search.allow_expensive_queries` est un interrupteur qu'un exploitant coupe un jour de
-   surcharge. Le jour où il est coupé, les alertes de recherche enregistrée s'arrêtent **en
-   silence** — mais je n'ai pas de quoi dire si c'est un risque ou une note de bas de page.
-
-5. **`code-conventions.md`.** 2 044 lignes lues par recherche ciblée, pas intégralement. Je
-   n'en tire qu'un point (G4), et il est vérifié aux deux bouts.
-
-6. **La latence réelle du renouvellement côté périphérie.** K3 démontre que la fenêtre
-   d'exposition est la durée de vie du jeton et non l'intervalle de renouvellement. Je n'ai
-   pas pu établir **quelle** valeur il faut viser : passer le jeton à 60 s doublerait la
-   fréquence de renouvellement sur le chemin le plus chaud du système, et personne n'a mesuré
-   ce que coûte ce doublement. Le défaut est certain ; le remède ne l'est pas.
-
-7. **`studio-mobile` n'a pas encore écrit sa Confrontation** (`needs/studio-mobile.md` est
-   inchangé à l'heure où j'écris). Quatre surfaces sur cinq ont confronté l'offre ; la
-   cinquième reste à lire, et il est possible qu'elle trouve dans `chat` et dans la garde ce
-   que je n'ai pas cherché.
+- **`chat`**: the structural invariant — three axes (`MessageState`, `ModerationItemState`,
+  `AudienceSanction`) instead of one stacked field, badge derived by `moderationBadgeOf` with
+  a written precedence — is **stronger** than what the mockups exercised, and it is grounded
+  in a real defect (`reported`, a triage state lodged in the sanctions field). It holds
+  without having been observed because it is demonstrated, not guessed. `storefront-mobile`
+  reaches the same conclusion ("designed, not proven", warning maintained on moderation
+  alone, lifted on the other ten functions);
+- **`streaming`**: nullable metrics with `measured_at` per sample and the distinction between
+  "not measured" and "measured at zero" is the right one, and it comes from a `streaming.md`
+  requirement. The `PlaybackTicket` is honestly marked provisional because the media vendor
+  is not chosen;
+- **`payouts`**: the admission "the form is safe, the tax model is not" is exactly inverted
+  by K1 and K2 — **it is the form that is wrong, and the model that is recoverable.** It is
+  the only one of the four where "provisional" is attached to the wrong half;
+- **`notifications`**: no Kafka topic at all (K4), but its invariants (quiet hours
+  conditioned on holding a seat, redacting an amount based on `canRevenue`, routing decided
+  server-side) are real, verifiable business rules.
 
 ---
 
-## Annexe — ce que j'ai lancé, pour qu'on puisse le relancer
+## What I could not judge, and why
+
+1. **The tax model itself.** Who owes VAT, on what base, who is liable: these are questions
+   of law, and the warning at the top of `adr-payments.md` is right to say so. I judged only
+   what is judgeable without tax counsel: the **internal consistency** between D-015 and the
+   Stripe configuration (K1) and between D-015 and the shape of the data (K2). On those two
+   points you do not need a lawyer.
+
+2. **The bundle measurements in D-012** (93 KB versus 7.5 KB gzip). Two agents measured
+   independently and converge within 1 KB; the caveat is already recorded (esbuild on an
+   isolated schema, tree-shaking not on by default in the React Native bundler). I have no
+   bundler here and would have added nothing.
+
+3. **The mockups.** The brief forbids opening them in full and I did not. Everything I claim
+   about the design comes from `shared/` (`catalogue.json` read in full on the vocabularies I
+   contest) and from the five `needs/`. Where a surface asserts what its mockup shows, I took
+   its word.
+
+4. **The percolator at scale.** I verified that it **exists** in OpenSearch (R1). I have no
+   order of magnitude for the expected number of saved searches, and
+   `search.allow_expensive_queries` is a switch an operator turns off one day under load. The
+   day it is turned off, saved-search alerts stop **silently** — but I have nothing to say
+   whether that is a risk or a footnote.
+
+5. **`code-conventions.md`.** 2,044 lines read by targeted search, not in full. I draw one
+   point from it (G4), and it is verified at both ends.
+
+6. **The real renewal latency at the edge.** K3 demonstrates that the exposure window is the
+   token lifetime and not the renewal interval. I could not establish **which** value to aim
+   for: dropping the token to 60 s would double the renewal frequency on the hottest path in
+   the system, and nobody has measured what that doubling costs. The defect is certain; the
+   remedy is not.
+
+7. **`studio-mobile` has not yet written its Confrontation** (`needs/studio-mobile.md` is
+   unchanged as I write). Four surfaces out of five have confronted the offer; the fifth is
+   still to read, and it may well find in `chat` and in on-call duty what I did not look for.
+
+---
+
+## Appendix — what I ran, so it can be re-run
 
 ```bash
-# R3 — les quinze règles, réimplémentées et lancées sur les deux documents
+# R3 — the fifteen rules, reimplemented and run against both documents
 python3 - <<'PY'
 import yaml, re, json
 ALLOW = {'recordPlaybackPosition','submitHealthSample','openPlayback','renewPlaybackTicket',
@@ -767,26 +760,26 @@ for f in ('openapi/storefront.yaml','openapi/studio.yaml'):
           'i18n-leak', len(re.findall(r'"(labelFr|labelEn|messageFr|messageEn)"', s)))
 PY
 
-# G1 — le fan-out réel, celui que R7 ne borne pas
+# G1 — the real fan-out, the one R7 does not bound
 grep -ohE 'x-arthome-upstream: \[[^]]*\]' openapi/*.yaml \
   | awk -F, '{print NF}' | sort | uniq -c
 
-# K4 — les deux vocabulaires d'événements, côte à côte
+# K4 — the two event vocabularies, side by side
 grep -ohE '\b(identity|catalog|ticketing|streaming|chat|payouts)\.[a-z_]+(\.[a-z_]+)*(\.v1)?' \
   architecture/context-map.md architecture/data-model.md | sort -u
 
-# K6 — la source qui fait autorité
+# K6 — the authoritative source
 python3 -c "import json;print(json.load(open('/home/julien-metral/Dev/arthome-design/design_handoff_arthome/shared/catalogue.json'))['plans'])"
 grep -n 'opens:' openapi/storefront.yaml
 ```
 
-**Sources vérifiées en ligne le 21 septembre 2026** :
+**Sources verified online on 21 September 2026**:
 [Stripe — Understand the merchant of record in a Connect integration](https://docs.stripe.com/connect/merchant-of-record) ·
 [Stripe — Understand how charges work in a Connect integration](https://docs.stripe.com/connect/charges) ·
 [OpenSearch — Percolator field type](https://docs.opensearch.org/latest/mappings/supported-field-types/percolator/) ·
 [OpenSearch — Percolate query](https://docs.opensearch.org/latest/query-dsl/specialized/percolate/) ·
 [Meilisearch — Filtering, sorting and faceting](https://www.meilisearch.com/docs/capabilities/filtering_sorting_faceting/overview) ·
 [Meilisearch — Facet aggregation functions (issue #1083)](https://github.com/meilisearch/MeiliSearch/issues/1083) ·
-[Meilisearch — Enterprise Edition licence](https://daily.dev/posts/introducing-the-meilisearch-enterprise-edition-license-w4boyi4ho) ·
+[Meilisearch — Enterprise Edition license](https://daily.dev/posts/introducing-the-meilisearch-enterprise-edition-license-w4boyi4ho) ·
 [CVE-2026-45337 — better-auth device authorization](https://osv.dev/vulnerability/CVE-2026-45337) ·
 npm (`better-auth@1.7.5`, `kafkajs@2.2.4`, `time.modified 2023-02-27`).
