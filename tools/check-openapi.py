@@ -133,10 +133,54 @@ def check(fn):
             if name in ("labelFr","labelEn","messageFr","messageEn"):
                 err(fn, f"R13 fuite d'i18n dans la donnée: {p}/{name}")
 
-    # R14 — un vocabulaire fermé en SORTIE ne doit pas être un `enum` figé
-    for p, n in walk(d.get("components",{}).get("schemas",{}), "components/schemas"):
-        if isinstance(n, dict) and "x-arthome-vocabulary" in n and "enum" in n:
-            err(fn, f"R14 vocabulaire de sortie figé en enum (rejetterait une valeur inconnue) — {p}")
+    # R14 — aucun `enum` figé dans un schéma ATTEIGNABLE DEPUIS UNE RÉPONSE.
+    #
+    # Deux corrections successives. La version d'origine ne se déclenchait que si
+    # `enum` ET `x-arthome-vocabulary` étaient présents ensemble : un `enum` nu
+    # passait au travers, et c'est ce que `storefront-tv` a trouvé à la main sur
+    # `Error.nature` — `required` dans `Error`, lui-même `required` dans
+    # `ErrorEnvelope`, donc dans le corps de TOUTES les erreurs. Une quatrième
+    # nature aurait fait rejeter l'enveloppe entière par un parc qu'on ne met pas
+    # à jour, au moment précis où quelque chose ne va pas.
+    #
+    # La première tentative de durcissement — « tout `enum` sous
+    # components/schemas » — criait à tort sur `SearchCriteria`, qui n'est
+    # référencée qu'en `in: query`. Un vocabulaire d'ENTRÉE est légitimement
+    # fermé : le serveur doit refuser ce qu'il ne connaît pas. Une porte qui crie
+    # à tort se fait désactiver, donc le critère juste est l'atteignabilité.
+    schemas = d.get("components", {}).get("schemas", {})
+
+    def refs_of(node):
+        out = []
+        if isinstance(node, dict):
+            r = node.get("$ref")
+            if isinstance(r, str) and r.startswith("#/components/schemas/"):
+                out.append(r.rsplit("/", 1)[1])
+            for v in node.values():
+                out += refs_of(v)
+        elif isinstance(node, list):
+            for v in node:
+                out += refs_of(v)
+        return out
+
+    reachable, queue = set(), []
+    for _pp, _m, o in ops:
+        for _code, r in (o.get("responses") or {}).items():
+            for _ct, media in ((r or {}).get("content") or {}).items():
+                queue += refs_of(media.get("schema"))
+    while queue:
+        name = queue.pop()
+        if name in reachable or name not in schemas:
+            continue
+        reachable.add(name)
+        queue += refs_of(schemas[name])
+
+    for name in sorted(reachable):
+        for sp, n in walk(schemas[name], f"components/schemas/{name}"):
+            if isinstance(n, dict) and "enum" in n:
+                hint = ("" if "x-arthome-vocabulary" in n
+                        else " (ajouter x-arthome-vocabulary et x-arthome-unknown-fallback)")
+                err(fn, f"R14 enum figé dans un schéma servi en réponse{hint} — {sp}")
 
     # R15 — tout schéma de réponse racine porte servedAt (via EnvelopeMeta)
     for pp, m, o in ops:
