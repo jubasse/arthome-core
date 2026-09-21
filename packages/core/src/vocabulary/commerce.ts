@@ -45,19 +45,19 @@ export const PlanTier = {
  * The NINE openings `catalogue.json` actually carries.
  *
  * Spelling: `shared/`'s, TO THE LETTER — so kebab-case (K6).
- * An `opens.includes('multi-screen')` against a payload carrying `multi_screen`
+ * An `opens.includes('multi_screen')` against a payload carrying `multi_screen`
  * returns `false` IN SILENCE: everyone drops to one screen. That is E1's exact
  * shape, reintroduced by the contract after being fixed on the plans.
  */
 export const PLAN_OPENINGS = [
   'browse',
   'trailers',
-  'free-dates',
+  'free_dates',
   'replays',
-  'no-ads',
-  'one-live-month',
-  'all-lives',
-  'multi-screen',
+  'no_ads',
+  'one_live_month',
+  'all_lives',
+  'multi_screen',
   'archive',
 ] as const;
 export type PlanOpening = (typeof PLAN_OPENINGS)[number];
@@ -65,22 +65,22 @@ export type PlanOpening = (typeof PLAN_OPENINGS)[number];
 export const PlanOpening = {
   BROWSE: 'browse',
   TRAILERS: 'trailers',
-  FREE_DATES: 'free-dates',
+  FREE_DATES: 'free_dates',
   REPLAYS: 'replays',
-  NO_ADS: 'no-ads',
-  ONE_LIVE_MONTH: 'one-live-month',
-  ALL_LIVES: 'all-lives',
-  MULTI_SCREEN: 'multi-screen',
+  NO_ADS: 'no_ads',
+  ONE_LIVE_MONTH: 'one_live_month',
+  ALL_LIVES: 'all_lives',
+  MULTI_SCREEN: 'multi_screen',
   ARCHIVE: 'archive',
 } as const;
 
-export const SUBSCRIPTION_STATES = ['active', 'past-due', 'sub-cancelled', 'trialing'] as const;
+export const SUBSCRIPTION_STATES = ['active', 'past_due', 'cancelled', 'trialing'] as const;
 export type SubscriptionState = (typeof SUBSCRIPTION_STATES)[number];
 
 export const SubscriptionState = {
   ACTIVE: 'active',
-  PAST_DUE: 'past-due',
-  CANCELLED: 'sub-cancelled',
+  PAST_DUE: 'past_due',
+  CANCELLED: 'cancelled',
   TRIALING: 'trialing',
 } as const;
 
@@ -91,30 +91,30 @@ export const SubscriptionState = {
  * string.
  */
 export const PROMOTION_REASONS = [
-  'pre-sale',
-  'preview-night',
-  'discovery-rate',
-  'final-date',
-  'late-rate',
+  'pre_sale',
+  'preview_night',
+  'discovery_rate',
+  'final_date',
+  'late_rate',
 ] as const;
 export type PromotionReason = (typeof PROMOTION_REASONS)[number];
 
 export const PromotionReason = {
-  PRE_SALE: 'pre-sale',
-  PREVIEW_NIGHT: 'preview-night',
-  DISCOVERY_RATE: 'discovery-rate',
-  FINAL_DATE: 'final-date',
-  LATE_RATE: 'late-rate',
+  PRE_SALE: 'pre_sale',
+  PREVIEW_NIGHT: 'preview_night',
+  DISCOVERY_RATE: 'discovery_rate',
+  FINAL_DATE: 'final_date',
+  LATE_RATE: 'late_rate',
 } as const;
 
 /** D-011: two DISTINCT orders, never a mixed one. */
-export const ORDER_KINDS = ['seat-order', 'merch-order', 'subscription-order'] as const;
+export const ORDER_KINDS = ['seat', 'merch', 'subscription'] as const;
 export type OrderKind = (typeof ORDER_KINDS)[number];
 
 export const OrderKind = {
-  SEAT: 'seat-order',
-  MERCH: 'merch-order',
-  SUBSCRIPTION: 'subscription-order',
+  SEAT: 'seat',
+  MERCH: 'merch',
+  SUBSCRIPTION: 'subscription',
 } as const;
 
 /**
@@ -123,11 +123,11 @@ export const OrderKind = {
  * What `shared/` carries and what has authority: 12% commission, 14-day delay,
  * rounding to the minor unit on each component taken separately.
  */
-export const PAYOUT_STATES = ['scheduled-payout', 'held', 'paid', 'refunded', 'suspended'] as const;
+export const PAYOUT_STATES = ['scheduled', 'held', 'paid', 'refunded', 'suspended'] as const;
 export type PayoutState = (typeof PAYOUT_STATES)[number];
 
 export const PayoutState = {
-  SCHEDULED: 'scheduled-payout',
+  SCHEDULED: 'scheduled',
   HELD: 'held',
   PAID: 'paid',
   REFUNDED: 'refunded',
@@ -140,17 +140,17 @@ export const PayoutState = {
  * DOES NOT EXTEND to a live stream.
  */
 export const TAX_SUPPLY_KINDS = [
-  'live-stream-access',
-  'replay-access',
-  'subscription-access',
+  'live_stream_access',
+  'replay_access',
+  'subscription',
   'merchandise',
 ] as const;
 export type TaxSupplyKind = (typeof TAX_SUPPLY_KINDS)[number];
 
 export const TaxSupplyKind = {
-  LIVE_STREAM_ACCESS: 'live-stream-access',
-  REPLAY_ACCESS: 'replay-access',
-  SUBSCRIPTION: 'subscription-access',
+  LIVE_STREAM_ACCESS: 'live_stream_access',
+  REPLAY_ACCESS: 'replay_access',
+  SUBSCRIPTION: 'subscription',
   MERCHANDISE: 'merchandise',
 } as const;
 
@@ -160,22 +160,22 @@ export const TaxSupplyKind = {
  * evidence rule CANNOT be delegated to it.
  */
 export const TAX_EVIDENCE_KINDS = [
-  'billing-address',
-  'ip-address',
-  'bank-country',
-  'card-country',
-  'sim-country',
-  'declared-by-buyer',
+  'billing_address',
+  'ip_address',
+  'bank_country',
+  'card_country',
+  'sim_country',
+  'declared_by_buyer',
 ] as const;
 export type TaxEvidenceKind = (typeof TAX_EVIDENCE_KINDS)[number];
 
 export const TaxEvidenceKind = {
-  BILLING_ADDRESS: 'billing-address',
-  IP_ADDRESS: 'ip-address',
-  BANK_COUNTRY: 'bank-country',
-  CARD_COUNTRY: 'card-country',
-  SIM_COUNTRY: 'sim-country',
-  DECLARED_BY_BUYER: 'declared-by-buyer',
+  BILLING_ADDRESS: 'billing_address',
+  IP_ADDRESS: 'ip_address',
+  BANK_COUNTRY: 'bank_country',
+  CARD_COUNTRY: 'card_country',
+  SIM_COUNTRY: 'sim_country',
+  DECLARED_BY_BUYER: 'declared_by_buyer',
 } as const;
 
 /** Roughly 9,000 US jurisdictions: a country allows no calculation at all. */

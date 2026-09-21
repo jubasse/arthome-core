@@ -45,7 +45,7 @@ describe('territorial rights', () => {
     const rights = restrictedRights(['BE'], BlackoutReason.FESTIVAL);
     expect(blackoutReasonOf(rights, 'BE')).toBe('festival');
     // And the spelling is `shared/`'s, to the letter: kebab-case (K6).
-    expect(BlackoutReason.CO_PRODUCTION).toBe('co-production');
+    expect(BlackoutReason.CO_PRODUCTION).toBe('co_production');
   });
 
   it('gives no reason to anyone who is not blocked', () => {

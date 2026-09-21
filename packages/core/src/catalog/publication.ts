@@ -2,7 +2,7 @@
  * A publication's state machine, and its two ONE-WAY passages.
  *
  * E5 — the quietest and most important correction: the fixtures encode
- * `lockedTransitions: ['scheduled', 'replay-online']`, a list of STATES, and
+ * `lockedTransitions: ['scheduled', 'replay_online']`, a list of STATES, and
  * test membership of the current state. The mockup encodes `from>to` PAIRS.
  * Those are two different semantics, and the second is the right one —
  * locking a STATE would also prevent entering it.
@@ -164,13 +164,13 @@ export function assertTransitionAllowed(
  * synchronous call to two services.
  */
 export const PUBLICATION_CHECKLIST_ITEMS = [
-  'title-and-discipline',
+  'title_and_discipline',
   'poster',
   'description',
-  'at-least-one-active-price',
+  'at_least_one_active_price',
   'capacity',
-  'technical-check-passed',
-  'chat-mode-set',
+  'technical_check_passed',
+  'chat_mode_set',
 ] as const;
 export type PublicationChecklistItem = (typeof PUBLICATION_CHECKLIST_ITEMS)[number];
 
@@ -181,7 +181,7 @@ export type PublicationChecklistItem = (typeof PUBLICATION_CHECKLIST_ITEMS)[numb
  * be possible to publish a date without chapters, and an unassigned post can be
  * filled up to the last day.
  */
-export const PUBLICATION_WARNING_ITEMS = ['chapters-planned', 'moderator-assigned'] as const;
+export const PUBLICATION_WARNING_ITEMS = ['chapters_planned', 'moderator_assigned'] as const;
 export type PublicationWarningItem = (typeof PUBLICATION_WARNING_ITEMS)[number];
 
 export interface PublicationReadiness {

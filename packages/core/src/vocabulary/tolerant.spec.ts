@@ -91,9 +91,9 @@ describe('the named members equal the wire values', () => {
   it('exposes the same string as shared/\'s spelling', () => {
     // K6: three spellings for a value `decideWatch` depends on. On the wire, it
     // is `shared/`'s kebab-case that has authority.
-    expect(PlanOpening.MULTI_SCREEN).toBe('multi-screen');
-    expect(PlanOpening.FREE_DATES).toBe('free-dates');
-    expect(PlanOpening.ONE_LIVE_MONTH).toBe('one-live-month');
+    expect(PlanOpening.MULTI_SCREEN).toBe('multi_screen');
+    expect(PlanOpening.FREE_DATES).toBe('free_dates');
+    expect(PlanOpening.ONE_LIVE_MONTH).toBe('one_live_month');
     // And the outcome IS the displayed state: same value, two axes.
     expect(DisplayState.CANCELLED).toBe('cancelled');
   });

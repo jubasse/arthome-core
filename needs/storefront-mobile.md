@@ -942,10 +942,22 @@ the others constrain it.
 > **↪ Outcome** were added later, after the fixes landed; everything else is the record of
 > 21 September and has not been renumbered, softened or re-cited.
 >
-> **Every line reference below is now dead.** `openapi/storefront.yaml` has grown from 5,072 lines
-> and 53 endpoints to 6,984 lines and 75 since this was written — l. 2354, cited for
-> `/v1/me/follows/{artistId}`, now falls in the middle of an unrelated response. The outcome notes
-> give the current line and say the old one has moved; they do not rewrite the citation.
+> **Every line reference below is now dead.** `openapi/storefront.yaml` stood at 5,072 lines and
+> 53 endpoints when this was written and has since passed 7,000 and 75 — and it moved again
+> between the day the outcome notes were added and the day after, which is the whole argument.
+> Every citation below therefore names its **identifier** as well — a schema, a path, an
+> `operationId`, a section — and that is what to follow. The outcome notes anchor on identifiers
+> only, for the same reason; they do not rewrite the original citation.
+>
+> **Three exceptions, and they are substitutions, not rewrites.** In §4 below, two pointers into
+> `context-map.md` were line numbers into a document I do not own; `backend-domain` found them
+> dead after its translation, and they now name **§7.1** and **§13** instead. In C5, a section
+> number was added *beside* the surviving line number into `transport.md`, which had a quotation
+> for an anchor and nothing else.
+>
+> Nothing else in the record was touched. A line number into a document someone else maintains is
+> a citation that dies on their next edit, and those two had already died **reading plausibly** —
+> which is how a bad reference survives, because nobody follows a pointer that looks right.
 
 ---
 
@@ -1048,8 +1060,9 @@ asserts the opposite ("**Following and being alerted are two settings**", l. 236
 the second.
 
 > **↪ Outcome (added after the confrontation, 21 September 2026).** **Closed, and closed on all
-> three asks.** `GET /v1/me/follows` exists (`openapi/storefront.yaml` l. 3870, `listFollowedArtists`),
-> cursor-paginated, and its own description opens with *"**The whole page was unserved.**"* It
+> three asks.** `GET /v1/me/follows` exists
+> (`openapi/storefront.yaml`, `operationId: listFollowedArtists`), cursor-paginated, and its own
+> description opens with *"**The whole page was unserved.**"* It
 > carries the three things this grievance said nothing else carried: `alertEnabled` per artist,
 > `nextDate` *"which gives the split the screen displays without a call per artist"*, and a
 > `liveOnly` parameter described as *"**the 'Following live' section**, served rather than filtered
@@ -1057,8 +1070,9 @@ the second.
 > it also serves `account/faves`, *"of whose two collections this is the first — the second being
 > `/v1/me/watchlist`"*, which closes the second half of this grievance as well.
 >
-> The per-artist alert write landed with it: `PUT /v1/me/follows/{artistId}` (now l. 3936, cited
-> above as l. 2354) takes `alertEnabled` in its body, and l. 3943 states that the alert is *"a flag
+> The per-artist alert write landed with it: `PUT /v1/me/follows/{artistId}`
+> (`operationId: followArtist`, cited above as l. 2354) takes `alertEnabled` in its body, and its
+> description states that the alert is *"a flag
 > **per followed artist** carried by `notifications`"*. So the description that asserted following
 > and being alerted were two settings now offers the second — the contradiction this grievance
 > named is resolved in the direction it argued for.
@@ -1178,10 +1192,10 @@ all the more regrettable because the rest of the reasoning is sound.
 > for that date *"**resumes that lease** and returns the same `sessionId`; it does not open a second
 > one and does not consume another screen"*. It ends by naming the defect — *"The promise 'you can
 > resume your own session, identified by the device' was written in the answers to the surfaces and
-> was carried nowhere in the contract."* `releasePlayback` says the same from the other side
-> (l. 2981): *"The client can **resume its own session**, identified by `deviceId`."*
+> was carried nowhere in the contract."* `releasePlayback` says the same from the other
+> side: *"The client can **resume its own session**, identified by `deviceId`."*
 >
-> `ActivePlaybackSession` (now l. 6615, cited above as l. 4719) gained both fields, and `deviceId`
+> `ActivePlaybackSession` (cited above as l. 4719) gained both fields, and `deviceId`
 > carries the reason verbatim from this grievance: *"**Served, because without it the list is not
 > actionable.** The surface must be able to recognise **its own** session in order to offer 'resume
 > here' rather than 'release another screen', and a device label is not enough: two phones of the
@@ -1195,7 +1209,7 @@ all the more regrettable because the rest of the reasoning is sound.
 
 ### C5 — The account menu costs six calls for six badges, and the header two more on cold start
 
-`transport.md` l. 31 announces "internal calls **per screen**: 1 to 4, all parallel". That is the
+`transport.md` §1 (l. 31) announces "internal calls **per screen**: 1 to 4, all parallel". That is the
 BFF's fan-out to the services, and it is good. **That is not what I pay.** The number of round trips
 **from the client to the BFF** is budgeted nowhere, and it is the only one measured in cellular
 latency — at 150 ms per round trip, four calls make six hundred milliseconds before the first screen
@@ -1316,17 +1330,17 @@ designed, and my verdict.
 | `seatsLabel`, `isSoldOut` | `availability`: `seatsAvailable`, `waitlistCount`, `fillRateBps`, `soldOut` | **holds, and better** |
 | `progressOf` | `liveEdgeSec` + `startsAt` + `runtimeMin`, derived against `servedAt` | **holds** |
 | `viewersOf` | `viewers` nullable — "absent, never zero" — plus a differential `counters:tick` | **holds** |
-| `devicesOf` | `Device` + `sessions[]`, device and session finally distinguished; my remark cited in `context-map.md` l. 610 | **holds** |
+| `devicesOf` | `Device` + `sessions[]`, device and session finally distinguished; my remark cited in `context-map.md` §7.1 | **holds** |
 | `alertsOf` | `NotificationEntry` + `SavedSearch` + `newMatchesSinceLastVisit` | **holds, except the per-artist alert** (C1) |
 | `resumeOf` | `resumePoint`, `viewerProgress`, `/v1/me/progress` with its cadence | **holds entirely** |
 | `plans` | `Plan`, `Subscription`, `concurrentStreamsAllowed` served | **holds** |
 | `messageState`, `chatOf` | `badge` **derived** by `moderationBadgeOf`, precedence written down, three axes kept separate model-side, removed messages filtered at source | **designed, not exercised** |
 
-**Eleven hold, two hold halfway, one remains open.** And `context-map.md` l. 967 marks `chat`
-**provisional**, citing my verification explicitly — "no screen has ever exercised moderation as the
-viewer sees it; a contract that is designed and not observed is not frozen". That is the right
-answer to my warning: not to claim it lifted. **I maintain the warning on moderation alone, and I
-lift it on the other ten.**
+**Eleven hold, two hold halfway, one remains open.** And `context-map.md` §13 (contract maturity)
+marks `chat` **provisional**, citing my verification explicitly — "no screen has ever exercised
+moderation as the viewer sees it; a contract that is designed and not observed is not frozen".
+That is the right answer to my warning: not to claim it lifted. **I maintain the warning on
+moderation alone, and I lift it on the other ten.**
 
 ---
 

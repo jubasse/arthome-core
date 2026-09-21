@@ -20,7 +20,7 @@ export const PUBLICATION_STATES = [
   'technical',
   'live',
   'ended',
-  'replay-online',
+  'replay_online',
 ] as const;
 export type PublicationState = (typeof PUBLICATION_STATES)[number];
 
@@ -31,7 +31,7 @@ export const PublicationState = {
   TECHNICAL: 'technical',
   LIVE: 'live',
   ENDED: 'ended',
-  REPLAY_ONLINE: 'replay-online',
+  REPLAY_ONLINE: 'replay_online',
 } as const;
 
 /**
@@ -42,15 +42,15 @@ export const PublicationState = {
  * sanctions field (E4). A run desk has no "cancelled" state: it has a stage
  * that is sending nothing.
  */
-export const RUN_STATES = ['idle', 'rehearsal', 'on-air', 'interrupted', 'run-ended'] as const;
+export const RUN_STATES = ['idle', 'rehearsal', 'on_air', 'interrupted', 'ended'] as const;
 export type RunState = (typeof RUN_STATES)[number];
 
 export const RunState = {
   IDLE: 'idle',
   REHEARSAL: 'rehearsal',
-  ON_AIR: 'on-air',
+  ON_AIR: 'on_air',
   INTERRUPTED: 'interrupted',
-  ENDED: 'run-ended',
+  ENDED: 'ended',
 } as const;
 
 /**
@@ -83,12 +83,12 @@ export const DateOutcome = {
 export const DISPLAY_STATES = [
   'draft',
   'reserve',
-  'scheduled-soon',
+  'scheduled',
   'technical',
-  'room-open',
-  'on-air-live',
-  'replay-available',
-  'finished',
+  'room_open',
+  'live',
+  'replay',
+  'ended',
   'postponed',
   'cancelled',
   'interrupted',
@@ -98,12 +98,12 @@ export type DisplayState = (typeof DISPLAY_STATES)[number];
 export const DisplayState = {
   DRAFT: 'draft',
   RESERVE: 'reserve',
-  SCHEDULED: 'scheduled-soon',
+  SCHEDULED: 'scheduled',
   TECHNICAL: 'technical',
-  ROOM_OPEN: 'room-open',
-  LIVE: 'on-air-live',
-  REPLAY: 'replay-available',
-  ENDED: 'finished',
+  ROOM_OPEN: 'room_open',
+  LIVE: 'live',
+  REPLAY: 'replay',
+  ENDED: 'ended',
   POSTPONED: 'postponed',
   CANCELLED: 'cancelled',
   INTERRUPTED: 'interrupted',
@@ -145,11 +145,11 @@ export const RightsScope = {
  * Spelling: `shared/`'s, to the letter — so `co-production` in kebab-case, not
  * `co_production` (K6).
  */
-export const BLACKOUT_REASONS = ['co-production', 'broadcaster', 'festival'] as const;
+export const BLACKOUT_REASONS = ['co_production', 'broadcaster', 'festival'] as const;
 export type BlackoutReason = (typeof BLACKOUT_REASONS)[number];
 
 export const BlackoutReason = {
-  CO_PRODUCTION: 'co-production',
+  CO_PRODUCTION: 'co_production',
   BROADCASTER: 'broadcaster',
   FESTIVAL: 'festival',
 } as const;
@@ -174,18 +174,18 @@ export const LanguageDependency = {
 
 /** The four incident kinds a viewer can see. */
 export const INCIDENT_KINDS = [
-  'hold-screen',
-  'incident-postponed',
-  'incident-cancelled',
-  'incident-interrupted',
+  'hold_screen',
+  'postponed',
+  'cancelled',
+  'interrupted',
 ] as const;
 export type IncidentKind = (typeof INCIDENT_KINDS)[number];
 
 export const IncidentKind = {
-  HOLD_SCREEN: 'hold-screen',
-  POSTPONED: 'incident-postponed',
-  CANCELLED: 'incident-cancelled',
-  INTERRUPTED: 'incident-interrupted',
+  HOLD_SCREEN: 'hold_screen',
+  POSTPONED: 'postponed',
+  CANCELLED: 'cancelled',
+  INTERRUPTED: 'interrupted',
 } as const;
 
 /**
@@ -196,20 +196,20 @@ export const IncidentKind = {
  * `streaming.md` names a fourth.
  */
 export const INCIDENT_CAUSES = [
-  'venue-feed-lost',
-  'run-desk-disconnected',
-  'bitrate-collapsed',
-  'compatibility-worker-failed',
-  'provider-error',
-  'manual-cause',
+  'venue_feed_lost',
+  'run_desk_disconnected',
+  'bitrate_collapsed',
+  'compatibility_worker_failed',
+  'provider_error',
+  'manual',
 ] as const;
 export type IncidentCause = (typeof INCIDENT_CAUSES)[number];
 
 export const IncidentCause = {
-  VENUE_FEED_LOST: 'venue-feed-lost',
-  RUN_DESK_DISCONNECTED: 'run-desk-disconnected',
-  BITRATE_COLLAPSED: 'bitrate-collapsed',
-  COMPATIBILITY_WORKER_FAILED: 'compatibility-worker-failed',
-  PROVIDER_ERROR: 'provider-error',
-  MANUAL: 'manual-cause',
+  VENUE_FEED_LOST: 'venue_feed_lost',
+  RUN_DESK_DISCONNECTED: 'run_desk_disconnected',
+  BITRATE_COLLAPSED: 'bitrate_collapsed',
+  COMPATIBILITY_WORKER_FAILED: 'compatibility_worker_failed',
+  PROVIDER_ERROR: 'provider_error',
+  MANUAL: 'manual',
 } as const;

@@ -42,14 +42,14 @@ export const MemberRole = {
  * Two scales, two lifecycles: confusing them would turn revoking a stand-in
  * into exclusion from the channel.
  */
-export const CREW_ROLES = ['crew-director', 'crew-video', 'crew-sound', 'crew-moderation'] as const;
+export const CREW_ROLES = ['director', 'video', 'sound', 'moderation'] as const;
 export type CrewRole = (typeof CREW_ROLES)[number];
 
 export const CrewRole = {
-  DIRECTOR: 'crew-director',
-  VIDEO: 'crew-video',
-  SOUND: 'crew-sound',
-  MODERATION: 'crew-moderation',
+  DIRECTOR: 'director',
+  VIDEO: 'video',
+  SOUND: 'sound',
+  MODERATION: 'moderation',
 } as const;
 
 /**
@@ -61,7 +61,7 @@ export const CrewRole = {
 export const NAVIGATION_ENTRIES = [
   'agenda',
   'dashboard',
-  'moderation-page',
+  'moderation_page',
   'crew',
   'events',
   'stream',
@@ -80,7 +80,7 @@ export type NavigationEntry = (typeof NAVIGATION_ENTRIES)[number];
 export const NavigationEntry = {
   AGENDA: 'agenda',
   DASHBOARD: 'dashboard',
-  MODERATION: 'moderation-page',
+  MODERATION: 'moderation_page',
   CREW: 'crew',
   EVENTS: 'events',
   STREAM: 'stream',
@@ -98,21 +98,21 @@ export const NavigationEntry = {
 /** The six panes of a date sheet, opened according to effective rights. */
 export const DATE_PANES = [
   'public',
-  'pane-tickets',
-  'pane-chat',
+  'tickets',
+  'chat',
   'tech',
-  'pane-crew',
-  'pane-replay',
+  'crew',
+  'replay',
 ] as const;
 export type DatePane = (typeof DATE_PANES)[number];
 
 export const DatePane = {
   PUBLIC: 'public',
-  TICKETS: 'pane-tickets',
-  CHAT: 'pane-chat',
+  TICKETS: 'tickets',
+  CHAT: 'chat',
   TECH: 'tech',
-  CREW: 'pane-crew',
-  REPLAY: 'pane-replay',
+  CREW: 'crew',
+  REPLAY: 'replay',
 } as const;
 
 /**
@@ -147,30 +147,30 @@ export const DeviceKind = {
  * lease expiry, automatic moderation.
  */
 export const SURFACES = [
-  'storefront-web',
-  'storefront-mobile',
-  'storefront-tv',
-  'studio-web',
-  'studio-mobile',
+  'storefront_web',
+  'storefront_mobile',
+  'storefront_tv',
+  'studio_web',
+  'studio_mobile',
   'system',
 ] as const;
 export type Surface = (typeof SURFACES)[number];
 
 export const Surface = {
-  STOREFRONT_WEB: 'storefront-web',
-  STOREFRONT_MOBILE: 'storefront-mobile',
-  STOREFRONT_TV: 'storefront-tv',
-  STUDIO_WEB: 'studio-web',
-  STUDIO_MOBILE: 'studio-mobile',
+  STOREFRONT_WEB: 'storefront_web',
+  STOREFRONT_MOBILE: 'storefront_mobile',
+  STOREFRONT_TV: 'storefront_tv',
+  STUDIO_WEB: 'studio_web',
+  STUDIO_MOBILE: 'studio_mobile',
   SYSTEM: 'system',
 } as const;
 
 /** The third channel, proposed and not observed: `in-app`, not `sms` (D-017). */
-export const NOTIFICATION_CHANNELS = ['push', 'email', 'in-app'] as const;
+export const NOTIFICATION_CHANNELS = ['push', 'email', 'in_app'] as const;
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 
 export const NotificationChannel = {
   PUSH: 'push',
   EMAIL: 'email',
-  IN_APP: 'in-app',
+  IN_APP: 'in_app',
 } as const;

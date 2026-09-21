@@ -15,9 +15,9 @@ import { isAfter, plusMinutes } from '../time/instant.js';
  * resolved by the surface.
  */
 export type SeatAvailability =
-  | { readonly kind: 'seats-available'; readonly seatsAvailable: number }
-  | { readonly kind: 'waitlist-only'; readonly waitlistCount: number }
-  | { readonly kind: 'sold-out' };
+  | { readonly kind: 'seats_available'; readonly seatsAvailable: number }
+  | { readonly kind: 'waitlist_only'; readonly waitlistCount: number }
+  | { readonly kind: 'sold_out' };
 
 export interface Gauge {
   readonly capacityTotal: number;
@@ -38,9 +38,9 @@ export function seatsAvailable(gauge: Gauge): number {
 
 export function availabilityOf(gauge: Gauge): SeatAvailability {
   const available = seatsAvailable(gauge);
-  if (available > 0) return { kind: 'seats-available', seatsAvailable: available };
-  if (gauge.waitlistCount > 0) return { kind: 'waitlist-only', waitlistCount: gauge.waitlistCount };
-  return { kind: 'sold-out' };
+  if (available > 0) return { kind: 'seats_available', seatsAvailable: available };
+  if (gauge.waitlistCount > 0) return { kind: 'waitlist_only', waitlistCount: gauge.waitlistCount };
+  return { kind: 'sold_out' };
 }
 
 /**

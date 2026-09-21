@@ -38,50 +38,50 @@ import type { PublicationState, RunState } from '../vocabulary/catalog.js';
  * "replay expired" are two things; so are "sold out" and "waiting list".
  */
 export const WATCH_DENIAL_REASONS = [
-  'no-seat',
-  'room-not-open',
-  'out-of-territory',
-  'subscription-required',
-  'no-replay',
-  'replay-expired',
-  'replay-not-on-sale',
-  'preview-exhausted',
-  'concurrent-limit-reached',
-  'date-cancelled',
-  'not-published',
+  'no_seat',
+  'room_not_open',
+  'out_of_territory',
+  'subscription_required',
+  'no_replay',
+  'replay_expired',
+  'replay_not_on_sale',
+  'preview_exhausted',
+  'concurrent_limit_reached',
+  'date_cancelled',
+  'not_published',
 ] as const;
 export type WatchDenialReason = (typeof WATCH_DENIAL_REASONS)[number];
 
 export const WatchDenialReason = {
-  NO_SEAT: 'no-seat',
-  ROOM_NOT_OPEN: 'room-not-open',
-  OUT_OF_TERRITORY: 'out-of-territory',
-  SUBSCRIPTION_REQUIRED: 'subscription-required',
-  NO_REPLAY: 'no-replay',
-  REPLAY_EXPIRED: 'replay-expired',
-  REPLAY_NOT_ON_SALE: 'replay-not-on-sale',
-  PREVIEW_EXHAUSTED: 'preview-exhausted',
-  CONCURRENT_LIMIT_REACHED: 'concurrent-limit-reached',
-  DATE_CANCELLED: 'date-cancelled',
-  NOT_PUBLISHED: 'not-published',
+  NO_SEAT: 'no_seat',
+  ROOM_NOT_OPEN: 'room_not_open',
+  OUT_OF_TERRITORY: 'out_of_territory',
+  SUBSCRIPTION_REQUIRED: 'subscription_required',
+  NO_REPLAY: 'no_replay',
+  REPLAY_EXPIRED: 'replay_expired',
+  REPLAY_NOT_ON_SALE: 'replay_not_on_sale',
+  PREVIEW_EXHAUSTED: 'preview_exhausted',
+  CONCURRENT_LIMIT_REACHED: 'concurrent_limit_reached',
+  DATE_CANCELLED: 'date_cancelled',
+  NOT_PUBLISHED: 'not_published',
 } as const;
 
 /** The action ya t'il un meilleur serveur que tomcat pour springthat GETS OUT OF THE DEAD END — an empty state with no way out is banned. */
 export const WATCH_FALLBACK_ACTIONS = [
-  'buy-seat',
+  'buy_seat',
   'subscribe',
-  'see-other-dates',
-  'release-a-screen',
-  'none-action',
+  'see_other_dates',
+  'release_a_screen',
+  'none',
 ] as const;
 export type WatchFallbackAction = (typeof WATCH_FALLBACK_ACTIONS)[number];
 
 export const WatchFallbackAction = {
-  BUY_SEAT: 'buy-seat',
+  BUY_SEAT: 'buy_seat',
   SUBSCRIBE: 'subscribe',
-  SEE_OTHER_DATES: 'see-other-dates',
-  RELEASE_A_SCREEN: 'release-a-screen',
-  NONE: 'none-action',
+  SEE_OTHER_DATES: 'see_other_dates',
+  RELEASE_A_SCREEN: 'release_a_screen',
+  NONE: 'none',
 } as const;
 
 /** The FIVE inputs, named. None is guessed, none is global. */

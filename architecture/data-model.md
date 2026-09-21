@@ -45,14 +45,14 @@
 > and converting them removed 36 disagreements that were live in both directions.
 >
 > **The remaining 13 are held, because converting them means editing a contract**, which is
-> `backend-contracts`' file and a second owner's decision: `all-lives`, `free-dates`, `hold-screen`,
-> `multi-screen`, `no-ads`, `one-live-month`, `read-only`, `replay-online`, and the five surface
+> `backend-contracts`' file and a second owner's decision: `all_lives`, `free_dates`, `hold_screen`,
+> `multi_screen`, `no_ads`, `one_live_month`, `read_only`, `replay_online`, and the five surface
 > names `storefront-web|mobile|tv`, `studio-web|mobile`. Seven of them are `shared/`'s own spelling,
 > verified in the handoff, so converting them makes the domain diverge from the source D2 makes
 > authoritative on vocabulary. That is not an objection — `shared/` is a mockup, not a wire — but it
 > is the reason the decision is not mine alone.
 >
-> **Two of the thirteen are a defect under any ruling**: `hold-screen` and `read-only` appear in
+> **Two of the thirteen are a defect under any ruling**: `hold_screen` and `read_only` appear in
 > **both** spellings across the two contracts, the same class as `co-production` / `co_production`.
 > Same value, two strings, one per contract.
 
@@ -526,8 +526,8 @@ that, a new quote. Shipping is computed **at the quote**, not when adding to the
 ### 3.6 `Subscription` and `Plan`
 
 `Plan`: the authoritative vocabulary is `catalogue.json`'s — **`free` (0), `pass` (12),
-`premium` (24)**, with `opens[]` (nine values: `browse`, `trailers`, `free-dates`, `replays`,
-`no-ads`, `one-live-month`, `all-lives`, `multi-screen`, `archive`) and `seat_discount`.
+`premium` (24)**, with `opens[]` (nine values: `browse`, `trailers`, `free_dates`, `replays`,
+`no_ads`, `one_live_month`, `all_lives`, `multi_screen`, `archive`) and `seat_discount`.
 
 **E1 is the gravest divergence in the file, and it must be stated as such.** Four disjoint
 vocabularies coexist, `helpers.planOf()` falls **all** accounts back to `free`, and `plan.opens[]`
@@ -540,7 +540,7 @@ what is a **way of buying** (the one-off seat, which is not a subscription). `mo
 `plan_id`, `state` (`active | past_due | cancelled | trialing`), `started_at`,
 `current_period_end`, `payment_method_ref`, `cancel_at_period_end`, invoices.
 
-**`multi-screen` is an execution constraint, not a marketing line**: "two screens at once" imposes a
+**`multi_screen` is an execution constraint, not a marketing line**: "two screens at once" imposes a
 server-side count, held by `streaming` (§5.4). `ticketing` publishes the ceiling; `streaming`
 enforces it.
 

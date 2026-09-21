@@ -94,14 +94,14 @@ describe('the capacity tiers', () => {
 describe('availability', () => {
   it('tells apart available, waiting list only, and sold out', () => {
     expect(availabilityOf(gauge({ seatsSold: 14 }))).toEqual({
-      kind: 'seats-available',
+      kind: 'seats_available',
       seatsAvailable: 86,
     });
     expect(availabilityOf(gauge({ seatsSold: 100, waitlistCount: 340 }))).toEqual({
-      kind: 'waitlist-only',
+      kind: 'waitlist_only',
       waitlistCount: 340,
     });
-    expect(availabilityOf(gauge({ seatsSold: 100 }))).toEqual({ kind: 'sold-out' });
+    expect(availabilityOf(gauge({ seatsSold: 100 }))).toEqual({ kind: 'sold_out' });
   });
 
   it('stops being "almost full" when nothing is left', () => {

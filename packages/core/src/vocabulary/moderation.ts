@@ -40,11 +40,11 @@ export const ModerationItemState = {
  * The same person is banned on one artist's channel and welcome on another's:
  * that is why the sanction belongs to `chat` and not to `identity`.
  */
-export const AUDIENCE_SANCTIONS = ['none-sanction', 'muted', 'banned'] as const;
+export const AUDIENCE_SANCTIONS = ['none', 'muted', 'banned'] as const;
 export type AudienceSanction = (typeof AUDIENCE_SANCTIONS)[number];
 
 export const AudienceSanction = {
-  NONE: 'none-sanction',
+  NONE: 'none',
   MUTED: 'muted',
   BANNED: 'banned',
 } as const;
@@ -72,14 +72,14 @@ export const ModerationVerdict = {
  * an ORIGIN — see STATE_CHANGE_ORIGINS. Putting it here would give one field
  * two axes.
  */
-export const MODERATION_REASONS = ['spam', 'insult', 'spoiler', 'off-topic', 'harassment'] as const;
+export const MODERATION_REASONS = ['spam', 'insult', 'spoiler', 'off_topic', 'harassment'] as const;
 export type ModerationReason = (typeof MODERATION_REASONS)[number];
 
 export const ModerationReason = {
   SPAM: 'spam',
   INSULT: 'insult',
   SPOILER: 'spoiler',
-  OFF_TOPIC: 'off-topic',
+  OFF_TOPIC: 'off_topic',
   HARASSMENT: 'harassment',
 } as const;
 
@@ -94,18 +94,18 @@ export const ModerationReason = {
  * what already exists) are TWO MOMENTS, not two names.
  */
 export const STATE_CHANGE_ORIGINS = [
-  'human-verdict',
-  'retroactive-filter',
-  'automatic-filter',
-  'author-sanctioned',
+  'human_verdict',
+  'retroactive_filter',
+  'automatic_filter',
+  'author_sanctioned',
 ] as const;
 export type StateChangeOrigin = (typeof STATE_CHANGE_ORIGINS)[number];
 
 export const StateChangeOrigin = {
-  HUMAN_VERDICT: 'human-verdict',
-  RETROACTIVE_FILTER: 'retroactive-filter',
-  AUTOMATIC_FILTER: 'automatic-filter',
-  AUTHOR_SANCTIONED: 'author-sanctioned',
+  HUMAN_VERDICT: 'human_verdict',
+  RETROACTIVE_FILTER: 'retroactive_filter',
+  AUTOMATIC_FILTER: 'automatic_filter',
+  AUTHOR_SANCTIONED: 'author_sanctioned',
 } as const;
 
 /**
@@ -113,13 +113,13 @@ export const StateChangeOrigin = {
  * mockups — `free | emoji | off` on the web and the run desk, `read` instead of
  * `read-only` — and the i18n files resolve only the first set (E2).
  */
-export const CHAT_MODES = ['open', 'emoji', 'read-only', 'off'] as const;
+export const CHAT_MODES = ['open', 'emoji', 'read_only', 'off'] as const;
 export type ChatMode = (typeof CHAT_MODES)[number];
 
 export const ChatMode = {
   OPEN: 'open',
   EMOJI: 'emoji',
-  READ_ONLY: 'read-only',
+  READ_ONLY: 'read_only',
   OFF: 'off',
 } as const;
 

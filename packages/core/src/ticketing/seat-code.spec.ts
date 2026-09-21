@@ -78,8 +78,47 @@ describe('human input', () => {
   });
 
   it('guesses NOTHING else — an unknown character makes it fail', () => {
-    // `U` has no single reading: we do not correct it.
+    // `U` has no single reading: we do not correct it. And that is deliberate —
+    // over a telephone "you" and "vee" are distinct, so `U`/`V` is not a
+    // confusable class on this channel the way it is on a paired screen.
     expect(isSeatCode(normalizeSeatCodeInput('7K2MUP'))).toBe(false);
     expect(isSeatCode(normalizeSeatCodeInput('7K2M#P'))).toBe(false);
+  });
+
+  it('accepts a body that BEGINS with the prefix letters', () => {
+    // THE DEFECT THIS TEST EXISTS FOR. The prefix is optional on input, so it
+    // used to be stripped unconditionally — and the body alphabet contains A, T
+    // and H. A viewer holding ATH-ATH123 and typing the six characters they
+    // were given got a three-character body and a false rejection. Roughly one
+    // code in 32,768.
+    expect(normalizeSeatCodeInput('ATH123')).toBe('ATH-ATH123');
+    expect(isSeatCode(normalizeSeatCodeInput('ATH123'))).toBe(true);
+
+    // And the prefixed form of that same code still resolves to itself.
+    expect(normalizeSeatCodeInput('ATH-ATH123')).toBe('ATH-ATH123');
+    expect(normalizeSeatCodeInput('ath ath 123')).toBe('ATH-ATH123');
+  });
+
+  it('still strips a real prefix typed without its hyphen', () => {
+    // The reading the fix must not lose: prefix + body run together.
+    expect(normalizeSeatCodeInput('ATH7K2M9P')).toBe('ATH-7K2M9P');
+    expect(normalizeSeatCodeInput('7K2M9P')).toBe('ATH-7K2M9P');
+  });
+
+  it('never has two valid readings to arbitrate between', () => {
+    // The property that makes "try both" a decision and not a guess: a valid
+    // body is exactly six characters, so the stripped reading can only be valid
+    // at nine typed characters and the bare one only at six. No input is both
+    // lengths, so the two readings are never both codes.
+    //
+    // DISTINCT readings — an input with no prefix to strip yields the same
+    // string twice, which is one reading counted twice and not an ambiguity.
+    // Writing this test the other way is what caught that.
+    for (const typed of ['ATH123', 'ATH7K2M9P', 'ATHATH123', '7K2M9P']) {
+      const valid = new Set(
+        [typed, typed.replace(/^ATH/, '')].map((body) => `ATH-${body}`).filter(isSeatCode),
+      );
+      expect(valid.size).toBeLessThanOrEqual(1);
+    }
   });
 });

@@ -69,13 +69,46 @@ export function seatCode(body: string): string {
  * ⚠ We correct NOTHING else. A character still outside the alphabet after
  * normalisation makes `isSeatCode` fail, and that is the right result: better
  * "this code does not exist" than a neighbouring code found by accident.
+ *
+ * ⚠ `U` is excluded from the alphabet and is NOT mapped, unlike `I`, `L` and
+ * `O`. That asymmetry is deliberate and it is the difference between the two
+ * channels: a pairing code is read off a screen three metres away, where `U`
+ * and `V` are one confusable class; a seat code is dictated over a telephone,
+ * where "you" and "vee" are distinct. So `U` is excluded here for the
+ * rude-word reason alone, and there is nothing it could safely become. A wrong
+ * pairing correction merely fails; a wrong seat correction finds somebody
+ * else's seat.
  */
 export function normalizeSeatCodeInput(raw: string): string {
-  const body = raw
+  const typed = raw
     .toUpperCase()
     .replace(/[\s-]/g, '')
-    .replace(/^ATH/, '')
     .replace(/[IL]/g, '1')
     .replace(/O/g, '0');
-  return `${SEAT_CODE_PREFIX}-${body}`;
+
+  // TWO READINGS, AND THEY CANNOT BOTH BE VALID.
+  //
+  // The prefix is optional on input — support dictates six characters, and the
+  // viewer types six. But the body alphabet contains A, T and H, so a body may
+  // legitimately BEGIN with `ATH`, and stripping unconditionally ate it:
+  // `ATH123` became `ATH-123`, a three-character body, and a valid seat was
+  // refused. Roughly one code in 32,768 — three positions of a 32-symbol
+  // alphabet.
+  //
+  // So we try both readings and keep whichever `isSeatCode` accepts. That is
+  // decidable rather than a guess, and the arithmetic says so: a valid body is
+  // exactly SEAT_CODE_BODY_LENGTH, so the stripped reading is valid only at
+  // length + 3 and the bare reading only at length. One input cannot be both
+  // lengths, so at most one reading is ever valid and there is nothing to
+  // arbitrate.
+  const bare = `${SEAT_CODE_PREFIX}-${typed}`;
+  if (isSeatCode(bare)) return bare;
+
+  const stripped = `${SEAT_CODE_PREFIX}-${typed.replace(/^ATH/, '')}`;
+  if (isSeatCode(stripped)) return stripped;
+
+  // Neither reading is a code. We return the bare one so the caller sees what
+  // the person actually typed, and `isSeatCode` still says no. Guessing a
+  // nearer code here is the one thing this module must never do.
+  return bare;
 }

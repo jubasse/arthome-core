@@ -31,18 +31,18 @@ import {
  * all their messages, whereas a removal bears on one message only.
  */
 export const MODERATION_BADGES = [
-  'badge-banned',
-  'badge-muted',
-  'badge-removed',
-  'badge-published',
+  'badge_banned',
+  'badge_muted',
+  'badge_removed',
+  'badge_published',
 ] as const;
 export type ModerationBadge = (typeof MODERATION_BADGES)[number];
 
 export const ModerationBadge = {
-  BANNED: 'badge-banned',
-  MUTED: 'badge-muted',
-  REMOVED: 'badge-removed',
-  PUBLISHED: 'badge-published',
+  BANNED: 'badge_banned',
+  MUTED: 'badge_muted',
+  REMOVED: 'badge_removed',
+  PUBLISHED: 'badge_published',
 } as const;
 
 export function moderationBadgeOf(

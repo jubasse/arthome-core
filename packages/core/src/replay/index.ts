@@ -69,12 +69,12 @@ export function isReplaySoldSeparately(timing: DateTiming): boolean {
 }
 
 /** Why the replay is not watchable — as a CODE. */
-export const REPLAY_UNAVAILABILITY_REASONS = ['no-replay-policy', 'replay-window-expired'] as const;
+export const REPLAY_UNAVAILABILITY_REASONS = ['no_replay_policy', 'replay_window_expired'] as const;
 export type ReplayUnavailabilityReason = (typeof REPLAY_UNAVAILABILITY_REASONS)[number];
 
 export const ReplayUnavailabilityReason = {
-  NO_POLICY: 'no-replay-policy',
-  WINDOW_EXPIRED: 'replay-window-expired',
+  NO_POLICY: 'no_replay_policy',
+  WINDOW_EXPIRED: 'replay_window_expired',
 } as const;
 
 /**

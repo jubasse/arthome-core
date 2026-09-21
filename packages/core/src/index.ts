@@ -34,6 +34,7 @@ export * from './permissions/index.js';
 
 // Wave 4 — what is bought, what is said, what is alerted, what is searched.
 export * from './ticketing/index.js';
+export * from './pairing/index.js';
 export * from './moderation/index.js';
 export * from './notification/index.js';
 export * from './search/index.js';

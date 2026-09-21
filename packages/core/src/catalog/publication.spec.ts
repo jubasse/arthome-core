@@ -17,7 +17,7 @@ import {
  *
  * WHY THIS TEST EXISTS
  *   E5: the fixtures encode `lockedTransitions: ['scheduled',
- *   'replay-online']` — a list of STATES — and test membership of the current
+ *   'replay_online']` — a list of STATES — and test membership of the current
  *   state. The mockup encodes pairs. Those are two semantics, and the
  *   difference is not academic: locking a STATE would also prevent ENTERING it.
  *   A date could never be published.
@@ -152,8 +152,8 @@ describe('the publication gate', () => {
   it('returns the list of missing items, not a count', () => {
     const readiness = publicationReadiness(['poster', 'description', 'capacity'], []);
     expect(readiness.ready).toBe(false);
-    expect(readiness.missing).toContain('technical-check-passed');
-    expect(readiness.missing).toContain('at-least-one-active-price');
+    expect(readiness.missing).toContain('technical_check_passed');
+    expect(readiness.missing).toContain('at_least_one_active_price');
     expect(readiness.missing).toHaveLength(4);
   });
 
