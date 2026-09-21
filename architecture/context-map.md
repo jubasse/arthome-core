@@ -68,6 +68,9 @@ d'artiste et la liste de souhaits, l'annuaire des intervenants (`Person`), la **
 espace de travail** (`Channel` : propriétaire, membres, ensembles de rôles, `grants`, invitations,
 accès ponctuels à une date), et la **table des droits effectifs**.
 
+Et — **rattachement rendu au temps 4** — le **journal du studio** : l'audit nominatif sur 24 mois
+de tous les gestes, toutes chaînes et tous contextes confondus. Voir §1.9.
+
 **Ne possède pas.** La face publique de l'artiste (c'est `catalog.Artist`). Le compte Stripe de la
 chaîne (c'est `payouts`). Le bannissement d'un spectateur dans une chaîne (c'est `chat`).
 
@@ -133,12 +136,45 @@ la disponibilité et le tarif d'appel, qui viennent de `ticketing` — et ils y 
 autre service. La règle « une base par service » n'est donc pas contournée par la porte de derrière.
 
 **Conséquence, et elle est contraignante** : le connecteur *sink* OpenSearch de Kafka Connect,
-que le README cite comme un avantage d'OpenSearch, **n'est pas utilisable ici**. Il écrit un
+que le README cite comme **l'unique argument** écartant Meilisearch, **n'est pas utilisable ici**. Il écrit un
 document par message ; notre document est une composition de trois sources. L'index est écrit par
 un consommateur `catalog-indexer` interne au service, qui recharge depuis son propre modèle
 d'écriture et indexe avec `version_type: external` sur la version de la ligne — un rejeu tardif ne
 peut donc jamais écraser une version plus récente. Debezium garde sa place, mais pour **publier
 l'outbox**, pas pour alimenter l'index.
+
+#### La comparaison des moteurs se rouvre, et OpenSearch gagne pour une autre raison
+
+Je ne peux pas démolir le seul argument qui écartait Meilisearch sans rouvrir la comparaison. Je la
+rouvre donc, et **la décision ne change pas — sa justification, si.**
+
+> **Ce qui tient OpenSearch, ce n'est pas Kafka Connect. C'est le *percolator*.**
+
+Une recherche enregistrée doit se déclencher quand une date **nouvelle** correspond à des critères
+**anciens** : c'est une **requête inversée**, et c'est exactement ce qu'est un percolator — on
+indexe les requêtes et on interroge avec un document. Toute la réponse à `storefront-web` Q23 en
+dépend (`saved_search_percolator`, `catalog.saved_search.matched.v1`, et le fait que dix recherches
+enregistrées coûtent **zéro** requête de comptage à l'ouverture de la page Compte).
+
+| | OpenSearch | Meilisearch |
+|---|---|---|
+| requête inversée | **type `percolator` + requête `percolate`**, hérités d'Elasticsearch 7.10 et conservés au fork | **aucun équivalent** — `facetDistribution` compte des documents, et l'agrégation au sens large reste une demande ouverte |
+| licence | **Apache 2.0** | double licenciement depuis : Community en MIT, Enterprise en **Business Source License** |
+
+Sans percolator, il faudrait ré-exécuter N recherches enregistrées à chaque publication de date,
+ou dix comptages à chaque ouverture d'une page Compte. C'est la différence entre une
+fonctionnalité et une dette.
+
+**Le raisonnement est rétrospectif dans la forme et juste dans le fond**, et je le dis comme tel :
+le dossier d'origine a retenu le bon moteur pour un motif qui s'est révélé faux, et j'ai démoli ce
+motif sans rouvrir la comparaison — ce qui était un manque. Le motif qui la tranche vraiment était
+déjà dans ce document, une section plus bas, sans que personne ne fasse le lien.
+
+**Une réserve consignée, parce qu'elle n'est pas jugée** : `search.allow_expensive_queries` est un
+interrupteur qu'un exploitant coupe un jour de surcharge, et **les alertes de recherche enregistrée
+s'arrêteraient alors en silence**. Il faut donc une sonde sur ce réglage, pas seulement sur le
+retard de l'index. Je n'ai aucun ordre de grandeur sur le nombre de recherches enregistrées
+attendu ; le risque est réel, son ampleur ne l'est pas.
 
 **Pourquoi les recherches enregistrées lui appartiennent.** Le vocabulaire des critères est celui
 des facettes ; la ré-exécution est une requête d'index ; le compteur de correspondances est un
@@ -318,6 +354,48 @@ prochain déploiement — c'est assumé, et c'est le bon compromis : le web se d
 vocabulaire du studio ni la table de touches TV), cache très long, embarqué au build comme repli.
 59,5 Ko bruts / 8,4 Ko gzip : pas un appel d'API.
 
+### 1.9 Le journal du studio appartient à `identity` — rattachement manquant, rendu au temps 4
+
+**Le défaut.** J'ai trié sept contextes et rattaché trois familles orphelines ; **celle-ci m'a
+échappé.** Le journal — 24 mois de conservation, une purge, un export, une rétention écrite — était
+déclaré nulle part comme agrégat, absent du tableau des modèles de lecture, et composé par le BFF
+studio depuis **cinq services** en `page + total`. C'est-à-dire, en une seule ligne, tout ce que ce
+document interdit :
+
+- une **jointure au moment de la requête**, sur le seul écran qui contredise frontalement
+  `data-model.md` §4 (*« aucun écran n'est servi par une jointure au moment de la requête »*) ;
+- un **total impossible** : il faudrait compter par période et par nature dans cinq services,
+  appliquer la projection par rôle, trier l'union, puis en extraire la page 3. Aucun des cinq ne
+  connaît le total des quatre autres ;
+- et **un BFF qui tiendrait une table** pour s'en sortir — la ligne qu'il n'a pas le droit de
+  franchir.
+
+**La décision : `identity` possède le journal**, comme un modèle de lecture alimenté **uniquement
+par consommation Kafka**.
+
+**Pourquoi `identity`, et pourquoi ce n'est pas un huitième service.** Un journal répond à une
+question, et une seule : *qui a fait quoi, quand, depuis quelle surface, sur quelle chaîne*. Le
+sujet de la phrase est un **acteur**, et l'acteur est le langage d'`identity`. Et le rattachement
+ne coûte **rien aux producteurs** : tout message porte déjà `actor-id` en en-tête (§EV 1.3) et un
+`Actor` dans sa charge utile. `identity` n'a donc aucun champ à demander à personne — il consomme
+ce qui circule déjà.
+
+Trois conséquences qui règlent les trois défauts d'un coup : **une table, donc un total exact** et
+la pagination `page + total` que D-010 prescrit au studio ; **aucune jointure** au moment de la
+requête ; **aucune table dans le BFF**.
+
+**Ce que cela met dans `identity`, et que j'assume.** Une entrée de nature `money` porte un
+montant. C'est une donnée de `ticketing` projetée dans `identity` — mais le précédent existe et il
+est déjà écrit : `channel_dues` y projette déjà des faits de `ticketing` et de `payouts` pour
+refuser la suppression d'une chaîne. La **redaction par rôle** s'applique comme partout ailleurs :
+sans `canRevenue`, la nature `money` est **absente de la réponse**, jamais présente et nulle.
+
+**Réfutation possible, et elle est sérieuse.** J'ai écarté les points de reprise d'`identity` au
+motif qu'ils feraient du service le plus froid le chemin d'écriture le plus chaud. Un journal est
+aussi une écriture continue — mais de **quelques dizaines de gestes par jour et par chaîne**, pas
+de plusieurs par seconde et par spectateur. Trois ordres de grandeur séparent les deux cas, et
+c'est ce qui rend le rattachement acceptable ici et inacceptable là.
+
 ---
 
 ## 2. Les quatre propriétaires d'une « date » (liste du chef, point 1)
@@ -345,16 +423,16 @@ reste par les événements Kafka des trois autres.
 
 | Modèle de lecture | Tenu par | Alimenté par |
 |---|---|---|
-| `date_card_public` | `catalog` | ses écritures + `ticketing.date_availability_changed`, `ticketing.pricing_changed`, `streaming.run_state_changed`, `streaming.viewer_count_sampled`, `streaming.replay_asset_ready`, `chat.date_chat_policy_changed` |
-| `date_detail_public` | `catalog` | idem + distribution, chapitres (`streaming.chapter_posted`) |
+| `date_card_public` | `catalog` | ses écritures + `ticketing.date_sales.availability_changed.v1`, `ticketing.date_sales.pricing_changed.v1`, `streaming.run.state_changed.v1`, `streaming.viewer_count.sampled.v1`, `streaming.replay.asset_ready.v1`, `chat.date_chat_policy.changed.v1` |
+| `date_detail_public` | `catalog` | idem + distribution, chapitres (`streaming.chapter.posted.v1`) |
 | `home_rails`, `live_grid`, `category_page`, `artist_page` | `catalog` | composés depuis `date_card_public` + l'index |
 | `search_index` (OpenSearch) | `catalog` | idem, via `catalog-indexer` |
 | `studio_date_sheet` (par volet) | `catalog` pour `public`/`replay` ; `ticketing` pour `tickets` ; `chat` pour `chat` ; `streaming` pour `tech` ; `identity` pour `crew` | chacun par ses propres écritures |
 | `viewer_entitlements` | `ticketing` | ses écritures |
 | `viewer_relations` | `identity` | ses écritures |
 | `viewer_progress` | `streaming` | ses écritures |
-| `channel_agenda`, `events_table` | `catalog` | + `ticketing.date_availability_changed` pour jauge et recette |
-| `person_duties` (les gardes, toutes chaînes) | `identity` | + `catalog.date_scheduled`, `streaming.run_state_changed` |
+| `channel_agenda`, `events_table` | `catalog` | + `ticketing.date_sales.availability_changed.v1` pour jauge et recette |
+| `person_duties` (les gardes, toutes chaînes) | `identity` | + `catalog.date.scheduled.v1`, `streaming.run.state_changed.v1` |
 
 **Le modèle de lecture du studio est projeté par rôle.** `canRevenue` ne masque pas une colonne :
 **il décide de ce que la réponse contient**. Une régie qui recevrait le brut de billetterie dans sa
@@ -404,7 +482,7 @@ d'abonnement (`ticketing`). Affichée sur chaque carte de chaque surface. Candid
 **Ce que cela règle** : `storefront-tv` Q6, `storefront-mobile` Q4, `storefront-web` Q19.
 
 **Ce que cela coûte** : `streaming` doit tenir une copie projetée de la possession et de
-l'abonnement. C'est le seul endroit du système où j'accepte de dupliquer une donnée de `ticketing`,
+l'abonnement. C'est la seule projection du système qui porte une **autorité** et non un affichage,
 et je l'accepte parce que l'alternative est un appel synchrone entre services — interdit — ou un
 droit décidé par le BFF, qui n'a pas d'autorité.
 
@@ -491,11 +569,24 @@ Et le contrat sert **une quatrième valeur, dérivée et unique** : `displayStat
 plus les trois issues qui le remplacent quand elles existent. C'est la seule valeur que les cartes
 affichent, et personne ne la recompose.
 
+> **Sur les DEUX produits, et le studio d'abord.** `studio-web` a mesuré 13 occurrences de
+> `displayState` côté storefront et **0 côté studio**, ce qui est l'inverse du besoin : **c'est le
+> studio qui a trois axes à réconcilier**, et ses libellés d'issue *remplacent* l'état
+> (`ANNULÉE ET REMBOURSÉE`, `REPORTÉE · PLACES VALABLES`, `INTERROMPUE · AVOIRS ÉMIS`). Servir
+> `state` + `orderRank` + `outcome` et laisser la surface les composer, c'est **exactement la
+> seconde implémentation que ce paragraphe interdit** — laissée à la surface où l'erreur n'est pas
+> une carte mal étiquetée, mais **une régie qui se trompe d'écran**.
+>
+> Tout modèle de lecture portant une date porte donc `displayState` et `displayStateValidUntil` :
+> côté storefront `date_card_public` et `date_detail_public` ; **côté studio `channel_agenda`,
+> `events_table`, `studio_date_sheet` et `person_duties`**. `orderRank` reste servi à côté, parce
+> qu'il sert au **tri** par état, qui n'est pas le même besoin que l'affichage.
+
 ---
 
 ## 6. `outcome` : un événement, quatre conséquences (liste du chef, point 4)
 
-`catalog.date_outcome_declared.v1` est publié une fois, par la chaîne, depuis le studio
+`catalog.date.outcome_declared.v1` est publié une fois, par la chaîne, depuis le studio
 (`decideOutcome`, réservé à `artist ∨ production`). Quatre contextes le consomment, et chacun
 produit **sa** conséquence, sans se parler :
 
@@ -515,9 +606,10 @@ exacte du chef, et elle a une réponse précise, en trois temps :
    rédaction. Le voile dit l'issue et ce qu'elle implique pour la place.
 2. **Le jeton de lecture n'est pas révoqué dans le même geste.** Pour `postponed` et `cancelled`,
    la diffusion est de toute façon terminée ou n'a pas commencé. Pour `interrupted`, la lecture
-   **s'arrête à la fin du renouvellement en cours** (≤ 60 s) avec le code `DATE_INTERRUPTED`, pas
+   **s'arrête au refus du renouvellement suivant** (≤ 45 s) avec le code `DATE_INTERRUPTED`, pas
    par une coupure brutale : un flux coupé sans explication est exactement ce que le principe n°6
-   interdit.
+   interdit. La périphérie, elle, peut continuer à servir jusqu'à l'expiration du jeton en main
+   (120 s) — c'est le client qui s'arrête, pas le CDN.
 3. **La conséquence financière arrive ensuite, et elle est visible ailleurs.** Le spectateur ne
    voit pas son remboursement sur l'écran du lecteur : il le voit dans « Mes places », qui porte le
    **montant** et le **code de délai** (jamais la phrase « 3 à 5 jours ouvrés »). Le contrat
@@ -555,10 +647,13 @@ paragraphe étaient un nombre plausible et faux : voir §7.0 et `adr-stream-enti
   session de lecture** (`adr-stream-entitlement.md`). Une session de compte et une session de
   lecture ne comptent pas la même chose.
 - **`signOutDevice` doit produire un effet observable sur l'appareil visé** (`storefront-web` Q25).
-  Il révoque la session **et** publie `identity.device_revoked.v1`, que `streaming` consomme pour
-  **invalider les baux de lecture de cet appareil**. Effet visible à la lecture : ≤ 60 s, au
-  prochain renouvellement de jeton. Le téléviseur affiche `SIGNED_OUT_ELSEWHERE`, pas une erreur
-  réseau.
+  Il révoque la session **et** publie `identity.device.revoked.v1`, que `streaming` consomme pour
+  **invalider les baux de lecture de cet appareil**. Le téléviseur affiche `SIGNED_OUT_ELSEWHERE`,
+  pas une erreur réseau. **Fenêtre d'exposition : jusqu'à 120 s**, pas 60 — la révocation refuse le
+  renouvellement suivant, mais le jeton déjà en main reste valide jusqu'à son expiration, et la
+  périphérie du CDN n'en sait rien. Régime courant 45 à 75 s. Une version antérieure de ce
+  paragraphe disait « ≤ 60 s » : c'était l'intervalle de renouvellement pris pour la garantie
+  (`adr-stream-entitlement.md` §3.3).
 - **Le studio mobile ne peut pas tenir sa session par cookie** (`studio-mobile` Q1) :
   `capacitor://localhost` est un contexte tiers sur iOS. Le BFF studio offre donc **une session
   porteuse de jeton à côté de la session par cookie** : jeton de rafraîchissement lié à
@@ -620,6 +715,12 @@ retenue est celle d'`adr-auth.md` §4/Q3, et elle est meilleure que celle que j'
 Deux gestes, et ils ne font pas la même chose : **« déconnecter un profil »** ferme une
 `DeviceSession` — *« les autres comptes restent connectés »*, ce que la TV exige ; **« révoquer
 l'appareil »** supprime le `Device`, toutes ses sessions **et ses baux de lecture**.
+
+**Et les deux publient, chacun à son grain** : `identity.device_session.closed.v1` porte
+`profile_id` et fait révoquer à `streaming` les baux du couple (appareil, profil) ;
+`identity.device.revoked.v1` fait révoquer tous ceux de l'appareil. Sans le premier — qui manquait
+— la distinction n'avait aucun effet sur la lecture : `signOutProfile` ne coupait rien, et la seule
+issue était de révoquer l'appareil, donc de déconnecter les cinq profils du salon.
 
 **L'identité d'appareil existe avant toute session** — réponse à `storefront-tv` Q3, et c'est un
 oui franc. Elle est nécessaire à quatre choses, et ces quatre choses sont toutes demandées par les
@@ -784,6 +885,23 @@ Le détail qui compte, écran par écran, sur les écrans les plus lourds :
 | `event` (fiche de date, studio) | **1 + 1 par volet ouvert** | `catalog.GetDateSheet` puis le volet chez son propriétaire |
 | `payouts` | **1** | `payouts.GetPayouts` |
 
+**Le fan-out maximal est 5, pas 4 — et il faut le dire, parce que le seuil d'alerte est à 4.**
+Deux opérations le franchissent au jour de la livraison : `getDateDetail`
+(`catalog, ticketing, identity, streaming, chat`) et la lecture du journal de chaîne. La décision
+de transport ne s'en trouve pas retournée — 5 n'est pas 12, et la profondeur reste 1 — mais
+**la phrase qui la justifie serait fausse**, et c'est elle qu'on relira dans six mois.
+
+Les deux cas ont chacun leur remède, et ce sont des remèdes de modèle de lecture, pas de seuil :
+
+- **le journal** : il passe de cinq services à **un** avec le rattachement du §1.9 ;
+- **`getDateDetail`** : le volet `chat` est **appelé et déjà projeté** — `date_detail_public` est
+  alimenté par `chat.date_chat_policy.changed.v1` (`data-model.md` §4). L'appel est donc en trop,
+  et c'est exactement le geste que le seuil prescrit : *« le modèle de lecture manque »* — sauf
+  qu'ici il ne manque pas, on ne s'en sert pas.
+
+Le seuil reste à **4**, et je refuse de le monter à 5 pour couvrir une composition qu'on peut
+supprimer. Un seuil qu'on relève pour faire taire une alerte cesse d'être un seuil.
+
 **Les trois surcouches sont un lot, jamais un appel par carte.** Elles prennent une liste
 d'identifiants et rendent une table. Et le BFF storefront les met en cache par profil dans Redis
 (TTL 30 s, invalidé par les écritures du profil) : en régime établi, `home` retombe à **1 à 2**
@@ -885,8 +1003,8 @@ une file : elle ne se parallélise pas.
 
 | Mesure | Seuil | Geste |
 |---|---|---|
-| `kafka_consumergroup_lag` sur une **partition unique** de `arthome.chat.message` | **> 10 000 messages ou > 30 s** | passer la clé du sujet `chat` de `date_id` à `date_id#shard`, le nombre de bandes étant **servi dans le contrat** |
-| `kafka_consumergroup_lag` sur `arthome.ticketing.seat_order` | **> 30 s** | augmenter les partitions ; la clé reste `date_id` (l'ordre y est un invariant de jauge) |
+| `kafka_consumergroup_lag` sur une **partition unique** de `arthome.chat.date` | **> 10 000 messages ou > 30 s** | passer la clé du sujet `chat` de `date_id` à `date_id#shard`, le nombre de bandes étant **servi dans le contrat** |
+| `kafka_consumergroup_lag` sur `arthome.ticketing.order` | **> 30 s** | augmenter les partitions ; la clé reste `date_id` (l'ordre y est un invariant de jauge) |
 | déséquilibre `partition_bytes_in` max/médiane | **> 10×** | même diagnostic |
 
 **Pourquoi le bandage est permis sur le tchat et interdit sur la billetterie.** L'ordre d'un tchat
@@ -1004,7 +1122,10 @@ Résumé opérationnel, pour ne pas relire tout le document.
    rechargement complet. Le curseur est **bidirectionnel** et **indépendant de la taille de page**
    (`storefront-mobile` : une rotation ne doit pas l'invalider).
 6. **Une enveloppe de page porte un total** — exact pour le studio, **approximatif borné** pour la
-   recherche storefront (`track_total_hits` à 10 000, et le contrat dit « au moins N »).
+   recherche storefront. **Le seuil au-delà duquel le total devient une borne inférieure est une
+   constante de domaine servie**, jamais un nombre gravé dans la prose : le graver reviendrait à
+   exposer la forme d'un moteur dans le contrat, et à promettre au nom d'un fournisseur qu'on
+   pourrait remplacer. L'enveloppe porte `approximateTotal` **et** `totalIsLowerBound`.
 7. **Projection par rôle côté serveur** pour le studio : un champ interdit est **absent**, jamais
    présent et nul ; une clé de tri sur un champ absent est **refusée**.
 8. **Aucun champ de billetterie ni de régie sur un modèle public** (E8) : ni `sold`, ni `revenue`,

@@ -61,13 +61,38 @@ enum ModerationVerdict {
   MODERATION_VERDICT_BAN = 4;
 }
 
+// Vocabulaire de `shared/catalogue.json` `moderationReasons`, qui fait autorité
+// — et qui n'avait ici AUCUN concurrent, contrairement aux autres enums.
+//
+// Une version antérieure de ce fichier perdait `insult` et `spoiler` et
+// inventait `hate` et `filter`. C'était donc le CONTRAT qui tenait une table
+// parallèle contre `shared/` : exactement le reproche que ce projet adresse aux
+// maquettes (E2), commis dans l'autre sens.
+//
+// Deux précisions sur ce qui a été retiré :
+//   - `spoiler` (« Divulgue le spectacle ») est LE SEUL motif propre au
+//     spectacle vivant, il est traduit dans `shared/i18n/studio.json`
+//     (`enums.moderationReason.spoiler`), et plus personne n'aurait pu l'émettre ;
+//   - `filter` n'est pas un motif, c'est une ORIGINE — et le contrat la porte
+//     déjà correctement dans `StateChangeOrigin`. La loger aussi ici donnerait
+//     deux axes à un champ, précisément le reproche fait à `reported` dans les
+//     sanctions et à `postponed` dans `run.state`.
+//
+// La règle « une valeur inconnue est conservée et traitée comme neutre » ne
+// sauvait rien ici : le problème n'était pas de recevoir `spoiler` sans le
+// comprendre, c'était que plus aucun émetteur ne pouvait le produire.
+//
+// Numéros 3 et 5 réservés : un numéro d'énumération ne se réutilise jamais.
 enum ModerationReason {
+  reserved 3, 5;
+  reserved "MODERATION_REASON_HATE", "MODERATION_REASON_FILTER";
+
   MODERATION_REASON_UNSPECIFIED = 0;
   MODERATION_REASON_SPAM = 1;
   MODERATION_REASON_HARASSMENT = 2;
-  MODERATION_REASON_HATE = 3;
   MODERATION_REASON_OFF_TOPIC = 4;
-  MODERATION_REASON_FILTER = 5;
+  MODERATION_REASON_INSULT = 6;
+  MODERATION_REASON_SPOILER = 7;
 }
 
 // AXE 3 — la sanction sur la PERSONNE, AU SEIN D'UNE CHAÎNE.

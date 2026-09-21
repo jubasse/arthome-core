@@ -19,6 +19,7 @@
 | arrondi | `roundMinor()` dans `@arthome/core`, **à l'unité mineure, sur chaque composante prise séparément** | c'est ce que `shared/` porte et qui fait autorité |
 | identifiants | **UUIDv7 généré par le domaine** — voir §7.1 | l'agrégat connaît son identifiant avant l'insertion, ce que l'outbox exige et ce que le brouillon du studio exige |
 | vocabulaires | énumérations **typées depuis `@arthome/core`**, jamais écrites en dur dans un service ni dans une application | E2 : la faute dominante du projet, commise sur huit champs par cinq maquettes |
+| **orthographe d'un vocabulaire sur le fil** | **celle de `shared/`, à la lettre** — donc `kebab-case` : `free-dates`, `no-ads`, `one-live-month`, `all-lives`, `multi-screen`, `co-production`, `off-topic`. Un nom d'énumération Protobuf est en `UPPER_SNAKE` par la règle de `buf` ; **c'est un nom de symbole, pas une valeur de fil**, et la correspondance est mécanique | un `opens.includes('multi-screen')` sur une charge utile qui porte `multi_screen` rend `false` **en silence** : tout le monde retombe à un écran. C'est la forme exacte d'E1, réintroduite par le contrat après avoir été corrigée sur les formules |
 | audit | `created_at`, `updated_at`, `version`, et sur tout agrégat modifié par un humain : `last_actor_id`, `last_actor_surface` | la maquette promet partout « horodaté et nominatif » et aucun champ ne le porte |
 | version | `integer`, incrémentée par **UPDATE conditionnel**, jamais par `save()` | `@VersionColumn` + `save()` n'a jamais rejeté une écriture périmée ; le studio est multi-opérateurs sans verrou |
 | suppression | `deleted_at` là où une ligne est référencée par un journal ou une facture ; suppression physique ailleurs | conservation comptable de 10 ans |
@@ -69,10 +70,23 @@ nom) et l'incohérence 11 de `storefront-mobile` :
 - **`DeviceSession`** — le couple **(appareil, profil)**. Un téléviseur de salon en porte jusqu'à
   cinq : c'est ce qui donne un sens à « les autres comptes restent connectés ».
 
-**Invariants.** Fermer une `DeviceSession` déconnecte **un profil** et laisse les autres.
-Révoquer le `Device` supprime l'appareil, **toutes** ses sessions, et publie
-`identity.device_revoked.v1`, que `streaming` consomme pour invalider ses **baux de lecture** :
-un appareil révoqué ne peut plus renouveler un jeton, effet visible ≤ 60 s.
+**Invariants — et les deux gestes publient, chacun à son grain.**
+
+| Geste | Publie | Ce que `streaming` révoque |
+|---|---|---|
+| **déconnecter un profil** (`signOutProfile`) | `identity.device_session.closed.v1` (porte **`profile_id`**) | les baux du couple **(appareil, profil)**, et d'eux seuls — « les autres comptes restent connectés » |
+| **révoquer l'appareil** (`revokeDevice`) | `identity.device.revoked.v1` | **tous** les baux de l'appareil |
+
+**Le second événement manquait, et son absence vidait la coupe de son sens.** `DeviceRevoked` ne
+porte que `device_id` : `streaming` n'avait donc aucun moyen d'apprendre qu'un profil avait été
+déconnecté, et le bail `PlaybackSession(account, profile, device, date)` continuait de se
+renouveler. Sur le téléviseur partagé qui est le **motif même** de la distinction
+`Device` / `DeviceSession`, « déconnecter ce profil » ne coupait aucune lecture — et comme le
+plafond d'écrans vaut 1 hors `premium`, on restait bloqué sur son propre compte, le défaut exact
+que `storefront-mobile` Q5 et `storefront-tv` Q9c demandaient d'éviter.
+
+**Fenêtre d'exposition dans les deux cas : jusqu'à 120 s** — la durée de vie du jeton déjà en main,
+pas l'intervalle de renouvellement (`adr-stream-entitlement.md` §3.3).
 
 ### 1.4 `DevicePairing` — agrégat racine
 
@@ -143,7 +157,7 @@ explicite plutôt que de la laisser deviner.
 
 Identité professionnelle : nom, ville, indépendant ou non, rôles tenus, `channels[]`,
 `runs_called`. **`runs_called` est un modèle de lecture**, pas un champ écrit à la main : il
-s'incrémente sur `streaming.run_ended.v1`.
+s'incrémente sur `streaming.run.ended.v1`.
 
 ### 1.8 Préférences, consentements, relations
 
@@ -237,8 +251,8 @@ Publication
 | `draft \| reserve → scheduled` | commande studio | **oui** — *la publication engage le tarif affiché* |
 | `scheduled → technical` | commande studio | non |
 | `technical → scheduled` | commande studio | — |
-| `technical → live` | **`streaming.run_started.v1` consommé** | — |
-| `live → ended` | **`streaming.run_ended.v1` consommé** | — |
+| `technical → live` | **`streaming.run.started.v1` consommé** | — |
+| `live → ended` | **`streaming.run.ended.v1` consommé** | — |
 | `ended → replay-online` | commande studio, gardée | **oui** — *des spectateurs ont payé pour la rediffusion* |
 
 **Ce point est la réponse au « agrégat à cheval sur trois contextes ».** `Publication` ne commande
@@ -262,9 +276,9 @@ sait si le flux entre. Deux transitions sur huit sont donc causées par un évé
 | Élément | Source |
 |---|---|
 | `title_and_discipline`, `poster`, `description` | `catalog`, ses propres champs |
-| `at_least_one_active_price`, `capacity` | **projetés** depuis `ticketing.pricing_changed.v1` et `ticketing.capacity_set.v1` |
-| `technical_check_passed` | **projeté** depuis `streaming.technical_check_passed.v1` |
-| `chat_mode_set` | **projeté** depuis `chat.date_chat_policy_changed.v1` |
+| `at_least_one_active_price`, `capacity` | **projetés** depuis `ticketing.date_sales.pricing_changed.v1` et `ticketing.date_sales.capacity_set.v1` |
+| `technical_check_passed` | **projeté** depuis `streaming.run.technical_check_passed.v1` |
+| `chat_mode_set` | **projeté** depuis `chat.date_chat_policy.changed.v1` |
 
 Servie comme une **liste d'identifiants manquants**, jamais un pourcentage. « Chapitres prévus »
 et « modérateur affecté » deviennent des **avertissements non bloquants** : on doit pouvoir publier
@@ -535,28 +549,46 @@ un consommateur idempotent, lue en une requête.
 
 | Modèle | Tenu par | Écrit par ses propres commandes | Alimenté par (Kafka) |
 |---|---|---|---|
-| `date_card_public` | `catalog` | date, publication, issue, droits, médias, taxonomie | `ticketing.date_availability_changed` (jauge, liste d'attente, tarif d'appel, promotion) · `ticketing.pricing_changed` · `streaming.run_state_changed` · `streaming.viewer_count_sampled` (agrégat à la minute) · `streaming.replay_asset_ready` (existence + expiration) · `chat.date_chat_policy_changed` |
-| `date_detail_public` | `catalog` | + synopsis, distribution, langues, attributs, salle | + `streaming.chapter_posted` · `ticketing.pricing_changed` (les trois paliers) |
+| `date_card_public` | `catalog` | date, publication, issue, droits, médias, taxonomie | `ticketing.date_sales.availability_changed.v1` (jauge, liste d'attente, tarif d'appel, promotion) · `ticketing.date_sales.pricing_changed.v1` · `streaming.run.state_changed.v1` · `streaming.viewer_count.sampled.v1` (agrégat à la minute) · `streaming.replay.asset_ready.v1` (existence + expiration) · `chat.date_chat_policy.changed.v1` |
+| `date_detail_public` | `catalog` | + synopsis, distribution, langues, attributs, salle | + `streaming.chapter.posted.v1` · `ticketing.date_sales.pricing_changed.v1` (les trois paliers) |
 | `home_rails` · `live_grid` · `category_page` · `artist_page` | `catalog` | composition et ordre par `@arthome/core` | dérivés de `date_card_public` + index |
 | `search_index` (OpenSearch) | `catalog` | via `catalog-indexer` | idem, `version_type: external` |
-| `saved_search_percolator` | `catalog` | requêtes enregistrées | déclenche `catalog.saved_search_matched` |
-| `channel_agenda` · `events_table` | `catalog` | date, publication | + `ticketing.date_availability_changed` (jauge, recette) |
+| `saved_search_percolator` | `catalog` | requêtes enregistrées | déclenche `catalog.saved_search.matched.v1` |
+| `channel_agenda` · `events_table` | `catalog` | date, publication | + `ticketing.date_sales.availability_changed.v1` (jauge, recette) |
 | `viewer_entitlements` | `ticketing` | places, abonnement, avoir | — (ses propres écritures) |
 | `viewer_relations` | `identity` | suivis, liste | — |
 | `viewer_progress` | `streaming` | points de reprise | — |
-| `entitlement_projection` | **`streaming`** | — | `ticketing.seat_activated` · `ticketing.seat_cancelled` · `ticketing.subscription_changed` · `catalog.date_published` · `catalog.date_outcome_declared` · `catalog.replay_policy_set` |
-| `person_duties` (les gardes, toutes chaînes) | `identity` | appartenances, accès ponctuels | + `catalog.date_scheduled` · `streaming.run_state_changed` |
-| `artist_counters` (abonnés, audience moyenne) | `catalog` | — | `identity.artist_followed` / `unfollowed` · `streaming.run_ended` |
-| `channel_dues` (dates en vente, versements dus) | `identity` | — | `ticketing.*` · `payouts.payout_state_changed` — sert le refus de suppression de chaîne |
+| `entitlement_projection` | **`streaming`** | — | `ticketing.seat.activated.v1` · `ticketing.seat.cancelled.v1` · `ticketing.subscription.changed.v1` · `catalog.date.scheduled.v1` · `catalog.date.outcome_declared.v1` · `catalog.date.replay_policy_set.v1` |
+| `person_duties` (les gardes, toutes chaînes) | `identity` | appartenances, accès ponctuels | + `catalog.date.scheduled.v1` · `streaming.run.state_changed.v1` |
+| `artist_counters` (abonnés, audience moyenne) | `catalog` | — | `identity.artist.followed.v1` / `unfollowed` · `streaming.run.ended.v1` |
+| `channel_dues` (dates en vente, versements dus) | `identity` | — | `ticketing.*` · `payouts.payout.state_changed.v1` — sert le refus de suppression de chaîne |
+| `channel_presence` | `identity` | connexions/déconnexions au canal `/studio` | — (état tenu en Redis, TTL 30 s) — **lu, pas seulement poussé** (`realtime.md` §5.3) |
+| `run_health_series` | `streaming` | échantillons d'ingest | — (série courte, fenêtre paramétrable, porte le **pic et son heure**) |
 | `moderation_queue` | `chat` | signalements, verdicts | — |
-| `payout_ledger` | `payouts` | — | `ticketing.seat_order_paid` · `ticketing.refund_issued` · `catalog.date_outcome_declared` · `streaming.run_ended` (l'échéance court depuis la fin) |
+| `payout_ledger` | `payouts` | — | `ticketing.order.paid.v1` · `ticketing.order.refunded.v1` · `catalog.date.outcome_declared.v1` · `streaming.run.ended.v1` (l'échéance court depuis la fin) |
+| **`channel_journal`** | **`identity`** | — | **tous les contextes**, par l'en-tête `actor-id` que tout message porte déjà. 24 mois, `page + total`, filtre de période **obligatoire**, nature `money` **absente** sans `canRevenue` (`context-map.md` §1.9) |
 | `inbox` | `notifications` | — | tous les contextes, routés par rôle |
 
-**`entitlement_projection` est la seule duplication que j'assume à contrecœur.** `streaming` tient
+**`entitlement_projection` est la seule projection qui porte une AUTORITÉ.** Le tableau ci-dessus
+en compte sept autres, et elles sont légitimes : `date_card_public`, `date_detail_public`,
+`channel_agenda`, `events_table`, `artist_counters`, `channel_dues`, `payout_ledger`, plus les
+trois éléments projetés de la liste de contrôle de publication. **La distinction n'est pas le
+nombre, c'est la nature** : les sept autres alimentent un **affichage**, et un affichage périmé de
+cinq secondes se corrige tout seul ; `entitlement_projection` décide d'un **droit**, et un droit
+périmé émet un jeton. C'est pour cela qu'elle seule porte une fraîcheur tolérée chiffrée (≤ 5 s) et
+une alerte. Une version antérieure de ce paragraphe disait « la seule duplication du système » —
+c'était faux, et la phrase aurait servi à refuser la huitième projection légitime. `streaming` tient
 une copie de la possession, de l'abonnement et de l'état de la date, parce qu'il est le seul à
 pouvoir décider d'un droit et le seul à émettre un jeton. L'alternative serait un appel synchrone
 entre services — interdit — ou un droit décidé par le BFF, qui n'a pas d'autorité. La fraîcheur
 tolérée est ≤ 5 s ; au-delà, l'alerte du §11 de `context-map.md` se déclenche.
+
+**Tout modèle de lecture portant une date porte `displayState` et `displayStateValidUntil`** —
+storefront **et studio**, sans exception. La valeur est produite par `displayStateOf` dans
+`@arthome/core` (`context-map.md` §5) ; aucune surface ne compose `publication.state`,
+`run.state` et `outcome` elle-même. Le studio est le cas qui compte le plus : c'est lui qui a les
+trois axes, et ses libellés d'issue **remplacent** l'état. `order_rank` reste servi à côté pour le
+**tri** par état, qui est un autre besoin.
 
 **Le retard est borné et visible.** Chaque modèle de lecture porte `last_event_at` et
 `last_event_seq` ; le BFF sert `servedAt` et le contrat déclare la fraîcheur par famille :
@@ -591,7 +623,7 @@ Run
 technique. Une régie n'a pas d'état « annulée » ; elle a un plateau qui n'envoie rien.
 
 **Invariants.** `idle → on_air` est refusé si le contrôle technique n'est jamais passé. Le passage
-à l'antenne publie `streaming.run_started.v1`, que `catalog` consomme pour avancer la publication.
+à l'antenne publie `streaming.run.started.v1`, que `catalog` consomme pour avancer la publication.
 **Un délai de grâce à la mise hors ligne** : une coupure réseau de deux secondes en salle ne produit
 ni incident ni manifeste HLS reparti de zéro. L'état poussé au studio est l'état **après**
 amortissement, et le studio distingue « accroc amorti » de « publieur parti » — deux champs, pas un.
@@ -615,6 +647,13 @@ HealthSample
   up_kbps · latency_ms · dropped_pct · jitter_ms · lost_packets · viewers
   source   ingest_server | client_submitted     ← deux débits, deux noms
 ```
+
+**La série est LISIBLE, pas seulement poussée.** `realtime.md` §5.1 écrit qu'« une courbe de débit
+se re-demande » : il faut donc qu'elle soit demandable. Une lecture bornée, fenêtre paramétrable
+(défaut : trois minutes), portant les échantillons **et le pic de spectateurs avec son heure** —
+qui se dérive de la série et n'est obtenable que par elle. Sans cette lecture, la courbe et le pic
+sont perdus après tout `resume:too_old`, toute reconnexion, ou simplement à l'ouverture de la
+console au milieu d'un direct.
 
 **Chaque métrique est nullable, et l'absence a un sens** (`studio-web` Q16). Le gigue et les paquets
 perdus **n'existent qu'en entrée WebRTC** ; en RTMP sur TCP ils n'ont pas de sens, et le contrat les
@@ -801,6 +840,18 @@ détention d'une place** — c'est une règle métier, pas un réglage d'interfa
 envoyé à vide**), `InboxEntry`, `AlertRoute` (rôle × chaîne → destinataires, décidé côté serveur ;
 l'application ne filtre pas une file commune).
 
+**Les cinq seuils sont servis, et deux d'entre eux n'avaient aucun porteur.** « 30 minutes
+avant », « 85 % des places » et « 6 heures avant expiration » sont servis dans les constantes du
+storefront. **Le seuil de file de modération (10 messages) et le délai d'affectation d'un poste
+(J-1) ne l'étaient nulle part** — deux constantes nommées comme règles de domaine et jamais
+portées, ce qui est la règle critique 15. Elles rejoignent les constantes du studio, à côté du
+seuil de provision, de l'échéance de révision et du seuil de débit de tchat.
+
+**Le total du budget d'aperçu manque aussi** (`storefront-web` ❻.3) : le contrat sert le **reste**
+(`previewSecondsLeft`) et jamais le **plafond**. Or `decideWatch` en a besoin en entrée, et une
+surface qui veut afficher « 4 min 12 sur 5 min » ne peut pas. Le plafond est une constante de
+domaine servie, comme les autres.
+
 **Le troisième canal, que personne ne nomme** (`storefront-mobile` incohérence 8, E15) : la grille
 offre trois canaux, deux seulement sont nommés (`push`, `email`), et le champ téléphone porte la
 mention « pour les SMS de rappel ». **Je propose `in_app`** et non `sms`. Motif : un canal SMS a un
@@ -862,7 +913,7 @@ CREATE TABLE outbox_event (
   id              uuid        PRIMARY KEY,              -- UUIDv7, devient le message-id
   aggregatetype   text        NOT NULL,                 -- « catalog.date » → nom du sujet Kafka
   aggregateid     text        NOT NULL,                 -- → CLÉ de partition Kafka
-  type            text        NOT NULL,                 -- « catalog.date.published.v1 » → en-tête
+  type            text        NOT NULL,                 -- « catalog.date.scheduled.v1 » → en-tête
   payload         bytea       NOT NULL,                 -- Protobuf DÉJÀ encadré pour le registre
   tracecontext    text        NULL,                     -- traceparent W3C, injecté à l'écriture
   actor_id        text        NULL,                     -- nominatif, exigé par le journal du studio
@@ -915,7 +966,7 @@ du mécanisme de transaction de TypeORM — une migration dédiée, marquée com
 | Donnée | Conservation | Mécanisme d'effacement |
 |---|---|---|
 | messages de tchat | **24 mois** (alignés sur le journal du studio) | purge mensuelle par partition de date ; le message est supprimé, l'**entrée de journal de modération** reste avec l'identifiant du message et non son texte |
-| journal du studio, journal des accès | **24 mois** | purge par période ; export avant purge |
+| journal du studio, journal des accès — **table `identity.channel_journal`** (§4) | **24 mois** | purge par période ; export avant purge |
 | échantillons de santé | **90 jours** en détail, agrégats horaires conservés | table partitionnée par mois, `DROP PARTITION` |
 | points de reprise | 24 mois sans lecture | purge |
 | sessions de lecture | 30 jours | purge |
@@ -932,7 +983,7 @@ synchrone et ne peut pas être totale.**
 
 Le déroulé, et c'est un flux de saga persistant, pas un appel :
 
-1. `identity` passe le compte en `deletion_requested` et publie `identity.account_deletion_requested.v1`.
+1. `identity` passe le compte en `deletion_requested` et publie `identity.account.deletion_requested.v1`.
    Les connexions sont bloquées, **le compte n'est pas encore effacé**.
 2. `ticketing` annule les places non utilisées, rembourse selon la politique, clôt l'abonnement au
    terme, et publie son accusé. `payouts` recalcule les lignes touchées.

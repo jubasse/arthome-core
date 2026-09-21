@@ -110,6 +110,35 @@ message DeviceRevoked {
   arthome.common.v1.Actor revoked_by = 5;
 }
 
+// Déconnecter UN PROFIL d'un appareil partagé. Cet événement MANQUAIT, et son
+// absence vidait de sens la distinction Device / DeviceSession : `DeviceRevoked`
+// ne porte que `device_id`, donc `streaming` n'avait AUCUN moyen d'apprendre
+// qu'un profil avait été déconnecté.
+//
+// Conséquence, sur le téléviseur partagé qui est le motif même de la coupe :
+// cinq profils dans un salon, quelqu'un regarde sous votre profil, vous faites
+// « déconnecter ce profil » depuis le web — et le bail
+// PlaybackSession(account, profile, device, date) continuait de se renouveler.
+// La lecture ne s'arrêtait pas. Et comme le plafond d'écrans vaut 1 hors
+// premium, vous restiez bloqué sur votre PROPRE compte : le défaut exact que
+// storefront-mobile Q5 et storefront-tv Q9c demandaient d'éviter. La seule
+// issue était de révoquer l'appareil, ce qui déconnecte les cinq profils.
+//
+// Consommé par `streaming`, qui révoque les baux du couple (appareil, profil)
+// — et d'eux seuls.
+message DeviceSessionClosed {
+  string device_id = 1;
+  string account_id = 2;
+  // LE GRAIN QUI MANQUAIT.
+  string profile_id = 3;
+  google.protobuf.Timestamp occurred_at = 4;
+  // Vrai quand la fermeture vient de l'appareil lui-même, faux quand elle est
+  // commandée à distance depuis une autre surface. Les deux existent, et
+  // l'écran déconnecté n'affiche pas le même message.
+  bool self_initiated = 5;
+  arthome.common.v1.Actor closed_by = 6;
+}
+
 // ---------------------------------------------------------------- relations
 
 // Suivre un artiste et être alerté sont DEUX réglages. Le premier est une

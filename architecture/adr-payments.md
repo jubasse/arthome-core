@@ -375,7 +375,7 @@ C'est ce qui rend acceptable de ne pas être parfait sur les webhooks : un évé
 
 ## 9. Les cas d'issue, et ce que le spectateur retrouve
 
-Une issue déclarée dans le studio (`catalog.date_outcome_declared.v1`) produit quatre conséquences
+Une issue déclarée dans le studio (`catalog.date.outcome_declared.v1`) produit quatre conséquences
 sans qu'aucun service n'en appelle un autre.
 
 | Issue | Argent | Versement | Ce que le spectateur voit, et où |

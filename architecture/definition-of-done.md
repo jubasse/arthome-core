@@ -283,7 +283,19 @@ premier incident.
 |---|---|---|
 | **mapping de recherche** : une date publiée est trouvable par sa facette, et un rejeu tardif **n'écrase pas** une version plus récente (`version_type: external`) | `catalog` | c'est le seul service qui écrit un index, et le rejeu tardif est un défaut silencieux |
 | **calcul d'argent de bout en bout** : commande → TVA ventilée par marché → commission sur le HT → net, à l'unité mineure près | `ticketing`, `payouts` | ce sont « les règles qui font mal » ; la fixture d'origine calculait sur le TTC à taux unique |
-| **émission et révocation d'un jeton de lecture** : un jeton émis, un `device_revoked` consommé, le **renouvellement suivant refusé** | `streaming` | c'est ce qui fait que « déconnecter cet appareil » coupe réellement la lecture, et la seule façon de vérifier la latence ≤ 60 s |
+| **émission et révocation d'un jeton de lecture** : un jeton émis, un `device_revoked` consommé, le **renouvellement suivant refusé**, et l'**expiration du jeton en main** mesurée — voir ci-dessous | `streaming` | c'est ce qui fait que « déconnecter cet appareil » coupe réellement la lecture |
+
+> **Ce que ce test doit mesurer, et qui a failli lui échapper.** Son énoncé était « la latence
+> ≤ 60 s », et il aurait passé au vert en constatant que le **renouvellement** est refusé au bout
+> de 45 s. Ce n'est pas ce que la phrase promet. La révocation ne révoque pas le jeton **en
+> main** : la signature de préfixe du CDN expire avec lui, donc la périphérie continue de servir
+> des segments parfaitement valides jusqu'à **120 s**. Le test doit donc mesurer **l'instant où un
+> segment cesse d'être servi**, pas l'instant où un renouvellement est refusé — sinon on obtient
+> une garantie fausse avec un test vert, ce qui est pire qu'une garantie absente.
+>
+> C'est la règle 15 violée sur une constante de sécurité : la constante avait deux propriétaires et
+> deux valeurs, et c'est la mauvaise qui a été recopiée — **parce que c'était celle qui satisfaisait
+> la question posée par la surface**. Le contrat sert désormais `playbackCutWithinSec: 120`.
 
 ### 5.3 Une seule fois pour tout le système — le parcours doré
 

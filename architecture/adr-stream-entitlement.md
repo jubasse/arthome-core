@@ -57,10 +57,19 @@ claims
 ```
 
 **Durée : 120 secondes. Intervalle de renouvellement : 45 secondes.**
-Le plafond exigé par `storefront-tv` est **≤ 60 s**, et le motif est décisif : c'est le
-renouvellement qui porte la limite de sessions simultanées, donc **la fenêtre pendant laquelle on
-regarde un flux auquel on n'a plus droit est exactement l'intervalle de renouvellement**. Au-delà
-d'une minute, la limite ne limite plus rien.
+
+`storefront-tv` Q9(b) exigeait « ≤ 60 s », et son exigence est satisfaite — mais **elle porte sur
+l'intervalle de renouvellement, pas sur la durée du jeton**, et il faut distinguer les deux sous
+peine d'écrire une garantie fausse (ce que j'avais fait : voir l'encadré du §3.3) :
+
+| | Borné par | Valeur |
+|---|---|---|
+| délai avant que **le client** apprenne qu'il n'a plus le droit | l'**intervalle** | ≤ 45 s |
+| délai avant que **la périphérie cesse de servir** des segments | la **durée du jeton** | jusqu'à 120 s |
+
+C'est le renouvellement qui porte la limite de sessions simultanées, donc c'est bien l'intervalle
+qui doit rester court — au-delà d'une minute, la limite ne limite plus rien. Mais il ne borne que
+ce que le client sait, jamais ce que le CDN sert.
 
 **Le renouvellement ne doit pas redémarrer la lecture.** C'est une contrainte sur la **forme** du
 jeton, pas sur sa durée : un jeton dans le **chemin** forcerait un rechargement de manifeste et
@@ -159,10 +168,50 @@ nu laisserait le spectateur sans issue, ce que le principe n°8 du dossier inter
 **Ce que voit le troisième écran** (`storefront-web` Q21) : un refus explicite, la liste, et un
 geste. Jamais une erreur réseau, jamais un lecteur qui tourne sans image.
 
+#### La fenêtre d'exposition réelle est de 120 s, pas de 60 s — et j'avais écrit 60
+
+C'est le défaut le plus grave que la revue adverse a trouvé chez moi (`skeptic.md` K3), parce
+qu'il porte sur **une garantie de sécurité, chiffrée et publiée aux cinq surfaces**.
+
+> **La révocation ne révoque pas un jeton : elle refuse le renouvellement suivant.** La fenêtre
+> pendant laquelle la périphérie continue de servir des segments est donc la durée de vie du
+> **jeton en main**, soit **jusqu'à 120 s** — et non l'intervalle de renouvellement.
+
+```
+révocation à T                                     jeton en main, émis à T−ε
+  │                                                  │
+  ├── renouvellement à T+45 s : REFUSÉ               ├── mais il reste valide jusqu'à T−ε+120 s
+  │   le client sait                                 │   et le CDN, lui, ne sait rien
+  └──────────────────────── exposition réelle ───────┘
+       cas favorable  ~45 s        cas défavorable  ~120 s        régime courant  45 à 75 s
+```
+
+Un client qui ignore le refus — ou qui, plus simplement, ne s'arrête pas — continue de tirer des
+segments **signés valides**. La signature de préfixe expire avec le jeton (§3.2), pas avec la
+décision.
+
+**Comment l'erreur s'est produite, parce qu'elle est instructive.** `storefront-tv` Q9(b) demandait
+« ≤ 60 s », et j'ai recopié 60 comme si c'était la garantie obtenue. Or son exigence portait sur
+l'**intervalle de renouvellement** — c'est lui qui borne le délai avant que le *client* apprenne le
+refus — et pas sur la durée d'exposition côté CDN. **J'ai choisi le nombre qui faisait plaisir à la
+question**, et il s'est propagé dans quatre documents. C'est la règle critique 15 — une constante à
+deux propriétaires et deux valeurs — appliquée cette fois à une garantie de sécurité. Un seul
+document était juste : `adr-auth.md:520`.
+
+**Ce que le contrat doit servir**, et c'est à `backend-contracts` de le porter : la valeur exposée
+n'est pas « 60 », c'est **`playbackCutWithinSec = 120`**, accompagnée de la valeur courante
+attendue (45 à 75 s). Et le test d'intégration doit mesurer **l'arrêt de la lecture**, pas le refus
+du renouvellement : un test qui constate le refus à 45 s passe au vert sans avoir vérifié ce que la
+phrase promet. **Une garantie fausse avec un test vert est pire qu'une garantie absente.**
+
+**Le remède au-delà de la mesure n'est pas tranché**, et je ne l'invente pas : raccourcir le jeton
+à 60 s ramènerait la fenêtre à 60 s mais **doublerait la fréquence de renouvellement sur le chemin
+le plus chaud du système**, et personne n'a mesuré ce que coûte ce doublement. Le défaut est
+certain, le remède ne l'est pas. **Signalé au chef.**
+
 **Révocation immédiate, deux chemins :**
-- `identity.device_revoked.v1` consommé par `streaming` → les baux de cet appareil passent à
-  `revoked`. Effet visible au prochain renouvellement, **≤ 60 s** : c'est ce qui fait que
-  « déconnecter ce téléviseur depuis le web » coupe réellement la lecture ;
+- `identity.device.revoked.v1` consommé par `streaming` → les baux de cet appareil passent à
+  `revoked`. **Fenêtre d'exposition réelle : jusqu'à 120 s** — voir l'encadré ci-dessous ;
 - issue `interrupted` déclarée → les baux de la date sont révoqués avec `DATE_INTERRUPTED`, **à la
   fin du renouvellement en cours**, pas par une coupure brutale : un flux coupé sans explication
   est exactement ce que le principe n°6 interdit.
@@ -250,13 +299,14 @@ services n'étant permis**, `streaming` tient une **projection locale** aliment�
 
 | Entrée | Source | Arrive par |
 |---|---|---|
-| possession d'une place | `ticketing` | `ticketing.seat.activated` / `.cancelled` |
-| formule et `opens[]`, plafond d'écrans | `ticketing` | `ticketing.subscription.changed` |
-| état de la date et ses bornes | `catalog` | `catalog.date.scheduled` / `.rescheduled` / `.outcome_declared` |
-| politique et fenêtre de rediffusion | `catalog` | `catalog.date.replay_policy_set` |
-| droits territoriaux | `catalog` | `catalog.date.rights_changed` |
+| possession d'une place | `ticketing` | `ticketing.seat.activated.v1` / `.cancelled` |
+| formule et `opens[]`, plafond d'écrans | `ticketing` | `ticketing.subscription.changed.v1` |
+| état de la date et ses bornes | `catalog` | `catalog.date.scheduled.v1` / `.rescheduled` / `.outcome_declared` |
+| politique et fenêtre de rediffusion | `catalog` | `catalog.date.replay_policy_set.v1` |
+| droits territoriaux | `catalog` | `catalog.date.rights_changed.v1` |
 
-C'est **la seule duplication de donnée que j'assume dans tout le système**, et elle est assumée
+C'est **la seule projection du système qui porte une autorité** — les sept autres
+(`data-model.md` §4) alimentent un affichage, celle-ci décide d'un droit — et elle est assumée
 parce que les deux alternatives sont pires : un appel synchrone entre services est interdit, et un
 droit décidé par le BFF n'a aucune autorité — il ne produit pas de jeton.
 

@@ -40,7 +40,7 @@ couvre que `/`.
 
 | Salle | Qui la rejoint | Ce qui y transite | Latence |
 |---|---|---|---|
-| `date:{id}:state` | toute surface affichant cette date | incident levé/résolu, issue déclarée, bascule d'antenne, ouverture de salle, expiration de rediffusion | **≤ 2 s** |
+| `date:{id}:state` | toute surface affichant cette date | incident levé/résolu, issue déclarée, **bascule d'antenne réelle** (le flux entre ou sort) | **≤ 2 s** |
 | `date:{id}:chat` | le lecteur, panneau tchat ouvert | messages, changements d'état de message, régime de tchat | ≤ 2 s, **plafonné à la source** |
 | `date:{id}:counters` | le lecteur et les cartes visibles | compteur de spectateurs, jauge, liste d'attente, tarif « séance commencée » | 10 à 30 s |
 | `viewer:{profileId}` | toujours | badge de notifications, droits recalculés après un achat, panier modifié ailleurs, révocation | ≤ 2 s |
@@ -72,6 +72,16 @@ Le protocole :
 Le lot se **remplace** quand la fenêtre de défilement bouge, **sans rouvrir le canal**. Et le tick
 est différentiel : seuls les identifiants dont une valeur a bougé sont émis. Sur une grille stable,
 le canal est silencieux.
+
+**Ce que cette salle ne porte PAS, et c'est délibéré** : l'**ouverture de salle** et l'**expiration
+d'une rediffusion**. Ce sont des transitions à instant **connu d'avance**, donc dérivables sans
+requête — voir §2.4, qui porte l'argument. Une version antérieure de ce tableau les listait ici :
+c'était l'unique ligne à contredire §2.4 et §8, et c'est celle qu'on aurait lue en cherchant le
+contenu d'une salle.
+
+La « bascule d'antenne » reste, mais au sens strict : `run.state_changed` est un **fait
+technique** que rien ne permet de prévoir — le flux entre ou il n'entre pas. `displayState` bascule
+alors de `room_open` à `live` chez le client, qui en dérive le reste.
 
 ### 2.2 Le plafond du tchat est appliqué **à la source**
 
@@ -134,7 +144,8 @@ par chaîne multiplierait les connexions.
 | Salle | Contenu |
 |---|---|
 | `person:{personId}` | version des droits, boîte, invitations, gardes, alertes routées |
-| `channel:{id}` — **une par chaîne accessible** | état d'antenne, incidents, présence de l'équipe, ventes, chapitres |
+| `channel:{id}` — **une par chaîne accessible** | état d'antenne, incidents, présence de l'équipe, ventes, chapitres, **état de publication d'une date** (§3.3) |
+| `channel:{id}:decide` — pour `artist ∨ production` | le même correctif de publication, **avec les transitions offertes recalculées** (§3.3) |
 | `channel:{id}:moderation` | file : entrée, prise en charge, relâche, verdict, sanction, reclassement rétroactif |
 | `channel:{id}:chat` | messages du direct en cours, avec leur état |
 | `channel:{id}:health` | échantillons de santé, 1 à 2 s |
@@ -174,7 +185,40 @@ Trois mécanismes, confirmés :
    verdict — pour que l'écran dise la vérité au lieu d'un échec.
 3. **La propagation est nominative.**
 
-### 3.3 La redaction s'applique au canal aussi
+### 3.3 L'état de publication, et le piège du bouton périmé
+
+**Le défaut corrigé.** La salle ne portait pas l'état de publication, et aucun événement ne
+naissait des transitions. Un second opérateur voyait BROUILLON indéfiniment sur une date déjà
+publiée, avec ses deux transitions offertes — et découvrait l'engagement en cliquant. La sûreté
+était complète, **la fraîcheur était entièrement absente** (`needs/studio-web.md` §F).
+
+Le correctif est la forme ordinaire du §3.1 :
+
+```
+{ entity: "publication", id: "<dateId>", op: "upsert", seq, channelId,
+  patch: { state, orderRank, version, irreversible, changedBy } }
+```
+
+**Mais un correctif qui porterait le nouvel état sans recalculer `offeredTransitions` laisserait un
+bouton périmé — le même défaut, déplacé d'un cran.** `studio-web` a raison, et ce n'est pas un
+détail : `offeredTransitions` est « calculée **pour cet opérateur** », donc elle ne peut pas voyager
+telle quelle dans une diffusion.
+
+**La réponse réutilise la mécanique déjà en place au §3.4** — une salle par classe de droit, filtrée
+à l'émission — parce que les transitions ne dépendent pas de la personne mais de `canDecide`
+(`artist ∨ production`), donc il n'y a que **deux** classes :
+
+| Salle | Qui la rejoint | `patch.offeredTransitions` |
+|---|---|---|
+| `channel:{id}` | tous les membres | **absent** — ces rôles n'ont aucun bouton de transition à périmer |
+| `channel:{id}:decide` | `artist ∨ production` | **présent**, recalculé pour la classe destinataire |
+
+Deux émissions, aucun calcul par personne, aucun bouton périmé. Et si un jour les transitions
+dépendaient d'autre chose que de `canDecide`, le repli est écrit : le correctif devient un
+**marqueur « relis cette entité »** pour cette entité-là seulement — jamais un « recharge tout »,
+qui condamnerait la console en plein arbitrage de file.
+
+### 3.4 La redaction s'applique au canal aussi
 
 `canRevenue` décide du **contenu** des messages poussés, pas de leur affichage. Une régie qui
 recevrait la recette dans un message de canal et ne l'afficherait pas est une fuite. Les salles
@@ -251,7 +295,7 @@ heures.
 
 | | |
 |---|---|
-| **à re-demander** (durée de vie longue) | état d'antenne, incident en cours, file **avec ses prises en charge**, sanctions actives, chapitres posés, journal du direct depuis le lever de rideau |
+| **à re-demander** (durée de vie longue) | état d'antenne, incident en cours, file **avec ses prises en charge**, sanctions actives, chapitres posés, journal du direct depuis le lever de rideau, **état de publication et transitions offertes**, **présence de l'équipe** (§5.3), **série de santé** (§5.3) |
 | **à reprendre depuis le dernier `seq`** | tchat, journal — ce sont des flux ordonnés |
 | **à jeter** | toute mesure de flux antérieure à la reconnexion. Une courbe de débit se re-demande, elle ne se rejoue pas |
 
@@ -279,6 +323,37 @@ n'a pas causés, et le chemin passe par le BFF, Kafka étant interdit hors inter
 rendu serveur de Next, le BFF expose en plus un **flux d'invalidations par étiquette** que le
 serveur Next consomme pour appeler `revalidateTag`. Les étiquettes sont **nommées par le
 contrat**, jamais inventées par une surface — sinon le mobile et la TV en inventeront d'autres.
+
+### 5.3 Un différentiel sans instantané n'est pas un contrat
+
+Deux promesses de ce document n'avaient **aucune lecture** en face, et `studio-web` l'a établi sur
+les deux. Le défaut est le même : on pousse un différentiel et on n'expose jamais l'état initial.
+Une console ouverte à 21 h 40 n'a alors **rien** à peindre, et le restera jusqu'au prochain
+changement.
+
+| Promesse | Où elle était écrite | Ce qui manquait |
+|---|---|---|
+| **présence de l'équipe** | §8 (« poussé ~10 s »), la salle `channel:{id}`, et `identity.GetChannelPresence` comptée dans les trois appels internes de `regie` (`context-map.md` §10.1) | aucune opération de BFF ne l'exposait, `RunConsole` ne la portait pas |
+| **série de santé** | §5.1, colonne « à jeter » : *« une courbe de débit **se re-demande** »* | la série n'était demandable nulle part — le point d'entrée est en écriture seule, et seul le dernier échantillon était servi |
+
+**Ce que le contrat doit porter, et c'est une exigence, pas une préférence :**
+
+1. **Toute salle qui diffuse un différentiel expose un instantané.** C'est la règle générale que
+   ces deux cas font apparaître, et elle vaut pour les suivantes.
+2. **La présence est une lecture** : qui est en ligne sur cette chaîne, avec son rôle et son
+   instant de dernière activité. Ce n'est pas cosmétique — la confirmation de coupure est
+   littéralement *« couper met fin à la diffusion pour N spectateurs · **M autres personnes en
+   ligne** »*, c'est le garde-fou du geste le plus destructeur de la régie, **dans un studio
+   explicitement sans verrou**, et il était vide.
+3. **La série de santé est une lecture bornée** : une fenêtre paramétrable (par défaut les trois
+   dernières minutes — `studio-mobile` la demandait **courte**), avec le **pic de spectateurs et
+   son heure**, qui se dérive de la série et n'est donc obtenable que par elle. Trois chemins la
+   traversent tous les soirs : après un `resume:too_old`, après une reconnexion, ou simplement en
+   ouvrant la console au milieu d'un direct.
+
+**Les deux lectures sont comptées dans mon inventaire** (`context-map.md` §10.1 :
+`identity.GetChannelPresence`, `streaming.GetHealthSeries`) — ce sont les **opérations de BFF** qui
+manquaient, et elles appartiennent à `backend-contracts`. Signalé.
 
 ---
 

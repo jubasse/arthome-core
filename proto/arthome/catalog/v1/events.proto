@@ -149,6 +149,40 @@ message PublicationEngaged {
   google.protobuf.Timestamp occurred_at = 4;
 }
 
+// La transition d'état de la publication. IL MANQUAIT, et son absence avait une
+// conséquence précise : `draft -> reserve`, `scheduled <-> technical` et
+// `ended -> replay-online` ne produisaient AUCUN événement, donc l'écran d'un
+// second opérateur affichait indéfiniment l'état d'avant.
+//
+// Le scénario que `studio-web` a établi : A publie (version 7 -> 8, tarifs
+// engagés, transition SANS RETOUR) ; l'écran de B affiche toujours BROUILLON
+// avec ses deux transitions offertes ; B clique « Publier », croyant franchir
+// le premier une porte irréversible, et l'apprend par une erreur — la
+// tentative partant au journal à son nom. La sûreté était complète
+// (`expectedVersion`, `STATE_CONFLICT`, `TRANSITION_IRREVERSIBLE`), la
+// FRAÎCHEUR était entièrement absente.
+//
+// Routé vers la salle `channel:{id}` comme un correctif ordinaire
+// { entity: "publication", id, op: "upsert", seq, patch } — voir realtime.md §3.1.
+message PublicationStateChanged {
+  string date_id = 1;
+  string channel_id = 2;
+  PublicationState from_state = 3;
+  PublicationState to_state = 4;
+
+  // La version APRÈS transition. C'est elle que le destinataire doit porter
+  // dans son prochain `expectedVersion`, sinon son correctif appliqué le laisse
+  // avec une version périmée et il repart en STATE_CONFLICT.
+  uint64 version = 5;
+
+  // Vrai quand la transition était sans retour. Le journal doit pouvoir
+  // distinguer un passage ordinaire d'un engagement définitif.
+  bool irreversible = 6;
+
+  google.protobuf.Timestamp occurred_at = 7;
+  arthome.common.v1.Actor changed_by = 8;
+}
+
 // Un report ne bouge pas d'argent : la place SUIT la nouvelle date, sans
 // démarche. `notifications` déplace le rappel plutôt que de l'envoyer à vide.
 message DateRescheduled {

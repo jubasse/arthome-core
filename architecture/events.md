@@ -17,14 +17,14 @@ colonne outbox                     conséquence Kafka
 ──────────────────────────────────────────────────────────────────
 aggregatetype = "catalog.date"  →  sujet   arthome.catalog.date
 aggregateid   = "<uuid>"        →  CLÉ     (donc partition, donc ordre)
-type          = "catalog.date.published.v1"  →  en-tête `type`
+type          = "catalog.date.scheduled.v1"  →  en-tête `type`
 payload       = bytes Protobuf encadrés      →  valeur
 tracecontext                                 →  en-tête `traceparent`
 id                                           →  en-tête `message-id`
 ```
 
 **Pourquoi un sujet par agrégat et non par événement.** L'ordre Kafka ne tient que **par
-partition**. `date.published`, `date.rescheduled` et `date.outcome_declared` portent sur le même
+partition**. `date.scheduled`, `date.rescheduled` et `date.outcome_declared` portent sur le même
 objet : les séparer en trois sujets ferait perdre leur ordre relatif, et un consommateur pourrait
 appliquer une issue avant la publication qui la crée. Un sujet par agrégat, clé = identifiant
 d'agrégat : l'ordre d'un objet est garanti, et le nombre de sujets reste lisible (**14 sujets**,
@@ -126,24 +126,58 @@ pas.
 
 ## 3. Les sujets
 
-| Sujet | Propriétaire | Clé | Partitions (début) | Maturité |
-|---|---|---|---|---|
-| `arthome.identity.account` | `identity` | `account_id` | 3 | **stable** |
-| `arthome.identity.device` | `identity` | `device_id` | 3 | **stable** |
-| `arthome.identity.channel` | `identity` | `channel_id` | 3 | **stable** |
-| `arthome.catalog.date` | `catalog` | `date_id` | **12** | **stable** |
-| `arthome.catalog.show` | `catalog` | `show_id` | 3 | **stable** |
-| `arthome.catalog.artist` | `catalog` | `artist_id` | 3 | **stable** |
-| `arthome.catalog.saved_search` | `catalog` | `account_id` | 3 | provisoire |
-| `arthome.ticketing.date_sales` | `ticketing` | `date_id` | **12** | **stable** |
-| `arthome.ticketing.order` | `ticketing` | `order_id` | 6 | **stable** |
-| `arthome.ticketing.subscription` | `ticketing` | `account_id` | 3 | **stable** |
-| `arthome.streaming.run` | `streaming` | `date_id` | **12** | provisoire |
-| `arthome.chat.message` | `chat` | `date_id` | **12** | provisoire |
-| `arthome.chat.moderation` | `chat` | `date_id` | 6 | provisoire |
-| `arthome.payouts.payout` | `payouts` | `channel_id` | 3 | provisoire |
+**Seize sujets, et les trente types d'agrégat qu'ils portent.** Une version antérieure de cette
+table en déclarait quatorze et laissait **seize types d'agrégat sans sujet** — donc sans clé, sans
+nombre de partitions, sans `groupId` et sans canal AsyncAPI, alors que la définition de fini génère
+les canaux **depuis cette table**. Le tableau ci-dessous est exhaustif : **tout message de §4 y
+trouve son sujet.**
+
+| Sujet | Propriétaire | Clé | Part. | Types d'agrégat portés | Maturité |
+|---|---|---|---|---|---|
+| `arthome.identity.account` | `identity` | `account_id` | 3 | `account`, `artist` (suivis), `rights_version` | **stable** |
+| `arthome.identity.device` | `identity` | `device_id` | 3 | `device`, `device_session` | **stable** |
+| `arthome.identity.channel` | `identity` | `channel_id` | 3 | `channel`, `date_access` | **stable** |
+| `arthome.catalog.date` | `catalog` | `date_id` | **12** | `date`, **`publication`** | **stable** |
+| `arthome.catalog.show` | `catalog` | `show_id` | 3 | `show` | **stable** |
+| `arthome.catalog.artist` | `catalog` | `artist_id` | 3 | `artist` | **stable** |
+| `arthome.catalog.saved_search` | `catalog` | `account_id` | 3 | `saved_search` | provisoire |
+| `arthome.ticketing.date_sales` | `ticketing` | `date_id` | **12** | `date_sales`, **`seat`**, `waitlist` | **stable** |
+| `arthome.ticketing.order` | `ticketing` | `order_id` | 6 | `order` | **stable** |
+| `arthome.ticketing.account` | `ticketing` | `account_id` | 3 | `subscription`, `credit` | **stable** |
+| `arthome.streaming.run` | `streaming` | `date_id` | **12** | `run`, `incident`, `replay`, `chapter`, `viewer_count` | provisoire |
+| `arthome.chat.date` | `chat` | `date_id` | **12** | `message`, `date_chat_policy` | provisoire |
+| `arthome.chat.moderation` | `chat` | `date_id` | 6 | `moderation` | provisoire |
+| `arthome.chat.audience` | `chat` | `channel_id` | 3 | `audience` | provisoire |
+| `arthome.payouts.payout` | `payouts` | `channel_id` | 3 | `payout`, `bank_change`, `reconciliation` | provisoire |
+| `arthome.notifications.delivery` | `notifications` | `account_id` | 3 | `delivery` | provisoire |
 
 Plus, par contexte : `arthome.<context>.retry` et `arthome.<context>.dlq`.
+
+### 3.1 Pourquoi ces regroupements, et pas un sujet par agrégat
+
+**Un sujet par agrégat aurait cassé la règle même du §1.1.** L'ordre ne tient que par partition, et
+la clé est ce qui décide de la partition. Deux regroupements sont donc des **exigences**, pas des
+commodités :
+
+- **`catalog.publication` partage le sujet de `catalog.date`, clé `date_id`.** Sur son propre sujet
+  avec `publication_id` pour clé, `publication.engaged` **perdrait son ordre relatif** avec
+  `date.scheduled` — et c'est exactement le contre-exemple que le §1.1 donne pour refuser un sujet
+  par événement : *« un consommateur pourrait appliquer une issue avant la publication qui la
+  crée »*. La règle était écrite, puis l'agrégat qui la viole était publié ;
+- **`ticketing.seat` partage le sujet de `ticketing.date_sales`, clé `date_id`.** `seat.activated`
+  crée le droit de lire (`entitlement_projection`) **et** cause le mouvement de jauge : les deux
+  doivent arriver dans l'ordre où ils se sont produits, donc dans la même partition.
+
+Les autres suivent la même logique, appliquée sans exception : un incident, un chapitre, un
+échantillon d'audience et un actif de rediffusion sont des **facettes d'un run** — ils vont dans
+`arthome.streaming.run`, clé `date_id`. Une politique de tchat et un message portent sur la même
+date, et l'ordre compte (un message posté après un passage en `read_only`) — ils vont dans
+`arthome.chat.date`.
+
+**Deux renommages que cela impose**, et ils sont sans coût puisque rien n'est construit :
+`arthome.ticketing.subscription` devient **`arthome.ticketing.account`** (il porte tout ce qui est
+clé `account_id` : abonnement **et** avoir), et `arthome.chat.message` devient
+**`arthome.chat.date`** (messages **et** régime de tchat).
 
 **Les quatre sujets à 12 partitions** sont ceux qu'un spectacle populaire concentre. Le nombre
 n'est pas magique : c'est la marge qui permet d'ajouter des répliques sans en repartitionner.
@@ -164,6 +198,7 @@ Charge utile résumée ; le schéma fait foi (`proto/`). Tous les instants sont
 | `identity.account.deletion_requested.v1` | `account_id`, `grace_until` | `ticketing`, `payouts`, `notifications`, `chat`, `streaming` | **saga d'effacement** (`data-model.md` §7.5) |
 | `identity.account.anonymised.v1` | `account_id` | tous | dissocier les pseudonymes, figer les factures |
 | `identity.device.revoked.v1` | `device_id`, `account_id` | **`streaming`** | invalider les baux de lecture de cet appareil : c'est ce qui fait que « déconnecter cet appareil » coupe la lecture |
+| **`identity.device_session.closed.v1`** | `device_id`, `account_id`, **`profile_id`**, `self_initiated` | **`streaming`** | **il manquait.** Révoque les baux du couple (appareil, profil) **et d'eux seuls** — sans lui, `signOutProfile` ne coupait aucune lecture sur un téléviseur partagé, et la seule issue était de révoquer l'appareil, donc les cinq profils |
 | `identity.artist.followed.v1` / `.unfollowed.v1` | `account_id`, `artist_id` | `catalog`, `notifications` | compteur d'abonnés ; abonnement d'alerte |
 | `identity.channel.created.v1` | `channel_id`, `owner_account_id` | `catalog`, `payouts` | créer l'artiste public ; ouvrir le compte connecté |
 | `identity.channel.membership_changed.v1` | `channel_id`, `person_id`, `roles[]`, `action` | `notifications`, `chat` | routage d'alerte par rôle ; droit de modérer |
@@ -177,6 +212,7 @@ Charge utile résumée ; le schéma fait foi (`proto/`). Tous les instants sont
 |---|---|---|
 | `catalog.date.drafted.v1` | `date_id`, `channel_id`, `show_id`, `venue_id` | `ticketing` (ouvrir `DateSales`), `streaming` (préparer le run) |
 | `catalog.date.scheduled.v1` | + `starts_at`, `venue_timezone`, `runtime_min`, `replay_policy`, `replay_window_hours`, `rights` | `ticketing`, `streaming`, `chat`, `notifications`, `identity` (gardes) |
+| **`catalog.publication.state_changed.v1`** | `date_id`, `from_state`, `to_state`, `version`, `irreversible`, `changed_by` | **temps réel du studio** (salle `channel:{id}`), journal. **Il manquait** : sans lui, `draft→reserve`, `scheduled↔technical` et `ended→replay-online` ne produisaient rien, et l'écran d'un second opérateur mentait indéfiniment |
 | `catalog.publication.engaged.v1` | `date_id`, `engaged[]` (`prices`, `replay`, `chat_mode`) | **`ticketing`** verrouille les tarifs · **`chat`** verrouille le régime |
 | `catalog.date.rescheduled.v1` | `date_id`, `new_starts_at`, `previous_starts_at` | `ticketing` (les places suivent), `notifications` (**les rappels suivent**), `streaming` |
 | `catalog.date.outcome_declared.v1` | `date_id`, `outcome`, `declared_by`, `declared_at`, `message` + `content_language` | **quatre conséquences** : `ticketing` (rembourse ou crédite), `payouts` (retient), `catalog` (copie publique), `notifications` (prévient) |
