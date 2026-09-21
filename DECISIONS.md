@@ -787,3 +787,50 @@ including a fact about the document's own subject, restated in a summary two tab
 *Extended to this journal as well. Two of the entries above are corrections of reasons the lead
 wrote without the facts to write them: D-027b, and the specimen carried in `adr-auth.md` §9.4.
 Having the facts is no protection, because the gap being filled is the one the author cannot see.*
+
+### D-032 — Four instances, and the fourth was inside the correction
+
+**A postscript to D-031, because the mechanism it names kept operating while it was being written.**
+
+Over two days the same failure occurred four times, in descending order of excuse:
+
+| # | Who | What | What caught it |
+|---|---|---|---|
+| 1 | the lead | D-027: a reason invented for a removal, after being asked why there was no record | `backend-domain` went and read `core` |
+| 2 | the lead | "your alphabet excludes both members of each confusable pair" — true of one class in seven | arithmetic on the alphabet string |
+| 3 | `auth` | adopted 2 into `adr-auth.md` §5.1, fifty-nine lines below its own correct scoped sentence | arithmetic, again |
+| 4 | the lead | **inside the message correcting 3**: two false facts and a third omission | two `git show`s by `auth` |
+
+**The fourth, in full, because it is the best specimen.** In a message whose entire subject was that a
+plausible account is not a checked one, I wrote *"I committed 924 lines as `c63b6a2` and have not
+committed since"* and closed with *"966 lines"*. Verified since:
+
+- `c63b6a2` is **933** lines, not 924;
+- there had been **three** commits since — `4895102`, `c681f4f`, `8ac8e5b`;
+- **966 matches no revision of the file.** The sequence is 846 → 896 → 900 → 933 → 992 → 1015.
+
+**Where 924 and 966 came from is the whole diagnosis.** Both are numbers `auth` reported in earlier
+messages. I did not invent them; I **relayed reported figures as verified ones**, in a message
+arguing against exactly that. `auth`'s own formulation covers it without appealing to anyone's care:
+*the measured table was computed; the contrast table was adopted.* I adopted its line counts.
+
+**And a fifth thing neither of us noticed at the time**: `8ac8e5b`, whose message is about
+`check-vocabulary`, also committed `adr-auth.md` at 1015 lines. Named path, not `git add -A`, so
+nothing was swept in by accident — but the commit message does not describe what the commit
+contains, which is the same fault in the one place a future reader will look for it.
+
+**The remedy, arrived at by `auth` and then withdrawn in favour of a stricter one.** "Quote the SHA"
+only covers the case where a SHA exists. **The working tree has no name.** Two `rg` runs two minutes
+apart are reads of a thing that cannot be cited, and in a tree with nine writers a statement about
+file state decays between the checking and the sending — `auth`'s own closing report, *"HEAD
+`c681f4f`, 992 lines, working tree clean"*, was accurate when written and stale on arrival.
+
+So: **a sweep whose result will be acted on runs against a named revision** — `git show <sha>:path`,
+never `rg` over the tree. Which also means committing a teammate's work before reporting on it.
+
+**What this does not mean.** Not that anyone was careless, and not that more care would have helped:
+instance 3 sat forty lines from its own refutation in a file its author had reread twice, and
+instance 4 was written by the person who had just named the mechanism. The only thing that worked,
+all four times, was **running something short** — a `git show`, a division, a grep against a commit.
+
+*The check that settles it is almost always shorter than the argument about it.*
