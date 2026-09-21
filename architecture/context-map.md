@@ -1,948 +1,918 @@
-# Carte des contextes
+# Context map
 
-> Écrit pour `backend-contracts`, qui en déduira les deux OpenAPI, le contrat des appels
-> synchrones BFF → service, `definition-of-done.md` et `critical-rules.md`.
-> Rédigé au temps 2, après lecture des cinq `needs/`, de `DECISIONS.md`, des 79 écarts de
-> `corrections-handoff.md`, du dossier de passation corrigé et de `streaming.md`.
+> Written for `backend-contracts`, which will derive from it the two OpenAPI documents, the
+> contract for synchronous BFF → service calls, `definition-of-done.md` and `critical-rules.md`.
+> Drafted at temps 2, after reading the five `needs/` files, `DECISIONS.md`, the 79 divergences in
+> `corrections-handoff.md`, the corrected handover file and `streaming.md`.
 >
-> **Identifiants en anglais, prose en français.** Tout vocabulaire fermé cité ici est celui qui
-> fait autorité au contrat ; les tables parallèles des maquettes (E2) ne sont jamais reprises.
+> Every closed vocabulary quoted here is the one that has authority in the contract; the mockups'
+> parallel tables (E2) are never adopted.
 
 ---
 
-## 0. La règle qui commande toutes les autres
+## 0. The rule that governs all the others
 
-Cinq surfaces sur six ont posé, sous des formes différentes, la même question : *« l'état d'une
-date est-il servi ou dérivé ? »* — `storefront-tv` (« une réponse qui livre PROGRAMMÉ est périmée
-en vol »), `storefront-mobile` (Q1), `storefront-web` (forme 1, besoin 1), `studio-mobile` (§L'horloge).
-Elles opposent deux principes du dossier qui semblent incompatibles : *aucune valeur calculée deux
-fois*, et *une réponse doit rester juste huit heures après avoir été mise en cache*.
+Five surfaces out of six asked, in different forms, the same question: *"is a date's state served
+or derived?"* — `storefront-tv` ("a response that delivers SCHEDULED is stale in flight"),
+`storefront-mobile` (Q1), `storefront-web` (shape 1, need 1), `studio-mobile` (§The clock). They set
+two of the file's principles against each other, and they look incompatible: *no value computed
+twice*, and *a response must still be right eight hours after being cached*.
 
-Elles ne sont pas incompatibles. L'arbitrage, qui vaut pour tout le reste de ce document :
+They are not incompatible. The arbitration, which holds for all the rest of this document:
 
-> **Une règle vit une fois, dans `@arthome/core`. Elle s'évalue à plusieurs endroits.
-> Ce qui est interdit, c'est deux *implémentations*, jamais deux *appels*.**
+> **A rule lives once, in `@arthome/core`. It is evaluated in several places.
+> What is forbidden is two *implementations*, never two *calls*.**
 
-Conséquences immédiates, et elles courent dans tous les contrats :
+Immediate consequences, and they run through every contract:
 
-1. Le contrat porte **les entrées** de la règle (les instants, les bornes, les politiques) **et**
-   son résultat au moment du service, **et** l'instant où ce résultat cesse d'être vrai.
-2. Le client n'invente rien : il rappelle la même fonction de `@arthome/core` quand `validUntil`
-   est passé. Il ne réécrit pas la règle, il la réexécute.
-3. Toute réponse porte `servedAt` (instant serveur) et, quand elle contient une valeur périssable,
-   `validUntil`. C'est aussi ce qui règle l'horloge du téléphone : tout décompte affiché se
-   calcule contre `servedAt`, jamais contre l'horloge locale.
+1. The contract carries **the rule's inputs** (the instants, the bounds, the policies) **and** its
+   result at serve time, **and** the instant at which that result stops being true.
+2. The client invents nothing: it calls the same `@arthome/core` function again when `validUntil`
+   has passed. It does not rewrite the rule, it re-executes it.
+3. Every response carries `servedAt` (the server instant) and, when it contains a perishable value,
+   `validUntil`. That is also what settles the phone's clock: every countdown displayed is computed
+   against `servedAt`, never against the local clock.
 
-Les fonctions concernées, nommées ici une fois pour toutes, et qui n'existent qu'à un seul
-endroit : `displayStateOf`, `isRoomOpen`, `replayHoursLeft`, `progressOf`, `decideWatch`,
-`effectiveRightsOf`, `overlapsWith`, `payoutOf`, `roundMinor`, `normalizeSearchCriteria`,
-`nextPublicationTransitions`, `moderationBadgeOf`.
+The functions concerned, named here once and for all, and which exist in one place only:
+`displayStateOf`, `isRoomOpen`, `replayHoursLeft`, `progressOf`, `decideWatch`, `effectiveRightsOf`,
+`overlapsWith`, `payoutOf`, `roundMinor`, `normalizeSearchCriteria`, `nextPublicationTransitions`,
+`moderationBadgeOf`.
 
 ---
 
-## 1. Les sept contextes, et pourquoi il n'y en a pas huit
+## 1. The seven contexts, and why there are not eight
 
-Les trois familles orphelines de `corrections-handoff.md` (C7 abonnements, C8 boutique,
-C9 annuaire et chaînes) sont **rattachées**, pas isolées. Le motif est écrit dans le dossier :
-*« un service de plus se paie en exploitation, pour une personne seule »*. Mais un rattachement ne
-vaut que s'il suit une frontière de **langage**, pas une frontière de commodité. Chacun est
-justifié ci-dessous, et chacun est réfutable par un argument que j'écris aussi.
+The three orphan families from `corrections-handoff.md` (C7 subscriptions, C8 shop, C9 directory
+and channels) are **attached**, not isolated. The reason is written in the file: *"one more service
+costs operations, for one person"*. But an attachment is only valid if it follows a boundary of
+**language**, not a boundary of convenience. Each is justified below, and each is refutable by an
+argument I also write down.
 
-| Contexte | Langage | Ne possède pas |
+| Context | Language | Does not own |
 |---|---|---|
-| `identity` | qui est cette personne, sur quel appareil, et **de quel droit agit-elle** | le contenu, l'argent, la parole |
-| `catalog` | ce qui est **publié** et comment on le trouve | la vente, la conduite, la parole |
-| `ticketing` | ce que le spectateur **achète** et ce que cet achat **ouvre** | le droit de diffusion, le versement |
-| `streaming` | la **conduite du direct** et le **droit de lire maintenant** | la vente, la publication |
-| `chat` | la **parole** dans une chaîne et sa police | l'identité globale du compte |
-| `payouts` | ce que la plateforme **doit** à une chaîne | l'encaissement |
-| `notifications` | **atteindre** une personne hors de l'application | ce qu'il y a à dire |
+| `identity` | who this person is, on which device, and **by what right they act** | the content, the money, the speech |
+| `catalog` | what is **published** and how it is found | the sale, the run, the speech |
+| `ticketing` | what the viewer **buys** and what that purchase **opens** | the broadcast right, the payout |
+| `streaming` | the **run of the live show** and the **right to watch now** | the sale, the publication |
+| `chat` | **speech** in a channel and its policing | the account's global identity |
+| `payouts` | what the platform **owes** a channel | taking the money |
+| `notifications` | **reaching** a person outside the application | what there is to say |
 
-### 1.1 `identity` — la personne, l'appareil, et le droit d'agir
+### 1.1 `identity` — the person, the device, and the right to act
 
-**Possède.** Le compte (`Account`), ses profils d'appareil (`Profile`, jusqu'à cinq par téléviseur),
-les identifiants de connexion, la 2FA, les clés d'accès, les sessions, les appareils
-(`Device` — un appareil *est* une session, voir §7.1), les appairages d'appareil (`DevicePairing`),
-les préférences de compte et d'appareil, les consentements horodatés et versionnés, les suivis
-d'artiste et la liste de souhaits, l'annuaire des intervenants (`Person`), la **chaîne comme
-espace de travail** (`Channel` : propriétaire, membres, ensembles de rôles, `grants`, invitations,
-accès ponctuels à une date), et la **table des droits effectifs**.
+**Owns.** The account (`Account`), its device profiles (`Profile`, up to five per television), the
+sign-in credentials, 2FA, passkeys, sessions, devices (`Device` — a device *is* a session, see
+§7.1), device pairings (`DevicePairing`), account and device preferences, timestamped and versioned
+consents, artist follows and the watchlist, the directory of people (`Person`), the **channel as a
+workspace** (`Channel`: owner, members, sets of roles, `grants`, invitations, one-off access to a
+date), and the **table of effective rights**.
 
-Et — **rattachement rendu au temps 4** — le **journal du studio** : l'audit nominatif sur 24 mois
-de tous les gestes, toutes chaînes et tous contextes confondus. Voir §1.9.
+And — **attachment returned at temps 4** — the **studio journal**: the 24-month by-name audit of
+every act, across all channels and all contexts. See §1.9.
 
-**Ne possède pas.** La face publique de l'artiste (c'est `catalog.Artist`). Le compte Stripe de la
-chaîne (c'est `payouts`). Le bannissement d'un spectateur dans une chaîne (c'est `chat`).
+**Does not own.** The artist's public face (that is `catalog.Artist`). The channel's Stripe account
+(that is `payouts`). The banning of a viewer in a channel (that is `chat`).
 
-**Pourquoi la frontière est là.** `corrections-handoff.md` C9 dit que `people` et `channels` sont
-à cheval sur `identity` et `catalog`. Ils le sont parce qu'une chaîne a deux visages, et qu'on les
-avait confondus. Je les sépare :
+**Why the boundary is there.** `corrections-handoff.md` C9 says `people` and `channels` straddle
+`identity` and `catalog`. They do, because a channel has two faces, and we had conflated them. I
+separate them:
 
-- la chaîne **comme organisation** — qui en est membre, avec quels rôles, qui peut inviter qui,
-  qui a une clé de flux : c'est de l'**autorisation**. Une autorisation se vérifie par le jeton
-  que le BFF émet, et un jeton ne peut porter que ce qu'`identity` sait. Donc `identity`.
-- la chaîne **comme page publique** — nom, biographie, avatar, discipline, abonnés, spectacles,
-  dates : c'est du **catalogue**. Donc `catalog.Artist`, en relation 1:1 avec `identity.Channel`
-  par `channel_id`.
+- the channel **as an organisation** — who belongs to it, with which roles, who can invite whom,
+  who has a stream key: that is **authorisation**. An authorisation is verified against the token
+  the BFF issues, and a token can only carry what `identity` knows. So `identity`.
+- the channel **as a public page** — name, biography, avatar, discipline, subscribers, shows,
+  dates: that is **catalogue**. So `catalog.Artist`, in a 1:1 relation with `identity.Channel` by
+  `channel_id`.
 
-La preuve que la coupe est juste : aucune commande du studio ne traverse les deux. `inviteMember`,
-`changeMemberRoles`, `grantDateAccess`, `transferOwnership` sont des écritures `identity` pures.
-`updateChannelIdentity` (nom public, slug, visuel, vérification) est une écriture `catalog` pure —
-et c'est bien ce que l'écran Réglages du studio montre : deux blocs qui ne se mélangent jamais.
+The proof that the cut is right: no studio command crosses both. `inviteMember`,
+`changeMemberRoles`, `grantDateAccess`, `transferOwnership` are pure `identity` writes.
+`updateChannelIdentity` (public name, slug, artwork, verification) is a pure `catalog` write — and
+that is exactly what the studio's Settings screen shows: two blocks that never mix.
 
-**`grants` et le repli à six personas (E6).** Le contrat porte les **huit** rôles canoniques
+**`grants` and the fold onto six personas (E6).** The contract carries the **eight** canonical roles
 (`artist`, `production`, `coordination`, `director`, `video`, `sound`, `moderation`, `treasury`).
-Le repli à six (`artist`, `prod`, `regie`, `mod`, `coord`, `tres`) est **un libellé de
-présentation** et ne figure dans aucune réponse : il détruit le droit d'invitation de `director`,
-et `studio-web` comme `studio-mobile` l'ont vérifié indépendamment. `identity` sert, pour le couple
-(personne, chaîne), un **ensemble** de rôles — une personne en tient plusieurs — et la projection
-de `grants` sur ces rôles (`assignableRoles[]`), matérialisée, jamais la table à recomposer.
+The fold onto six (`artist`, `prod`, `regie`, `mod`, `coord`, `tres`) is **a presentation label**
+and appears in no response: it destroys `director`'s invitation right, and `studio-web` and
+`studio-mobile` verified it independently. `identity` serves, for the (person, channel) pair, a
+**set** of roles — one person holds several — and the projection of `grants` onto those roles
+(`assignableRoles[]`), materialised, never the table to be recomposed.
 
-**Deux échelles d'accès, jamais confondues** (`studio-web`, §Multiplicité) :
+**Two scales of access, never conflated** (`studio-web`, §Multiplicity):
 
 | | `ChannelMembership` | `DateAccessGrant` |
 |---|---|---|
-| portée | la chaîne | **une date** |
-| durée | permanente | **expire à un instant servi** |
-| révocation | retire de la chaîne | retire de la date seulement |
-| propriétaire | `owner: true`, `removable: false` | jamais propriétaire |
+| scope | the channel | **one date** |
+| duration | permanent | **expires at a served instant** |
+| revocation | removes from the channel | removes from the date only |
+| owner | `owner: true`, `removable: false` | never the owner |
 
-Les confondre ferait d'une révocation de renfort une exclusion de chaîne. Ce sont deux agrégats.
+Conflating them would turn revoking a stand-in into exclusion from the channel. They are two
+aggregates.
 
-#### L'isolation entre chaînes est un **invariant**, pas une commodité
+#### Isolation between channels is an **invariant**, not a convenience
 
-Les régisseurs et les modérateurs **ne sont pas nos salariés** : ce sont des collaborateurs des
-artistes ou des indépendants qui travaillent sur plusieurs chaînes — `people` le modélise déjà
-ainsi, avec `channels[]` et `runsCalled`, et une date sur douze est tenue par un renfort
-indépendant.
+Run-desk operators and moderators **are not our employees**: they are artists' collaborators or
+freelancers working across several channels — `people` already models them that way, with
+`channels[]` and `runsCalled`, and one date in twelve is run by a freelance stand-in.
 
-Cela change la nature du besoin. Tant qu'on croyait parler d'employés, l'absence de déconnexion et
-de révocation d'appareil côté studio (`studio-mobile` C6) était un **défaut d'ergonomie**. Avec des
-tiers qui vont d'un artiste à l'autre, c'est un **défaut de protection des données** : un
-indépendant verrait la file de modération, les pseudonymes et l'historique des spectateurs de
-chaînes qui ne sont pas les siennes.
+That changes the nature of the need. While we believed we were talking about employees, the absence
+of sign-out and device revocation on the studio side (`studio-mobile` C6) was an **ergonomics
+defect**. With third parties moving from one artist to another, it is a **data-protection defect**:
+a freelancer would see the moderation queue, the nicknames and the viewer history of channels that
+are not theirs.
 
-> **Toute lecture du studio est portée par une chaîne, et le droit se vérifie sur cette
-> chaîne-là — jamais sur l'appartenance à une chaîne quelconque.** Aucune lecture de modération,
-> d'audience, de journal ou de billetterie ne traverse une frontière de chaîne, même pour un
-> propriétaire.
+> **Every studio read is carried by a channel, and the right is verified on that channel — never
+> on membership of some channel.** No moderation, audience, journal or ticketing read crosses a
+> channel boundary, not even for an owner.
 
-Trois conséquences, qui sont des invariants et non des filtres d'affichage :
+Three consequences, which are invariants and not display filters:
 
-- **les collections de `chat` sont indexées par chaîne** — `AudienceMember`, `ModerationItem`,
-  `BannedWord`, les sanctions — et une requête sans `channel_id` n'existe pas ;
-- **les deux seules lectures par personne** sont `person_duties` (mes gardes) et la boîte. Toutes
-  deux ne portent que ce qui concerne **les chaînes où la personne a un accès vivant**, et un accès
-  ponctuel expiré au tomber du rideau les retire **sans attendre une reconnexion** ;
-- **un accès révoqué se voit dans la seconde** : `identity.rights_version.bumped.v1` fait quitter
-  les salles de la chaîne perdue (`realtime.md` §3), et le jeton de service émis par le BFF ne vit
-  que 60 s — c'est la borne de fraîcheur de l'autorisation, et elle est écrite.
+- **`chat`'s collections are indexed by channel** — `AudienceMember`, `ModerationItem`,
+  `BannedWord`, the sanctions — and a query without a `channel_id` does not exist;
+- **the only two per-person reads** are `person_duties` (my duties) and the inbox. Both carry only
+  what concerns **the channels where the person has a live access**, and a one-off access that
+  expired at curtain-down removes them **without waiting for a reconnection**;
+- **a revoked access is visible within the second**: `identity.rights_version.bumped.v1` makes you
+  leave the lost channel's rooms (`realtime.md` §3), and the service token issued by the BFF lives
+  only 60 s — that is the authorisation's freshness bound, and it is written down.
 
-**Réfutation possible.** On peut soutenir que `Channel` mérite son propre contexte `organisation`.
-Je l'écarte parce que la seule chose qu'une chaîne fait sans `identity` est de porter un nom, et
-qu'un nom n'est pas un invariant.
+**Possible refutation.** One can argue that `Channel` deserves its own `organisation` context. I
+rule it out because the only thing a channel does without `identity` is carry a name, and a name is
+not an invariant.
 
-### 1.2 `catalog` — ce qui est publié
+### 1.2 `catalog` — what is published
 
-**Possède.** La taxonomie (2 univers, 21 disciplines, 176 sous-genres, 205 étiquettes, 7 groupes
-d'attributs, le **rang éditorial**), l'artiste public, la salle, le spectacle, la **date** comme
-objet public, la **publication** comme acte de la chaîne, l'**issue** de la date (`outcome`),
-les **droits territoriaux**, la **politique de rediffusion** (la promesse, pas le fichier ni le
-prix), les médias en renditions déclarées, l'**index OpenSearch et ses facettes**, les **recherches
-enregistrées**, et les **modèles de lecture composés** que les deux BFF lisent (rangées d'accueil,
-grille du soir, page de discipline, fiche de date, tableau des événements, agenda de chaîne).
+**Owns.** The taxonomy (2 universes, 21 disciplines, 176 sub-genres, 205 tags, 7 attribute groups,
+the **editorial rank**), the public artist, the venue, the show, the **date** as a public object,
+the **publication** as the channel's act, the date's **outcome** (`outcome`), the **territorial
+rights**, the **replay policy** (the promise, not the file and not the price), media as declared
+renditions, the **OpenSearch index and its facets**, the **saved searches**, and the **composed
+read models** the two BFFs read (home rows, tonight's grid, discipline page, date sheet, events
+table, channel agenda).
 
-**Ne possède pas.** La jauge, les tarifs, les promotions, la recette (`ticketing`). Le compteur de
-spectateurs, la santé du flux, les chapitres, les incidents (`streaming`). Le régime de tchat
-(`chat`). Les membres de la chaîne (`identity`).
+**Does not own.** Capacity, prices, promotions, revenue (`ticketing`). The viewer counter, feed
+health, chapters, incidents (`streaming`). The chat policy (`chat`). The channel's members
+(`identity`).
 
-**Pourquoi l'index lui appartient** (liste du chef, point 9). Les facettes dérivent de la
-taxonomie, et la taxonomie est à `catalog`. Un service `search` ne posséderait aucun invariant,
-aucune écriture, aucun vocabulaire : seulement une projection. Or un contexte est une frontière de
-langage, pas un type d'infrastructure. Deux faits étrangers entrent dans le document indexé —
-la disponibilité et le tarif d'appel, qui viennent de `ticketing` — et ils y entrent **par
-événement Kafka consommé par l'indexeur de `catalog`**, jamais par une CDC qui lirait la base d'un
-autre service. La règle « une base par service » n'est donc pas contournée par la porte de derrière.
+**Why the index belongs to it** (chief's list, point 9). The facets derive from the taxonomy, and
+the taxonomy belongs to `catalog`. A `search` service would own no invariant, no write and no
+vocabulary: only a projection. But a context is a boundary of language, not a kind of
+infrastructure. Two foreign facts enter the indexed document — availability and the headline price,
+which come from `ticketing` — and they enter **through a Kafka event consumed by `catalog`'s
+indexer**, never through a CDC reading another service's database. So the "one database per
+service" rule is not circumvented by the back door.
 
-**Conséquence, et elle est contraignante** : le connecteur *sink* OpenSearch de Kafka Connect,
-que le README cite comme **l'unique argument** écartant Meilisearch, **n'est pas utilisable ici**. Il écrit un
-document par message ; notre document est une composition de trois sources. L'index est écrit par
-un consommateur `catalog-indexer` interne au service, qui recharge depuis son propre modèle
-d'écriture et indexe avec `version_type: external` sur la version de la ligne — un rejeu tardif ne
-peut donc jamais écraser une version plus récente. Debezium garde sa place, mais pour **publier
-l'outbox**, pas pour alimenter l'index.
+**A consequence, and it is binding**: Kafka Connect's OpenSearch *sink* connector, which the README
+cites as **the only argument** ruling out Meilisearch, **is not usable here**. It writes one
+document per message; our document is a composition of three sources. The index is written by a
+`catalog-indexer` consumer internal to the service, which reloads from its own write model and
+indexes with `version_type: external` on the row's version — so a late replay can never overwrite a
+newer version. Debezium keeps its place, but for **publishing the outbox**, not for feeding the
+index.
 
-#### La comparaison des moteurs se rouvre, et OpenSearch gagne pour une autre raison
+#### The engine comparison reopens, and OpenSearch wins for another reason
 
-Je ne peux pas démolir le seul argument qui écartait Meilisearch sans rouvrir la comparaison. Je la
-rouvre donc, et **la décision ne change pas — sa justification, si.**
+I cannot demolish the only argument that ruled out Meilisearch without reopening the comparison. So
+I reopen it, and **the decision does not change — its justification does.**
 
-> **Ce qui tient OpenSearch, ce n'est pas Kafka Connect. C'est le *percolator*.**
+> **What holds OpenSearch is not Kafka Connect. It is the *percolator*.**
 
-Une recherche enregistrée doit se déclencher quand une date **nouvelle** correspond à des critères
-**anciens** : c'est une **requête inversée**, et c'est exactement ce qu'est un percolator — on
-indexe les requêtes et on interroge avec un document. Toute la réponse à `storefront-web` Q23 en
-dépend (`saved_search_percolator`, `catalog.saved_search.matched.v1`, et le fait que dix recherches
-enregistrées coûtent **zéro** requête de comptage à l'ouverture de la page Compte).
+A saved search must fire when a **new** date matches **old** criteria: that is an **inverted
+query**, and that is exactly what a percolator is — you index the queries and query with a
+document. The whole answer to `storefront-web` Q23 depends on it (`saved_search_percolator`,
+`catalog.saved_search.matched.v1`, and the fact that ten saved searches cost **zero** counting
+queries when the Account page opens).
 
 | | OpenSearch | Meilisearch |
 |---|---|---|
-| requête inversée | **type `percolator` + requête `percolate`**, hérités d'Elasticsearch 7.10 et conservés au fork | **aucun équivalent** — `facetDistribution` compte des documents, et l'agrégation au sens large reste une demande ouverte |
-| licence | **Apache 2.0** | double licenciement depuis : Community en MIT, Enterprise en **Business Source License** |
+| inverted query | **`percolator` field type + `percolate` query**, inherited from Elasticsearch 7.10 and kept at the fork | **no equivalent** — `facetDistribution` counts documents, and aggregation in the broad sense remains an open request |
+| licence | **Apache 2.0** | dual-licensed since: Community under MIT, Enterprise under the **Business Source License** |
 
-Sans percolator, il faudrait ré-exécuter N recherches enregistrées à chaque publication de date,
-ou dix comptages à chaque ouverture d'une page Compte. C'est la différence entre une
-fonctionnalité et une dette.
+Without a percolator, we would have to re-run N saved searches on every date publication, or ten
+counts every time an Account page opens. That is the difference between a feature and a debt.
 
-**Le raisonnement est rétrospectif dans la forme et juste dans le fond**, et je le dis comme tel :
-le dossier d'origine a retenu le bon moteur pour un motif qui s'est révélé faux, et j'ai démoli ce
-motif sans rouvrir la comparaison — ce qui était un manque. Le motif qui la tranche vraiment était
-déjà dans ce document, une section plus bas, sans que personne ne fasse le lien.
+**The reasoning is retrospective in form and right in substance**, and I say so: the original file
+picked the right engine for a reason that turned out to be false, and I demolished that reason
+without reopening the comparison — which was a gap. The reason that really settles it was already
+in this document, one section further down, with nobody making the connection.
 
-**Une réserve consignée, parce qu'elle n'est pas jugée** : `search.allow_expensive_queries` est un
-interrupteur qu'un exploitant coupe un jour de surcharge, et **les alertes de recherche enregistrée
-s'arrêteraient alors en silence**. Il faut donc une sonde sur ce réglage, pas seulement sur le
-retard de l'index. Je n'ai aucun ordre de grandeur sur le nombre de recherches enregistrées
-attendu ; le risque est réel, son ampleur ne l'est pas.
+**One reservation recorded, because it is not settled**: `search.allow_expensive_queries` is a
+switch an operator turns off on a day of overload, and **the saved-search alerts would then stop in
+silence**. So we need a probe on that setting, not only on index lag. I have no order of magnitude
+for the expected number of saved searches; the risk is real, its size is not.
 
-**Pourquoi les recherches enregistrées lui appartiennent.** Le vocabulaire des critères est celui
-des facettes ; la ré-exécution est une requête d'index ; le compteur de correspondances est un
-comptage d'index ; et le déclenchement d'alerte quand une **nouvelle** date correspond est une
-requête inversée — c'est exactement ce que fait un *percolator* OpenSearch. Les mettre ailleurs
-obligerait à recopier la grammaire des filtres. `notifications` n'en reçoit que la conséquence.
+**Why saved searches belong to it.** The criteria vocabulary is the facets' vocabulary;
+re-execution is an index query; the match counter is an index count; and firing an alert when a
+**new** date matches is an inverted query — exactly what an OpenSearch *percolator* does. Putting
+them elsewhere would mean copying the filter grammar. `notifications` receives only the
+consequence.
 
-**Réfutation possible.** Une recherche enregistrée est une donnée très personnelle et pourrait
-vivre dans `identity`. Je l'écarte : elle serait alors inexécutable sans un appel synchrone vers
-`catalog` à chaque comptage, et la grammaire des critères serait déclarée à deux endroits.
+**Possible refutation.** A saved search is very personal data and could live in `identity`. I rule
+it out: it would then be unexecutable without a synchronous call to `catalog` on every count, and
+the criteria grammar would be declared in two places.
 
-### 1.3 `ticketing` — ce que le spectateur achète, et ce que cet achat ouvre
+### 1.3 `ticketing` — what the viewer buys, and what that purchase opens
 
-Ce contexte absorbe **C7 (abonnements)** et **C8 (boutique)**. Son langage n'est pas « les
-billets » : c'est **le commerce du spectateur et les droits qu'il ouvre**.
+This context absorbs **C7 (subscriptions)** and **C8 (shop)**. Its language is not "tickets": it is
+**the viewer's commerce and the rights it opens**.
 
-**Possède.** La jauge et ses paliers, la liste d'attente et sa fenêtre de priorité, les tarifs
-(`full | reduced | support`), les promotions et leurs fenêtres, les frais de service, la
-**commande de places** (`SeatOrder`) et la **commande de marchandise** (`MerchOrder`) — deux
-commandes distinctes (D-011) —, le panier, le devis opposable, la place détenue et son **code de
-place émis par le serveur**, les contremarques, l'**abonnement** (`Subscription`) et le catalogue
-des formules avec leurs `opens[]` et leur `seatDiscount`, la **boutique** (articles, variantes,
-stock, épinglage en direct), le **reflet en lecture seule** des commandes passées chez un tiers
-(E14), l'encaissement Stripe et ses webhooks, les **issues commerciales** (remboursement, avoir),
-l'**avoir de compte** (`Credit`), les factures, et le **droit d'achat projeté** que le storefront
-lit (`viewer_entitlements`).
+**Owns.** Capacity and its tiers, the waiting list and its priority window, the prices
+(`full | reduced | support`), promotions and their windows, service fees, the **seat order**
+(`SeatOrder`) and the **merchandise order** (`MerchOrder`) — two distinct orders (D-011) — the
+basket, the binding quote, the seat held and its **server-issued seat code**, complimentary tickets,
+the **subscription** (`Subscription`) and the catalogue of plans with their `opens[]` and their
+`seatDiscount`, the **shop** (items, variants, stock, live pinning), the **read-only reflection** of
+orders placed with a third party (E14), taking money through Stripe and its webhooks, the
+**commercial outcomes** (refund, credit note), the **account credit** (`Credit`), invoices, and the
+**projected purchase entitlement** the storefront reads (`viewer_entitlements`).
 
-**Ne possède pas.** Le calcul du droit à versement et la TVA de l'artiste (`payouts` — voir §1.6).
-L'émission du jeton de lecture (`streaming`). L'état de la date (`catalog`).
+**Does not own.** Computing the payout entitlement and the artist's VAT (`payouts` — see §1.6).
+Issuing the playback token (`streaming`). The date's state (`catalog`).
 
-**Pourquoi les abonnements sont ici et pas dans `identity`.** Un abonnement est **un achat
-récurrent** : il a un moyen de paiement, une échéance, une facture, un prorata, une résiliation,
-un litige bancaire. Ce sont les invariants de `ticketing`, pas ceux d'`identity`. Et surtout :
-`plan.opens[]` et `seatDiscount` conditionnent **le prix affiché** et **le droit de lire**, c'est-
-à-dire les deux choses que `ticketing` sert déjà. Les séparer produirait deux intégrations Stripe,
-deux magasins d'idempotence, deux politiques de remboursement, et un appel synchrone de plus sur
-le chemin critique de la lecture.
+**Why subscriptions are here and not in `identity`.** A subscription is **a recurring purchase**: it
+has a payment method, a renewal date, an invoice, a pro rata, a cancellation, a chargeback. Those
+are `ticketing`'s invariants, not `identity`'s. And above all: `plan.opens[]` and `seatDiscount`
+condition **the price displayed** and **the right to watch**, that is, the two things `ticketing`
+already serves. Separating them would produce two Stripe integrations, two idempotency stores, two
+refund policies, and one more synchronous call on playback's critical path.
 
-**Pourquoi la boutique est ici et pas ailleurs.** Même argument : même client Stripe, même
-enveloppe de commande, même flux de versement, même politique de remboursement. La marchandise a
-ses propres invariants (stock, variante, expédition) : elle est un **agrégat distinct dans le même
-contexte**, avec ses propres tables, jamais un champ de plus sur une commande de places.
+**Why the shop is here and not elsewhere.** The same argument: the same Stripe customer, the same
+order envelope, the same payout flow, the same refund policy. Merchandise has its own invariants
+(stock, variant, shipping): it is a **distinct aggregate in the same context**, with its own tables,
+never one more field on a seat order.
 
-**Une conséquence que je rends explicitement** (`storefront-web` Q15) : **une commande de
-marchandise est mono-vendeur.** Un panier contenant les articles de deux chaînes **se scinde en
-deux commandes au paiement**, chacune avec son port, sa commission et son versement. Motif
-technique en plus du motif métier : le modèle Stripe retenu (`destination charges`, voir
-`adr-payments.md`) n'admet **qu'une seule destination par paiement**.
+**A consequence I state explicitly** (`storefront-web` Q15): **a merchandise order is
+single-seller.** A basket containing two channels' items **splits into two orders at payment**, each
+with its own shipping, commission and payout. A technical reason on top of the business one: the
+Stripe model adopted (`destination charges`, see `adr-payments.md`) allows **only one destination
+per payment**.
 
-**Réfutation possible.** `ticketing` devient le plus gros contexte du système et le plus chaud en
-écriture. C'est vrai, et c'est le prix assumé. Le signal qui déclencherait la scission est écrit
-au §8 : si `merch` et `subscription` dépassent ensemble 30 % des écritures du service, ou si la
-file BullMQ de `ticketing` mêle durablement des travaux d'expédition et de billetterie, on extrait
-`shop` — la frontière est déjà propre, les agrégats ne se touchent pas.
+**Possible refutation.** `ticketing` becomes the system's largest context and its hottest in writes.
+That is true, and it is the price we own. The signal that would trigger the split is written in §8:
+if `merch` and `subscription` together exceed 30% of the service's writes, or if `ticketing`'s
+BullMQ queue durably mixes shipping jobs with ticketing ones, we extract `shop` — the boundary is
+already clean, the aggregates do not touch.
 
-### 1.4 `streaming` — la conduite, et le droit de lire maintenant
+### 1.4 `streaming` — the run, and the right to watch now
 
-**Possède.** La conduite (`Run` : état d'antenne, équipe tenue, caméras, profil de diffusion,
-échelle de qualités), les **clés de flux** et leur rotation, l'autorisation d'ingestion, les
-**mesures de santé** (débit, latence, images perdues, gigue — avec leur instant de mesure et leur
-absence quand le protocole ne les fournit pas), le **compteur de spectateurs**, les **chapitres**,
-les **incidents** (cause + issue + message de régie) et l'écran d'attente, l'**enregistrement** et
-la **rediffusion** comme actif (existence, durée, instant d'expiration), le **jeton de lecture**,
-la **session de lecture** et la limite d'écrans simultanés, le **budget d'aperçu gratuit**, et le
-**point de reprise** (`ResumePoint`).
+**Owns.** The run (`Run`: on-air state, crew on duty, cameras, broadcast profile, quality ladder),
+the **stream keys** and their rotation, ingest authorisation, the **health measurements** (bitrate,
+latency, dropped frames, jitter — with their measurement instant and their absence when the
+protocol does not supply them), the **viewer counter**, the **chapters**, the **incidents** (cause +
+outcome + run-desk message) and the standby screen, the **recording** and the **replay** as an asset
+(existence, duration, expiry instant), the **playback token**, the **playback session** and the
+concurrent-screen limit, the **free-preview budget**, and the **resume point** (`ResumePoint`).
 
-**Ne possède pas.** La *politique* de rediffusion (`catalog` : la promesse) ni sa *mise en vente*
-(`ticketing` : le prix). `streaming` en possède le **fichier** et l'**instant d'expiration**, qui
-se dérive de la fin du direct et de `windowHours` servi par `catalog`.
+**Does not own.** The replay *policy* (`catalog`: the promise) nor its *going on sale* (`ticketing`:
+the price). `streaming` owns its **file** and its **expiry instant**, which is derived from the end
+of the live show and from `windowHours` served by `catalog`.
 
-**Pourquoi le point de reprise est ici.** C'est l'écriture la plus fréquente du système
-(`storefront-mobile` : « la plus fréquente de toutes »). La placer dans `identity` ferait du
-service le plus froid et le plus sensible du système son chemin d'écriture le plus chaud. Elle est
-de la même famille que la session de lecture : même producteur (le lecteur), même tolérance à la
-perte, même cycle de vie.
+**Why the resume point is here.** It is the system's most frequent write (`storefront-mobile`: "the
+most frequent of all"). Putting it in `identity` would make the coldest and most sensitive service
+in the system its hottest write path. It is of the same family as the playback session: same
+producer (the player), same tolerance of loss, same lifecycle.
 
-**Pourquoi le droit de lire est ici, et pas dans `ticketing`.** Parce que c'est `streaming` qui
-émet le jeton, et qu'un droit qui ne produit pas de jeton n'a pas d'effet. Voir §3, qui traite
-`isWatchable` en entier.
+**Why the right to watch is here, and not in `ticketing`.** Because it is `streaming` that issues
+the token, and an entitlement that produces no token has no effect. See §3, which handles
+`isWatchable` in full.
 
-### 1.5 `chat` — la parole et sa police
+### 1.5 `chat` — speech and its policing
 
-**Possède.** Le message et son **ancrage sur le temps média** (`at_media_sec`, en plus de l'instant
-absolu), l'état du message, la **file de modération** et ses baux de prise en charge, les verdicts
-et leur préséance, la **sanction sur la personne du public, au sein d'une chaîne**, le
-**dictionnaire de mots filtrés** et son effet rétroactif, le régime de tchat de la date
-(`chatMode`), le mode lent, la réserve aux détenteurs de place, le **public d'une chaîne** comme
-collection interrogeable (`AudienceMember` — y compris ceux qui n'ont jamais écrit), et le
-**journal de modération**.
+**Owns.** The message and its **anchor on media time** (`at_media_sec`, in addition to the absolute
+instant), the message's state, the **moderation queue** and its claim leases, the verdicts and their
+precedence, the **sanction on a member of the audience, within a channel**, the **dictionary of
+filtered words** and its retroactive effect, the date's chat policy (`chatMode`), slow mode, the
+reservation to seat holders, the **channel's audience** as a queryable collection (`AudienceMember`
+— including those who have never written), and the **moderation journal**.
 
-**Ne possède pas.** La suspension globale d'un compte (`identity`) — qui est autre chose.
+**Does not own.** The global suspension of an account (`identity`) — which is a different thing.
 
-**La réponse à D6 / E3, et elle est structurante** (liste du chef, point 8). Quatre vocabulaires
-existent dans `shared/` pour une même notion. Le défaut de fond n'est pas qu'ils divergent : c'est
-que **`reported` est un état de triage logé dans le champ des sanctions**. Le contrat sépare donc
-**trois axes**, jamais empilés :
+**The answer to D6 / E3, and it is structuring** (chief's list, point 8). Four vocabularies exist in
+`shared/` for one notion. The underlying fault is not that they diverge: it is that **`reported` is
+a triage state lodged in the sanctions field**. So the contract separates **three axes**, never
+stacked:
 
-| Axe | Porte sur | Vocabulaire au contrat | Propriétaire |
+| Axis | Bears on | Contract vocabulary | Owner |
 |---|---|---|---|
-| `MessageState` | le message | `published` · `removed` | `chat` |
-| `ModerationItemState` | la **ligne de file** | `reported` · `claimed` · `settled` | `chat` |
-| `AudienceSanction` | la **personne, dans une chaîne** | `none` · `muted` (avec `expires_at` nullable) · `banned` | `chat` |
+| `MessageState` | the message | `published` · `removed` | `chat` |
+| `ModerationItemState` | the **queue item** | `reported` · `claimed` · `settled` | `chat` |
+| `AudienceSanction` | the **person, within a channel** | `none` · `muted` (with a nullable `expires_at`) · `banned` | `chat` |
 
-`ok` est renommé `published` (c'est le vocabulaire de l'i18n, et le seul qui dise ce qu'il fait).
-`muted` et `banned` **disparaissent du message** : ils n'y ont jamais eu de sens, ils portent sur
-la personne. Un message d'une personne bannie est `removed` ; la sanction, elle, est sur la
-personne.
+`ok` is renamed `published` (it is the i18n vocabulary, and the only one that says what it does).
+`muted` and `banned` **disappear from the message**: they never had meaning there, they bear on the
+person. A banned person's message is `removed`; the sanction is on the person.
 
-**La pastille unique** que les surfaces affichent est **une valeur dérivée**, `moderationBadgeOf`,
-qui vit dans `@arthome/core` et compose les trois axes dans cet ordre de préséance :
+**The single badge** the surfaces display is **a derived value**, `moderationBadgeOf`, which lives in
+`@arthome/core` and composes the three axes in this order of precedence:
 `AudienceSanction.banned` > `AudienceSanction.muted` > `MessageState.removed` > `published`.
-Servie, jamais recomposée.
+Served, never recomposed.
 
-**Pourquoi la personne bannie appartient à `chat` et non à `identity`** (`studio-mobile` Q6). Parce
-que la sanction est **par chaîne** : la même personne est bannie chez un artiste et bienvenue chez
-un autre. Une sanction par chaîne dans `identity` obligerait chaque verdict de modération — geste
-le plus fréquent d'un direct saturé — à une écriture croisée vers le service le plus sensible du
-système. Le bannissement porte sur la parole, pas sur le compte.
+**Why the banned person belongs to `chat` and not to `identity`** (`studio-mobile` Q6). Because the
+sanction is **per channel**: the same person is banned on one artist's channel and welcome on
+another's. A per-channel sanction in `identity` would force every moderation verdict — the most
+frequent act of a saturated live show — into a cross-service write to the most sensitive service in
+the system. A ban bears on the speech, not on the account.
 
-### 1.6 `payouts` — ce que la plateforme doit
+### 1.6 `payouts` — what the platform owes
 
-**Possède.** Le **droit à versement** par date et par chaîne (brut, commission, **ventilation de
-TVA par marché**, net), l'état du versement (`scheduled | held | paid | refunded | suspended`),
-l'échéance (14 jours), la **retenue** tant qu'une issue est ouverte, le compte connecté Stripe de
-la chaîne et son parcours d'inscription, la **demande de changement de coordonnées bancaires à
-double signature**, la **réconciliation** avec le grand livre Stripe, la clôture de période, et
-les **exports comptables** (journal des ventes, FEC, Sage, Cegid, factures groupées).
+**Owns.** The **payout entitlement** per date and per channel (gross, commission, **VAT breakdown by
+jurisdiction**, net), the payout's state (`scheduled | held | paid | refunded | suspended`), the due
+date (14 days), the **withholding** while an outcome is open, the channel's Stripe connected account
+and its onboarding flow, the **dual-signature bank details change request**, **reconciliation**
+against Stripe's ledger, period closing, and the **accounting exports** (sales journal, tax export,
+Sage, Cegid, grouped invoices).
 
-**Ne possède pas.** L'encaissement — c'est `ticketing`. **Stripe reste la source de vérité du
-mouvement d'argent** : `payouts` ne reconstruit jamais son grand livre, il **réconcilie** le sien
-avec lui et signale les écarts. Une période ne se clôt pas avec un écart non expliqué.
+**Does not own.** Taking the money — that is `ticketing`. **Stripe remains the source of truth for
+the movement of money**: `payouts` never rebuilds its ledger, it **reconciles** its own with it and
+reports the gaps. A period does not close with an unexplained gap.
 
-**Pourquoi c'est un contexte séparé de `ticketing`, alors que j'ai rattaché deux orphelins.**
-Parce que ce sont deux langages différents avec deux interlocuteurs différents : `ticketing` parle
-au spectateur (jauge, panier, remboursement) ; `payouts` parle à l'artiste et au comptable
-(assiette, taux, retenue, écriture comptable, FEC). Et surtout : `payouts` n'a **aucune écriture
-sur le chemin d'un achat**. Il consomme, il calcule, il verse. C'est la définition d'un contexte
-en aval.
+**Why it is a context separate from `ticketing`, when I attached two orphans.** Because they are two
+different languages with two different interlocutors: `ticketing` speaks to the viewer (capacity,
+basket, refund); `payouts` speaks to the artist and to the accountant (base, rate, withholding,
+accounting entry, tax export). And above all: `payouts` has **no write on a purchase's path**. It
+consumes, it computes, it pays out. That is the definition of a downstream context.
 
-### 1.7 `notifications` — atteindre une personne hors de l'application
+### 1.7 `notifications` — reaching a person outside the application
 
-**Possède.** L'enregistrement d'appareil pour la poussée (jeton FCM/APNs, plateforme, version,
-langue), les préférences par déclencheur et par canal, les **heures calmes** et leur exception
-conditionnée à la détention d'une place, le **routage par rôle et par chaîne** pour le studio, la
-**boîte du studio** (`inbox`), les rappels datés (`setReminder`), l'envoi, et le journal d'envoi.
+**Owns.** Device registration for push (FCM/APNs token, platform, version, language), preferences
+per trigger and per channel, **quiet hours** and their exception conditioned on holding a seat,
+**routing by role and by channel** for the studio, the **studio inbox** (`inbox`), dated reminders
+(`setReminder`), sending, and the send journal.
 
-**Ne possède pas.** Les **seuils** qui déclenchent une alerte : ils sont du domaine et vivent dans
-`@arthome/core` (« 30 minutes avant », « 85 % des places », « 6 heures avant expiration »,
-« file au-delà de dix messages », « poste non affecté à J-1 »). `notifications` les lit, ne les
-invente pas. Réponse directe à `storefront-mobile` Q10.
+**Does not own.** The **thresholds** that trigger an alert: they are domain and live in
+`@arthome/core` ("30 minutes before", "85% of the seats", "6 hours before expiry", "queue beyond ten
+messages", "post unassigned at D-1"). `notifications` reads them, it does not invent them. A direct
+answer to `storefront-mobile` Q10.
 
-**Règle de rédaction** (`studio-mobile` §Notifications) : **une notification ne porte jamais un
-montant si le rôle destinataire n'a pas `canRevenue`.** Une notification s'affiche sur un écran
-verrouillé.
+**A drafting rule** (`studio-mobile` §Notifications): **a notification never carries an amount if
+the recipient's role does not have `canRevenue`.** A notification appears on a locked screen.
 
-### 1.8 Ce qui n'est **pas** un contexte : le catalogue de libellés (C6)
+### 1.8 What is **not** a context: the label catalogue (C6)
 
-**Décision : aucun service.** `@arthome/core` détient les clés et le catalogue de référence ; un
-travail de CI publie des **artefacts versionnés immuables** `/{surface}/{locale}/v{N}.json` sur
-MinIO puis CDN ; chaque application embarque un **instantané au build** comme repli obligatoire.
-La version courante est servie dans la charge utile d'amorçage (`ViewerContext.labelCatalog`),
-jamais dans un appel par page.
+**Decision: no service.** `@arthome/core` holds the keys and the reference catalogue; a CI job
+publishes **immutable versioned artefacts** `/{surface}/{locale}/v{N}.json` to MinIO and then to the
+CDN; each application embeds a **build-time snapshot** as a mandatory fallback. The current version
+is served in the bootstrap payload (`ViewerContext.labelCatalog`), never in a per-page call.
 
-**Pourquoi pas un service.** Il n'aurait aucun invariant, aucune transaction, aucun événement —
-seulement une lecture de fichier statique, déjà mieux faite par un CDN. Le seul besoin réel
-(corriger une coquille sans attendre une revue de magasin) est satisfait par la publication d'une
-version d'artefact. Le jour où une rédactrice doit éditer la copie depuis le studio, cela devient
-un écran du studio qui pousse dans le même pipeline, pas un service de plus.
+**Why not a service.** It would have no invariant, no transaction and no event — only a static file
+read, already done better by a CDN. The one real need (fixing a typo without waiting for a store
+review) is met by publishing a new artefact version. The day a copywriter has to edit the copy from
+the studio, that becomes a studio screen pushing into the same pipeline, not one more service.
 
-**Conséquence pour `storefront-web` (Q30).** Le rendu serveur résout les codes i18n **depuis
-l'instantané embarqué au build**, jamais par un appel réseau sur le chemin de rendu. Le catalogue
-dynamique ne sert que mobile et TV. Une coquille corrigée n'est donc visible sur le web qu'au
-prochain déploiement — c'est assumé, et c'est le bon compromis : le web se déploie en minutes.
+**Consequence for `storefront-web` (Q30).** Server rendering resolves its i18n codes **from the
+build-time snapshot**, never through a network call on the render path. The dynamic catalogue serves
+mobile and TV only. So a typo fixed is only visible on the web at the next deployment — that is
+owned, and it is the right trade-off: the web deploys in minutes.
 
-**Et la taxonomie ?** Même régime (`storefront-mobile`, forme 4) : artefact versionné immuable,
-`/taxonomy/{locale}/v{N}.json`, **servi par tranche et par surface** (le mobile ne charge ni le
-vocabulaire du studio ni la table de touches TV), cache très long, embarqué au build comme repli.
-59,5 Ko bruts / 8,4 Ko gzip : pas un appel d'API.
+**And the taxonomy?** The same regime (`storefront-mobile`, shape 4): an immutable versioned
+artefact, `/taxonomy/{locale}/v{N}.json`, **served per slice and per surface** (mobile loads neither
+the studio vocabulary nor the TV key table), a very long cache, embedded at build time as a
+fallback. 59.5 KB raw / 8.4 KB gzip: not an API call.
 
-### 1.9 Le journal du studio appartient à `identity` — rattachement manquant, rendu au temps 4
+### 1.9 The studio journal belongs to `identity` — a missing attachment, returned at temps 4
 
-**Le défaut.** J'ai trié sept contextes et rattaché trois familles orphelines ; **celle-ci m'a
-échappé.** Le journal — 24 mois de conservation, une purge, un export, une rétention écrite — était
-déclaré nulle part comme agrégat, absent du tableau des modèles de lecture, et composé par le BFF
-studio depuis **cinq services** en `page + total`. C'est-à-dire, en une seule ligne, tout ce que ce
-document interdit :
+**The defect.** I sorted seven contexts and attached three orphan families; **this one escaped me.**
+The journal — 24 months of retention, a purge, an export, a written retention policy — was declared
+nowhere as an aggregate, absent from the read-model table, and composed by the studio BFF from
+**five services** in `page + total`. That is, in one line, everything this document forbids:
 
-- une **jointure au moment de la requête**, sur le seul écran qui contredise frontalement
-  `data-model.md` §4 (*« aucun écran n'est servi par une jointure au moment de la requête »*) ;
-- un **total impossible** : il faudrait compter par période et par nature dans cinq services,
-  appliquer la projection par rôle, trier l'union, puis en extraire la page 3. Aucun des cinq ne
-  connaît le total des quatre autres ;
-- et **un BFF qui tiendrait une table** pour s'en sortir — la ligne qu'il n'a pas le droit de
-  franchir.
+- a **join at query time**, on the one screen that head-on contradicts `data-model.md` §4 (*"no
+  screen is served by a join at query time"*);
+- an **impossible total**: you would have to count by period and by kind across five services, apply
+  the projection by role, sort the union, then extract page 3 from it. None of the five knows the
+  other four's total;
+- and **a BFF that would keep a table** to get out of it — the line it has no right to cross.
 
-**La décision : `identity` possède le journal**, comme un modèle de lecture alimenté **uniquement
-par consommation Kafka**.
+**The decision: `identity` owns the journal**, as a read model fed **only by Kafka consumption**.
 
-**Pourquoi `identity`, et pourquoi ce n'est pas un huitième service.** Un journal répond à une
-question, et une seule : *qui a fait quoi, quand, depuis quelle surface, sur quelle chaîne*. Le
-sujet de la phrase est un **acteur**, et l'acteur est le langage d'`identity`. Et le rattachement
-ne coûte **rien aux producteurs** : tout message porte déjà `actor-id` en en-tête (§EV 1.3) et un
-`Actor` dans sa charge utile. `identity` n'a donc aucun champ à demander à personne — il consomme
-ce qui circule déjà.
+**Why `identity`, and why this is not an eighth service.** A journal answers one question, and one
+only: *who did what, when, from which surface, on which channel*. The subject of the sentence is an
+**actor**, and the actor is `identity`'s language. And the attachment costs the producers
+**nothing**: every message already carries `actor-id` in a header (§EV 1.3) and an `Actor` in its
+payload. So `identity` has no field to ask anyone for — it consumes what already circulates.
 
-Trois conséquences qui règlent les trois défauts d'un coup : **une table, donc un total exact** et
-la pagination `page + total` que D-010 prescrit au studio ; **aucune jointure** au moment de la
-requête ; **aucune table dans le BFF**.
+Three consequences that settle the three defects at once: **one table, hence an exact total** and
+the `page + total` pagination D-010 prescribes for the studio; **no join** at query time; **no table
+in the BFF**.
 
-**Ce que cela met dans `identity`, et que j'assume.** Une entrée de nature `money` porte un
-montant. C'est une donnée de `ticketing` projetée dans `identity` — mais le précédent existe et il
-est déjà écrit : `channel_dues` y projette déjà des faits de `ticketing` et de `payouts` pour
-refuser la suppression d'une chaîne. La **redaction par rôle** s'applique comme partout ailleurs :
-sans `canRevenue`, la nature `money` est **absente de la réponse**, jamais présente et nulle.
+**What this puts into `identity`, and what I own.** An entry of kind `money` carries an amount. That
+is `ticketing` data projected into `identity` — but the precedent exists and is already written:
+`channel_dues` already projects facts from `ticketing` and from `payouts` in order to refuse the
+deletion of a channel. **Redaction by role** applies as everywhere else: without `canRevenue`, the
+`money` kind is **absent from the response**, never present and null.
 
-**Réfutation possible, et elle est sérieuse.** J'ai écarté les points de reprise d'`identity` au
-motif qu'ils feraient du service le plus froid le chemin d'écriture le plus chaud. Un journal est
-aussi une écriture continue — mais de **quelques dizaines de gestes par jour et par chaîne**, pas
-de plusieurs par seconde et par spectateur. Trois ordres de grandeur séparent les deux cas, et
-c'est ce qui rend le rattachement acceptable ici et inacceptable là.
+**Possible refutation, and it is a serious one.** I ruled resume points out of `identity` on the
+grounds that they would make the coldest service the hottest write path. A journal is a continuous
+write too — but of **a few dozen acts per day per channel**, not several per second per viewer.
+Three orders of magnitude separate the two cases, and that is what makes the attachment acceptable
+here and unacceptable there.
 
 ---
 
-## 2. Les quatre propriétaires d'une « date » (liste du chef, point 1)
+## 2. The four owners of a "date" (chief's list, point 1)
 
-Une date est la chose la plus partagée du système. Elle porte, dans la maquette, huit familles de
-champs appartenant à quatre contextes. Voici où passe la frontière, et pourquoi.
+A date is the most shared thing in the system. In the mockup it carries eight families of fields
+belonging to four contexts. Here is where the boundary runs, and why.
 
-| Famille | Propriétaire | Motif de la frontière |
+| Family | Owner | Reason for the boundary |
 |---|---|---|
-| identité, instant UTC, zone IANA de la salle, durée, taxonomie, médias, slug, URL canonique | `catalog` | c'est ce qui est **publié** |
-| `rights` (portée + territoires + **code** de motif) | `catalog` | un droit de diffusion est une clause de contrat de spectacle, négociée avec la date |
-| `replay.policy` + `windowHours` | `catalog` | c'est la **promesse** faite avant l'achat (principe n°5 du dossier) |
-| `outcome` (`cancelled · postponed · interrupted`) | `catalog` | c'est un fait sur la représentation, décidé par la chaîne, affiché sur chaque carte |
-| `publication.state` | `catalog` | c'est l'acte de la chaîne |
-| `seats`, `prices`, promotions, frais, contremarques, `replay` **en vente** | `ticketing` | c'est ce qui **s'achète** |
-| `revenue`, `sold` | `ticketing` (brut) → `payouts` (droit) | donnée de régie, **jamais** sur le modèle public (E8) |
-| `run.state`, `viewers`, santé, chapitres, incidents, **actif** de rediffusion et son expiration | `streaming` | c'est ce qui **se diffuse** |
-| `chatMode`, mode lent, réserve aux détenteurs | `chat` | c'est ce qui **se dit** |
+| identity, UTC instant, the venue's IANA zone, duration, taxonomy, media, slug, canonical URL | `catalog` | it is what is **published** |
+| `rights` (scope + territories + reason **code**) | `catalog` | a broadcast right is a clause of a performance contract, negotiated with the date |
+| `replay.policy` + `windowHours` | `catalog` | it is the **promise** made before the purchase (the file's principle no. 5) |
+| `outcome` (`cancelled · postponed · interrupted`) | `catalog` | it is a fact about the performance, decided by the channel, shown on every card |
+| `publication.state` | `catalog` | it is the channel's act |
+| `seats`, `prices`, promotions, fees, complimentary tickets, `replay` **on sale** | `ticketing` | it is what **is bought** |
+| `revenue`, `sold` | `ticketing` (gross) → `payouts` (entitlement) | run-desk data, **never** on the public model (E8) |
+| `run.state`, `viewers`, health, chapters, incidents, the replay **asset** and its expiry | `streaming` | it is what **is broadcast** |
+| `chatMode`, slow mode, reservation to holders | `chat` | it is what **is said** |
 
-### Les projections qui servent les écrans
+### The projections that serve the screens
 
-Aucun écran n'appelle quatre services. Chaque écran est servi par **un modèle de lecture déjà
-composé**, tenu par le contexte qui possède la majorité de ses invariants, et alimenté pour le
-reste par les événements Kafka des trois autres.
+No screen calls four services. Each screen is served by **an already composed read model**, held by
+the context that owns the majority of its invariants, and fed for the rest by the Kafka events of
+the other three.
 
-| Modèle de lecture | Tenu par | Alimenté par |
+| Read model | Held by | Fed by |
 |---|---|---|
-| `date_card_public` | `catalog` | ses écritures + `ticketing.date_sales.availability_changed.v1`, `ticketing.date_sales.pricing_changed.v1`, `streaming.run.state_changed.v1`, `streaming.viewer_count.sampled.v1`, `streaming.replay.asset_ready.v1`, `chat.date_chat_policy.changed.v1` |
-| `date_detail_public` | `catalog` | idem + distribution, chapitres (`streaming.chapter.posted.v1`) |
-| `home_rails`, `live_grid`, `category_page`, `artist_page` | `catalog` | composés depuis `date_card_public` + l'index |
-| `search_index` (OpenSearch) | `catalog` | idem, via `catalog-indexer` |
-| `studio_date_sheet` (par volet) | `catalog` pour `public`/`replay` ; `ticketing` pour `tickets` ; `chat` pour `chat` ; `streaming` pour `tech` ; `identity` pour `crew` | chacun par ses propres écritures |
-| `viewer_entitlements` | `ticketing` | ses écritures |
-| `viewer_relations` | `identity` | ses écritures |
-| `viewer_progress` | `streaming` | ses écritures |
-| `channel_agenda`, `events_table` | `catalog` | + `ticketing.date_sales.availability_changed.v1` pour jauge et recette |
-| `person_duties` (les gardes, toutes chaînes) | `identity` | + `catalog.date.scheduled.v1`, `streaming.run.state_changed.v1` |
+| `date_card_public` | `catalog` | its own writes + `ticketing.date_sales.availability_changed.v1`, `ticketing.date_sales.pricing_changed.v1`, `streaming.run.state_changed.v1`, `streaming.viewer_count.sampled.v1`, `streaming.replay.asset_ready.v1`, `chat.date_chat_policy.changed.v1` |
+| `date_detail_public` | `catalog` | same + cast, chapters (`streaming.chapter.posted.v1`) |
+| `home_rails`, `live_grid`, `category_page`, `artist_page` | `catalog` | composed from `date_card_public` + the index |
+| `search_index` (OpenSearch) | `catalog` | same, via `catalog-indexer` |
+| `studio_date_sheet` (per pane) | `catalog` for `public`/`replay`; `ticketing` for `tickets`; `chat` for `chat`; `streaming` for `tech`; `identity` for `crew` | each by its own writes |
+| `viewer_entitlements` | `ticketing` | its own writes |
+| `viewer_relations` | `identity` | its own writes |
+| `viewer_progress` | `streaming` | its own writes |
+| `channel_agenda`, `events_table` | `catalog` | + `ticketing.date_sales.availability_changed.v1` for capacity and revenue |
+| `person_duties` (the duties, across all channels) | `identity` | + `catalog.date.scheduled.v1`, `streaming.run.state_changed.v1` |
 
-**Le modèle de lecture du studio est projeté par rôle.** `canRevenue` ne masque pas une colonne :
-**il décide de ce que la réponse contient**. Une régie qui recevrait le brut de billetterie dans sa
-charge utile et ne l'afficherait pas est une fuite, pas une règle — la charge utile est en clair
-dans un WebView, inspectable, et elle survit dans le cache HTTP du téléphone. Réponse directe à
-`studio-web` Q2 et `studio-mobile` §3. **Corollaire** : une clé de tri sur un champ absent est
-**refusée** (`SORT_KEY_FORBIDDEN`), jamais ignorée — un tri accepté en silence sur la recette
-trahit l'ordre des valeurs qu'on n'a pas le droit de montrer.
+**The studio's read model is projected by role.** `canRevenue` does not hide a column: **it decides
+what the response contains**. A run desk that received the ticketing gross in its payload and did
+not show it is a leak, not a rule — the payload is in the clear in a WebView, inspectable, and it
+survives in the phone's HTTP cache. A direct answer to `studio-web` Q2 and `studio-mobile` §3.
+**Corollary**: a sort key on an absent field is **refused** (`SORT_KEY_FORBIDDEN`), never ignored —
+a sort silently accepted on revenue betrays the order of the values we are not allowed to show.
 
 ---
 
-## 3. `isWatchable` : la valeur la plus dangereuse du système (liste du chef, point 3)
+## 3. `isWatchable`: the most dangerous value in the system (chief's list, point 3)
 
-Cinq sources : possession (`ticketing`), état de la date (`catalog`), droits territoriaux
-(`catalog`), politique de rediffusion (`catalog` + `ticketing` pour la mise en vente), formule
-d'abonnement (`ticketing`). Affichée sur chaque carte de chaque surface. Candidate n°1 au
-« calculé deux fois ».
+Five sources: holding a seat (`ticketing`), the date's state (`catalog`), territorial rights
+(`catalog`), replay policy (`catalog` + `ticketing` for going on sale), subscription plan
+(`ticketing`). Shown on every card of every surface. Candidate no. 1 for "computed twice".
 
-**L'arbitrage.**
+**The arbitration.**
 
-1. **Une seule implémentation** : `decideWatch(inputs): WatchVerdict` dans `@arthome/core`.
-   Entrées : possession, état d'abonnement et `opens[]`, état de la date et ses bornes, politique
-   et fenêtre de rediffusion, mise en vente de la rediffusion, portée des droits et territoire du
-   spectateur, budget d'aperçu restant, nombre de sessions de lecture ouvertes et plafond.
-   Sortie : `{ allowed, reasonCode, fallbackAction, previewSecondsLeft, validUntil }`.
-2. **Deux sites d'évaluation, une seule autorité.**
-   - **À l'affichage** : le BFF storefront assemble les entrées depuis ses trois lectures groupées
-     et appelle `decideWatch`. Le résultat est **indicatif et non opposable**, et il est déclaré
-     tel dans le contrat. Il sert à peindre la carte sans second aller-retour — ce que la TV exige.
-   - **À l'ouverture du lecteur** : `streaming` assemble les mêmes entrées depuis **ses propres
-     copies projetées** (alimentées par les événements de `ticketing` et de `catalog`) et appelle
-     `decideWatch`. **C'est la seule évaluation qui fait autorité**, parce que c'est la seule qui
-     produit un jeton.
-3. **Le même vocabulaire de refus des deux côtés.** Une carte qui annonce « abonnement requis » et
-   un lecteur qui refuse pour la même raison disent le même code. Vocabulaire fermé :
+1. **One implementation**: `decideWatch(inputs): WatchVerdict` in `@arthome/core`.
+   Inputs: holding a seat, subscription state and `opens[]`, the date's state and its bounds, replay
+   policy and window, whether the replay is on sale, rights scope and the viewer's territory,
+   preview budget remaining, number of playback sessions open and the ceiling.
+   Output: `{ allowed, reasonCode, fallbackAction, previewSecondsLeft, validUntil }`.
+2. **Two evaluation sites, one single authority.**
+   - **At display time**: the storefront BFF assembles the inputs from its three batched reads and
+     calls `decideWatch`. The result is **indicative and not binding**, and it is declared as such in
+     the contract. It serves to paint the card without a second round trip — which the TV requires.
+   - **When the player opens**: `streaming` assembles the same inputs from **its own projected
+     copies** (fed by `ticketing`'s and `catalog`'s events) and calls `decideWatch`. **That is the
+     only evaluation with authority**, because it is the only one that produces a token.
+3. **The same refusal vocabulary on both sides.** A card announcing "subscription required" and a
+   player refusing for the same reason say the same code. Closed vocabulary:
    `NO_SEAT` · `ROOM_NOT_OPEN` · `OUT_OF_TERRITORY` · `SUBSCRIPTION_REQUIRED` · `NO_REPLAY` ·
    `REPLAY_EXPIRED` · `REPLAY_NOT_ON_SALE` · `PREVIEW_EXHAUSTED` · `CONCURRENT_LIMIT_REACHED` ·
-   `DATE_CANCELLED`. Chacun produit un écran différent sur les trois storefronts ; un code
-   générique en produirait un faux.
-4. **Le droit ne se met jamais en cache côté client** (`storefront-mobile`, besoin n°5). Il expire,
-   il dépend du territoire, il dépend de la limite d'écrans. Un droit relu depuis le disque est un
-   droit faux. Le contrat le dit, et `validUntil` d'un verdict ne dépasse jamais 60 secondes.
-5. **Revérifié au démarrage de la lecture, jamais hérité du catalogue.** Le pays du spectateur
-   change entre les deux (déplacement, itinérance, réseau d'entreprise), et sur mobile ce délai se
-   compte en heures.
+   `DATE_CANCELLED`. Each produces a different screen on the three storefronts; a generic code would
+   produce a wrong one.
+4. **The entitlement is never cached client-side** (`storefront-mobile`, need no. 5). It expires, it
+   depends on territory, it depends on the screen limit. An entitlement re-read from disk is a wrong
+   entitlement. The contract says so, and a verdict's `validUntil` never exceeds 60 seconds.
+5. **Re-checked when playback starts, never inherited from the catalogue.** The viewer's country
+   changes between the two (travel, roaming, corporate network), and on mobile that gap is measured
+   in hours.
 
-**Ce que cela règle** : `storefront-tv` Q6, `storefront-mobile` Q4, `storefront-web` Q19.
+**What this settles**: `storefront-tv` Q6, `storefront-mobile` Q4, `storefront-web` Q19.
 
-**Ce que cela coûte** : `streaming` doit tenir une copie projetée de la possession et de
-l'abonnement. C'est la seule projection du système qui porte une **autorité** et non un affichage,
-et je l'accepte parce que l'alternative est un appel synchrone entre services — interdit — ou un
-droit décidé par le BFF, qui n'a pas d'autorité.
+**What it costs**: `streaming` must keep a projected copy of seat holdings and of the subscription.
+It is the only projection in the system that carries **authority** rather than a display, and I
+accept it because the alternative is a synchronous call between services — forbidden — or an
+entitlement decided by the BFF, which has no authority.
 
 ---
 
-## 4. `publicationState` verrouille des valeurs qu'il ne possède pas (liste du chef, point 2)
+## 4. `publicationState` locks values it does not own (chief's list, point 2)
 
-Le constat est juste : la publication engage le **tarif** (ticketing), la **mise en vente de la
-rediffusion** (ticketing) et le **régime de tchat** (chat). Trois contextes, un agrégat.
+The observation is correct: publication commits the **price** (ticketing), **putting the replay on
+sale** (ticketing) and the **chat policy** (chat). Three contexts, one aggregate.
 
-**L'arbitrage : la publication ne verrouille rien qu'elle ne possède. Elle publie un fait ; chaque
-propriétaire applique son propre verrou.**
+**The arbitration: publication locks nothing it does not own. It publishes a fact; each owner
+applies its own lock.**
 
 ```
-catalog.Publication  ── publication.engaged.v1 ──►  ticketing   verrouille prices, capacity-shrink
-                                                ──►  chat       verrouille chatMode
-                                                ──►  streaming  ouvre l'ingestion
+catalog.Publication  ── publication.engaged.v1 ──►  ticketing   locks prices, capacity-shrink
+                                                ──►  chat       locks chatMode
+                                                ──►  streaming  opens ingest
 ```
 
-Concrètement :
+Concretely:
 
-- `catalog.Publication` porte l'état, la liste de contrôle, les transitions offertes **pour cet
-  opérateur**, et les couples de transition sans retour. Elle ne porte **aucun tarif**.
-- `ticketing` refuse `setPrices` sur une date dont il a reçu `publication.engaged` — avec son
-  propre code, sa propre trace, son propre message. Il n'a pas besoin de demander à `catalog`.
-- `chat` refuse de même `setChatMode` après engagement, sauf restriction (on peut toujours
-  **fermer** un tchat en direct ; on ne peut plus l'ouvrir après engagement).
-- La **porte de publication** (la liste de contrôle) est servie par `catalog`, mais **trois de ses
-  sept éléments sont des faits projetés** : « au moins un tarif actif » et « jauge » viennent de
-  `ticketing`, « tests techniques passés » vient de `streaming`. `catalog` les tient à jour par
-  événement et **sert la liste des manquants** avec un identifiant par élément — jamais un
-  pourcentage, que le client calculerait.
+- `catalog.Publication` carries the state, the checklist, the transitions offered **to this
+  operator**, and the one-way transition pairs. It carries **no price**.
+- `ticketing` refuses `setPrices` on a date for which it has received `publication.engaged` — with
+  its own code, its own trace, its own message. It does not need to ask `catalog`.
+- `chat` likewise refuses `setChatMode` after the commitment, except to restrict (you can always
+  **close** a live chat; you can no longer open it further after the commitment).
+- The **publication gate** (the checklist) is served by `catalog`, but **three of its seven items are
+  projected facts**: "at least one active price" and "capacity" come from `ticketing`, "technical
+  check passed" comes from `streaming`. `catalog` keeps them up to date by event and **serves the
+  list of missing items** with an identifier per item — never a percentage, which the client would
+  compute.
 
-**La liste de contrôle qui fait foi** (`studio-web` Q7, incohérence 5) : **sept éléments**, ceux de
-la fiche, pas les quatre des fixtures. Les quatre des fixtures sont un sous-ensemble arbitraire ;
-les sept sont ceux qu'un écran a réellement exercés :
+**The authoritative checklist** (`studio-web` Q7, inconsistency 5): **seven items**, the sheet's, not
+the fixtures' four. The fixtures' four are an arbitrary subset; the seven are the ones a screen
+actually exercised:
 `title_and_discipline` · `poster` · `description` · `at_least_one_active_price` · `capacity` ·
 `technical_check_passed` · `chat_mode_set`.
-« Chapitres prévus » quitte la liste bloquante et devient un **avertissement** : on peut publier
-une date sans chapitres, et le studio doit pouvoir le faire.
+"Chapters planned" leaves the blocking list and becomes a **warning**: you must be able to publish a
+date without chapters, and the studio must be able to do it.
 
-**Le verrou porte sur la transition, pas sur l'état** (E5, `studio-web` incohérence 6). Le contrat
-porte des **couples** `from > to`, pas une liste d'états. Deux couples sans retour, avec leur
-promesse engagée, qui voyage avec le refus :
+**The lock is on the transition, not on the state** (E5, `studio-web` inconsistency 6). The contract
+carries **pairs** `from > to`, not a list of states. Two one-way pairs, with the promise they commit,
+which travels with the refusal:
 
-| Couple | Promesse engagée | Code de refus |
+| Pair | Promise committed | Refusal code |
 |---|---|---|
-| `draft\|reserve → scheduled` | *la publication engage le tarif affiché* | `TRANSITION_IRREVERSIBLE` |
-| `ended → replay-online` | *des spectateurs ont payé pour la rediffusion* | `TRANSITION_IRREVERSIBLE` |
+| `draft\|reserve → scheduled` | *publishing commits the displayed price* | `TRANSITION_IRREVERSIBLE` |
+| `ended → replay-online` | *viewers have paid for the replay* | `TRANSITION_IRREVERSIBLE` |
 
-Et la tentative de marche arrière est **elle-même journalisée** (`studio-web` Q8) : une tentative de
-revenir sur un tarif engagé est en soi une information de conduite.
+And the attempt to go back is **itself journalled** (`studio-web` Q8): an attempt to go back on a
+committed price is in itself a piece of run information.
 
 ---
 
-## 5. Trois axes d'état sur une date, et leur hiérarchie (liste du chef, point 10 ; E4)
+## 5. Three state axes on a date, and their hierarchy (chief's list, point 10; E4)
 
-Aucun des trois ne porte l'état affiché, et chaque surface le recomposait à sa façon. Le contrat
-écrit la hiérarchie **une fois**, et sert le résultat.
+None of the three carries the displayed state, and each surface recomposed it its own way. The
+contract writes the hierarchy **once**, and serves the result.
 
-| Axe | Propriétaire | Vocabulaire | Ce qu'il décide |
+| Axis | Owner | Vocabulary | What it decides |
 |---|---|---|---|
-| `publication.state` | `catalog` | `draft · reserve · scheduled · technical · live · ended · replay-online` | ce qui est public et ce qui est engagé |
-| `run.state` | `streaming` | `idle · rehearsal · on_air · interrupted · ended` | l'antenne, et rien d'autre |
-| `date.outcome` | `catalog` | `postponed · cancelled · interrupted` (nullable) | l'argent et le message au spectateur |
+| `publication.state` | `catalog` | `draft · reserve · scheduled · technical · live · ended · replay-online` | what is public and what is committed |
+| `run.state` | `streaming` | `idle · rehearsal · on_air · interrupted · ended` | being on air, and nothing else |
+| `date.outcome` | `catalog` | `postponed · cancelled · interrupted` (nullable) | the money and the message to the viewer |
 
-**Deux corrections que je rends au passage :**
+**Two corrections I return along the way:**
 
-1. `run.state` **perd** `postponed` et `cancelled`. Ces deux valeurs étaient des échos de
-   `outcome` logés dans l'axe technique — la même faute que `reported` dans les sanctions. Une
-   régie n'a pas d'état « annulée » : elle a un plateau qui n'envoie rien. `interrupted` reste,
-   parce qu'il décrit une antenne réellement coupée, et il **cause** l'issue sans être l'issue.
-2. `publication.state` porte un **rang explicite** (`order_rank`), servi avec lui. Le tableau des
-   événements du studio trie par état, et l'ordre est celui de la machine à états, pas l'ordre
-   alphabétique. Sans rang servi, chaque surface réinvente `STATE_ORDER` (`studio-web` Q5).
+1. `run.state` **loses** `postponed` and `cancelled`. Those two values were echoes of `outcome`
+   lodged in the technical axis — the same fault as `reported` in the sanctions. A run desk has no
+   "cancelled" state: it has a stage sending nothing. `interrupted` stays, because it describes a
+   feed actually cut, and it **causes** the outcome without being the outcome.
+2. `publication.state` carries an **explicit rank** (`order_rank`), served with it. The studio's
+   events table sorts by state, and the order is the state machine's, not alphabetical. Without a
+   served rank, each surface reinvents `STATE_ORDER` (`studio-web` Q5).
 
-**La hiérarchie, écrite :**
+**The hierarchy, written:**
 
-> `outcome` prime sur `run.state`, qui prime sur `publication.state`.
+> `outcome` outranks `run.state`, which outranks `publication.state`.
 
-Et le contrat sert **une quatrième valeur, dérivée et unique** : `displayState`, produite par
-`displayStateOf(publication, run, outcome, instants, now)` dans `@arthome/core`, accompagnée de
-`displayStateValidUntil`. Vocabulaire public : `scheduled · room_open · live · replay · ended`,
-plus les trois issues qui le remplacent quand elles existent. C'est la seule valeur que les cartes
-affichent, et personne ne la recompose.
+And the contract serves **a fourth value, derived and unique**: `displayState`, produced by
+`displayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`, accompanied by
+`displayStateValidUntil`. Public vocabulary: `scheduled · room_open · live · replay · ended`, plus
+the three outcomes which replace it when they exist. It is the only value the cards display, and
+nobody recomposes it.
 
-> **Sur les DEUX produits, et le studio d'abord.** `studio-web` a mesuré 13 occurrences de
-> `displayState` côté storefront et **0 côté studio**, ce qui est l'inverse du besoin : **c'est le
-> studio qui a trois axes à réconcilier**, et ses libellés d'issue *remplacent* l'état
-> (`ANNULÉE ET REMBOURSÉE`, `REPORTÉE · PLACES VALABLES`, `INTERROMPUE · AVOIRS ÉMIS`). Servir
-> `state` + `orderRank` + `outcome` et laisser la surface les composer, c'est **exactement la
-> seconde implémentation que ce paragraphe interdit** — laissée à la surface où l'erreur n'est pas
-> une carte mal étiquetée, mais **une régie qui se trompe d'écran**.
+> **On BOTH products, and the studio first.** `studio-web` measured 13 occurrences of `displayState`
+> on the storefront side and **0 on the studio side**, which is the inverse of the need: **it is the
+> studio that has three axes to reconcile**, and its outcome labels *replace* the state
+> (`CANCELLED AND REFUNDED`, `POSTPONED · SEATS VALID`, `INTERRUPTED · CREDITS ISSUED`). Serving
+> `state` + `orderRank` + `outcome` and letting the surface compose them is **exactly the second
+> implementation this paragraph forbids** — left to the surface where the error is not a
+> mislabelled card, but **a run desk on the wrong screen**.
 >
-> Tout modèle de lecture portant une date porte donc `displayState` et `displayStateValidUntil` :
-> côté storefront `date_card_public` et `date_detail_public` ; **côté studio `channel_agenda`,
-> `events_table`, `studio_date_sheet` et `person_duties`**. `orderRank` reste servi à côté, parce
-> qu'il sert au **tri** par état, qui n'est pas le même besoin que l'affichage.
+> So every read model carrying a date carries `displayState` and `displayStateValidUntil`: on the
+> storefront side `date_card_public` and `date_detail_public`; **on the studio side
+> `channel_agenda`, `events_table`, `studio_date_sheet` and `person_duties`**. `orderRank` is still
+> served alongside, because it serves **sorting** by state, which is not the same need as display.
 
 ---
 
-## 6. `outcome` : un événement, quatre conséquences (liste du chef, point 4)
+## 6. `outcome`: one event, four consequences (chief's list, point 4)
 
-`catalog.date.outcome_declared.v1` est publié une fois, par la chaîne, depuis le studio
-(`decideOutcome`, réservé à `artist ∨ production`). Quatre contextes le consomment, et chacun
-produit **sa** conséquence, sans se parler :
+`catalog.date.outcome_declared.v1` is published once, by the channel, from the studio
+(`decideOutcome`, reserved to `artist ∨ production`). Four contexts consume it, and each produces
+**its** consequence, without talking to the others:
 
-| Conséquence | Contexte | Détail |
+| Consequence | Context | Detail |
 |---|---|---|
-| remboursement / avoir | `ticketing` | `cancelled` → remboursement intégral ; `interrupted` → **avoir** sur le compte ; `postponed` → **aucun mouvement**, la place suit la nouvelle date |
-| retenue de versement | `payouts` | `held` tant qu'une issue est ouverte ; `refunded` si annulée |
-| copie publique | `catalog` | l'issue remplace l'état sur **chaque carte**, pas seulement sur la fiche |
-| affichage prioritaire | `catalog` | la date remonte dans « Mes places » et dans la boîte du studio |
+| refund / credit note | `ticketing` | `cancelled` → full refund; `interrupted` → a **credit note** on the account; `postponed` → **no movement**, the seat follows the new date |
+| payout withholding | `payouts` | `held` while an outcome is open; `refunded` if cancelled |
+| public copy | `catalog` | the outcome replaces the state on **every card**, not only on the sheet |
+| priority display | `catalog` | the date rises in "My tickets" and in the studio inbox |
 
-**Ce que voit un spectateur dont l'écran était ouvert pendant la transition.** C'est la question
-exacte du chef, et elle a une réponse précise, en trois temps :
+**What a viewer whose screen was open during the transition sees.** That is the chief's exact
+question, and it has a precise answer, in three steps:
 
-1. **Dans la seconde** : le canal temps réel pousse `date.outcome` dans la salle `date:{id}:state`.
-   Le lecteur **pose le voile d'incident par-dessus la vidéo intacte** — jamais une bascule de
-   flux, `streaming.md` est formel — avec le message écrit par la régie, dans sa langue de
-   rédaction. Le voile dit l'issue et ce qu'elle implique pour la place.
-2. **Le jeton de lecture n'est pas révoqué dans le même geste.** Pour `postponed` et `cancelled`,
-   la diffusion est de toute façon terminée ou n'a pas commencé. Pour `interrupted`, la lecture
-   **s'arrête au refus du renouvellement suivant** (≤ 45 s) avec le code `DATE_INTERRUPTED`, pas
-   par une coupure brutale : un flux coupé sans explication est exactement ce que le principe n°6
-   interdit. La périphérie, elle, peut continuer à servir jusqu'à l'expiration du jeton en main
-   (120 s) — c'est le client qui s'arrête, pas le CDN.
-3. **La conséquence financière arrive ensuite, et elle est visible ailleurs.** Le spectateur ne
-   voit pas son remboursement sur l'écran du lecteur : il le voit dans « Mes places », qui porte le
-   **montant** et le **code de délai** (jamais la phrase « 3 à 5 jours ouvrés »). Le contrat
-   n'invente pas une notification d'argent sur un écran de spectacle.
+1. **Within the second**: the realtime channel pushes `date.outcome` into the `date:{id}:state`
+   room. The player **lays the incident veil over the intact video** — never a feed switch,
+   `streaming.md` is categorical — with the message written by the run desk, in the language it was
+   written in. The veil states the outcome and what it means for the seat.
+2. **The playback token is not revoked in the same act.** For `postponed` and `cancelled`, the
+   broadcast is over anyway or has not started. For `interrupted`, playback **stops at the next
+   renewal refusal** (≤ 45 s) with the `DATE_INTERRUPTED` code, not by an abrupt cut: a feed cut with
+   no explanation is exactly what principle no. 6 forbids. The edge, for its part, may keep serving
+   until the token in hand expires (120 s) — it is the client that stops, not the CDN.
+3. **The financial consequence comes afterwards, and it is visible elsewhere.** The viewer does not
+   see their refund on the player screen: they see it in "My tickets", which carries the **amount**
+   and the **period code** (never the sentence "3 to 5 working days"). The contract does not invent a
+   money notification on a performance screen.
 
-**Ce qui est interdit** : qu'une surface dérive l'issue d'autre chose que de `outcome`. La maquette
-TV et la maquette studio la recomposaient toutes deux, différemment.
+**What is forbidden**: a surface deriving the outcome from anything other than `outcome`. The TV
+mockup and the studio mockup both recomposed it, differently.
 
 ---
 
-## 7. Deux systèmes de jetons (liste du chef, point 7)
+## 7. Two token systems (chief's list, point 7)
 
-Deux jetons, deux durées, deux vérificateurs, **jamais interchangeables**.
+Two tokens, two lifetimes, two verifiers, **never interchangeable**.
 
-| | **Session** | **Jeton de service** | **Jeton de lecture** |
+| | **Session** | **Service token** | **Playback token** |
 |---|---|---|---|
-| émis par | BFF | BFF | `streaming` |
-| porté par | cookie (web) / porteur (natif) | en-tête interne | requête signée vers le CDN |
-| durée | **fixée par `adr-auth.md`** (session 7 j, glissement quotidien) | **60 s** | **120 s** |
-| vérifié par | le BFF, contre Redis | chaque service, **par JWKS, localement** | la **périphérie du CDN** |
-| révocation | magasin de sessions | expiration seule | bail de session de lecture |
+| issued by | the BFF | the BFF | `streaming` |
+| carried by | cookie (web) / bearer (native) | an internal header | a signed request to the CDN |
+| lifetime | **fixed by `adr-auth.md`** (session 7 d, daily sliding) | **60 s** | **120 s** |
+| verified by | the BFF, against Redis | each service, **by JWKS, locally** | the **CDN edge** |
+| revocation | the session store | expiry alone | the playback session lease |
 
-**Aucun service n'appelle `identity` ni ne lit le magasin de sessions.** Le BFF valide la session,
-puis émet un jeton signé court qui porte : `sub` (compte), `pro` (profil), `did` (appareil),
-`chn[]` (chaînes accessibles) et `rol[]` (rôles effectifs par chaîne) pour le studio, `scope`,
-`exp`, et le `traceparent`. Chaque service vérifie par JWKS, en local, sans réseau à chaud (jeu de
-clés mis en cache, `kid` dans l'en-tête, **cadences de rotation fixées par `adr-auth.md` §8.1** —
-30 j / grâce 24 h pour les deux BFF, 90 j / grâce 7 j pour le jeton de lecture et le
-`device_token`. Les « 24 h avec deux clés vivantes » que portait une version antérieure de ce
-paragraphe étaient un nombre plausible et faux : voir §7.0 et `adr-stream-entitlement.md` §3.4.
+**No service calls `identity` or reads the session store.** The BFF validates the session, then
+issues a short signed token carrying: `sub` (account), `pro` (profile), `did` (device), `chn[]`
+(accessible channels) and `rol[]` (effective roles per channel) for the studio, `scope`, `exp`, and
+the `traceparent`. Each service verifies by JWKS, locally, with no network on the hot path (key set
+cached, `kid` in the header, **rotation cadences fixed by `adr-auth.md` §8.1** — 30 d / 24 h grace
+for the two BFFs, 90 d / 7 d grace for the playback token and the `device_token`). The "24 h with
+two live keys" an earlier version of this paragraph carried was a plausible number and a wrong one:
+see §7.0 and `adr-stream-entitlement.md` §3.4.
 
-**Trois précisions que les surfaces ont exigées :**
+**Three points the surfaces insisted on:**
 
-- **Limite de sessions simultanées** : elle n'est pas portée par la session, mais par le **bail de
-  session de lecture** (`adr-stream-entitlement.md`). Une session de compte et une session de
-  lecture ne comptent pas la même chose.
-- **`signOutDevice` doit produire un effet observable sur l'appareil visé** (`storefront-web` Q25).
-  Il révoque la session **et** publie `identity.device.revoked.v1`, que `streaming` consomme pour
-  **invalider les baux de lecture de cet appareil**. Le téléviseur affiche `SIGNED_OUT_ELSEWHERE`,
-  pas une erreur réseau. **Fenêtre d'exposition : jusqu'à 120 s**, pas 60 — la révocation refuse le
-  renouvellement suivant, mais le jeton déjà en main reste valide jusqu'à son expiration, et la
-  périphérie du CDN n'en sait rien. Régime courant 45 à 75 s. Une version antérieure de ce
-  paragraphe disait « ≤ 60 s » : c'était l'intervalle de renouvellement pris pour la garantie
+- **The concurrent-session limit** is not carried by the session, but by the **playback session
+  lease** (`adr-stream-entitlement.md`). An account session and a playback session do not count the
+  same thing.
+- **`signOutDevice` must produce an observable effect on the device concerned**
+  (`storefront-web` Q25). It revokes the session **and** publishes `identity.device.revoked.v1`,
+  which `streaming` consumes to **invalidate that device's playback leases**. The television shows
+  `SIGNED_OUT_ELSEWHERE`, not a network error. **Exposure window: up to 120 s**, not 60 — revocation
+  refuses the next renewal, but the token already in hand stays valid until it expires, and the CDN
+  edge knows nothing about it. Typical 45 to 75 s. An earlier version of this paragraph said
+  "≤ 60 s": that was the renewal interval taken for the guarantee
   (`adr-stream-entitlement.md` §3.3).
-- **Le studio mobile ne peut pas tenir sa session par cookie** (`studio-mobile` Q1) :
-  `capacitor://localhost` est un contexte tiers sur iOS. Le BFF studio offre donc **une session
-  porteuse de jeton à côté de la session par cookie** : jeton de rafraîchissement lié à
-  l'appareil, conservé dans le magasin natif (`@capacitor/preferences`, jamais `localStorage`),
-  jeton d'accès court, révocation par appareil. Le comportement au retour d'arrière-plan avec
-  jeton expiré est **le rafraîchissement silencieux** ; une réauthentification en pleine garde est
-  une faute. Le détail appartient à `adr-auth.md` ; la topologie est ici.
+- **The studio mobile cannot keep its session in a cookie** (`studio-mobile` Q1):
+  `capacitor://localhost` is a third-party context on iOS. So the studio BFF offers **a
+  bearer-token session alongside the cookie session**: a device-bound refresh token kept in the
+  native store (`@capacitor/preferences`, never `localStorage`), a short access token, revocation
+  per device. The behaviour on returning from the background with an expired token is **silent
+  refresh**; re-authenticating mid-duty is a fault. The detail belongs to `adr-auth.md`; the
+  topology is here.
 
-### 7.0 Le document JWKS n'a pas de contexte propriétaire — et c'est voulu
+### 7.0 The JWKS document has no owning context — and that is intended
 
-`adr-auth.md` §8.1 pose le mécanisme : **un document JWKS unique, statique, servi par le CDN**,
-portant les clés publiques des quatre émetteurs (BFF storefront, BFF studio, entitlement de
-lecture, `device_token`), distinguées par un préfixe de `kid`, en ES256, avec deux cadences de
-rotation distinctes. Ce qu'il ne dit pas, et `auth` le remonte lui-même : **qui le possède**.
+`adr-auth.md` §8.1 sets the mechanism: **a single, static JWKS document served by the CDN**,
+carrying the public keys of the four issuers (storefront BFF, studio BFF, playback entitlement,
+`device_token`), told apart by a `kid` prefix, in ES256, with two distinct rotation cadences. What it
+does not say, and `auth` raises it itself: **who owns it**.
 
-C'est une question pour cette carte, parce que la réponse conditionne une règle du projet :
+That is a question for this map, because the answer conditions a project rule:
 
-> **« Aucun service n'appelle le service d'identité » doit rester vrai *y compris pour la
-> découverte des clés*.**
+> **"No service calls the identity service" must stay true *including for key discovery*.**
 
-Deux réponses la casseraient, et il faut les écarter explicitement :
+Two answers would break it, and they must be ruled out explicitly:
 
-| Fausse réponse | Ce qu'elle casse |
+| Wrong answer | What it breaks |
 |---|---|
-| `identity` sert le JWKS | **chaque service appellerait `identity`** à chaque construction de son jeu de clés — c'est la règle violée littéralement, par la porte de la découverte |
-| un BFF sert le JWKS | les services dépendraient de **l'entrée**. La dépendance est inversée : un service ne doit rien attendre du BFF |
+| `identity` serves the JWKS | **every service would call `identity`** every time it builds its key set — the rule violated literally, through the discovery door |
+| a BFF serves the JWKS | the services would depend on **the entry point**. The dependency is inverted: a service must expect nothing from the BFF |
 
-**Ma proposition — le JWKS est un artefact d'infrastructure, comme l'i18n et la taxonomie (§1.8),
-et il n'appartient à aucun contexte.**
+**My proposal — the JWKS is an infrastructure artefact, like the i18n and the taxonomy (§1.8), and
+it belongs to no context.**
 
-- il n'a **aucun invariant, aucune transaction, aucun événement** : c'est un fichier statique, et
-  un service qui sert un fichier statique est un service à exploiter pour rien. Même raisonnement
-  qu'en C6, et il a déjà servi deux fois ;
-- **chaque émetteur ne publie que ses clés publiques** dans un préfixe de stockage objet ; un
-  travail de `arthome-platform` les assemble en `/.well-known/jwks.json` et le pousse au CDN.
-  **Aucune clé privée ne quitte son émetteur**, et aucun service n'en lit un autre ;
-- le CDN met le document en cache agressivement — c'est précisément pourquoi `auth` impose deux
-  cadences de rotation et une publication de la nouvelle clé **avant** de signer avec.
+- it has **no invariant, no transaction and no event**: it is a static file, and a service that
+  serves a static file is a service to operate for nothing. The same reasoning as in C6, and it has
+  already served twice;
+- **each issuer publishes only its public keys** into an object-storage prefix; a job in
+  `arthome-platform` assembles them into `/.well-known/jwks.json` and pushes it to the CDN. **No
+  private key leaves its issuer**, and no service reads another's;
+- the CDN caches the document aggressively — which is precisely why `auth` imposes two rotation
+  cadences and publishing the new key **before** signing with it.
 
-**Ce n'est pas tranché : je le propose, `backend-contracts` le traite aussi.** Le point où il faut
-s'accorder est le **découpage du travail de rotation** — un seul travail qui engendre les quatre
-paires (simple à exploiter pour une personne seule, mais il détient quatre clés privées) contre
-quatre rotations indépendantes qui ne publient que du public (rayon d'explosion borné, quatre
-choses à surveiller). Je penche pour le second, parce que le premier ferait d'un travail
-d'infrastructure le point le plus sensible du système.
+**This is not settled: I propose it, `backend-contracts` handles it too.** The point to agree on is
+the **split of the rotation job** — one job generating all four pairs (simple to operate for one
+person, but it holds four private keys) against four independent rotations publishing only public
+material (bounded blast radius, four things to watch). I lean towards the second, because the first
+would make an infrastructure job the most sensitive point in the system.
 
-### 7.1 Appareil et session : deux objets, et c'est `adr-auth.md` qui les nomme (E13, E15)
+### 7.1 Device and session: two objects, and it is `adr-auth.md` that names them (E13, E15)
 
-`storefront-mobile` relève que la maquette traite appareils et sessions comme deux choses sans
-dire laquelle fait foi, et E13 relève que `devices` a deux formes sous un seul nom. **La coupe
-retenue est celle d'`adr-auth.md` §4/Q3, et elle est meilleure que celle que j'avais posée :**
+`storefront-mobile` notes that the mockup treats devices and sessions as two things without saying
+which is authoritative, and E13 notes that `devices` has two shapes under one name. **The cut
+adopted is `adr-auth.md` §4/Q3's, and it is better than the one I had proposed:**
 
-- **`Device`** — l'appareil **enregistré**, durable, révocable, identifié avant toute session.
-  Nature (`tv · mobile · tablet · desktop · stick · console · box`), libellé, ville dérivée de
-  l'adresse, instant de dernière activité, drapeau « cet appareil ».
-- **`DeviceSession`** — le couple **(appareil, profil)**. Un téléviseur de salon porte jusqu'à
-  cinq profils, donc jusqu'à cinq sessions sur un seul appareil.
+- **`Device`** — the **registered** device, durable, revocable, identified before any session. Kind
+  (`tv · mobile · tablet · desktop · stick · console · box`), label, city derived from the address,
+  last-activity instant, a "this device" flag.
+- **`DeviceSession`** — the **(device, profile)** pair. A living-room television carries up to five
+  profiles, hence up to five sessions on a single device.
 
-Deux gestes, et ils ne font pas la même chose : **« déconnecter un profil »** ferme une
-`DeviceSession` — *« les autres comptes restent connectés »*, ce que la TV exige ; **« révoquer
-l'appareil »** supprime le `Device`, toutes ses sessions **et ses baux de lecture**.
+Two acts, and they do not do the same thing: **"disconnect a profile"** closes a `DeviceSession` —
+*"the other accounts stay signed in"*, which the TV requires; **"revoke the device"** deletes the
+`Device`, all its sessions **and its playback leases**.
 
-**Et les deux publient, chacun à son grain** : `identity.device_session.closed.v1` porte
-`profile_id` et fait révoquer à `streaming` les baux du couple (appareil, profil) ;
-`identity.device.revoked.v1` fait révoquer tous ceux de l'appareil. Sans le premier — qui manquait
-— la distinction n'avait aucun effet sur la lecture : `signOutProfile` ne coupait rien, et la seule
-issue était de révoquer l'appareil, donc de déconnecter les cinq profils du salon.
+**And both publish, each at its own grain**: `identity.device_session.closed.v1` carries
+`profile_id` and makes `streaming` revoke the (device, profile) pair's leases;
+`identity.device.revoked.v1` makes it revoke all of the device's. Without the first — which was
+missing — the distinction had no effect on playback: `signOutProfile` stopped nothing, and the only
+way out was to revoke the device, hence to disconnect the living room's five profiles.
 
-**L'identité d'appareil existe avant toute session** — réponse à `storefront-tv` Q3, et c'est un
-oui franc. Elle est nécessaire à quatre choses, et ces quatre choses sont toutes demandées par les
-surfaces : ouvrir un appairage de connexion, se nommer dans « appareils connectés », être révoquée,
-et porter une limite de débit ailleurs que sur l'adresse IP (qu'un foyer partage).
+**Device identity exists before any session** — the answer to `storefront-tv` Q3, and it is a plain
+yes. It is necessary for four things, and all four are asked for by the surfaces: opening a sign-in
+pairing, naming itself in "connected devices", being revoked, and carrying a rate limit somewhere
+other than on the IP address (which a household shares).
 
 ---
 
-## 8. L'appairage d'appareil : une primitive, cinq intentions
+## 8. Device pairing: one primitive, five intents
 
-`corrections-handoff.md` le pose comme une question ouverte ; `storefront-tv` en a démontré la
-nécessité en comptant cinq parcours. **Décision : une seule primitive, dans `identity`, conforme à
-RFC 8628.**
+`corrections-handoff.md` poses it as an open question; `storefront-tv` demonstrated its necessity by
+counting five journeys. **Decision: one single primitive, in `identity`, conformant to RFC 8628.**
 
 ```
 identity.DevicePairing
   intent      signin | seat | plan | payment_method | merch
-  payload     dépend de l'intention, opaque à identity, relayé au service cible
-  deviceId    l'identité d'appareil (§7.1)
-  profileId   le profil qui a ouvert l'appairage — nullable pour `signin`
+  payload     depends on the intent, opaque to identity, relayed to the target service
+  deviceId    the device identity (§7.1)
+  profileId   the profile that opened the pairing — nullable for `signin`
 ```
 
-- `userCode` : **six caractères**, et **l'alphabet exact est déclaré par `adr-auth.md` §5.1** —
-  un sous-ensemble sans glyphes confusables, dimensionné au-dessus du seuil d'entropie de la
-  §5.1 de RFC 8628. Je ne le redéclare pas ici : deux déclarations d'un même alphabet sont
-  exactement la table littérale parallèle que E2 décrit. Ce que le modèle de données impose, en
-  revanche : unicité **parmi les appairages en cours seulement** — un code se réutilise une fois
-  expiré, sinon l'espace s'épuise — plafond de tentatives par code **et par appareil**, et
-  verrouillage après échecs.
-- `verificationUri` et `verificationUriComplete` (le QR, code inclus) : **servis tous les deux**,
-  jamais fabriqués par la surface.
-- **Durée par intention** (`storefront-tv` Q4) : `signin` 15 min (on cherche son téléphone, on fait
-  une 2FA) ; `seat` et `merch` **5 min** (au-delà, la jauge affichée n'est plus vraie) ; `plan` et
-  `payment_method` 10 min. Servie dans `expiresAt`, jamais codée sur la surface. L'écran d'attente
-  **n'affiche pas de compte à rebours** : la TV s'en sert pour renoncer, pas pour inquiéter.
-- **Cycle de vie** : `pending → approved | denied | expired | cancelled`, plus
-  **`approved_with_failure`** pour les intentions d'achat — le téléphone a terminé mais l'achat a
-  échoué (complet entre-temps, paiement refusé). Cinq codes distincts, parce que la TV dit cinq
-  choses différentes.
-- **Rattachement après redémarrage** : la TV persiste `pairingId` et appelle `attachPairing`
-  plutôt que d'en ouvrir un second. Sans cela, un téléviseur redémarré pendant le paiement affiche
-  l'accueil pendant que le paiement aboutit dans le vide.
-- **Un téléviseur est partagé** (`storefront-tv` Q2). Pour les **quatre intentions d'achat**,
-  l'appairage est lié au **profil qui l'a ouvert** : un téléphone qui approuve sous une autre
-  identité est **refusé** avec un code distinct (`PAIRING_IDENTITY_MISMATCH`), et le téléphone
-  propose « changer de compte » — un geste de la personne, jamais du système. Motif : une bascule
-  implicite ferait payer le mauvais moyen de paiement, créditerait les mauvais droits et livrerait
-  la place au mauvais compte, dans un salon, au moment précis où deux personnes regardent le même
-  écran. **`signin` est l'exception et n'en est pas une** : il n'y a pas de profil ouvreur, donc
-  l'appairage est lié à l'**appareil**, et un téléphone connecté sous une autre identité est le
-  cas nominal — c'est le sens même d'« ajouter un compte ». Aucun `MISMATCH` n'y est possible.
-- **Ce qui n'est pas un appairage** : le QR de la page compte, qui renvoie vers la gestion du
-  compte sur téléphone. C'est un **renvoi** (`AccountDeepLink`), rien n'attend, l'écran ne bascule
-  pas. Deux formes distinctes au contrat, sinon on implémentera une attente là où il n'y en a pas.
+- `userCode`: **six characters**, and **the exact alphabet is declared by `adr-auth.md` §5.1** — a
+  subset with no confusable glyphs, sized above RFC 8628 §5.1's entropy threshold. I do not
+  redeclare it here: two declarations of one alphabet are exactly the parallel literal table E2
+  describes. What the data model does impose: uniqueness **among pairings in progress only** — a
+  code is reused once expired, otherwise the space is exhausted — a cap on attempts per code **and
+  per device**, and a lockout after failures.
+- `verificationUri` and `verificationUriComplete` (the QR, code included): **both served**, never
+  built by the surface.
+- **Duration per intent** (`storefront-tv` Q4): `signin` 15 min (you go and find your phone, you do
+  2FA); `seat` and `merch` **5 min** (beyond that, the capacity displayed is no longer true); `plan`
+  and `payment_method` 10 min. Served in `expiresAt`, never hard-coded on the surface. The waiting
+  screen **shows no countdown**: the TV uses it to give up, not to worry the viewer.
+- **Lifecycle**: `pending → approved | denied | expired | cancelled`, plus
+  **`approved_with_failure`** for the purchase intents — the phone finished but the purchase failed
+  (sold out in the meantime, payment declined). Five distinct codes, because the TV says five
+  different things.
+- **Reattachment after a restart**: the TV persists `pairingId` and calls `attachPairing` rather
+  than opening a second one. Without that, a television restarted during payment shows the home
+  screen while the payment completes into the void.
+- **A television is shared** (`storefront-tv` Q2). For the **four purchase intents**, the pairing is
+  bound to the **profile that opened it**: a phone approving under another identity is **refused**
+  with a distinct code (`PAIRING_IDENTITY_MISMATCH`), and the phone offers "switch account" — a
+  person's act, never the system's. Reason: an implicit switch would charge the wrong payment
+  method, credit the wrong entitlements and deliver the seat to the wrong account, in a living room,
+  at the precise moment two people are watching the same screen. **`signin` is the exception and is
+  not one**: there is no opening profile, so the pairing is bound to the **device**, and a phone
+  signed in under another identity is the nominal case — that is the very meaning of "add an
+  account". No `MISMATCH` is possible there.
+- **What is not a pairing**: the QR on the account page, which sends you to account management on a
+  phone. That is a **hand-off** (`AccountDeepLink`), nothing waits, the screen does not switch. Two
+  distinct shapes in the contract, otherwise we will implement a wait where there is none.
 
-**Comment la TV apprend l'issue** (Q1) : **interrogation périodique conforme à RFC 8628, et pas
-le canal temps réel.** C'est la décision d'`adr-auth.md` §5.3, et **je m'y range en retirant celle
-que j'avais posée** (une poussée sur une salle `device:{deviceId}`).
+**How the TV learns the outcome** (Q1): **RFC 8628-conformant polling, and not the realtime
+channel.** That is `adr-auth.md` §5.3's decision, and **I fall in behind it, withdrawing the one I
+had proposed** (a push on a `device:{deviceId}` room).
 
-Son motif est le bon : au moment de `signin`, faire entrer une identité d'appareil dans l'espace de
-noms WebSocket **élargirait sa surface d'attaque pour gagner quelques centaines de millisecondes**.
-Et l'exigence de la TV — bascule en deux secondes au plus — est tenue sans cela : `pollInterval`
-est servi à **2 s pendant les 60 premières secondes**, puis 5 s. C'est une décroissance **servie
-par le serveur**, donc modérable comme `storefront-tv` le demande, et elle coûte au plus **trente
-requêtes par appairage**. Contre une salle WebSocket accessible avant toute session, l'échange
-n'est pas bon.
+Its reasoning is the right one: at `signin` time, bringing a device identity into the WebSocket
+namespace **would widen its attack surface to gain a few hundred milliseconds**. And the TV's
+requirement — a switch within two seconds at most — is met without that: `pollInterval` is served at
+**2 s for the first 60 seconds**, then 5 s. It is a decay **served by the server**, hence tunable as
+`storefront-tv` asks, and it costs at most **thirty requests per pairing**. Against a WebSocket room
+reachable before any session, the trade is not a good one.
 
-`slow_down` est honoré, et la TV n'interroge jamais plus vite que l'intervalle servi.
+`slow_down` is honoured, and the TV never polls faster than the served interval.
 
 ---
 
-## 9. Topologie d'entrée
+## 9. Entry topology
 
 ```
                     ┌─────────────────────────────────────────────┐
-  web · mobile · TV │                  Traefik                    │  TLS, routage par hôte,
-  studio web/mobile │  (passerelle d'infrastructure, configurée)  │  limites de débit grossières,
-                    └───────┬─────────────────────────┬───────────┘  WebSocket upgrade, affinité
+  web · mobile · TV │                  Traefik                    │  TLS, routing by host,
+  studio web/mobile │   (infrastructure gateway, configured)      │  coarse rate limits,
+                    └───────┬─────────────────────────┬───────────┘  WebSocket upgrade, affinity
                             │                         │
                  ┌──────────▼────────┐     ┌──────────▼────────┐
-                 │  bff-storefront   │     │    bff-studio     │  session, CORS, enveloppe
-                 │  + ws /storefront │     │  + ws /studio     │  d'erreur, idempotence,
-                 └──────────┬────────┘     └──────────┬────────┘  composition, jeton de service
-                            │   appels synchrones (le seul sens autorisé)
+                 │  bff-storefront   │     │    bff-studio     │  session, CORS, error
+                 │  + ws /storefront │     │  + ws /studio     │  envelope, idempotence,
+                 └──────────┬────────┘     └──────────┬────────┘  composition, service token
+                            │   synchronous calls (the only direction allowed)
         ┌────────┬──────────┼──────────┬──────────┬──────────┬─────────┐
      identity  catalog  ticketing  streaming    chat      payouts  notifications
         └────────┴──────────┴────┬─────┴──────────┴──────────┴─────────┘
-                                 │  Kafka — outbox + Debezium — le seul canal inter-services
+                                 │  Kafka — outbox + Debezium — the only inter-service channel
                                  ▼
-                  PostgreSQL ×7 · Redis ×4 usages · OpenSearch · MinIO
+                  PostgreSQL ×7 · Redis ×4 uses · OpenSearch · MinIO
 ```
 
-### Pourquoi une passerelle d'infrastructure **et** deux BFF, dès le départ
+### Why an infrastructure gateway **and** two BFFs, from the start
 
-La mission demande un argument, pas une préférence. Le voici, en quatre points, dont trois sont
-des besoins exprimés par les surfaces :
+The mission asks for an argument, not a preference. Here it is, in four points, three of which are
+needs expressed by the surfaces:
 
-1. **Le TLS, le routage par hôte et les limites de débit grossières sont de la configuration.**
-   Les réécrire en NestJS serait refaire, moins bien, ce qu'un proxy standard fait en dix lignes.
-   **Écartée d'avance, et je confirme l'écart** : une passerelle applicative NestJS qui ne ferait
-   que redispatcher. Elle n'aurait aucun invariant et deviendrait le goulot partagé.
-2. **Le WebSocket a besoin d'elle.** L'adaptateur Redis de Socket.IO relaie les diffusions, pas les
-   requêtes de sondage : il faut **soit une affinité de session, soit des clients en transport
-   `websocket` seul**. Les deux se règlent au proxy, pas dans l'application.
-3. **`storefront-tv` remonte une exigence jusqu'à la passerelle** : *« toute réponse du système, y
-   compris en surcharge, doit porter l'enveloppe d'erreur avec son code et son identifiant de
-   trace »*. Une passerelle qui renvoie une page HTML brute rend impossible la distinction entre
-   « votre connexion » et « nos serveurs », et le spectateur va redémarrer sa box. Traefik doit
-   donc être configuré pour servir **une page d'erreur JSON conforme à l'enveloppe** sur les 5xx
-   qu'il produit lui-même. C'est une ligne de `definition-of-done.md`, et `backend-contracts`
-   doit la porter.
-4. **Le CORS ne peut pas être à la passerelle.** Il doit connaître les chaînes littérales
-   `capacitor://localhost` et `https://localhost` (`studio-mobile`), renvoyer l'origine telle quelle
-   avec des requêtes créditées, et `capacitor://` est un schéma non standard qu'un analyseur d'URL
-   rejette. C'est une vérification **par chaîne littérale**, donc applicative, donc au BFF.
+1. **TLS, routing by host and coarse rate limits are configuration.** Rewriting them in NestJS would
+   be redoing, less well, what a standard proxy does in ten lines. **Ruled out in advance, and I
+   confirm the exclusion**: a NestJS application gateway that would only re-dispatch. It would own
+   no invariant and would become the shared bottleneck.
+2. **WebSocket needs it.** Socket.IO's Redis adapter relays broadcasts, not polling requests: you
+   need **either session affinity, or clients on `websocket` transport only**. Both are settled at
+   the proxy, not in the application.
+3. **`storefront-tv` raises a requirement that reaches the gateway**: *"every response from the
+   system, including under overload, must carry the error envelope with its code and its trace
+   identifier"*. A gateway that returns a raw HTML page makes it impossible to tell "your
+   connection" from "our servers", and the viewer will go and restart their set-top box. So Traefik
+   must be configured to serve **a JSON error page conformant to the envelope** on the 5xx it
+   produces itself. That is a line of `definition-of-done.md`, and `backend-contracts` must carry
+   it.
+4. **CORS cannot live at the gateway.** It must know the literal strings `capacitor://localhost` and
+   `https://localhost` (`studio-mobile`), return the origin as it stands with credentialed requests,
+   and `capacitor://` is a non-standard scheme a URL parser rejects. It is a check **by literal
+   string**, hence application-level, hence at the BFF.
 
-**Un BFF par produit**, jamais un seul partagé : les deux produits ont des sessions différentes
-(cookie contre porteur), des pagination différentes (curseur contre page + total), des enveloppes
-de réponse différentes (projection par rôle contre projection par spectateur) et des cycles de
-déploiement différents.
+**One BFF per product**, never a single shared one: the two products have different sessions (cookie
+against bearer), different pagination (cursor against page + total), different response envelopes
+(projection by role against projection by viewer) and different deployment cycles.
 
-**Ce que les BFF n'ont pas le droit de faire** : porter une règle de domaine. Le prix, la remise,
-le droit de lire, l'ordre des rangées, le seuil de rareté, le calcul d'un versement — tout cela est
-dans `@arthome/core`, exécuté par le service propriétaire. Le BFF **compose et adapte**. La seule
-chose qu'il évalue lui-même est `decideWatch` en mode indicatif (§3), et le contrat le déclare tel.
+**What the BFFs have no right to do**: carry a domain rule. The price, the discount, the right to
+watch, the order of the rows, the scarcity threshold, computing a payout — all of that is in
+`@arthome/core`, executed by the owning service. The BFF **composes and adapts**. The only thing it
+evaluates itself is `decideWatch` in indicative mode (§3), and the contract says so.
 
-### Le vrai risque, nommé
+### The real risk, named
 
-Un composant **sans état se réplique** : Traefik, les BFF et les passerelles WebSocket n'ont aucun
-état local (session dans Redis, diffusion dans Redis, journal dans Kafka), donc ils montent en
-ajoutant des répliques. Le danger n'est pas la charge : **c'est qu'une passerelle devienne
-épaisse.** Un BFF qui se met à calculer un prix, à tenir un cache métier ou à joindre trois
-services en mémoire devient un monolithe distribué — tout le couplage d'un monolithe, plus la
-latence du réseau. La mesure qui déclencherait une action est au §11.
+A **stateless component replicates**: Traefik, the BFFs and the WebSocket gateways have no local
+state (session in Redis, broadcast in Redis, journal in Kafka), so they scale by adding replicas.
+The danger is not the load: **it is a gateway becoming thick.** A BFF that starts computing a price,
+keeping a business cache or joining three services in memory becomes a distributed monolith — all of
+a monolith's coupling, plus network latency. The measure that would trigger an action is in §11.
 
 ---
 
-## 10. Le compte d'appels synchrones BFF → service
+## 10. The count of synchronous BFF → service calls
 
-**Compté, pas supposé**, à partir des cinq `needs/`. Un appel synchrone ne va que du BFF vers un
-service ; entre services, rien.
+**Counted, not assumed**, from the five `needs/` files. A synchronous call goes only from a BFF to a
+service; between services, nothing.
 
-### 10.1 En lecture — le compte est bas parce que les modèles sont projetés
+### 10.1 Reads — the count is low because the models are projected
 
-| BFF | Méthodes de lecture distinctes | Appels **par écran** |
+| BFF | Distinct read methods | Calls **per screen** |
 |---|---|---|
-| storefront | **22** | **1 à 4**, tous parallèles |
-| studio | **38** | **1 à 3** |
+| storefront | **22** | **1 to 4**, all in parallel |
+| studio | **38** | **1 to 3** |
 | **total** | **60** | |
 
-Le détail qui compte, écran par écran, sur les écrans les plus lourds :
+The detail that matters, screen by screen, on the heaviest screens:
 
-| Écran | Appels internes | Lesquels |
+| Screen | Internal calls | Which ones |
 |---|---|---|
-| `home` (TV, web, mobile) | **4** | `catalog.GetHomeRails` + trois surcouches par spectateur, groupées par lots d'identifiants : `ticketing.GetViewerOverlay`, `identity.GetViewerRelations`, `streaming.GetViewerProgress` |
-| `live` / `category` / `artist` / `search` | **4** | même schéma : un modèle composé + trois surcouches |
-| `title` (fiche de date) | **4** | idem, avec `date_detail_public` |
+| `home` (TV, web, mobile) | **4** | `catalog.GetHomeRails` + three per-viewer overlays, batched by identifier: `ticketing.GetViewerOverlay`, `identity.GetViewerRelations`, `streaming.GetViewerProgress` |
+| `live` / `category` / `artist` / `search` | **4** | the same pattern: one composed model + three overlays |
+| `title` (date sheet) | **4** | same, with `date_detail_public` |
 | `boot` (`ViewerContext`) | **1** | `identity.GetViewerContext` |
-| `confirm` (issue d'appairage) | **0** | tout vient de `PairingOutcome` |
-| `player` | **1** | `streaming.OpenPlayback` — chapitres, pistes, régime de tchat, incident, reprise, bord du direct, DRM, plafond de qualité : **tout dans la même réponse** |
-| `regie` (studio) | **3** | `streaming.GetRunConsole`, `chat.GetModerationQueue`, `identity.GetChannelPresence` |
-| `event` (fiche de date, studio) | **1 + 1 par volet ouvert** | `catalog.GetDateSheet` puis le volet chez son propriétaire |
+| `confirm` (pairing outcome) | **0** | everything comes from `PairingOutcome` |
+| `player` | **1** | `streaming.OpenPlayback` — chapters, tracks, chat policy, incident, resume point, live edge, DRM, quality ceiling: **all in the same response** |
+| `run desk` (studio) | **3** | `streaming.GetRunConsole`, `chat.GetModerationQueue`, `identity.GetChannelPresence` — ⚠ **the third does not exist in the contract yet**: see `realtime.md` §5.3 |
+| `event` (date sheet, studio) | **1 + 1 per open pane** | `catalog.GetDateSheet` then the pane from its owner |
 | `payouts` | **1** | `payouts.GetPayouts` |
 
-**Le fan-out maximal est 5, pas 4 — et il faut le dire, parce que le seuil d'alerte est à 4.**
-Deux opérations le franchissent au jour de la livraison : `getDateDetail`
-(`catalog, ticketing, identity, streaming, chat`) et la lecture du journal de chaîne. La décision
-de transport ne s'en trouve pas retournée — 5 n'est pas 12, et la profondeur reste 1 — mais
-**la phrase qui la justifie serait fausse**, et c'est elle qu'on relira dans six mois.
+**The maximum fan-out is 5, not 4 — and it has to be said, because the alert threshold is at 4.**
+Two operations cross it on delivery day: `getDateDetail`
+(`catalog, ticketing, identity, streaming, chat`) and reading the channel journal. The transport
+decision is not overturned by it — 5 is not 12, and the depth stays 1 — but **the sentence that
+justifies it would be false**, and that sentence is the one we will re-read in six months.
 
-Les deux cas ont chacun leur remède, et ce sont des remèdes de modèle de lecture, pas de seuil :
+Each of the two cases has its own remedy, and they are read-model remedies, not threshold ones:
 
-- **le journal** : il passe de cinq services à **un** avec le rattachement du §1.9 ;
-- **`getDateDetail`** : le volet `chat` est **appelé et déjà projeté** — `date_detail_public` est
-  alimenté par `chat.date_chat_policy.changed.v1` (`data-model.md` §4). L'appel est donc en trop,
-  et c'est exactement le geste que le seuil prescrit : *« le modèle de lecture manque »* — sauf
-  qu'ici il ne manque pas, on ne s'en sert pas.
+- **the journal**: it goes from five services to **one** with §1.9's attachment;
+- **`getDateDetail`**: the `chat` pane is **both called and already projected** —
+  `date_detail_public` is fed by `chat.date_chat_policy.changed.v1` (`data-model.md` §4). So the
+  call is redundant, and that is exactly the act the threshold prescribes: *"the read model is
+  missing"* — except that here it is not missing, we simply are not using it.
 
-Le seuil reste à **4**, et je refuse de le monter à 5 pour couvrir une composition qu'on peut
-supprimer. Un seuil qu'on relève pour faire taire une alerte cesse d'être un seuil.
+The threshold stays at **4**, and I refuse to raise it to 5 to cover a composition we can delete. A
+threshold raised to silence an alert stops being a threshold.
 
-**Les trois surcouches sont un lot, jamais un appel par carte.** Elles prennent une liste
-d'identifiants et rendent une table. Et le BFF storefront les met en cache par profil dans Redis
-(TTL 30 s, invalidé par les écritures du profil) : en régime établi, `home` retombe à **1 à 2**
-appels internes.
+**The three overlays are one batch, never one call per card.** They take a list of identifiers and
+return a table. And the storefront BFF caches them per profile in Redis (TTL 30 s, invalidated by
+the profile's writes): in steady state, `home` falls back to **1 to 2** internal calls.
 
-**Le compte que `storefront-tv` annonçait est donc confirmé** : *« en lecture, si les modèles sont
-projetés, la TV n'en exige aucun »* — aucun de plus, s'entend : un seul modèle composé plus les
-surcouches partagées par tous ses écrans.
+**So the count `storefront-tv` announced is confirmed**: *"for reads, if the models are projected,
+the TV requires none"* — none extra, that is: one composed model plus the overlays shared by all its
+screens.
 
-### 10.2 En écriture — le compte est haut, et c'est structurel
+### 10.2 Writes — the count is high, and it is structural
 
-| Contexte | storefront | studio | total |
+| Context | storefront | studio | total |
 |---|---:|---:|---:|
 | `identity` | 26 | 13 | **39** |
 | `catalog` | 5 | 12 | **17** |
@@ -953,217 +923,213 @@ surcouches partagées par tous ses écrans.
 | `notifications` | 9 | 1 | **10** |
 | **total** | **61** | **71** | **132** |
 
-**Total général : 60 lectures + 132 écritures = 192 méthodes synchrones BFF → service.**
+**Grand total: 60 reads + 132 writes = 192 synchronous BFF → service methods.**
 
-### 10.3 Ce que ce compte pesait, et comment le transport a été tranché
+### 10.3 What that count weighed, and how the transport was settled
 
-J'ai donné le compte et la matière ; **`backend-contracts` a tranché**, comme la mission le
-prévoit. La pesée est conservée telle que je l'avais écrite — elle explique pourquoi la décision
-n'allait pas de soi — et la décision est consignée à la fin.
+I gave the count and the material; **`backend-contracts` settled it**, as the mission provides. The
+weighing is kept as I had written it — it explains why the decision was not obvious — and the
+decision is recorded at the end.
 
-**Ce qui plaidait pour gRPC.**
-192 méthodes typées, décrites une fois. Les schémas Protobuf existent déjà pour les événements et
-l'outillage `buf` est déjà en place : le générateur de clients est gratuit. Un appel BFF → service
-a un **délai** (`deadline`) qui traverse et se propage, ce qu'HTTP/JSON n'offre pas nativement —
-et sur le chemin critique de `OpenPlayback` (budget ≤ 1 s dans un budget total de 10 s jusqu'à la
-première image), ce n'est pas un confort. Les lectures groupées (surcouches par lot d'identifiants)
-sont exactement ce que gRPC fait bien.
+**What argued for gRPC.**
+192 typed methods, described once. The Protobuf schemas already exist for the events and the `buf`
+tooling is already in place: the client generator is free. A BFF → service call has a **deadline**
+that crosses and propagates, which HTTP/JSON does not offer natively — and on `OpenPlayback`'s
+critical path (a ≤ 1 s budget inside a total budget of 10 s to first frame), that is not a comfort.
+Batched reads (per-identifier overlays) are exactly what gRPC does well.
 
-**Ce que gRPC coûtait à une personne seule.**
-`h2c` à configurer dans Traefik (le proxy doit parler HTTP/2 en clair vers les services, ou il faut
-du TLS interne). Pas de `curl` : déboguer un appel demande `grpcurl` ou la réflexion, et la
-réflexion ne doit pas être exposée en production. Des sondes distinctes : `grpc-health-check` au
-lieu d'un `GET /health`. Un arrêt gracieux qui n'est pas celui par défaut (`gracefulShutdown: true`
-est non documenté, et le défaut coupe les appels en vol à chaque déploiement). Et un équilibrage
-de charge côté client (`round_robin` + `max_connection_age_ms`), parce qu'un Service ClusterIP
-épingle un seul pod.
+**What gRPC would cost one person.**
+`h2c` to configure in Traefik (the proxy must speak cleartext HTTP/2 to the services, or you need
+internal TLS). No `curl`: debugging a call needs `grpcurl` or reflection, and reflection must not be
+exposed in production. Distinct probes: `grpc-health-check` instead of a `GET /health`. A graceful
+shutdown that is not the default (`gracefulShutdown: true` is undocumented, and the default cuts
+in-flight calls on every rollout). And client-side load balancing (`round_robin` +
+`max_connection_age_ms`), because a ClusterIP Service pins a single pod.
 
-**Ma recommandation était gRPC pour les 60 lectures. `backend-contracts` a tranché l'inverse, et
-il a raison — je consigne le résultat et les deux arguments qui m'avaient échappé.**
+**My recommendation was gRPC for the 60 reads. `backend-contracts` settled the opposite, and it is
+right — I record the result and the two arguments I had missed.**
 
-> **Décision : HTTP/JSON décrit en OpenAPI 3.1, pas de gRPC.**
+> **Decision: HTTP/JSON described in OpenAPI 3.1, no gRPC.**
 
-Ce qui a emporté la décision n'est pas le compte de 192, mais **1 et 4** :
+What carried the decision is not the count of 192, but **1 and 4**:
 
-- **profondeur de chaîne : 1, par construction.** Ma propre règle — aucun appel entre services —
-  fait qu'un délai n'a **personne à qui se propager**. Or la propagation du `deadline` était mon
-  meilleur argument pour gRPC ; il tombe de lui-même. Pire, `nestjs-grpc` établit que **Nest ne
-  coupe jamais un handler unaire** : le délai gRPC n'arrête pas le destinataire, c'est le même
-  travail à la main qu'en HTTP ;
-- **fan-out maximal : 4**, et tous parallèles. On n'est pas dans le régime où le typage d'un
-  transport binaire paie.
+- **chain depth: 1, by construction.** My own rule — no call between services — means a deadline has
+  **nobody to propagate to**. Yet deadline propagation was my best argument for gRPC; it falls on
+  its own. Worse, `nestjs-grpc` establishes that **Nest never cancels a unary handler**: the gRPC
+  deadline does not stop the callee, it is the same manual work as in HTTP;
+- **maximum fan-out: 4**, and all in parallel. We are not in the regime where a binary transport's
+  typing pays.
 
-Et un argument qui touche directement ce que ce document défend depuis le début : gRPC ferait
-passer de **deux à trois** les déclarations manuscrites de chaque vocabulaire fermé — l'union dans
-`@arthome/core`, le proto d'événement, **plus** un proto de service. Soit **+50 % de surface
-exposée à E2**, la faute dominante du projet, pour un gain de latence que le fan-out ne justifie
-pas. J'avais listé le coût d'exploitation au paragraphe précédent ; c'est celui-là qui manquait.
+And an argument that touches directly what this document has been defending from the start: gRPC
+would take each closed vocabulary's handwritten declarations from **two to three** — the union in
+`@arthome/core`, the event proto, **plus** a service proto. That is **+50% of surface exposed to
+E2**, the project's dominant fault, for a latency gain the fan-out does not justify. I had listed
+the operational cost in the previous paragraph; this is the one that was missing.
 
 ---
 
-## 11. Les points chauds, et la mesure qui déclenche une action
+## 11. The hot spots, and the measure that triggers an action
 
-Pas de « ça pourrait scaler ». Trois risques réels, chacun avec le seuil qui commande un geste.
+No "it could scale". Three real risks, each with the threshold that commands an act.
 
-### (a) Les jointures au moment de la requête
+### (a) Joins at query time
 
-**Le risque.** Un écran servi par sept appels internes parce que le modèle de lecture manque. C'est
-exactement ce que toute cette architecture événementielle existe pour éviter.
+**The risk.** A screen served by seven internal calls because the read model is missing. That is
+exactly what this whole event-driven architecture exists to avoid.
 
-| Mesure | Seuil | Geste |
+| Measure | Threshold | Act |
 |---|---|---|
-| `bff_upstream_calls_per_request` p95 | **> 4** sur un écran de liste | le modèle de lecture manque : le créer dans le contexte majoritaire |
-| `bff_request_duration_ms` p95 | **> 400 ms** sur une lecture publique | idem, ou la surcouche n'est pas groupée |
-| `read_model_staleness_seconds` p99 (âge du dernier événement appliqué) | **> 30 s** | le consommateur de projection décroche : augmenter `partitionsConsumedConcurrently`, ou le nombre de partitions |
-| `search_index_lag_seconds` p99 | **> 60 s** | l'indexeur décroche ; une date publiée n'est pas trouvable |
+| `bff_upstream_calls_per_request` p95 | **> 4** on a list screen | the read model is missing: create it in the majority context |
+| `bff_request_duration_ms` p95 | **> 400 ms** on a public read | same, or the overlay is not batched |
+| `read_model_staleness_seconds` p99 (age of the last event applied) | **> 30 s** | the projection consumer is falling behind: raise `partitionsConsumedConcurrently`, or the partition count |
+| `search_index_lag_seconds` p99 | **> 60 s** | the indexer is falling behind; a published date is not findable |
 
-Rappel de `storefront-web` §4 : la clé de cache de Next inclut l'identifiant de build, donc **un
-déploiement vide tout** et la première minute voit passer l'intégralité du trafic de lecture vers
-le BFF. C'est un argument indépendant, et décisif, pour que les lectures publiques soient des
-modèles servis et non des compositions coûteuses. Si `bff_request_duration_ms` p95 explose dans la
-minute qui suit un déploiement du web, c'est ce défaut-là.
+A reminder from `storefront-web` §4: Next's cache key includes the build identifier, so **a
+deployment empties everything** and the first minute sends the whole read traffic to the BFF. That
+is an independent, and decisive, argument for public reads being served models rather than expensive
+compositions. If `bff_request_duration_ms` p95 explodes in the minute after a web deployment, that
+is the defect.
 
-### (b) La clé de partition d'un spectacle populaire
+### (b) A popular performance's partition key
 
-**Le risque, nommé précisément.** La clé de partition est l'identifiant d'agrégat (règle
-`nestjs-kafka` n°7). Sur un direct très suivi, `dateId` concentre sur **une seule partition** le
-tchat, la modération, les achats et les échantillons d'audience de ce spectacle. Une partition est
-une file : elle ne se parallélise pas.
+**The risk, named precisely.** The partition key is the aggregate identifier (`nestjs-kafka` rule
+7). On a heavily watched live show, `dateId` concentrates that performance's chat, moderation,
+purchases and audience samples onto **a single partition**. A partition is a queue: it does not
+parallelise.
 
-| Mesure | Seuil | Geste |
+| Measure | Threshold | Act |
 |---|---|---|
-| `kafka_consumergroup_lag` sur une **partition unique** de `arthome.chat.date` | **> 10 000 messages ou > 30 s** | passer la clé du sujet `chat` de `date_id` à `date_id#shard`, le nombre de bandes étant **servi dans le contrat** |
-| `kafka_consumergroup_lag` sur `arthome.ticketing.order` | **> 30 s** | augmenter les partitions ; la clé reste `date_id` (l'ordre y est un invariant de jauge) |
-| déséquilibre `partition_bytes_in` max/médiane | **> 10×** | même diagnostic |
+| `kafka_consumergroup_lag` on a **single partition** of `arthome.chat.date` | **> 10,000 messages or > 30 s** | change the `chat` topic's key from `date_id` to `date_id#shard`, the shard count being **served in the contract** |
+| `kafka_consumergroup_lag` on `arthome.ticketing.order` | **> 30 s** | raise the partition count; the key stays `date_id` (order there is a capacity invariant) |
+| `partition_bytes_in` max/median imbalance | **> 10×** | same diagnosis |
 
-**Pourquoi le bandage est permis sur le tchat et interdit sur la billetterie.** L'ordre d'un tchat
-est rétabli côté lecture par `(at_media_sec, seq)` : il n'est pas porté par la partition. L'ordre
-des achats sur une date **est** l'invariant de la jauge : il doit rester dans une partition.
+**Why sharding is permitted on the chat and forbidden on ticketing.** A chat's order is restored on
+read by `(at_media_sec, seq)`: it is not carried by the partition. The order of purchases on a date
+**is** the capacity invariant: it must stay inside one partition.
 
-**Et le compteur de spectateurs ne passe pas par Kafka à la fréquence de l'échantillon.** Un
-échantillon par seconde par direct sur un journal durable est du gâchis. Le compteur circule sur
-**Redis** (diffusion), et seul un **agrégat à la minute** entre dans Kafka pour l'historique et les
-statistiques. C'est la frontière Kafka/Redis de `streaming.md`, appliquée.
+**And the viewer counter does not go through Kafka at the sample's frequency.** One sample per
+second per live show in a durable log is waste. The counter travels over **Redis** (broadcast), and
+only a **per-minute aggregate** enters Kafka for history and statistics. That is `streaming.md`'s
+Kafka/Redis boundary, applied.
 
-### (c) La diffusion WebSocket d'un direct très suivi
+### (c) The WebSocket broadcast of a heavily watched live show
 
-**Le risque.** 20 000 spectateurs dans la salle `date:{id}:chat`, répartis sur N nœuds. L'adaptateur
-Redis relaie **chaque message à chaque nœud**, qui l'écrit ensuite sur chacune de ses sockets. Le
-coût croît en N × messages, et le canal Redis devient le goulot.
+**The risk.** 20,000 viewers in the `date:{id}:chat` room, spread over N nodes. The Redis adapter
+relays **every message to every node**, which then writes it to each of its sockets. The cost grows
+as N × messages, and the Redis channel becomes the bottleneck.
 
-| Mesure | Seuil | Geste |
+| Measure | Threshold | Act |
 |---|---|---|
-| `socketio_broadcast_lag_ms` p99 (émission → réception client témoin) | **> 500 ms sur 30 s** | activer le plafond serveur par salle (voir ci-dessous), puis bander la salle |
-| `redis_pubsub_channel_bytes_per_sec` sur le canal de l'adaptateur | **> 20 Mo/s** | passer à `@socket.io/redis-streams-adapter`, ou bander |
-| `ws_connections_per_node` | **> 15 000** | ajouter une réplique (le composant est sans état) |
-| `ws_reconnects_per_minute` | **> 5 % des connexions** | l'affinité de session est cassée au proxy |
+| `socketio_broadcast_lag_ms` p99 (emission → witness client reception) | **> 500 ms over 30 s** | turn on the server-side per-room ceiling (see below), then shard the room |
+| `redis_pubsub_channel_bytes_per_sec` on the adapter's channel | **> 20 MB/s** | move to `@socket.io/redis-streams-adapter`, or shard |
+| `ws_connections_per_node` | **> 15,000** | add a replica (the component is stateless) |
+| `ws_reconnects_per_minute` | **> 5% of connections** | session affinity is broken at the proxy |
 
-**Le plafond est appliqué à la source, pas au client.** `storefront-tv` l'exige et a raison : une
-TV ne peut pas absorber un flux à haut débit pour en jeter 95 %, chaque message rejeté ayant coûté
-du parsing et de l'allocation sur un appareil qui décode déjà de la vidéo. Le serveur applique donc
-**un plafond par salle et par surface** (TV : 2 msg/s ; web et mobile : 10 msg/s), avec une
-sélection faite en amont, et un historique de rattrapage court à l'entrée (20 messages sur TV,
-50 ailleurs). Réponse à `storefront-tv` Q11.
+**The ceiling is enforced at the source, not at the client.** `storefront-tv` requires it and is
+right: a TV cannot absorb a high-rate stream in order to throw 95% of it away, each rejected message
+having cost parsing and allocation on a device that is already decoding video. So the server applies
+**a ceiling per room and per surface** (TV: 2 msg/s; web and mobile: 10 msg/s), with the selection
+made upstream, and a short catch-up history on entry (20 messages on TV, 50 elsewhere). The answer to
+`storefront-tv` Q11.
 
-**Le vrai danger n'est aucun des trois.** C'est qu'une passerelle devienne épaisse (§9). La mesure :
-si le BFF acquiert une table qu'il écrit lui-même, ou un cache dont l'invalidation devient une
-règle métier, il a franchi la ligne. Ce n'est pas une métrique, c'est une revue — et c'est une
-ligne de `definition-of-done.md`.
+**The real danger is none of the three.** It is a gateway becoming thick (§9). The measure: if the
+BFF acquires a table it writes itself, or a cache whose invalidation becomes a business rule, it has
+crossed the line. That is not a metric, it is a review — and it is a line of
+`definition-of-done.md`.
 
 ---
 
-## 12. Ce qui relève de CQRS, et ce qui n'en relève pas
+## 12. What is CQRS, and what is not
 
-Pas par principe. La règle que j'applique : **CQRS là où le modèle d'écriture et les formes de
-lecture divergent réellement, et nulle part ailleurs.** Ailleurs, service + repository + DTO.
+Not on principle. The rule I apply: **CQRS where the write model and the read shapes genuinely
+diverge, and nowhere else.** Elsewhere, service + repository + DTO.
 
-| Contexte / module | Régime | Justification |
+| Context / module | Regime | Justification |
 |---|---|---|
-| `catalog` — publication, date, issue | **CQRS complet** (bus de commandes, agrégats, projections) | Sept états, deux transitions sans retour, une liste de contrôle alimentée par trois contextes, une concurrence optimiste multi-opérateurs, **et** six modèles de lecture radicalement différents du modèle d'écriture (rangées, index, tuiles, fiche par volet). Le divorce est total. |
-| `ticketing` — place, jauge, commande | **CQRS complet** | La jauge est un invariant de concurrence pure ; les lectures sont des projections par spectateur et par chaîne. Et le modèle d'écriture (une commande, un paiement, une issue) n'a rien de la forme lue (une carte de place avec sa fenêtre de rediffusion). |
-| `chat` — modération | **CQRS complet** | Verdicts conditionnels, baux, préséance, reclassement rétroactif, et une file lue par plusieurs personnes en même temps. |
-| `streaming` — conduite | **commandes seulement**, pas de bus de requêtes | Les écritures sont des commandes de régie avec invariants (on ne passe pas à l'antenne sans contrôle technique). Les lectures sont des séries temporelles courtes : un repository suffit, un bus de requêtes serait de la cérémonie. |
-| `identity` — droits et chaînes | **agrégats sans bus** | `Channel` et `ChannelMembership` ont de vrais invariants (le propriétaire n'est jamais retirable ; un rôle attribuable dépend de `grants`), donc des agrégats et des méthodes. Mais une seule forme de lecture, et elle ressemble au modèle d'écriture. Pas de bus. |
-| `identity` — préférences, consentements, suivis, liste | **service + repository** | CRUD. Des agrégats ici seraient de la cérémonie sur des tables plates. |
-| `payouts` | **service + repository + machine à états** | Le calcul est du domaine pur (`@arthome/core`), la persistance est une ligne par date. La complexité est fiscale, pas structurelle. |
-| `notifications` | **service + repository + file** | Aucun invariant croisé. |
-| `identity` — appairage | **agrégat, sans bus** | Une machine à états courte (cinq issues) avec une expiration. |
+| `catalog` — publication, date, outcome | **full CQRS** (command bus, aggregates, projections) | Seven states, two one-way transitions, a checklist fed by three contexts, optimistic concurrency across operators, **and** six read models radically different from the write model (rows, index, tiles, sheet by pane). The divorce is total. |
+| `ticketing` — seat, capacity, order | **full CQRS** | Capacity is a pure concurrency invariant; the reads are projections by viewer and by channel. And the write model (one order, one payment, one outcome) has nothing of the shape that is read (a seat card with its replay window). |
+| `chat` — moderation | **full CQRS** | Conditional verdicts, leases, precedence, retroactive reclassification, and a queue read by several people at once. |
+| `streaming` — the run | **commands only**, no query bus | The writes are run-desk commands with invariants (you do not go on air without a technical check). The reads are short time series: a repository is enough, a query bus would be ceremony. |
+| `identity` — rights and channels | **aggregates without a bus** | `Channel` and `ChannelMembership` have real invariants (the owner is never removable; an assignable role depends on `grants`), hence aggregates and methods. But one single read shape, and it resembles the write model. No bus. |
+| `identity` — preferences, consents, follows, watchlist | **service + repository** | CRUD. Aggregates here would be ceremony over flat tables. |
+| `payouts` | **service + repository + state machine** | The computation is pure domain (`@arthome/core`), the persistence is one row per date. The complexity is fiscal, not structural. |
+| `notifications` | **service + repository + queue** | No cross-cutting invariant. |
+| `identity` — pairing | **an aggregate, no bus** | A short state machine (five outcomes) with an expiry. |
 
-**Ce que je refuse explicitement** : le *event sourcing*. `@nestjs/cqrs` ne persiste rien —
-magasin d'événements, instantanés, rejeu et projections seraient à écrire. Pour une personne seule,
-c'est un projet dans le projet, et le **journal d'audit nominatif sur 24 mois** que le studio exige
-est une table, pas un magasin d'événements. Les deux sont souvent confondus ; ils ne se
-remplacent pas.
+**What I explicitly refuse**: *event sourcing*. `@nestjs/cqrs` persists nothing — an event store,
+snapshots, replay and projections would all have to be written. For one person that is a project
+inside the project, and the **24-month by-name audit journal** the studio requires is a table, not
+an event store. The two are often conflated; they do not replace each other.
 
-**Et la règle qui rend tout cela sûr** (`nestjs-cqrs` n°8) : un agrégat publie ses événements
-domaine par `commit()` **après** que la transaction soit résolue, jamais dedans — un rollback ne
-rappelle pas un événement publié. Les événements d'**intégration**, eux, sont des lignes d'outbox
-écrites **dans** la transaction (§ `data-model.md`). Ce sont deux mécanismes, et les confondre est
-la faute la plus coûteuse du modèle.
+**And the rule that makes all this safe** (`nestjs-cqrs` rule 8): an aggregate publishes its domain
+events through `commit()` **after** the transaction has resolved, never inside it — a rollback does
+not recall a published event. **Integration** events, for their part, are outbox rows written
+**inside** the transaction (see `data-model.md`). Those are two mechanisms, and confusing them is
+the model's most expensive fault.
 
 ---
 
-## 13. Maturité des contrats
+## 13. Contract maturity
 
-| Contexte | Régime | Motif |
+| Context | Regime | Reason |
 |---|---|---|
-| `identity` | **stable** | palier 2. `buf breaking` et `oasdiff` bloquent toute rupture. |
-| `catalog` | **stable** | palier 2. |
-| `ticketing` | **stable** | palier 3. |
-| `streaming` | **provisoire** | palier 5. Le choix du fournisseur média n'est pas fait, et les capacités déclarées (signature de segments, DRM, renditions) **changeront la forme du `PlaybackTicket`**. Figer maintenant, c'est figer contre MediaMTX. |
-| `chat` | **provisoire** | palier 5. Quatre vocabulaires de sanction existaient ; j'en tranche trois axes, mais **aucun écran n'a jamais exercé la modération vue du spectateur** (`storefront-mobile` a vérifié : `chatOf` n'est jamais appelée dans sa maquette). Un contrat conçu et non observé ne se fige pas. |
-| `payouts` | **provisoire** | palier 3+. **La question fiscale n'est pas tranchée** (`adr-payments.md`, D5) : l'assiette et le redevable de la TVA changeront les champs. La *forme* — une ventilation par marché — est en revanche sûre et ne bougera pas. |
-| `notifications` | **provisoire** | palier 6. Le troisième canal n'est pas nommé dans le dossier ; je propose `in_app`, mais c'est une proposition. |
+| `identity` | **stable** | milestone 2. `buf breaking` and `oasdiff` block any break. |
+| `catalog` | **stable** | milestone 2. |
+| `ticketing` | **stable** | milestone 3. |
+| `streaming` | **provisional** | milestone 5. The media provider has not been chosen, and the declared capabilities (segment signing, DRM, renditions) **will change the `PlaybackTicket`'s shape**. Freezing now means freezing against MediaMTX. |
+| `chat` | **provisional** | milestone 5. Four sanction vocabularies existed; I settle three axes from them, but **no screen has ever exercised moderation as the viewer sees it** (`storefront-mobile` verified: `chatOf` is never called in its mockup). A contract designed and not observed does not freeze. |
+| `payouts` | **provisional** | milestone 3+. The tax model is settled (`adr-payments.md`, D-015), but **its legal validation is not**: the VAT base and the liable party could still move the fields. The *shape* — a breakdown per jurisdiction, each line carrying the rate applied at the sale — is safe and will not move. |
+| `notifications` | **provisional** | milestone 6. The third channel is not named in the file; I propose `in_app`, but it is a proposal. |
 
-**Règle de lecture pour `backend-contracts`** : un contrat *provisoire* se modifie sans cérémonie
-jusqu'à ce que son palier arrive. Un contrat *stable* se modifie par ajout seulement. Les deux
-sont générés par la même chaîne ; seule la porte de CI diffère.
+**A reading rule for `backend-contracts`**: a *provisional* contract is changed without ceremony
+until its milestone arrives. A *stable* contract is changed by addition only. Both are generated by
+the same chain; only the CI gate differs.
 
-**Une exigence qui traverse les deux régimes** (`storefront-tv` Q12, et c'est la question dont
-dépend la survie du parc) : **le comportement devant une valeur d'énumération inconnue est
-déclaré, et c'est « conserver la valeur brute et la traiter comme neutre », jamais « rejeter ».**
-Une revue de magasin TV est lente : une version publiée aujourd'hui tournera dans des salons dans
-un an, et le jour où le catalogue gagne une 22ᵉ discipline, ces téléviseurs la recevront. Une
-validation stricte par énumération ne dégraderait pas une carte : elle ferait échouer la **page
-entière**. La sévérité porte donc sur la **forme** (les champs obligatoires, les types), jamais sur
-le **membre** d'un vocabulaire. En Protobuf c'est le comportement natif (un membre inconnu arrive
-comme son numéro) ; côté zod, `backend-contracts` doit l'écrire explicitement — un `z.enum()` nu ne
-le fait pas.
+**One requirement that crosses both regimes** (`storefront-tv` Q12, and it is the question the
+fleet's survival depends on): **the behaviour in front of an unknown enumeration value is declared,
+and it is "keep the raw value and treat it as neutral", never "reject".** A TV store review is slow:
+a version published today will be running in living rooms a year from now, and the day the catalogue
+gains a 22nd discipline, those televisions will receive it. Strict per-enumeration validation would
+not degrade a card: it would fail the **whole page**. So strictness bears on the **shape** (the
+mandatory fields, the types), never on a vocabulary's **member**. In Protobuf that is the native
+behaviour (an unknown member arrives as its number); on the zod side, `backend-contracts` must write
+it explicitly — a bare `z.enum()` does not do it.
 
 ---
 
-## 14. Ce que `backend-contracts` doit reprendre d'ici
+## 14. What `backend-contracts` should take from here
 
-Résumé opérationnel, pour ne pas relire tout le document.
+An operational summary, so the whole document does not have to be re-read.
 
-1. **60 méthodes de lecture, 132 d'écriture.** §10 donne la répartition par service. Le transport
-   est à lui ; le compte est établi.
-2. **Toute réponse porte `servedAt`** ; toute réponse contenant une valeur périssable porte
-   `validUntil`. Non négociable : cinq surfaces en dépendent.
-3. **Toute réponse porte le résultat *et* les entrées** des règles périssables (état, fenêtre de
-   rediffusion, ouverture de salle, jauge, aperçu restant).
-4. **Enveloppe d'erreur unique**, jusqu'à la passerelle Traefik incluse, avec `code`, `params`,
-   `traceId`, et une **nature** explicite : `refused` (le serveur a dit non définitivement) /
-   `unavailable` (réessayer) / `offline_forbidden` (refus local avant envoi). `studio-mobile`
-   l'exige et a raison : c'est la décision qu'une personne en garde doit prendre en dix secondes.
-5. **Deux régimes de pagination** (D-010), plus les deux exceptions nommées. Curseur en **Base64
-   opaque** sur `(created_at, id)`, **durée de vie 24 h**, code `CURSOR_TOO_OLD` qui exige un
-   rechargement complet. Le curseur est **bidirectionnel** et **indépendant de la taille de page**
-   (`storefront-mobile` : une rotation ne doit pas l'invalider).
-6. **Une enveloppe de page porte un total** — exact pour le studio, **approximatif borné** pour la
-   recherche storefront. **Le seuil au-delà duquel le total devient une borne inférieure est une
-   constante de domaine servie**, jamais un nombre gravé dans la prose : le graver reviendrait à
-   exposer la forme d'un moteur dans le contrat, et à promettre au nom d'un fournisseur qu'on
-   pourrait remplacer. L'enveloppe porte `approximateTotal` **et** `totalIsLowerBound`.
-7. **Projection par rôle côté serveur** pour le studio : un champ interdit est **absent**, jamais
-   présent et nul ; une clé de tri sur un champ absent est **refusée**.
-8. **Aucun champ de billetterie ni de régie sur un modèle public** (E8) : ni `sold`, ni `revenue`,
-   ni `publication`, ni `publishedBy`.
-9. **Les constantes de domaine sont servies**, jamais recopiées : ouverture de salle (30 min),
-   délai d'aperçu du billboard (4 s), seuil de rareté, échéance d'annulation (1 h), délai de
-   crédit (un **code**, pas « 3 à 5 jours ouvrés »), seuils de notification, fenêtre de priorité de
-   liste d'attente (2 h), seuil de provision technique (10 000), échéance de révision (72 h),
-   plafond de débit du tchat, quota de réactions. Elles vivent dans `@arthome/core` et sont servies
-   dans `ViewerContext` (storefront) et dans l'amorçage (studio).
-10. **`@arthome/contracts` expose une entrée sans fichier baril** (D-012), et n'importe zod que par
-    chemins profonds.
+1. **60 read methods, 132 write methods.** §10 gives the split per service. The transport is its
+   call; the count is established.
+2. **Every response carries `servedAt`**; every response containing a perishable value carries
+   `validUntil`. Non-negotiable: five surfaces depend on it.
+3. **Every response carries the result *and* the inputs** of the perishable rules (state, replay
+   window, room opening, capacity, preview remaining).
+4. **One single error envelope**, up to and including the Traefik gateway, with `code`, `params`,
+   `traceId`, and an explicit **nature**: `refused` (the server said no, definitively) /
+   `unavailable` (try again) / `offline_forbidden` (refused locally before sending).
+   `studio-mobile` requires it and is right: it is the decision a person on duty has to take in ten
+   seconds.
+5. **Two pagination regimes** (D-010), plus the two named exceptions. Cursor as **opaque Base64**
+   over `(created_at, id)`, **24 h lifetime**, a `CURSOR_TOO_OLD` code that requires a full reload.
+   The cursor is **bidirectional** and **independent of page size** (`storefront-mobile`: a rotation
+   must not invalidate it).
+6. **A page envelope carries a total** — exact for the studio, **bounded approximate** for
+   storefront search. **The threshold beyond which the total becomes a lower bound is a served
+   domain constant**, never a number carved into prose: carving it would expose an engine's shape in
+   the contract, and make a promise in the name of a provider we could replace. The envelope carries
+   `approximateTotal` **and** `totalIsLowerBound`.
+7. **Projection by role, server-side** for the studio: a forbidden field is **absent**, never present
+   and null; a sort key on an absent field is **refused**.
+8. **No ticketing or run-desk field on a public model** (E8): not `sold`, not `revenue`, not
+   `publication`, not `publishedBy`.
+9. **Domain constants are served**, never copied: room opening (30 min), billboard preview delay
+   (4 s), scarcity threshold, cancellation deadline (1 h), credit period (a **code**, not "3 to 5
+   working days"), notification thresholds, waiting-list priority window (2 h), technical
+   provisioning threshold (10,000), revision deadline (72 h), chat rate ceiling, reaction quota. They
+   live in `@arthome/core` and are served in `ViewerContext` (storefront) and in the bootstrap
+   (studio).
+10. **`@arthome/contracts` exposes a barrel-free entry point** (D-012), and imports zod only through
+    deep paths.

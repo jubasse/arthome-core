@@ -1218,11 +1218,11 @@ calls it until a second caller appears; at that point it moves up into `@arthome
 | variable, function, method, property | `camelCase` | `remainingSeats` |
 | class, interface, type, enumeration | `PascalCase` | `BookingWindow` |
 | module-scope constant, genuinely constant | `SCREAMING_SNAKE_CASE` | `MAX_CHAT_MESSAGE_LENGTH` |
-| a literal union's value | lowercase `kebab-case` | `'read-only'`, `'replay-online'` |
+| a literal union's value | lowercase **`snake_case`** — the wire's spelling (see below) | `'read_only'`, `'replay_online'` |
 | boolean | `is` / `has` / `can` / `should` prefix | `canModerate` |
 | function returning a promise | a verb, no `Async` suffix | `fetchBooking` |
 | i18n key | `camelCase` segments, dot-separated | `chat.collapse`, `account.alerts.alertHint` |
-| i18n key **for an enumeration label** | `enums.<enumName>.<value>` | `enums.chatMode.read-only` |
+| i18n key **for an enumeration label** | `enums.<enumName>.<value>` | `enums.chatMode.read_only` |
 
 The last two rows are read from `shared/i18n/storefront.json`, like the values in §5.3 and for the
 same reason. The distinction between them **is not cosmetic**: among its eight fields, E2 records a
@@ -1230,6 +1230,45 @@ same reason. The distinction between them **is not cosmetic**: among its eight f
 `open`, `emoji`, `read-only`, `off` — with a vocabulary that diverges on the very first value (`free`
 versus `open`). An enumeration label that is not under `enums.` is a parallel table in the making:
 the §5.3 gate says so, not vigilance.
+
+**The wire decides the spelling, and `@arthome/core` serves it.** This reverses what this document
+first said, and the reversal was settled by counting rather than by preference.
+
+The first draft said `kebab-case`, on the reasoning that §5.3 makes the domain the single source, so
+the domain's spelling should win. Three contract vocabularies disagreed with the domain by separator
+alone, and they looked like the outliers. Then someone counted the 374 distinct members declared
+across both contracts:
+
+| Spelling | Members |
+|---|---|
+| `snake_case` | **125** |
+| `kebab-case` | 12 |
+
+The wire is 91 % snake. It is the **kebab** values that are the exception, and the expectation was
+backwards — which is the whole reason this row now carries a count instead of a preference.
+
+**The criterion is which side is expensive to change.** Published enum values in two contracts,
+consumed by five surfaces and seven services, cannot be renamed later without breaking clients.
+The domain's internal spelling can be refactored in an afternoon. So the wire decides, and the domain
+serves it.
+
+**And §5.3 is untouched by this**, which is the part worth being precise about: §5.3 is a rule about
+**provenance**, not about spelling. `@arthome/core` remains the single place a vocabulary is declared;
+it simply declares it **in the spelling that goes on the wire**. Any other answer needs a transform
+between the domain and the wire — and a transform is the parallel literal table wearing a codec's
+costume: two spellings, both live, with a function asserting they mean the same thing.
+
+> **[floor]** `@arthome/core` exports **exactly the value that goes on the wire**, and that value is
+> `snake_case`. The twelve `kebab-case` members are exceptions that each justify themselves or
+> convert. Enumerating them belongs to `backend-domain` and `backend-contracts`, not here.
+
+**One defect that is a defect under either ruling**, found while counting and now caught by gate 18:
+`co-production` in `storefront.yaml` against `co_production` in `studio.yaml`. The same value, two
+spellings, one per contract. Neither document is wrong on its own; together they mean a storefront
+client and a studio client read **different strings for the same thing**. That class needs no
+`-source` annotation to detect — the gate groups every member across both contracts by its
+separator-insensitive form and fails on any group with more than one spelling, so it is live today
+across all 148 unannotated blocks.
 
 **What we do not do — [floor]:** no `I` prefix on interfaces, no `Type` suffix, no `Enum` suffix, no
 private `_` (TypeScript has `#` and `private`). These conventions come from languages without
@@ -1268,6 +1307,18 @@ five mockups despite an explicit principle).
 > Both examples below are now read from the source, and the source is named every time. **That is
 > this section's drafting rule**: an enumeration value is not written here without its file of
 > origin.
+
+> **A note on spelling, so that this section and §5.2 do not appear to contradict each other.** The
+> values below are **read from their sources as those sources stand today**, which is this section's
+> own drafting rule — and today several of them are `kebab-case`. §5.2 has since ruled that the wire
+> spelling wins and the wire is `snake_case`, so `read-only` becomes `read_only` and `replay-online`
+> becomes `replay_online` when `backend-domain` and `backend-contracts` convert them.
+>
+> The examples are **not** updated here in advance of that conversion. Writing `read_only` while
+> `proto/arthome/chat/v1/events.proto` still says `READ_ONLY` → `read-only` would make this document
+> a table that disagrees with its own cited source — which is the exact fault the section is about.
+> A sourced example tracks its source; it does not anticipate a decision. Gate 18 is what makes the
+> conversion visible when it happens, and §5.2 is what says which way it goes.
 
 **[floor] The rule:** a literal union, declared **exactly once**, in `@arthome/core`.
 
@@ -1416,8 +1467,7 @@ x-arthome-vocabulary: [agenda, dashboard, moderation-page, crew, …]
 
 Heuristic matching by member overlap was tried first, and it is *why* this key exists: at 0.38
 overlap the matcher paired a display-state list with `DATE_OUTCOMES` and invented five missing
-members. A gate that guesses produces false positives, and a gate that shouts wrongly gets switched
-off. The cost is honest and it is not small: **148 blocks need the key**, and five of them sit inside
+members. **A guessing gate gets switched off.** The cost is honest and it is not small: **148 blocks need the key**, and five of them sit inside
 YAML flow mappings where it cannot be added by inserting a line.
 
 **b. A vocabulary with no domain counterpart says so, in place.**

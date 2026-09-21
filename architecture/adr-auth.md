@@ -302,7 +302,7 @@ transcription.
 
 The two alphabets differ, but **far less than one would think, and the narrow difference is the
 interesting one.** Both keep one member of a confusable class wherever they can, and both refuse
-to guess. Computed from `ACDEFHJKLMNPQRTVWXY23456789`, six of the seven classes keep a member —
+to guess. Computed from `PAIRING_CODE_ALPHABET` above, six of the seven classes keep a member —
 `L`, `5`, `8`, `2`, `6`, `V` — and exactly one does not:
 
 | | `PAIRING_CODE` (this ADR) | `SEAT_CODE_ALPHABET` (ticketing) |

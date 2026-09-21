@@ -1,175 +1,173 @@
-# Transport BFF → service, et le contrat des appels synchrones
+# BFF → service transport, and the contract for synchronous calls
 
-> **Statut** : accepté · **Date** : 21 septembre 2026 · **Auteur** : `backend-contracts`
-> **Décide** : le transport des appels synchrones **BFF → service**, et la forme exacte de ces
-> appels dans le transport retenu.
-> **Ne décide pas** : le transport inter-services — il n'y en a pas, c'est Kafka et rien d'autre
-> (`events.md`). Ni la forme des deux contrats de BFF, qui est dans `openapi/`.
-
----
-
-## 0. La décision, en une ligne
-
-> **HTTP/1.1 keep-alive, charges utiles JSON, décrites en OpenAPI 3.1 généré depuis zod.
-> Un document OpenAPI par service, à côté des deux documents de BFF. Pas de gRPC.**
-
-Et la contrepartie, écrite dans le même souffle parce que sans elle la décision est incomplète :
-**un délai explicite voyage en en-tête sur chaque appel** (§5.3), et **chaque service le vérifie**,
-exactement comme il devrait vérifier `call.cancelled` en gRPC.
+> **Status**: accepted · **Date**: 21 September 2026 · **Author**: `backend-contracts`
+> **Decides**: the transport of synchronous **BFF → service** calls, and the exact shape of those
+> calls in the transport chosen.
+> **Does not decide**: the inter-service transport — there is none, it is Kafka and nothing else
+> (`events.md`). Nor the shape of the two BFF contracts, which is in `openapi/`.
 
 ---
 
-## 1. Le nombre sur lequel je tranche — et ce que le compte de `backend-domain` mesure vraiment
+## 0. The decision, in one line
 
-`context-map.md` §10 donne un compte honnête et complet :
+> **HTTP/1.1 keep-alive, JSON payloads, described in OpenAPI 3.1 generated from zod.
+> One OpenAPI document per service, beside the two BFF documents. No gRPC.**
+
+And the counterpart, written in the same breath because without it the decision is incomplete:
+**an explicit deadline travels in a header on every call** (§5.3), and **every service checks it**,
+exactly as it would have to check `call.cancelled` under gRPC.
+
+---
+
+## 1. The number I decide on — and what `backend-domain`'s count really measures
+
+`context-map.md` §10 gives an honest and complete count:
 
 | | |
 |---|---|
-| méthodes de lecture distinctes | **60** |
-| méthodes d'écriture distinctes | **132** |
+| distinct read methods | **60** |
+| distinct write methods | **132** |
 | **total** | **192** |
-| appels internes **par écran** | **1 à 4, tous parallèles** |
-| `home`, `live`, `category`, `artist`, `search` | 4 (un modèle composé + trois surcouches par lot) |
+| internal calls **per screen** | **1 to 4, all parallel** |
+| `home`, `live`, `category`, `artist`, `search` | 4 (one composed read model plus three batched overlays) |
 | `player` | **1** |
 | `confirm` | **0** |
-| **profondeur d'une chaîne d'appels** | **1** |
+| **depth of a call chain** | **1** |
 
-**192 est un compte de *méthodes*. Ce n'est pas un compte d'*appels*.** Et les deux avantages
-réels de gRPC — le **délai propagé** et le **multiplexage d'un flux** — ne paient ni l'un ni
-l'autre sur un compte de méthodes. Ils paient sur la **profondeur d'une chaîne** et sur le
-**volume d'un appel unitaire**.
+**192 is a count of *methods*. It is not a count of *calls*.** And gRPC's two real advantages — the
+**propagated deadline** and **multiplexing a stream** — pay off on neither of those on a count of
+methods. They pay off on the **depth of a chain** and on the **volume of a single call**.
 
-Or la profondeur d'une chaîne, dans cette architecture, est **1**, et elle l'est **par
-construction** : la règle « aucun appel synchrone entre services » est la première du projet. Un
-délai n'a personne à qui se propager. Il n'y a **pas un seul point du système** où un service en
-appelle un autre et doit lui transmettre le temps qu'il lui reste.
+Now, the depth of a chain in this architecture is **1**, and it is so **by construction**: "no
+synchronous call between services" is the project's first rule. A deadline has nobody to propagate
+to. There is **not one point in the system** where a service calls another and has to pass on the
+time it has left.
 
-> **Le nombre qui tranche n'est donc pas 192. C'est 1 — la profondeur, et 4 — le fan-out
-> parallèle maximal d'un écran.**
+> **The number I decide on is therefore not 192. It is 1 — the depth — and 4 — a screen's maximum
+> parallel fan-out.**
 
-À profondeur 1 et fan-out 4, un `Promise.allSettled` de quatre requêtes HTTP avec quatre
-`AbortSignal.timeout` fait, exactement, ce que feraient quatre appels gRPC avec quatre `deadline`.
-La latence d'un écran est celle de l'appel le plus lent dans les deux cas.
+At depth 1 and fan-out 4, a `Promise.allSettled` of four HTTP requests with four
+`AbortSignal.timeout` does exactly what four gRPC calls with four `deadline`s would do. A screen's
+latency is that of the slowest call in both cases.
 
-**Le 4 a été mesuré, pas supposé — et il était faux à la livraison.** La revue adverse a compté
-`x-arthome-upstream` sur les deux documents et trouvé **deux opérations à 5**, c'est-à-dire le
-seuil d'alerte franchi le jour même où il était écrit. Les deux ont été instruites :
+**The 4 was measured, not assumed — and it was wrong at delivery.** The adversarial review counted
+`x-arthome-upstream` across both documents and found **two operations at 5**, that is, the alert
+threshold crossed on the very day it was written. Both were investigated:
 
-| Opération | Ce que le compte disait | Ce qui a été fait |
+| Operation | What the count said | What was done |
 |---|---|---|
-| `getDateDetail` | 5 — `catalog, ticketing, identity, streaming, chat` | **composé, donc redescendu à 4.** `chat` était **à la fois projeté et appelé** : le régime de tchat arrive déjà dans `date_detail_public` par `chat.date_chat_policy_changed`. On payait un appel pour une donnée qu'on possédait. C'est le geste que le seuil prescrit — « le modèle de lecture manque » — sauf qu'ici il ne manquait pas, il était ignoré |
-| `listChannelJournal` | 5 — cinq services | **exception déclarée dans le contrat** (`x-arthome-fanout-exception`), en attendant un propriétaire. Le journal est une jointure au moment de la requête sur un artefact conservé 24 mois, et **il n'a aucun contexte propriétaire** : aucun agrégat ne le définit, il n'est dans aucun tableau de modèles de lecture. Ce n'est pas un défaut de transport, c'est un trou de modèle — remonté au chef |
+| `getDateDetail` | 5 — `catalog, ticketing, identity, streaming, chat` | **composed, hence back down to 4.** `chat` was **both projected and called**: the chat regime already arrives in `date_detail_public` through `chat.date_chat_policy_changed`. We were paying for a call to fetch data we already held. That is the gesture the threshold prescribes — "the read model is missing" — except that here it was not missing, it was ignored |
+| `listChannelJournal` | 5 — five services | **exception declared in the contract** (`x-arthome-fanout-exception`), pending an owner. The audit log is a query-time join over an artifact kept for 24 months, and **it has no owning context**: no aggregate defines it, it appears in no read-model table. This is not a transport defect, it is a hole in the model — escalated to the lead |
 
-Et une troisième, que j'avais créée en écrivant le flux d'invalidations du studio : `listChanges`
-et `listStudioChanges` déclaraient quatre et six services. **Ils n'en appellent aucun** — ils
-lisent le tampon de reprise Redis que la passerelle temps réel tient déjà par salle, et sont le
-tirage HTTP du même flux que le canal pousse. Les deux portent désormais
-`x-arthome-upstream: [realtime]`. Déclarer une composition qui n'a pas lieu fausse la mesure dans
-le sens qui rassure, ce qui est le pire des deux.
+And a third, which I had created myself while writing the studio's invalidation feed: `listChanges`
+and `listStudioChanges` declared four and six services. **They call none** — they read the Redis
+resume buffer the real-time gateway already keeps per room, and they are the HTTP pull of the same
+stream the channel pushes. Both now carry `x-arthome-upstream: [realtime]`. Declaring a composition
+that does not happen skews the measurement in the reassuring direction, which is the worse of the
+two.
 
-**État après correction** : storefront `1:53 · 2:6 · 3:6 · 4:7`, studio
-`1:71 · 2:3 · 3:4 · 4:1 · 5:1`, l'unique 5 portant son exception écrite. **Le seuil de 4 est tenu
-partout ailleurs, et il est désormais vérifiable en une commande** — ce que `x-arthome-upstream`
-existait pour permettre et que personne n'avait lancé.
+**State after correction**: storefront `1:53 · 2:6 · 3:6 · 4:7`, studio
+`1:71 · 2:3 · 3:4 · 4:1 · 5:1`, the single 5 carrying its written exception. **The threshold of 4
+holds everywhere else, and it is now checkable in one command** — which is what
+`x-arthome-upstream` existed to make possible and what nobody had run.
 
-**Ce que 192 mesure réellement**, c'est le coût de **décrire** et de **générer**. Et là, la
-question n'est pas « gRPC ou HTTP », c'est « d'où vient le schéma ». Il vient de zod (décision
-acquise), dans les deux cas.
+**What 192 really measures** is the cost of **describing** and **generating**. And there the
+question is not "gRPC or HTTP", it is "where does the schema come from". It comes from zod
+(a settled decision), in both cases.
 
 ---
 
-## 2. Les quatre critères, pesés
+## 2. The four criteria, weighed
 
-### 2.1 Le délai — l'argument principal de gRPC, et il est plus faible qu'annoncé
+### 2.1 The deadline — gRPC's main argument, and it is weaker than announced
 
-`context-map.md` §10.3 l'écrit : *« un appel BFF → service a un délai (`deadline`) qui traverse et
-se propage, ce qu'HTTP/JSON n'offre pas nativement »*. C'est exact sur le papier. Trois faits le
-réduisent :
+`context-map.md` §10.3 puts it this way: *"a BFF → service call has a deadline that crosses and
+propagates, which HTTP/JSON does not offer natively"*. That is correct on paper. Three facts reduce
+it:
 
-1. **Il ne se propage nulle part** : profondeur 1 (§1).
-2. **En NestJS, il n'arrête pas le destinataire.** La skill `nestjs-grpc` est formelle (règle 7) :
-   *« Nest ne coupe jamais un handler unaire, donc le travail et ses effets de bord survivent à
-   `DEADLINE_EXCEEDED` »*. Il faut lire `call.cancelled` **à la main**, dans chaque handler long.
-   C'est exactement le même travail que lire un en-tête de délai à la main. Le « gratuit » de gRPC
-   ne l'est pas ici.
-3. **Ce qu'on veut vraiment, c'est que l'appelant abandonne**, et qu'il le fasse avec un code
-   exploitable. `AbortSignal.timeout(ms)` ferme la socket ; le service voit `req.destroyed` /
-   `'close'` au même endroit où il aurait lu `call.cancelled`.
+1. **It propagates nowhere**: depth 1 (§1).
+2. **Under NestJS, it does not stop the callee.** The `nestjs-grpc` skill is explicit (rule 7):
+   *"Nest never cancels a unary handler, so work and side effects outlive `DEADLINE_EXCEEDED`"*.
+   You have to read `call.cancelled` **by hand**, in every long handler. That is exactly the same
+   work as reading a deadline header by hand. gRPC's "free" is not free here.
+3. **What we actually want is for the caller to give up**, and to do so with a usable code.
+   `AbortSignal.timeout(ms)` closes the socket; the service sees `req.destroyed` / `'close'` in the
+   same place where it would have read `call.cancelled`.
 
-**Ce que je garde quand même de l'idée** : le délai n'est pas une durée locale décidée par
-l'appelant dans son coin, c'est une **information de contrat**. Il voyage en en-tête, il est écrit
-dans `openapi/`, et il fait partie de la définition de fini d'un service (§5.3).
+**What I keep from the idea all the same**: the deadline is not a local duration the caller decides
+on its own, it is a piece of **contract information**. It travels in a header, it is written in
+`openapi/`, and it is part of a service's definition of done (§5.3).
 
-### 2.2 Le typage et la génération — et le piège E2, à l'échelle du système
+### 2.2 Typing and generation — and the E2 trap, at system scale
 
-C'est ici que l'argument bascule, et c'est un argument que le compte ne donne pas.
+This is where the argument turns, and it is an argument the count does not give.
 
-`corrections-handoff.md` E2 établit le mode de défaillance dominant du projet : **la table
-littérale parallèle**, commise sur huit champs par cinq maquettes malgré un principe explicite.
-`code-conventions.md` §5.3 en fait sa section la plus importante et lui donne une porte.
-`events.md` §5.3 en tire la règle : *« zod vit à la frontière HTTP, et seulement là. Mélanger les
-deux coûterait un second schéma à maintenir pour zéro garantie de plus — et le décalage entre les
-deux serait la prochaine table parallèle. »*
+`corrections-handoff.md` E2 establishes the project's dominant failure mode: **the parallel literal
+table**, committed on eight fields by five designs despite an explicit principle.
+`code-conventions.md` §5.3 makes it its most important section and gives it a gate. `events.md` §5.3
+draws the rule: *"zod lives at the HTTP boundary, and only there. Mixing the two would cost a second
+schema to maintain for not one more guarantee — and the drift between them would be the next
+parallel table."*
 
-Comptons les **déclarations** d'un vocabulaire de frontière, par exemple `ChatMode` :
+Let us count the **declarations** of one boundary vocabulary, say `ChatMode`:
 
-| | aujourd'hui | avec gRPC sur les 192 méthodes |
+| | today | with gRPC over the 192 methods |
 |---|---|---|
-| union littérale `@arthome/core` | 1 | 1 |
-| schéma zod de `@arthome/contracts` | **0** — `z.enum(CHAT_MODES)` **dérive**, il ne déclare pas | 0 |
-| `.proto` d'**événement** | 1 — écrit à la main, la duplication que `events.md` assume | 1 |
-| `.proto` de **service synchrone** | — | **1 de plus, écrit à la main** |
-| **total de déclarations à tenir d'accord** | **2** | **3** |
+| literal union in `@arthome/core` | 1 | 1 |
+| zod schema in `@arthome/contracts` | **0** — `z.enum(CHAT_MODES)` **derives**, it does not declare | 0 |
+| **event** `.proto` | 1 — hand-written, the duplication `events.md` accepts | 1 |
+| **synchronous service** `.proto` | — | **1 more, hand-written** |
+| **total declarations to keep in agreement** | **2** | **3** |
 
-Choisir gRPC pour la voie synchrone, c'est faire passer de **deux à trois** le nombre de
-déclarations manuscrites de chaque vocabulaire fermé du système — et il y en a des dizaines.
-C'est **+50 % de surface exposée à la faute dominante du projet**, contre un délai qui ne se
-propage nulle part et qui n'arrête pas le destinataire de toute façon.
+Choosing gRPC for the synchronous path takes the number of hand-written declarations of every
+closed vocabulary in the system from **two to three** — and there are dozens of them. That is
+**+50% of surface exposed to the project's dominant fault**, against a deadline that propagates
+nowhere and does not stop the callee anyway.
 
-Et ce n'est pas seulement les énumérations : c'est chaque forme. `PlaybackTicket`, `WatchVerdict`,
-`CartQuote`, `PayoutLine` existeraient en zod pour la frontière publique **et** en Protobuf pour la
-frontière interne, sur la même donnée, dans le même dépôt.
+And it is not only the enumerations: it is every shape. `PlaybackTicket`, `WatchVerdict`,
+`CartQuote`, `PayoutLine` would exist in zod for the public boundary **and** in Protobuf for the
+internal boundary, over the same data, in the same repository.
 
-**En HTTP/JSON, le schéma de la frontière BFF → service est le même objet zod que celui de la
-frontière surface → BFF.** Un seul `z.object`, deux documents OpenAPI générés depuis lui. Zéro
-déclaration de plus.
+**In HTTP/JSON, the schema of the BFF → service boundary is the same zod object as the one for the
+surface → BFF boundary.** A single `z.object`, two OpenAPI documents generated from it. Not one
+extra declaration.
 
-> C'est la vraie économie, et elle ne se voit pas dans un compte de méthodes.
+> That is the real saving, and it is invisible in a count of methods.
 
-### 2.3 L'exploitation par une personne seule
+### 2.3 Operation by one person alone
 
-`context-map.md` §10.3 liste honnêtement ce que gRPC coûte ; je le reprends et je chiffre ce que
-chaque ligne demande **en plus** d'une pile HTTP déjà nécessaire de toute façon (Traefik, les deux
-BFF, les sept services qui exposent déjà un `/health`).
+`context-map.md` §10.3 lists honestly what gRPC costs; I take it up and put a number on what each
+line demands **on top of** an HTTP stack that is necessary anyway (Traefik, the two BFFs, the seven
+services that already expose a `/health`).
 
-| Coût gRPC | Détail vérifié | Ce qu'il faut écrire ou configurer en plus |
+| gRPC cost | Verified detail | What must be written or configured on top |
 |---|---|---|
-| `h2c` à Traefik | HTTP/2 en clair vers les services, ou TLS interne | 7 `serversTransport` + le risque d'un `h2c` qui silencieusement retombe en HTTP/1 |
-| pas de `curl` | `grpcurl`, ou la réflexion — **et la réflexion ne s'expose pas en production** (skill, règle 13) | un binaire de plus sur le poste, et un chemin de débogage qui n'existe pas en production |
-| sondes | `grpc-health-check` + `HealthImplementation.addToServer` dans `onLoadPackageDefinition`, et la skill précise que **l'extrait de la documentation ne compile pas** (règle 13) | ~20 lignes × 7 services, et un `NOT_SERVING` à poser à l'arrêt |
-| arrêt gracieux | `gracefulShutdown: true`, **non documenté** ; le défaut est `forceShutdown()`, qui coupe les appels en vol **à chaque déploiement** (règle 3) | un drapeau qu'on ne découvre qu'en lisant la skill, et un `max_connection_age_ms` + `_grace_ms` (règle 4) |
-| équilibrage | Service *headless* + `grpc.service_config` `round_robin` — un ClusterIP **épingle un seul pod** (règle 5) | une configuration Kubernetes que la voie HTTP n'exige pas |
-| erreurs | `Grpc*Exception` + `GrpcExceptionFilter`, et **le filtre standard ne journalise pas** : toute erreur inattendue est un `UNKNOWN` silencieux (règles 1–2) | un filtre maison × 7, plus la table de correspondance vers notre enveloppe |
-| construction | les `.proto` ne sont pas compilés : `"assets"` dans `nest-cli.json`, sinon **le service démarre et échoue au premier appel** (`code-conventions.md` §6.5) | un piège silencieux de plus |
-| limites | `maxReceiveMessageLength` (défaut 4 Mio) sur le récepteur | un réglage à ne pas oublier sur les lectures groupées |
+| `h2c` at Traefik | cleartext HTTP/2 towards the services, or internal TLS | 7 `serversTransport` entries plus the risk of an `h2c` that silently falls back to HTTP/1 |
+| no `curl` | `grpcurl`, or reflection — **and reflection is not exposed in production** (skill, rule 13) | one more binary on the workstation, and a debugging path that does not exist in production |
+| probes | `grpc-health-check` + `HealthImplementation.addToServer` in `onLoadPackageDefinition`, and the skill notes that **the documentation snippet does not compile** (rule 13) | ~20 lines × 7 services, and a `NOT_SERVING` to set on shutdown |
+| graceful shutdown | `gracefulShutdown: true`, **undocumented**; the default is `forceShutdown()`, which cuts in-flight calls **on every deployment** (rule 3) | a flag you only discover by reading the skill, plus `max_connection_age_ms` + `_grace_ms` (rule 4) |
+| load balancing | headless Service + `grpc.service_config` `round_robin` — a ClusterIP **pins a single pod** (rule 5) | a Kubernetes configuration the HTTP path does not require |
+| errors | `Grpc*Exception` + `GrpcExceptionFilter`, and **the stock filter does not log**: every unexpected error is a silent `UNKNOWN` (rules 1–2) | a bespoke filter × 7, plus the mapping table to our envelope |
+| build | `.proto` files are not compiled: `"assets"` in `nest-cli.json`, otherwise **the service starts and fails on the first call** (`code-conventions.md` §6.5) | one more silent trap |
+| limits | `maxReceiveMessageLength` (default 4 MiB) on the receiver | a setting not to forget on batched reads |
 
-**Huit pièges, dont cinq sont silencieux** — ils ne cassent pas la construction, ils cassent la
-production. Pour une personne seule qui exploite sept services, c'est le critère décisif et
-`context-map.md` §10.3 le nomme déjà.
+**Eight traps, five of them silent** — they do not break the build, they break production. For one
+person alone operating seven services, that is the decisive criterion, and `context-map.md` §10.3
+already names it.
 
-À mettre en face, le coût honnête d'HTTP/JSON : **il n'y a pas de générateur de client gratuit
-fourni par `buf`**. Mais il y en a un fourni par OpenAPI, et surtout : le client BFF → service est
-**typé par le même `z.infer` que le reste du dépôt**, sans génération du tout à l'intérieur de
-`arthome-platform`. La génération ne sert que les cinq surfaces, et elles consomment les deux
-documents de BFF, pas ceux des services.
+Against that, the honest cost of HTTP/JSON: **there is no free client generator supplied by
+`buf`**. But there is one supplied by OpenAPI, and above all: the BFF → service client is **typed
+by the same `z.infer` as the rest of the repository**, with no generation at all inside
+`arthome-platform`. Generation only serves the five surfaces, and they consume the two BFF
+documents, not the services'.
 
-### 2.4 Le jour où ça casse, à 20 h 45, pendant un direct
+### 2.4 The day it breaks, at 8.45 p.m., during a live show
 
-C'est le critère que les tableaux ne portent pas et qui compte le plus ici.
+This is the criterion the tables do not carry and the one that counts most here.
 
-Un incident en cours de diffusion : le studio affiche « nos serveurs », la régie appelle. La
-question est « quel service refuse, et avec quel code ». Avec HTTP/JSON, la réponse tient en une
-ligne de terminal :
+An incident mid-broadcast: the studio displays "our servers", the control room phones. The question
+is "which service is refusing, and with which code". With HTTP/JSON, the answer fits on one line of
+terminal:
 
 ```sh
 curl -sS -H "authorization: Bearer $(arthome mint-token streaming)" \
@@ -177,206 +175,202 @@ curl -sS -H "authorization: Bearer $(arthome mint-token streaming)" \
      http://streaming.internal/v1/dates/$DATE_ID/run | jq .
 ```
 
-Avec gRPC, la même question demande `grpcurl`, le descripteur du service (puisque la réflexion
-n'est pas exposée en production), et la reconstruction d'une `Metadata`. Ce n'est pas impossible ;
-c'est plus long au moment précis où le temps manque, et c'est un chemin qu'on n'a pas répété.
+With gRPC, the same question needs `grpcurl`, the service descriptor (since reflection is not
+exposed in production), and the reconstruction of a `Metadata`. It is not impossible; it is longer
+at the precise moment when time is short, and it is a path we have not rehearsed.
 
-**`storefront-tv` a formulé la même exigence par l'autre bout** : *« toute réponse du système, y
-compris en surcharge, doit porter l'enveloppe d'erreur avec son code et son identifiant de
-trace »*. Cette exigence remonte jusqu'à Traefik. Avec une voie interne HTTP, Traefik, les BFF et
-les sept services parlent **une seule langue d'erreur** — la nôtre. Avec gRPC, il y a la langue de
-Traefik (HTTP), celle des BFF (HTTP) et celle des services (16 statuts gRPC), plus une table de
-correspondance à tenir dans chaque adaptateur de BFF.
-
----
-
-## 3. La décision, et ce qu'elle n'est pas
-
-**Retenu : HTTP/1.1 avec keep-alive, JSON, OpenAPI 3.1 généré depuis zod.**
-
-**Ce que ce n'est pas** :
-
-- ce n'est **pas** un rejet de Protobuf. Protobuf reste le format de **tout** ce qui passe par
-  Kafka, avec `buf`, le registre et `RecordNameStrategy` — `events.md` ne bouge pas d'une ligne.
-  Deux frontières, deux formats, et **chacune n'en a qu'un** ;
-- ce n'est **pas** REST au sens « ressources pures ». Une commande métier est une commande :
-  `POST /v1/dates/{dateId}/publication/transitions` est un verbe, il est assumé, et son
-  `operationId` est `moveDatePublicationState`. On ne tord pas une machine à états en `PATCH` ;
-- ce n'est **pas** « HTTP/2 interdit ». Si Traefik et Node négocient HTTP/2 un jour, rien ne
-  change au contrat. On ne le **configure** pas aujourd'hui parce qu'on n'en a pas besoin :
-  4 requêtes parallèles tiennent dans le pool keep-alive d'un agent HTTP/1.1 sans coût mesurable.
-
-**Le seul endroit où gRPC gagnerait** est celui que `context-map.md` §10.3 nomme : les lectures
-groupées par lot d'identifiants. Elles sont traitées en HTTP par **une requête `POST` de lecture**
-(§5.6), ce qui est laid dans le vocabulaire REST et parfaitement juste dans le nôtre : un lot de
-200 identifiants ne rentre pas dans une chaîne de requête, et la réponse est une table, pas une
-liste.
+**`storefront-tv` stated the same requirement from the other end**: *"every response from the
+system, including under overload, must carry the error envelope with its code and its trace
+identifier"*. That requirement reaches all the way up to Traefik. With an internal HTTP path,
+Traefik, the BFFs and the seven services speak **a single error language** — ours. With gRPC there
+is Traefik's language (HTTP), the BFFs' (HTTP) and the services' (16 gRPC statuses), plus a mapping
+table to keep in every BFF adapter.
 
 ---
 
-## 4. Ce qu'on perd, et comment on le compense
+## 3. The decision, and what it is not
 
-| Perdu avec gRPC écarté | Compensation écrite | Où |
+**Adopted: HTTP/1.1 with keep-alive, JSON, OpenAPI 3.1 generated from zod.**
+
+**What it is not**:
+
+- it is **not** a rejection of Protobuf. Protobuf remains the format of **everything** that goes
+  through Kafka, with `buf`, the registry and `RecordNameStrategy` — `events.md` does not move a
+  line. Two boundaries, two formats, and **each has only one**;
+- it is **not** REST in the "pure resources" sense. A business command is a command:
+  `POST /v1/dates/{dateId}/publication/transitions` is a verb, it is owned as such, and its
+  `operationId` is `moveDatePublicationState`. You do not twist a state machine into a `PATCH`;
+- it is **not** "HTTP/2 forbidden". If Traefik and Node negotiate HTTP/2 one day, nothing about the
+  contract changes. We do not **configure** it today because we do not need it: 4 parallel requests
+  fit in an HTTP/1.1 agent's keep-alive pool at no measurable cost.
+
+**The one place where gRPC would win** is the one `context-map.md` §10.3 names: reads batched by a
+list of identifiers. They are handled in HTTP by **a `POST` used as a read** (§5.6), which is ugly
+in REST vocabulary and perfectly right in ours: a batch of 200 identifiers does not fit in a query
+string, and the response is a table, not a list.
+
+---
+
+## 4. What we lose, and how we make up for it
+
+| Lost by setting gRPC aside | Written compensation | Where |
 |---|---|---|
-| délai natif traversant | en-tête `x-arthome-deadline`, instant RFC 3339, **vérifié par le service** | §5.3 |
-| annulation côté destinataire | identique en gRPC (règle 7) : `req.on('close')` au lieu de `call.cancelled` | §5.3 |
-| binaire compact | JSON + `content-encoding: gzip` sur les réponses > 1 Kio. Les charges utiles internes sont des modèles de lecture de quelques dizaines de Kio, pas des flux | §5.7 |
-| statuts typés | table de correspondance **unique**, dans `@arthome/contracts`, entre code d'erreur de domaine et statut HTTP | §5.5 |
-| génération de client par `buf` | génération par OpenAPI pour les cinq surfaces ; `z.infer` à l'intérieur de `arthome-platform`, sans génération | §5.8 |
-| streaming bidirectionnel | il n'y en a aucun dans le compte de `backend-domain`. Le temps réel est Socket.IO (`realtime.md`), pas une voie BFF → service | — |
+| native crossing deadline | `x-arthome-deadline` header, RFC 3339 instant, **checked by the service** | §5.3 |
+| cancellation on the callee side | identical under gRPC (rule 7): `req.on('close')` instead of `call.cancelled` | §5.3 |
+| compact binary | JSON + `content-encoding: gzip` on responses > 1 KiB. Internal payloads are read models of a few tens of KiB, not streams | §5.7 |
+| typed statuses | **one** mapping table, in `@arthome/contracts`, between domain error code and HTTP status | §5.5 |
+| client generation by `buf` | generation by OpenAPI for the five surfaces; `z.infer` inside `arthome-platform`, with no generation | §5.8 |
+| bidirectional streaming | there is none in `backend-domain`'s count. Real time is Socket.IO (`realtime.md`), not a BFF → service path | — |
 
 ---
 
-## 5. Le contrat des appels synchrones BFF → service
+## 5. The contract for synchronous BFF → service calls
 
-Cette section **est** le contrat. Elle vaut pour les 192 méthodes, et un service qui ne la
-respecte pas n'est pas fini (`definition-of-done.md`).
+This section **is** the contract. It holds for all 192 methods, and a service that does not honour
+it is not done (`definition-of-done.md`).
 
-### 5.1 Adressage et forme des chemins
+### 5.1 Addressing and path shape
 
 ```
-http://<service>.internal/v<major>/<ressource>[/<id>][/<sous-ressource>][/<commande>]
+http://<service>.internal/v<major>/<resource>[/<id>][/<sub-resource>][/<command>]
 ```
 
-- `<service>` ∈ `identity · catalog · ticketing · streaming · chat · payouts · notifications` ;
-- **jamais de TLS interne** au palier 1 : le réseau du cluster est la frontière de confiance, et
-  l'autorisation est portée par le jeton (§5.2), pas par le transport. Le jour où le cluster est
-  partagé, `credentials` se pose sans toucher au contrat ;
-- `v<major>` est la **version majeure du contrat du service**, indépendante de celle des BFF ;
-- une **lecture** est `GET`, sauf lecture par lot (§5.6) ;
-- une **commande** est `POST` sur un chemin qui la nomme, ou `PUT`/`PATCH`/`DELETE` quand la
-  commande *est* une mise en état (`PUT /v1/follows/{artistId}`, et `storefront-mobile` a raison :
-  une relation est une mise en état, jamais une bascule).
+- `<service>` ∈ `identity · catalog · ticketing · streaming · chat · payouts · notifications`;
+- **no internal TLS** at tier 1: the cluster network is the trust boundary, and authorisation is
+  carried by the token (§5.2), not by the transport. The day the cluster is shared, `credentials`
+  is added without touching the contract;
+- `v<major>` is the **major version of the service's contract**, independent of the BFFs';
+- a **read** is a `GET`, except a batched read (§5.6);
+- a **command** is a `POST` on a path that names it, or `PUT`/`PATCH`/`DELETE` when the command
+  *is* a put (`PUT /v1/follows/{artistId}`, and `storefront-mobile` is right: a relation is a put,
+  never a toggle).
 
-**`operationId` est stable et il est la clé de la génération de client.** Forme :
-`<verbe><Objet>[<Qualificatif>]`, en `lowerCamelCase`, unique dans tout le document. Il ne change
-**jamais** sans changement majeur, même si la méthode TypeScript qui l'implémente est renommée —
-la skill `nestjs-openapi` le nomme comme le piège n°1 de la génération de client. Il est donc
-**écrit explicitement** (`operationIdFactory` épinglé), jamais dérivé du nom de méthode.
+**`operationId` is stable and it is the key to client generation.** Shape:
+`<verb><Object>[<Qualifier>]`, in `lowerCamelCase`, unique across the whole document. It **never**
+changes without a major change, even if the TypeScript method implementing it is renamed — the
+`nestjs-openapi` skill names it as client generation's trap number one. It is therefore **written
+explicitly** (`operationIdFactory` pinned), never derived from a method name.
 
-### 5.2 Les en-têtes de requête
+### 5.2 Request headers
 
-| En-tête | Obligatoire | Contenu | Motif |
+| Header | Mandatory | Content | Reason |
 |---|---|---|---|
-| `authorization` | **oui** | `Bearer <JWT ES256 ~60 s>`, frappé par le BFF, `aud: arthome.<service>` | `adr-auth.md` §8. Un jeton frappé pour `ticketing` est **refusé** par `payouts` |
-| `traceparent` | **oui** | W3C, créé au BFF, propagé sans modification | `events.md` §1.3 ; c'est lui qu'on injecte dans `outbox_event.tracecontext` |
-| `x-arthome-deadline` | **oui** | instant RFC 3339 UTC, `2026-09-21T20:45:13.400Z` | §5.3 |
-| `idempotency-key` | **sur toute écriture d'argent ou d'engagement** | UUIDv7 généré **par la surface**, relayé tel quel | §5.4 |
-| `x-arthome-actor-surface` | sur toute écriture humaine | `storefront-web · storefront-mobile · storefront-tv · studio-web · studio-mobile · system` | le journal du studio est nominatif **et situé** (`common.proto` `Surface`) |
-| `accept-encoding` | recommandé | `gzip` | §5.7 |
+| `authorization` | **yes** | `Bearer <ES256 JWT, ~60 s>`, minted by the BFF, `aud: arthome.<service>` | `adr-auth.md` §8. A token minted for `ticketing` is **refused** by `payouts` |
+| `traceparent` | **yes** | W3C, created at the BFF, propagated unmodified | `events.md` §1.3; it is the one injected into `outbox_event.tracecontext` |
+| `x-arthome-deadline` | **yes** | RFC 3339 UTC instant, `2026-09-21T20:45:13.400Z` | §5.3 |
+| `idempotency-key` | **on every money or commitment write** | UUIDv7 generated **by the surface**, relayed as-is | §5.4 |
+| `x-arthome-actor-surface` | on every human write | `storefront-web · storefront-mobile · storefront-tv · studio-web · studio-mobile · system` | the studio log names names **and places them** (`common.proto` `Surface`) |
+| `accept-encoding` | recommended | `gzip` | §5.7 |
 
-**Jamais `x-user-id`, ni `x-roles`, ni aucun en-tête d'identité en clair.** N'importe quel appelant
-peut les poser ; la skill `nestjs-bff-gateway` en fait sa règle 7 et `adr-auth.md` §8 la répète.
-L'identité est **dans le jeton, et nulle part ailleurs**.
+**Never `x-user-id`, nor `x-roles`, nor any identity header in the clear.** Any caller can set
+them; the `nestjs-bff-gateway` skill makes it its rule 7 and `adr-auth.md` §8 repeats it. Identity
+is **in the token, and nowhere else**.
 
-**Et le corollaire, qui est une règle critique** : un service **ne saute jamais son autorisation**
-parce que « seul le BFF l'appelle ». Chaque commande porte l'identifiant de la ressource visée, et
-le service vérifie la propriété **sur l'instance chargée** — pas seulement le rôle porté par le
-jeton, parce qu'un accès ponctuel à une date expire pendant la durée de vie du jeton
-(`adr-auth.md` §7).
+**And the corollary, which is a critical rule**: a service **never skips its authorisation**
+because "only the BFF calls me". Every command carries the identifier of the resource targeted, and
+the service checks ownership **on the loaded instance** — not merely the role carried by the token,
+because a one-off access to a date expires inside the token's lifetime (`adr-auth.md` §7).
 
-### 5.3 Le délai — comment il remplace `deadline`
+### 5.3 The deadline — how it replaces `deadline`
 
 ```
 x-arthome-deadline: 2026-09-21T20:45:13.400Z
 ```
 
-**Trois obligations, une par bout :**
+**Three obligations, one per end:**
 
-1. **Le BFF le calcule** à partir du budget de l'écran (§5.9) et le pose sur chacun des appels
-   parallèles. Il arme le même instant en local par `AbortSignal.timeout`, de sorte que
-   l'abandon local et l'abandon distant sont le même instant.
-2. **Le service le lit** et l'applique en deux points : **avant** d'ouvrir une transaction ou de
-   lancer une requête coûteuse, et **entre** les unités d'un traitement itératif. S'il est dépassé,
-   il rend `504` avec le code `DEADLINE_EXCEEDED` et **n'écrit rien**.
-3. **Le service écoute la fermeture de la socket** (`req.on('close')` avant la fin de la réponse)
-   et arrête ce qu'il peut arrêter. C'est exactement le travail que `call.cancelled` demande en
-   gRPC (skill `nestjs-grpc`, règle 7) ; la voie HTTP ne le rend ni plus ni moins nécessaire.
+1. **The BFF computes it** from the screen's budget (§5.9) and sets it on each of the parallel
+   calls. It arms the same instant locally through `AbortSignal.timeout`, so that giving up locally
+   and giving up remotely are the same instant.
+2. **The service reads it** and applies it at two points: **before** opening a transaction or
+   launching an expensive query, and **between** the units of an iterative job. If it has passed,
+   the service answers `504` with the code `DEADLINE_EXCEEDED` and **writes nothing**.
+3. **The service listens for the socket closing** (`req.on('close')` before the response ends) and
+   stops what it can stop. That is exactly the work `call.cancelled` demands under gRPC
+   (`nestjs-grpc` skill, rule 7); the HTTP path makes it neither more nor less necessary.
 
-**Le délai n'est pas une suggestion et il ne se re-négocie pas.** Un service qui reçoit un délai
-déjà passé refuse immédiatement : c'est moins cher qu'un travail dont personne n'attend le
-résultat.
+**The deadline is not a suggestion and it is not renegotiated.** A service receiving a deadline
+already past refuses immediately: that is cheaper than work whose result nobody is waiting for.
 
-**Pourquoi un instant et non une durée.** Une durée (`grpc-timeout: 800m`) suppose que les deux
-horloges avancent au même rythme, ce qui est vrai, mais elle perd le temps déjà consommé par le
-réseau. Un instant absolu est **la même valeur pour les quatre appels parallèles d'un écran**, ce
-qui rend le budget d'écran lisible dans un journal. Les horloges sont disciplinées par NTP avec la
-même tolérance de ± 30 s que les jetons (`adr-auth.md` §9.4).
+**Why an instant and not a duration.** A duration (`grpc-timeout: 800m`) assumes the two
+clocks advance at the same rate, which is true, but it loses the time the network has already
+consumed. An absolute instant is **the same value for a screen's four parallel calls**, which makes
+a screen budget legible in a log. Clocks are disciplined by NTP with the same ± 30 s tolerance as
+the tokens (`adr-auth.md` §9.4).
 
-### 5.4 L'idempotence — et la question que `storefront-web` pose (Q9), tranchée
+### 5.4 Idempotency — and `storefront-web`'s question (Q9), settled
 
-**La décision : une clé rejouée rend la réponse de la première tentative, verbatim. Jamais une
-erreur de doublon.**
+**The decision: a replayed key returns the first attempt's response, verbatim. Never a duplicate
+error.**
 
-Le motif est celui de `storefront-web`, et il est juste : **c'est la différence entre une reprise
-sûre et une place perdue.** Un rejeu qui échoue transforme un hoquet de réseau en échec d'achat,
-alors que l'achat a réussi. Sur mobile, où la bascule Wi-Fi → cellulaire coupe une requête au
-milieu sans que le client sache si l'écriture a abouti, c'est le cas **nominal**, pas le cas
-dégradé.
+The reason is `storefront-web`'s, and it is right: **it is the difference between a safe retry and
+a lost seat.** A replay that fails turns a network hiccup into a failed purchase, when the purchase
+succeeded. On mobile, where a Wi-Fi → cellular handover cuts a request in the middle without the
+client knowing whether the write landed, that is the **nominal** case, not the degraded one.
 
-**Le magasin, par service** :
+**The store, per service**:
 
 ```
 idempotency_record
-  key             text      ← l'en-tête, tel que reçu
-  account_id      uuid      ← la clé est scopée au compte : deux comptes ne se collisionnent pas
-  fingerprint     text      ← empreinte canonique (méthode + chemin + corps normalisé)
+  key             text      ← the header, as received
+  account_id      uuid      ← the key is scoped to the account: two accounts never collide
+  fingerprint     text      ← canonical fingerprint (method + path + normalised body)
   state           in_flight | completed
-  status_code     int       ← mémorisés à la fin de la transaction
+  status_code     int       ← memorised at the end of the transaction
   response_body   jsonb
   created_at      timestamptz
   expires_at      timestamptz   ← created_at + 24 h
   PRIMARY KEY (account_id, key)
 ```
 
-**Les quatre cas, et il n'y en a pas un cinquième :**
+**The four cases, and there is no fifth:**
 
-| Cas | Réponse | Motif |
+| Case | Response | Reason |
 |---|---|---|
-| clé inconnue | exécution normale ; la ligne `idempotency_record` est écrite **dans la transaction métier** | sans cela, un plantage entre l'écriture et la mémorisation rejoue l'effet |
-| clé connue, `completed`, **même empreinte** | la réponse d'origine, **verbatim**, avec `idempotency-replayed: true` | la réponse est la preuve que l'effet a eu lieu |
-| clé connue, `completed`, **empreinte différente** | `409` `IDEMPOTENCY_KEY_REUSED`, rien n'est exécuté | la clé promettait un effet ; en servir un autre serait pire que refuser |
-| clé connue, `in_flight` | `409` `IDEMPOTENCY_IN_FLIGHT`, paramètre `retryAfterMs` | jamais deux exécutions concurrentes de la même intention |
+| unknown key | normal execution; the `idempotency_record` row is written **inside the business transaction** | without that, a crash between the write and the memorisation replays the effect |
+| known key, `completed`, **same fingerprint** | the original response, **verbatim**, with `idempotency-replayed: true` | the response is the proof the effect took place |
+| known key, `completed`, **different fingerprint** | `409` `IDEMPOTENCY_KEY_REUSED`, nothing is executed | the key promised one effect; serving another would be worse than refusing |
+| known key, `in_flight` | `409` `IDEMPOTENCY_IN_FLIGHT`, parameter `retryAfterMs` | never two concurrent executions of the same intention |
 
-**Trois précisions qui font la différence :**
+**Three points that make the difference:**
 
-- **`24 h` de durée de vie**, alignée sur la file hors ligne de `storefront-mobile` (Q7) : une
-  commande mise en file le soir et rejouée le lendemain matin doit retomber sur la même réponse ;
-- **une réponse rejouée n'est pas une réponse fraîche.** Le corps est verbatim, donc son `servedAt`
-  est celui de la première tentative. La réponse porte en plus un en-tête
-  `x-arthome-served-at` **du rejeu**, et le client qui a besoin d'une valeur périssable relit. Un
-  rejeu prouve qu'un effet a eu lieu ; il ne promet pas une donnée à jour ;
-- **la clé est générée par la surface, avant l'envoi, et persistée avant l'envoi**
-  (`storefront-mobile`). Le BFF la relaie **sans la réécrire** : une clé régénérée par le BFF ne
-  protège de rien, puisque c'est le client qui rejoue.
+- **`24 h` lifetime**, aligned with `storefront-mobile`'s offline queue (Q7): a command queued in
+  the evening and replayed the next morning must land on the same response;
+- **a replayed response is not a fresh response.** The body is verbatim, so its `servedAt` is the
+  first attempt's. The response additionally carries an `x-arthome-served-at` header **of the
+  replay**, and a client that needs a perishable value reads again. A replay proves an effect took
+  place; it does not promise up-to-date data;
+- **the key is generated by the surface, before sending, and persisted before sending**
+  (`storefront-mobile`). The BFF relays it **without rewriting it**: a key regenerated by the BFF
+  protects nothing, since it is the client that replays.
 
-**Ce qui ne porte PAS de clé d'idempotence, et c'est une décision** : `recordPlaybackPosition`.
-C'est l'écriture la plus fréquente du système ; une clé par tranche de 30 s, par spectateur et par
-direct, ferait du magasin d'idempotence la table la plus chaude de `streaming` pour protéger une
-écriture dont la perte est sans conséquence. Elle est **dernier écrivain gagne, avec un rang
-serveur** (`data-model.md` §5.5).
+**What does NOT carry an idempotency key, and it is a decision**: `recordPlaybackPosition`. It is
+the most frequent write in the system; one key per 30 s slice, per viewer and per live show would
+make the idempotency store the hottest table in `streaming` in order to protect a write whose loss
+has no consequence. It is **last writer wins, with a server-side rank** (`data-model.md` §5.5).
 
-### 5.5 L'enveloppe de réponse et l'enveloppe d'erreur
+### 5.5 The response envelope and the error envelope
 
-**Toute réponse de succès** porte, au niveau racine :
+**Every success response** carries, at the root level:
 
 ```jsonc
 {
-  "servedAt": "2026-09-21T20:31:04.118Z",  // TOUJOURS. Tout décompte s'y réfère
-  "validUntil": "2026-09-21T20:31:34.118Z", // dès qu'une valeur périssable est présente
-  "data": { }                               // ou "items" + "page" pour une collection
+  "servedAt": "2026-09-21T20:31:04.118Z",  // ALWAYS. Every countdown refers to it
+  "validUntil": "2026-09-21T20:31:34.118Z", // as soon as a perishable value is present
+  "data": { }                               // or "items" + "page" for a collection
 }
 ```
 
-et, quand c'est applicable : `version` (sur tout agrégat qu'une commande conditionnelle pourra
-viser) et `lastEventSeq` (sur tout modèle de lecture alimenté par un flux).
+and, where applicable: `version` (on every aggregate a conditional command might target) and
+`lastEventSeq` (on every read model fed by a stream).
 
-**Toute réponse d'erreur**, du service, du BFF **et de Traefik**, porte exactement ceci :
+**Every error response**, from the service, from the BFF **and from Traefik**, carries exactly
+this:
 
 ```jsonc
 {
   "error": {
-    "code": "TRANSITION_IRREVERSIBLE",       // vocabulaire fermé, i18n par codes
+    "code": "TRANSITION_IRREVERSIBLE",       // closed vocabulary, i18n by codes
     "nature": "refused",                     // refused | unavailable | offline_forbidden
     "params": { "from": "scheduled", "to": "reserve", "promise": "prices_engaged" },
     "traceId": "4bf92f3577b34da6a3ce929d0e0e4736"
@@ -385,18 +379,18 @@ viser) et `lastEventSeq` (sur tout modèle de lecture alimenté par un flux).
 }
 ```
 
-- **`code` est un code, jamais une phrase.** Un échec de validation zod se traduit en
-  `SCHEMA_INVALID` avec les chemins de champ en `params` — **jamais** le message anglais de zod ;
-- **`traceId` est la partie `trace-id` du `traceparent`**, lisible et recopiable depuis l'écran
-  d'erreur. Sur mobile c'est le seul lien entre « mon application a planté » et un journal serveur ;
-- **`nature` est ce que `studio-mobile` exige**, et c'est la décision qu'une personne en garde doit
-  prendre en dix secondes. **Le serveur n'émet jamais `offline_forbidden`** : c'est la nature d'un
-  refus **local**, produit par la surface avant tout envoi. Elle est dans le vocabulaire pour que la
-  surface n'ait qu'**une** forme d'erreur à rendre, pas deux.
+- **`code` is a code, never a sentence.** A zod validation failure becomes `SCHEMA_INVALID` with
+  the field paths in `params` — **never** zod's English message;
+- **`traceId` is the `trace-id` part of the `traceparent`**, readable and copyable from the error
+  screen. On mobile it is the only link between "my app crashed" and a server log;
+- **`nature` is what `studio-mobile` requires**, and it is the decision someone on duty must make
+  in ten seconds. **The server never emits `offline_forbidden`**: that is the nature of a **local**
+  refusal, produced by the surface before anything is sent. It is in the vocabulary so that the
+  surface has **one** error shape to render, not two.
 
-**La table de correspondance statut ↔ nature, unique, dans `@arthome/contracts` :**
+**The status ↔ nature mapping table, single, in `@arthome/contracts`:**
 
-| Statut | `nature` | Codes typiques |
+| Status | `nature` | Typical codes |
 |---|---|---|
 | `400` | `refused` | `SCHEMA_INVALID`, `PERIOD_FILTER_REQUIRED` |
 | `401` | `refused` | `UNAUTHENTICATED`, `TOKEN_EXPIRED` |
@@ -405,192 +399,185 @@ viser) et `lastEventSeq` (sur tout modèle de lecture alimenté par un flux).
 | `409` | `refused` | `STATE_CONFLICT`, `TRANSITION_IRREVERSIBLE`, `MODERATION_ALREADY_SETTLED`, `PRICE_STALE`, `SOLD_OUT`, `IDEMPOTENCY_KEY_REUSED`, `IDEMPOTENCY_IN_FLIGHT`, `CAPACITY_SHRINK_FORBIDDEN` |
 | `410` | `refused` | `CURSOR_TOO_OLD`, `PAIRING_EXPIRED`, `REPLAY_EXPIRED` |
 | `429` | `unavailable` | `RATE_LIMITED`, `CHAT_RATE_LIMITED` (param `retryAfterMs`) |
-| `500` | `unavailable` | `INTERNAL` — **jamais** le message de l'erreur d'origine |
-| `502` | `unavailable` | `UPSTREAM_ERROR` (le BFF, pour un service en échec) |
-| `503` | `unavailable` | `SERVICE_UNAVAILABLE` (arrêt en cours, dépendance absente) |
+| `500` | `unavailable` | `INTERNAL` — **never** the original error's message |
+| `502` | `unavailable` | `UPSTREAM_ERROR` (the BFF, for a service that failed) |
+| `503` | `unavailable` | `SERVICE_UNAVAILABLE` (shutting down, dependency absent) |
 | `504` | `unavailable` | `DEADLINE_EXCEEDED`, `UPSTREAM_TIMEOUT` |
 
-**Le BFF ne relaie jamais une erreur de service telle quelle** (skill `nestjs-bff-gateway`,
-règle 6). Il mappe une **liste blanche** de codes de domaine, qui traversent avec leur `params`, et
-tout le reste devient `UPSTREAM_ERROR` / `UPSTREAM_TIMEOUT`, l'original étant journalisé avec le
-`traceId`. La liste blanche est dans `@arthome/contracts` : un code qui n'y est pas ne peut pas
-atteindre une surface, ce qui interdit à un message interne de fuir.
+**The BFF never relays a service error as-is** (`nestjs-bff-gateway` skill, rule 6). It maps an
+**allowlist** of domain codes, which cross with their `params`, and everything else becomes
+`UPSTREAM_ERROR` / `UPSTREAM_TIMEOUT`, the original being logged with the `traceId`. The allowlist
+lives in `@arthome/contracts`: a code that is not in it cannot reach a surface, which forbids an
+internal message from leaking.
 
-**Traefik est dans le périmètre.** Il doit servir cette enveloppe sur les 5xx qu'il produit
-lui-même (`errors` middleware vers un service statique), avec `nature: "unavailable"` et
-`code: "GATEWAY_UNAVAILABLE"`. Une page HTML brute rendrait impossible la distinction « votre
-connexion » / « nos serveurs », et `storefront-tv` a raison : le spectateur ira redémarrer sa box.
+**Traefik is inside the perimeter.** It must serve this envelope on the 5xx it produces itself
+(`errors` middleware pointing at a static service), with `nature: "unavailable"` and
+`code: "GATEWAY_UNAVAILABLE"`. A raw HTML page would make the "your connection" / "our servers"
+distinction impossible, and `storefront-tv` is right: the viewer will go and reboot their router.
 
-### 5.6 Les lectures — et la lecture par lot
+### 5.6 Reads — and the batched read
 
-**Une lecture simple est un `GET`**, cacheable, avec sa fraîcheur déclarée (§5.9).
+**A simple read is a `GET`**, cacheable, with its declared freshness (§5.9).
 
-**Une lecture par lot est un `POST` sur `/batch`**, et c'est assumé :
+**A batched read is a `POST` on `/batch`**, and it is owned as such:
 
 ```http
 POST /v1/viewer-overlay/batch
 content-type: application/json
 
-{ "profileId": "…", "dateIds": ["…", "…", … ] }   // jusqu'à 200
+{ "profileId": "…", "dateIds": ["…", "…", … ] }   // up to 200
 ```
 
 ```jsonc
 {
   "servedAt": "…",
   "validUntil": "…",
-  "data": { "<dateId>": { "owned": true, "watchVerdict": { … } }, … }   // une TABLE, pas une liste
+  "data": { "<dateId>": { "owned": true, "watchVerdict": { … } }, … }   // a TABLE, not a list
 }
 ```
 
-Trois raisons, dans l'ordre : 200 identifiants ne tiennent pas dans une chaîne de requête ; la
-réponse est une **table indexée** que le BFF fusionne par identifiant sans la parcourir ; et un
-`GET` avec un corps n'est pas transportable de façon fiable. **Ces lectures ne sont pas
-cacheables par HTTP** — elles le sont dans le Redis du BFF, par profil, TTL 30 s, invalidé par les
-écritures du profil (`context-map.md` §10.1).
+Three reasons, in order: 200 identifiers do not fit in a query string; the response is an **indexed
+table** the BFF merges by identifier without walking it; and a `GET` with a body is not reliably
+transportable. **These reads are not cacheable by HTTP** — they are cached in the BFF's Redis, per
+profile, TTL 30 s, invalidated by the profile's writes (`context-map.md` §10.1).
+**These are exactly the three overlays** of §10.1: `ticketing.getViewerOverlayBatch`,
+`identity.getViewerRelationsBatch`, `streaming.getViewerProgressBatch`. There are no others, and
+**there must never be a fourth without `context-map.md` §11(a)'s threshold being crossed**: beyond
+four internal calls on a list screen, it is not an overlay that is missing, it is a read model.
 
-**Ce sont exactement les trois surcouches** de §10.1 : `ticketing.getViewerOverlayBatch`,
-`identity.getViewerRelationsBatch`, `streaming.getViewerProgressBatch`. Il n'y en a pas d'autres,
-et **il ne doit jamais y en avoir une quatrième sans que le seuil de `context-map.md` §11(a) soit
-franchi** : au-delà de quatre appels internes sur un écran de liste, ce n'est pas une surcouche
-qui manque, c'est un modèle de lecture.
+**The corollary, and it is a line of `definition-of-done.md`**: a batched read **never** takes one
+identifier at a time. A service exposing `getViewerOverlay(dateId)` without its batch will be
+called once per card, and the BFF will grow fat.
 
-**Le corollaire, et c'est une ligne de `definition-of-done.md`** : une lecture par lot ne prend
-**jamais** un identifiant à la fois. Un service qui expose `getViewerOverlay(dateId)` sans son lot
-sera appelé par carte, et le BFF deviendra épais.
+### 5.7 Negotiation, compression, size
 
-### 5.7 Négociation, compression, taille
+- `content-type: application/json; charset=utf-8`, always. No format negotiation: a single format
+  is one less thing that diverges;
+- **`gzip` on every response over 1 KiB.** The composed read models (`home` = 60 to 100 cards
+  ≈ 50 to 90 KiB raw) come down under 15 KiB; that is the order of magnitude a television can hold
+  on a 5 s cold start;
+- **inbound body ceiling: 1 MiB**, except `/batch` (2 MiB). A service receiving more refuses with
+  `413` `PAYLOAD_TOO_LARGE`;
+- **no binary crosses this path.** A poster, a FEC export, an invoice go through a **short-lived
+  signed URL** obtained by a JSON command (`data-model.md` §7.5, `studio-mobile` Q9: upload 15 min,
+  export 60 min). No `multipart` from a WebView, no PDF in an API response.
 
-- `content-type: application/json; charset=utf-8`, toujours. Pas de négociation de format : un
-  seul format, c'est une chose de moins qui diverge ;
-- **`gzip` sur toute réponse de plus de 1 Kio.** Les modèles de lecture composés (`home` = 60 à
-  100 cartes ≈ 50 à 90 Kio bruts) descendent sous 15 Kio ; c'est l'ordre de grandeur que la TV peut
-  tenir sur un démarrage à froid de 5 s ;
-- **plafond de corps en entrée : 1 Mio**, sauf `/batch` (2 Mio). Un service qui reçoit plus refuse
-  en `413` `PAYLOAD_TOO_LARGE` ;
-- **aucun binaire ne traverse cette voie.** Une affiche, un export FEC, une facture passent par
-  une **adresse signée de courte durée** obtenue par une commande JSON (`data-model.md` §7.5,
-  `studio-mobile` Q9 : dépôt 15 min, export 60 min). Pas de `multipart` depuis un WebView, pas de
-  PDF dans une réponse d'API.
+### 5.8 The client, on the BFF side
 
-### 5.8 Le client, côté BFF
+**One adapter per service**, and nothing else speaks HTTP inside a BFF. Each adapter:
 
-Un **adaptateur par service**, et rien d'autre ne parle HTTP dans un BFF. Chaque adaptateur :
+1. **bounds the call** — `AbortSignal.timeout` aligned on `x-arthome-deadline`, tighter for an
+   optional part (`nestjs-bff-gateway` skill, rule 5);
+2. **fans out in parallel** — `Promise.allSettled`, never `Promise.all`: an optional overlay that
+   fails **degrades** the response and names itself in the payload (`degraded: ["viewerProgress"]`),
+   it does not sink the screen (rule 4). The composed read model, by contrast, is **required**: its
+   failure is the request's failure;
+3. **maps the error** (§5.5), and **logs the original** — Nest never logs an `HttpException`;
+4. **replays nothing.** Retry lives at **one layer only**, and that layer is the surface: it holds
+   the idempotency key, it knows whether the user is still waiting, and a BFF replaying a write
+   would duplicate work the service may already have finished.
 
-1. **borne l'appel** — `AbortSignal.timeout` aligné sur `x-arthome-deadline`, plus serré pour une
-   partie facultative (skill `nestjs-bff-gateway`, règle 5) ;
-2. **lance en parallèle** — `Promise.allSettled`, jamais `Promise.all` : une surcouche facultative
-   qui échoue **dégrade** la réponse et se nomme dans la charge utile
-   (`degraded: ["viewerProgress"]`), elle ne coule pas l'écran (règle 4). Le modèle composé, lui,
-   est **obligatoire** : son échec est l'échec de la requête ;
-3. **mappe l'erreur** (§5.5), et **journalise l'originale** — Nest ne journalise jamais une
-   `HttpException` ;
-4. **ne rejoue rien.** La reprise est à **une seule couche**, et c'est la surface : elle a la clé
-   d'idempotence, elle sait si l'utilisateur attend encore, et un rejeu de BFF sur une écriture
-   dupliquerait un travail que le service a peut-être terminé.
+**What an adapter does not do**: compute a price, a discount, a right, a row order, a threshold.
+`decideWatch` in **advisory** mode is the one rule a BFF evaluates, and the contract declares it
+`advisory: true` on the field (`context-map.md` §3).
 
-**Ce qu'un adaptateur ne fait pas** : calculer un prix, une remise, un droit, un ordre de rangée,
-un seuil. `decideWatch` en mode **indicatif** est la seule règle qu'un BFF évalue, et le contrat le
-déclare `advisory: true` sur le champ (`context-map.md` §3).
+**Typing.** Inside `arthome-platform`, a service's client is typed by `@arthome/contracts`'
+`z.infer<typeof …>` — **no generation at all**. The five surfaces, for their part, generate their
+client from `openapi/storefront.yaml` or `openapi/studio.yaml`.
 
-**Typage.** À l'intérieur de `arthome-platform`, le client d'un service est typé par le
-`z.infer<typeof …>` de `@arthome/contracts` — **aucune génération**. Les cinq surfaces, elles,
-génèrent leur client depuis `openapi/storefront.yaml` ou `openapi/studio.yaml`.
+### 5.9 Budgets and freshness — what the contract promises
 
-### 5.9 Budgets et fraîcheur — ce que le contrat promet
+**Latency budgets** (p95, from BFF to service, deadline included):
 
-**Budgets de latence** (p95, du BFF au service, délai compris) :
-
-| Chemin | Budget | Motif |
+| Path | Budget | Reason |
 |---|---|---|
-| `streaming.openPlayback` | **≤ 1 s** | dans un budget total de ~10 s jusqu'à la première image (`storefront-tv`) |
-| lecture publique composée (`home`, `live`, `category`, `artist`) | **≤ 400 ms** | seuil d'alerte de `context-map.md` §11(a) |
-| lecture par lot (surcouche) | ≤ 150 ms | quatre en parallèle sous le budget de l'écran |
-| écriture d'argent | ≤ 2 s | une transaction, une jauge, un magasin d'idempotence |
-| recherche | **≤ 200 ms** | sinon le retour visuel de la frappe TV décroche (`storefront-tv`) |
+| `streaming.openPlayback` | **≤ 1 s** | within a total budget of ~10 s to first frame (`storefront-tv`) |
+| composed public read (`home`, `live`, `category`, `artist`) | **≤ 400 ms** | `context-map.md` §11(a)'s alert threshold |
+| batched read (overlay) | ≤ 150 ms | four in parallel, under the screen's budget |
+| money write | ≤ 2 s | one transaction, one capacity check, one idempotency store |
+| search | **≤ 200 ms** | otherwise the TV's typing feedback falls behind (`storefront-tv`) |
 
-**Fraîcheur garantie par famille** — `data-model.md` §4, reprise ici parce que c'est le BFF qui la
-pose en `cache-control` et la surface qui la mappe sur son cache client :
+**Guaranteed freshness per family** — `data-model.md` §4, repeated here because it is the BFF that
+sets it as `cache-control` and the surface that maps it onto its client cache:
 
-| Famille | Fraîcheur | `cache-control` posé par le BFF |
+| Family | Freshness | `cache-control` set by the BFF |
 |---|---|---|
-| taxonomie, libellés | artefact immuable | `public, max-age=86400, immutable` |
+| taxonomy, labels | immutable artifact | `public, max-age=86400, immutable` |
 | `category`, `artist`, `plans`, `account` | 5 min | `private, max-age=300` |
 | `home`, `tickets`, `list`, `replays` | 60 s | `private, max-age=60` |
-| `live`, jauge, compteur | 15 s | `private, max-age=15` |
-| `PlaybackTicket`, `WatchVerdict`, clé de flux | **jamais** | **`no-store`** |
+| `live`, capacity, counters | 15 s | `private, max-age=15` |
+| `PlaybackTicket`, `WatchVerdict`, stream key | **never** | **`no-store`** |
 
-`no-store` sur la clé de flux et le jeton de lecture n'est pas une optimisation : c'est ce qui les
-tient hors du cache HTTP du téléphone et hors de l'instantané d'application pris par le système au
-passage en arrière-plan (`data-model.md` §5.2).
+`no-store` on the stream key and the playback token is not an optimisation: it is what keeps them
+out of the phone's HTTP cache and out of the application snapshot the OS takes when it goes to the
+background (`data-model.md` §5.2).
 
-### 5.10 Santé et arrêt
+### 5.10 Health and shutdown
 
-| Point d'entrée | Ce qu'il dit | Qui le lit |
+| Entry point | What it says | Who reads it |
 |---|---|---|
-| `GET /health/live` | le processus répond | l'orchestrateur (redémarrage) |
-| `GET /health/ready` | base joignable, migrations à niveau, consommateur Kafka dans son groupe | l'orchestrateur (routage) |
-| `GET /health/ready` pendant l'arrêt | **`503` immédiatement**, avant de fermer quoi que ce soit | c'est ce qui vide le pool de Traefik avant la première socket coupée |
+| `GET /health/live` | the process answers | the orchestrator (restart) |
+| `GET /health/ready` | database reachable, migrations up to date, Kafka consumer in its group | the orchestrator (routing) |
+| `GET /health/ready` during shutdown | **`503` immediately**, before closing anything | that is what drains Traefik's pool before the first socket is cut |
 
-`app.enableShutdownHooks()`, et l'ordre est : `ready` → 503, attendre la fenêtre de purge, fermer
-le serveur HTTP, **puis** arrêter le consommateur Kafka, **puis** fermer la base.
+`app.enableShutdownHooks()`, and the order is: `ready` → 503, wait out the drain window, close the
+HTTP server, **then** stop the Kafka consumer, **then** close the database.
 
-C'est trois points d'entrée HTTP qu'un service expose de toute façon, contre `grpc-health-check` et
-son `HealthImplementation.addToServer` — dont la skill signale que l'extrait de la documentation ne
-compile pas. C'est un des huit pièges du §2.3, et le plus visible à chaque déploiement.
+That is three HTTP entry points a service exposes anyway, against `grpc-health-check` and its
+`HealthImplementation.addToServer` — whose documentation snippet, the skill notes, does not
+compile. It is one of §2.3's eight traps, and the most visible on every deployment.
 
-### 5.11 Versionnement et maturité — la distinction portée dans les contrats
+### 5.11 Versioning and maturity — the distinction carried in the contracts
 
-| Contexte | Régime | Porte de CI sur son OpenAPI |
+| Context | Regime | CI gate on its OpenAPI |
 |---|---|---|
-| `identity`, `catalog`, `ticketing` | **stable** | `oasdiff breaking` **bloquant** : ajout seulement |
-| `streaming`, `chat`, `payouts`, `notifications` | **provisoire** | `oasdiff` en **avertissement**, `oasdiff changelog` journalisé |
+| `identity`, `catalog`, `ticketing` | **stable** | `oasdiff breaking` **blocking**: additions only |
+| `streaming`, `chat`, `payouts`, `notifications` | **provisional** | `oasdiff` as a **warning**, `oasdiff changelog` logged |
 
-C'est la même coupe que `buf.yaml` pour les événements, avec la même règle de sortie : on retire
-la ligne d'exception **le jour où le palier du contexte est livré**, jamais avant.
+It is the same cut as `buf.yaml` for the events, with the same exit rule: the exception line is
+removed **the day the context's tier ships**, never before.
 
-**Ce que « stable » autorise, et rien d'autre** : ajouter un point d'entrée, ajouter une propriété
-**optionnelle** à une réponse, ajouter une valeur à une énumération, ajouter un paramètre
-**optionnel**. Tout le reste est un `v2` du service, servi **à côté** du `v1` jusqu'à ce que les
-deux BFF aient migré.
+**What "stable" allows, and nothing else**: adding an entry point, adding an **optional** property
+to a response, adding a value to an enumeration, adding an **optional** parameter. Everything else
+is a `v2` of the service, served **beside** the `v1` until both BFFs have migrated.
 
-**Et la règle qui rend une énumération extensible sans casser un téléviseur** (`storefront-tv`
-Q12, `context-map.md` §13) : une valeur d'énumération inconnue est **conservée brute et traitée
-comme neutre**, jamais rejetée. Côté zod, un `z.enum()` nu **ne le fait pas** — il faut
-`z.union([z.enum(VALUES), z.string()])` en **sortie** (lecture tolérante), et `z.enum(VALUES)` en
-**entrée** (écriture stricte). Les deux ne sont pas le même schéma, et `io: "input"` / `io:
-"output"` de `z.toJSONSchema()` est exactement ce qui les sépare. Se tromper produit une
-documentation fausse dans les deux sens.
+**And the rule that makes an enumeration extensible without breaking a television**
+(`storefront-tv` Q12, `context-map.md` §13): an unknown enumeration value is **kept raw and treated
+as neutral**, never rejected. On the zod side, a bare `z.enum()` **does not do that** — it takes
+`z.union([z.enum(VALUES), z.string()])` on **output** (tolerant read), and `z.enum(VALUES)` on
+**input** (strict write). The two are not the same schema, and `z.toJSONSchema()`'s `io: "input"` /
+`io: "output"` is exactly what separates them. Getting it wrong produces false documentation in
+both directions.
 
 ---
 
-## 6. Le signal qui ferait changer d'avis, écrit maintenant
+## 6. The signal that would change my mind, written now
 
-Une décision de transport sans condition de révision est une préférence. Voici les trois, et elles
-sont mesurables :
+A transport decision with no condition for revision is a preference. Here are the three, and they
+are measurable:
 
-| Mesure | Seuil | Geste |
+| Measurement | Threshold | Action |
 |---|---|---|
-| `bff_upstream_calls_per_request` p95 sur un écran de liste | **> 4 soutenu** | ce n'est **pas** un signal de transport : c'est un modèle de lecture qui manque (`context-map.md` §11a). On le crée **avant** de rouvrir cette décision |
-| profondeur d'une chaîne d'appels synchrones | **> 1** | la règle « aucun appel synchrone entre services » a cédé. **Rétablir la règle**, et seulement si c'est impossible, rouvrir gRPC — car c'est le seul cas où le délai propagé paie |
-| taille p95 d'une réponse de lecture composée, gzip appliqué | **> 300 Kio** | le coût de sérialisation JSON commence à peser sur la TV. Mesurer avant de conclure : c'est plus probablement un modèle de lecture trop large |
+| `bff_upstream_calls_per_request` p95 on a list screen | **> 4 sustained** | this is **not** a transport signal: it is a missing read model (`context-map.md` §11a). Create it **before** reopening this decision |
+| depth of a synchronous call chain | **> 1** | the "no synchronous call between services" rule has given way. **Restore the rule**, and only if that is impossible, reopen gRPC — because that is the only case where a propagated deadline pays |
+| p95 size of a composed read response, gzip applied | **> 300 KiB** | the cost of JSON serialisation is starting to weigh on the TV. Measure before concluding: it is more probably a read model that is too wide |
 
-**Ce qui ne serait pas un signal** : « il y a maintenant 250 méthodes ». Le compte de méthodes n'a
-jamais été l'argument (§1).
+**What would not be a signal**: "there are 250 methods now". The count of methods was never the
+argument (§1).
 
 ---
 
-## 7. Ce que je remonte
+## 7. What I escalate
 
-> **Clos.** `events.md` §6 dessinait le flux vertical en gRPC, par anticipation d'une décision que
-> `context-map.md` §10.3 me laissait. `backend-domain` l'a corrigé — le flux porte aujourd'hui
-> `POST /v1/orders/seats · HTTP/JSON · traceparent en en-tête` — et a consigné la décision dans son
-> §10.3. Il n'y a plus rien à arbitrer là-dessus, et laisser la remontée en place ferait attendre
-> un arbitrage sur un défaut qui n'existe plus.
+> **Closed.** `events.md` §6 drew the vertical flow in gRPC, anticipating a decision
+> `context-map.md` §10.3 was leaving to me. `backend-domain` corrected it — the flow now reads
+> `POST /v1/orders/seats · HTTP/JSON · traceparent in a header` — and recorded the decision in its
+> §10.3. There is nothing left to arbitrate there, and leaving the escalation in place would keep
+> someone waiting on a ruling about a defect that no longer exists.
 
-1. **Le générateur de client n'a pas de propriétaire.** Les cinq surfaces consomment
-   `openapi/storefront.yaml` ou `openapi/studio.yaml` ; personne n'a été désigné pour choisir
-   l'outil, l'épingler et décider où le client généré est publié (un paquet de plus dans
-   `arthome-core` ? un dossier `src/generated/**` par surface, déjà exempté du lint par
-   `code-conventions.md` §4.5 ?). Ma recommandation est la seconde — un client généré n'est pas un
-   contrat, c'est une commodité de surface, et le publier créerait une troisième chose à faire
-   tourner. À attribuer.
+1. **The client generator has no owner.** The five surfaces consume `openapi/storefront.yaml` or
+   `openapi/studio.yaml`; nobody has been appointed to choose the tool, pin it and decide where the
+   generated client is published (one more package in `arthome-core`? a `src/generated/**` folder
+   per surface, already exempted from the lint by `code-conventions.md` §4.5?). My recommendation is
+   the second — a generated client is not a contract, it is a surface convenience, and publishing it
+   would create a third thing to keep running. To be assigned.
