@@ -1,14 +1,26 @@
 # Corrections au dossier de passation
 
-> Vingt-sept écarts de phase 0, plus cinquante-deux relevés au temps 1, dans dans `arthome-design/design_handoff_arthome/` pendant la phase 0 de la session
-> « contrats d'interface, architecture backend, authentification » (21 septembre 2026).
+> **Soixante-dix-neuf écarts** relevés dans `arthome-design/design_handoff_arthome/` au cours de
+> la session « contrats d'interface, architecture backend, authentification » (21 septembre 2026) :
+> **27 en phase 0**, par le chef, en lisant le dossier contre les décisions déjà prises ;
+> **52 au temps 1**, par les cinq spécialistes de surface, en lisant leur maquette contre `shared/`.
 >
-> **Statut des corrections.** Les écarts des familles **A**, **B** et **C** ont été corrigés
-> directement dans les documents du dossier au cours de cette session, sur décision du chef de
-> projet. Les originaux sont conservés à côté d'eux sous `*.pre-corrections.md`.
-> Les écarts de la famille **D** portent sur `shared/`, qui reste en **lecture seule** : ils ne
-> sont pas corrigés ici, ils constituent la liste de courses du portage de `@arthome/core`
-> (palier 1). Aucun ne doit être découvert une seconde fois.
+> **Statut des corrections.**
+>
+> | Famille | Nature | Traitement |
+> |---|---|---|
+> | **A** (7) | le dossier contredit une décision prise depuis sa rédaction | **corrigé** dans le dossier |
+> | **B** (4) | le dossier se contredit lui-même | **corrigé** dans le dossier |
+> | **C** (9) | le dossier est muet là où le contrat doit trancher | section ajoutée ou renvoi posé |
+> | **D** (7) | `shared/` porte une donnée fausse, incomplète ou trompeuse | à corriger **au portage** |
+> | **E** (15) | écarts relevés par les spécialistes de surface au temps 1 | à corriger **au portage** |
+>
+> Les familles A, B et C ont été corrigées dans les documents du dossier sur décision du chef de
+> projet ; les originaux sont conservés à côté d'eux sous `*.pre-corrections.md`.
+> Les familles **D** et **E** portent sur `shared/` et sur les maquettes, qui restent en **lecture
+> seule** : elles constituent la liste de courses du portage de `@arthome/core` (palier 1), et la
+> matière que les agents du temps 2 doivent avoir lue. Aucun de ces écarts ne doit être découvert
+> une seconde fois.
 
 ---
 
