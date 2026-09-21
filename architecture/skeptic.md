@@ -1,5 +1,13 @@
 # Adversarial review of the architecture
 
+> **What this document is.** An adversarial review written on 21 September 2026 against the
+> architecture **as it then stood**. The findings below are preserved **verbatim**, line
+> references included, dead or not — their value is that they were written before the fixes.
+> The outcome notes marked **↪ Outcome** were added later, after the fixes landed; everything
+> else is the record of 21 September and has not been renumbered, softened or re-cited. Where
+> a citation now points at a line that has moved or a document that has since been
+> restructured or translated, the outcome note says so rather than updating it.
+
 > **Author**: `skeptic`, sixth and last pass. **Date**: 21 September 2026.
 > Read without the blind spots of the other seven: `architecture/*`, `openapi/*`, `proto/*`,
 > `needs/*` (including the Confrontations being written as I read), `DECISIONS.md`, and
@@ -79,6 +87,15 @@ This is not an impossibility for D-015: model A remains reachable, minus `on_beh
 is an **incompatibility between D-015 and §3 of the same document**, and it is invisible
 because the two paragraphs are four pages apart.
 
+> **↪ Outcome (added after the review).** **Closed.** `on_behalf_of` was removed after
+> verification across three jurisdictions. `adr-payments.md:83` now reads *"destination
+> charges on the platform account — **without `on_behalf_of`**"*, and line 93 states the
+> removal as *"a correction, not a setting"*. The commissionnaire model holds, and the ADR
+> now presents it as the only coherent reading of the facts rather than as a choice. The cost
+> is written down instead of discovered (line 100): Stripe **requires** the parameter once the
+> connected account leaves the common region, so a Swiss or Canadian channel waits or is
+> handled otherwise. My cited line numbers are dead — §3 was rewritten around the removal.
+
 ---
 
 ### K2 — VAT is broken down by **billing market**, but the rate chosen is that of the **viewer's country** — and that country is recorded nowhere
@@ -134,6 +151,16 @@ Replace "single scalar" with "by market": the paragraph stays true word for word
 reconstruction will be **impossible**, not merely expensive, since the country was never
 written down.
 
+> **↪ Outcome (added after the review).** **Closed, and the finding was shallower than the
+> defect.** `backend-domain` found the category error underneath it: a billing market is a
+> **pricing** notion and never a **tax** one, so no amount of re-keying within markets would
+> have worked. `VatLine` moved off the market key entirely — it now carries
+> `jurisdiction_code`, `jurisdiction_level` and `supply_kind`
+> (`proto/arthome/ticketing/v1/events.proto:213-216`) — and the missing fact is now recorded:
+> `BuyerTaxLocation` (line 173) with `TaxEvidence[]` (line 152), an `evidence_conflicting`
+> flag (line 186) and ten-year retention, carried on `OrderPaid` as `buyer_tax_location`
+> (line 352). My cited line numbers for `VatLine` are dead; the message was rewritten.
+
 ---
 
 ### K3 — "signing out this device stops playback within ≤ 60 s" is false, and the 60 is served in the contract
@@ -180,6 +207,20 @@ two values, and the wrong one was copied four times — because it is the one th
 `storefront-tv`'s requirement (`needs/storefront-tv.md:653`: *"Beyond a minute, you are
 watching a stream you no longer have the right to. I ask for ≤ 60 s"*). **The plausible
 number was chosen because it pleased the question.**
+
+> **↪ Outcome (added after the review).** **Closed — the promise was corrected, not the
+> mechanism.** The token stays at 120 s and the lease at 90 s. `adr-stream-entitlement.md`
+> §3.1 now carries a two-line table separating what the **client learns** (bounded by the
+> renewal interval, ≤ 45 s) from what the **edge serves** (bounded by the token lifetime, up
+> to 120 s) — lines 62–68 — and a dedicated section at line 171 titled *"the real exposure
+> window is 120 s, not 60 s — and I had written 60"*. The served constant became
+> `playbackCutWithinSec = 120` (line 202). The definition-of-done gate now measures the stop
+> of playback rather than the refusal to renew.
+>
+> And `backend-domain` isolated the root sentence I had not: §3.1 asserted that the window
+> *is exactly the renewal interval*. That single clause is where the 60 came from, and every
+> one of the five copies I listed descends from it. I found the copies; I had not found what
+> they were copying.
 
 ---
 
@@ -250,6 +291,14 @@ The two in bold are the expensive ones:
 Finally, `context-map.md:889` measures lag on a topic named `arthome.ticketing.seat_order`,
 a seventeenth name that appears in neither list.
 
+> **↪ Outcome (added after the review).** **Closed.** 54 event names were normalised onto the
+> `<context>.<aggregate>.<event>.v<N>` form, and `catalog.date_published` — the name that
+> denoted nothing — was renamed. The topic table went from 14 to **16** and now accounts for
+> all **30** aggregate types; `events.md:129-130` carries the retraction explicitly, noting
+> that the earlier table *"left sixteen aggregate types with no topic — therefore no key, no
+> partition count"*. My table of eighteen divergent names is a record of the pre-normalisation
+> state and none of its citations resolve any more.
+
 ---
 
 ### K5 — `signOutProfile` stops no playback, and nothing says so
@@ -283,6 +332,11 @@ way out is `revokeDevice`, which signs out all five profiles.
 revokes the `DeviceSession`, which publishes `session.revoked` / `device.revoked`:
 `session.revoked` exists nowhere, and the two gestures are conflated in the very sentence
 that claims to articulate them.
+
+> **↪ Outcome (added after the review).** **Closed.** `DeviceSessionClosed` was added
+> (`proto/arthome/identity/v1/events.proto:129`) with the `profile_id` grain that was missing
+> — the grain whose absence was the whole defect, since `DeviceRevoked` could only ever speak
+> about a whole device.
 
 ---
 
@@ -327,6 +381,12 @@ Same fault, quieter, on the territorial restriction reason: `shared/catalogue.js
 > it is a pattern, across at least three vocabularies, and it runs from `shared/` all the way
 > into the `.proto`.
 
+> **↪ Outcome (added after the review).** **Closed, and generalised.** `opens[]` is back to
+> kebab-case in the contract (`openapi/storefront.yaml:1530`, `:6501`), and the document
+> records the former snake spelling rather than quietly overwriting it (`:6491-6493`). The
+> fix became a convention rather than a patch: **the wire spelling is `shared/`'s, to the
+> letter.** That is the right shape — the pattern was the finding, not the one field.
+
 ---
 
 ### K7 — The studio journal has no owning context, and the BFF composes it from five services with `page + total`
@@ -359,6 +419,15 @@ saying where. **A 24-month table with a retention, a purge and an export, and no
 
 And it is the one screen in the system that directly contradicts `data-model.md` §4: *"no
 screen is served by a join at request time"*.
+
+> **↪ Outcome (added after the review).** **Closed.** The journal now belongs to `identity`
+> as a read model, `channel_journal` (`data-model.md:571`), fed **only** by Kafka consumption
+> — through the `actor-id` header every message already carries — with the 24-month
+> retention, `page + total`, the mandatory period filter and the `money` nature absent without
+> `canRevenue` all stated on the model rather than assembled at request time.
+> `listChannelJournal` is now `x-arthome-upstream: [identity]`
+> (`openapi/studio.yaml:4574`). Its fan-out exception is gone, and **the system now declares
+> no fan-out exception at all** — see G1.
 
 ---
 
@@ -398,6 +467,14 @@ that is the sentence someone will re-read in six months.
 On depth 1, on the other hand, the attack the lead asked me to make does not land: see `R2`
 below.
 
+> **↪ Outcome (added after the review).** **Closed.** Re-measured on both documents: maximum
+> fan-out is now **4**, with no operation at 5 in either. `getDateDetail` lost its `chat`
+> call — the pane was already projected into `date_detail_public`, which was the point — and
+> `listChannelJournal` dropped to a single upstream (K7). Distribution today, against my
+> table above: storefront 1:69 · 2:6 · 3:6 · 4:7; studio 1:75 · 2:3 · 3:5 · 4:2. Both
+> documents also grew substantially — the surfaces' missing endpoints were added — so the
+> sentence in `transport.md` §1 is now true of a larger contract than the one I measured.
+
 ### G2 — `adr-auth.md` §8.1 announces three issuers, lists four, and promises "a single object to rotate"
 
 `adr-auth.md:454`: *"It contains the public keys of the **three** issuers"*. The table that
@@ -409,6 +486,12 @@ And `adr-auth.md:464`: *"a single object to rotate, a single thing to watch"* �
 secretless assembler", demonstrating that a single job holding four private keys "creates a
 target that does not yet exist". The auth ADR still carries the argument the definition of
 done refuted.
+
+> **↪ Outcome (added after the review).** **Closed, both halves.** `adr-auth.md:501` now says
+> *"the **four** issuers"*, and line 513 retracts the other half by name — *"What I had
+> written and that was wrong: 'a single object to rotate'"* — rather than silently deleting
+> it. My line numbers are dead: `adr-auth.md` has since been translated to English and
+> renumbered.
 
 ### G3 — `realtime.md` contradicts itself on what transits `date:{id}:state`
 
@@ -422,6 +505,14 @@ done refuted.
 Three sections, two answers. §2.4 carries the argument (a TV idle for eight hours must make
 no request); line 43 is the outlier, and it is the only one `backend-contracts` will read if
 they go looking for the contents of a room.
+
+> **↪ Outcome (added after the review).** **Closed.** The room now carries *"going on air in
+> the strict sense (the stream enters or leaves)"* only; room opening and replay expiry were
+> removed from the table, with a note in §2.1 stating that the earlier row *"was the single
+> line contradicting §2.4 and §8, and the one you would have read looking for the contents of
+> a room"* — which is the finding, quoted back. The same pass added `playback:stop` on
+> `viewer:{profileId}` as an explicit **courtesy, not a control**, with the 120 s guarantee of
+> K3 restated next to it so the signal is never mistaken for a security boundary.
 
 ### G4 — `definition-of-done.md` §6 imposes a gate based on a fracture D-014 retracted
 
@@ -442,6 +533,14 @@ repositories on TS 6.0.3.
 So the line turns a service review into a check on a state that does not exist. This is E2
 applied to a decision: plausible reasoning, retracted elsewhere, left standing here.
 
+> **↪ Outcome (added after the review).** **Closed.** `definition-of-done.md:380-385` now
+> reads *"There is no fracture: `code-conventions.md` §1.3 investigated it and **retracted**
+> it. […] All seven repositories sit under a single ceiling at TS 6.0.x"*, and keeps the
+> forward-looking gates on the ground that the fracture **will** arrive rather than that it
+> has. The lead's note on this one is worth recording: the gate rested on a fracture **he had
+> himself retracted in D-014** without propagating the correction. E2 applied to a decision,
+> committed by the lead — which is the same shape as the five copies of K3, one level up.
+
 ### G5 — `transport.md` §7 reports a defect that has already been fixed
 
 `transport.md:264-269`: *"`events.md` §6 draws the vertical flow with
@@ -451,6 +550,10 @@ file** — for the lead to arbitrate."*
 `events.md:279-281` today carries `POST /orders/seats` / `HTTP/JSON` / `traceparent in
 header`. The correction was made; the report stayed. An arbitration is pending on a defect
 that no longer exists.
+
+> **↪ Outcome (added after the review).** **Closed.** The stale report is gone from
+> `transport.md` — no occurrence of `PurchaseSeat`, of gRPC `Metadata`, or of *"I do not touch
+> a teammate's file"* remains. Nothing is pending.
 
 ### G6 — Two of the five notification thresholds have no owner
 
@@ -471,6 +574,11 @@ with no owning document: critical rule 15.
 > `decideWatch` needs it as an input (`context-map.md:382`) and `definition-of-done.md:233`
 > requires testing "the preview budget at 0".
 
+> **↪ Outcome (added after the review).** **Closed.** Both missing thresholds are now served
+> constants in the studio bootstrap: `moderationQueueAlertThreshold: 10` and
+> `crewUnassignedAlertHoursBefore: 24` (`openapi/studio.yaml:366-367`, schema at `:5679-5686`).
+> Five of five now have an owning document.
+
 ### G7 — "the only data duplication in the system" is announced three times, and there are at least eight
 
 `context-map.md:414`: *"This is the only place in the system where I accept duplicating a
@@ -489,6 +597,14 @@ The distinction being drawn is real — `entitlement_projection` is the only one
 **authority**, not just display — but it is written nowhere, and the sentence as it stands is
 false. It will be quoted to refuse the eighth legitimate projection.
 
+> **↪ Outcome (added after the review).** **Closed, and the distinction I asked for was
+> written.** `data-model.md:578-581` now states *"what counts is not the number, it is the
+> nature"* — the seven others feed a **display**, and a display five seconds stale corrects
+> itself; `entitlement_projection` decides a **right**, and a stale right mints a token, which
+> is why it alone carries a numbered freshness budget (≤ 5 s) and an alert. The false sentence
+> is retracted by name, with my reason for objecting quoted: *"it would have served to refuse
+> the eighth legitimate projection"*.
+
 ### G8 — The contract exposes the shape of a search engine
 
 `answers-to-surfaces.md:46` (answer to `storefront-web` Q2):
@@ -502,6 +618,16 @@ the right shape — it is the **number** and its provenance that leak. If we eve
 engine whose total semantics differ, the contract line saying "at least 10,000" becomes a
 promise made in the name of a vendor who is no longer there. The remedy is one line: serve
 the threshold as a domain constant instead of carving it into prose.
+
+> **↪ Outcome (added after the review).** **Half closed — and the remaining half is the half
+> that matters.** The answer index was fixed and retracts the leak by name:
+> `answers-to-surfaces.md:46` now serves `approximateTotal` **and** `totalIsLowerBound` with
+> the threshold as a served domain constant, noting that the earlier answer *"cited
+> `track_total_hits: 10000`, which is the name of a Lucene parameter and its default"*. But
+> **the contract itself still carries it**: `openapi/storefront.yaml:5214` reads *"Exact up to
+> 10,000 (`track_total_hits`)"*, with the vendor parameter named and the number carved into
+> the description. The index is not the contract. Of the two places the shape leaked, the one
+> a generated client reads is still leaking.
 
 ---
 

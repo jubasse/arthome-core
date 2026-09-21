@@ -1,115 +1,114 @@
-# ADR — Authentification, session et appairage d'appareil
+# ADR — Authentication, session and device pairing
 
-> **Statut** : proposé · **Date** : 21 septembre 2026 · **Auteur** : spécialiste `auth`
-> **Décide** : le mécanisme d'authentification des cinq surfaces, la forme de session par
-> surface, et la **primitive unique d'appairage d'appareil** (RFC 8628) qui sert les cinq
-> intentions de la TV.
-> **Ne décide pas** : le jeton de lecture du direct (→ `adr-stream-entitlement.md`), mais
-> §9 dit comment les deux systèmes s'articulent.
+> **Status**: proposed · **Date**: 21 September 2026 · **Author**: `auth` specialist
+> **Decides**: the authentication mechanism for the five surfaces, the session form per
+> surface, and the **single device-pairing primitive** (RFC 8628) that serves the TV's five
+> intents.
+> **Does not decide**: the live playback token (→ `adr-stream-entitlement.md`), but
+> §9 states how the two systems fit together.
 
 ---
 
-## 1. Ce qui a été vérifié en ligne, et non de mémoire
+## 1. What was verified online, and not from memory
 
-Ma connaissance interne s'arrête en mai 2026. Tout ce qui suit a été relu le
-**21 septembre 2026** sur la documentation des éditeurs, sur npm et sur GitHub. Les
-capacités décisives ne sont jamais affirmées de mémoire.
+My internal knowledge stops in May 2026. Everything below was re-read on
+**21 September 2026** against vendor documentation, npm and GitHub. Decisive capabilities are
+never asserted from memory.
 
-| Fait vérifié | Source | Résultat |
+| Verified fact | Source | Result |
 |---|---|---|
-| better-auth possède un plugin Device Authorization | `better-auth.com/docs/plugins/device-authorization` + `npm view better-auth exports` | **Confirmé.** `./plugins/device-authorization` est exporté par le paquet publié |
-| Version et licence de better-auth | npm, 14 sept. 2026 | **1.7.5**, **MIT**, 30 k étoiles, publié il y a une semaine |
-| Adaptateur TypeORM pour better-auth | `better-auth.com/docs/adapters/...` | **N'existe pas.** Kysely (défaut), Drizzle, Prisma, Mongo, adaptateur maison |
-| Plugin JWT / JWKS de better-auth | `better-auth.com/docs/plugins/jwt` | JWKS servi, `jwksPath`, rotation (`rotationInterval`, `gracePeriod`), `kid`, `definePayload`, `issuer`/`audience`, clé privée chiffrée AES-256-GCM au repos |
-| Alphabet du code court de better-auth | doc du plugin | `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` — exclut `0/O` et `1/I`, **mais garde `5`+`S` et `8`+`B`** |
-| Surcharge de la génération d'identifiants | `better-auth.com/docs/reference/options` | `advanced.database.generateId` accepte une **fonction** → UUIDv7 possible |
-| Plafond de profils simultanés sur un appareil | plugin `multi-session` | `maximumSessions`, **défaut 5**, révocation par session |
-| 2FA | plugin `two-factor` | TOTP + OTP + codes de secours, secrets chiffrés, 3 req/10 s intégré |
-| Adaptateur NestJS | npm `@thallesp/nestjs-better-auth` | **2.8.0**, MIT, 3 sept. 2026, pairs `@nestjs/core ^11.1.6 \|\| ^12`, `better-auth >=1.5 <2`, `express ^5.1`, Node ≥ 22.22.1 |
-| SuperTokens et le device flow | recherche + doc éditeur | **Non implémenté.** Évoqué comme piste de feuille de route, pas comme capacité |
-| Keycloak et le device flow | doc Keycloak | Natif, activé et annoncé dans `openid-configuration` par défaut. Apache-2.0 |
-| Zitadel et le device flow | `zitadel.com/docs/guides/integrate/login/oidc/device-authorization` | Natif. **AGPL-3.0-only** depuis la v3 |
-| Logto et le device flow | `docs.logto.io/quick-starts/device-flow` | Natif, `urn:ietf:params:oauth:grant-type:device_code`. **MPL-2.0** |
-| `typeorm` publié | npm, 21 sept. 2026 | **1.1.1** — conforme au `^1.1` acté |
-| `jose` publié | npm | **6.2.12**, MIT |
+| better-auth has a Device Authorization plugin | `better-auth.com/docs/plugins/device-authorization` + `npm view better-auth exports` | **Confirmed.** `./plugins/device-authorization` is exported by the published package |
+| better-auth version and licence | npm, 14 Sept. 2026 | **1.7.5**, **MIT**, 30 k stars, published a week ago |
+| TypeORM adapter for better-auth | `better-auth.com/docs/adapters/...` | **Does not exist.** Kysely (default), Drizzle, Prisma, Mongo, custom adapter |
+| better-auth JWT / JWKS plugin | `better-auth.com/docs/plugins/jwt` | JWKS served, `jwksPath`, rotation (`rotationInterval`, `gracePeriod`), `kid`, `definePayload`, `issuer`/`audience`, private key encrypted AES-256-GCM at rest |
+| better-auth short-code alphabet | plugin docs | `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` — excludes `0/O` and `1/I`, **but keeps `5`+`S` and `8`+`B`** |
+| Overriding identifier generation | `better-auth.com/docs/reference/options` | `advanced.database.generateId` accepts a **function** → UUIDv7 possible |
+| Cap on simultaneous profiles per device | `multi-session` plugin | `maximumSessions`, **default 5**, per-session revocation |
+| 2FA | `two-factor` plugin | TOTP + OTP + backup codes, encrypted secrets, 3 req/10 s built in |
+| NestJS adapter | npm `@thallesp/nestjs-better-auth` | **2.8.0**, MIT, 3 Sept. 2026, peers `@nestjs/core ^11.1.6 \|\| ^12`, `better-auth >=1.5 <2`, `express ^5.1`, Node ≥ 22.22.1 |
+| SuperTokens and the device flow | search + vendor docs | **Not implemented.** Mentioned as a roadmap possibility, not as a capability |
+| Keycloak and the device flow | Keycloak docs | Native, enabled and advertised in `openid-configuration` by default. Apache-2.0 |
+| Zitadel and the device flow | `zitadel.com/docs/guides/integrate/login/oidc/device-authorization` | Native. **AGPL-3.0-only** since v3 |
+| Logto and the device flow | `docs.logto.io/quick-starts/device-flow` | Native, `urn:ietf:params:oauth:grant-type:device_code`. **MPL-2.0** |
+| `typeorm` published | npm, 21 Sept. 2026 | **1.1.1** — matches the recorded `^1.1` |
+| `jose` published | npm | **6.2.12**, MIT |
 
-**Deux faits de sécurité datés, trouvés en ligne, qui pèsent sur la décision :**
+**Two dated security facts, found online, that bear on the decision:**
 
-- **CVE-2026-45337** (better-auth) — le plugin Device Authorization traitait **toute session
-  authentifiée comme propriétaire de tout `user_code` en attente** : la garde de propriété sur
-  `POST /device/approve` et `/device/deny` court-circuitait tant que `userId` était nul. Corrigé
-  en **1.6.11**. Nous sommes en 1.7.5, donc couvert — mais cette CVE **est exactement la
-  question Q2 du spécialiste TV**. Elle prouve que le liage de l'appairage à une identité est la
-  partie difficile, et qu'elle ne doit pas être déléguée sans vérification propre (§6.3).
-- **CVE-2026-88770** (Keycloak) — le device flow de Keycloak délivre encore des jetons pour un
-  compte verrouillé par la protection anti-force brute, l'étape de rédemption ne vérifiant pas
-  le verrouillage. Le même défaut de classe, chez le candidat réputé le plus mûr.
+- **CVE-2026-45337** (better-auth) — the Device Authorization plugin treated **any authenticated
+  session as the owner of any pending `user_code`**: the ownership gate on
+  `POST /device/approve` and `/device/deny` short-circuited while `userId` was unset. Fixed in
+  **1.6.11**. We are on 1.7.5, so covered — but this CVE **is exactly the TV specialist's
+  question Q2**. It proves that binding a pairing to an identity is the hard part, and that it
+  must not be delegated without a check of our own (§6.3).
+- **CVE-2026-88770** (Keycloak) — Keycloak's device flow still issues tokens for an account
+  locked by brute-force protection, the redemption step not checking the lock. The same class of
+  defect, in the candidate reputed to be the most mature.
 
-**Limite connue du plugin better-auth**, relevée en ligne : ni `/device/code` ni `/device/token`
-n'accepte de paramètre `resource`/`audience` — le flux rend une **session better-auth opaque**,
-pas un JWT restreint à une API. Sans importance ici : dans notre topologie c'est le **BFF** qui
-frappe le jeton interne (§8), jamais le client.
+**Known limitation of the better-auth plugin**, found online: neither `/device/code` nor
+`/device/token` accepts a `resource`/`audience` parameter — the flow returns an **opaque
+better-auth session**, not a JWT restricted to an API. Of no consequence here: in our topology it
+is the **BFF** that mints the internal token (§8), never the client.
 
 ---
 
-## 2. Tableau de décision — surfaces × besoins × candidats
+## 2. Decision table — surfaces × needs × candidates
 
-### 2.1 Les candidats sur les capacités décisives
+### 2.1 The candidates on the decisive capabilities
 
-| | **better-auth 1.7.5** | **SuperTokens 24.x** | **Passport + maison** | **Keycloak** | **Zitadel v3** | **Logto** |
+| | **better-auth 1.7.5** | **SuperTokens 24.x** | **Passport + in-house** | **Keycloak** | **Zitadel v3** | **Logto** |
 |---|---|---|---|---|---|---|
-| **Device flow natif (RFC 8628)** | **oui**, plugin dédié + intégration `oauthProvider()` | **non** (feuille de route) | non — à écrire | oui | oui | oui |
-| Alphabet du code court maîtrisable | oui (`generateUserCode`, `userCodeLength`) | — | total | difficile (serveur) | difficile | difficile |
-| TTL par intention | via `expiresIn` + hooks, **à composer** | — | total | non (par realm) | non | non |
-| 2FA | TOTP/OTP/codes de secours | oui | à écrire | oui | oui | oui |
-| Réinit. mot de passe | intégré | oui | à écrire | oui | oui | oui |
-| Social Google/Facebook | intégré | oui | via stratégies | oui | oui | oui |
-| Retour OAuth **Capacitor** (`capacitor://localhost`) | plugin `bearer` → jeton hors cookie | oui | à écrire | possible, via AppAuth | possible | possible |
-| Retour OAuth **React Native** | `@better-auth/expo` (**exige Expo**) ; sinon `bearer` | SDK RN | à écrire | AppAuth | AppAuth | AppAuth |
-| **JWKS + rotation** | plugin `jwt` : `kid`, `rotationInterval`, `gracePeriod` | oui | à écrire | oui | oui | oui |
-| Révocation par session / par appareil | `multi-session.revoke` + table `session` | oui | à écrire | oui | oui | oui |
-| **≤ 5 profils sur un appareil partagé** | `multi-session`, **défaut 5** | non natif | à écrire | non natif | non natif | non natif |
-| **Coexistence TypeORM + PG 18** | pas d'adaptateur TypeORM → **Kysely sur le même PG, schéma séparé** | service séparé + sa base | natif | **base à lui** | **base à lui** | **base à lui** |
-| **Charge d'exploitation (1 personne)** | **bibliothèque dans `identity`** : 0 déploiement de plus | 1 conteneur + 1 base | 0 conteneur, **tout le code** | JVM, realms, montées de version, CVE | Go + PG, AGPL | Node + PG |
-| Licence | **MIT** | Apache-2.0 + `NOASSERTION` sur le dépôt | — | Apache-2.0 | **AGPL-3.0-only** | MPL-2.0 |
+| **Native device flow (RFC 8628)** | **yes**, dedicated plugin + `oauthProvider()` integration | **no** (roadmap) | no — to be written | yes | yes | yes |
+| Short-code alphabet controllable | yes (`generateUserCode`, `userCodeLength`) | — | total | hard (server-side) | hard | hard |
+| TTL per intent | via `expiresIn` + hooks, **to be composed** | — | total | no (per realm) | no | no |
+| 2FA | TOTP/OTP/backup codes | yes | to be written | yes | yes | yes |
+| Password reset | built in | yes | to be written | yes | yes | yes |
+| Social Google/Facebook | built in | yes | via strategies | yes | yes | yes |
+| OAuth return in **Capacitor** (`capacitor://localhost`) | `bearer` plugin → token outside the cookie | yes | to be written | possible, via AppAuth | possible | possible |
+| OAuth return in **React Native** | `@better-auth/expo` (**requires Expo**); otherwise `bearer` | RN SDK | to be written | AppAuth | AppAuth | AppAuth |
+| **JWKS + rotation** | `jwt` plugin: `kid`, `rotationInterval`, `gracePeriod` | yes | to be written | yes | yes | yes |
+| Per-session / per-device revocation | `multi-session.revoke` + `session` table | yes | to be written | yes | yes | yes |
+| **≤ 5 profiles on a shared device** | `multi-session`, **default 5** | not native | to be written | not native | not native | not native |
+| **Coexistence with TypeORM + PG 18** | no TypeORM adapter → **Kysely on the same PG, separate schema** | separate service + its own database | native | **its own database** | **its own database** | **its own database** |
+| **Operating burden (one person)** | **a library inside `identity`**: 0 extra deployment | 1 container + 1 database | 0 containers, **all the code** | JVM, realms, version upgrades, CVEs | Go + PG, AGPL | Node + PG |
+| Licence | **MIT** | Apache-2.0 + `NOASSERTION` on the repository | — | Apache-2.0 | **AGPL-3.0-only** | MPL-2.0 |
 
-### 2.2 Les surfaces et la forme de session dont chacune a besoin
+### 2.2 The surfaces and the session form each one needs
 
-| Surface | Contrainte dure relevée par son spécialiste | Porteur de session retenu | Stockage |
+| Surface | Hard constraint raised by its specialist | Session carrier chosen | Storage |
 |---|---|---|---|
-| `storefront-web` (Next.js) | une fonction mise en cache **ne peut lire ni cookie ni en-tête** ; l'en-tête a besoin de la session sur toutes les routes | **cookie** `HttpOnly`/`Secure`/`SameSite=Lax`, validé par le BFF storefront | navigateur |
-| `studio-web` (Angular) | six/huit rôles, droits qui **bougent en cours de session** | **cookie** `HttpOnly`, BFF studio | navigateur |
-| `studio-mobile` (Capacitor) | `capacitor://localhost` est un **contexte tiers sur iOS 14+** → le cookie est mort | **jeton porteur** (`bearer`) | `@capacitor/preferences` (Keychain / Keystore), **jamais `localStorage`** |
-| `storefront-mobile` (React Native) | l'OS tue l'application sans préavis ; le jeton ne doit pas survivre en clair | **jeton porteur** | Keychain / Keystore (`expo-secure-store` en Expo, équivalent natif en RN nu) |
-| `storefront-tv` (react-native-tvos) | **aucune saisie au-delà de six caractères** ; appareil **partagé** ; pas de session au moment de se connecter | **jeton porteur** + **identité d'appareil préalable** | magasin natif de l'appareil |
+| `storefront-web` (Next.js) | a cached function **can read neither cookies nor headers**; the header needs the session on every route | **cookie** `HttpOnly`/`Secure`/`SameSite=Lax`, validated by the storefront BFF | browser |
+| `studio-web` (Angular) | six/eight roles, rights that **change mid-session** | **cookie** `HttpOnly`, studio BFF | browser |
+| `studio-mobile` (Capacitor) | `capacitor://localhost` is a **third-party context on iOS 14+** → the cookie is dead | **bearer token** (`bearer`) | `@capacitor/preferences` (Keychain / Keystore), **never `localStorage`** |
+| `storefront-mobile` (React Native) | the OS kills the app without warning; the token must not survive in the clear | **bearer token** | Keychain / Keystore (`expo-secure-store` under Expo, native equivalent under bare RN) |
+| `storefront-tv` (react-native-tvos) | **no input beyond six characters**; **shared** device; no session at the moment of signing in | **bearer token** + **prior device identity** | the device's native store |
 
-La ligne qui commande tout : **trois surfaces sur cinq ne peuvent pas tenir une session par
-cookie.** Un candidat qui ne sait faire que le cookie est disqualifié d'office ; un candidat qui
-oblige à écrire soi-même la voie « jeton porteur » a un coût caché.
+The line that governs everything: **three surfaces out of five cannot hold a cookie session.**
+A candidate that can only do cookies is disqualified outright; a candidate that forces you to
+write the "bearer token" path yourself carries a hidden cost.
 
 ---
 
-## 3. Décision
+## 3. Decision
 
-### D-A1 — **better-auth 1.7.5**, en bibliothèque dans le service `identity`, avec quatre plugins
+### D-A1 — **better-auth 1.7.5**, as a library inside the `identity` service, with four plugins
 
-`better-auth` + `@thallesp/nestjs-better-auth` 2.8.0, et les plugins **`jwt`**, **`bearer`**,
+`better-auth` + `@thallesp/nestjs-better-auth` 2.8.0, and the plugins **`jwt`**, **`bearer`**,
 **`two-factor`**, **`multi-session`**, **`device-authorization`**.
 
-**Pourquoi lui, en une phrase** : c'est le seul candidat qui coche *à la fois* le device flow
-natif, la session par jeton porteur pour les trois surfaces sans cookie, les cinq profils sur un
-appareil partagé, et **zéro déploiement supplémentaire** — le critère qui, pour un projet solo,
-pèse autant que la fonctionnalité.
+**Why this one, in one sentence**: it is the only candidate that ticks *at the same time* the
+native device flow, the bearer-token session for the three cookie-less surfaces, five profiles on
+a shared device, and **zero extra deployment** — the criterion that, for a solo project, weighs
+as much as the feature itself.
 
-**Ce que cela n'autorise pas.** better-auth authentifie ; il **n'autorise pas**. Les huit rôles,
-la table `grants`, les accès ponctuels qui expirent au tomber du rideau restent du domaine
-(§7). Le plugin `organization` de better-auth **n'est pas retenu** : son modèle de rôles ne sait
-pas exprimer « `director` peut inviter `video` et `sound`, qui n'invitent personne », ni un accès
-borné dans le temps.
+**What this does not authorise.** better-auth authenticates; it **does not authorise**. The eight
+roles, the `grants` table, the one-off accesses that expire at curtain fall stay in the domain
+(§7). better-auth's `organization` plugin **is not retained**: its role model cannot express
+"`director` may invite `video` and `sound`, who invite nobody", nor a time-bounded access.
 
-### D-A2 — Une **primitive unique d'appairage d'appareil**, propriété de `identity`
+### D-A2 — A **single device-pairing primitive**, owned by `identity`
 
-Le contrat porte **une** commande, **une** forme, **un** automate, **cinq** intentions.
+The contract carries **one** command, **one** shape, **one** state machine, **five** intents.
 
 ```
 POST /pairings        createPairing(intent, payload?, deviceDescriptor) -> DevicePairing
@@ -119,782 +118,779 @@ DELETE /pairings/{id} cancelPairing(pairingId)                          -> Devic
 
 `intent ∈ { signin, seat, plan, payment-method, merch }`.
 
-**Le raisonnement qui permet l'unification** — et il faut le dire, parce qu'il n'est pas
-évident : **quatre des cinq intentions ne sont pas des flux d'autorisation OAuth.** Acheter une
-place depuis un téléviseur *déjà connecté* n'est pas une demande de jeton : c'est un
-**rendez-vous de transaction**. Seule `signin` est un vrai RFC 8628.
+**The reasoning that makes the unification possible** — and it must be stated, because it is not
+obvious: **four of the five intents are not OAuth authorisation flows.** Buying a seat from a TV
+that is *already signed in* is not a request for a token: it is a **transaction rendezvous**.
+Only `signin` is a genuine RFC 8628.
 
-Ce qui est donc unique, c'est **l'automate de rendez-vous** : code court, QR, expiration,
-interrogation, `slow_down`, cinq issues. Ce qui diffère, c'est **l'effet de l'approbation**.
+What is therefore single is **the rendezvous state machine**: short code, QR, expiry, polling,
+`slow_down`, five outcomes. What differs is **the effect of approval**.
 
 | | `signin` | `seat` · `plan` · `payment-method` · `merch` |
 |---|---|---|
-| La TV a-t-elle une session en ouvrant ? | **non** | oui (obligatoire) |
-| Liage | à l'**appareil** (`device_id`) | au **profil** qui a ouvert |
-| Approbation servie par | le plugin `device-authorization` de better-auth | le parcours normal du téléphone (BFF → `ticketing` / `billing`) |
-| Effet | une session de plus sur l'appareil | un `outcomeRef` posé sur l'appairage |
+| Does the TV have a session when it opens one? | **no** | yes (mandatory) |
+| Bound to | the **device** (`device_id`) | the **profile** that opened it |
+| Approval served by | better-auth's `device-authorization` plugin | the phone's normal journey (BFF → `ticketing` / `billing`) |
+| Effect | one more session on the device | an `outcomeRef` set on the pairing |
 
-**Le flux d'une intention d'achat, qui respecte « aucun appel synchrone entre services » :**
+**The flow of a purchase intent, which respects "no synchronous calls between services":**
 
-1. TV → BFF storefront → `identity` : `createPairing`. `identity` écrit une ligne
-   `device_pairing` et rend le code.
-2. Téléphone scanne → ouvre `verificationUriComplete` → BFF → `identity` : lit l'intention et
-   la charge utile, **pour les afficher**.
-3. Le téléphone confirme et **passe par son parcours d'achat normal** (BFF → `ticketing`), avec
-   sa propre `Idempotency-Key`. Aucune duplication de la billetterie.
-4. Le BFF pose `approvePairing(pairingId, outcomeRef)` — ou `failPairing(reason)` si
-   `ticketing` a refusé.
-5. La TV interroge → le BFF lit l'appairage, **compose** `PairingOutcome` à partir de
-   `outcomeRef` et le rend complet, pour que l'écran de confirmation s'affiche **sans un appel
-   de plus**, comme la TV l'exige.
+1. TV → storefront BFF → `identity`: `createPairing`. `identity` writes a `device_pairing` row
+   and returns the code.
+2. The phone scans → opens `verificationUriComplete` → BFF → `identity`: reads the intent and
+   the payload, **in order to display them**.
+3. The phone confirms and **goes through its normal purchase journey** (BFF → `ticketing`), with
+   its own `Idempotency-Key`. No duplication of ticketing.
+4. The BFF sets `approvePairing(pairingId, outcomeRef)` — or `failPairing(reason)` if
+   `ticketing` refused.
+5. The TV polls → the BFF reads the pairing, **composes** `PairingOutcome` from `outcomeRef` and
+   returns it complete, so that the confirmation screen renders **without one more call**, as the
+   TV requires.
 
-`identity` ne connaît ni les places ni les paiements : il ne porte que le rendez-vous et un
-pointeur opaque. `ticketing` n'implémente **aucun** code court. C'est l'exigence « conçu une
-fois, implémenté une fois » tenue sans faire de `identity` un service fourre-tout.
+`identity` knows neither seats nor payments: it carries only the rendezvous and an opaque
+pointer. `ticketing` implements **no** short code. That is the "designed once, implemented once"
+requirement met without turning `identity` into a catch-all service.
 
-**Le sixième cas est bien un renvoi, pas un appairage.** Le QR de la page compte qui renvoie vers
-`arthome.fr/compte` porte le type `handoff` et **n'ouvre aucune ligne** `device_pairing` : rien
-n'attend, l'écran ne bascule pas. Le contrat les sépare par le nom, pas par une option.
+**The sixth case is a handoff, not a pairing.** The account-page QR that sends the viewer to
+`arthome.fr/compte` carries the type `handoff` and **opens no** `device_pairing` row: nothing is
+waiting, the screen does not switch. The contract separates them by name, not by an option.
 
 ---
 
-## 4. Les trois questions de la TV, tranchées
+## 4. The TV's three questions, decided
 
-### Q3 — **Oui, la TV a une identité d'appareil avant toute session.** C'est une notion du contrat.
+### Q3 — **Yes, the TV has a device identity before any session.** It is a contract notion.
 
-Les points d'entrée anonymes « avec le code pour seul secret » sont écartés : ils rendent
-impossibles les quatre choses que la TV demande (se nommer dans « appareils connectés », être
-révoquée, porter une limite de débit, se rattacher après un redémarrage).
+Anonymous endpoints "with the code as the only secret" are rejected: they make impossible the
+four things the TV asks for (naming itself under "connected devices", being revoked, carrying a
+rate limit, re-attaching after a restart).
 
-**Mécanisme.** Au premier lancement, la surface appelle `registerDevice(deviceDescriptor)` et
-reçoit un **`device_token`** : un JWT **ES256**, `aud: "arthome.device"`, longue durée
-(180 jours), **rotation à chaque usage**, portant `device_id` (UUIDv7) et rien d'autre. Il ne
-donne accès qu'à : ouvrir un appairage, interroger un appairage, lire l'amorçage public. Il
-**n'est pas** une session et ne donne accès à aucune donnée personnelle.
+**Mechanism.** On first launch, the surface calls `registerDevice(deviceDescriptor)` and receives
+a **`device_token`**: an **ES256** JWT, `aud: "arthome.device"`, long-lived (180 days),
+**rotated on every use**, carrying `device_id` (UUIDv7) and nothing else. It grants access only
+to: opening a pairing, polling a pairing, reading the public bootstrap payload. It **is not** a
+session and gives access to no personal data.
 
-Cela règle aussi **E13** (`devices` a deux formes sous un seul nom) : `Device` est l'appareil
-enregistré, durable, révocable ; `DeviceSession` est le couple (appareil, profil). Deux noms,
-deux formes.
+This also settles **E13** (`devices` has two shapes under one name): `Device` is the registered
+device, durable, revocable; `DeviceSession` is the (device, profile) pair. Two names, two shapes.
 
-### Q2 — **Refus avec un code distinct pour les quatre intentions d'achat. Pas de bascule de profil.**
+### Q2 — **Refusal with a distinct code for the four purchase intents. No profile switch.**
 
-Si le téléphone qui approuve est connecté sous une autre identité que le profil qui a ouvert
-l'appairage : `PAIRING_IDENTITY_MISMATCH`, et le téléphone propose explicitement « changer de
-compte » — un geste de la personne, jamais du système.
+If the approving phone is signed in under a different identity from the profile that opened the
+pairing: `PAIRING_IDENTITY_MISMATCH`, and the phone explicitly offers "switch account" — an act
+of the person, never of the system.
 
-**Pourquoi le refus et non la bascule.** Une bascule implicite fait payer le **mauvais moyen de
-paiement**, crédite les **mauvais droits**, et livre la place au mauvais compte — dans un salon,
-au moment précis où deux personnes regardent le même écran. Une opération d'argent ne se résout
-jamais par un changement d'identité silencieux. Et CVE-2026-45337 montre ce que coûte le
-relâchement de cette garde exacte.
+**Why refusal and not a switch.** An implicit switch charges the **wrong payment method**,
+credits the **wrong rights**, and delivers the seat to the wrong account — in a living room, at
+the precise moment when two people are watching the same screen. A money operation is never
+resolved by a silent change of identity. And CVE-2026-45337 shows what loosening this exact guard
+costs.
 
-**`signin` est l'exception, et ce n'est pas une exception.** Pour `signin`, il n'y a pas de
-profil ouvreur : l'appairage est lié à l'**appareil**. Que le téléphone soit connecté sous une
-autre identité est le **cas nominal** — c'est même le sens de « ajouter un compte » depuis
-l'écran `gate`. Aucun `MISMATCH` n'est donc possible sur `signin`.
+**`signin` is the exception, and it is not an exception.** For `signin` there is no opening
+profile: the pairing is bound to the **device**. The phone being signed in under a different
+identity is the **nominal case** — it is the very meaning of "add an account" from the `gate`
+screen. No `MISMATCH` is therefore possible on `signin`.
 
-### Q4 — **Une durée par intention, servie dans la réponse. Jamais quinze minutes pour un paiement.**
+### Q4 — **One duration per intent, served in the response. Never fifteen minutes for a payment.**
 
-| `intent` | `expiresAt` | Pourquoi |
+| `intent` | `expiresAt` | Why |
 |---|---|---|
-| `signin` | **15 min** | chercher son téléphone, se connecter, faire une 2FA |
-| `payment-method` · `plan` · `merch` | **10 min** | pas de jauge à respecter, mais un paiement ne traîne pas |
-| **`seat`** | **5 min** | la jauge affichée à la réservation doit rester vraie |
+| `signin` | **15 min** | finding your phone, signing in, possibly doing 2FA |
+| `payment-method` · `plan` · `merch` | **10 min** | no gauge to honour, but a payment does not linger |
+| **`seat`** | **5 min** | the gauge shown at booking time must stay true |
 
-**Et pour `seat`, une exigence de plus, adressée à `backend-domain` :** la durée de l'appairage
-doit être **la durée d'un maintien de places** (`hold`) posé par `ticketing` à la création de
-l'appairage. Sans cela, la jauge affichée sur la TV est un mensonge pendant cinq minutes, ce qui
-est précisément le défaut que la TV signale. Les deux durées sont la même valeur, servie une
-seule fois.
+**And for `seat`, one further requirement, addressed to `backend-domain`:** the pairing duration
+must be **the duration of a seat hold** placed by `ticketing` when the pairing is created.
+Without it, the gauge shown on the TV is a lie for five minutes, which is precisely the defect
+the TV reports. The two durations are the same value, served once.
 
-Conformément à la maquette, **l'écran d'attente n'affiche pas de compte à rebours** :
-`expiresAt` sert à la TV pour renoncer, pas pour angoisser le spectateur.
+In line with the mockup, **the waiting screen shows no countdown**: `expiresAt` is there for the
+TV to give up, not to make the viewer anxious.
 
 ---
 
-## 5. Les deux exigences de contrat relevées par la TV
+## 5. The two contract requirements raised by the TV
 
-### 5.1 L'alphabet du code court est **déclaré dans le contrat**
+### 5.1 The short-code alphabet is **declared in the contract**
 
-L'alphabet par défaut de better-auth, `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, **ne suffit pas** : il
-exclut bien `0/O` et `1/I`, mais **conserve `5` avec `S` et `8` avec `B`** — les deux confusions
-que la TV nomme explicitement. Nous le remplaçons par `generateUserCode`.
+better-auth's default alphabet, `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, **is not enough**: it does
+exclude `0/O` and `1/I`, but it **keeps `5` alongside `S` and `8` alongside `B`** — the two
+confusions the TV names explicitly. We replace it via `generateUserCode`.
 
 ```
-PAIRING_CODE_ALPHABET = "ACDEFHJKLMNPQRTVWXY23456789"   // 27 symboles
+PAIRING_CODE_ALPHABET = "ACDEFHJKLMNPQRTVWXY23456789"   // 27 symbols
 PAIRING_CODE_LENGTH   = 6
 ```
 
-**Le principe, et il est plus fort que « retirer les glyphes confusables » :** pour toute paire
-couramment confondue, **garder exactement un membre**. C'est le membre gardé qui rend la
-correction *sûre* au lieu de devinée — la règle que `backend-domain` a formulée en écrivant la
-normalisation du code de place, et qu'il faut lui reprendre.
+**The principle, and it is stronger than "drop the confusable glyphs":** for every commonly
+confused pair, **keep exactly one member**. It is the kept member that makes correction *safe*
+rather than guessed — the rule `backend-domain` formulated while writing the seat code's
+normalisation, and which must be taken from him.
 
-**La normalisation, déclarée — c'est ce qui manquait à ma première rédaction.** Un alphabet sans
-sa table de normalisation est une moitié de contrat : chaque surface devinerait la sienne.
+**The normalisation, declared — this is what my first draft was missing.** An alphabet without
+its normalisation table is half a contract: each surface would guess its own.
 
-| Saisi | Ramené à | | Saisi | Ramené à |
+| Typed | Mapped to | | Typed | Mapped to |
 |---|---|---|---|---|
 | `S`, `s` | `5` | | `I`, `i`, `1` | `L` |
 | `B`, `b` | `8` | | `U`, `u` | `V` |
-| `Z`, `z` | `2` | | minuscules | majuscules |
-| `G`, `g` | `6` | | espaces, `-`, `.` | supprimés |
+| `Z`, `z` | `2` | | lower case | upper case |
+| `G`, `g` | `6` | | spaces, `-`, `.` | removed |
 
-**Le cas `0`/`O`, où j'exclus les deux membres — et c'est délibéré.** `backend-domain` a raison
-qu'exclure les deux interdit toute correction. Je le fais quand même, parce que sur **un écran lu
-à trois mètres** `0` n'est pas le membre d'une paire mais d'une **classe** : `0`, `O`, `D`, `Q`,
-`C` s'effondrent ensemble. Garder `0` ne récupère qu'une arête de cette classe et autorise en
-échange la production de codes qui contiennent le glyphe rond — donc davantage d'erreurs qu'elle
-n'en corrige. Retirer la classe du domaine des codes en supprime la totalité. Un `O` saisi est
-alors **nécessairement** la mélecture d'autre chose, sans cible correcte : le contrat répond
-`PAIRING_CODE_AMBIGUOUS_GLYPH`, qui dit à la TV de désigner la position plutôt que de rejeter le
-code en bloc. Mieux qu'un refus muet, et mieux qu'une correction inventée.
+**The `0`/`O` case, where I exclude both members — and it is deliberate.** `backend-domain` is
+right that excluding both forbids any correction. I do it anyway, because on **a screen read from
+three metres** `0` is not the member of a pair but of a **class**: `0`, `O`, `D`, `Q`, `C`
+collapse together. Keeping `0` recovers only one edge of that class and in exchange permits the
+production of codes containing the round glyph — thus causing more errors than it corrects.
+Removing the class from the code space removes all of them. A typed `O` is then **necessarily**
+the misreading of something else, with no correct target: the contract answers
+`PAIRING_CODE_AMBIGUOUS_GLYPH`, which tells the TV to point at the position rather than reject
+the code wholesale. Better than a silent refusal, and better than an invented correction.
 
-**Pourquoi je n'aligne pas sur Crockford, mesuré paire par paire.** L'alignement aurait l'air de
-la bonne réponse ; il est l'inverse, et c'est le seul point de ce document où j'ai dû vérifier
-avant de croire :
+**Why I do not align on Crockford, measured pair by pair.** Aligning would look like the right
+answer; it is the opposite, and this is the one point in this document where I had to verify
+before believing:
 
-| Paire | Cet ADR (lecture à 3 m) | Crockford (dictée) |
+| Pair | This ADR (read at 3 m) | Crockford (dictated) |
 |---|---|---|
-| `5/S` · `8/B` · `2/Z` · `6/G` | garde le chiffre — **correction sûre** | **les deux présents** — une mélecture donne un code *valide mais faux* |
-| `1/I/L` | garde `L` | garde `1` |
-| `0/O` | les deux absents — classe retirée | garde `0` |
-| `U/V` | garde `V` | garde `V` |
+| `5/S` · `8/B` · `2/Z` · `6/G` | keeps the digit — **safe correction** | **both present** — a misread yields a code that is *valid but wrong* |
+| `1/I/L` | keeps `L` | keeps `1` |
+| `0/O` | both absent — class removed | keeps `0` |
+| `U/V` | keeps `V` | keeps `V` |
 
-Crockford conserve `0` et `1` **parce qu'un encodage en base 32 doit avoir exactement 32
-symboles** : sa table de normalisation est une compensation d'une contrainte de cardinalité, pas
-un idéal d'ergonomie. Mon code n'encode rien — c'est un jeton aléatoire, sa cardinalité est
-libre. Hériter du compromis sans hériter de la contrainte ferait de `5/S`, `8/B`, `2/Z` et `6/G`
-**quatre paires à deux membres présents**, c'est-à-dire le pire mode d'échec pour cette
-surface : une mélecture qui produit un code valide échoue *sans que rien ne signale où*.
+Crockford keeps `0` and `1` **because a base-32 encoding must have exactly 32 symbols**: its
+normalisation table compensates a cardinality constraint, it does not express an ergonomic ideal.
+My code encodes nothing — it is a random token, its cardinality is free. Inheriting the
+compromise without inheriting the constraint would turn `5/S`, `8/B`, `2/Z` and `6/G` into
+**four pairs with both members present**, that is, the worst failure mode for this surface: a
+misread that produces a valid code fails *with nothing to signal where*.
 
-**`U` est retiré**, pour les deux raisons de Crockford : `U`/`V` se confondent à trois mètres, et
-l'absence de `U` écarte les codes de six lettres qui forment un mot malheureux — un code
-s'affiche en 120 points sur un téléviseur de salon.
+**`U` is removed**, for Crockford's two reasons: `U`/`V` are confused at three metres, and the
+absence of `U` rules out six-letter codes that form an unfortunate word — a code is displayed at
+120 points on a living-room television.
 
-- **27⁶ ≈ 3,9 × 10⁸**, soit **28,5 bits** — au-dessus du seuil que la §5.1 de la RFC 8628 juge
-  acceptable **dès lors qu'un plafond de tentatives existe**, ce qui est le cas (§6.2). Les
-  0,3 bit cédés par rapport à mon premier jet achètent une paire confusable de moins.
-- L'alphabet reste un **sous-ensemble strict** de celui de better-auth : la normalisation
-  décrite par sa documentation (insensible à la casse, espaces et ponctuation ignorés) continue
-  de s'appliquer, et la nôtre s'y ajoute. *À confirmer par le spike (§11), c'est une lecture de
-  documentation et non une mesure.*
-- L'unicité est exigée **parmi les appairages en cours seulement**. Un code expiré redevient
-  disponible, sinon l'espace s'épuise. `deviceCode`/`userCode` portent un index unique dans
-  better-auth ; l'unicité partielle demande un **index unique partiel PostgreSQL** sur
+- **27⁶ ≈ 3.9 × 10⁸**, i.e. **28.5 bits** — above the threshold RFC 8628 §5.1 judges acceptable
+  **provided a cap on attempts exists**, which is the case (§6.2). The 0.3 bit given up relative
+  to my first draft buys one confusable pair fewer.
+- The alphabet remains a **strict subset** of better-auth's: the normalisation described in its
+  documentation (case-insensitive, spaces and punctuation ignored) continues to apply, and ours
+  is added to it. *To be confirmed by the spike (§11); this is a reading of documentation and not
+  a measurement.*
+- Uniqueness is required **among pending pairings only**. An expired code becomes available
+  again, otherwise the space is exhausted. `deviceCode`/`userCode` carry a unique index in
+  better-auth; partial uniqueness calls for a **PostgreSQL partial unique index** on
   `status = 'pending'`.
 
-**Un alphabet unique pour les deux codes est écarté, et la raison est le canal.** Le code de
-place est **dicté au téléphone** ; le code d'appairage est **lu à trois mètres**. Les deux jeux
-de confusions ne se recouvrent pas : l'un est phonétique (`B`/`P`/`V`, `M`/`N`, `F`/`S`), l'autre
-purement visuel. Un alphabet commun devrait exclure l'**union** des deux, et ne servirait
-correctement ni l'un ni l'autre. Ce qui doit être partagé, c'est la **forme** — un alphabet
-déclaré *plus* sa table de normalisation — et elle vit dans `@arthome/core` en deux instances
-nommées, `PAIRING_CODE` et le code de place. Aucune des deux ne cite l'autre.
+**A single alphabet for both codes is rejected, and the reason is the channel.** The seat code is
+**dictated over the phone**; the pairing code is **read from three metres**. The two confusion
+sets do not overlap: one is phonetic (`B`/`P`/`V`, `M`/`N`, `F`/`S`), the other purely visual. A
+shared alphabet would have to exclude the **union** of both, and would serve neither one
+properly. What must be shared is the **shape** — a declared alphabet *plus* its normalisation table —
+and it lives in `@arthome/core` as two named instances: `PAIRING_CODE`, and the seat code's own
+constant, whose name belongs to `backend-domain`. Neither cites the other.
 
-### 5.2 La durée de validité est **servie**, jamais copiée
+### 5.2 The validity duration is **served**, never copied
 
-`expiresAt` est un **instant ISO en UTC** dans `DevicePairing`, conformément à la règle du
-projet. Elle n'est plus jamais un littéral de maquette (**E12** clos). La TV n'a rien à savoir,
-et la politique se change sans revue de magasin.
+`expiresAt` is an **ISO instant in UTC** inside `DevicePairing`, in line with the project rule.
+It is never again a mockup literal (**E12** closed). The TV has nothing to know, and the policy
+changes without a store review.
 
-**Une exception à la règle « les dates voyagent en chaînes ISO », et il faut l'écrire** : à
-l'*intérieur* d'un JWT, `exp`, `iat` et `nbf` restent des **secondes numériques**, parce que la
-RFC 7519 l'impose et qu'aucun vérifieur ne lira autre chose. La règle ISO gouverne les charges
-utiles d'API, pas l'intérieur d'un jeton. Tolérance d'horloge déclarée : **± 30 s**
-(`clockTolerance` de `jose`).
+**An exception to the "dates travel as ISO strings" rule, and it must be written down**: *inside*
+a JWT, `exp`, `iat` and `nbf` remain **numeric seconds**, because RFC 7519 requires it and no
+verifier will read anything else. The ISO rule governs API payloads, not the inside of a token.
+Declared clock tolerance: **± 30 s** (`jose`'s `clockTolerance`).
 
-### 5.3 Ce que le contrat doit porter en plus, et qui manquait
+### 5.3 What the contract must carry in addition, and was missing
 
-- **Cinq issues, cinq codes**, comme la TV l'exige : `pending` → `approved` | `denied` |
-  `expired` | `cancelled`, plus **`approved_with_failure`** pour « le téléphone a fini, l'achat a
-  échoué ». Un code unique produirait un message faux quatre fois sur cinq.
-- **`pollInterval`** servi (défaut better-auth : 5 s), et `slow_down` honoré. La TV ne doit
-  jamais interroger plus vite : quelques milliers de téléviseurs en attente sont une charge que
-  le serveur doit pouvoir modérer.
-- **Le rattachement après redémarrage** : `pairingId` est persisté par la TV, et
-  `pollPairing(pairingId)` doit fonctionner **avec le seul `device_token`**, sans session. C'est
-  le cas qu'on oublie, et il est servi par construction puisque l'appairage est lié à l'appareil.
-- **Q1 — comment la TV apprend que c'est fait** : **interrogation périodique conforme à la
-  RFC 8628**, pas le canal temps réel. Motif : le canal ne connaît pas encore d'identité au
-  moment de `signin`, et l'y faire entrer élargirait sa surface d'attaque pour gagner quelques
-  centaines de millisecondes. Pour tenir l'exigence « bascule en deux secondes au plus », on sert
-  `pollInterval: 2s` **pendant les 60 premières secondes** puis 5 s. C'est une décroissance
-  servie par le serveur, donc modérable, et elle coûte au plus 30 requêtes par appairage.
+- **Five outcomes, five codes**, as the TV requires: `pending` → `approved` | `denied` |
+  `expired` | `cancelled`, plus **`approved_with_failure`** for "the phone finished, the purchase
+  failed". A single code would produce a false message four times out of five.
+- **`pollInterval`** served (better-auth default: 5 s), and `slow_down` honoured. The TV must
+  never poll faster: a few thousand televisions all waiting are a load the server must be able to
+  moderate.
+- **Re-attachment after a restart**: `pairingId` is persisted by the TV, and
+  `pollPairing(pairingId)` must work **with the `device_token` alone**, without a session. This
+  is the case one forgets, and it is served by construction since the pairing is bound to the
+  device.
+- **Q1 — how the TV learns it is done**: **periodic polling per RFC 8628**, not the real-time
+  channel. Reason: the channel knows no identity yet at `signin` time, and bringing it in would
+  widen its attack surface to gain a few hundred milliseconds. To meet the "switch within two
+  seconds at most" requirement, we serve `pollInterval: 2s` **for the first 60 seconds**, then
+  5 s. It is a server-served decay, therefore moderable, and it costs at most 30 requests per
+  pairing.
 
 ---
 
-## 6. Sessions, jetons et révocation, surface par surface
+## 6. Sessions, tokens and revocation, surface by surface
 
-### 6.1 Trois porteurs, un seul émetteur
+### 6.1 Three carriers, a single issuer
 
-- **Session opaque better-auth** — émise par `identity`, écrite dans sa base. Portée par
-  **cookie** (`storefront-web`, `studio-web`) ou par **jeton porteur** (`studio-mobile`,
-  `storefront-mobile`, `storefront-tv`), selon le plugin `bearer`, qui rend le jeton dans
-  l'en-tête `set-auth-token` et le reçoit en `Authorization: Bearer`. **Le mode est choisi par
-  le BFF et déclaré explicitement — §8.2.4.**
+- **Opaque better-auth session** — issued by `identity`, written to its database. Carried by
+  **cookie** (`storefront-web`, `studio-web`) or by **bearer token** (`studio-mobile`,
+  `storefront-mobile`, `storefront-tv`), via the `bearer` plugin, which returns the token in the
+  `set-auth-token` header and receives it as `Authorization: Bearer`. **The mode is chosen by the
+  BFF and declared explicitly — §8.2.4.**
 - **`device_token`** — §4/Q3.
-- **Jeton interne** — frappé par le **BFF**, ~60 s, `aud` par service (§8).
+- **Internal token** — minted by the **BFF**, ~60 s, per-service `aud` (§8).
 
-**Réponse à `studio-mobile` sur le retour d'arrière-plan avec jeton expiré** :
-**rafraîchissement silencieux**, jamais de réauthentification. Une réauthentification en pleine
-garde est une faute d'exploitation. La réauthentification n'est exigée que pour les **opérations
-sensibles** (changer la clé de flux, transférer la propriété d'une chaîne, ajouter un moyen de
-versement), et elle est alors demandée *au moment de l'opération*, pas au retour d'écran.
-Durées : session 7 jours (`session.expiresIn`), glissement quotidien (`session.updateAge`).
+**Answer to `studio-mobile` on returning from background with an expired token**: **silent
+refresh**, never a re-authentication. A re-authentication in the middle of a shift is an
+operational fault. Re-authentication is required only for **sensitive operations** (changing the
+stream key, transferring channel ownership, adding a payout method), and it is then asked for *at
+the moment of the operation*, not on returning to the screen. Durations: session 7 days
+(`session.expiresIn`), sliding renewal every 24 h (`session.updateAge`).
 
-**Réponse à `storefront-mobile` sur ce qui survit à une mise à mort** : le jeton porteur survit
-**chiffré par le magasin natif** (Keychain / Keystore), jamais en clair. Le **droit de lecture ne
-survit jamais** — il est rendu par le service d'entitlement à chaque lecture (§9). Une
-application rouverte après une semaine renouvelle silencieusement si la session est encore
-vivante, et ne renvoie à l'écran de connexion que si elle ne l'est plus.
+**Answer to `storefront-mobile` on what survives a kill**: the bearer token survives **encrypted
+by the native store** (Keychain / Keystore), never in the clear. The **playback right never
+survives** — it is returned by the entitlement service on each playback (§9). An app reopened
+after a week refreshes silently if the session is still alive, and sends the user back to the
+sign-in screen only if it is not.
 
-### 6.2 Limitation de débit
+### 6.2 Rate limiting
 
-better-auth apporte : 5 requêtes sur `/device` par fenêtre de vie du code, 3 req/10 s sur les
-points d'entrée 2FA, `slow_down` sur l'interrogation. **Insuffisant pour nous** : ces plafonds
-sont par session ou par adresse, or un salon derrière un NAT partage son adresse. Nous ajoutons,
-au BFF, un plafond **par `device_id`** (`@nestjs/throttler` + Redis, qui est déjà au BFF) et un
-**verrouillage après N tentatives de code erroné**, par code et par appareil. C'est la défense
-que les 28,5 bits d'entropie supposent.
+better-auth provides: 5 requests on `/device` per code-lifetime window, 3 req/10 s on the 2FA
+endpoints, `slow_down` on polling. **Not enough for us**: those caps are per session or per
+address, and a living room behind a NAT shares its address. At the BFF we add a cap **per
+`device_id`** (`@nestjs/throttler` + Redis, which is already at the BFF) and a **lockout after N
+wrong-code attempts**, per code and per device. That is the defence the 28.5 bits of entropy
+presuppose.
 
-### 6.3 La garde de propriété, écrite par nous
+### 6.3 The ownership guard, written by us
 
-Au vu de CVE-2026-45337, `approvePairing` et `denyPairing` **ne sont pas exposés tels quels**.
-Le BFF interpose une garde qui vérifie explicitement, avant de déléguer :
+In light of CVE-2026-45337, `approvePairing` and `denyPairing` **are not exposed as they stand**.
+The BFF interposes a guard that checks explicitly, before delegating:
 
-1. l'appairage est `pending` et non expiré ;
-2. `intent = signin` → le porteur est une session valide quelconque (cas nominal) ;
-3. sinon → `session.user.id` **est** le `owner_profile_id` de l'appairage, sous peine de
+1. the pairing is `pending` and not expired;
+2. `intent = signin` → the bearer is any valid session (nominal case);
+3. otherwise → `session.user.id` **is** the pairing's `owner_profile_id`, failing which
    `PAIRING_IDENTITY_MISMATCH`.
 
-C'est cinq lignes, et c'est la ligne qui a fait la CVE. On ne délègue pas la garde qui a déjà
-cédé une fois chez l'éditeur.
+It is five lines, and it is the line that caused the CVE. One does not delegate the guard that
+has already given way once at the vendor.
 
-### 6.4 Les cinq sorties vers un navigateur externe (`studio-mobile`)
+### 6.4 The five exits to an external browser (`studio-mobile`)
 
-Ce que `studio-mobile` demande est adopté intégralement et devient une règle de contrat :
+What `studio-mobile` asks for is adopted in full and becomes a contract rule:
 
-- **liste blanche stricte** d'adresses de retour (liens universels `applinks` / App Links), des
-  chaînes littérales, **jamais un motif** ;
-- **état opaque, à usage unique, de courte durée** (10 min), émis avant le départ et vérifié au
-  retour — il ne porte **rien de signifiant**, l'URL de retour transitant par le système ;
-- **l'état d'attente vit côté serveur**, jamais en mémoire d'application : « changement de compte
-  en attente de signature », « connexion du compte de versement en cours ». Le système peut tuer
-  l'application pendant le détour ; au retour, **le lien profond dit où aller, le backend dit ce
-  qui a changé**. Un paiement confirmé par un paramètre d'URL est un paiement confirmé par le
-  client.
+- a **strict allow-list** of return addresses (universal links `applinks` / App Links), literal
+  strings, **never a pattern**;
+- an **opaque, single-use, short-lived state** (10 min), issued before departure and verified on
+  return — it carries **nothing meaningful**, the return URL transiting through the OS;
+- **the pending state lives server-side**, never in app memory: "account change awaiting
+  signature", "payout account connection in progress". The system may kill the app during the
+  detour; on return, **the deep link says where to go, the backend says what changed**. A payment
+  confirmed by a URL parameter is a payment confirmed by the client.
 
-L'état opaque est servi par le plugin **`one-time-token`** de better-auth, qui existe déjà.
+The opaque state is served by better-auth's **`one-time-token`** plugin, which already exists.
 
-### 6.5 Le téléviseur partagé
+### 6.5 The shared television
 
-`multi-session` avec `maximumSessions: 5` — qui est déjà le défaut — porte exactement les trois
-règles que la TV énonce : jusqu'à cinq profils sur l'appareil, les droits portés par le
-**profil** jamais par l'appareil, et une **déconnexion par profil** (`multi-session.revoke`) qui
-laisse les autres comptes connectés. Révoquer l'**appareil** est une commande distincte, qui
-supprime le `Device` et toutes ses `DeviceSession` d'un coup.
+`multi-session` with `maximumSessions: 5` — which is already the default — carries exactly the
+three rules the TV states: up to five profiles on the device, rights carried by the **profile**
+and never by the device, and a **per-profile sign-out** (`multi-session.revoke`) that leaves the
+other accounts signed in. Revoking the **device** is a distinct command, which deletes the
+`Device` and all its `DeviceSession` rows at once.
 
-### 6.6 CORS pour la coquille native
+### 6.6 CORS for the native shell
 
-La liste d'autorisation du BFF studio contient les **chaînes littérales** `capacitor://localhost`
-et `https://localhost`, plus les origines de développement. Une entrée `localhost` nue n'en couvre
-aucune, `Access-Control-Allow-Origin: *` est illégal avec des requêtes créditées, et un cadre qui
-normalise `Origin` par un analyseur d'URL rejettera `capacitor://` — la comparaison porte donc sur
-la chaîne brute. Détails et réglages → `nestjs-web-security`.
+The studio BFF's allow-list contains the **literal strings** `capacitor://localhost` and
+`https://localhost`, plus the development origins. A bare `localhost` entry covers neither,
+`Access-Control-Allow-Origin: *` is illegal with credentialed requests, and a framework that
+normalises `Origin` through a URL parser will reject `capacitor://` — so the comparison is on the
+raw string. Details and settings → `nestjs-web-security`.
 
 ---
 
-## 7. Autorisation : les huit rôles restent au domaine
+## 7. Authorization: the eight roles stay in the domain
 
-**Le repli à six personas n'est pas sûr pour l'autorisation** (E6). L'autorisation se fait sur les
-**huit** valeurs de `memberRoles`, vérifiées dans `shared/catalogue.json` :
+**The collapse to six personas is not safe for authorization** (E6). Authorization is done on the
+**eight** values of `memberRoles`, verified in `shared/catalogue.json`:
 `artist · production · coordination · director · video · sound · moderation · treasury`.
-La table `grants` du catalogue le confirme : `director` peut inviter `video` et `sound` ; `video`,
-`sound`, `moderation` et `treasury` n'invitent personne. Le repli à six confond `director`,
-`video` et `sound` sous `regie` et **efface ce droit**. Six est un **libellé**, jamais une clé
-d'autorisation.
+The catalogue's `grants` table confirms it: `director` may invite `video` and `sound`; `video`,
+`sound`, `moderation` and `treasury` invite nobody. The collapse to six merges `director`,
+`video` and `sound` under `regie` and **erases that right**. Six is a **label**, never an
+authorization key.
 
-**Où vit quoi**
+**Where each thing lives**
 
-| Notion | Propriétaire | Pourquoi |
+| Notion | Owner | Why |
 |---|---|---|
-| Compte, mot de passe, 2FA, social, sessions, appareils | `identity` (better-auth) | authentification |
-| Membre d'une chaîne, **ensemble** de rôles par (personne, chaîne), `grants` | domaine (`channels`) | c'est de la donnée métier qui change sans reconnexion |
-| **Renfort affecté à une date**, avec `expiresAt` | domaine | portée une date, cycle de vie propre — confondre les deux ferait d'une révocation de renfort une exclusion de chaîne |
-| Droits effectifs (navigation, volets, `canRevenue`/`canOps`/`canTech`, `canInviteRoles`) | calculés **une fois** dans `@arthome/core`, servis par le BFF studio | « aucune valeur calculée deux fois » |
+| Account, password, 2FA, social, sessions, devices | `identity` (better-auth) | authentication |
+| Channel membership, **set** of roles per (person, channel), `grants` | domain (`channels`) | this is business data that changes without signing in again |
+| **Stand-in assigned to a date**, with `expiresAt` | domain | scoped to one date, own life cycle — merging the two would turn revoking a stand-in into an exclusion from the channel |
+| Effective rights (navigation, panels, `canRevenue`/`canOps`/`canTech`, `canInviteRoles`) | computed **once** in `@arthome/core`, served by the studio BFF | "no value computed twice" |
 
-**Les droits bougent en cours de session — et c'est réglé par la durée du jeton interne.** Le
-jeton frappé par le BFF vivant ~60 s, **la fraîcheur maximale de l'autorisation est de 60
-secondes**. C'est la bonne réponse au studio web : une invitation acceptée est effective en moins
-d'une minute, sans reconnexion et sans que personne n'interroge `identity`.
+**Rights change mid-session — and this is settled by the internal token's lifetime.** Since the
+token minted by the BFF lives ~60 s, **the maximum staleness of authorization is 60 seconds**.
+That is the right answer for the studio web: an accepted invitation takes effect in under a
+minute, without signing in again and without anyone querying `identity`.
 
-**Mais soixante secondes ne suffisent pas pour un accès qui expire.** Un renfort dont l'accès
-expire « au tomber du rideau » peut survivre jusqu'à 60 s dans un jeton déjà frappé. Donc, règle
-ferme : le jeton porte les **rôles** (grossier, stable) ; le service vérifie l'**accès borné dans
-le temps sur la ressource chargée** (fin, daté). CASL 7 (`createMongoAbility`, vérification sur
-l'instance avec `subject()`), jamais une vérification de type seule.
+**But sixty seconds is not enough for an access that expires.** A stand-in whose access expires
+"at curtain fall" may survive up to 60 s inside an already-minted token. Hence a firm rule: the
+token carries the **roles** (coarse, stable); the service checks the **time-bounded access on the
+loaded resource** (fine, dated). CASL 7 (`createMongoAbility`, checking the instance with
+`subject()`), never a type-level check alone.
 
-**`canRevenue` décide du contenu, pas de l'affichage.** Une régie qui reçoit le brut de
-billetterie et ne l'affiche pas est une fuite. La projection est **serveur**, et une notification
-ne porte **jamais** un montant si le rôle destinataire n'a pas `canRevenue` — elle s'affiche sur
-un écran verrouillé.
+**`canRevenue` decides the content, not the display.** A control room that receives the ticketing
+gross and does not display it is a leak. The projection is **server-side**, and a notification
+**never** carries an amount if the recipient role lacks `canRevenue` — it is shown on a locked
+screen.
 
-**Chaque commande est autorisable seule.** Une action serveur Next.js est une route POST
-publique : la protection de la page qui l'appelle n'est pas une frontière. Chaque commande
-d'écriture porte l'identifiant de la ressource visée, et le contrat dit quelle propriété est
-vérifiée. Et **aucun service ne saute son autorisation** parce que « seul le BFF l'appelle ».
+**Every command must be authorisable on its own.** A Next.js server action is a public POST
+route: the protection of the page that calls it is not a boundary. Every write command carries
+the identifier of the targeted resource, and the contract states which ownership is checked. And
+**no service skips its own authorization** because "only the BFF calls it".
 
-### 7.1 E1 — pourquoi les formules cassées touchent l'authentification
+### 7.1 E1 — why the broken plans touch authentication
 
-`plan.opens[]` conditionne l'accès à la lecture, et **quatre vocabulaires disjoints** coexistent :
-`plans[]` dit `free`/`pass`/`premium`, `accounts[].plan` dit `season`/`monthly`/`none`, les
-maquettes web et TV en inventent quatre autres. `helpers.planOf()` faisant
-`… || plans()[0]`, **les quatre comptes de référence retombent silencieusement sur `free`**.
+`plan.opens[]` gates playback access, and **four disjoint vocabularies** coexist: `plans[]` says
+`free`/`pass`/`premium`, `accounts[].plan` says `season`/`monthly`/`none`, the web and TV mockups
+invent four more. Since `helpers.planOf()` does `… || plans()[0]`, **the four reference accounts
+silently fall back to `free`**.
 
-**Conséquence pour cet ADR, et elle est ferme : le jeton interne ne porte aucune revendication
-de formule.** Pas de `plan`, pas de `opens[]`, pas d'`entitlements`. Motifs :
+**Consequence for this ADR, and it is firm: the internal token carries no plan claim.** No
+`plan`, no `opens[]`, no `entitlements`. Reasons:
 
-1. mettre un vocabulaire cassé dans un jeton fige le défaut dans un artefact signé ;
-2. une formule change à la seconde (résiliation, échec de prélèvement) et ne supporte pas 60 s de
-   latence sur une décision d'argent ;
-3. le droit de lecture appartient à `adr-stream-entitlement.md`, qui le résout **à l'émission du
-   jeton de lecture**, sur la donnée fraîche.
+1. putting a broken vocabulary into a token freezes the defect inside a signed artefact;
+2. a plan changes by the second (cancellation, failed direct debit) and does not tolerate 60 s of
+   staleness on a money decision;
+3. the playback right belongs to `adr-stream-entitlement.md`, which resolves it **at playback-token
+   issuance**, on fresh data.
 
-Le jeton d'authentification dit **qui**. Il ne dit jamais **ce à quoi la personne a droit de
-regarder**.
+The authentication token says **who**. It never says **what the person is entitled to watch**.
 
-### 7.2 UUIDv7 et la date de création
+### 7.2 UUIDv7 and the creation date
 
-Un UUIDv7 révèle sa date de création. Décision, volontairement étroite :
+A UUIDv7 reveals its creation date. The decision, deliberately narrow:
 
-- `sub` d'un jeton = UUIDv7 de l'utilisateur : **acceptable**. Un jeton est court, déjà
-  authentifié, et n'est pas une URL publique.
-- **Aucun identifiant de personne physique n'apparaît dans une URL publique.** Les pages de
-  partage, les profils publics et les QR portent un **slug** ou un identifiant public distinct.
-  Les artistes sont des entités publiques : leur date de création n'est pas un secret.
-- better-auth génère par défaut une chaîne base62. On impose l'UUIDv7 par
-  `advanced.database.generateId`, **vérifié** comme acceptant une fonction.
+- a token's `sub` = the user's UUIDv7: **acceptable**. A token is short-lived, already
+  authenticated, and is not a public URL.
+- **No natural person's identifier appears in a public URL.** Share pages, public profiles and QR
+  codes carry a **slug** or a distinct public identifier. Artists are public entities: their
+  creation date is not a secret.
+- better-auth generates a base62 string by default. We impose UUIDv7 through
+  `advanced.database.generateId`, **verified** as accepting a function.
 
 ---
 
-## 8. Topologie : ce que le BFF frappe, ce que les services vérifient
+## 8. Topology: what the BFF mints, what the services verify
 
-Conforme aux décisions contraignantes, sans exception demandée.
+In line with the binding decisions, with no exception requested.
 
 ```
 surface ──(cookie | Bearer)──► BFF ──(JWT ES256, ~60 s, aud=<service>)──► service
                                 │                                          │
-                                └─ valide la session (Redis + identity)     └─ vérifie par JWKS,
-                                   frappe le jeton interne                     localement, jose
+                                └─ validates the session (Redis + identity) └─ verifies via JWKS,
+                                   mints the internal token                    locally, jose
 ```
 
-- **Le BFF, et lui seul, valide la session.** Aucun service n'appelle `identity` ni ne lit le
-  magasin de sessions. Redis reste **au BFF seulement**.
-- **Le BFF frappe le jeton interne** : `jose`, **ES256**, `iss` = le BFF, `aud` = le service
-  visé, `sub` = `user_id`, revendications minimales (rôles par chaîne, `device_id`), `exp` 60 s.
-  Un jeton frappé pour `ticketing` est **refusé** par `billing`.
-- **Chaque service vérifie localement** avec `createRemoteJWKSet` construit **une fois** (pas par
-  requête), `algorithms`, `issuer` et `audience` **épinglés** — sans épinglage, tout jeton signé
-  par la clé passe. Jamais `x-user-id` en en-tête : n'importe quel appelant peut le poser.
-- **`traceparent` (W3C) est propagé** de la surface au service, en passant par le BFF.
+- **The BFF, and it alone, validates the session.** No service calls `identity` or reads the
+  session store. Redis stays **at the BFF only**.
+- **The BFF mints the internal token**: `jose`, **ES256**, `iss` = the BFF, `aud` = the target
+  service, `sub` = `user_id`, minimal claims (roles per channel, `device_id`), `exp` 60 s. A token
+  minted for `ticketing` is **refused** by `billing`.
+- **Each service verifies locally** with `createRemoteJWKSet` built **once** (not per request),
+  with `algorithms`, `issuer` and `audience` **pinned** — without pinning, any token signed by
+  that key passes. Never `x-user-id` in a header: any caller can set it.
+- **`traceparent` (W3C) is propagated** from the surface to the service, through the BFF.
 
-### 8.1 Le point sensible : où vit le JWKS
+### 8.1 The sensitive point: where the JWKS lives
 
-Un service qui va chercher le JWKS chez un BFF réintroduit une dépendance vers l'entrée.
-**Décision : un document JWKS unique, statique, servi par le CDN.** Il contient les clés publiques
-des **quatre** émetteurs, distinguées par un préfixe de `kid` :
+A service that fetches the JWKS from a BFF reintroduces a dependency on the edge.
+**Decision: a single, static JWKS document served by the CDN.** It contains the public keys of
+the **four** issuers, distinguished by a `kid` prefix:
 
-| Émetteur | `kid` | `aud` | Rotation |
+| Issuer | `kid` | `aud` | Rotation |
 |---|---|---|---|
-| BFF storefront | `bff-sf-<date>` | `arthome.<service>` | 30 j, grâce 24 h |
-| BFF studio | `bff-st-<date>` | `arthome.<service>` | 30 j, grâce 24 h |
-| Entitlement (lecture) | `play-<date>` | `arthome.cdn` | **90 j, grâce 7 j** |
-| `identity` (device_token) | `dev-<date>` | `arthome.device` | 90 j, grâce 7 j |
+| storefront BFF | `bff-sf-<date>` | `arthome.<service>` | 30 d, grace 24 h |
+| studio BFF | `bff-st-<date>` | `arthome.<service>` | 30 d, grace 24 h |
+| Entitlement (playback) | `play-<date>` | `arthome.cdn` | **90 d, grace 7 d** |
+| `identity` (device_token) | `dev-<date>` | `arthome.device` | 90 d, grace 7 d |
 
-Aucun appel de service à service : c'est le seul bénéfice que le document unique achète, et il
-suffit à le justifier.
+No service-to-service call: that is the only benefit the single document buys, and it is enough
+to justify it.
 
-**Ce que j'avais écrit et qui était faux : « un seul objet à faire tourner ».** J'en tirais un
-argument pour un **travail de rotation unique**. `definition-of-done.md` §7.6 l'a réfuté, et la
-réfutation vaut d'être reprise ici plutôt que de vivre seulement là-bas : **la simplification
-était illusoire, et mon propre tableau le montrait.** Mes quatre lignes portent déjà deux
-calendriers et deux fenêtres de grâce — 30 j / 24 h pour les BFF, 90 j / 7 j pour la lecture et
-l'appareil. Un travail unique n'aurait donc pas été *un* travail, mais *un travail à quatre
-branches* : il aurait payé le prix de réunir **quatre clés privées** sous un seul processus sans
-jamais acheter la simplicité qui le motivait.
+**What I had written and that was wrong: "a single object to rotate".** From it I drew an
+argument for a **single rotation job**. `definition-of-done.md` §7.6 refuted it, and the
+refutation is worth restating here rather than living only there: **the simplification was
+illusory, and my own table showed it.** My four rows already carry two calendars and two grace
+windows — 30 d / 24 h for the BFFs, 90 d / 7 d for playback and the device. A single job would
+therefore not have been *one* job, but *one job with four branches*: it would have paid the price
+of gathering **four private keys** under a single process without ever buying the simplicity that
+motivated it.
 
-**La décision retenue : quatre rotations indépendantes, une par émetteur, plus un assembleur sans
-secret.** Chaque émetteur fait tourner sa clé à sa cadence et publie sa **partie publique** ;
-l'assembleur concatène les quatre parties publiques en un document et le dépose. Il ne détient
-aucune clé privée : il n'est donc pas une cible, et une rotation qui échoue n'en bloque aucune
-autre. C'est précisément ce qu'un travail unique aurait perdu.
+**The decision retained: four independent rotations, one per issuer, plus a secret-less
+assembler.** Each issuer rotates its key at its own cadence and publishes its **public part**;
+the assembler concatenates the four public parts into one document and uploads it. It holds no
+private key: it is therefore not a target, and a rotation that fails blocks none of the others.
+That is precisely what a single job would have lost.
 
-Règle de séquence, inchangée : publier la nouvelle clé **avant** de signer avec, retirer
-l'ancienne **après** la fenêtre calculée ci-dessous.
+Sequencing rule, unchanged: publish the new key **before** signing with it, retire the old one
+**after** the window computed below.
 
-**Pourquoi les deux cadences divergent — la raison, qui manquait.** J'avais écrit ces chiffres
-sans les argumenter ; `backend-contracts` a formulé le mécanisme, et il est contre-intuitif assez
-pour qu'il faille l'écrire, sous peine que quelqu'un « simplifie » en alignant les cadences :
+**Why the two cadences diverge — the reason, which was missing.** I had written these figures
+without arguing them; `backend-contracts` formulated the mechanism, and it is counter-intuitive
+enough that it must be written down, or someone will "simplify" by aligning the cadences:
 
-> **La fenêtre de grâce doit couvrir le cache du CDN, pas la durée du jeton.** La périphérie met
-> le document JWKS en cache pendant des heures. Publier la nouvelle clé puis signer avec elle
-> soixante secondes plus tard fait rejeter des jetons **parfaitement valides**, par une
-> périphérie qui sert encore l'ancien document et ne connaît pas le nouveau `kid`.
+> **The grace window must cover the CDN cache, not the token's lifetime.** The edge caches the
+> JWKS document for hours. Publishing the new key and then signing with it sixty seconds later
+> causes **perfectly valid** tokens to be rejected, by an edge that is still serving the old
+> document and does not know the new `kid`.
 
-D'où la règle, et elle est chiffrée : le document est servi en **`Cache-Control: max-age=3600`**,
-et **toute fenêtre de grâce est ≥ 2 × max-age**. Les deux cadences respectent ce plancher de 2 h
-(24 h pour les BFF, 7 j pour la lecture et l'appareil) ; ce qui les sépare, c'est donc la marge
-au-dessus, et elle est délibérée : une périphérie de CDN se réchauffe moins bien qu'un service que
-nous exploitons, et son cache est le seul des quatre que nous ne pouvons pas vider.
+Hence the rule, and it is numeric: the document is served with **`Cache-Control: max-age=3600`**,
+and **every grace window is ≥ 2 × max-age**. Both cadences respect this 2 h floor (24 h for the
+BFFs, 7 d for playback and the device); what separates them is therefore the margin above it, and
+it is deliberate: a CDN edge warms up less well than a service we operate, and its cache is the
+only one of the four we cannot flush.
 
-Le raisonnement dimensionnant n'est donc **pas** « la plus longue durée de vie de jeton » mais
-**le maximum des deux** : durée de vie du jeton *et* deux fois le `max-age` du document. Porte de
-recette : `definition-of-done.md` §7.6.
+The sizing reasoning is therefore **not** "the longest token lifetime" but **the maximum of the
+two**: the token's lifetime *and* twice the document's `max-age`. Acceptance gate:
+`definition-of-done.md` §7.6.
 
-**ES256 partout, pas EdDSA.** better-auth signe en EdDSA par défaut ; nous imposons `ES256`.
-Deux raisons vérifiées : `@nestjs/jwt` (jsonwebtoken 9) **ne sait pas** vérifier EdDSA, et la
-périphérie du CDN qui doit vérifier le jeton de lecture s'appuie sur WebCrypto, où le support
-d'Ed25519 est plus récent et plus inégal que celui de P-256. Un seul algorithme pour les quatre
-émetteurs, c'est une chose de moins qui diverge.
+**ES256 everywhere, not EdDSA.** better-auth signs with EdDSA by default; we impose `ES256`. Two
+verified reasons: `@nestjs/jwt` (jsonwebtoken 9) **cannot** verify EdDSA, and the CDN edge that
+must verify the playback token relies on WebCrypto, where Ed25519 support is more recent and more
+uneven than P-256's. One algorithm for the four issuers is one fewer thing that diverges.
 
-### 8.2 Où les routes d'authentification sont montées
+### 8.2 Where the authentication routes are mounted
 
-*Arbitrage du chef, rendu au temps 4 sur remontée de `backend-contracts`.* Six contrats manquaient
-— créer un compte, se connecter, se déconnecter, réinitialiser un mot de passe, les quatre actions
-d'`account/security`, la gestion d'appareil du studio — et ils dépendaient tous de la même
-décision non prise.
+*Lead's arbitration, made at time 4 on a point raised by `backend-contracts`.* Six contracts were
+missing — create an account, sign in, sign out, reset a password, the four `account/security`
+actions, the studio's device management — and they all depended on the same undecided question.
 
-**Décision : le BFF expose `/v1/auth/*` en relais documenté, et le cookie de session est posé sur
-le domaine du BFF.** Elle est cohérente avec ce que cet ADR disait déjà — « le BFF, et lui seul,
-valide la session » — et elle tient les quatre contraintes d'un coup : la **règle critique 1**
-n'a plus d'exception par la porte de l'authentification, le serveur Next voit le cookie sur son
-propre domaine, et la coquille Capacitor reçoit un **jeton porteur** du même relais plutôt qu'un
-cookie qu'iOS 14+ lui interdit de tenir.
+**Decision: the BFF exposes `/v1/auth/*` as a documented relay, and the session cookie is set on
+the BFF's domain.** It is consistent with what this ADR already stated — "the BFF, and it alone,
+validates the session" — and it holds all four constraints at once: **critical rule 1** no longer
+has an exception through the authentication door, the Next server sees the cookie on its own
+domain, the Capacitor shell receives a **bearer token** from the same relay rather than a cookie
+that iOS 14+ forbids it to hold, and **§7's placement of better-auth inside `identity` is
+preserved untouched** — trivially, since the relay adds a hop in front of `identity` instead of
+moving anything out of it. That fourth constraint costs nothing to meet, which is exactly why it
+was about to go unwritten: the relay was chosen against four pressures, not three, and a reader
+who counts three will not understand why `identity` was never a candidate for the edge.
 
-**Une porte d'entrée, trois modes de restitution.**
+**One entry door, three delivery modes.**
 
-#### 8.2.1 Ce que le relais expose, et ce qu'il n'expose pas
+#### 8.2.1 What the relay exposes, and what it does not
 
-| Famille | Relayé en `/v1/auth/*` | Note |
+| Family | Relayed under `/v1/auth/*` | Note |
 |---|---|---|
-| `sign-up/email`, `sign-in/email`, `sign-out` | **oui** | |
-| `forget-password`, `reset-password` | **oui** | le lien du courriel pointe la **surface**, pas l'API (§8.2.5 c) |
-| `sign-in/social`, `callback/:provider` | **oui** | client confidentiel côté serveur (§8.2.3) |
-| `get-session` | **oui**, mais **projeté** — rend `ViewerContext` / droits effectifs, pas la forme better-auth |
-| `update-user`, `change-password`, `change-email`, `delete-user` | **oui** | réauthentification exigée sur les sensibles (§6.1) |
-| `two-factor/*` | **oui** | |
-| `multi-session/*` | **oui** | c'est la gestion d'appareil du studio et des profils de la TV |
-| `device/*` (RFC 8628) | **non** | consommé **par** le BFF derrière `/v1/pairings` — une seule primitive (§3) |
-| `device/approve`, `device/deny` | **non, jamais bruts** | enveloppés par la garde de propriété (§6.3) |
-| `/jwks` | **non** | le document est **statique et servi par le CDN** (§8.1). Le relayer réintroduirait la dépendance que §8.1 supprime |
-| `/token` (plugin `jwt`) | **non** | le BFF frappe lui-même le jeton interne ; **aucun client n'obtient un JWT d'audience de service** |
-| `/ok`, `/error` (pages par défaut) | **non** | elles rendent des phrases anglaises — interdit par l'i18n par codes |
+| `sign-up/email`, `sign-in/email`, `sign-out` | **yes** | |
+| `forget-password`, `reset-password` | **yes** | the email link points at the **surface**, not the API (§8.2.7) |
+| `sign-in/social`, `callback/:provider` | **yes** | confidential server-side client (§8.2.3) |
+| `get-session` | **yes**, but **projected** | returns `ViewerContext` / effective rights, not better-auth's shape |
+| `update-user`, `change-password`, `change-email`, `delete-user` | **yes** | re-authentication required on the sensitive ones (§6.1) |
+| `two-factor/*` | **yes** | |
+| `multi-session/*` | **yes** | this is the studio's device management and the TV's profiles |
+| `device/*` (RFC 8628) | **no** | consumed **by** the BFF behind `/v1/pairings` — a single primitive (§3) |
+| `device/approve`, `device/deny` | **no, never raw** | wrapped by the ownership guard (§6.3) |
+| `/jwks` | **no** | the document is **static and served by the CDN** (§8.1). Relaying it would reintroduce the dependency §8.1 removes |
+| `/token` (`jwt` plugin) | **no** | the BFF mints the internal token itself; **no client obtains a service-audience JWT** |
+| `/ok`, `/error` (default pages) | **no** | they render English sentences — forbidden by i18n-by-codes |
 
-#### 8.2.2 Ce que le relais **ajoute** — sans quoi ce serait la passerelle applicative écartée
+#### 8.2.2 What the relay **adds** — without which it would be the application gateway we rejected
 
-Le chef a raison d'exiger cette liste : un relais qui redispatche est une passerelle, et le projet
-l'a écartée d'avance. Ce que le BFF fait **en plus de transmettre**, et dont rien ne le dispense :
+The lead is right to demand this list: a relay that re-dispatches is a gateway, and the project
+rejected one in advance. What the BFF does **beyond forwarding**, and from which nothing excuses
+it:
 
-1. **La validation zod et donc l'OpenAPI.** C'est l'argument décisif, et il vient d'une décision
-   contraignante : `zod` valide tout, l'OpenAPI est **généré depuis zod**. Un relais transparent
-   n'a pas de schéma, donc **n'apparaît pas dans l'OpenAPI** — les six contrats manquants
-   resteraient manquants. Chaque route relayée déclare ses schémas d'entrée et de sortie.
-2. **L'enveloppe d'erreur du projet, en codes.** better-auth répond des phrases anglaises
-   (`"Invalid email or password"`). L'i18n par codes l'interdit, enveloppe d'erreur comprise. Le
-   BFF fait la table de correspondance code better-auth → code du projet. À lui seul, ce point
-   rendrait le relais obligatoire.
-3. **La garde de propriété de l'appairage** (§6.3) — la ligne qui a fait CVE-2026-45337.
-4. **Le choix du mode de restitution** (§8.2.4) : c'est le BFF qui décide ce qu'il rend, pas
-   `identity` qui l'ignore.
-5. **La limitation de débit par `device_id`** (§6.2), que better-auth ne sait pas faire : ses
-   plafonds sont par adresse ou par session, et un salon derrière un NAT partage son adresse.
-6. **Le durcissement du cookie et la CSRF** en mode cookie (→ `nestjs-web-security`), sans objet
-   en mode porteur.
-7. **`traceparent`** propagé, et la corrélation avec le reste de la requête.
+1. **Zod validation, and therefore the OpenAPI.** This is the decisive argument, and it comes
+   from a binding decision: `zod` validates everything, the OpenAPI is **generated from zod**. A
+   transparent relay has no schema, therefore **does not appear in the OpenAPI** — the six
+   missing contracts would stay missing. Every relayed route declares its input and output
+   schemas.
+2. **The project's error envelope, in codes.** better-auth answers with English sentences
+   (`"Invalid email or password"`). i18n-by-codes forbids that, error envelope included. The BFF
+   holds the mapping from better-auth code to project code. On its own, this point would make the
+   relay mandatory.
+3. **The pairing ownership guard** (§6.3) — the line that caused CVE-2026-45337.
+4. **The choice of delivery mode** (§8.2.4): it is the BFF that decides what it returns, not
+   `identity`, which knows nothing about it.
+5. **Rate limiting per `device_id`** (§6.2), which better-auth cannot do: its caps are per address
+   or per session, and a living room behind a NAT shares its address.
+6. **Cookie hardening and CSRF** in cookie mode (→ `nestjs-web-security`), moot in bearer mode.
+7. **`traceparent`** propagated, and correlation with the rest of the request chain.
 
-#### 8.2.3 Le retour d'OAuth, et les deux coquilles natives
+#### 8.2.3 The OAuth return, and the two native shells
 
-La redirection est enregistrée **une fois par fournisseur**, sur le domaine du BFF. Point
-structurant, qui règle la question que j'avais laissée « à vérifier » : **les surfaces ne parlent
-jamais à Google ni à Facebook.** Elles ouvrent `/v1/auth/sign-in/social` sur le BFF, qui redirige.
-Le client OAuth est donc **confidentiel et côté serveur** — aucune application mobile n'embarque
-de secret, ce qui est de toute façon la seule forme défendable sur un binaire distribué.
+The redirect URI is registered **once per provider**, on the BFF's domain. A structural point,
+which settles the question I had left "to be verified": **the surfaces never talk to Google or to
+Facebook.** They open `/v1/auth/sign-in/social` on the BFF, which redirects. The OAuth client is
+therefore **confidential and server-side** — no mobile app embeds a secret, which is in any case
+the only defensible arrangement in a distributed binary.
 
-| Surface | Chemin du retour | Ce qui tient |
+| Surface | Return path | What holds |
 |---|---|---|
-| `storefront-web`, `studio-web` | redirection navigateur ordinaire | cookie posé sur le domaine du BFF, lu par Next au rendu serveur |
-| `studio-mobile` (Capacitor) | **navigateur système**, jamais le WebView, puis **lien universel** | `capacitor://localhost` est un contexte tiers : aucun cookie n'y survivrait |
-| `storefront-mobile` (RN) | `ASWebAuthenticationSession` / Custom Tabs, puis **lien d'application** | idem |
-| `storefront-tv` | **aucun navigateur** | la TV ne fait pas d'OAuth : elle passe par l'appairage, `intent: signin` (§3) |
+| `storefront-web`, `studio-web` | ordinary browser redirect | cookie set on the BFF's domain, read by Next during server rendering |
+| `studio-mobile` (Capacitor) | **system browser**, never the WebView, then a **universal link** | `capacitor://localhost` is a third-party context: no cookie would survive there |
+| `storefront-mobile` (RN) | `ASWebAuthenticationSession` / Custom Tabs, then an **app link** | same |
+| `storefront-tv` | **no browser** | the TV does no OAuth: it goes through pairing, `intent: signin` (§3) |
 
-**La règle qui rend le retour sûr, et elle est absolue : le lien profond ne porte jamais le
-jeton.** Il ne porte qu'un **état opaque à usage unique** (plugin `one-time-token`), que
-l'application échange contre son jeton porteur en TLS direct avec le BFF. Motif déjà établi par
-`studio-mobile` : l'URL de retour transite par le système, peut être journalisée, et peut être
-ouverte par une autre application. C'est aussi ce qui rend le parcours **rejouable** si l'OS tue
-l'application pendant le détour — l'état d'attente est côté serveur (§6.4).
+**The rule that makes the return safe, and it is absolute: the deep link never carries the
+token.** It carries only an **opaque single-use state** (`one-time-token` plugin), which the app
+exchanges for its bearer token over direct TLS with the BFF. The reason was already established
+by `studio-mobile`: the return URL transits through the OS, may be logged, and may be opened by
+another application. It is also what makes the journey **replayable** if the OS kills the app
+during the detour — the pending state is server-side (§6.4).
 
-#### 8.2.4 Les trois modes de restitution
+#### 8.2.4 The three delivery modes
 
-Le mode est un **paramètre explicite** de la demande, validé par zod. **Jamais déduit du
-`User-Agent`** : il est falsifiable, et j'ai tenu tout ce document qu'une heuristique
-contournable ne compte pas comme réponse.
+The mode is an **explicit parameter** of the request, validated by zod. **Never inferred from the
+`User-Agent`**: it is forgeable, and I have held throughout this document that a bypassable
+heuristic does not count as an answer.
 
-| Mode | Surfaces | Ce que rend le BFF | Stockage |
+| Mode | Surfaces | What the BFF returns | Storage |
 |---|---|---|---|
-| `cookie` | `storefront-web`, `studio-web` | cookie `HttpOnly` `Secure` `SameSite=Lax`, **rien dans le corps** | navigateur |
-| `bearer` | `studio-mobile`, `storefront-mobile` | jeton opaque dans le corps, **aucun cookie** | Keychain / Keystore, `@capacitor/preferences` |
-| `device` | `storefront-tv` | `device_token` d'abord (§4/Q3), puis un jeton porteur **par profil** à l'issue de l'appairage | magasin natif |
+| `cookie` | `storefront-web`, `studio-web` | `HttpOnly` `Secure` `SameSite=Lax` cookie, **nothing in the body** | browser |
+| `bearer` | `studio-mobile`, `storefront-mobile` | opaque token in the body, **no cookie** | Keychain / Keystore, `@capacitor/preferences` |
+| `device` | `storefront-tv` | `device_token` first (§4/Q3), then a bearer token **per profile** at the end of pairing | native store |
 
-**Invariant : une réponse ne porte jamais les deux à la fois.** Un jeton dans le corps *et* un
-cookie, c'est deux porteurs pour une session, donc deux révocations à tenir et une qu'on oubliera.
+**Invariant: a response never carries both at once.** A token in the body *and* a cookie means two
+carriers for one session, therefore two revocations to maintain and one that will be forgotten.
 
-Le mode `device` est celui que le chef me demande de relier : la TV n'a **ni cookie ni jeton** au
-moment où elle ouvre un appairage de connexion, puisqu'elle n'a pas de session. C'est exactement
-ce que l'identité d'appareil résout (§4/Q3) — le `device_token` est ce qui l'autorise à frapper
-`/v1/pairings` avant toute session, et rien d'autre.
+The `device` mode is the one the lead asks me to connect: the TV has **neither cookie nor token**
+at the moment it opens a sign-in pairing, since it has no session. That is exactly what the device
+identity solves (§4/Q3) — the `device_token` is what allows it to call `/v1/pairings` before any
+session, and nothing else.
 
-#### 8.2.5 La déconnexion, dans les trois modes
+#### 8.2.5 Sign-out, in the three modes
 
-| Mode | Ce qui se passe |
+| Mode | What happens |
 |---|---|
-| `cookie` | session détruite côté serveur, puis cookie effacé **avec exactement les attributs qui l'ont posé** — sans quoi il n'est pas effacé |
-| `bearer` | session détruite côté serveur, **puis** le client efface son magasin natif. L'ordre compte : effacer le magasin n'est pas révoquer |
-| `device` | **`multi-session.revoke` d'un seul profil.** Les autres comptes du téléviseur restent connectés. Révoquer l'**appareil** est une commande distincte, qui ferme toutes ses sessions d'un coup |
+| `cookie` | session destroyed server-side, then the cookie cleared **with exactly the attributes that set it** — otherwise it is not cleared |
+| `bearer` | session destroyed server-side, **then** the client wipes its native store. The order matters: wiping the store is not revoking |
+| `device` | **`multi-session.revoke` for a single profile.** The television's other accounts stay signed in. Revoking the **device** is a distinct command, which closes all its sessions at once |
 
-**Piège à écrire** : le `signOut` de better-auth révoque **toutes** les sessions de l'utilisateur.
-Sur un téléviseur partagé, ce n'est pas ce qu'on veut — la déconnexion par profil passe
-obligatoirement par `multi-session.revoke`. Deux gestes, deux routes, jamais l'une pour l'autre.
+**A trap worth writing down**: better-auth's `signOut` revokes **all** of the user's sessions. On
+a shared television that is not what is wanted — per-profile sign-out must go through
+`multi-session.revoke`. Two gestures, two routes, never one for the other.
 
-**Articulation avec `DeviceSessionClosed`.** Les trois modes émettent le même événement, et le
-grain que `backend-domain` vient d'ajouter est celui qui manquait : **`(device_id, profile_id)`**.
-Sans `profile_id`, déconnecter un profil sur un téléviseur partagé coupait la lecture de tout le
-salon ou de personne. L'entitlement le consomme et refuse le renouvellement suivant **pour ce
-profil sur cet appareil** ; la latence est celle du §9 — retard de l'événement, puis 75 à 120 s.
+**Connection to `DeviceSessionClosed`.** The three modes emit the same event, and the grain
+`backend-domain` has just added is the one that was missing: **`(device_id, profile_id)`**.
+Without `profile_id`, signing one profile out of a shared television cut off playback for the
+whole living room or for nobody. The entitlement service consumes it and refuses the next renewal
+**for that profile on that device**; the latency is the one in §9 — the event lag, then 75 to
+120 s.
 
-#### 8.2.6 Ce qui reste à `identity` et n'est jamais exposé
+#### 8.2.6 What stays inside `identity` and is never exposed
 
-- **le magasin de justificatifs** — empreintes argon2id, secrets TOTP chiffrés, codes de secours.
-  Jamais lus par le BFF, jamais sur le fil, sous aucun mode ;
-- **les clés privées et leur rotation** (§8.1) — `/jwks` n'est pas relayé, `/token` non plus ;
-- **le registre des appareils** — `identity` l'écrit ; les surfaces en lisent une projection ;
-- **les tables du schéma `auth`** — aucune entité TypeORM ne les mappe (R2).
+- **the credential store** — argon2id hashes, encrypted TOTP secrets, backup codes. Never read by
+  the BFF, never on the wire, under any mode;
+- **the private keys and their rotation** (§8.1) — `/jwks` is not relayed, nor is `/token`;
+- **the device registry** — `identity` writes it; the surfaces read a projection of it;
+- **the `auth` schema's tables** — no TypeORM entity maps them (R2).
 
-#### 8.2.7 Ce que le relais casse, et que je signale
+#### 8.2.7 What the relay breaks, and that I am flagging
 
-Le chef a demandé que je signale ce qui ne tient pas. Une chose casse, réellement :
+The lead asked me to flag what does not hold. One thing genuinely breaks:
 
-**Le client officiel de better-auth ne sert plus.** `authClient` — et avec lui
-`@better-auth/expo` — attend la forme de route et de réponse de better-auth sur une `baseURL`
-connue. Dès lors que le BFF projette `get-session` en `ViewerContext` et remplace les messages par
-des codes, la forme ne correspond plus. **Les cinq surfaces écrivent donc un client mince contre
-`@arthome/contracts`**, comme pour tout le reste du produit, et n'utilisent pas le SDK.
+**better-auth's official client is no longer usable.** `authClient` — and with it
+`@better-auth/expo` — expects better-auth's route and response shape at a known `baseURL`. Once
+the BFF projects `get-session` into `ViewerContext` and replaces messages with codes, the shape no
+longer matches. **The five surfaces therefore write a thin client against `@arthome/contracts`**,
+as they do for everything else in the product, and do not use the SDK.
 
-C'est un coût réel : il retire l'un des arguments de vente de better-auth. Je le tiens pour
-acceptable, et il a une contrepartie que je n'avais pas vue. **R4 disparaît** : je signalais que
-`@better-auth/expo` exige Expo alors que le choix Expo / React Native nu n'est pas fait. Puisque
-nous n'utilisons plus ce paquet du tout, la décision d'authentification devient **entièrement
-indifférente** au choix de pile React Native. Un risque de moins, par un chemin inattendu.
+This is a real cost: it removes one of better-auth's selling points. I hold it to be acceptable,
+and it has an upside I had not foreseen. **R4 disappears**: I had flagged that `@better-auth/expo`
+requires Expo while the Expo / bare React Native choice is not made. Since we no longer use that
+package at all, the authentication decision becomes **entirely indifferent** to the React Native
+stack choice. One risk fewer, by an unexpected route.
 
-Trois pièges de configuration, à écrire avant qu'ils ne coûtent une demi-journée chacun :
+Three configuration traps, to be written down before they cost half a day each:
 
-- **`baseURL` doit être l'URL publique du BFF**, pas l'adresse interne d'`identity`. better-auth
-  construit ses redirections et ses liens de courriel à partir d'elle : mal réglée, les retours
-  OAuth et les liens de réinitialisation pointent un hôte injoignable. `trustedOrigins` liste les
-  origines des cinq surfaces, **chaînes littérales** — `capacitor://localhost` comprise (§6.6).
-- **Le lien de réinitialisation pointe la surface, pas l'API** : `arthome.fr/reset?token=…` ou
-  `studio.arthome.fr/reset?token=…`, donc **par produit et par langue**. On surcharge
-  `sendResetPassword` ; le défaut construit depuis `baseURL` mènerait l'utilisateur sur une API.
-- **`bodyParser: false` concerne l'application `identity`**, pas le BFF. C'est une exigence de
-  l'adaptateur NestJS de better-auth ; l'appliquer au BFF y casserait tout le reste.
+- **`baseURL` must be the BFF's public URL**, not `identity`'s internal address. better-auth
+  builds its redirects and its email links from it: set wrongly, the OAuth returns and the reset
+  links point at an unreachable host. `trustedOrigins` lists the five surfaces' origins, as
+  **literal strings** — including `capacitor://localhost` (§6.6).
+- **The reset link points at the surface, not the API**: `arthome.fr/reset?token=…` or
+  `studio.arthome.fr/reset?token=…`, therefore **per product and per language**. We override
+  `sendResetPassword`; the default built from `baseURL` would land the user on an API.
+- **`bodyParser: false` concerns the `identity` application**, not the BFF. It is a requirement of
+  better-auth's NestJS adapter; applying it to the BFF would break everything else there.
 
 ---
 
-## 9. Articulation avec `adr-stream-entitlement.md`
+## 9. How this fits with `adr-stream-entitlement.md`
 
-C'est la question explicitement posée. **Deux systèmes de jetons, cinq points de contact.**
+This is the question explicitly asked. **Two token systems, five points of contact.**
 
-| | Session / jeton interne (cet ADR) | Jeton de lecture (`adr-stream-entitlement`) |
+| | Session / internal token (this ADR) | Playback token (`adr-stream-entitlement`) |
 |---|---|---|
-| **Qui émet** | session : `identity` · jeton interne : le **BFF** | le service d'**entitlement** |
-| **Qui vérifie** | le BFF (session) · chaque service (JWKS) | la **périphérie du CDN** |
-| **Durée** | session 7 j · interne **60 s** | **120 s**, renouvelé toutes les **45 s**, bail **90 s** |
-| **Porte** | qui vous êtes, vos rôles | ce que vous avez le droit de lire, sur quel appareil |
-| **Algorithme** | **ES256** | **ES256** — même famille, obligatoire pour la périphérie |
-| **Clés** | `kid` `bff-*` | `kid` `play-*` — **même document JWKS**, cadence de rotation **plus lente** (§8.1) |
+| **Who issues** | session: `identity` · internal token: the **BFF** | the **entitlement** service |
+| **Who verifies** | the BFF (session) · each service (JWKS) | the **CDN edge** |
+| **Lifetime** | session 7 d · internal **60 s** | **120 s**, renewed every **45 s**, lease **90 s** |
+| **Carries** | who you are, your roles | what you may watch, on which device |
+| **Algorithm** | **ES256** | **ES256** — same family, mandatory for the edge |
+| **Keys** | `kid` `bff-*` | `kid` `play-*` — **same JWKS document**, **slower** rotation cadence (§8.1) |
 
-**Cinq points de contact, écrits :**
+**Five points of contact, written down:**
 
-1. **Le document est commun, la rotation ne l'est pas.** Même document publié, même convention
-   de `kid` — mais **quatre rotations indépendantes** (§8.1), parce que les cadences diffèrent et
-   qu'un travail unique réunirait quatre clés privées sans rien simplifier. La périphérie du CDN
-   met par ailleurs le JWKS en cache agressivement : une clé de
-   lecture tourne **tous les 90 jours avec 7 jours de grâce**, quand une clé de BFF tourne tous
-   les 30 jours avec 24 h. Aligner les deux cadences ferait rejeter des jetons valides en
-   périphérie. **C'est le piège principal de cette articulation**, et le mécanisme exact qui le
-   produit est écrit en **§8.1** — la grâce se dimensionne sur le **cache**, pas sur le jeton.
-2. **La révocation passe par le renouvellement, pas par une liste de refus.** Un jeton de
-   lecture de 120 s ne se révoque pas : on **cesse de le renouveler**. « Déconnecter cet
-   appareil » révoque la `DeviceSession` dans `identity`, qui publie `session.revoked` /
-   `device.revoked` ; l'entitlement consomme l'événement et refuse le renouvellement suivant.
-   **Latence maximale = retard de l'événement + 120 s** — le cas où le jeton vient d'être
-   renouvelé à l'instant de la révocation. La fourchette réelle est **75 à 120 s** : le dernier
-   renouvellement date de 0 à 45 s, et le jeton qu'il a produit vit 120 s à partir de là. (Ma
-   première rédaction disait « 45 à 75 s » : c'était la même confusion entre l'intervalle et la
-   durée, commise une ligne après l'avoir dénoncée.) C'est la réponse
-   chiffrée à la question 25 de `storefront-web` (« déconnecter cet appareil coupe-t-il la
-   lecture, et en combien de temps ? ») et à `DeviceSession` de la TV.
-3. **Le bail expire, il ne se ferme pas.** La limite de sessions simultanées repose sur un
-   **bail de 90 s qui expire** — plus court que le jeton, donc renouvelé par le même battement de
-   45 s — jamais sur un appel de fin que la TV ou un mobile tué par l'OS ne pourra pas toujours
-   passer. C'est exactement Q9c de la TV et la question 5 de `storefront-mobile`
-   (« qui libère une session tuée ? »). La session de lecture est identifiée par le `device_id`
-   de cet ADR, ce qui permet à une personne de **reprendre sa propre session** au lieu d'être
-   bloquée par son propre écran fantôme.
-4. **L'intervalle de renouvellement n'est pas la durée du jeton — et c'est la faute dont tout
-   est parti.** `adr-stream-entitlement.md` §3.1 écrivait que « la fenêtre pendant laquelle on
-   regarde un flux auquel on n'a plus droit est *exactement l'intervalle de renouvellement* ».
-   C'est faux, et c'est de cette phrase que le « 60 s » a voyagé dans cinq documents, le mien
-   compris. Deux délais distincts, deux bornes distinctes :
+1. **The document is shared, the rotation is not.** Same published document, same `kid`
+   convention — but **four independent rotations** (§8.1), because the cadences differ and a
+   single job would gather four private keys while simplifying nothing. The CDN edge also caches
+   the JWKS aggressively: a playback key rotates **every 90 days with 7 days of grace**, while a
+   BFF key rotates every 30 days with 24 h. Aligning the two cadences would cause valid tokens to
+   be rejected at the edge. **This is the main trap of this articulation**, and the exact
+   mechanism that produces it is written in **§8.1** — the grace window is sized on the **cache**,
+   not on the token.
+2. **Revocation works through renewal, not through a deny-list.** A 120 s playback token is not
+   revoked: one **stops renewing it**. "Disconnect this device" revokes the `DeviceSession` in
+   `identity`, which publishes `session.revoked` / `device.revoked`; the entitlement service
+   consumes the event and refuses the next renewal. **Maximum latency = event lag + 120 s** — the
+   case where the token has just been renewed at the instant of revocation. The real range is
+   **75 to 120 s**: the last renewal is 0 to 45 s old, and the token it produced lives 120 s from
+   then. (My first draft said "45 to 75 s": it was the same confusion between the interval and the
+   lifetime, committed one line after denouncing it.) This is the numeric answer to
+   `storefront-web`'s question 25 ("does disconnecting this device cut playback, and in how
+   long?") and to the TV's `DeviceSession`.
+3. **The lease expires, it does not close.** The concurrent-session limit rests on a **90 s lease
+   that expires** — shorter than the token, therefore renewed by the same 45 s heartbeat — never
+   on an end call that a TV, or a mobile killed by the OS, will not always be able to make. This
+   is exactly the TV's Q9c and `storefront-mobile`'s question 5 ("who releases a killed
+   session?"). The playback session is identified by this ADR's `device_id`, which lets a person
+   **take back their own session** instead of being blocked by their own ghost screen.
+4. **The renewal interval is not the token's lifetime — and this is the fault everything came
+   from.** `adr-stream-entitlement.md` §3.1 stated that "the window during which one watches a
+   stream one is no longer entitled to is *exactly the renewal interval*". That is false, and it
+   is from this sentence that the "60 s" travelled into five documents, mine included. Two
+   distinct delays, two distinct bounds:
 
-   | Délai | Borné par | Valeur |
+   | Delay | Bounded by | Value |
    |---|---|---|
-   | avant que **le client** apprenne le refus | l'intervalle de renouvellement | **≤ 45 s** |
-   | avant que **la périphérie cesse de servir** | la **durée du jeton** | jusqu'à **120 s** |
+   | before **the client** learns of the refusal | the renewal interval | **≤ 45 s** |
+   | before **the edge stops serving** | the **token's lifetime** | up to **120 s** |
 
-   La garantie de sécurité est la **seconde ligne**, toujours. La première n'est qu'une
-   commodité : elle décrit à quelle vitesse un client coopératif s'arrête de lui-même.
+   The security guarantee is the **second row**, always. The first is only a convenience: it
+   describes how fast a cooperative client stops of its own accord.
 
-   **Un signal poussé peut arrêter la lecture plus tôt ; il est une courtoisie, pas une
-   frontière.** Le chef en a demandé un pour le cas visible, et il doit être étiqueté comme tel
-   dans le contrat : un client modifié l'ignore, et la garantie reste **120 s**. J'ai tenu dans
-   tout ce document que toute heuristique contournable ne compte pas comme réponse ; elle ne
-   compte pas davantage ici parce qu'elle est confortable.
+   **A pushed signal may stop playback sooner; it is a courtesy, not a boundary.** The lead asked
+   for one for the visible case, and it must be labelled as such in the contract: a modified
+   client ignores it, the edge serves for up to 120 s, and the guarantee remains **120 s**. I have
+   held throughout this document that any bypassable heuristic does not count as an answer; it
+   counts no more here because it is comfortable.
 
-   **Comment l'erreur s'est produite**, dit par son auteur et recopié ici pour que la forme de la
-   faute reste lisible : *« `storefront-tv` demandait ≤ 60 s, j'ai choisi le nombre qui faisait
-   plaisir à la question. »* Je l'avais reprise sans la vérifier — une exigence de client lue
-   comme une valeur de serveur. C'est le même geste que celui qui a produit E1 et E12 : un
-   littéral adopté parce qu'il était là.
+   **How the error happened**, stated by its author and copied here so that the shape of the fault
+   stays legible: *"`storefront-tv` asked for ≤ 60 s, I picked the number that pleased the
+   question."* I had taken it up without verifying it — a client requirement read as a server
+   value. It is the same gesture that produced E1 and E12: a literal adopted because it was there.
+   **It does not come from ignorance, it comes from the smaller number being easier to write** —
+   which is why it will happen again, and why a constant needs an owning document rather than a
+   careful author.
 
-5. **Les horloges.** Tous les émetteurs sont disciplinés par NTP ; tolérance déclarée **± 30 s**
-   des deux côtés ; `exp`/`iat` numériques (RFC 7519) dans les jetons, ISO dans les charges
-   utiles d'API. Une périphérie de CDN dont l'horloge dérive rejette silencieusement : la
-   tolérance doit être écrite dans les deux ADR, avec la même valeur.
+5. **The clocks.** All issuers are NTP-disciplined; declared tolerance **± 30 s** on both sides;
+   `exp`/`iat` numeric (RFC 7519) inside tokens, ISO in API payloads. A CDN edge whose clock
+   drifts rejects silently: the tolerance must be written in both ADRs, with the same value.
 
-**Et la frontière, dite une fois** : cet ADR répond **qui êtes-vous** ; `adr-stream-entitlement`
-répond **avez-vous le droit de lire ceci, maintenant, ici, sur cet écran**. Le second consomme le
-`sub` et le `device_id` du premier ; le premier ne connaît ni les territoires, ni les formules,
-ni les écrans simultanés (§7.1).
+**And the boundary, stated once**: this ADR answers **who are you**; `adr-stream-entitlement`
+answers **may you watch this, now, here, on this screen**. The second consumes the first's `sub`
+and `device_id`; the first knows nothing of territories, of plans, or of concurrent screens
+(§7.1).
 
 ---
 
-## 10. Risques assumés
+## 10. Risks accepted
 
-| # | Risque | Gravité | Ce qui le contient |
+| # | Risk | Severity | What contains it |
 |---|---|---|---|
-| **R1** | **Le plugin Device Authorization est jeune, et il a déjà eu une CVE d'autorisation** (CVE-2026-45337, corrigée en 1.6.11). Le liage à l'identité — notre Q2 — est précisément ce qui a cédé. | **élevée** | La garde de propriété est **écrite par nous** au BFF (§6.3), pas déléguée. Spike S3. Veille sur les avis de sécurité de l'éditeur, qui publie un bulletin mensuel. |
-| **R2** | **Pas d'adaptateur TypeORM.** better-auth écrit dans PostgreSQL par Kysely : **deux outils de migration sur une base**. | moyenne | Schéma **`auth`** dédié pour better-auth, **`public`** pour TypeORM. Aucune entité TypeORM ne mappe une table better-auth ; le domaine ne tient qu'un `user_id`. Deux commandes de migration dans la même recette de déploiement, jamais entrelacées. |
-| **R3** | **`@thallesp/nestjs-better-auth` est un adaptateur communautaire** (2.8.0, MIT, un mainteneur). Il impose `bodyParser: false` et pose une garde globale. | moyenne | La dépendance est **fine** : elle monte un routeur et un garde. En cas d'abandon, monter `auth.handler` à la main coûte une journée, pas une migration. `@AllowAnonymous()` sur santé et webhooks — à ne pas oublier, la garde est globale. |
-| **R4** | ~~**`@better-auth/expo` exige Expo**, et le choix Expo / RN nu n'est pas fait (D-001).~~ **Éteint** par §8.2.7. | ~~moyenne~~ → **nulle** | Le relais `/v1/auth/*` rend le client officiel inutilisable de toute façon : nous n'installons **pas** `@better-auth/expo`. La décision d'authentification est donc **entièrement indifférente** au choix Expo / React Native nu. Éteint par un chemin que je n'avais pas prévu — c'est le relais, décidé pour une tout autre raison, qui a supprimé ce risque. |
-| **R5** | **Quatre intentions sur cinq ne sont pas du RFC 8628**, et je les fais passer par le même automate. Un lecteur pressé y verra un détournement du standard. | moyenne | C'est délibéré et écrit (§3, D-A2) : la **forme** est celle de la RFC parce que le client TV doit être unique ; seul `signin` emprunte le **protocole**. Les quatre autres n'émettent aucun jeton OAuth. |
-| **R6** | **La limite de débit par adresse est inopérante** : un salon derrière un NAT, un opérateur en CGNAT. | faible | Plafond par **`device_id`** (§6.2), rendu possible par la décision Q3. C'est la raison pratique qui tranche Q3, en plus des quatre raisons de la TV. |
-| **R7** | **28,5 bits d'entropie sur six caractères** est confortable mais pas énorme. | faible | Fenêtres courtes (5–15 min), unicité **partielle** aux seuls appairages en cours, plafond de tentatives et verrouillage. La RFC 8628 §5.1 admet cette entropie **sous condition de limitation de débit** — la condition est tenue. |
-| **R8** | **Je fais de `identity` le propriétaire de l'appairage**, y compris pour des intentions d'achat. | faible | `identity` ne porte qu'un rendez-vous et un **pointeur opaque** ; il ignore places, formules et paiements. L'alternative — `ticketing` propriétaire — obligerait `identity` à l'appeler pour `signin`, ce que « aucun appel synchrone entre services » interdit. |
+| **R1** | **The Device Authorization plugin is young, and it has already had an authorization CVE** (CVE-2026-45337, fixed in 1.6.11). Binding to an identity — our Q2 — is precisely what gave way. | **high** | The ownership guard is **written by us** at the BFF (§6.3), not delegated. Spike S3. Watch the vendor's security advisories; they publish a monthly bulletin. |
+| **R2** | **No TypeORM adapter.** better-auth writes to PostgreSQL through Kysely: **two migration tools on one database**. | medium | A dedicated **`auth`** schema for better-auth, **`public`** for TypeORM. No TypeORM entity maps a better-auth table; the domain holds only a `user_id`. Two migration commands in the same deployment recipe, never interleaved. |
+| **R3** | **`@thallesp/nestjs-better-auth` is a community adapter** (2.8.0, MIT, one maintainer). It requires `bodyParser: false` and installs a global guard. | medium | The dependency is **thin**: it mounts a router and a guard. Should it be abandoned, mounting `auth.handler` by hand costs a day, not a migration. `@AllowAnonymous()` on health and webhooks — not to be forgotten, the guard is global. |
+| **R4** | ~~**`@better-auth/expo` requires Expo**, and the Expo / bare RN choice is not made (D-001).~~ **Extinguished** by §8.2.7. | ~~medium~~ → **none** | The `/v1/auth/*` relay makes the official client unusable anyway: we do **not** install `@better-auth/expo`. The authentication decision is therefore **entirely indifferent** to the Expo / bare React Native choice. Extinguished by a route I had not foreseen — it is the relay, decided for an entirely different reason, that removed this risk. |
+| **R5** | **Four intents out of five are not RFC 8628**, and I route them through the same state machine. A hurried reader will see a misuse of the standard. | medium | It is deliberate and written down (§3, D-A2): the **shape** is the RFC's because the TV client must be single; only `signin` borrows the **protocol**. The other four issue no OAuth token. |
+| **R6** | **A per-address rate limit is ineffective**: a living room behind a NAT, a carrier on CGNAT. | low | A cap per **`device_id`** (§6.2), made possible by the Q3 decision. That is the practical reason that settles Q3, on top of the TV's four. |
+| **R7** | **28.5 bits of entropy over six characters** is comfortable but not enormous. | low | Short windows (5–15 min), **partial** uniqueness over pending pairings only, a cap on attempts and a lockout. RFC 8628 §5.1 accepts this entropy **provided rate limiting exists** — the condition is met. |
+| **R8** | **I make `identity` the owner of the pairing**, including for purchase intents. | low | `identity` carries only a rendezvous and an **opaque pointer**; it knows nothing of seats, plans or payments. The alternative — `ticketing` as owner — would force `identity` to call it for `signin`, which "no synchronous calls between services" forbids. |
 
-**Le risque principal que j'assume est R1** : je retiens, sur le point le plus décisif du
-document, un composant dont la mise en œuvre de ce point précis a été vulnérable il y a trois
-mois. Je l'assume parce que les alternatives sont pires — SuperTokens ne sait pas faire, Keycloak
-porte **la même classe de défaut, non corrigée** (CVE-2026-88770), et le faire à la main revient
-à écrire soi-même le code qui a produit ces deux CVE — mais je ne l'assume qu'avec la garde de
-§6.3 écrite chez nous.
+**The main risk I accept is R1**: on the most decisive point of this document I retain a component
+whose implementation of that very point was vulnerable three months ago. I accept it because the
+alternatives are worse — SuperTokens cannot do it, Keycloak carries **the same class of defect,
+unfixed** (CVE-2026-88770), and doing it by hand amounts to writing oneself the code that produced
+both CVEs — but I accept it only with the §6.3 guard written on our side.
 
 ---
 
-## 11. Le spike minimal qui confirme la décision
+## 11. The minimal spike that would confirm the decision
 
-**Un seul spike, deux à trois jours, un seul service NestJS jetable.** Il ne valide pas
-better-auth en général : il valide les **quatre points sur lesquels la décision pourrait casser**.
+**A single spike, two to three days, one throwaway NestJS service.** It does not validate
+better-auth in general: it validates the **points on which the decision could break**.
 
-**S1 — La coexistence, qui est le risque d'architecture.** `identity` jetable : NestJS 12 +
-`@thallesp/nestjs-better-auth` 2.8.0 + better-auth 1.7.5 sur **PostgreSQL 18**, better-auth dans
-le schéma `auth` par son CLI, **deux entités TypeORM ^1.1** dans `public` avec leurs migrations.
-*Succès* : les deux jeux de migrations tournent dans les deux ordres sans conflit ;
-`advanced.database.generateId` produit bien des **UUIDv7** dans les tables better-auth ; une
-jointure `public.channel_member → auth.user` fonctionne. *Échec ⇒ retomber sur Logto (MPL-2.0,
-base à lui, device flow natif), qui est le second de ce classement.*
+**S1 — The coexistence, which is the architectural risk.** A throwaway `identity`: NestJS 12 +
+`@thallesp/nestjs-better-auth` 2.8.0 + better-auth 1.7.5 on **PostgreSQL 18**, better-auth in the
+`auth` schema via its CLI, **two TypeORM ^1.1 entities** in `public` with their migrations.
+*Success*: both sets of migrations run in either order without conflict;
+`advanced.database.generateId` does produce **UUIDv7** values in the better-auth tables; a join
+`public.channel_member → auth.user` works. *Failure ⇒ fall back to Logto (MPL-2.0, its own
+database, native device flow), which is second in this ranking.*
 
-**S2 — L'appairage bout en bout, avec les cinq issues.** `deviceAuthorization` configuré avec
-`generateUserCode` (alphabet §5.1, 6 caractères), `expiresIn` **par intention**, `interval`
-dégressif. Un faux client TV en Node interroge ; un faux téléphone approuve, refuse, laisse
-expirer, annule, et **approuve puis échoue**. *Succès* : les cinq issues sont distinguables par
-un code, `slow_down` est reçu, la bascule tient **sous deux secondes**, et un `pairingId`
-persisté se **rattache après redémarrage** du faux client. *À mesurer aussi* : qu'un code en
-minuscules, avec un espace au milieu, soit bien accepté — c'est la lecture de documentation que
-j'ai signalée comme non mesurée (§5.1). *Et depuis la correction de §5.1* : la **table de
-normalisation** entière — `S`→`5`, `B`→`8`, `Z`→`2`, `G`→`6`, `I`/`1`→`L`, `U`→`V` — plus le fait
-qu'un `O` saisi rende `PAIRING_CODE_AMBIGUOUS_GLYPH` et non un échec générique. Une normalisation
-non testée est une normalisation qui diverge entre cinq surfaces.
+**S2 — Pairing end to end, with the five outcomes.** `deviceAuthorization` configured with
+`generateUserCode` (alphabet from §5.1, 6 characters), `expiresIn` **per intent**, a decaying
+`interval`. A fake TV client in Node polls; a fake phone approves, denies, lets it expire,
+cancels, and **approves then fails**. *Success*: the five outcomes are distinguishable by code,
+`slow_down` is received, the switch happens **within two seconds**, and a persisted `pairingId`
+**re-attaches after a restart** of the fake client. *Also to be measured*: that a code in lower
+case, with a space in the middle, is indeed accepted — the reading of documentation I flagged as
+unmeasured (§5.1). *And since the §5.1 correction*: the whole **normalisation table** — `S`→`5`,
+`B`→`8`, `Z`→`2`, `G`→`6`, `I`/`1`→`L`, `U`→`V` — plus the fact that a typed `O` returns
+`PAIRING_CODE_AMBIGUOUS_GLYPH` and not a generic failure. An untested normalisation is a
+normalisation that diverges across five surfaces.
 
-**S3 — La garde qui a fait la CVE.** Deux comptes. Le compte A ouvre un appairage `seat` ; le
-compte B, **authentifié**, tente `approve` avec le `user_code` de A. *Succès* :
-`PAIRING_IDENTITY_MISMATCH`, et **rien n'est créé**. Puis le même essai en `intent = signin` :
-*succès* = accepté, parce que c'est le cas nominal. **C'est le test qui doit exister avant
-n'importe quelle ligne de production**, et il doit entrer dans la suite de non-régression, pas
-rester dans le spike.
+**S3 — The guard that caused the CVE.** Two accounts. Account A opens a `seat` pairing; account B,
+**authenticated**, attempts `approve` with A's `user_code`. *Success*:
+`PAIRING_IDENTITY_MISMATCH`, and **nothing is created**. Then the same attempt with
+`intent = signin`: *success* = accepted, because that is the nominal case. **This is the test that
+must exist before any line of production code**, and it belongs in the regression suite, not in
+the spike.
 
-**S4 — La chaîne de vérification, en une page.** Le BFF valide la session, frappe un JWT
-**ES256** de 60 s avec `aud: "arthome.ticketing"` ; un faux service le vérifie avec `jose` et
-`createRemoteJWKSet` contre un **document JWKS statique**, `algorithms`/`issuer`/`audience`
-épinglés. *Succès* : le jeton passe ; le **même jeton présenté à un faux `billing` est refusé** ;
-une rotation de `kid` avec période de grâce ne casse rien. *Échec sur la rotation ⇒ le §8.1 est à
-revoir avant d'écrire quoi que ce soit.*
+**S4 — The verification chain, on one page.** The BFF validates the session, mints a 60 s
+**ES256** JWT with `aud: "arthome.ticketing"`; a fake service verifies it with `jose` and
+`createRemoteJWKSet` against a **static JWKS document**, with `algorithms`/`issuer`/`audience`
+pinned. *Success*: the token passes; the **same token presented to a fake `billing` is refused**;
+a `kid` rotation with a grace period breaks nothing. *Failure on the rotation ⇒ §8.1 must be
+revised before anything is written.*
 
-**S5 — Le retour d'OAuth dans une coquille native, qui est la seule chose que §8.2.3 affirme sans
-l'avoir mesurée.** Une coquille Capacitor minimale : `sign-in/social` ouvert dans le **navigateur
-système**, retour par **lien universel**, échange de l'état à usage unique contre un jeton
-porteur, rangé dans `@capacitor/preferences`. *Succès* : le retour rouvre l'application, et **le
-lien profond ne contient aucun jeton** — seulement l'état opaque. *À éprouver surtout* : le cas
-où l'OS **tue l'application pendant le détour**, qui est le mode d'échec que `studio-mobile`
-signale et que rien d'autre ne couvre. *Échec ⇒ c'est §8.2.3 qui est à revoir, pas le choix de
+**S5 — The OAuth return inside a native shell, which is the only thing §8.2.3 asserts without
+having measured it.** A minimal Capacitor shell: `sign-in/social` opened in the **system
+browser**, return via a **universal link**, exchange of the single-use state for a bearer token,
+stored in `@capacitor/preferences`. *Success*: the return reopens the app, and **the deep link
+contains no token** — only the opaque state. *Above all to be exercised*: the case where the OS
+**kills the app during the detour**, which is the failure mode `studio-mobile` reports and that
+nothing else covers. *Failure ⇒ it is §8.2.3 that must be revised, not the choice of
 better-auth.*
 
-**Ce que le spike n'a pas à prouver** : 2FA, réinitialisation de mot de passe et connexions
-sociales. Ce sont des fonctions établies de tous les candidats ; les éprouver coûterait des jours
-sans rien trancher.
+**What the spike does not have to prove**: 2FA, password reset and social sign-in. These are
+established functions in every candidate; exercising them would cost days without settling
+anything.
 
 ---
 
-## 12. Ce que je remonte au chef
+## 12. What I escalate to the lead
 
-Aucune impossibilité technique : **aucune décision contraignante n'est rouverte.** Trois points
-avaient été remontés et un quatrième est venu du chef ; **les quatre sont clos.** Je les laisse
-ici avec leur issue plutôt que de les effacer — une question résolue sans trace se repose.
+No technical impossibility: **no binding decision is reopened.** Three points had been escalated
+and a fourth came from the lead; **all four are closed.** I leave them here with their outcome
+rather than deleting them — a question resolved without a trace gets asked again.
 
-1. **~~La durée d'appairage `seat` doit être la durée d'un `hold` de places~~ — clos.** (§4/Q4.)
-   `backend-domain` en a tiré un agrégat qu'il n'avait pas, **`SeatHold`**, dont l'invariant est
-   « un seul instant porté par les deux objets, jamais deux durées qui dérivent ». Cela justifie
-   après coup les 5 minutes que j'avais retenues pour `seat` sans pouvoir les argumenter : **une
-   durée d'appairage est un engagement de jauge**, pas un confort d'interface.
-2. **Le montage des routes d'authentification** — *tranché par le chef au temps 4*, écrit en
-   **§8.2** : relais `/v1/auth/*` au BFF, cookie sur le domaine du BFF, trois modes de
-   restitution. Je n'ai trouvé qu'une chose qui casse — le client officiel de better-auth devient
-   inutilisable (§8.2.7) — et elle éteint R4 au passage. **L'arbitrage n'a pas à se rouvrir.**
-3. **~~Une exception écrite à la règle « les dates voyagent en chaînes ISO »~~ — clos.**
-   `backend-contracts` l'a écrite au temps 2, `critical-rules.md` **règle 6**, avec la mention
-   qui était le vrai objet de la demande :
+1. **~~The `seat` pairing duration must be the duration of a seat hold~~ — closed.** (§4/Q4.)
+   `backend-domain` drew from it an aggregate he did not have, **`SeatHold`**, whose invariant is
+   "a single instant carried by both objects, never two durations that drift". This justifies
+   after the fact the 5 minutes I had chosen for `seat` without being able to argue them: **a
+   pairing duration is a commitment about the gauge**, not an interface convenience.
+2. **Where the authentication routes are mounted** — *decided by the lead at time 4*, written in
+   **§8.2**: a `/v1/auth/*` relay at the BFF, cookie on the BFF's domain, three delivery modes. I
+   found only one thing that breaks — better-auth's official client becomes unusable (§8.2.7) —
+   and it extinguishes R4 along the way. **The arbitration does not need to be reopened.**
+3. **~~A written exception to the "dates travel as ISO strings" rule~~ — closed.**
+   `backend-contracts` wrote it at time 2, `critical-rules.md` **rule 6**, with the note that was
+   the real object of the request:
 
-   > **Les dates voyagent en chaînes ISO 8601 UTC.** *Exception : à l'intérieur d'un JWT,
-   > `exp`/`iat`/`nbf` restent des secondes numériques (RFC 7519) — ce n'est pas une faute, ne
-   > pas « corriger ».*
+   > **Dates travel as ISO 8601 UTC strings.** *Exception: inside a JWT, `exp`/`iat`/`nbf` remain
+   > numeric seconds (RFC 7519) — this is not a mistake, do not "fix" it.*
 
-   Je demandais moins la règle que **l'interdiction de la corriger** : une exception qui a l'air
-   d'une faute se fait réparer par quelqu'un de bien intentionné, et le jeton cesse alors d'être
-   vérifiable par le moindre vérifieur conforme.
-4. **~~Le document JWKS statique n'a pas de propriétaire~~ — clos, et ma proposition était
-   mauvaise.** (§8.1.) Je demandais qu'on attribue *un travail de rotation unique* ;
-   `definition-of-done.md` §7.6 a montré que la simplification était illusoire, mon propre
-   tableau portant déjà deux calendriers. La forme retenue est **quatre rotations indépendantes
-   plus un assembleur sans secret** — ce qui, accessoirement, n'a plus besoin d'un propriétaire
-   unique, puisque chaque émetteur fait tourner sa clé et que l'assembleur ne détient rien.
+   What I was asking for was less the rule than **the prohibition on correcting it**: an exception
+   that looks like a mistake gets repaired by someone well-intentioned, and the token then stops
+   being verifiable by any conformant verifier at all.
+4. **~~The static JWKS document has no owner~~ — closed, and my proposal was the wrong one.**
+   (§8.1.) I was asking for *a single rotation job* to be assigned; `definition-of-done.md` §7.6
+   showed that the simplification was illusory, my own table already carrying two calendars. The
+   form retained is **four independent rotations plus a secret-less assembler** — which,
+   incidentally, no longer needs a single owner, since each issuer rotates its own key and the
+   assembler holds nothing.
