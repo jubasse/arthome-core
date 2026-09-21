@@ -2028,3 +2028,17 @@ Ce document ne cite aucune version de mémoire. Relevés effectués ce jour, cha
 | Catalogues pnpm et publication | `pnpm.io/catalogs` | `catalog:` **remplacé par la version réelle** à la publication |
 | Node LTS | `nodejs.org/dist/index.json` | 24.21.0 « Krypton » ; 26.9.0 pas encore LTS |
 | Prettier 4 | `dist-tags` de `prettier` | `next` = 4.0.0-**alpha**.13 → on reste en 3.x |
+
+**Relevés dans les sources du projet** — ajoutés après qu'un autre coéquipier eut trouvé une
+énumération inventée au §5.3 (l'épisode est consigné là-bas). Toute valeur d'énumération écrite dans
+ce document vient désormais d'un fichier nommé.
+
+| Vérifié | Source | Résultat |
+|---|---|---|
+| Régimes de tchat | `proto/arthome/chat/v1/events.proto` → `enum ChatMode` | `OPEN`, `EMOJI`, `READ_ONLY`, `OFF` → `open \| emoji \| read-only \| off` |
+| — confirmation croisée | `shared/i18n/storefront.json`, `shared/fixtures.js` | `enums.chatMode.open \| emoji \| read-only \| off` — concordants |
+| États de publication | `shared/catalogue.json` → `publicationStates` | `draft`, `reserve`, `scheduled`, `technical`, `live`, `ended`, `replay-online` |
+| — la table parallèle | `mockups/Studio.dc.html` → `EV_MOVES`, via `corrections-handoff.md` § D2 | `draft`, `hidden`, `sched`, `tech`, `live`, `done`, `replay` — `catalogue.json` fait autorité |
+| Les trois axes de modération | `proto/arthome/chat/v1/events.proto` | `MessageState`, `ModerationItemState` (où vit `reported`) et `ModerationVerdict` sont **séparés** — ne pas les refondre sous un nom unique (§5.3, E3) |
+| Forme des clés i18n | `shared/i18n/storefront.json` | segments `camelCase` pointés (`chat.collapse`, `account.alerts.alertHint`) ; libellés d'énumération sous `enums.<enum>.<valeur>` |
+| La famille de copie `chat.*` | `shared/i18n/storefront.json`, via `corrections-handoff.md` § E2 | `chat.free \| emoji \| off` double `enums.chatMode.*` et diverge dès la première valeur (`free` contre `open`) |
