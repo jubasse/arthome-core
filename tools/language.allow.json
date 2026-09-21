@@ -1,0 +1,49 @@
+{
+  "_comment": [
+    "The exceptions to arthome-check-language, EACH WITH ITS REASON.",
+    "",
+    "Everything committed to the repositories is written in English. French",
+    "survives in exactly two shapes, and both are CONTENT rather than interface",
+    "of the codebase:",
+    "",
+    "  1. a VERBATIM COPY of the read-only design handoff. Translating it would",
+    "     fork the copy from its source, and the copy is worth something only",
+    "     because it is identical. Verified with cmp, not assumed.",
+    "  2. the PRODUCT'S OWN VOCABULARY — discipline names, subgenres, tags, UI",
+    "     copy. Arthome is a French-language product; its words are data.",
+    "",
+    "Anything else is a file that has not been translated yet. Adding an entry",
+    "here to make the gate pass is the one use this file does not have."
+  ],
+  "allow": [
+    {
+      "path": "prototypes/*.dc.html",
+      "reason": "The five design mockups, copied byte for byte from arthome-design/design_handoff_arthome/mockups/. Verified identical with cmp on 2026-09-21. They are the design, they are read only, and their French is the product's interface copy."
+    },
+    {
+      "path": "prototypes/shared/**",
+      "reason": "helpers.js, fixtures.js, catalogue.json, studio-data.js, i18n-compile.js — copied byte for byte from the handoff's shared/. Verified identical with cmp on 2026-09-21. The mission declares shared/ read only: it is the source the five surface specialists read, and a fork of it would be a second source of truth."
+    },
+    {
+      "path": "prototypes/shared/i18n/**",
+      "reason": "The French dictionaries themselves. Translating the French dictionary is a contradiction in terms."
+    },
+    {
+      "path": "docs/taxonomy.md",
+      "reason": "The 21 disciplines, 176 subgenres and 205 tags are the product's vocabulary, carried verbatim by shared/taxonomy.json. Translating them here would create a second vocabulary that shared/ does not know — exactly fault E2, the parallel literal table, applied to a document."
+    }
+  ],
+  "extractBlocks": {
+    "_why": [
+      "Inside prototypes/screens/**, the copy tables extracted from the mockups",
+      "are French and must stay French: they are the mockup's content, lifted",
+      "verbatim. The comments AROUND them are ours and must be English.",
+      "",
+      "So the gate skips the extract blocks and checks everything else. A whole",
+      "file exempted would have exempted its header too, which is the part worth",
+      "checking."
+    ],
+    "open": "<script type=\"text/x-arthome-extract\"",
+    "close": "</script>"
+  }
+}
