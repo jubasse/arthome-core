@@ -1518,6 +1518,16 @@ record of an observation, not a forecast. The `rebaselineAfter` date exists beca
 — "the slack disappears on its own" — is the shape of a fact that is true the day it is written and
 false the next.
 
+**And this generalises past ratchets, which is the part worth carrying.** Any threshold written as
+*"what this number will be once X lands"* has the same defect: it encodes a **forecast of someone
+else's work** into a gate that then fails loudly and inscrutably when the forecast is off by one. The
+failure does not say "your prediction was wrong" — it says the thing the gate normally says, which
+sends whoever reads it looking for a defect that is not there.
+
+The test to apply to any number in a gate's configuration: **is this a count someone took, or a count
+someone expects?** If the second, it does not belong in the gate yet. Wait for the observation, or
+date the guess so it cannot outlive its plausibility.
+
 **What it found on its first real run, which nobody was looking for.** In five blocks a vocabulary
 member is **not a string**:
 
@@ -1534,6 +1544,52 @@ by the parser**, and a vocabulary of short lowercase words is exactly where that
 The gate reports this as its own class and **skips the agreement check for that block**: until the
 members are strings, comparing them is meaningless, and two messages for one cause invites fixing
 the wrong one — the same principle as §4.5.1's broken-chain rule.
+
+**With one exemption, written before it fired rather than after.** A vocabulary declared
+`type: [string, "null"]` may legitimately list `null` among its members, and **fourteen blocks across
+the two contracts are declared that way**. Nullability is a fact about the *type*, not a member of the
+vocabulary, so `null` is accepted there and dropped before the comparison — the domain's union will
+not contain it either. In a block typed plainly `string`, a `null` member remains a defect, and the
+gate still says so.
+
+No block lists `null` today; the ones that could are already nullable. **A gate that shouts wrongly
+gets switched off** applies to this gate as much as to the one that sentence was written about, and a
+latent false positive is cheaper to remove while it is still latent.
+
+**And this gate committed its own fault, which is the third time this document has had to record
+that.** As first wired into `verify:offline` it printed:
+
+```
+… 0 agree, 0 disagree, 0 exempt, 149 undeclared
+PASS the contracts and the domain share one vocabulary
+```
+
+**It compared nothing and then asserted that the two sides agree.** The count line was honest; the
+verdict line was not. A reader of a green `verify:offline` took away a conclusion nothing in this
+repository had established — which is the failure mode this whole section exists to name, committed by
+the gate built to catch it.
+
+The other four gates already had the pattern, in two words: `GATE INACTIVE`, plus the condition that
+is missing. This one asserted instead. Two rules came out of it, and they apply to every gate here:
+
+1. **No coverage, no verdict.** When nothing was compared, the verdict is
+   `GATE INACTIVE — N blocks undeclared, nothing compared`, with the missing condition named. Exit 0
+   stays correct, because the ratchet is deliberate policy; it was the *sentence* that was wrong.
+2. **A pass states what it covered** — `PASS — 87 of 149 blocks compared, all agree; 62 undeclared`.
+   A pass that names its coverage cannot quietly decay into a pass that covers nothing, which is
+   exactly what a drifting ratchet would otherwise let happen.
+
+There is a sharper version worth keeping: `0 exempt` meant the `source: none` branch had never run
+either, so **neither branch had executed against real data**. A gate whose branches have never run is
+a gate whose behaviour is a hypothesis. All four verdict states — inactive, agree, disagree, exemption
+without a reason — are now exercised against fixtures built from the real contracts.
+
+**Two notes on testing gates, learned by getting both wrong here.** A fixture assembled with `grep`
+or string replacement broke the YAML twice — once by orphaning a block scalar, once by inserting a
+duplicate key that the parser silently discarded, keeping the last. In both cases the gate then
+*passed*, and I was one step from concluding it had a gap. So: **build a fixture in the object model,
+not in the text**; and **a broken fixture and a broken gate are indistinguishable from outside** —
+both are "the gate did not fire" — so verify the fixture before believing the result.
 
 **Where the YAML-type rule lives, which is a different question from where it was found.** "Every
 vocabulary and enum member must be a string" is the **contract's own conformance rule**, so it belongs

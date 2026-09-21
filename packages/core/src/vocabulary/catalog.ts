@@ -142,8 +142,17 @@ export const RightsScope = {
  * `labelEn` — prose written INSIDE the data, while everything else goes through
  * `enums.*`. That is an i18n leak in the model (E8).
  *
- * Spelling: `shared/`'s, to the letter — so `co-production` in kebab-case, not
- * `co_production` (K6).
+ * Spelling: `snake_case`, like every value on the wire — so `co_production`.
+ *
+ * ⚠ THIS COMMENT SAID THE OPPOSITE UNTIL `code-conventions.md` §5.2 REVERSED IT,
+ * and it went on saying it three lines above a constant that had already moved.
+ * It is recorded rather than quietly swapped, because the reversal has a
+ * distinction worth keeping (D-034): `shared/` → `@arthome/core` is a ONE-TIME
+ * PORT, which already normalises by design (D1 drops `light` and adds
+ * `essential`, D7 turns relative offsets into instants); `core` ↔ the wire is a
+ * LIVE BOUNDARY, and only a live boundary turns a mapping into a parallel table
+ * with a codec's costume. K6 never required kebab — it required ONE spelling,
+ * and its defect was the divergence.
  */
 export const BLACKOUT_REASONS = ['co_production', 'broadcaster', 'festival'] as const;
 export type BlackoutReason = (typeof BLACKOUT_REASONS)[number];

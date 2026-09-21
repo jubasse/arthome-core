@@ -271,7 +271,7 @@ and that is a warning as much as a list.
 | **the five notification thresholds** | 30 min · 85% · 6 h · queue > 10 · post unassigned at D-1 | written into screen copy, copied per surface |
 | **`capacityTierRules`** | monotonic tiers, provisioning threshold (10,000), revision deadline (72 h), priority window (2 h) | absent from `shared/`; six shapes displayed by the mockup with no owner |
 | **`parseTolerant`** | keeping an unknown enumeration value and treating it as **neutral** | the TV fleet's survival depends on it |
-| **`concurrentLimitOf`** | `multi-screen` is an **execution constraint**, not a marketing line | no count existed |
+| **`concurrentLimitOf`** | `multi_screen` is an **execution constraint**, not a marketing line | no count existed |
 
 ---
 

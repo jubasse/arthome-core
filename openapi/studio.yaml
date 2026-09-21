@@ -6388,6 +6388,7 @@ components:
                 settings,
                 help,
               ]
+            x-arthome-vocabulary-source: NAVIGATION_ENTRIES
         contextualPages:
           type: array
           description: |
@@ -6805,7 +6806,8 @@ components:
                 {
                   type: string,
                   x-arthome-vocabulary:
-                    [scheduled, room_open, live, replay, ended, postponed, cancelled, interrupted],
+                    [draft, reserve, scheduled, technical, room_open, live, replay, ended,
+                     postponed, cancelled, interrupted],
                 }
               seatsSold: { type: integer }
               liveViewersPeak: { type: [integer, "null"] }
@@ -6870,7 +6872,10 @@ components:
                         type: string,
                         x-arthome-vocabulary:
                           [
+                            draft,
+                            reserve,
                             scheduled,
+                            technical,
                             room_open,
                             live,
                             replay,
@@ -7017,7 +7022,9 @@ components:
           type: string
           description: The composed value, served. Never recomposed by the surface.
           x-arthome-vocabulary:
-            [scheduled, room_open, live, replay, ended, postponed, cancelled, interrupted]
+            [draft, reserve, scheduled, technical, room_open, live, replay, ended,
+             postponed, cancelled, interrupted]
+          x-arthome-vocabulary-source: DISPLAY_STATES
         displayStateValidUntil: { type: string, format: date-time }
         publication: { $ref: "#/components/schemas/Publication" }
         openPanes:
@@ -7055,7 +7062,9 @@ components:
             implementation that critical rule 2 forbids — on the surface where a mistake is not a
             mislabelled card but a control room on the wrong screen.
           x-arthome-vocabulary:
-            [scheduled, room_open, live, replay, ended, postponed, cancelled, interrupted]
+            [draft, reserve, scheduled, technical, room_open, live, replay, ended,
+             postponed, cancelled, interrupted]
+          x-arthome-vocabulary-source: DISPLAY_STATES
           examples: [live]
         displayStateValidUntil: { type: string, format: date-time }
         lowestPrice: { $ref: "#/components/schemas/Money" }
@@ -7102,7 +7111,9 @@ components:
         displayState:
           type: string
           x-arthome-vocabulary:
-            [scheduled, room_open, live, replay, ended, postponed, cancelled, interrupted]
+            [draft, reserve, scheduled, technical, room_open, live, replay, ended,
+             postponed, cancelled, interrupted]
+          x-arthome-vocabulary-source: DISPLAY_STATES
         runState:
           {
             type: [string, "null"],

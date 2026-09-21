@@ -573,9 +573,27 @@ contract writes the hierarchy **once**, and serves the result.
 
 And the contract serves **a fourth value, derived and unique**: `displayState`, produced by
 `displayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`, accompanied by
-`displayStateValidUntil`. Public vocabulary: `scheduled · room_open · live · replay · ended`, plus
-the three outcomes which replace it when they exist. It is the only value the cards display, and
-nobody recomposes it.
+`displayStateValidUntil`. It is the only value the cards display, and nobody recomposes it.
+
+**The vocabulary has ELEVEN members, and the split between the two products is the point.**
+
+| | Members | |
+|---|---|---|
+| public, both products | `scheduled · room_open · live · replay · ended` | the time axis |
+| both products | `postponed · cancelled · interrupted` | the three outcomes, which **replace** the rest |
+| **studio only** | `draft · reserve · technical` | a date that is not public yet still has to be shown to the channel that owns it |
+
+The last three are why the count is eleven and not eight. They deliberately **share the strings of
+`publication.state`**, because for a non-public date the displayed state IS the publication state —
+there is no third axis to reconcile yet. A storefront never receives them, not by filtering but **by
+construction**: a date reaches the storefront only once published.
+
+> **Consequence for `backend-contracts`, and it is a cardinality question rather than a spelling
+> one.** The `displayState` vocabulary is **one** vocabulary with eleven members. The studio contract
+> declares all eleven. The storefront contract may declare the eight it can actually receive — but as
+> a **documented narrowing of the same vocabulary**, said in the schema, never as a second
+> vocabulary that happens to be shorter. Two independently authored lists for one field is how E4
+> started.
 
 > **On BOTH products, and the studio first.** `studio-web` measured 13 occurrences of `displayState`
 > on the storefront side and **0 on the studio side**, which is the inverse of the need: **it is the

@@ -374,6 +374,10 @@ def main(files):
         print(f"  - {note}")
 
     if problems:
+        # The count line and the notes go to stdout, the failures to stderr. Flush
+        # stdout first or the two streams interleave when piped, and the failures
+        # appear before the context that explains them.
+        sys.stdout.flush()
         print(f"\nFAIL {len(problems)} vocabulary problem(s):\n", file=sys.stderr)
         for p in problems:
             print(f"  {p}", file=sys.stderr)
@@ -385,7 +389,39 @@ def main(files):
         )
         return 1
 
-    print("PASS the contracts and the domain share one vocabulary")
+    # ── The verdict names its own coverage ───────────────────────────────────
+    # An earlier version printed "PASS the contracts and the domain share one
+    # vocabulary" while having compared ZERO blocks: 0 agree, 0 disagree, 149
+    # undeclared. The count line above was honest and the verdict line was not,
+    # and a reader of a green `verify:offline` took away a conclusion nothing in
+    # this repository had established.
+    #
+    # That is the exact class this gate was built to catch, committed by the gate
+    # itself — a green gate that was never asked the question. The other four
+    # gates already had the pattern (`GATE INACTIVE`, plus the missing
+    # condition); this one asserted instead.
+    #
+    # So: no coverage, no verdict. And a pass states what it covered, because a
+    # pass that names its coverage cannot quietly decay into a pass that covers
+    # nothing as the ratchet lets the undeclared count drift.
+    compared = agreed + (declared - agreed)
+    total = declared + exempt + len(undeclared)
+
+    if compared == 0:
+        print(
+            f"GATE INACTIVE — {len(undeclared)} block(s) undeclared, nothing compared."
+            f"\n  Needs `{SOURCE}` on a block before it can compare anything."
+            f"\n  Exit 0 because the ratchet is deliberate policy (§5.3.1 c); the gate is not"
+            f"\n  claiming the two sides agree."
+        )
+        return 0
+
+    parts = [f"{compared} of {total} block(s) compared, all agree"]
+    if exempt:
+        parts.append(f"{exempt} exempt")
+    if undeclared:
+        parts.append(f"{len(undeclared)} undeclared")
+    print("PASS — " + "; ".join(parts))
     return 0
 
 

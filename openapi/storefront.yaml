@@ -5629,6 +5629,11 @@ components:
               ['date:{id}', 'date:{id}:availability', 'artist:{id}', 'category:{id}',
                'account:tickets', 'account:orders', 'account:subscription', 'account:cart',
                'account:profile', 'account:devices', 'account:payment-methods', 'home:rails']
+            x-arthome-vocabulary-source: none
+            x-arthome-vocabulary-reason: |
+              Cache tags, not a domain vocabulary. They name what a surface must revalidate, in
+              Next's `revalidateTag` namespace convention, and the domain has no notion of them:
+              `@arthome/core` knows a date, not `date:{id}`.
           examples: [['date:019928a0-7d31-7a10-b8c4-2f9e11a4c001', 'account:tickets']]
         complete:
           type: boolean
@@ -5755,7 +5760,9 @@ components:
             `displayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`. The hierarchy,
             written once: `outcome` outranks `run.state`, which outranks `publication.state`.
           x-arthome-vocabulary:
-            [scheduled, room_open, live, replay, ended, postponed, cancelled, interrupted]
+            [draft, reserve, scheduled, technical, room_open, live, replay, ended,
+             postponed, cancelled, interrupted]
+          x-arthome-vocabulary-source: DISPLAY_STATES
           examples: [live]
         displayStateValidUntil: { type: string, format: date-time }
         outcome:
@@ -5824,6 +5831,7 @@ components:
         chatMode:
           type: string
           x-arthome-vocabulary: [open, emoji, read_only, 'off']
+          x-arthome-vocabulary-source: CHAT_MODES
         media: { $ref: '#/components/schemas/MediaSet' }
         languageDependency:
           type: string
