@@ -39,6 +39,35 @@ info:
     recevront. La sévérité porte sur la **forme** — champs obligatoires, types — jamais sur le
     **membre** d'un vocabulaire.
 
+    ## Lecture publique et lecture identifiée — deux corps, un chemin
+
+    **Dix opérations de catalogue s'appellent sans aucune authentification**, et c'est un cas
+    **nominal** : `home`, `live`, `categories`, `categories/{id}`, `artists`, `artists/{id}`,
+    `dates/{id}`, `dates/{id}/availability`, `search`, `plans`. Cette surface existe pour être
+    indexée — le dossier la définit par « référencement et rendu serveur décisifs » — et le robot
+    d'un moteur n'a ni cookie, ni jeton porteur, ni la moindre raison d'en fabriquer un. Le **mode
+    visiteur** emprunte exactement le même chemin.
+
+    Le même chemin rend **deux corps**, et la différence est déclarée :
+
+    | Appelée | Corps | `Cache-Control` |
+    |---|---|---|
+    | sans aucune authentification | **corps public** — `watchVerdict`, `viewerRelations` et `viewerProgress` sont **absents** | `public, max-age=<fraîcheur>` |
+    | avec session, jeton porteur ou jeton d'appareil | corps public **plus** les trois surcouches | `private, max-age=<fraîcheur>` |
+
+    **Le corps public est identique pour tous les appelants anonymes.** C'est ce qui le rend
+    mutualisable : une fonction de rendu mise en cache ne peut lire ni cookie ni en-tête, donc
+    elle est anonyme par construction, et elle peut mettre ce corps en cache sans risque. Servir
+    en `public` un corps qui varie par spectateur serait **une fuite, pas une optimisation** — et
+    c'est l'unique raison d'être du `Vary` déclaré sur ces dix réponses.
+
+    **Un champ absent n'est jamais un champ nul** : la règle de projection vaut ici comme côté
+    studio. Une surface qui reçoit le corps public sait qu'elle n'a pas demandé les surcouches ;
+    elle ne les distingue pas d'un droit refusé.
+
+    **L'absence de justificatif n'est jamais un `401`.** Un `401` sur ces dix chemins signifie
+    qu'un justificatif a été **présenté et refusé** — expiré, malformé, mauvaise audience.
+
     ## Ce que toute réponse porte
 
     `servedAt` sur **toute** réponse ; `validUntil` dès qu'une valeur périssable est présente ;
@@ -228,6 +257,8 @@ paths:
                     reactionQuotaPerDate: 20
                     reminderLeadMinutes: 30
                     replayExpiryWarningHours: 6
+                    previewSecondsTotal: 300
+                    searchExactTotalLimit: 10000
                     creditDelayCode: refund_delay_business_days_3_5
                   labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json' }
                   taxonomyArtifact: { locale: fr, version: 12, url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json' }
@@ -250,7 +281,11 @@ paths:
         les mêmes étiquettes alimentent `revalidateTag` : elles sont **nommées par le contrat**,
         jamais inventées par une surface.
       x-arthome-maturity: stable
-      x-arthome-upstream: [catalog, ticketing, identity, streaming]
+      x-arthome-upstream: [realtime]
+      # Ce flux n'interroge AUCUN service : il lit le tampon de reprise Redis que la passerelle
+      # temps réel tient déjà par salle (30 min / 5 000 événements). C'est le tirage HTTP du même
+      # flux que le canal pousse. Le déclarer sur quatre services décrivait une composition qui
+      # n'a pas lieu, et l'aurait fait compter comme un écran à quatre appels.
       parameters:
         - $ref: '#/components/parameters/Surface'
         - $ref: '#/components/parameters/Traceparent'
@@ -297,8 +332,23 @@ paths:
         Le BFF compose ce modèle avec **trois surcouches par spectateur, groupées par lot
         d'identifiants** — jamais un appel par carte. En régime établi, le cache Redis par profil
         (TTL 30 s) ramène l'écran à un ou deux appels internes.
+
+        **Lecture publique.** Appelée **sans aucune authentification**, cette opération rend le
+        **corps public** — identique pour tous les appelants anonymes, donc mutualisable dans un
+        cache partagé. Les trois surcouches par spectateur (`watchVerdict`, `viewerRelations`,
+        `viewerProgress`) sont alors **absentes**, jamais nulles. Appelée avec une session ou un
+        jeton porteur, elle rend le corps public **plus** les surcouches, et devient privée.
       x-arthome-maturity: stable
       x-arthome-upstream: [catalog, ticketing, identity, streaming]
+      security:
+        # **Lecture publique.** L'absence totale d'authentification est un cas NOMINAL, pas une
+        # erreur : cette lecture est la face indexable du produit, et le robot d'un moteur n'a ni
+        # cookie, ni jeton porteur, ni moyen de s'en fabriquer un. Le mode visiteur emprunte le
+        # même chemin. Voir « Lecture publique et lecture identifiée » en tête de document.
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
       x-arthome-freshness: 60
       parameters:
         - $ref: '#/components/parameters/Surface'
@@ -307,6 +357,9 @@ paths:
       responses:
         '200':
           description: Accueil.
+          headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
           content:
             application/json:
               schema:
@@ -359,8 +412,23 @@ paths:
         **Un appel**, et le regroupement horaire est **serveur** : il dépend du fuseau du
         spectateur, que la surface envoie en en-tête. Un groupement côté client serait groupé cinq
         fois différemment, et le rendu serveur de Next ne connaît pas le fuseau du visiteur.
+
+        **Lecture publique.** Appelée **sans aucune authentification**, cette opération rend le
+        **corps public** — identique pour tous les appelants anonymes, donc mutualisable dans un
+        cache partagé. Les trois surcouches par spectateur (`watchVerdict`, `viewerRelations`,
+        `viewerProgress`) sont alors **absentes**, jamais nulles. Appelée avec une session ou un
+        jeton porteur, elle rend le corps public **plus** les surcouches, et devient privée.
       x-arthome-maturity: stable
       x-arthome-upstream: [catalog, ticketing, streaming, identity]
+      security:
+        # **Lecture publique.** L'absence totale d'authentification est un cas NOMINAL, pas une
+        # erreur : cette lecture est la face indexable du produit, et le robot d'un moteur n'a ni
+        # cookie, ni jeton porteur, ni moyen de s'en fabriquer un. Le mode visiteur emprunte le
+        # même chemin. Voir « Lecture publique et lecture identifiée » en tête de document.
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
       x-arthome-freshness: 15
       parameters:
         - $ref: '#/components/parameters/Surface'
@@ -369,6 +437,9 @@ paths:
       responses:
         '200':
           description: Grille du soir.
+          headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
           content:
             application/json:
               schema:
@@ -397,8 +468,23 @@ paths:
         **Un appel, pas un par tuile.** Le rang éditorial fait autorité et **aucune surface ne
         réordonne**. La taxonomie complète, elle, n'est pas ici : c'est un **artefact versionné
         immuable** servi par le CDN, référencé dans `ViewerContext`.
+
+        **Lecture publique.** Appelée **sans aucune authentification**, cette opération rend le
+        **corps public** — identique pour tous les appelants anonymes, donc mutualisable dans un
+        cache partagé. Les trois surcouches par spectateur (`watchVerdict`, `viewerRelations`,
+        `viewerProgress`) sont alors **absentes**, jamais nulles. Appelée avec une session ou un
+        jeton porteur, elle rend le corps public **plus** les surcouches, et devient privée.
       x-arthome-maturity: stable
       x-arthome-upstream: [catalog]
+      security:
+        # **Lecture publique.** L'absence totale d'authentification est un cas NOMINAL, pas une
+        # erreur : cette lecture est la face indexable du produit, et le robot d'un moteur n'a ni
+        # cookie, ni jeton porteur, ni moyen de s'en fabriquer un. Le mode visiteur emprunte le
+        # même chemin. Voir « Lecture publique et lecture identifiée » en tête de document.
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
       x-arthome-freshness: 300
       parameters:
         - $ref: '#/components/parameters/Surface'
@@ -406,6 +492,9 @@ paths:
       responses:
         '200':
           description: Les disciplines.
+          headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
           content:
             application/json:
               schema:
@@ -429,16 +518,58 @@ paths:
       description: |
         **Un appel.** La vue d'ensemble **ne se pagine pas** : elle se borne (8 par section). Les
         quatre autres sections portent chacune leur curseur.
+
+        **Lecture publique.** Appelée **sans aucune authentification**, cette opération rend le
+        **corps public** — identique pour tous les appelants anonymes, donc mutualisable dans un
+        cache partagé. Les trois surcouches par spectateur (`watchVerdict`, `viewerRelations`,
+        `viewerProgress`) sont alors **absentes**, jamais nulles. Appelée avec une session ou un
+        jeton porteur, elle rend le corps public **plus** les surcouches, et devient privée.
       x-arthome-maturity: stable
       x-arthome-upstream: [catalog, ticketing, identity, streaming]
+      security:
+        # **Lecture publique.** L'absence totale d'authentification est un cas NOMINAL, pas une
+        # erreur : cette lecture est la face indexable du produit, et le robot d'un moteur n'a ni
+        # cookie, ni jeton porteur, ni moyen de s'en fabriquer un. Le mode visiteur emprunte le
+        # même chemin. Voir « Lecture publique et lecture identifiée » en tête de document.
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
       x-arthome-freshness: 300
       parameters:
         - $ref: '#/components/parameters/CategoryId'
         - $ref: '#/components/parameters/Surface'
         - $ref: '#/components/parameters/Traceparent'
+        - name: section
+          in: query
+          description: |
+            **Étendre une seule section.** Sans ce paramètre, la réponse sert les cinq sections
+            bornées ; avec lui, elle sert cette section-là, paginée. C'est ce qui consomme les
+            `sections[].nextCursor` que la réponse portait déjà — quatre curseurs servis et aucun
+            consommateur, c'est-à-dire quatre boutons « Voir plus » qui ne menaient nulle part.
+          schema: { type: string, enum: [overview, live, upcoming, replays, artists] }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: subGenreId
+          in: query
+          description: Identifiant **stable** de sous-genre, jamais un indice de tableau.
+          schema: { type: string }
+        - name: filters
+          in: query
+          description: |
+            Critères, dans la **même grammaire normalisée** que `/v1/search` et que
+            `SavedSearch.criteria`. Le panneau de filtres propre à la discipline — tarif, date,
+            statut, bientôt complet, en promotion — s'y pose.
+          schema: { $ref: '#/components/schemas/SearchCriteria' }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [relevance, soon, popularity, price_asc, price_desc], default: soon }
       responses:
         '200':
           description: La discipline.
+          headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
           content:
             application/json:
               schema:
@@ -466,8 +597,23 @@ paths:
         Deux tris seulement, et ils sont **servis** : alphabétique et par nombre d'abonnés.
         Le compteur d'abonnés vient d'une **seule projection**, pour qu'il ne diffère jamais entre la
         fiche et la liste.
+
+        **Lecture publique.** Appelée **sans aucune authentification**, cette opération rend le
+        **corps public** — identique pour tous les appelants anonymes, donc mutualisable dans un
+        cache partagé. Les trois surcouches par spectateur (`watchVerdict`, `viewerRelations`,
+        `viewerProgress`) sont alors **absentes**, jamais nulles. Appelée avec une session ou un
+        jeton porteur, elle rend le corps public **plus** les surcouches, et devient privée.
       x-arthome-maturity: stable
       x-arthome-upstream: [catalog, identity]
+      security:
+        # **Lecture publique.** L'absence totale d'authentification est un cas NOMINAL, pas une
+        # erreur : cette lecture est la face indexable du produit, et le robot d'un moteur n'a ni
+        # cookie, ni jeton porteur, ni moyen de s'en fabriquer un. Le mode visiteur emprunte le
+        # même chemin. Voir « Lecture publique et lecture identifiée » en tête de document.
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
       x-arthome-freshness: 300
       parameters:
         - $ref: '#/components/parameters/Surface'
@@ -487,6 +633,9 @@ paths:
       responses:
         '200':
           description: Page d'artistes.
+          headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
           content:
             application/json:
               schema:
@@ -512,8 +661,23 @@ paths:
         **Un appel** : la fiche, les dates à venir, les dates passées, les rediffusions et la boutique
         dans la même réponse. Une fiche servie en quatre appels se peindrait en quatre temps, ce
         qu'un écran à trois mètres rend illisible.
+
+        **Lecture publique.** Appelée **sans aucune authentification**, cette opération rend le
+        **corps public** — identique pour tous les appelants anonymes, donc mutualisable dans un
+        cache partagé. Les trois surcouches par spectateur (`watchVerdict`, `viewerRelations`,
+        `viewerProgress`) sont alors **absentes**, jamais nulles. Appelée avec une session ou un
+        jeton porteur, elle rend le corps public **plus** les surcouches, et devient privée.
       x-arthome-maturity: stable
       x-arthome-upstream: [catalog, ticketing, identity, streaming]
+      security:
+        # **Lecture publique.** L'absence totale d'authentification est un cas NOMINAL, pas une
+        # erreur : cette lecture est la face indexable du produit, et le robot d'un moteur n'a ni
+        # cookie, ni jeton porteur, ni moyen de s'en fabriquer un. Le mode visiteur emprunte le
+        # même chemin. Voir « Lecture publique et lecture identifiée » en tête de document.
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
       x-arthome-freshness: 300
       parameters:
         - $ref: '#/components/parameters/ArtistId'
@@ -522,6 +686,9 @@ paths:
       responses:
         '200':
           description: La fiche.
+          headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
           content:
             application/json:
               schema:
@@ -559,8 +726,23 @@ paths:
         **Budget ≤ 200 ms** : le clavier à l'écran d'un téléviseur produit un caractère par
         pression et les résultats vivent en direct ; au-delà, le retour visuel de la frappe
         décroche. La requête est **annulable** — le client ferme la socket, le serveur abandonne.
+
+        **Lecture publique.** Appelée **sans aucune authentification**, cette opération rend le
+        **corps public** — identique pour tous les appelants anonymes, donc mutualisable dans un
+        cache partagé. Les trois surcouches par spectateur (`watchVerdict`, `viewerRelations`,
+        `viewerProgress`) sont alors **absentes**, jamais nulles. Appelée avec une session ou un
+        jeton porteur, elle rend le corps public **plus** les surcouches, et devient privée.
       x-arthome-maturity: stable
       x-arthome-upstream: [catalog, ticketing, identity, streaming]
+      security:
+        # **Lecture publique.** L'absence totale d'authentification est un cas NOMINAL, pas une
+        # erreur : cette lecture est la face indexable du produit, et le robot d'un moteur n'a ni
+        # cookie, ni jeton porteur, ni moyen de s'en fabriquer un. Le mode visiteur emprunte le
+        # même chemin. Voir « Lecture publique et lecture identifiée » en tête de document.
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
       x-arthome-freshness: 60
       parameters:
         - $ref: '#/components/parameters/Surface'
@@ -575,17 +757,24 @@ paths:
           schema: { type: string, enum: [best, lives, replays, artists], default: best }
         - name: sort
           in: query
-          schema: { type: string, enum: [relevance, soon, popularity, price_asc], default: relevance }
+          description: '**Cinq tris**, pas quatre : `price_desc` existe dans la conception, au même titre que les autres.'
+          schema: { type: string, enum: [relevance, soon, popularity, price_asc, price_desc], default: relevance }
         - name: filters
           in: query
           description: |
-            Critères sérialisés. **Les valeurs sont des identifiants stables**, jamais des indices
-            de tableau : une position ne survit ni à une URL partageable, ni à une recherche
-            enregistrée, ni à l'insertion d'une discipline.
-          schema: { type: string }
+            Critères, dans la grammaire **publiée** ci-contre. Ce paramètre était une chaîne libre :
+            sur le paramètre le plus important de l'écran le plus utilisé, cela signifiait que zod
+            ne validait rien et que trois surfaces le sérialiseraient de trois façons — alors qu'une
+            forme normalisée **existe déjà**, puisque `normalizeSearchCriteria()` en produit la
+            signature dans `@arthome/core`. C'est cette forme-là qui est publiée, et c'est la même
+            que `SavedSearch.criteria`.
+          schema: { $ref: '#/components/schemas/SearchCriteria' }
       responses:
         '200':
           description: Résultats, facettes et filtres structurés.
+          headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
           content:
             application/json:
               schema:
@@ -617,8 +806,23 @@ paths:
         Trois formules, leurs neuf ouvertures possibles, la remise sur les places et le plafond
         d'écrans simultanés. **Le plafond est publié ici et appliqué par `streaming`** : c'est une
         contrainte d'exécution, pas une ligne de marketing.
+
+        **Lecture publique.** Appelée **sans aucune authentification**, cette opération rend le
+        **corps public** — identique pour tous les appelants anonymes, donc mutualisable dans un
+        cache partagé. Les trois surcouches par spectateur (`watchVerdict`, `viewerRelations`,
+        `viewerProgress`) sont alors **absentes**, jamais nulles. Appelée avec une session ou un
+        jeton porteur, elle rend le corps public **plus** les surcouches, et devient privée.
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
+      security:
+        # **Lecture publique.** L'absence totale d'authentification est un cas NOMINAL, pas une
+        # erreur : cette lecture est la face indexable du produit, et le robot d'un moteur n'a ni
+        # cookie, ni jeton porteur, ni moyen de s'en fabriquer un. Le mode visiteur emprunte le
+        # même chemin. Voir « Lecture publique et lecture identifiée » en tête de document.
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
       x-arthome-freshness: 300
       parameters:
         - $ref: '#/components/parameters/Surface'
@@ -626,6 +830,9 @@ paths:
       responses:
         '200':
           description: Les formules.
+          headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
           content:
             application/json:
               schema:
@@ -640,10 +847,217 @@ paths:
                 items:
                   - tier: pass
                     price: { amountMinor: 1200, currencyCode: EUR }
-                    opens: [browse, trailers, free_dates, replays, one_live_month]
+                    opens: [browse, trailers, free-dates, replays, one-live-month]
                     seatDiscountBps: 1000
                     concurrentStreamsAllowed: 1
         '503': { $ref: '#/components/responses/Unavailable' }
+
+  /v1/replays:
+    get:
+      operationId: listReplays
+      tags: [discovery]
+      summary: Les rediffusions en ligne, celles qui expirent d'abord — page de découverte, publique.
+      description: |
+        **C'est une page de découverte, pas « Mes rediffusions ».** La distinction n'est pas
+        cosmétique : « Rediffusions » est une entrée permanente de la barre latérale d'un
+        téléviseur, au même titre que « En direct » ou « Catégories », et elle n'est pas préfixée
+        « Mes » — contrairement à « Mes places » et « Ma liste », qui le sont. Son contenu est le
+        catalogue des rediffusions **en vente ou incluses**, y compris celles qu'on n'a jamais
+        vues : c'est tout son intérêt.
+
+        Trois raisons pour lesquelles les chemins existants ne s'y substituaient pas :
+        `/v1/me/replays` rend ce qu'on **détient** et répond `401` à un visiteur — or sur un
+        téléviseur la barre latérale est toujours là, et masquer une entrée selon la session fait
+        changer le menu de taille sous le focus, ce qui casse la mémoire de focus ;
+        `/v1/search?tab=replays` exige `q` d'au moins deux caractères, donc n'a pas de recherche
+        vide ; et son unité paginée est le **spectacle**, alors qu'une fenêtre de rediffusion
+        expire **par date** — regrouper par spectacle rend le tri « qui expire d'abord »
+        inexprimable.
+
+        **Lecture publique**, comme les neuf autres opérations de catalogue.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [catalog, ticketing, streaming]
+      x-arthome-freshness: 60
+      security:
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
+      parameters:
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: sort
+          in: query
+          description: '`expiring_first` est le défaut, et c''est le tri que la page annonce.'
+          schema: { type: string, enum: [expiring_first, recent, popularity], default: expiring_first }
+        - name: categoryId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Page de rediffusions en ligne, triée par fenêtre restante croissante.
+          headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [items, page]
+                    properties:
+                      items: { type: array, items: { $ref: '#/components/schemas/DateCard' } }
+                      page: { $ref: '#/components/schemas/CursorPageInfo' }
+              example:
+                servedAt: '2026-09-21T18:02:40.000Z'
+                validUntil: '2026-09-21T18:03:40.000Z'
+                items: []
+                page: { hasMore: false, emptyReason: no_replay_available, emptyActionCode: browse_catalog }
+        '410': { $ref: '#/components/responses/Gone' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+
+  /v1/rails/{railId}:
+    get:
+      operationId: extendRail
+      tags: [discovery]
+      summary: Étend une rangée d'accueil — le consommateur de `Rail.nextCursor`.
+      description: |
+        `Rail.nextCursor` était servi et **aucune opération ne le consommait**. Une rangée s'étend,
+        elle ne se pagine pas à l'écran : le curseur sert à ajouter des éléments à droite quand le
+        focus atteint le bord, pas à changer de page.
+
+        La composition et l'ordre restent **serveur** — la surface ne filtre jamais le catalogue.
+
+        **Lecture publique**, comme la rangée dont elle prolonge le contenu.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [catalog, ticketing, identity, streaming]
+      x-arthome-freshness: 60
+      security:
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
+      parameters:
+        - name: railId
+          in: path
+          required: true
+          description: L'`id` porté par la rangée, jamais une chaîne fabriquée par la surface.
+          schema: { type: string }
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: La suite de la rangée.
+          headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: '#/components/schemas/Rail' } }
+              example:
+                servedAt: '2026-09-21T18:02:45.000Z'
+                data:
+                  id: cat-dance-contemporary
+                  titleCode: home.rail.category
+                  kind: category
+                  itemKind: date
+                  cardForm: wide
+                  items: []
+                  total: 84
+                  totalIsLowerBound: false
+                  nextCursor: null
+        '404': { $ref: '#/components/responses/NotFound' }
+        '410': { $ref: '#/components/responses/Gone' }
+
+  /v1/resolve:
+    get:
+      operationId: resolvePublicLink
+      tags: [discovery]
+      summary: Résout une URL canonique ou un slug vers la ressource qu'elle désigne.
+      description: |
+        **`slug` et `canonicalUrl` étaient servis partout et acceptés nulle part.** Les
+        identifiants de chemin sont des UUID ; les cinq occurrences de `slug` étaient toutes en
+        sortie. Une notification poussée sur une application morte, un lien partagé, un favori,
+        un résultat de moteur : tous livrent une **URL**, et rien au contrat ne savait la lire.
+
+        Le trou dépassait le mobile : `canonicalUrl` est ce que le téléviseur encode dans le QR
+        de l'action **Partager** — sur un téléviseur, partager ne peut pas vouloir dire copier un
+        lien, il n'y a ni presse-papiers ni messagerie utile.
+
+        **Résout, ne redirige pas.** La réponse nomme le type et l'identifiant, et la surface
+        décide où aller : un lien profond mobile, une route Next et une page de téléviseur n'ont
+        pas la même destination pour la même ressource.
+
+        **Lecture publique** : un lien partagé s'ouvre avant toute connexion.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [catalog]
+      x-arthome-freshness: 300
+      security:
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
+      parameters:
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+        - name: url
+          in: query
+          description: URL canonique complète. Exclusif avec `kind` + `slug`.
+          schema: { type: string, format: uri }
+        - name: kind
+          in: query
+          schema: { type: string, enum: [date, show, artist, category] }
+        - name: slug
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: La ressource désignée, et de quoi peindre immédiatement.
+          headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        required: [kind, id, canonicalUrl]
+                        properties:
+                          kind: { type: string, x-arthome-vocabulary: [date, show, artist, category] }
+                          id: { type: string }
+                          canonicalUrl:
+                            type: string
+                            format: uri
+                            description: |
+                              **L'URL canonique de la cible**, qui peut différer de celle demandée :
+                              un slug d'une autre langue, ou un slug remplacé, résout vers la forme
+                              courante. C'est ce qui permet à la surface de corriger son URL plutôt
+                              que d'en garder une périmée en favori.
+                          date: { $ref: '#/components/schemas/DateCard' }
+                          artist: { $ref: '#/components/schemas/ArtistSummary' }
+              example:
+                servedAt: '2026-09-21T18:02:50.000Z'
+                data:
+                  kind: date
+                  id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  canonicalUrl: 'https://arthome.fr/fr/d/nuit-blanche-2026-09-21'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   # =============================================================== la date
 
@@ -656,8 +1070,26 @@ paths:
         **Un appel**, et il doit être **bon marché** : la surface TV le pré-charge sur l'élément
         focalisé après stabilisation du focus, et un pré-chargement qui se paie deux fois est pire
         que pas de pré-chargement. D'où une validation de cache (`ETag`) et une fraîcheur déclarée.
+
+        **Lecture publique.** Appelée **sans aucune authentification**, cette opération rend le
+        **corps public** — identique pour tous les appelants anonymes, donc mutualisable dans un
+        cache partagé. Les trois surcouches par spectateur (`watchVerdict`, `viewerRelations`,
+        `viewerProgress`) sont alors **absentes**, jamais nulles. Appelée avec une session ou un
+        jeton porteur, elle rend le corps public **plus** les surcouches, et devient privée.
       x-arthome-maturity: stable
-      x-arthome-upstream: [catalog, ticketing, identity, streaming, chat]
+      x-arthome-upstream: [catalog, ticketing, identity, streaming]
+      # `chat` n'est PAS appelé : le régime de tchat est déjà PROJETÉ dans `date_detail_public`
+      # par `chat.date_chat_policy_changed`. Il était à la fois projeté et appelé — un appel pour
+      # une donnée qu'on possède déjà, et le seul écran du storefront à franchir le seuil de 4.
+      security:
+        # **Lecture publique.** L'absence totale d'authentification est un cas NOMINAL, pas une
+        # erreur : cette lecture est la face indexable du produit, et le robot d'un moteur n'a ni
+        # cookie, ni jeton porteur, ni moyen de s'en fabriquer un. Le mode visiteur emprunte le
+        # même chemin. Voir « Lecture publique et lecture identifiée » en tête de document.
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
       x-arthome-freshness: 60
       parameters:
         - $ref: '#/components/parameters/DateId'
@@ -671,6 +1103,8 @@ paths:
         '200':
           description: La fiche.
           headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
             ETag: { schema: { type: string }, description: Validateur de cache, pour que le pré-chargement TV ne se paie pas deux fois. }
           content:
             application/json:
@@ -718,8 +1152,23 @@ paths:
         Le seul appel légitime de l'écran de réservation d'un téléviseur : la date est déjà en
         main, seule la jauge bouge. `validUntil` est court (60 s) parce que le tarif « séance
         commencée » est **au prorata du temps restant**.
+
+        **Lecture publique.** Appelée **sans aucune authentification**, cette opération rend le
+        **corps public** — identique pour tous les appelants anonymes, donc mutualisable dans un
+        cache partagé. Les trois surcouches par spectateur (`watchVerdict`, `viewerRelations`,
+        `viewerProgress`) sont alors **absentes**, jamais nulles. Appelée avec une session ou un
+        jeton porteur, elle rend le corps public **plus** les surcouches, et devient privée.
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
+      security:
+        # **Lecture publique.** L'absence totale d'authentification est un cas NOMINAL, pas une
+        # erreur : cette lecture est la face indexable du produit, et le robot d'un moteur n'a ni
+        # cookie, ni jeton porteur, ni moyen de s'en fabriquer un. Le mode visiteur emprunte le
+        # même chemin. Voir « Lecture publique et lecture identifiée » en tête de document.
+        - {}
+        - sessionCookie: []
+        - bearerToken: []
+        - deviceToken: []
       x-arthome-freshness: 15
       parameters:
         - $ref: '#/components/parameters/DateId'
@@ -728,6 +1177,9 @@ paths:
       responses:
         '200':
           description: Jauge et tarifs à l'instant du service.
+          headers:
+            Cache-Control: { $ref: '#/components/headers/CacheControlPublic' }
+            Vary: { $ref: '#/components/headers/VaryAuth' }
           content:
             application/json:
               schema:
@@ -788,7 +1240,9 @@ paths:
                   description: |
                     Contribution libre à la compagnie, pour une place gratuite. Le montant est
                     **ouvert** ; minimum et maximum sont des **règles du domaine**, pas des
-                    attributs d'un champ de saisie, et le refus porte son propre code.
+                    attributs d'un champ de saisie, et le refus porte
+                    **`CONTRIBUTION_OUT_OF_RANGE`**, avec les deux bornes en paramètres. Le code
+                    était annoncé et jamais nommé — donc promis à être inventé trois fois.
                 applyCreditId: { type: [string, 'null'], format: uuid }
             example: { tier: full, quantity: 2 }
       responses:
@@ -935,6 +1389,9 @@ paths:
       responses:
         '200':
           description: Place annulée, avec le remboursement et son code de délai.
+          # Le refus après échéance porte `CANCEL_DEADLINE_PASSED`, avec l'instant en paramètre.
+          # Il était annoncé — « le refus après échéance a son propre code » — et nommé nulle part :
+          # un code non nommé est un code inventé trois fois.
           content:
             application/json:
               schema:
@@ -1305,7 +1762,21 @@ paths:
                 data:
                   orders: [{ id: 019928f6-2222-7000-8000-000000000001, reference: ATH-2026-00043, kind: merch, state: paid, placedAt: '2026-09-21T18:46:00Z' }]
                   cart: { lines: [], vendorGroups: [] }
-        '409': { $ref: '#/components/responses/Conflict' }
+        '409':
+          description: |
+            `CHECKOUT_LINE_UNAVAILABLE` (avec `unavailableLineIds`), `QUOTE_ADDRESS_MISMATCH`, ou
+            `PRICE_STALE`.
+
+            **`QUOTE_ADDRESS_MISMATCH` ferme un trou** : le devis calcule le port sur un pays et un
+            code postal, le paiement reçoit une adresse complète, et rien n'imposait qu'elles
+            correspondent. **Un devis opposable dont l'adresse change entre-temps n'est plus
+            opposable** — il faut un nouveau devis, pas un débit silencieusement différent.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error: { code: QUOTE_ADDRESS_MISMATCH, nature: refused, params: { quotedCountryCode: FR, quotedPostalCode: '75011' }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                servedAt: '2026-09-21T18:46:00.000Z'
         '410': { $ref: '#/components/responses/Gone' }
 
   /v1/subscription:
@@ -1425,7 +1896,16 @@ paths:
               type: object
               required: [deviceId, kind]
               properties:
-                deviceId: { type: string, format: uuid }
+                deviceId:
+                  type: string
+                  format: uuid
+                  description: |
+                    **C'est lui qui porte la reprise.** Une ouverture sur un `deviceId` qui tient
+                    déjà un bail vivant pour cette date **reprend ce bail** et rend le même
+                    `sessionId` ; elle n'en ouvre pas un second et ne consomme pas un écran de
+                    plus. La promesse « tu peux reprendre ta propre session, identifiée par
+                    l'appareil » était écrite dans les réponses aux surfaces et n'était portée
+                    nulle part au contrat.
                 kind: { type: string, enum: [live, replay] }
                 profileId: { type: [string, 'null'], format: uuid }
                 capabilities:
@@ -1496,7 +1976,7 @@ paths:
                   params:
                     allowed: 2
                     activeSessions:
-                      - { sessionId: 019928f7-0000-7000-8000-0000000000aa, deviceLabel: 'Téléviseur du salon', city: Paris, openedAt: '2026-09-21T19:00:00Z' }
+                      - { sessionId: 019928f7-0000-7000-8000-0000000000aa, deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77, isCurrentDevice: false, deviceLabel: 'Téléviseur du salon', city: Paris, openedAt: '2026-09-21T19:00:00Z' }
                   traceId: 4bf92f3577b34da6a3ce929d0e0e4736
                 servedAt: '2026-09-21T19:05:00.000Z'
         '404': { $ref: '#/components/responses/NotFound' }
@@ -1550,7 +2030,7 @@ paths:
             Renouvellement refusé. `SEAT_EXPIRED` · `CONCURRENT_LIMIT_REACHED` ·
             `SIGNED_OUT_ELSEWHERE` · `PREVIEW_EXHAUSTED` · `DATE_INTERRUPTED`.
             `SIGNED_OUT_ELSEWHERE` est ce que voit le téléviseur déconnecté depuis le web — **pas
-            une erreur réseau**, et au plus 60 s après le geste.
+            une erreur réseau**. **Fenêtre réelle : jusqu'à 120 s** — voir `revokeDevice`.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -1841,7 +2321,16 @@ paths:
               type: object
               required: [reason]
               properties:
-                reason: { type: string, enum: [spam, harassment, hate, off_topic] }
+                reason:
+                  type: string
+                  description: |
+                    **Le vocabulaire de `shared/`, qui fait autorité et n'avait aucun concurrent.**
+                    `spoiler` — « divulgue le spectacle » — est le seul motif propre au spectacle
+                    vivant et il est traduit dans l'i18n ; il avait disparu, comme `insult`. `hate`
+                    et `filter` avaient été inventés, et `filter` n'est pas un motif mais une
+                    **origine** — le contrat la porte déjà correctement ailleurs, et la mettre
+                    aussi dans `reason` donnait deux axes à un champ.
+                  enum: [spam, insult, spoiler, off-topic, harassment]
             example: { reason: harassment }
       responses:
         '202':
@@ -2040,6 +2529,99 @@ paths:
                 servedAt: '2026-09-21T18:53:00.000Z'
                 data: { pairingId: 019928f9-0000-7000-8000-000000000001, intent: seat, state: cancelled, pollIntervalSec: 5 }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: |
+            **`PAIRING_EXECUTION_ENGAGED` — l'appairage n'est plus annulable.** Le téléphone est
+            entré dans le parcours de paiement ; l'annuler ici orphelinerait un achat en vol.
+
+            **Ce que la surface fait de ce refus** : elle **reste sur l'écran d'attente** et
+            continue d'interroger. Elle ne revient pas en arrière. C'est le seul cas du contrat
+            où un appui sur Retour ne remonte pas d'un niveau, et la raison est écrite : on ne
+            laisse pas une télécommande annuler un paiement qu'elle a elle-même déclenché.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error:
+                  code: PAIRING_EXECUTION_ENGAGED
+                  nature: refused
+                  params: { state: engaged, engagedAt: '2026-09-21T18:52:04Z' }
+                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                servedAt: '2026-09-21T18:52:06.000Z'
+
+  /v1/pairings/{pairingId}/engagement:
+    post:
+      operationId: engagePairing
+      tags: [pairing]
+      summary: Marque l'appairage comme engagé — à l'entrée du parcours de paiement.
+      description: |
+        **Cette opération existe pour fermer une course qui coûte de l'argent réel.**
+
+        La séquence sans elle : le spectateur scanne le QR, paie sur son téléphone, et appuie sur
+        **Retour** pendant que le paiement s'exécute. La télévision envoie son `DELETE` ;
+        `ticketing` a déjà encaissé ; la décision arrive ensuite et reçoit `410`. **La place est
+        payée, le téléphone affiche un échec, la télévision est revenue en arrière, et l'argent
+        est parti.** Le contrat traitait l'ordre inverse — approbation puis annulation — et pas
+        celui-ci, qui est pourtant le plus probable des deux : l'exécution d'un paiement dure des
+        secondes, l'appui sur Retour est instantané.
+
+        **Appelée par le BFF au nom du téléphone**, au moment où celui-ci entre dans le parcours
+        de paiement — donc **avant** que `ticketing` exécute, et non après. Elle fait passer
+        l'appairage de `pending` à `engaged`, et à partir de là `cancelPairing` répond `409`.
+
+        **Elle ne s'applique qu'aux quatre intentions d'achat.** `signin` n'engage aucun argent :
+        un appairage de connexion reste annulable jusqu'à sa décision, et l'appeler dessus est
+        refusé.
+
+        **Idempotente** : un second appel sur un appairage déjà `engaged` rend le même état, pas
+        une erreur — le téléphone peut rejouer son entrée de parcours sur un réseau qui bascule.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+        - bearerToken: []
+      parameters:
+        - name: pairingId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: [string, 'null']
+                  description: Trace facultative du parcours engagé, pour le journal.
+            example: {}
+      responses:
+        '200':
+          description: Appairage engagé, donc non annulable.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties: { data: { $ref: '#/components/schemas/PairingOutcome' } }
+              example:
+                servedAt: '2026-09-21T18:52:04.000Z'
+                data: { pairingId: 019928f9-0000-7000-8000-000000000001, intent: seat, state: engaged, pollIntervalSec: 2 }
+        '403':
+          description: '`PAIRING_IDENTITY_MISMATCH`, ou `PAIRING_INTENT_NOT_ENGAGEABLE` sur `signin`.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error: { code: PAIRING_INTENT_NOT_ENGAGEABLE, nature: refused, params: { intent: signin }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                servedAt: '2026-09-21T18:52:04.000Z'
+        '410': { $ref: '#/components/responses/Gone' }
 
   /v1/pairings/{pairingId}/decision:
     post:
@@ -2051,7 +2633,8 @@ paths:
         que coûte son relâchement : le plugin traitait toute session authentifiée comme
         propriétaire de tout code en attente.
 
-        Trois vérifications, dans cet ordre : l'appairage est `pending` et non expiré ; si
+        Trois vérifications, dans cet ordre : l'appairage est `pending` **ou `engaged`** et non
+        expiré — un appairage engagé est précisément celui dont on attend la décision ; si
         `intent = signin`, une session valide quelconque suffit — **c'est le cas nominal, et c'est
         même le sens d'« ajouter un compte »** ; sinon, le porteur **est** le profil qui a ouvert
         l'appairage, sous peine de `PAIRING_IDENTITY_MISMATCH`.
@@ -2350,6 +2933,74 @@ paths:
                 servedAt: '2026-09-21T18:57:40.000Z'
                 data: { id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001, displayState: live, viewerRelations: { inWatchlist: false, reminderSet: false, followsArtist: false } }
         '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/me/follows:
+    get:
+      operationId: listFollowedArtists
+      tags: [account]
+      summary: Les artistes suivis — la page « Suivis », qui n'avait aucun point d'entrée.
+      description: |
+        **La page entière n'était pas servie.** `/v1/me/follows/{artistId}` n'exposait que `PUT` et
+        `DELETE`, `/v1/artists` n'acceptait pas de filtre sur le suivi, et `AccountScreen` ne
+        portait aucune liste. Le seul moyen de peindre l'écran était de parcourir `/v1/artists` en
+        entier et de filtrer côté client — c'est-à-dire exactement ce que le contrat interdit
+        ailleurs, et à juste titre.
+
+        **Le rail `followed` de l'accueil ne s'y substituait pas** : il porte des `DateCard`, donc
+        des dates annoncées, alors que la moitié de cette page est faite des artistes suivis **qui
+        n'ont pas de date** — et il n'a ni tri, ni retrait sur place, ni états vides propres.
+
+        Le contrat se contredisait d'ailleurs tout seul : `emptyReason` portait
+        `no_followed_artist_live`, **un état vide pour une liste qu'aucune opération ne
+        produisait**.
+
+        Sert aussi `account/faves`, dont c'est la première des deux collections — la seconde étant
+        `/v1/me/watchlist`.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity, catalog, notifications]
+      x-arthome-freshness: 60
+      parameters:
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: sort
+          in: query
+          schema: { type: string, enum: [alpha, followers, next_date], default: next_date }
+        - name: liveOnly
+          in: query
+          description: '**La section « Suivis en direct »**, servie plutôt que filtrée côté client.'
+          schema: { type: boolean, default: false }
+      responses:
+        '200':
+          description: |
+            Page d'artistes suivis. Chacun porte `alertEnabled` — **suivre et être alerté sont deux
+            réglages** — et `nextDate` quand il y en a une, ce qui donne la scission que l'écran
+            affiche sans un appel par artiste.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [items, page]
+                    properties:
+                      items: { type: array, items: { $ref: '#/components/schemas/ArtistSummary' } }
+                      page: { $ref: '#/components/schemas/CursorPageInfo' }
+              example:
+                servedAt: '2026-09-21T18:58:40.000Z'
+                items:
+                  - id: 019928a0-7d31-7a10-b8c4-2f9e11a4c333
+                    channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    name: Compagnie Verticale
+                    categoryId: dance-contemporary
+                    followers: 4120
+                    isLiveNow: true
+                    followedByViewer: true
+                    alertEnabled: true
+                page: { hasMore: false, emptyReason: no_followed_artist, emptyActionCode: browse_artists }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '410': { $ref: '#/components/responses/Gone' }
 
   /v1/me/follows/{artistId}:
     put:
@@ -2973,7 +3624,7 @@ paths:
       tags: [account]
       summary: Révoque un appareil — et coupe sa lecture.
       description: |
-        **Un effet observable sur l'appareil visé, en 60 secondes au plus.** Révoquer supprime le
+        **Un effet observable sur l'appareil visé, en 120 secondes au plus.** Révoquer supprime le
         `Device`, **toutes** ses `DeviceSession` **et ses baux de lecture** : `identity` publie
         `device_revoked`, `streaming` le consomme et refuse le **prochain renouvellement** de
         jeton. L'appareil affiche `SIGNED_OUT_ELSEWHERE`, **pas une erreur réseau**.
@@ -2993,7 +3644,9 @@ paths:
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
-          description: Appareil révoqué. `playbackCutWithinSec` dit au bout de combien de temps la lecture s'arrête.
+          description: |
+            Appareil révoqué. `playbackCutWithinSec` dit au bout de combien de temps la lecture
+            s'arrête **réellement**.
           content:
             application/json:
               schema:
@@ -3005,10 +3658,24 @@ paths:
                         type: object
                         properties:
                           devices: { type: array, items: { $ref: '#/components/schemas/Device' } }
-                          playbackCutWithinSec: { type: integer }
+                          playbackCutWithinSec:
+                            type: integer
+                            description: |
+                              **120, et non 60.** La révocation ne révoque pas le jeton en main :
+                              elle **refuse le renouvellement suivant**. La signature de préfixe du
+                              CDN expire avec le jeton, donc la périphérie continue de servir des
+                              segments valides pendant toute la durée de vie du jeton détenu — soit
+                              jusqu'à **120 s**, dans le cas où il vient d'être renouvelé à
+                              l'instant de la révocation. En régime courant : 45 à 75 s.
+
+                              Le 60 servi jusqu'ici était l'**intervalle de renouvellement**
+                              présenté comme une garantie d'arrêt. C'était la règle 15 violée sur
+                              une constante de sécurité, et le nombre plausible avait été retenu
+                              parce qu'il satisfaisait la question posée.
+                            examples: [120]
               example:
                 servedAt: '2026-09-21T19:06:00.000Z'
-                data: { devices: [], playbackCutWithinSec: 60 }
+                data: { devices: [], playbackCutWithinSec: 120 }
         '404': { $ref: '#/components/responses/NotFound' }
 
   /v1/me/device-sessions/{sessionId}:
@@ -3440,6 +4107,23 @@ components:
       description: Délai d'attente avant de réessayer, en millisecondes. Sert à désactiver un contrôle proprement plutôt qu'à enchaîner les refus.
       schema: { type: integer, minimum: 0 }
 
+    CacheControlPublic:
+      description: |
+        Posé par le BFF. **`public` uniquement sur une lecture anonyme** — le corps est alors
+        identique pour tous les appelants, donc mutualisable dans un cache partagé et dans le
+        cache de rendu de Next. Dès qu'une session ou un jeton porteur accompagne la requête, le
+        corps porte les surcouches par spectateur et l'en-tête devient `private` : **servir en
+        `public` un corps personnalisé serait une fuite, pas une optimisation.**
+      schema: { type: string, examples: ['public, max-age=60'] }
+
+    VaryAuth:
+      description: |
+        **`Cookie, Authorization, X-Arthome-Device-Token, X-Arthome-Surface`.** Sans ce `Vary`, un
+        cache intermédiaire servirait à un visiteur anonyme le corps personnalisé d'un autre. Les
+        trois premiers séparent public et identifié ; `X-Arthome-Surface` sépare les plafonds de
+        tchat et les tranches de catalogue de libellés, qui diffèrent par surface.
+      schema: { type: string }
+
   responses:
 
     BadRequest:
@@ -3592,7 +4276,9 @@ components:
             écran différent, **avec une action qui sort de l'impasse**.
           x-arthome-vocabulary:
             [no_match_for_query, no_match_with_filters, nothing_in_category_yet,
-             no_followed_artist_live, no_order_yet, no_ticket_yet, no_replay_available]
+             no_live_in_category, no_upcoming_in_category, no_replay_in_category,
+             no_followed_artist, no_followed_artist_live, no_order_yet, no_ticket_yet,
+             no_replay_available, empty_cart, no_saved_search, no_watchlist_entry]
         emptyActionCode:
           type: [string, 'null']
           description: |
@@ -3613,12 +4299,20 @@ components:
           examples: [TRANSITION_IRREVERSIBLE]
         nature:
           type: string
-          enum: [refused, unavailable, offline_forbidden]
           description: |
             La décision que la personne doit prendre. `refused` : ne pas réessayer, comprendre.
             `unavailable` : réessayer. `offline_forbidden` : refus **local**, avant tout envoi —
             **jamais émis par le serveur**, présent au vocabulaire pour que la surface n'ait
             qu'une seule forme d'erreur à rendre.
+
+            **Vocabulaire ouvert en lecture, et c'est l'endroit où cela compte le plus.** Une
+            nature inconnue — `degraded`, `needs_reauth` — est traitée comme **`unavailable`**,
+            donc réessayable. Un `enum` figé ici ferait rejeter l'enveloppe entière par un
+            téléviseur d'une version antérieure : il ne perdrait pas une carte, il perdrait sa
+            capacité à **lire les erreurs**, précisément au moment où quelque chose ne va déjà
+            pas, et sur un parc qu'on ne peut pas mettre à jour.
+          x-arthome-vocabulary: [refused, unavailable, offline_forbidden]
+          x-arthome-unknown-fallback: unavailable
           examples: [refused]
         params:
           type: object
@@ -3732,6 +4426,22 @@ components:
         reactionQuotaPerDate: { type: integer, examples: [20] }
         reminderLeadMinutes: { type: integer, examples: [30] }
         replayExpiryWarningHours: { type: integer, examples: [6] }
+        previewSecondsTotal:
+          type: integer
+          description: |
+            **Le total de l'aperçu gratuit.** `WatchVerdict.previewSecondsLeft` servait le
+            **reste** et rien ne servait le total : le décompte « il vous reste 4 min 12 » avait un
+            reste sans dénominateur, et la copie dit « les 5 premières minutes ». Règle 15 — la
+            constante n'avait pas de document propriétaire.
+          examples: [300]
+        searchExactTotalLimit:
+          type: integer
+          description: |
+            **Le seuil au-delà duquel `approximateTotal` devient une borne inférieure.** Il était
+            gravé dans la prose sous la forme « exact jusqu'à 10 000 » : on servait le défaut d'un
+            paramètre de moteur de recherche, au nom d'un fournisseur. Servi comme constante, il
+            survit au changement de moteur.
+          examples: [10000]
         creditDelayCode:
           type: string
           description: |
@@ -3789,6 +4499,13 @@ components:
           properties:
             interfaceLocale: { type: string, examples: [fr] }
             subtitlesDefault: { type: boolean }
+            subtitleLanguage:
+              type: [string, 'null']
+              description: |
+                **Activer les sous-titres et choisir leur langue sont deux réglages.** Le contrat
+                ne portait que le booléen ; la conception porte une langue. Un spectateur qui veut
+                des sous-titres anglais sur un spectacle français n'était pas exprimable.
+              examples: [fr]
             audioDescription: { type: boolean }
             liveOpenBehaviour:
               type: string
@@ -4071,7 +4788,7 @@ components:
             reasonCode:
               type: [string, 'null']
               description: 'Un **code**, jamais une phrase. Le jeu actuel porte `label`/`labelEn` rédigés dans la donnée : fuite d''i18n (E8).'
-              x-arthome-vocabulary: [co_production, broadcaster, festival]
+              x-arthome-vocabulary: [co-production, broadcaster, festival]
         chatMode:
           type: string
           x-arthome-vocabulary: [open, emoji, read_only, off]
@@ -4079,16 +4796,24 @@ components:
         languageDependency:
           type: string
           x-arthome-vocabulary: [none, helpful, essential]
-        watchVerdict: { $ref: '#/components/schemas/WatchVerdict' }
+        watchVerdict:
+          allOf: [{ $ref: '#/components/schemas/WatchVerdict' }]
+          description: |
+            Surcouche par spectateur. **Absente — pas nulle — en lecture anonyme**, ce qui rend le
+            corps public identique pour tous les appelants et donc mutualisable dans un cache
+            partagé.
         viewerRelations:
           type: [object, 'null']
-          description: Surcouche par spectateur, fusionnée depuis une lecture **groupée par lot**, jamais un appel par carte.
+          description: |
+            Surcouche par spectateur, fusionnée depuis une lecture **groupée par lot**, jamais un
+            appel par carte. **Absente en lecture anonyme.**
           properties:
             inWatchlist: { type: boolean }
             reminderSet: { type: boolean }
             followsArtist: { type: boolean }
         viewerProgress:
           type: [object, 'null']
+          description: Surcouche par spectateur. **Absente en lecture anonyme.**
           properties:
             positionSec: { type: integer }
             durationSec: { type: integer }
@@ -4176,7 +4901,7 @@ components:
 
     Rail:
       type: object
-      required: [id, titleCode, kind, items]
+      required: [id, titleCode, kind, itemKind, cardForm, items]
       description: |
         Une rangée d'accueil. **La composition et l'ordre sont serveur** : la maquette charge
         1 814 dates (1,79 Mo) et filtre côté client, ce que le contrat doit rendre impossible sur
@@ -4189,11 +4914,54 @@ components:
           examples: [home.rail.resume]
         kind:
           type: string
-          x-arthome-vocabulary: [resume, live_now, upcoming_tonight, followed, editorial, category, replay_expiring]
-        items: { type: array, items: { $ref: '#/components/schemas/DateCard' } }
+          description: |
+            `my_seats` porte « Vos places » : elle n'est **pas** éditoriale mais personnelle, et son
+            comportement lui est propre — la carte devient « Entrer dans la salle » à l'ouverture de
+            la salle. La ranger sous `editorial` aurait effacé cette différence.
+          x-arthome-vocabulary:
+            [resume, live_now, my_seats, upcoming_tonight, followed, editorial, category,
+             replay_expiring, artists_to_follow]
+        itemKind:
+          type: string
+          description: |
+            **Ce que la rangée porte.** Sans ce champ, une rangée d'artistes est inexprimable :
+            `ArtistSummary` existe au contrat mais aucune rangée ne pouvait le transporter, et la
+            surface aurait dû deviner le type sur l'identifiant de rangée — c'est-à-dire sur un
+            littéral parallèle.
+          x-arthome-vocabulary: [date, artist]
+          examples: [date]
+        cardForm:
+          type: string
+          description: |
+            **La forme de carte est un choix éditorial, donc serveur**, au même titre que l'ordre
+            des rangées. `poster` sert la rangée « Affiches » en 2/3 vertical, `portrait` les
+            artistes en rond. Sans ce champ la surface choisirait sur l'identifiant de rangée, et
+            *« la variété de format est ce qui empêche l'écran de ressembler à un tableur »* —
+            neuf rangées de cartes 16/9 identiques, c'est le défaut n°1 d'un téléviseur.
+          x-arthome-vocabulary: [wide, poster, portrait]
+          examples: [wide]
+        items:
+          type: array
+          description: |
+            **Union discriminée par `itemKind`** : `DateCard` quand `itemKind` vaut `date`,
+            `ArtistSummary` quand il vaut `artist`.
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/DateCard'
+              - $ref: '#/components/schemas/ArtistSummary'
+        total:
+          type: [integer, 'null']
+          description: |
+            **L'effectif de la rangée, pas celui de la tranche servie.** Chaque rangée affiche un
+            compteur à droite de son titre ; sans ce champ elle ne peut afficher que
+            `items.length`, soit la taille de page — un chiffre faux. Même garantie que
+            `CursorPageInfo.approximateTotal` : exact jusqu'à 10 000, borne inférieure au-delà.
+        totalIsLowerBound: { type: boolean, default: false }
         nextCursor:
           type: [string, 'null']
-          description: Curseur **par rangée**. Un rail est un extrait ; il ne se pagine pas à l'écran, il s'étend.
+          description: |
+            Curseur **par rangée**, consommé par `extendRail`. Un rail est un extrait ; il ne se
+            pagine pas à l'écran, il s'étend.
 
     HomeScreen:
       type: object
@@ -4297,6 +5065,19 @@ components:
         avgViewers: { type: [integer, 'null'] }
         isLiveNow: { type: boolean }
         followedByViewer: { type: [boolean, 'null'] }
+        alertEnabled:
+          type: [boolean, 'null']
+          description: |
+            **Suivre et être alerté sont deux réglages**, et le contrat les sépare : `followedByViewer`
+            est une relation de catalogue, `alertEnabled` un drapeau porté par `notifications`. Les
+            confondre rendrait impossible de suivre un artiste sans être notifié — et la conception
+            montre les deux séparément. **Absent en lecture anonyme.**
+        nextDate:
+          allOf: [{ $ref: '#/components/schemas/DateCard' }]
+          description: |
+            La prochaine date annoncée, quand il y en a une. Servie pour que la page « Suivis »
+            distingue les artistes **qui ont une date** de ceux qui n'en ont pas — c'est la
+            scission que l'écran affiche, et elle serait sinon calculée par un appel par artiste.
 
     ArtistDetail:
       allOf:
@@ -4340,6 +5121,36 @@ components:
         kind: { type: string, x-arthome-vocabulary: [money_range, date_range, boolean] }
         min: { type: [integer, 'null'] }
         max: { type: [integer, 'null'] }
+
+    SearchCriteria:
+      type: object
+      description: |
+        **La grammaire des critères, publiée.** C'est la même forme partout : paramètre de
+        `/v1/search`, paramètre de `/v1/categories/{id}`, et corps de `SavedSearch.criteria`. Une
+        seule forme, donc une seule signature — et `criteriaSignature` ne peut la produire que
+        parce que la forme est normalisée.
+
+        **Toutes les valeurs sont des identifiants stables**, jamais des indices de tableau : une
+        position ne survit ni à une URL partageable, ni à une recherche enregistrée, ni à
+        l'insertion d'une discipline.
+      additionalProperties: false
+      properties:
+        categoryIds: { type: array, items: { type: string } }
+        genreIds: { type: array, items: { type: string } }
+        tagIds: { type: array, items: { type: string } }
+        artistIds: { type: array, items: { type: string, format: uuid } }
+        cityIds: { type: array, items: { type: string } }
+        countryCodes: { type: array, items: { type: string, pattern: '^[A-Z]{2}$' } }
+        languageDependency: { type: array, items: { type: string, enum: [none, helpful, essential] } }
+        replayPolicy: { type: array, items: { type: string, enum: [included, subscription, unit, none] } }
+        displayStates: { type: array, items: { type: string, enum: [scheduled, room_open, live, replay, ended] } }
+        priceMinMinor: { type: [integer, 'null'], minimum: 0 }
+        priceMaxMinor: { type: [integer, 'null'], minimum: 0 }
+        startsAfter: { type: [string, 'null'], format: date-time }
+        startsBefore: { type: [string, 'null'], format: date-time }
+        almostSoldOut: { type: [boolean, 'null'] }
+        onPromotion: { type: [boolean, 'null'] }
+        accessibility: { type: array, items: { type: string } }
 
     ShowGroup:
       type: object
@@ -4565,9 +5376,20 @@ components:
           type: array
           items:
             type: string
+            description: |
+              **Orthographe kebab, celle de la source qui fait autorité.** Le contrat portait
+              `free_dates`, `no_ads`, `one_live_month`, `all_lives`, `multi_screen` en snake, là où
+              `shared/catalogue.json` — déclaré faisant autorité sur le vocabulaire — porte
+              `free-dates`, `no-ads`, `one-live-month`, `all-lives`, `multi-screen`.
+
+              **Ce n'était pas cosmétique** : c'est le vocabulaire dont dépend `decideWatch`. Un
+              `opens.includes('multi-screen')` sur une charge utile qui porte `multi_screen` rend
+              `false` **en silence**, et tout le monde retombe à un écran — exactement la forme du
+              défaut d'autorisation que le contrat avait corrigé sur les **formules** et
+              réintroduit sur les **ouvertures**.
             x-arthome-vocabulary:
-              [browse, trailers, free_dates, replays, no_ads, one_live_month, all_lives,
-               multi_screen, archive]
+              [browse, trailers, free-dates, replays, no-ads, one-live-month, all-lives,
+               multi-screen, archive]
         seatDiscountBps: { type: integer, examples: [2000] }
         concurrentStreamsAllowed:
           type: integer
@@ -4602,7 +5424,22 @@ components:
         **Jamais mis en cache** — `Cache-Control: no-store`. Un droit relu depuis le disque est
         un droit faux.
       properties:
-        sessionId: { type: string, format: uuid }
+        sessionId:
+          type: string
+          format: uuid
+          description: |
+            **Récupérable après une mise à mort par le système.** Le jeton étant `no-store`, un
+            client tué par l'OS n'a plus ce `sessionId` : il ne pourrait ni renouveler, ni
+            libérer, ni désigner sa propre session dans la liste du refus. Rouvrir avec le **même
+            `deviceId`** rend la même session — c'est le mécanisme, et il est déclaré.
+        resumedExistingSession:
+          type: boolean
+          description: |
+            Vrai quand cette ouverture a **repris le bail existant** de cet appareil au lieu d'en
+            ouvrir un second. C'est ce qui empêche un foyer d'être bloqué par ses propres écrans
+            fantômes — et c'est décisif pour un abonné `pass`, dont le plafond est de **un** écran :
+            sans reprise, rouvrir l'application après une mise à mort le verrouille hors de son
+            propre téléphone pendant les quatre-vingt-dix secondes du bail.
         dateId: { type: string, format: uuid }
         scope:
           type: string
@@ -4724,6 +5561,15 @@ components:
         libérer une. Un refus nu laisserait le spectateur sans issue.
       properties:
         sessionId: { type: string, format: uuid }
+        deviceId:
+          type: string
+          format: uuid
+          description: |
+            **Servi, parce que sans lui la liste n'est pas actionnable.** La surface doit pouvoir
+            reconnaître **sa propre** session pour proposer « reprendre ici » plutôt que « libérer
+            un autre écran », et un libellé d'appareil ne suffit pas : deux téléphones du même
+            modèle portent le même.
+        isCurrentDevice: { type: boolean }
         deviceLabel: { type: string, examples: ['Téléviseur du salon'] }
         city: { type: [string, 'null'] }
         openedAt: { type: string, format: date-time }
@@ -4836,7 +5682,15 @@ components:
             « bascule en deux secondes au plus » est tenue **sans** faire entrer une identité
             d'appareil dans l'espace de noms WebSocket.
           examples: [2]
-        state: { type: string, x-arthome-vocabulary: [pending, approved, denied, expired, cancelled, approved_with_failure] }
+        state:
+          type: string
+          description: |
+            **`engaged` est l'état qui protège l'argent.** Il est posé dès que le téléphone entre
+            dans le parcours de paiement, et **avant** que `ticketing` exécute. À partir de là
+            l'appairage n'est plus annulable : sans cet état, un appui sur Retour — la touche la
+            plus sollicitée d'une télécommande — annule un appairage dont le paiement est déjà en
+            vol, et la place est encaissée sans qu'aucun des deux écrans ne le dise.
+          x-arthome-vocabulary: [pending, engaged, approved, denied, expired, cancelled, approved_with_failure]
 
     PairingOutcome:
       type: object
@@ -4852,7 +5706,15 @@ components:
       properties:
         pairingId: { type: string, format: uuid }
         intent: { type: string, x-arthome-vocabulary: [signin, seat, plan, payment_method, merch] }
-        state: { type: string, x-arthome-vocabulary: [pending, approved, denied, expired, cancelled, approved_with_failure] }
+        state:
+          type: string
+          description: |
+            **`engaged` est l'état qui protège l'argent.** Il est posé dès que le téléphone entre
+            dans le parcours de paiement, et **avant** que `ticketing` exécute. À partir de là
+            l'appairage n'est plus annulable : sans cet état, un appui sur Retour — la touche la
+            plus sollicitée d'une télécommande — annule un appairage dont le paiement est déjà en
+            vol, et la place est encaissée sans qu'aucun des deux écrans ne le dise.
+          x-arthome-vocabulary: [pending, engaged, approved, denied, expired, cancelled, approved_with_failure]
         pollIntervalSec: { type: integer }
         failureCode: { type: [string, 'null'], x-arthome-vocabulary: [SOLD_OUT, PAYMENT_DECLINED, PRICE_STALE, PLAN_UNAVAILABLE] }
         ticket: { $ref: '#/components/schemas/TicketCard' }

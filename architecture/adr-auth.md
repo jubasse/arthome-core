@@ -280,7 +280,8 @@ utiles d'API, pas l'intérieur d'un jeton. Tolérance d'horloge déclarée : **�
 - **Session opaque better-auth** — émise par `identity`, écrite dans sa base. Portée par
   **cookie** (`storefront-web`, `studio-web`) ou par **jeton porteur** (`studio-mobile`,
   `storefront-mobile`, `storefront-tv`), selon le plugin `bearer`, qui rend le jeton dans
-  l'en-tête `set-auth-token` et le reçoit en `Authorization: Bearer`.
+  l'en-tête `set-auth-token` et le reçoit en `Authorization: Bearer`. **Le mode est choisi par
+  le BFF et déclaré explicitement — §8.2.4.**
 - **`device_token`** — §4/Q3.
 - **Jeton interne** — frappé par le **BFF**, ~60 s, `aud` par service (§8).
 
@@ -506,6 +507,157 @@ périphérie du CDN qui doit vérifier le jeton de lecture s'appuie sur WebCrypt
 d'Ed25519 est plus récent et plus inégal que celui de P-256. Un seul algorithme pour les quatre
 émetteurs, c'est une chose de moins qui diverge.
 
+### 8.2 Où les routes d'authentification sont montées
+
+*Arbitrage du chef, rendu au temps 4 sur remontée de `backend-contracts`.* Six contrats manquaient
+— créer un compte, se connecter, se déconnecter, réinitialiser un mot de passe, les quatre actions
+d'`account/security`, la gestion d'appareil du studio — et ils dépendaient tous de la même
+décision non prise.
+
+**Décision : le BFF expose `/v1/auth/*` en relais documenté, et le cookie de session est posé sur
+le domaine du BFF.** Elle est cohérente avec ce que cet ADR disait déjà — « le BFF, et lui seul,
+valide la session » — et elle tient les quatre contraintes d'un coup : la **règle critique 1**
+n'a plus d'exception par la porte de l'authentification, le serveur Next voit le cookie sur son
+propre domaine, et la coquille Capacitor reçoit un **jeton porteur** du même relais plutôt qu'un
+cookie qu'iOS 14+ lui interdit de tenir.
+
+**Une porte d'entrée, trois modes de restitution.**
+
+#### 8.2.1 Ce que le relais expose, et ce qu'il n'expose pas
+
+| Famille | Relayé en `/v1/auth/*` | Note |
+|---|---|---|
+| `sign-up/email`, `sign-in/email`, `sign-out` | **oui** | |
+| `forget-password`, `reset-password` | **oui** | le lien du courriel pointe la **surface**, pas l'API (§8.2.5 c) |
+| `sign-in/social`, `callback/:provider` | **oui** | client confidentiel côté serveur (§8.2.3) |
+| `get-session` | **oui**, mais **projeté** — rend `ViewerContext` / droits effectifs, pas la forme better-auth |
+| `update-user`, `change-password`, `change-email`, `delete-user` | **oui** | réauthentification exigée sur les sensibles (§6.1) |
+| `two-factor/*` | **oui** | |
+| `multi-session/*` | **oui** | c'est la gestion d'appareil du studio et des profils de la TV |
+| `device/*` (RFC 8628) | **non** | consommé **par** le BFF derrière `/v1/pairings` — une seule primitive (§3) |
+| `device/approve`, `device/deny` | **non, jamais bruts** | enveloppés par la garde de propriété (§6.3) |
+| `/jwks` | **non** | le document est **statique et servi par le CDN** (§8.1). Le relayer réintroduirait la dépendance que §8.1 supprime |
+| `/token` (plugin `jwt`) | **non** | le BFF frappe lui-même le jeton interne ; **aucun client n'obtient un JWT d'audience de service** |
+| `/ok`, `/error` (pages par défaut) | **non** | elles rendent des phrases anglaises — interdit par l'i18n par codes |
+
+#### 8.2.2 Ce que le relais **ajoute** — sans quoi ce serait la passerelle applicative écartée
+
+Le chef a raison d'exiger cette liste : un relais qui redispatche est une passerelle, et le projet
+l'a écartée d'avance. Ce que le BFF fait **en plus de transmettre**, et dont rien ne le dispense :
+
+1. **La validation zod et donc l'OpenAPI.** C'est l'argument décisif, et il vient d'une décision
+   contraignante : `zod` valide tout, l'OpenAPI est **généré depuis zod**. Un relais transparent
+   n'a pas de schéma, donc **n'apparaît pas dans l'OpenAPI** — les six contrats manquants
+   resteraient manquants. Chaque route relayée déclare ses schémas d'entrée et de sortie.
+2. **L'enveloppe d'erreur du projet, en codes.** better-auth répond des phrases anglaises
+   (`"Invalid email or password"`). L'i18n par codes l'interdit, enveloppe d'erreur comprise. Le
+   BFF fait la table de correspondance code better-auth → code du projet. À lui seul, ce point
+   rendrait le relais obligatoire.
+3. **La garde de propriété de l'appairage** (§6.3) — la ligne qui a fait CVE-2026-45337.
+4. **Le choix du mode de restitution** (§8.2.4) : c'est le BFF qui décide ce qu'il rend, pas
+   `identity` qui l'ignore.
+5. **La limitation de débit par `device_id`** (§6.2), que better-auth ne sait pas faire : ses
+   plafonds sont par adresse ou par session, et un salon derrière un NAT partage son adresse.
+6. **Le durcissement du cookie et la CSRF** en mode cookie (→ `nestjs-web-security`), sans objet
+   en mode porteur.
+7. **`traceparent`** propagé, et la corrélation avec le reste de la requête.
+
+#### 8.2.3 Le retour d'OAuth, et les deux coquilles natives
+
+La redirection est enregistrée **une fois par fournisseur**, sur le domaine du BFF. Point
+structurant, qui règle la question que j'avais laissée « à vérifier » : **les surfaces ne parlent
+jamais à Google ni à Facebook.** Elles ouvrent `/v1/auth/sign-in/social` sur le BFF, qui redirige.
+Le client OAuth est donc **confidentiel et côté serveur** — aucune application mobile n'embarque
+de secret, ce qui est de toute façon la seule forme défendable sur un binaire distribué.
+
+| Surface | Chemin du retour | Ce qui tient |
+|---|---|---|
+| `storefront-web`, `studio-web` | redirection navigateur ordinaire | cookie posé sur le domaine du BFF, lu par Next au rendu serveur |
+| `studio-mobile` (Capacitor) | **navigateur système**, jamais le WebView, puis **lien universel** | `capacitor://localhost` est un contexte tiers : aucun cookie n'y survivrait |
+| `storefront-mobile` (RN) | `ASWebAuthenticationSession` / Custom Tabs, puis **lien d'application** | idem |
+| `storefront-tv` | **aucun navigateur** | la TV ne fait pas d'OAuth : elle passe par l'appairage, `intent: signin` (§3) |
+
+**La règle qui rend le retour sûr, et elle est absolue : le lien profond ne porte jamais le
+jeton.** Il ne porte qu'un **état opaque à usage unique** (plugin `one-time-token`), que
+l'application échange contre son jeton porteur en TLS direct avec le BFF. Motif déjà établi par
+`studio-mobile` : l'URL de retour transite par le système, peut être journalisée, et peut être
+ouverte par une autre application. C'est aussi ce qui rend le parcours **rejouable** si l'OS tue
+l'application pendant le détour — l'état d'attente est côté serveur (§6.4).
+
+#### 8.2.4 Les trois modes de restitution
+
+Le mode est un **paramètre explicite** de la demande, validé par zod. **Jamais déduit du
+`User-Agent`** : il est falsifiable, et j'ai tenu tout ce document qu'une heuristique
+contournable ne compte pas comme réponse.
+
+| Mode | Surfaces | Ce que rend le BFF | Stockage |
+|---|---|---|---|
+| `cookie` | `storefront-web`, `studio-web` | cookie `HttpOnly` `Secure` `SameSite=Lax`, **rien dans le corps** | navigateur |
+| `bearer` | `studio-mobile`, `storefront-mobile` | jeton opaque dans le corps, **aucun cookie** | Keychain / Keystore, `@capacitor/preferences` |
+| `device` | `storefront-tv` | `device_token` d'abord (§4/Q3), puis un jeton porteur **par profil** à l'issue de l'appairage | magasin natif |
+
+**Invariant : une réponse ne porte jamais les deux à la fois.** Un jeton dans le corps *et* un
+cookie, c'est deux porteurs pour une session, donc deux révocations à tenir et une qu'on oubliera.
+
+Le mode `device` est celui que le chef me demande de relier : la TV n'a **ni cookie ni jeton** au
+moment où elle ouvre un appairage de connexion, puisqu'elle n'a pas de session. C'est exactement
+ce que l'identité d'appareil résout (§4/Q3) — le `device_token` est ce qui l'autorise à frapper
+`/v1/pairings` avant toute session, et rien d'autre.
+
+#### 8.2.5 La déconnexion, dans les trois modes
+
+| Mode | Ce qui se passe |
+|---|---|
+| `cookie` | session détruite côté serveur, puis cookie effacé **avec exactement les attributs qui l'ont posé** — sans quoi il n'est pas effacé |
+| `bearer` | session détruite côté serveur, **puis** le client efface son magasin natif. L'ordre compte : effacer le magasin n'est pas révoquer |
+| `device` | **`multi-session.revoke` d'un seul profil.** Les autres comptes du téléviseur restent connectés. Révoquer l'**appareil** est une commande distincte, qui ferme toutes ses sessions d'un coup |
+
+**Piège à écrire** : le `signOut` de better-auth révoque **toutes** les sessions de l'utilisateur.
+Sur un téléviseur partagé, ce n'est pas ce qu'on veut — la déconnexion par profil passe
+obligatoirement par `multi-session.revoke`. Deux gestes, deux routes, jamais l'une pour l'autre.
+
+**Articulation avec `DeviceSessionClosed`.** Les trois modes émettent le même événement, et le
+grain que `backend-domain` vient d'ajouter est celui qui manquait : **`(device_id, profile_id)`**.
+Sans `profile_id`, déconnecter un profil sur un téléviseur partagé coupait la lecture de tout le
+salon ou de personne. L'entitlement le consomme et refuse le renouvellement suivant **pour ce
+profil sur cet appareil** ; la latence est celle du §9 — retard de l'événement, puis 75 à 120 s.
+
+#### 8.2.6 Ce qui reste à `identity` et n'est jamais exposé
+
+- **le magasin de justificatifs** — empreintes argon2id, secrets TOTP chiffrés, codes de secours.
+  Jamais lus par le BFF, jamais sur le fil, sous aucun mode ;
+- **les clés privées et leur rotation** (§8.1) — `/jwks` n'est pas relayé, `/token` non plus ;
+- **le registre des appareils** — `identity` l'écrit ; les surfaces en lisent une projection ;
+- **les tables du schéma `auth`** — aucune entité TypeORM ne les mappe (R2).
+
+#### 8.2.7 Ce que le relais casse, et que je signale
+
+Le chef a demandé que je signale ce qui ne tient pas. Une chose casse, réellement :
+
+**Le client officiel de better-auth ne sert plus.** `authClient` — et avec lui
+`@better-auth/expo` — attend la forme de route et de réponse de better-auth sur une `baseURL`
+connue. Dès lors que le BFF projette `get-session` en `ViewerContext` et remplace les messages par
+des codes, la forme ne correspond plus. **Les cinq surfaces écrivent donc un client mince contre
+`@arthome/contracts`**, comme pour tout le reste du produit, et n'utilisent pas le SDK.
+
+C'est un coût réel : il retire l'un des arguments de vente de better-auth. Je le tiens pour
+acceptable, et il a une contrepartie que je n'avais pas vue. **R4 disparaît** : je signalais que
+`@better-auth/expo` exige Expo alors que le choix Expo / React Native nu n'est pas fait. Puisque
+nous n'utilisons plus ce paquet du tout, la décision d'authentification devient **entièrement
+indifférente** au choix de pile React Native. Un risque de moins, par un chemin inattendu.
+
+Trois pièges de configuration, à écrire avant qu'ils ne coûtent une demi-journée chacun :
+
+- **`baseURL` doit être l'URL publique du BFF**, pas l'adresse interne d'`identity`. better-auth
+  construit ses redirections et ses liens de courriel à partir d'elle : mal réglée, les retours
+  OAuth et les liens de réinitialisation pointent un hôte injoignable. `trustedOrigins` liste les
+  origines des cinq surfaces, **chaînes littérales** — `capacitor://localhost` comprise (§6.6).
+- **Le lien de réinitialisation pointe la surface, pas l'API** : `arthome.fr/reset?token=…` ou
+  `studio.arthome.fr/reset?token=…`, donc **par produit et par langue**. On surcharge
+  `sendResetPassword` ; le défaut construit depuis `baseURL` mènerait l'utilisateur sur une API.
+- **`bodyParser: false` concerne l'application `identity`**, pas le BFF. C'est une exigence de
+  l'adaptateur NestJS de better-auth ; l'appliquer au BFF y casserait tout le reste.
+
 ---
 
 ## 9. Articulation avec `adr-stream-entitlement.md`
@@ -594,7 +746,7 @@ ni les écrans simultanés (§7.1).
 | **R1** | **Le plugin Device Authorization est jeune, et il a déjà eu une CVE d'autorisation** (CVE-2026-45337, corrigée en 1.6.11). Le liage à l'identité — notre Q2 — est précisément ce qui a cédé. | **élevée** | La garde de propriété est **écrite par nous** au BFF (§6.3), pas déléguée. Spike S3. Veille sur les avis de sécurité de l'éditeur, qui publie un bulletin mensuel. |
 | **R2** | **Pas d'adaptateur TypeORM.** better-auth écrit dans PostgreSQL par Kysely : **deux outils de migration sur une base**. | moyenne | Schéma **`auth`** dédié pour better-auth, **`public`** pour TypeORM. Aucune entité TypeORM ne mappe une table better-auth ; le domaine ne tient qu'un `user_id`. Deux commandes de migration dans la même recette de déploiement, jamais entrelacées. |
 | **R3** | **`@thallesp/nestjs-better-auth` est un adaptateur communautaire** (2.8.0, MIT, un mainteneur). Il impose `bodyParser: false` et pose une garde globale. | moyenne | La dépendance est **fine** : elle monte un routeur et un garde. En cas d'abandon, monter `auth.handler` à la main coûte une journée, pas une migration. `@AllowAnonymous()` sur santé et webhooks — à ne pas oublier, la garde est globale. |
-| **R4** | **`@better-auth/expo` exige Expo**, et le choix Expo / React Native nu **n'est pas fait** (D-001). | moyenne | La voie retenue est le plugin **`bearer`**, qui ne dépend d'aucun des deux : le client stocke le jeton où il veut. `@better-auth/expo` reste une commodité si Expo est choisi, pas un prérequis. **Cette décision ne présuppose pas le choix de pile.** |
+| **R4** | ~~**`@better-auth/expo` exige Expo**, et le choix Expo / RN nu n'est pas fait (D-001).~~ **Éteint** par §8.2.7. | ~~moyenne~~ → **nulle** | Le relais `/v1/auth/*` rend le client officiel inutilisable de toute façon : nous n'installons **pas** `@better-auth/expo`. La décision d'authentification est donc **entièrement indifférente** au choix Expo / React Native nu. Éteint par un chemin que je n'avais pas prévu — c'est le relais, décidé pour une tout autre raison, qui a supprimé ce risque. |
 | **R5** | **Quatre intentions sur cinq ne sont pas du RFC 8628**, et je les fais passer par le même automate. Un lecteur pressé y verra un détournement du standard. | moyenne | C'est délibéré et écrit (§3, D-A2) : la **forme** est celle de la RFC parce que le client TV doit être unique ; seul `signin` emprunte le **protocole**. Les quatre autres n'émettent aucun jeton OAuth. |
 | **R6** | **La limite de débit par adresse est inopérante** : un salon derrière un NAT, un opérateur en CGNAT. | faible | Plafond par **`device_id`** (§6.2), rendu possible par la décision Q3. C'est la raison pratique qui tranche Q3, en plus des quatre raisons de la TV. |
 | **R7** | **28,8 bits d'entropie sur six caractères** est confortable mais pas énorme. | faible | Fenêtres courtes (5–15 min), unicité **partielle** aux seuls appairages en cours, plafond de tentatives et verrouillage. La RFC 8628 §5.1 admet cette entropie **sous condition de limitation de débit** — la condition est tenue. |
@@ -645,6 +797,15 @@ rester dans le spike.
 une rotation de `kid` avec période de grâce ne casse rien. *Échec sur la rotation ⇒ le §8.1 est à
 revoir avant d'écrire quoi que ce soit.*
 
+**S5 — Le retour d'OAuth dans une coquille native, qui est la seule chose que §8.2.3 affirme sans
+l'avoir mesurée.** Une coquille Capacitor minimale : `sign-in/social` ouvert dans le **navigateur
+système**, retour par **lien universel**, échange de l'état à usage unique contre un jeton
+porteur, rangé dans `@capacitor/preferences`. *Succès* : le retour rouvre l'application, et **le
+lien profond ne contient aucun jeton** — seulement l'état opaque. *À éprouver surtout* : le cas
+où l'OS **tue l'application pendant le détour**, qui est le mode d'échec que `studio-mobile`
+signale et que rien d'autre ne couvre. *Échec ⇒ c'est §8.2.3 qui est à revoir, pas le choix de
+better-auth.*
+
 **Ce que le spike n'a pas à prouver** : 2FA, réinitialisation de mot de passe et connexions
 sociales. Ce sont des fonctions établies de tous les candidats ; les éprouver coûterait des jours
 sans rien trancher.
@@ -654,19 +815,30 @@ sans rien trancher.
 ## 12. Ce que je remonte au chef
 
 Aucune impossibilité technique : **aucune décision contraignante n'est rouverte.** Trois points
-avaient été remontés ; deux sont clos depuis, et je les laisse ici avec leur issue plutôt que de
-les effacer — une question résolue sans trace se repose.
+avaient été remontés et un quatrième est venu du chef ; **les quatre sont clos.** Je les laisse
+ici avec leur issue plutôt que de les effacer — une question résolue sans trace se repose.
 
 1. **~~La durée d'appairage `seat` doit être la durée d'un `hold` de places~~ — clos.** (§4/Q4.)
    `backend-domain` en a tiré un agrégat qu'il n'avait pas, **`SeatHold`**, dont l'invariant est
    « un seul instant porté par les deux objets, jamais deux durées qui dérivent ». Cela justifie
    après coup les 5 minutes que j'avais retenues pour `seat` sans pouvoir les argumenter : **une
    durée d'appairage est un engagement de jauge**, pas un confort d'interface.
-2. **Une exception écrite à la règle « les dates voyagent en chaînes ISO »** — *ouvert*.
-   L'intérieur d'un JWT reste en secondes numériques (RFC 7519). Ce n'est pas une entorse, c'est
-   une frontière — mais elle doit figurer dans `critical-rules.md`, sinon quelqu'un la
-   « corrigera ». Pour `backend-contracts`.
-3. **~~Le document JWKS statique n'a pas de propriétaire~~ — clos, et ma proposition était
+2. **Le montage des routes d'authentification** — *tranché par le chef au temps 4*, écrit en
+   **§8.2** : relais `/v1/auth/*` au BFF, cookie sur le domaine du BFF, trois modes de
+   restitution. Je n'ai trouvé qu'une chose qui casse — le client officiel de better-auth devient
+   inutilisable (§8.2.7) — et elle éteint R4 au passage. **L'arbitrage n'a pas à se rouvrir.**
+3. **~~Une exception écrite à la règle « les dates voyagent en chaînes ISO »~~ — clos.**
+   `backend-contracts` l'a écrite au temps 2, `critical-rules.md` **règle 6**, avec la mention
+   qui était le vrai objet de la demande :
+
+   > **Les dates voyagent en chaînes ISO 8601 UTC.** *Exception : à l'intérieur d'un JWT,
+   > `exp`/`iat`/`nbf` restent des secondes numériques (RFC 7519) — ce n'est pas une faute, ne
+   > pas « corriger ».*
+
+   Je demandais moins la règle que **l'interdiction de la corriger** : une exception qui a l'air
+   d'une faute se fait réparer par quelqu'un de bien intentionné, et le jeton cesse alors d'être
+   vérifiable par le moindre vérifieur conforme.
+4. **~~Le document JWKS statique n'a pas de propriétaire~~ — clos, et ma proposition était
    mauvaise.** (§8.1.) Je demandais qu'on attribue *un travail de rotation unique* ;
    `definition-of-done.md` §7.6 a montré que la simplification était illusoire, mon propre
    tableau portant déjà deux calendriers. La forme retenue est **quatre rotations indépendantes

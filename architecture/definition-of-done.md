@@ -376,10 +376,23 @@ Trois, et ils protègent trois choses différentes.
 | **C2** | `buf breaking` sur les événements | `buf breaking proto --against '.git#branch=main'` | une rupture Protobuf sur un contexte stable |
 | **C3** | `oasdiff` sur l'OpenAPI | `oasdiff breaking <base> <head>` | une rupture HTTP sur un contexte stable |
 
-**C1 mérite une précision, parce qu'il est le seul qui traverse la fracture TypeScript.** Le client
-est consommé par un dépôt en **TS 6.0.x** (Angular 22) **et** par des dépôts en **TS 7.x**
-(React 19.3). Il compile donc **deux fois**, exactement comme les `.d.ts` publiés — portes 6 et 7 de
-`code-conventions.md` §8.1. Un client généré qui n'est lisible que par l'un des deux n'est pas fini.
+**C1 compile une fois, pas deux — et cette ligne disait le contraire.** Elle imposait de compiler
+le client généré sous TS 6.0.x **et** sous TS 7.x, « parce qu'il traverse la fracture ». Il n'y a
+pas de fracture : `code-conventions.md` §1.3 l'a instruite et l'a **rétractée**. Le plancher de
+React 19.3 n'est pas 7.0.2 — `react-native` n'a aucun pair `typescript` et `@types/react` se
+contente de TS 5.1 ; le `7.0.2` relevé était un constat de registre, pas une contrainte. Le seul
+plancher dur est le **plafond** d'Angular (`<6.1`), rejoint par NestJS, dont `nest build` échoue
+sur TS 7.0. **Les sept dépôts sont sous un plafond unique à TS 6.0.x.**
+
+Le client généré vit donc dans des dépôts qui sont tous du même côté, et **une compilation
+suffit**. Faire d'une revue de service la vérification d'un état qui n'existe pas, c'est E2
+appliqué à une décision : un raisonnement plausible, rétracté ailleurs, laissé en place ici.
+
+Ce qui reste vrai, et qui n'est pas la même chose : les **portes 6 et 7** de
+`code-conventions.md` §8.1 compilent les `.d.ts` de `@arthome/core` et `@arthome/contracts` sous
+les deux versions. Elles portent sur les **paquets publiés**, pas sur le client des surfaces, et
+elles existent parce que la fracture **arrivera** — `typescript@7.0.2` est déjà `latest` et un
+`pnpm add typescript` distrait l'installe.
 
 **Et `@arthome/contracts` expose une entrée sans fichier baril** (D-012), mesuré à 7,7 Ko gzip
 contre 92 Ko. La porte : le paquet n'a **aucun `index.ts` réexportant tout**, et n'importe zod que

@@ -146,6 +146,7 @@ paths:
       x-arthome-upstream: [identity]
       parameters:
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -188,6 +189,8 @@ paths:
                     payoutDelayDays: 14
                     commissionRateBps: 1200
                     chatBurstThresholdPerMinute: 60
+                    moderationQueueAlertThreshold: 10
+                    crewUnassignedAlertHoursBefore: 24
                     holdScreenAutoAfterSec: 15
                     seasonBounds: { startsOn: '09-01', endsOn: '08-31' }
                   labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/studio/fr/v41.json' }
@@ -210,6 +213,7 @@ paths:
       x-arthome-upstream: [notifications]
       parameters:
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
@@ -251,6 +255,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -279,6 +284,365 @@ paths:
                 data: { moderationPending: 14, inboxUnread: 0, dutiesTonight: 3 }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /v1/me/reauth:
+    post:
+      operationId: createReauthToken
+      tags: [bootstrap]
+      summary: Frappe le jeton de réauthentification qu'exigent les quatre commandes sensibles.
+      description: |
+        **Quatre commandes le déclaraient `required` et aucun point d'entrée ne l'émettait** :
+        révéler une clé de flux, la renouveler, transférer la propriété d'une chaîne, supprimer une
+        chaîne. Le contrat exigeait un jeton qu'il n'offrait pas.
+
+        **Le facteur est servi, pas deviné.** `GET` rend `acceptedFactors` pour cet appareil et
+        cette personne ; la surface propose ce que le serveur accepte, au lieu de supposer. C'est
+        la question que la garde pose : renouveler une clé de flux est le geste d'urgence du
+        régisseur — celui qu'on fait quand on soupçonne une fuite **pendant** un direct. Si la
+        réauthentification est un mot de passe à taper dans une salle noire, à une main, la
+        garantie se paie en antenne noire.
+
+        **Ce que le contrat garantit** : `platform_biometric` est proposé dès que l'appareil le
+        déclare, et **son échec ne ferme rien** — il retombe sur les autres facteurs acceptés,
+        listés dans la même réponse. Un facteur unique qui échoue en salle est un opérateur bloqué.
+
+        Le jeton est **à usage unique**, de courte durée, et **lié à la commande visée** : un jeton
+        frappé pour révéler une clé ne transfère pas une chaîne.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [identity]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [intent, factor]
+              properties:
+                intent:
+                  type: string
+                  description: La commande visée. Le jeton n'est valable que pour elle.
+                  enum: [reveal_stream_key, rotate_stream_key, transfer_ownership, delete_channel, change_bank_details]
+                factor: { type: string, enum: [platform_biometric, password, totp, backup_code] }
+                proof:
+                  type: [string, 'null']
+                  description: |
+                    Preuve du facteur. **Absente pour `platform_biometric`** : l'appareil atteste,
+                    le secret ne quitte jamais le matériel.
+            example: { intent: rotate_stream_key, factor: platform_biometric }
+      responses:
+        '201':
+          description: Jeton frappé, à usage unique.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        required: [reauthToken, expiresAt, intent]
+                        properties:
+                          reauthToken: { type: string }
+                          intent: { type: string }
+                          expiresAt: { type: string, format: date-time }
+              example:
+                servedAt: '2026-09-21T18:39:50.000Z'
+                rightsVersion: 412
+                data: { reauthToken: ott_9f2ac1, intent: rotate_stream_key, expiresAt: '2026-09-21T18:44:50Z' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+    get:
+      operationId: listReauthFactors
+      tags: [bootstrap]
+      summary: Les facteurs de réauthentification acceptés pour cet appareil.
+      description: |
+        **Servis, pour que la surface ne suppose rien.** Elle propose ce que le serveur accepte, et
+        elle sait d'avance s'il existe un repli quand la biométrie échoue — ce qui décide de
+        l'interface à afficher dans une salle, à une main.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [identity]
+      parameters:
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Les facteurs acceptés, dans l'ordre de préférence serveur.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          acceptedFactors:
+                            type: array
+                            items: { type: string, x-arthome-vocabulary: [platform_biometric, password, totp, backup_code] }
+                          platformBiometricEnrolled: { type: boolean }
+              example:
+                servedAt: '2026-09-21T18:39:40.000Z'
+                rightsVersion: 412
+                data: { acceptedFactors: [platform_biometric, totp, backup_code], platformBiometricEnrolled: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/me/devices:
+    get:
+      operationId: listStudioDevices
+      tags: [bootstrap]
+      summary: Les appareils sur lesquels cette personne est connectée au studio.
+      description: |
+        **Le studio n'offrait ni liste, ni révocation, ni déconnexion**, alors que la réponse à la
+        question de la surface promettait « révocation par appareil ». Ce que cela vaut
+        concrètement : **un téléphone oublié dans une salle ouvre une console de modération et la
+        révélation d'une clé de flux** — et, un indépendant intervenant sur plusieurs chaînes, sur
+        des chaînes qui n'appartiennent pas à son porteur. Ni la personne ni le propriétaire de la
+        chaîne n'avaient de geste.
+
+        La notion d'appareil est celle de la **session porteuse de jeton** du studio, distincte de
+        l'appareil d'appairage du téléviseur : ici un appareil est le porteur d'un jeton de
+        rafraîchissement lié au magasin natif.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [identity]
+      parameters:
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Les appareils, avec celui qui appelle marqué.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [items]
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          required: [deviceId, label, lastSeenAt, isCurrent]
+                          properties:
+                            deviceId: { type: string, format: uuid }
+                            label: { type: string }
+                            platform: { type: string, x-arthome-vocabulary: [ios, android, web] }
+                            city: { type: [string, 'null'] }
+                            lastSeenAt: { type: string, format: date-time }
+                            isCurrent: { type: boolean }
+              example:
+                servedAt: '2026-09-21T18:52:00.000Z'
+                rightsVersion: 412
+                items:
+                  - { deviceId: 019928eb-0000-7000-8000-000000000001, label: 'iPhone de Claire', platform: ios, city: Paris, lastSeenAt: '2026-09-21T18:51:00Z', isCurrent: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/me/devices/{deviceId}:
+    delete:
+      operationId: revokeStudioDevice
+      tags: [bootstrap]
+      summary: Révoque un appareil du studio — le téléphone oublié dans une salle.
+      description: |
+        Révoque le jeton de rafraîchissement lié à cet appareil. L'effet est immédiat sur la
+        console — le serveur fait quitter les salles temps réel sans attendre une reconnexion — et
+        **au plus 60 s sur les commandes**, durée du jeton interne déjà frappé.
+
+        **Commande de sécurité : jamais mise en file hors ligne.** Elle doit échouer bruyamment
+        plutôt que d'être rejouée à l'aveugle.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [identity]
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Appareil révoqué, avec le délai d'effet sur les commandes.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          revoked: { type: boolean }
+                          commandsStopWithinSec: { type: integer, examples: [60] }
+              example:
+                servedAt: '2026-09-21T18:53:00.000Z'
+                rightsVersion: 413
+                data: { revoked: true, commandsStopWithinSec: 60 }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/me/session:
+    delete:
+      operationId: signOutStudio
+      tags: [bootstrap]
+      summary: Se déconnecter — la seule sortie d'un opérateur, et elle n'existait pas.
+      description: |
+        La feuille « Mon compte » porte « SE DÉCONNECTER » et le contrat n'avait aucun geste.
+        Ferme la session de **cet** appareil et révoque son jeton de rafraîchissement ; les autres
+        appareils de la personne restent connectés.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [identity]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Session close. Rejouée sur une session déjà close, elle réussit.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      data: { type: object, properties: { signedOut: { type: boolean } } }
+              example:
+                servedAt: '2026-09-21T23:10:00.000Z'
+                rightsVersion: 412
+                data: { signedOut: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/me/push-registrations:
+    put:
+      operationId: registerStudioPushToken
+      tags: [bootstrap]
+      summary: Enregistre le jeton de poussée — sans lui, une garde ne se réveille pas.
+      description: |
+        **Le routage était acquis, le destinataire n'existait pas.** Les alertes de garde — file de
+        modération saturée, aucun modérateur affecté à J-1, débit instable — arrivent précisément
+        quand l'application n'est **pas** au premier plan. La redaction de la charge utile était
+        promise ; la charge utile n'avait personne à qui aller.
+
+        **Une mise en état** : réenregistrer le même jeton ne crée pas un doublon, et un jeton mort
+        est détaché par le service quand le prestataire le signale.
+
+        **La redaction s'applique** : une notification ne porte jamais un montant si le rôle
+        destinataire n'a pas `canRevenue` — elle s'affiche sur un écran verrouillé.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [notifications]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [platform, token, deviceId]
+              properties:
+                platform: { type: string, enum: [fcm, apns] }
+                token: { type: string }
+                deviceId: { type: string, format: uuid }
+                locale: { type: string }
+            example: { platform: apns, token: 'a1b2c3…', deviceId: 019928eb-0000-7000-8000-000000000001, locale: fr }
+      responses:
+        '200':
+          description: Jeton enregistré.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      data: { type: object, properties: { registered: { type: boolean } } }
+              example:
+                servedAt: '2026-09-21T18:00:40.000Z'
+                rightsVersion: 412
+                data: { registered: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/changes:
+    get:
+      operationId: listStudioChanges
+      tags: [bootstrap]
+      summary: Les invalidations survenues depuis un instant — pas les données.
+      description: |
+        Le mécanisme était **écrit, motivé, spécifié** — et branché sur le seul BFF storefront.
+        Le studio en a le même besoin, sur la surface qu'on laisse ouverte deux heures pendant
+        qu'un confrère modifie les mêmes objets.
+
+        Et il a une raison qui n'existe que chez lui : sous le routeur d'Ionic, **une page reste
+        dans le DOM après qu'on l'a quittée** et se réaffiche telle quelle au retour. Sans lecture
+        bon marché de fraîcheur, chaque retour sur une page est soit un affichage périmé, soit un
+        rechargement complet sur la 4G d'une salle.
+
+        `complete: false` signifie « trop de changements, recharge tout » — la même honnêteté que
+        `resume:too_old` sur le canal.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [realtime]
+      # Comme son jumeau storefront : lecture du tampon de reprise Redis de la passerelle temps
+      # réel, pas une interrogation des six services.
+      parameters:
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+        - name: since
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+        - name: channelId
+          in: query
+          description: Restreint à une chaîne. Absent, la réponse couvre **toutes** les chaînes accessibles.
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Liste d'étiquettes invalidées.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [invalidated, complete]
+                    properties:
+                      invalidated:
+                        type: array
+                        description: |
+                          Étiquettes **nommées par le contrat**, jamais inventées par une surface.
+                        items:
+                          type: string
+                          x-arthome-vocabulary:
+                            ['date:{id}', 'date:{id}:publication', 'date:{id}:tickets',
+                             'date:{id}:run', 'date:{id}:crew', 'channel:{id}:members',
+                             'channel:{id}:payouts', 'channel:{id}:moderation',
+                             'channel:{id}:settings', 'person:duties', 'person:inbox',
+                             'person:rights']
+                      complete: { type: boolean }
+              example:
+                servedAt: '2026-09-21T19:45:00.000Z'
+                rightsVersion: 412
+                invalidated: ['date:019928a0-7d31-7a10-b8c4-2f9e11a4c001:publication', 'person:inbox']
+                complete: true
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /v1/me/duties:
     get:
       operationId: listDuties
@@ -292,6 +656,7 @@ paths:
       x-arthome-upstream: [identity, catalog, streaming]
       parameters:
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
         - name: from
           in: query
@@ -355,6 +720,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
@@ -425,6 +791,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
         - name: from
           in: query
@@ -476,6 +843,7 @@ paths:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -559,6 +927,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -601,6 +970,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -628,6 +998,334 @@ paths:
                   pricesLocked: true
                   technicalProvision: { required: false, threshold: 10000, revisableUntil: null }
                   version: 12
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/dates/{dateId}/panes/public:
+    get:
+      operationId: getDatePublicPane
+      tags: [publication]
+      summary: Le volet public d'une date — ce qui est publié.
+      description: |
+        Un des cinq volets qui manquaient. Le motif « un appel pour la fiche, puis un appel par
+        volet ouvert, **chez son propriétaire** » était énoncé deux fois et implémenté une seule :
+        un `moderation` recevait `openPanes: [chat]` et n'avait **aucun volet à appeler**, un
+        `coordination` recevait `[tech, crew]` — aucun des deux n'existait.
+
+        Ouvert à `artist` et `production`.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [catalog]
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Le volet public.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          title: { type: string }
+                          categoryId: { type: string }
+                          genreIds: { type: array, items: { type: string } }
+                          tagIds: { type: array, items: { type: string } }
+                          synopsis: { $ref: '#/components/schemas/LocalizedText' }
+                          slug: { type: string }
+                          canonicalUrl: { type: string, format: uri }
+                          rights:
+                            type: object
+                            properties:
+                              scope: { type: string, x-arthome-vocabulary: [worldwide, restricted] }
+                              blackoutCountries: { type: array, items: { type: string, pattern: '^[A-Z]{2}$' } }
+                              reasonCode: { type: [string, 'null'], x-arthome-vocabulary: [co_production, broadcaster, festival] }
+                          version: { type: integer }
+              example:
+                servedAt: '2026-09-21T18:03:25.000Z'
+                rightsVersion: 412
+                data:
+                  title: Nuit blanche
+                  categoryId: dance-contemporary
+                  genreIds: [dance-contemporary-repertoire]
+                  slug: nuit-blanche-2026-09-21
+                  canonicalUrl: 'https://arthome.fr/fr/d/nuit-blanche-2026-09-21'
+                  rights: { scope: worldwide, blackoutCountries: [] }
+                  version: 8
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/dates/{dateId}/panes/chat:
+    get:
+      operationId: getDateChatPane
+      tags: [moderation]
+      summary: Le volet tchat d'une date — le volet d'un modérateur.
+      description: |
+        **C'est le volet qui justifiait toute la mécanique** : *« un modérateur doit pouvoir charger
+        le volet `chat` sans charger la fiche entière, sinon la billetterie transite pour rien »*.
+        L'argument était cité dans le contrat et défait par sa propre mise en œuvre.
+
+        Ouvert à `artist`, `production` et `moderation`.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [chat]
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Régime de tchat, débit mesuré, file en attente.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          policy: { $ref: '#/components/schemas/ChatPolicy' }
+                          throughputPerMinute: { type: [integer, 'null'] }
+                          pendingModerationCount: { type: integer }
+                          assignedModerators:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                personId: { type: string, format: uuid }
+                                displayName: { type: string }
+              example:
+                servedAt: '2026-09-21T19:30:20.000Z'
+                rightsVersion: 412
+                data:
+                  policy: { dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001, mode: open, filterSeverity: medium, slowModeSec: 0, holdersOnly: false, locked: true, version: 5 }
+                  throughputPerMinute: 41
+                  pendingModerationCount: 14
+                  assignedModerators: []
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/dates/{dateId}/panes/tech:
+    get:
+      operationId: getDateTechPane
+      tags: [run]
+      summary: Le volet technique d'une date — pré-vol et profil de diffusion.
+      description: |
+        Ouvert à `artist`, `production`, `director`, `video`, `sound` et `coordination`. C'est le
+        seul volet d'un `director` ; il n'existait pas.
+
+        **La clé de flux n'y figure pas** : elle n'apparaît dans aucune charge utile de liste, et
+        sa révélation est une commande distincte, auditée et nominative.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [streaming]
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Protocole, voie de retour, échelle de qualités, liste de pré-vol.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          runState: { type: string, x-arthome-vocabulary: [idle, rehearsal, on_air, interrupted, ended] }
+                          ingestProtocol: { type: string, x-arthome-vocabulary: [rtmps, srt, whip] }
+                          monitorPath: { type: string, x-arthome-vocabulary: [whep, ll_hls] }
+                          ingestUrl: { type: string, format: uri }
+                          technicalCheckPassedAt: { type: [string, 'null'], format: date-time }
+                          preflight:
+                            type: array
+                            description: La liste de pré-vol, **servie** — chaque point avec son état et sa dernière mesure.
+                            items:
+                              type: object
+                              properties:
+                                id: { type: string }
+                                satisfied: { type: boolean }
+                                measuredAt: { type: [string, 'null'], format: date-time }
+                          qualityLadder:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                renditionId: { type: string }
+                                heightPx: { type: integer }
+                                enabled: { type: boolean }
+                          version: { type: integer }
+              example:
+                servedAt: '2026-09-21T18:40:20.000Z'
+                rightsVersion: 412
+                data:
+                  runState: idle
+                  ingestProtocol: rtmps
+                  monitorPath: ll_hls
+                  ingestUrl: 'rtmps://ingest.arthome.fr/live'
+                  technicalCheckPassedAt: '2026-09-21T18:45:00Z'
+                  preflight: [{ id: ingest_reachable, satisfied: true, measuredAt: '2026-09-21T18:44:58Z' }]
+                  qualityLadder: [{ renditionId: '1080p', heightPx: 1080, enabled: true }]
+                  version: 3
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/dates/{dateId}/panes/crew:
+    get:
+      operationId: getDateCrewPane
+      tags: [crew]
+      summary: Le volet équipe d'une date — affectations et accès ponctuels, avec leurs identifiants.
+      description: |
+        Trois manques se cumulaient sur la même page, celle du persona `coordination`, dont la
+        navigation entière est `crew · journal · help` :
+
+        - `/v1/dates/{dateId}/crew` était **POST seul** : la matrice dates × postes et la liste
+          « ce soir » n'avaient aucun chemin de lecture. `listDuties` donne **mes** gardes,
+          `EffectiveRights.dateGrants` donne **mes** accès — ni l'un ni l'autre ne donne la
+          couverture ;
+        - **`revokeDateAccess` révoque par `grantId`, un identifiant qu'aucune lecture ne
+          donnait** ;
+        - `moderator_assigned` est l'un des éléments de la liste de contrôle et `datesToCover` un
+          compteur servi : **les deux se calculaient sur une couverture que le studio ne pouvait
+          pas lire.**
+
+        Ouvert à `artist`, `production` et `coordination`.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Postes couverts, postes manquants, accès ponctuels avec leur `grantId`.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        required: [slots, grants]
+                        properties:
+                          slots:
+                            type: array
+                            description: Un poste par créneau, couvert ou non. **`missing` est servi, jamais déduit.**
+                            items:
+                              type: object
+                              required: [crewRole, covered]
+                              properties:
+                                crewRole: { type: string, x-arthome-vocabulary: [director, video, sound, moderation] }
+                                covered: { type: boolean }
+                                personId: { type: [string, 'null'], format: uuid }
+                                displayName: { type: [string, 'null'] }
+                                membershipKind:
+                                  type: string
+                                  description: |
+                                    **Les deux échelles, distinguées à la lecture** : `member` est
+                                    une appartenance permanente affectée à un poste, `grant` est un
+                                    renfort ponctuel qui expire.
+                                  x-arthome-vocabulary: [member, grant]
+                          grants:
+                            type: array
+                            items: { $ref: '#/components/schemas/DateAccessGrant' }
+                          missingRoles: { type: array, items: { type: string } }
+              example:
+                servedAt: '2026-09-21T18:20:20.000Z'
+                rightsVersion: 412
+                data:
+                  slots:
+                    - { crewRole: director, covered: true, personId: 019928b2-0000-7000-8000-000000000001, displayName: 'Yann P.', membershipKind: grant }
+                    - { crewRole: moderation, covered: false, personId: null, displayName: null, membershipKind: member }
+                  grants:
+                    - grantId: 019928b3-0000-7000-8000-000000000001
+                      dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                      personId: 019928b2-0000-7000-8000-000000000001
+                      displayName: 'Yann P.'
+                      crewRole: director
+                      expiresAt: '2026-09-21T21:45:00Z'
+                  missingRoles: [moderation]
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/dates/{dateId}/panes/replay:
+    get:
+      operationId: getDateReplayPane
+      tags: [publication]
+      summary: Le volet rediffusion d'une date — la promesse, le fichier, la mise en vente.
+      description: |
+        Les trois choses que les sources confondaient, servies séparément : la **promesse**
+        appartient à `catalog`, le **fichier et son expiration** à `streaming`, la **mise en
+        vente** à `ticketing`.
+
+        Ouvert à `artist` et `production`.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [catalog, streaming, ticketing]
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Politique, actif, fenêtre restante, mise en vente, audience.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          policy: { type: string, x-arthome-vocabulary: [included, subscription, unit, none] }
+                          windowHours: { type: [integer, 'null'] }
+                          assetReady: { type: boolean }
+                          durationSec: { type: [integer, 'null'] }
+                          availableFrom: { type: [string, 'null'], format: date-time }
+                          expiresAt:
+                            type: [string, 'null']
+                            format: date-time
+                            description: '**Dérivé** de la fin du direct et de la fenêtre servie, jamais posé à la main.'
+                          unitPrice: { $ref: '#/components/schemas/Money' }
+                          views: { type: [integer, 'null'] }
+                          revenue:
+                            allOf: [{ $ref: '#/components/schemas/Money' }]
+                            description: '**Absent** sans `canRevenue`.'
+                          version: { type: integer }
+              example:
+                servedAt: '2026-09-22T10:00:20.000Z'
+                rightsVersion: 412
+                data:
+                  policy: included
+                  windowHours: 72
+                  assetReady: true
+                  durationSec: 5700
+                  availableFrom: '2026-09-21T22:00:00Z'
+                  expiresAt: '2026-09-24T22:00:00Z'
+                  views: 412
+                  version: 2
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
@@ -667,6 +1365,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -745,6 +1444,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -815,6 +1515,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -876,6 +1577,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -928,6 +1630,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -980,6 +1683,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -1021,6 +1725,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -1083,6 +1788,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -1166,6 +1872,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -1220,6 +1927,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -1268,6 +1976,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -1316,6 +2025,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -1370,6 +2080,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -1418,6 +2129,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -1469,6 +2181,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -1511,6 +2224,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -1578,6 +2292,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -1617,6 +2332,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -1674,6 +2390,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -1726,6 +2443,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -1787,6 +2505,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -1857,6 +2576,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -1882,6 +2602,7 @@ paths:
                   claimedBy: { personId: 019928b0-0000-7000-8000-000000000001, displayName: 'Claire D.', surface: studio-mobile }
                   claimExpiresAt: '2026-09-21T19:32:10Z'
                   version: 2
+                  decisionVersion: 0
         '409':
           description: '`MODERATION_ALREADY_CLAIMED`, avec le nom de qui tient le bail.'
           content:
@@ -1904,6 +2625,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -1951,6 +2673,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -1958,16 +2681,23 @@ paths:
           application/json:
             schema:
               type: object
-              required: [verdict, expectedVersion]
+              required: [verdict, expectedDecisionVersion]
               properties:
                 verdict: { type: string, enum: [publish, remove, mute, ban] }
-                reason: { type: string, enum: [spam, harassment, hate, off_topic, filter] }
+                expectedDecisionVersion:
+                  type: integer
+                  description: |
+                    **L'axe du règlement, pas celui du bail.** Un verdict est accepté tant
+                    qu'aucun autre verdict n'a été rendu — y compris si un confrère tient la ligne
+                    en charge. Refusé seulement par `MODERATION_ALREADY_SETTLED`, qui transporte le
+                    verdict gagnant et son auteur.
+                reason: { type: string, enum: [spam, insult, spoiler, off-topic, harassment] }
                 muteUntil:
                   type: [string, 'null']
                   format: date-time
                   description: '**Un instant**, jamais une étiquette. Absent = sans limite.'
                 expectedVersion: { type: integer }
-            example: { verdict: mute, reason: harassment, muteUntil: '2026-09-21T20:30:00Z', expectedVersion: 2 }
+            example: { verdict: mute, reason: harassment, muteUntil: '2026-09-21T20:30:00Z', expectedDecisionVersion: 0 }
       responses:
         '200':
           description: Verdict rendu.
@@ -1994,6 +2724,7 @@ paths:
                   settledAt: '2026-09-21T19:31:20Z'
                   origin: human_verdict
                   version: 3
+                  decisionVersion: 1
         '409':
           description: '`MODERATION_ALREADY_SETTLED`, **avec le verdict gagnant et son auteur**.'
           content:
@@ -2021,6 +2752,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
@@ -2085,6 +2817,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -2096,7 +2829,7 @@ paths:
               properties:
                 kind: { type: string, enum: [none, muted, banned] }
                 expiresAt: { type: [string, 'null'], format: date-time }
-                reason: { type: string, enum: [spam, harassment, hate, off_topic, filter] }
+                reason: { type: string, enum: [spam, insult, spoiler, off-topic, harassment] }
             example: { kind: muted, expiresAt: '2026-09-21T20:30:00Z', reason: harassment }
       responses:
         '200':
@@ -2135,6 +2868,7 @@ paths:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -2185,6 +2919,7 @@ paths:
           schema: { type: string }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -2220,6 +2955,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
@@ -2292,6 +3028,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
@@ -2352,6 +3089,7 @@ paths:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -2410,6 +3148,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -2471,6 +3210,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -2518,6 +3258,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -2559,6 +3300,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -2621,6 +3363,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -2655,6 +3398,7 @@ paths:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -2711,6 +3455,7 @@ paths:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -2766,6 +3511,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
@@ -2833,6 +3579,7 @@ paths:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -2888,6 +3635,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -2950,6 +3698,7 @@ paths:
           schema: { type: string }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: false
@@ -3018,6 +3767,7 @@ paths:
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -3070,6 +3820,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -3108,6 +3859,369 @@ paths:
 
   # =============================================================== chaîne
 
+  /v1/channels/{channelId}/stream:
+    get:
+      operationId: getChannelStreamSettings
+      tags: [run]
+      summary: La page Diffusion d'une chaîne — serveur d'ingestion, profil recommandé, historique des tests.
+      description: |
+        **Une des cinq seules entrées d'une régie**, et elle n'avait aucune opération. Retirer
+        `stream` et `replays` à un `director` lui laissait un tableau d'événements.
+
+        Porte aussi les **valeurs par défaut de diffusion** appliquées aux nouvelles dates, que
+        l'écran Réglages annonce et qui n'avaient pas de porteur.
+
+        **La clé de flux n'y figure pas** : elle n'apparaît dans aucune charge utile de liste.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [streaming]
+      parameters:
+        - $ref: '#/components/parameters/ChannelId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Ingestion, profil recommandé, débit mesuré, historique des contrôles.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          ingestUrl: { type: string, format: uri }
+                          recommendedProtocol: { type: string, x-arthome-vocabulary: [rtmps, srt, whip] }
+                          recommendedBitrateKbps: { type: integer }
+                          lastMeasuredUpKbps: { type: [integer, 'null'] }
+                          defaults:
+                            type: object
+                            description: Appliquées aux **nouvelles** dates, jamais rétroactivement.
+                            properties:
+                              ingestProtocol: { type: string, x-arthome-vocabulary: [rtmps, srt, whip] }
+                              qualityLadder: { type: array, items: { type: string } }
+                              holdScreenAutoAfterSec: { type: integer }
+                          recentChecks:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                dateId: { type: string, format: uuid }
+                                passed: { type: boolean }
+                                passedAt: { type: [string, 'null'], format: date-time }
+                          preflightPending:
+                            type: integer
+                            description: La pastille `preflightBadge`, **servie** — elle n'avait aucune source.
+              example:
+                servedAt: '2026-09-21T18:12:00.000Z'
+                rightsVersion: 412
+                data:
+                  ingestUrl: 'rtmps://ingest.arthome.fr/live'
+                  recommendedProtocol: rtmps
+                  recommendedBitrateKbps: 6000
+                  lastMeasuredUpKbps: 8900
+                  defaults: { ingestProtocol: rtmps, qualityLadder: ['1080p', '720p', '360p'], holdScreenAutoAfterSec: 15 }
+                  recentChecks: []
+                  preflightPending: 1
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /v1/channels/{channelId}/replays:
+    get:
+      operationId: listChannelReplays
+      tags: [channel]
+      summary: Le catalogue de rediffusions d'une chaîne — en ligne et archivées.
+      description: |
+        `reopenReplayWindow` permettait de **rouvrir une fenêtre qu'on ne pouvait pas voir**. C'est
+        aussi l'écran où l'on constate qu'une fenêtre ferme dans vingt-quatre heures — ce que la
+        boîte annonce déjà par une alerte.
+
+        Page + total, comme toute collection stable du studio.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [streaming, catalog, ticketing]
+      parameters:
+        - $ref: '#/components/parameters/ChannelId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/SortBy'
+        - $ref: '#/components/parameters/SortDir'
+        - name: state
+          in: query
+          schema: { type: string, enum: [online, expired, archived] }
+      responses:
+        '200':
+          description: Page de rediffusions, **projetée selon le rôle** — le revenu est absent sans `canRevenue`.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [items, page]
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          required: [dateId, title, state]
+                          properties:
+                            dateId: { type: string, format: uuid }
+                            title: { type: string }
+                            state: { type: string, x-arthome-vocabulary: [online, expired, archived] }
+                            expiresAt: { type: [string, 'null'], format: date-time }
+                            durationSec: { type: [integer, 'null'] }
+                            views: { type: [integer, 'null'] }
+                            revenue:
+                              allOf: [{ $ref: '#/components/schemas/Money' }]
+                              description: '**Absent** sans `canRevenue`.'
+                      page: { $ref: '#/components/schemas/OffsetPageInfo' }
+              example:
+                servedAt: '2026-09-21T18:13:00.000Z'
+                rightsVersion: 412
+                items:
+                  - { dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001, title: Nuit blanche, state: online, expiresAt: '2026-09-24T22:00:00Z', durationSec: 5700, views: 412 }
+                page: { page: 1, pageSize: 20, totalItems: 18, totalPages: 1 }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /v1/channels/{channelId}/ticketing:
+    get:
+      operationId: getChannelTicketing
+      tags: [ticketing]
+      summary: La billetterie au niveau chaîne — répartition, liste d'attente, et les demandes en cours.
+      description: |
+        Les commandes existaient (`refundSeat`, `issueComplimentary`) ; **la collection qu'elles
+        traitent n'existait pas**. Les « demandes en cours » sont les trois que l'écran énumère —
+        remboursement, transfert de place, litige bancaire — et deux d'entre elles n'avaient
+        aucune surface de lecture.
+
+        **Réservé aux rôles avec `canRevenue`** : la page entière, pas seulement ses colonnes.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [ticketing]
+      parameters:
+        - $ref: '#/components/parameters/ChannelId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Répartition par tarif, listes d'attente, contremarques, demandes en cours.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          byTier:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                tier: { type: string, x-arthome-vocabulary: [full, reduced, support] }
+                                seatsSold: { type: integer }
+                                gross: { $ref: '#/components/schemas/Money' }
+                          waitlistByDate:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                dateId: { type: string, format: uuid }
+                                title: { type: string }
+                                waitlistCount: { type: integer }
+                          complimentaries:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                categoryId: { type: string }
+                                issued: { type: integer }
+                                allocated: { type: integer }
+                          pendingRequests:
+                            type: array
+                            description: |
+                              **Les trois natures, dans une seule collection** : un remboursement
+                              demandé, un transfert de place à autoriser, un litige bancaire à
+                              répondre sous 24 h. Deux n'avaient aucune lecture.
+                            items:
+                              type: object
+                              required: [requestId, kind, openedAt]
+                              properties:
+                                requestId: { type: string, format: uuid }
+                                kind: { type: string, x-arthome-vocabulary: [refund, seat_transfer, chargeback] }
+                                dateId: { type: [string, 'null'], format: uuid }
+                                seatId: { type: [string, 'null'], format: uuid }
+                                amount: { $ref: '#/components/schemas/Money' }
+                                openedAt: { type: string, format: date-time }
+                                respondBy: { type: [string, 'null'], format: date-time }
+              example:
+                servedAt: '2026-09-21T18:14:00.000Z'
+                rightsVersion: 412
+                data:
+                  byTier: [{ tier: full, seatsSold: 174, gross: { amountMinor: 417600, currencyCode: EUR } }]
+                  waitlistByDate: [{ dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001, title: Nuit blanche, waitlistCount: 12 }]
+                  complimentaries: []
+                  pendingRequests:
+                    - { requestId: 019928ea-0000-7000-8000-000000000001, kind: chargeback, seatId: 019928f5-0000-7000-8000-000000000001, amount: { amountMinor: 2400, currencyCode: EUR }, openedAt: '2026-09-21T09:00:00Z', respondBy: '2026-09-22T09:00:00Z' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /v1/channels/{channelId}/settings:
+    get:
+      operationId: getChannelSettings
+      tags: [channel]
+      summary: Les réglages d'une chaîne — l'écran n'avait rien à lire avant d'écrire.
+      description: |
+        `PATCH /channels/{id}/identity` existait **sans GET**. S'y ajoutent deux blocs qui
+        n'avaient aucun porteur : les **valeurs par défaut de modération**, et l'**intégration
+        marchande** — une seule à la fois par chaîne.
+
+        Le bloc de modération règle un défaut nommé par la surface : `filterSeverity`,
+        `slowModeSec`, `holdersOnly` et `retroactiveFilter` ne vivaient **que** sur
+        `PUT /dates/{id}/chat-policy`, donc **par date, avec l'`expectedVersion` d'une date**. Or
+        hors antenne il n'y a pas de date à désigner, et la conception dit l'inverse en toutes
+        lettres : *« le dictionnaire, la sévérité et les sanctions restent modifiables hors
+        antenne — ils s'appliqueront au prochain direct »*. Le dictionnaire était déjà au niveau
+        chaîne ; les trois autres ne l'étaient pas.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [catalog, chat, streaming, ticketing]
+      parameters:
+        - $ref: '#/components/parameters/ChannelId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: Identité publique, défauts de modération, défauts de diffusion, intégration marchande.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          identity:
+                            type: object
+                            properties:
+                              publicName: { type: string }
+                              slug: { type: string }
+                              categoryId: { type: string }
+                              verified: { type: boolean }
+                              version: { type: integer }
+                          moderationDefaults:
+                            type: object
+                            description: |
+                              **Héritées par une nouvelle date à sa création**, jamais appliquées
+                              rétroactivement à une date existante — sinon un réglage de chaîne
+                              changerait le régime d'un direct en cours.
+                            properties:
+                              filterSeverity: { type: string, x-arthome-vocabulary: [low, medium, high] }
+                              slowModeSec: { type: integer }
+                              holdersOnly: { type: boolean }
+                              retroactiveFilter: { type: boolean }
+                              chatMode: { type: string, x-arthome-vocabulary: [open, emoji, read_only, off] }
+                              version: { type: integer }
+                          merchIntegration:
+                            type: [object, 'null']
+                            description: '**Une seule à la fois.** `null` quand la boutique est servie par Arthome.'
+                            properties:
+                              source: { type: string, x-arthome-vocabulary: [shopify, woocommerce, prestashop, drupal, api] }
+                              merchantUrl: { type: string, format: uri }
+                              connectedAt: { type: string, format: date-time }
+                              lastSyncedAt: { type: [string, 'null'], format: date-time }
+              example:
+                servedAt: '2026-09-21T18:49:00.000Z'
+                rightsVersion: 412
+                data:
+                  identity: { publicName: Compagnie Verticale, slug: compagnie-verticale, categoryId: dance-contemporary, verified: true, version: 5 }
+                  moderationDefaults: { filterSeverity: medium, slowModeSec: 0, holdersOnly: false, retroactiveFilter: true, chatMode: open, version: 2 }
+                  merchIntegration: null
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    patch:
+      operationId: updateChannelSettings
+      tags: [channel]
+      summary: Écrit les défauts de modération et de diffusion d'une chaîne.
+      description: |
+        **Le pendant en écriture de `getChannelSettings`** — sans lui, je venais de créer un écran
+        en lecture seule, c'est-à-dire exactement le défaut que ce lot corrige ailleurs.
+
+        Elle règle le geste **hors antenne** : sévérité du filtre, mode lent et réserve aux
+        détenteurs se posent ici, au niveau chaîne, sans date à désigner. L'identité publique reste
+        sur son propre chemin, parce que c'est une écriture `catalog` pure et que les deux visages
+        d'une chaîne ne se mélangent jamais.
+
+        **Les défauts sont hérités à la création d'une date, jamais appliqués rétroactivement** :
+        un réglage de chaîne ne change pas le régime d'un direct en cours.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [chat, streaming]
+      parameters:
+        - $ref: '#/components/parameters/ChannelId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedVersion]
+              properties:
+                expectedVersion: { type: integer }
+                moderationDefaults:
+                  type: object
+                  properties:
+                    filterSeverity: { type: string, enum: [low, medium, high] }
+                    slowModeSec: { type: integer, minimum: 0, maximum: 300 }
+                    holdersOnly: { type: boolean }
+                    retroactiveFilter: { type: boolean }
+                    chatMode: { type: string, enum: [open, emoji, read_only, off] }
+                broadcastDefaults:
+                  type: object
+                  properties:
+                    ingestProtocol: { type: string, enum: [rtmps, srt, whip] }
+                    holdScreenAutoAfterSec: { type: integer, minimum: 5, maximum: 120 }
+            example: { expectedVersion: 2, moderationDefaults: { filterSeverity: high, slowModeSec: 5 } }
+      responses:
+        '200':
+          description: Réglages à jour.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    properties:
+                      data: { type: object, additionalProperties: true }
+              example:
+                servedAt: '2026-09-21T18:49:30.000Z'
+                rightsVersion: 412
+                data:
+                  moderationDefaults: { filterSeverity: high, slowModeSec: 5, holdersOnly: false, retroactiveFilter: true, chatMode: open, version: 3 }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
   /v1/channels/{channelId}/journal:
     get:
       operationId: listChannelJournal
@@ -3126,9 +4240,20 @@ paths:
         une transition engagée y figurent : c'est en soi une information de conduite.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity, catalog, chat, streaming, payouts]
+      x-arthome-fanout-exception: |
+        **Seule opération des deux contrats au-dessus du seuil de quatre, et elle est assumée en
+        attendant un propriétaire.** Le journal est une jointure au moment de la requête, paginée
+        par décalage, sur l'artefact que le studio conserve 24 mois — et son `totalItems` exact
+        suppose de compter, par période et par nature, les entrées de cinq services, puis
+        d'appliquer la projection par rôle, puis de trier l'union. Aucun des cinq ne connaît le
+        total des quatre autres, et le BFF n'a pas le droit de tenir une table.
+        **Le journal n'a aucun contexte propriétaire** : aucun agrégat ne le définit, il n'est dans
+        aucun tableau de modèles de lecture, et sa rétention est fixée sans dire où. Tant qu'il
+        n'en a pas un, ce chemin reste hors seuil et le sait.
       parameters:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
@@ -3190,6 +4315,7 @@ paths:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -3234,6 +4360,7 @@ paths:
           required: true
           schema: { type: string, format: uuid }
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -3272,6 +4399,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -3317,6 +4445,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -3355,6 +4484,7 @@ paths:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -3428,6 +4558,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -3471,6 +4602,7 @@ paths:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -3530,6 +4662,7 @@ paths:
         - $ref: '#/components/parameters/ChannelId'
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -3595,6 +4728,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/IfRightsVersion'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
         required: true
@@ -3689,6 +4823,28 @@ components:
         mobile rejoue, et une personne qui ne voit pas de réponse appuie deux fois. Une clé
         rejouée rend la réponse d'origine, verbatim. Durée de vie 24 h.
       schema: { type: string, format: uuid, examples: ['019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77'] }
+
+    IfRightsVersion:
+      name: If-Rights-Version
+      in: header
+      required: false
+      description: |
+        **La version des droits que le client détient**, symétrique de
+        `X-Arthome-Rights-Version` en réponse. Sans elle, le serveur ne peut pas distinguer
+        « tu n'as jamais eu ce droit » de « tu l'avais il y a deux cents millisecondes » :
+        **deux des trois codes de refus étaient hors d'atteinte**, et il ne restait que
+        `FORBIDDEN` — c'est-à-dire l'indistinction que les trois codes existaient pour supprimer.
+
+        La différence, en garde, n'est pas théorique : sur `FORBIDDEN` l'application renvoie
+        l'opérateur à l'accueil comme s'il n'avait jamais eu le droit ; sur
+        `RIGHTS_VERSION_STALE` elle recharge l'amorçage et **retrouve sa place**.
+
+        **Quelle horloge fait foi**, puisqu'il y en avait deux : le serveur fait quitter les salles
+        temps réel **immédiatement**, mais une commande passe encore jusqu'à 60 s, durée du jeton
+        interne. C'est **la commande qui fait foi** — un refus n'est rendu que lorsque le service
+        propriétaire le rend, sur la ressource chargée. La console peut donc se figer avant que les
+        écritures ne cessent, et c'est l'ordre sûr : on cesse de montrer avant de cesser d'agir.
+      schema: { type: integer, format: int64, examples: [412] }
 
     ChannelId:
       name: channelId
@@ -3919,8 +5075,16 @@ components:
           examples: [PUBLICATION_CHECKLIST_INCOMPLETE]
         nature:
           type: string
-          enum: [refused, unavailable, offline_forbidden]
-          description: '`offline_forbidden` est un refus **local**, jamais émis par le serveur.'
+          description: |
+            `offline_forbidden` est un refus **local**, jamais émis par le serveur.
+
+            **Vocabulaire ouvert en lecture.** Une nature inconnue est traitée comme
+            **`unavailable`**, donc réessayable. Un `enum` figé ici ferait rejeter l'enveloppe
+            d'erreur **entière** par une version antérieure de l'application — donc perdre la
+            capacité de lire les erreurs au moment précis où quelque chose ne va pas, en garde, sur
+            une application qu'une revue de magasin met des jours à remplacer.
+          x-arthome-vocabulary: [refused, unavailable, offline_forbidden]
+          x-arthome-unknown-fallback: unavailable
         params:
           type: object
           additionalProperties: true
@@ -3998,6 +5162,38 @@ components:
             x-arthome-vocabulary:
               [agenda, dashboard, moderation, crew, events, stream, stats, tickets, store,
                replays, payouts, journal, settings, help]
+        contextualPages:
+          type: array
+          description: |
+            **Les pages atteintes depuis une autre page, jamais listées dans un menu** — et elles
+            ont besoin d'un porteur de droit comme les autres. `regie` est la page de garde d'un
+            régisseur, celle qu'il ouvre quand le flux tombe ; `wizard` crée une date ; `event`
+            est la fiche ; `inbox` est ouverte à tout le monde, sans condition de rôle.
+
+            **Elles ne sont pas dans `navigation`, et c'est volontaire** : `navigation` peuple la
+            barre et la feuille, ces quatre-là non. Les ranger ensemble avait produit l'erreur
+            inverse — on avait retiré `regie` du vocabulaire pour faire disparaître une
+            incohérence entre deux tables, c'est-à-dire **supprimé la destination principale de la
+            garde pour faire taire le symptôme qui la signalait**. Les deux tables sont ici
+            réconciliées, et la page est rendue.
+          items: { type: string, x-arthome-vocabulary: [regie, wizard, event, inbox] }
+          examples: [[regie, wizard, event, inbox]]
+        tabBar:
+          type: array
+          description: |
+            **Les quatre onglets de la barre du bas, dans leur ordre, servis.** Ce n'est **pas**
+            `navigation` tronquée à quatre : l'ordre de la barre dépend du rôle, et la
+            démonstration est arithmétique — pour un artiste, les quatre premières entrées de
+            `navigation` donnent `dashboard · crew · events · stream`, là où la barre doit porter
+            `dashboard · events · crew · tickets`. Deux différences sur quatre : prendre le début
+            de `navigation` mettrait la régie dans la barre d'un artiste et en sortirait la
+            billetterie, c'est-à-dire ce qu'un artiste regarde le plus.
+
+            La table vit dans `@arthome/core` et est **servie** ici, parce que le studio web
+            ordonne le même menu : recopiée, elle serait implémentée deux fois — ce que la règle
+            critique 2 interdit.
+          items: { type: string }
+          examples: [[dashboard, events, crew, tickets]]
         datePanes:
           type: array
           description: |
@@ -4081,6 +5277,19 @@ components:
         channels:
           type: array
           items: { $ref: '#/components/schemas/EffectiveRights' }
+        personNavigation:
+          type: array
+          description: |
+            **Les entrées qui appartiennent à la personne, pas à une chaîne.** `agenda` est servi
+            par `GET /v1/me/duties`, explicitement « toutes chaînes confondues » ; `inbox` de même,
+            et elle est ouverte à tout le monde. Les ranger dans la `navigation` **par chaîne**
+            faisait qu'une personne sur trois chaînes recevait la même entrée trois fois — ou zéro
+            fois, ce qui était le cas dans l'exemple servi par ce document : un `video` y recevait
+            `[events, stream, replays, help]`, sans `agenda`, alors que la page de garde d'un
+            régisseur est précisément celle-là. Le compteur `dutiesTonight` était pourtant servi,
+            ce qui suppose que les gardes comptent.
+          items: { type: string, x-arthome-vocabulary: [agenda, inbox, help] }
+          examples: [[agenda, inbox, help]]
         rightsVersion: { type: integer, format: int64 }
         constants:
           type: object
@@ -4097,6 +5306,14 @@ components:
             payoutDelayDays: { type: integer, examples: [14] }
             commissionRateBps: { type: integer, examples: [1200] }
             chatBurstThresholdPerMinute: { type: integer, examples: [60] }
+            moderationQueueAlertThreshold:
+              type: integer
+              description: '**Le seuil « file au-delà de dix messages »**, l''un des cinq seuils de notification qui n''avaient pas de porteur. Règle 15.'
+              examples: [10]
+            crewUnassignedAlertHoursBefore:
+              type: integer
+              description: '**Le délai « poste non affecté à J-1 »**, le second des deux seuils sans porteur.'
+              examples: [24]
             holdScreenAutoAfterSec:
               type: integer
               description: |
@@ -4245,6 +5462,11 @@ components:
             venueUtcOffsetMin: { type: integer }
         runtimeMin: { type: integer }
         outcome: { type: [string, 'null'], x-arthome-vocabulary: [postponed, cancelled, interrupted] }
+        displayState:
+          type: string
+          description: La valeur composée, servie. Jamais recomposée par la surface.
+          x-arthome-vocabulary: [scheduled, room_open, live, replay, ended, postponed, cancelled, interrupted]
+        displayStateValidUntil: { type: string, format: date-time }
         publication: { $ref: '#/components/schemas/Publication' }
         openPanes:
           type: array
@@ -4265,6 +5487,20 @@ components:
         state: { type: string, x-arthome-vocabulary: [draft, reserve, scheduled, technical, live, ended, replay-online] }
         orderRank: { type: integer }
         outcome: { type: [string, 'null'] }
+        displayState:
+          type: string
+          description: |
+            **La valeur composée, servie au studio comme au storefront.** C'est ici qu'elle compte
+            le plus : le storefront a un axe à afficher, le studio en a **trois à réconcilier** —
+            `publication.state`, `run.state` et `outcome` —, et les libellés d'issue **remplacent**
+            l'état (`ANNULÉE ET REMBOURSÉE`, `REPORTÉE · PLACES VALABLES`, `INTERROMPUE · AVOIRS
+            ÉMIS`). Servir `state + orderRank + outcome` et laisser composer, c'était la seconde
+            implémentation que la règle critique 2 interdit — sur la surface où une erreur n'est
+            pas une carte mal étiquetée mais une régie qui se trompe d'écran.
+          x-arthome-vocabulary:
+            [scheduled, room_open, live, replay, ended, postponed, cancelled, interrupted]
+          examples: [live]
+        displayStateValidUntil: { type: string, format: date-time }
         lowestPrice: { $ref: '#/components/schemas/Money' }
         fillRateBps: { type: [integer, 'null'] }
         seatsSold: { type: [integer, 'null'] }
@@ -4286,6 +5522,24 @@ components:
         title: { type: string }
         crewRole: { type: string, x-arthome-vocabulary: [director, video, sound, moderation] }
         startsAt: { type: string, format: date-time }
+        venueClock:
+          type: object
+          description: |
+            **Le fuseau de la salle, sur la garde elle-même.** L'écran des gardes est l'écran
+            d'accueil de cette surface, et il affiche pour chaque ligne l'heure de la personne
+            **et** l'heure de salle — « l'heure du spectateur d'abord, l'heure de salle en second
+            quand elle diffère ». Sans ce bloc, le rendre demandait un appel par garde :
+            exactement le N+1 que l'amorçage existe pour tuer, sur le seul écran qu'un régisseur
+            ouvre en arrivant dans une salle.
+          properties:
+            venueTimezone: { type: string, examples: ['Europe/Paris'] }
+            venueUtcOffsetMin: { type: integer, examples: [120] }
+        runtimeMin:
+          type: [integer, 'null']
+          description: La durée annoncée, que la ligne affiche.
+        displayState:
+          type: string
+          x-arthome-vocabulary: [scheduled, room_open, live, replay, ended, postponed, cancelled, interrupted]
         runState: { type: [string, 'null'], x-arthome-vocabulary: [idle, rehearsal, on_air, interrupted, ended] }
         overlapsWith:
           type: array
@@ -4538,7 +5792,7 @@ components:
         dateId: { type: string, format: uuid }
         channelId: { type: string, format: uuid }
         state: { type: string, x-arthome-vocabulary: [reported, claimed, settled] }
-        reason: { type: string, x-arthome-vocabulary: [spam, harassment, hate, off_topic, filter] }
+        reason: { type: string, x-arthome-vocabulary: [spam, insult, spoiler, off-topic, harassment] }
         reportsCount: { type: integer }
         atMediaSec: { type: integer }
         sentAt: { type: string, format: date-time }
@@ -4565,9 +5819,26 @@ components:
         version:
           type: integer
           description: |
-            **Les commandes de modération sont conditionnelles, jamais idempotentes aveugles.**
-            « Prendre en charge n'est pas trancher » : c'est une préséance, donc une règle, donc un
-            arbitrage serveur sur la version.
+            **Porte le bail, et lui seul.** Une prise en charge puis un relâchement l'incrémentent
+            deux fois **sans que rien n'ait été tranché**.
+        decisionVersion:
+          type: integer
+          description: |
+            **N'est incrémenté que par un verdict.** C'est sur cet axe-là que `settleModerationItem`
+            conditionne, et la raison est une règle de la conception, pas une commodité :
+            « prendre en charge n'est pas trancher — **tant que le confrère n'a pas rendu de
+            verdict, votre sanction s'applique** ». Un verdict doit donc être **accepté** pendant
+            qu'un autre tient le bail.
+
+            Avec un compteur unique, c'était impossible : poser puis relâcher un bail faisait
+            passer la version de 1 à 3, et un verdict mis en file hors ligne à `expectedVersion: 1`
+            était refusé **alors que personne n'avait tranché** — sur un direct à soixante messages
+            par minute, les lignes changent de bail sans arrêt, et la file hors ligne est la seule
+            concession accordée au mobile. Un compteur ne peut pas exprimer « refuse si tranché,
+            accepte si seulement réclamé ».
+
+            C'est la doctrine des trois axes que le contrat applique déjà à la modération,
+            appliquée au verrou lui-même.
 
     AudienceMember:
       type: object

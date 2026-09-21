@@ -51,6 +51,27 @@ appelle un autre et doit lui transmettre le temps qu'il lui reste.
 `AbortSignal.timeout` fait, exactement, ce que feraient quatre appels gRPC avec quatre `deadline`.
 La latence d'un écran est celle de l'appel le plus lent dans les deux cas.
 
+**Le 4 a été mesuré, pas supposé — et il était faux à la livraison.** La revue adverse a compté
+`x-arthome-upstream` sur les deux documents et trouvé **deux opérations à 5**, c'est-à-dire le
+seuil d'alerte franchi le jour même où il était écrit. Les deux ont été instruites :
+
+| Opération | Ce que le compte disait | Ce qui a été fait |
+|---|---|---|
+| `getDateDetail` | 5 — `catalog, ticketing, identity, streaming, chat` | **composé, donc redescendu à 4.** `chat` était **à la fois projeté et appelé** : le régime de tchat arrive déjà dans `date_detail_public` par `chat.date_chat_policy_changed`. On payait un appel pour une donnée qu'on possédait. C'est le geste que le seuil prescrit — « le modèle de lecture manque » — sauf qu'ici il ne manquait pas, il était ignoré |
+| `listChannelJournal` | 5 — cinq services | **exception déclarée dans le contrat** (`x-arthome-fanout-exception`), en attendant un propriétaire. Le journal est une jointure au moment de la requête sur un artefact conservé 24 mois, et **il n'a aucun contexte propriétaire** : aucun agrégat ne le définit, il n'est dans aucun tableau de modèles de lecture. Ce n'est pas un défaut de transport, c'est un trou de modèle — remonté au chef |
+
+Et une troisième, que j'avais créée en écrivant le flux d'invalidations du studio : `listChanges`
+et `listStudioChanges` déclaraient quatre et six services. **Ils n'en appellent aucun** — ils
+lisent le tampon de reprise Redis que la passerelle temps réel tient déjà par salle, et sont le
+tirage HTTP du même flux que le canal pousse. Les deux portent désormais
+`x-arthome-upstream: [realtime]`. Déclarer une composition qui n'a pas lieu fausse la mesure dans
+le sens qui rassure, ce qui est le pire des deux.
+
+**État après correction** : storefront `1:53 · 2:6 · 3:6 · 4:7`, studio
+`1:71 · 2:3 · 3:4 · 4:1 · 5:1`, l'unique 5 portant son exception écrite. **Le seuil de 4 est tenu
+partout ailleurs, et il est désormais vérifiable en une commande** — ce que `x-arthome-upstream`
+existait pour permettre et que personne n'avait lancé.
+
 **Ce que 192 mesure réellement**, c'est le coût de **décrire** et de **générer**. Et là, la
 question n'est pas « gRPC ou HTTP », c'est « d'où vient le schéma ». Il vient de zod (décision
 acquise), dans les deux cas.
@@ -558,15 +579,15 @@ jamais été l'argument (§1).
 
 ---
 
-## 7. Deux points que je remonte, sans les corriger
+## 7. Ce que je remonte
 
-1. **`events.md` §6 dessine le flux vertical avec `ticketing.PurchaseSeat  gRPC  traceparent en
-   Metadata`.** C'est une anticipation de `backend-domain` sur une décision que `context-map.md`
-   §10.3 lui laissait explicitement. Le flux est juste dans tout le reste ; seules deux lignes
-   nomment le transport. Elles deviennent :
-   `POST /v1/orders/seats  ·  HTTP/JSON  ·  traceparent en en-tête`. **Je ne touche pas au fichier
-   d'un coéquipier** — à arbitrer par le chef.
-2. **Le générateur de client n'a pas de propriétaire.** Les cinq surfaces consomment
+> **Clos.** `events.md` §6 dessinait le flux vertical en gRPC, par anticipation d'une décision que
+> `context-map.md` §10.3 me laissait. `backend-domain` l'a corrigé — le flux porte aujourd'hui
+> `POST /v1/orders/seats · HTTP/JSON · traceparent en en-tête` — et a consigné la décision dans son
+> §10.3. Il n'y a plus rien à arbitrer là-dessus, et laisser la remontée en place ferait attendre
+> un arbitrage sur un défaut qui n'existe plus.
+
+1. **Le générateur de client n'a pas de propriétaire.** Les cinq surfaces consomment
    `openapi/storefront.yaml` ou `openapi/studio.yaml` ; personne n'a été désigné pour choisir
    l'outil, l'épingler et décider où le client généré est publié (un paquet de plus dans
    `arthome-core` ? un dossier `src/generated/**` par surface, déjà exempté du lint par
