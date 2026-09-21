@@ -204,10 +204,40 @@ attendue (45 à 75 s). Et le test d'intégration doit mesurer **l'arrêt de la l
 du renouvellement : un test qui constate le refus à 45 s passe au vert sans avoir vérifié ce que la
 phrase promet. **Une garantie fausse avec un test vert est pire qu'une garantie absente.**
 
-**Le remède au-delà de la mesure n'est pas tranché**, et je ne l'invente pas : raccourcir le jeton
-à 60 s ramènerait la fenêtre à 60 s mais **doublerait la fréquence de renouvellement sur le chemin
-le plus chaud du système**, et personne n'a mesuré ce que coûte ce doublement. Le défaut est
-certain, le remède ne l'est pas. **Signalé au chef.**
+#### L'arbitrage rendu : le jeton reste à 120 s
+
+**Décision : on ne raccourcit pas le jeton.** Trois raisons, et la première est la bonne.
+
+1. **Le défaut n'a jamais été la fenêtre, c'était la promesse** — et elle est réparée. Doubler la
+   fréquence de renouvellement sur le chemin le plus chaud du système pour faire correspondre un
+   mécanisme à une phrase que quelqu'un avait mal écrite serait payer très cher une erreur de
+   rédaction.
+2. **120 s sur un spectacle de deux heures font 1,6 % de la séance.**
+3. **La propriété de sécurité qui compte est tenue à l'ÉMISSION, pas à la révocation.**
+   *Un lien partagé n'ouvre pas le direct à qui n'a pas de droit* : cela se joue quand le jeton est
+   émis contre un droit vérifié. La révocation traite un tout autre cas — un droit qui a **existé
+   puis cessé** : abonnement échu, appareil déconnecté, limite d'écrans franchie, remboursement.
+   Aucun ne justifie de doubler la charge du chemin chaud.
+
+**Une addition pour le cas visible, et elle est étiquetée honnêtement.** Quand quelqu'un déconnecte
+un appareil depuis son compte et regarde l'écran s'arrêter, 120 s sont longues. Le canal temps réel
+existant pousse donc, sur `viewer:{profileId}` et `device:{deviceId}`, un signal demandant au
+client d'**arrêter la lecture immédiatement**.
+
+> **⚠ Ce signal n'est PAS une frontière de sécurité.** Un client modifié l'ignore ; la périphérie
+> continue de servir jusqu'à 120 s ; **la garantie reste 120 s**. C'est une **courtoisie qui rend
+> le cas courant instantané**, jamais un contrôle.
+
+Le dire ainsi n'est pas de la prudence rédactionnelle : ce document rejette d'emblée « toute
+heuristique IP ou cookie » parce qu'elle est contournable, et il serait incohérent de présenter
+ensuite un signal client comme une protection. Un mécanisme qu'un attaquant peut ignorer se mesure
+au confort qu'il apporte, pas à la sécurité qu'il n'apporte pas.
+
+**Ce qui rouvrirait la décision — un seuil, pas une intention.** Si l'on mesure que le
+renouvellement à 45 s coûte **moins de 5 % du temps processeur du service `streaming` en pointe**
+et **moins de 2 % de latence ajoutée au p95 de `OpenPlayback`**, alors raccourcir le jeton à 60 s
+devient gratuit et la fenêtre tombe de 120 à 60 s. **Tant que ce n'est pas mesuré, on ne touche à
+rien** — c'est exactement l'erreur qu'on vient de corriger, dans l'autre sens.
 
 **Révocation immédiate, deux chemins :**
 - `identity.device.revoked.v1` consommé par `streaming` → les baux de cet appareil passent à

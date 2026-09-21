@@ -43,7 +43,19 @@ couvre que `/`.
 | `date:{id}:state` | toute surface affichant cette date | incident levé/résolu, issue déclarée, **bascule d'antenne réelle** (le flux entre ou sort) | **≤ 2 s** |
 | `date:{id}:chat` | le lecteur, panneau tchat ouvert | messages, changements d'état de message, régime de tchat | ≤ 2 s, **plafonné à la source** |
 | `date:{id}:counters` | le lecteur et les cartes visibles | compteur de spectateurs, jauge, liste d'attente, tarif « séance commencée » | 10 à 30 s |
-| `viewer:{profileId}` | toujours | badge de notifications, droits recalculés après un achat, panier modifié ailleurs, révocation | ≤ 2 s |
+| `viewer:{profileId}` | toujours | badge de notifications, droits recalculés après un achat, panier modifié ailleurs, révocation, **`playback:stop`** (voir ci-dessous) | ≤ 2 s |
+
+**`playback:stop` est une courtoisie, pas un contrôle.** Quand un droit cesse — appareil
+déconnecté, profil déconnecté, abonnement échu, issue `interrupted` —, le canal pousse un signal
+demandant au client d'arrêter la lecture **immédiatement**, au lieu d'attendre le refus du
+renouvellement suivant. Il rend instantané le cas visible : quelqu'un déconnecte un téléviseur
+depuis son compte et regarde l'écran s'arrêter.
+
+> **Ce signal n'est pas une frontière de sécurité.** Un client modifié l'ignore, et la périphérie
+> du CDN continue de servir jusqu'à l'expiration du jeton en main — **la garantie reste 120 s**
+> (`adr-stream-entitlement.md` §3.3). Le contrat doit le dire ainsi : ce document rejette « toute
+> heuristique contournable » comme réponse de sécurité, et il serait incohérent de présenter
+> ensuite un signal client comme une protection.
 
 **L'issue d'un appairage ne passe PAS par ce canal.** J'avais posé une salle
 `device:{deviceId}`, rejoignable avant toute session ; `adr-auth.md` §5.3 la refuse et **son
@@ -437,6 +449,7 @@ Récapitulatif opposable, que `backend-contracts` peut reprendre tel quel.
 | compteur de spectateurs | storefront ×3 | 10 à 30 s | poussé par lot, différentiel |
 | jauge, liste d'attente | storefront ×3 | 15 à 60 s | poussé par lot ; **la vérité est au moment de la commande**, pas à l'affichage |
 | badge de notifications | storefront | 30 à 60 s | poussé sur `viewer:{id}` |
+| `playback:stop` après révocation d'un droit | storefront ×3 | ≤ 2 s | poussé — **courtoisie, pas frontière de sécurité** : la garantie reste 120 s |
 | ventes pendant un direct | studio | 10 à 30 s | poussé, salle `:revenue` |
 | passage à l'antenne, ouverture de salle, expiration de rediffusion | **toutes** | — | **dérivé, aucun appel** |
 | jauge affichée sur une page rendue au serveur | web | — | dérivé de `validUntil` |

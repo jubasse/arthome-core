@@ -62,20 +62,47 @@ maintenant, c'est la structure des données et la frontière des contextes.
 Conséquence : **SAQ-A**, le périmètre le plus étroit. C'est aussi ce qui rend la démonstration
 publique possible sans engager quoi que ce soit.
 
+### 2.1 Deux vérifications d'identité, qui n'ont rien à voir — à écrire une fois pour toutes
+
+Elles sont confondues à peu près systématiquement, et la confusion coûte cher parce qu'elle fait
+croire qu'une seule suffit.
+
+| | Porte sur | Qui la fait | Ce qu'elle sert |
+|---|---|---|---|
+| **KYB / KYC de Connect** | **l'ARTISTE** — identité et entreprise du compte connecté | Stripe, dans son parcours d'inscription hébergé | pouvoir **verser** de l'argent à quelqu'un, et savoir à qui |
+| **Localisation fiscale** | **le SPECTATEUR** — pays, subdivision, code postal, preuves | **nous**, à l'instant de la vente (§5.0) | savoir **quel taux** appliquer et pouvoir le **justifier dix ans** |
+
+La première est de la conformité **bénéficiaire**, déléguée et hors de notre périmètre. La seconde
+est de la conformité **fiscale**, et elle est **irréversible** : personne ne la fait à notre place,
+et un fait non capturé à la vente n'existe plus. Avoir l'une ne donne rien de l'autre.
+
 ---
 
 ## 3. Le modèle Stripe Connect retenu
 
-**Décision : `destination charges` sur le compte plateforme, avec `on_behalf_of` et
+**Décision : `destination charges` sur le compte plateforme — sans `on_behalf_of` — avec
 `application_fee_amount`. Comptes connectés en Express.**
 
 ```
 PaymentIntent
-  ├─ créé sur le compte PLATEFORME               (nous sommes le marchand d'enregistrement)
-  ├─ on_behalf_of        = acct_<chaîne>          (règlement, devise et rattachement fiscal)
-  ├─ transfer_data.destination = acct_<chaîne>    (le net part vers l'artiste)
+  ├─ créé sur le compte PLATEFORME               nous sommes le marchand d'enregistrement
+  ├─ transfer_data.destination = acct_<chaîne>   le net part vers l'artiste
   └─ application_fee_amount   = commission + TVA due par la plateforme
 ```
+
+**`on_behalf_of` est retiré, et c'est une correction, pas un réglage.** Il fait de l'artiste le
+**marchand d'enregistrement** — il fixe le règlement, la devise et le rattachement fiscal sur le
+compte connecté. Or tout le modèle commissionnaire du §5 repose sur l'affirmation inverse : c'est
+**Arthome** qui fournit la prestation au spectateur. Le garder aurait mis la configuration Stripe
+en contradiction frontale avec le modèle fiscal qu'elle est censée exécuter — et c'est le genre de
+contradiction qu'aucun test ne rattrape, parce que les deux moitiés fonctionnent séparément.
+
+**Le coût, à écrire plutôt qu'à découvrir** : Stripe **exige** `on_behalf_of` dès que le compte
+connecté sort de la région du compte plateforme. Une chaîne **suisse ou canadienne** ne peut donc
+pas être servie par ce montage — elle devra être traitée autrement (compte plateforme local, ou
+`separate charges and transfers`) **ou attendre**. `catalogue.json` déclare précisément ces deux
+marchés (`chf`, `cad`), et D4 a montré qu'aucun n'a jamais été exercé : la limite est donc théorique
+aujourd'hui et réelle au premier artiste non européen.
 
 **Pourquoi ce modèle et pas les deux autres.**
 
@@ -137,20 +164,58 @@ C'est la distinction qui compte le plus dans ce document.
 > **Le modèle fiscal est un calcul : il se refait. La forme des données est une structure : elle
 > ne se refait pas.**
 >
-> **Le seul choix réellement irréversible de tout ce chapitre est de porter — ou non — une
-> ventilation de TVA par marché.**
+> **Le seul choix réellement irréversible de tout ce chapitre est de capturer — ou non — la
+> localisation fiscale de l'acheteur, ses preuves, et le taux appliqué à la vente.**
 
 ```
-irréversible   vat[] = [ { market, rate, base, amount }, … ]     ← ce qu'on grave
-                                                                   juste dans LES DEUX modèles
-réversible     quel taux, quelle assiette, quel redevable        ← ce qui se recalcule
+irréversible   la LOCALISATION FISCALE de l'acheteur, ses PREUVES,
+               et le TAUX APPLIQUÉ conservé sur la ligne          ← ce qu'on grave
+réversible     quel taux, quelle assiette, quel redevable         ← ce qui se recalcule
 ```
+
+**Et la forme est plus exigeante que je ne l'avais écrite.** J'avais gravé une ventilation clée sur
+le **marché de facturation**. C'est insuffisant, et la raison est arithmétique plutôt
+qu'argumentative :
+
+| Juridiction | Pourquoi un marché — ni même un pays — ne suffit pas |
+|---|---|
+| **États-Unis** | environ **9 000 juridictions** (État, comté, ville). Un pays ne permet **aucun** calcul ; le **code postal** est indispensable, et les lois *marketplace facilitator* obligent la plateforme à collecter dans **46 États plus le district de Columbia**, quelle que soit sa position contractuelle |
+| **Union européenne** | **deux éléments de preuve non contradictoires** sont obligatoires pour une vente B2C — adresse de facturation, adresse IP, pays de la banque, pays de la carte SIM. Et **Stripe Tax privilégie une adresse unique** au lieu de les comparer : la règle de preuve **ne peut pas lui être déléguée** |
+| **Royaume-Uni** | l'arrêt **Derby Quad contre HMRC** a jugé que l'exonération des places de théâtre **ne s'étend pas** au direct diffusé. Le taux dépend donc du couple **juridiction × nature de la prestation**, jamais d'une constante par marché |
+
+**Un marché de facturation est une notion de PRIX** — dans quelle devise on vend. **Ce n'est pas
+une notion de TAXE**, et les confondre était ma faute. `market_id` est retiré de la ligne de TVA
+(numéro réservé) et remplacé par `jurisdiction_code`, `jurisdiction_level` et `supply_kind`.
+
+**Ce que la commande porte désormais** — et c'est la forme à graver :
+
+```
+BuyerTaxLocation   country · subdivision · postal_code · city
+                   evidence[]  { kind, country, subdivision, source, collected_at }
+                   evidence_conflicting        ← deux preuves qui se contredisent : on l'assume
+VatLine            jurisdiction_code · jurisdiction_level · supply_kind
+                   rate_bps  ← LE TAUX APPLIQUÉ AU MOMENT DE LA VENTE, pas le taux courant
+```
+
+**Trois raisons de ne pas s'en remettre au `Customer` de Stripe**, et aucune n'est une préférence :
+la facture se conserve **dix ans** quand l'objet Stripe ne vit que tant qu'on reste chez Stripe ;
+il faut le taux **historique**, pas le taux courant ; et l'obligation de conservation porte sur
+**six éléments** — date, preuves de localisation, nature du produit, taux applicable, montant de
+TVA, total. C'est notre registre qui doit les porter.
+
+**Et la conséquence sur le mot « irréversible » est plus dure que ce que j'avais écrit.** Je disais
+que reconstruire l'assiette de chaque ligne passée « n'est plus une migration, c'est une
+reconstitution comptable ». Avec la localisation fiscale, ce serait **impossible** : une adresse de
+facturation, une adresse IP et un pays de carte au moment d'une vente d'il y a deux ans
+**n'existent nulle part** si on ne les a pas capturés. On ne reconstitue pas un fait daté qu'on n'a
+pas enregistré.
 
 Pourquoi ce n'est pas un détail de modélisation :
 
 - **La ventilation est juste dans les deux modèles fiscaux.** Un modèle à taux unique produit
   simplement une ventilation **à une ligne**. Elle ne présume donc de rien, et elle survit à un
-  changement d'avis du conseil fiscal.
+  changement d'avis du conseil fiscal — de même que la localisation de l'acheteur, qui est un
+  **fait**, pas une conséquence du modèle retenu.
 - **Un champ `vat_amount` scalaire unique aurait figé le défaut.** Le jour où l'on découvre qu'il
   faut ventiler — parce qu'un second marché s'ouvre, ou parce que le taux est celui de l'acheteur —
   il faut **reconstruire l'assiette de chaque ligne passée**, sur des versements déjà payés et des
@@ -203,6 +268,26 @@ Arthome affiche le prix, encaisse, émet la facture, tient la politique d'annula
 avant »), exécute le remboursement et émet l'avoir. Le spectateur ne contracte jamais avec
 l'artiste, ne voit jamais son nom sur un moyen de paiement, et ne s'adresse jamais à lui pour un
 remboursement. **Ce sont les marques d'un commissionnaire, pas d'un intermédiaire transparent.**
+
+**Et le droit l'impose aussi — ce n'est donc pas un choix de commodité, c'est la seule lecture
+cohérente des faits.** Trois juridictions, vérifiées, et elles convergent :
+
+| | Ce qui s'applique |
+|---|---|
+| **Union européenne** | l'**article 28** attrape **sur les faits**, pas sur la rédaction du contrat. Une plateforme qui affiche le prix, encaisse, facture et rembourse est réputée recevoir puis fournir la prestation, quoi qu'elle écrive dans ses conditions |
+| **États-Unis** | les lois ***marketplace facilitator*** obligent la plateforme à **collecter et reverser** dans **46 États plus le district de Columbia**, **quelle que soit sa position contractuelle**. Le modèle B n'y est pas une option : il est inapplicable |
+| **Royaume-Uni** | HMRC **n'a pas aligné** ses règles sur celles de l'UE : le fournisseur y est taxé **par établissement**. C'est la juridiction où les deux modèles divergent le plus, et où il faudra un avis |
+
+Et le montage est exactement celui qu'une plateforme comparable décrit dans un document déposé
+auprès d'un régulateur : le formulaire **10-Q d'Eventbrite** (SEC) énonce que *« the Company is the
+merchant of record… remitting these amounts collected, less the Company's fees, to the event
+creator »*. Ce n'est pas une autorité juridique, mais c'est la preuve que le montage est **courant
+et assumé publiquement** par un acteur du même métier.
+
+**L'avertissement en tête du document reste entier.** « La seule lecture cohérente des faits » n'est
+pas « validé » : le statut d'assujetti d'Arthome, celui des artistes, les seuils et le guichet
+unique restent à instruire par un conseil. Ce qui change, c'est qu'on ne choisit plus entre deux
+modèles — **on constate lequel s'applique**, et on l'écrit.
 
 ### 5.4 La recommandation, et la formule
 
@@ -418,7 +503,9 @@ juridique du §5 — qui n'est pas un arbitrage de projet.**
 
 | Point | Décision | Référence |
 |---|---|---|
-| Modèle fiscal, commission sur le HT | **modèle commissionnaire**, acté | **D-015** |
+| Modèle fiscal, commission sur le HT | **modèle commissionnaire**, acté — et **la seule lecture cohérente des faits**, pas un choix de commodité (§5.3) | **D-015** |
+| `on_behalf_of` | **retiré** : il ferait de l'artiste le marchand d'enregistrement, en contradiction avec le modèle (§3) | — |
+| Clé de la ventilation de TVA | **la juridiction**, pas le marché ; localisation d'acheteur avec preuves (§5.0) | — |
 | Devise d'affichage | **retirée au palier 1**, réversible (§5.6) | **D-016** |
 | Portée de l'avoir | **la chaîne émettrice** — borne l'engagement de trésorerie | **D-017** |
 | Commande de marchandise | **mono-vendeur**, le panier se scinde au paiement | **D-017** |

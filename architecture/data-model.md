@@ -359,7 +359,8 @@ pour ses liens alternatifs croisés.
 
 ```
 DateSales
-  date_id (racine) · channel_id · market_id · currency
+  date_id (racine) · channel_id · currency · market_id   ← marché de FACTURATION : la devise
+                                                            de vente, JAMAIS une notion de taxe
   capacity_total · capacity_tiers[]  (ouverts par paliers, jamais réduits après mise en vente)
   seats_available · waitlist_count
   price_tiers[]     full | reduced | support, montant en unité mineure
@@ -850,7 +851,9 @@ mesure-là — pas contre « nombre de messages ÷ heures écoulées », qui n'e
 PayoutLine
   id · channel_id · date_id · currency
   gross_ttc_minor
-  vat_breakdown[]     { market_id, rate, base_minor, amount_minor }   ← ventilation PAR MARCHÉ
+  vat_breakdown[]     { jurisdiction_code, jurisdiction_level, supply_kind,
+                        rate_bps, base_minor, amount_minor }   ← ventilation PAR JURIDICTION
+                        rate_bps = le taux APPLIQUÉ À LA VENTE, jamais le taux courant
   gross_ht_minor      = gross_ttc − Σ vat.amount
   commission_rate     SERVI, jamais redérivé de commission / gross
   commission_minor    = roundMinor(gross_ht × rate)
@@ -861,12 +864,16 @@ PayoutLine
   stripe_transfer_id · reconciled_at · discrepancy_minor
 ```
 
-**La ventilation par marché est la forme, et elle est sûre.** `studio-web` a trouvé que l'écran des
-versements ventile la TVA « par pays d'achat » alors que la fixture applique un taux unique au
-brut : ce sont deux affirmations incompatibles, et **aucune des deux n'est instruite**. La forme
-retenue porte la ventilation **quel que soit le modèle fiscal retenu** : un modèle à taux unique
-produit une ventilation à une ligne. Le modèle lui-même est traité dans `adr-payments.md` §5, avec
-la question de droit posée et non supposée.
+**La ventilation est la forme sûre — mais par JURIDICTION, pas par marché.** `studio-web` a trouvé
+que l'écran des versements ventile la TVA « par pays d'achat » alors que la fixture applique un
+taux unique au brut. Les deux ont tort d'une manière ou d'une autre, et **un marché de facturation
+n'a jamais été la bonne clé** : c'est une notion de **prix** — dans quelle devise on vend — pas une
+notion de **taxe**. Le pays ne suffit pas non plus : environ **9 000 juridictions** aux États-Unis,
+et un taux qui dépend du couple **juridiction × nature de la prestation** au Royaume-Uni. Voir
+`adr-payments.md` §5.0, qui porte la forme complète et les preuves de localisation.
+
+La ventilation reste juste **quel que soit le modèle fiscal** : un modèle à taux unique produit une
+ventilation à une ligne. Le modèle est acté (D-015) ; sa validation juridique ne l'est pas.
 
 **Le taux de commission est servi**, pas redérivé de `commission / gross` — la maquette le redérive
 et retombe sur 12 % par défaut quand le brut est nul.
@@ -1029,6 +1036,7 @@ du mécanisme de transaction de TypeORM — une migration dédiée, marquée com
 | sessions de lecture | 30 jours | purge |
 | appairages | 7 jours après issue | purge |
 | **factures** | **10 ans** | jamais supprimées — obligation comptable |
+| **localisation fiscale d'une commande et ses preuves** | **10 ans** | jamais supprimées ni anonymisées : ce sont **six éléments obligatoires** — date, preuves de localisation, nature du produit, taux applicable, montant de TVA, total. Une adresse IP y est conservée **à titre de preuve fiscale**, ce qui est une base légale distincte du consentement et doit être déclaré comme telle |
 | lignes de versement, écritures comptables | **10 ans** | idem |
 | compte supprimé | **anonymisé, pas supprimé** | voir ci-dessous |
 
