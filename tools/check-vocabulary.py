@@ -178,6 +178,22 @@ def main(files):
             # the block: until the members are strings, comparing them is
             # meaningless, and two messages for one cause invites fixing the
             # wrong one (the same principle as check-tsconfig's broken chain).
+            # A nullable vocabulary may legitimately list `null` among its
+            # members: `type: [string, "null"]` admits it, and 14 blocks in these
+            # two contracts are declared that way. Nullability is a fact about the
+            # TYPE, not a member of the vocabulary, so `null` is accepted here and
+            # dropped before the comparison — the domain's union will not contain
+            # it either.
+            #
+            # Written before it fired rather than after: no block lists `null`
+            # today, but the ones that could are already declared nullable. A gate
+            # that shouts wrongly gets switched off, and that applies to this gate
+            # as much as to the one it was written about.
+            type_decl = node.get("type")
+            nullable = isinstance(type_decl, list) and "null" in type_decl
+            if nullable:
+                members = [m for m in members if m is not None]
+
             non_strings = [m for m in members if not isinstance(m, str)]
             if non_strings:
                 problems.append(

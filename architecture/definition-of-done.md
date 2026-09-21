@@ -118,7 +118,7 @@ A Python checker, with no dependency beyond PyYAML, committed as **`tools/check-
 python3 tools/check-openapi.py openapi/*.yaml
 ```
 
-Fifteen rules, each of them because it has a consequence:
+Nineteen rules, each of them because it has a consequence:
 
 | # | Rule | What it prevents |
 |---|---|---|
@@ -137,6 +137,17 @@ Fifteen rules, each of them because it has a consequence:
 | R13 | no `labelFr`/`labelEn`/`messageFr`/`messageEn` field | an i18n leak **in the data** (E8) |
 | R14 | an **output** vocabulary is never a frozen `enum` | a television that rejects an unknown value |
 | R15 | every 2xx response composes `EnvelopeMeta` | a response with no `servedAt`, hence no reference clock |
+| R16 | every `enum` and `x-arthome-vocabulary` member is a string | `[open, emoji, read_only, off]` declares three modes and a `False`: YAML 1.1 reads bare `off`/`on`/`yes`/`no` as booleans |
+| R17 | no mapping key that reads like prose | a comma inside an unquoted scalar in a **flow** mapping ends it, and the rest of the sentence becomes a key mapped to null |
+| R18 | no prose value carrying its own quotation marks | perfect in the YAML, corrupted in every generated client |
+| R19 | every prose key has a string value | a `summary` that parses to a number, a list or a mapping |
+
+**R16 to R19 exist because fifteen green rules declared two documents conformant while four defect
+classes were in them**, and two of those defects had been shipping a half-sentence since the
+documents were first written. They share one property: **invisible at the line level, obvious at
+the parse level**. An unquoted YAML scalar is a type decision made by the parser, and a reviewer
+reading YAML never sees the value the parser produced. That is the whole reason the gate reads the
+parsed document rather than the file.
 
 **R11's exemption is read from the document, not from a list kept in the checker — and that is a
 correction of this document.** The first version carried a hard-coded `SAFE_WRITE` allowlist, which
@@ -619,7 +630,7 @@ Fourteen lines. A service that does not tick fourteen is not finished.
 
 - [ ] `pnpm run verify` passes (`code-conventions.md` §8.2)
 - [ ] `openapi/<service>.yaml` **regenerated identical** to the committed document
-- [ ] `python3 tools/check-openapi.py` passes the fifteen rules
+- [ ] `python3 tools/check-openapi.py` passes the nineteen rules
 - [ ] `asyncapi/<service>.yaml` regenerated identical, and its `receive` entries match the
       `@EventPattern` handlers actually registered
 - [ ] `buf lint` passes; `buf breaking` passes if the context is **stable**

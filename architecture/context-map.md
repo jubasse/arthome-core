@@ -881,7 +881,7 @@ The detail that matters, screen by screen, on the heaviest screens:
 | `boot` (`ViewerContext`) | **1** | `identity.GetViewerContext` |
 | `confirm` (pairing outcome) | **0** | everything comes from `PairingOutcome` |
 | `player` | **1** | `streaming.OpenPlayback` — chapters, tracks, chat policy, incident, resume point, live edge, DRM, quality ceiling: **all in the same response** |
-| `run desk` (studio) | **3** | `streaming.GetRunConsole`, `chat.GetModerationQueue`, `identity.GetChannelPresence` — ⚠ **the third does not exist in the contract yet**: see `realtime.md` §5.3 |
+| `run desk` (studio) | **3** | `streaming.GetRunConsole`, `chat.GetModerationQueue`, `identity.GetChannelPresence` — the third is composed into `RunConsole.presence`, so the run desk's real fan-out is **2** (`realtime.md` §5.3) |
 | `event` (date sheet, studio) | **1 + 1 per open pane** | `catalog.GetDateSheet` then the pane from its owner |
 | `payouts` | **1** | `payouts.GetPayouts` |
 

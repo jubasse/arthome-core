@@ -1910,7 +1910,7 @@ paths:
         1. **The server refuses the reverse transition.** Not offering it in the interface is not a
            guarantee. The refusal carries `TRANSITION_IRREVERSIBLE`, the transition attempted **and
            the promise committed** as parameters — `prices_engaged` for `draft|reserve → scheduled`,
-           `replay_sold` for `ended → replay-online`. **The lock bears on the `from > to` pair, not
+           `replay_sold` for `ended → replay_online`. **The lock bears on the `from > to` pair, not
            on the state.**
         2. **It is conditional and versioned.** Two people can be on the record: a command sent from
            `technical` while the current state is `live` is refused with `STATE_CONFLICT`, **with the
@@ -1945,7 +1945,7 @@ paths:
               type: object
               required: [to, expectedVersion]
               properties:
-                to: { type: string, enum: [draft, reserve, scheduled, technical, replay-online] }
+                to: { type: string, enum: [draft, reserve, scheduled, technical, replay_online] }
                 expectedVersion: { type: integer }
                 acknowledgedPromiseCode:
                   type: [string, "null"]
@@ -6950,7 +6950,7 @@ components:
           description: |
             The **promise committed**, which travels with the refusal and with the confirmation:
             `prices_engaged` for `draft|reserve → scheduled`, `replay_sold` for
-            `ended → replay-online`. A code, never the sentence.
+            `ended → replay_online`. A code, never the sentence.
           x-arthome-vocabulary: [prices_engaged, replay_sold]
 
     Publication:
@@ -6961,10 +6961,10 @@ components:
         state:
           type: string
           description: |
-            The vocabulary of `catalogue.json`, which is authoritative. `replay-online` says what
+            The vocabulary of `catalogue.json`, which is authoritative. `replay_online` says what
             `replay` does not: **the replay is on sale**. The parallel tables in the two studio designs
             are never adopted.
-          x-arthome-vocabulary: [draft, reserve, scheduled, technical, live, ended, replay-online]
+          x-arthome-vocabulary: [draft, reserve, scheduled, technical, live, ended, replay_online]
         orderRank:
           type: integer
           description: |
@@ -7040,7 +7040,7 @@ components:
           {
             type: string,
             x-arthome-vocabulary:
-              [draft, reserve, scheduled, technical, live, ended, replay-online],
+              [draft, reserve, scheduled, technical, live, ended, replay_online],
           }
         orderRank: { type: integer }
         outcome: { type: [string, "null"] }

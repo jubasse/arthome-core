@@ -301,9 +301,9 @@ WebSocket resume covers minutes; the HTTP read covers hours.
 
 | | |
 |---|---|
-| **to re-request** (long-lived) | on-air state, current incident, the queue **with its claims**, active sanctions, chapters posted, the live show's journal since curtain-up, **publication state and offered transitions**, **crew presence** (§5.3 — ⚠ not served today), **health series** (§5.3 — ⚠ not served today) |
+| **to re-request** (long-lived) | on-air state, current incident, the queue **with its claims**, active sanctions, chapters posted, the live show's journal since curtain-up, **publication state and offered transitions**, **crew presence** (§5.3), **health series** (§5.3) |
 | **to resume from the last `seq`** | chat, journal — those are ordered streams |
-| **to throw away** | any feed measurement predating the reconnection. A bitrate curve is re-requested, it is not replayed — **and today it cannot be re-requested at all: see §5.3** |
+| **to throw away** | any feed measurement predating the reconnection. A bitrate curve is re-requested, it is not replayed — `GET /v1/dates/{dateId}/run/health-samples` (§5.3) |
 
 ### 5.2 Mobile, returning to the foreground, and the burst
 
@@ -341,18 +341,20 @@ console opened at 21:40 then has **nothing** to paint, and stays that way until 
 | **crew presence** | §8 ("pushed ~10 s"), the `channel:{id}` room, and `identity.GetChannelPresence` counted among `run desk`'s three internal calls (`context-map.md` §10.1) | no BFF operation exposed it, `RunConsole` did not carry it |
 | **health series** | §5.1, the "throw away" column: *"a bitrate curve **is re-requested**"* | the series was requestable nowhere — the endpoint is write-only, and only the last sample was served |
 
-**⚠ STATE ON 22 SEPTEMBER 2026: STILL NOT SERVED.** Verified against `openapi/studio.yaml`:
-`RunConsole` carries `lastSample` — a single `HealthSample` — and no presence field; the only
-`present` in the document belongs to `AudienceMember` and means presence **on the live show**, which
-is a viewer's, not a crew member's; and `/v1/dates/{dateId}/run/health-samples` is **POST-only**.
-So the two promises are still promises. Every place in this document that states them now says so
-(§5.1, §8), because a document that promises what the contract does not serve is worse in English
-than in French: it reads more confidently.
+**✔ SERVED SINCE 22 SEPTEMBER 2026.** `backend-contracts` has built both, and I verified them in
+`openapi/studio.yaml` rather than taking the report: `RunConsole.presence` carries
+`CrewPresence[]`, scoped to the **channel** and not to the date; and
+`GET /v1/dates/{dateId}/run/health-samples` serves `HealthSeries` with a capped window
+(`windowSec`, default 180 s) and **`peakViewers` / `peakViewersAt` served rather than derived
+twice**. The two promises below are now promises the contract keeps.
+
+What stays written is the rule they produced, because it is the general one and it outlived the two
+cases: **any room broadcasting a differential exposes a snapshot.**
 
 **What the contract must carry, and it is a requirement, not a preference:**
 
 1. **Any room broadcasting a differential exposes a snapshot.** That is the general rule these two
-   cases bring out, and it holds for the ones that follow.
+   cases brought out, and it holds for the ones that follow.
 2. **Presence is a read**: who is online on this channel, with their role and their last-activity
    instant. It is not cosmetic — the cut confirmation is literally *"cutting ends the broadcast for
    N viewers · **M other people online**"*, it is the guard rail on the most destructive act in the
@@ -363,9 +365,9 @@ than in French: it reads more confidently.
    evening: after a `resume:too_old`, after a reconnection, or simply opening the console in the
    middle of a live show.
 
-**Both reads are counted in my inventory** (`context-map.md` §10.1: `identity.GetChannelPresence`,
-`streaming.GetHealthSeries`) — they are the **BFF operations** that were missing, and they belong to
-`backend-contracts`. Reported, and still open.
+**Both reads were already counted in my inventory** (`context-map.md` §10.1:
+`identity.GetChannelPresence`, `streaming.GetHealthSeries`) — they were the **BFF operations** that
+were missing. Reported, and now closed.
 
 ---
 
@@ -442,7 +444,7 @@ A binding summary, which `backend-contracts` can take as it stands.
 | moderation queue | studio | **≤ 1 s** | pushed, by name |
 | on-air state | studio | immediate | pushed |
 | health measurements | studio | 1 to 2 s | pushed, with `measured_at` |
-| crew presence | studio | ~10 s | pushed — **⚠ not served today, and it has no snapshot: see §5.3** |
+| crew presence | studio | ~10 s | pushed, with `RunConsole.presence` as its snapshot (§5.3) |
 | rights version | studio | immediate | pushed — it invalidates the navigation |
 | viewer counter | storefront ×3 | 10 to 30 s | pushed in batches, differential |
 | capacity, waiting list | storefront ×3 | 15 to 60 s | pushed in batches; **the truth is at command time**, not at display time |

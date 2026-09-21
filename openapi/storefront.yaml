@@ -1564,7 +1564,7 @@ paths:
                 items:
                   - tier: pass
                     price: { amountMinor: 1200, currencyCode: EUR }
-                    opens: [browse, trailers, free-dates, replays, one-live-month]
+                    opens: [browse, trailers, free_dates, replays, one_live_month]
                     seatDiscountBps: 1000
                     concurrentStreamsAllowed: 1
         '503': { $ref: '#/components/responses/Unavailable' }
@@ -6503,7 +6503,7 @@ components:
             type: string
             description: |
               **One spelling, and only one — which is the part that is not cosmetic.** This is the
-              vocabulary `decideWatch` depends on. An `opens.includes('multi-screen')` over a payload
+              vocabulary `decideWatch` depends on. An `opens.includes('multi_screen')` over a payload
               carrying `multi_screen` returns `false` **silently**, and everyone falls back to one
               screen — the shape of the authorisation defect the contract had fixed on **plans** and
               reintroduced on **openings**. Whichever spelling wins, both sides must carry it.
@@ -6511,22 +6511,23 @@ components:
               **The rule this motive used to give has been reversed, and it is recorded rather than
               quietly deleted.** It read "kebab spelling, that of the authoritative source", because
               `shared/catalogue.json` carries `free-dates`, `no-ads`, `one-live-month`, `all-lives`,
-              `multi-screen`. The separator ruling settles it the other way: the wire is
-              `snake_case`, D2's authority over `catalogue.json` is over **which names exist and what
-              they mean**, not over their lexical form, and `shared/` is a mockup that will never be
-              a wire.
+              `multi-screen` in kebab. D-034 settles it the other way, on a distinction worth keeping:
+              `shared/` → `@arthome/core` is a **one-time port**, which already normalises by design
+              (D1 drops `light` and adds `essential`, D7 turns relative offsets into instants), while
+              `core` ↔ the wire is a **live boundary**, and only a live boundary turns a mapping into
+              a parallel table with a codec's costume. `shared/` is a mockup and will never be a
+              runtime participant, so it does not convert and everything downstream of it does.
 
-              **These five members have not converted yet**, and neither has `@arthome/core`. They
-              convert with the rest of the migration, in one move with the domain — converting the
-              wire here alone would reintroduce, in the other direction, the silent `includes()`
-              mismatch this paragraph exists to describe.
+              **K6 is untouched by this.** Its defect was the **divergence** — an
+              `opens.includes(…)` returning `false` in silence — never the separator. It is closed by
+              the two sides agreeing, and they now agree on `snake_case`.
             x-arthome-vocabulary:
-              [browse, trailers, free-dates, replays, no-ads, one-live-month, all-lives,
-               multi-screen, archive]
+              [browse, trailers, free_dates, replays, no_ads, one_live_month, all_lives,
+               multi_screen, archive]
         seatDiscountBps: { type: integer, examples: [2000] }
         concurrentStreamsAllowed:
           type: integer
-          description: '`multi-screen` is an **execution constraint**, not a marketing line: `ticketing` publishes the ceiling, `streaming` enforces it.'
+          description: '`multi_screen` is an **execution constraint**, not a marketing line: `ticketing` publishes the ceiling, `streaming` enforces it.'
 
     Subscription:
       type: object
