@@ -7,40 +7,60 @@
 
 ## Phase 0 — 21 septembre 2026
 
-### D-001 — L'orchestrateur des deux surfaces React Native dépend d'un choix non fait
+### D-001 — Orchestrateur si existant, sinon skills spécialisées au cas par cas
 
-**Le constat.** `react-how-to` **est installé** — il fait bien partie des cinq orchestrateurs
-vérifiés. Mais il s'exclut lui-même de React Native : « Router for React 19 **on the web — no
+**La règle, posée par le chef de projet.** Chaque coéquipier charge **l'orchestrateur de sa
+technologie avant de décider ou d'écrire quoi que ce soit**. Quand il n'en existe pas, il charge
+**les skills spécialisées au cas par cas**, en justifiant son choix.
+
+C'est une règle générale, pas une exception : elle vaudra pour toute pile future dont la banque de
+skills n'a pas de porte d'entrée.
+
+**Application aux huit coéquipiers.**
+
+| Coéquipier | Orchestrateur | État |
+|---|---|---|
+| `storefront-web` | `nextjs-how-to` | existe |
+| `studio-web` | `angular-how-to` | existe |
+| `studio-mobile` | `ionic-capacitor-how-to` + `angular-how-to` | existent |
+| `backend-domain`, `backend-contracts`, `auth` | `nestjs-how-to` | existe |
+| `storefront-mobile`, `storefront-tv` | selon la pile — voir ci-dessous | **conditionnel** |
+
+**Le cas des deux surfaces React Native.** Le prompt de mission prévoyait `react-how-to`. Il est
+bien installé, mais s'exclut lui-même de React Native : « Router for React 19 **on the web — no
 Next, no React Native** […] Not for Next.js (→ nextjs-how-to), Expo or React Native
-(→ expo-overview) ». Le prompt de mission, qui le prévoit pour `storefront-mobile` et
-`storefront-tv`, se trompe donc de porte.
+(→ expo-overview) ». La porte suivante, `expo-overview`, pose sa propre condition : « a bare
+React Native project with no `expo` dependency is not Expo work ».
 
-`expo-overview` est la porte suivante — mais il pose sa propre condition : « a bare React Native
-project with no `expo` dependency is not Expo work ».
+Inventaire de la banque, vérifié :
 
-**Ce qui en découle, et qui est conditionnel.**
+| Famille | Skills installées | Orchestrateur |
+|---|---|---|
+| React web | 6 | `react-how-to` |
+| Expo / EAS | 26 | `expo-overview` |
+| **React Native nu** | **8** | **aucun** |
 
-| Choix de pile | Orchestrateur |
-|---|---|
-| **Expo** (y compris Expo TV) | `expo-overview` — aucun trou, la règle s'applique normalement |
-| **React Native nu** (`react-native-tvos` seul) | **aucun orchestrateur n'existe** |
+Donc : en **Expo** (y compris Expo TV), `expo-overview` s'applique et la règle joue normalement.
+En **React Native nu**, aucun orchestrateur n'existe et on passe au cas par cas. Le choix Expo /
+RN nu **n'est pas fait** et sort du périmètre de cette session.
 
-Le choix Expo / RN nu **n'est pas fait** et sort du périmètre de cette session. Le libellé initial
-de cette décision — « les deux surfaces React Native n'ont pas d'orchestrateur » — était donc trop
-absolu : le trou est conditionnel.
+**Les skills retenues pour le temps 1, au cas par cas.** L'essentiel de la banque React Native
+traite de *construire et livrer* ; au temps 1 un spécialiste **exprime un besoin de données** et
+n'écrit pas une ligne de code. Quatre skills seulement, chacune parce qu'elle pèse sur le contrat :
 
-**La décision, valable dans les deux cas.** Au temps 1, les spécialistes **expriment un besoin de
-données** ; ils n'écrivent pas de code React Native. L'orchestrateur ne mord qu'au moment de
-construire. Ils chargent donc `react-core` (sémantique React), `react-native-best-practices`,
-`react-navigation`, et pour la TV `react-native-tv-best-practices` — qui couvre le moteur de
-focus, la croix directionnelle, l'UI à trois mètres et la lecture sur matériel contraint, et qui
-vise explicitement « react-native-tvos, Expo TV » : il vaut dans les deux hypothèses.
+- `react-core` — sémantique React ;
+- `react-native-tv-best-practices` — moteur de focus, UI à trois mètres, mémoire contrainte,
+  lecture. Vise explicitement « react-native-tvos, Expo TV », donc valable dans les deux
+  hypothèses de pile ;
+- `react-native-best-practices` — virtualisation de listes et mémoire, qui commandent la
+  pagination et le volume attendu ;
+- `react-server-state` — fraîcheur, cache, invalidation : ce que le client attend du contrat en
+  temps réel et hors ligne.
 
-**La règle qui reste.** « L'orchestrateur d'abord, la skill spécialisée ensuite, la décision en
-dernier » s'applique partout ailleurs sans exception.
+Écartées comme hors périmètre : tests, montées de version, brownfield, EAS, scaffolding de
+bibliothèque.
 
-**Resté ouvert, et à trancher avant le palier mobile** : Expo ou React Native nu. Le choix
-déterminera rétroactivement s'il y avait un trou ou non.
+**Resté ouvert, à trancher avant le palier mobile** : Expo ou React Native nu.
 
 ### D-002 — L'agent `backend` est scindé en deux
 
