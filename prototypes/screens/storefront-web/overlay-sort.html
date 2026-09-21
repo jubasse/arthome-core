@@ -1,26 +1,29 @@
 <!--
-  ÉCRAN      Menu de tri
-  ROUTE      superposition, sans URL — DUPLIQUÉ
-  AFFICHE    Le sélecteur de tri des résultats : pertinence, bientôt, popularité, prix croissant, prix décroissant.
-  MÈNE VERS  browse · category
+  SCREEN     Sort menu
+  ROUTE      overlay, no URL — DUPLICATED
+  SHOWS      The result sort selector: relevance, soon, popularity, price ascending, price descending.
+  LEADS TO   browse · category
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 741-758 · 1700-1717
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 741-758 · 1700-1717
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       ⚠ CE BLOC EST RECOPIÉ DEUX FOIS DANS L'ORIGINAL — une fois dans `browse` (742-762),
-             une fois dans `category` (1701-1721), avec le même modèle de vue `sortRows`. Les deux
-             copies sont ci-dessous, telles quelles. Défaut relevé au temps 3 : le tri `price_desc`
-             de cet écran n'existe pas dans l'énumération `sort` d'`openapi/storefront.yaml`.
+  NOTE       ⚠ THIS BLOCK IS COPIED TWICE IN THE ORIGINAL — once in `browse` (741-758), once in
+             `category` (1700-1717), with the same `sortRows` view model. Both copies are below,
+             verbatim. Defect found in round 3: the `price_desc` sort of this screen does not exist
+             in the `sort` enum of `openapi/storefront.yaml`.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — search, getCategoryScreen
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — search, getCategoryScreen
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : category, s, t
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: category, s, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
             <div data-pop="sort">
               <div style="display: flex; align-items: baseline; border-bottom: 1px solid #1F1C19; padding-bottom: 7px;">
@@ -60,15 +63,15 @@
               </div>
             </div>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* qq  —  lignes 5934-5934 */
+/* qq  —  lines 5934-5934 */
     const qq = (s.liveQuery || '').trim().toLowerCase();
-/* sortDefs  —  lignes 6082-6082 */
+/* sortDefs  —  lines 6082-6082 */
     const sortDefs = [['auto', qq ? t.sortRelevance : t.sortSoon], ['soon', t.sortSoon], ['pop', t.sortPop], ['priceUp', t.sortPriceUp], ['priceDown', t.sortPriceDown]];
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       sortOpen: s.sortOpen,
@@ -93,17 +96,18 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.sortLabel  t.sortPop  t.sortPriceDown  t.sortPriceUp  t.sortRelevance  t.sortSoon  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     cSort  liveQuery  page  sort  sortOpen  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

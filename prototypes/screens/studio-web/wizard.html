@@ -1,34 +1,34 @@
 <!--
 ==============================================================================
-  ÉCRAN — wizard — création d'une date
+  SCREEN — wizard — creating a date
 ==============================================================================
 
-  Ce qu'il affiche : quatre décisions (titre, jour, heure, jauge) plus la politique de rediffusion, puis un brouillon ; tout le reste se complète sur la fiche
+  What it shows: four decisions (title, day, time, capacity) plus the replay policy, then a draft; everything else is completed on the record
 
-  Rôles qui l'ouvrent : artist · production
-  Mène vers : event
+  Roles that open it: artist · production
+  Leads to: event
 
-  Source : mockups/Studio.dc.html
-    balisage        lignes 2132–2207
-    modèle de vue   lignes 3433–3433, 3984–3984, 5345–5428, 6267–6267
+  Source: mockups/Studio.dc.html
+    markup          lines 2132–2207
+    view model      lines 3433–3433, 3984–3984, 5345–5428, 6267–6267
 
-  Clés de copie employées :
-    aucune clé i18n directe
+  Copy keys used:
+    no direct i18n key
 
-  Contrat :
-    besoins   needs/studio-web.md § « Les autres irréversibilités »
+  Contract:
+    needs     needs/studio-web.md § "The other irreversibilities — they are not in the state machine"
     openapi   openapi/studio.yaml · createDateDraft
     openapi   openapi/studio.yaml · setDateReplayPolicy
 
-  Relevé d'extraction (défauts vus, non corrigés) :
-    · la politique de rediffusion y est nommée included/sub/unit/off ; shared/helpers.js et le contrat disent included/subscription/unit/none — helpers.stateOf teste littéralement `policy !== 'none'`.
-    · « brouillon enregistré » s'affiche avant tout aller-retour : d'où l'exigence d'un identifiant généré dans le domaine.
+  Extraction notes (defects seen, left uncorrected):
+    · the replay policy is named included/sub/unit/off here; shared/helpers.js and the contract say included/subscription/unit/none — helpers.stateOf literally tests `policy !== 'none'`.
+    · “brouillon enregistré” is displayed before any round trip: hence the requirement for a domain-generated identifier.
 
-  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+  EXTRACTED VERBATIM from Studio.dc.html — nothing has been corrected or rewritten.
 -->
 
-<!-- ======================= BALISAGE ======================= -->
-<!-- ···· balisage · Studio.dc.html lignes 2132–2207 ···· -->
+<!-- ======================== MARKUP ======================== -->
+<!-- ···· markup · Studio.dc.html lines 2132–2207 ···· -->
     <sc-if value="{{ isWizard }}" hint-placeholder-val="{{ false }}">
     <div style="animation: fadeIn .2s ease both;">
       <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 14px 22px; display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap;">
@@ -106,13 +106,13 @@
     </div>
     </sc-if>
 
-<!-- ===================== MODÈLE DE VUE ===================== -->
+<!-- ====================== VIEW MODEL ======================= -->
 <script type="text/x-dc-fragment">
-<!-- ···· modèle de vue · Studio.dc.html lignes 3433–3433 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3433–3433 ···· -->
         chan: i, chanOpen: false,
-<!-- ···· modèle de vue · Studio.dc.html lignes 3984–3984 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3984–3984 ···· -->
       wzNamePlaceholder: (evDefs[0] || [])[2] || '',
-<!-- ···· modèle de vue · Studio.dc.html lignes 5345–5428 ···· -->
+<!-- ···· view model · Studio.dc.html lines 5345–5428 ···· -->
         const cap = parseInt(String(s.wzCap === undefined ? '' : s.wzCap).replace(/[^0-9]/g, ''), 10) || 0;
         const name = (s.wzName === undefined ? '' : s.wzName).trim();
         const date = (s.wzDate === undefined ? '' : s.wzDate).trim();
@@ -197,6 +197,6 @@
             });
           }
         };
-<!-- ···· modèle de vue · Studio.dc.html lignes 6267–6267 ···· -->
+<!-- ···· view model · Studio.dc.html lines 6267–6267 ···· -->
       goEvents: () => this.setState({ page: 'events' }),
 </script>

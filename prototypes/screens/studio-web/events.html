@@ -1,33 +1,33 @@
 <!--
 ==============================================================================
-  ÉCRAN — events — tableau des événements
+  SCREEN — events — the events table
 ==============================================================================
 
-  Ce qu'il affiche : toutes les dates de la chaîne : recherche, filtre multi-états, six clés de tri, pagination à huit
+  What it shows: every date of the channel: search, multi-state filter, six sort keys, paginated by eight
 
-  Rôles qui l'ouvrent : artist · production · director · video · sound
-  Mène vers : event · regie · wizard
+  Roles that open it: artist · production · director · video · sound
+  Leads to: event · regie · wizard
 
-  Source : mockups/Studio.dc.html
-    balisage        lignes 1032–1150
-    modèle de vue   lignes 3073–3128, 3823–3900, 4218–4218, 6268–6269, 6274–6275, 6279–6356
+  Source: mockups/Studio.dc.html
+    markup          lines 1032–1150
+    view model      lines 3073–3128, 3823–3900, 4218–4218, 6268–6269, 6274–6275, 6279–6356
 
-  Clés de copie employées :
-    aucune clé i18n directe
+  Copy keys used:
+    no direct i18n key
 
-  Contrat :
-    besoins   needs/studio-web.md § « Pagination et volumes » → « Tris et filtres à servir »
+  Contract:
+    needs     needs/studio-web.md § "Pagination and volumes" → "Sorts and filters to serve"
     openapi   openapi/studio.yaml · listChannelEvents
     openapi   openapi/studio.yaml · createDateDraft
 
-  Relevé d'extraction (défauts vus, non corrigés) :
-    · le tri par état suit STATE_ORDER : le contrat sert `orderRank` pour qu'aucune surface ne réinvente cette table.
+  Extraction notes (defects seen, left uncorrected):
+    · sorting by state follows STATE_ORDER: the contract serves `orderRank` so that no surface reinvents that table.
 
-  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+  EXTRACTED VERBATIM from Studio.dc.html — nothing has been corrected or rewritten.
 -->
 
-<!-- ======================= BALISAGE ======================= -->
-<!-- ···· balisage · Studio.dc.html lignes 1032–1150 ···· -->
+<!-- ======================== MARKUP ======================== -->
+<!-- ···· markup · Studio.dc.html lines 1032–1150 ···· -->
     <sc-if value="{{ isEvents }}" hint-placeholder-val="{{ false }}">
     <div style="animation: fadeIn .2s ease both;">
       <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 16px 22px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
@@ -148,9 +148,9 @@
     </div>
     </sc-if>
 
-<!-- ===================== MODÈLE DE VUE ===================== -->
+<!-- ====================== VIEW MODEL ======================= -->
 <script type="text/x-dc-fragment">
-<!-- ···· modèle de vue · Studio.dc.html lignes 3073–3128 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3073–3128 ···· -->
   agendaOf(channelName) {
     const A = this.A, D = this.data;
     if (!A || !D) return [];
@@ -207,7 +207,7 @@
     const rank = (r) => r[3] === 'live' ? 0 : (r[10] > 0 ? 2 : 1);
     return rows.sort((a, b) => rank(a) - rank(b) || (rank(a) === 2 ? b[10] - a[10] : a[10] - b[10]));
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 3823–3900 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3823–3900 ···· -->
 
     const evQ = (s.evQuery || '').trim().toLowerCase();
     const PAST = { done: 1, replay: 1 };
@@ -286,15 +286,15 @@
     const agenda = evDefs.slice(0, 6).map(([date, time, title, st0, sold, cap, price], i) => {
       const st = (s.evOver || {})[i] || st0;
       const stDef = STATES[st];
-<!-- ···· modèle de vue · Studio.dc.html lignes 4218–4218 ···· -->
+<!-- ···· view model · Studio.dc.html lines 4218–4218 ···· -->
       isEvents: page === 'events',
-<!-- ···· modèle de vue · Studio.dc.html lignes 6268–6269 ···· -->
+<!-- ···· view model · Studio.dc.html lines 6268–6269 ···· -->
       startWizard: () => this.setState({ page: 'wizard' }),
       canCreate: roleOf === 'prod' || roleOf === 'artist',
-<!-- ···· modèle de vue · Studio.dc.html lignes 6274–6275 ···· -->
+<!-- ···· view model · Studio.dc.html lines 6274–6275 ···· -->
       showRevenue: evShowRev,
       showFillCol: evShowFill,
-<!-- ···· modèle de vue · Studio.dc.html lignes 6279–6356 ···· -->
+<!-- ···· view model · Studio.dc.html lines 6279–6356 ···· -->
       eventsCount: filtered.length + (filtered.length > 1 ? ' dates' : ' date'),
       /* sélecteur d'états, à choix multiple */
       stateOpen: !!s.stateOpen,

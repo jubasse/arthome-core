@@ -1,38 +1,38 @@
 <!--
 ==============================================================================
-  ÉCRAN — dashboard — tableau de bord de la chaîne
+  SCREEN — dashboard — the channel dashboard
 ==============================================================================
 
-  Ce qu'il affiche : la prochaine date et son décompte, six mesures avec leur série, la recette par date, les prochaines dates et la liste « à traiter »
+  What it shows: the next date and its countdown, six measures with their series, revenue per date, the upcoming dates and the “to handle” list
 
-  Rôles qui l'ouvrent : artist · production · treasury
-  Mène vers : regie · event · events · wizard
+  Roles that open it: artist · production · treasury
+  Leads to: regie · event · events · wizard
 
-  Source : mockups/Studio.dc.html
-    balisage        lignes 135–302
-    modèle de vue   lignes 2516–2530, 2599–2631, 2788–2820, 3073–3128, 3277–3294, 3433–3433, 3793–3832, 3920–3980, 4217–4217, 6240–6269, 6273–6274, 6276–6277
+  Source: mockups/Studio.dc.html
+    markup          lines 135–302
+    view model      lines 2516–2530, 2599–2631, 2788–2820, 3073–3128, 3277–3294, 3433–3433, 3793–3832, 3920–3980, 4217–4217, 6240–6269, 6273–6274, 6276–6277
 
-  Clés de copie employées :
+  Copy keys used:
     enums.publicationState.*
 
-  Contrat :
-    besoins   needs/studio-web.md § « Dashboard et stats — relevé pour le contrat »
+  Contract:
+    needs     needs/studio-web.md § "Dashboard and stats — survey for the contract"
     openapi   openapi/studio.yaml · getChannelDashboard
     openapi   openapi/studio.yaml · getChannelAgenda
     openapi   openapi/studio.yaml · listChannelEvents
 
-  Relevé d'extraction (défauts vus, non corrigés) :
-    · les mesures 5 (MESSAGES MODÉRÉS) et 6 (SIGNAL MOYEN) testent roleOf === 'mod' / 'regie', or ni mod ni regie n'ouvrent dashboard : DEUX TUILES SUR SIX SONT MORTES.
-    · ABONNÉS GAGNÉS multiplie par le coefficient de période un compteur déjà figé à 30 jours ; MESSAGES MODÉRÉS porte l'unité littérale « sur 30 j » alors qu'un sélecteur de période existe.
-    · revenueTotal est codé en dur (140 496 € × coefficient) et ne dérive pas des six lignes affichées.
-    · le coefficient `mul` par période est une commodité de fixture, pas une règle.
-    · clés de vue non résolues automatiquement : periods, customRange, canOpenRecord, canTech, kpis, revenueTotal, revenueRows, agenda
+  Extraction notes (defects seen, left uncorrected):
+    · measures 5 (MESSAGES MODÉRÉS) and 6 (SIGNAL MOYEN) test roleOf === 'mod' / 'regie', yet neither mod nor regie opens dashboard: TWO TILES OUT OF SIX ARE DEAD.
+    · ABONNÉS GAGNÉS multiplies by the period coefficient a counter already frozen at 30 days; MESSAGES MODÉRÉS carries the literal unit “sur 30 j” although a period selector exists.
+    · revenueTotal is hard-coded (140 496 € × coefficient) and does not derive from the six rows displayed.
+    · the per-period `mul` coefficient is a fixture convenience, not a rule.
+    · view keys not resolved automatically: periods, customRange, canOpenRecord, canTech, kpis, revenueTotal, revenueRows, agenda
 
-  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+  EXTRACTED VERBATIM from Studio.dc.html — nothing has been corrected or rewritten.
 -->
 
-<!-- ======================= BALISAGE ======================= -->
-<!-- ···· balisage · Studio.dc.html lignes 135–302 ···· -->
+<!-- ======================== MARKUP ======================== -->
+<!-- ···· markup · Studio.dc.html lines 135–302 ···· -->
     <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
     <div style="animation: fadeIn .2s ease both;">
       <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 16px 22px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
@@ -202,9 +202,9 @@
     </div>
     </sc-if>
 
-<!-- ===================== MODÈLE DE VUE ===================== -->
+<!-- ====================== VIEW MODEL ======================= -->
 <script type="text/x-dc-fragment">
-<!-- ···· modèle de vue · Studio.dc.html lignes 2516–2530 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2516–2530 ···· -->
   // Variation lue dans une série : moyenne de la première moitié contre la
   // seconde. Série trop courte : aucune variation affichée.
   trendOf(values, unit) {
@@ -220,7 +220,7 @@
     const shown = Math.abs(rounded) >= 10 ? Math.round(Math.abs(rounded)) : Math.abs(rounded).toString().replace('.', ',');
     return { up: rounded > 0, label: (rounded > 0 ? '+' : '−') + shown + (unit === 'pts' ? ' pts' : ' %') };
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 2599–2631 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2599–2631 ···· -->
   metricsOf(channelName) {
     const A = this.A, D = this.data;
     const empty = { series: { merch: [], followers: [], replays: [], fill: [], moderation: [], signal: [] },
@@ -254,7 +254,7 @@
       signal: (100 - Math.round(dropped * 10) / 10).toString().replace('.', ',') + ' %'
     };
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 2788–2820 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2788–2820 ···· -->
   checksOf(channelName) {
     const A = this.A, D = this.data, fx = this.fx;
     if (!A || !D) return [];
@@ -288,7 +288,7 @@
     });
     return out;
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 3073–3128 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3073–3128 ···· -->
   agendaOf(channelName) {
     const A = this.A, D = this.data;
     if (!A || !D) return [];
@@ -345,7 +345,7 @@
     const rank = (r) => r[3] === 'live' ? 0 : (r[10] > 0 ? 2 : 1);
     return rows.sort((a, b) => rank(a) - rank(b) || (rank(a) === 2 ? b[10] - a[10] : a[10] - b[10]));
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 3277–3294 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3277–3294 ···· -->
   barsFrom(values, tint) {
     const list = (values || []).filter(v => typeof v === 'number' && isFinite(v));
     const max = Math.max.apply(null, list.concat([0]));
@@ -364,9 +364,9 @@
     }
     return out;
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 3433–3433 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3433–3433 ···· -->
         chan: i, chanOpen: false,
-<!-- ···· modèle de vue · Studio.dc.html lignes 3793–3832 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3793–3832 ···· -->
 
     const DUR_MIN = 130;
     const target = (() => {
@@ -407,7 +407,7 @@
       const d = m ? parseInt(m[1], 10) : 1;
       return mo * 100 + d + row[1].replace(':', '') / 10000;
     };
-<!-- ···· modèle de vue · Studio.dc.html lignes 3920–3980 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3920–3980 ···· -->
     const M = this.metricsOf(chan.name);
     const kpis = [
       ['VENTES BOUTIQUE', eur(M.merchRevenue * mul), '', '', OK, 'merch', 'money'],
@@ -469,9 +469,9 @@
     const evCur = Math.min(s.evPage || 0, evPages - 1);
     const evPageRows = eventRows.slice(evCur * EV_PER, evCur * EV_PER + EV_PER);
 
-<!-- ···· modèle de vue · Studio.dc.html lignes 4217–4217 ···· -->
+<!-- ···· view model · Studio.dc.html lines 4217–4217 ···· -->
       isDashboard: page === 'dashboard',
-<!-- ···· modèle de vue · Studio.dc.html lignes 6240–6269 ···· -->
+<!-- ···· view model · Studio.dc.html lines 6240–6269 ···· -->
       rangeFrom: s.rangeFrom, rangeTo: s.rangeTo,
       onRangeFrom: e => this.setState({ rangeFrom: e.target.value }),
       onRangeTo: e => this.setState({ rangeTo: e.target.value }),
@@ -502,10 +502,10 @@
       goEvents: () => this.setState({ page: 'events' }),
       startWizard: () => this.setState({ page: 'wizard' }),
       canCreate: roleOf === 'prod' || roleOf === 'artist',
-<!-- ···· modèle de vue · Studio.dc.html lignes 6273–6274 ···· -->
+<!-- ···· view model · Studio.dc.html lines 6273–6274 ···· -->
       todos: todos.filter(t => t.scope === 'all' || (t.scope === 'money' && canRevenue) || (t.scope === 'ops' && canOps)),
       showRevenue: evShowRev,
-<!-- ···· modèle de vue · Studio.dc.html lignes 6276–6277 ···· -->
+<!-- ···· view model · Studio.dc.html lines 6276–6277 ···· -->
       showFill: canOps || canRevenue,
       canOpenRecord, canTech,
 </script>

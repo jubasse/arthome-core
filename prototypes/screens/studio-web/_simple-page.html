@@ -1,35 +1,35 @@
 <!--
 ==============================================================================
-  ÉCRAN — _simple-page — le gabarit générique des douze pages simples
+  SCREEN — _simple-page — the generic template of the twelve simple pages
 ==============================================================================
 
-  Ce qu'il affiche : un en-tête (kicker, titre, actions), un bandeau de chiffres, et une suite de blocs (lignes, pastilles, barres, anneau), paginés à huit
+  What it shows: a header (kicker, title, actions), a strip of figures, and a sequence of blocks (rows, chips, bars, donut), paginated by eight
 
-  Rôles qui l'ouvrent : variable — c'est la page qui décide, pas le gabarit
-  Mène vers : agenda · stream · stats · tickets · store · replays · team · payouts · journal · settings · help · inbox
+  Roles that open it: variable — the page decides, not the template
+  Leads to: agenda · stream · stats · tickets · store · replays · team · payouts · journal · settings · help · inbox
 
-  Source : mockups/Studio.dc.html
-    balisage        lignes 2209–2340
-    modèle de vue   lignes 4555–4663, 5336–5341
+  Source: mockups/Studio.dc.html
+    markup          lines 2209–2340
+    view model      lines 4555–4663, 5336–5341
 
-  Clés de copie employées :
-    aucune clé i18n directe
-    T(...) — littéraux français traduits par la table EN de _shared.html
+  Copy keys used:
+    no direct i18n key
+    T(...) — French literals translated by the EN table in _shared.html
 
-  Contrat :
-    besoins   needs/studio-web.md § « Pagination et volumes »
-    openapi   openapi/studio.yaml · voir chaque page
+  Contract:
+    needs     needs/studio-web.md § "Pagination and volumes"
+    openapi   openapi/studio.yaml · see each page
 
-  Relevé d'extraction (défauts vus, non corrigés) :
-    · DOUZE écrans partagent ce balisage ; ils ne diffèrent que par leur entrée du registre PAGES. C'est pourquoi les douze fichiers d'écran ne portent que leur modèle de vue et renvoient ici.
-    · `strip()` retire les chiffres d'argent (/RECETTE|REVENU|VENTES|PANIER|VERSEMENT|COMMISSION|IMPAY/) sans canRevenue : le rôle change LA LISTE, pas le contenu d'une case.
-    · pagination : PER = 8, avec « 1–8 SUR N » et un bouton par page — d'où l'exigence page + total (D-010).
+  Extraction notes (defects seen, left uncorrected):
+    · TWELVE screens share this markup; they differ only by their entry in the PAGES registry. That is why the twelve screen files carry only their view model and point back here.
+    · `strip()` removes the money figures (/RECETTE|REVENU|VENTES|PANIER|VERSEMENT|COMMISSION|IMPAY/) without canRevenue: the role changes THE LIST, not the content of a cell.
+    · pagination: PER = 8, with “1–8 SUR N” and one button per page — hence the page + total requirement (D-010).
 
-  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+  EXTRACTED VERBATIM from Studio.dc.html — nothing has been corrected or rewritten.
 -->
 
-<!-- ======================= BALISAGE ======================= -->
-<!-- ···· balisage · Studio.dc.html lignes 2209–2340 ···· -->
+<!-- ======================== MARKUP ======================== -->
+<!-- ···· markup · Studio.dc.html lines 2209–2340 ···· -->
     <sc-if value="{{ hasSimple }}" hint-placeholder-val="{{ false }}">
     <div style="animation: fadeIn .2s ease both;">
       <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 16px 22px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
@@ -163,9 +163,9 @@
     </div>
     </sc-if>
 
-<!-- ===================== MODÈLE DE VUE ===================== -->
+<!-- ====================== VIEW MODEL ======================= -->
 <script type="text/x-dc-fragment">
-<!-- ···· modèle de vue · Studio.dc.html lignes 4555–4663 ···· -->
+<!-- ···· view model · Studio.dc.html lines 4555–4663 ···· -->
         const p = page;
         const simple = ['inbox', 'agenda', 'stream', 'stats', 'tickets', 'store', 'replays', 'team', 'payouts', 'journal', 'settings', 'help'];
         if (simple.indexOf(p) < 0) return { hasSimple: false, sp: { kicker: '', title: '', actions: [], hasStrip: false, strip: [], stripStyle: '', blocks: [] } };
@@ -275,7 +275,7 @@
           });
         };
 
-<!-- ···· modèle de vue · Studio.dc.html lignes 5336–5341 ···· -->
+<!-- ···· view model · Studio.dc.html lines 5336–5341 ···· -->
 
         const pg = PAGES[p]();
         return { hasSimple: true, sp: Object.assign({}, pg, {

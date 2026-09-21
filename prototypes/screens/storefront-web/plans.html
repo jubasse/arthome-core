@@ -1,25 +1,28 @@
 <!--
-  ÉCRAN      Formules
+  SCREEN     Plans
   ROUTE      page === 'plans'
-  AFFICHE    Les trois formules et leur comparatif ligne à ligne.
-  MÈNE VERS  overlay-auth · account-subscription
+  SHOWS      The three plans and their line-by-line comparison.
+  LEADS TO   overlay-auth · account-subscription
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2959-2988
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2959-2988
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Vocabulaire divergent relevé au temps 1 : cette page dit `free`/`unit`/`sub` (14
-             €/mois) quand `catalogue.json` dit `free`/`pass`/`premium` (0/12/24 €).
+  NOTE       Divergent vocabulary found in round 1: this page says `free`/`unit`/`sub` (€14/month)
+             where `catalogue.json` says `free`/`pass`/`premium` (0/12/24 €).
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — listPlans, setSubscriptionPlan
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — listPlans, setSubscriptionPlan
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : A, account, artist, catalogue, colsOf, followed, fr, s, t, tileCols
-  À LIRE     dépendances non recopiées ici : heroBase, onArtistLive, watched, watchedShow, watchedViewers
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: A, account, artist, catalogue, colsOf, followed, fr, s, t, tileCols
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: heroBase, onArtistLive, watched, watchedShow, watchedViewers
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <sc-if value="{{ isPlans }}" hint-placeholder-val="{{ false }}">
 <section style="max-width: 1440px; margin: 0 auto; padding: 40px 40px 0; animation: riseIn .4s ease both;">
@@ -52,9 +55,9 @@
 </section>
 </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* reactions  —  lignes 5141-5147 */
+/* reactions  —  lines 5141-5147 */
     const reactions = ['👏 Bravo', '🌹', '😂', fr ? 'Magnifique' : 'Beautiful', fr ? 'Encore !' : 'Encore!'].map(label => ({
       label,
       send: () => this.setState(st => ({ messages: st.messages.concat([{ user: 'vous', text: label, color: 'oklch(0.72 0.16 42)' }]) }))
@@ -62,7 +65,7 @@
 
     /* Le catalogue public vient de fixtures.js : mêmes artistes, mêmes dates
        et mêmes tarifs que la régie et que les autres surfaces. */
-/* hero  —  lignes 5551-5571 */
+/* hero  —  lines 5551-5571 */
     const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
       title: s.pick.title,
       artist: s.pick.artist,
@@ -86,7 +89,7 @@
     } : heroBase);
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       isPlans: s.page === 'plans',
@@ -135,19 +138,20 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.planChoose  t.planCurrent  t.planFreeName  t.planFreePrice  t.planFreeTag  t.planSignUp  
     t.planSubName  t.planSubPrice  t.planSubTag  t.planUnitName  t.planUnitPrice  
     t.planUnitTag  t.plansFootnote  t.plansIntro  t.plansSub  t.plansTitle  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     guest  messages  page  pick  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     cssUrl, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

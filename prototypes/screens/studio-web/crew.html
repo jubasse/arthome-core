@@ -1,22 +1,22 @@
 <!--
 ==============================================================================
-  ÉCRAN — crew — planning et équipe
+  SCREEN — crew — scheduling and crew
 ==============================================================================
 
-  Ce qu'il affiche : les membres et leurs rôles, la matrice de couverture par date, les accès ponctuels, le journal des accès, et les fenêtres d'invitation, de changement de rôle et de retrait
+  What it shows: members and their roles, the coverage matrix per date, one-off access, the access journal, and the invitation, role-change and removal dialogs
 
-  Rôles qui l'ouvrent : artist · production · coordination
-  Mène vers : event (volet équipe) · journal
+  Roles that open it: artist · production · coordination
+  Leads to: event (crew pane) · journal
 
-  Source : mockups/Studio.dc.html
-    balisage        lignes 597–866, 868–976, 978–999, 1001–1016, 1018–1030
-    modèle de vue   lignes 2679–2703, 2886–2929, 3057–3071, 3433–3433, 3985–3985, 3987–3988, 4016–4017, 4019–4214, 4221–4221, 4224–4551
+  Source: mockups/Studio.dc.html
+    markup          lines 597–866, 868–976, 978–999, 1001–1016, 1018–1030
+    view model      lines 2679–2703, 2886–2929, 3057–3071, 3433–3433, 3985–3985, 3987–3988, 4016–4017, 4019–4214, 4221–4221, 4224–4551
 
-  Clés de copie employées :
-    aucune clé i18n directe
+  Copy keys used:
+    no direct i18n key
 
-  Contrat :
-    besoins   needs/studio-web.md § « Les rôles et ce qu'ils ouvrent » → « Multiplicité »
+  Contract:
+    needs     needs/studio-web.md § "Roles, and what they open" → "Multiplicity"
     openapi   openapi/studio.yaml · listChannelMembers
     openapi   openapi/studio.yaml · inviteMember
     openapi   openapi/studio.yaml · changeMemberRoles
@@ -26,16 +26,16 @@
     openapi   openapi/studio.yaml · getDateCrewPane
     openapi   openapi/studio.yaml · listChannelJournal
 
-  Relevé d'extraction (défauts vus, non corrigés) :
-    · l'affectation d'un membre PERMANENT à un poste de date et l'accès PONCTUEL d'un renfort sont deux échelles distinctes ; la maquette les tient séparées (assign vs guests), le contrat n'a qu'une écriture avec expiresAt obligatoire.
-    · un membre porte un ENSEMBLE de rôles (roleKeys) ; les fixtures n'en portent qu'un.
-    · clés de vue non résolues automatiquement : mxHasPager, mxPagerLabel, mxPagerBtns, mxNoMatch, mxNoMatchLabel, memberRows, crewHasPager, crewPagerLabel, crewPagerBtns, gsHasPager, gsPagerLabel, gsPagerBtns
+  Extraction notes (defects seen, left uncorrected):
+    · assigning a PERMANENT member to a post on a date and the ONE-OFF access of a stand-in are two distinct scales; the mockup keeps them apart (assign vs guests), the contract has a single write with a mandatory expiresAt.
+    · a member carries a SET of roles (roleKeys); the fixtures carry only one.
+    · view keys not resolved automatically: mxHasPager, mxPagerLabel, mxPagerBtns, mxNoMatch, mxNoMatchLabel, memberRows, crewHasPager, crewPagerLabel, crewPagerBtns, gsHasPager, gsPagerLabel, gsPagerBtns
 
-  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+  EXTRACTED VERBATIM from Studio.dc.html — nothing has been corrected or rewritten.
 -->
 
-<!-- ======================= BALISAGE ======================= -->
-<!-- ···· balisage · Studio.dc.html lignes 597–866 ···· -->
+<!-- ======================== MARKUP ======================== -->
+<!-- ···· markup · Studio.dc.html lines 597–866 ···· -->
     <sc-if value="{{ isCrew }}" hint-placeholder-val="{{ false }}">
     <div style="animation: fadeIn .2s ease both;">
       <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 16px 22px;">
@@ -306,7 +306,7 @@
       </div>
     </div>
     </sc-if>
-<!-- ···· balisage · Studio.dc.html lignes 868–976 ···· -->
+<!-- ···· markup · Studio.dc.html lines 868–976 ···· -->
     <sc-if value="{{ inviteOpen }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ closeInvite }}" style="position: fixed; inset: 0; z-index: 8000; background: rgba(8,9,10,0.78); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .16s ease both;">
       <div onClick="{{ stopEvt }}" style="width: 460px; max-width: 100%; max-height: calc(100vh - 64px); overflow-y: auto; border: 1px solid #333941; background: #15171A; animation: riseIn .2s ease both;">
@@ -416,7 +416,7 @@
       </div>
     </div>
     </sc-if>
-<!-- ···· balisage · Studio.dc.html lignes 978–999 ···· -->
+<!-- ···· markup · Studio.dc.html lines 978–999 ···· -->
     <sc-if value="{{ roleEditOpen }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ closeRoleEdit }}" style="position: fixed; inset: 0; z-index: 8000; background: rgba(8,9,10,0.78); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .16s ease both;">
       <div onClick="{{ stopEvt }}" style="width: 420px; max-width: 100%; border: 1px solid #333941; background: #15171A; animation: riseIn .2s ease both;">
@@ -439,7 +439,7 @@
       </div>
     </div>
     </sc-if>
-<!-- ···· balisage · Studio.dc.html lignes 1001–1016 ···· -->
+<!-- ···· markup · Studio.dc.html lines 1001–1016 ···· -->
     <sc-if value="{{ guestDropOpen }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ cancelGuestDrop }}" style="position: fixed; inset: 0; z-index: 8000; background: rgba(8,9,10,0.78); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .16s ease both;">
       <div onClick="{{ stopEvt }}" style="width: 400px; max-width: 100%; border: 1px solid #333941; background: #15171A; padding: 20px; animation: riseIn .2s ease both;">
@@ -456,7 +456,7 @@
       </div>
     </div>
     </sc-if>
-<!-- ···· balisage · Studio.dc.html lignes 1018–1030 ···· -->
+<!-- ···· markup · Studio.dc.html lines 1018–1030 ···· -->
     <sc-if value="{{ dropOpen }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ cancelDrop }}" style="position: fixed; inset: 0; z-index: 8000; background: rgba(8,9,10,0.78); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .16s ease both;">
       <div onClick="{{ stopEvt }}" style="width: 420px; max-width: 100%; border: 1px solid #333941; background: #15171A; padding: 16px; animation: riseIn .2s ease both;">
@@ -471,9 +471,9 @@
     </div>
     </sc-if>
 
-<!-- ===================== MODÈLE DE VUE ===================== -->
+<!-- ====================== VIEW MODEL ======================= -->
 <script type="text/x-dc-fragment">
-<!-- ···· modèle de vue · Studio.dc.html lignes 2679–2703 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2679–2703 ···· -->
   guestsOf(channelName) {
     const A = this.A, D = this.data;
     if (!A || !D) return [];
@@ -499,7 +499,7 @@
     });
     return out;
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 2886–2929 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2886–2929 ···· -->
   accessLogOf(channelName) {
     const A = this.A, D = this.data;
     if (!A || !D) return [];
@@ -544,7 +544,7 @@
     /* Du plus récent au plus ancien, sur l'horodatage lui-même. */
     return rows.sort((a, b) => b.at - a.at).slice(0, 10);
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 3057–3071 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3057–3071 ···· -->
   planningOf(channelName) {
     const A = this.A;
     if (!A) return [];
@@ -560,17 +560,17 @@
       return [r[0], r[1], r[2], covered, r[3] === 'live', r[11], r[12]];
     });
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 3433–3433 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3433–3433 ···· -->
         chan: i, chanOpen: false,
-<!-- ···· modèle de vue · Studio.dc.html lignes 3985–3985 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3985–3985 ···· -->
       invNamePlaceholder: ((this.data && this.data.directory) || [[]])[0][0] || '',
-<!-- ···· modèle de vue · Studio.dc.html lignes 3987–3988 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3987–3988 ···· -->
       stopEvt: e => { if (e && e.stopPropagation) e.stopPropagation(); },
       me,
-<!-- ···· modèle de vue · Studio.dc.html lignes 4016–4017 ···· -->
+<!-- ···· view model · Studio.dc.html lines 4016–4017 ···· -->
       openInvite: () => this.setState({ inviteOpen: true, invMode: 'account', invScope: 'staff', invDate: 0, invQuery: '', invPick: null, invMail: '', invName: '', invRole: 'mod' }),
 
-<!-- ···· modèle de vue · Studio.dc.html lignes 4019–4214 ···· -->
+<!-- ···· view model · Studio.dc.html lines 4019–4214 ···· -->
         const chipFor = k => 'cursor: pointer; padding: 8px 12px; white-space: nowrap; ' + MONO
           + 'font-size: 9.5px; letter-spacing: 0.09em; border: 1px solid ' + ROLES[k][1].replace(')', ' / 0.45)')
           + '; color: ' + ROLES[k][1] + '; ';
@@ -767,9 +767,9 @@
           })),
           cancelDrop: () => this.setState({ crewDrop: null })
         };
-<!-- ···· modèle de vue · Studio.dc.html lignes 4221–4221 ···· -->
+<!-- ···· view model · Studio.dc.html lines 4221–4221 ···· -->
       isCrew: page === 'crew',
-<!-- ···· modèle de vue · Studio.dc.html lignes 4224–4551 ···· -->
+<!-- ···· view model · Studio.dc.html lines 4224–4551 ···· -->
         if (page !== 'crew') return { crewTabs: [], cwMembers: false, cwGuests: false, cwLog: false, cwMatrix: false, memberRows: [], guestRows: [], logRows: [], crewStats: [], dateTabs: [], mxCols: [], mxRows: [], mxGrid: '' };
         const tab = ['members', 'matrix', 'guests', 'log'].indexOf(s.crewTab) > -1 ? s.crewTab : 'members';
 

@@ -2,25 +2,25 @@
   Arthome · storefront mobile — category-live
   ══════════════════════════════════════════════════════════════════════════
   Route      : category · catTab=live
-  Affiche    : Section « En direct dans cette discipline ».
-  Mène vers  : live, artist
-  Contrat    : GET /v1/categories/{categoryId}
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L687–739
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : Section "Live in this discipline".
+  Leads to   : live, artist
+  Contract   : GET /v1/categories/{categoryId}
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L687–739
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L687–739
+     MARKUP — L687–739
      ══════════════════════════════════════════════════════════════════════════ -->
     <sc-if value="{{ catShowLive }}" hint-placeholder-val="{{ true }}">
       <div style="padding-top: 18px;">
@@ -77,10 +77,10 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (17 symboles)
+     VIEW MODEL — specific to this screen (17 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── paged  —  méthode de classe  —  L4091–4113 ── */
+/* ── paged  —  class method  —  L4091–4113 ── */
   paged(key, list, step, fr) {
     const n = (this.state.shown || {})[key] || step;
     const rest = Math.max(0, list.length - n);
@@ -105,16 +105,16 @@
     };
   }
 
-/* ── capOv  —  calcul dans renderReady()  —  L4309–4309 ── */
+/* ── capOv  —  computation in renderReady()  —  L4309–4309 ── */
     const capOv = Math.max(3, Number(this.props.overviewCap || 8));
 
-/* ── priceDefs  —  calcul dans renderReady()  —  L5338–5338 ── */
+/* ── priceDefs  —  computation in renderReady()  —  L5338–5338 ── */
     const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
 
-/* ── priceMatch  —  calcul dans renderReady()  —  L5566–5566 ── */
+/* ── priceMatch  —  computation in renderReady()  —  L5566–5566 ── */
     const priceMatch = (k, p) => { const d = priceDefs.find(x => x[0] === k); return d ? d[2](p) : true; };
 
-/* ── dateMatch  —  calcul dans renderReady()  —  L5567–5573 ── */
+/* ── dateMatch  —  computation in renderReady()  —  L5567–5573 ── */
     const dateMatch = (k, d) => {
       if (k === 'range') return true;
       if (k === 'tonight') return d === 0;
@@ -123,7 +123,7 @@
       return d >= 0 && d <= 30;
     };
 
-/* ── catPool  —  calcul dans renderReady()  —  L5575–5590 ── */
+/* ── catPool  —  computation in renderReady()  —  L5575–5590 ── */
     const catPool = catalogue.filter(o => {
       if (o.cat !== s.catId) return false;
       if (subsSel.length && !subsSel.some(i => o.subs.indexOf(i) > -1)) return false;
@@ -141,46 +141,46 @@
       return 0;
     });
 
-/* ── catOv  —  calcul dans renderReady()  —  L5591–5591 ── */
+/* ── catOv  —  computation in renderReady()  —  L5591–5591 ── */
     const catOv = s.catTab === 'ov';
 
-/* ── catStep  —  calcul dans renderReady()  —  L5592–5592 ── */
+/* ── catStep  —  computation in renderReady()  —  L5592–5592 ── */
     const catStep = catOv ? capOv : 10;
 
-/* ── catLiveList  —  calcul dans renderReady()  —  L5593–5593 ── */
+/* ── catLiveList  —  computation in renderReady()  —  L5593–5593 ── */
     const catLiveList = catPool.filter(o => o.kind === 'live');
 
-/* ── pgCatLive  —  calcul dans renderReady()  —  L5597–5597 ── */
+/* ── pgCatLive  —  computation in renderReady()  —  L5597–5597 ── */
     const pgCatLive = this.paged('catLive', catLiveList, catStep, fr);
 
-/* ── ovMore  —  calcul dans renderReady()  —  L5602–5602 ── */
+/* ── ovMore  —  computation in renderReady()  —  L5602–5602 ── */
     const ovMore = (pg, list, tab) => catOv
 
-/* ── mLive  —  calcul dans renderReady()  —  L5605–5605 ── */
+/* ── mLive  —  computation in renderReady()  —  L5605–5605 ── */
     const mLive = ovMore(pgCatLive, catLiveList, 'live');
 
-/* ── catLive  —  clé du modèle rendu  —  L6172–6175 ── */
+/* ── catLive  —  key of the rendered model  —  L6172–6175 ── */
       catLive: pgCatLive.items.map(o => Object.assign({}, o, {
         viewersLabel: (o.viewers || 0).toLocaleString('fr-FR'),
         meta: o.catName.toUpperCase() + ' · ' + o.duration
       })),
 
-/* ── catNoLive  —  clé du modèle rendu  —  L6185–6185 ── */
+/* ── catNoLive  —  key of the rendered model  —  L6185–6185 ── */
       catNoLive: !catPool.some(o => o.kind === 'live'),
 
-/* ── catCountLabel  —  clé du modèle rendu  —  L6189–6189 ── */
+/* ── catCountLabel  —  key of the rendered model  —  L6189–6189 ── */
       catCountLabel: (() => { const n = catPool.filter(o => o.kind === 'live').length; return n + ' ' + (n > 1 ? t.resultsLabel : t.resultLabel); })(),
 
-/* ── moreCatLive  —  clé du modèle rendu  —  L6191–6191 ── */
+/* ── moreCatLive  —  key of the rendered model  —  L6191–6191 ── */
       moreCatLive: pgCatLive.hasMore, moreCatLiveLabel: mLive.label, loadMoreCatLive: mLive.go, loadingCatLive: pgCatLive.loading && !catOv,
 
-/* ── catShowLive  —  clé du modèle rendu  —  L6276–6276 ── */
+/* ── catShowLive  —  key of the rendered model  —  L6276–6276 ── */
       catShowLive: catOv || s.catTab === 'live',
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (10) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (10) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2422  catLiveNow: "En direct dans cette catégorie"
@@ -216,8 +216,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

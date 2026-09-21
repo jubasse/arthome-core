@@ -1,25 +1,25 @@
 <!--
-  ÉCRAN        feuille · sort
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Les six clés de tri du tableau des dates, avec leur direction.
-  RÔLES        artist · prod · regie
-  MÈNE VERS    aucun (écran terminal)
+  SCREEN       sheet / sort
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        The six sort keys of the dates table, with their direction.
+  ROLES        artist · prod · regie
+  LEADS TO     none (terminal screen)
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  sheet L828-895
-               modèle    L3866-3879
-  CLÉS DE COPIE
-               - aucune — libellés français en dur dans le modèle de vue
-  CONTRAT
-               - needs §Pagination (SORT_KEY_FORBIDDEN sur un champ absent)
-               - openapi paramètres SortBy / SortDir
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+               markup      sheet L828-895
+               view model  L3866-3879
+  COPY KEYS
+               - none — French labels hardcoded in the view model
+  CONTRACT
+               - needs §Pagination (SORT_KEY_FORBIDDEN on an absent field)
+               - openapi parameters SortBy / SortDir
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!-- ---- sheet (L828-895) ---- -->
   <sc-if value="{{ shOpen }}" hint-placeholder-val="{{ false }}">
@@ -91,7 +91,7 @@
     </div>
   </sc-if>
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
     if (kind === 'sort') {

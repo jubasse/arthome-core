@@ -1,30 +1,30 @@
 <!--
-  ÉCRAN        crew / members
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Les membres de la chaîne, leurs rôles, et leur affectation aux créneaux d'une date.
-  RÔLES        artist · prod · coord
-  MÈNE VERS    feuilles : crewdate, invite, role
+  SCREEN       crew / members
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        The channel's members, their roles, and their assignment to a date's slots.
+  ROLES        artist · prod · coord
+  LEADS TO     sheets: crewdate, invite, role
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  hasBand L475-485 · hasTabs L487-495 · hasFilters L497-505 · hasNote L555-557 · hasSearch L559-567 · hasActions L569-575 · hasBlocks L731-791 · hasMore L795-806
-               modèle    L2472-2518 · L2519-2573
-  CLÉS DE COPIE
-               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
-               - table ROLES en dur (six personas — libellé, jamais un droit, E6)
-  CONTRAT
+               markup      hasBand L475-485 · hasTabs L487-495 · hasFilters L497-505 · hasNote L555-557 · hasSearch L559-567 · hasActions L569-575 · hasBlocks L731-791 · hasMore L795-806
+               view model  L2472-2518 · L2519-2573
+  COPY KEYS
+               - EN table at the top of the script (a parallel translation, outside i18n — see _index.md, note D2)
+               - hardcoded ROLES table (six personas — a label, never a right, E6)
+  CONTRACT
                - openapi GET /v1/channels/{channelId}/members
                - openapi PATCH /v1/channels/{channelId}/members/{personId}
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!--
-  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
-  partagé par tous les écrans, et n'est pas recopié ici :
+  Generic markup driven by this view model — it lives in _blocks.html,
+  shared by every screen, and is not copied here:
     hasBand        L475-485
     hasTabs        L487-495
     hasFilters     L497-505
@@ -35,7 +35,7 @@
     hasMore        L795-806
 -->
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
   page_crew(c) {

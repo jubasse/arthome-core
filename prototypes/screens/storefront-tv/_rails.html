@@ -1,21 +1,21 @@
 <!--
-  Mécanique  : rangées (carrousels) — partagées par six écrans
-  Source     : Storefront TV.dc.html — balisage L441-528 (squelettes + rangées),
+  Mechanic   : rows (carousels) — shared by six screens
+  Source     : Storefront TV.dc.html — markup L441-528 (skeletons + rows),
                construction L2545-2660 (rail, emptyRail, homeRails, pageRails)
-  Consommé par : home, title, artist, live, category, replays
-  Trois formes de carte : `card` (16/9), `poster` (2/3 vertical), `portrait` (rond).
-  Contient aussi l'état de chargement (squelettes) et les rangées vides avec leur
-  action de sortie d'impasse.
+  Consumed by: home, title, artist, live, category, replays
+  Three card forms: `card` (16/9), `poster` (2/3 vertical), `portrait` (round).
+  Also contains the loading state (skeletons) and empty rows with their
+  get-out-of-the-dead-end action.
 
-  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
-    · Le compteur de rangée dérive de items.length — littéral parallèle dès que la rangée est paginée (Confrontation C2).
-    · genreInterest() classe les sous-genres depuis seats.sold / viewers / replayViews : classement éditorial calculé sur la surface (incohérence n°6 de needs/).
+  DEFECTS FOUND (not fixed — verbatim extraction):
+    · The row counter derives from items.length — a parallel literal as soon as the row is paginated (Confrontation C2).
+    · genreInterest() ranks sub-genres from seats.sold / viewers / replayViews: an editorial ranking computed on the surface (inconsistency no. 6 in needs/).
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
-<!-- ═══════════ Squelettes de chargement et rangées (verbatim, L441-528) ═══════════ -->
+<!-- ═══════════ Loading skeletons and rows (verbatim, L441-528) ═══════════ -->
       <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
         <div data-row="1" style="padding-top: 30px;">
           <div style="padding: 0 0 18px 184px; width: 320px; height: 32px; border-radius: 4px; background: #221F1B; animation: skel 1.2s infinite;"></div>
@@ -105,7 +105,7 @@
     </div>
   </sc-if>
 
-<!-- ═══════════ Fabrique de cartes (verbatim, L2468-2544) ═══════════ -->
+<!-- ═══════════ Card factory (verbatim, L2468-2544) ═══════════ -->
 <script type="text/x-dc-extract">
   // ---------- cards ----------
   card(o, ns) {
@@ -186,7 +186,7 @@
 
 </script>
 
-<!-- ═══════════ Fabrique de rangées (verbatim, L2545-2660) ═══════════ -->
+<!-- ═══════════ Row factory (verbatim, L2545-2660) ═══════════ -->
 <script type="text/x-dc-extract">
   // ---------- rails ----------
   rail(key, label, items, kind, note, noteCol) {
@@ -306,8 +306,8 @@
 
 </script>
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « Les formes de données » (Rail et HomeScreen) et « Confrontation » C2
-  openapi/storefront.yaml → schéma Rail (kind, titleCode, items, nextCursor)
-  ⚠ Confrontation C2 : le schéma Rail du contrat ne peut exprimer ni « Vos places », ni la rangée d'artistes (items = DateCard uniquement), ni la forme affiche ; et il ne porte pas de total.
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "The data shapes" (Rail and HomeScreen) and "Confrontation" C2
+  openapi/storefront.yaml → Rail schema (kind, titleCode, items, nextCursor)
+  ⚠ needs/storefront-tv.md → Confrontation C2: the contract's Rail schema can express neither "Your seats", nor the artists row (items = DateCard only), nor the poster form; and it carries no total.
 -->

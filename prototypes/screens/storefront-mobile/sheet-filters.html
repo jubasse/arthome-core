@@ -1,26 +1,26 @@
 <!--
   Arthome · storefront mobile — sheet-filters
   ══════════════════════════════════════════════════════════════════════════
-  Route      : superposée · filtersOpen
-  Affiche    : Les filtres : disciplines, sous-genres, tranches de prix, fenêtre de date, statut, drapeaux.
-  Mène vers  : browse, category
-  Contrat    : GET /v1/search (paramètre filters)
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L2172–2196
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Route      : overlay · filtersOpen
+  Shows      : The filters: disciplines, sub-genres, price bands, date window, status, flags.
+  Leads to   : browse, category
+  Contract   : GET /v1/search (filters parameter)
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L2172–2196
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L2172–2196
+     MARKUP — L2172–2196
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ sheetFilters }}" hint-placeholder-val="{{ false }}">
 <div onClick="{{ closeFiltersSheet }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
@@ -49,84 +49,84 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (17 symboles)
+     VIEW MODEL — specific to this screen (17 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── priceDefs  —  calcul dans renderReady()  —  L5338–5338 ── */
+/* ── priceDefs  —  computation in renderReady()  —  L5338–5338 ── */
     const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
 
-/* ── dateDefs  —  calcul dans renderReady()  —  L5339–5339 ── */
+/* ── dateDefs  —  computation in renderReady()  —  L5339–5339 ── */
     const dateDefs = [['tonight', t.dTonight], ['weekend', t.dWeekend], ['d7', t.d7], ['d30', t.d30], ['range', t.dRange]];
 
-/* ── statusDefs  —  calcul dans renderReady()  —  L5347–5347 ── */
+/* ── statusDefs  —  computation in renderReady()  —  L5347–5347 ── */
     const statusDefs = [['live', t.stLive], ['soon', t.stSoon], ['replay', t.stReplay]];
 
-/* ── expiryFilters  —  calcul dans renderReady()  —  L5499–5503 ── */
+/* ── expiryFilters  —  computation in renderReady()  —  L5499–5503 ── */
     const expiryFilters = [{
       label: t.expSoon,
       pick: () => this.setState(st => ({ fExpiring: !st.fExpiring, shown: {} })),
       style: CHIP + (s.fExpiring ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
     }];
 
-/* ── catFilters  —  calcul dans renderReady()  —  L5504–5508 ── */
+/* ── catFilters  —  computation in renderReady()  —  L5504–5508 ── */
     const catFilters = CAT_NAMES.map((name, i) => ({
       label: name.toUpperCase(),
       pick: () => this.setState(st => ({ fCats: st.fCats.indexOf(i) > -1 ? st.fCats.filter(x => x !== i) : st.fCats.concat([i]) })),
       style: CHIP + (s.fCats.indexOf(i) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
     }));
 
-/* ── priceFilters  —  calcul dans renderReady()  —  L5509–5513 ── */
+/* ── priceFilters  —  computation in renderReady()  —  L5509–5513 ── */
     const priceFilters = priceDefs.map(([k, label]) => ({
       label,
       pick: () => this.setState(st => ({ fPrices: st.fPrices.indexOf(k) > -1 ? st.fPrices.filter(x => x !== k) : st.fPrices.concat([k]) })),
       style: CHIP + (s.fPrices.indexOf(k) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
     }));
 
-/* ── dateFilters  —  calcul dans renderReady()  —  L5514–5518 ── */
+/* ── dateFilters  —  computation in renderReady()  —  L5514–5518 ── */
     const dateFilters = dateDefs.map(([k, label]) => ({
       label,
       pick: () => this.setState(st => ({ fDate: st.fDate === k ? 'all' : k })),
       style: CHIP + (s.fDate === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
     }));
 
-/* ── statusFilters  —  calcul dans renderReady()  —  L5519–5523 ── */
+/* ── statusFilters  —  computation in renderReady()  —  L5519–5523 ── */
     const statusFilters = statusDefs.map(([k, label]) => ({
       label,
       pick: () => this.setState(st => ({ fStatus: st.fStatus === k ? 'all' : k })),
       style: CHIP + (s.fStatus === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
     }));
 
-/* ── miscFilters  —  calcul dans renderReady()  —  L5524–5528 ── */
+/* ── miscFilters  —  computation in renderReady()  —  L5524–5528 ── */
     const miscFilters = [
       { label: t.almostFull, on: s.fAlmost, toggle: () => this.setState(st => ({ fAlmost: !st.fAlmost })) },
       { label: t.hasDates, on: s.fHasDates, toggle: () => this.setState(st => ({ fHasDates: !st.fHasDates })) },
       { label: t.promoFilter, on: s.fPromo, toggle: () => this.setState(st => ({ fPromo: !st.fPromo })) }
     ].map(o => ({ label: o.label, pick: o.toggle, style: CHIP + (o.on ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;') }));
 
-/* ── flags  —  calcul dans renderReady()  —  L5556–5556 ── */
+/* ── flags  —  computation in renderReady()  —  L5556–5556 ── */
     const flags = [];
 
-/* ── catFilterCount  —  calcul dans renderReady()  —  L5574–5574 ── */
+/* ── catFilterCount  —  computation in renderReady()  —  L5574–5574 ── */
     const catFilterCount = subsSel.length + s.cPrices.length + (s.cDate !== 'all' ? 1 : 0) + (s.cStatus !== 'all' ? 1 : 0) + (s.cAlmost ? 1 : 0) + (s.cPromo ? 1 : 0);
 
-/* ── catOv  —  calcul dans renderReady()  —  L5591–5591 ── */
+/* ── catOv  —  computation in renderReady()  —  L5591–5591 ── */
     const catOv = s.catTab === 'ov';
 
-/* ── activeFilterCount  —  calcul dans renderReady()  —  L5631–5631 ── */
+/* ── activeFilterCount  —  computation in renderReady()  —  L5631–5631 ── */
     const activeFilterCount = s.fCats.length + (s.fCats.length === 1 ? (s.fSubs || []).length : 0) + s.fPrices.length + (s.fDate !== 'all' ? 1 : 0) + (s.fStatus !== 'all' ? 1 : 0) + flags.length;
 
-/* ── filtersHeadLabel  —  clé du modèle rendu  —  L6299–6299 ── */
+/* ── filtersHeadLabel  —  key of the rendered model  —  L6299–6299 ── */
       filtersHeadLabel: t.showFilters + (s.page === 'category' ? (catFilterCount ? ' · ' + catFilterCount : '') : (activeFilterCount ? ' · ' + activeFilterCount : '')),
 
-/* ── hasAnyFilter  —  clé du modèle rendu  —  L6300–6300 ── */
+/* ── hasAnyFilter  —  key of the rendered model  —  L6300–6300 ── */
       hasAnyFilter: s.page === 'category' ? catFilterCount > 0 : activeFilterCount > 0,
 
-/* ── clearFiltersHere  —  clé du modèle rendu  —  L6301–6303 ── */
+/* ── clearFiltersHere  —  key of the rendered model  —  L6301–6303 ── */
       clearFiltersHere: () => this.setState(s.page === 'category'
         ? { subs: [], cPrices: [], cDate: 'all', cStatus: 'all', cAlmost: false, cPromo: false, cSort: 'auto', shown: {} }
         : { fCats: [], fSubs: [], fPrices: [], fDate: 'all', fStatus: 'all', fAlmost: false, fHasDates: false, fExpiring: false, fPromo: false, shown: {} }),
 
-/* ── filterGroups  —  clé du modèle rendu  —  L6304–6340 ── */
+/* ── filterGroups  —  key of the rendered model  —  L6304–6340 ── */
       filterGroups: (() => {
         const g = [];
         const add = (title, chips, on) => { if (on && chips.length) g.push({ title, chips }); };
@@ -168,7 +168,7 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (26) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (26) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2371  almostFull: "BIENTÔT COMPLET"
@@ -252,8 +252,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

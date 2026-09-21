@@ -1,22 +1,25 @@
 <!--
-  ÉCRAN      Compte — Notifications
+  SCREEN     Account — Notifications
   ROUTE      page === 'account', accTab === 'notifs'
-  AFFICHE    Cinq déclencheurs, trois canaux, et les heures calmes avec leur exception.
-  MÈNE VERS  account
+  SHOWS      Five triggers, three channels, and quiet hours with their exception.
+  LEADS TO   account
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2764-2797
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2764-2797
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — updateNotificationPreferences
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — updateNotificationPreferences
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : availW, fr, s
-  À LIRE     dépendances non recopiées ici : notifDefs
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: availW, fr, s
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: notifDefs
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
       <sc-if value="{{ accNotifs }}" hint-placeholder-val="{{ false }}">
       <div style="animation: fadeIn .3s ease both; max-width: 760px;">
@@ -53,11 +56,11 @@
       </sc-if>
 
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* accStack  —  lignes 5747-5747 */
+/* accStack  —  lines 5747-5747 */
     const accStack = availW < 760;
-/* notifRows  —  lignes 5892-5907 */
+/* notifRows  —  lines 5892-5907 */
     const notifRows = notifDefs.map(([key, label, hint]) => ({
       label, hint,
       cells: [0, 1, 2].map(ci => {
@@ -76,7 +79,7 @@
 
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       accH2: accStack ? 'display: none;' : '',
@@ -89,17 +92,18 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.accNotifs  t.notifEvent  t.quietHours  t.quietHoursHint  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     accTab  notif  quiet  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

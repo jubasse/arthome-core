@@ -1,22 +1,25 @@
 <!--
-  ÉCRAN      Explorateur — onglet Rediffusions
+  SCREEN     Explorer — Replays tab
   ROUTE      page === 'browse', sTab === 'replays'
-  AFFICHE    Les rediffusions disponibles, avec leur fenêtre restante et le filtre « expire sous 90 h ».
-  MÈNE VERS  replay · artist
+  SHOWS      The available replays, with their remaining window and the "expires within 90 h" filter.
+  LEADS TO   replay · artist
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 1200-1206 · 1207-1264
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 1200-1206 · 1207-1264
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — search
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — search
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : catalogue, colsOf, colsTiles, colsWideN, fr, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, tileCols
-  À LIRE     dépendances non recopiées ici : passFilters, replaysGrouped, sortFn
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: catalogue, colsOf, colsTiles, colsWideN, fr, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, tileCols
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: passFilters, replaysGrouped, sortFn
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
   <sc-if value="{{ noReplaysTab }}" hint-placeholder-val="{{ false }}">
     <div style="margin-top: 24px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 48px 32px; text-align: center;">
@@ -85,15 +88,15 @@
     </sc-if>
   </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* replaysAll  —  lignes 5972-5972 */
+/* replaysAll  —  lines 5972-5972 */
     const replaysAll = catalogue.filter(o => o.kind === 'replay' && passFilters(o)).sort(sortFn);
-/* pgReplays  —  lignes 6041-6041 */
+/* pgReplays  —  lines 6041-6041 */
     const pgReplays = this.paged('replays', replaysGrouped, 12, fr);
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       clearAllFilters: () => this.setState({ query: '', fCats: [], fSubs: [], fPrices: [], fDate: 'all', fStatus: 'all', fAlmost: false, fHasDates: false, fExpiring: false, fPromo: false, sort: 'auto', alertCreated: false }),
@@ -105,17 +108,18 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.clearAll  t.emptyResults  t.emptyResultsHint  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     sTab  sView  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     paged, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

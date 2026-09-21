@@ -1,19 +1,19 @@
 <!--
-  PIÈCE        _data — tables, chargement et modèles de lecture
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  RÔLE         Ce qui alimente tous les écrans : les tables de vocabulaire, le chargement depuis shared/, et les fonctions qui remodèlent les fixtures en ce que chaque page attend.
+  PART         _data — tables, loading and read models
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  PURPOSE      What feeds every screen: the vocabulary tables, the loading from shared/, and the functions that reshape the fixtures into what each page expects.
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  —
-               modèle    L903-1083 (constantes et tables) · L1085-1087 (état) · L1092-1326 (modèles de lecture) · L1327-1411 (loadArthome) · L2254-2292 (équipe et créneaux)
-  NOTE         ⚠ loadArthome() résout helpers.js, fixtures.js, studio-data.js, catalogue.json, taxonomy.json et i18n/ RELATIVEMENT au fichier HTML : ils doivent être posés à côté (voir B4 de architecture/corrections-handoff.md). L'échec est avalé par le try : la maquette rend dégradé sans dire pourquoi.
+               markup      —
+               view model  L903-1083 (constants and tables) · L1085-1087 (state) · L1092-1326 (read models) · L1327-1411 (loadArthome) · L2254-2292 (crew and slots)
+  NOTE         WARNING — loadArthome() resolves helpers.js, fixtures.js, studio-data.js, catalogue.json, taxonomy.json and i18n/ RELATIVE to the HTML file: they must be placed next to it (see B4 in architecture/corrections-handoff.md). The failure is swallowed by the try: the mockup renders degraded without saying why.
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 <script type="text/x-dc-fragment">
-/* ---- constantes, icônes, vocabulaires, table EN (L903-1083) ---- */
+/* ---- constants, icons, vocabularies, EN table (L903-1083) ---- */
 const OK = 'oklch(0.72 0.14 155)';
 const WARN = 'oklch(0.78 0.13 75)';
 const LIVE = 'oklch(0.7 0.19 27)';
@@ -196,12 +196,12 @@ const EN = {
 };
 
 
-/* ---- état initial du composant (L1085-1087) ---- */
+/* ---- the component's initial state (L1085-1087) ---- */
   state = { dataReady: false, dataError: null, page: null, chan: 0, now: Date.now(), sheet: null, period: '30j', rangeFrom: '01/06/2026', rangeTo: '03/09/2026' };
 
   // Les données viennent de fixtures.js par studio-data.js : une seule source
 
-/* ---- modèles de lecture par chaîne (L1092-1326) ---- */
+/* ---- per-channel read models (L1092-1326) ---- */
   metricsOf(channelName) {
     const A = this.A, D = this.data;
     const empty = { sold: 0, available: 0, waitlist: 0, gross: 0, commission: 0, vat: 0, net: 0,
@@ -438,7 +438,7 @@ const EN = {
   }
 
 
-/* ---- chargement de la couche de données (L1327-1411) ---- */
+/* ---- loading of the data layer (L1327-1411) ---- */
   async loadArthome() {
     try {
       const at = (p) => new URL(p, document.baseURI).href;
@@ -525,7 +525,7 @@ const EN = {
   }
 
 
-/* ---- équipe, dates et créneaux (L2254-2292) ---- */
+/* ---- crew, dates and slots (L2254-2292) ---- */
   crewRoster(c) {
     const s = this.state;
     const gone = s.crewGone || {};

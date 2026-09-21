@@ -1,33 +1,35 @@
 <!--
-  ÉCRAN      Explorateur — cadre, filtres et rail latéral
+  SCREEN     Explorer — frame, filters and side rail
   ROUTE      page === 'browse'
-  AFFICHE    Le cadre de l'explorateur : titre, champ de recherche, quatre onglets de résultats, menu de tri, panneau de filtres, rail latéral (recherches récentes, enregistrées, suivis en direct, bientôt complet) et le rail « presque complet » de bas de page.
-  MÈNE VERS  browse-best · browse-lives · browse-artists · browse-replays · overlay-save-search · live
+  SHOWS      The frame of the explorer: title, search field, four result tabs, sort menu, filter panel, side rail (recent searches, saved searches, followed artists live, almost sold out) and the "almost sold out" rail at the foot of the page.
+  LEADS TO   browse-best · browse-lives · browse-artists · browse-replays · overlay-save-search · live
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 732-734 · 813-875 · 1265-1300
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 732-734 · 813-875 · 1265-1300
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Le menu de tri (746-760) est recopié à l'identique dans `category` : voir
-             `overlay-sort.html`, et le rail latéral avec son panneau de filtres dans
-             `overlay-filters-rail.html`. Défaut relevé au temps 1 : les valeurs de filtre sont des
-             indices de tableau (`fCats: [1]`), pas des identifiants.
+  NOTE       The sort menu (746-760) is copied verbatim into `category`: see `overlay-sort.html`,
+             and the side rail with its filter panel is in `overlay-filters-rail.html`. Defect
+             found in round 1: the filter values are array indices (`fCats: [1]`), not identifiers.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — search, listSavedSearches, createSavedSearch
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — search, listSavedSearches, createSavedSearch
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : A, artist, catalogue, category, cats, fr, roster, s, sideDrawer, t, tickets
-  À LIRE     dépendances non recopiées ici : curSig, modeDefs, ownDates, ownFuture, passFilters, qq, sortFn, tabDefs, tierDefs, tierIdx, tokens, watched, watchedShow
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: A, artist, catalogue, category, cats, fr, roster, s, sideDrawer, t, tickets
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: curSig, modeDefs, ownDates, ownFuture, passFilters, qq, sortFn, tabDefs, tierDefs, tierIdx, tokens, watched, watchedShow
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <sc-if value="{{ isBrowse }}" hint-placeholder-val="{{ false }}">
 <section style="max-width: 1440px; margin: 0 auto; padding: 40px 40px 0; animation: fadeIn .3s ease both;">
     <div style="display: grid; grid-template-columns: {{ sideCols }}; gap: 28px; align-items: start;">
 
-      <!-- … le rail latéral et le panneau de filtres (lignes 735-812) sont dans overlay-filters-rail.html … -->
+      <!-- … the side rail and the filter panel (lines 735-812) are in overlay-filters-rail.html … -->
 
       <div style="min-width: 0;">
   <div style="display: flex; align-items: flex-end; gap: 18px;">
@@ -130,16 +132,16 @@
 </section>
 </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* modes  —  lignes 5035-5040 */
+/* modes  —  lines 5035-5040 */
     const modes = modeDefs.map(([id, label]) => ({
       label,
       pick: () => this.setState({ mode: id }),
       style: 'cursor: pointer; padding: 5px 10px; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.1em; ' +
         (s.mode === id ? 'background: #EDE7DC; color: #0B0A09;' : 'background: rgba(11,10,9,0.72); color: #C9C0B2;')
     }));
-/* qualities  —  lignes 5041-5047 */
+/* qualities  —  lines 5041-5047 */
     const qualities = ['4K', '1080p', '720p', 'AUTO'].map(label => ({
       label,
       pick: () => this.setState({ quality: label }),
@@ -147,14 +149,14 @@
         (s.quality === label ? 'background: oklch(0.68 0.18 42); color: #0B0A09;' : 'background: rgba(11,10,9,0.72); color: #9B948A;')
     }));
 
-/* tiers  —  lignes 5083-5088 */
+/* tiers  —  lines 5083-5088 */
     const tiers = tierDefs.map(([name, price, desc], i) => ({
       name, price, desc,
       pick: () => this.setState({ tier: i }),
       style: 'cursor: pointer; padding: 14px; border: 1px solid ' + (tierIdx === i ? '#EDE7DC' : '#262320') +
         '; background: ' + (tierIdx === i ? '#141210' : 'transparent') + ';'
     }));
-/* reactions  —  lignes 5141-5147 */
+/* reactions  —  lines 5141-5147 */
     const reactions = ['👏 Bravo', '🌹', '😂', fr ? 'Magnifique' : 'Beautiful', fr ? 'Encore !' : 'Encore!'].map(label => ({
       label,
       send: () => this.setState(st => ({ messages: st.messages.concat([{ user: 'vous', text: label, color: 'oklch(0.72 0.16 42)' }]) }))
@@ -162,7 +164,7 @@
 
     /* Le catalogue public vient de fixtures.js : mêmes artistes, mêmes dates
        et mêmes tarifs que la régie et que les autres surfaces. */
-/* soldOut  —  lignes 5672-5698 */
+/* soldOut  —  lines 5672-5698 */
     const soldOut = A.upcoming().map(d => {
       const cap = A.venue(d.venue).capacity;
       return { d, pct: cap ? Math.round((d.seats.sold / cap) * 100) : 0 };
@@ -190,11 +192,11 @@
       open: () => this.openLive(artist), openArtist: this.goArtistFrom(artist), buy: this.openTicketFor(title, priceLabel, fr)
     }));
 
-/* livesAll  —  lignes 5971-5971 */
+/* livesAll  —  lines 5971-5971 */
     const livesAll = catalogue.filter(o => o.kind !== 'replay' && passFilters(o)).sort(sortFn);
-/* replaysAll  —  lignes 5972-5972 */
+/* replaysAll  —  lines 5972-5972 */
     const replaysAll = catalogue.filter(o => o.kind === 'replay' && passFilters(o)).sort(sortFn);
-/* artistsAll  —  lignes 5973-5995 */
+/* artistsAll  —  lines 5973-5995 */
     const artistsAll = roster.filter(a => {
       if (qq && (a.name + ' ' + a.discipline + ' ' + a.showTitle).toLowerCase().indexOf(qq) < 0) return false;
       if (s.fCats.length && !catalogue.some(o => o.artistIdx === a.i && s.fCats.indexOf(o.cat) > -1)) return false;
@@ -218,7 +220,7 @@
       });
     });
 
-/* artistEvents  —  lignes 6016-6037 */
+/* artistEvents  —  lines 6016-6037 */
     const artistEvents = (ownDates.length
       ? this.groupByArtist(ownFuture, fr).slice().sort((a, b) => a.day - b.day)
       : (watched ? [{
@@ -241,12 +243,12 @@
       ...this.promoOf(o.promoTitle || o.title, o.priceLabel, fr)
     }));
 
-/* savedMatch  —  lignes 6047-6047 */
+/* savedMatch  —  lines 6047-6047 */
     const savedMatch = s.alerts.find(al => this.alertSig(al.query, al.st) === curSig) || null;
-/* alreadySaved  —  lignes 6048-6049 */
+/* alreadySaved  —  lines 6048-6049 */
     const alreadySaved = !!savedMatch;
 
-/* searchTabs  —  lignes 6075-6081 */
+/* searchTabs  —  lines 6075-6081 */
     const searchTabs = tabDefs.map(([k, label, n]) => ({
       label, count: String(n),
       pick: () => this.setState({ sTab: k }),
@@ -254,7 +256,7 @@
         (s.sTab === k ? '#EDE7DC' : 'transparent') + '; color: ' + (s.sTab === k ? '#EDE7DC' : '#857E73') + '; transition: color .24s ease, border-color .24s ease;'
     }));
 
-/* activeTokens  —  lignes 6233-6237 */
+/* activeTokens  —  lines 6233-6237 */
     const activeTokens = tokens.map(tk => Object.assign(tk, {
       title: tk.title || tk.label,
       style: 'cursor: pointer; padding: 4px 8px; display: inline-flex; align-items: center; gap: 5px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid #332E28; background: #141210; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: #C9C0B2; transition: border-color .2s ease, color .2s ease;'
@@ -262,7 +264,7 @@
 
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       hasTokens: activeTokens.length > 0,
@@ -315,21 +317,22 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.alertDelete  t.alertHint  t.alertRename  t.alertRenameHint  t.almostGone  
     t.almostGoneSub  t.clearAll  t.createAlert  t.dateToCome  t.datesToCome  t.emptyResults  
     t.emptyResultsHint  t.onNow  t.resultLabel  t.resultsLabel  t.savedHere  t.viewLabel  
     t.viewList  t.viewTiles  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     alerts  fCats  fHasDates  fStatus  messages  mode  page  quality  query  renameDraft  
     renameId  sTab  sView  sideOpen  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     alertName, alertSig, buyStyle, cssUrl, gate, goArtistFrom, groupByArtist, openLive, openTicketFor, promoOf, scroll, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

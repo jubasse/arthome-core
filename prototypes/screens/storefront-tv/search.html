@@ -1,19 +1,19 @@
 <!--
-  Écran      : search
+  Screen     : search
   Route      : page === 'search'
-  Affiche    : Clavier à l'écran à gauche (AZERTY ou QWERTY selon la langue), résultats en grille à droite mis à jour à chaque lettre, recherches récentes, disciplines et entrée vocale. Aucun bouton Valider.
-  Mène vers  : title · artist · category
-  Partagé    : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
+  Shows      : On-screen keyboard on the left (AZERTY or QWERTY depending on the language), results in a grid on the right updated on every letter, recent searches, disciplines and a voice entry. No Submit button.
+  Leads to   : title · artist · category
+  Shared     : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
 
-  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
-    · Le filtrage est local (indexOf sur titre + artiste + discipline + salle) : aucun appel, donc aucun anti-rebond n'a jamais été exercé.
-    · La saisie est plafonnée à 32 caractères (type(), L2348) alors que la règle de surface est « rien au-delà de six caractères » — la recherche en est l'exception assumée.
+  DEFECTS FOUND (not fixed — verbatim extraction):
+    · Filtering is local (indexOf over title + artist + discipline + venue): no calls, so no debounce was ever exercised.
+    · Input is capped at 32 characters (type(), L2348) whereas the surface rule is "nothing beyond six characters" — search is its acknowledged exception.
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger ici : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
-<!-- ═══════════ Balisage (verbatim, L530-621) ═══════════ -->
+<!-- ═══════════ Markup (verbatim, L530-621) ═══════════ -->
   <sc-if value="{{ pgSearch }}" hint-placeholder-val="{{ false }}">
     <div style="position: absolute; inset: 0; display: flex; animation: fadeIn .2s ease both;">
       <div style="flex: 0 0 844px; padding: 84px 0 60px 184px;">
@@ -107,7 +107,7 @@
     </div>
   </sc-if>
 
-<!-- ═══════════ Modèle de vue (verbatim, L2883-2910) ═══════════ -->
+<!-- ═══════════ View model (verbatim, L2883-2910) ═══════════ -->
 <script type="text/x-dc-extract">
     // ---- recherche
     const qq = (s.q || '').trim().toLowerCase();
@@ -139,27 +139,27 @@
 
 </script>
 
-<!-- ═══════════ type() et del() — saisie (verbatim, L2348-2349) ═══════════ -->
+<!-- ═══════════ type() and del() — input (verbatim, L2348-2349) ═══════════ -->
 <script type="text/x-dc-extract">
   type(ch) { this.setState({ q: (this.state.q + ch).slice(0, 32) }); }
   del() { this.setState({ q: this.state.q.slice(0, -1) }); }
 </script>
 
-<!-- ═══════════ CLÉS DE COPIE ═══════════
-  jeton du composant  →  clé i18n (shared/i18n/tv-keymap.json)
-    t.kbClear            → discovery.keyboard.clear   [majuscules]
-    t.kbDel              → discovery.keyboard.delete   [majuscules]
-    t.kbSpace            → discovery.keyboard.space   [majuscules]
+<!-- ═══════════ COPY KEYS ═══════════
+  component token  →  i18n key (shared/i18n/tv-keymap.json)
+    t.kbClear            → discovery.keyboard.clear   [uppercased]
+    t.kbDel              → discovery.keyboard.delete   [uppercased]
+    t.kbSpace            → discovery.keyboard.space   [uppercased]
     t.nArtists           → common.nav.artists
     t.nCats              → common.nav.categories
-    t.recentLabel        → discovery.recentSearches   [majuscules]
+    t.recentLabel        → discovery.recentSearches   [uppercased]
     t.resultsTitle       → discovery.results
     t.searchEmptyHint    → discovery.searchHint
 -->
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « Les commandes » : pas de requête sous 2 caractères, anti-rebond 250-300 ms, une seule requête en vol
-  openapi/storefront.yaml → search (GET /v1/search), q minLength 2, budget ≤ 200 ms, requête ANNULABLE
-  L'unité paginée du contrat est le SPECTACLE (ShowGroup) pour best/lives/replays, l'artiste pour artists.
-  Les recherches récentes et les disciplines viennent de l'amorçage : 0 appel de plus.
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "The commands": no request below 2 characters, 250-300 ms debounce, a single request in flight
+  openapi/storefront.yaml → search (GET /v1/search), q minLength 2, budget ≤ 200 ms, CANCELLABLE request
+  The contract's paginated unit is the SHOW (ShowGroup) for best/lives/replays, the artist for artists.
+  Recent searches and disciplines come from start-up: 0 extra calls.
 -->

@@ -1,26 +1,26 @@
 <!--
-  ÉCRAN        event / volets
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Les six volets de la fiche, DÉRIVÉS DU RÔLE : public, tickets, chat, tech, crew, replay.
-  RÔLES        artist · prod · regie · mod · coord · tres   (les six)
-  MÈNE VERS    écrans : crew, stream
+  SCREEN       event / panes
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        The record's six panes, ROLE-DERIVED: public, tickets, chat, tech, crew, replay.
+  ROLES        artist · prod · regie · mod · coord · tres   (all six)
+  LEADS TO     screens: crew, stream
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  pgEvent L354-416
-               modèle    L3583-3643
-  CLÉS DE COPIE
-               - aucune — libellés français en dur dans le modèle de vue
-  CONTRAT
-               - needs §« Ce qui distingue cette surface » 2 (les volets dérivés du rôle)
-               - needs §Confrontation C10 (un seul volet sur six a un point d'entrée)
-               - openapi GET /v1/dates/{dateId}/panes/tickets — le seul qui existe
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+               markup      pgEvent L354-416
+               view model  L3583-3643
+  COPY KEYS
+               - none — French labels hardcoded in the view model
+  CONTRACT
+               - needs §"What sets this surface apart" 2 (the role-derived panes)
+               - needs §Confrontation C10 (one pane out of six has an endpoint)
+               - openapi GET /v1/dates/{dateId}/panes/tickets — the only one that exists
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!-- ---- pgEvent (L354-416) ---- -->
     <sc-if value="{{ pgEvent }}" hint-placeholder-val="{{ false }}">
@@ -87,7 +87,7 @@
       </div>
     </sc-if>
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
     if (see('public')) blocks.push(this.block('PAGE PUBLIQUE', 'ARTHOME.FR/' + slug, {

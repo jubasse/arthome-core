@@ -2,25 +2,25 @@
   Arthome · storefront mobile — browse-best
   ══════════════════════════════════════════════════════════════════════════
   Route      : browse · sTab=best
-  Affiche    : Onglet Vue d'ensemble : un extrait d'artistes, un extrait de directs et de dates à venir, un extrait de rediffusions.
-  Mène vers  : artist, live, replay
-  Contrat    : GET /v1/search?tab=best
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L346–443
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : Overview tab: an extract of artists, an extract of lives and upcoming dates, an extract of replays.
+  Leads to   : artist, live, replay
+  Contract   : GET /v1/search?tab=best
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L346–443
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L346–443
+     MARKUP — L346–443
      ══════════════════════════════════════════════════════════════════════════ -->
   <sc-if value="{{ showBest }}" hint-placeholder-val="{{ true }}">
     <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 22px;">
@@ -122,16 +122,16 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (20 symboles)
+     VIEW MODEL — specific to this screen (20 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── capOv  —  calcul dans renderReady()  —  L4309–4309 ── */
+/* ── capOv  —  computation in renderReady()  —  L4309–4309 ── */
     const capOv = Math.max(3, Number(this.props.overviewCap || 8));
 
-/* ── matchQ  —  calcul dans renderReady()  —  L5103–5103 ── */
+/* ── matchQ  —  computation in renderReady()  —  L5103–5103 ── */
     const matchQ = (...fields) => !q || fields.some(v => String(v).toLowerCase().indexOf(q) > -1);
 
-/* ── suggArtists  —  calcul dans renderReady()  —  L5104–5110 ── */
+/* ── suggArtists  —  computation in renderReady()  —  L5104–5110 ── */
     const suggArtists = q ? roster.filter(a => matchQ(a.name, a.discipline)).slice(0, 4).map(a => ({
       name: a.name, img: a.portrait, imgCss: this.cssUrl(a.portrait),
       portrait: a.portrait, portraitCss: this.cssUrl(a.portrait),
@@ -140,7 +140,7 @@
       statusColor: a.isLive ? 'oklch(0.78 0.14 27)' : '#857E73'
     })) : [];
 
-/* ── suggShows  —  calcul dans renderReady()  —  L5111–5116 ── */
+/* ── suggShows  —  computation in renderReady()  —  L5111–5116 ── */
     const suggShows = q ? roster.filter(a => matchQ(a.showTitle)).slice(0, 4).map(a => ({
       name: a.showTitle, artist: a.name, img: a.showImg,
       open: () => this.setState({ page: 'live', artistId: a.i, suggOpen: false, searchOpen: false, watching: a.i, watchKind: 'live', pipClosed: false }),
@@ -148,10 +148,10 @@
       statusColor: a.isLive ? 'oklch(0.78 0.14 27)' : '#857E73'
     })) : [];
 
-/* ── priceDefs  —  calcul dans renderReady()  —  L5338–5338 ── */
+/* ── priceDefs  —  computation in renderReady()  —  L5338–5338 ── */
     const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
 
-/* ── dateOk  —  calcul dans renderReady()  —  L5340–5346 ── */
+/* ── dateOk  —  computation in renderReady()  —  L5340–5346 ── */
     const dateOk = (d) => {
       if (s.fDate === 'all' || s.fDate === 'range') return true;
       if (s.fDate === 'tonight') return d === 0;
@@ -160,7 +160,7 @@
       return d >= 0 && d <= 30;
     };
 
-/* ── passFilters  —  calcul dans renderReady()  —  L5348–5363 ── */
+/* ── passFilters  —  computation in renderReady()  —  L5348–5363 ── */
     const passFilters = (o) => {
       if (!hit(o)) return false;
       if (s.fCats.length && s.fCats.indexOf(o.cat) < 0) return false;
@@ -178,10 +178,10 @@
       return true;
     };
 
-/* ── sortKey  —  calcul dans renderReady()  —  L5364–5364 ── */
+/* ── sortKey  —  computation in renderReady()  —  L5364–5364 ── */
     const sortKey = s.sort === 'auto' ? (qq ? 'rel' : 'soon') : s.sort;
 
-/* ── sortFn  —  calcul dans renderReady()  —  L5365–5372 ── */
+/* ── sortFn  —  computation in renderReady()  —  L5365–5372 ── */
     const sortFn = (a, b) => {
       if (sortKey === 'soon') return (a.day < 0 ? 999 : a.day) - (b.day < 0 ? 999 : b.day);
       if (sortKey === 'pop') return (b.viewers || roster[b.artistIdx].followers.replace(/\D/g, '') / 100) - (a.viewers || roster[a.artistIdx].followers.replace(/\D/g, '') / 100);
@@ -191,13 +191,13 @@
       return score(a) - score(b);
     };
 
-/* ── livesAll  —  calcul dans renderReady()  —  L5373–5373 ── */
+/* ── livesAll  —  computation in renderReady()  —  L5373–5373 ── */
     const livesAll = catalogue.filter(o => o.kind !== 'replay' && passFilters(o)).sort(sortFn);
 
-/* ── replaysAll  —  calcul dans renderReady()  —  L5374–5374 ── */
+/* ── replaysAll  —  computation in renderReady()  —  L5374–5374 ── */
     const replaysAll = catalogue.filter(o => o.kind === 'replay' && passFilters(o)).sort(sortFn);
 
-/* ── artistsAll  —  calcul dans renderReady()  —  L5375–5396 ── */
+/* ── artistsAll  —  computation in renderReady()  —  L5375–5396 ── */
     const artistsAll = roster.filter(a => {
       if (qq && (a.name + ' ' + a.discipline + ' ' + a.showTitle).toLowerCase().indexOf(qq) < 0) return false;
       if (s.fCats.length && !catalogue.some(o => o.artistIdx === a.i && s.fCats.indexOf(o.cat) > -1)) return false;
@@ -221,37 +221,37 @@
       });
     });
 
-/* ── artistsHL  —  calcul dans renderReady()  —  L5398–5401 ── */
+/* ── artistsHL  —  computation in renderReady()  —  L5398–5401 ── */
     const artistsHL = artistsAll.map(a => Object.assign({}, a, {
       nHit: this.splitHit(a.name, qq),
       sHit: this.splitHit(a.showTitle, qq)
     }));
 
-/* ── goTabLives  —  clé du modèle rendu  —  L5670–5670 ── */
+/* ── goTabLives  —  key of the rendered model  —  L5670–5670 ── */
       goTabLives: () => this.setState({ sTab: 'lives' }),
 
-/* ── goTabArtists  —  clé du modèle rendu  —  L5671–5671 ── */
+/* ── goTabArtists  —  key of the rendered model  —  L5671–5671 ── */
       goTabArtists: () => this.setState({ sTab: 'artists' }),
 
-/* ── goTabReplays  —  clé du modèle rendu  —  L5672–5672 ── */
+/* ── goTabReplays  —  key of the rendered model  —  L5672–5672 ── */
       goTabReplays: () => this.setState({ sTab: 'replays' }),
 
-/* ── showBest  —  clé du modèle rendu  —  L5674–5674 ── */
+/* ── showBest  —  key of the rendered model  —  L5674–5674 ── */
       showBest: s.sTab === 'best', showLives: s.sTab === 'lives', showArtists: s.sTab === 'artists', showReplays: s.sTab === 'replays',
 
-/* ── bestLives  —  clé du modèle rendu  —  L5679–5679 ── */
+/* ── bestLives  —  key of the rendered model  —  L5679–5679 ── */
       bestLives: livesAll.slice(0, capOv), bestArtists: artistsHL.slice(0, capOv), bestReplays: replaysAll.slice(0, capOv),
 
-/* ── hasLives  —  clé du modèle rendu  —  L5680–5680 ── */
+/* ── hasLives  —  key of the rendered model  —  L5680–5680 ── */
       hasLives: livesAll.length > 0, hasArtistsRes: artistsAll.length > 0, hasReplays: replaysAll.length > 0,
 
-/* ── hasSuggArtists  —  clé du modèle rendu  —  L5857–5857 ── */
+/* ── hasSuggArtists  —  key of the rendered model  —  L5857–5857 ── */
       hasSuggArtists: suggArtists.length > 0, hasSuggShows: suggShows.length > 0,
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (12) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (12) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2452  dateToCome: "date à venir"
@@ -293,8 +293,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

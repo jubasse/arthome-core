@@ -1,22 +1,25 @@
 <!--
-  ÉCRAN      Compte — Confidentialité
+  SCREEN     Account — Privacy
   ROUTE      page === 'account', accTab === 'privacy'
-  AFFICHE    Consentements, cookies, durées de conservation, droits RGPD, documents, contact du délégué à la protection des données.
-  MÈNE VERS  account
+  SHOWS      Consents, cookies, retention periods, GDPR rights, documents, data protection officer contact.
+  LEADS TO   account
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2798-2872
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2798-2872
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — updateConsents, requestExport, requestAccountDeletion, contactSupport
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — updateConsents, requestExport, requestAccountDeletion, contactSupport
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : account, availW, followed, fr, locked, s, t, tickets
-  À LIRE     dépendances non recopiées ici : tierDefs, tierIdx
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: account, availW, followed, fr, locked, s, t, tickets
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: tierDefs, tierIdx
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
       <sc-if value="{{ accPrivacy }}" hint-placeholder-val="{{ false }}">
       <div style="animation: fadeIn .3s ease both; max-width: 760px;">
@@ -94,20 +97,20 @@
       </sc-if>
 
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* tiers  —  lignes 5083-5088 */
+/* tiers  —  lines 5083-5088 */
     const tiers = tierDefs.map(([name, price, desc], i) => ({
       name, price, desc,
       pick: () => this.setState({ tier: i }),
       style: 'cursor: pointer; padding: 14px; border: 1px solid ' + (tierIdx === i ? '#EDE7DC' : '#262320') +
         '; background: ' + (tierIdx === i ? '#141210' : 'transparent') + ';'
     }));
-/* accStack  —  lignes 5747-5747 */
+/* accStack  —  lines 5747-5747 */
     const accStack = availW < 760;
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       accH2: accStack ? 'display: none;' : '',
@@ -163,19 +166,20 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.accPrivacy  t.helpCta  t.privConsents  t.privCookies  t.privDocs  t.privDpo  
     t.privDpoHint  t.privLocked  t.privOff  t.privOn  t.privRead  t.privRetention  
     t.privRetentionText  t.privRights  t.privRun  t.privUpdated  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     accTab  consents  cookies  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

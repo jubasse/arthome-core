@@ -1,28 +1,28 @@
 <!--
-  ÉCRAN        agenda
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Les gardes de la personne, toutes chaînes confondues, avec les chevauchements.
-  RÔLES        regie · mod
-  MÈNE VERS    écrans : regie
+  SCREEN       agenda
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        The person's duties, across every channel, with the overlaps.
+  ROLES        regie · mod
+  LEADS TO     screens: regie
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  pgAgenda L165-232 · hasBlocks L731-791
-               modèle    L2011-2064
-  CLÉS DE COPIE
-               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
-               - table STATES en dur (draft|hidden|sched|tech|live|done|replay — vocabulaire parallèle, D2)
-               - table ROLES en dur (six personas — libellé, jamais un droit, E6)
-  CONTRAT
-               - needs §« Ce qui distingue cette surface » 1 (la racine est une personne)
-               - needs §Confrontation C11 (Duty ne porte pas le fuseau de la salle)
+               markup      pgAgenda L165-232 · hasBlocks L731-791
+               view model  L2011-2064
+  COPY KEYS
+               - EN table at the top of the script (a parallel translation, outside i18n — see _index.md, note D2)
+               - hardcoded STATES table (draft|hidden|sched|tech|live|done|replay — a parallel vocabulary, D2)
+               - hardcoded ROLES table (six personas — a label, never a right, E6)
+  CONTRACT
+               - needs §"What sets this surface apart" 1 (the root is a person)
+               - needs §Confrontation C11 (Duty does not carry the venue timezone)
                - openapi GET /v1/me/duties
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!-- ---- pgAgenda (L165-232) ---- -->
     <sc-if value="{{ pgAgenda }}" hint-placeholder-val="{{ false }}">
@@ -95,12 +95,12 @@
     </sc-if>
 
 <!--
-  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
-  partagé par tous les écrans, et n'est pas recopié ici :
+  Generic markup driven by this view model — it lives in _blocks.html,
+  shared by every screen, and is not copied here:
     hasBlocks      L731-791
 -->
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
   page_agenda(c) {

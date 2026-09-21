@@ -1,22 +1,25 @@
 <!--
-  ÉCRAN      Recherche et suggestions
-  ROUTE      superposition, sans URL
-  AFFICHE    Le champ de recherche de l'en-tête, son voile plein écran, et le panneau de suggestions : recherches récentes, artistes, spectacles, « voir tous les résultats ».
-  MÈNE VERS  browse · artist · live
+  SCREEN     Search and suggestions
+  ROUTE      overlay, no URL
+  SHOWS      The header search field, its full-screen veil, and the suggestion panel: recent searches, artists, shows, "see all results".
+  LEADS TO   browse · artist · live
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 72-130
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 72-130
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — search
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — search
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : artist, fr, roster, s, sideDrawer, t
-  À LIRE     dépendances non recopiées ici : REPLAY, matchQ
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: artist, fr, roster, s, sideDrawer, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: REPLAY, matchQ
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
     <sc-if value="{{ searchModal }}" hint-placeholder-val="{{ false }}">
       <div onClick="{{ closeSearch }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.82); backdrop-filter: blur(6px); animation: fadeIn .18s ease both;"></div>
@@ -78,17 +81,17 @@
       </sc-if>
     </div>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* q  —  lignes 5699-5699 */
+/* q  —  lines 5699-5699 */
     const q = s.query.trim().toLowerCase();
-/* suggArtists  —  lignes 5701-5705 */
+/* suggArtists  —  lines 5701-5705 */
     const suggArtists = q ? roster.filter(a => matchQ(a.name, a.discipline)).slice(0, 4).map(a => ({
       name: a.name, img: a.portrait, imgCss: this.cssUrl(a.portrait), open: () => this.setState({ page: 'artist', artistId: a.i, suggOpen: false, searchOpen: false }),
       isLive: a.isLive, status: a.isLive ? t.onNow : a.discipline.toUpperCase(),
       statusColor: a.isLive ? 'oklch(0.78 0.14 27)' : '#857E73'
     })) : [];
-/* suggShows  —  lignes 5706-5712 */
+/* suggShows  —  lines 5706-5712 */
     const suggShows = q ? roster.filter(a => matchQ(a.showTitle)).slice(0, 4).map(a => ({
       name: a.showTitle, artist: a.name, img: a.showImg, imgCss: this.cssUrl(a.showImg),
       open: () => this.setState({ page: 'live', artistId: a.i, suggOpen: false, searchOpen: false, watching: a.i, watchKind: 'live', pipClosed: false }),
@@ -98,7 +101,7 @@
 
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       query: s.query, draft: s.draft,
@@ -131,18 +134,19 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.noArtistFound  t.noShowFound  t.onNow  t.search  t.seeAll  t.suggArtistsLabel  
     t.suggNothing  t.suggShowsLabel  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     draft  page  query  searchOpen  suggOpen  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     cssUrl, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

@@ -1,21 +1,20 @@
 <!--
-  ÉCRAN      Amorçage et enveloppe du document
-  ROUTE      avant toute route
-  AFFICHE    L'en-tête du document, les jetons de style, le grain, et l'écran d'amorçage avec son état d'erreur — le seul écran qu'un robot d'indexation ne doit jamais voir.
-  MÈNE VERS  toutes les routes, une fois `dataReady` vrai
+  SCREEN     Boot screen and document shell
+  ROUTE      before any route
+  SHOWS      The document head, the style tokens, the grain, and the boot screen with its error state — the one screen a crawler must never see.
+  LEADS TO   every route, once `dataReady` is true
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 1-58
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 1-58
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Contient `bootError` : l'erreur de chargement du catalogue est un état de premier
-             ordre.
+  NOTE       Carries `bootError`: a catalogue load failure is a first-class state.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <!DOCTYPE html>
 <html>
@@ -76,9 +75,9 @@
 </sc-if>
 
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

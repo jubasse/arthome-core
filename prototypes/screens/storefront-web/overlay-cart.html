@@ -1,25 +1,28 @@
 <!--
-  ÉCRAN      Panier — popover à trois temps
-  ROUTE      superposition, sans URL
-  AFFICHE    Le panier : liste des lignes avec quantités et vendeur, paiement, confirmation. Il ne porte que de la marchandise.
-  MÈNE VERS  account-orders · live-store
+  SCREEN     Cart — three-step popover
+  ROUTE      overlay, no URL
+  SHOWS      The cart: line list with quantities and seller, payment, confirmation. It carries merchandise only.
+  LEADS TO   account-orders · live-store
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 172-252
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 172-252
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Trois temps : `cartStep` vaut 'list', 'pay' puis 'done'. Défaut relevé au temps 3 :
-             aucune opération ne rend de `clientSecret` ni d'URL de retour — le paiement 3-D Secure
-             n'a pas de chemin.
+  NOTE       Three steps: `cartStep` is 'list', then 'pay', then 'done'. Defect found in round 3:
+             no operation returns a `clientSecret` or a return URL — the 3-D Secure payment has no
+             path.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — getCart, addCartLine, updateCartLine, removeCartLine, quoteCart, checkoutCart
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — getCart, addCartLine, updateCartLine, removeCartLine, quoteCart, checkoutCart
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : account, fr, s, t
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: account, fr, s, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
       <div data-pop="cart" style="{{ memberOnly }} position: relative;">
         <span onClick="{{ toggleCart }}" title="{{ t.cartTitle }}" style="{{ cartStyle }}" style-hover="border-color:#4A423A;color:#EDE7DC">{{ cartBadge }}</span>
@@ -103,13 +106,13 @@
         <span style="display: block; width: 15px; height: 9px; border-top: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; position: relative;"><span style="position: absolute; left: 0; right: 0; top: 3.5px; height: 1.5px; background: currentColor;"></span></span>
       </span>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* cartCount  —  lignes 6231-6231 */
+/* cartCount  —  lines 6231-6231 */
     const cartCount = s.cartLines.reduce((n, l) => n + l.qty, 0);
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       cartBadge: (fr ? 'Panier' : 'Cart') + (cartCount ? ' · ' + cartCount : ''),
@@ -161,19 +164,20 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.accOrders  t.cartBackToShow  t.cartCard  t.cartCheckout  t.cartDone  t.cartDoneHint  
     t.cartEmpty  t.cartEmptyHint  t.cartFrom  t.cartGoStore  t.cartHead  t.cartItem  
     t.cartItems  t.cartPay  t.cartRemove  t.cartShip  t.cartSubtotal  t.cartTitle  t.menuTitle  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     cartLines  cartOpen  cartStep  guest  menuOpen  orders  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     cssUrl, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

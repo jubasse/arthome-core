@@ -1,27 +1,27 @@
 <!--
-  ÉCRAN        event
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      La fiche d'une date : machine à états, liste de contrôle, série, gestes irréversibles.
-  RÔLES        artist · prod · regie
-  MÈNE VERS    feuilles : confirm, del, dup, poster
+  SCREEN       event
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        A date's record: state machine, checklist, series, irreversible gestures.
+  ROLES        artist · prod · regie
+  LEADS TO     sheets: confirm, del, dup, poster
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  pgEvent L354-416 · hasNote L555-557 · hasForm L610-648 · hasBlocks L731-791
-               modèle    L3512-3582 · L3644-3772
-  CLÉS DE COPIE
-               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
-               - table STATES en dur (draft|hidden|sched|tech|live|done|replay — vocabulaire parallèle, D2)
-  CONTRAT
-               - needs §Les commandes (verrous et transitions sans retour)
+               markup      pgEvent L354-416 · hasNote L555-557 · hasForm L610-648 · hasBlocks L731-791
+               view model  L3512-3582 · L3644-3772
+  COPY KEYS
+               - EN table at the top of the script (a parallel translation, outside i18n — see _index.md, note D2)
+               - hardcoded STATES table (draft|hidden|sched|tech|live|done|replay — a parallel vocabulary, D2)
+  CONTRACT
+               - needs §Commands (locks and one-way transitions)
                - openapi GET /v1/dates/{dateId}/sheet
                - openapi POST /v1/dates/{dateId}/publication/transitions
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!-- ---- pgEvent (L354-416) ---- -->
     <sc-if value="{{ pgEvent }}" hint-placeholder-val="{{ false }}">
@@ -89,14 +89,14 @@
     </sc-if>
 
 <!--
-  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
-  partagé par tous les écrans, et n'est pas recopié ici :
+  Generic markup driven by this view model — it lives in _blocks.html,
+  shared by every screen, and is not copied here:
     hasNote        L555-557
     hasForm        L610-648
     hasBlocks      L731-791
 -->
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
   page_event(c) {

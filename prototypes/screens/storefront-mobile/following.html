@@ -2,30 +2,30 @@
   Arthome · storefront mobile — following
   ══════════════════════════════════════════════════════════════════════════
   Route      : following
-  Affiche    : Suivi : les artistes suivis en direct, puis ceux qui ne le sont pas, classés par nom et dernier live.
-  Mène vers  : artist, live
-  Contrat    : ⚠ AUCUN POINT D'ENTRÉE — voir Confrontation C1
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1054–1108
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : Following: followed artists who are live, then those who are not, sorted by name and last live.
+  Leads to   : artist, live
+  Contract   : ⚠ NO ENDPOINT — see Confrontation C1
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1054–1108
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
-  Note       : ⚠ ÉCRAN NON SERVI. Aucun point d'entrée de openapi/storefront.yaml ne rend
-               l'ensemble des artistes suivis : /v1/artists n'a pas de filtre followedOnly,
-               AccountScreen ne porte aucun suivi, /v1/me/follows/{artistId} est en ecriture
-               seule. Voir needs/storefront-mobile.md § Confrontation C1.
+  Note       : ⚠ UNSERVED SCREEN. No endpoint in openapi/storefront.yaml returns the set
+               of artists a viewer follows: /v1/artists has no followedOnly filter,
+               AccountScreen carries no follows, /v1/me/follows/{artistId} is write-only.
+               See needs/storefront-mobile.md § Confrontation C1.
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1054–1108
+     MARKUP — L1054–1108
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ isFollowing }}" hint-placeholder-val="{{ false }}">
 <div style="animation: fadeIn .3s ease both; padding: 18px 16px 0;">
@@ -84,10 +84,10 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (6 symboles)
+     VIEW MODEL — specific to this screen (6 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── followRow  —  calcul dans renderReady()  —  L5121–5130 ── */
+/* ── followRow  —  computation in renderReady()  —  L5121–5130 ── */
     const followRow = (a, i) => ({
       liveLabel: a.isLive ? t.onNow : '',
       liveColor: 'oklch(0.72 0.16 27)',
@@ -99,10 +99,10 @@
       })
     });
 
-/* ── followLive  —  calcul dans renderReady()  —  L5131–5131 ── */
+/* ── followLive  —  computation in renderReady()  —  L5131–5131 ── */
     const followLive = followed.filter(a => a.isLive).map((a, i) => Object.assign({}, a, followRow(a, i)));
 
-/* ── followOffline  —  calcul dans renderReady()  —  L5132–5141 ── */
+/* ── followOffline  —  computation in renderReady()  —  L5132–5141 ── */
     const followOffline = followed.filter(a => !a.isLive).map((a, i) => {
       const hasReplay = a.replay !== 'off';
       return Object.assign({}, a, followRow(a, i), {
@@ -114,19 +114,19 @@
       });
     });
 
-/* ── noFollowLive  —  clé du modèle rendu  —  L6082–6082 ── */
+/* ── noFollowLive  —  key of the rendered model  —  L6082–6082 ── */
       noFollowLive: followLive.length === 0,
 
-/* ── followingCountLabel  —  clé du modèle rendu  —  L6434–6434 ── */
+/* ── followingCountLabel  —  key of the rendered model  —  L6434–6434 ── */
       followingCountLabel: followed.length + (fr ? ' ARTISTES SUIVIS' : ' ARTISTS FOLLOWED'),
 
-/* ── followLiveCount  —  clé du modèle rendu  —  L6435–6435 ── */
+/* ── followLiveCount  —  key of the rendered model  —  L6435–6435 ── */
       followLiveCount: followLive.length + (fr ? ' EN DIRECT' : ' LIVE'),
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (9) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (9) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2470  emptyFollowLive: "Aucun artiste suivi n’est en direct"
@@ -159,8 +159,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

@@ -1,24 +1,27 @@
 <!--
-  ÉCRAN      Compte — Sécurité et connexion
+  SCREEN     Account — Security and sign-in
   ROUTE      page === 'account', accTab === 'security'
-  AFFICHE    Mot de passe, double authentification, clé d'accès, moyens de paiement, et les appareils connectés.
-  MÈNE VERS  account
+  SHOWS      Password, two-factor authentication, passkey, payment methods, and connected devices.
+  LEADS TO   account
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2873-2907
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2873-2907
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Défaut relevé au temps 3 : les quatre actions de cette section n'ont AUCUNE opération
-             dans `openapi/storefront.yaml`.
+  NOTE       Defect found in round 3: the four actions of this section have NO operation in
+             `openapi/storefront.yaml`.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — revokeDevice, signOutProfile
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — revokeDevice, signOutProfile
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : A, availW, fr
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: A, availW, fr
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
       <sc-if value="{{ accSecurity }}" hint-placeholder-val="{{ false }}">
       <div style="animation: fadeIn .3s ease both; max-width: 760px;">
@@ -56,11 +59,11 @@
       </sc-if>
     </div>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* accStack  —  lignes 5747-5747 */
+/* accStack  —  lines 5747-5747 */
     const accStack = availW < 760;
-/* securityRows  —  lignes 5908-5922 */
+/* securityRows  —  lines 5908-5922 */
     const securityRows = (fr ? [
       ['Mot de passe', 'MODIFIÉ IL Y A 4 MOIS', '#8B857C', 'Un mot de passe unique de 12 caractères minimum.', 'Modifier'],
       ['Double authentification', 'ACTIVÉE ✓', 'oklch(0.7 0.13 150)', 'Application d\u2019authentification · codes de secours générés en mars 2026.', 'Gérer'],
@@ -76,7 +79,7 @@
       action: () => this.setState({ accTab: 'security' })
     }));
 
-/* sessions  —  lignes 5923-5933 */
+/* sessions  —  lines 5923-5933 */
     const sessions = (fr ? [
       ['MacBook Pro · Lyon', 'CHROME · SESSION ACTUELLE · IL Y A 2 MIN', 'oklch(0.7 0.13 150)', 'CETTE SESSION', '#6B6459'],
       ['iPhone 15 · Lyon', 'APPLI ARTHOME · IL Y A 3 H', '#8B857C', 'DÉCONNECTER', '#C9C0B2'],
@@ -90,7 +93,7 @@
 
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       accH2: accStack ? 'display: none;' : '',
@@ -99,14 +102,15 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.accSecurity  t.sessions  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

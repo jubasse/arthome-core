@@ -1,22 +1,25 @@
 <!--
-  ÉCRAN      Discipline — section Artistes
+  SCREEN     Discipline — Artists section
   ROUTE      page === 'category', catTab === 'art'
-  AFFICHE    Les artistes de la discipline.
-  MÈNE VERS  artist
+  SHOWS      The artists of the discipline.
+  LEADS TO   artist
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2032-2060
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2032-2060
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — getCategoryScreen, listArtists
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — getCategoryScreen, listArtists
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : artist, catalogue, colsOf, colsWideN, fr, roster, s, subsSel, tileCols
-  À LIRE     dépendances non recopiées ici : catArtList, catStep, dateMatch, ovMore, pgArtists, pgCatLive, pgCatRep, pgCatUp, pgLives, pgReplays, priceMatch
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: artist, catalogue, colsOf, colsWideN, fr, roster, s, subsSel, tileCols
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: catArtList, catStep, dateMatch, ovMore, pgArtists, pgCatLive, pgCatRep, pgCatUp, pgLives, pgReplays, priceMatch
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
     <sc-if value="{{ catShowArt }}" hint-placeholder-val="{{ false }}">
     <h2 id="cat-art" style="margin: 48px 0 16px; font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 32px; scroll-margin-top: 90px;">{{ t.catArtists }}</h2>
@@ -48,9 +51,9 @@
     </sc-if>
     </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* catPool  —  lignes 6176-6191 */
+/* catPool  —  lines 6176-6191 */
     const catPool = catalogue.filter(o => {
       if (o.cat !== s.catId) return false;
       if (subsSel.length && !subsSel.some(i => o.subs.indexOf(i) > -1)) return false;
@@ -67,11 +70,11 @@
       if (s.cSort === 'priceDown') return b.price - a.price;
       return 0;
     });
-/* catOv  —  lignes 6192-6192 */
+/* catOv  —  lines 6192-6192 */
     const catOv = s.catTab === 'ov';
-/* pgCatArt  —  lignes 6201-6201 */
+/* pgCatArt  —  lines 6201-6201 */
     const pgCatArt = this.paged('catArt', catArtList, catStep, fr);
-/* mArt  —  lignes 6209-6215 */
+/* mArt  —  lines 6209-6215 */
     const mArt = ovMore(pgCatArt, catArtList, 'art');
 
     this._pg = {
@@ -81,7 +84,7 @@
 
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       catArtistsStyle: 'display: grid; grid-template-columns: ' +
@@ -96,17 +99,18 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.catArtists  t.emptyCatArtists  t.emptyCatHint  t.followersShort  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     cAlmost  cDate  cPrices  cPromo  cSort  cStatus  cView  catId  catTab  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     paged, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

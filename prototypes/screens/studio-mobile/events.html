@@ -1,26 +1,26 @@
 <!--
-  ÉCRAN        events
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Le tableau des dates : recherche, filtre multi-états, six clés de tri, pagination.
-  RÔLES        artist · prod · regie
-  MÈNE VERS    écrans : wizard · feuilles : sort, states
+  SCREEN       events
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        The dates table: search, multi-state filter, six sort keys, pagination.
+  ROLES        artist · prod · regie
+  LEADS TO     screens: wizard · sheets: sort, states
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  pgEvents L294-352 · hasMore L795-806 · hasFooterAct L808-810
-               modèle    L3437-3511
-  CLÉS DE COPIE
-               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
-               - table STATES en dur (draft|hidden|sched|tech|live|done|replay — vocabulaire parallèle, D2)
-  CONTRAT
-               - needs §Pagination et volumes (six clés de tri, tri par recette refusé)
+               markup      pgEvents L294-352 · hasMore L795-806 · hasFooterAct L808-810
+               view model  L3437-3511
+  COPY KEYS
+               - EN table at the top of the script (a parallel translation, outside i18n — see _index.md, note D2)
+               - hardcoded STATES table (draft|hidden|sched|tech|live|done|replay — a parallel vocabulary, D2)
+  CONTRACT
+               - needs §Pagination and volumes (six sort keys, revenue sort refused)
                - openapi GET /v1/channels/{channelId}/events
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!-- ---- pgEvents (L294-352) ---- -->
     <sc-if value="{{ pgEvents }}" hint-placeholder-val="{{ false }}">
@@ -84,13 +84,13 @@
     </sc-if>
 
 <!--
-  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
-  partagé par tous les écrans, et n'est pas recopié ici :
+  Generic markup driven by this view model — it lives in _blocks.html,
+  shared by every screen, and is not copied here:
     hasMore        L795-806
     hasFooterAct   L808-810
 -->
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
   page_events(c) {

@@ -1,42 +1,42 @@
 <!--
 ==============================================================================
-  ÉCRAN — _shared — constantes, dictionnaire EN, horloges, pont de données
+  SCREEN — _shared — constants, EN dictionary, clocks, data bridge
 ==============================================================================
 
-  Ce qu'il affiche : les jetons de couleur, la table de traduction littérale EN, le décalage d'heure de salle, les tables remplies depuis shared/studio-data.js, et les fabriques communes (chip, pill, barsFrom, hms)
+  What it shows: the colour tokens, the EN literal translation table, the venue-time shift, the tables filled from shared/studio-data.js, and the shared builders (chip, pill, barsFrom, hms)
 
-  Rôles qui l'ouvrent : tous
-  Mène vers : tous les écrans
+  Roles that open it: everyone
+  Leads to: every screen
 
-  Source : mockups/Studio.dc.html
-    balisage        aucun — préambule du script
-    modèle de vue   lignes 2349–2354, 2373–2432, 2443–2467, 2468–2508, 3263–3294, 3374–3381
+  Source: mockups/Studio.dc.html
+    markup          none — script preamble
+    view model      lines 2349–2354, 2373–2432, 2443–2467, 2468–2508, 3263–3294, 3374–3381
 
-  Clés de copie employées :
-    aucune clé i18n directe
+  Copy keys used:
+    no direct i18n key
 
-  Contrat :
-    besoins   needs/studio-web.md § « Contraintes propres au studio »
+  Contract:
+    needs     needs/studio-web.md § "Constraints specific to the studio"
     openapi   openapi/studio.yaml · getStudioBootstrap (constants, labelCatalog, realtime)
 
-  Relevé d'extraction (défauts vus, non corrigés) :
-    · la copie n'est PAS en clés i18n : `tr(s, en)` traduit des LITTÉRAUX FRANÇAIS par la table EN. Le contrat impose l'inverse (i18n par codes) — à porter, pas à recopier.
-    · shiftTime dérive l'heure de salle d'un décalage figé (utcOffsetMin) : errata D3, le contrat porte un identifiant IANA et un instant UTC.
-    · loadArthome cherche helpers.js, fixtures.js, studio-data.js, catalogue.json, taxonomy.json et i18n/ À CÔTÉ du .html : errata B4, il faut copier shared/ à côté des maquettes.
+  Extraction notes (defects seen, left uncorrected):
+    · the copy is NOT in i18n keys: `tr(s, en)` translates FRENCH LITERALS through the EN table. The contract requires the opposite (i18n by codes) — to be ported, not copied.
+    · shiftTime derives venue time from a frozen offset (utcOffsetMin): errata D3, the contract carries an IANA identifier and a UTC instant.
+    · loadArthome looks for helpers.js, fixtures.js, studio-data.js, catalogue.json, taxonomy.json and i18n/ NEXT TO the .html: errata B4, shared/ must be copied beside the mockups.
 
-  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+  EXTRACTED VERBATIM from Studio.dc.html — nothing has been corrected or rewritten.
 -->
 
-<!-- ===================== MODÈLE DE VUE ===================== -->
+<!-- ====================== VIEW MODEL ======================= -->
 <script type="text/x-dc-fragment">
-<!-- ···· modèle de vue · Studio.dc.html lignes 2349–2354 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2349–2354 ···· -->
 const OK = 'oklch(0.72 0.14 155)';
 const WARN = 'oklch(0.78 0.13 75)';
 const LIVE = 'oklch(0.7 0.19 27)';
 const INFO = 'oklch(0.72 0.11 235)';
 const MONO = "font-family: 'JetBrains Mono', monospace;";
 
-<!-- ···· modèle de vue · Studio.dc.html lignes 2373–2432 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2373–2432 ···· -->
 const EN = {
   /* navigation et pages */
   'Boîte': 'Inbox', 'BOÎTE': 'INBOX', 'BOÎTE VIDE': 'INBOX EMPTY',
@@ -97,7 +97,7 @@ const shiftTime = (hhmm, from, to) => {
   };
 };
 
-<!-- ···· modèle de vue · Studio.dc.html lignes 2443–2467 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2443–2467 ···· -->
 
 let DIRECTORY = [];
 
@@ -123,7 +123,7 @@ const IMG = {
   hands: U('photo-1526401281623-3a6c7c1c1e58')
 };
 
-<!-- ···· modèle de vue · Studio.dc.html lignes 2468–2508 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2468–2508 ···· -->
 class Component extends DCLogic {
   mainRef = React.createRef();
 
@@ -165,7 +165,7 @@ class Component extends DCLogic {
       this.setState({ dataReady: false, dataError: String(e && e.message || e) });
     }
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 3263–3294 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3263–3294 ···· -->
   chip(on) {
     return 'cursor: pointer; padding: 6px 10px; white-space: nowrap; ' + MONO
       + 'font-size: 9.5px; letter-spacing: 0.1em; border: 1px solid '
@@ -198,7 +198,7 @@ class Component extends DCLogic {
     }
     return out;
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 3374–3381 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3374–3381 ···· -->
   hms(n) {
     /* Un chapitre posé avant le lever de rideau a un horodatage négatif :
        le signe se sort du calcul, sinon chaque part le porte. */

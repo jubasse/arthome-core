@@ -1,24 +1,27 @@
 <!--
-  ÉCRAN      Authentification
-  ROUTE      superposition, sans URL
-  AFFICHE    Créer un compte ou se connecter : nom, courriel, mot de passe, bascule entre les deux, et « continuer sans compte ».
-  MÈNE VERS  toutes les routes réservées aux membres
+  SCREEN     Authentication
+  ROUTE      overlay, no URL
+  SHOWS      Create an account or sign in: name, email, password, toggle between the two, and "continue without an account".
+  LEADS TO   every member-only route
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 3062-3090
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 3062-3090
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Défaut relevé au temps 3 : l'authentification n'a AUCUNE opération dans
-             `openapi/storefront.yaml`. C'est la porte d'entrée du produit.
+  NOTE       Defect found in round 3: authentication has NO operation in `openapi/storefront.yaml`.
+             It is the front door of the product.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : s, t
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: s, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <sc-if value="{{ authOpen }}" hint-placeholder-val="{{ false }}">
 <div onClick="{{ closeAuth }}" style="position: fixed; inset: 0; z-index: 8700; background: rgba(6,5,5,0.82); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .2s ease both;">
@@ -50,7 +53,7 @@
 </div>
 </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       stopEvt: e => { if (e && e.stopPropagation) e.stopPropagation(); },
@@ -64,18 +67,19 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.authAlt  t.authEmail  t.authGo  t.authIntroIn  t.authIntroUp  t.authName  t.authPass  
     t.authSwitchIn  t.authSwitchUp  t.authTitleIn  t.authTitleUp  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     authOpen  authTab  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

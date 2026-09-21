@@ -1,34 +1,34 @@
 <!--
-  ÉCRAN        moderation
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      La console de modération : quatre sous-onglets, une bande d'état commune.
-  RÔLES        mod
-  MÈNE VERS    aucun (écran terminal)
+  SCREEN       moderation
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        The moderation console: four sub-tabs, one shared status band.
+  ROLES        mod
+  LEADS TO     none (terminal screen)
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  hasBand L475-485 · hasTabs L487-495
-               modèle    L2304-2334
-  CLÉS DE COPIE
-               - aucune — libellés français en dur dans le modèle de vue
-  CONTRAT
-               - needs §« Le temps réel en situation de garde »
+               markup      hasBand L475-485 · hasTabs L487-495
+               view model  L2304-2334
+  COPY KEYS
+               - none — French labels hardcoded in the view model
+  CONTRACT
+               - needs §"Real time on duty"
                - openapi GET /v1/channels/{channelId}/moderation/queue
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!--
-  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
-  partagé par tous les écrans, et n'est pas recopié ici :
+  Generic markup driven by this view model — it lives in _blocks.html,
+  shared by every screen, and is not copied here:
     hasBand        L475-485
     hasTabs        L487-495
 -->
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
   page_moderation(c) {

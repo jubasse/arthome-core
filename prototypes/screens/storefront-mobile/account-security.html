@@ -2,25 +2,25 @@
   Arthome · storefront mobile — account-security
   ══════════════════════════════════════════════════════════════════════════
   Route      : account · accTab=security
-  Affiche    : Sécurité : mot de passe, double authentification, clé d'accès, moyens de paiement, sessions actives.
-  Mène vers  : —
-  Contrat    : DELETE /v1/me/devices/{deviceId} · DELETE /v1/me/device-sessions/{sessionId}
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1672–1701
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : Security: password, two-factor authentication, passkey, payment methods, active sessions.
+  Leads to   : —
+  Contract   : DELETE /v1/me/devices/{deviceId} · DELETE /v1/me/device-sessions/{sessionId}
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1672–1701
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1672–1701
+     MARKUP — L1672–1701
      ══════════════════════════════════════════════════════════════════════════ -->
       <sc-if value="{{ accSecurity }}" hint-placeholder-val="{{ false }}">
         <div>
@@ -54,10 +54,10 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (1 symboles)
+     VIEW MODEL — specific to this screen (1 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── securityRows  —  calcul dans renderReady()  —  L5310–5323 ── */
+/* ── securityRows  —  computation in renderReady()  —  L5310–5323 ── */
     const securityRows = (fr ? [
       ['Mot de passe', 'MODIFIÉ IL Y A 4 MOIS', '#8B857C', 'Un mot de passe unique de 12 caractères minimum.', 'Modifier'],
       ['Double authentification', 'ACTIVÉE ✓', 'oklch(0.7 0.13 150)', 'Application d\u2019authentification · codes de secours générés en mars 2026.', 'Gérer'],
@@ -76,7 +76,7 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (1) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (1) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2699  sessions: "APPAREILS CONNECTÉS"
@@ -85,8 +85,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

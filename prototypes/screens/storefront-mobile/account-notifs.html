@@ -2,25 +2,25 @@
   Arthome · storefront mobile — account-notifs
   ══════════════════════════════════════════════════════════════════════════
   Route      : account · accTab=notifs
-  Affiche    : Notifications : cinq déclencheurs × trois canaux, plus les heures calmes.
-  Mène vers  : —
-  Contrat    : PATCH /v1/me/notification-preferences
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1650–1671
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : Notifications: five triggers x three channels, plus quiet hours.
+  Leads to   : —
+  Contract   : PATCH /v1/me/notification-preferences
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1650–1671
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1650–1671
+     MARKUP — L1650–1671
      ══════════════════════════════════════════════════════════════════════════ -->
       <sc-if value="{{ accNotifs }}" hint-placeholder-val="{{ false }}">
         <div>
@@ -46,10 +46,10 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (2 symboles)
+     VIEW MODEL — specific to this screen (2 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── notifDefs  —  calcul dans renderReady()  —  L5281–5293 ── */
+/* ── notifDefs  —  computation in renderReady()  —  L5281–5293 ── */
     const notifDefs = fr ? [
       ['live', 'Un artiste suivi passe en direct', 'Envoyé dès l\u2019ouverture du flux.'],
       ['soon', 'Rappel avant un live pour lequel j\u2019ai une place', '30 minutes avant le lever de rideau.'],
@@ -64,7 +64,7 @@
       ['replay', 'A replay is about to expire', '6 hours before expiry.']
     ];
 
-/* ── notifRows  —  calcul dans renderReady()  —  L5294–5308 ── */
+/* ── notifRows  —  computation in renderReady()  —  L5294–5308 ── */
     const notifRows = notifDefs.map(([key, label, hint]) => ({
       label, hint,
       cells: [0, 1, 2].map(ci => {
@@ -84,7 +84,7 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (2) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (2) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2646  quietHours: "Heures calmes"
@@ -96,8 +96,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

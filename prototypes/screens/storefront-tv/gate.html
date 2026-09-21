@@ -1,18 +1,18 @@
 <!--
-  Écran      : gate
-  Route      : page === 'gate' — écran d'ouverture de l'application
-  Affiche    : Sélection du profil : jusqu'à cinq avatars, dont un profil enfant au catalogue filtré.
-  Mène vers  : home (choix d'un profil) · signin (ajouter un compte)
-  Partagé    : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
+  Screen     : gate
+  Route      : page === 'gate' — the app's opening screen
+  Shows      : Profile selection: up to five avatars, including a child profile with a filtered catalogue.
+  Leads to   : home (picking a profile) · signin (add an account)
+  Shared     : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
 
-  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
-    · pick() vide this.mem et this.stack : changer de profil efface la mémoire de focus. Voulu.
+  DEFECTS FOUND (not fixed — verbatim extraction):
+    · pick() clears this.mem and this.stack: switching profile erases focus memory. Intentional.
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger ici : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
-<!-- ═══════════ Balisage (verbatim, L112-145) ═══════════ -->
+<!-- ═══════════ Markup (verbatim, L112-145) ═══════════ -->
   <sc-if value="{{ pgGate }}" hint-placeholder-val="{{ true }}">
     <div style="position: absolute; inset: 0; background: #0B0A09; animation: fadeIn .4s ease both;">
       <sc-if value="{{ gateImg }}" hint-placeholder-val="{{ false }}"><img data-img="{{ gateImg }}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.5) brightness(.34); transform-origin: 50% 100%; animation: {{ ken }};" /></sc-if>
@@ -48,7 +48,7 @@
     </div>
   </sc-if>
 
-<!-- ═══════════ Modèle de vue (verbatim, L3244-3252) ═══════════ -->
+<!-- ═══════════ View model (verbatim, L3244-3252) ═══════════ -->
 <script type="text/x-dc-extract">
       me: { img: A(AVA[meProf.k]), name: meProf.name, tag: personaTag, tagCol: persona === 'visiteur' ? '#6B6459' : GOLD },
       gateImg: U(PIC.curtain),
@@ -61,7 +61,7 @@
       }))
 </script>
 
-<!-- ═══════════ browseAnon() — parcourir sans compte (verbatim, L2328-2333) ═══════════ -->
+<!-- ═══════════ browseAnon() — browse without an account (verbatim, L2328-2333) ═══════════ -->
 <script type="text/x-dc-extract">
   browseAnon() {
     clearTimeout(this.signT);
@@ -71,16 +71,16 @@
   }
 </script>
 
-<!-- ═══════════ CLÉS DE COPIE ═══════════
-  jeton du composant  →  clé i18n (shared/i18n/tv-keymap.json)
+<!-- ═══════════ COPY KEYS ═══════════
+  component token  →  i18n key (shared/i18n/tv-keymap.json)
     t.addAccount         → account.addAccount
-    t.addAccountHint     → account.addAccountHint   [majuscules]
+    t.addAccountHint     → account.addAccountHint   [uppercased]
     t.manageProfiles     → account.manageThisTv
     t.whoWatches         → account.whoWatches
 -->
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « Inventaire des écrans » : gate, 0 appel (les profils viennent de l'amorçage)
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "Screen inventory": gate, 0 calls (profiles arrive at start-up)
   openapi/storefront.yaml → getViewerContext (GET /v1/viewer-context) → ViewerContext.profiles[]
-  ProfileSummary porte allowedCategories : le filtrage enfant est SERVEUR, jamais client.
+  ProfileSummary carries allowedCategories: child filtering is SERVER-SIDE, never client-side.
 -->

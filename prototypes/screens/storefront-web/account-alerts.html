@@ -1,24 +1,27 @@
 <!--
-  ÉCRAN      Compte — Recherches enregistrées
+  SCREEN     Account — Saved searches
   ROUTE      page === 'account', accTab === 'alerts'
-  AFFICHE    Les recherches enregistrées : critères dépliables, canaux d'alerte, pause, renommage, suppression, et le nombre de correspondances.
-  MÈNE VERS  account
+  SHOWS      Saved searches: expandable criteria, alert channels, pause, rename, delete, and the number of matches.
+  LEADS TO   account
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2489-2572
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2489-2572
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       La signature de déduplication (`alertSig`) est calculée côté client dans la maquette ;
-             le contrat la rend au serveur (`criteriaSignature`).
+  NOTE       The deduplication signature (`alertSig`) is computed client-side in the mockup; the
+             contract makes it server-side (`criteriaSignature`).
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — listSavedSearches, updateSavedSearch, deleteSavedSearch
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — listSavedSearches, updateSavedSearch, deleteSavedSearch
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : A, availW, category, cats, fr, ordWide, s, t
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: A, availW, category, cats, fr, ordWide, s, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
       <sc-if value="{{ accAlerts }}" hint-placeholder-val="{{ false }}">
       <div style="animation: fadeIn .3s ease both; max-width: 860px;">
@@ -105,13 +108,13 @@
       </sc-if>
 
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* accStack  —  lignes 5747-5747 */
+/* accStack  —  lines 5747-5747 */
     const accStack = availW < 760;
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       accH2: accStack ? 'display: none;' : '',
@@ -228,9 +231,10 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.accAlerts  t.accAlertsSub  t.alertActive  t.alertChannels  t.alertCreatedAt  
     t.alertDelete  t.alertMatches  t.alertPause  t.alertPaused  t.alertRename  
     t.alertRenameHint  t.alertResume  t.alertSee  t.alertSeeCat  t.almostFull  t.d30  t.d7  
@@ -240,13 +244,13 @@
     t.sortPop  t.sortPriceDown  t.sortPriceUp  t.sortRelevance  t.sortSoon  t.stLive  
     t.stReplay  t.stSoon  t.subgenres  t.tabArtists  t.tabBest  t.tabLives  t.tabReplays  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     accTab  alerts  fAlmost  fCats  fDate  fExpiring  fHasDates  fPrices  fPromo  fStatus  
     fSubs  openAlerts  renameDraft  renameId  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     alertName, applyAlert, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

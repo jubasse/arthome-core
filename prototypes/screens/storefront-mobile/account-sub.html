@@ -2,25 +2,25 @@
   Arthome · storefront mobile — account-sub
   ══════════════════════════════════════════════════════════════════════════
   Route      : account · accTab=sub
-  Affiche    : Mon abonnement : échéance de renouvellement, moyen de paiement, ancienneté, avantages.
-  Mène vers  : plans
-  Contrat    : GET /v1/subscription
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1565–1596
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : My subscription: renewal date, payment method, seniority, benefits.
+  Leads to   : plans
+  Contract   : GET /v1/subscription
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1565–1596
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1565–1596
+     MARKUP — L1565–1596
      ══════════════════════════════════════════════════════════════════════════ -->
       <sc-if value="{{ accSub }}" hint-placeholder-val="{{ false }}">
         <div style="border: 1px solid rgba(214,178,102,0.3); background: rgba(214,178,102,0.04); padding: 16px;">
@@ -56,16 +56,16 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (1 symboles)
+     VIEW MODEL — specific to this screen (1 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── goPlans  —  clé du modèle rendu  —  L6238–6238 ── */
+/* ── goPlans  —  key of the rendered model  —  L6238–6238 ── */
       goPlans: () => this.setState({ page: 'plans', menuOpen: false, pick: null }),
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (5) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (5) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2741  subCancel: "Résilier l’abonnement"
@@ -86,8 +86,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

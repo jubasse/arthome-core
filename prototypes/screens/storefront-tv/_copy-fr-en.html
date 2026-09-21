@@ -1,15 +1,17 @@
 <!--
-  Mécanique  : dictionnaires de copie FR et EN, tels que le composant les porte
+  Mechanic   : FR and EN copy dictionaries, as the component carries them
   Source     : Storefront TV.dc.html, L1230-1593
-  ⚠ Ces dictionnaires sont une COMPILATION : la source de vérité est shared/i18n/,
-    et shared/i18n/tv-keymap.json donne la correspondance jeton → clé.
-    Le dossier le dit : « Regenerate the component dictionaries from i18n/ through this
-    map; never edit copy inside the .dc.html. »
-  Volume     : 1 126 clés pour la tranche storefront (storefront + taxonomy + system),
-               54 Ko bruts / 15,6 Ko compressés par langue — mesuré dans needs/.
+  ⚠ These dictionaries are a COMPILATION: the source of truth is shared/i18n/, and
+    shared/i18n/tv-keymap.json gives the token → key mapping.
+    The dossier says so: "Regenerate the component dictionaries from i18n/ through this
+    map; never edit copy inside the .dc.html."
+  ⚠ The French and English strings below are EXTRACTED CONTENT, not authored prose.
+    They are left byte-for-byte as the mockup carries them.
+  Volume     : 1,126 keys for the storefront slice (storefront + taxonomy + system),
+               54 KB raw / 15.6 KB compressed per language — measured in needs/.
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
 <!-- ═══════════ FR (verbatim, L1230-1412) ═══════════ -->
@@ -384,8 +386,8 @@ const EN = { // en
 
 </script>
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « États d'erreur et de chargement » (instantané embarqué obligatoire)
-  shared/i18n/tv-keymap.json — la correspondance jeton → clé, à rejouer au portage
-  openapi/storefront.yaml → ViewerContext.labelCatalog (artefact versionné, ne bloque jamais le premier rendu)
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "Error and loading states" (embedded snapshot mandatory)
+  shared/i18n/tv-keymap.json — the token → key mapping, to be replayed at port time
+  openapi/storefront.yaml → ViewerContext.labelCatalog (versioned artifact, never blocks the first render)
 -->

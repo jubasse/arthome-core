@@ -1,22 +1,25 @@
 <!--
-  ÉCRAN      Enregistrer une recherche
-  ROUTE      superposition, sans URL
-  AFFICHE    La modale d'enregistrement : nom optionnel, critères retenus, portée (recherche ou catégorie), canaux d'alerte, puis l'état confirmé.
-  MÈNE VERS  account-alerts · browse · category
+  SCREEN     Save a search
+  ROUTE      overlay, no URL
+  SHOWS      The save modal: optional name, criteria retained, scope (search or category), alert channels, then the confirmed state.
+  LEADS TO   account-alerts · browse · category
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 3131-3209
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 3131-3209
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — createSavedSearch
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — createSavedSearch
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : A, account, artist, category, cats, followed, fr, mk, roster, s, t
-  À LIRE     dépendances non recopiées ici : artistsAll, groupsOf, heroBase, livesAll, onArtistLive, replaysAll, watched, watchedShow, watchedViewers
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: A, account, artist, category, cats, followed, fr, mk, roster, s, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: artistsAll, groupsOf, heroBase, livesAll, onArtistLive, replaysAll, watched, watchedShow, watchedViewers
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <sc-if value="{{ saveOpen }}" hint-placeholder-val="{{ false }}">
 <div onClick="{{ closeSave }}" style="position: fixed; inset: 0; z-index: 8400; background: rgba(6,5,5,0.78); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .2s ease both;">
@@ -98,9 +101,9 @@
 </div>
 </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* trending  —  lignes 5197-5206 */
+/* trending  —  lines 5197-5206 */
     const trending = A.liveNow().slice(0, 6).map(d => {
       const show = A.show(d.show), art = A.artist(show.artist);
       const cat = A.label(A.category(show.category)).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US');
@@ -111,7 +114,7 @@
     });
 
     /* Vos artistes suivis, ou à défaut les plus suivis, avec ce qu'ils jouent. */
-/* faves  —  lignes 5207-5227 */
+/* faves  —  lines 5207-5227 */
     const faves = (() => {
       const followed = (s.follows || []).map(i => roster[i]).filter(Boolean);
       const pool = followed.length ? followed : roster.slice(0, 5);
@@ -133,7 +136,7 @@
       }));
     })().map(x => Object.assign(x, { open: () => this.openLive(x.artist), openArtist: this.goArtistFrom(x.artist) }));
 
-/* hero  —  lignes 5551-5571 */
+/* hero  —  lines 5551-5571 */
     const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
       title: s.pick.title,
       artist: s.pick.artist,
@@ -155,20 +158,20 @@
       priceLabel: watched.prices[0].amount ? A.price(watched.prices[0].amount) : (fr ? 'Gratuit' : 'Free'),
       img: A.showImage(watchedShow, 1600), imgCss: this.cssUrl(A.showImage(watchedShow, 1600))
     } : heroBase);
-/* qq  —  lignes 5934-5934 */
+/* qq  —  lines 5934-5934 */
     const qq = (s.liveQuery || '').trim().toLowerCase();
-/* savingCat  —  lignes 6071-6071 */
+/* savingCat  —  lines 6071-6071 */
     const savingCat = s.saveScope === 'category';
-/* savedGroups  —  lignes 6072-6073 */
+/* savedGroups  —  lines 6072-6073 */
     const savedGroups = groupsOf(savingCat ? this.catAlertState() : this.alertState());
 
-/* tabDefs  —  lignes 6074-6074 */
+/* tabDefs  —  lines 6074-6074 */
     const tabDefs = [['best', t.tabBest, livesAll.length + artistsAll.length + replaysAll.length], ['artists', t.tabArtists, artistsAll.length], ['lives', t.tabLives, livesAll.length], ['replays', t.tabReplays, replaysAll.length]];
-/* sortDefs  —  lignes 6082-6082 */
+/* sortDefs  —  lines 6082-6082 */
     const sortDefs = [['auto', qq ? t.sortRelevance : t.sortSoon], ['soon', t.sortSoon], ['pop', t.sortPop], ['priceUp', t.sortPriceUp], ['priceDown', t.sortPriceDown]];
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       saveOpen: s.saveOpen,
@@ -226,9 +229,10 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.saveAskIntro  t.saveAskTitle  t.saveCancel  t.saveCatAskIntro  t.saveCatAskTitle  
     t.saveCatTitle  t.saveChannels  t.saveClose  t.saveConfirm  t.saveEmail  t.saveFilters  
     t.saveIntro  t.saveManage  t.saveName  t.saveNameHint  t.saveNoFilters  t.saveNoQuery  
@@ -236,13 +240,13 @@
     t.sortPriceUp  t.sortRelevance  t.sortSoon  t.tabArtists  t.tabBest  t.tabLives  
     t.tabReplays  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     alerts  cSort  follows  liveQuery  page  pick  query  recent  sTab  saveName  saveOpen  
     saveScope  saveStep  sort  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     alertName, alertState, catAlertState, cssUrl, goArtistFrom, openLive, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

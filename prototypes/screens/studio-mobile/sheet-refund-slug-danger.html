@@ -1,26 +1,26 @@
 <!--
-  ÉCRAN        feuille · refund / slug / danger
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Trois feuilles qui partagent une branche : remboursement, adresse de page, zone sensible.
-  RÔLES        artist · prod · tres
-  MÈNE VERS    aucun (écran terminal)
+  SCREEN       sheet / refund · slug · danger
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        Three sheets sharing one branch: refund, page address, danger zone.
+  ROLES        artist · prod · tres
+  LEADS TO     none (terminal screen)
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  sheet L828-895
-               modèle    L4141-4157
-  CLÉS DE COPIE
-               - aucune — libellés français en dur dans le modèle de vue
-  CONTRAT
+               markup      sheet L828-895
+               view model  L4141-4157
+  COPY KEYS
+               - none — French labels hardcoded in the view model
+  CONTRACT
                - openapi POST /v1/seats/{seatId}/refund
                - openapi PATCH /v1/channels/{channelId}/identity
                - openapi DELETE /v1/channels/{channelId}
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!-- ---- sheet (L828-895) ---- -->
   <sc-if value="{{ shOpen }}" hint-placeholder-val="{{ false }}">
@@ -92,7 +92,7 @@
     </div>
   </sc-if>
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
     if (kind === 'refund' || kind === 'slug' || kind === 'danger') {

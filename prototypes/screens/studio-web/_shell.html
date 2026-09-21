@@ -1,35 +1,35 @@
 <!--
 ==============================================================================
-  ÉCRAN — _shell — coquille : barre latérale, sélecteur de chaîne, boîte, écran d'amorçage
+  SCREEN — _shell — shell: sidebar, channel picker, inbox, boot screen
 ==============================================================================
 
-  Ce qu'il affiche : la colonne de gauche (compte, chaîne courante, boîte, navigation filtrée) et l'écran d'attente tant que les données n'ont pas répondu
+  What it shows: the left column (account, current channel, inbox, filtered navigation) and the waiting screen until the data has answered
 
-  Rôles qui l'ouvrent : tous
-  Mène vers : les quinze entrées de navigation · inbox
+  Roles that open it: everyone
+  Leads to: the fifteen navigation entries · inbox
 
-  Source : mockups/Studio.dc.html
-    balisage        lignes 35–134, 2342–2345
-    modèle de vue   lignes 3982–4017, 4217–4221, 2586–2597
+  Source: mockups/Studio.dc.html
+    markup          lines 35–134, 2342–2345
+    view model      lines 3982–4017, 4217–4221, 2586–2597
 
-  Clés de copie employées :
-    aucune clé i18n directe
-    T(...) — littéraux français traduits par la table EN de _shared.html
+  Copy keys used:
+    no direct i18n key
+    T(...) — French literals translated by the EN table in _shared.html
 
-  Contrat :
-    besoins   needs/studio-web.md § « États d'erreur et de chargement » → « Le démarrage »
+  Contract:
+    needs     needs/studio-web.md § "Error and loading states" → "Start-up"
     openapi   openapi/studio.yaml · getStudioBootstrap
     openapi   openapi/studio.yaml · listInbox
     openapi   openapi/studio.yaml · markInboxRead
 
-  Relevé d'extraction (défauts vus, non corrigés) :
-    · l'écran d'amorçage porte l'identifiant de trace — c'est le seul moment où la personne peut le dicter au support.
+  Extraction notes (defects seen, left uncorrected):
+    · the boot screen carries the trace identifier — it is the only moment the person can read it out to support.
 
-  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+  EXTRACTED VERBATIM from Studio.dc.html — nothing has been corrected or rewritten.
 -->
 
-<!-- ======================= BALISAGE ======================= -->
-<!-- ···· balisage · Studio.dc.html lignes 35–134 ···· -->
+<!-- ======================== MARKUP ======================== -->
+<!-- ···· markup · Studio.dc.html lines 35–134 ···· -->
 <div style="display: flex; align-items: stretch; min-height: 100vh; background: #0E0F10; color: #E6E9EC; font-family: Archivo, sans-serif; font-size: 14px;">
 
   <sc-if value="{{ booting }}" hint-placeholder-val="{{ false }}">
@@ -130,15 +130,15 @@
 
   <main ref="{{ mainRef }}" style="flex: 1 1 auto; min-width: 0;">
 
-<!-- ···· balisage · Studio.dc.html lignes 2342–2345 ···· -->
+<!-- ···· markup · Studio.dc.html lines 2342–2345 ···· -->
   </main>
   </sc-if>
 
 </div>
 
-<!-- ===================== MODÈLE DE VUE ===================== -->
+<!-- ====================== VIEW MODEL ======================= -->
 <script type="text/x-dc-fragment">
-<!-- ···· modèle de vue · Studio.dc.html lignes 3982–4017 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3982–4017 ···· -->
       ready: true, booting: false, bootError: '',
       /* Les textes indicatifs nomment un exemple réel du catalogue. */
       wzNamePlaceholder: (evDefs[0] || [])[2] || '',
@@ -175,13 +175,13 @@
 
       openInvite: () => this.setState({ inviteOpen: true, invMode: 'account', invScope: 'staff', invDate: 0, invQuery: '', invPick: null, invMail: '', invName: '', invRole: 'mod' }),
 
-<!-- ···· modèle de vue · Studio.dc.html lignes 4217–4221 ···· -->
+<!-- ···· view model · Studio.dc.html lines 4217–4221 ···· -->
       isDashboard: page === 'dashboard',
       isEvents: page === 'events',
       isEvent: page === 'event',
       isModeration: page === 'moderation',
       isCrew: page === 'crew',
-<!-- ···· modèle de vue · Studio.dc.html lignes 2586–2597 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2586–2597 ···· -->
   countsOf(channelName) {
     const A = this.A, D = this.data;
     if (!A || !D) return { merch: 0, replays: 0, events: 0 };

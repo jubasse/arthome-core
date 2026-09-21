@@ -2,28 +2,28 @@
   Arthome · storefront mobile — _mini-player
   ══════════════════════════════════════════════════════════════════════════
   Route      : —
-  Affiche    : Le mini-lecteur persistant : il survit à la navigation entre routes et ramène au direct ou à la rediffusion en cours.
-  Mène vers  : live, replay
-  Contrat    : POST /v1/playback/{dateId}/open · PUT /v1/me/progress/{dateId}
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1837–1858
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : The persistent mini-player: it survives navigation between routes and returns to the live or replay in progress.
+  Leads to   : live, replay
+  Contract   : POST /v1/playback/{dateId}/open · PUT /v1/me/progress/{dateId}
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1837–1858
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
-  Note       : Surface transverse : elle survit à la navigation entre routes et n'appartient
-               à aucune d'elles. state.watching / state.watchKind / state.pipClosed.
+  Note       : A cross-cutting surface: it survives navigation between routes and belongs
+               to none of them. state.watching / state.watchKind / state.pipClosed.
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1837–1858
+     MARKUP — L1837–1858
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ pipVisible }}" hint-placeholder-val="{{ false }}">
 <div style="{{ pipStyle }}box-shadow: 0 18px 44px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 11px; padding: 9px;">
@@ -49,52 +49,52 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (10 symboles)
+     VIEW MODEL — specific to this screen (10 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── pipVisible  —  clé du modèle rendu  —  L5934–5934 ── */
+/* ── pipVisible  —  key of the rendered model  —  L5934–5934 ── */
       pipVisible: s.watching !== null && !s.pipClosed && s.page !== (s.watchKind === 'replay' ? 'replay' : 'live'),
 
-/* ── pipIsLive  —  clé du modèle rendu  —  L5935–5935 ── */
+/* ── pipIsLive  —  key of the rendered model  —  L5935–5935 ── */
       pipIsLive: s.watchKind !== 'replay',
 
-/* ── pipIsReplay  —  clé du modèle rendu  —  L5936–5936 ── */
+/* ── pipIsReplay  —  key of the rendered model  —  L5936–5936 ── */
       pipIsReplay: s.watchKind === 'replay',
 
-/* ── pipImg  —  clé du modèle rendu  —  L5937–5937 ── */
+/* ── pipImg  —  key of the rendered model  —  L5937–5937 ── */
       pipImg: s.watching !== null ? (s.watchKind === 'replay' ? (s.replayImg || roster[s.watching].showImg) : roster[s.watching].showImg) : '',
 
-/* ── pipImgCss  —  clé du modèle rendu  —  L5938–5938 ── */
+/* ── pipImgCss  —  key of the rendered model  —  L5938–5938 ── */
       pipImgCss: this.cssUrl(s.watching !== null ? (s.watchKind === 'replay' ? (s.replayImg || roster[s.watching].showImg) : roster[s.watching].showImg) : ''),
 
-/* ── pipTitle  —  clé du modèle rendu  —  L5939–5939 ── */
+/* ── pipTitle  —  key of the rendered model  —  L5939–5939 ── */
       pipTitle: s.watching !== null ? (s.watchKind === 'replay' ? (s.replayTitle || roster[s.watching].showTitle) : roster[s.watching].showTitle) : '',
 
-/* ── pipViewersShort  —  clé du modèle rendu  —  L5942–5942 ── */
+/* ── pipViewersShort  —  key of the rendered model  —  L5942–5942 ── */
       pipViewersShort: s.watching !== null ? (roster[s.watching].viewers || '1 240') : '',
 
-/* ── pipBarStyle  —  clé du modèle rendu  —  L5944–5944 ── */
+/* ── pipBarStyle  —  key of the rendered model  —  L5944–5944 ── */
       pipBarStyle: 'position: absolute; left: 0; bottom: 0; height: 3px; width: ' + Math.round(s.pos * 100) + '%; background: oklch(0.68 0.18 42);',
 
-/* ── pipReturn  —  clé du modèle rendu  —  L5952–5952 ── */
+/* ── pipReturn  —  key of the rendered model  —  L5952–5952 ── */
       pipReturn: () => this.setState({ page: s.watchKind === 'replay' ? 'replay' : 'live', pipClosed: false }),
 
-/* ── pipClose  —  clé du modèle rendu  —  L5953–5953 ── */
+/* ── pipClose  —  key of the rendered model  —  L5953–5953 ── */
       pipClose: () => this.setState({ pipClosed: true }),
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (0) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (0) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
-  (aucune : cet écran n'emploie aucune clé des tables FR/EN)
+  (none: this screen uses no key from the FR/EN tables)
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

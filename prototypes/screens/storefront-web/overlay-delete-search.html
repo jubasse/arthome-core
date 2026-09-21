@@ -1,21 +1,24 @@
 <!--
-  ÉCRAN      Supprimer une recherche enregistrée
-  ROUTE      superposition, sans URL
-  AFFICHE    La confirmation de suppression d'une recherche ou d'une catégorie enregistrée.
-  MÈNE VERS  account-alerts
+  SCREEN     Delete a saved search
+  ROUTE      overlay, no URL
+  SHOWS      The confirmation for deleting a saved search or a saved category.
+  LEADS TO   account-alerts
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 3114-3129
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 3114-3129
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — deleteSavedSearch
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — deleteSavedSearch
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : category, cats, s, t
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: category, cats, s, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <sc-if value="{{ deleteOpen }}" hint-placeholder-val="{{ false }}">
 <div onClick="{{ cancelDelete }}" style="position: fixed; inset: 0; z-index: 8500; background: rgba(6,5,5,0.78); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .2s ease both;">
@@ -34,7 +37,7 @@
 </div>
 </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       stopEvt: e => { if (e && e.stopPropagation) e.stopPropagation(); },
@@ -59,18 +62,19 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.delCancel  t.delConfirm  t.delIntro  t.delTitle  t.savedHere  t.scopeCategory  
     t.unfollowCat  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     alerts  deleteId  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     alertName, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

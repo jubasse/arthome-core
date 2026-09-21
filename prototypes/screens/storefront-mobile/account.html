@@ -2,28 +2,28 @@
   Arthome · storefront mobile — account
   ══════════════════════════════════════════════════════════════════════════
   Route      : account
-  Affiche    : La coquille du compte : portrait, identité, et le menu des onze sections avec leurs pastilles de comptage.
-  Mène vers  : les onze sections du compte
-  Contrat    : GET /v1/me/account
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1299–1348, L1771–1777
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : The account shell: portrait, identity, and the menu of the eleven sections with their count badges.
+  Leads to   : the eleven account sections
+  Contract   : GET /v1/me/account
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1299–1348, L1771–1777
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
-  Note       : Les onze sections sont dans account-*.html. accView bascule entre 'menu' (ce
-               fichier) et 'section' (les onze autres).
+  Note       : The eleven sections are in account-*.html. accView switches between 'menu'
+               (this file) and 'section' (the eleven others).
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1299–1348
+     MARKUP — L1299–1348
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
 <div style="animation: fadeIn .3s ease both; padding: 18px 16px 0;">
@@ -77,7 +77,7 @@
     <div style="{{ accContentStyle }}">
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1771–1777
+     MARKUP — L1771–1777
      ══════════════════════════════════════════════════════════════════════════ -->
 
     <sc-if value="{{ accMenuView }}" hint-placeholder-val="{{ true }}">
@@ -88,25 +88,25 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (4 symboles)
+     VIEW MODEL — specific to this screen (4 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── artistPortrait  —  clé du modèle rendu  —  L5825–5825 ── */
+/* ── artistPortrait  —  key of the rendered model  —  L5825–5825 ── */
       artistPortrait: artist.portrait, artistPortraitCss: this.cssUrl(artist.portrait),
 
-/* ── sessionLabel  —  clé du modèle rendu  —  L6252–6252 ── */
+/* ── sessionLabel  —  key of the rendered model  —  L6252–6252 ── */
       sessionLabel: s.guest ? t.signIn : t.signOut,
 
-/* ── toggleSession  —  clé du modèle rendu  —  L6253–6253 ── */
+/* ── toggleSession  —  key of the rendered model  —  L6253–6253 ── */
       toggleSession: () => this.setState(st => ({ guest: !st.guest, menuOpen: false, accMenuOpen: false, page: 'home', pick: null, accTab: 'upcoming' })),
 
-/* ── accountName  —  clé du modèle rendu  —  L6437–6437 ── */
+/* ── accountName  —  key of the rendered model  —  L6437–6437 ── */
       accountName: account.name,
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (3) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (3) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2338  accBackToMenu: "MON COMPTE"
@@ -121,8 +121,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

@@ -1,19 +1,19 @@
 <!--
-  Écran      : categories
+  Screen     : categories
   Route      : page === 'categories'
-  Affiche    : Les 21 disciplines en tuiles typographiques, dans le rang éditorial de taxonomy.json, avec leur nombre de dates et de directs.
-  Mène vers  : category
-  Partagé    : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
+  Shows      : The 21 disciplines as typographic tiles, in the editorial rank from taxonomy.json, with their date count and live count.
+  Leads to   : category
+  Shared     : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
 
-  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
-    · hint-placeholder-count vaut 9 (L627) : trace de l'erreur B1 de l'errata — il y a 21 disciplines, pas 9.
-    · Les tuiles ne sont PAS groupées par univers (Musique / Scène) dans la maquette, alors que le cahier des charges corrigé l'exige.
+  DEFECTS FOUND (not fixed — verbatim extraction):
+    · hint-placeholder-count is 9 (L627): a trace of erratum B1 — there are 21 disciplines, not 9.
+    · The tiles are NOT grouped by universe (Music / Stage) in the mockup, although the corrected specification requires it.
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger ici : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
-<!-- ═══════════ Balisage (verbatim, L622-645) ═══════════ -->
+<!-- ═══════════ Markup (verbatim, L622-645) ═══════════ -->
   <sc-if value="{{ pgCats }}" hint-placeholder-val="{{ false }}">
     <div style="position: absolute; inset: 0; padding: 84px 60px 60px 184px; animation: fadeIn .2s ease both;">
       <div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 0.18em; color: #857E73;">{{ t.catsKicker }}</div>
@@ -39,7 +39,7 @@
     </div>
   </sc-if>
 
-<!-- ═══════════ Modèle de vue (verbatim, L2911-2922) ═══════════ -->
+<!-- ═══════════ View model (verbatim, L2911-2922) ═══════════ -->
 <script type="text/x-dc-extract">
     // ---- catégories, artistes, ma liste
     const visibleCats = this.kid() ? CATS.filter(c => KID_CATS.indexOf(c.id) > -1) : CATS;
@@ -55,14 +55,14 @@
     });
 </script>
 
-<!-- ═══════════ CLÉS DE COPIE ═══════════
-  jeton du composant  →  clé i18n (shared/i18n/tv-keymap.json)
-    t.catsKicker         → discovery.categoriesKicker   [majuscules]
+<!-- ═══════════ COPY KEYS ═══════════
+  component token  →  i18n key (shared/i18n/tv-keymap.json)
+    t.catsKicker         → discovery.categoriesKicker   [uppercased]
     t.nCats              → common.nav.categories
 -->
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « Les formes de données » : CategoryTile, famille + rang, aucune surface ne réordonne
-  openapi/storefront.yaml → listCategories (GET /v1/categories) — « un appel, pas un par tuile »
-  Q5 tranchée : les 21 avec famille et rang (obligatoire) + featured_category_ids[] optionnel, servi comme une règle.
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "The data shapes": CategoryTile, family + rank, no surface reorders
+  openapi/storefront.yaml → listCategories (GET /v1/categories) — "one call, not one per tile"
+  Q5 settled: the 21 with family and rank (mandatory) + an optional featured_category_ids[], served as a rule.
 -->

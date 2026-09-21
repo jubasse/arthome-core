@@ -1,27 +1,27 @@
 <!--
-  ÉCRAN        inbox
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Ce qui attend une réponse : invitations reçues et alertes routées par rôle.
-  RÔLES        artist · prod · regie · mod · coord · tres   (les six)
-  MÈNE VERS    aucun (écran terminal)
+  SCREEN       inbox
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        What is waiting for an answer: received invitations and role-routed alerts.
+  ROLES        artist · prod · regie · mod · coord · tres   (all six)
+  LEADS TO     none (terminal screen)
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  pgInbox L89-163
-               modèle    L1972-2010
-  CLÉS DE COPIE
-               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
-               - table ROLES en dur (six personas — libellé, jamais un droit, E6)
-  CONTRAT
-               - needs §Les formes de données 7 (les invitations reçues)
+               markup      pgInbox L89-163
+               view model  L1972-2010
+  COPY KEYS
+               - EN table at the top of the script (a parallel translation, outside i18n — see _index.md, note D2)
+               - hardcoded ROLES table (six personas — a label, never a right, E6)
+  CONTRACT
+               - needs §Data shapes 7 (received invitations)
                - openapi GET /v1/inbox
                - openapi POST /v1/invitations/{invitationId}/response
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!-- ---- pgInbox (L89-163) ---- -->
     <sc-if value="{{ pgInbox }}" hint-placeholder-val="{{ false }}">
@@ -100,7 +100,7 @@
       </div>
     </sc-if>
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
   page_inbox(c) {

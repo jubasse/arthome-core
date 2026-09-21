@@ -1,25 +1,25 @@
 <!--
-  ÉCRAN        feuille · states
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Le filtre multi-états du tableau des dates.
-  RÔLES        artist · prod · regie
-  MÈNE VERS    aucun (écran terminal)
+  SCREEN       sheet / states
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        The multi-state filter of the dates table.
+  ROLES        artist · prod · regie
+  LEADS TO     none (terminal screen)
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  sheet L828-895
-               modèle    L3846-3865
-  CLÉS DE COPIE
-               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
-               - table STATES en dur (draft|hidden|sched|tech|live|done|replay — vocabulaire parallèle, D2)
-  CONTRAT
-               - openapi GET /v1/channels/{channelId}/events — paramètre d'état
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+               markup      sheet L828-895
+               view model  L3846-3865
+  COPY KEYS
+               - EN table at the top of the script (a parallel translation, outside i18n — see _index.md, note D2)
+               - hardcoded STATES table (draft|hidden|sched|tech|live|done|replay — a parallel vocabulary, D2)
+  CONTRACT
+               - openapi GET /v1/channels/{channelId}/events — state parameter
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!-- ---- sheet (L828-895) ---- -->
   <sc-if value="{{ shOpen }}" hint-placeholder-val="{{ false }}">
@@ -91,7 +91,7 @@
     </div>
   </sc-if>
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
     if (kind === 'states') {

@@ -1,37 +1,37 @@
 <!--
 ==============================================================================
-  ÉCRAN — _roles — la mécanique de filtrage par rôle (transverse)
+  SCREEN — _roles — the role-filtering mechanism (cross-cutting)
 ==============================================================================
 
-  Ce qu'il affiche : la table d'accès, la navigation, les volets de fiche, les transitions offertes et les trois capacités transverses ; aucun écran ne s'affiche sans elle
+  What it shows: the access table, navigation, record panes, offered transitions and the three cross-cutting capabilities; no screen renders without it
 
-  Rôles qui l'ouvrent : tous — c'est elle qui décide de ce que chacun ouvre
-  Mène vers : tous les écrans
+  Roles that open it: everyone — it is what decides what each person opens
+  Leads to: every screen
 
-  Source : mockups/Studio.dc.html
-    balisage        aucun — la mécanique est entièrement dans le modèle de vue
-    modèle de vue   lignes 2433–2442, 3420–3425, 3428–3460, 3474–3495, 3566–3580, 3617–3620, 3698–3712, 3731–3741, 3742–3790
+  Source: mockups/Studio.dc.html
+    markup          none — the mechanism lives entirely in the view model
+    view model      lines 2433–2442, 3420–3425, 3428–3460, 3474–3495, 3566–3580, 3617–3620, 3698–3712, 3731–3741, 3742–3790
 
-  Clés de copie employées :
-    aucune clé i18n directe
-    T(...) — littéraux français traduits par la table EN de _shared.html
+  Copy keys used:
+    no direct i18n key
+    T(...) — French literals translated by the EN table in _shared.html
 
-  Contrat :
-    besoins   needs/studio-web.md § « Les rôles et ce qu'ils ouvrent »
-    openapi   openapi/studio.yaml · getStudioBootstrap (EffectiveRights : roles, navigation, datePanes, canRevenue/canOps/canTech/canDecideOutcome, assignableRoles, dateGrants)
+  Contract:
+    needs     needs/studio-web.md § "Roles, and what they open"
+    openapi   openapi/studio.yaml · getStudioBootstrap (EffectiveRights: roles, navigation, datePanes, canRevenue/canOps/canTech/canDecideOutcome, assignableRoles, dateGrants)
 
-  Relevé d'extraction (défauts vus, non corrigés) :
-    · le repli des huit rôles sur six personas (ROLE_FROM_FIXTURE, shared/studio-data.js) confond director, video et sound sous « regie » et EFFACE le droit d'invitation de director — le contrat retient les huit (E6).
-    · `team` figure dans ORDER et dans navDefs mais dans AUCUNE ligne d'ACCESS : la page est inatteignable, et la règle « crew absorbe team » la retire une seconde fois.
-    · ACCESS est indexé sur les six personas ; `agenda` y est donné à regie et mod, or c'est un écran DE PERSONNE (listDuties) et non de chaîne.
-    · canRevenue / canOps / canTech testent `roleOf` (le rôle principal) et non l'union `has()` — deux mesures du tableau de bord ne s'affichent donc jamais.
+  Extraction notes (defects seen, left uncorrected):
+    · folding the eight roles onto six personas (ROLE_FROM_FIXTURE, shared/studio-data.js) conflates director, video and sound under “regie” and ERASES director's invitation right — the contract keeps the eight (E6).
+    · `team` appears in ORDER and in navDefs but in NO line of ACCESS: the page is unreachable, and the “crew absorbs team” rule removes it a second time.
+    · ACCESS is keyed on the six personas; `agenda` is given there to regie and mod, yet it is a PERSON screen (listDuties), not a channel one.
+    · canRevenue / canOps / canTech test `roleOf` (the primary role) and not the `has()` union — so two dashboard measures are never displayed.
 
-  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+  EXTRACTED VERBATIM from Studio.dc.html — nothing has been corrected or rewritten.
 -->
 
-<!-- ===================== MODÈLE DE VUE ===================== -->
+<!-- ====================== VIEW MODEL ======================= -->
 <script type="text/x-dc-fragment">
-<!-- ···· modèle de vue · Studio.dc.html lignes 2433–2442 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2433–2442 ···· -->
 const ROLES = {
   artist: ['ARTISTE · PROPRIÉTAIRE', '#C6CDD4'],
   prod:   ['PRODUCTION', INFO],
@@ -42,14 +42,14 @@ const ROLES = {
 };
 
 const MUTE = 'oklch(0.75 0.12 300)';
-<!-- ···· modèle de vue · Studio.dc.html lignes 3420–3425 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3420–3425 ···· -->
     if (!s.dataReady) return { booting: true, ready: false, bootError: s.dataError || '' };
     const vw = s.vw || 1196;
     const personaRaw = P.persona || 'production';
     const persona = { 'régie': 'regie', 'modération': 'moderation', 'trésorerie': 'tresorerie' }[personaRaw] || personaRaw;
     const SECOND = { aucun: null, artiste: 'artist', production: 'prod', coordination: 'coord', régie: 'regie', modération: 'mod', trésorerie: 'tres' };
     const second = SECOND[P.secondRole || 'aucun'] || null;
-<!-- ···· modèle de vue · Studio.dc.html lignes 3428–3460 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3428–3460 ···· -->
 
 
     const channels = (CHAN_SETS[persona] || CHAN_SETS.production).map(([name, img, rk, isLive, own], i) => ({
@@ -83,7 +83,7 @@ const MUTE = 'oklch(0.75 0.12 300)';
     })();
     const role = ROLES[roleOf];
 
-<!-- ···· modèle de vue · Studio.dc.html lignes 3474–3495 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3474–3495 ···· -->
       return alt ? alt.time + ' ' + alt.abbr + alt.shift : '';
     };
 
@@ -106,7 +106,7 @@ const MUTE = 'oklch(0.75 0.12 300)';
     let allowed = ORDER.filter(p => union.indexOf(p) > -1);
     /* la console de coordination absorbe la page Équipe quand les deux sont ouvertes */
     if (allowed.indexOf('crew') > -1) allowed = allowed.filter(p => p !== 'team');
-<!-- ···· modèle de vue · Studio.dc.html lignes 3566–3580 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3566–3580 ···· -->
     const SHORT = { artist: 'Artiste', prod: 'Production', regie: 'Régie', mod: 'Modération', coord: 'Coordination', tres: 'Trésorerie' };
     const grantable = ['artist', 'coord', 'prod', 'regie', 'mod', 'tres']
       .filter(k => roles.some(r => (GRANTS[r] || []).indexOf(k) > -1));
@@ -122,12 +122,12 @@ const MUTE = 'oklch(0.75 0.12 300)';
             : '')
         + 'Plusieurs personnes peuvent tenir le même rôle — une chaîne compte autant de régisseurs et de modérateurs que nécessaire.'
       : 'Vous ne gérez pas les accès de cette chaîne. Demandez un renfort à la coordination ou au propriétaire.';
-<!-- ···· modèle de vue · Studio.dc.html lignes 3617–3620 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3617–3620 ···· -->
     const canRevenue = roleOf === 'artist' || roleOf === 'prod' || roleOf === 'tres';
     const canOps = roleOf === 'artist' || roleOf === 'prod' || roleOf === 'regie';
     const canTech = roleOf === 'artist' || roleOf === 'prod' || roleOf === 'regie';
 
-<!-- ···· modèle de vue · Studio.dc.html lignes 3698–3712 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3698–3712 ···· -->
     const EV_TABS = [
       ['public', 'PUBLIC', ['artist', 'prod']],
       ['tickets', 'BILLETTERIE', ['artist', 'prod', 'tres']],
@@ -143,7 +143,7 @@ const MUTE = 'oklch(0.75 0.12 300)';
 
     /* ce qu'il faut avant d'engager un tarif public */
     const evMissing = [
-<!-- ···· modèle de vue · Studio.dc.html lignes 3731–3741 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3731–3741 ···· -->
     const EV_MOVES = {
       draft:  [['hidden', 'Mettre en réserve', false], ['sched', 'Publier', true]],
       hidden: [['sched', 'Ouvrir la vente', true]],
@@ -155,7 +155,7 @@ const MUTE = 'oklch(0.75 0.12 300)';
     };
     const evMoves = (has('artist') || has('prod')) ? (EV_MOVES[evState] || []) : [];
 
-<!-- ···· modèle de vue · Studio.dc.html lignes 3742–3790 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3742–3790 ···· -->
     const navDefs = [
       ['agenda', 'Mes dates', '⧉', agendaBadge],
       ['dashboard', 'Tableau de bord', '◧', ''],

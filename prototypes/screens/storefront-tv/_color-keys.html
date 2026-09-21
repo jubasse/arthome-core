@@ -1,23 +1,23 @@
 <!--
-  Mécanique  : touches couleur, et la barre d'indices qui les annonce
-  Source     : Storefront TV.dc.html — colorKeys() L2377, branches couleur dans keyDown()
-               L2147-2199, barre d'indices L2855-2876 et L3220-3236
-  Rôle       : rouge = tchat en direct · vert = sous-titres · jaune = pistes et qualité ·
-               bleu = informations sur la date. Le réglage `remote` (croix simple /
-               croix + touches couleur) commande leur existence.
-  Note       : les branches de keyDown() sont recopiées ici depuis _remote-keys.html,
-               qui en garde l'exemplaire en place. Les deux citent les mêmes lignes.
+  Mechanic   : colour keys, and the hint bar that announces them
+  Source     : Storefront TV.dc.html — colorKeys() L2377, colour branches in keyDown()
+               L2147-2199, hint bar L2855-2876 and L3220-3236
+  Role       : red = live chat · green = subtitles · yellow = tracks and quality ·
+               blue = information about the date. The `remote` setting (plain cross /
+               cross + colour keys) governs whether they exist.
+  Note       : the keyDown() branches are copied here from _remote-keys.html, which keeps
+               the in-place copy. Both cite the same lines.
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
-<!-- ═══════════ colorKeys() — le réglage `remote` (verbatim, L2377) ═══════════ -->
+<!-- ═══════════ colorKeys() — the `remote` setting (verbatim, L2377) ═══════════ -->
 <script type="text/x-dc-extract">
   colorKeys() { return (this.props.remote || 'croix + touches couleur').indexOf('couleur') > -1; }
 </script>
 
-<!-- ═══════════ keyDown() — aiguillage complet, branches couleur comprises (verbatim, L2148-2199) ═══════════ -->
+<!-- ═══════════ keyDown() — full dispatch, colour branches included (verbatim, L2148-2199) ═══════════ -->
 <script type="text/x-dc-extract">
   keyDown(e) {
     const k = e.key;
@@ -73,7 +73,7 @@
   }
 </script>
 
-<!-- ═══════════ Barre d'indices — construction (verbatim, L2855-2876) ═══════════ -->
+<!-- ═══════════ Hint bar — construction (verbatim, L2855-2876) ═══════════ -->
 <script type="text/x-dc-extract">
     // hints
     const hint = (k, l, col) => ({ key: k, label: l, border: col || '#332E28', bg: col ? veil(col) : '#17140F', keyCol: col || '#9B948A' });
@@ -99,7 +99,7 @@
 
 </script>
 
-<!-- ═══════════ Barre d'indices — modèle de vue (verbatim, L3220-3236) ═══════════ -->
+<!-- ═══════════ Hint bar — view model (verbatim, L3220-3236) ═══════════ -->
 <script type="text/x-dc-extract">
       hints: hintsVisible ? hints : (this.lastHints || hints),
       hintOpacity: hintsVisible ? 1 : 0,
@@ -120,8 +120,8 @@
       previewOn: s.preview && page === 'home',
 </script>
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « Contraintes propres à la TV » §2
-  Prompt - Storefront TV.md → « Raccourcis à honorer » et réglage `remote`
-  Exemplaire en place : _remote-keys.html
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "TV-specific constraints" §2
+  docs/storefront-tv.md → "Shortcuts to honour" and the `remote` setting
+  In-place copy: _remote-keys.html
 -->

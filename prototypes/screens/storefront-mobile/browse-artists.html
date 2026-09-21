@@ -2,25 +2,25 @@
   Arthome · storefront mobile — browse-artists
   ══════════════════════════════════════════════════════════════════════════
   Route      : browse · sTab=artists
-  Affiche    : Onglet Artistes : les artistes correspondants, leur prochaine date, le dépliage de toutes leurs dates.
-  Mène vers  : artist, live
-  Contrat    : GET /v1/search?tab=artists
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L505–564
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : Artists tab: matching artists, their next date, and the expansion of all their dates.
+  Leads to   : artist, live
+  Contract   : GET /v1/search?tab=artists
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L505–564
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L505–564
+     MARKUP — L505–564
      ══════════════════════════════════════════════════════════════════════════ -->
   <sc-if value="{{ showArtists }}" hint-placeholder-val="{{ false }}">
     <sc-if value="{{ noArtistsTab }}" hint-placeholder-val="{{ false }}">
@@ -84,10 +84,10 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (6 symboles)
+     VIEW MODEL — specific to this screen (6 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── paged  —  méthode de classe  —  L4091–4113 ── */
+/* ── paged  —  class method  —  L4091–4113 ── */
   paged(key, list, step, fr) {
     const n = (this.state.shown || {})[key] || step;
     const rest = Math.max(0, list.length - n);
@@ -112,7 +112,7 @@
     };
   }
 
-/* ── artistsAll  —  calcul dans renderReady()  —  L5375–5396 ── */
+/* ── artistsAll  —  computation in renderReady()  —  L5375–5396 ── */
     const artistsAll = roster.filter(a => {
       if (qq && (a.name + ' ' + a.discipline + ' ' + a.showTitle).toLowerCase().indexOf(qq) < 0) return false;
       if (s.fCats.length && !catalogue.some(o => o.artistIdx === a.i && s.fCats.indexOf(o.cat) > -1)) return false;
@@ -136,25 +136,25 @@
       });
     });
 
-/* ── artistsHL  —  calcul dans renderReady()  —  L5398–5401 ── */
+/* ── artistsHL  —  computation in renderReady()  —  L5398–5401 ── */
     const artistsHL = artistsAll.map(a => Object.assign({}, a, {
       nHit: this.splitHit(a.name, qq),
       sHit: this.splitHit(a.showTitle, qq)
     }));
 
-/* ── pgArtists  —  calcul dans renderReady()  —  L5441–5441 ── */
+/* ── pgArtists  —  computation in renderReady()  —  L5441–5441 ── */
     const pgArtists = this.paged('artists', artistsHL, 10, fr);
 
-/* ── moreArtists  —  clé du modèle rendu  —  L5678–5678 ── */
+/* ── moreArtists  —  key of the rendered model  —  L5678–5678 ── */
       moreArtists: pgArtists.hasMore, moreArtistsLabel: pgArtists.moreLabel, loadMoreArtists: pgArtists.loadMore, loadingArtists: pgArtists.loading,
 
-/* ── noArtistsTab  —  clé du modèle rendu  —  L5683–5683 ── */
+/* ── noArtistsTab  —  key of the rendered model  —  L5683–5683 ── */
       noArtistsTab: s.sTab === 'artists' && artistsAll.length === 0,
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (5) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (5) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2452  dateToCome: "date à venir"
@@ -175,8 +175,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

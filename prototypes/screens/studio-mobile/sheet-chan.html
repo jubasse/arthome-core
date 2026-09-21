@@ -1,25 +1,25 @@
 <!--
-  ÉCRAN        feuille · chan
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Le sélecteur de chaîne : ma chaîne, puis celles où j'interviens.
-  RÔLES        artist · prod · regie · mod · coord · tres   (les six)
-  MÈNE VERS    aucun (écran terminal)
+  SCREEN       sheet / chan
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        The channel picker: my channel, then the ones I work on.
+  ROLES        artist · prod · regie · mod · coord · tres   (all six)
+  LEADS TO     none (terminal screen)
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  sheet L828-895
-               modèle    L1912-1928
-  CLÉS DE COPIE
-               - aucune — libellés français en dur dans le modèle de vue
-  CONTRAT
-               - needs §« Ce qui distingue cette surface » 2 (le rôle est par chaîne)
+               markup      sheet L828-895
+               view model  L1912-1928
+  COPY KEYS
+               - none — French labels hardcoded in the view model
+  CONTRACT
+               - needs §"What sets this surface apart" 2 (the role is per channel)
                - openapi GET /v1/bootstrap — channels[]
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!-- ---- sheet (L828-895) ---- -->
   <sc-if value="{{ shOpen }}" hint-placeholder-val="{{ false }}">
@@ -91,7 +91,7 @@
     </div>
   </sc-if>
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
     if (kind === 'chan') {

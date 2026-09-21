@@ -1,26 +1,26 @@
 <!--
   Arthome · storefront mobile — sheet-search
   ══════════════════════════════════════════════════════════════════════════
-  Route      : superposée · searchOpen
-  Affiche    : La recherche en plein écran : suggestions d'artistes et de spectacles, recherches récentes.
-  Mène vers  : artist, live, browse
-  Contrat    : GET /v1/search
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1886–1958
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Route      : overlay · searchOpen
+  Shows      : Full-screen search: artist and show suggestions, recent searches.
+  Leads to   : artist, live, browse
+  Contract   : GET /v1/search
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1886–1958
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1886–1958
+     MARKUP — L1886–1958
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ searchModal }}" hint-placeholder-val="{{ false }}">
 <div onClick="{{ closeSearch }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
@@ -97,13 +97,13 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (13 symboles)
+     VIEW MODEL — specific to this screen (13 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── matchQ  —  calcul dans renderReady()  —  L5103–5103 ── */
+/* ── matchQ  —  computation in renderReady()  —  L5103–5103 ── */
     const matchQ = (...fields) => !q || fields.some(v => String(v).toLowerCase().indexOf(q) > -1);
 
-/* ── suggArtists  —  calcul dans renderReady()  —  L5104–5110 ── */
+/* ── suggArtists  —  computation in renderReady()  —  L5104–5110 ── */
     const suggArtists = q ? roster.filter(a => matchQ(a.name, a.discipline)).slice(0, 4).map(a => ({
       name: a.name, img: a.portrait, imgCss: this.cssUrl(a.portrait),
       portrait: a.portrait, portraitCss: this.cssUrl(a.portrait),
@@ -112,7 +112,7 @@
       statusColor: a.isLive ? 'oklch(0.78 0.14 27)' : '#857E73'
     })) : [];
 
-/* ── suggShows  —  calcul dans renderReady()  —  L5111–5116 ── */
+/* ── suggShows  —  computation in renderReady()  —  L5111–5116 ── */
     const suggShows = q ? roster.filter(a => matchQ(a.showTitle)).slice(0, 4).map(a => ({
       name: a.showTitle, artist: a.name, img: a.showImg,
       open: () => this.setState({ page: 'live', artistId: a.i, suggOpen: false, searchOpen: false, watching: a.i, watchKind: 'live', pipClosed: false }),
@@ -120,16 +120,16 @@
       statusColor: a.isLive ? 'oklch(0.78 0.14 27)' : '#857E73'
     })) : [];
 
-/* ── recentSearches  —  clé du modèle rendu  —  L5690–5690 ── */
+/* ── recentSearches  —  key of the rendered model  —  L5690–5690 ── */
       recentSearches: s.recent.map(r => ({ label: r, pick: () => this.setState({ query: r, suggOpen: false, searchOpen: false, page: 'browse' }) })),
 
-/* ── hasRecent  —  clé du modèle rendu  —  L5691–5691 ── */
+/* ── hasRecent  —  key of the rendered model  —  L5691–5691 ── */
       hasRecent: !qq && s.recent.length > 0,
 
-/* ── query  —  clé du modèle rendu  —  L5826–5826 ── */
+/* ── query  —  key of the rendered model  —  L5826–5826 ── */
       query: s.query, draft: s.draft,
 
-/* ── onQuery  —  clé du modèle rendu  —  L5840–5848 ── */
+/* ── onQuery  —  key of the rendered model  —  L5840–5848 ── */
       onQuery: e => {
         const v = e.target.value;
         this.setState({ query: v, suggOpen: v.trim().length > 0 });
@@ -140,28 +140,28 @@
         }, 260);
       },
 
-/* ── onSearchFocus  —  clé du modèle rendu  —  L5849–5849 ── */
+/* ── onSearchFocus  —  key of the rendered model  —  L5849–5849 ── */
       onSearchFocus: () => this.setState(st => ({ suggOpen: st.query.trim().length > 0 })),
 
-/* ── onSearchKey  —  clé du modèle rendu  —  L5851–5851 ── */
+/* ── onSearchKey  —  key of the rendered model  —  L5851–5851 ── */
       onSearchKey: e => { if (e.key === 'Enter') this.setState(st => ({ page: 'browse', suggOpen: false, searchOpen: false, filter: 0, liveQuery: st.query.trim(), shown: {} })); if (e.key === 'Escape') this.setState({ suggOpen: false, searchOpen: false }); },
 
-/* ── submitSearch  —  clé du modèle rendu  —  L5852–5852 ── */
+/* ── submitSearch  —  key of the rendered model  —  L5852–5852 ── */
       submitSearch: () => this.setState(st => ({ page: 'browse', suggOpen: false, searchOpen: false, filter: 0, liveQuery: st.query.trim(), shown: {} })),
 
-/* ── suggOpen  —  clé du modèle rendu  —  L5855–5855 ── */
+/* ── suggOpen  —  key of the rendered model  —  L5855–5855 ── */
       suggOpen: s.suggOpen && s.query.trim().length > 0,
 
-/* ── hasSuggArtists  —  clé du modèle rendu  —  L5857–5857 ── */
+/* ── hasSuggArtists  —  key of the rendered model  —  L5857–5857 ── */
       hasSuggArtists: suggArtists.length > 0, hasSuggShows: suggShows.length > 0,
 
-/* ── suggEmpty  —  clé du modèle rendu  —  L5860–5860 ── */
+/* ── suggEmpty  —  key of the rendered model  —  L5860–5860 ── */
       suggEmpty: suggArtists.length === 0 && suggShows.length === 0,
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (8) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (8) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2400  cancel: "Annuler"
@@ -191,8 +191,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

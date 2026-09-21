@@ -2,25 +2,25 @@
   Arthome · storefront mobile — replay
   ══════════════════════════════════════════════════════════════════════════
   Route      : replay
-  Affiche    : La rediffusion : lecteur avec position reprise, chapitres cliquables, vitesse de lecture.
-  Mène vers  : artist, live
-  Contrat    : POST /v1/playback/{dateId}/open · PUT /v1/me/progress/{dateId}
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1243–1297
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : The replay: player with the position resumed, clickable chapters, playback speed.
+  Leads to   : artist, live
+  Contract   : POST /v1/playback/{dateId}/open · PUT /v1/me/progress/{dateId}
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1243–1297
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1243–1297
+     MARKUP — L1243–1297
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ isReplay }}" hint-placeholder-val="{{ false }}">
 <div style="animation: fadeIn .3s ease both;">
@@ -79,10 +79,10 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (22 symboles)
+     VIEW MODEL — specific to this screen (22 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── CHAP  —  calcul dans renderReady()  —  L4978–4994 ── */
+/* ── CHAP  —  computation in renderReady()  —  L4978–4994 ── */
     const CHAP = fr ? {
       dance: ['Ouverture — entrée des danseurs', 'Premier tableau — piano préparé', 'Solo', 'Duo — corde et lumière à vue', 'Ensemble — douze danseurs', 'Final et saluts'],
       theatre: ['Lever de rideau', 'Acte I — le procès', 'Entracte technique', 'Acte II — le cercle', 'Monologue', 'Saluts'],
@@ -101,13 +101,13 @@
       circus: ['Entering the ring', 'Rope act', 'Clown interlude', 'Four-way trapeze', 'Chinese pole', 'Collective finale']
     };
 
-/* ── disc  —  calcul dans renderReady()  —  L4995–4995 ── */
+/* ── disc  —  computation in renderReady()  —  L4995–4995 ── */
     const disc = artist.discipline.toLowerCase();
 
-/* ── chapKey  —  calcul dans renderReady()  —  L4996–4996 ── */
+/* ── chapKey  —  computation in renderReady()  —  L4996–4996 ── */
     const chapKey = disc.indexOf('danse') > -1 || disc.indexOf('dance') > -1 ? 'dance'
 
-/* ── chapTimes  —  calcul dans renderReady()  —  L5005–5014 ── */
+/* ── chapTimes  —  computation in renderReady()  —  L5005–5014 ── */
     const chapTimes = (() => {
       const d = currentDate;
       const run = d ? A.runOf(d) : null;
@@ -119,13 +119,13 @@
       });
     })();
 
-/* ── chapPos  —  calcul dans renderReady()  —  L5015–5015 ── */
+/* ── chapPos  —  computation in renderReady()  —  L5015–5015 ── */
     const chapPos = [0, 0.08, 0.24, 0.4, 0.57, 0.81];
 
-/* ── chapterDefs  —  calcul dans renderReady()  —  L5016–5016 ── */
+/* ── chapterDefs  —  computation in renderReady()  —  L5016–5016 ── */
     const chapterDefs = CHAP[chapKey].map((label, i) => [chapTimes[i], label, chapPos[i]]);
 
-/* ── chapterList  —  calcul dans renderReady()  —  L5017–5026 ── */
+/* ── chapterList  —  computation in renderReady()  —  L5017–5026 ── */
     const chapterList = chapterDefs.map(([time, label, at]) => {
       const active = s.pos >= at && s.pos < at + 0.2;
       return {
@@ -137,34 +137,34 @@
       };
     });
 
-/* ── artistLastLive  —  calcul dans renderReady()  —  L5408–5408 ── */
+/* ── artistLastLive  —  computation in renderReady()  —  L5408–5408 ── */
     const artistLastLive = artist.lastLive;
 
-/* ── isReplay  —  clé du modèle rendu  —  L5954–5954 ── */
+/* ── isReplay  —  key of the rendered model  —  L5954–5954 ── */
       isReplay: s.page === 'replay',
 
-/* ── replayTitle  —  clé du modèle rendu  —  L5955–5955 ── */
+/* ── replayTitle  —  key of the rendered model  —  L5955–5955 ── */
       replayTitle: s.replayTitle || artist.showTitle,
 
-/* ── replayImg  —  clé du modèle rendu  —  L5956–5956 ── */
+/* ── replayImg  —  key of the rendered model  —  L5956–5956 ── */
       replayImg: s.replayImg || artist.showImg,
 
-/* ── replayImgCss  —  clé du modèle rendu  —  L5957–5957 ── */
+/* ── replayImgCss  —  key of the rendered model  —  L5957–5957 ── */
       replayImgCss: this.cssUrl(s.replayImg || artist.showImg),
 
-/* ── replayDateLabel  —  clé du modèle rendu  —  L5958–5958 ── */
+/* ── replayDateLabel  —  key of the rendered model  —  L5958–5958 ── */
       replayDateLabel: t.replayOf + ' ' + artistLastLive,
 
-/* ── replayMeta  —  clé du modèle rendu  —  L5959–5959 ── */
+/* ── replayMeta  —  key of the rendered model  —  L5959–5959 ── */
       replayMeta: artist.discipline.toUpperCase() + ' · ' + s.replayDuration + ' · ' + s.quality,
 
-/* ── playIcon  —  clé du modèle rendu  —  L5960–5960 ── */
+/* ── playIcon  —  key of the rendered model  —  L5960–5960 ── */
       playIcon: s.playing ? '❙❙' : '▶',
 
-/* ── togglePlay  —  clé du modèle rendu  —  L5961–5961 ── */
+/* ── togglePlay  —  key of the rendered model  —  L5961–5961 ── */
       togglePlay: () => this.setState(st => ({ playing: !st.playing })),
 
-/* ── timeLabel  —  clé du modèle rendu  —  L5962–5973 ── */
+/* ── timeLabel  —  key of the rendered model  —  L5962–5973 ── */
       timeLabel: (() => {
         const d = String(s.replayDuration || '1 h 42');
         const hm = d.match(/(\d+)\s*h\s*(\d+)?/);
@@ -178,16 +178,16 @@
         return fmt(cur) + ' / ' + fmt(total);
       })(),
 
-/* ── progressStyle  —  clé du modèle rendu  —  L5974–5974 ── */
+/* ── progressStyle  —  key of the rendered model  —  L5974–5974 ── */
       progressStyle: 'position: absolute; left: 0; top: 0; bottom: 0; width: ' + Math.round(s.pos * 100) + '%; background: oklch(0.68 0.18 42);',
 
-/* ── seek  —  clé du modèle rendu  —  L5975–5978 ── */
+/* ── seek  —  key of the rendered model  —  L5975–5978 ── */
       seek: e => {
         const r = e.currentTarget.getBoundingClientRect();
         this.setState({ pos: Math.min(0.999, Math.max(0, (e.clientX - r.left) / r.width)) });
       },
 
-/* ── speeds  —  clé du modèle rendu  —  L5979–5984 ── */
+/* ── speeds  —  key of the rendered model  —  L5979–5984 ── */
       speeds: ['0,75×', '1×', '1,5×'].map(label => ({
         label,
         pick: () => this.setState({ speed: label }),
@@ -195,16 +195,16 @@
           (s.speed === label ? 'background: #EDE7DC; color: #0B0A09;' : 'background: rgba(11,10,9,0.72); color: #9B948A;')
       })),
 
-/* ── chapters  —  clé du modèle rendu  —  L5985–5985 ── */
+/* ── chapters  —  key of the rendered model  —  L5985–5985 ── */
       chapters: chapterList,
 
-/* ── replayMerch  —  clé du modèle rendu  —  L5989–5989 ── */
+/* ── replayMerch  —  key of the rendered model  —  L5989–5989 ── */
       replayMerch: merch.slice(0, 2),
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (4) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (4) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2425  chapters: "HORODATAGE"
@@ -222,8 +222,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

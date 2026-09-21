@@ -1,25 +1,28 @@
 <!--
-  ÉCRAN      Achat d'une place
-  ROUTE      superposition, sans URL
-  AFFICHE    La modale d'achat : paliers de tarif, promotion avec son motif, quantité, frais de service, total, mention d'annulation.
-  MÈNE VERS  live · account-upcoming
+  SCREEN     Seat purchase
+  ROUTE      overlay, no URL
+  SHOWS      The purchase modal: price tiers, promotion with its reason, quantity, service fee, total, cancellation notice.
+  LEADS TO   live · account-upcoming
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 3211-3260
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 3211-3260
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       L'achat d'une place NE PASSE PAS par le panier. Les frais de service sont une
-             constante d'écran dans la maquette (`feeNum = 1.2`) ; le contrat les sert.
+  NOTE       Buying a seat DOES NOT go through the cart. The service fee is a screen constant in
+             the mockup (`feeNum = 1.2`); the contract serves it.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — refreshDateAvailability, quoteSeat, purchaseSeat
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — refreshDateAvailability, quoteSeat, purchaseSeat
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : A, artist, fr, locked, money, s, t
-  À LIRE     dépendances non recopiées ici : heroBase, onArtistLive, tierDefs, tkStd, tkSup, watched, watchedShow, watchedViewers
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: A, artist, fr, locked, money, s, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: heroBase, onArtistLive, tierDefs, tkStd, tkSup, watched, watchedShow, watchedViewers
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <sc-if value="{{ ticketOpen }}" hint-placeholder-val="{{ false }}">
 <div onClick="{{ closeTicket }}" style="position: fixed; inset: 0; z-index: 8000; background: rgba(6,5,5,0.78); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 40px; animation: fadeIn .2s ease both;">
@@ -72,28 +75,28 @@
 </div>
 </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* tkFree  —  lignes 5051-5055 */
+/* tkFree  —  lines 5051-5055 */
     const tkFree = (() => {
       const raw = (s.ticketFor && s.ticketFor.priceLabel);
       if (!raw) return false;
       return /gratuit|free/i.test(String(raw)) || parseFloat(String(raw).replace(',', '.').replace(/[^\d.]/g, '')) === 0;
     })();
-/* tierIdx  —  lignes 5082-5082 */
+/* tierIdx  —  lines 5082-5082 */
     const tierIdx = Math.min(s.tier, tierDefs.length - 1);
-/* tiers  —  lignes 5083-5088 */
+/* tiers  —  lines 5083-5088 */
     const tiers = tierDefs.map(([name, price, desc], i) => ({
       name, price, desc,
       pick: () => this.setState({ tier: i }),
       style: 'cursor: pointer; padding: 14px; border: 1px solid ' + (tierIdx === i ? '#EDE7DC' : '#262320') +
         '; background: ' + (tierIdx === i ? '#141210' : 'transparent') + ';'
     }));
-/* priceNum  —  lignes 5089-5089 */
+/* priceNum  —  lines 5089-5089 */
     const priceNum = tkFree ? 0 : ([0, tkStd, tkSup][tierIdx] || 0);
-/* feeNum  —  lignes 5090-5090 */
+/* feeNum  —  lines 5090-5090 */
     const feeNum = priceNum ? 1.2 : 0;
-/* hero  —  lignes 5551-5571 */
+/* hero  —  lines 5551-5571 */
     const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
       title: s.pick.title,
       artist: s.pick.artist,
@@ -115,13 +118,13 @@
       priceLabel: watched.prices[0].amount ? A.price(watched.prices[0].amount) : (fr ? 'Gratuit' : 'Free'),
       img: A.showImage(watchedShow, 1600), imgCss: this.cssUrl(A.showImage(watchedShow, 1600))
     } : heroBase);
-/* heroIsLive  —  lignes 6227-6229 */
+/* heroIsLive  —  lines 6227-6229 */
     const heroIsLive = (s.pick && (s.page === 'live' || s.page === 'artist'))
       ? s.pick.kind === 'live'
       : (s.page === 'live' || s.page === 'home' || onArtistLive);
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       tpOn: !!s.ticketPromo,
@@ -149,18 +152,19 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.chooseTier  t.fees  t.freeGiveCta  t.freeSeatCta  t.noFee  t.onNow  t.promoBadge  
     t.subtotal  t.ticketFine  t.total  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     page  pick  shareOpen  ticketFor  ticketOpen  ticketPromo  tier  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     cssUrl, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

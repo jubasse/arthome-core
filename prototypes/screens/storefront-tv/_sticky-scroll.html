@@ -1,21 +1,21 @@
 <!--
-  Mécanique  : défilement collant (« sticky row ») et calage horizontal
+  Mechanic   : sticky scrolling ("sticky row") and horizontal seating
   Source     : Storefront TV.dc.html — fit() L1935-1944, glide() L1993-2007, place() L2008-2025
-  Rôle       : vertical — la rangée focalisée se cale toujours au même endroit de l'écran,
-               les autres glissent sous elle, jamais de saut brutal.
-               horizontal — la carte focalisée reste à gauche après les trois premières,
-               avec un aperçu de la suivante qui dépasse du bord.
-  Note       : ces trois fonctions sont physiquement DANS le moteur de focus du fichier
-               d'origine (place() est appelée par focusEl()). Elles sont recopiées ici
-               parce qu'elles forment une mécanique à part entière ; _focus-engine.html
-               en garde l'exemplaire en place. Les deux fichiers ne divergent pas :
-               ils citent les mêmes lignes.
+  Role       : vertical — the focused row always seats at the same place on screen and
+               the others glide underneath it, never a brutal jump.
+               horizontal — the focused card stays on the left after the first three,
+               with a glimpse of the next one spilling past the edge.
+  Note       : these three functions physically live INSIDE the focus engine in the
+               original file (place() is called by focusEl()). They are copied here
+               because they form a mechanic in their own right; _focus-engine.html
+               keeps the in-place copy. The two files do not diverge: they cite the
+               same lines.
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
-<!-- ═══════════ fit() — ajustement du cadre (verbatim, L1935-1944) ═══════════ -->
+<!-- ═══════════ fit() — frame adjustment (verbatim, L1935-1944) ═══════════ -->
 <script type="text/x-dc-extract">
   fit() {
     const wrap = document.querySelector('[data-tvwrap]');
@@ -29,7 +29,7 @@
 
 </script>
 
-<!-- ═══════════ glide() — défilement animé (verbatim, L1993-2007) ═══════════ -->
+<!-- ═══════════ glide() — animated scrolling (verbatim, L1993-2007) ═══════════ -->
 <script type="text/x-dc-extract">
   glide(sc, axis, target, instant) {
     const max = axis === 'y' ? sc.scrollHeight - sc.clientHeight : sc.scrollWidth - sc.clientWidth;
@@ -48,7 +48,7 @@
   }
 </script>
 
-<!-- ═══════════ place() — calage de l'élément focalisé (verbatim, L2008-2025) ═══════════ -->
+<!-- ═══════════ place() — seats the focused element (verbatim, L2008-2025) ═══════════ -->
 <script type="text/x-dc-extract">
   place(el, instant) {
     let n = el.parentElement; const conts = [];
@@ -70,8 +70,8 @@
   }
 </script>
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « Contraintes propres à la TV »
-  Prompt - Storefront TV.md → « Défilement »
-  Exemplaire en place : _focus-engine.html (L1945-2146)
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "TV-specific constraints"
+  docs/storefront-tv.md → "Scrolling"
+  In-place copy: _focus-engine.html (L1945-2146)
 -->

@@ -1,26 +1,26 @@
 <!--
-  ÉCRAN        feuille · role
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Changer les rôles d'un membre, borné par ce qu'on peut attribuer — ou le retirer.
-  RÔLES        artist · prod · coord
-  MÈNE VERS    aucun (écran terminal)
+  SCREEN       sheet / role
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        Changing a member's roles, bounded by what you may assign — or removing them.
+  ROLES        artist · prod · coord
+  LEADS TO     none (terminal screen)
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  sheet L828-895
-               modèle    L4008-4038
-  CLÉS DE COPIE
-               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
-               - table ROLES en dur (six personas — libellé, jamais un droit, E6)
-  CONTRAT
-               - needs §Incohérences 3 (la projection à six n'est pas sûre pour l'autorisation)
+               markup      sheet L828-895
+               view model  L4008-4038
+  COPY KEYS
+               - EN table at the top of the script (a parallel translation, outside i18n — see _index.md, note D2)
+               - hardcoded ROLES table (six personas — a label, never a right, E6)
+  CONTRACT
+               - needs §Inconsistencies 3 (the six-persona projection is not safe for authorization)
                - openapi PATCH /v1/channels/{channelId}/members/{personId} — ROLE_NOT_ASSIGNABLE
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!-- ---- sheet (L828-895) ---- -->
   <sc-if value="{{ shOpen }}" hint-placeholder-val="{{ false }}">
@@ -92,7 +92,7 @@
     </div>
   </sc-if>
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
     if (kind === 'role') {

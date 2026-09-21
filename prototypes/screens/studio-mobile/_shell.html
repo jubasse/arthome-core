@@ -1,20 +1,20 @@
 <!--
-  PIÈCE        _shell — la coquille
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  RÔLE         Ce qui entoure tous les écrans : écran d'amorçage, barre haute (sélecteur de chaîne, compte, boîte), bouton de retour, titre de page, et le contexte que renderReady() passe à chaque page_*.
+  PART         _shell — the shell
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  PURPOSE      What surrounds every screen: the boot screen, the top bar (channel picker, account, inbox), the back button, the page title, and the context renderReady() hands to every page_*.
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  L1-28 · L29-31 · L32-44 · L46-47 · L48-75 · L76-77 · L78-88 · L812-813 · L896-900
-               modèle    L1089-1090 · L1412-1439 · L1440-1498 · L1519-1522 · L1557-1567 · L1568-1890
-  NOTE         renderReady() est recopié EN ENTIER ici. Sa tranche d'onglets (L1626-1632 et L1727-1768) est recopiée une seconde fois dans _tab-bar.html, verbatim : la duplication est voulue, pour qu'un agent qui ouvre _tab-bar.html n'ait rien à aller chercher ailleurs.
-               La bascule portrait/paysage vit ici : const land = (P.orientation) === 'paysage', puis shellStyle, mainStyle, blocksWrapStyle, tabBarStyle, sheetStyle.
+               markup      L1-28 · L29-31 · L32-44 · L46-47 · L48-75 · L76-77 · L78-88 · L812-813 · L896-900
+               view model  L1089-1090 · L1412-1439 · L1440-1498 · L1519-1522 · L1557-1567 · L1568-1890
+  NOTE         renderReady() is copied here IN FULL. Its tab slice (L1626-1632 and L1727-1768) is copied a second time into _tab-bar.html, verbatim: the duplication is deliberate, so that an agent opening _tab-bar.html has nothing to fetch elsewhere.
+               The portrait/landscape switch lives here: const land = (P.orientation) === 'paysage', then shellStyle, mainStyle, blocksWrapStyle, tabBarStyle, sheetStyle.
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
-<!-- ---- en-tête du document, styles et animations (L1-28) ---- -->
+<!-- ---- document head, styles and animations (L1-28) ---- -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -44,12 +44,12 @@
 </style>
 </helmet>
 
-<!-- ---- ouverture de la coquille (L29-31) ---- -->
+<!-- ---- opening of the shell (L29-31) ---- -->
 
 <div style="{{ shellStyle }}">
 
 
-<!-- ---- écran d'amorçage : rien n'est peint avant la réponse (L32-44) ---- -->
+<!-- ---- boot screen: nothing is painted before the answer (L32-44) ---- -->
   <sc-if value="{{ booting }}" hint-placeholder-val="{{ false }}">
     <div style="position: fixed; inset: 0; z-index: 90; background: #0E0F10; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 0 28px; text-align: center;">
       <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: #6E7681;">ARTHOME · STUDIO</div>
@@ -64,11 +64,11 @@
   </sc-if>
 
 
-<!-- ---- ouverture du rendu prêt (L46-47) ---- -->
+<!-- ---- opening of the ready render (L46-47) ---- -->
   <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
 
 
-<!-- ---- barre haute : chaîne, compte, boîte (L48-75) ---- -->
+<!-- ---- top bar: channel, account, inbox (L48-75) ---- -->
 
   <div style="position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 7px; height: 56px; padding: 0 9px; background: #15171A; border-bottom: 1px solid #23272C;">
     <div onClick="{{ goHome }}" style="min-height: 44px; display: flex; flex-direction: column; justify-content: center; cursor: pointer;">
@@ -98,11 +98,11 @@
   </div>
 
 
-<!-- ---- ouverture du corps (L76-77) ---- -->
+<!-- ---- opening of the body (L76-77) ---- -->
   <main style="{{ mainStyle }}">
 
 
-<!-- ---- retour et titre de page (L78-88) ---- -->
+<!-- ---- back button and page title (L78-88) ---- -->
     <sc-if value="{{ hasBack }}" hint-placeholder-val="{{ false }}">
       <div onClick="{{ backAct }}" style="margin-bottom: 9px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px 0 9px; border: 1px solid #23272C; background: #121417; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.09em; color: #C6CDD4;">{{ backLabel }}</div>
     </sc-if>
@@ -116,44 +116,44 @@
 
 
 <!--
-  Ici s'insèrent les blocs propres aux six pages qui en ont un :
+  Here the blocks of the six pages that have one are inserted:
     pgInbox   L89-163    -> inbox.html
     pgAgenda  L165-232   -> agenda.html
     pgDash    L234-292   -> dashboard.html
     pgEvents  L294-352   -> events.html
     pgEvent   L354-416   -> event.html / event-panes.html
     pgWizard  L418-473   -> wizard.html
-  puis le balisage générique L475-810 -> _blocks.html
+  then the generic markup L475-810 -> _blocks.html
 -->
 
-<!-- ---- fermeture du corps (L812-813) ---- -->
+<!-- ---- closing of the body (L812-813) ---- -->
   </main>
 
 
 <!--
-  Puis la barre d'onglets L814-826 -> _tab-bar.html
-  et la feuille           L828-895 -> _sheet-shell.html
+  Then the tab bar L814-826 -> _tab-bar.html
+  and the sheet    L828-895 -> _sheet-shell.html
 -->
 
-<!-- ---- fermetures (L896-900) ---- -->
+<!-- ---- closings (L896-900) ---- -->
 
   </sc-if>
 
 </div>
 
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <!--
-  LES PROPRIÉTÉS D'ENTRÉE DE LA SURFACE (L901-902, recopiées telles quelles).
-  C'est ce qu'un agent doit lire en premier : orientation (portrait|paysage), lang (fr|en),
-  persona (les six), secondRole (le cumul de rôles), myZone (fuseau de lecture),
+  THE SURFACE'S INPUT PROPERTIES (L901-902, copied as they stand).
+  This is what an agent should read first: orientation (portrait|paysage), lang (fr|en),
+  persona (the six), secondRole (holding more than one role), myZone (reading timezone),
   onAir, chatRegime, autoMod.
 -->
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:900},&quot;orientation&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;portrait&quot;,&quot;paysage&quot;],&quot;default&quot;:&quot;portrait&quot;,&quot;tsType&quot;:&quot;'portrait' | 'paysage'&quot;,&quot;section&quot;:&quot;Affichage&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;fr&quot;,&quot;en&quot;],&quot;default&quot;:&quot;fr&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Général&quot;},&quot;persona&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;artiste&quot;,&quot;production&quot;,&quot;régie&quot;,&quot;modération&quot;,&quot;coordination&quot;,&quot;trésorerie&quot;],&quot;default&quot;:&quot;artiste&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Général&quot;},&quot;secondRole&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;aucun&quot;,&quot;artiste&quot;,&quot;production&quot;,&quot;régie&quot;,&quot;modération&quot;,&quot;coordination&quot;,&quot;trésorerie&quot;],&quot;default&quot;:&quot;aucun&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Général&quot;},&quot;myZone&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Europe/Paris&quot;,&quot;Europe/London&quot;,&quot;Europe/Lisbon&quot;,&quot;America/New_York&quot;,&quot;America/Montreal&quot;,&quot;Asia/Tokyo&quot;],&quot;default&quot;:&quot;Europe/Paris&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Général&quot;},&quot;onAir&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Antenne&quot;},&quot;chatRegime&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;libre&quot;,&quot;emojis et phrases préparées&quot;,&quot;lecture seule&quot;,&quot;coupé&quot;],&quot;default&quot;:&quot;emojis et phrases préparées&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Antenne&quot;},&quot;autoMod&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Antenne&quot;}}">
 
-<!-- Ouverture de la classe (L1084) -->
+<!-- Opening of the class (L1084) -->
 <script type="text/x-dc-fragment">
 class Component extends DCLogic {
   cssUrl(u) { return u ? 'url("' + u + '")' : 'none'; }
@@ -589,7 +589,7 @@ class Component extends DCLogic {
 
   /* ---------- feuilles : toute modale remonte du bas ---------- */
 
-/* ---- fermeture de la classe et du script (L4158-4162) ---- */
+/* ---- closing of the class and of the script (L4158-4162) ---- */
 }
 
 

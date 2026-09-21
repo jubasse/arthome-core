@@ -1,26 +1,29 @@
 <!--
-  ÉCRAN      En-tête et navigation
-  ROUTE      toutes les routes
-  AFFICHE    La barre d'en-tête présente sur toutes les routes : logo, navigation, champ de recherche, bascule de langue, bascule de variante, boutons visiteur, cloche de notifications, panier, menu de compte.
-  MÈNE VERS  home · browse · categories · artists · following · account · help · plans · les quatre popovers
+  SCREEN     Header and navigation
+  ROUTE      every route
+  SHOWS      The header bar present on every route: logo, navigation, search field, language toggle, variant toggle, guest buttons, notification bell, cart, account menu.
+  LEADS TO   home · browse · categories · artists · following · account · help · plans · the four popovers
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 59-71 · 131-143 · 253-283
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 59-71 · 131-143 · 253-283
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Trois trous dans ce fichier, marqués par des commentaires : la recherche et ses
-             suggestions (72-130), les notifications (144-171) et le panier (172-252) sont extraits
-             à part parce que ce sont les blocs qu'un agent aura le plus de mal à retrouver.
+  NOTE       Three holes in this file, marked by comments: search and its suggestions (72-130),
+             notifications (144-171) and the cart (172-252) are extracted separately, because those
+             are the blocks an agent would have the hardest time finding.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — getViewerContext, listNotifications, getCart
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — getViewerContext, listNotifications, getCart
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : account, artist, artistsList, catalogue, disciplineKeys, favesCount, fr, pastCount, s, sideDrawer, t, upcomingCount
-  À LIRE     dépendances non recopiées ici : faves
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: account, artist, artistsList, catalogue, disciplineKeys, favesCount, fr, pastCount, s, sideDrawer, t, upcomingCount
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: faves
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <div style="height: 77px;"></div>
 <header style="{{ headerStyle }}">
@@ -82,15 +85,15 @@
 </header>
 
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* artistFilters  —  lignes 5232-5236 */
+/* artistFilters  —  lines 5232-5236 */
     const artistFilters = disciplineKeys.map((label, i) => ({
       label,
       pick: () => this.setState(st => ({ artistFilter: st.artistFilter === i ? -1 : i })),
       style: CHIP + (s.artistFilter === i ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;')
     }));
-/* artistSorts  —  lignes 5237-5243 */
+/* artistSorts  —  lines 5237-5243 */
     const artistSorts = [['az', t.sortAZ], ['pop', t.sortFollowers]].map(([key, label]) => ({
       label,
       pick: () => this.setState({ artistSort: key }),
@@ -98,7 +101,7 @@
     }));
 
     /* ---------- catalogue de recherche ---------- */
-/* navDefs  —  lignes 5740-5746 */
+/* navDefs  —  lines 5740-5746 */
     const navDefs = fr ? [
       ['upcoming', 'Événements à venir', String(upcomingCount)], ['past', 'Événements passés', String(pastCount)], ['faves', 'Mes favoris', String(favesCount)],
       ['alerts', 'Recherches enregistrées', String(s.alerts.length)], ['orders', 'Mes commandes', String(s.orders.length)], ['sub', 'Mon abonnement', ''], ['profile', 'Mon profil', ''], ['prefs', 'Préférences', ''], ['notifs', 'Notifications', '4'], ['security', 'Sécurité', ''], ['privacy', 'Confidentialité', '']
@@ -108,7 +111,7 @@
     ];
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       goHome: this.nav('home'), goBrowse: this.nav('browse'), goArtist: this.nav('artist'),
@@ -136,19 +139,20 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.amFormule  t.categories  t.navArtists  t.navBrowse  t.navFollowing  t.navHome  
     t.navTickets  t.planSubName  t.planSubPrice  t.search  t.signIn  t.signOut  t.signUp  
     t.sortAZ  t.sortFollowers  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     accMenuOpen  accTab  alerts  artistFilter  artistSort  guest  orders  page  searchOpen  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     gate, nav, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

@@ -1,21 +1,21 @@
 <!--
-  Arthome · storefront mobile — noyau commun du modèle de vue
+  Arthome · storefront mobile — shared core of the view model
   ══════════════════════════════════════════════════════════════════════════
-  Les 74 symboles que presque tous les fichiers d'écran référencent.
-  Ils sont ici UNE fois et ne sont recopiés dans aucun fichier d'écran.
-  Chaque fichier d'écran en donne la liste qu'il emploie, en pied de fichier.
+  The 74 symbols that nearly every screen file references.
+  They are here ONCE and are recopied into no screen file.
+  Each screen file lists the ones it uses, in its footer.
 
   Source     : mockups/Storefront Mobile.dc.html
-  Voir aussi : _copy.html (tables FR et EN) · _shell.html (la coquille)
+  See also   : _copy.html (FR and EN tables) · _shell.html (the frame)
 
-  ⚠ EXTRACTION LITTÉRALE. Rien n'a été corrigé ni reformaté.
+  ⚠ VERBATIM EXTRACTION. Nothing was corrected or reformatted.
 -->
 
-<script type="text/x-arthome-extract" data-part="viewmodel-commun">
-/* ── U  —  constante de module  —  L2301–2301 ── */
+<script type="text/x-arthome-extract" data-part="viewmodel-shared">
+/* ── U  —  module constant  —  L2301–2301 ── */
 const U = (id, w) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w || 900}&q=70`;
 
-/* ── IMG  —  constante de module  —  L2302–2330 ── */
+/* ── IMG  —  module constant  —  L2302–2330 ── */
 const IMG = {
   ballet: U('photo-1547153760-18fc86324498'),
   lights: U('photo-1459749411175-04bf5292ceea'),
@@ -46,17 +46,17 @@ const IMG = {
   tote: U('photo-1591561954557-26941169b49e', 500)
 };
 
-/* ── ARTIST_NAMES  —  constante de module  —  L3239–3239 ── */
+/* ── ARTIST_NAMES  —  module constant  —  L3239–3239 ── */
 let ARTIST_NAMES = [];
 
-/* ── artistIndexFor  —  constante de module  —  L3240–3244 ── */
+/* ── artistIndexFor  —  module constant  —  L3240–3244 ── */
 const artistIndexFor = (text) => {
   const s = String(text || '');
   for (let i = 0; i < ARTIST_NAMES.length; i++) if (s.indexOf(ARTIST_NAMES[i]) > -1) return i;
   return 3;
 };
 
-/* ── PROMO_DEFS  —  constante de module  —  L3246–3255 ── */
+/* ── PROMO_DEFS  —  module constant  —  L3246–3255 ── */
 let PROMO_DEFS = {
   'Nocturnes — acte II': { was: 20, now: 14, live: true, reasonFr: 'SÉANCE COMMENCÉE', reasonEn: 'ALREADY STARTED' },
   'Nocturnes — acte III': { was: 22, reasonFr: 'DERNIÈRE DATE', reasonEn: 'FINAL DATE' },
@@ -68,7 +68,7 @@ let PROMO_DEFS = {
   'The Chalk Circle': { was: 16, reasonFr: 'AVANT-PREMIÈRE', reasonEn: 'PREVIEW' }
 };
 
-/* ── SUBS_ALL  —  constante de module  —  L3262–3280 ── */
+/* ── SUBS_ALL  —  module constant  —  L3262–3280 ── */
 let SUBS_ALL = { fr: [
       ['Répertoire classique', 'Contemporain', 'Comédie', 'Tragédie', 'Théâtre documentaire', 'Jeune public', 'Lecture', 'Théâtre d’objets', 'Impro', 'Seul en scène'],
       ['Ballet classique', 'Néoclassique', 'Danse contemporaine', 'Hip-hop', 'Krump & waacking', 'Danses urbaines', 'Flamenco', 'Danses du monde', 'Bal participatif', 'Butō'],
@@ -89,10 +89,10 @@ let SUBS_ALL = { fr: [
       ['Open air', 'All-nighter', 'Marathon', 'Touring', 'Residency', 'Festival', 'Carte blanche', 'Performance']
 ] };
 
-/* ── PROMO_INK  —  constante de module  —  L3281–3281 ── */
+/* ── PROMO_INK  —  module constant  —  L3281–3281 ── */
 const PROMO_INK = 'oklch(0.83 0.1 84)';
 
-/* ── BADGE_BY_REASON  —  constante de module  —  L3282–3288 ── */
+/* ── BADGE_BY_REASON  —  module constant  —  L3282–3288 ── */
 const BADGE_BY_REASON = {
   'PRÉVENTE': ['PRÉVENTE', 'PRE-SALE'],
   'AVANT-PREMIÈRE': ['AVANT-PREMIÈRE', 'PREVIEW'],
@@ -101,26 +101,26 @@ const BADGE_BY_REASON = {
   'SÉANCE COMMENCÉE': ['TARIF RETARDATAIRE', 'LATE RATE']
 };
 
-/* ── CHIP  —  constante de module  —  L3297–3297 ── */
+/* ── CHIP  —  module constant  —  L3297–3297 ── */
 const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  min-height: 44px; display: inline-flex; align-items: center; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.1em; border: 1px solid ';
 
-/* ── cssUrl  —  méthode de classe  —  L3470–3470 ── */
+/* ── cssUrl  —  class method  —  L3470–3470 ── */
   cssUrl(u) { return u ? 'url("' + u + '")' : 'none'; }
 
-/* ── defaultDate  —  méthode de classe  —  L3475–3479 ── */
+/* ── defaultDate  —  class method  —  L3475–3479 ── */
   defaultDate() {
     const A = this.A;
     if (!A) return null;
     return A.liveNow()[0] || A.upcoming()[0] || null;
   }
 
-/* ── seatCode  —  méthode de classe  —  L3483–3486 ── */
+/* ── seatCode  —  class method  —  L3483–3486 ── */
   seatCode(d) {
     if (!d) return '';
     return 'ATH-' + String(Component.hash(d.id) % 9000 + 1000) + '-' + d.id.slice(0, 2).toUpperCase();
   }
 
-/* ── promoOf  —  méthode de classe  —  L3979–4027 ── */
+/* ── promoOf  —  class method  —  L3979–4027 ── */
   promoOf(title, priceLabel, fr, liveOnly, t) {
     const d = PROMO_DEFS[title];
     if (liveOnly && (!d || !d.live)) return { hasPromo: false, pShowBox: false, pShowWas: false };
@@ -171,7 +171,7 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
     };
   }
 
-/* ── gate  —  méthode de classe  —  L4029–4034 ── */
+/* ── gate  —  class method  —  L4029–4034 ── */
   gate(fn) {
     return (...args) => {
       if (this.state.guest) { this.setState({ authOpen: true, authTab: 'up' }); return; }
@@ -179,7 +179,7 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
     };
   }
 
-/* ── openTicketFor  —  méthode de classe  —  L4036–4046 ── */
+/* ── openTicketFor  —  class method  —  L4036–4046 ── */
   openTicketFor(title, priceLabel, fr, ctx) {
     const d = PROMO_DEFS[title];
     const now = parseFloat(String(priceLabel || '').replace(',', '.').replace(/[^\d.]/g, ''));
@@ -192,7 +192,7 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
     }));
   }
 
-/* ── splitHit  —  méthode de classe  —  L4048–4054 ── */
+/* ── splitHit  —  class method  —  L4048–4054 ── */
   splitHit(text, q) {
     const s = String(text || '');
     if (!q) return { pre: s, hit: '', post: '' };
@@ -201,7 +201,7 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
     return { pre: s.slice(0, i), hit: s.slice(i, i + q.length), post: s.slice(i + q.length) };
   }
 
-/* ── setState  —  méthode de classe  —  L4145–4158 ── */
+/* ── setState  —  class method  —  L4145–4158 ── */
   setState(patch, cb) {
     const next = typeof patch === 'function' ? null : patch;
     if (next && next.page !== undefined && next.page !== this.state.page) {
@@ -217,7 +217,7 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
     return super.setState(patch, cb);
   }
 
-/* ── openRow  —  méthode de classe  —  L4166–4179 ── */
+/* ── openRow  —  class method  —  L4166–4179 ── */
   openRow(row) {
     const pick = { title: row.title, artist: row.artist, img: row.img, priceLabel: row.priceLabel, meta: (row.catName || '').toUpperCase() + ' · ' + row.duration, whenLabel: row.whenLabel, kind: row.kind };
     if (row.kind === 'live') {
@@ -233,7 +233,7 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
     });
   }
 
-/* ── alertSig  —  méthode de classe  —  L4181–4191 ── */
+/* ── alertSig  —  class method  —  L4181–4191 ── */
   alertSig(query, st) {
     const s = st || {};
     return [
@@ -246,7 +246,7 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
     ].join('|');
   }
 
-/* ── alertState  —  méthode de classe  —  L4193–4200 ── */
+/* ── alertState  —  class method  —  L4193–4200 ── */
   alertState() {
     const s = this.state;
     return {
@@ -256,41 +256,41 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
     };
   }
 
-/* ── openLive  —  méthode de classe  —  L4264–4268 ── */
+/* ── openLive  —  class method  —  L4264–4268 ── */
   openLive(who) {
     const id = artistIndexFor(who);
     this.setState({ pick: null });
     this.setState({ page: 'live', artistId: id, ticketOpen: false, shareOpen: false, suggOpen: false, searchOpen: false, watching: id, watchKind: 'live', pipClosed: false });
   }
 
-/* ── hashOf  —  calcul dans renderReady()  —  L4285–4285 ── */
+/* ── hashOf  —  computation in renderReady()  —  L4285–4285 ── */
     const hashOf = Component.hash;
 
-/* ── s  —  calcul dans renderReady()  —  L4306–4306 ── */
+/* ── s  —  computation in renderReady()  —  L4306–4306 ── */
     const s = this.state;
 
-/* ── A  —  calcul dans renderReady()  —  L4307–4307 ── */
+/* ── A  —  computation in renderReady()  —  L4307–4307 ── */
     const A = this.A;
 
-/* ── P  —  calcul dans renderReady()  —  L4338–4338 ── */
+/* ── P  —  computation in renderReady()  —  L4338–4338 ── */
     const P = this.props;
 
-/* ── ownedIds  —  calcul dans renderReady()  —  L4344–4344 ── */
+/* ── ownedIds  —  computation in renderReady()  —  L4344–4344 ── */
     const ownedIds = (((this.A.fixtures.accounts || [])[0] || { ownedDates: [] }).ownedDates) || [];
 
-/* ── ownsDate  —  calcul dans renderReady()  —  L4345–4345 ── */
+/* ── ownsDate  —  computation in renderReady()  —  L4345–4345 ── */
     const ownsDate = (d) => !!d && ownedIds.indexOf(d.id) > -1;
 
-/* ── lockedPref  —  calcul dans renderReady()  —  L4346–4346 ── */
+/* ── lockedPref  —  computation in renderReady()  —  L4346–4346 ── */
     const lockedPref = s.lockedSet ? s.locked : (P.freePreview !== 'ouvert');
 
-/* ── t  —  calcul dans renderReady()  —  L4347–4347 ── */
+/* ── t  —  computation in renderReady()  —  L4347–4347 ── */
     const t = s.lang === 'fr' ? FR : EN;
 
-/* ── fr  —  calcul dans renderReady()  —  L4348–4348 ── */
+/* ── fr  —  computation in renderReady()  —  L4348–4348 ── */
     const fr = s.lang === 'fr';
 
-/* ── cats  —  calcul dans renderReady()  —  L4396–4410 ── */
+/* ── cats  —  computation in renderReady()  —  L4396–4410 ── */
     const cats = A.categoriesOf().map((c, ci) => {
       const dates = A.datesInCategory(c.id);
       const live = dates.filter(d => A.isOnAir(d)).length;
@@ -307,32 +307,32 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
       };
     });
 
-/* ── SUBS  —  calcul dans renderReady()  —  L4412–4412 ── */
+/* ── SUBS  —  computation in renderReady()  —  L4412–4412 ── */
     const SUBS = SUBS_ALL[fr ? 'fr' : 'en'];
 
-/* ── category  —  calcul dans renderReady()  —  L4413–4413 ── */
+/* ── category  —  computation in renderReady()  —  L4413–4413 ── */
     const category = cats[s.catId] || cats[0];
 
-/* ── subsSel  —  calcul dans renderReady()  —  L4414–4414 ── */
+/* ── subsSel  —  computation in renderReady()  —  L4414–4414 ── */
     const subsSel = s.subs || [];
 
-/* ── filterLabels  —  calcul dans renderReady()  —  L4430–4430 ── */
+/* ── filterLabels  —  computation in renderReady()  —  L4430–4430 ── */
     const filterLabels = fr
 
-/* ── filters  —  calcul dans renderReady()  —  L4433–4437 ── */
+/* ── filters  —  computation in renderReady()  —  L4433–4437 ── */
     const filters = filterLabels.map((label, i) => ({
       label,
       pick: () => this.setState({ filter: i }),
       style: CHIP + (s.filter === i ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;')
     }));
 
-/* ── results  —  calcul dans renderReady()  —  L4446–4446 ── */
+/* ── results  —  computation in renderReady()  —  L4446–4446 ── */
     const results = A.fixtures.dates
 
-/* ── account  —  calcul dans renderReady()  —  L4537–4537 ── */
+/* ── account  —  computation in renderReady()  —  L4537–4537 ── */
     const account = (A.fixtures.accounts || [])[0] || { name: 'Camille', plan: 'season' };
 
-/* ── tickets  —  calcul dans renderReady()  —  L4541–4585 ── */
+/* ── tickets  —  computation in renderReady()  —  L4541–4585 ── */
     const tickets = (() => {
       const acc = (A.fixtures.accounts || [])[0];
       const ids = acc ? acc.ownedDates : [];
@@ -379,7 +379,7 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
       });
     });
 
-/* ── roster  —  calcul dans renderReady()  —  L4595–4635 ── */
+/* ── roster  —  computation in renderReady()  —  L4595–4635 ── */
     const roster = (() => {
       const followed = (s.followedIds || []).map(id => A.artist(id)).filter(Boolean);
       const live = A.liveNow().map(d => A.artist(A.show(d.show).artist)).filter(Boolean);
@@ -422,19 +422,19 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
       });
     })();
 
-/* ── CAT_NAMES  —  calcul dans renderReady()  —  L4655–4655 ── */
+/* ── CAT_NAMES  —  computation in renderReady()  —  L4655–4655 ── */
     const CAT_NAMES = cats.map(c => c.name);
 
-/* ── SUB_OF_ARTIST  —  calcul dans renderReady()  —  L4656–4656 ── */
+/* ── SUB_OF_ARTIST  —  computation in renderReady()  —  L4656–4656 ── */
     const SUB_OF_ARTIST = {};
 
-/* ── byArtist  —  calcul dans renderReady()  —  L4657–4657 ── */
+/* ── byArtist  —  computation in renderReady()  —  L4657–4657 ── */
     const byArtist = {};
 
-/* ── catIndexOf  —  calcul dans renderReady()  —  L4659–4659 ── */
+/* ── catIndexOf  —  computation in renderReady()  —  L4659–4659 ── */
     const catIndexOf = (id) => Math.max(0, cats.findIndex(c => c.id === id));
 
-/* ── genPool  —  calcul dans renderReady()  —  L4660–4717 ── */
+/* ── genPool  —  computation in renderReady()  —  L4660–4717 ── */
     const genPool = (() => {
       const artists = [];
       const rows = [];
@@ -494,22 +494,22 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
       return { artists, rows };
     })();
 
-/* ── RAW  —  calcul dans renderReady()  —  L4720–4720 ── */
+/* ── RAW  —  computation in renderReady()  —  L4720–4720 ── */
     const RAW = [];
 
-/* ── MFR  —  calcul dans renderReady()  —  L4721–4721 ── */
+/* ── MFR  —  computation in renderReady()  —  L4721–4721 ── */
     const MFR = ['JANV.', 'FÉVR.', 'MARS', 'AVRIL', 'MAI', 'JUIN', 'JUIL.', 'AOÛT', 'SEPT.', 'OCT.', 'NOV.', 'DÉC.'];
 
-/* ── MEN  —  calcul dans renderReady()  —  L4722–4722 ── */
+/* ── MEN  —  computation in renderReady()  —  L4722–4722 ── */
     const MEN = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-/* ── DFR  —  calcul dans renderReady()  —  L4723–4723 ── */
+/* ── DFR  —  computation in renderReady()  —  L4723–4723 ── */
     const DFR = ['DIM', 'LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'];
 
-/* ── DEN  —  calcul dans renderReady()  —  L4724–4724 ── */
+/* ── DEN  —  computation in renderReady()  —  L4724–4724 ── */
     const DEN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-/* ── dateAt  —  calcul dans renderReady()  —  L4725–4736 ── */
+/* ── dateAt  —  computation in renderReady()  —  L4725–4736 ── */
     const dateAt = (d, hour) => {
       const dt = new Date();
       dt.setDate(dt.getDate() + d);
@@ -523,10 +523,10 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
       return stamp + (fr ? ' · ' + hh + 'h' + m2 : ' · ' + (hh > 12 ? hh - 12 : hh) + ':' + m2 + (hh >= 12 ? 'PM' : 'AM'));
     };
 
-/* ── SLOTS  —  calcul dans renderReady()  —  L4737–4737 ── */
+/* ── SLOTS  —  computation in renderReady()  —  L4737–4737 ── */
     const SLOTS = [18, 18.5, 19, 19.5, 20, 20.5, 21, 21.5, 22, 22.5];
 
-/* ── dayLabel  —  calcul dans renderReady()  —  L4738–4748 ── */
+/* ── dayLabel  —  computation in renderReady()  —  L4738–4748 ── */
     const dayLabel = (d, key) => {
       const h = SLOTS[hashOf(String(key || '') + d) % SLOTS.length];
       const hh = Math.floor(h);
@@ -539,7 +539,7 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
       return dateAt(d, 0);
     };
 
-/* ── subOf  —  calcul dans renderReady()  —  L4749–4755 ── */
+/* ── subOf  —  computation in renderReady()  —  L4749–4755 ── */
     const subOf = (cat, ai, title, subIdx) => {
       if (subIdx !== undefined) return subIdx;
       const nm = (roster[ai] || {}).name;
@@ -548,16 +548,16 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
       return hashOf(title) % ((SUBS_ALL.fr[cat] || [1]).length || 1);
     };
 
-/* ── price$  —  calcul dans renderReady()  —  L4756–4756 ── */
+/* ── price$  —  computation in renderReady()  —  L4756–4756 ── */
     const price$ = n => n === 0 ? t.freeLabel : (fr ? n + ' €' : '€' + n);
 
-/* ── seenSlot  —  calcul dans renderReady()  —  L4757–4757 ── */
+/* ── seenSlot  —  computation in renderReady()  —  L4757–4757 ── */
     const seenSlot = {};
 
-/* ── liveSeen  —  calcul dans renderReady()  —  L4758–4758 ── */
+/* ── liveSeen  —  computation in renderReady()  —  L4758–4758 ── */
     const liveSeen = {};
 
-/* ── catalogue  —  calcul dans renderReady()  —  L4759–4810 ── */
+/* ── catalogue  —  computation in renderReady()  —  L4759–4810 ── */
     const catalogue = RAW.concat(genPool.rows).filter(([kind, title, ai, , , , day]) => {
       const key = ai + '§' + String(title || '').split(' — ')[0].trim() + '§' + kind + '§' + day;
       if (seenSlot[key]) return false;
@@ -611,22 +611,22 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
       return row;
     });
 
-/* ── artist  —  calcul dans renderReady()  —  L4846–4846 ── */
+/* ── artist  —  computation in renderReady()  —  L4846–4846 ── */
     const artist = roster[s.artistId] || roster[3];
 
-/* ── currentDate  —  calcul dans renderReady()  —  L4850–4853 ── */
+/* ── currentDate  —  computation in renderReady()  —  L4850–4853 ── */
     const currentDate = (() => {
       const dates = artist ? A.datesOfArtist(artist.id) : [];
       return dates.filter(d => A.isOnAir(d))[0] || dates.filter(d => d.startOffsetMin > 0)[0] || dates[0] || null;
     })();
 
-/* ── ownsCurrent  —  calcul dans renderReady()  —  L4854–4854 ── */
+/* ── ownsCurrent  —  computation in renderReady()  —  L4854–4854 ── */
     const ownsCurrent = ownsDate(currentDate);
 
-/* ── locked  —  calcul dans renderReady()  —  L4856–4856 ── */
+/* ── locked  —  computation in renderReady()  —  L4856–4856 ── */
     const locked = lockedPref && !ownsCurrent;
 
-/* ── merch  —  calcul dans renderReady()  —  L4859–4881 ── */
+/* ── merch  —  computation in renderReady()  —  L4859–4881 ── */
     const merch = (() => {
       const IMG_BY_KIND = { textile: IMG.tshirt, poster: IMG.poster, record: IMG.vinyl, print: IMG.poster };
       const d = currentDate || this.defaultDate();
@@ -651,7 +651,7 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
         ' transition: background .24s ease, border-color .24s ease, color .24s ease;'
     }));
 
-/* ── REPLAY  —  calcul dans renderReady()  —  L4883–4893 ── */
+/* ── REPLAY  —  computation in renderReady()  —  L4883–4893 ── */
     const REPLAY = fr ? {
       included: ['INCLUSE 72 H AVEC LA PLACE', 'oklch(0.7 0.13 150)', 'L\u2019artiste a choisi d\u2019offrir la rediffusion à toute personne ayant acheté sa place, pendant 72 heures après le rideau.'],
       sub: ['INCLUSE DANS L\u2019ABONNEMENT', 'oklch(0.78 0.13 42)', 'Les rediffusions de cet artiste sont accessibles aux abonnés Arthome, sans limite de durée.'],
@@ -664,13 +664,13 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
       off: ['DISABLED BY THE ARTIST', '#8B857C', 'This artist streams live only: nothing is recorded. The choice is locked before the show and cannot be changed afterwards.']
     };
 
-/* ── q  —  calcul dans renderReady()  —  L5102–5102 ── */
+/* ── q  —  computation in renderReady()  —  L5102–5102 ── */
     const q = s.query.trim().toLowerCase();
 
-/* ── followed  —  calcul dans renderReady()  —  L5118–5118 ── */
+/* ── followed  —  computation in renderReady()  —  L5118–5118 ── */
     const followed = roster.filter(a => a.followed).slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'));
 
-/* ── savedShows  —  calcul dans renderReady()  —  L5219–5224 ── */
+/* ── savedShows  —  computation in renderReady()  —  L5219–5224 ── */
     const savedShows = A.upcoming().slice(0, 4).map(d => {
       const show = A.show(d.show);
       const img = A.showImage(show, 900);
@@ -678,7 +678,7 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
         open: () => this.openLive(A.title(show)) };
     });
 
-/* ── sessions  —  calcul dans renderReady()  —  L5325–5333 ── */
+/* ── sessions  —  computation in renderReady()  —  L5325–5333 ── */
     const sessions = (fr ? [
       ['MacBook Pro · Lyon', 'CHROME · SESSION ACTUELLE · IL Y A 2 MIN', 'oklch(0.7 0.13 150)', 'CETTE SESSION', '#6B6459'],
       ['iPhone 15 · Lyon', 'APPLI ARTHOME · IL Y A 3 H', '#8B857C', 'DÉCONNECTER', '#C9C0B2'],
@@ -689,22 +689,22 @@ const CHIP = 'cursor: pointer; padding: 12px 13px; min-height: 44px; box-sizing:
       ['Apple TV · Living room', 'TV APP · YESTERDAY, 9:40PM', '#8B857C', 'SIGN OUT', '#C9C0B2']
     ]).map(([device, meta, dot, cta, ctaColor]) => ({ device, meta, dot, cta, ctaColor }));
 
-/* ── qq  —  calcul dans renderReady()  —  L5336–5336 ── */
+/* ── qq  —  computation in renderReady()  —  L5336–5336 ── */
     const qq = (s.liveQuery || '').trim().toLowerCase();
 
-/* ── hit  —  calcul dans renderReady()  —  L5337–5337 ── */
+/* ── hit  —  computation in renderReady()  —  L5337–5337 ── */
     const hit = (o) => !qq || (o.title + ' ' + o.artist + ' ' + o.catName).toLowerCase().indexOf(qq) > -1;
 
-/* ── curSig  —  calcul dans renderReady()  —  L5445–5445 ── */
+/* ── curSig  —  computation in renderReady()  —  L5445–5445 ── */
     const curSig = this.alertSig(s.query, this.alertState());
 
-/* ── savedMatch  —  calcul dans renderReady()  —  L5446–5446 ── */
+/* ── savedMatch  —  computation in renderReady()  —  L5446–5446 ── */
     const savedMatch = s.alerts.find(al => this.alertSig(al.query, al.st) === curSig) || null;
 
-/* ── alreadySaved  —  calcul dans renderReady()  —  L5447–5447 ── */
+/* ── alreadySaved  —  computation in renderReady()  —  L5447–5447 ── */
     const alreadySaved = !!savedMatch;
 
-/* ── subgenres  —  calcul dans renderReady()  —  L5615–5625 ── */
+/* ── subgenres  —  computation in renderReady()  —  L5615–5625 ── */
     const subgenres = (SUBS[s.catId] || SUBS[0]).map((label, i) => ({
       n: catalogue.filter(o => o.cat === s.catId && o.subs.indexOf(i) > -1).length,
       label: label.toUpperCase(),

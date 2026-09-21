@@ -1,24 +1,27 @@
 <!--
-  ÉCRAN      Centre de notifications
-  ROUTE      superposition, sans URL
-  AFFICHE    Le panneau de notifications ouvert depuis la cloche : fil, marquage lu, renvoi vers les réglages.
-  MÈNE VERS  artist · account-notifications
+  SCREEN     Notification centre
+  ROUTE      overlay, no URL
+  SHOWS      The notification panel opened from the bell: feed, mark as read, link to the settings.
+  LEADS TO   artist · account-notifications
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 144-171
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 144-171
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Le badge « non lu » est la seule donnée personnalisée présente sur TOUTES les routes,
-             y compris les pages publiques indexables.
+  NOTE       The unread badge is the only personalised datum present on EVERY route, including the
+             public indexable pages.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — listNotifications, markNotificationsRead
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — listNotifications, markNotificationsRead
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : A, account, artist, fr, locked, roster, s
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: A, account, artist, fr, locked, roster, s
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
       <div data-pop="notifs" style="{{ memberOnly }} position: relative;">
         <span onClick="{{ toggleNotifs }}" style="{{ bellStyle }}">✳</span>
@@ -49,9 +52,9 @@
         </sc-if>
       </div>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* REPLAY  —  lignes 5469-5479 */
+/* REPLAY  —  lines 5469-5479 */
     const REPLAY = fr ? {
       included: ['INCLUSE 72 H AVEC LA PLACE', 'oklch(0.7 0.13 150)', 'L\u2019artiste a choisi d\u2019offrir la rediffusion à toute personne ayant acheté sa place, pendant 72 heures après le rideau.'],
       sub: ['INCLUSE DANS L\u2019ABONNEMENT', 'oklch(0.78 0.13 42)', 'Les rediffusions de cet artiste sont accessibles aux abonnés Arthome, sans limite de durée.'],
@@ -65,7 +68,7 @@
     };
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       notifsOpen: s.notifsOpen,
@@ -115,17 +118,18 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.markRead  t.notifCenter  t.notifSettings  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     guest  notifsOpen  notifsRead  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     cssUrl, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

@@ -1,30 +1,30 @@
 <!--
-  ÉCRAN        stats
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Audience et séries, en graphiques ou en liste détaillée.
-  RÔLES        artist · prod · tres
-  MÈNE VERS    aucun (écran terminal)
+  SCREEN       stats
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        Audience and series, as charts or as a detailed list.
+  ROLES        artist · prod · tres
+  LEADS TO     none (terminal screen)
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  hasBand L475-485 · hasTabs L487-495 · hasFilters L497-505 · hasBars L688-706 · hasDonut L708-729 · hasBlocks L731-791
-               modèle    L3212-3352
-  CLÉS DE COPIE
-               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
-               - table STATES en dur (draft|hidden|sched|tech|live|done|replay — vocabulaire parallèle, D2)
-  CONTRAT
-               - needs §Confrontation C9 (stats est dans navigation et n'a aucun point d'entrée)
-               - openapi — AUCUN point d'entrée (seul stats_csv existe en export)
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+               markup      hasBand L475-485 · hasTabs L487-495 · hasFilters L497-505 · hasBars L688-706 · hasDonut L708-729 · hasBlocks L731-791
+               view model  L3212-3352
+  COPY KEYS
+               - EN table at the top of the script (a parallel translation, outside i18n — see _index.md, note D2)
+               - hardcoded STATES table (draft|hidden|sched|tech|live|done|replay — a parallel vocabulary, D2)
+  CONTRACT
+               - needs §Confrontation C9 (stats is in navigation and has no endpoint)
+               - openapi — NO endpoint (only stats_csv exists, as an export)
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!--
-  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
-  partagé par tous les écrans, et n'est pas recopié ici :
+  Generic markup driven by this view model — it lives in _blocks.html,
+  shared by every screen, and is not copied here:
     hasBand        L475-485
     hasTabs        L487-495
     hasFilters     L497-505
@@ -33,7 +33,7 @@
     hasBlocks      L731-791
 -->
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
   page_stats(c) {

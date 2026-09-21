@@ -1,26 +1,26 @@
 <!--
   Arthome · storefront mobile — sheet-auth
   ══════════════════════════════════════════════════════════════════════════
-  Route      : superposée · authOpen
-  Affiche    : Inscription et connexion, deux onglets d'un même formulaire.
-  Mène vers  : toutes les routes gardées
-  Contrat    : architecture/adr-auth.md
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L2142–2170
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Route      : overlay · authOpen
+  Shows      : Sign-up and sign-in, two tabs of one form.
+  Leads to   : every gated route
+  Contract   : architecture/adr-auth.md
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L2142–2170
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L2142–2170
+     MARKUP — L2142–2170
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ authOpen }}" hint-placeholder-val="{{ false }}">
 <div onClick="{{ closeAuth }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
@@ -53,37 +53,37 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (8 symboles)
+     VIEW MODEL — specific to this screen (8 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── authOpen  —  clé du modèle rendu  —  L6242–6242 ── */
+/* ── authOpen  —  key of the rendered model  —  L6242–6242 ── */
       authOpen: s.authOpen, authIsUp: s.authTab === 'up',
 
-/* ── authTitle  —  clé du modèle rendu  —  L6243–6243 ── */
+/* ── authTitle  —  key of the rendered model  —  L6243–6243 ── */
       authTitle: s.authTab === 'up' ? t.authTitleUp : t.authTitleIn,
 
-/* ── authIntro  —  clé du modèle rendu  —  L6244–6244 ── */
+/* ── authIntro  —  key of the rendered model  —  L6244–6244 ── */
       authIntro: s.authTab === 'up' ? t.authIntroUp : t.authIntroIn,
 
-/* ── authSwitch  —  clé du modèle rendu  —  L6245–6245 ── */
+/* ── authSwitch  —  key of the rendered model  —  L6245–6245 ── */
       authSwitch: s.authTab === 'up' ? t.authSwitchUp : t.authSwitchIn,
 
-/* ── switchAuth  —  clé du modèle rendu  —  L6249–6249 ── */
+/* ── switchAuth  —  key of the rendered model  —  L6249–6249 ── */
       switchAuth: () => this.setState(st => ({ authTab: st.authTab === 'up' ? 'in' : 'up' })),
 
-/* ── closeAuth  —  clé du modèle rendu  —  L6250–6250 ── */
+/* ── closeAuth  —  key of the rendered model  —  L6250–6250 ── */
       closeAuth: () => this.setState({ authOpen: false }),
 
-/* ── doAuth  —  clé du modèle rendu  —  L6251–6251 ── */
+/* ── doAuth  —  key of the rendered model  —  L6251–6251 ── */
       doAuth: () => this.setState({ authOpen: false, guest: false }),
 
-/* ── accountName  —  clé du modèle rendu  —  L6437–6437 ── */
+/* ── accountName  —  key of the rendered model  —  L6437–6437 ── */
       accountName: account.name,
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (11) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (11) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2383  authAlt: "Ou continuer sans compte"
@@ -122,8 +122,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

@@ -1,24 +1,26 @@
 <!--
-  ÉCRAN      Compte — Favoris
+  SCREEN     Account — Favourites
   ROUTE      page === 'account', accTab === 'faves'
-  AFFICHE    Les artistes suivis et les spectacles mis de côté.
-  MÈNE VERS  account
+  SHOWS      Followed artists and saved shows.
+  LEADS TO   account
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2448-2488
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2448-2488
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Servi à moitié : la liste a `/v1/me/watchlist`, les artistes suivis n'ont pas de
-             collection.
+  NOTE       Half served: the list has `/v1/me/watchlist`, the followed artists have no collection.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — listWatchlist
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — listWatchlist
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : A, artist, availW, colsOf, colsTiles, colsWideN, fr, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, tileCols
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: A, artist, availW, colsOf, colsTiles, colsWideN, fr, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, tileCols
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
       <sc-if value="{{ accFaves }}" hint-placeholder-val="{{ false }}">
       <div style="animation: fadeIn .3s ease both;">
@@ -62,11 +64,11 @@
       </sc-if>
 
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* accStack  —  lignes 5747-5747 */
+/* accStack  —  lines 5747-5747 */
     const accStack = availW < 760;
-/* favArtists  —  lignes 5792-5817 */
+/* favArtists  —  lines 5792-5817 */
     const favArtists = roster.slice(0, (s.followedIds || []).length || 6).map((a, k) => {
       const dates = A.datesOfArtist(a.id);
       const onAir = dates.filter(d => A.isOnAir(d))[0] || null;
@@ -93,7 +95,7 @@
     }).filter((_, k) => (s.unfollowed || []).indexOf(k) < 0);
 
     /* Les spectacles mis de côté : les prochaines dates de la liste. */
-/* savedShows  —  lignes 5818-5823 */
+/* savedShows  —  lines 5818-5823 */
     const savedShows = A.upcoming().slice(0, 4).map(d => {
       const show = A.show(d.show);
       return { title: A.title(show), img: A.showImage(show, 900), imgCss: this.cssUrl(A.showImage(show, 900)), when: A.when(d),
@@ -102,7 +104,7 @@
 
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       colsTiles: colsOf(tileCols), colsWide: colsOf(colsWideN),
@@ -114,17 +116,18 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.accFaves  t.savedShows  t.unfollow  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     followedIds  notifyArtists  unfollowed  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     cssUrl, openLive, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

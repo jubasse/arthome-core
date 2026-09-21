@@ -1,37 +1,37 @@
 <!--
-  ÉCRAN        moderation / queue
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      La file des signalements : prise en charge, verdict, préséance entre modérateurs.
-  RÔLES        mod
-  MÈNE VERS    aucun (écran terminal)
+  SCREEN       moderation / queue
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        The queue of reported messages: claim, verdict, precedence between moderators.
+  ROLES        mod
+  LEADS TO     none (terminal screen)
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  hasBand L475-485 · hasTabs L487-495 · hasNote L555-557 · hasChat L577-608
-               modèle    L2304-2334 · L2355-2401
-  CLÉS DE COPIE
-               - aucune — libellés français en dur dans le modèle de vue
-  CONTRAT
-               - needs §Confrontation C3 (le bail et la décision partagent un compteur)
+               markup      hasBand L475-485 · hasTabs L487-495 · hasNote L555-557 · hasChat L577-608
+               view model  L2304-2334 · L2355-2401
+  COPY KEYS
+               - none — French labels hardcoded in the view model
+  CONTRACT
+               - needs §Confrontation C3 (the lease and the decision share one counter)
                - openapi POST /v1/moderation/items/{itemId}/claim
                - openapi POST /v1/moderation/items/{itemId}/verdict
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!--
-  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
-  partagé par tous les écrans, et n'est pas recopié ici :
+  Generic markup driven by this view model — it lives in _blocks.html,
+  shared by every screen, and is not copied here:
     hasBand        L475-485
     hasTabs        L487-495
     hasNote        L555-557
     hasChat        L577-608
 -->
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
   page_moderation(c) {

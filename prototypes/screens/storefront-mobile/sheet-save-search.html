@@ -1,26 +1,26 @@
 <!--
   Arthome · storefront mobile — sheet-save-search
   ══════════════════════════════════════════════════════════════════════════
-  Route      : superposée · saveOpen
-  Affiche    : Enregistrer une recherche : nom, rappel des critères et du tri, confirmation.
-  Mène vers  : account-alerts
-  Contrat    : POST /v1/me/saved-searches
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L2213–2261
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Route      : overlay · saveOpen
+  Shows      : Save a search: name, recap of the criteria and the sort, confirmation.
+  Leads to   : account-alerts
+  Contract   : POST /v1/me/saved-searches
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L2213–2261
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L2213–2261
+     MARKUP — L2213–2261
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ saveOpen }}" hint-placeholder-val="{{ false }}">
 <div onClick="{{ closeSave }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
@@ -73,10 +73,10 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (19 symboles)
+     VIEW MODEL — specific to this screen (19 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── catAlertState  —  méthode de classe  —  L4202–4209 ── */
+/* ── catAlertState  —  class method  —  L4202–4209 ── */
   catAlertState() {
     const s = this.state;
     return {
@@ -86,7 +86,7 @@
     };
   }
 
-/* ── groupsOf  —  calcul dans renderReady()  —  L5449–5469 ── */
+/* ── groupsOf  —  computation in renderReady()  —  L5449–5469 ── */
     const groupsOf = (st) => {
       const g = [];
       const add = (title, labels) => { if (labels.length) g.push({ title, chips: labels.map(label => ({ label })) }); };
@@ -109,43 +109,43 @@
       return g;
     };
 
-/* ── savingCat  —  calcul dans renderReady()  —  L5470–5470 ── */
+/* ── savingCat  —  computation in renderReady()  —  L5470–5470 ── */
     const savingCat = s.saveScope === 'category';
 
-/* ── savedGroups  —  calcul dans renderReady()  —  L5471–5471 ── */
+/* ── savedGroups  —  computation in renderReady()  —  L5471–5471 ── */
     const savedGroups = groupsOf(savingCat ? this.catAlertState() : this.alertState());
 
-/* ── sortDefs  —  calcul dans renderReady()  —  L5481–5481 ── */
+/* ── sortDefs  —  computation in renderReady()  —  L5481–5481 ── */
     const sortDefs = [['auto', qq ? t.sortRelevance : t.sortSoon], ['soon', t.sortSoon], ['pop', t.sortPop], ['priceUp', t.sortPriceUp], ['priceDown', t.sortPriceDown]];
 
-/* ── saveOpen  —  clé du modèle rendu  —  L5693–5693 ── */
+/* ── saveOpen  —  key of the rendered model  —  L5693–5693 ── */
       saveOpen: s.saveOpen,
 
-/* ── saveAsk  —  clé du modèle rendu  —  L5694–5694 ── */
+/* ── saveAsk  —  key of the rendered model  —  L5694–5694 ── */
       saveAsk: s.saveStep !== 'done', saveDone: s.saveStep === 'done',
 
-/* ── saveHeadTitle  —  clé du modèle rendu  —  L5695–5695 ── */
+/* ── saveHeadTitle  —  key of the rendered model  —  L5695–5695 ── */
       saveHeadTitle: s.saveStep === 'done'
 
-/* ── saveHeadIntro  —  clé du modèle rendu  —  L5698–5698 ── */
+/* ── saveHeadIntro  —  key of the rendered model  —  L5698–5698 ── */
       saveHeadIntro: s.saveStep === 'done' ? t.saveIntro : (savingCat ? t.saveCatAskIntro : t.saveAskIntro),
 
-/* ── saveShowQuery  —  clé du modèle rendu  —  L5699–5699 ── */
+/* ── saveShowQuery  —  key of the rendered model  —  L5699–5699 ── */
       saveShowQuery: !savingCat,
 
-/* ── closeSave  —  clé du modèle rendu  —  L5700–5700 ── */
+/* ── closeSave  —  key of the rendered model  —  L5700–5700 ── */
       closeSave: () => this.setState({ saveOpen: false, saveStep: 'ask' }),
 
-/* ── goManageSearches  —  clé du modèle rendu  —  L5702–5702 ── */
+/* ── goManageSearches  —  key of the rendered model  —  L5702–5702 ── */
       goManageSearches: () => this.setState({ saveOpen: false, saveStep: 'ask', page: 'account', accView: 'section', accTab: 'alerts' }),
 
-/* ── savedQueryLabel  —  clé du modèle rendu  —  L5703–5703 ── */
+/* ── savedQueryLabel  —  key of the rendered model  —  L5703–5703 ── */
       savedQueryLabel: s.query.trim() || t.saveNoQuery,
 
-/* ── savedHasFilters  —  clé du modèle rendu  —  L5706–5706 ── */
+/* ── savedHasFilters  —  key of the rendered model  —  L5706–5706 ── */
       savedHasFilters: savedGroups.length > 0, savedNoFilters: savedGroups.length === 0,
 
-/* ── savedSortLabel  —  clé du modèle rendu  —  L5707–5714 ── */
+/* ── savedSortLabel  —  key of the rendered model  —  L5707–5714 ── */
       savedSortLabel: (() => {
         if (savingCat) {
           const M = { auto: t.sortSoon, soon: t.sortSoon, pop: t.sortPop, priceUp: t.sortPriceUp, priceDown: t.sortPriceDown };
@@ -155,16 +155,16 @@
         return ((defs.find(d => d[0] === s.sort) || defs[0]) || ['', ''])[1];
       })(),
 
-/* ── saveNameValue  —  clé du modèle rendu  —  L5769–5769 ── */
+/* ── saveNameValue  —  key of the rendered model  —  L5769–5769 ── */
       saveNameValue: s.saveName,
 
-/* ── onSaveName  —  clé du modèle rendu  —  L5770–5770 ── */
+/* ── onSaveName  —  key of the rendered model  —  L5770–5770 ── */
       onSaveName: e => this.setState({ saveName: e.target.value }),
 
-/* ── saveNamePlaceholder  —  clé du modèle rendu  —  L5771–5771 ── */
+/* ── saveNamePlaceholder  —  key of the rendered model  —  L5771–5771 ── */
       saveNamePlaceholder: savingCat
 
-/* ── confirmSave  —  clé du modèle rendu  —  L5774–5796 ── */
+/* ── confirmSave  —  key of the rendered model  —  L5774–5796 ── */
       confirmSave: () => {
         if (savingCat) {
           const st2 = this.catAlertState();
@@ -192,7 +192,7 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (39) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (39) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2371  almostFull: "BIENTÔT COMPLET"
@@ -315,8 +315,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

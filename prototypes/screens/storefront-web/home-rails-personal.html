@@ -1,25 +1,28 @@
 <!--
-  ÉCRAN      Accueil — rangées personnalisées et disciplines
-  ROUTE      page === 'home', variante 'a'
-  AFFICHE    Les prochaines dates de vos artistes suivis, les dates bientôt complètes, et les douze premières disciplines.
-  MÈNE VERS  live · artist · category · categories
+  SCREEN     Home — personalised rails and disciplines
+  ROUTE      page === 'home', variant 'a'
+  SHOWS      The upcoming dates of the artists you follow, the dates that are almost sold out, and the first twelve disciplines.
+  LEADS TO   live · artist · category · categories
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 475-572
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 475-572
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Extrait de `home.html`, à la suite de `home-rails.html`. C'est ici que se lit la
-             tension entre rendu serveur indexable et personnalisation : ces rangées dépendent du
-             spectateur, la billboard non.
+  NOTE       Extracted from `home.html`, following `home-rails.html`. This is where the tension
+             between an indexable server render and personalisation can be read: these rails depend
+             on the viewer, the billboard does not.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — getHomeScreen
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — getHomeScreen
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : A, artist, cats, colsOf, colsTiles, colsWideN, followed, fr, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, tileCols
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: A, artist, cats, colsOf, colsTiles, colsWideN, followed, fr, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, tileCols
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
     <section style="max-width: 1440px; margin: 0 auto; padding: 72px 40px 0;">
       <div style="display: flex; align-items: baseline; gap: 16px; margin-bottom: 20px;">
@@ -120,9 +123,9 @@
       </div>
     </section>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* favNext  —  lignes 5644-5671 */
+/* favNext  —  lines 5644-5671 */
     const favNext = (() => {
       const followed = (s.follows || []).map(i => roster[i]).filter(Boolean);
       const pool = followed.length ? followed : roster.slice(0, 5);
@@ -151,7 +154,7 @@
     }));
 
     /* Presque complet : les dates dont la jauge se referme. */
-/* soldOut  —  lignes 5672-5698 */
+/* soldOut  —  lines 5672-5698 */
     const soldOut = A.upcoming().map(d => {
       const cap = A.venue(d.venue).capacity;
       return { d, pct: cap ? Math.round((d.seats.sold / cap) * 100) : 0 };
@@ -181,7 +184,7 @@
 
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       favNextLeft: () => this.scroll('rail-favnext', -1), favNextRight: () => this.scroll('rail-favnext', 1),
@@ -195,18 +198,19 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.allCategories  t.almostGone  t.almostGoneSub  t.categories  t.favUpcoming  
     t.favUpcomingSub  t.remind  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     follows  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     buyStyle, cssUrl, goArtistFrom, nav, openLive, openTicketFor, promoOf, scroll
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

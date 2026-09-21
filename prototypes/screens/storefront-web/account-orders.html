@@ -1,24 +1,27 @@
 <!--
-  ÉCRAN      Compte — Commandes
+  SCREEN     Account — Orders
   ROUTE      page === 'account', accTab === 'orders'
-  AFFICHE    Les commandes de marchandise, y compris le reflet des commandes passées sur la boutique propre de l'artiste, avec leur référence marchand.
-  MÈNE VERS  account
+  SHOWS      Merchandise orders, including the reflection of orders placed on the artist's own shop, with their merchant reference.
+  LEADS TO   account
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2573-2657
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2573-2657
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Cinq plateformes externes sont nommées dans le modèle de vue : Shopify, WooCommerce,
-             PrestaShop, Drupal Commerce, API.
+  NOTE       Five external platforms are named in the view model: Shopify, WooCommerce, PrestaShop,
+             Drupal Commerce, API.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — listMyOrders
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — listMyOrders
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : availW, fr, ordMid, ordWide, s, t
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: availW, fr, ordMid, ordWide, s, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
       <sc-if value="{{ accOrders }}" hint-placeholder-val="{{ false }}">
       <div style="animation: fadeIn .3s ease both; max-width: 860px;">
@@ -106,13 +109,13 @@
       </sc-if>
 
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* accStack  —  lignes 5747-5747 */
+/* accStack  —  lines 5747-5747 */
     const accStack = availW < 760;
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       accH2: accStack ? 'display: none;' : '',
@@ -164,20 +167,21 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.accOrders  t.accOrdersSub  t.cartFrom  t.cartItem  t.cartItems  t.emptyOrders  
     t.emptyOrdersHint  t.ordDelivered  t.ordDetail  t.ordDigital  t.ordDownload  
     t.ordExtNotice  t.ordExtOpen  t.ordExtRef  t.ordInvoice  t.ordItems  t.ordPlaced  
     t.ordPrep  t.ordShipped  t.ordSoldArthome  t.ordSoldExternal  t.ordTotal  t.ordTrack  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     accTab  openOrders  orders  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

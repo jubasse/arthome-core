@@ -1,27 +1,30 @@
 <!--
-  ÉCRAN      Rail latéral et panneau de filtres
-  ROUTE      superposition, sans URL — DUPLIQUÉ
-  AFFICHE    Le rail latéral de l'explorateur et de la page discipline : repli, menu de tri, panneau de filtres par groupes, puis les blocs contextuels (recherches récentes, recherches enregistrées, suivis en direct, bientôt complet ici, autres catégories).
-  MÈNE VERS  browse · category · overlay-save-search · live · artist
+  SCREEN     Side rail and filter panel
+  ROUTE      overlay, no URL — DUPLICATED
+  SHOWS      The side rail of the explorer and of the discipline page: collapse, sort menu, filter panel by group, then the contextual blocks (recent searches, saved searches, followed artists live, almost sold out here, other categories).
+  LEADS TO   browse · category · overlay-save-search · live · artist
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 735-812 · 1694-1771
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 735-812 · 1694-1771
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       ⚠ CE BLOC EST RECOPIÉ DEUX FOIS DANS L'ORIGINAL — une fois dans `browse` (735-812),
-             une fois dans `category` (1694-1771), avec le même modèle de vue (`sideBlocks`,
-             `filterGroups`, `asideStyle`). Les deux copies sont ci-dessous, telles quelles. Le
-             menu de tri qu'il contient est lui-même extrait dans `overlay-sort.html`.
+  NOTE       ⚠ THIS BLOCK IS COPIED TWICE IN THE ORIGINAL — once in `browse` (735-812), once in
+             `category` (1694-1771), with the same view model (`sideBlocks`, `filterGroups`,
+             `asideStyle`). Both copies are below, verbatim. The sort menu it contains is itself
+             extracted into `overlay-sort.html`.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — search, getCategoryScreen, listSavedSearches
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — search, getCategoryScreen, listSavedSearches
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : CAT_NAMES, SUBS, account, catalogue, category, cats, drawerOpen, roster, s, sideDrawer, subsSel, t
-  À LIRE     dépendances non recopiées ici : catSig, flags
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: CAT_NAMES, SUBS, account, catalogue, category, cats, drawerOpen, roster, s, sideDrawer, subsSel, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: catSig, flags
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
       <aside style="{{ asideStyle }}">
         <div style="{{ sideToggleRow }}">
@@ -181,64 +184,64 @@
         </sc-if>
       </aside>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* q  —  lignes 5699-5699 */
+/* q  —  lines 5699-5699 */
     const q = s.query.trim().toLowerCase();
-/* qq  —  lignes 5934-5934 */
+/* qq  —  lines 5934-5934 */
     const qq = (s.liveQuery || '').trim().toLowerCase();
-/* priceDefs  —  lignes 5936-5936 */
+/* priceDefs  —  lines 5936-5936 */
     const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
-/* dateDefs  —  lignes 5937-5937 */
+/* dateDefs  —  lines 5937-5937 */
     const dateDefs = [['tonight', t.dTonight], ['weekend', t.dWeekend], ['d7', t.d7], ['d30', t.d30], ['range', t.dRange]];
-/* statusDefs  —  lignes 5945-5945 */
+/* statusDefs  —  lines 5945-5945 */
     const statusDefs = [['live', t.stLive], ['soon', t.stSoon], ['replay', t.stReplay]];
-/* catFollowEntry  —  lignes 6045-6045 */
+/* catFollowEntry  —  lines 6045-6045 */
     const catFollowEntry = s.alerts.find(al => al.scope === 'category' && this.alertSig('', al.st) === catSig) || null;
-/* sortDefs  —  lignes 6082-6082 */
+/* sortDefs  —  lines 6082-6082 */
     const sortDefs = [['auto', qq ? t.sortRelevance : t.sortSoon], ['soon', t.sortSoon], ['pop', t.sortPop], ['priceUp', t.sortPriceUp], ['priceDown', t.sortPriceDown]];
-/* expiryFilters  —  lignes 6100-6104 */
+/* expiryFilters  —  lines 6100-6104 */
     const expiryFilters = [{
       label: t.expSoon,
       pick: () => this.setState(st => ({ fExpiring: !st.fExpiring, shown: {} })),
       style: CHIP + (s.fExpiring ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
     }];
-/* catFilters  —  lignes 6105-6109 */
+/* catFilters  —  lines 6105-6109 */
     const catFilters = CAT_NAMES.map((name, i) => ({
       label: name.toUpperCase(),
       pick: () => this.setState(st => ({ fCats: st.fCats.indexOf(i) > -1 ? st.fCats.filter(x => x !== i) : st.fCats.concat([i]) })),
       style: CHIP + (s.fCats.indexOf(i) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
     }));
-/* priceFilters  —  lignes 6110-6114 */
+/* priceFilters  —  lines 6110-6114 */
     const priceFilters = priceDefs.map(([k, label]) => ({
       label,
       pick: () => this.setState(st => ({ fPrices: st.fPrices.indexOf(k) > -1 ? st.fPrices.filter(x => x !== k) : st.fPrices.concat([k]) })),
       style: CHIP + (s.fPrices.indexOf(k) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
     }));
-/* dateFilters  —  lignes 6115-6119 */
+/* dateFilters  —  lines 6115-6119 */
     const dateFilters = dateDefs.map(([k, label]) => ({
       label,
       pick: () => this.setState(st => ({ fDate: st.fDate === k ? 'all' : k })),
       style: CHIP + (s.fDate === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
     }));
-/* statusFilters  —  lignes 6120-6124 */
+/* statusFilters  —  lines 6120-6124 */
     const statusFilters = statusDefs.map(([k, label]) => ({
       label,
       pick: () => this.setState(st => ({ fStatus: st.fStatus === k ? 'all' : k })),
       style: CHIP + (s.fStatus === k ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
     }));
-/* miscFilters  —  lignes 6125-6130 */
+/* miscFilters  —  lines 6125-6130 */
     const miscFilters = [
       { label: t.almostFull, on: s.fAlmost, toggle: () => this.setState(st => ({ fAlmost: !st.fAlmost })) },
       { label: t.hasDates, on: s.fHasDates, toggle: () => this.setState(st => ({ fHasDates: !st.fHasDates })) },
       { label: t.promoFilter, on: s.fPromo, toggle: () => this.setState(st => ({ fPromo: !st.fPromo })) }
     ].map(o => ({ label: o.label, pick: o.toggle, style: CHIP + (o.on ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;') }));
 
-/* catFilterCount  —  lignes 6175-6175 */
+/* catFilterCount  —  lines 6175-6175 */
     const catFilterCount = subsSel.length + s.cPrices.length + (s.cDate !== 'all' ? 1 : 0) + (s.cStatus !== 'all' ? 1 : 0) + (s.cAlmost ? 1 : 0) + (s.cPromo ? 1 : 0);
-/* catOv  —  lignes 6192-6192 */
+/* catOv  —  lines 6192-6192 */
     const catOv = s.catTab === 'ov';
-/* subgenres  —  lignes 6216-6226 */
+/* subgenres  —  lines 6216-6226 */
     const subgenres = (SUBS[s.catId] || SUBS[0]).map((label, i) => ({
       n: catalogue.filter(o => o.cat === s.catId && o.subs.indexOf(i) > -1).length,
       label: label.toUpperCase(),
@@ -250,11 +253,11 @@
       }),
       style: CHIP + (subsSel.indexOf(i) > -1 ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : 'rgba(237,231,220,0.4); color: #B0A899;')
     })).filter(x => x.n > 0);
-/* activeFilterCount  —  lignes 6232-6232 */
+/* activeFilterCount  —  lines 6232-6232 */
     const activeFilterCount = s.fCats.length + (s.fCats.length === 1 ? (s.fSubs || []).length : 0) + s.fPrices.length + (s.fDate !== 'all' ? 1 : 0) + (s.fStatus !== 'all' ? 1 : 0) + flags.length;
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       sortOpen: s.sortOpen,
@@ -397,9 +400,10 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.almostFull  t.clearAll  t.collapseSide  t.d30  t.d7  t.dRange  t.dTonight  t.dWeekend  
     t.expSoon  t.expandSide  t.expiresIn  t.fCats  t.fDate  t.fMisc  t.fPrice  t.fStatus  
     t.hasDates  t.noSavedCatHere  t.p1020  t.p2035  t.p35  t.pFree  t.pU10  t.promoFilter  
@@ -407,14 +411,14 @@
     t.sideRecent  t.sortLabel  t.sortPop  t.sortPriceDown  t.sortPriceUp  t.sortRelevance  
     t.sortSoon  t.stLive  t.stReplay  t.stSoon  t.subgenres  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     alerts  cAlmost  cDate  cPrices  cPromo  cSort  cStatus  catId  catTab  drawerOpen  
     fAlmost  fCats  fDate  fExpiring  fHasDates  fPrices  fPromo  fStatus  fSubs  follows  
     liveQuery  page  query  recent  sTab  sideOpen  sort  sortOpen  subs  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     alertName, alertSig, applyAlert, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

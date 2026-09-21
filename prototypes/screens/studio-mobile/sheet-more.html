@@ -1,25 +1,25 @@
 <!--
-  ÉCRAN        feuille · more
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Le reste des pages que les rôles ouvrent, hors des quatre onglets.
-  RÔLES        artist · prod · regie · mod · coord · tres   (les six)
-  MÈNE VERS    feuilles : account, chan
+  SCREEN       sheet / more
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        The remaining pages the roles open, outside the four tabs.
+  ROLES        artist · prod · regie · mod · coord · tres   (all six)
+  LEADS TO     sheets: account, chan
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  sheet L828-895
-               modèle    L1941-1960
-  CLÉS DE COPIE
-               - table EN en tête de script (traduction parallèle, hors i18n — voir _index.md note D2)
-  CONTRAT
-               - needs §« Ce qui distingue cette surface » 2 (l'accès est l'union des rôles)
+               markup      sheet L828-895
+               view model  L1941-1960
+  COPY KEYS
+               - EN table at the top of the script (a parallel translation, outside i18n — see _index.md, note D2)
+  CONTRACT
+               - needs §"What sets this surface apart" 2 (access is the union of roles)
                - openapi GET /v1/bootstrap — channels[].navigation
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!-- ---- sheet (L828-895) ---- -->
   <sc-if value="{{ shOpen }}" hint-placeholder-val="{{ false }}">
@@ -91,7 +91,7 @@
     </div>
   </sc-if>
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
     if (kind === 'more') {

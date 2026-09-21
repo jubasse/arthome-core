@@ -2,25 +2,25 @@
   Arthome · storefront mobile — browse-replays
   ══════════════════════════════════════════════════════════════════════════
   Route      : browse · sTab=replays
-  Affiche    : Onglet Rediffusions : les rediffusions disponibles et leur reste de fenêtre.
-  Mène vers  : replay, artist
-  Contrat    : GET /v1/search?tab=replays
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L565–601
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : Replays tab: available replays and how much of their window is left.
+  Leads to   : replay, artist
+  Contract   : GET /v1/search?tab=replays
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L565–601
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L565–601
+     MARKUP — L565–601
      ══════════════════════════════════════════════════════════════════════════ -->
   <sc-if value="{{ showReplays }}" hint-placeholder-val="{{ false }}">
     <sc-if value="{{ noReplaysTab }}" hint-placeholder-val="{{ false }}">
@@ -61,10 +61,10 @@
   </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (12 symboles)
+     VIEW MODEL — specific to this screen (12 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── groupByArtist  —  méthode de classe  —  L4056–4089 ── */
+/* ── groupByArtist  —  class method  —  L4056–4089 ── */
   groupByArtist(list, fr) {
     const baseOf = (title) => String(title || '').split(' — ')[0].trim();
     const order = [];
@@ -100,7 +100,7 @@
     return out;
   }
 
-/* ── paged  —  méthode de classe  —  L4091–4113 ── */
+/* ── paged  —  class method  —  L4091–4113 ── */
   paged(key, list, step, fr) {
     const n = (this.state.shown || {})[key] || step;
     const rest = Math.max(0, list.length - n);
@@ -125,10 +125,10 @@
     };
   }
 
-/* ── priceDefs  —  calcul dans renderReady()  —  L5338–5338 ── */
+/* ── priceDefs  —  computation in renderReady()  —  L5338–5338 ── */
     const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
 
-/* ── dateOk  —  calcul dans renderReady()  —  L5340–5346 ── */
+/* ── dateOk  —  computation in renderReady()  —  L5340–5346 ── */
     const dateOk = (d) => {
       if (s.fDate === 'all' || s.fDate === 'range') return true;
       if (s.fDate === 'tonight') return d === 0;
@@ -137,7 +137,7 @@
       return d >= 0 && d <= 30;
     };
 
-/* ── passFilters  —  calcul dans renderReady()  —  L5348–5363 ── */
+/* ── passFilters  —  computation in renderReady()  —  L5348–5363 ── */
     const passFilters = (o) => {
       if (!hit(o)) return false;
       if (s.fCats.length && s.fCats.indexOf(o.cat) < 0) return false;
@@ -155,10 +155,10 @@
       return true;
     };
 
-/* ── sortKey  —  calcul dans renderReady()  —  L5364–5364 ── */
+/* ── sortKey  —  computation in renderReady()  —  L5364–5364 ── */
     const sortKey = s.sort === 'auto' ? (qq ? 'rel' : 'soon') : s.sort;
 
-/* ── sortFn  —  calcul dans renderReady()  —  L5365–5372 ── */
+/* ── sortFn  —  computation in renderReady()  —  L5365–5372 ── */
     const sortFn = (a, b) => {
       if (sortKey === 'soon') return (a.day < 0 ? 999 : a.day) - (b.day < 0 ? 999 : b.day);
       if (sortKey === 'pop') return (b.viewers || roster[b.artistIdx].followers.replace(/\D/g, '') / 100) - (a.viewers || roster[a.artistIdx].followers.replace(/\D/g, '') / 100);
@@ -168,25 +168,25 @@
       return score(a) - score(b);
     };
 
-/* ── replaysAll  —  calcul dans renderReady()  —  L5374–5374 ── */
+/* ── replaysAll  —  computation in renderReady()  —  L5374–5374 ── */
     const replaysAll = catalogue.filter(o => o.kind === 'replay' && passFilters(o)).sort(sortFn);
 
-/* ── replaysGrouped  —  calcul dans renderReady()  —  L5438–5438 ── */
+/* ── replaysGrouped  —  computation in renderReady()  —  L5438–5438 ── */
     const replaysGrouped = this.groupByArtist(replaysAll, fr);
 
-/* ── pgReplays  —  calcul dans renderReady()  —  L5440–5440 ── */
+/* ── pgReplays  —  computation in renderReady()  —  L5440–5440 ── */
     const pgReplays = this.paged('replays', replaysGrouped, 10, fr);
 
-/* ── moreReplays  —  clé du modèle rendu  —  L5677–5677 ── */
+/* ── moreReplays  —  key of the rendered model  —  L5677–5677 ── */
       moreReplays: pgReplays.hasMore, moreReplaysLabel: pgReplays.moreLabel, loadMoreReplays: pgReplays.loadMore, loadingReplays: pgReplays.loading,
 
-/* ── noReplaysTab  —  clé du modèle rendu  —  L5684–5684 ── */
+/* ── noReplaysTab  —  key of the rendered model  —  L5684–5684 ── */
       noReplaysTab: s.sTab === 'replays' && replaysAll.length === 0,
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (6) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (6) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2474  emptyResults: "Aucun spectacle pour cette recherche"
@@ -210,8 +210,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

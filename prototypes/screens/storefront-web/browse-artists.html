@@ -1,22 +1,25 @@
 <!--
-  ÉCRAN      Explorateur — onglet Artistes
+  SCREEN     Explorer — Artists tab
   ROUTE      page === 'browse', sTab === 'artists'
-  AFFICHE    Les artistes correspondant à la recherche, en tuiles ou en liste, avec leur prochaine date et le dépliage « toutes les dates (N) ».
-  MÈNE VERS  artist · live
+  SHOWS      The artists matching the search, as tiles or as a list, with their next date and the "all dates (N)" expansion.
+  LEADS TO   artist · live
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 1138-1144 · 1145-1198
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 1138-1144 · 1145-1198
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — search, listArtists
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — search, listArtists
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : artist, catalogue, colsOf, colsTiles, colsWideN, fr, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, t, tileCols
-  À LIRE     dépendances non recopiées ici : artistsHL, qq
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: artist, catalogue, colsOf, colsTiles, colsWideN, fr, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, t, tileCols
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: artistsHL, qq
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
   <sc-if value="{{ noArtistsTab }}" hint-placeholder-val="{{ false }}">
     <div style="margin-top: 24px; border: 1px solid #1F1C19; background: #0D0C0A; padding: 48px 32px; text-align: center;">
@@ -81,9 +84,9 @@
     </sc-if>
   </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* artistsAll  —  lignes 5973-5995 */
+/* artistsAll  —  lines 5973-5995 */
     const artistsAll = roster.filter(a => {
       if (qq && (a.name + ' ' + a.discipline + ' ' + a.showTitle).toLowerCase().indexOf(qq) < 0) return false;
       if (s.fCats.length && !catalogue.some(o => o.artistIdx === a.i && s.fCats.indexOf(o.cat) > -1)) return false;
@@ -107,12 +110,12 @@
       });
     });
 
-/* pgArtists  —  lignes 6042-6043 */
+/* pgArtists  —  lines 6042-6043 */
     const pgArtists = this.paged('artists', artistsHL, 12, fr);
 
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       clearAllFilters: () => this.setState({ query: '', fCats: [], fSubs: [], fPrices: [], fDate: 'all', fStatus: 'all', fAlmost: false, fHasDates: false, fExpiring: false, fPromo: false, sort: 'auto', alertCreated: false }),
@@ -124,18 +127,19 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.clearAll  t.dateToCome  t.datesToCome  t.emptyResults  t.emptyResultsHint  
     t.followersShort  t.onNow  t.seeArtist  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     fCats  fHasDates  fStatus  sTab  sView  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     paged, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

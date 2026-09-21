@@ -1,30 +1,30 @@
 <!--
-  ÉCRAN        regie
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      La conduite du direct : quatre sous-onglets, chronomètre, et le parcours d'incident.
-  RÔLES        artist · prod · regie
-  MÈNE VERS    écrans : event, moderation
+  SCREEN       regie
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        Running the live show: four sub-tabs, a stopwatch, and the incident flow.
+  ROLES        artist · prod · regie
+  LEADS TO     screens: event, moderation
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  hasBand L475-485 · hasTabs L487-495 · hasPanel L509-553 · hasNote L555-557 · hasActions L569-575
-               modèle    L2644-2789
-  CLÉS DE COPIE
-               - aucune — libellés français en dur dans le modèle de vue
-  CONTRAT
-               - needs §« Ce qui distingue cette surface » 4 (deux pannes à ne pas confondre)
-               - needs §Confrontation C1 (regie n'a aucun porteur de droit)
+               markup      hasBand L475-485 · hasTabs L487-495 · hasPanel L509-553 · hasNote L555-557 · hasActions L569-575
+               view model  L2644-2789
+  COPY KEYS
+               - none — French labels hardcoded in the view model
+  CONTRACT
+               - needs §"What sets this surface apart" 4 (two failures not to confuse)
+               - needs §Confrontation C1 (regie has no rights carrier)
                - openapi GET /v1/dates/{dateId}/run
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!--
-  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
-  partagé par tous les écrans, et n'est pas recopié ici :
+  Generic markup driven by this view model — it lives in _blocks.html,
+  shared by every screen, and is not copied here:
     hasBand        L475-485
     hasTabs        L487-495
     hasPanel       L509-553
@@ -32,7 +32,7 @@
     hasActions     L569-575
 -->
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
   page_regie(c) {

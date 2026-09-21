@@ -1,26 +1,29 @@
 <!--
-  ÉCRAN      Page d'une date — lecteur et fiche
+  SCREEN     Page of a date — player and detail
   ROUTE      page === 'live'
-  AFFICHE    La page d'une date : lecteur, voile d'aperçu gratuit avec son décompte, barre de commandes (qualité, cinéma, plein écran), métadonnées, achat, partage, et le panneau latéral à deux onglets.
-  MÈNE VERS  live-chat · live-store · overlay-ticket · overlay-share · artist · replay
+  SHOWS      The page of a date: player, free-preview veil with its countdown, control bar (quality, theatre, fullscreen), metadata, purchase, sharing, and the two-tab side panel.
+  LEADS TO   live-chat · live-store · overlay-ticket · overlay-share · artist · replay
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2166-2256 · 2339-2342
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2166-2256 · 2339-2342
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       C'est l'écran le plus dense de la surface. Défaut relevé au temps 1 : la page est
-             adressée par ARTISTE (`artistId`) et résout « la date courante » à l'arrivée — il n'y
-             a pas d'URL canonique par date dans la maquette.
+  NOTE       This is the densest screen on the surface. Defect found in round 1: the page is
+             addressed by ARTIST (`artistId`) and resolves "the current date" on arrival — there is
+             no canonical URL per date in the mockup.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — getDateDetail, openPlayback, renewPlaybackTicket, refreshDateAvailability
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — getDateDetail, openPlayback, renewPlaybackTicket, refreshDateAvailability
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : A, account, artist, currentDate, drawerOpen, fr, ownsCurrent, s, sideDrawer, t
-  À LIRE     dépendances non recopiées ici : REPLAY, heroBase, modeDefs, onArtistLive, polKey, watchedShow, watchedViewers
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: A, account, artist, currentDate, drawerOpen, fr, ownsCurrent, s, sideDrawer, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: REPLAY, heroBase, modeDefs, onArtistLive, polKey, watchedShow, watchedViewers
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <sc-if value="{{ isLive }}" hint-placeholder-val="{{ false }}">
 <section id="live-stage" style="{{ liveWrapStyle }}">
@@ -119,16 +122,16 @@
 </section>
 </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* modes  —  lignes 5035-5040 */
+/* modes  —  lines 5035-5040 */
     const modes = modeDefs.map(([id, label]) => ({
       label,
       pick: () => this.setState({ mode: id }),
       style: 'cursor: pointer; padding: 5px 10px; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.1em; ' +
         (s.mode === id ? 'background: #EDE7DC; color: #0B0A09;' : 'background: rgba(11,10,9,0.72); color: #C9C0B2;')
     }));
-/* qualities  —  lignes 5041-5047 */
+/* qualities  —  lines 5041-5047 */
     const qualities = ['4K', '1080p', '720p', 'AUTO'].map(label => ({
       label,
       pick: () => this.setState({ quality: label }),
@@ -136,21 +139,21 @@
         (s.quality === label ? 'background: oklch(0.68 0.18 42); color: #0B0A09;' : 'background: rgba(11,10,9,0.72); color: #9B948A;')
     }));
 
-/* theater  —  lignes 5048-5048 */
+/* theater  —  lines 5048-5048 */
     const theater = s.mode === 'theater' || s.mode === 'full';
-/* full  —  lignes 5049-5050 */
+/* full  —  lines 5049-5050 */
     const full = s.mode === 'full';
 
-/* pol  —  lignes 5482-5482 */
+/* pol  —  lines 5482-5482 */
     const pol = REPLAY[polKey] || REPLAY.included;
-/* watched  —  lignes 5542-5547 */
+/* watched  —  lines 5542-5547 */
     const watched = (() => {
       const dates = A.datesOfArtist(artist.id) || [];
       return dates.filter(d => A.isOnAir(d))[0]
         || dates.filter(d => d.startOffsetMin > 0).sort((x, y) => x.startOffsetMin - y.startOffsetMin)[0]
         || dates[0] || null;
     })();
-/* hero  —  lignes 5551-5571 */
+/* hero  —  lines 5551-5571 */
     const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
       title: s.pick.title,
       artist: s.pick.artist,
@@ -172,17 +175,17 @@
       priceLabel: watched.prices[0].amount ? A.price(watched.prices[0].amount) : (fr ? 'Gratuit' : 'Free'),
       img: A.showImage(watchedShow, 1600), imgCss: this.cssUrl(A.showImage(watchedShow, 1600))
     } : heroBase);
-/* q  —  lignes 5699-5699 */
+/* q  —  lines 5699-5699 */
     const q = s.query.trim().toLowerCase();
-/* heroIsLive  —  lignes 6227-6229 */
+/* heroIsLive  —  lines 6227-6229 */
     const heroIsLive = (s.pick && (s.page === 'live' || s.page === 'artist'))
       ? s.pick.kind === 'live'
       : (s.page === 'live' || s.page === 'home' || onArtistLive);
-/* heroPromo  —  lignes 6230-6230 */
+/* heroPromo  —  lines 6230-6230 */
     const heroPromo = this.promoOf(hero.title, hero.priceLabel, fr);
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       isLive: s.page === 'live', isAccount: s.page === 'account',
@@ -245,18 +248,19 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.chat  t.chatCollapse  t.chatExpand  t.gauge  t.getTicket  t.peekBlurb  t.peekTitle  
     t.qualityLabel  t.replayLabel  t.share  t.store  t.subtitlesLabel  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     chatOpen  following  mode  page  peek  pick  quality  query  tab  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     cssUrl, gate, openTicketFor, promoOf, seatCode, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

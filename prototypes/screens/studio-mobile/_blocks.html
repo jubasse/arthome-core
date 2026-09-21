@@ -1,18 +1,18 @@
 <!--
-  PIÈCE        _blocks — le balisage générique et ses fabriques
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  RÔLE         Les quinze sections que TOUS les écrans pilotent par leur modèle de vue : bande d'indicateurs, sous-onglets, filtres, panneau de décision, note, recherche, actions, tchat, formulaire, matrice, barres, anneau, blocs, « voir plus », pied de page.
+  PART         _blocks — the generic markup and its factories
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  PURPOSE      The fifteen sections that EVERY screen drives through its view model: indicator band, sub-tabs, filters, decision panel, note, search, actions, chat, form, matrix, bars, donut, blocks, "show more", footer.
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  L475-810
-               modèle    L1499-1518 (pill, btn, chip) · L1523-1556 (rows, stats, block) · L2160-2253 (parts, pager, fld, barsOf, donutOf) · L2293-2303 (tabStrip, act)
-  NOTE         Douze des dix-huit pages n'ont AUCUN balisage propre : elles n'existent que par ce fichier et par leur modèle de vue. C'est pourquoi il n'est recopié qu'ici, et référencé ailleurs.
+               markup      L475-810
+               view model  L1499-1518 (pill, btn, chip) · L1523-1556 (rows, stats, block) · L2160-2253 (parts, pager, fld, barsOf, donutOf) · L2293-2303 (tabStrip, act)
+  NOTE         Twelve of the eighteen pages have NO markup of their own: they exist only through this file and through their view model. That is why it is copied here only, and referenced elsewhere.
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 <!--
-  Correspondance clé de modèle de vue -> section de balisage :
+  View-model key -> markup section:
     band        -> hasBand        L475-485      form     -> hasForm        L610-648
     pageTabs    -> hasTabs        L487-495      matrix   -> hasMatrix      L650-686
     filters     -> hasFilters     L497-505      bars     -> hasBars        L688-706
@@ -23,7 +23,7 @@
     chatRows    -> hasChat        L577-608
 -->
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
     <sc-if value="{{ hasBand }}" hint-placeholder-val="{{ false }}">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #1D2126; border: 1px solid #23272C;">
         <sc-for list="{{ band }}" as="k" hint-placeholder-count="4">
@@ -361,7 +361,7 @@
       <div onClick="{{ footerAct }}" style="{{ footerStyle }}">{{ footerLabel }}</div>
     </sc-if>
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 <script type="text/x-dc-fragment">
   pill(c) {
     return MONO + 'flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; padding: 3px 6px; font-size: 9px; letter-spacing: 0.09em; white-space: nowrap; border: 1px solid '

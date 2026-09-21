@@ -1,25 +1,28 @@
 <!--
-  ÉCRAN      Compte — Préférences de lecture
+  SCREEN     Account — Playback preferences
   ROUTE      page === 'account', accTab === 'prefs'
-  AFFICHE    Qualité, comportement à l'ouverture d'un direct, tchat, réduction des animations, langue de sous-titrage, devise d'affichage.
-  MÈNE VERS  account
+  SHOWS      Quality, behaviour on opening a live, chat, reduced motion, subtitle language, display currency.
+  LEADS TO   account
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2743-2763
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2743-2763
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       La devise d'affichage est retirée du contrat au palier 1 (D-016) ; elle est encore
-             dans ce balisage, qui n'est pas corrigé.
+  NOTE       The display currency is removed from the contract at stage 1 (D-016); it is still in
+             this markup, which is not corrected.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — updatePreferences
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — updatePreferences
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : availW, s
-  À LIRE     dépendances non recopiées ici : prefDefs
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: availW, s
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: prefDefs
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
       <sc-if value="{{ accPrefs }}" hint-placeholder-val="{{ false }}">
       <div style="animation: fadeIn .3s ease both; max-width: 760px;">
@@ -43,11 +46,11 @@
       </sc-if>
 
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* accStack  —  lignes 5747-5747 */
+/* accStack  —  lines 5747-5747 */
     const accStack = availW < 760;
-/* prefRows  —  lignes 5864-5878 */
+/* prefRows  —  lines 5864-5878 */
     const prefRows = prefDefs.map(([key, label, hint, opts]) => ({
       label, hint,
       options: opts.map(([val, oLabel]) => {
@@ -65,7 +68,7 @@
 
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       accH2: accStack ? 'display: none;' : '',
@@ -73,17 +76,18 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.accPrefs  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     lang  prefs  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

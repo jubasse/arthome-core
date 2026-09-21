@@ -2,25 +2,25 @@
   Arthome · storefront mobile — artist
   ══════════════════════════════════════════════════════════════════════════
   Route      : artist
-  Affiche    : La fiche d'un artiste : biographie, dates à venir groupées, dates passées, rediffusions, politique de rediffusion, boutique.
-  Mène vers  : live, replay, sheet-ticket, sheet-share
-  Contrat    : GET /v1/artists/{artistId} · GET /v1/dates/{dateId}
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L909–1052
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : An artist's page: biography, upcoming dates grouped, past dates, replays, replay policy, store.
+  Leads to   : live, replay, sheet-ticket, sheet-share
+  Contract   : GET /v1/artists/{artistId} · GET /v1/dates/{dateId}
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L909–1052
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L909–1052
+     MARKUP — L909–1052
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ isArtist }}" hint-placeholder-val="{{ false }}">
 <div style="animation: fadeIn .3s ease both;">
@@ -168,10 +168,10 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (21 symboles)
+     VIEW MODEL — specific to this screen (21 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── groupByArtist  —  méthode de classe  —  L4056–4089 ── */
+/* ── groupByArtist  —  class method  —  L4056–4089 ── */
   groupByArtist(list, fr) {
     const baseOf = (title) => String(title || '').split(' — ')[0].trim();
     const order = [];
@@ -207,7 +207,7 @@
     return out;
   }
 
-/* ── buyStyle  —  méthode de classe  —  L4130–4136 ── */
+/* ── buyStyle  —  class method  —  L4130–4136 ── */
   buyStyle(base, p, hasBorder) {
     if (!p || !p.pAmberCta) return base;
     const line = 'rgba(214,178,102,0.42)';
@@ -216,37 +216,37 @@
       : ' background: transparent; border: 1px solid ' + line + '; padding: 7px 13px; color: ' + PROMO_INK + ';');
   }
 
-/* ── polKey  —  calcul dans renderReady()  —  L4894–4894 ── */
+/* ── polKey  —  computation in renderReady()  —  L4894–4894 ── */
     const polKey = (!P.replayPolicy || P.replayPolicy === 'artiste') ? artist.replay
 
-/* ── pol  —  calcul dans renderReady()  —  L4896–4896 ── */
+/* ── pol  —  computation in renderReady()  —  L4896–4896 ── */
     const pol = REPLAY[polKey] || REPLAY.included;
 
-/* ── replayPrice  —  calcul dans renderReady()  —  L4897–4897 ── */
+/* ── replayPrice  —  computation in renderReady()  —  L4897–4897 ── */
     const replayPrice = polKey === 'unit' ? '8 €' : (polKey === 'sub' ? (fr ? 'Abonnement' : 'Subscription') : (fr ? 'Incluse' : 'Included'));
 
-/* ── sameDiscipline  —  calcul dans renderReady()  —  L4918–4918 ── */
+/* ── sameDiscipline  —  computation in renderReady()  —  L4918–4918 ── */
     const sameDiscipline = roster
 
-/* ── ownAll  —  calcul dans renderReady()  —  L5402–5402 ── */
+/* ── ownAll  —  computation in renderReady()  —  L5402–5402 ── */
     const ownAll = catalogue.filter(o => o.artistIdx === artist.i);
 
-/* ── ownDates  —  calcul dans renderReady()  —  L5403–5403 ── */
+/* ── ownDates  —  computation in renderReady()  —  L5403–5403 ── */
     const ownDates = ownAll.filter(o => o.kind !== 'replay');
 
-/* ── ownFuture  —  calcul dans renderReady()  —  L5404–5404 ── */
+/* ── ownFuture  —  computation in renderReady()  —  L5404–5404 ── */
     const ownFuture = ownDates.slice().sort((a, b) => a.day - b.day);
 
-/* ── artistNextDate  —  calcul dans renderReady()  —  L5407–5407 ── */
+/* ── artistNextDate  —  computation in renderReady()  —  L5407–5407 ── */
     const artistNextDate = artist.nextDate;
 
-/* ── artistLastLive  —  calcul dans renderReady()  —  L5408–5408 ── */
+/* ── artistLastLive  —  computation in renderReady()  —  L5408–5408 ── */
     const artistLastLive = artist.lastLive;
 
-/* ── ownReplays  —  calcul dans renderReady()  —  L5410–5410 ── */
+/* ── ownReplays  —  computation in renderReady()  —  L5410–5410 ── */
     const ownReplays = catalogue.filter(o => o.artistIdx === artist.i && o.kind === 'replay').sort((a, b) => b.day - a.day);
 
-/* ── artistReplays  —  calcul dans renderReady()  —  L5411–5417 ── */
+/* ── artistReplays  —  computation in renderReady()  —  L5411–5417 ── */
     const artistReplays = polKey === 'off' ? [] : (ownReplays.length
       ? ownReplays.map(o => [o.title, o.img, o.whenLabel, o.duration])
       : [[artist.showTitle, artist.showImg, artistLastLive, '1 h 42']]
@@ -255,7 +255,7 @@
       open: () => this.setState({ page: 'replay', artistId: artist.i, replayTitle: title, replayImg: img, replayDuration: duration, pos: 0, watching: artist.i, watchKind: 'replay', pipClosed: false })
     }));
 
-/* ── artistEvents  —  calcul dans renderReady()  —  L5418–5435 ── */
+/* ── artistEvents  —  computation in renderReady()  —  L5418–5435 ── */
     const artistEvents = (ownDates.length
       ? this.groupByArtist(ownFuture, fr).slice().sort((a, b) => a.day - b.day)
       : [{ title: artist.showTitle, img: artist.showImg, whenLabel: artist.nextDate,
@@ -275,19 +275,19 @@
       ...this.promoOf(o.promoTitle || o.title, o.priceLabel, fr)
     }));
 
-/* ── artistMetaLine  —  clé du modèle rendu  —  L5914–5914 ── */
+/* ── artistMetaLine  —  key of the rendered model  —  L5914–5914 ── */
       artistMetaLine: artist.followers + ' ' + t.followersShort + ' · ' + artist.discipline.toUpperCase() + ' · ' + artist.city.toUpperCase(),
 
-/* ── artistViewersLine  —  clé du modèle rendu  —  L5915–5915 ── */
+/* ── artistViewersLine  —  key of the rendered model  —  L5915–5915 ── */
       artistViewersLine: artist.viewers ? artist.viewers + ' ' + t.viewersShort : '',
 
-/* ── artistFollowLabel  —  clé du modèle rendu  —  L5916–5916 ── */
+/* ── artistFollowLabel  —  key of the rendered model  —  L5916–5916 ── */
       artistFollowLabel: artist.followed ? (fr ? 'Suivi ✓' : 'Following ✓') : (fr ? 'Suivre' : 'Follow'),
 
-/* ── artistFollowStyle  —  clé du modèle rendu  —  L5917–5917 ── */
+/* ── artistFollowStyle  —  key of the rendered model  —  L5917–5917 ── */
       artistFollowStyle: 'cursor: pointer; padding: 12px 20px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; font-size: 13.5px; font-weight: 600; transition: background .24s ease, border-color .24s ease; ' +
 
-/* ── artistStats  —  clé du modèle rendu  —  L5919–5924 ── */
+/* ── artistStats  —  key of the rendered model  —  L5919–5924 ── */
       artistStats: [
         { value: artist.followers, label: t.followersShort },
         { value: artist.replay === 'off' ? '0' : String(artistReplays.length), label: t.replaysTitle.toUpperCase() },
@@ -295,7 +295,7 @@
         { value: '2024', label: t.joined }
       ],
 
-/* ── artistFacts  —  clé du modèle rendu  —  L5925–5930 ── */
+/* ── artistFacts  —  key of the rendered model  —  L5925–5930 ── */
       artistFacts: [
         { label: t.based, value: artist.city },
         { label: t.shows, value: String(ownAll.length) },
@@ -303,13 +303,13 @@
         { label: t.lastLive, value: artistLastLive }
       ],
 
-/* ── replayPolicyLabel  —  clé du modèle rendu  —  L5931–5931 ── */
+/* ── replayPolicyLabel  —  key of the rendered model  —  L5931–5931 ── */
       replayPolicyLabel: pol[0], replayPolicyColor: pol[1], replayPolicyHint: pol[2],
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (12) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (12) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2394  avgViewers: "AUDIENCE MOYENNE"
@@ -351,8 +351,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

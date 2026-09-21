@@ -2,28 +2,28 @@
   Arthome · storefront mobile — category
   ══════════════════════════════════════════════════════════════════════════
   Route      : category
-  Affiche    : Une discipline, la coquille : la une, le suivi de la discipline sous forme de recherche enregistrée, les sous-genres, les filtres et le sommaire ancré. Les quatre sections sont dans category-*.html.
-  Mène vers  : category-live/-upcoming/-artists/-replays, sheet-filters, sheet-save-search
-  Contrat    : GET /v1/categories/{categoryId}
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L627–686, L866–868
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : One discipline, the shell: the billboard, following the discipline as a saved search, the sub-genres, the filters and the anchored contents. The four sections are in category-*.html.
+  Leads to   : category-live/-upcoming/-artists/-replays, sheet-filters, sheet-save-search
+  Contract   : GET /v1/categories/{categoryId}
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L627–686, L866–868
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
-  Note       : Les quatre sections ancrées sont dans category-live.html, category-upcoming.html,
-               category-artists.html et category-replays.html.
+  Note       : The four anchored sections are in category-live.html, category-upcoming.html,
+               category-artists.html and category-replays.html.
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L627–686
+     MARKUP — L627–686
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ isCategory }}" hint-placeholder-val="{{ false }}">
 <div style="animation: fadeIn .3s ease both;">
@@ -87,20 +87,20 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L866–868
+     MARKUP — L866–868
      ══════════════════════════════════════════════════════════════════════════ -->
   </div>
 </div>
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (41 symboles)
+     VIEW MODEL — specific to this screen (41 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── nav  —  méthode de classe  —  L3977–3977 ── */
+/* ── nav  —  class method  —  L3977–3977 ── */
   nav(page) { return () => this.setState({ page, pick: null, ticketOpen: false, shareOpen: false }); }
 
-/* ── catAlertState  —  méthode de classe  —  L4202–4209 ── */
+/* ── catAlertState  —  class method  —  L4202–4209 ── */
   catAlertState() {
     const s = this.state;
     return {
@@ -110,7 +110,7 @@
     };
   }
 
-/* ── alertTokens  —  méthode de classe  —  L4211–4232 ── */
+/* ── alertTokens  —  class method  —  L4211–4232 ── */
   alertTokens(al, cats, T) {
     const st = al.st || {};
     const out = [];
@@ -134,7 +134,7 @@
     return out;
   }
 
-/* ── alertName  —  méthode de classe  —  L4234–4239 ── */
+/* ── alertName  —  class method  —  L4234–4239 ── */
   alertName(al, cats, T) {
     if (al.name) return al.name;
     if (al.query) return al.query;
@@ -142,28 +142,28 @@
     return tk.length ? tk.join(' · ') : T.alertAll;
   }
 
-/* ── priceDefs  —  calcul dans renderReady()  —  L5338–5338 ── */
+/* ── priceDefs  —  computation in renderReady()  —  L5338–5338 ── */
     const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
 
-/* ── dateDefs  —  calcul dans renderReady()  —  L5339–5339 ── */
+/* ── dateDefs  —  computation in renderReady()  —  L5339–5339 ── */
     const dateDefs = [['tonight', t.dTonight], ['weekend', t.dWeekend], ['d7', t.d7], ['d30', t.d30], ['range', t.dRange]];
 
-/* ── statusDefs  —  calcul dans renderReady()  —  L5347–5347 ── */
+/* ── statusDefs  —  computation in renderReady()  —  L5347–5347 ── */
     const statusDefs = [['live', t.stLive], ['soon', t.stSoon], ['replay', t.stReplay]];
 
-/* ── catSig  —  calcul dans renderReady()  —  L5443–5443 ── */
+/* ── catSig  —  computation in renderReady()  —  L5443–5443 ── */
     const catSig = this.alertSig('', this.catAlertState());
 
-/* ── catFollowEntry  —  calcul dans renderReady()  —  L5444–5444 ── */
+/* ── catFollowEntry  —  computation in renderReady()  —  L5444–5444 ── */
     const catFollowEntry = s.alerts.find(al => al.scope === 'category' && this.alertSig('', al.st) === catSig) || null;
 
-/* ── sortDefs  —  calcul dans renderReady()  —  L5481–5481 ── */
+/* ── sortDefs  —  computation in renderReady()  —  L5481–5481 ── */
     const sortDefs = [['auto', qq ? t.sortRelevance : t.sortSoon], ['soon', t.sortSoon], ['pop', t.sortPop], ['priceUp', t.sortPriceUp], ['priceDown', t.sortPriceDown]];
 
-/* ── priceMatch  —  calcul dans renderReady()  —  L5566–5566 ── */
+/* ── priceMatch  —  computation in renderReady()  —  L5566–5566 ── */
     const priceMatch = (k, p) => { const d = priceDefs.find(x => x[0] === k); return d ? d[2](p) : true; };
 
-/* ── dateMatch  —  calcul dans renderReady()  —  L5567–5573 ── */
+/* ── dateMatch  —  computation in renderReady()  —  L5567–5573 ── */
     const dateMatch = (k, d) => {
       if (k === 'range') return true;
       if (k === 'tonight') return d === 0;
@@ -172,10 +172,10 @@
       return d >= 0 && d <= 30;
     };
 
-/* ── catFilterCount  —  calcul dans renderReady()  —  L5574–5574 ── */
+/* ── catFilterCount  —  computation in renderReady()  —  L5574–5574 ── */
     const catFilterCount = subsSel.length + s.cPrices.length + (s.cDate !== 'all' ? 1 : 0) + (s.cStatus !== 'all' ? 1 : 0) + (s.cAlmost ? 1 : 0) + (s.cPromo ? 1 : 0);
 
-/* ── catPool  —  calcul dans renderReady()  —  L5575–5590 ── */
+/* ── catPool  —  computation in renderReady()  —  L5575–5590 ── */
     const catPool = catalogue.filter(o => {
       if (o.cat !== s.catId) return false;
       if (subsSel.length && !subsSel.some(i => o.subs.indexOf(i) > -1)) return false;
@@ -193,46 +193,46 @@
       return 0;
     });
 
-/* ── catLiveList  —  calcul dans renderReady()  —  L5593–5593 ── */
+/* ── catLiveList  —  computation in renderReady()  —  L5593–5593 ── */
     const catLiveList = catPool.filter(o => o.kind === 'live');
 
-/* ── catRepList  —  calcul dans renderReady()  —  L5595–5595 ── */
+/* ── catRepList  —  computation in renderReady()  —  L5595–5595 ── */
     const catRepList = catPool.filter(o => o.kind === 'replay');
 
-/* ── catArtList  —  calcul dans renderReady()  —  L5596–5596 ── */
+/* ── catArtList  —  computation in renderReady()  —  L5596–5596 ── */
     const catArtList = roster.filter(a => catPool.some(o => o.artistIdx === a.i));
 
-/* ── goCatTab  —  calcul dans renderReady()  —  L5601–5601 ── */
+/* ── goCatTab  —  computation in renderReady()  —  L5601–5601 ── */
     const goCatTab = k => () => this.setState({ catTab: k, shown: {} });
 
-/* ── goCategories  —  clé du modèle rendu  —  L6085–6085 ── */
+/* ── goCategories  —  key of the rendered model  —  L6085–6085 ── */
       goCategories: this.nav('categories'),
 
-/* ── catAlreadySaved  —  clé du modèle rendu  —  L6096–6096 ── */
+/* ── catAlreadySaved  —  key of the rendered model  —  L6096–6096 ── */
       catAlreadySaved: !!catFollowEntry, catNotSaved: !catFollowEntry,
 
-/* ── catSaveNew  —  clé du modèle rendu  —  L6097–6097 ── */
+/* ── catSaveNew  —  key of the rendered model  —  L6097–6097 ── */
       catSaveNew: this.gate(() => this.setState({ saveOpen: true, saveStep: 'ask', saveName: '', saveScope: 'category' })),
 
-/* ── catSavedName  —  clé du modèle rendu  —  L6098–6098 ── */
+/* ── catSavedName  —  key of the rendered model  —  L6098–6098 ── */
       catSavedName: catFollowEntry ? this.alertName(catFollowEntry, cats, t) : '',
 
-/* ── catSavedEditing  —  clé du modèle rendu  —  L6099–6099 ── */
+/* ── catSavedEditing  —  key of the rendered model  —  L6099–6099 ── */
       catSavedEditing: !!catFollowEntry && s.renameId === catFollowEntry.id,
 
-/* ── catSavedIdle  —  clé du modèle rendu  —  L6100–6100 ── */
+/* ── catSavedIdle  —  key of the rendered model  —  L6100–6100 ── */
       catSavedIdle: !!catFollowEntry && s.renameId !== catFollowEntry.id,
 
-/* ── catSavedDraft  —  clé du modèle rendu  —  L6101–6101 ── */
+/* ── catSavedDraft  —  key of the rendered model  —  L6101–6101 ── */
       catSavedDraft: s.renameDraft,
 
-/* ── catSavedStartRename  —  clé du modèle rendu  —  L6102–6102 ── */
+/* ── catSavedStartRename  —  key of the rendered model  —  L6102–6102 ── */
       catSavedStartRename: () => { if (catFollowEntry) this.setState({ renameId: catFollowEntry.id, renameDraft: this.alertName(catFollowEntry, cats, t) }); },
 
-/* ── catSavedInput  —  clé du modèle rendu  —  L6103–6103 ── */
+/* ── catSavedInput  —  key of the rendered model  —  L6103–6103 ── */
       catSavedInput: e => this.setState({ renameDraft: e.target.value }),
 
-/* ── catSavedKey  —  clé du modèle rendu  —  L6104–6110 ── */
+/* ── catSavedKey  —  key of the rendered model  —  L6104–6110 ── */
       catSavedKey: e => {
         if (e.key === 'Enter') this.setState(st => ({
           alerts: st.alerts.map(x => catFollowEntry && x.id === catFollowEntry.id ? Object.assign({}, x, { name: st.renameDraft.trim() }) : x),
@@ -241,19 +241,19 @@
         if (e.key === 'Escape') this.setState({ renameId: null, renameDraft: '' });
       },
 
-/* ── catSavedRemove  —  clé du modèle rendu  —  L6111–6111 ── */
+/* ── catSavedRemove  —  key of the rendered model  —  L6111–6111 ── */
       catSavedRemove: () => { if (catFollowEntry) this.setState({ deleteId: catFollowEntry.id }); },
 
-/* ── toggleCatFilters  —  clé du modèle rendu  —  L6114–6114 ── */
+/* ── toggleCatFilters  —  key of the rendered model  —  L6114–6114 ── */
       toggleCatFilters: () => this.setState(st => ({ cFiltersOpen: !(st.cFiltersOpen === null ? catFilterCount > 0 : st.cFiltersOpen) })),
 
-/* ── catFiltersBtnLabel  —  clé du modèle rendu  —  L6115–6115 ── */
+/* ── catFiltersBtnLabel  —  key of the rendered model  —  L6115–6115 ── */
       catFiltersBtnLabel: t.showFilters + (catFilterCount ? ' · ' + catFilterCount : '') + ((s.cFiltersOpen === null ? catFilterCount > 0 : s.cFiltersOpen) ? ' ▴' : ' ▾'),
 
-/* ── catFiltersBtnStyle  —  clé du modèle rendu  —  L6116–6116 ── */
+/* ── catFiltersBtnStyle  —  key of the rendered model  —  L6116–6116 ── */
       catFiltersBtnStyle: 'cursor: pointer; padding: 10px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; font-size: 12.5px; transition: background .2s ease, border-color .2s ease; ' +
 
-/* ── catTokens  —  clé du modèle rendu  —  L6138–6163 ── */
+/* ── catTokens  —  key of the rendered model  —  L6138–6163 ── */
       catTokens: (() => {
         const out = [];
         if (subsSel.length) {
@@ -281,32 +281,32 @@
         }));
       })(),
 
-/* ── catHasTokens  —  clé du modèle rendu  —  L6164–6164 ── */
+/* ── catHasTokens  —  key of the rendered model  —  L6164–6164 ── */
       catHasTokens: catFilterCount > 0,
 
-/* ── clearCatFilters  —  clé du modèle rendu  —  L6165–6165 ── */
+/* ── clearCatFilters  —  key of the rendered model  —  L6165–6165 ── */
       clearCatFilters: () => this.setState({ subs: [], cPrices: [], cDate: 'all', cStatus: 'all', cAlmost: false, cPromo: false, cSort: 'auto' }),
 
-/* ── catTotalLabel  —  clé du modèle rendu  —  L6190–6190 ── */
+/* ── catTotalLabel  —  key of the rendered model  —  L6190–6190 ── */
       catTotalLabel: catPool.length + ' ' + (catPool.length > 1 ? t.resultsLabel : t.resultLabel),
 
-/* ── toggleSortMenu  —  clé du modèle rendu  —  L6281–6281 ── */
+/* ── toggleSortMenu  —  key of the rendered model  —  L6281–6281 ── */
       toggleSortMenu: () => this.setState(st => ({ sortOpen: !st.sortOpen })),
 
-/* ── sortFieldStyle  —  clé du modèle rendu  —  L6282–6282 ── */
+/* ── sortFieldStyle  —  key of the rendered model  —  L6282–6282 ── */
       sortFieldStyle: "cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 10px 12px; min-height: 44px; box-sizing: border-box;  border: 1px solid " +
 
-/* ── sortCaret  —  clé du modèle rendu  —  L6284–6284 ── */
+/* ── sortCaret  —  key of the rendered model  —  L6284–6284 ── */
       sortCaret: s.sortOpen ? '▴' : '▾',
 
-/* ── sortCurrentLabel  —  clé du modèle rendu  —  L6293–6297 ── */
+/* ── sortCurrentLabel  —  key of the rendered model  —  L6293–6297 ── */
       sortCurrentLabel: (() => {
         const defs = s.page === 'category' ? sortDefs.filter(d => d[0] !== 'soon') : (qq ? sortDefs : sortDefs.filter(d => d[0] !== 'soon'));
         const cur = s.page === 'category' ? s.cSort : s.sort;
         return ((defs.find(d => d[0] === cur) || defs[0]) || ['', ''])[1];
       })(),
 
-/* ── catTabs  —  clé du modèle rendu  —  L6414–6425 ── */
+/* ── catTabs  —  key of the rendered model  —  L6414–6425 ── */
       catTabs: [
         ['ov', t.tabOverview, catPool.length],
         ['live', t.tabCatLive, catLiveList.length],
@@ -323,7 +323,7 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (40) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (40) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2354  alertAll: "Tous les lives"
@@ -449,8 +449,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

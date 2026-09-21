@@ -1,19 +1,19 @@
 <!--
-  Écran      : signin
-  Route      : page === 'signin' — appairage d'appareil, intention `signin`
-  Affiche    : QR + code court à six caractères, trois arguments de vente, et un écran qui attend puis bascule seul.
-  Mène vers  : gate (comptes connectés) · home (parcourir sans compte)
-  Partagé    : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
+  Screen     : signin
+  Route      : page === 'signin' — device pairing, intent `signin`
+  Shows      : QR + six-character short code, three selling points, and a screen that waits then flips by itself.
+  Leads to   : gate (connected accounts) · home (browse without an account)
+  Shared     : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
 
-  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
-    · Le code est un littéral de maquette ('H4T9RD') et la validité (« CODE VALABLE 15 MINUTES ») est une chaîne de copie. Le contrat les sert désormais.
-    · Le minuteur de 14 s (signT, L1783) simule l'approbation : il n'y a pas d'interrogation réelle.
+  DEFECTS FOUND (not fixed — verbatim extraction):
+    · The code is a mockup literal ('H4T9RD') and the validity ("CODE VALID FOR 15 MINUTES") is a copy string. The contract now serves both.
+    · The 14 s timer (signT, L1783) simulates approval: there is no real polling.
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger ici : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
-<!-- ═══════════ Balisage (verbatim, L59-110) ═══════════ -->
+<!-- ═══════════ Markup (verbatim, L59-110) ═══════════ -->
   <sc-if value="{{ pgSignin }}" hint-placeholder-val="{{ false }}">
     <div style="position: absolute; inset: 0; background: #0B0A09; animation: fadeIn .4s ease both;">
       <sc-if value="{{ signin.img }}" hint-placeholder-val="{{ false }}"><img data-img="{{ signin.img }}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.62) brightness(.44); transform-origin: 50% 100%; animation: {{ ken }};" /></sc-if>
@@ -67,7 +67,7 @@
     </div>
   </sc-if>
 
-<!-- ═══════════ Modèle de vue (verbatim, L3197-3214) ═══════════ -->
+<!-- ═══════════ View model (verbatim, L3197-3214) ═══════════ -->
 <script type="text/x-dc-extract">
       signin: {
         img: U(PIC.lights), cells: this.qr('signin'), code: 'H4T9RD', url: 'arthome.fr/tv',
@@ -89,7 +89,7 @@
       },
 </script>
 
-<!-- ═══════════ signIn() — bascule à l'approbation (verbatim, L2322-2327) ═══════════ -->
+<!-- ═══════════ signIn() — flip on approval (verbatim, L2322-2327) ═══════════ -->
 <script type="text/x-dc-extract">
   signIn() {
     if (this.state.page !== 'signin' || this.state.signinOk) return;
@@ -99,7 +99,7 @@
   }
 </script>
 
-<!-- ═══════════ qr() — tramage du QR (verbatim, L2350-2361) ═══════════ -->
+<!-- ═══════════ qr() — QR rasterisation (verbatim, L2350-2361) ═══════════ -->
 <script type="text/x-dc-extract">
   qr(seed) {
     const N = 21, out = [];
@@ -115,20 +115,20 @@
   }
 </script>
 
-<!-- ═══════════ CLÉS DE COPIE ═══════════
-  jeton du composant  →  clé i18n (shared/i18n/tv-keymap.json)
-    t.codeNote           → ticketing.codeValidity   [majuscules]
+<!-- ═══════════ COPY KEYS ═══════════
+  component token  →  i18n key (shared/i18n/tv-keymap.json)
+    t.codeNote           → ticketing.codeValidity   [uppercased]
     t.siDone             → common.qr.done
-    t.siOrType           → common.qr.orType   [majuscules]
-    t.siScan             → common.qr.signInTitle   [majuscules]
+    t.siOrType           → common.qr.orType   [uppercased]
+    t.siScan             → common.qr.signInTitle   [uppercased]
     t.siTitle            → account.signIn.title
     t.siWait             → common.qr.waiting
 -->
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « L'appairage d'appareil » — section la plus détaillée du document
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "Device pairing" — the most detailed section of the document
   openapi/storefront.yaml → createPairing (POST /v1/pairings, intent=signin) · pollPairing (GET /v1/pairings/{id})
-  adr-auth.md §3-§5 : seul `signin` est un vrai RFC 8628 ; les quatre autres sont des rendez-vous de transaction.
-  Alphabet du code : 28 symboles ACDEFHJKLMNPQRTUVWXY23456789 (B, S, Z, G retirés). Durée servie : 15 min pour signin.
-  pollPairing fonctionne avec le SEUL jeton d'appareil : c'est ce qui permet le rattachement après redémarrage.
+  adr-auth.md §3-§5: only `signin` is a true RFC 8628; the other four are transaction rendezvous.
+  Code alphabet: 28 symbols ACDEFHJKLMNPQRTUVWXY23456789 (B, S, Z, G removed). Served duration: 15 min for signin.
+  pollPairing works with the DEVICE TOKEN ALONE: that is what makes reattachment after a restart possible.
 -->

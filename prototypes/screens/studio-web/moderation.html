@@ -1,23 +1,23 @@
 <!--
 ==============================================================================
-  ÉCRAN — moderation — console de modération hors régie
+  SCREEN — moderation — moderation console outside the control room
 ==============================================================================
 
-  Ce qu'il affiche : le tchat du direct, la file à valider, le filtre et le régime, les sanctions actives, et la fiche d'un spectateur
+  What it shows: the live chat, the queue awaiting a verdict, the filter and the policy, active sanctions, and a viewer's record
 
-  Rôles qui l'ouvrent : moderation
-  Mène vers : regie (onglet tchat et modération)
+  Roles that open it: moderation
+  Leads to: regie (chat and moderation tab)
 
-  Source : mockups/Studio.dc.html
-    balisage        lignes 304–526, 528–595
-    modèle de vue   lignes 2642–2663, 2752–2770, 3239–3261, 3399–3413, 3433–3433, 3987–3988, 4220–4220, 5844–5847, 6380–6463, 6465–6488, 6491–6552
+  Source: mockups/Studio.dc.html
+    markup          lines 304–526, 528–595
+    view model      lines 2642–2663, 2752–2770, 3239–3261, 3399–3413, 3433–3433, 3987–3988, 4220–4220, 5844–5847, 6380–6463, 6465–6488, 6491–6552
 
-  Clés de copie employées :
+  Copy keys used:
     enums.moderationReason.*
     enums.moderationState.*
 
-  Contrat :
-    besoins   needs/studio-web.md § « Le temps réel » et § « Les commandes de modération »
+  Contract:
+    needs     needs/studio-web.md § "Real time — running the live show" and § "Moderation commands — a case apart"
     openapi   openapi/studio.yaml · listModerationQueue
     openapi   openapi/studio.yaml · claimModerationItem
     openapi   openapi/studio.yaml · releaseModerationItem
@@ -29,18 +29,18 @@
     openapi   openapi/studio.yaml · listStudioChatMessages
     openapi   openapi/studio.yaml · setDateChatPolicy
 
-  Relevé d'extraction (défauts vus, non corrigés) :
-    · DEUX vocabulaires de sévérité dans le même fichier : severityChips dit souple/normale/haute, sevRows dit basse/moyenne/haute. Le contrat retient low/medium/high.
-    · les motifs de modération de la maquette ne sont pas ceux de shared/catalogue.json (spam · insult · spoiler · off-topic · harassment).
-    · la prise en charge (claim) et le refus du second verdict sont simulés localement : PEER_VERDICT est codé en dur sur la ligne 1.
-    · hors antenne, sévérité, mode lent et réserve aux détenteurs n'ont aucune cible : la maquette dit pourtant qu'ils restent modifiables.
-    · clés de vue non résolues automatiquement : modLiveNow, modTitleStyle, modEventTitle, modViewers, modStats, modNoQueue, modEmptyTitle, modEmptyHint, modRows, modeRows, sevRows, sevHint, retroHint, banList, sanctions
+  Extraction notes (defects seen, left uncorrected):
+    · TWO severity vocabularies in the same file: severityChips says souple/normale/haute, sevRows says basse/moyenne/haute. The contract keeps low/medium/high.
+    · the mockup's moderation reasons are not those of shared/catalogue.json (spam · insult · spoiler · off-topic · harassment).
+    · the claim and the refusal of a second verdict are simulated locally: PEER_VERDICT is hard-coded on row 1.
+    · off air, severity, slow mode and holders-only have no target: the mockup nevertheless says they remain editable.
+    · view keys not resolved automatically: modLiveNow, modTitleStyle, modEventTitle, modViewers, modStats, modNoQueue, modEmptyTitle, modEmptyHint, modRows, modeRows, sevRows, sevHint, retroHint, banList, sanctions
 
-  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+  EXTRACTED VERBATIM from Studio.dc.html — nothing has been corrected or rewritten.
 -->
 
-<!-- ======================= BALISAGE ======================= -->
-<!-- ···· balisage · Studio.dc.html lignes 304–526 ···· -->
+<!-- ======================== MARKUP ======================== -->
+<!-- ···· markup · Studio.dc.html lines 304–526 ···· -->
     <sc-if value="{{ isModeration }}" hint-placeholder-val="{{ false }}">
     <div style="animation: fadeIn .2s ease both;">
       <div style="border-bottom: 1px solid #1D2126; background: #111316; padding: 16px 22px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
@@ -264,7 +264,7 @@
       </div>
     </div>
     </sc-if>
-<!-- ···· balisage · Studio.dc.html lignes 528–595 ···· -->
+<!-- ···· markup · Studio.dc.html lines 528–595 ···· -->
     <sc-if value="{{ userOpen }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ closeUser }}" style="position: fixed; inset: 0; z-index: 8000; background: rgba(8,9,10,0.78); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 32px; animation: fadeIn .16s ease both;">
       <div onClick="{{ stopEvt }}" style="width: 460px; max-width: 100%; max-height: calc(100vh - 64px); overflow-y: auto; border: 1px solid #333941; background: #15171A; animation: riseIn .2s ease both;">
@@ -334,9 +334,9 @@
     </div>
     </sc-if>
 
-<!-- ===================== MODÈLE DE VUE ===================== -->
+<!-- ====================== VIEW MODEL ======================= -->
 <script type="text/x-dc-fragment">
-<!-- ···· modèle de vue · Studio.dc.html lignes 2642–2663 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2642–2663 ···· -->
   sanctionsOf(channelName) {
     const A = this.A, D = this.data;
     if (!A || !D) return [];
@@ -359,7 +359,7 @@
     });
     return out.slice(0, 6);
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 2752–2770 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2752–2770 ···· -->
   modLogOf(channelName) {
     const A = this.A;
     if (!A) return [];
@@ -379,7 +379,7 @@
     // Du plus récent au plus ancien : un journal se lit par le haut.
     return rows.reverse();
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 3239–3261 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3239–3261 ···· -->
   settle(i, verdict, user, claimedBy, meName, peerVerdict) {
     /* refus seulement si le confrère a réellement tranché : la ligne se clôt alors sur SA décision */
     if (claimedBy && claimedBy !== meName && peerVerdict) {
@@ -403,7 +403,7 @@
       verdict === 'mute' ? { modSanct: Object.assign({}, st.modSanct, { [user]: 'MUET SANS LIMITE' }) } : {}
     ));
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 3399–3413 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3399–3413 ···· -->
   applyCustomMute(user) {
     const n = parseInt(this.state.muteCustom, 10);
     if (!user || !n || n < 1) return;
@@ -419,19 +419,19 @@
       return { banWords: cur.indexOf(w) > -1 ? cur : cur.concat([w]), banDraft: '' };
     });
   }
-<!-- ···· modèle de vue · Studio.dc.html lignes 3433–3433 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3433–3433 ···· -->
         chan: i, chanOpen: false,
-<!-- ···· modèle de vue · Studio.dc.html lignes 3987–3988 ···· -->
+<!-- ···· view model · Studio.dc.html lines 3987–3988 ···· -->
       stopEvt: e => { if (e && e.stopPropagation) e.stopPropagation(); },
       me,
-<!-- ···· modèle de vue · Studio.dc.html lignes 4220–4220 ···· -->
+<!-- ···· view model · Studio.dc.html lines 4220–4220 ···· -->
       isModeration: page === 'moderation',
-<!-- ···· modèle de vue · Studio.dc.html lignes 5844–5847 ···· -->
+<!-- ···· view model · Studio.dc.html lines 5844–5847 ···· -->
           banDraft: s.banDraft || '',
           onBanDraft: e => this.setState({ banDraft: e.target.value }),
           onBanKey: e => { if (e.key === 'Enter') this.addBanWord(); },
           addBan: () => this.addBanWord(),
-<!-- ···· modèle de vue · Studio.dc.html lignes 6380–6463 ···· -->
+<!-- ···· view model · Studio.dc.html lines 6380–6463 ···· -->
               mdChat: tab === 'chat', mdQueue: tab === 'queue', mdFilter: tab === 'filter', mdSanct: tab === 'sanct',
               modFilterCols: vw < 900 ? 'minmax(0,1fr)' : 'minmax(0,1fr) minmax(0,1fr)',
               modTabs: [
@@ -516,7 +516,7 @@
               specCount: (AUDIENCE[chan.name] || []).length.toLocaleString('fr-FR') + ' spectateurs présents',
 
               userOpen: !!sel,
-<!-- ···· modèle de vue · Studio.dc.html lignes 6465–6488 ···· -->
+<!-- ···· view model · Studio.dc.html lines 6465–6488 ···· -->
               userSilent: selMsgs.length === 0,
               userName: sel || '',
               userMeta: sel ? ((selMsgs.length ? selMsgs.length + ' message' + (selMsgs.length > 1 ? 's' : '') + ' ce soir' : 'Aucun message ce soir') + ' · compte créé il y a ' + (2 + (sel.length % 9)) + ' mois') : '',
@@ -541,7 +541,7 @@
               isBanned: cur === 'BANNI',
               isMuted: sel ? /^MUET/.test(cur) : false,
               notMuted: sel ? !/^MUET/.test(cur) : true,
-<!-- ···· modèle de vue · Studio.dc.html lignes 6491–6552 ···· -->
+<!-- ···· view model · Studio.dc.html lines 6491–6552 ···· -->
               banUser: () => this.setState(st => ({ modSanct: Object.assign({}, st.modSanct, { [sel]: 'BANNI' }) })),
               liftUser: () => this.setState(st => {
                 const n = Object.assign({}, st.modSanct); n[sel] = null; return { modSanct: n };

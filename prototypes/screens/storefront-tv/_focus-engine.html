@@ -1,30 +1,30 @@
 <!--
-  Mécanique  : moteur de focus (transverse aux 22 écrans)
+  Mechanic   : focus engine (cross-cutting, all 22 screens)
   Source     : Storefront TV.dc.html, L1945-2146
-  Rôle       : un seul élément focalisé à l'instant t, déplacement en croix vers le
-               voisin géométrique le plus proche dans l'axe demandé. Aucune diagonale.
-  Pourquoi   : le dossier de passation le désigne comme « la partie à étudier de près
-               avant d'écrire la version react-native-tvos ».
+  Role       : exactly one focused element at any instant, moving in a cross towards
+               the nearest geometric neighbour on the requested axis. No diagonals.
+  Why        : the handoff dossier calls it "the part to study closely before writing
+               the react-native-tvos version".
 
-  Carte des fonctions :
-    R()         racine du document, pour les mesures
-    fids()      les cibles focalisables présentes, dans l'ordre du DOM
-    rectOf(n)   géométrie d'une cible
-    navKey()    clé de la barre latérale, pour la traiter à part
-    firstOf()   première cible hors barre latérale
-    mayFocus()  le focus est-il permis dans l'état courant
-    focusEl()   pose le focus et déclenche le placement (→ _sticky-scroll.html)
-    glide()     défilement animé          ─┐ mécanique de défilement collant,
-    place()     calage de l'élément focalisé ┘ détaillée dans _sticky-scroll.html
-    sync()      resynchronise après un rendu
-    move(dir)   déplacement demandé par une touche (→ _remote-keys.html)
-    pick()      ÉLECTION DE LA CIBLE — c'est ici que vit la règle du voisin le plus proche
+  Function map:
+    R()         document root, for measurements
+    fids()      the focusable targets present, in DOM order
+    rectOf(n)   a target's geometry
+    navKey()    the sidebar key, so it can be handled separately
+    firstOf()   first target outside the sidebar
+    mayFocus()  is focus allowed in the current state
+    focusEl()   sets focus and triggers placement (→ _sticky-scroll.html)
+    glide()     animated scrolling        ─┐ sticky-scroll mechanic,
+    place()     seats the focused element ─┘ detailed in _sticky-scroll.html
+    sync()      resynchronises after a render
+    move(dir)   movement requested by a key (→ _remote-keys.html)
+    pick()      TARGET ELECTION — this is where the nearest-neighbour rule lives
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
-<!-- ═══════════ MOTEUR DE FOCUS (verbatim, L1945-2146) ═══════════ -->
+<!-- ═══════════ FOCUS ENGINE (verbatim, L1945-2146) ═══════════ -->
 <script type="text/x-dc-extract">
   // ---------- focus engine ----------
   R() {
@@ -230,9 +230,9 @@
 
 </script>
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « Contraintes propres à la TV » §2 (cinq touches)
-  Prompt - Storefront TV.md → « Le cœur du sujet : la télécommande »
-  Consommé par : les 22 écrans, sans exception.
-  Voir aussi : _sticky-scroll.html (glide/place), _focus-memory.html, _remote-keys.html
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "TV-specific constraints" §2 (five keys)
+  docs/storefront-tv.md → "The heart of the matter: the remote control"
+  Consumed by: all 22 screens, without exception.
+  See also: _sticky-scroll.html (glide/place), _focus-memory.html, _remote-keys.html
 -->

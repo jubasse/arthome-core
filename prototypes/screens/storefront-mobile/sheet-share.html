@@ -1,30 +1,30 @@
 <!--
   Arthome · storefront mobile — sheet-share
   ══════════════════════════════════════════════════════════════════════════
-  Route      : superposée · shareOpen
-  Affiche    : Le partage : cibles sociales et lien canonique.
-  Mène vers  : —
-  Contrat    : DateCard.canonicalUrl — ⚠ non résoluble en entrée, voir Confrontation C2
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L2122–2140
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Route      : overlay · shareOpen
+  Shows      : Share: social targets and the canonical link.
+  Leads to   : —
+  Contract   : DateCard.canonicalUrl — ⚠ not resolvable as input, see Confrontation C2
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L2122–2140
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
-  Note       : ⚠ Le lien produit ici n'est résoluble par aucun point d'entrée : slug et
-               canonicalUrl sont servis en sortie, jamais acceptés en entrée.
-               Voir needs/storefront-mobile.md § Confrontation C2.
+  Note       : ⚠ The link produced here is resolvable by no endpoint: slug and
+               canonicalUrl are served outbound, never accepted as input.
+               See needs/storefront-mobile.md § Confrontation C2.
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L2122–2140
+     MARKUP — L2122–2140
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ shareOpen }}" hint-placeholder-val="{{ false }}">
 <div onClick="{{ closeShare }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
@@ -47,14 +47,14 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (0 symboles)
+     VIEW MODEL — specific to this screen (0 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* Aucun symbole propre : cet écran n'emploie que le noyau commun. */
+/* No symbols of its own: this screen uses only the shared core. */
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (3) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (3) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2442  copy: "Copier"
@@ -69,8 +69,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

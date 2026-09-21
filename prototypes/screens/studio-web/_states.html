@@ -1,35 +1,35 @@
 <!--
 ==============================================================================
-  ÉCRAN — _states — la machine à états d'une publication (transverse)
+  SCREEN — _states — a publication's state machine (cross-cutting)
 ==============================================================================
 
-  Ce qu'il affiche : les sept états d'une date, leur ordre, les deux transitions sans retour et leur promesse engagée
+  What it shows: the seven states of a date, their order, the two one-way transitions and the promise each engages
 
-  Rôles qui l'ouvrent : lecture pour tous ; seuls artist et production déplacent une date
-  Mène vers : event · events · agenda · dashboard
+  Roles that open it: read for everyone; only artist and production move a date
+  Leads to: event · events · agenda · dashboard
 
-  Source : mockups/Studio.dc.html
-    balisage        aucun — tables de constantes
-    modèle de vue   lignes 2355–2372
+  Source: mockups/Studio.dc.html
+    markup          none — constant tables
+    view model      lines 2355–2372
 
-  Clés de copie employées :
-    aucune clé i18n directe
+  Copy keys used:
+    no direct i18n key
 
-  Contrat :
-    besoins   needs/studio-web.md § « Les commandes » → « La machine à états d'une publication »
+  Contract:
+    needs     needs/studio-web.md § "Commands" → "A publication's state machine"
     openapi   openapi/studio.yaml · moveDatePublicationState
-    openapi   openapi/studio.yaml · setRunState (technical→live et live→ended sont CAUSÉES par streaming, jamais commandées ici)
+    openapi   openapi/studio.yaml · setRunState (technical→live and live→ended are CAUSED by streaming, never commanded here)
 
-  Relevé d'extraction (défauts vus, non corrigés) :
-    · VOCABULAIRE PARALLÈLE (errata D2) : la maquette dit draft·hidden·sched·tech·live·done·replay ; shared/catalogue.json et le contrat disent draft·reserve·scheduled·technical·live·ended·replay-online. C'est CE DERNIER qui fait autorité.
-    · STATE_LOCKED porte des COUPLES `from>to` — c'est la bonne sémantique, retenue par le contrat (E5) ; shared/fixtures.js encode à tort une liste d'états.
+  Extraction notes (defects seen, left uncorrected):
+    · PARALLEL VOCABULARY (errata D2): the mockup says draft·hidden·sched·tech·live·done·replay; shared/catalogue.json and the contract say draft·reserve·scheduled·technical·live·ended·replay-online. THE LATTER is authoritative.
+    · STATE_LOCKED carries `from>to` PAIRS — that is the right semantics, kept by the contract (E5); shared/fixtures.js wrongly encodes a list of states.
 
-  EXTRAIT TEL QUEL de Studio.dc.html — rien n'a été corrigé ni réécrit.
+  EXTRACTED VERBATIM from Studio.dc.html — nothing has been corrected or rewritten.
 -->
 
-<!-- ===================== MODÈLE DE VUE ===================== -->
+<!-- ====================== VIEW MODEL ======================= -->
 <script type="text/x-dc-fragment">
-<!-- ···· modèle de vue · Studio.dc.html lignes 2355–2372 ···· -->
+<!-- ···· view model · Studio.dc.html lines 2355–2372 ···· -->
 const STATES = {
   draft:  ['BROUILLON', 'oklch(0.6 0.014 245)'],
   hidden: ['EN RÉSERVE', WARN],

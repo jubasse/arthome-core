@@ -1,24 +1,27 @@
 <!--
-  ÉCRAN      Partage d'un direct
-  ROUTE      superposition, sans URL
-  AFFICHE    Le partage d'une date : cibles, adresse à copier, et la mention que les amis peuvent regarder l'aperçu gratuitement.
-  MÈNE VERS  live
+  SCREEN     Share a live
+  ROUTE      overlay, no URL
+  SHOWS      Sharing a date: targets, the address to copy, and the note that friends can watch the free preview.
+  LEADS TO   live
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 3262-3278
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 3262-3278
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       L'adresse partagée est construite côté client dans la maquette ; le contrat sert
+  NOTE       The shared address is built client-side in the mockup; the contract serves
              `DateCard.canonicalUrl`.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : fr
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: fr
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <sc-if value="{{ shareOpen }}" hint-placeholder-val="{{ false }}">
 <div onClick="{{ closeShare }}" style="position: fixed; inset: 0; z-index: 8000; background: rgba(6,5,5,0.72); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 40px; animation: fadeIn .2s ease both;">
@@ -38,7 +41,7 @@
 </div>
 </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       closeShare: () => this.setState({ shareOpen: false }),
@@ -48,14 +51,15 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.copy  t.shareBlurb  t.shareTitle  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

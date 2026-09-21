@@ -2,33 +2,33 @@
   Arthome · storefront mobile — live
   ══════════════════════════════════════════════════════════════════════════
   Route      : live
-  Affiche    : Le direct : lecteur, aperçu gratuit verrouillé, chapitres, qualité, et le panneau latéral à deux onglets (tchat / boutique).
-  Mène vers  : artist, sheet-ticket, sheet-share, sheet-cart
-  Contrat    : POST /v1/playback/{dateId}/open · /v1/dates/{dateId}/chat/messages
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1110–1241
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : The live: player, locked free preview, chapters, quality, and the two-tab side panel (chat / store).
+  Leads to   : artist, sheet-ticket, sheet-share, sheet-cart
+  Contract   : POST /v1/playback/{dateId}/open · /v1/dates/{dateId}/chat/messages
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1110–1241
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
-  Note       : Ce fichier contient TROIS régions, et deux d'entre elles ne sont pas des écrans :
-                 L1110-1166  le lecteur et sa barre d'onglets
-                 L1167-1214  onglet TCHAT du panneau latéral   (state.tab === 'chat')
-                 L1215-1241  onglet BOUTIQUE du panneau latéral (state.tab === 'store')
-               'chat' et 'store' sont des onglets de CET écran, pas des routes : ils partagent
-               son cycle de vie et son canal temps réel. Voir needs/storefront-mobile.md,
-               Inventaire des écrans, « Correction à la liste du chef ».
+  Note       : This file holds THREE regions, and two of them are not screens:
+                 L1110-1166  the player and its tab bar
+                 L1167-1214  CHAT tab of the side panel   (state.tab === 'chat')
+                 L1215-1241  STORE tab of the side panel  (state.tab === 'store')
+               'chat' and 'store' are tabs of THIS screen, not routes: they share its
+               lifecycle and its realtime channel. See needs/storefront-mobile.md,
+               Screen inventory, "Correction to the lead's list".
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1110–1241
+     MARKUP — L1110–1241
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ isLive }}" hint-placeholder-val="{{ false }}">
 <div style="animation: fadeIn .3s ease both;">
@@ -164,16 +164,16 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (14 symboles)
+     VIEW MODEL — specific to this screen (14 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── reactions  —  calcul dans renderReady()  —  L4587–4590 ── */
+/* ── reactions  —  computation in renderReady()  —  L4587–4590 ── */
     const reactions = ['👏 Bravo', '🌹', '😂', fr ? 'Magnifique' : 'Beautiful', fr ? 'Encore !' : 'Encore!'].map(label => ({
       label,
       send: () => this.setState(st => ({ messages: st.messages.concat([{ user: 'vous', text: label, color: 'oklch(0.72 0.16 42)' }]) }))
     }));
 
-/* ── heroBase  —  calcul dans renderReady()  —  L4932–4949 ── */
+/* ── heroBase  —  computation in renderReady()  —  L4932–4949 ── */
     const heroBase = (() => {
       const d = A.liveNow()[0] || A.upcoming()[0];
       if (!d) return { title: '', artist: '', blurb: '', meta: '', viewersLabel: '', priceLabel: '', img: '' };
@@ -193,10 +193,10 @@
       };
     })();
 
-/* ── onArtistLive  —  calcul dans renderReady()  —  L4950–4950 ── */
+/* ── onArtistLive  —  computation in renderReady()  —  L4950–4950 ── */
     const onArtistLive = (s.page === 'live' || s.page === 'replay') && artist.i !== 3;
 
-/* ── hero  —  calcul dans renderReady()  —  L4951–4977 ── */
+/* ── hero  —  computation in renderReady()  —  L4951–4977 ── */
     const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
       title: s.pick.title,
       artist: s.pick.artist,
@@ -225,40 +225,40 @@
       img: artist.showImg, imgCss: this.cssUrl(artist.showImg)
     } : heroBase);
 
-/* ── heroBuyStyle  —  clé du modèle rendu  —  L5807–5807 ── */
+/* ── heroBuyStyle  —  key of the rendered model  —  L5807–5807 ── */
       heroBuyStyle: 'cursor: pointer; padding: 14px 26px; white-space: nowrap; border: 1px solid #332E28; font-size: 13.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease, color .24s ease;' +
 
-/* ── isLive  —  clé du modèle rendu  —  L5828–5828 ── */
+/* ── isLive  —  key of the rendered model  —  L5828–5828 ── */
       isLive: s.page === 'live', isAccount: s.page === 'account',
 
-/* ── hasTicket  —  clé du modèle rendu  —  L5885–5885 ── */
+/* ── hasTicket  —  key of the rendered model  —  L5885–5885 ── */
       hasTicket: ownsCurrent,
 
-/* ── needsTicket  —  clé du modèle rendu  —  L5888–5888 ── */
+/* ── needsTicket  —  key of the rendered model  —  L5888–5888 ── */
       needsTicket: !ownsCurrent,
 
-/* ── ownedLabel  —  clé du modèle rendu  —  L5889–5889 ── */
+/* ── ownedLabel  —  key of the rendered model  —  L5889–5889 ── */
       ownedLabel: (fr ? 'VOTRE PLACE · ' : 'YOUR SEAT · ') + this.seatCode(currentDate),
 
-/* ── peekLabel  —  clé du modèle rendu  —  L5890–5890 ── */
+/* ── peekLabel  —  key of the rendered model  —  L5890–5890 ── */
       peekLabel: fr ? 'APERÇU GRATUIT' : 'FREE PREVIEW',
 
-/* ── artistFollowLabel  —  clé du modèle rendu  —  L5916–5916 ── */
+/* ── artistFollowLabel  —  key of the rendered model  —  L5916–5916 ── */
       artistFollowLabel: artist.followed ? (fr ? 'Suivi ✓' : 'Following ✓') : (fr ? 'Suivre' : 'Follow'),
 
-/* ── openStoreFromCart  —  clé du modèle rendu  —  L6078–6078 ── */
+/* ── openStoreFromCart  —  key of the rendered model  —  L6078–6078 ── */
       openStoreFromCart: () => this.setState({ page: 'live', tab: 'store', chatOpen: true, cartOpen: false }),
 
-/* ── qualityLine  —  clé du modèle rendu  —  L6080–6080 ── */
+/* ── qualityLine  —  key of the rendered model  —  L6080–6080 ── */
       qualityLine: s.quality + ' · 4K ' + (fr ? 'disponible' : 'available'),
 
-/* ── toggleSortMenu  —  clé du modèle rendu  —  L6281–6281 ── */
+/* ── toggleSortMenu  —  key of the rendered model  —  L6281–6281 ── */
       toggleSortMenu: () => this.setState(st => ({ sortOpen: !st.sortOpen })),
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (9) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (9) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2426  chat: "Tchat"
@@ -291,8 +291,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

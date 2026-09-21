@@ -1,25 +1,25 @@
 <!--
-  ÉCRAN        wizard
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Quatre décisions pour créer une date en brouillon ; le reste va sur la fiche.
-  RÔLES        artist · prod
-  MÈNE VERS    écrans : event
+  SCREEN       wizard
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        Four decisions to create a draft date; everything else goes on the record.
+  ROLES        artist · prod
+  LEADS TO     screens: event
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  pgWizard L418-473
-               modèle    L3773-3843
-  CLÉS DE COPIE
-               - aucune — libellés français en dur dans le modèle de vue
-  CONTRAT
-               - needs §Les formes de données (la jauge est un engagement d'infrastructure)
+               markup      pgWizard L418-473
+               view model  L3773-3843
+  COPY KEYS
+               - none — French labels hardcoded in the view model
+  CONTRACT
+               - needs §Data shapes (capacity is an infrastructure commitment)
                - openapi POST /v1/channels/{channelId}/dates
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!-- ---- pgWizard (L418-473) ---- -->
     <sc-if value="{{ pgWizard }}" hint-placeholder-val="{{ false }}">
@@ -79,7 +79,7 @@
       </div>
     </sc-if>
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
   page_wizard(c) {

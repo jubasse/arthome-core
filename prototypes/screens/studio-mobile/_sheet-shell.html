@@ -1,17 +1,17 @@
 <!--
-  PIÈCE        _sheet-shell — la feuille de dialogue générique
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  RÔLE         Le balisage unique que les dix-huit feuilles remplissent, et la fabrique d'options/boutons que chaque branche appelle.
+  PART         _sheet-shell — the generic dialog sheet
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  PURPOSE      The single markup that the eighteen sheets fill, and the option/button factory every branch calls.
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  L828-895
-               modèle    L1891-1911 (base, opt, btn) · L1961-1971 (aiguillage vers sheetCustom)
-  NOTE         Les dix-huit feuilles sont dans sheet-*.html. Trois viennent de sheetVals (chan, account, more), les autres de sheetCustom (L3844-4157).
+               markup      L828-895
+               view model  L1891-1911 (base, opt, btn) · L1961-1971 (dispatch to sheetCustom)
+  NOTE         The eighteen sheets are in sheet-*.html. Three come from sheetVals (chan, account, more), the others from sheetCustom (L3844-4157).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
   <sc-if value="{{ shOpen }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ closeSheet }}" style="position: fixed; inset: 0; z-index: 60; background: rgba(6,7,8,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease;"></div>
     <div style="position: fixed; z-index: 61; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; pointer-events: none;">
@@ -81,7 +81,7 @@
     </div>
   </sc-if>
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 <script type="text/x-dc-fragment">
   sheetVals(c) {
     const s = this.state, kind = s.sheet;
@@ -105,7 +105,7 @@
     const btn = (label, act, tone) => ({ label, act: act || (() => {}), style: this.btn(tone) });
 
 
-/* ---- aiguillage : les branches vivent dans sheet-*.html (L1961-1971) ---- */
+/* ---- dispatch: the branches live in sheet-*.html (L1961-1971) ---- */
         )
       });
     }
@@ -118,7 +118,7 @@
   /* ---------- pages ---------- */
 
 
-/* ---- signature de sheetCustom : chaque branche sheet-*.html s'y accroche (L3844-3845) ---- */
+/* ---- signature of sheetCustom: every sheet-*.html branch hangs off it (L3844-3845) ---- */
   sheetCustom(c, kind, opt, btn, base) {
     const s = this.state;
 </script>

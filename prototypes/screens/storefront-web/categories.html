@@ -1,23 +1,26 @@
 <!--
-  ÉCRAN      Toutes les disciplines
+  SCREEN     All disciplines
   ROUTE      page === 'categories'
-  AFFICHE    Les 21 disciplines en tuiles typographiques, dans leur rang éditorial.
-  MÈNE VERS  category
+  SHOWS      The 21 disciplines as typographic tiles, in their editorial rank order.
+  LEADS TO   category
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 1652-1672
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 1652-1672
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       L'accueil n'en montre que douze ; cette page les montre toutes.
+  NOTE       The home page shows only twelve; this page shows them all.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — listCategories
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — listCategories
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : SUBS, catalogue, category, cats, s, subsSel
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: SUBS, catalogue, category, cats, s, subsSel
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <sc-if value="{{ isCategories }}" hint-placeholder-val="{{ false }}">
 <section style="max-width: 1440px; margin: 0 auto; padding: 40px 40px 0; animation: riseIn .4s ease both;">
@@ -41,9 +44,9 @@
 </section>
 </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* subgenres  —  lignes 6216-6226 */
+/* subgenres  —  lines 6216-6226 */
     const subgenres = (SUBS[s.catId] || SUBS[0]).map((label, i) => ({
       n: catalogue.filter(o => o.cat === s.catId && o.subs.indexOf(i) > -1).length,
       label: label.toUpperCase(),
@@ -57,7 +60,7 @@
     })).filter(x => x.n > 0);
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       isCategories: s.page === 'categories', isCategory: s.page === 'category',
@@ -65,17 +68,18 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.allCatsSub  t.allCatsTitle  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     catId  page  subs  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

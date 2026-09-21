@@ -2,25 +2,25 @@
   Arthome · storefront mobile — account-past
   ══════════════════════════════════════════════════════════════════════════
   Route      : account · accTab=past
-  Affiche    : Événements passés : les places jouées, avec le reste de fenêtre de rediffusion ou la mention expirée.
-  Mène vers  : replay, artist
-  Contrat    : GET /v1/me/tickets?window=past · GET /v1/me/replays
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1379–1400
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : Past events: seats already played, with what is left of the replay window or the expired notice.
+  Leads to   : replay, artist
+  Contract   : GET /v1/me/tickets?window=past · GET /v1/me/replays
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1379–1400
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1379–1400
+     MARKUP — L1379–1400
      ══════════════════════════════════════════════════════════════════════════ -->
       <sc-if value="{{ accPast }}" hint-placeholder-val="{{ false }}">
         <div style="display: flex; flex-direction: column; gap: 1px; background: #1F1C19; border: 1px solid #1F1C19;">
@@ -46,13 +46,13 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (2 symboles)
+     VIEW MODEL — specific to this screen (2 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── ownedPast  —  calcul dans renderReady()  —  L5169–5169 ── */
+/* ── ownedPast  —  computation in renderReady()  —  L5169–5169 ── */
     const ownedPast = (((A.fixtures.accounts || [])[0] || { ownedDates: [] }).ownedDates || [])
 
-/* ── pastEvents  —  calcul dans renderReady()  —  L5172–5182 ── */
+/* ── pastEvents  —  computation in renderReady()  —  L5172–5182 ── */
     const pastEvents = ownedPast.map(d => {
         const show = A.show(d.show), art = A.artist(show.artist);
         const online = A.stateOf(d) === 'replay';
@@ -68,16 +68,16 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (0) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (0) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
-  (aucune : cet écran n'emploie aucune clé des tables FR/EN)
+  (none: this screen uses no key from the FR/EN tables)
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

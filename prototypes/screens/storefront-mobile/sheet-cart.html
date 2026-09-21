@@ -1,26 +1,26 @@
 <!--
   Arthome · storefront mobile — sheet-cart
   ══════════════════════════════════════════════════════════════════════════
-  Route      : superposée · cartOpen
-  Affiche    : Le panier en trois étapes : liste, paiement, confirmation. Le panier vit sur le compte.
-  Mène vers  : account-orders, live (onglet boutique)
-  Contrat    : GET /v1/cart · POST /v1/cart/quote · POST /v1/orders/merch
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1988–2062
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Route      : overlay · cartOpen
+  Shows      : The cart in three steps: list, payment, confirmation. The cart lives on the account.
+  Leads to   : account-orders, live (store tab)
+  Contract   : GET /v1/cart · POST /v1/cart/quote · POST /v1/orders/merch
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1988–2062
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1988–2062
+     MARKUP — L1988–2062
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ cartOpen }}" hint-placeholder-val="{{ false }}">
 <div onClick="{{ toggleCart }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
@@ -99,31 +99,31 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (14 symboles)
+     VIEW MODEL — specific to this screen (14 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── cartCount  —  calcul dans renderReady()  —  L5630–5630 ── */
+/* ── cartCount  —  computation in renderReady()  —  L5630–5630 ── */
     const cartCount = s.cartLines.reduce((n, l) => n + l.qty, 0);
 
-/* ── cartOpen  —  clé du modèle rendu  —  L6036–6036 ── */
+/* ── cartOpen  —  key of the rendered model  —  L6036–6036 ── */
       cartOpen: s.cartOpen, cartIsEmpty: cartCount === 0 && s.cartStep === 'list',
 
-/* ── cartShowList  —  clé du modèle rendu  —  L6037–6037 ── */
+/* ── cartShowList  —  key of the rendered model  —  L6037–6037 ── */
       cartShowList: cartCount > 0 && s.cartStep === 'list',
 
-/* ── toggleCart  —  clé du modèle rendu  —  L6038–6038 ── */
+/* ── toggleCart  —  key of the rendered model  —  L6038–6038 ── */
       toggleCart: () => this.setState(st => ({ cartOpen: !st.cartOpen, notifsOpen: false })),
 
-/* ── cartStepPay  —  clé du modèle rendu  —  L6039–6039 ── */
+/* ── cartStepPay  —  key of the rendered model  —  L6039–6039 ── */
       cartStepPay: s.cartStep === 'pay' && cartCount > 0, cartStepDone: s.cartStep === 'done',
 
-/* ── goCartPay  —  clé du modèle rendu  —  L6040–6040 ── */
+/* ── goCartPay  —  key of the rendered model  —  L6040–6040 ── */
       goCartPay: () => this.setState({ cartStep: 'pay' }),
 
-/* ── backToCart  —  clé du modèle rendu  —  L6041–6041 ── */
+/* ── backToCart  —  key of the rendered model  —  L6041–6041 ── */
       backToCart: () => this.setState({ cartStep: 'list' }),
 
-/* ── payCart  —  clé du modèle rendu  —  L6042–6059 ── */
+/* ── payCart  —  key of the rendered model  —  L6042–6059 ── */
       payCart: () => {
         const now = new Date();
         const mFr = ['janv.', 'févr.', 'mars', 'avril', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'][now.getMonth()];
@@ -143,16 +143,16 @@
         this._payT = setTimeout(() => this.setState({ cartLines: [] }), 400);
       },
 
-/* ── closeCartDone  —  clé du modèle rendu  —  L6060–6060 ── */
+/* ── closeCartDone  —  key of the rendered model  —  L6060–6060 ── */
       closeCartDone: () => this.setState({ cartOpen: false, cartStep: 'list' }),
 
-/* ── seeOrders  —  clé du modèle rendu  —  L6061–6061 ── */
+/* ── seeOrders  —  key of the rendered model  —  L6061–6061 ── */
       seeOrders: () => this.setState({ cartOpen: false, cartStep: 'list', page: 'account', accView: 'section', accTab: 'orders' }),
 
-/* ── cartItemsLine  —  clé du modèle rendu  —  L6062–6062 ── */
+/* ── cartItemsLine  —  key of the rendered model  —  L6062–6062 ── */
       cartItemsLine: cartCount + ' ' + (cartCount > 1 ? t.cartItems : t.cartItem),
 
-/* ── cartLines  —  clé du modèle rendu  —  L6063–6073 ── */
+/* ── cartLines  —  key of the rendered model  —  L6063–6073 ── */
       cartLines: s.cartLines.map((l, i) => ({
         name: l.name, img: l.img, price: l.price, qty: l.qty, seller: l.seller,
         lineTotal: (parseInt(l.price, 10) * l.qty) + ' €',
@@ -165,16 +165,16 @@
         drop: () => this.setState(st => { const a = st.cartLines.slice(); a.splice(i, 1); return { cartLines: a }; })
       })),
 
-/* ── cartSubtotalValue  —  clé du modèle rendu  —  L6074–6074 ── */
+/* ── cartSubtotalValue  —  key of the rendered model  —  L6074–6074 ── */
       cartSubtotalValue: s.cartLines.reduce((n, l) => n + parseInt(l.price, 10) * l.qty, 0) + ' €',
 
-/* ── openStoreFromCart  —  clé du modèle rendu  —  L6078–6078 ── */
+/* ── openStoreFromCart  —  key of the rendered model  —  L6078–6078 ── */
       openStoreFromCart: () => this.setState({ page: 'live', tab: 'store', chatOpen: true, cartOpen: false }),
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (16) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (16) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2341  accOrders: "Mes commandes"
@@ -228,8 +228,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

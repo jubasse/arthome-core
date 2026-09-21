@@ -1,24 +1,27 @@
 <!--
-  ÉCRAN      Aide et contact
+  SCREEN     Help and contact
   ROUTE      page === 'help'
-  AFFICHE    Les six sujets d'assistance, le formulaire, les horaires et le contact du délégué à la protection des données.
-  MÈNE VERS  account-privacy
+  SHOWS      The six support topics, the form, the opening hours and the data protection officer's contact.
+  LEADS TO   account-privacy
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2926-2957
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2926-2957
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Incohérence de source : `shared/i18n/storefront.json` porte `support.topic3Hint` sans
-             `support.topic3`.
+  NOTE       Source inconsistency: `shared/i18n/storefront.json` carries `support.topic3Hint`
+             without `support.topic3`.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — contactSupport
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — contactSupport
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : account, colsOf, s, t, tileCols
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: account, colsOf, s, t, tileCols
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <sc-if value="{{ isHelp }}" hint-placeholder-val="{{ false }}">
 <section style="max-width: 1440px; margin: 0 auto; padding: 40px 40px 0; animation: fadeIn .3s ease both;">
@@ -53,7 +56,7 @@
 </section>
 </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       isHelp: s.page === 'help',
@@ -66,21 +69,22 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.accPrivacy  t.helpContactTitle  t.helpDpoLabel  t.helpHours  t.helpIntro  t.helpMail  
     t.helpMailDpo  t.helpSub  t.helpTitle  t.helpTopic1  t.helpTopic1Hint  t.helpTopic2  
     t.helpTopic2Hint  t.helpTopic3  t.helpTopic3Hint  t.helpTopic4  t.helpTopic4Hint  
     t.helpTopic5  t.helpTopic5Hint  t.helpTopic6  t.helpTopic6Hint  t.helpTopics  t.helpWrite  
     t.privDpoHint  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     page  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

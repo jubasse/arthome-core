@@ -1,22 +1,25 @@
 <!--
-  ÉCRAN      Discipline — section En direct
+  SCREEN     Discipline — Live section
   ROUTE      page === 'category', catTab === 'live'
-  AFFICHE    Les directs en cours dans la discipline, en tuiles ou en liste.
-  MÈNE VERS  live · artist
+  SHOWS      The lives in progress in the discipline, as tiles or as a list.
+  LEADS TO   live · artist
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 1821-1883
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 1821-1883
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — getCategoryScreen
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — getCategoryScreen
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : catalogue, colsOf, colsTiles, colsWideN, fr, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, subsSel, t, tileCols
-  À LIRE     dépendances non recopiées ici : catLiveList, catStep, dateMatch, ovMore, priceMatch
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: catalogue, colsOf, colsTiles, colsWideN, fr, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, subsSel, t, tileCols
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: catLiveList, catStep, dateMatch, ovMore, priceMatch
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
     <sc-if value="{{ catShowLive }}" hint-placeholder-val="{{ true }}">
     <div id="cat-live" style="margin-top: 32px; display: flex; align-items: baseline; gap: 14px; scroll-margin-top: 90px;">
@@ -82,9 +85,9 @@
     </sc-if>
     </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* catPool  —  lignes 6176-6191 */
+/* catPool  —  lines 6176-6191 */
     const catPool = catalogue.filter(o => {
       if (o.cat !== s.catId) return false;
       if (subsSel.length && !subsSel.some(i => o.subs.indexOf(i) > -1)) return false;
@@ -101,15 +104,15 @@
       if (s.cSort === 'priceDown') return b.price - a.price;
       return 0;
     });
-/* catOv  —  lignes 6192-6192 */
+/* catOv  —  lines 6192-6192 */
     const catOv = s.catTab === 'ov';
-/* pgCatLive  —  lignes 6198-6198 */
+/* pgCatLive  —  lines 6198-6198 */
     const pgCatLive = this.paged('catLive', catLiveList, catStep, fr);
-/* mLive  —  lignes 6206-6206 */
+/* mLive  —  lines 6206-6206 */
     const mLive = ovMore(pgCatLive, catLiveList, 'live');
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       catTilesView: s.cView === 'tiles', catListView: s.cView === 'list',
@@ -126,17 +129,18 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.catLiveNow  t.emptyCatLive  t.emptyCatLiveHint  t.onNow  t.resultLabel  t.resultsLabel  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     cAlmost  cDate  cPrices  cPromo  cSort  cStatus  cView  catId  catTab  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     paged
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

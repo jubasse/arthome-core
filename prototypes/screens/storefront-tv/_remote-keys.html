@@ -1,25 +1,25 @@
 <!--
-  Mécanique  : télécommande — les cinq touches, plus les touches couleur et le transport
+  Mechanic   : the remote control — the five keys, plus colour keys and transport
   Source     : Storefront TV.dc.html, L2147-2277
-  Rôle       : tout se pilote à cinq touches. « Sur mobile et desktop ces raccourcis n'ont
-               pas lieu d'être : ici, ils sont l'interface. »
+  Role       : everything is driven with five keys. "On mobile and desktop these shortcuts
+               have no reason to exist: here, they ARE the interface."
 
-  Carte des fonctions :
-    keyDown(e)      aiguillage principal — flèches, OK, Retour, Lecture/Pause, ◀◀ ▶▶, couleurs
-    keyUp(e)        fin d'appui long
-    ensure()        garantit qu'un élément est focalisé (« le focus perdu » est un piège nommé)
-    activate()      OK — active la cible focalisée
-    longOk()        OK maintenu — ouvre l'aide des touches, retire de Ma liste
-    playerArrow()   flèches dans le lecteur
-    playPause()     Lecture/Pause, partout où quelque chose est lisible
-    seek(d, repeat) ◀◀ ▶▶ 10 s, maintien ×4
-    closeInfo() / hideCtrl() / showCtrl()   cycle des contrôles du lecteur (4 s)
+  Function map:
+    keyDown(e)      main dispatch — arrows, OK, Back, Play/Pause, ◀◀ ▶▶, colour keys
+    keyUp(e)        end of a long press
+    ensure()        guarantees something is focused ("lost focus" is a named pitfall)
+    activate()      OK — activates the focused target
+    longOk()        OK held — opens key help, removes from My list
+    playerArrow()   arrows inside the player
+    playPause()     Play/Pause, anywhere something is playable
+    seek(d, repeat) ◀◀ ▶▶ 10 s, hold = ×4
+    closeInfo() / hideCtrl() / showCtrl()   the player's control cycle (4 s)
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
-<!-- ═══════════ TOUCHES (verbatim, L2147-2277) ═══════════ -->
+<!-- ═══════════ KEYS (verbatim, L2147-2277) ═══════════ -->
 <script type="text/x-dc-extract">
   // ---------- keys ----------
   keyDown(e) {
@@ -154,8 +154,8 @@
 
 </script>
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « Contraintes propres à la TV » §1 et §2
-  Prompt - Storefront TV.md → « Raccourcis à honorer »
-  Voir aussi : _color-keys.html (rouge/vert/jaune/bleu), _focus-engine.html (move())
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "TV-specific constraints" §1 and §2
+  docs/storefront-tv.md → "Shortcuts to honour"
+  See also: _color-keys.html (red/green/yellow/blue), _focus-engine.html (move())
 -->

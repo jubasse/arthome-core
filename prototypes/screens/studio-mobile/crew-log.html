@@ -1,29 +1,29 @@
 <!--
-  ÉCRAN        crew / log
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  AFFICHE      Le journal des accès, horodaté et nominatif.
-  RÔLES        artist · prod · coord
-  MÈNE VERS    feuilles : crewdate, invite
+  SCREEN       crew / log
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  SHOWS        The access log, timestamped and named.
+  ROLES        artist · prod · coord
+  LEADS TO     sheets: crewdate, invite
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  hasBand L475-485 · hasTabs L487-495 · hasNote L555-557 · hasActions L569-575 · hasBlocks L731-791
-               modèle    L2472-2518 · L2634-2642
-  CLÉS DE COPIE
-               - table ROLES en dur (six personas — libellé, jamais un droit, E6)
-  CONTRAT
-               - needs §Confrontation C12 (journal des accès sans point d'entrée)
-               - openapi — AUCUN point d'entrée distinct du journal de chaîne
-  DISPOSITION  portrait et paysage partagent ce balisage ; en paysage la coquille double de largeur et les blocs passent en deux colonnes — voir _shell.html (shellStyle, blocksWrapStyle, mainStyle).
+               markup      hasBand L475-485 · hasTabs L487-495 · hasNote L555-557 · hasActions L569-575 · hasBlocks L731-791
+               view model  L2472-2518 · L2634-2642
+  COPY KEYS
+               - hardcoded ROLES table (six personas — a label, never a right, E6)
+  CONTRACT
+               - needs §Confrontation C12 (access log with no endpoint)
+               - openapi — NO endpoint distinct from the channel journal
+  LAYOUT       portrait and landscape share this markup; in landscape the shell doubles in width and the blocks go to two columns — see _shell.html (shellStyle, blocksWrapStyle, mainStyle).
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
 <!--
-  Balisage générique piloté par ce modèle de vue — il vit dans _blocks.html,
-  partagé par tous les écrans, et n'est pas recopié ici :
+  Generic markup driven by this view model — it lives in _blocks.html,
+  shared by every screen, and is not copied here:
     hasBand        L475-485
     hasTabs        L487-495
     hasNote        L555-557
@@ -31,7 +31,7 @@
     hasBlocks      L731-791
 -->
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 
 <script type="text/x-dc-fragment">
   page_crew(c) {

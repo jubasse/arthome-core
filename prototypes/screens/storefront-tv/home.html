@@ -1,20 +1,20 @@
 <!--
-  Écran      : home
+  Screen     : home
   Route      : page === 'home'
-  Affiche    : Billboard plein cadre (62 % de l'écran) avec aperçu vidéo muet après 4 s, puis les rangées : Reprendre, À l'antenne, Vos places, Ce soir, Parce que vous suivez, Rediffusions qui expirent, affiches, disciplines, artistes.
-  Mène vers  : title · player · book · category · artist · search · tous les écrans par la barre latérale
-  Partagé    : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
+  Shows      : Full-frame billboard (62% of the screen) with a muted video preview after 4 s, then the rows: Resume, On air, Your seats, Tonight, Because you follow, Replays expiring, posters, disciplines, artists.
+  Leads to   : title · player · book · category · artist · search · every screen via the sidebar
+  Shared     : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
 
-  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
-    · L'ordre des rangées est codé dans homeRails() ; le contrat le rend serveur (Rail.kind + ordre du tableau).
-    · previewStartsAfterSec est en dur à 4 000 ms ici ; le contrat le sert (DomainConstants.billboardPreviewDelaySec).
-    · La rangée « Artistes à suivre » emploie artistCard() : le schéma Rail du contrat n'accepte que DateCard.
+  DEFECTS FOUND (not fixed — verbatim extraction):
+    · Row order is coded inside homeRails(); the contract makes it server-side (Rail.kind + array order).
+    · previewStartsAfterSec is hard-coded at 4,000 ms here; the contract serves it (DomainConstants.billboardPreviewDelaySec).
+    · The "Artists to follow" row uses artistCard(): the contract's Rail schema accepts only DateCard.
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger ici : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
-<!-- ═══════════ Balisage — billboard (verbatim, L189-233) ═══════════ -->
+<!-- ═══════════ Markup — billboard (verbatim, L189-233) ═══════════ -->
       <sc-if value="{{ pgHome }}" hint-placeholder-val="{{ true }}">
         <div data-row="1" style="position: relative; z-index: 0; overflow: hidden; width: 1920px; height: 566px;">
           <img data-img="{{ hero.img }}" alt="" style="position: absolute; left: 0; right: 0; top: 0; bottom: 8px; width: 100%; height: calc(100% - 8px); object-fit: cover; filter: saturate(.7) brightness(.6); transform-origin: 50% 100%; animation: {{ ken }};" />
@@ -61,7 +61,7 @@
         </div>
       </sc-if>
 
-<!-- ═══════════ Modèle de vue — billboard (verbatim, L2676-2708) ═══════════ -->
+<!-- ═══════════ View model — billboard (verbatim, L2676-2708) ═══════════ -->
 <script type="text/x-dc-extract">
     // hero
     const lives = cat.filter(o => this.st(o) === 'live').sort((a, b) => b.view - a.view);
@@ -98,7 +98,7 @@
     };
 </script>
 
-<!-- ═══════════ homeRails() — ordre éditorial des rangées (verbatim, L2561-2588) ═══════════ -->
+<!-- ═══════════ homeRails() — editorial row order (verbatim, L2561-2588) ═══════════ -->
 <script type="text/x-dc-extract">
   homeRails() {
     const t = this.t(), cat = this.catalogue(), out = [];
@@ -130,7 +130,7 @@
   }
 </script>
 
-<!-- ═══════════ armPreview() — aperçu vidéo après 4 s (verbatim, L1911-1916) ═══════════ -->
+<!-- ═══════════ armPreview() — video preview after 4 s (verbatim, L1911-1916) ═══════════ -->
 <script type="text/x-dc-extract">
   armPreview() {
     clearTimeout(this.prevT);
@@ -140,18 +140,18 @@
   }
 </script>
 
-<!-- ═══════════ CLÉS DE COPIE ═══════════
-  jeton du composant  →  clé i18n (shared/i18n/tv-keymap.json)
+<!-- ═══════════ COPY KEYS ═══════════
+  component token  →  i18n key (shared/i18n/tv-keymap.json)
     t.book               → common.actions.book
     t.enter              → common.actions.enter
-    t.kEnterOpen         → common.status.houseOpen   [majuscules]
-    t.kLast              → common.status.lastSeats   [majuscules]
-    t.kOnAir             → common.status.onAir   [majuscules]
-    t.kReplayOn          → common.status.replayOnline   [majuscules]
+    t.kEnterOpen         → common.status.houseOpen   [uppercased]
+    t.kLast              → common.status.lastSeats   [uppercased]
+    t.kOnAir             → common.status.onAir   [uppercased]
+    t.kReplayOn          → common.status.replayOnline   [uppercased]
     t.more               → common.actions.more
     t.nothingOnAirShort  → discovery.nothingOnAirShort
     t.onTheBill          → discovery.onTheBill
-    t.previewMuted       → states.previewMuted   [majuscules]
+    t.previewMuted       → states.previewMuted   [uppercased]
     t.rArtistsToFollow   → discovery.rail.artistsToFollow
     t.rBecause           → discovery.rail.because
     t.rExpiring          → discovery.rail.expiring
@@ -162,15 +162,15 @@
     t.rTonight           → discovery.rail.tonight
     t.seeTonight         → discovery.seeTonight
     t.trailer            → common.actions.trailer
-    t.viewersSuffix      → common.units.viewers   [majuscules]
+    t.viewersSuffix      → common.units.viewers   [uppercased]
     t.watch              → common.actions.watch
-    t.yourLiveSeat       → common.status.yourSeat   [majuscules]
+    t.yourLiveSeat       → common.status.yourSeat   [uppercased]
 -->
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « Budget d'appels par écran » : 1 appel, 60 à 100 cartes, 50 à 90 Ko
-  openapi/storefront.yaml → getHomeScreen (GET /v1/home) → HomeScreen { billboard, rails[] }, fraîcheur 60 s
-  4 appels internes BFF → service, tous parallèles, derrière UN aller-retour de surface.
-  ⚠ needs/storefront-tv.md → Confrontation C2 : trois des neuf rangées ne sont pas exprimables par le schéma Rail.
-  Rangées partagées : _rails.html
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "Per-screen call budget": 1 call, 60 to 100 cards, 50 to 90 KB
+  openapi/storefront.yaml → getHomeScreen (GET /v1/home) → HomeScreen { billboard, rails[] }, freshness 60 s
+  4 internal BFF → service calls, all parallel, behind ONE surface round trip.
+  ⚠ needs/storefront-tv.md → Confrontation C2: three of the nine rows are not expressible by the Rail schema.
+  Shared rows: _rails.html
 -->

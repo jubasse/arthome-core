@@ -1,22 +1,25 @@
 <!--
-  ÉCRAN      Lecteur de rediffusion
+  SCREEN     Replay player
   ROUTE      page === 'replay'
-  AFFICHE    Le lecteur de rediffusion : position, vitesse, chapitres horodatés, fenêtre restante, et la boutique du spectacle.
-  MÈNE VERS  live · artist · overlay-cart
+  SHOWS      The replay player: position, speed, timestamped chapters, remaining window, and the show's store.
+  LEADS TO   live · artist · overlay-cart
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2071-2164
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2071-2164
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — openPlayback, recordPlaybackPosition, listMyReplays
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — openPlayback, recordPlaybackPosition, listMyReplays
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : A, account, artist, currentDate, fr, roster, s, t
-  À LIRE     dépendances non recopiées ici : REPLAY, chapterDefs, kinship, ownReplays, polKey, replayPrice
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: A, account, artist, currentDate, fr, roster, s, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: REPLAY, chapterDefs, kinship, ownReplays, polKey, replayPrice
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <sc-if value="{{ isReplay }}" hint-placeholder-val="{{ false }}">
 <section style="max-width: 1440px; margin: 0 auto; padding: 32px 40px 0; animation: riseIn .4s ease both;">
@@ -113,9 +116,9 @@
 </section>
 </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* qualities  —  lignes 5041-5047 */
+/* qualities  —  lines 5041-5047 */
     const qualities = ['4K', '1080p', '720p', 'AUTO'].map(label => ({
       label,
       pick: () => this.setState({ quality: label }),
@@ -123,7 +126,7 @@
         (s.quality === label ? 'background: oklch(0.68 0.18 42); color: #0B0A09;' : 'background: rgba(11,10,9,0.72); color: #9B948A;')
     }));
 
-/* merch  —  lignes 5445-5468 */
+/* merch  —  lines 5445-5468 */
     const merch = (() => {
       const IMG_BY_KIND = { textile: IMG.tshirt, poster: IMG.poster, record: IMG.vinyl, print: IMG.poster };
       const d = currentDate || this.defaultDate();
@@ -148,9 +151,9 @@
         ' transition: background .24s ease, border-color .24s ease, color .24s ease;'
     }));
 
-/* pol  —  lignes 5482-5482 */
+/* pol  —  lines 5482-5482 */
     const pol = REPLAY[polKey] || REPLAY.included;
-/* sameDiscipline  —  lignes 5504-5516 */
+/* sameDiscipline  —  lines 5504-5516 */
     const sameDiscipline = roster
       .filter(a => a.i !== artist.i)
       .map(a => ({ a, k: kinship(a) }))
@@ -164,7 +167,7 @@
       dotColor: 'oklch(0.78 0.14 27)'
     }));
 
-/* chapterList  —  lignes 5611-5622 */
+/* chapterList  —  lines 5611-5622 */
     const chapterList = chapterDefs.map(([time, label, at]) => {
       const active = s.pos >= at && s.pos < at + 0.2;
       return {
@@ -177,12 +180,12 @@
     });
 
 
-/* q  —  lignes 5699-5699 */
+/* q  —  lines 5699-5699 */
     const q = s.query.trim().toLowerCase();
-/* artistLastLive  —  lignes 6006-6007 */
+/* artistLastLive  —  lines 6006-6007 */
     const artistLastLive = artist.lastLive;
 
-/* artistReplays  —  lignes 6009-6015 */
+/* artistReplays  —  lines 6009-6015 */
     const artistReplays = polKey === 'off' ? [] : (ownReplays.length
       ? ownReplays.map(o => [o.title, o.img, o.whenLabel, o.duration])
       : [[artist.showTitle, artist.showImg, artistLastLive, '1 h 42']]
@@ -192,7 +195,7 @@
     }));
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       goLive: () => this.openLive((roster[0] || {}).name || ''), goAccount: this.gate(this.nav('account')),
@@ -238,19 +241,20 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.add  t.cartAdded  t.chapters  t.onNow  t.replayAccess  t.replayExpires  t.replayOf  
     t.replayPage  t.share  t.store  t.watchLive  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     cartJustAdded  cartLines  page  playing  pos  quality  query  replayDuration  replayImg  
     replayTitle  speed  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     cssUrl, defaultDate, gate, nav, openLive, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

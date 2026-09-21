@@ -2,25 +2,25 @@
   Arthome · storefront mobile — home
   ══════════════════════════════════════════════════════════════════════════
   Route      : home
-  Affiche    : L'accueil : une de direct, rangées de directs, d'artistes suivis, de la grille du soir et des rediffusions.
-  Mène vers  : live, artist, browse, category, sheet-ticket
-  Contrat    : GET /v1/home · GET /v1/live
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L96–306
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : Home: the live billboard, rails of lives, of followed artists, of tonight's schedule and of replays.
+  Leads to   : live, artist, browse, category, sheet-ticket
+  Contract   : GET /v1/home · GET /v1/live
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L96–306
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L96–306
+     MARKUP — L96–306
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
 <div style="animation: fadeIn .3s ease both;">
@@ -235,13 +235,13 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (20 symboles)
+     VIEW MODEL — specific to this screen (20 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── nav  —  méthode de classe  —  L3977–3977 ── */
+/* ── nav  —  class method  —  L3977–3977 ── */
   nav(page) { return () => this.setState({ page, pick: null, ticketOpen: false, shareOpen: false }); }
 
-/* ── goArtistFrom  —  méthode de classe  —  L4138–4143 ── */
+/* ── goArtistFrom  —  class method  —  L4138–4143 ── */
   goArtistFrom(who) {
     return (e) => {
       if (e && e.stopPropagation) e.stopPropagation();
@@ -249,7 +249,7 @@
     };
   }
 
-/* ── mk  —  calcul dans renderReady()  —  L4353–4361 ── */
+/* ── mk  —  computation in renderReady()  —  L4353–4361 ── */
     const mk = (title, artist, v, meta, img, sponsored, desc, tag) => ({
       title, artist, img, desc, imgCss: this.cssUrl(img),
       sponsored: sponsored && P.showSponsored !== false,
@@ -260,7 +260,7 @@
       openArtist: this.goArtistFrom(artist)
     });
 
-/* ── trending  —  calcul dans renderReady()  —  L4363–4369 ── */
+/* ── trending  —  computation in renderReady()  —  L4363–4369 ── */
     const trending = A.liveNow().slice(0, 6).map((d, k) => {
       const show = A.show(d.show), art = A.artist(show.artist);
       const cat = A.label(A.category(show.category)).toLocaleUpperCase(fr ? 'fr-FR' : 'en-US');
@@ -269,13 +269,13 @@
         A.synopsis(show) || [cat, A.duration(show.runtimeMin), A.venue(d.venue).name].join(' · '));
     });
 
-/* ── faves  —  calcul dans renderReady()  —  L4371–4371 ── */
+/* ── faves  —  computation in renderReady()  —  L4371–4371 ── */
     const faves = (() => {
 
-/* ── ownsHero  —  calcul dans renderReady()  —  L4855–4855 ── */
+/* ── ownsHero  —  computation in renderReady()  —  L4855–4855 ── */
     const ownsHero = ownsDate(A.liveNow()[0] || A.upcoming()[0]);
 
-/* ── heroBase  —  calcul dans renderReady()  —  L4932–4949 ── */
+/* ── heroBase  —  computation in renderReady()  —  L4932–4949 ── */
     const heroBase = (() => {
       const d = A.liveNow()[0] || A.upcoming()[0];
       if (!d) return { title: '', artist: '', blurb: '', meta: '', viewersLabel: '', priceLabel: '', img: '' };
@@ -295,10 +295,10 @@
       };
     })();
 
-/* ── onArtistLive  —  calcul dans renderReady()  —  L4950–4950 ── */
+/* ── onArtistLive  —  computation in renderReady()  —  L4950–4950 ── */
     const onArtistLive = (s.page === 'live' || s.page === 'replay') && artist.i !== 3;
 
-/* ── hero  —  calcul dans renderReady()  —  L4951–4977 ── */
+/* ── hero  —  computation in renderReady()  —  L4951–4977 ── */
     const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
       title: s.pick.title,
       artist: s.pick.artist,
@@ -327,7 +327,7 @@
       img: artist.showImg, imgCss: this.cssUrl(artist.showImg)
     } : heroBase);
 
-/* ── upNext  —  calcul dans renderReady()  —  L5029–5039 ── */
+/* ── upNext  —  computation in renderReady()  —  L5029–5039 ── */
     const upNext = A.upcoming().slice(0, 8).map(d => {
       const show = A.show(d.show), art = A.artist(show.artist), venue = A.venue(d.venue);
       const at = A.dateAt(d.startOffsetMin);
@@ -340,43 +340,43 @@
       ];
     })
 
-/* ── favNext  —  calcul dans renderReady()  —  L5050–5050 ── */
+/* ── favNext  —  computation in renderReady()  —  L5050–5050 ── */
     const favNext = (() => {
 
-/* ── soldOut  —  calcul dans renderReady()  —  L5080–5083 ── */
+/* ── soldOut  —  computation in renderReady()  —  L5080–5083 ── */
     const soldOut = A.upcoming().map(d => {
       const cap = A.venue(d.venue).capacity;
       return { d, pct: cap ? Math.round((d.seats.sold / cap) * 100) : 0 };
     })
 
-/* ── heroPromo  —  calcul dans renderReady()  —  L5629–5629 ── */
+/* ── heroPromo  —  computation in renderReady()  —  L5629–5629 ── */
     const heroPromo = this.promoOf(hero.title, hero.priceLabel, fr);
 
-/* ── heroPromoLine  —  clé du modèle rendu  —  L5806–5806 ── */
+/* ── heroPromoLine  —  key of the rendered model  —  L5806–5806 ── */
       heroPromoLine: heroPromo.hasPromo && this.props.heroPromo !== 'aucune' && this.props.heroPromo !== 'bouton',
 
-/* ── heroBuyStyle  —  clé du modèle rendu  —  L5807–5807 ── */
+/* ── heroBuyStyle  —  key of the rendered model  —  L5807–5807 ── */
       heroBuyStyle: 'cursor: pointer; padding: 14px 26px; white-space: nowrap; border: 1px solid #332E28; font-size: 13.5px; color: #EDE7DC; transition: background .24s ease, border-color .24s ease, color .24s ease;' +
 
-/* ── isHome  —  clé du modèle rendu  —  L5827–5827 ── */
+/* ── isHome  —  key of the rendered model  —  L5827–5827 ── */
       isHome: s.page === 'home', isBrowse: s.page === 'browse', isArtist: s.page === 'artist',
 
-/* ── goLive  —  clé du modèle rendu  —  L5831–5831 ── */
+/* ── goLive  —  key of the rendered model  —  L5831–5831 ── */
       goLive: () => this.openLive(heroBase.artist), goAccount: this.gate(this.nav('account')),
 
-/* ── heroHasTicket  —  clé du modèle rendu  —  L5886–5886 ── */
+/* ── heroHasTicket  —  key of the rendered model  —  L5886–5886 ── */
       heroHasTicket: ownsHero, heroNeedsTicket: !ownsHero,
 
-/* ── heroOwnedLabel  —  clé du modèle rendu  —  L5887–5887 ── */
+/* ── heroOwnedLabel  —  key of the rendered model  —  L5887–5887 ── */
       heroOwnedLabel: (fr ? 'VOTRE PLACE' : 'YOUR SEAT'),
 
-/* ── goCategories  —  clé du modèle rendu  —  L6085–6085 ── */
+/* ── goCategories  —  key of the rendered model  —  L6085–6085 ── */
       goCategories: this.nav('categories'),
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (12) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (12) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2372  almostGone: "Bientôt complet"
@@ -418,8 +418,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

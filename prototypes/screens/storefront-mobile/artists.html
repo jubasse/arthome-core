@@ -2,25 +2,25 @@
   Arthome · storefront mobile — artists
   ══════════════════════════════════════════════════════════════════════════
   Route      : artists
-  Affiche    : L'annuaire des artistes, filtrable par discipline, triable par nom ou par audience.
-  Mène vers  : artist
-  Contrat    : GET /v1/artists
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L870–907
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : The artist directory, filterable by discipline, sortable by name or by audience.
+  Leads to   : artist
+  Contract   : GET /v1/artists
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L870–907
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L870–907
+     MARKUP — L870–907
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ isArtists }}" hint-placeholder-val="{{ false }}">
 <div style="animation: fadeIn .3s ease both; padding: 18px 16px 0;">
@@ -62,49 +62,49 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (8 symboles)
+     VIEW MODEL — specific to this screen (8 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── disciplineKeys  —  calcul dans renderReady()  —  L4639–4639 ── */
+/* ── disciplineKeys  —  computation in renderReady()  —  L4639–4639 ── */
     const disciplineKeys = fr
 
-/* ── matchers  —  calcul dans renderReady()  —  L4642–4642 ── */
+/* ── matchers  —  computation in renderReady()  —  L4642–4642 ── */
     const matchers = [['théâtre', 'theatre'], ['danse', 'dance'], ['concert', 'club', 'jazz', 'guitare', 'guitar'], ['humour', 'comedy'], ['classique', 'classical', 'piano'], ['cirque', 'circus']];
 
-/* ── artistFilters  —  calcul dans renderReady()  —  L4643–4647 ── */
+/* ── artistFilters  —  computation in renderReady()  —  L4643–4647 ── */
     const artistFilters = disciplineKeys.map((label, i) => ({
       label,
       pick: () => this.setState(st => ({ artistFilter: st.artistFilter === i ? -1 : i })),
       style: CHIP + (s.artistFilter === i ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;')
     }));
 
-/* ── artistSorts  —  calcul dans renderReady()  —  L4648–4652 ── */
+/* ── artistSorts  —  computation in renderReady()  —  L4648–4652 ── */
     const artistSorts = [['az', t.sortAZ], ['pop', t.sortFollowers]].map(([key, label]) => ({
       label,
       pick: () => this.setState({ artistSort: key }),
       style: CHIP + (s.artistSort === key ? '#EDE7DC; background: #EDE7DC; color: #0B0A09;' : '#262320; color: #9B948A;')
     }));
 
-/* ── activeMatch  —  calcul dans renderReady()  —  L4828–4828 ── */
+/* ── activeMatch  —  computation in renderReady()  —  L4828–4828 ── */
     const activeMatch = s.artistFilter >= 0 ? matchers[s.artistFilter] : null;
 
-/* ── artistsList  —  calcul dans renderReady()  —  L4829–4833 ── */
+/* ── artistsList  —  computation in renderReady()  —  L4829–4833 ── */
     let artistsList = roster.filter(a => {
       if (!activeMatch) return true;
       const d = a.discipline.toLowerCase();
       return activeMatch.some(m => d.indexOf(m) > -1);
     });
 
-/* ── isArtists  —  clé du modèle rendu  —  L6429–6429 ── */
+/* ── isArtists  —  key of the rendered model  —  L6429–6429 ── */
       isArtists: s.page === 'artists', isFollowing: s.page === 'following' && !s.guest,
 
-/* ── artistsCountLabel  —  clé du modèle rendu  —  L6432–6432 ── */
+/* ── artistsCountLabel  —  key of the rendered model  —  L6432–6432 ── */
       artistsCountLabel: roster.length + ' · ' + t.artistsSub,
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (4) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (4) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2381  artistsSub: "COMPAGNIES, ORCHESTRES ET SOLISTES SUR ARTHOME"
@@ -122,8 +122,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

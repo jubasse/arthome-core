@@ -1,21 +1,21 @@
 <!--
-  Mécanique  : constantes, adaptation des données partagées, et fonctions d'affichage
-  Source     : Storefront TV.dc.html — L1205-1229 (palette, recettes d'image, globales),
-               L1607-1659 (constructeur et état initial), L1660-1774 (buildCatalogue),
-               L2345-2467 (helpers : horloge, nombres, état, catalogue)
-  Rôle       : buildCatalogue() est l'ADAPTATEUR entre shared/ (helpers.js + fixtures.js)
-               et la forme plate que les écrans consomment. C'est le point à remplacer par
-               les modèles de lecture du contrat.
+  Mechanic   : constants, shared-data adaptation, and display functions
+  Source     : Storefront TV.dc.html — L1205-1229 (palette, image recipes, globals),
+               L1607-1659 (constructor and initial state), L1660-1774 (buildCatalogue),
+               L2345-2467 (helpers: clock, numbers, state, catalogue)
+  Role       : buildCatalogue() is the ADAPTER between shared/ (helpers.js + fixtures.js)
+               and the flat shape the screens consume. It is the point to replace with the
+               contract's read models.
 
-  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
-    · fx.geography.viewerUtcOffsetMin n'existe nulle part : vaut 0, donc « heure à la salle » est calculée contre UTC (incohérence n°3 de needs/).
-    · Les durées et seuils (30 min d'ouverture de salle, 4 s d'aperçu, 480 000 ms de veille) sont recopiés en dur (incohérence n°11).
+  DEFECTS FOUND (not fixed — verbatim extraction):
+    · fx.geography.viewerUtcOffsetMin exists nowhere: it is 0, so "venue time" is computed against UTC (inconsistency no. 3 in needs/).
+    · Durations and thresholds (30 min house opening, 4 s preview, 480,000 ms screensaver) are hard-coded (inconsistency no. 11).
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger dans ce fichier : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
-<!-- ═══════════ Constantes, palette, recettes d'image (verbatim, L1205-1229) ═══════════ -->
+<!-- ═══════════ Constants, palette, image recipes (verbatim, L1205-1229) ═══════════ -->
 <script type="text/x-dc-extract">
 const U = (i, w) => `https://images.unsplash.com/${i}?auto=format&fit=crop&w=${w || 1500}&q=72`;
 const V = (i) => `https://images.unsplash.com/${i}?auto=format&fit=crop&w=520&h=780&q=72`;
@@ -44,7 +44,7 @@ let SHOWS = [];
 // la copie vit dans i18n/, et ce bloc se régénère avec i18n-compile.js.
 </script>
 
-<!-- ═══════════ Globales et état initial (verbatim, L1594-1659) ═══════════ -->
+<!-- ═══════════ Globals and initial state (verbatim, L1594-1659) ═══════════ -->
 <script type="text/x-dc-extract">
 let PROFILES = [];
 
@@ -114,7 +114,7 @@ class Component extends DCLogic {
      catalogue partagé. Rien n'est inventé ici, tout est traduit. */
 </script>
 
-<!-- ═══════════ buildCatalogue() — adaptateur vers shared/ (verbatim, L1660-1774) ═══════════ -->
+<!-- ═══════════ buildCatalogue() — adapter onto shared/ (verbatim, L1660-1774) ═══════════ -->
 <script type="text/x-dc-extract">
   buildCatalogue() {
     const H = this.ath, fx = this.fx;
@@ -233,7 +233,7 @@ class Component extends DCLogic {
 
 </script>
 
-<!-- ═══════════ Fonctions d'affichage (verbatim, L2345-2467) ═══════════ -->
+<!-- ═══════════ Display functions (verbatim, L2345-2467) ═══════════ -->
 <script type="text/x-dc-extract">
   // ---------- helpers ----------
   fr() { return (this.state.langOv || this.props.lang || 'fr') !== 'en'; }
@@ -360,8 +360,8 @@ class Component extends DCLogic {
 
 </script>
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « Les formes de données » (DateCard, DateDetail)
-  openapi/storefront.yaml → schémas DateCard, DateDetail, VenueClock, MediaSet, DomainConstants
-  ⚠ buildCatalogue() charge 1 814 dates (1,79 Mo) et filtre côté client — exactement ce que le contrat rend impossible.
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "The data shapes" (DateCard, DateDetail)
+  openapi/storefront.yaml → schemas DateCard, DateDetail, VenueClock, MediaSet, DomainConstants
+  ⚠ buildCatalogue() loads 1,814 dates (1.79 MB) and filters client-side — exactly what the contract makes impossible.
 -->

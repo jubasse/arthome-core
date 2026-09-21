@@ -2,28 +2,28 @@
   Arthome · storefront mobile — browse
   ══════════════════════════════════════════════════════════════════════════
   Route      : browse
-  Affiche    : Explorer, la coquille : recherche, jetons de filtre actifs, barre de quatre onglets, état vide. Les quatre onglets de résultats sont dans browse-*.html.
-  Mène vers  : browse-best/-lives/-artists/-replays, sheet-filters, sheet-sort, sheet-save-search
-  Contrat    : GET /v1/search
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L308–345, L602–603
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : Browse, the shell: search, active filter tokens, four-tab bar, empty state. The four result tabs are in browse-*.html.
+  Leads to   : browse-best/-lives/-artists/-replays, sheet-filters, sheet-sort, sheet-save-search
+  Contract   : GET /v1/search
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L308–345, L602–603
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
-  Note       : Les quatre onglets de resultats sont dans browse-best.html, browse-lives.html,
-               browse-artists.html et browse-replays.html.
+  Note       : The four result tabs are in browse-best.html, browse-lives.html,
+               browse-artists.html and browse-replays.html.
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L308–345
+     MARKUP — L308–345
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ isBrowse }}" hint-placeholder-val="{{ false }}">
 <div style="animation: fadeIn .3s ease both; padding: 18px 16px 0;">
@@ -65,19 +65,19 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L602–603
+     MARKUP — L602–603
      ══════════════════════════════════════════════════════════════════════════ -->
 </div>
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (30 symboles)
+     VIEW MODEL — specific to this screen (30 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── priceDefs  —  calcul dans renderReady()  —  L5338–5338 ── */
+/* ── priceDefs  —  computation in renderReady()  —  L5338–5338 ── */
     const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
 
-/* ── dateOk  —  calcul dans renderReady()  —  L5340–5346 ── */
+/* ── dateOk  —  computation in renderReady()  —  L5340–5346 ── */
     const dateOk = (d) => {
       if (s.fDate === 'all' || s.fDate === 'range') return true;
       if (s.fDate === 'tonight') return d === 0;
@@ -86,7 +86,7 @@
       return d >= 0 && d <= 30;
     };
 
-/* ── passFilters  —  calcul dans renderReady()  —  L5348–5363 ── */
+/* ── passFilters  —  computation in renderReady()  —  L5348–5363 ── */
     const passFilters = (o) => {
       if (!hit(o)) return false;
       if (s.fCats.length && s.fCats.indexOf(o.cat) < 0) return false;
@@ -104,10 +104,10 @@
       return true;
     };
 
-/* ── sortKey  —  calcul dans renderReady()  —  L5364–5364 ── */
+/* ── sortKey  —  computation in renderReady()  —  L5364–5364 ── */
     const sortKey = s.sort === 'auto' ? (qq ? 'rel' : 'soon') : s.sort;
 
-/* ── sortFn  —  calcul dans renderReady()  —  L5365–5372 ── */
+/* ── sortFn  —  computation in renderReady()  —  L5365–5372 ── */
     const sortFn = (a, b) => {
       if (sortKey === 'soon') return (a.day < 0 ? 999 : a.day) - (b.day < 0 ? 999 : b.day);
       if (sortKey === 'pop') return (b.viewers || roster[b.artistIdx].followers.replace(/\D/g, '') / 100) - (a.viewers || roster[a.artistIdx].followers.replace(/\D/g, '') / 100);
@@ -117,13 +117,13 @@
       return score(a) - score(b);
     };
 
-/* ── livesAll  —  calcul dans renderReady()  —  L5373–5373 ── */
+/* ── livesAll  —  computation in renderReady()  —  L5373–5373 ── */
     const livesAll = catalogue.filter(o => o.kind !== 'replay' && passFilters(o)).sort(sortFn);
 
-/* ── replaysAll  —  calcul dans renderReady()  —  L5374–5374 ── */
+/* ── replaysAll  —  computation in renderReady()  —  L5374–5374 ── */
     const replaysAll = catalogue.filter(o => o.kind === 'replay' && passFilters(o)).sort(sortFn);
 
-/* ── artistsAll  —  calcul dans renderReady()  —  L5375–5396 ── */
+/* ── artistsAll  —  computation in renderReady()  —  L5375–5396 ── */
     const artistsAll = roster.filter(a => {
       if (qq && (a.name + ' ' + a.discipline + ' ' + a.showTitle).toLowerCase().indexOf(qq) < 0) return false;
       if (s.fCats.length && !catalogue.some(o => o.artistIdx === a.i && s.fCats.indexOf(o.cat) > -1)) return false;
@@ -147,10 +147,10 @@
       });
     });
 
-/* ── tabDefs  —  calcul dans renderReady()  —  L5473–5473 ── */
+/* ── tabDefs  —  computation in renderReady()  —  L5473–5473 ── */
     const tabDefs = [['best', t.tabBest, livesAll.length + artistsAll.length + replaysAll.length], ['artists', t.tabArtists, artistsAll.length], ['lives', t.tabLives, livesAll.length], ['replays', t.tabReplays, replaysAll.length]];
 
-/* ── searchTabs  —  calcul dans renderReady()  —  L5474–5479 ── */
+/* ── searchTabs  —  computation in renderReady()  —  L5474–5479 ── */
     const searchTabs = tabDefs.map(([k, label, n]) => ({
       label, count: String(n),
       pick: () => this.setState({ sTab: k }),
@@ -158,71 +158,71 @@
         (s.sTab === k ? '#EDE7DC' : 'transparent') + '; color: ' + (s.sTab === k ? '#EDE7DC' : '#857E73') + '; transition: color .24s ease, border-color .24s ease;'
     }));
 
-/* ── sortDefs  —  calcul dans renderReady()  —  L5481–5481 ── */
+/* ── sortDefs  —  computation in renderReady()  —  L5481–5481 ── */
     const sortDefs = [['auto', qq ? t.sortRelevance : t.sortSoon], ['soon', t.sortSoon], ['pop', t.sortPop], ['priceUp', t.sortPriceUp], ['priceDown', t.sortPriceDown]];
 
-/* ── tokens  —  calcul dans renderReady()  —  L5530–5530 ── */
+/* ── tokens  —  computation in renderReady()  —  L5530–5530 ── */
     const tokens = [];
 
-/* ── flags  —  calcul dans renderReady()  —  L5556–5556 ── */
+/* ── flags  —  computation in renderReady()  —  L5556–5556 ── */
     const flags = [];
 
-/* ── activeFilterCount  —  calcul dans renderReady()  —  L5631–5631 ── */
+/* ── activeFilterCount  —  computation in renderReady()  —  L5631–5631 ── */
     const activeFilterCount = s.fCats.length + (s.fCats.length === 1 ? (s.fSubs || []).length : 0) + s.fPrices.length + (s.fDate !== 'all' ? 1 : 0) + (s.fStatus !== 'all' ? 1 : 0) + flags.length;
 
-/* ── activeTokens  —  calcul dans renderReady()  —  L5632–5635 ── */
+/* ── activeTokens  —  computation in renderReady()  —  L5632–5635 ── */
     const activeTokens = tokens.map(tk => Object.assign(tk, {
       title: tk.title || tk.label,
       style: 'cursor: pointer; padding: 10px 12px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  display: inline-flex; align-items: center; gap: 5px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid #332E28; background: #141210; font-family: \'JetBrains Mono\', monospace; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: #C9C0B2; transition: border-color .2s ease, color .2s ease;'
     }));
 
-/* ── hasTokens  —  clé du modèle rendu  —  L5639–5639 ── */
+/* ── hasTokens  —  key of the rendered model  —  L5639–5639 ── */
       hasTokens: activeTokens.length > 0,
 
-/* ── toggleFilters  —  clé du modèle rendu  —  L5641–5641 ── */
+/* ── toggleFilters  —  key of the rendered model  —  L5641–5641 ── */
       toggleFilters: () => this.setState(st => ({ filtersOpen: !st.filtersOpen })),
 
-/* ── filtersBtnLabel  —  clé du modèle rendu  —  L5642–5642 ── */
+/* ── filtersBtnLabel  —  key of the rendered model  —  L5642–5642 ── */
       filtersBtnLabel: t.showFilters + (activeFilterCount ? ' · ' + activeFilterCount : '') + (s.filtersOpen ? ' ▴' : ' ▾'),
 
-/* ── filtersBtnStyle  —  clé du modèle rendu  —  L5643–5643 ── */
+/* ── filtersBtnStyle  —  key of the rendered model  —  L5643–5643 ── */
       filtersBtnStyle: 'cursor: pointer; padding: 10px 13px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; font-size: 12.5px; transition: background .2s ease, border-color .2s ease; ' +
 
-/* ── clearAllFilters  —  clé du modèle rendu  —  L5673–5673 ── */
+/* ── clearAllFilters  —  key of the rendered model  —  L5673–5673 ── */
       clearAllFilters: () => this.setState({ query: '', fCats: [], fSubs: [], fPrices: [], fDate: 'all', fStatus: 'all', fAlmost: false, fHasDates: false, fExpiring: false, fPromo: false, sort: 'auto', alertCreated: false }),
 
-/* ── nothingFound  —  clé du modèle rendu  —  L5681–5681 ── */
+/* ── nothingFound  —  key of the rendered model  —  L5681–5681 ── */
       nothingFound: s.sTab === 'best' && livesAll.length === 0 && artistsAll.length === 0 && replaysAll.length === 0,
 
-/* ── searchCountLabel  —  clé du modèle rendu  —  L5685–5689 ── */
+/* ── searchCountLabel  —  key of the rendered model  —  L5685–5689 ── */
       searchCountLabel: (() => {
         const n = s.sTab === 'best' ? (livesAll.length + artistsAll.length + replaysAll.length)
           : (s.sTab === 'artists' ? artistsAll.length : (s.sTab === 'replays' ? replaysAll.length : livesAll.length));
         return n + ' ' + (n > 1 ? t.resultsLabel : t.resultLabel);
       })(),
 
-/* ── createAlert  —  clé du modèle rendu  —  L5716–5716 ── */
+/* ── createAlert  —  key of the rendered model  —  L5716–5716 ── */
       createAlert: this.gate(() => this.setState({ saveOpen: true, saveStep: 'ask', saveName: '', saveScope: 'search' })),
 
-/* ── createAlertLabel  —  clé du modèle rendu  —  L5766–5766 ── */
+/* ── createAlertLabel  —  key of the rendered model  —  L5766–5766 ── */
       createAlertLabel: t.createAlert,
 
-/* ── createAlertStyle  —  clé du modèle rendu  —  L5767–5767 ── */
+/* ── createAlertStyle  —  key of the rendered model  —  L5767–5767 ── */
       createAlertStyle: 'cursor: pointer; padding: 12px 20px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;  white-space: nowrap; font-size: 12.5px; border: 1px solid #332E28; color: #C9C0B2; transition: border-color .24s ease, color .24s ease;',
 
-/* ── browseTitle  —  clé du modèle rendu  —  L5877–5877 ── */
+/* ── browseTitle  —  key of the rendered model  —  L5877–5877 ── */
       browseTitle: s.query ? '« ' + s.query + ' »' : (fr ? 'Explorer la scène' : 'Browse the stage'),
 
-/* ── toggleSortMenu  —  clé du modèle rendu  —  L6281–6281 ── */
+/* ── toggleSortMenu  —  key of the rendered model  —  L6281–6281 ── */
       toggleSortMenu: () => this.setState(st => ({ sortOpen: !st.sortOpen })),
 
-/* ── sortFieldStyle  —  clé du modèle rendu  —  L6282–6282 ── */
+/* ── sortFieldStyle  —  key of the rendered model  —  L6282–6282 ── */
       sortFieldStyle: "cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 10px 12px; min-height: 44px; box-sizing: border-box;  border: 1px solid " +
 
-/* ── sortCaret  —  clé du modèle rendu  —  L6284–6284 ── */
+/* ── sortCaret  —  key of the rendered model  —  L6284–6284 ── */
       sortCaret: s.sortOpen ? '▴' : '▾',
 
-/* ── sortCurrentLabel  —  clé du modèle rendu  —  L6293–6297 ── */
+/* ── sortCurrentLabel  —  key of the rendered model  —  L6293–6297 ── */
       sortCurrentLabel: (() => {
         const defs = s.page === 'category' ? sortDefs.filter(d => d[0] !== 'soon') : (qq ? sortDefs : sortDefs.filter(d => d[0] !== 'soon'));
         const cur = s.page === 'category' ? s.cSort : s.sort;
@@ -232,7 +232,7 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (24) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (24) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2439  clearAll: "Tout effacer"
@@ -310,8 +310,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

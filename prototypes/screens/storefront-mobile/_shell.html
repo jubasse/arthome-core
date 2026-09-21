@@ -2,31 +2,31 @@
   Arthome · storefront mobile — _shell
   ══════════════════════════════════════════════════════════════════════════
   Route      : —
-  Affiche    : La coquille : styles, écran de démarrage, en-tête collant avec ses deux pastilles, bandeau visiteur, barre de cinq onglets bas.
-  Mène vers  : les douze routes
-  Contrat    : GET /v1/viewer-context · GET /v1/devices
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1–54, L55–66, L68–68, L69–87, L88–94, L1860–1885, L2295–2299
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : The shell: styles, boot screen, sticky header with its two badges, guest banner, five-tab bottom bar.
+  Leads to   : all twelve routes
+  Contract   : GET /v1/viewer-context · GET /v1/devices
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1–54, L55–66, L68–68, L69–87, L88–94, L1860–1885, L2295–2299
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
-  Note       : Le paysage vit ici, et nulle part ailleurs : shellStyle, navBarStyle, heroStyle,
-               sheetBase et sheetTop sont les seules différences entre portrait et paysage.
-               Aucune branche de balisage n'est conditionnée à l'orientation — vérifié.
-               Les modes d'affichage « tiles » et « list » (state.view, state.followView) sont
-               eux aussi des variantes de style, pas des écrans.
+  Note       : Landscape lives here and nowhere else: shellStyle, navBarStyle, heroStyle,
+               sheetBase and sheetTop are the only differences between portrait and landscape.
+               No markup branch anywhere is conditioned on orientation - verified.
+               The display modes 'tiles' and 'list' (state.view, state.followView) are
+               likewise style variants, not screens.
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1–54
+     MARKUP — L1–54
      ══════════════════════════════════════════════════════════════════════════ -->
 <!DOCTYPE html>
 <html>
@@ -84,7 +84,7 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L55–66
+     MARKUP — L55–66
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ booting }}" hint-placeholder-val="{{ false }}">
   <div style="position: fixed; inset: 0; z-index: 8000; background: #0B0A09; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 0 28px; text-align: center;">
@@ -100,12 +100,12 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L68–68
+     MARKUP — L68–68
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L69–87
+     MARKUP — L69–87
      ══════════════════════════════════════════════════════════════════════════ -->
 <header style="position: sticky; top: 0; z-index: 500; background: rgba(11,10,9,0.92); border-bottom: 1px solid #1F1C19;">
   <div style="padding: 0 16px; height: 58px; display: flex; align-items: center; gap: 10px;">
@@ -128,7 +128,7 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L88–94
+     MARKUP — L88–94
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}">
   <div style="margin: 12px 16px 0; border: 1px solid rgba(214,178,102,0.3); background: rgba(214,178,102,0.05); padding: 12px 14px;">
@@ -139,7 +139,7 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1860–1885
+     MARKUP — L1860–1885
      ══════════════════════════════════════════════════════════════════════════ -->
 <nav style="{{ navBarStyle }}">
   <div style="display: grid; grid-template-columns: repeat(5, minmax(0,1fr));">
@@ -169,7 +169,7 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L2295–2299
+     MARKUP — L2295–2299
      ══════════════════════════════════════════════════════════════════════════ -->
 </sc-if>
 
@@ -178,46 +178,46 @@
 </x-dc>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (11 symboles)
+     VIEW MODEL — specific to this screen (11 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── nav  —  méthode de classe  —  L3977–3977 ── */
+/* ── nav  —  class method  —  L3977–3977 ── */
   nav(page) { return () => this.setState({ page, pick: null, ticketOpen: false, shareOpen: false }); }
 
-/* ── cartCount  —  calcul dans renderReady()  —  L5630–5630 ── */
+/* ── cartCount  —  computation in renderReady()  —  L5630–5630 ── */
     const cartCount = s.cartLines.reduce((n, l) => n + l.qty, 0);
 
-/* ── goHome  —  clé du modèle rendu  —  L5830–5830 ── */
+/* ── goHome  —  key of the rendered model  —  L5830–5830 ── */
       goHome: this.nav('home'), goBrowse: this.nav('browse'), goArtist: this.nav('artist'),
 
-/* ── toggleNotifs  —  clé du modèle rendu  —  L5991–5991 ── */
+/* ── toggleNotifs  —  key of the rendered model  —  L5991–5991 ── */
       toggleNotifs: () => this.setState(st => ({ notifsOpen: !st.notifsOpen })),
 
-/* ── unreadNotifs  —  clé du modèle rendu  —  L5993–5993 ── */
+/* ── unreadNotifs  —  key of the rendered model  —  L5993–5993 ── */
       unreadNotifs: !s.notifsRead,
 
-/* ── notifCount  —  clé du modèle rendu  —  L5994–5994 ── */
+/* ── notifCount  —  key of the rendered model  —  L5994–5994 ── */
       notifCount: '3',
 
-/* ── cartCountBadge  —  clé du modèle rendu  —  L6034–6034 ── */
+/* ── cartCountBadge  —  key of the rendered model  —  L6034–6034 ── */
       cartCountBadge: cartCount ? String(cartCount) : '',
 
-/* ── hasCartItems  —  clé du modèle rendu  —  L6035–6035 ── */
+/* ── hasCartItems  —  key of the rendered model  —  L6035–6035 ── */
       hasCartItems: cartCount > 0,
 
-/* ── toggleCart  —  clé du modèle rendu  —  L6038–6038 ── */
+/* ── toggleCart  —  key of the rendered model  —  L6038–6038 ── */
       toggleCart: () => this.setState(st => ({ cartOpen: !st.cartOpen, notifsOpen: false })),
 
-/* ── isGuest  —  clé du modèle rendu  —  L6239–6239 ── */
+/* ── isGuest  —  key of the rendered model  —  L6239–6239 ── */
       isGuest: s.guest, isMember: !s.guest,
 
-/* ── openSignUp  —  clé du modèle rendu  —  L6246–6246 ── */
+/* ── openSignUp  —  key of the rendered model  —  L6246–6246 ── */
       openSignUp: () => this.setState({ authOpen: true, authTab: 'up', menuOpen: false }),
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (5) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (5) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2504  guestBadge: "VISITEUR"
@@ -238,8 +238,8 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

@@ -1,19 +1,19 @@
 <!--
-  Écran      : live
+  Screen     : live
   Route      : page === 'live'
-  Affiche    : Le direct du moment en grand avec aperçu, puis les autres directs, puis la grille horaire de la soirée — une ligne par heure, en heure locale du spectateur, avec l'heure de salle en second quand elle diffère.
-  Mène vers  : player · title · book
-  Partagé    : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
+  Shows      : What is on air right now, large, with a preview; then the other lives; then the evening's schedule grid — one line per hour, in the viewer's local time, with the venue time second when it differs.
+  Leads to   : player · title · book
+  Shared     : _app-shell · _focus-engine · _sticky-scroll · _focus-memory · _remote-keys · _color-keys · _copy-fr-en · _shared-view-model
 
-  DÉFAUTS RELEVÉS (non corrigés — extraction verbatim) :
-    · Le groupement par heure est fait côté client (const hours), à partir d'une chaîne d'horloge reformatée par expression régulière.
-    · tzNote est codé en dur à « EUROPE/PARIS » (L3238) alors que le fuseau devrait venir du spectateur.
+  DEFECTS FOUND (not fixed — verbatim extraction):
+    · Hour grouping is done client-side (const hours), from a clock string reformatted with a regular expression.
+    · tzNote is hard-coded to "EUROPE/PARIS" (L3238) whereas the zone should come from the viewer.
 
-  ⚠ EXTRACTION VERBATIM. Ne rien corriger ici : l'original
-    `Storefront TV.dc.html` reste la source runnable de la galerie.
+  ⚠ VERBATIM EXTRACTION. Fix nothing in this file: the original
+    `Storefront TV.dc.html` remains the runnable source for the gallery.
 -->
 
-<!-- ═══════════ Balisage (verbatim, L316-400) ═══════════ -->
+<!-- ═══════════ Markup (verbatim, L316-400) ═══════════ -->
       <sc-if value="{{ pgLive }}" hint-placeholder-val="{{ false }}">
         <div data-row="1" style="position: relative; z-index: 0; overflow: hidden; width: 1920px; height: 620px;">
           <img data-img="{{ liveHero.img }}" alt="" style="position: absolute; left: 0; right: 0; top: 0; bottom: 8px; width: 100%; height: calc(100% - 8px); object-fit: cover; filter: saturate(.72) brightness(.58); transform-origin: 50% 100%; animation: {{ ken }};" />
@@ -100,7 +100,7 @@
         </div>
       </sc-if>
 
-<!-- ═══════════ Modèle de vue — direct en tête (verbatim, L2769-2777) ═══════════ -->
+<!-- ═══════════ View model — lead live (verbatim, L2769-2777) ═══════════ -->
 <script type="text/x-dc-extract">
     // live page
     const lh = lives[0];
@@ -113,7 +113,7 @@
     } : { has: false, none: true, img: U(PIC.curtain) };
 </script>
 
-<!-- ═══════════ Modèle de vue — grille horaire et autres directs (verbatim, L2810-2832) ═══════════ -->
+<!-- ═══════════ View model — schedule grid and other lives (verbatim, L2810-2832) ═══════════ -->
 <script type="text/x-dc-extract">
     const hours = {};
     cat.filter(x => this.st(x) === 'soon' && x.min < 2880).sort((a, b) => a.min - b.min).forEach(x => {
@@ -140,33 +140,33 @@
 
 </script>
 
-<!-- ═══════════ Modèle de vue — compteurs (verbatim, L3179-3181) ═══════════ -->
+<!-- ═══════════ View model — counters (verbatim, L3179-3181) ═══════════ -->
 <script type="text/x-dc-extract">
       pgGate: page === 'gate', pgHome: page === 'home', pgTitle: page === 'title', pgArtist: page === 'artist',
       liveNow: liveNow, liveNowOn: liveNow.length > 0, liveNowCount: this.num(lives.length) + ' ' + (fr ? 'À L’ANTENNE' : 'ON AIR'),
       pgLive: page === 'live', pgSearch: page === 'search', pgCats: page === 'categories', pgArtists: page === 'artists',
 </script>
 
-<!-- ═══════════ CLÉS DE COPIE ═══════════
-  jeton du composant  →  clé i18n (shared/i18n/tv-keymap.json)
+<!-- ═══════════ COPY KEYS ═══════════
+  component token  →  i18n key (shared/i18n/tv-keymap.json)
     t.book               → common.actions.book
-    t.kFull              → common.status.soldOut   [majuscules]
-    t.kLast              → common.status.lastSeats   [majuscules]
-    t.kOnAir             → common.status.onAir   [majuscules]
-    t.liveNowLabel       → discovery.onAirNow   [majuscules]
+    t.kFull              → common.status.soldOut   [uppercased]
+    t.kLast              → common.status.lastSeats   [uppercased]
+    t.kOnAir             → common.status.onAir   [uppercased]
+    t.liveNowLabel       → discovery.onAirNow   [uppercased]
     t.more               → common.actions.more
     t.nothingOnAir       → discovery.nothingOnAir
     t.nothingOnAirHint   → discovery.nothingOnAirHint
-    t.ownedSeat          → common.status.seatHeld   [majuscules]
+    t.ownedSeat          → common.status.seatHeld   [uppercased]
     t.rOnAir             → discovery.rail.onAir
     t.tonightGrid        → discovery.tonightGrid
-    t.viewersSuffix      → common.units.viewers   [majuscules]
+    t.viewersSuffix      → common.units.viewers   [uppercased]
     t.watch              → common.actions.watch
 -->
 
-<!-- ═══════════ RENVOIS ═══════════
-  needs/storefront-tv.md → « Le temps réel » : compteur de spectateurs 10 à 30 s, jamais zéro
-  openapi/storefront.yaml → getLiveScreen (GET /v1/live), fraîcheur 15 s, en-tête ViewerTimezone
-  ⚠ Le GROUPEMENT HORAIRE est serveur : il dépend du fuseau du spectateur, que la surface envoie.
-  Rangées partagées : _rails.html
+<!-- ═══════════ CROSS-REFERENCES ═══════════
+  needs/storefront-tv.md → "Real time": viewer count 10 to 30 s, never zero
+  openapi/storefront.yaml → getLiveScreen (GET /v1/live), freshness 15 s, ViewerTimezone header
+  ⚠ The HOUR GROUPING is server-side: it depends on the viewer's time zone, which the surface sends.
+  Shared rows: _rails.html
 -->

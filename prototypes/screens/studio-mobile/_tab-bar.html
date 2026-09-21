@@ -1,39 +1,39 @@
 <!--
-  PIÈCE        _tab-bar — la barre de quatre onglets, dérivée du rôle
-  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, outil de garde
-  RÔLE         La mécanique centrale de cette surface : quatre entrées au plus, choisies par le rôle tenu SUR LA CHAÎNE COURANTE, plus une entrée « Plus » toujours présente.
+  PART         _tab-bar — the four-tab bar, derived from the role
+  SURFACE      Studio Mobile — Angular + Ionic + Capacitor, 430 px, duty tool
+  PURPOSE      This surface's central mechanism: four entries at most, chosen by the role held ON THE CURRENT CHANNEL, plus a "More" entry that is always present.
   SOURCE       prototypes/Studio Mobile.dc.html
-               balisage  L814-826
-               modèle    L962-1019 (ROLES, SHORT, GRANTS, ACCESS, FREE, ORDER, PAGE_META, TAB_PREF, TAB_SHORT) · L1626-1632 (accès) · L1727-1768 (onglets et retour)
-  NOTE         Les deux tranches de renderReady() sont AUSSI dans _shell.html, verbatim. Duplication voulue.
+               markup      L814-826
+               view model  L962-1019 (ROLES, SHORT, GRANTS, ACCESS, FREE, ORDER, PAGE_META, TAB_PREF, TAB_SHORT) · L1626-1632 (access) · L1727-1768 (tabs and back button)
+  NOTE         Both renderReady() slices are ALSO in _shell.html, verbatim. The duplication is deliberate.
 
-  EXTRACTION VERBATIM — rien n'est corrigé, rien n'est réécrit.
-  L'original ne doit jamais être modifié.
+  VERBATIM EXTRACTION — nothing is corrected, nothing is rewritten.
+  The original must never be modified.
 -->
 
 <!--
-  La dérivation, dans cet ordre exact (extraite telle quelle ci-dessous) :
+  The derivation, in exactly this order (extracted as it stands below):
 
-    roles   = rôle tenu sur la chaîne courante  ∪  second rôle éventuel
-    union   = ⋃ ACCESS[r]                         « l'accès est l'union des rôles, jamais un rang »
-    allowed = ORDER filtré par union              ordre canonique, pas l'ordre d'arrivée
+    roles   = role held on the current channel  ∪  optional second role
+    union   = ⋃ ACCESS[r]                         "access is the union of roles, never a rank"
+    allowed = ORDER filtered by union             canonical order, not arrival order
     free    = ⋃ FREE[r]  +  inbox
-    pref    = ⋃ TAB_PREF[r], dédupliqué           ordre de préférence PAR RÔLE
-    tabs    = pref ∩ (allowed ∪ free), 4 au plus  + « Plus »
+    pref    = ⋃ TAB_PREF[r], deduplicated         PER-ROLE preference order
+    tabs    = pref ∩ (allowed ∪ free), 4 at most  + "More"
 
-  ⚠ TAB_PREF n'est pas ORDER tronqué. Pour artist, ORDER∩ACCESS donne
-    dashboard · crew · events · stream, alors que TAB_PREF.artist donne
-    dashboard · events · crew · tickets. Deux différences sur quatre.
-    Voir needs/studio-mobile.md §Confrontation C2.
+  WARNING — TAB_PREF is not ORDER truncated. For artist, ORDER∩ACCESS gives
+    dashboard · crew · events · stream, whereas TAB_PREF.artist gives
+    dashboard · events · crew · tickets. Two differences out of four.
+    See needs/studio-mobile.md §Confrontation C2.
 
-  ⚠ TAB_PREF.regie contient « regie », qui n'est PAS dans ACCESS.regie : il n'entre dans la
-    barre que par FREE.regie. Voir needs/studio-mobile.md §Confrontation C1 et
+  WARNING — TAB_PREF.regie contains "regie", which is NOT in ACCESS.regie: it only enters the
+    bar through FREE.regie. See needs/studio-mobile.md §Confrontation C1 and
     architecture/corrections-handoff.md E6.
 -->
 
-<!-- ======================== BALISAGE ======================== -->
+<!-- ========================= MARKUP ========================= -->
 
-<!-- ---- la barre, fixée en bas (L814-826) ---- -->
+<!-- ---- the bar, fixed at the bottom (L814-826) ---- -->
   <div style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 45; display: flex; justify-content: center; pointer-events: none;">
     <div style="{{ tabBarStyle }}">
       <sc-for list="{{ tabs }}" as="t">
@@ -48,9 +48,9 @@
     </div>
   </div>
 
-<!-- ====================== MODÈLE DE VUE ===================== -->
+<!-- ======================== VIEW MODEL ====================== -->
 <script type="text/x-dc-fragment">
-/* ---- les tables (L962-1019) ---- */
+/* ---- the tables (L962-1019) ---- */
 const ROLES = {
   artist: ['ARTISTE · PROPRIÉTAIRE', INK2],
   prod:   ['PRODUCTION', INFO],
@@ -110,7 +110,7 @@ const TAB_SHORT = {
   tickets: 'Billets', stats: 'Stats', help: 'Aide', store: 'Boutique', replays: 'Rediff.'
 };
 
-/* ---- accès : union des rôles (extrait de renderReady, L1626-1632) ---- */
+/* ---- access: the union of roles (extracted from renderReady, L1626-1632) ---- */
     /* accès : union des rôles, jamais un rang */
     const union = roles.reduce((acc, r) => acc.concat(ACCESS[r] || []), []);
     const allowed = ORDER.filter(p => union.indexOf(p) > -1);
@@ -119,7 +119,7 @@ const TAB_SHORT = {
     const page = (s.page && (allowed.indexOf(s.page) > -1 || free.indexOf(s.page) > -1)) ? s.page : allowed[0];
 
 
-/* ---- onglets bas et bouton de retour (extrait de renderReady, L1727-1768) ---- */
+/* ---- bottom tabs and back button (extracted from renderReady, L1727-1768) ---- */
     /* ---------- onglets bas : quatre entrées au plus, dérivées du rôle ---------- */
     const pref = roles.reduce((acc, r) => acc.concat(TAB_PREF[r] || []), []).filter((v, i, a) => a.indexOf(v) === i);
     const tabKeys = pref.filter(k => allowed.indexOf(k) > -1 || free.indexOf(k) > -1).slice(0, 4);

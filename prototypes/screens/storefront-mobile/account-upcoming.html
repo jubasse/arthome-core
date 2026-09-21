@@ -2,25 +2,25 @@
   Arthome · storefront mobile — account-upcoming
   ══════════════════════════════════════════════════════════════════════════
   Route      : account · accTab=upcoming
-  Affiche    : Événements à venir : les places détenues sur des dates non encore jouées.
-  Mène vers  : live, artist
-  Contrat    : GET /v1/me/tickets?window=upcoming
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L1349–1378
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Shows      : Upcoming events: seats held on dates not yet played.
+  Leads to   : live, artist
+  Contract   : GET /v1/me/tickets?window=upcoming
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L1349–1378
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L1349–1378
+     MARKUP — L1349–1378
      ══════════════════════════════════════════════════════════════════════════ -->
       <sc-if value="{{ accUpcoming }}" hint-placeholder-val="{{ true }}">
         <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -54,23 +54,23 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (0 symboles)
+     VIEW MODEL — specific to this screen (0 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* Aucun symbole propre : cet écran n'emploie que le noyau commun. */
+/* No symbols of its own: this screen uses only the shared core. */
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (0) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (0) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
-  (aucune : cet écran n'emploie aucune clé des tables FR/EN)
+  (none: this screen uses no key from the FR/EN tables)
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

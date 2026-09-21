@@ -1,21 +1,24 @@
 <!--
-  ÉCRAN      Compte — Événements à venir
+  SCREEN     Account — Upcoming events
   ROUTE      page === 'account', accTab === 'upcoming'
-  AFFICHE    Les places confirmées, avec leur code de place, leur heure locale et l'accès à la salle.
-  MÈNE VERS  account
+  SHOWS      Confirmed seats, with their seat code, their local time and the way into the house.
+  LEADS TO   account
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 2381-2416
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 2381-2416
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — listMyTickets
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — listMyTickets
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : A, artist, availW, colsOf, colsTiles, colsWideN, followed, fr, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, tileCols, upcomingCount
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: A, artist, availW, colsOf, colsTiles, colsWideN, followed, fr, roster, rowGrid4, rowGrid4b, rowGrid5, rowGrid5b, rowGridLive, rowStack, rowThumb, s, tileCols, upcomingCount
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
       <sc-if value="{{ accUpcoming }}" hint-placeholder-val="{{ true }}">
       <div style="animation: fadeIn .3s ease both;">
@@ -54,9 +57,9 @@
       </sc-if>
 
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* faves  —  lignes 5207-5227 */
+/* faves  —  lines 5207-5227 */
     const faves = (() => {
       const followed = (s.follows || []).map(i => roster[i]).filter(Boolean);
       const pool = followed.length ? followed : roster.slice(0, 5);
@@ -78,11 +81,11 @@
       }));
     })().map(x => Object.assign(x, { open: () => this.openLive(x.artist), openArtist: this.goArtistFrom(x.artist) }));
 
-/* accStack  —  lignes 5747-5747 */
+/* accStack  —  lines 5747-5747 */
     const accStack = availW < 760;
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       colsTiles: colsOf(tileCols), colsWide: colsOf(colsWideN),
@@ -93,17 +96,18 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.accUpcoming  t.accUpcoming2  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     accTab  follows  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     cssUrl, goArtistFrom, openLive
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->

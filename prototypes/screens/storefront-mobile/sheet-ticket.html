@@ -1,26 +1,26 @@
 <!--
   Arthome · storefront mobile — sheet-ticket
   ══════════════════════════════════════════════════════════════════════════
-  Route      : superposée · ticketOpen
-  Affiche    : La feuille de billetterie : trois paliers de tarif, promotion éventuelle, frais de service, total.
-  Mène vers  : live
-  Contrat    : POST /v1/dates/{dateId}/seat-quote · POST /v1/orders/seats
-  Source     : mockups/Storefront Mobile.dc.html  ·  balisage L2064–2120
-  Orientation: balisage unique. Portrait et paysage ne diffèrent que par des
-               chaînes de style du modèle de vue (shellStyle, navBarStyle,
-               heroStyle, sheetBase) — voir _shell.html.
-  Voir aussi : needs/storefront-mobile.md  ·  openapi/storefront.yaml
-               _shell.html · _viewmodel-commun.html · _copy.html
+  Route      : overlay · ticketOpen
+  Shows      : The ticketing sheet: three price tiers, promotion if any, service fee, total.
+  Leads to   : live
+  Contract   : POST /v1/dates/{dateId}/seat-quote · POST /v1/orders/seats
+  Source     : mockups/Storefront Mobile.dc.html  ·  markup L2064–2120
+  Orientation: one markup. Portrait and landscape differ only by style strings
+               in the view model (shellStyle, navBarStyle, heroStyle, sheetBase)
+               — see _shell.html.
+  See also   : needs/storefront-mobile.md  ·  openapi/storefront.yaml
+               _shell.html · _viewmodel-shared.html · _copy.html
 
 
-  ⚠ EXTRACTION LITTÉRALE. Aucune ligne n'a été corrigée, complétée ni
-    reformatée. L'original n'a pas été modifié. Les incohérences relevées
-    au temps 1 (needs/storefront-mobile.md § Incohérences) sont donc encore
-    présentes ici : c'est voulu.
+  ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
+    reformatted. The original was not modified. The inconsistencies found at
+    time 1 (needs/storefront-mobile.md § Inconsistencies found) are therefore
+    still present here: that is deliberate.
 -->
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     BALISAGE — L2064–2120
+     MARKUP — L2064–2120
      ══════════════════════════════════════════════════════════════════════════ -->
 <sc-if value="{{ ticketOpen }}" hint-placeholder-val="{{ false }}">
 <div onClick="{{ closeTicket }}" style="position: fixed; inset: 0; z-index: 8850; background: rgba(6,5,5,0.8); backdrop-filter: blur(5px); animation: fadeIn .2s ease both;"></div>
@@ -81,10 +81,10 @@
 </sc-if>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     MODÈLE DE VUE — propre à cet écran (16 symboles)
+     VIEW MODEL — specific to this screen (16 symbols)
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="viewmodel">
-/* ── PROMO_NOTES  —  constante de module  —  L3289–3295 ── */
+/* ── PROMO_NOTES  —  module constant  —  L3289–3295 ── */
 const PROMO_NOTES = {
   'DERNIÈRE DATE': ['Dernière représentation de la série : les places encore libres passent au tarif réduit jusqu’au lever de rideau.', 'Final performance of the run: remaining seats are discounted until curtain up.'],
   'SÉANCE COMMENCÉE': ['La représentation a commencé. Le tarif est réduit au prorata du temps restant et vous rejoignez le direct immédiatement.', 'The show has started. The price is reduced pro rata and you join the live straight away.'],
@@ -93,20 +93,20 @@ const PROMO_NOTES = {
   'AVANT-PREMIÈRE': ['Avant-première : filage devant public, sans réglages définitifs. Tarif réduit en contrepartie.', 'Preview night: a run-through in front of an audience, settings not final. Reduced price in return.']
 };
 
-/* ── tkFree  —  calcul dans renderReady()  —  L4492–4496 ── */
+/* ── tkFree  —  computation in renderReady()  —  L4492–4496 ── */
     const tkFree = (() => {
       const raw = (s.ticketFor && s.ticketFor.priceLabel);
       if (!raw) return false;
       return /gratuit|free/i.test(String(raw)) || parseFloat(String(raw).replace(',', '.').replace(/[^\d.]/g, '')) === 0;
     })();
 
-/* ── tierDefs  —  calcul dans renderReady()  —  L4506–4506 ── */
+/* ── tierDefs  —  computation in renderReady()  —  L4506–4506 ── */
     const tierDefs = tkFree
 
-/* ── tierIdx  —  calcul dans renderReady()  —  L4523–4523 ── */
+/* ── tierIdx  —  computation in renderReady()  —  L4523–4523 ── */
     const tierIdx = Math.min(s.tier, tierDefs.length - 1);
 
-/* ── tiers  —  calcul dans renderReady()  —  L4524–4529 ── */
+/* ── tiers  —  computation in renderReady()  —  L4524–4529 ── */
     const tiers = tierDefs.map(([name, price, desc], i) => ({
       name, price, desc,
       pick: () => this.setState({ tier: i }),
@@ -114,7 +114,7 @@ const PROMO_NOTES = {
         '; background: ' + (tierIdx === i ? '#141210' : 'transparent') + ';'
     }));
 
-/* ── heroBase  —  calcul dans renderReady()  —  L4932–4949 ── */
+/* ── heroBase  —  computation in renderReady()  —  L4932–4949 ── */
     const heroBase = (() => {
       const d = A.liveNow()[0] || A.upcoming()[0];
       if (!d) return { title: '', artist: '', blurb: '', meta: '', viewersLabel: '', priceLabel: '', img: '' };
@@ -134,10 +134,10 @@ const PROMO_NOTES = {
       };
     })();
 
-/* ── onArtistLive  —  calcul dans renderReady()  —  L4950–4950 ── */
+/* ── onArtistLive  —  computation in renderReady()  —  L4950–4950 ── */
     const onArtistLive = (s.page === 'live' || s.page === 'replay') && artist.i !== 3;
 
-/* ── hero  —  calcul dans renderReady()  —  L4951–4977 ── */
+/* ── hero  —  computation in renderReady()  —  L4951–4977 ── */
     const hero = (s.pick && (s.page === 'live' || s.page === 'artist')) ? {
       title: s.pick.title,
       artist: s.pick.artist,
@@ -166,25 +166,25 @@ const PROMO_NOTES = {
       img: artist.showImg, imgCss: this.cssUrl(artist.showImg)
     } : heroBase);
 
-/* ── heroIsLive  —  calcul dans renderReady()  —  L5626–5626 ── */
+/* ── heroIsLive  —  computation in renderReady()  —  L5626–5626 ── */
     const heroIsLive = (s.pick && (s.page === 'live' || s.page === 'artist'))
 
-/* ── tpOn  —  clé du modèle rendu  —  L5811–5811 ── */
+/* ── tpOn  —  key of the rendered model  —  L5811–5811 ── */
       tpOn: !!s.ticketPromo,
 
-/* ── tpReason  —  clé du modèle rendu  —  L5812–5812 ── */
+/* ── tpReason  —  key of the rendered model  —  L5812–5812 ── */
       tpReason: s.ticketPromo ? s.ticketPromo.reason : '',
 
-/* ── tpNote  —  clé du modèle rendu  —  L5813–5813 ── */
+/* ── tpNote  —  key of the rendered model  —  L5813–5813 ── */
       tpNote: s.ticketPromo ? (PROMO_NOTES[s.ticketPromo.key] || ['', ''])[fr ? 0 : 1] : '',
 
-/* ── tpPrices  —  clé du modèle rendu  —  L5814–5814 ── */
+/* ── tpPrices  —  key of the rendered model  —  L5814–5814 ── */
       tpPrices: s.ticketPromo ? (fr ? s.ticketPromo.was + ' €' : '€' + s.ticketPromo.was) + '  →  ' + (fr ? s.ticketPromo.now + ' €' : '€' + s.ticketPromo.now) : '',
 
-/* ── tpSave  —  clé du modèle rendu  —  L5815–5815 ── */
+/* ── tpSave  —  key of the rendered model  —  L5815–5815 ── */
       tpSave: s.ticketPromo ? (fr ? '−' + (s.ticketPromo.was - s.ticketPromo.now) + ' € par place' : '−€' + (s.ticketPromo.was - s.ticketPromo.now) + ' per seat') : '',
 
-/* ── tkHero  —  clé du modèle rendu  —  L5817–5822 ── */
+/* ── tkHero  —  key of the rendered model  —  L5817–5822 ── */
       tkHero: {
         title: (s.ticketFor && s.ticketFor.title) || hero.title,
         artist: (s.ticketFor && s.ticketFor.artist) || hero.artist,
@@ -192,13 +192,13 @@ const PROMO_NOTES = {
         img: (s.ticketFor && s.ticketFor.img) || hero.img
       },
 
-/* ── tkStatusLabel  —  clé du modèle rendu  —  L5823–5823 ── */
+/* ── tkStatusLabel  —  key of the rendered model  —  L5823–5823 ── */
       tkStatusLabel: (s.ticketFor ? s.ticketFor.isLive : heroIsLive) ? t.onNow : (fr ? 'À VENIR' : 'UPCOMING'),
 
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     CLÉS DE COPIE EMPLOYÉES (6) — extraites de FR{} L2334–2783 et EN{} L2787–3236
+     COPY KEYS USED (6) — extracted from FR{} L2334–2783 and EN{} L2787–3236
      ══════════════════════════════════════════════════════════════════════════ -->
 <script type="text/x-arthome-extract" data-part="copy">
   FR L2437  chooseTier: "CHOISIR SA PLACE"
@@ -222,8 +222,8 @@ const PROMO_NOTES = {
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
-     SYMBOLES DU NOYAU COMMUN RÉFÉRENCÉS (74)
-     Ils ne sont recopiés nulle part : ils vivent dans _viewmodel-commun.html.
+     SHARED-CORE SYMBOLS REFERENCED (74)
+     They are recopied nowhere: they live in _viewmodel-shared.html.
      ══════════════════════════════════════════════════════════════════════════
      A, ARTIST_NAMES, BADGE_BY_REASON, CAT_NAMES, CHIP, DEN
      DFR, IMG, MEN, MFR, P, PROMO_DEFS

@@ -1,27 +1,30 @@
 <!--
-  ÉCRAN      Discipline — cadre, sommaire et filtres
+  SCREEN     Discipline — frame, contents and filters
   ROUTE      page === 'category'
-  AFFICHE    Une discipline : bandeau, sommaire « sur cette page », sous-genres, son propre panneau de filtres, son enregistrement en recherche, et les cinq onglets de sections.
-  MÈNE VERS  category-live · category-upcoming · category-replays · category-artists · artist · live
+  SHOWS      One discipline: banner, "on this page" contents, sub-genres, its own filter panel, its save-as-search, and the five section tabs.
+  LEADS TO   category-live · category-upcoming · category-replays · category-artists · artist · live
 
-  SOURCE     mockups/Storefront Web.dc.html, lignes 1674-1693 · 1772-1820 · 2061-2069
-             Extraction stricte : balisage et code recopiés tels quels, rien n'est
-             corrigé. L'original reste la référence et reste intact.
+  SOURCE     mockups/Storefront Web.dc.html, lines 1674-1693 · 1772-1820 · 2061-2069
+             Strict extraction: markup and code copied verbatim, nothing is
+             corrected. The original stays the reference and stays intact.
 
-  NOTE       Le rail latéral et le panneau de filtres (1694-1771) sont dans
-             `overlay-filters-rail.html` : ce bloc est recopié à l'identique depuis `browse`.
-             Défaut relevé au temps 3 : `getCategoryScreen` n'accepte ni section, ni curseur, ni
-             filtre — les quatre boutons « Voir plus » de cette page n'ont pas d'opération.
+  NOTE       The side rail and the filter panel (1694-1771) are in `overlay-filters-rail.html`:
+             that block is copied verbatim from `browse`. Defect found in round 3:
+             `getCategoryScreen` accepts no section, no cursor and no filter — the four "Show more"
+             buttons on this page have no operation.
 
-  BESOINS    needs/storefront-web.md
-  CONTRAT    openapi/storefront.yaml — getCategoryScreen, createSavedSearch
+  NEEDS      needs/storefront-web.md
+  CONTRACT   openapi/storefront.yaml — getCategoryScreen, createSavedSearch
 
-  PARTAGÉ    ce fichier s'appuie sur _shared-runtime.html et _shared-catalogue.html
-             pour : SUBS, catalogue, category, cats, roster, s, sideDrawer, subsSel, t
-  À LIRE     dépendances non recopiées ici : catSig, dateMatch, priceMatch
+  SHARED     this file relies on _shared-runtime.html and _shared-catalogue.html
+             for: SUBS, catalogue, category, cats, roster, s, sideDrawer, subsSel, t
+             ⚠ _shared-runtime.html, _shared-catalogue.html and _shared-i18n.html
+             are NOT YET WRITTEN: the split is on hold, the foundation comes first.
+             Read those definitions from the original mockup until they exist.
+  SEE ALSO   dependencies not copied in here: catSig, dateMatch, priceMatch
 -->
 
-<!-- ═══ BALISAGE ══════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ MARKUP ════════════════════════════════════════════════════════════════════════════════ -->
 
 <sc-if value="{{ isCategory }}" hint-placeholder-val="{{ false }}">
 <div style="animation: fadeIn .3s ease both;">
@@ -44,7 +47,7 @@
   <section style="max-width: 1440px; margin: 0 auto; padding: 20px 40px 0;">
     <div style="display: grid; grid-template-columns: {{ sideCols }}; gap: 28px; align-items: start;">
 
-      <!-- … le rail latéral et le panneau de filtres (lignes 1694-1771) sont dans overlay-filters-rail.html … -->
+      <!-- … the side rail and the filter panel (lines 1694-1771) are in overlay-filters-rail.html … -->
 
       <div style="min-width: 0;">
     <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; padding-bottom: 14px;">
@@ -106,19 +109,19 @@
 </div>
 </sc-if>
 
-<!-- ═══ MODÈLE DE VUE — calculs locaux (renderReady) ══════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — local computations (renderReady) ═════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
-/* priceDefs  —  lignes 5936-5936 */
+/* priceDefs  —  lines 5936-5936 */
     const priceDefs = [['free', t.pFree, p => p === 0], ['u10', t.pU10, p => p > 0 && p < 10], ['1020', t.p1020, p => p >= 10 && p <= 20], ['2035', t.p2035, p => p > 20 && p <= 35], ['o35', t.p35, p => p > 35]];
-/* dateDefs  —  lignes 5937-5937 */
+/* dateDefs  —  lines 5937-5937 */
     const dateDefs = [['tonight', t.dTonight], ['weekend', t.dWeekend], ['d7', t.d7], ['d30', t.d30], ['range', t.dRange]];
-/* statusDefs  —  lignes 5945-5945 */
+/* statusDefs  —  lines 5945-5945 */
     const statusDefs = [['live', t.stLive], ['soon', t.stSoon], ['replay', t.stReplay]];
-/* catFollowEntry  —  lignes 6045-6045 */
+/* catFollowEntry  —  lines 6045-6045 */
     const catFollowEntry = s.alerts.find(al => al.scope === 'category' && this.alertSig('', al.st) === catSig) || null;
-/* catFilterCount  —  lignes 6175-6175 */
+/* catFilterCount  —  lines 6175-6175 */
     const catFilterCount = subsSel.length + s.cPrices.length + (s.cDate !== 'all' ? 1 : 0) + (s.cStatus !== 'all' ? 1 : 0) + (s.cAlmost ? 1 : 0) + (s.cPromo ? 1 : 0);
-/* catPool  —  lignes 6176-6191 */
+/* catPool  —  lines 6176-6191 */
     const catPool = catalogue.filter(o => {
       if (o.cat !== s.catId) return false;
       if (subsSel.length && !subsSel.some(i => o.subs.indexOf(i) > -1)) return false;
@@ -135,17 +138,17 @@
       if (s.cSort === 'priceDown') return b.price - a.price;
       return 0;
     });
-/* catLiveList  —  lignes 6194-6194 */
+/* catLiveList  —  lines 6194-6194 */
     const catLiveList = catPool.filter(o => o.kind === 'live');
-/* catRepList  —  lignes 6196-6196 */
+/* catRepList  —  lines 6196-6196 */
     const catRepList = catPool.filter(o => o.kind === 'replay');
-/* catArtList  —  lignes 6197-6197 */
+/* catArtList  —  lines 6197-6197 */
     const catArtList = roster.filter(a => catPool.some(o => o.artistIdx === a.i));
-/* goCatTab  —  lignes 6202-6202 */
+/* goCatTab  —  lines 6202-6202 */
     const goCatTab = k => () => this.setState({ catTab: k, shown: {} });
 </script>
 
-<!-- ═══ MODÈLE DE VUE — clés rendues au balisage ══════════════════════════════════════════════ -->
+<!-- ═══ VIEW MODEL — keys bound by the markup ═════════════════════════════════════════════════ -->
 <script type="text/x-dc-fragment">
 ({
       goCategories: this.nav('categories'),
@@ -216,22 +219,23 @@
 })
 </script>
 
-<!-- ═══ RÉFÉRENCES ════════════════════════════════════════════════════════════════════════════ -->
+<!-- ═══ REFERENCES ════════════════════════════════════════════════════════════════════════════ -->
 <!--
-  CLÉS DE COPIE employées (dictionnaires FR/EN, voir _shared-i18n.html) :
+  COPY KEYS used (FR/EN dictionaries — _shared-i18n.html, NOT YET WRITTEN:
+  the split is on hold; read them from the original mockup):
     t.alertDelete  t.alertRename  t.alertRenameHint  t.almostFull  t.backToCats  t.catAll  
     t.catUpcoming  t.clearAll  t.d30  t.d7  t.dRange  t.dTonight  t.dWeekend  t.fMisc  
     t.fPrice  t.followCat  t.followCatHint  t.p1020  t.p2035  t.p35  t.pFree  t.pU10  
     t.promoFilter  t.replaysTitle  t.savedCatHere  t.stLive  t.stReplay  t.stSoon  t.subgenres  
     t.tabCatArtists  t.tabCatLive  t.tabOverview  t.viewLabel  t.viewList  t.viewTiles  
 
-  ÉTAT LU (this.state, voir _shared-runtime.html) :
+  STATE READ (this.state — _shared-runtime.html, NOT YET WRITTEN):
     alerts  cAlmost  cDate  cPrices  cPromo  cSort  cStatus  cView  catId  catTab  
     renameDraft  renameId  sideOpen  
 
-  MÉTHODES DU COMPOSANT appelées (voir _shared-runtime.html) :
+  COMPONENT METHODS called (_shared-runtime.html, NOT YET WRITTEN):
     alertName, alertSig, gate, nav, setState
 
-  Les besoins de cet écran sont dans needs/storefront-web.md,
-  son contrat dans openapi/storefront.yaml.
+  The needs of this screen are in needs/storefront-web.md,
+  its contract in openapi/storefront.yaml.
 -->
