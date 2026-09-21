@@ -281,13 +281,41 @@ absence of `U` rules out six-letter codes that form an unfortunate word — a co
   better-auth; partial uniqueness calls for a **PostgreSQL partial unique index** on
   `status = 'pending'`.
 
-**A single alphabet for both codes is rejected, and the reason is the channel.** The seat code is
-**dictated over the phone**; the pairing code is **read from three metres**. The two confusion
-sets do not overlap: one is phonetic (`B`/`P`/`V`, `M`/`N`, `F`/`S`), the other purely visual. A
-shared alphabet would have to exclude the **union** of both, and would serve neither one
-properly. What must be shared is the **shape** — a declared alphabet *plus* its normalisation table —
-and it lives in `@arthome/core` as two named instances: `PAIRING_CODE`, and the seat code's own
-constant, whose name belongs to `backend-domain`. Neither cites the other.
+**The seat code uses a different alphabet, and the difference is the point.** `@arthome/core`
+exports `SEAT_CODE_ALPHABET` and `SEAT_CODE_BODY_LENGTH` from `src/ticketing/index.ts`; the
+composed form is built by `seatCode(body)`, checked by `isSeatCode(value)` and normalised by
+`normalizeSeatCodeInput(raw)`, with the prefix and the shape regex deliberately module-private.
+**This ADR does not restate the value of `SEAT_CODE_ALPHABET`** — a second copy of 32 characters
+in a prose document is exactly the parallel literal table that E2 found on eight fields, wearing
+a different costume. Read it from `@arthome/core`, and assert against the import, never against a
+transcription.
+
+The two alphabets are **deliberately different, because the two codes fail differently.**
+
+| | `PAIRING_CODE` (this ADR) | `SEAT_CODE_ALPHABET` (ticketing) |
+|---|---|---|
+| Channel | **read once off a television, then discarded** | **dictated to support, retyped off a printed confirmation months later** |
+| Optimises for | **not being misread** | **being recoverable** |
+| Confusable pairs | **both members excluded** | **one member kept, the other mapped to it** |
+| Normalisation | 8 rows, and `0`/`O` has no target by design | 3 rows, exhaustive over the excluded set |
+
+A code that is read once and thrown away can afford to remove an ambiguous glyph class outright:
+nothing is ever brought back, so ambiguity is pure loss (§5.1 above). A code that comes back —
+spoken aloud, or typed from paper — cannot. **Recoverability requires that every confusable
+character have exactly one valid target**, which is possible only if one member of each pair
+survives in the alphabet. Excluding both, as I do, would leave someone who says "O" with no valid
+value to be corrected to. `backend-domain` reports that a first draft of the seat code made
+precisely that mistake.
+
+The two therefore converge on one rule and diverge on everything below it: **correct
+exhaustively, or not at all.** `normalizeSeatCodeInput` strips spaces, hyphens and a leading
+prefix, uppercases, applies its three mappings and **corrects nothing else** — a character still
+outside the alphabet afterwards makes `isSeatCode` return false, because "this code does not
+exist" is better than a neighbouring seat found by accident. `PAIRING_CODE` does the same with
+`PAIRING_CODE_AMBIGUOUS_GLYPH`, for the same reason and with a lighter consequence: a wrong
+pairing correction merely fails, where a wrong seat correction finds someone else's seat. That
+asymmetry is also why the two treat `U` differently — I map `U`→`V`, ticketing refuses `U`
+outright. Neither constant cites the other, and neither should.
 
 ### 5.2 The validity duration is **served**, never copied
 
@@ -776,6 +804,15 @@ This is the question explicitly asked. **Two token systems, five points of conta
    **It does not come from ignorance, it comes from the smaller number being easier to write** —
    which is why it will happen again, and why a constant needs an owning document rather than a
    careful author.
+
+   The same shape has a second form, found in this very document: **a sentence that needs a fact
+   its author does not have will fill the gap with a plausible generalisation.** §5.1 claimed for
+   two drafts that the pairing code and the seat code "share a shape", because I was holding a
+   placeholder for an identifier I had not been given — and a generalisation reads so much better
+   than an admission that nobody rereads it. The two codes share no alphabet and no normalisation
+   table. The remedy is not more care either: it is to **name the hole** — write "whose name
+   belongs to `backend-domain`" and leave it ugly — because a named hole gets filled and a
+   definite description that reads fine does not.
 
 5. **The clocks.** All issuers are NTP-disciplined; declared tolerance **± 30 s** on both sides;
    `exp`/`iat` numeric (RFC 7519) inside tokens, ISO in API payloads. A CDN edge whose clock
