@@ -966,3 +966,55 @@ compared them — which is the whole argument for gate 18 in one line.
 **The count of this job has now been wrong three times**: mine at 12, `backend-domain`'s at 103,
 `backend-contracts`' machine-produced 54 across 20 vocabularies. Only the last was measured on the
 right population by the right method. *Take the machine's number.*
+
+### D-035 — The suffix premise was empirically false, and `displayState` resolves mechanically
+
+**`backend-contracts` answered `displayState` by comparing every core vocabulary against every
+other, rather than by arguing about names. I re-ran the comparison and it is larger than it
+reported.**
+
+**Twenty values of 183 are already shared across two or more of the 44 vocabularies**, and
+`arthome-check-enums` is green on all of them:
+
+| value | vocabularies |
+|---|---|
+| `cancelled` | `SUBSCRIPTION_STATES` `DATE_OUTCOMES` `DISPLAY_STATES` `INCIDENT_KINDS` |
+| `interrupted` | `RUN_STATES` `DATE_OUTCOMES` `DISPLAY_STATES` `INCIDENT_KINDS` |
+| `scheduled` | `PAYOUT_STATES` `PUBLICATION_STATES` `DISPLAY_STATES` |
+| `none` | `REPLAY_POLICIES` `LANGUAGE_DEPENDENCIES` `AUDIENCE_SANCTIONS` |
+| **`moderation`** | **`MEMBER_ROLES` `CREW_ROLES`** |
+| `director` `video` `sound` | `MEMBER_ROLES` `CREW_ROLES` |
+| …twelve more | |
+
+**So D-027's premise was false, and I accepted it without checking.** It records `moderation_page`
+winning because *"two closed vocabularies cannot share a value here, since `arthome-check-enums`
+discovers values rather than vocabularies"*. The codebase shares twenty, the gate is green, and
+**`moderation` itself is one of them** — shared between `MEMBER_ROLES` and `CREW_ROLES`, which is
+the exact collision the suffix was invented to avoid.
+
+**The conclusion survives on a different argument, and it is `backend-contracts`' one.** Inside
+`EffectiveRights`, `roles: [moderation]` and `navigation: [moderation]` would sit **in the same
+payload meaning two different things**. That is a fact about the wire, not about a gate, and it
+passes the criterion set in D-033: a suffix goes on the wire only if it reads correctly on its own
+merits, and disambiguating two fields of one payload is a merit.
+
+*A conclusion that survives the failure of its stated reason was reached for a reason nobody wrote
+down.* The right record is the surviving argument, not the comfortable one.
+
+**`displayState`, resolved.** `DISPLAY_STATES` already shares six of its eleven members with other
+vocabularies and disambiguated the other five — so the disambiguation was a **habit**, and this very
+vocabulary broke the supposed rule six times over. Two of the four also failed on their own merits:
+`on_air_live` says live twice, and **`scheduled_soon` was factually wrong** — `displayStateOf`
+returns it whenever `now < roomOpensAt`, which includes a date six months out. *A card that says
+"soon" about next spring is a card that lies.*
+
+Core has converted: `draft` `reserve` `scheduled` `technical` `room_open` `live` `replay` `ended`
+`postponed` `cancelled` `interrupted`. **What remains is the defect underneath the naming
+question** — both contracts declare eight and cannot express `draft`, `reserve` or `technical`,
+which a **studio** date is in by definition. The contracts gain the three.
+
+**And the method is the transferable part.** `backend-contracts` put it better than the finding:
+reading both sides **as data** — core's `as const` arrays parsed out of TypeScript, the contracts
+parsed out of YAML — and comparing sets. *A grep finds what you thought to look for; a set
+difference finds what nobody thought to look for.* Six shared values and two factually wrong names
+fell out of a question that was only ever about hyphens.
