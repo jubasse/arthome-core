@@ -900,3 +900,69 @@ you are choosing between is decoration, however honestly it was run.
 **And `auth` took the half that is its own**, which completes the diagnosis: 924 and 966 were
 relayable as facts because they had been reported **without a revision attached**, in a file changing
 under both of us. *A number stated without its revision is an invitation to be quoted back.*
+
+### D-034 — `displayState` is two vocabularies, and the `shared/` port is a migration not a codec
+
+**Two findings from `backend-contracts`, one of which is not a spelling question at all.**
+
+**1. `displayState` — verified, and worse than reported.**
+
+| | |
+|---|---|
+| `@arthome/core` `DISPLAY_STATES` | `draft` `reserve` `scheduled-soon` `technical` `room-open` `on-air-live` `replay-available` `finished` `postponed` `cancelled` `interrupted` — **11** |
+| both contracts | `scheduled` `room_open` `live` `replay` `ended` `postponed` `cancelled` `interrupted` — **8** |
+
+**Three members match. Three exist only in core** (`draft`, `reserve`, `technical`). One differs by
+separator (`room-open`). **Four differ by word**: `scheduled-soon`/`scheduled`,
+`on-air-live`/`live`, `replay-available`/`replay`, `finished`/`ended`.
+
+This is not a separator divergence. It is **two independently authored vocabularies for the same
+field**, and it is the field critical rule 2 was written for — *any value displayed twice comes from
+`@arthome/core`*. `displayStateOf` can return a value neither contract can express. Rule 10 means a
+client degrades rather than breaks, so it will never announce itself; the contract simply lies about
+its own vocabulary.
+
+**`backend-contracts` filed it as "probably harmless by construction, since a draft date never
+reaches the storefront" and then said the thing that makes it a finding**: *"probably harmless by
+construction" is the sentence that precedes every one of these.* It is right. And note the **studio**
+contract carries the same eight — yet `draft`, `reserve` and `technical` are studio states by
+definition.
+
+**To reconcile, not to patch**: either the contracts declare what `displayStateOf` can actually
+return, or `displayStateOf` is not the wire value and something else is. `backend-domain` and
+`backend-contracts` together; core is the source, so the wire moves unless the domain is wrong.
+
+**2. `co-production`, and the distinction that resolves it.**
+
+`backend-contracts` unified the twin on **kebab**, against D-033, and **flagged it rather than
+complying** — which is the right order and the reason it gets a ruling instead of a correction. Its
+argument: K6 pins that family's spelling to `shared/` "to the letter", so converting the wire while
+the source stays kebab is the transform D-033 forbids.
+
+**The argument is good and the conclusion is wrong, because two different things were being called a
+transform.**
+
+- **`shared/` → `@arthome/core` is a one-time port.** It already normalises by design: D1 drops
+  `light` and adds `essential`, D7 turns relative offsets into ISO instants. A port that corrects
+  the vocabulary and the shape is not made unfaithful by normalising a separator.
+- **`core` ↔ the wire is a live boundary.** *That* is where a transform becomes a parallel table
+  with a codec's costume, because both sides run at the same time and both can drift.
+
+`shared/` is a mockup fixture. It is not a runtime participant and never will be. So: **`shared/`
+does not convert, `core` converts, both contracts converge on `snake_case`, and the whole
+entitlements family moves in one commit.**
+
+**What K6 actually established is untouched by this.** K6's defect is the **divergence** —
+`opens.includes('multi-screen')` against a payload carrying `multi_screen` returns false in silence,
+and `adr-auth.md` §7.1 calls that an authorization defect rather than a display defect. It is closed
+by the two sides agreeing, and D-033 decides which way. K6 never required kebab; it required one
+spelling.
+
+**And the same defect is live in a second family.** `CHAT_MODES`: core exports `'read-only'`, both
+contracts carry `read_only`, so `mode === ChatMode.READ_ONLY` is **false in silence** and chat falls
+to the else-branch. It gates what a viewer may do in a live chat. Neither side knew until a gate
+compared them — which is the whole argument for gate 18 in one line.
+
+**The count of this job has now been wrong three times**: mine at 12, `backend-domain`'s at 103,
+`backend-contracts`' machine-produced 54 across 20 vocabularies. Only the last was measured on the
+right population by the right method. *Take the machine's number.*

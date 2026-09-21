@@ -1470,6 +1470,24 @@ overlap the matcher paired a display-state list with `DATE_OUTCOMES` and invente
 members. **A guessing gate gets switched off.** The cost is honest and it is not small: **148 blocks need the key**, and five of them sit inside
 YAML flow mappings where it cannot be added by inserting a line.
 
+**a-bis. When a gate needs data that does not exist yet, look for the check that needs no data.**
+
+The `-source` key is weeks away for 149 blocks, so a gate that depends on it does nothing until the
+migration lands. But one class of drift needs no annotation at all: **the same value spelled two ways
+across the two contracts.** Group every member by its separator-insensitive form, fail on any group
+holding more than one spelling — no source key, no domain comparison, live today across all 149.
+
+It found `co-production` in `storefront.yaml` against `co_production` in `studio.yaml`: neither
+document wrong on its own, together meaning a storefront client and a studio client read different
+strings for the same thing. It was found once by hand in a one-off count; the check turns that
+finding into a **class**, which is the difference between noticing and covering.
+
+And the way to prove such a check: **it reproduced exactly the one known case and nothing else.** A
+new gate that finds more than the known case on its first run is usually finding false positives.
+
+Most drift classes have a formulation that needs no data. It is worth looking for it before accepting
+that a gate has to wait.
+
 **b. A vocabulary with no domain counterpart says so, in place.**
 
 ```yaml
@@ -1483,9 +1501,22 @@ that does not say why is not an exception, it is a hole.
 
 **c. The migration is a ratchet, not a truce.** `tools/vocabulary-migration.json` records how many
 blocks are still unannotated, so the gate is useful **today** against contracts nobody has annotated
-yet. Two properties make it a ratchet: the number may go **down and never up**, so new drift fails
-immediately; and it carries a `removeAfter` date the gate enforces, so it cannot be forgotten. Same
-shape as §7.6, for the same reason.
+yet. Three properties make it a ratchet: the number may go **down and never up**, so new drift fails
+immediately; it carries a `removeAfter` date the gate enforces, so the migration cannot be forgotten;
+and it carries a `rebaselineAfter` date that dates the **slack** separately, so an allowance set above
+the real count cannot sit there quietly. Same shape as §7.6, for the same reason.
+
+**And it is set from a measurement, never from a prediction** — which this file learned by getting it
+wrong within the hour. The allowance was first set to 148 while the observed count was 143, because
+five blocks were unparseable and 148 was a *prediction* of the count once they were quoted. They were
+quoted; the real count was **149**; and the gate went red **because a defect had been fixed** — the one
+thing a ratchet must never do. The prediction was off by one because the contracts had gained a block
+in the meantime, which is precisely what a prediction cannot see.
+
+So: **when a fix changes the count, re-baseline in the same commit as the fix.** An allowance is a
+record of an observation, not a forecast. The `rebaselineAfter` date exists because the first instinct
+— "the slack disappears on its own" — is the shape of a fact that is true the day it is written and
+false the next.
 
 **What it found on its first real run, which nobody was looking for.** In five blocks a vocabulary
 member is **not a string**:
@@ -1503,6 +1534,23 @@ by the parser**, and a vocabulary of short lowercase words is exactly where that
 The gate reports this as its own class and **skips the agreement check for that block**: until the
 members are strings, comparing them is meaningless, and two messages for one cause invites fixing
 the wrong one — the same principle as §4.5.1's broken-chain rule.
+
+**Where the YAML-type rule lives, which is a different question from where it was found.** "Every
+vocabulary and enum member must be a string" is the **contract's own conformance rule**, so it belongs
+in `check-openapi.py`, which travels with the format and checks the contract against itself. This gate
+finding it first is what a new gate should do; it is not an argument for the rule living here.
+
+This gate nevertheless keeps its own boolean check, and that is **not** the same rule duplicated —
+which would be the parallel-table fault in gate form. The distinction is worth being exact about:
+
+- `check-openapi.py` asserts a **rule**: a member must be a string, because a contract that says
+  `False` where it means `'off'` is wrong for every consumer.
+- `check-vocabulary.py` asserts a **precondition**: it cannot compare a boolean to a string, so it
+  must detect one to know that it is skipping the block, and say so rather than silently pass.
+
+One is a statement about the artefact; the other is a guard on an operation. A guard that disappeared
+because "the other gate covers it" would turn this gate's skip into a silent pass — the failure mode
+every section of this document is about.
 
 **Where it lives, and why not in `@arthome/tooling`.** In `tools/`, in Python, next to
 `check-openapi.py`. Python because it reads OpenAPI and a gate that reads OpenAPI with a real YAML

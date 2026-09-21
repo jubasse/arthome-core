@@ -408,6 +408,7 @@ paths:
                           tickets,
                           store,
                           replays,
+                          team,
                           journal,
                           help,
                         ]
@@ -2184,7 +2185,7 @@ paths:
               required: [expectedVersion]
               properties:
                 expectedVersion: { type: integer }
-                mode: { type: string, enum: [open, emoji, read_only, off] }
+                mode: { type: string, enum: [open, emoji, read_only, 'off'] }
                 filterSeverity: { type: string, enum: [low, medium, high] }
                 slowModeSec: { type: integer, minimum: 0, maximum: 300 }
                 holdersOnly: { type: boolean }
@@ -3511,7 +3512,7 @@ paths:
                     no other verdict has been rendered — including when a colleague holds the row
                     claimed. Refused only by `MODERATION_ALREADY_SETTLED`, which carries the winning
                     verdict and its author.
-                reason: { type: string, enum: [spam, insult, spoiler, off-topic, harassment] }
+                reason: { type: string, enum: [spam, insult, spoiler, off_topic, harassment] }
                 muteUntil:
                   type: [string, "null"]
                   format: date-time
@@ -3661,7 +3662,7 @@ paths:
               properties:
                 kind: { type: string, enum: [none, muted, banned] }
                 expiresAt: { type: [string, "null"], format: date-time }
-                reason: { type: string, enum: [spam, insult, spoiler, off-topic, harassment] }
+                reason: { type: string, enum: [spam, insult, spoiler, off_topic, harassment] }
             example: { kind: muted, expiresAt: "2026-09-21T20:30:00Z", reason: harassment }
       responses:
         "200":
@@ -5149,7 +5150,7 @@ paths:
                               chatMode:
                                 {
                                   type: string,
-                                  x-arthome-vocabulary: [open, emoji, read_only, off],
+                                  x-arthome-vocabulary: [open, emoji, read_only, 'off'],
                                 }
                               version: { type: integer }
                           merchIntegration:
@@ -5227,7 +5228,7 @@ paths:
                     slowModeSec: { type: integer, minimum: 0, maximum: 300 }
                     holdersOnly: { type: boolean }
                     retroactiveFilter: { type: boolean }
-                    chatMode: { type: string, enum: [open, emoji, read_only, off] }
+                    chatMode: { type: string, enum: [open, emoji, read_only, 'off'] }
                 broadcastDefaults:
                   type: object
                   properties:
@@ -6373,7 +6374,7 @@ components:
               [
                 agenda,
                 dashboard,
-                moderation-page,
+                moderation_page,
                 crew,
                 events,
                 stream,
@@ -7455,7 +7456,7 @@ components:
         channelId: { type: string, format: uuid }
         state: { type: string, x-arthome-vocabulary: [reported, claimed, settled] }
         reason:
-          { type: string, x-arthome-vocabulary: [spam, insult, spoiler, off-topic, harassment] }
+          { type: string, x-arthome-vocabulary: [spam, insult, spoiler, off_topic, harassment] }
         reportsCount: { type: integer }
         atMediaSec: { type: integer }
         sentAt: { type: string, format: date-time }
@@ -7530,7 +7531,7 @@ components:
       required: [dateId, mode, filterSeverity, slowModeSec, holdersOnly, locked]
       properties:
         dateId: { type: string, format: uuid }
-        mode: { type: string, x-arthome-vocabulary: [open, emoji, read_only, off] }
+        mode: { type: string, x-arthome-vocabulary: [open, emoji, read_only, 'off'] }
         filterSeverity:
           type: string
           description: |

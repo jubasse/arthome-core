@@ -960,6 +960,34 @@ paths:
         forbidden outside inter-service traffic, it is the only one possible. For Next's server
         rendering, the same tags feed `revalidateTag`: they are **named by the contract**, never
         invented by a surface.
+
+        ## This feed requires a credential, and the public side has no feed at all
+
+        **The `401` is a ruling, not an oversight** (D-022's rule applied). This path answers "what
+        changed **for you** since your cursor". A public invalidation stream would answer "what
+        changed in the catalogue since T". They are **two resources**, and their cacheability
+        requirements are opposite: this one must `Vary` on the credential and can never be
+        edge-cached; a public one is worthless unless it is. Served from one path, the public half
+        inherits the private half's `Vary`, so Next's server rendering would reach origin on every
+        revalidation check — which is most of what this path exists to save.
+
+        The direction was chosen on reversibility. Making this path anonymous **cannot be undone**:
+        once clients call it without a credential, the credential cannot come back. Adding a
+        separate public path later is **purely additive**.
+
+        **The cost, named rather than shrugged at.** Signed-out pages have no invalidation path and
+        fall back to **time-based revalidation** on their family's freshness — 60 s for `home` and
+        the lists, 300 s for `category` and `artist` (§ the freshness table). A catalogue change is
+        therefore visible to a signed-out reader in **up to one freshness window**, where a feed
+        would cut it to the push latency. That is a performance property, not a contract property,
+        and it is the number to beat: a measurement showing a public page stale past its window, or
+        an origin-hit cost that the time-based fallback makes unacceptable, reopens this.
+
+        **What it would take to fill the gap, and why the shape is not written here.** Nobody has
+        designed a public catalogue-change stream: whether it is keyed on time or on entity, what
+        window it covers, what a client that has been away for a week receives, and whether it is a
+        feed at all rather than an `ETag` on each catalogue read. What has no source does not enter
+        the contract, so the gap is named and the shape is left alone.
       x-arthome-maturity: stable
       x-arthome-upstream: [realtime]
       # This feed queries NO service: it reads the Redis resume buffer that the real-time
@@ -3277,7 +3305,7 @@ paths:
                     in the i18n catalogue; it had disappeared, as had `insult`. `hate` and `filter` had been
                     invented, and `filter` is not a reason but an **origin** — the contract already carries it
                     correctly elsewhere, and putting it in `reason` as well gave one field two axes.
-                  enum: [spam, insult, spoiler, off-topic, harassment]
+                  enum: [spam, insult, spoiler, off_topic, harassment]
             example: { reason: harassment }
       responses:
         '202':
@@ -5504,7 +5532,7 @@ components:
             audioDescription: { type: boolean }
             liveOpenBehaviour:
               type: string
-              x-arthome-vocabulary: [peek, muted, off]
+              x-arthome-vocabulary: [peek, muted, 'off']
             chatOpenByDefault: { type: boolean }
             readingTimezone:
               type: string
@@ -5792,10 +5820,10 @@ components:
             reasonCode:
               type: [string, 'null']
               description: 'A **code**, never a sentence. The current data carries `label`/`labelEn` authored inside the data: an i18n leak (E8).'
-              x-arthome-vocabulary: [co-production, broadcaster, festival]
+              x-arthome-vocabulary: [co_production, broadcaster, festival]
         chatMode:
           type: string
-          x-arthome-vocabulary: [open, emoji, read_only, off]
+          x-arthome-vocabulary: [open, emoji, read_only, 'off']
         media: { $ref: '#/components/schemas/MediaSet' }
         languageDependency:
           type: string
@@ -6474,22 +6502,31 @@ components:
           items:
             type: string
             description: |
-              **Kebab spelling, that of the authoritative source.** The contract carried `free_dates`,
-              `no_ads`, `one_live_month`, `all_lives`, `multi_screen` in snake case, where
-              `shared/catalogue.json` — declared authoritative on vocabulary — carries `free-dates`,
-              `no-ads`, `one-live-month`, `all-lives`, `multi-screen`.
+              **One spelling, and only one — which is the part that is not cosmetic.** This is the
+              vocabulary `decideWatch` depends on. An `opens.includes('multi-screen')` over a payload
+              carrying `multi_screen` returns `false` **silently**, and everyone falls back to one
+              screen — the shape of the authorisation defect the contract had fixed on **plans** and
+              reintroduced on **openings**. Whichever spelling wins, both sides must carry it.
 
-              **This was not cosmetic**: it is the vocabulary `decideWatch` depends on. An
-              `opens.includes('multi-screen')` over a payload carrying `multi_screen` returns `false`
-              **silently**, and everyone falls back to one screen — exactly the shape of the authorisation
-              defect the contract had fixed on **plans** and reintroduced on **openings**.
+              **The rule this motive used to give has been reversed, and it is recorded rather than
+              quietly deleted.** It read "kebab spelling, that of the authoritative source", because
+              `shared/catalogue.json` carries `free-dates`, `no-ads`, `one-live-month`, `all-lives`,
+              `multi-screen`. The separator ruling settles it the other way: the wire is
+              `snake_case`, D2's authority over `catalogue.json` is over **which names exist and what
+              they mean**, not over their lexical form, and `shared/` is a mockup that will never be
+              a wire.
+
+              **These five members have not converted yet**, and neither has `@arthome/core`. They
+              convert with the rest of the migration, in one move with the domain — converting the
+              wire here alone would reintroduce, in the other direction, the silent `includes()`
+              mismatch this paragraph exists to describe.
             x-arthome-vocabulary:
               [browse, trailers, free-dates, replays, no-ads, one-live-month, all-lives,
                multi-screen, archive]
         seatDiscountBps: { type: integer, examples: [2000] }
         concurrentStreamsAllowed:
           type: integer
-          description: '`multi_screen` is an **execution constraint**, not a marketing line: `ticketing` publishes the ceiling, `streaming` enforces it.'
+          description: '`multi-screen` is an **execution constraint**, not a marketing line: `ticketing` publishes the ceiling, `streaming` enforces it.'
 
     Subscription:
       type: object
@@ -6621,7 +6658,7 @@ components:
               id: { type: string }
               language: { type: string }
               kind: { type: string, x-arthome-vocabulary: [subtitles, captions, surtitles] }
-        chatMode: { type: string, x-arthome-vocabulary: [open, emoji, read_only, off] }
+        chatMode: { type: string, x-arthome-vocabulary: [open, emoji, read_only, 'off'] }
         chatRateLimitPerSecond: { type: integer }
         incident: { $ref: '#/components/schemas/Incident' }
         date: { $ref: '#/components/schemas/DateCard' }

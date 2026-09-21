@@ -295,6 +295,42 @@ def main(files):
                 f"      migration or re-date the allowance with a reason."
             )
 
+        # ── The allowance must not stay loose ────────────────────────────────
+        # A ratchet set above the real count is slack, and slack is a promise
+        # nobody owns. This one is deliberate and temporary: five blocks are
+        # unparseable today (the YAML boolean trap), so they are not counted, and
+        # quoting them RAISES the count. Tightening the allowance now would turn
+        # the gate red for fixing a defect, which a ratchet must never do.
+        #
+        # So the slack is dated rather than promised. After `rebaselineAfter`,
+        # any gap between the allowance and the real count is a failure: by then
+        # the count has settled and the allowance should equal it.
+        slack = allowed - len(undeclared)
+        rebaseline_after = ratchet.get("rebaselineAfter")
+        if slack > 0:
+            if not rebaseline_after:
+                problems.append(
+                    f"{RATCHET}\n"
+                    f"      `undeclaredAllowed` is {allowed} but only {len(undeclared)} block(s) are\n"
+                    f"      undeclared — {slack} unit(s) of slack, with no `rebaselineAfter` date.\n"
+                    "      Slack with no deadline is an allowance that will never be tightened.\n"
+                    "      Either lower it to the real count or date the slack."
+                )
+            elif str(rebaseline_after) < date.today().isoformat():
+                problems.append(
+                    f"{RATCHET}\n"
+                    f"      `undeclaredAllowed` is still {allowed} but only {len(undeclared)} block(s)\n"
+                    f"      are undeclared, and the re-baseline was due {rebaseline_after}\n"
+                    f"      (today is {date.today().isoformat()}).\n"
+                    f"      Lower `undeclaredAllowed` to {len(undeclared)}. A ratchet that keeps its\n"
+                    "      slack stops being a ratchet."
+                )
+            else:
+                notes.append(
+                    f"allowance {allowed} against {len(undeclared)} undeclared — {slack} unit(s) of "
+                    f"slack, to be re-baselined by {rebaseline_after}."
+                )
+
     print(
         f"arthome-check-vocabulary: {len(core)} domain vocabularies, "
         f"{declared + exempt + len(undeclared)} contract block(s) — "
