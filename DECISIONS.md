@@ -582,3 +582,48 @@ La suppression de la liste a révélé **six opérations exemptées sans que per
 pourquoi**, plus deux que la liste ne couvrait pas. Toutes légitimes — et c'est ce qui rend la
 découverte utile : *une liste de noms sans motifs est indistinguable d'une liste de noms sans
 raisons.*
+
+---
+
+## Après la session — 21 septembre 2026
+
+### D-025 — Expo pour les deux surfaces React Native
+
+**Décision du chef de projet : Expo**, pour `storefront-mobile` et `storefront-tv`.
+
+**Ce que cela ferme.** D-001 laissait ouvert le choix Expo / React Native nu, et notait que le
+trou d'orchestrateur en dépendait. Il est comblé : **`expo-overview` est l'orchestrateur** des deux
+surfaces, et la règle « orchestrateur si existant, sinon skills spécialisées au cas par cas »
+retrouve son premier terme. Les huit coéquipiers ont désormais tous une porte d'entrée.
+
+La banque compte **26 skills Expo/EAS** derrière cet orchestrateur, contre 8 skills React Native
+nues sans porte d'entrée. Le choix améliore donc aussi la couverture.
+
+**Ce que cela ne change pas.** `react-native-tv-best-practices` reste la skill principale de la TV
+— elle vise explicitement « react-native-tvos, **Expo TV** », donc elle valait déjà dans les deux
+hypothèses. Et l'authentification reste indifférente : `auth` a établi que le client officiel de
+better-auth devient inutilisable puisque le BFF projette la session en `ViewerContext`, donc
+`@better-auth/expo` n'est pas installé et le risque R4 est éteint quel que soit ce choix.
+
+**Ce qu'il faut vérifier au palier mobile.** Le dossier de passation signalait un conflit documenté
+entre `react-native-tvos` et les autres projets Expo d'un même espace de travail. En multi-dépôts
+la question ne se pose plus telle quelle (A5), mais **Expo TV et son support de `react-native-tvos`
+sont à vérifier sur la version retenue** avant d'engager la surface TV.
+
+### D-026 — Rappel : gRPC a été écarté, `proto/` sert les événements
+
+Consigné parce que la question s'est posée après coup, et que `proto/` peut prêter à confusion.
+
+**Le transport retenu est HTTP/JSON décrit en OpenAPI.** `transport.md` : *« Un document OpenAPI
+par service, à côté des deux documents de BFF. Pas de gRPC. »*
+
+**`proto/` porte 109 types et zéro `service`** : ce sont les schémas d'**événements Kafka**,
+outillés par `buf`. Protobuf sert le journal d'événements, jamais les appels synchrones.
+`backend-domain` a délibérément laissé `service` vide pour ne pas préempter une décision qui ne lui
+revenait pas.
+
+**Le nombre qui a tranché n'est pas 192 mais 1 et 4** : les deux avantages réels de gRPC — délai
+propagé, multiplexage — paient sur la **profondeur** d'une chaîne, et cette profondeur est **1 par
+construction**, puisque aucun appel ne va entre services. Un délai n'a personne à qui se propager.
+Confirmé par le `skeptic`, y compris à travers un modèle de lecture projeté : c'est une table
+locale du service appelé, elle n'ajoute aucun saut réseau.
