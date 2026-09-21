@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Le domaine, les contrats et l'outillage partage d'Arthome.",
+  "description": "The Arthome domain, contracts and shared tooling.",
   "license": "UNLICENSED",
   "packageManager": "pnpm@12.4.2",
   "engines": {
@@ -16,19 +16,21 @@
     "lint": "eslint . --max-warnings 0 --report-unused-disable-directives",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check:prettier-conflict": "eslint-config-prettier packages/tooling/eslint/base.js",
+    "check:prettier-conflict": "arthome-check-prettier-conflict",
     "check:enums": "arthome-check-enums",
+    "check:language": "arthome-check-language",
     "check:core-entry": "node tools/check-core-entry.mjs",
     "check:versions": "arthome-check-versions",
     "check:tsconfig": "arthome-check-tsconfig",
     "check:openapi": "python3 tools/check-openapi.py openapi/storefront.yaml openapi/studio.yaml",
-    "verify": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:core-entry && pnpm run check:openapi && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test",
-    "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:core-entry && pnpm run check:openapi"
+    "verify": "pnpm run verify:offline && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test",
+    "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:language && pnpm run check:core-entry && pnpm run check:openapi"
   },
   "devDependencies": {
     "@arthome/tooling": "workspace:*",
     "@eslint/js": "10.0.1",
     "eslint": "10.11.0",
+    "eslint-config-prettier": "10.1.8",
     "prettier": "3.9.8",
     "typescript": "6.0.3",
     "vitest": "5.0.1"

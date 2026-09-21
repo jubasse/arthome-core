@@ -1,30 +1,31 @@
 // @arthome/tooling/eslint/base
 //
-// Socle ESLint des sept depots. Configuration a plat (ESLint 9 et 10 ; l'ancien
-// format eslintrc n'existe plus en 10).
+// The ESLint floor for all seven repositories. Flat config (ESLint 9 and 10; the
+// old eslintrc format no longer exists in 10).
 //
-// ⚠ CE FICHIER NE CONTIENT AUCUNE REGLE DE FORMATAGE, ET NE DOIT JAMAIS EN CONTENIR.
-//   Prettier possede le formatage, ESLint ne possede que la qualite de code.
-//   Recouvrement zero, verifie par `npx eslint-config-prettier <fichier>` et non
-//   par la discipline. Voir architecture/code-conventions.md section 3.
+// ⚠ THIS FILE CONTAINS NO FORMATTING RULE, AND MUST NEVER CONTAIN ONE.
+//   Prettier owns formatting; ESLint owns code quality only. Zero overlap,
+//   verified by `npx eslint-config-prettier <file>` rather than by discipline.
+//   See architecture/code-conventions.md section 3.
 //
-// ⚠ `prettier` (eslint-config-prettier/flat) N'EST PAS inclus ici : il doit etre le
-//   DERNIER element du tableau final du depot, apres les prereglages de pile et
-//   apres les surcharges locales. Place avant, il ne desactive rien de ce qui suit.
-//   Chaque depot l'importe lui-meme et le met en queue. Voir section 3.2.
+// ⚠ `prettier` (eslint-config-prettier/flat) IS NOT included here: it must be the
+//   LAST element of the repository's final array, after the stack presets and
+//   after the local overrides. Placed earlier, it switches off nothing that comes
+//   after it — and it fails SILENTLY. Each repository imports it and puts it at
+//   the end. See section 3.2.
 //
-// ⚠ eslint-plugin-prettier est PROSCRIT : faire tourner Prettier comme une regle
-//   ESLint est le montage qui CREE les conflits qu'on veut eviter. Section 3.3.
+// ⚠ eslint-plugin-prettier is FORBIDDEN: running Prettier as an ESLint rule is
+//   the very setup that CREATES the conflicts we are avoiding. Section 3.3.
 
 import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import importX from 'eslint-plugin-import-x';
 import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
+import importX from 'eslint-plugin-import-x';
+import tseslint from 'typescript-eslint';
 
-/** Fichiers TypeScript et JavaScript sous contrat. */
+/** TypeScript and JavaScript files under contract. */
 export const SOURCE_FILES = ['**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'];
 
-/** Ce qu'aucun depot ne lint, jamais. */
+/** What no repository ever lints. */
 export const COMMON_IGNORES = [
   '**/node_modules/**',
   '**/dist/**',
@@ -35,30 +36,27 @@ export const COMMON_IGNORES = [
 ];
 
 /**
- * Le socle, sous forme de tableau a plat.
- * Un depot l'etale en tete de son eslint.config.js, puis ajoute sa pile, puis ses
- * surcharges, puis `eslint-config-prettier/flat` en dernier.
+ * The floor, as a flat-config array.
+ * A repository spreads it at the head of its eslint.config.js, then adds its
+ * stack, then its overrides, then `eslint-config-prettier/flat` last.
  */
 export const base = tseslint.config(
   { ignores: COMMON_IGNORES },
 
-  // ---------------------------------------------------------------- recommandations
+  // ------------------------------------------------------------- recommended
   {
     files: SOURCE_FILES,
     extends: [js.configs.recommended],
   },
 
-  // ------------------------------------------------------- TypeScript, avec les types
-  // Les regles typees sont la raison pour laquelle Biome a ete ecarte (D-013) :
-  // no-floating-promises, no-misused-promises et await-thenable n'existent que
-  // parce qu'un verificateur de types est branche. `projectService` est donc
-  // obligatoire, et un depot qui l'eteint pour gagner du temps annule la decision.
+  // ------------------------------------------------------ TypeScript, with types
+  // The type-aware rules are the reason Biome was ruled out (D-013):
+  // no-floating-promises, no-misused-promises and await-thenable only exist
+  // because a type checker is wired in. So `projectService` is mandatory, and a
+  // repository that switches it off to save time has cancelled the decision.
   {
     files: ['**/*.{ts,tsx,mts,cts}'],
-    extends: [
-      ...tseslint.configs.recommendedTypeChecked,
-      ...tseslint.configs.stylisticTypeChecked,
-    ],
+    extends: [...tseslint.configs.recommendedTypeChecked, ...tseslint.configs.stylisticTypeChecked],
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -66,24 +64,24 @@ export const base = tseslint.config(
     },
   },
 
-  // -------------------------------------------------------- TypeScript non negociable
+  // ------------------------------------------------- TypeScript, non-negotiable
   {
     files: ['**/*.{ts,tsx,mts,cts}'],
     rules: {
-      // `any` : interdit. L'exception est le code genere, et elle se declare
-      // dans le depot avec sa raison (section 4.5).
+      // `any`: forbidden. The exception is generated code, and it is declared in
+      // the repository with its reason (section 4.5).
       '@typescript-eslint/no-explicit-any': 'error',
 
-      // Une assertion non verifiee fait taire le verificateur ; `satisfies` lui
-      // demande de verifier PUIS de conserver le type precis infere.
+      // An unchecked assertion tells the checker to be quiet; `satisfies` asks it
+      // to check AND THEN keep the precise inferred type.
       '@typescript-eslint/consistent-type-assertions': [
         'error',
         { assertionStyle: 'as', objectLiteralTypeAssertions: 'never' },
       ],
       '@typescript-eslint/no-non-null-assertion': 'error',
 
-      // @ts-expect-error avec description, jamais @ts-ignore : la difference est
-      // que @ts-expect-error devient une erreur le jour ou le probleme est resolu.
+      // @ts-expect-error with a description, never @ts-ignore: the difference is
+      // that @ts-expect-error becomes an error the day the problem is fixed.
       '@typescript-eslint/ban-ts-comment': [
         'error',
         {
@@ -95,30 +93,29 @@ export const base = tseslint.config(
         },
       ],
 
-      // enum interdit : emet du code a l'execution (inacceptable dans @arthome/core),
-      // ne survit pas a isolatedModules en `const enum`, ne se serialise pas en JSON,
-      // et ne se retrecit pas comme une union litterale. Section 5.3.
-      '@typescript-eslint/no-restricted-types': 'off',
+      // enum forbidden: emits runtime code (unacceptable in @arthome/core), does
+      // not survive isolatedModules as `const enum`, does not serialise to JSON,
+      // and does not narrow like a literal union. Section 5.3.
       'no-restricted-syntax': [
         'error',
         {
           selector: 'TSEnumDeclaration',
           message:
-            "`enum` est interdit : declarer une union litterale `as const` dans @arthome/core (code-conventions.md section 5.3).",
+            '`enum` is forbidden: declare an `as const` literal union in @arthome/core (code-conventions.md section 5.3).',
         },
       ],
       '@typescript-eslint/no-namespace': 'error',
       '@typescript-eslint/no-require-imports': 'error',
 
-      // Imports de type explicites : un import de type qui survit a la compilation
-      // retient un module entier — la cause de poids mort numero un sur Metro.
+      // Explicit type imports: a type import that survives compilation keeps a
+      // whole module alive — the number one source of dead weight on Metro.
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports', fixStyle: 'separate-type-imports' },
       ],
       '@typescript-eslint/consistent-type-exports': 'error',
 
-      // Erreurs — section 5.6.
+      // Errors — section 5.6.
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/await-thenable': 'error',
@@ -126,8 +123,8 @@ export const base = tseslint.config(
       '@typescript-eslint/use-unknown-in-catch-callback-variable': 'error',
       '@typescript-eslint/return-await': ['error', 'in-try-catch'],
 
-      // Un parametre de constructeur << inutilise >> est utilise par l'injection
-      // NestJS et Angular : args after-used, et on ignore le prefixe _.
+      // An "unused" constructor parameter is used by NestJS and Angular
+      // injection: args after-used, and the _ prefix is ignored.
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -141,18 +138,19 @@ export const base = tseslint.config(
     },
   },
 
-  // ------------------------------------------------------------- imports et leur ordre
-  // Prettier NE TRIE PAS les imports, et c'est delibere : l'ordre des imports
-  // n'est donc pas un domaine partage, il appartient entierement a ESLint et ne
-  // cree aucun conflit. Ce n'est vrai que tant qu'aucun greffon de tri n'est
-  // installe cote Prettier — d'ou l'interdiction en section 3.3 de
-  // prettier-plugin-organize-imports et @trivago/prettier-plugin-sort-imports.
+  // ------------------------------------------------------- imports and their order
+  // Prettier DOES NOT SORT imports, and that is deliberate: import order is
+  // therefore not a shared domain — it belongs entirely to ESLint and creates no
+  // conflict. That holds only as long as no sorting plugin is installed on the
+  // Prettier side, hence the section 3.3 ban on prettier-plugin-organize-imports
+  // and @trivago/prettier-plugin-sort-imports.
   {
     files: SOURCE_FILES,
     plugins: { 'import-x': importX },
     settings: {
-      // Resolveur TypeScript : sans lui, import-x/no-cycle et no-restricted-imports
-      // ne voient pas a travers les `paths` ni les `exports`.
+      // TypeScript resolver: without it, import-x/no-cycle and
+      // no-restricted-imports see through neither `paths` nor `exports` — the
+      // rule runs and finds nothing, which is the worse of the two failure modes.
       'import-x/resolver-next': [createTypeScriptImportResolver({ alwaysTryTypes: true })],
     },
     rules: {
@@ -166,8 +164,8 @@ export const base = tseslint.config(
           alphabetize: { order: 'asc', caseInsensitive: true },
         },
       ],
-      // Sur NestJS en ESM, un cycle est un TDZ au demarrage ou un TS1272, et le
-      // message ne designe pas le cycle.
+      // On NestJS under ESM a cycle is a TDZ at boot or a TS1272, and the message
+      // does not name the cycle.
       'import-x/no-cycle': ['error', { maxDepth: Infinity, ignoreExternal: true }],
       'import-x/no-self-import': 'error',
       'import-x/no-duplicates': 'error',
@@ -180,7 +178,7 @@ export const base = tseslint.config(
             {
               group: ['**/dist/**', '@arthome/*/dist/**', '@arthome/*/src/**'],
               message:
-                "Importer par le nom du paquet, jamais par un chemin interne : passer par `exports`, c'est passer par le contrat.",
+                'Import by package name, never by an internal path: going through `exports` is going through the contract.',
             },
           ],
         },
@@ -188,14 +186,14 @@ export const base = tseslint.config(
     },
   },
 
-  // ------------------------------------------------- deux regles nommees, et eteintes
-  // Ni l'une ni l'autre n'est une regle de formatage : eslint-config-prettier ne
-  // les eteint pas, et c'est normal. Elles ne deviennent nuisibles qu'avec
-  // eslint-plugin-prettier, qui est proscrit ici. On les eteint parce qu'elles
-  // arbitrent un style sans attraper de defaut — pas par crainte d'un conflit.
-  // Ecrites explicitement, et non laissees eteintes par omission : une regle
-  // qu'on decide de ne pas appliquer doit etre visible, sinon le jour ou un
-  // prereglage l'allume personne ne saura si c'etait voulu. Section 3.4.
+  // ------------------------------------------------ two named rules, switched off
+  // Neither is a formatting rule: eslint-config-prettier does not switch them off,
+  // and that is correct. They only become harmful together with
+  // eslint-plugin-prettier, which is forbidden here. We switch them off because
+  // they arbitrate a style without catching a defect — not out of fear of a
+  // conflict. Written explicitly rather than left off by omission: a rule you
+  // decide not to apply must be visible, otherwise the day a preset turns it on
+  // nobody will know whether that was intended. Section 3.4.
   {
     files: SOURCE_FILES,
     rules: {
@@ -204,7 +202,7 @@ export const base = tseslint.config(
     },
   },
 
-  // ------------------------------------------------------- qualite, hors formatage
+  // ------------------------------------------------------ quality, not formatting
   {
     files: SOURCE_FILES,
     rules: {
@@ -220,16 +218,15 @@ export const base = tseslint.config(
     },
   },
 
-  // -------------------------------------------- l'outillage n'entre pas dans src/
-  // Trois barrieres protegent @arthome/tooling d'une dependance de production
-  // (section 4.7) ; celle-ci est la seule qui parle a l'auteur au moment ou il
-  // ecrit l'import.
+  // ------------------------------------------------- tooling does not enter src/
+  // Four barriers keep @arthome/tooling out of production (section 4.7); this is
+  // the only one that speaks to the author at the moment they write the import.
   {
     files: ['src/**', 'app/**'],
     rules: {
-      // ⚠ `rules` ecrase entierement la valeur precedente d'une meme regle : les
-      //   motifs du bloc << imports >> sont donc REPETES ici, sans quoi ils
-      //   seraient perdus pour src/ — exactement les fichiers qu'ils protegent.
+      // ⚠ `rules` fully replaces the previous value of the same rule, so the
+      //   patterns from the "imports" block are REPEATED here — otherwise they
+      //   would be lost for src/, which is exactly what they protect.
       'no-restricted-imports': [
         'error',
         {
@@ -237,11 +234,11 @@ export const base = tseslint.config(
             {
               group: ['**/dist/**', '@arthome/*/dist/**', '@arthome/*/src/**'],
               message:
-                "Importer par le nom du paquet, jamais par un chemin interne : passer par `exports`, c'est passer par le contrat.",
+                'Import by package name, never by an internal path: going through `exports` is going through the contract.',
             },
             {
               group: ['@arthome/tooling', '@arthome/tooling/*'],
-              message: "@arthome/tooling est de l'outillage : jamais dans src/.",
+              message: '@arthome/tooling is tooling: never in src/.',
             },
           ],
         },
@@ -249,7 +246,7 @@ export const base = tseslint.config(
     },
   },
 
-  // ------------------------------------------------------------------- fichiers de test
+  // ------------------------------------------------------------------ test files
   {
     files: ['**/*.spec.{ts,tsx}', '**/*.test.{ts,tsx}'],
     rules: {
@@ -258,7 +255,7 @@ export const base = tseslint.config(
     },
   },
 
-  // ------------------------------------------ configurations JS a la racine d'un depot
+  // --------------------------------------- JS configuration at a repository root
   {
     files: ['*.{js,mjs,cjs}', 'tools/**/*.{js,mjs,cjs}', 'bin/**/*.mjs'],
     extends: [tseslint.configs.disableTypeChecked],

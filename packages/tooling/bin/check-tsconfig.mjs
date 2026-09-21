@@ -1,30 +1,30 @@
 #!/usr/bin/env node
-// arthome-check-tsconfig — les verrous tsconfig n'ont pas ete desserres.
+// arthome-check-tsconfig — the tsconfig locks have not been loosened.
 //
-// Lire les tsconfig.json des sept depots ne prouve rien : c'est la configuration
-// RESOLUE qui s'execute, et un `extends` se contourne d'une ligne locale. Le
-// controle porte donc sur le resultat de la resolution.
+// Reading the seven repositories' tsconfig.json files proves nothing: it is the
+// RESOLVED configuration that runs, and an `extends` is bypassed by one local
+// line. So the check looks at the result of resolution, not at the files.
 //
-// Deux modes :
-//   · si `tsc` est resolvable, on lui demande `--showConfig` — c'est la reference ;
-//   · sinon, on resout la chaine d'`extends` soi-meme (JSON avec commentaires,
-//     resolution par nom de paquet comprise). Le repli existe pour que la porte
-//     tourne AVANT que typescript soit installe : une porte qui attend une
-//     installation pour exister n'est pas une porte.
+// Two modes:
+//   - if `tsc` resolves, ask it for `--showConfig` — that is the reference;
+//   - otherwise resolve the `extends` chain ourselves (JSON with comments,
+//     package-name resolution included). The fallback exists so the gate runs
+//     BEFORE typescript is installed: a gate that needs an install in order to
+//     exist does not exist on the day a repository is created.
 //
-// Elle verifie aussi ce que `--showConfig` ne dira jamais : que les trois
-// fichiers de base de @arthome/tooling ne portent AUCUNE option de chemin. Les
-// chemins relatifs d'un tsconfig etendu se resolvent depuis le fichier ou ils
-// sont ecrits, donc depuis node_modules/@arthome/tooling/tsconfig/ — un
-// include: ["src"] dans la base compilerait les sources de @arthome/tooling.
+// It also checks what `--showConfig` will never tell you: that the three base
+// files of @arthome/tooling carry NO path-bearing option. Relative paths in an
+// extended tsconfig resolve FROM THE FILE THEY ARE WRITTEN IN, i.e. from
+// node_modules/@arthome/tooling/tsconfig/ — an include: ["src"] in the base
+// would literally compile @arthome/tooling's own sources.
 //
-// Voir architecture/code-conventions.md sections 4.4.4, 4.5 et 4.5.1.
+// See architecture/code-conventions.md sections 4.4.4, 4.5 and 4.5.1.
 
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import process from 'node:process';
-import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const CWD = process.cwd();
@@ -39,9 +39,8 @@ const PROJECTS = only !== -1 && args[only + 1] ? [args[only + 1]] : null;
 const problems = [];
 const notes = [];
 
-// ------------------------------------------------------------- JSON commente
-// tsconfig accepte // et /* */ et les virgules trainantes. On ne peut donc pas
-// se contenter de JSON.parse.
+// ---------------------------------------------------------- JSON with comments
+// tsconfig accepts // and /* */ and trailing commas, so JSON.parse alone will not do.
 function parseJsonc(text) {
   let out = '';
   let i = 0;
@@ -81,7 +80,7 @@ function parseJsonc(text) {
 
 const readJsonc = (p) => parseJsonc(fs.readFileSync(p, 'utf8'));
 
-// --------------------------------------------- resolution de la chaine extends
+// ------------------------------------------------ resolving the extends chain
 function resolveExtends(spec, fromFile) {
   const fromDir = path.dirname(fromFile);
   if (spec.startsWith('.') || path.isAbsolute(spec)) {
@@ -91,14 +90,14 @@ function resolveExtends(spec, fromFile) {
     }
     return null;
   }
-  // Par nom de paquet. `extends` respecte le champ `exports` depuis la PR #50955
-  // (TypeScript 5.0) ; createRequire fait la meme resolution.
+  // By package name. `extends` honours the `exports` field since PR #50955
+  // (TypeScript 5.0); createRequire performs the same resolution.
   const require = createRequire(path.join(fromDir, 'noop.js'));
   try {
     return require.resolve(spec);
   } catch {
-    // exports absent ou sous-chemin non expose : repli sur la racine du paquet,
-    // qui est ce que TypeScript faisait AVANT la PR #50955.
+    // No `exports`, or the subpath is not exposed: fall back to the package
+    // root, which is what TypeScript did BEFORE PR #50955.
     try {
       const parts = spec.split('/');
       const pkg = spec.startsWith('@') ? `${parts[0]}/${parts[1]}` : parts[0];
@@ -107,48 +106,45 @@ function resolveExtends(spec, fromFile) {
       const cand = path.join(path.dirname(pkgJson), rest || 'tsconfig.json');
       if (fs.existsSync(cand)) {
         notes.push(
-          `${path.relative(CWD, fromFile)} : "${spec}" resolu par repli sur la racine du paquet. ` +
-            "Verifier que le sous-chemin est bien liste dans `exports` (extension .json comprise).",
+          `${path.relative(CWD, fromFile)}: "${spec}" resolved by falling back to the package root. ` +
+            'Check that the subpath is listed in `exports` (with its .json extension).',
         );
         return cand;
       }
     } catch {
-      /* vraiment introuvable */
+      /* genuinely not found */
     }
     return null;
   }
 }
 
-/** Fusionne la chaine d'extends comme TypeScript le fait : base d'abord, enfant ensuite. */
+/** Merges the extends chain the way TypeScript does: base first, child last. */
 function resolveConfig(file, seen = new Set()) {
   const abs = path.resolve(file);
   if (seen.has(abs)) {
-    problems.push(`Cycle d'extends sur ${path.relative(CWD, abs)}.`);
-    return { compilerOptions: {}, chain: [] };
+    problems.push(`Cycle in the extends chain at ${path.relative(CWD, abs)}.`);
+    return { compilerOptions: {}, chain: [], broken: true };
   }
   seen.add(abs);
   const json = readJsonc(abs);
   let merged = { compilerOptions: {} };
   let chain = [];
   let broken = false;
-  const parents = json.extends
-    ? Array.isArray(json.extends)
-      ? json.extends
-      : [json.extends]
-    : [];
+  const parents = json.extends ? (Array.isArray(json.extends) ? json.extends : [json.extends]) : [];
   for (const spec of parents) {
     const target = resolveExtends(spec, abs);
     if (!target) {
       broken = true;
       const installed = fs.existsSync(path.join(CWD, 'node_modules'));
       problems.push(
-        `${path.relative(CWD, abs)} : extends "${spec}" introuvable.` +
+        `${path.relative(CWD, abs)}: extends "${spec}" not found.` +
           (installed
-            ? '\n      Dans un espace de travail pnpm, le paquet doit etre une dependance DIRECTE du depot :' +
-              '\n      pnpm isole et ne remonte pas les dependances transitives.'
-            : "\n      node_modules/ est absent : lancer `pnpm install` d'abord.") +
-          '\n      ⚠ NE PAS recopier les options de la base dans ce fichier pour faire taire la porte :' +
-          "\n        ce serait une table litterale parallele de plus (E2), et la base cesserait d'etre la source.",
+            ? '\n      In a pnpm workspace the package must be a DIRECT dependency of the' +
+              '\n      repository: pnpm isolates, it does not hoist transitive dependencies.'
+            : '\n      node_modules/ is absent: run `pnpm install` first.') +
+          '\n      DO NOT copy the base options into this file to silence the gate:' +
+          '\n      that would be one more parallel literal table (E2), and the base would stop' +
+          '\n      being the source. Fix the link, not the symptom.',
       );
       continue;
     }
@@ -165,24 +161,19 @@ function resolveConfig(file, seen = new Set()) {
   };
 }
 
-// ----------------------------------------------------- `tsc --showConfig`
+// --------------------------------------------------------- `tsc --showConfig`
 const require0 = createRequire(path.join(CWD, 'noop.js'));
 
 function viaTsc(project) {
   try {
     require0.resolve('typescript/package.json');
   } catch {
-    return null; // typescript pas installe : on prendra le repli
+    return null; // typescript not installed: the fallback will be used
   }
   try {
     const out = execFileSync(
       process.execPath,
-      [
-        require0.resolve('typescript/bin/tsc'),
-        '-p',
-        project,
-        '--showConfig',
-      ],
+      [require0.resolve('typescript/bin/tsc'), '-p', project, '--showConfig'],
       { cwd: CWD, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
     );
     return parseJsonc(out);
@@ -191,27 +182,25 @@ function viaTsc(project) {
   }
 }
 
-// ------------------------------------------------------------------ controles
+// ---------------------------------------------------------------------- checks
 function checkOptions(label, opts) {
   for (const [name, spec] of Object.entries(LOCKS.locked)) {
     if (opts[name] !== spec.value) {
       problems.push(
-        `${label} : ${name} = ${JSON.stringify(opts[name])}, verrouille a ${JSON.stringify(spec.value)}.` +
+        `${label}: ${name} = ${JSON.stringify(opts[name])}, locked to ${JSON.stringify(spec.value)}.` +
           `\n      ${spec.why}`,
       );
     }
   }
   for (const [name, why] of Object.entries(LOCKS.forbidden)) {
     if (name.startsWith('_')) continue;
-    if (name in opts) {
-      problems.push(`${label} : ${name} est interdit.\n      ${why}`);
-    }
+    if (name in opts) problems.push(`${label}: ${name} is forbidden.\n      ${why}`);
   }
   for (const [name, rule] of Object.entries(LOCKS.forbiddenValues)) {
     if (!(name in opts)) continue;
     const v = opts[name];
     if (rule.not.some((bad) => String(bad).toLowerCase() === String(v).toLowerCase())) {
-      problems.push(`${label} : ${name} = ${JSON.stringify(v)} est interdit.\n      ${rule.why}`);
+      problems.push(`${label}: ${name} = ${JSON.stringify(v)} is forbidden.\n      ${rule.why}`);
     }
   }
 }
@@ -219,21 +208,20 @@ function checkOptions(label, opts) {
 function checkScoped() {
   for (const [pattern, expected] of Object.entries(LOCKS.scoped)) {
     if (pattern.startsWith('_')) continue;
-    let hits = [];
+    let hits;
     try {
       hits = fs.globSync(pattern, { cwd: CWD });
     } catch {
       hits = [];
     }
     for (const h of hits) {
-      const abs = path.join(CWD, h);
-      const resolved = resolveConfig(abs);
+      const resolved = resolveConfig(path.join(CWD, h));
       if (resolved.broken) continue;
-      const { compilerOptions } = resolved;
       for (const [name, want] of Object.entries(expected)) {
-        if (compilerOptions[name] !== want) {
+        if (resolved.compilerOptions[name] !== want) {
           problems.push(
-            `${h} : ${name} = ${JSON.stringify(compilerOptions[name])}, attendu ${JSON.stringify(want)}.`,
+            `${h}: ${name} = ${JSON.stringify(resolved.compilerOptions[name])}, ` +
+              `expected ${JSON.stringify(want)}.`,
           );
         }
       }
@@ -241,7 +229,7 @@ function checkScoped() {
   }
 }
 
-/** Les trois fichiers de base ne portent aucun chemin. */
+/** The three base files carry no path. */
 function checkBasesCarryNoPaths() {
   const spec = LOCKS.mustNotCarryPaths;
   let toolingDir = null;
@@ -252,37 +240,38 @@ function checkBasesCarryNoPaths() {
     }
   }
   if (!toolingDir) {
-    notes.push('@arthome/tooling introuvable : controle des fichiers de base saute.');
+    notes.push('@arthome/tooling not found: base-file check skipped.');
     return;
   }
   for (const rel of spec.files) {
     const abs = path.join(toolingDir, rel);
     if (!fs.existsSync(abs)) {
-      problems.push(`@arthome/tooling/${rel} manquant.`);
+      problems.push(`@arthome/tooling/${rel} is missing.`);
       continue;
     }
     const json = readJsonc(abs);
     for (const key of spec.keys) {
       if (key in json) {
-        problems.push(
-          `@arthome/tooling/${rel} porte "${key}".\n      ${spec._why}`,
-        );
+        problems.push(`@arthome/tooling/${rel} carries "${key}".\n      ${spec._why}`);
       }
     }
     for (const key of spec.compilerOptions) {
       if (json.compilerOptions && key in json.compilerOptions) {
         problems.push(
-          `@arthome/tooling/${rel} porte compilerOptions.${key}.\n      ${spec._why}`,
+          `@arthome/tooling/${rel} carries compilerOptions.${key}.\n      ${spec._why}`,
         );
       }
     }
-    // stableTypeOrdering : uniquement dans lib.json, que seul TypeScript 6 lit.
-    const hasSTO = json.compilerOptions && 'stableTypeOrdering' in json.compilerOptions;
-    if (hasSTO && !rel.endsWith('lib.json')) {
+    // stableTypeOrdering: only in lib.json, the one file TypeScript 7 never reads.
+    if (
+      json.compilerOptions &&
+      'stableTypeOrdering' in json.compilerOptions &&
+      !rel.endsWith('lib.json')
+    ) {
       problems.push(
-        `@arthome/tooling/${rel} porte stableTypeOrdering. Sous TypeScript 7 le tri ` +
-          'deterministe est toujours actif et ne peut pas etre desactive : cette option ne ' +
-          'doit vivre que dans lib.json, le seul fichier que TypeScript 7 ne lit jamais.',
+        `@arthome/tooling/${rel} carries stableTypeOrdering. Under TypeScript 7 the ` +
+          'deterministic ordering is always on and cannot be turned off, so this option must ' +
+          'live only in lib.json — the one base file TypeScript 7 never reads.',
       );
     }
   }
@@ -301,31 +290,30 @@ function findProjects() {
     try {
       out.push(...fs.globSync(pattern, { cwd: CWD }));
     } catch {
-      /* rien */
+      /* nothing */
     }
   }
   return [...new Set(out)];
 }
 
-// ---------------------------------------------------------------------- main
+// ------------------------------------------------------------------------ main
 const projects = findProjects();
-let mode = 'repli (resolution interne)';
+let mode = 'fallback (internal resolution)';
 
 for (const p of projects) {
-  const abs = path.join(CWD, p);
   const fromTsc = viaTsc(p);
-  if (fromTsc) mode = 'tsc --showConfig';
   if (fromTsc) {
+    mode = 'tsc --showConfig';
     checkOptions(p, fromTsc.compilerOptions ?? {});
     continue;
   }
-  const resolved = resolveConfig(abs);
-  // ⚠ Chaine d'extends rompue : on N'ENCHAINE PAS sur les verrous. Signaler dix
-  //   options manquantes quand la cause unique est un lien absent inviterait a
-  //   les recopier dans le depot — c'est-a-dire a commettre exactement la faute
-  //   que la base existe pour eviter. Une cause, un message.
+  const resolved = resolveConfig(path.join(CWD, p));
+  // Broken extends chain: DO NOT cascade into the lock checks. Reporting ten
+  // missing options when the single cause is a missing link invites copying them
+  // into the repository — which is committing the very fault the base exists to
+  // prevent. One cause, one message.
   if (resolved.broken) {
-    notes.push(`${p} : verrous non verifies — chaine d'extends rompue (voir ci-dessous).`);
+    notes.push(`${p}: locks not checked — extends chain is broken (see below).`);
     continue;
   }
   checkOptions(p, resolved.compilerOptions);
@@ -335,24 +323,22 @@ checkScoped();
 checkBasesCarryNoPaths();
 
 if (!QUIET) {
-  console.log(
-    `arthome-check-tsconfig : ${projects.length} projet(s) — mode ${mode}`,
-  );
+  console.log(`arthome-check-tsconfig: ${projects.length} project(s) — mode ${mode}`);
   if (projects.length) console.log(`  ${projects.join(', ')}`);
 }
-for (const n of notes) console.log(`  · ${n}`);
+for (const n of notes) console.log(`  - ${n}`);
 
 if (!projects.length) {
-  console.error('⚠ aucun tsconfig.json trouve. PORTE INACTIVE.');
+  console.error('WARN no tsconfig.json found. GATE INACTIVE.');
   process.exit(0);
 }
 
 if (problems.length) {
-  console.error(`\n✗ ${problems.length} verrou(s) desserre(s) :\n`);
-  for (const p of problems) console.error(`  ✗ ${p}`);
+  console.error(`\nFAIL ${problems.length} loosened lock(s):\n`);
+  for (const p of problems) console.error(`  ${p}`);
   console.error(
-    '\n  La table des verrous est @arthome/tooling/tsconfig-locks.json — une seule, pour les sept depots.',
+    '\n  The lock table is @arthome/tooling/tsconfig-locks.json — one table, for all seven repositories.',
   );
   process.exit(1);
 }
-if (!QUIET) console.log('✓ verrous tsconfig intacts');
+if (!QUIET) console.log('PASS tsconfig locks intact');

@@ -1,81 +1,70 @@
 packages:
-  - 'packages/*'
-  - 'tools/*'
+  - "packages/*"
+  - "tools/*"
 
-# ---------------------------------------------------------------- chaine d'approvisionnement
-# minimumReleaseAge : nombre de MINUTES pendant lesquelles pnpm refuse d'installer
-# une version fraichement publiee. Le defaut est 1440 (un jour) depuis pnpm 11.
-# 10080 = une semaine : pour une personne seule qui ne surveille pas les avis de
-# securite en continu, une semaine de decantation sur les paquets tiers coute peu
-# et attrape l'essentiel des compromissions, qui sont detectees en quelques jours.
+# ------------------------------------------------------------------ supply chain
+# minimumReleaseAge is the number of MINUTES during which pnpm refuses to install
+# a freshly published version. The default has been 1440 (one day) since pnpm 11.
+# 10080 = one week: for a single maintainer who does not watch security advisories
+# continuously, a week of settling on third-party packages costs little and catches
+# most compromises, which are detected within days.
 minimumReleaseAge: 10080
 
 minimumReleaseAgeExclude:
-  # ⚠ Sans cette ligne, un paquet @arthome/* publie a l'instant serait INVISIBLE
-  #   pendant une semaine pour le depot qui l'attend — et le symptome est
-  #   << la version n'existe pas >>, ce qui envoie chercher au mauvais endroit.
-  - '@arthome/*'
+  # Without this line, an @arthome/* package published moments ago would be
+  # INVISIBLE for a week to the repository waiting for it — and the symptom is
+  # "that version does not exist", which sends you looking in the wrong place.
+  - "@arthome/*"
 
-  # prettier@3.9.8 — publiee le 2026-09-17, soit 4 jours avant le premier
-  # `pnpm install` de ce depot (2026-09-21). Le seuil d'une semaine l'a refusee.
-  # Exception NOMMEE et DATEE plutot qu'un seuil abaisse : c'est la version
-  # epinglee au catalogue et dans @arthome/tooling/versions.json, et l'abaisser
-  # globalement aurait leve la decantation sur TOUS les paquets tiers pour un
-  # seul cas.
-  # ⚠ A RETIRER apres le 2026-09-24, date a laquelle la version aura sept jours
-  #   et l'exception n'aura plus d'objet. Une exception qu'on oublie de retirer
-  #   est un seuil abaisse qui ne dit pas son nom.
-  - 'prettier'
+  # ─────────────────────────────────────────────────────────────────────────────
+  # A CONTRADICTION BETWEEN TWO DECISIONS, found at the first `pnpm install`.
+  #
+  #   versions.json pins the versions verified ON THE DAY (2026-09-21), and this
+  #   policy refuses anything less than seven days old. Both cannot hold: pinning
+  #   the latest verified version guarantees it will be too fresh. The policy is
+  #   not wrong — the CONJUNCTION is, and it only showed itself at install time.
+  #
+  #   Named, dated exceptions rather than a lowered threshold. Lowering
+  #   minimumReleaseAge globally would have removed the settling period from EVERY
+  #   third-party package to fix five.
+  #
+  #   The durable remedy is NOT to add exceptions here: a version bump pins a
+  #   version that is ALREADY MATURE, never the day's. See code-conventions.md
+  #   section 7.6. These entries are a bootstrap, not a policy.
+  #
+  #   `arthome-check-versions` reads the `remove-after:` markers below and turns
+  #   red once they are past. An exception nobody removes is a lowered threshold
+  #   that does not say its name.
+  # ─────────────────────────────────────────────────────────────────────────────
+  - "prettier" # 3.9.8  published 2026-09-17 — mature 2026-09-24
+  - "eslint" # 10.11.0 published 2026-09-18 — mature 2026-09-25
+  - "vitest" # 5.0.1  published 2026-09-15 — mature 2026-09-22
+  - "@vitest/*" # same, vitest sub-packages
+  # remove-after: 2026-09-25
 
-  # ⚠ CONTRADICTION ENTRE DEUX DECISIONS, constatee au premier `pnpm install`.
-  #
-  #   `versions.json` epingle les versions VERIFIEES LE JOUR MEME (2026-09-21),
-  #   et cette politique refuse tout ce qui a moins de sept jours. Les deux ne
-  #   peuvent pas tenir ensemble : epingler la derniere version verifiee garantit
-  #   qu'elle sera trop fraiche. Ce n'est pas la politique qui est mauvaise, c'est
-  #   la conjonction — et elle ne s'est vue qu'a l'installation.
-  #
-  #   Exceptions NOMMEES et DATEES plutot qu'un seuil abaisse. Les dates de
-  #   publication sont celles que pnpm a rapportees.
-  - 'eslint'            # 10.11.0 publiee le 2026-09-18 — mature le 2026-09-25
-  - 'vitest'            # 5.0.1   publiee le 2026-09-15 — mature le 2026-09-22
-  - '@vitest/*'         # idem, sous-paquets de vitest
-  #
-  # ⚠ LES QUATRE EXCEPTIONS CI-DESSUS SONT A RETIRER APRES LE 2026-09-25.
-  #   Une exception qu'on oublie de retirer est un seuil abaisse qui ne dit pas
-  #   son nom — et ce fichier reste court, ou la regle est mauvaise.
-  #
-  #   Le remede durable n'est pas d'en ajouter : c'est qu'une montee de version
-  #   epingle une version DEJA MATURE, jamais celle du jour. A porter dans
-  #   code-conventions.md, section gouvernance des versions.
-
-# Si `pnpm install` refuse une version epinglee parce qu'elle est trop recente,
-# la reponse est une exception NOMMEE ici, avec sa raison et sa date — jamais
-# d'abaisser minimumReleaseAge globalement.
-
-# ------------------------------------------------------------------------ catalogue
-# Le catalogue ne vaut QU'A L'INTERIEUR de cet espace de travail. Entre les sept
-# depots il n'en existe pas : c'est la limite du multi-depots, et le substitut est
-# la porte `arthome-check-versions` qui lit @arthome/tooling/versions.json.
-# pnpm remplace `catalog:` par la version reelle a la publication, donc un
-# consommateur exterieur ne voit jamais le protocole.
+# ---------------------------------------------------------------------- catalog
+# The catalog is only valid INSIDE this workspace. There is none across the seven
+# repositories: that is the limit of the multi-repository layout, and the
+# substitute is the `arthome-check-versions` gate reading
+# @arthome/tooling/versions.json.
+# pnpm replaces `catalog:` with the real version on publish, so an outside
+# consumer never sees the protocol.
 catalog:
   typescript: 6.0.3
   eslint: 10.11.0
-  '@eslint/js': 10.0.1
+  "@eslint/js": 10.0.1
   prettier: 3.9.8
   vitest: 5.0.1
 
-# ------------------------------------------------------------------ construction
-# pnpm 11 n'execute plus les scripts d'installation d'une dependance sans
-# approbation NOMMEE. C'est la bonne posture : un script d'installation est du
-# code arbitraire execute avec les droits du developpeur.
+# ------------------------------------------------------------------------ builds
+# pnpm 11 no longer runs a dependency's install scripts without a NAMED approval.
+# That is the right posture: an install script is arbitrary code run with the
+# developer's privileges.
 allowBuilds:
-  # unrs-resolver — resolveur natif (Rust) dont depend
-  # `eslint-import-resolver-typescript`, ajoute pour que `import-x/no-cycle`
-  # resolve reellement les chemins TypeScript. Son script d'installation lie le
-  # binaire natif de la plateforme.
-  # Approuve parce que SANS LUI la regle ne signale pas qu'elle echoue : elle
-  # tourne et ne trouve rien, ce qui est la pire des deux facons d'echouer —
-  # une porte verte qui ne verifie rien.
+  # unrs-resolver — the native (Rust) resolver that eslint-import-resolver-typescript
+  # depends on, added so `import-x/no-cycle` actually resolves TypeScript paths.
+  # Its install script links the platform's native binary.
+  # Approved because WITHOUT IT the rule does not report that it failed: it runs
+  # and finds nothing, which is the worse of the two failure modes — a green gate
+  # that checks nothing.
   unrs-resolver: true

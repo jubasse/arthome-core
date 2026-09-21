@@ -1,31 +1,30 @@
 #!/usr/bin/env node
-// arthome-check-enums — la porte contre E2, la faute dominante du projet.
+// arthome-check-enums — the gate against E2, this project's dominant fault.
 //
-// E2 : la TABLE LITTERALE PARALLELE. Commise sur huit champs par cinq maquettes,
-// malgre un principe explicite qui l'interdisait. La lecon est que le principe ne
-// suffit pas — il faut une porte. Celle-ci.
+// E2: the PARALLEL LITERAL TABLE. Committed on eight fields by five mockups,
+// despite an explicit written principle forbidding it. The lesson is that the
+// principle is not enough — you need a gate. This is it.
 //
-// CE QU'ELLE FAIT
-//   1. decouvre, dans les SOURCES du paquet declarant, toutes les constantes
-//      exportees de la forme `export const NAME = ['a', 'b'] as const` ;
-//   2. parcourt les sources du depot ;
-//   3. signale toute chaine litterale appartenant a l'une de ces enumerations,
-//      hors du module qui la declare.
+// WHAT IT DOES
+//   1. discovers, in the SOURCES of the declaring package, every exported
+//      constant of the form `export const NAME = ['a', 'b'] as const`;
+//   2. walks the repository's own sources;
+//   3. reports every string literal belonging to one of those enumerations,
+//      outside the module that declares it.
 //
-// ⚠ ELLE NE PORTE AUCUNE LISTE D'ENUMERATIONS, ET NE DOIT JAMAIS EN PORTER.
-//   Une premiere redaction de la specification donnait la liste en dur
-//   (CHAT_MODES, PUBLICATION_STATES, ...) : c'etait une table parallele de plus,
-//   la liste des enumerations recopiee a cote des enumerations. Une enumeration
-//   nouvelle est couverte le jour ou elle est declaree, sans que personne ait a
-//   l'inscrire quelque part.
+// ⚠ IT CARRIES NO LIST OF ENUMERATIONS, AND MUST NEVER CARRY ONE.
+//   An early draft of the specification hardcoded the list (CHAT_MODES,
+//   PUBLICATION_STATES, ...): that was one more parallel table — the list of
+//   enumerations, copied next to the enumerations. A new enumeration is covered
+//   the day it is declared, with nobody having to register it anywhere.
 //
-// ⚠ ELLE LIT LES SOURCES, PAS LE PAQUET CONSTRUIT. Importer @arthome/core
-//   exigerait qu'il soit compile et installe ; lire `src/**/*.ts` fonctionne des
-//   le premier jour, sans build, sans runtime, sans resolution de module.
-//   (La specification disait << importe depuis @arthome/core >> ; c'est le seul
-//   ecart d'implementation, et il est dans le sens de la robustesse.)
+// ⚠ IT READS SOURCES, NOT THE BUILT PACKAGE. Importing @arthome/core would
+//   require it to be compiled and installed; reading `src/**/*.ts` works from
+//   day one — no build, no runtime, no module resolution. (The specification
+//   said "imports from @arthome/core"; this is the one implementation
+//   divergence, and it is in the direction of robustness.)
 //
-// Voir architecture/code-conventions.md section 5.3.
+// See architecture/code-conventions.md section 5.3.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -41,8 +40,8 @@ const opt = (name, fallback) => {
 };
 const QUIET = args.includes('--quiet');
 
-// ------------------------------------------------- ou vivent les enumerations
-// Ordre de recherche, du plus explicite au plus devinable.
+// ------------------------------------------------- where the enumerations live
+// Search order, most explicit first.
 function findEnumSources() {
   const explicit = opt('source', process.env.ARTHOME_ENUM_SOURCE);
   const candidates = explicit
@@ -60,11 +59,11 @@ function findEnumSources() {
   return null;
 }
 
-// --------------------------------------------------------- lecture des sources
+// --------------------------------------------------------------- reading files
 function listFiles(root, patterns) {
   const out = new Set();
   for (const p of patterns) {
-    let hits = [];
+    let hits;
     try {
       hits = fs.globSync(p, { cwd: root });
     } catch {
@@ -81,16 +80,18 @@ function listFiles(root, patterns) {
   });
 }
 
-// Retire commentaires de ligne et de bloc, pour ne pas signaler une valeur citee
-// dans une explication. Naif mais suffisant : on ne cherche pas a parser.
+// Blanks out line and block comments so a value quoted inside an explanation is
+// not reported. Naive but sufficient: we are not trying to parse TypeScript.
 function stripComments(src) {
-  return src.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' ')).replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + ' '.repeat(Math.max(0, m.length - p1.length)));
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + ' '.repeat(Math.max(0, m.length - p1.length)));
 }
 
-// ------------------------------------------------------- 1. decouvrir les enums
-// `export const NAME = [ ... ] as const`  —  NAME en SCREAMING_SNAKE_CASE.
+// ------------------------------------------------------ 1. discover the enums
+// `export const NAME = [ ... ] as const`  —  NAME in SCREAMING_SNAKE_CASE.
 const DECL = /export\s+const\s+([A-Z][A-Z0-9_]*)\s*(?::[^=]+?)?=\s*\[([\s\S]*?)\]\s*as\s+const/g;
-const STRING_IN_ARRAY = /'([^'\\\r\n]*)'|"([^"\\\r\n]*)"/g;
+const STRING_LITERAL = /'([^'\\\r\n]*)'|"([^"\\\r\n]*)"/g;
 
 function discoverEnums(sourceRoot) {
   const files = listFiles(sourceRoot, ['**/*.ts', '**/*.mts']).filter(
@@ -104,7 +105,7 @@ function discoverEnums(sourceRoot) {
     for (const m of src.matchAll(DECL)) {
       const [, name, body] = m;
       const values = [];
-      for (const v of body.matchAll(STRING_IN_ARRAY)) {
+      for (const v of body.matchAll(STRING_LITERAL)) {
         const value = v[1] ?? v[2];
         if (value) values.push(value);
       }
@@ -118,7 +119,7 @@ function discoverEnums(sourceRoot) {
   return { byValue, constants, declaringFiles: new Set(constants.map((c) => c.file)) };
 }
 
-// ------------------------------------------------------------ 2. l'allow-list
+// ------------------------------------------------------------ 2. the allow-list
 function loadAllow() {
   const file = path.resolve(CWD, opt('allow', 'tools/enum-literals.allow.json'));
   if (!fs.existsSync(file)) return { entries: [], file };
@@ -126,7 +127,10 @@ function loadAllow() {
   const entries = Array.isArray(raw) ? raw : (raw.allow ?? []);
   for (const e of entries) {
     if (!e.reason) {
-      console.error(`✗ ${path.relative(CWD, file)} : une entree sans "reason" (${JSON.stringify(e)}).`);
+      console.error(
+        `FAIL ${path.relative(CWD, file)}: an entry has no "reason" (${JSON.stringify(e)}).`,
+      );
+      console.error('     Every exception states why, or it is not an exception — it is a hole.');
       process.exit(2);
     }
   }
@@ -141,7 +145,7 @@ function isAllowed(entries, relFile, value) {
   });
 }
 
-// --------------------------------------------------------------- 3. le balayage
+// --------------------------------------------------------------- 3. the sweep
 const SCAN = [
   'src/**/*.ts',
   'src/**/*.tsx',
@@ -157,19 +161,23 @@ const SKIP = /(^|\/)(node_modules|dist|build|coverage|generated)(\/|$)|\.spec\.|
 function main() {
   const sourceRoot = findEnumSources();
   if (!sourceRoot) {
-    // @arthome/core n'existe pas encore. On le DIT, bruyamment, plutot que de
-    // rendre 0 en silence : une porte qui passe toujours n'est pas une porte.
-    console.error('⚠ arthome-check-enums : aucune source d\'enumerations trouvee.');
-    console.error('  Cherche dans : packages/core/src, ../core/src, node_modules/@arthome/core/{src,dist}');
-    console.error('  Preciser avec --source <dossier> ou ARTHOME_ENUM_SOURCE.');
-    console.error('  PORTE INACTIVE tant que @arthome/core n\'existe pas.');
+    // @arthome/core does not exist yet. Say so LOUDLY rather than exiting 0 in
+    // silence: a gate that always passes is not a gate.
+    console.error('WARN arthome-check-enums: no enumeration source found.');
+    console.error(
+      '     Looked in: packages/core/src, ../core/src, node_modules/@arthome/core/{src,dist}',
+    );
+    console.error('     Point at one with --source <dir> or ARTHOME_ENUM_SOURCE.');
+    console.error('     GATE INACTIVE until @arthome/core exists.');
     process.exit(0);
   }
 
   const { byValue, constants, declaringFiles } = discoverEnums(sourceRoot);
   if (!constants.length) {
-    console.error(`⚠ arthome-check-enums : aucune constante \`as const\` dans ${path.relative(CWD, sourceRoot)}.`);
-    console.error('  PORTE INACTIVE. Forme attendue : export const NOM = [\'a\', \'b\'] as const;');
+    console.error(
+      `WARN arthome-check-enums: no \`as const\` constant in ${path.relative(CWD, sourceRoot)}.`,
+    );
+    console.error("     GATE INACTIVE. Expected shape: export const NAME = ['a', 'b'] as const;");
     process.exit(0);
   }
 
@@ -180,9 +188,8 @@ function main() {
   for (const file of files) {
     const rel = path.relative(CWD, file);
     const src = stripComments(fs.readFileSync(file, 'utf8'));
-    const lines = src.split('\n');
-    lines.forEach((line, i) => {
-      for (const m of line.matchAll(STRING_IN_ARRAY)) {
+    src.split('\n').forEach((line, i) => {
+      for (const m of line.matchAll(STRING_LITERAL)) {
         const value = m[1] ?? m[2];
         if (!value || !byValue.has(value)) continue;
         if (isAllowed(allow, rel, value)) continue;
@@ -200,26 +207,28 @@ function main() {
 
   if (!QUIET) {
     console.log(
-      `arthome-check-enums : ${constants.length} enumeration(s), ${byValue.size} valeur(s), ` +
-        `${files.length} fichier(s) balaye(s) — source ${path.relative(CWD, sourceRoot) || '.'}`,
+      `arthome-check-enums: ${constants.length} enumeration(s), ${byValue.size} value(s), ` +
+        `${files.length} file(s) swept — source ${path.relative(CWD, sourceRoot) || '.'}`,
     );
   }
 
   if (findings.length) {
-    console.error(`\n✗ ${findings.length} table(s) litterale(s) parallele(s) — E2 :\n`);
+    console.error(`\nFAIL ${findings.length} parallel literal table(s) — E2:\n`);
     for (const f of findings) {
       console.error(`  ${f.file}:${f.line}  '${f.value}'`);
-      console.error(`    → appartient a ${f.constant} (${f.from}). Importer la constante, ne pas recopier la valeur.`);
+      console.error(
+        `    -> belongs to ${f.constant} (${f.from}). Import the constant; do not copy the value.`,
+      );
     }
     console.error(
-      `\n  Exception legitime ? L'inscrire dans ${path.relative(CWD, allowFile)} AVEC SA RAISON.`,
+      `\n  A legitimate exception? Register it in ${path.relative(CWD, allowFile)} WITH ITS REASON.`,
     );
-    console.error('  Ce fichier reste court ou la regle est mauvaise : au-dela de vingt lignes,');
-    console.error('  c\'est le signe qu\'une valeur manque dans @arthome/core.');
+    console.error('  That file stays short, or the rule is wrong: past twenty lines it is the');
+    console.error('  sign that a value is missing from @arthome/core.');
     process.exit(1);
   }
 
-  if (!QUIET) console.log('✓ aucune valeur d\'enumeration recopiee');
+  if (!QUIET) console.log('PASS no enumeration value copied');
 }
 
 main();

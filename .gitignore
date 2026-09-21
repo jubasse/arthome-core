@@ -5,13 +5,17 @@ coverage/
 .DS_Store
 *.tsbuildinfo
 
-# ⚠ `dist/` n'est PAS ignore pour les deux paquets publies (@arthome/core et
-#   @arthome/contracts) : leurs .d.ts sont suivis volontairement, contre l'usage
-#   habituel, parce que c'est ce qui rend un changement de contrat visible dans
-#   une revue plutot que dans un incident chez un consommateur.
-#   Voir architecture/code-conventions.md section 2.4, porte n°8.
-#   (git ne sait pas re-inclure un fichier sous un dossier exclu : on n'exclut
-#   donc `dist/` que la ou il est vraiment un artefact.)
+# ⚠ `dist/` is NOT ignored for the two published packages (@arthome/core and
+#   @arthome/contracts): their .d.ts files are tracked deliberately, against the
+#   usual practice, because that is what makes a contract change visible in a
+#   review rather than in an incident at a consumer.
+#   See architecture/code-conventions.md section 2.4, gate 8.
+#   (git cannot re-include a file under an excluded directory, so we exclude
+#   `dist/` only where it really is an artefact.)
 /dist/
 packages/tooling/dist/
 tools/*/dist/
+
+# Extraction scratch from the OpenAPI translation harness (backend-contracts).
+# Regenerated on demand; 140 KB of French source units, not a deliverable.
+*.units.json

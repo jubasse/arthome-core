@@ -1,36 +1,36 @@
 // @arthome/tooling/vitest
 //
-// ⚠ CE MODULE N'IMPORTE RIEN DE `vitest`, ET NE DOIT JAMAIS LE FAIRE.
+// ⚠ THIS MODULE IMPORTS NOTHING FROM `vitest`, AND MUST NEVER DO SO.
 //
-// Il exporte un OBJET NU, que le depot passe a SON PROPRE `defineConfig` :
+// It exports a BARE OBJECT, which the repository passes to ITS OWN defineConfig:
 //
-//     import { defineConfig } from 'vitest/config';   // la version du depot
+//     import { defineConfig } from 'vitest/config';   // the repository's version
 //     import base from '@arthome/tooling/vitest';
 //     export default defineConfig({ ...base, test: { ...base.test, /* local */ } });
 //
-// La raison est la fracture des versions : Angular 22 epingle `vitest ^4.0.8`,
-// les cinq autres depots sont sur `5.0.1`. Si ce fichier importait `defineConfig`
-// depuis `vitest`, il imposerait UNE version de Vitest aux sept depots et
-// casserait les deux depots Angular. Un objet nu n'impose rien : `vitest`
-// n'apparait ni en dependencies ni en peerDependencies de @arthome/tooling.
-// Le paquet decrit la configuration ; il ne fournit pas l'outil.
+// The reason is the version split: Angular 22 pins `vitest ^4.0.8`, the five
+// other repositories are on `5.0.1`. If this file imported `defineConfig` from
+// `vitest`, it would impose ONE version of Vitest on all seven repositories and
+// break the two Angular ones. A bare object imposes nothing: `vitest` appears
+// neither in dependencies nor in peerDependencies of @arthome/tooling.
+// The package describes the configuration; it does not supply the tool.
 //
-// Voir architecture/code-conventions.md sections 4.2 et 4.3.
+// See architecture/code-conventions.md sections 4.2 and 4.3.
 
 /**
- * Fragment de configuration Vitest commun aux sept depots.
- * Compatible Vitest 4 et 5 : aucune cle propre a l'un des deux.
+ * Vitest configuration fragment shared by all seven repositories.
+ * Works on Vitest 4 and 5: no key specific to either.
  */
 export const base = {
   test: {
-    // Le test est A COTE du fichier qu'il teste. Pas de dossier __tests__, pas
-    // d'arborescence test/ parallele : une arborescence parallele finit toujours
-    // par diverger de celle qu'elle double — c'est E2 sous un autre visage.
+    // The test sits NEXT TO the file it tests. No __tests__ directory, no
+    // parallel test/ tree: a parallel tree always ends up diverging from the one
+    // it mirrors — that is E2 wearing another face.
     include: ['src/**/*.spec.{ts,tsx}'],
     exclude: ['**/node_modules/**', '**/dist/**'],
 
-    // `.spec.ts` et non `.test.ts` : c'est ce qu'Angular impose, et aligner les
-    // cinq autres coute zero.
+    // `.spec.ts` rather than `.test.ts`: it is what Angular imposes, and aligning
+    // the other five costs nothing.
     globals: false,
     clearMocks: true,
     restoreMocks: true,
@@ -38,10 +38,10 @@ export const base = {
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      // Pas de seuil chiffre : sur un projet solo, un seuil global produit des
-      // tests ecrits pour le chiffre. Ce qui est exige est cible — les bornes
-      // des modules de @arthome/core/domain — et c'est definition-of-done.md
-      // qui a le dernier mot. Voir code-conventions.md section 5.8.
+      // No numeric threshold: on a solo project a global threshold produces tests
+      // written for the number. What is required is targeted — the boundaries of
+      // the @arthome/core/domain modules — and definition-of-done.md has the last
+      // word. See code-conventions.md section 5.8.
       exclude: ['**/*.spec.{ts,tsx}', '**/generated/**', '**/dist/**'],
     },
   },

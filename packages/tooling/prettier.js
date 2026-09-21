@@ -1,25 +1,24 @@
 // @arthome/tooling/prettier
 //
-// Prettier possede le formatage. ESLint ne possede que la qualite de code.
-// Recouvrement zero, verifie par `npx eslint-config-prettier <fichier>`.
+// Prettier owns formatting. ESLint owns code quality only.
+// Zero overlap, verified by `npx eslint-config-prettier <file>`.
 //
-// Un depot consomme cette configuration par une ligne de son package.json :
+// A repository consumes this config with one line in its package.json:
 //     { "prettier": "@arthome/tooling/prettier" }
 //
-// ⚠ AUCUN GREFFON. En particulier pas prettier-plugin-organize-imports ni
-//   @trivago/prettier-plugin-sort-imports : ils feraient trier les imports a
-//   Prettier, en concurrence directe avec import-x/order — deux outils, deux
-//   ordres, une guerre de --fix. Prettier NE TRIE PAS les imports, et c'est
-//   delibere : c'est ce qui fait que l'ordre des imports n'est PAS un domaine
-//   partage. Un greffon de tri reintroduirait le recouvrement la ou il n'y en a
-//   pas. Voir architecture/code-conventions.md section 3.3.
+// ⚠ NO PLUGINS. In particular not prettier-plugin-organize-imports nor
+//   @trivago/prettier-plugin-sort-imports: they would make Prettier sort
+//   imports, in direct competition with import-x/order — two tools, two orders,
+//   a --fix war. Prettier DOES NOT SORT imports, and that is deliberate: it is
+//   what makes import order NOT a shared domain. A sorting plugin would
+//   reintroduce the overlap exactly where there is none.
+//   See architecture/code-conventions.md section 3.3.
 
 /** @type {import("prettier").Config} */
 export const config = {
-  // printWidth 100 : 80 fait retourner a la ligne des signatures TypeScript
-  // parfaitement lisibles et des chaines de methodes RxJS ; 120 rend les diffs
-  // cote a cote illisibles sur un portable. Le meme partout, pour que deplacer
-  // du code entre depots ne reformate rien.
+  // printWidth 100: 80 wraps perfectly readable TypeScript signatures and RxJS
+  // method chains; 120 makes side-by-side diffs unreadable on a laptop. The same
+  // everywhere, so that moving code between repositories reformats nothing.
   printWidth: 100,
   tabWidth: 2,
   useTabs: false,
@@ -31,9 +30,9 @@ export const config = {
   bracketSpacing: true,
   quoteProps: 'as-needed',
 
-  // Seul poste ou un defaut different produirait un diff de fichier entier.
-  // Double d'un .gitattributes `* text=auto eol=lf` sur les sept depots :
-  // Prettier corrige le fichier, git l'empeche d'arriver.
+  // The one setting where a different default would produce a whole-file diff.
+  // Backed by a `* text=auto eol=lf` .gitattributes in all seven repositories:
+  // Prettier fixes the file, git stops it arriving in the first place.
   endOfLine: 'lf',
 
   overrides: [

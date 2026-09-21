@@ -1,49 +1,94 @@
 {
   "_comment": [
-    "LA table des verrous tsconfig, pour les sept depots. Une seule, ici.",
+    "THE tsconfig lock table, for all seven repositories. One table, here.",
     "",
-    "Sans cette liste, `extends` n'est qu'une suggestion : chaque depot desactivera",
-    "la rigueur qui le gene, et on retombera sur sept configurations divergentes",
-    "sous un nom commun. Sept copies de cette table seraient la faute E2 appliquee",
-    "a l'outillage — d'ou le fichier unique et la porte qui le lit.",
+    "Without this list, `extends` is only a suggestion: every repository will switch off",
+    "whichever strictness annoys it, and we end up with seven diverging configurations",
+    "under a common name. Seven copies of this table would be fault E2 applied to",
+    "tooling — hence one file, and a gate that reads it.",
     "",
-    "Ce que la porte attrape et que rien d'autre n'attrape : le \"strict\": false",
-    "ajoute un soir pour faire passer une migration, et jamais retire.",
+    "What the gate catches and nothing else does: the \"strict\": false added one evening",
+    "to get a migration through, and never removed.",
     "",
-    "Voir architecture/code-conventions.md sections 4.5 et 4.5.1."
+    "See architecture/code-conventions.md sections 4.5 and 4.5.1."
   ],
 
   "locked": {
-    "strict": { "value": true, "why": "Un depot << presque strict >> n'a aucune des garanties du strict." },
-    "noUncheckedIndexedAccess": { "value": true, "why": "tableau[i] vaut T | undefined — la source d'erreur numero un en production." },
-    "exactOptionalPropertyTypes": { "value": true, "why": "{ a?: string } n'accepte pas { a: undefined }." },
-    "noImplicitOverride": { "value": true, "why": "Une methode qui croit surcharger et ne surcharge pas est silencieuse." },
-    "noFallthroughCasesInSwitch": { "value": true, "why": "L'exhaustivite des unions litterales (section 5.3) en depend." },
-    "noImplicitReturns": { "value": true, "why": "Un chemin sans return rend undefined sans le dire." },
-    "useUnknownInCatchVariables": { "value": true, "why": "C'est par la qu'`any` revient le plus souvent dans un projet strict." },
-    "isolatedModules": { "value": true, "why": "Metro, SWC et esbuild transpilent fichier par fichier." },
-    "verbatimModuleSyntax": { "value": true, "why": "Impose `import type` et supprime l'ambiguite d'elision." },
-    "forceConsistentCasingInFileNames": { "value": true, "why": "Un seul cas de sensibilite a la casse entre macOS et Linux suffit a perdre une soiree." }
+    "strict": {
+      "value": true,
+      "why": "A repository that is \"almost strict\" has none of strict's guarantees."
+    },
+    "noUncheckedIndexedAccess": {
+      "value": true,
+      "why": "array[i] is T | undefined — the number one source of production errors."
+    },
+    "exactOptionalPropertyTypes": {
+      "value": true,
+      "why": "{ a?: string } does not accept { a: undefined }."
+    },
+    "noImplicitOverride": {
+      "value": true,
+      "why": "A method that believes it overrides and does not is silent."
+    },
+    "noFallthroughCasesInSwitch": {
+      "value": true,
+      "why": "Exhaustiveness over literal unions (section 5.3) depends on it."
+    },
+    "noImplicitReturns": {
+      "value": true,
+      "why": "A path with no return yields undefined without saying so."
+    },
+    "useUnknownInCatchVariables": {
+      "value": true,
+      "why": "This is where `any` most often comes back into a strict project."
+    },
+    "isolatedModules": {
+      "value": true,
+      "why": "Metro, SWC and esbuild transpile file by file."
+    },
+    "verbatimModuleSyntax": {
+      "value": true,
+      "why": "Forces `import type` and removes elision ambiguity."
+    },
+    "forceConsistentCasingInFileNames": {
+      "value": true,
+      "why": "One case-sensitivity mismatch between macOS and Linux is enough to lose an evening."
+    }
   },
 
   "forbidden": {
-    "baseUrl": "Porte un chemin (donc resolu depuis node_modules/@arthome/tooling/) ET erreur dure sous TypeScript 7. Les paths s'ecrivent sans baseUrl, dans le depot.",
-    "downlevelIteration": "Erreur dure sous TypeScript 7.",
-    "outFile": "Erreur dure sous TypeScript 7. Utiliser un empaqueteur.",
-    "ignoreDeprecations": "Ne tait plus rien sous TypeScript 7 : s'en servir reviendrait a repousser le travail."
+    "baseUrl": "Carries a path (so it resolves from node_modules/@arthome/tooling/) AND is a hard error under TypeScript 7. Write `paths` without baseUrl, in the repository.",
+    "downlevelIteration": "Hard error under TypeScript 7.",
+    "outFile": "Hard error under TypeScript 7. Use a bundler.",
+    "ignoreDeprecations": "Silences nothing under TypeScript 7: using it would only postpone the work."
   },
 
   "forbiddenValues": {
-    "target": { "not": ["es5", "ES5", "es3", "ES3"], "why": "Erreur dure sous TypeScript 7 : ES2015 est le minimum." },
-    "moduleResolution": { "not": ["node", "node10", "classic", "Node", "Node10", "Classic"], "why": "Erreur dure sous TypeScript 7. Utiliser nodenext ou bundler." },
-    "module": { "not": ["amd", "umd", "system", "systemjs", "none", "AMD", "UMD", "System", "None"], "why": "Erreur dure sous TypeScript 7." },
-    "esModuleInterop": { "not": [false], "why": "Erreur dure sous TypeScript 7 : toujours actif." },
-    "allowSyntheticDefaultImports": { "not": [false], "why": "Erreur dure sous TypeScript 7 : toujours actif." },
-    "alwaysStrict": { "not": [false], "why": "Erreur dure sous TypeScript 7 : tout le code est en mode strict." }
+    "target": {
+      "not": ["es5", "ES5", "es3", "ES3"],
+      "why": "Hard error under TypeScript 7: ES2015 is the minimum."
+    },
+    "moduleResolution": {
+      "not": ["node", "node10", "classic", "Node", "Node10", "Classic"],
+      "why": "Hard error under TypeScript 7. Use nodenext or bundler."
+    },
+    "module": {
+      "not": ["amd", "umd", "system", "systemjs", "none", "AMD", "UMD", "System", "None"],
+      "why": "Hard error under TypeScript 7."
+    },
+    "esModuleInterop": { "not": [false], "why": "Hard error under TypeScript 7: always on." },
+    "allowSyntheticDefaultImports": {
+      "not": [false],
+      "why": "Hard error under TypeScript 7: always on."
+    },
+    "alwaysStrict": {
+      "not": [false],
+      "why": "Hard error under TypeScript 7: all code is strict mode."
+    }
   },
 
   "scoped": {
-    "_why": "Verrous qui ne valent que sur certains fichiers. Verifies par la porte quand le fichier cible est celui-la.",
+    "_why": "Locks that apply only to certain files. Checked when the target file is one of them.",
     "packages/*/tsconfig.build.json": {
       "declaration": true,
       "isolatedDeclarations": true,
@@ -55,16 +100,48 @@
   },
 
   "redefinable": {
-    "_why": "Il FAUT que ce soit possible : une base trop rigide serait contournee au lieu d'etre etendue.",
-    "paths": ["include", "exclude", "files", "outDir", "rootDir", "declarationDir", "paths", "typeRoots"],
-    "options": ["types", "lib", "jsx", "module", "moduleResolution", "noEmit", "sourceMap", "skipLibCheck", "allowJs", "resolveJsonModule", "experimentalDecorators", "emitDecoratorMetadata", "target"],
+    "_why": "This MUST be possible: a base that is too rigid gets bypassed instead of extended.",
+    "paths": [
+      "include",
+      "exclude",
+      "files",
+      "outDir",
+      "rootDir",
+      "declarationDir",
+      "paths",
+      "typeRoots"
+    ],
+    "options": [
+      "types",
+      "lib",
+      "jsx",
+      "module",
+      "moduleResolution",
+      "noEmit",
+      "sourceMap",
+      "skipLibCheck",
+      "allowJs",
+      "resolveJsonModule",
+      "experimentalDecorators",
+      "emitDecoratorMetadata",
+      "target"
+    ],
     "sections": ["angularCompilerOptions", "references", "ts-node", "vueCompilerOptions"]
   },
 
   "mustNotCarryPaths": {
-    "_why": "Les chemins relatifs d'un tsconfig etendu se resolvent DEPUIS LE FICHIER OU ILS SONT ECRITS. Un include: [\"src\"] dans la base compilerait litteralement les sources de @arthome/tooling.",
+    "_why": "Relative paths in an extended tsconfig resolve FROM THE FILE THEY ARE WRITTEN IN. An include: [\"src\"] in the base would literally compile @arthome/tooling's own sources.",
     "files": ["tsconfig/base.json", "tsconfig/lib.json", "tsconfig/app.json"],
     "keys": ["include", "exclude", "files", "references"],
-    "compilerOptions": ["outDir", "rootDir", "rootDirs", "declarationDir", "baseUrl", "paths", "typeRoots", "outFile"]
+    "compilerOptions": [
+      "outDir",
+      "rootDir",
+      "rootDirs",
+      "declarationDir",
+      "baseUrl",
+      "paths",
+      "typeRoots",
+      "outFile"
+    ]
   }
 }

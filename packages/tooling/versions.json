@@ -1,24 +1,27 @@
 {
   "_comment": [
-    "LA table des versions attendues, pour les sept depots. Une seule, ici.",
+    "THE table of expected versions, for all seven repositories. One table, here.",
     "",
-    "Entre les sept depots il n'existe pas de catalogue pnpm — c'est la limite du",
-    "multi-depots, et elle est assumee. Le substitut est cette table plus la porte",
-    "`arthome-check-versions`, PAS un espoir. Sept package.json autonomes seraient",
-    "sept tables litterales paralleles sous un nom commun : la faute E2 appliquee",
-    "aux versions.",
+    "There is no pnpm catalog across the seven repositories — that is the limit of the",
+    "multi-repository layout, and it is accepted. The substitute is this table plus the",
+    "`arthome-check-versions` gate, NOT a hope. Seven autonomous package.json files would",
+    "be seven parallel literal tables under a common name: fault E2, applied to versions.",
     "",
-    "Regimes (code-conventions.md section 7.1) :",
-    "  A — epingle exact, une montee majeure se traite comme un changement de",
-    "      contrat. Y entre ce que PLUSIEURS depots doivent voir de la meme facon",
-    "      A L'EXECUTION. Test d'appartenance : si deux depots en ont deux versions",
-    "      en meme temps, est-ce que quelque chose casse de facon difficile a",
-    "      diagnostiquer ? zod : oui. react : non (un node_modules par depot).",
-    "  B — epingle exact, montee coordonnee dans l'ordre de la section 7.3.",
-    "  C — fourchette, montee au fil de l'eau. Le verrou fait foi.",
+    "Regimes (code-conventions.md section 7.1):",
+    "  A — exact pin; a major bump is handled as a contract change. What belongs here is",
+    "      what SEVERAL repositories must see the same way AT RUNTIME. Membership test:",
+    "      if two repositories hold two different versions at the same time, does",
+    "      something break in a way that is hard to diagnose? zod: yes. react: no (one",
+    "      node_modules per repository).",
+    "  B — exact pin, bumped in the order of section 7.3.",
+    "  C — range, bumped as they come. The lockfile is the record.",
     "",
-    "Releve le 21 septembre 2026 sur registry.npmjs.org. CE TABLEAU PERIME :",
-    "la section 7.5 donne les commandes qui le reconstruisent."
+    "Verified on 2026-09-21 against registry.npmjs.org. THIS TABLE GOES STALE:",
+    "section 7.5 gives the commands that rebuild it.",
+    "",
+    "⚠ A version bump pins a version that is ALREADY MATURE, never the day's — see",
+    "  section 7.6. Pinning the day's latest guarantees minimumReleaseAge refuses it,",
+    "  which is exactly what happened at the first install of this repository."
   ],
   "verifiedOn": "2026-09-21",
 
@@ -26,36 +29,36 @@
     "node": {
       "range": "^22.22.3 || ^24.15.0 || >=26",
       "preferred": "24.21.0",
-      "why": "Intersection des quatre planchers. Angular 22 est le plus exigeant (^22.22.3 || ^24.15.0 || >=26) ; RN 0.87 demande ^22.13 || ^24.3 || >=26 ; ESLint 10 ^20.19 || ^22.13 || >=24 ; @nestjs/cli >=20.11. Node 24 << Krypton >> est LTS ; 26 ne l'est pas encore."
+      "why": "Intersection of the four floors. Angular 22 is the most demanding (^22.22.3 || ^24.15.0 || >=26); RN 0.87 asks for ^22.13 || ^24.3 || >=26; ESLint 10 for ^20.19 || ^22.13 || >=24; @nestjs/cli for >=20.11. Node 24 'Krypton' is LTS; 26 is not yet."
     },
     "pnpm": {
       "range": ">=12.4.2",
       "preferred": "12.5.1",
-      "why": "packageManager fait installer la bonne version par Corepack. minimumReleaseAge vaut 1440 par defaut depuis pnpm 11."
+      "why": "packageManager makes Corepack install the right version. minimumReleaseAge has defaulted to 1440 since pnpm 11."
     }
   },
 
   "A": {
-    "_why": "Partage a l'execution par plusieurs depots. Une montee majeure = changement de contrat.",
+    "_why": "Shared at runtime by several repositories. A major bump is a contract change.",
     "zod": {
       "version": "4.6.5",
-      "why": "Dependance d'execution partagee par sept services et cinq applications. En peerDependency de @arthome/contracts, epinglee. Deux zod dans un meme processus, c'est deux registres de schemas et des erreurs de validation incomprehensibles. Acte par le chef de projet."
+      "why": "Runtime dependency shared by seven services and five applications. A peerDependency of @arthome/contracts, exactly pinned. Two zod copies in one process means two schema registries and unintelligible validation errors. Settled by the project lead."
     },
     "typescript": {
       "version": "6.0.3",
-      "why": "Une seule version par depot et la meme sur les sept. Plafond dur d'Angular (@angular/compiler-cli peer >=6.0 <6.1), rejoint par nest build (abandonne sur TS 7) et par typescript-eslint (peer >=4.8.4 <6.1.0). Rien ne pousse vers le haut : react-native n'a aucun peer typescript et @types/react accepte TS 5.1+."
+      "why": "One version per repository, and the same across all seven. Angular's hard ceiling (@angular/compiler-cli peer >=6.0 <6.1), joined by nest build (aborts on TS 7) and by typescript-eslint (peer >=4.8.4 <6.1.0). Nothing pushes upward: react-native has no typescript peer and @types/react accepts TS 5.1+."
     }
   },
 
   "B": {
-    "_why": "Outillage qui decide si la construction passe. Epingle exact, monte dans l'ordre de la section 7.3.",
+    "_why": "Tooling that decides whether the build passes. Exact pin, bumped in the order of section 7.3.",
     "eslint": {
       "version": "10.11.0",
       "exceptions": {
         "arthome-storefront-mobile": "9.39.5",
         "arthome-storefront-tv": "9.39.5"
       },
-      "why": "Divergence imposee et datee : @react-native/eslint-config@0.87.1 a pour peer `eslint ^8.0.0 || ^9.0.0` — pas 10. Condition de sortie : une version de ce prereglage acceptant ESLint 10. eslintrc n'existe plus en 10 ; config cherchee depuis le dossier du fichier linte."
+      "why": "A forced, dated divergence: @react-native/eslint-config@0.87.1 has peer `eslint ^8.0.0 || ^9.0.0` — not 10. Exit condition: a release of that preset accepting ESLint 10. eslintrc no longer exists in 10; the config is looked up from the linted file's directory upward."
     },
     "@eslint/js": {
       "version": "10.0.1",
@@ -63,19 +66,19 @@
         "arthome-storefront-mobile": "9.39.5",
         "arthome-storefront-tv": "9.39.5"
       },
-      "why": "Doit suivre le majeur d'eslint : c'est pourquoi il est en peerDependency de @arthome/tooling et non en dependency."
+      "why": "Must track eslint's major, which is why it is a peerDependency of @arthome/tooling and not a dependency."
     },
     "prettier": {
       "version": "3.9.8",
-      "why": "Prettier 4 est en alpha (4.0.0-alpha.13). On reste en 3.x."
+      "why": "Prettier 4 is in alpha (4.0.0-alpha.13). We stay on 3.x."
     },
     "eslint-config-prettier": {
       "version": "10.1.8",
-      "why": "Entree a plat dediee depuis 10.1.1 : importer `eslint-config-prettier/flat`, et le placer DERNIER. Gere les regles @stylistic depuis 10.0.0."
+      "why": "Dedicated flat entry point since 10.1.1: import `eslint-config-prettier/flat`, and put it LAST. Handles @stylistic rules since 10.0.0."
     },
     "typescript-eslint": {
       "version": "8.70.0",
-      "why": "Peer typescript >=4.8.4 <6.1.0 : c'est le plafond reel de la flotte. La demande de support TS 7 (issue #12518) a ete fermee << not planned >>, faute d'API TypeScript 7 ; elle est attendue en 7.1."
+      "why": "Peer typescript >=4.8.4 <6.1.0: this is the fleet's real ceiling. The TS 7 support request (issue #12518) was closed 'not planned' for lack of a TypeScript 7 API; it is expected in 7.1."
     },
     "eslint-plugin-import-x": { "version": "4.17.1" },
     "eslint-import-resolver-typescript": { "version": "4.4.5" },
@@ -86,27 +89,27 @@
         "arthome-studio-web": "4.1.11",
         "arthome-studio-mobile": "4.1.11"
       },
-      "why": "Angular 22 epingle vitest ^4.0.8. C'est pourquoi @arthome/tooling/vitest exporte un objet nu et n'importe rien de vitest."
+      "why": "Angular 22 pins vitest ^4.0.8. This is why @arthome/tooling/vitest exports a bare object and imports nothing from vitest."
     },
     "turbo": {
       "version": "2.11.2",
       "scope": ["arthome-core", "arthome-platform"],
-      "why": "Cache de taches seulement. Les cinq applications n'en ont pas : un depot d'une seule application n'a pas de graphe a mettre en cache. Pas de Nx, sur aucun des sept."
+      "why": "Task cache only. The five applications have none: a single-application repository has no task graph to cache. No Nx, in any of the seven."
     }
   },
 
   "forbidden": {
-    "_why": "Installer l'un de ces paquets annule une decision. La porte le dit avant la revue.",
-    "eslint-plugin-prettier": "Proscrit : faire tourner Prettier comme une regle ESLint est le montage qui CREE les conflits qu'on veut eviter (section 3.3).",
-    "prettier-plugin-organize-imports": "Proscrit : ferait trier les imports a Prettier, en concurrence avec import-x/order.",
-    "@trivago/prettier-plugin-sort-imports": "Proscrit : meme raison.",
-    "@stylistic/eslint-plugin": "Proscrit : rend ESLint au formatage, ce que eslint-config-prettier est la pour eteindre.",
-    "eslint-plugin-react-compiler": "Ne pas installer : derniere publication 2025-08-15, restee au stade RC. Ses regles vivent dans eslint-plugin-react-hooks.",
-    "@biomejs/biome": "Ecarte (D-013) : ce sont les greffons de framework — lint de template Angular, regles des hooks et du compilateur React, eslint-config-next — qui attrapent les vraies fautes, et Biome n'a pas cet ecosysteme.",
-    "nx": "Pas de Nx (README section 3) : ses generateurs, executeurs et migrations deviennent un projet dans le projet.",
-    "tslint": "Mort depuis 2019.",
-    "husky": "Non : core.hooksPath et deux crochets de dix lignes font le meme travail sans trois paquets a entretenir en sept exemplaires (section 8.4).",
-    "lint-staged": "Meme raison que husky.",
-    "@commitlint/cli": "Meme raison : le crochet commit-msg tient en dix lignes."
+    "_why": "Installing any of these cancels a decision. The gate says so before review does.",
+    "eslint-plugin-prettier": "Forbidden: running Prettier as an ESLint rule is the very setup that CREATES the conflicts we are avoiding (section 3.3).",
+    "prettier-plugin-organize-imports": "Forbidden: would make Prettier sort imports, competing with import-x/order.",
+    "@trivago/prettier-plugin-sort-imports": "Forbidden: same reason.",
+    "@stylistic/eslint-plugin": "Forbidden: gives formatting back to ESLint, which is what eslint-config-prettier exists to switch off.",
+    "eslint-plugin-react-compiler": "Do not install: last published 2025-08-15, never left RC. Its rules live in eslint-plugin-react-hooks.",
+    "@biomejs/biome": "Ruled out (D-013): it is the framework plugins — Angular template lint, React hooks and compiler rules, eslint-config-next — that catch the real faults, and Biome has no such ecosystem.",
+    "nx": "No Nx (README section 3): its generators, executors and migrations become a project inside the project.",
+    "tslint": "Dead since 2019.",
+    "husky": "No: core.hooksPath plus two ten-line hooks do the same work without three packages to maintain in seven copies (section 8.4).",
+    "lint-staged": "Same reason as husky.",
+    "@commitlint/cli": "Same reason: the commit-msg hook fits in ten lines."
   }
 }

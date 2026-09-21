@@ -1,0 +1,29 @@
+# Prettier owns CODE formatting. It does not own PROSE.
+#
+# ── Markdown ──────────────────────────────────────────────────────────────────
+# Measured, not assumed: running Prettier over architecture/ rewrites all fifteen
+# documents. The cause is not proseWrap — it is Markdown TABLE PADDING. Prettier
+# pads every cell to the column width, so a table whose cells hold sentences
+# produces source lines of several hundred characters. Two consequences, both
+# bad: the source becomes unreadable in an editor, and every later edit to one
+# cell reflows the whole table, so the diff no longer shows what changed.
+#
+# These documents are read and reviewed by humans, and their line structure is
+# authorial: a line per clause is what makes a prose diff reviewable. That is a
+# deliberate scope boundary, not an oversight — see code-conventions.md 5.1.
+**/*.md
+
+# ── Not ours to reformat ──────────────────────────────────────────────────────
+# The five mockups: the source of truth, reproduced as they are, not rewritten
+# (README section 3). Also ESLint-ignored, for the same reason.
+prototypes/
+# The handoff dossier: corrected in place, but not ours to restyle.
+docs/
+
+# ── Generated or machine-owned ────────────────────────────────────────────────
+pnpm-lock.yaml
+**/dist/
+**/coverage/
+**/generated/
+.turbo/
+node_modules/

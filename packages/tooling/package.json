@@ -1,7 +1,7 @@
 {
   "name": "@arthome/tooling",
   "version": "0.1.0",
-  "description": "Configuration de base partagee par les sept depots Arthome : ESLint, Prettier, TypeScript, Vitest, et les portes locales.",
+  "description": "Shared base configuration for the seven Arthome repositories: ESLint, Prettier, TypeScript, Vitest, and the local gates.",
   "license": "UNLICENSED",
   "private": false,
   "type": "module",
@@ -32,7 +32,9 @@
   "bin": {
     "arthome-check-enums": "./bin/check-enums.mjs",
     "arthome-check-versions": "./bin/check-versions.mjs",
-    "arthome-check-tsconfig": "./bin/check-tsconfig.mjs"
+    "arthome-check-tsconfig": "./bin/check-tsconfig.mjs",
+    "arthome-check-prettier-conflict": "./bin/check-prettier-conflict.mjs",
+    "arthome-check-language": "./bin/check-language.mjs"
   },
   "files": [
     "bin",
@@ -47,6 +49,7 @@
   "peerDependencies": {
     "@eslint/js": "^9.39.5 || ^10.0.1",
     "eslint": "^9.39.5 || ^10.11.0",
+    "eslint-config-prettier": "10.1.8",
     "prettier": "^3.9.8",
     "typescript": "6.0.3"
   },
@@ -56,10 +59,23 @@
     }
   },
   "dependencies": {
-    "eslint-config-prettier": "10.1.8",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-import-x": "4.17.1",
     "globals": "16.4.0",
     "typescript-eslint": "8.70.0"
-  }
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.11.0",
+    "eslint-config-prettier": "10.1.8",
+    "prettier": "3.9.8",
+    "typescript": "6.0.3"
+  },
+  "keywords": [
+    "arthome",
+    "eslint-config",
+    "prettier-config",
+    "tsconfig",
+    "internal"
+  ]
 }

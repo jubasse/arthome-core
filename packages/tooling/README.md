@@ -1,74 +1,75 @@
 # `@arthome/tooling`
 
-La configuration de base que les **sept dépôts Arthome** étendent : ESLint, Prettier, TypeScript,
-Vitest — et les trois portes qui vérifient qu'ils n'ont pas divergé.
+The base configuration that the **seven Arthome repositories** extend: ESLint, Prettier, TypeScript,
+Vitest — and the four gates that check they have not drifted apart.
 
-> **La conception est dans [`architecture/code-conventions.md`](../../architecture/code-conventions.md).**
-> Ce README dit comment s'en servir ; le document dit pourquoi c'est comme ça. Quand les deux se
-> contredisent, c'est le document qui a raison et ce paquet qui a un défaut.
+> **The reasoning lives in [`architecture/code-conventions.md`](../../architecture/code-conventions.md).**
+> This README says how to use the package; that document says why it is the way it is. Where the two
+> disagree, the document is right and this package has a defect.
 
 ---
 
-## Ce qu'il porte
+## What it carries
 
-| Entrée | Contenu |
+| Entry point | Contents |
 |---|---|
-| `@arthome/tooling/eslint/base` | Le socle : recommandations JS, `typescript-eslint` **typé**, `import-x`, les règles TypeScript non négociables. **Aucune règle de formatage.** |
-| `@arthome/tooling/eslint/node` | `base` + globales Node + préfixe `node:` obligatoire. Pour `arthome-platform`. |
-| `@arthome/tooling/eslint/browser` | `base` + globales navigateur. Pour les cinq applications. |
-| `@arthome/tooling/prettier` | La configuration Prettier. Aucun greffon. |
-| `@arthome/tooling/vitest` | Un **objet nu**, jamais un `defineConfig`. |
-| `@arthome/tooling/tsconfig/base.json` | L'**intersection** TS 6 / TS 7. Aucune option de chemin. |
-| `@arthome/tooling/tsconfig/lib.json` | Paquets publiés. Le seul fichier que TS 7 ne lit jamais. |
-| `@arthome/tooling/tsconfig/app.json` | Applications et services. |
+| `@arthome/tooling/eslint/base` | The floor: JS recommended, **type-aware** `typescript-eslint`, `import-x`, the non-negotiable TypeScript rules. **No formatting rule.** |
+| `@arthome/tooling/eslint/node` | `base` + Node globals + mandatory `node:` prefix. For `arthome-platform`. |
+| `@arthome/tooling/eslint/browser` | `base` + browser globals. For the five applications. |
+| `@arthome/tooling/prettier` | The Prettier config. No plugins. |
+| `@arthome/tooling/vitest` | A **bare object**, never a `defineConfig`. |
+| `@arthome/tooling/tsconfig/base.json` | The TS 6 / TS 7 **intersection**. No path-bearing option. |
+| `@arthome/tooling/tsconfig/lib.json` | Published packages. The one file TS 7 never reads. |
+| `@arthome/tooling/tsconfig/app.json` | Applications and services. |
 
-Et trois exécutables : `arthome-check-enums`, `arthome-check-versions`, `arthome-check-tsconfig`.
+Plus four executables: `arthome-check-enums`, `arthome-check-versions`, `arthome-check-tsconfig`
+and `arthome-check-prettier-conflict`.
 
-**Il n'y a pas d'entrée `"."`**, volontairement : `import … from '@arthome/tooling'` échoue à la
-résolution. C'est la première des quatre barrières qui l'empêchent de devenir une dépendance de
-production, et la seule qui n'ait rien à surveiller.
+**There is no `"."` entry point**, deliberately: `import … from '@arthome/tooling'` fails to resolve.
+That is the first of four barriers keeping it out of production, and the only one with nothing to
+watch.
 
 ---
 
-## Comment un dépôt l'étend
+## How a repository extends it
 
-### ESLint — l'ordre est la seule chose qui ne se négocie pas
+### ESLint — the order is the one thing that is not negotiable
 
 ```js
 // eslint.config.js
 import { defineConfig, globalIgnores } from 'eslint/config';
 import base from '@arthome/tooling/eslint/browser';
-import nextVitals from 'eslint-config-next/core-web-vitals';   // la pile, chez le dépôt
+import nextVitals from 'eslint-config-next/core-web-vitals';   // the stack, owned by the repository
 import prettier from 'eslint-config-prettier/flat';
 
 export default defineConfig([
   globalIgnores(['.next/**', 'out/**', 'next-env.d.ts']),
-  ...base,           // 1. le socle
-  ...nextVitals,     // 2. la pile, qui peut rallumer des choses
-  { rules: {} },     // 3. surcharges locales, chacune avec sa raison en commentaire
-  prettier,          // 4. DERNIER : il éteint ce que 2 et 3 ont rallumé côté format
+  ...base,           // 1. the floor
+  ...nextVitals,     // 2. the stack, which may turn things back on
+  { rules: {} },     // 3. local overrides, each with its reason in a comment
+  prettier,          // 4. LAST: switches off whatever 2 and 3 turned on
 ]);
 ```
 
-**`eslint-config-prettier/flat` est le dernier élément, sans exception.** Placé avant, il ne
-désactive rien de ce qui suit — et il échoue **silencieusement**. La porte le vérifie :
+**`eslint-config-prettier/flat` is the last element, without exception.** Placed earlier it switches
+off nothing that follows — and it fails **silently**. The gate checks it:
 
 ```bash
-npx eslint-config-prettier src/index.ts
-# attendu : No rules that are unnecessary or conflict with Prettier were found.
+pnpm exec arthome-check-prettier-conflict
+# expected: PASS no ESLint rule conflicts with Prettier
 ```
 
-### Prettier — une ligne de `package.json`
+### Prettier — one line of `package.json`
 
 ```json
 { "prettier": "@arthome/tooling/prettier" }
 ```
 
-Les deux dépôts Angular ont la **seule surcharge autorisée**, parce que Prettier n'associe
-l'analyseur `angular` qu'à l'extension `.component.html` — que Angular 20+ a supprimée :
+The two Angular repositories carry the **only permitted override**, because Prettier binds the
+`angular` parser to the `.component.html` extension only — which Angular 20+ removed:
 
 ```js
-// .prettierrc.mjs — dépôts Angular uniquement
+// .prettierrc.mjs — Angular repositories only
 import base from '@arthome/tooling/prettier';
 export default {
   ...base,
@@ -76,7 +77,7 @@ export default {
 };
 ```
 
-### TypeScript — `extends` par nom de paquet
+### TypeScript — `extends` by package name
 
 ```jsonc
 {
@@ -86,13 +87,13 @@ export default {
 }
 ```
 
-Les chemins vont **ici**, jamais dans la base : un chemin écrit dans un fichier étendu se résout
-depuis ce fichier, c'est-à-dire depuis `node_modules/@arthome/tooling/tsconfig/`.
+Paths go **here**, never in the base: a path written in an extended file resolves from that file,
+i.e. from `node_modules/@arthome/tooling/tsconfig/`.
 
-### Vitest — le `defineConfig` du dépôt, jamais celui du paquet
+### Vitest — the repository's `defineConfig`, never the package's
 
 ```ts
-import { defineConfig } from 'vitest/config';   // la version du dépôt : 4.x sur Angular, 5.x ailleurs
+import { defineConfig } from 'vitest/config';   // the repository's version: 4.x on Angular, 5.x elsewhere
 import base from '@arthome/tooling/vitest';
 
 export default defineConfig({ ...base, test: { ...base.test } });
@@ -100,132 +101,157 @@ export default defineConfig({ ...base, test: { ...base.test } });
 
 ---
 
-## Verrouillé / redéfinissable
+## Locked / redefinable
 
-**Verrouillé** — un dépôt qui redéfinit ceci a un défaut, pas un besoin :
+**Locked** — a repository that redefines these has a defect, not a need:
 
 `strict` · `noUncheckedIndexedAccess` · `exactOptionalPropertyTypes` · `noImplicitOverride` ·
 `noFallthroughCasesInSwitch` · `noImplicitReturns` · `useUnknownInCatchVariables` ·
-`isolatedModules` · `verbatimModuleSyntax` · `forceConsistentCasingInFileNames` · la version de
-`typescript` · la position de `eslint-config-prettier/flat` en dernier · l'interdiction
-d'`eslint-plugin-prettier` et des greffons de tri Prettier.
+`isolatedModules` · `verbatimModuleSyntax` · `forceConsistentCasingInFileNames` · the `typescript`
+version · the position of `eslint-config-prettier/flat` last · the ban on `eslint-plugin-prettier`
+and on Prettier sorting plugins.
 
-**Interdit** : `baseUrl`, `downlevelIteration`, `outFile`, `ignoreDeprecations`, `target: es5`,
-`moduleResolution: node10`, `module: amd|umd|systemjs`, `esModuleInterop: false`. Tous sont des
-**erreurs dures sous TypeScript 7**.
+**Forbidden**: `baseUrl`, `downlevelIteration`, `outFile`, `ignoreDeprecations`, `target: es5`,
+`moduleResolution: node10`, `module: amd|umd|systemjs`, `esModuleInterop: false`. All of these are
+**hard errors under TypeScript 7**.
 
-**Redéfinissable sans justification** — et il faut que ce le soit, sinon la base sera contournée au
-lieu d'être étendue : tous les chemins (`include`, `exclude`, `outDir`, `rootDir`, `paths`…),
-`types`, `lib`, `jsx`, `module`, `moduleResolution`, `angularCompilerOptions`, les préréglages de
-pile, la configuration Vitest hors du socle.
+**Redefinable with no justification** — and it has to be, otherwise the base gets bypassed instead
+of extended: every path (`include`, `exclude`, `outDir`, `rootDir`, `paths`…), `types`, `lib`, `jsx`,
+`module`, `moduleResolution`, `angularCompilerOptions`, the stack presets, Vitest configuration
+outside the floor.
 
-**Redéfinissable avec une justification écrite dans le fichier** : désactiver une règle du socle sur
-un motif de fichiers. La forme est imposée :
+**Redefinable with a justification written in the file**: switching off a floor rule for a file
+pattern. The shape is prescribed:
 
 ```js
 {
   files: ['src/generated/**/*.ts'],
   rules: {
-    // Code Protobuf généré : la règle y est structurelle, et le fichier est
-    // réécrit à chaque `buf generate`. Voir architecture/events.md.
+    // Generated Protobuf code: the rule is structural there, and the file is
+    // rewritten on every `buf generate`. See architecture/events.md.
     '@typescript-eslint/no-explicit-any': 'off',
   },
 }
 ```
 
-La table de référence est [`tsconfig-locks.json`](./tsconfig-locks.json) — **une seule, pour les
-sept dépôts.** Sept copies seraient la faute E2 appliquée à l'outillage.
+The reference table is [`tsconfig-locks.json`](./tsconfig-locks.json) — **one table, for all seven
+repositories.** Seven copies would be fault E2 applied to tooling.
 
 ---
 
-## Les trois portes
+## The four gates
 
-Toutes en **Node pur, zéro dépendance** : elles tournent avant même `pnpm install`, et sans
-exécuteur distant — le quota d'Actions du compte est épuisé.
+All in **pure Node, zero dependencies**: they run before `pnpm install` and without a remote runner —
+the account's Actions quota is exhausted.
 
 ```bash
-pnpm exec arthome-check-enums       # aucune valeur d'énumération recopiée (E2)
-pnpm exec arthome-check-versions    # les sept dépôts n'ont pas divergé
-pnpm exec arthome-check-tsconfig    # les verrous n'ont pas été desserrés
+pnpm exec arthome-check-prettier-conflict  # the ESLint/Prettier overlap is empty
+pnpm exec arthome-check-enums              # no enumeration value copied (E2)
+pnpm exec arthome-check-versions           # the seven repositories have not drifted
+pnpm exec arthome-check-tsconfig           # the locks have not been loosened
 ```
 
-### `arthome-check-enums` — la porte contre E2
+### `arthome-check-enums` — the gate against E2
 
-La faute dominante du projet est la **table littérale parallèle** : huit champs, cinq maquettes,
-malgré un principe explicite qui l'interdisait. La leçon est qu'un principe ne suffit pas.
+This project's dominant fault is the **parallel literal table**: eight fields, five mockups, despite
+an explicit written principle forbidding it. The lesson is that a principle is not enough.
 
-Elle **découvre** les `export const NOM = [...] as const` dans les sources de `@arthome/core`, puis
-signale toute réapparition de ces valeurs ailleurs. Elle **ne porte aucune liste d'énumérations** —
-une liste serait une table parallèle de plus. Une énumération nouvelle est couverte le jour où elle
-est déclarée.
+It **discovers** the `export const NAME = [...] as const` declarations in `@arthome/core`'s sources,
+then reports any reappearance of those values elsewhere. It **carries no list of enumerations** — a
+list would be one more parallel table. A new enumeration is covered the day it is declared.
 
-| Option | Effet |
+| Option | Effect |
 |---|---|
-| `--source <dossier>` | où sont les énumérations (défaut : `packages/core/src`, puis `../core/src`, puis `node_modules/@arthome/core/{src,dist}`) |
-| `--allow <fichier>` | les exceptions (défaut : `tools/enum-literals.allow.json`) |
-| `--quiet` | n'écrit qu'en cas d'échec |
+| `--source <dir>` | where the enumerations live (default: `packages/core/src`, then `../core/src`, then `node_modules/@arthome/core/{src,dist}`) |
+| `--allow <file>` | the exceptions (default: `tools/enum-literals.allow.json`) |
+| `--quiet` | only prints on failure |
 
-Une exception **doit** porter une `reason`, sinon la porte refuse le fichier :
+An exception **must** carry a `reason`, or the gate rejects the file:
 
 ```json
-{ "allow": [{ "file": "src/i18n/keymap.ts", "value": "open", "reason": "Plan de correspondance i18n : la clé est la valeur." }] }
+{ "allow": [{ "file": "src/i18n/keymap.ts", "value": "open", "reason": "i18n key map: the key is the value." }] }
 ```
 
-Ce fichier reste court ou la règle est mauvaise. Au-delà de vingt lignes, c'est le signe qu'une
-valeur manque dans `@arthome/core`.
+That file stays short, or the rule is wrong. Past twenty lines it is the sign that a value is
+missing from `@arthome/core`.
 
 ### `arthome-check-versions`
 
-Lit [`versions.json`](./versions.json) — régime A (partagé à l'exécution, une montée majeure vaut
-changement de contrat : `zod`, `typescript`), régime B (outillage), et la liste des paquets
-proscrits. Il connaît les **exceptions nommées** : ESLint 9 sur les deux dépôts React Native,
-Vitest 4 sur les deux dépôts Angular. Passer `--repo <nom>` pour forcer le dépôt évalué.
+Reads [`versions.json`](./versions.json) — regime A (shared at runtime, a major bump is a contract
+change: `zod`, `typescript`), regime B (tooling), and the list of forbidden packages. It knows the
+**named exceptions**: ESLint 9 on the two React Native repositories, Vitest 4 on the two Angular
+ones. Pass `--repo <name>` to force which repository is evaluated.
+
+It also checks the **`minimumReleaseAge` exceptions**: each temporary entry in
+`pnpm-workspace.yaml` must carry a `remove-after: YYYY-MM-DD` marker, and the gate turns red once
+that date has passed. An exception nobody removes is a lowered threshold that does not say its name.
 
 ### `arthome-check-tsconfig`
 
-Vérifie la configuration **résolue**, pas les fichiers : un `extends` se contourne d'une ligne
-locale. Utilise `tsc --showConfig` quand `typescript` est installé, sinon résout la chaîne d'`extends`
-lui-même — pour que la porte existe avant l'installation.
+Checks the **resolved** configuration, not the files: an `extends` is bypassed by one local line.
+Uses `tsc --showConfig` when `typescript` is installed, otherwise resolves the `extends` chain itself
+— so that the gate exists before the install.
 
-Quand la chaîne d'`extends` est rompue, elle signale **la cause unique et s'arrête** : lister dix
-verrous manquants inviterait à les recopier dans le dépôt, c'est-à-dire à commettre la faute même
-que la base existe pour éviter.
+When the `extends` chain is broken it reports **the single cause and stops**: listing ten missing
+locks would invite copying them into the repository, which is committing the very fault the base
+exists to prevent.
+
+### `arthome-check-prettier-conflict`
+
+Enumerates the still-enabled ESLint rules that conflict with Prettier, and must return an empty list.
+It wraps the upstream `eslint-config-prettier` CLI for two reasons: that binary is not on the
+repository's path by design, and ESLint 10 resolves its configuration **per linted file**, so the
+gate must probe one file per configuration family — which the upstream CLI cannot do in one call.
+
+Pass the probe files as arguments, or let it use its defaults. If **no** probe file exists it exits 2
+rather than 0: a gate reporting success while checking nothing would be the most dangerous file in
+the repository.
 
 ---
 
-## `dependencies` contre `peerDependencies`
+## `dependencies` versus `peerDependencies`
 
-La question qui tranche : **le dépôt nomme-t-il ce paquet lui-même ?**
+The question that settles it: **does the repository name this package itself?**
 
-| | Pourquoi |
+| | Why |
 |---|---|
-| **peer** — `eslint`, `@eslint/js`, `prettier`, `typescript` | Ce sont les **binaires que le dépôt exécute**. Deux copies d'ESLint, et le greffon chargé par l'une n'est pas celui que l'autre voit ; les deux fonctionnent, différemment, et le diagnostic est long. `@eslint/js` est peer parce qu'il doit suivre le **majeur d'`eslint`**, qui vaut 9 sur deux dépôts et 10 sur cinq. |
-| **dependencies** épinglés exact — `typescript-eslint`, `eslint-config-prettier`, `eslint-plugin-import-x`, `eslint-import-resolver-typescript`, `globals` | En configuration à plat un greffon est un **objet passé par valeur**, plus un nom résolu depuis le dépôt : aucune ambiguïté de résolution, donc on peut les épingler ici sans que le dépôt ait à les connaître. |
-| **nulle part** — `angular-eslint`, `eslint-config-next`, `eslint-plugin-react-hooks`, `eslint-config-expo`, `@react-native/eslint-config` | Leur version doit suivre le **majeur du framework installé dans le dépôt**. Les loger ici forcerait les sept dépôts à monter de framework ensemble. |
-| **ni l'un ni l'autre** — `vitest` | L'entrée exporte un objet nu. Importer `vitest/config` imposerait une version aux sept et casserait les deux dépôts Angular. |
+| **peer** — `eslint`, `@eslint/js`, `prettier`, `typescript`, `eslint-config-prettier` | These are the **binaries the repository runs**. Two copies of ESLint, and the plugin loaded by one is not the one the other sees; both work, differently, and the diagnosis is long. `@eslint/js` is peer because it must track **eslint's major**, which is 9 on two repositories and 10 on five. |
+| **exactly pinned dependencies** — `typescript-eslint`, `eslint-plugin-import-x`, `eslint-import-resolver-typescript`, `globals` | In flat config a plugin is an **object passed by value**, no longer a name resolved from the repository: no resolution ambiguity, so they can be pinned here without the repository having to know them. |
+| **nowhere** — `angular-eslint`, `eslint-config-next`, `eslint-plugin-react-hooks`, `eslint-config-expo`, `@react-native/eslint-config` | Their version must track the **framework major installed in the repository**. Lodging them here would force all seven to upgrade together. |
+| **neither** — `vitest` | The entry point exports a bare object. Importing `vitest/config` would impose one version on all seven and break the two Angular repositories. |
+
+**A package that declares a peer must also pin it in its own `devDependencies`.** Without that, pnpm
+auto-installs a peer for this workspace package and picks the **lowest** member of the range — which
+is how `eslint@9.39.5` ended up here while the repository root had `10.11.0`. Two copies, both
+working, differently, and nothing red.
 
 ```bash
-pnpm why eslint typescript prettier   # attendu : une seule version résolue pour chacun
-pnpm why -P @arthome/tooling          # attendu : aucune dépendance (jamais en production)
+pnpm why eslint typescript prettier   # expected: one resolved version each
+pnpm why -P @arthome/tooling          # expected: no dependency (never in production)
+pnpm exec arthome-check-versions      # reads the pnpm store and fails on a duplicate
 ```
 
 ---
 
-## Monter la version de ce paquet
+## Bumping this package
 
-Le versionnement d'un paquet de configuration n'est pas celui d'une bibliothèque :
+A configuration package is not versioned like a library:
 
-| Changement | Version |
+| Change | Version |
 |---|---|
-| **allumer une règle**, durcir `warn` → `error`, monter un greffon d'un majeur | **MAJEUR** |
-| ajouter une règle en `warn`, ajouter une entrée d'export | mineur |
-| corriger un motif de fichiers, un commentaire | correctif |
+| **turning a rule on**, hardening `warn` → `error`, bumping a plugin by a major | **MAJOR** |
+| adding a rule as `warn`, adding an export entry | minor |
+| fixing a file pattern, a comment | patch |
 
-**Allumer une règle est un changement cassant** : sinon un `pnpm update` rend sept dépôts rouges le
-même jour. Toute règle nouvelle arrive en `warn` au mineur `N`, puis passe `error` au majeur `N+1`,
-une fois les sept dépôts à zéro. Un seul dépôt en transit à la fois, dans l'ordre :
+**Turning a rule on is a breaking change**: otherwise one `pnpm update` turns seven repositories red
+the same day. Every new rule arrives as `warn` in minor `N`, then becomes `error` in major `N+1`,
+once all seven are at zero. One repository in transit at a time, in this order:
 `arthome-core` → `arthome-platform` → `storefront-web` → `studio-web` → `studio-mobile` →
 `storefront-mobile` → `storefront-tv`.
 
-`arthome-core` consomme la version de l'espace de travail : un majeur qui casse quelque chose le
-casse **d'abord chez l'éditeur**, avant d'être publié.
+`arthome-core` consumes the workspace version: a major that breaks something breaks it **at the
+publisher first**, before it is ever published.
+
+**And a bump pins a version that is already mature, never the day's** — see code-conventions.md
+section 7.6. Pinning the day's latest guarantees `minimumReleaseAge` will refuse it, which is exactly
+what happened at this repository's first install.

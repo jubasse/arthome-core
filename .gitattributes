@@ -1,5 +1,5 @@
-# Prettier corrige le fichier (endOfLine: lf), git l'empeche d'arriver.
-# Seul poste ou un defaut different produirait un diff de fichier entier.
+# Prettier fixes the file (endOfLine: lf), git stops it arriving in the first place.
+# The one setting where a different default would produce a whole-file diff.
 * text=auto eol=lf
 
 *.png binary

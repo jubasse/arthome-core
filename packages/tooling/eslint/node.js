@@ -1,17 +1,17 @@
 // @arthome/tooling/eslint/node
 //
-// Socle + globales Node. Pour arthome-platform (les sept services NestJS) et pour
-// l'outillage en JavaScript des autres depots.
+// The floor plus Node globals. For arthome-platform (the seven NestJS services)
+// and for the JavaScript tooling of the other repositories.
 //
-// Trois entrees ESLint et pas une : une seule obligerait a embarquer les globales
-// navigateur dans les services et inversement, et les globales sont exactement ce
-// qui produit les faux positifs qui font desactiver une regle — puis oublier de
-// la rallumer.
+// Three ESLint entry points and not one: a single entry would force browser
+// globals into the services and vice versa, and globals are exactly what
+// produces the false positives that make someone switch a rule off — and then
+// forget to switch it back on.
 //
-// ⚠ Ne contient AUCUN greffon de pile. @nestjs/* n'apparait nulle part ici : la
-//   version d'un greffon de pile doit suivre le majeur du framework installe dans
-//   le depot, et le loger ici forcerait les sept depots a monter ensemble.
-//   Voir architecture/code-conventions.md section 4.2.
+// ⚠ Contains NO stack preset. @nestjs/* appears nowhere here: a stack preset's
+//   version must track the framework major installed in the repository, and
+//   lodging it here would force all seven repositories to upgrade together.
+//   See architecture/code-conventions.md section 4.2.
 
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -26,9 +26,9 @@ export const node = tseslint.config(...base, {
     sourceType: 'module',
   },
   rules: {
-    // Le prefixe `node:` est obligatoire : il distingue sans ambiguite un module
-    // interne d'un paquet homonyme du registre, ce qui est une surface d'attaque
-    // reelle sur une chaine d'approvisionnement.
+    // The `node:` prefix is mandatory: it distinguishes a built-in module from a
+    // same-named registry package without ambiguity, which is a real
+    // supply-chain attack surface.
     'no-restricted-imports': [
       'error',
       {
@@ -50,12 +50,12 @@ export const node = tseslint.config(...base, {
               'assert',
               'zlib',
             ],
-            message: "Prefixer les modules internes : `node:fs`, `node:path`, etc.",
+            message: 'Prefix built-in modules: `node:fs`, `node:path`, and so on.',
           },
           {
             group: ['**/dist/**', '@arthome/*/dist/**', '@arthome/*/src/**'],
             message:
-              "Importer par le nom du paquet, jamais par un chemin interne : passer par `exports`, c'est passer par le contrat.",
+              'Import by package name, never by an internal path: going through `exports` is going through the contract.',
           },
         ],
       },
