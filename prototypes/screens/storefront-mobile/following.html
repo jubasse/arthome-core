@@ -17,6 +17,12 @@
                AccountScreen carries no follows, /v1/me/follows/{artistId} is write-only.
                See needs/storefront-mobile.md § Confrontation C1.
 
+  ↪ Outcome  : ⚠ The note above is preserved as written. **Closed on 21 September 2026**, after
+               extraction: `GET /v1/me/follows` exists (openapi/storefront.yaml l. 3870), cursor-
+               paginated, with `liveOnly` for the live section, `nextDate`, `alertEnabled` and a
+               served sort. Its own description opens with "The whole page was unserved."
+               See needs/storefront-mobile.md § Confrontation C1, ↪ Outcome.
+
 
   ⚠ VERBATIM EXTRACTION. Not one line was corrected, completed or
     reformatted. The original was not modified. The inconsistencies found at

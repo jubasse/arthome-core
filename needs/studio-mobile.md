@@ -711,8 +711,8 @@ moment when the person can still read a number out to support.
 
 ## Inconsistencies found
 
-Beyond D2 and D6, which I confirm and refine, eight points found in my sources. I do not apply
-them.
+Beyond D2 and D6, which I confirm and refine, the points found in my sources — numbered
+below, so the count is read off the list rather than asserted beside it. I do not apply them.
 
 **1. D2, made worse on my surface.** The studio mobile mockup carries **the same parallel table**
 as the studio web's (`draft | hidden | sched | tech | live | done | replay`) — and goes further: it
@@ -866,6 +866,14 @@ contract? → `data-model.md`, `context-map.md` (C8)
 
 # Confrontation
 
+> **What this section is.** An objection round written on 21 September 2026 against the contract
+> **as it then stood**. The findings below are preserved **verbatim**, citations included, dead or
+> not — their value is that they were written before the fixes. The outcome notes marked
+> **↪ Outcome** were added later, after the fixes landed; everything else is the record of
+> 21 September and has not been renumbered, softened or re-cited. Where a citation now points at a
+> parameter list, an example value or a vocabulary that has since changed, the outcome note says
+> so rather than updating it.
+
 > Round 3. Read: `answers-to-surfaces.md`, `adr-auth.md`, `context-map.md`, `data-model.md`,
 > `events.md`, `realtime.md`, `transport.md`, `critical-rules.md`, `openapi/studio.yaml` and
 > `DECISIONS.md`. **On the evidence**: the answer index is a promise, the YAML is the proof. Every
@@ -937,6 +945,17 @@ This is not a matter of missing paths: `/v1/dates/{dateId}/run`, `/run/state`,
 `/run/health-samples`, `/incidents`, `/stream-key/*` all exist and serve the run desk very well. It
 is **the right** that is missing, not the data.
 
+
+> **↪ Outcome (added after the round, 21 September 2026).** **Closed.** `contextualPages` was
+> added to `EffectiveRights`, with the closed vocabulary `[regie, wizard, event, inbox]` — the
+> four pages that had no rights carrier. The contract states why they sit beside `navigation`
+> rather than inside it: `navigation` fills the bar and the sheet, these four do not, and filing
+> them together is what had produced the inverse error. The schema description names the
+> regression in its own words — *"`regie` was removed from the vocabulary to make an
+> inconsistency between two tables disappear, that is, the duty's main destination was deleted to
+> silence the symptom that flagged it"* — and ends with *"the two tables are reconciled here, and
+> the page is returned"*. My citation of `navigation`'s fourteen entries is still accurate; it is
+> the conclusion drawn from it that is superseded.
 ### C2 — The four-tab bar does not derive from `navigation`, and the proof is arithmetic
 
 `navigation` is described as served "in **canonical order**". That is `ORDER`. But the bar is not
@@ -961,6 +980,15 @@ two *calls* are allowed, two *implementations* never". Searched across the whole
 the contract, nor named as belonging to the domain. Two surfaces are therefore going to implement
 it twice, and that is exactly the case rule 2 forbids.
 
+
+> **↪ Outcome (added after the round, 21 September 2026).** **Closed.** `tabBar` was added to
+> `EffectiveRights` and is **served**, ordered, four entries. The contract reproduces the
+> arithmetic of this finding verbatim — for an artist the first four entries of `navigation` give
+> `dashboard · crew · events · stream` where the bar must carry `dashboard · events · crew ·
+> tickets` — and draws the conclusion I asked for: the table lives in `@arthome/core` and is
+> served, *"because the studio web orders the same menu: copied, it would be implemented twice —
+> which critical rule 2 forbids"*. My citation stands: `TAB_PREF` still appears exactly once in
+> the repository, in `corrections-handoff.md` as errata E6. It is now moot rather than wrong.
 ### C3 — The moderation optimistic lock conflates the lease with the decision, and cancels the offline queue
 
 This is my most serious objection, and it is demonstrated with the contract's **own examples**.
@@ -995,6 +1023,23 @@ And the contract contradicts itself here: the **only** documented 409 on `/verdi
 separate axes, which is precisely the doctrine the contract already applies, and applies well, to
 the three moderation states.
 
+
+> **↪ Outcome (added after the round, 21 September 2026).** **Closed, and by the fix this finding
+> asked for.** The counter was split along the axis the three moderation states already used:
+> `version` now carries **the lease and nothing else** — the schema says a claim then a release
+> increment it twice *"without anything having been settled"* — and `decisionVersion` is
+> **incremented only by a verdict**. `settleModerationItem` conditions on the second:
+> `expectedDecisionVersion` is now `required`, `expectedVersion` is gone from the request body.
+> The examples carry both counters (`version: 2, decisionVersion: 0` on a claim; `version: 3,
+> decisionVersion: 1` after a verdict), so a verdict queued offline against an unsettled line is
+> accepted however many times the lease moved — which is the supersession rule the mockup stated
+> and a single counter could not express.
+>
+> Two notes. My cited example values are **dead**: `openapi/studio.yaml` went from 4,824 to 7,682
+> lines and the moderation examples were rewritten around the second counter. And one residue
+> worth a line rather than a reopening — the prose of `settleModerationItem` still reads
+> *"the command is conditional (`expectedVersion`)"* while its body requires
+> `expectedDecisionVersion`. The schema is right and the sentence above it was not updated.
 ### C4 — `RIGHTS_VERSION_STALE` cannot be emitted, and that is exactly the transition case
 
 The contract states the doctrine in so many words: three distinct codes — `FORBIDDEN`,
@@ -1024,6 +1069,20 @@ internal token minted by the BFF". For a minute, the console is mute but the com
 through. Which one is authoritative on screen? The contract does not say, and a moderator who
 watches their queue freeze while their verdicts succeed will understand neither.
 
+
+> **↪ Outcome (added after the round, 21 September 2026).** **Closed.** The `If-Rights-Version`
+> request header was added, symmetric with `X-Arthome-Rights-Version` on the response, and is
+> referenced by the operations that need it. Its description carries this finding's reasoning
+> almost word for word: without it the server *"cannot distinguish «you never had this right» from
+> «you had it two hundred milliseconds ago»: two of the three refusal codes were out of reach, and
+> only `FORBIDDEN` remained — that is, the indistinction the three codes existed to remove"*, and
+> it spells out the duty consequence, `FORBIDDEN` sending the operator home against
+> `RIGHTS_VERSION_STALE` letting them find their place again.
+>
+> My citation of the complete parameter list is **dead** — `IfRightsVersion` is now in it, which
+> is precisely the change. The second half of the finding, the two revocation clocks (the
+> channel's immediate one against HTTP's 60 s), is **not** addressed by this and stands as
+> question **b**.
 ### C5 — Four commands require a `reauthToken` that nothing issues
 
 `stream-key/reveal`, `stream-key/rotate`, `ownership-transfer` and channel deletion declare
@@ -1037,6 +1096,16 @@ and the one you make when you suspect a key has leaked during a live show. If re
 a password to be typed in a dark venue, one-handed, the guarantee is paid for in dead air. If it is
 the device's biometrics, that needs saying, along with what happens when it fails.
 
+
+> **↪ Outcome (added after the round, 21 September 2026).** **Closed, including the part I could
+> only pose as a question.** `POST /v1/me/reauth` now mints the token the four sensitive commands
+> declare `required`. And the factor is answered rather than left implicit: the endpoint serves
+> `acceptedFactors` per device, `platform_biometric` is offered as soon as the device declares it,
+> proof is **absent** for that factor because the device attests, and — the point this finding
+> turned on — **its failure closes nothing**: it falls back to the other accepted factors listed
+> in the same response, because *"a single factor that fails in a venue is a blocked operator"*.
+> The scenario I raised, a password typed one-handed in a dark venue to rotate a leaked stream
+> key, is the one the contract quotes back.
 ### C6 — No device management, no revocation, no sign-out
 
 The answer to my question 1 promises **per-device revocation**. The studio contract offers neither
@@ -1052,6 +1121,17 @@ revelation of a stream key **on channels that do not belong to its holder** — 
 across several channels, which is the premise of this entire surface. The contract offers no
 gesture, neither to the person nor to the channel owner.
 
+
+> **↪ Outcome (added after the round, 21 September 2026).** **Closed.** `GET /v1/me/devices` and
+> `DELETE /v1/me/devices/{deviceId}` give the list and the per-device revocation the answer to my
+> question 1 had promised, and `DELETE /v1/me/session` is the sign-out the "My account" sheet had
+> been offering with nothing behind it.
+>
+> The blast radius I described was narrowed separately and more deeply than by any endpoint:
+> `AudienceMember` is now **indexed by `(channel_id, account_id)`**, never by account alone
+> (`data-model.md:821`). A moderator cannot read a spectator's history at a channel that is not
+> theirs **because the row does not exist** — an invariant rather than a check, which is a
+> stronger guarantee than the one this finding asked for.
 ### C7 — No notification token registration
 
 My question 10 is answered with "routing by role and by channel decided server-side, per-account
@@ -1065,6 +1145,11 @@ Without it, duty cannot be woken with the app closed. That is half the reason a 
 arrive when the app is not in the foreground. Redaction of amounts in the payload is promised; the
 payload has no addressee.
 
+
+> **↪ Outcome (added after the round, 21 September 2026).** **Closed.**
+> `PUT /v1/me/push-registrations` registers the token. The summary states the finding's point as
+> the reason for the endpoint — *"without it, a duty does not wake up"* — and the description names
+> the asymmetry I had found: *"the routing was secured, the addressee did not exist"*.
 ### C8 — `GET /changes` exists only on the storefront BFF
 
 `realtime.md` §5.2 describes exactly the mechanism I need:
@@ -1086,6 +1171,12 @@ venue's 4G. The studio has `servedAt` and `rightsVersion` per response, but noth
 one call "here is what changed" for a screen's six reads. The mechanism is written, motivated,
 specified by someone else — and not wired up here.
 
+
+> **↪ Outcome (added after the round, 21 September 2026).** **Closed.** `GET /v1/changes` now
+> exists on the studio BFF, returning invalidations rather than data. Its description opens on the
+> finding: the mechanism was *"written, motivated, specified"* — and wired to the storefront BFF
+> alone. The Ionic page-cache reason that made it a studio need, and not only a storefront one, is
+> what carried it across.
 ### C9 — Two pages are named in `navigation` and have no endpoint
 
 `dashboard` and `stats` appear in the `navigation` vocabulary and in the example served by the
@@ -1097,6 +1188,11 @@ This is not a secondary page. **`dashboard` is the first entry of `TAB_PREF` for
 and `tres`** — the default tab of three personas out of six. As it stands, three personas open the
 app on a screen the contract does not fill.
 
+
+> **↪ Outcome (added after the round, 21 September 2026).** **Closed.**
+> `GET /v1/channels/{channelId}/dashboard` and `GET /v1/channels/{channelId}/stats` were added.
+> The two pages that `navigation` named and no path served — one of them the default tab of three
+> personas out of six — now have endpoints.
 ### C10 — The "one call per pane" pattern is implemented for one pane out of six
 
 `GET /dates/{dateId}/sheet` serves `openPanes`, and serves better than my request: **per date**
@@ -1114,6 +1210,12 @@ Neighbouring paths exist (`/dates/{id}/crew`, `/run`, `/chat-policy`, `/replay-p
 cover the material, but then the announced pattern is false and the surface does not know which
 path to call for which pane.
 
+
+> **↪ Outcome (added after the round, 21 September 2026).** **Closed.** All six panes now have an
+> endpoint: `/v1/dates/{dateId}/panes/` `public`, `tickets`, `chat`, `tech`, `crew`, `replay`. The
+> announced pattern — one call for the record, then one call per open pane at its owner — is now
+> implemented rather than merely stated, and the argument that justified it holds: a `mod` whose
+> only pane is `chat` has somewhere to go.
 ### C11 — `Duty` does not carry the venue timezone
 
 `DateSheet` carries `venueClock { venueTimezone, venueUtcOffsetMin }`. `Duty` carries `dateId`,
@@ -1130,6 +1232,11 @@ the bootstrap exists to kill**, and on the one screen a show caller opens on arr
 `runtimeMin` is missing too, which the row displays ("announced runtime"). The **rule** is safe —
 `overlapsWith` is served and computed in `@arthome/core`, which is right — but the display is not.
 
+
+> **↪ Outcome (added after the round, 21 September 2026).** **Closed.** `Duty` now carries
+> `venueClock { venueTimezone, venueUtcOffsetMin }` and `runtimeMin`. The duties list — this
+> surface's home screen — renders the venue time and the announced runtime without one call per
+> duty, which was the N+1 the bootstrap exists to kill.
 ### C12 — Seven screen holes, named
 
 Less serious, but each one is a page or a gesture of the mockup with no counterpart:
@@ -1144,6 +1251,15 @@ Less serious, but each one is a page or a gesture of the mockup with no counterp
 | **Sign-out** | nothing |
 | **`help`** | nothing, and nothing says it is a static artifact |
 
+
+> **↪ Outcome (added after the round, 21 September 2026).** **Partly closed, and the remainder is
+> stated rather than quietly dropped.** Landed: the channel-level replay catalogue
+> (`GET /v1/channels/{channelId}/replays`) and sign-out (`DELETE /v1/me/session`, see C6).
+> **Still absent**, checked against the current `openapi/studio.yaml`: the crew matrix across N
+> dates, the access log distinct from the channel journal, seat transfer, bank dispute, and named
+> encoding profiles — `encodingProfileName` is still a single string with nothing storing the
+> profiles it names. `help` still has no endpoint and nothing yet says it is a static artifact.
+> Five of the seven holes stand.
 ---
 
 ## What is satisfied differently, and whether that works for me
@@ -1227,3 +1343,27 @@ try to stuff it into the note.
 | **k** | What is the measurement **window** for the chat rate? The threshold is served, the window is not — and that is the half my inconsistency 6 was missing. |
 | **l** | `GET /changes` on the studio BFF: granted or refused? Ionic's page cache depends on it. |
 | **m** | Escalation: is the technical reading attached server-side from the incident, and is the number of people actually reached returned? |
+
+> **↪ Outcome (added after the round, 21 September 2026).** Ten of these thirteen were answered by
+> the fixes recorded above — **a** (C4), **c** (C5), **d** (C6), **f** (C1), **g** (C2), **h** (C3,
+> with the stale `expectedVersion` in the operation's prose noted there), **i** (C9), **j** (C10),
+> **l** (C8), and the endpoint half of **e** (C7). The table is left as written; this note is the
+> index, so that the closures are read here rather than inferred from elsewhere in the document.
+>
+> **Three and a half stand, checked against the current `openapi/studio.yaml`:**
+>
+> - **b** — the two revocation clocks. The channel makes the client leave a lost channel's rooms
+>   immediately while HTTP keeps a 60-second authorization staleness. Which is authoritative on
+>   screen is still unwritten, and `If-Rights-Version` does not settle it.
+> - **e**, second half — `PUT /v1/me/push-registrations` takes `platform`, `token`, `deviceId` and
+>   `locale`. That is the registration. Whether the **outbound payload** carries `channelId`,
+>   `dateId` and the target page — so that opening a notification lands on the right channel, page
+>   and sub-tab — is not stated anywhere I can find.
+> - **k** — `chatBurstThresholdPerMinute: 60` is served among the constants, so the threshold will
+>   not be copied onto two surfaces. The **window** it applies over is still absent: no sliding
+>   window, no unit, no refresh rate. This was the half of inconsistency 6 that was missing when I
+>   wrote it, and it is still the half that is missing.
+> - **m** — `escalateIncidentToProduction` still takes only `note` (400 characters) and still
+>   returns only `routedToRoles`. Neither the technical reading attached server-side from the
+>   incident, nor the count of people actually reached — the mockup announces "**2 people** received
+>   the alert", and role labels do not say how many humans that is.

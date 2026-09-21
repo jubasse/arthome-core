@@ -8,6 +8,17 @@
 > `shared/i18n/index.json`, and `mockups/Studio.dc.html` in fragments located with `rg`.
 > Errata taken into account: `architecture/corrections-handoff.md`, family **D** in particular.
 
+> **What this document is, and what the outcome notes are.** The findings below are preserved
+> **verbatim**, line references included, dead or not — their value is that they were written
+> before the fixes, from the mockup and the handoff alone. The notes marked **↪ Outcome** were
+> added later, on 21 September 2026, once the contract answered; everything else is the record
+> as written and has not been renumbered, softened or re-cited. Where a citation now points at a
+> line that has moved, or at a French section heading that no longer exists because this document
+> has since been translated, the outcome note says so rather than quietly updating it.
+> The `## Confrontation` section does not move at all: it records what I contested at the time,
+> not what has since been fixed, and the notes are what stop a reader mistaking one for the
+> other.
+
 ---
 
 ## Screen inventory
@@ -457,6 +468,17 @@ Treated above: without a heartbeat on the control channel, the application canno
 own deafness from silence at the venue, and the operator cuts a healthy broadcast. It is the only
 point in this chapter that is **blocking**.
 
+> **↪ Outcome (added 21 September 2026).** **Closed, and it was the right thing to call blocking.**
+> `realtime.md` §4 answers with `ws:pulse` every 5 s on both namespaces, carrying the exact
+> discrimination asked for here: **no pulse for 15 s = I am the deaf one; a pulse with no health
+> sample for 30 s = the venue is no longer sending**. It is served at bootstrap
+> (`StudioBootstrap.realtime.pulseIntervalSec`), it doubles as the reference clock (`serverTime`)
+> and as the resume point (`seq`), and it has an operational threshold of its own
+> (`ws_pulse_gap_seconds` p99 > 15 s). One thing was added that I had not thought to ask for: the
+> automatic hold screen after 15 s of lost stream is a **server rule** with
+> `IncidentTrigger.AUTO`, which covers the case this section could not — the show caller who is
+> unreachable, or who is precisely the one who lost the network.
+
 ### 2. Resuming without losing anything and without replaying wrongly
 
 On reconnection the studio must not replay a buffer of stale metrics. It must **re-request** what
@@ -681,9 +703,40 @@ Beyond D2, D5 and D6, which the errata already names, the reading surfaced the f
 
 None of these inconsistencies has been applied: they are reported, not settled.
 
+> **↪ Outcome (added 21 September 2026).** **Eight of the ten settled; one is closed but
+> undocumented; one was never contractual.**
+> **2, 3, 4** — the competing vocabularies are gone: chat policy is `open · emoji · read_only ·
+> off`, replay policy `included · subscription · unit · none`, filter severity `low · medium ·
+> high`. One canonical set each, English, served as identifiers.
+> **5** — the seven-item checklist wins, with `chapters_planned` and `moderator_assigned`
+> demoted to non-blocking warnings; the fixtures' four were a subset, not a rule.
+> **6** — `PublicationTransition` carries `from`/`to`/`irreversible`: the lock is on the pair,
+> as this section argued (E5).
+> **7** — reduced to three axes that never stack: `MessageState`, `ModerationItemState`,
+> `AudienceSanction`, with a single derived badge and a written precedence.
+> **8** — a hierarchy is written (E4): `outcome` over `run.state` over `publication.state`, with
+> `displayState` derived and served. `run.state` lost `postponed` and `cancelled` in the process.
+> **9** — settled by D-015 towards the screen and against the fixture: VAT is broken down by
+> market, and commission is taken on the net-of-VAT base.
+> **1** — `team` has indeed disappeared from the navigation vocabulary, which is the outcome this
+> section argued for, but **no decision record says so**; a reader of `DECISIONS.md` still cannot
+> find out why. Still worth one line somewhere.
+> **10** — a mockup defect with no contractual reach; it remains true of the mockup and needs no
+> fix in the contract.
+
 ---
 
 ## What I cannot obtain alone — questions to the backend
+
+> **↪ Outcome (added 21 September 2026).** **All twenty-nine were answered**, indexed in
+> `architecture/answers-to-surfaces.md` under "studio web — 29 questions", each with a pointer to
+> the document that motivates it. Four answers went further than the question: the eight-role
+> vocabulary was adopted whole (Q1), server projection was adopted with `SORT_KEY_FORBIDDEN`
+> added on top (Q2), the VAT model was researched rather than assumed and carries a standing
+> reservation that it is an architecture recommendation and not tax advice (Q9), and the
+> heartbeat of Q15 was granted as blocking. The section headings cited in the questions were
+> French when written; this document has since been translated, and the headings are now the
+> English ones. No question was left open.
 
 ### Roles and rights
 
@@ -885,6 +938,20 @@ GET** — the screen has nothing to read before writing — and the "broadcast d
 dates" block has no owner; `store` has its catalogue but not the "merchant integration, one at a
 time" block.
 
+> **↪ Outcome (added 21 September 2026).** **Closed, and one part of the finding was wrong in a
+> way worth keeping.** Five entries now carry operations: `getChannelDashboard`,
+> `getChannelStats`, `getChannelStreamSettings` (with `preflightPending`, the badge that had no
+> source), `listChannelReplays` (one no longer reopens a window one cannot see) and
+> `getChannelTicketing` (with `seat_transfer` and `chargeback`, the two requests that had no read
+> surface at all). The half-served pair is closed too: `getChannelSettings` /
+> `updateChannelSettings` give the screen something to read before it writes, and carry both
+> orphan blocks — broadcast and moderation defaults, and the merchant integration, one per
+> channel. **Where I was wrong**: I framed the `regie` mismatch as an entry to remove. It was
+> restored instead, through a separate `contextualPages` list, and the contract writes the reason
+> down — deleting it would have been *"removing the show caller's main destination in order to
+> silence the symptom that revealed it"*. Pages reached from another page needed a rights carrier
+> like any other; they did not belong in `navigation`.
+
 ### B — Five of the six date-record panes do not exist
 
 `DateSheet.openPanes` has the vocabulary `[public, tickets, chat, tech, crew, replay]`. Exactly one
@@ -900,6 +967,11 @@ nothing"*. The `chat` pane does not exist. Concretely:
   `tickets → ticketing`, `chat → chat`, `tech → streaming`, `crew → identity`.
 
 The rule is written, the mechanism is described, one of the four paths is laid.
+
+> **↪ Outcome (added 21 September 2026).** **Closed.** All six panes exist —
+> `getDatePublicPane`, `getDateTicketsPane`, `getDateChatPane`, `getDateTechPane`,
+> `getDateCrewPane`, `getDateReplayPane` — each served by its owning context, as answer 29
+> described. A `moderation` can now load the `chat` pane alone, which was the whole argument.
 
 ### C — Crew presence is **pushed without ever being served**
 
@@ -918,6 +990,13 @@ This is not cosmetic. The cut confirmation reads literally *"cutting ends the br
 viewers · **M other people online**"* — it is the guard rail on the most destructive gesture in the
 control room, in a studio that is explicitly **lock-free**, and it is empty.
 
+> **↪ Outcome (added 21 September 2026).** **Still open.** `presence` returns nothing in
+> `openapi/studio.yaml`, `RunConsole` does not carry it, and the "to re-request" list in
+> `realtime.md` §5.1 still omits it, while §8 still promises it pushed every ~10 s and
+> `context-map.md` §10.1 still counts `identity.GetChannelPresence` among the control room's three
+> internal calls. A delta with no snapshot remains a delta with no snapshot, and the cut
+> confirmation remains empty on a console opened mid-show.
+
 ### D — The health curve "is re-requested" and can be requested nowhere
 
 `realtime.md` §5.1, "to discard" column: *"every stream measurement from before the reconnection. A
@@ -930,6 +1009,11 @@ Consequence, on three paths that occur every evening: after a `resume:too_old`, 
 reconnection, or simply by opening the console in the middle of a show, the bitrate curve and the
 **peak viewers with its time** are unobtainable. Two documents of the same offer contradict each
 other, and the one that promises is the one with no operation.
+
+> **↪ Outcome (added 21 September 2026).** **Still open.**
+> `/v1/dates/{dateId}/run/health-samples` is still POST-only, and `RunConsole.lastSample` is
+> still a single sample. `realtime.md` §5.1 still says a bitrate curve "is re-requested", and
+> there is still nothing to re-request it from.
 
 ### E — `displayState` is served to the storefront and **not** to the studio
 
@@ -946,6 +1030,12 @@ them.
 
 That is exactly the second implementation critical rule no. 2 forbids — and it is left to the
 surface where a mistake is not a mislabelled card but a control room on the wrong screen.
+
+> **↪ Outcome (added 21 September 2026).** **Closed.** `displayState` now appears eight times in
+> `studio.yaml`, `EventsRow` among them, alongside `displayStateValidUntil`. The field's own
+> description carries the argument back: the storefront has one axis to display, the studio has
+> three to reconcile, and serving `state + orderRank + outcome` and leaving the client to compose
+> them was the second implementation rule 2 forbids.
 
 ### F — An event during a transition: **safe, and the screen still lies**
 
@@ -991,6 +1081,14 @@ operator". A patch carrying the new state without recomputing the transitions **
 would leave a stale button — the same defect, moved one notch. The patch must therefore either carry
 the recipient's transitions, or be a "re-read this entity" marker for that one entity.
 
+> **↪ Outcome (added 21 September 2026).** **Closed.** `events.md` now carries
+> `catalog.publication.state_changed.v1` with `date_id`, `from_state`, `to_state`, `version`,
+> `irreversible` and `changed_by`, routed to the studio real-time room `channel:{id}` and to the
+> journal — and the entry states the defect it fixes in the terms used here: without it
+> `draft→reserve`, `scheduled↔technical` and `ended→replay-online` produced nothing, and a second
+> operator's screen lied indefinitely. The studio also gained `/v1/changes`
+> (`listStudioChanges`), which was the third reservation under "How many round trips".
+
 ### G — The moderation reasons are a **parallel table** — the very thing the contract reproaches the mockups for
 
 | `shared/catalogue.json` `moderationReasons` (authored, and the only set the i18n resolves) | `studio.yaml`, `settleModerationItem` and `sanctionAudienceMember` |
@@ -1020,6 +1118,12 @@ The `studio.yaml` preamble says: *"the parallel tables of the two studio mockups
 up"*. Here it is the contract that holds a parallel table against `shared/`, on the one enum
 `shared/` is unambiguously authoritative about — it had no competitor.
 
+> **↪ Outcome (added 21 September 2026).** **Closed.** The enum is now
+> `spam · insult · spoiler · off-topic · harassment` in all three places it appears — the authored
+> vocabulary of `shared/catalogue.json`, unchanged, including the hyphen in `off-topic`. `insult`
+> and `spoiler` are back, `hate` and `filter` are gone, and `filter` no longer competes with
+> `origin` for the same axis.
+
 ### H — `crew` has no read of assignments, and the two access scales are reconflated on write
 
 Three defects compounding on the same page, that of the `coordination` persona — whose entire
@@ -1040,6 +1144,13 @@ navigation is `crew · journal · help`.
 And it is not isolated: `moderator_assigned` is one of the nine checklist items, `datesToCover` is a
 served counter. **Both are computed from a coverage the studio can never read.**
 
+> **↪ Outcome (added 21 September 2026).** **Closed, all three defects, by one pane.**
+> `getDateCrewPane` now serves the posts covered, `missingRoles`, and the one-off grants **with
+> their `grantId`** — the identifier `revokeDateAccess` demanded and no read provided. The
+> coverage that `moderator_assigned` and `datesToCover` were computed from is now readable. Point
+> 3, the mandatory `expiresAt` that reconflated the two access scales, is the part to re-check
+> against the final shape.
+
 ### I — An off-air moderator has no write surface
 
 `filterSeverity`, `slowModeSec`, `holdersOnly` and `retroactiveFilter` all four live on
@@ -1053,6 +1164,13 @@ next show"*. The dictionary is correctly at channel level
 A **channel-default chat policy** is missing, along with the inheritance rule saying what a new date
 takes from it. It is also the natural owner of the "broadcast defaults" block of `settings`, which
 has none.
+
+> **↪ Outcome (added 21 September 2026).** **Closed, and by the owner this section predicted.**
+> `getChannelSettings` carries a channel-level moderation block — `filterSeverity`, `slowModeSec`,
+> `holdersOnly`, `retroactiveFilter` — beside the broadcast defaults, and its description quotes
+> the mockup line this finding rested on: *"the dictionary, the severity and the sanctions remain
+> editable off air — they will apply to the next show"*. An off-air moderator now has somewhere to
+> write.
 
 ### J — `agenda` and `inbox` are **person** screens filed in a **channel** array
 
@@ -1075,6 +1193,11 @@ depending on the reading — and nothing says which.** The `dutiesTonight` count
 served, which presupposes that duties count.
 
 The fix is small: a person-level `navigation` beside the channel-level one.
+
+> **↪ Outcome (added 21 September 2026).** **Closed, exactly as proposed.**
+> `StudioBootstrap` now carries `personNavigation` (`[agenda, inbox, help]`) beside the
+> per-channel `navigation`, and `contextualPages` for the four screens reached from another
+> screen. The landing page of the two field personas is neither duplicated nor lost.
 
 ---
 
@@ -1103,6 +1226,13 @@ bring the console down to **two**.
 **3. The studio has no `/changes`.** The storefront gets a list of invalidations in one call on
 foregrounding. The studio, which is the application left open for two hours while another person
 edits the same objects, has nothing. It is the same need, on the surface where it is most acute.
+
+> **↪ Outcome (added 21 September 2026).** **One of three closed.** Reservation 3 is answered:
+> `listStudioChanges` exists on the studio BFF. Reservation 1 — `?panes=` composed at the BFF, so
+> that the call count follows the role rather than the maximum — was **not** adopted; the record
+> is still one call plus one per open pane, which is seven for an artist. Reservation 2 follows C
+> and D: the control room is still four calls before painting, and adding presence and the last
+> health samples to `RunConsole` would still bring it to two.
 
 ---
 
@@ -1170,6 +1300,18 @@ blocks the close.
     closes blind.
 13. **Is `GET /changes?since=` open to the studio BFF?**
 14. **A GET of the channel settings**, and the owner of the "broadcast defaults" block.
+
+> **↪ Outcome (added 21 September 2026).** **Nine of fourteen closed**: 1 (publication state
+> pushed), 4 and 5 (the entries and the panes), 6 (`displayState` served to the studio), 7
+> (`spoiler` and `insult` restored, `filter` removed), 8 (channel-default chat policy), 9 (crew
+> coverage and grants readable), 10 (`personNavigation`), 13 (`/changes` on the studio BFF), and
+> 14 (`getChannelSettings`, which also owns the broadcast defaults). **Five remain open**: 2 (a
+> read of the health series), 3 (an operation exposing `identity.GetChannelPresence`), 11 (a
+> machine-readable WebSocket contract), 12 (a read of the reconciliation and of the disputes —
+> `reconciliation-periods/{id}/close` is still a POST with no GET), and the `?panes=` half of the
+> round-trip reservation. Questions 1 and 5 were answered together with the refinement this
+> section asked for: the patch carries `version` and `irreversible`, so a stale button is
+> detectable.
 
 ---
 

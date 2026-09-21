@@ -10,7 +10,8 @@ session must be able to re-read it.
 > **Corrected on 21 September 2026.** This document was written before several
 > structuring decisions, and it contradicted them. The discrepancies are
 > detailed in `arthome-core/architecture/corrections-handoff.md`; the original
-> version is kept alongside it under `README.pre-corrections.md`.
+> version is kept under `README.pre-corrections.md`, which lives with the source
+> folder `design_handoff_arthome/` and is not part of this repository.
 > The corrections cover: the multi-repository layout (§3, §8), the two packages
 > of `arthome-core` (§3), Protobuf alone (§3), observability (§3), the uses of
 > Redis (§3), and the ADRs still to be written (§9). Three sections were added
@@ -180,8 +181,13 @@ arthome-core/packages/core/src/
 
 **Strict rule: zero framework dependency.** No React, no Angular, no Nest, no
 browser API, no Node-specific code in the business rules. The package must work
-under Node, Next, Metro, `react-native-tvos`, Angular and NativeScript.
-Sophistication goes into the domain, never into the `package.json`.
+under Node, Next, Metro, `react-native-tvos` and Angular. Sophistication goes
+into the domain, never into the `package.json`.
+
+> **Corrected on 21 September 2026.** This list named NativeScript, although §7
+> rules it out. The decision changed while this document was being written and
+> only §7 received it — the same pattern as the corrections listed in the note
+> at the top, occurring a second time inside the same document.
 
 That is what makes the story readable at a glance: **the domain belongs to
 Arthome, not to the frameworks.** React, Angular and NestJS are only consumers

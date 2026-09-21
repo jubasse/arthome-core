@@ -700,6 +700,21 @@ cursor).
   in the project. I am not contesting the decision: I am asking that it be delivered in a form
   mobile can afford.
 
+> **↪ Outcome (added after this was written, 21 September 2026).** **Closed, and taken one level
+> deeper than asked.** The ask became **D-012**, *"`@arthome/contracts` exposes a barrel-free entry
+> point"*. But the measurement's real lesson — that zod's cost is **fixed and tied to the import**,
+> not marginal and tied to the number of schemas — was applied to `@arthome/core` as well, which now
+> ships **two entry points**: `.` for the rules, which imports zod *at no depth*, and `./schema` for
+> the boundary schemas, the only one that depends on it. `packages/core/package.json` records the
+> reasoning in its `_comment_exports` block — still in French at the time of writing, so I
+> paraphrase rather than quote: a surface needing only the rules pulls in not one line of zod;
+> zod's cost is fixed and tied to the import, not marginal and tied to the number of schemas
+> (it cites D-012); and had the main entry imported it, no barrel-free entry of
+> `@arthome/contracts` could have made up the bill. A gate, `tools/check-core-entry.mjs`, enforces
+> it. That is more than I asked for: I
+> asked not to be charged 93 KB for validating, and the answer was to make it possible not to be
+> charged at all for not validating.
+
 ### 2. Client-side formatting — the `Intl` dependency is not a given
 
 The decision is: amounts in canonical units, formatting on the client. Good news, verified:
@@ -921,13 +936,16 @@ the others constrain it.
 > several are met better than I asked. Two are not, and I add three defects the index could not
 > see because they answer none of my questions: they answer my **screens**.
 >
-> **Recorded after the fact, at the lead's notice, without touching the argument below.** Three
-> of the five grievances were settled after this section was written: `openPlayback` now declares
-> that `deviceId` carries resumption and returns the same `sessionId`; `ActivePlaybackSession`
-> gained `deviceId` and `isCurrentDevice`; and `following` has a real read. The zod finding in the
-> body of this document produced **D-012** and, one level deeper, `@arthome/core` now has two
-> package entry points so a surface that needs only the rules pulls in no zod at all. The
-> reasoning is left exactly as it was written — it is why those changes happened.
+> **What this section is.** A confrontation written on **21 September 2026** against the contract
+> **as it then stood**. The grievances below are preserved **verbatim**, line references included,
+> dead or not — their value is that they were written before the fixes. The notes marked
+> **↪ Outcome** were added later, after the fixes landed; everything else is the record of
+> 21 September and has not been renumbered, softened or re-cited.
+>
+> **Every line reference below is now dead.** `openapi/storefront.yaml` has grown from 5,072 lines
+> and 53 endpoints to 6,984 lines and 75 since this was written — l. 2354, cited for
+> `/v1/me/follows/{artistId}`, now falls in the middle of an unrelated response. The outcome notes
+> give the current line and say the old one has moved; they do not rewrite the citation.
 
 ---
 
@@ -1028,6 +1046,26 @@ per-artist alert write, or the explicit decision that following and being alerte
 gesture — in which case `/v1/me/follows/{artistId}` must say so, since its description currently
 asserts the opposite ("**Following and being alerted are two settings**", l. 2360) without offering
 the second.
+
+> **↪ Outcome (added after the confrontation, 21 September 2026).** **Closed, and closed on all
+> three asks.** `GET /v1/me/follows` exists (`openapi/storefront.yaml` l. 3870, `listFollowedArtists`),
+> cursor-paginated, and its own description opens with *"**The whole page was unserved.**"* It
+> carries the three things this grievance said nothing else carried: `alertEnabled` per artist,
+> `nextDate` *"which gives the split the screen displays without a call per artist"*, and a
+> `liveOnly` parameter described as *"**the 'Following live' section**, served rather than filtered
+> client-side"*. Sorting is served too (`alpha | followers | next_date`). The endpoint states that
+> it also serves `account/faves`, *"of whose two collections this is the first — the second being
+> `/v1/me/watchlist`"*, which closes the second half of this grievance as well.
+>
+> The per-artist alert write landed with it: `PUT /v1/me/follows/{artistId}` (now l. 3936, cited
+> above as l. 2354) takes `alertEnabled` in its body, and l. 3943 states that the alert is *"a flag
+> **per followed artist** carried by `notifications`"*. So the description that asserted following
+> and being alerted were two settings now offers the second — the contradiction this grievance
+> named is resolved in the direction it argued for.
+>
+> The self-contradiction is cited in the fix: the endpoint's own text records that `emptyReason`
+> carried `no_followed_artist_live`, *"**an empty state for a list no operation produced**"*. The
+> vocabulary now carries `no_followed_artist` instead.
 
 ### C2 — No endpoint resolves a public link: three cold openings are broken
 
@@ -1133,6 +1171,27 @@ all the more regrettable because the rest of the reasoning is sound.
 **What I ask**: that `open` from a `deviceId` already holding a lease on the **same date**
 **reclaim** it — same session, lease extended, no refusal — and that `ActivePlaybackSession` carry
 `deviceId` and `isCurrentDevice` so the refusal stays legible in the other cases.
+
+> **↪ Outcome (added after the confrontation, 21 September 2026).** **Closed, both halves, in the
+> words this grievance used.** `openPlayback`'s `deviceId` now carries a description that begins
+> *"**This is what carries resumption.**"*: an opening on a `deviceId` already holding a live lease
+> for that date *"**resumes that lease** and returns the same `sessionId`; it does not open a second
+> one and does not consume another screen"*. It ends by naming the defect — *"The promise 'you can
+> resume your own session, identified by the device' was written in the answers to the surfaces and
+> was carried nowhere in the contract."* `releasePlayback` says the same from the other side
+> (l. 2981): *"The client can **resume its own session**, identified by `deviceId`."*
+>
+> `ActivePlaybackSession` (now l. 6615, cited above as l. 4719) gained both fields, and `deviceId`
+> carries the reason verbatim from this grievance: *"**Served, because without it the list is not
+> actionable.** The surface must be able to recognise **its own** session in order to offer 'resume
+> here' rather than 'release another screen', and a device label is not enough: two phones of the
+> same model carry the same one."*
+>
+> One consequence I had not anticipated: resumption made the idempotency key redundant on this
+> endpoint. `x-arthome-idempotency-exemption` now argues that *"the effect of a second call is the
+> effect of the first, by construction and not by memorisation"*, and that a key would have forced a
+> signed token into a 24-hour store for a response the contract declares `no-store`. The fix is
+> cheaper than the ask.
 
 ### C5 — The account menu costs six calls for six badges, and the header two more on cold start
 
@@ -1290,3 +1349,16 @@ Seven, in order of impact.
 
 Questions 4 to 7 are vocabulary additions, not changes of shape: they cost one line each and stop
 five surfaces from inventing five answers.
+
+> **↪ Outcome (added after the confrontation, 21 September 2026).** **Two of the seven are
+> answered.** Question 2 — does an `open` from a `deviceId` already holding a lease reclaim it —
+> is now yes, stated on the parameter itself (see C4). Question 4 — following and being alerted,
+> one gesture or two — is answered as **two**, with the second now offered: `alertEnabled` is
+> written through `PUT /v1/me/follows/{artistId}` and read back on every entry of
+> `GET /v1/me/follows` (see C1).
+>
+> **Five remain open as of this date**, and I record that rather than leave a reader to infer it
+> from silence: question 1 (the retention window of `/v1/changes`), question 3 (the screen limit for
+> `free`), question 5 (bitrate per variant), question 6 (`network_unreachable`), question 7
+> (`see_other_dates`). Grievances **C2**, **C3** and **C5** are open for the same reason — no
+> outcome note appears under them because nothing has yet happened, not because nothing was found.

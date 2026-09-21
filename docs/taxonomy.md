@@ -165,6 +165,11 @@ its provenance. On a page, no threshold: a tag with a single occurrence stays
 clickable, that is lateral navigation. In a global list, sort by frequency and
 cut off the long tail.
 
+> **The lists below are illustrative, not exhaustive.** The tag vocabulary
+> lives in `shared/taxonomy.json`, which is the sole authority on its contents
+> and on how many there are; the selection printed here is shorter. Read the
+> count from the file, never from this page.
+
 ### STYLE — micro-genres
 
 **Rock, metal, punk**

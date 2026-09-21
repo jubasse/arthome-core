@@ -1,5 +1,15 @@
 # Needs — storefront web (Next.js)
 
+> **What this document is.** The needs and the Confrontation below were written on
+> **21 September 2026**, against the contract **as it then stood**. They are preserved
+> **verbatim** — line references, quoted YAML and dead citations included. Their value is that
+> they were written before the fixes. The notes marked **↪ Outcome** were added later, after the
+> fixes landed; nothing else has been renumbered, softened or re-cited. Each outcome note was
+> **verified against `openapi/storefront.yaml` as it stands**, not transcribed from a summary —
+> which is why one of the six contested items is recorded as still open. Where a citation points
+> at a line that has since moved, the outcome note says so rather than updating it.
+
+
 > Surface: **Storefront Web**, Next.js, 1440 px. A **public, indexable** ticketing catalogue:
 > server rendering and URL stability are not implementation preferences, they are contract
 > constraints.
@@ -1107,6 +1117,16 @@ down what an anonymous response contains (no `watchVerdict`, no `viewerRelations
 `viewerProgress`). This is not an accommodation: without it, my surface's server render has
 nothing to render.
 
+
+> **↪ Outcome (added 21 September 2026, after the fixes).** **Closed.** Thirteen reads now
+> declare optional security — `- {}` alongside the session schemes — and are servable with no
+> session at all: `/v1/home`, `/v1/live`, `/v1/categories`, `/v1/categories/{categoryId}`,
+> `/v1/artists`, `/v1/artists/{artistId}`, `/v1/search`, `/v1/plans`, `/v1/dates/{dateId}`,
+> `/v1/dates/{dateId}/availability`, plus three paths that did not exist when I wrote this —
+> `/v1/replays`, `/v1/rails/{railId}` and `/v1/resolve`. The eight paths I named are among them,
+> and `/v1/home` no longer answers `401` to an anonymous caller. `Vary` is now declared. The
+> guest mode has a contract, and a crawler has a path.
+
 #### ❷ No payment confirmation step — the web cannot take money
 
 **On the evidence.** `adr-payments.md` §2:
@@ -1134,6 +1154,16 @@ there is **no command** to add or remove a payment method from the web. The `pay
 intent exists for TV pairing (`adr-auth.md` §4) — that is, the only surface able to register a
 card is the one with no keyboard. The account's `security` section nevertheless shows "Payment
 methods · 2 SAVED CARDS · **Manage**".
+
+
+> **↪ Outcome (added 21 September 2026, after the fixes).** **Closed, and better than I asked.**
+> `PaymentHandoff` exists, returned with a `202` by all three money commands, carrying
+> `clientSecret`, `nextAction` and `returnUrl`. The contract adds the precision I had not thought
+> to ask for: *"the return URL concludes nothing, `getOrder` is authoritative"* — which is the
+> right rule, since a payment confirmed by a redirect parameter is a payment confirmed by the
+> client. The corollary is closed too: `/v1/me/payment-methods` and
+> `/v1/me/payment-methods/{paymentMethodId}` exist, and the add returns a setup `clientSecret`
+> so no card number touches our domain.
 
 #### ❸ The invalidation feed that drives `revalidateTag` does not exist in the contract
 
@@ -1187,6 +1217,20 @@ principle, a tag name, and no mechanism.
 authenticates with a service secret, not with a viewer's cookie), that pushes or exposes the
 **public** tags; and the alignment of the two lists, in the same file.
 
+
+> **↪ Outcome (added 21 September 2026, after the fixes).** **STILL OPEN — the only one of the
+> six.** Verified against the contract as it stands, not assumed. `/v1/changes` is unchanged:
+> `scope` is still `enum: [profile, device]`, it still answers `401`, and it is still a pull. No
+> public or service-authenticated invalidation path exists among the seventy-five paths.
+> `date:{id}`, `artist:{id}` and `category:{id}` are still in the `ChangeFeed.invalidated`
+> vocabulary and are still emitted by no operation — and the mismatch has widened, not closed:
+> the emitted set has since gained `account:payment-methods`, which is also absent from the
+> vocabulary, so it is now four tags emitted-but-unlisted against three listed-but-unemitted.
+> The contract's own note beside that vocabulary says the tags are named centrally *"otherwise
+> mobile and television would invent others and Next's server rendering would call
+> `revalidateTag` on keys nobody emits"*. That last clause is a description of the three public
+> keys as they stand today.
+
 #### ❹ Five screens — or half-screens — are not served
 
 **(a) `following` — the whole page has no entry point.**
@@ -1238,6 +1282,19 @@ cursor.** The page's four "Show more" buttons lead nowhere, and the discipline's
 The same fault hits the home page: `Rail.nextCursor` exists and **no operation consumes it**.
 Three cursors served, zero consumers.
 
+
+> **↪ Outcome (added 21 September 2026, after the fixes).** **Closed, all five.** (a) and (b)
+> `GET /v1/me/follows` exists, and its description names the gap it closes; `account/faves` is
+> whole. (c) `/v1/auth/password`, `/v1/auth/two-factor`, `/v1/auth/two-factor/verify`,
+> `/v1/me/passkeys`, `/v1/me/passkeys/{passkeyId}` and `/v1/me/payment-methods` give the four
+> security rows their operations. (d) Authentication is in the contract:
+> `/v1/auth/sign-up`, `/v1/auth/sign-in`, `/v1/auth/sign-out`, `/v1/auth/forget-password`,
+> `/v1/auth/reset-password`, `/v1/auth/social/{provider}/start` and `/v1/auth/exchange`. (e)
+> `getCategoryScreen` now takes `section`, `subGenreId`, `filters` and `sort`, and the `section`
+> parameter is documented as *"what consumes the `sections[].nextCursor` the response already
+> carried — four cursors served and no consumer"*. `Rail.nextCursor` got its consumer too:
+> `/v1/rails/{railId}`.
+
 #### ❺ The server render does not hold — and I acknowledge I never put it as a question
 
 This was my Next.js constraint number 2, not one of my 30 questions: **public and personalised
@@ -1271,6 +1328,16 @@ read**, which the contract declares omits `watchVerdict`, `viewerRelations` and 
 and is **identical for every unauthenticated caller**. That is `degraded[]` raised to an explicit
 mode — the shape already exists, it just cannot be requested. Together with ❶ and ❸, that closes
 all three holes at once.
+
+
+> **↪ Outcome (added 21 September 2026, after the fixes).** **Closed, and the contract states the
+> reason in my own terms.** The public body is now declared *"identical for every anonymous
+> caller, hence shareable in a common cache"*, with the justification written into the contract
+> itself: *"a cached render function can read neither cookie nor header, so it is anonymous by
+> construction"*. That is the separability I asked for, raised from an implementation detail to a
+> declared property. The sentence above — that this was never one of my thirty questions and the
+> backend refused me nothing because it was not asked — stands unchanged, and is the reason the
+> gap was believed when it was finally raised.
 
 #### ❻ The small things, each verifiable in a minute
 
@@ -1306,6 +1373,17 @@ all three holes at once.
 7. **The preferred subtitle language has disappeared.** `ViewerPreferences.account` carries
    `subtitlesDefault: boolean`; the mockup carries `prefs.subs: 'fr'`, a **language**. Turning
    subtitles on and choosing their language are two settings.
+
+
+> **↪ Outcome (added 21 September 2026, after the fixes).** **Closed, all seven.** 1. `price_desc`
+> is in both sort enums. 2. `filters` is now `$ref: SearchCriteria`, a published grammar shared
+> with `SavedSearch.criteria` — the free string is gone. 3. `previewSecondsTotal` is served
+> (300). 4. Both codes are named: `CANCEL_DEADLINE_PASSED` and `CONTRIBUTION_OUT_OF_RANGE`.
+> 5. `QUOTE_ADDRESS_MISMATCH` closes the quote/checkout address gap. 6. `emptyReason` went from
+> seven values to fourteen, adding `no_followed_artist`, `empty_cart`, `no_saved_search`,
+> `no_watchlist_entry` and the three the copy distinguishes — `no_live_in_category`,
+> `no_upcoming_in_category`, `no_replay_in_category`. 7. `subtitleLanguage` sits beside
+> `subtitlesDefault`.
 
 ---
 
@@ -1348,6 +1426,14 @@ below are **new**, born of reading the offer:
 9. **What is the published grammar of the `filters` parameter**, and is it the same shape as
    `SavedSearch.criteria`? (❻.2)
 
+
+> **↪ Outcome (added 21 September 2026, after the fixes).** **Eight of the nine are answered.**
+> 1, 2, 3, 4, 5, 7, 8 and 9 are covered by the outcome notes above — question 5 fully, since
+> `/v1/rails/{railId}` now consumes `Rail.nextCursor` as `section` consumes the category cursors.
+> **Question 6 — who emits `date:{id}`, `artist:{id}` and `category:{id}` — has no answer**, and
+> it is the same gap as ❸. It remains the one thing standing between this surface and a cached
+> server render that stays right.
+
 ---
 
 ### One source inconsistency, spotted along the way
@@ -1357,3 +1443,52 @@ To be added to the eleven already listed, because it will be met at porting time
 topic of the help form — the one about replays — has its hint text and not its label, while the
 other five have both. The server-side contract is right (`topic: enum [..., replay, ...]`); it is
 the copy that is missing.
+
+
+
+---
+
+## Open questions from the English translation pass
+
+> Added **21 September 2026**, when this file was translated into English. These are not
+> translation notes: translating forced a choice of word where French allowed one noun to cover
+> several things, and two of those choices turned out to be contract questions that had been
+> hiding inside the vocabulary. They are recorded here as findings, with the rest.
+
+### V1. `jauge` covered three different values, and hid a finding of my own
+
+French `jauge` means, at once, a venue's **capacity**, the number of **seats still on sale**, and
+the **fill rate** as a proportion. I used the single word about a dozen times in the French
+version, including in the real-time table, where one row welded a count and a ratio together.
+
+**Why it matters beyond wording**: inconsistency 11 above says the fill rate and the number of
+seats left are currently two independent values — and the French sentence reporting that
+confusion was itself written in the word that causes it. English forced a choice every time, and
+the choosing is what made it visible. The contract's split between `fillRateBps` and
+`seatsAvailable` now reads as the deliberate decision it is, rather than two spellings of one
+idea. **No action on the contract; this is a note for the port of `@arthome/core`**, where the
+three must never share a name.
+
+### V2. Is a ticket the same aggregate as a seat? — open question
+
+French `place` covers both the **entitlement a person owns** and the **unit of inventory a venue
+has left**. "Une place détenue ouvre le spectacle" and "86 places restantes" use one noun for two
+different things, and I wrote both.
+
+The contract carries the same double life without naming it: `TicketCard` is the entitlement,
+`seatId` is its identifier, `seatsAvailable` is inventory, and `purchaseSeat` sits across the
+two. On this surface they display differently — a `TicketCard` has a seat code, a cancellation
+deadline, a refund and a replay window; a seat on sale has a tier and a price.
+
+**The question: are `Ticket` and `Seat` one aggregate or two?** If one, the name should be
+chosen once and the other spelling retired. If two, the contract should say which one
+`purchaseSeat` creates and which one it decrements. Deciding it by default, one field at a time,
+is how the two-vocabularies fault (D2, and inconsistency 4 above) happens a third time.
+
+### V3. `la salle` did three jobs
+
+Venue, the house that opens thirty minutes early, and the chat room (`date:{id}:chat`). Three
+things, one French noun. It is the smaller stake of the three, but it explains why
+**`roomOpensAt` and `venueClock` look unrelated in French and are not**: both are properties of
+the same physical place, one an instant and one a zone. Whoever ports the timezone rules should
+know they belong together.

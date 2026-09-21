@@ -4,7 +4,9 @@
 > right (the count of disciplines, and the use of "ballet" and "concerts" as
 > disciplines). Details in
 > `arthome-core/architecture/corrections-handoff.md`, family B; the original
-> version is kept under `Prompt - Storefront TV.pre-corrections.md`.
+> version is kept under `Prompt - Storefront TV.pre-corrections.md`, which lives
+> with the source folder `design_handoff_arthome/` and is not part of this
+> repository.
 
 ## Overall project context
 

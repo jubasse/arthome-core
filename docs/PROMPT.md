@@ -17,7 +17,8 @@
 >
 > **The living reference is the corrected `README.md`, plus
 > `arthome-core/architecture/`.** The original version of this document is
-> under `PROMPT.pre-corrections.md`.
+> under `PROMPT.pre-corrections.md`, which lives with the source folder
+> `design_handoff_arthome/` and is not part of this repository.
 
 Three prompts, for the first three stages. The sessions that follow no longer
 need a prompt: it is enough to ask for

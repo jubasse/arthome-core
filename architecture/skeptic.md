@@ -525,7 +525,8 @@ they go looking for the contents of a room.
 
 D-014 says the opposite, explicitly: *"The conclusion inverts. There is no fracture between
 repositories: there is a **single ceiling at TS 6.0.x across all seven**"*, and
-`code-conventions.md:103`: *"the TypeScript 6 / 7 fracture is not a present constraint"*.
+`code-conventions.md` §1.3: *"the TypeScript 6 / 7 split is not a fate imposed by React. The only
+hard floor is Angular's ceiling"*.
 Gates 6 and 7 of `code-conventions.md` §8.1 apply to the `.d.ts` of `@arthome/core` and
 `@arthome/contracts` — **not** to the surfaces' generated client, which exists only in
 repositories on TS 6.0.3.

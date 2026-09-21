@@ -1,5 +1,14 @@
 # Needs — storefront TV (react-native-tvos)
 
+> **What this document is.** The needs of the TV surface, written on 21 September 2026 against
+> the contract **as it then stood**, and the Confrontation written the same day against the
+> contract as it was answered. Everything below is preserved **verbatim**, line references
+> included, dead or not — their value is that they were written before the fixes. The outcome
+> notes marked **↪ Outcome** were added later, after the fixes landed; everything else is the
+> record of 21 September and has not been renumbered, softened or re-cited. Where a citation now
+> points at a line that has moved, the outcome note says so rather than updating it: an updated
+> citation would hide that the document moved underneath the finding.
+
 > Surface: connected televisions, operator set-top boxes, games consoles, HDMI
 > sticks. 1920 × 1080, driven with five keys, read from three metres away,
 > a highly heterogeneous fleet, memory counted. The studio does not exist here:
@@ -1299,6 +1308,16 @@ Three consequences, all visible:
 discovery page over a date state. The cost is one read model that `catalog` already projects for
 the home screen's `replay_expiring` rail — the material exists, it is missing a door.
 
+> **↪ Outcome (added after the confrontation).** **Closed.** `GET /v1/replays` exists:
+> `operationId: listReplays`, `tags: [discovery]`, `x-arthome-upstream: [catalog, ticketing,
+> streaming]`, freshness 60 s, and `security: - {}` — a public read, like the nine other catalogue
+> operations. The three arguments are carried into its description almost word for word, including
+> the one only a television can make: hiding a sidebar entry based on the session *"makes the menu
+> change size under the focus, which breaks focus memory"*. The page was added rather than removed
+> from my sidebar, which was the answer I preferred of the two I said were acceptable. My cited
+> line for `/v1/me/replays` (L2226) is dead — it is now L3742, the file having grown from 5,072 to
+> 6,984 lines.
+
 #### C2 — `Rail` can express only six of my nine home rows, and does not carry its counter
 
 This is the heaviest objection, because it touches the most-watched screen on the surface.
@@ -1352,6 +1371,18 @@ cracks because `Rail` does not use the common page envelope.
 
 All four are additive and affect no other surface.
 
+> **↪ Outcome (added after the confrontation).** **Closed, and wider than I asked.** All four
+> requests landed: `total` with `totalIsLowerBound` (same guarantee as
+> `CursorPageInfo.approximateTotal` — exact up to 10,000, a lower bound beyond); `items` as a
+> `oneOf` discriminated by a new `itemKind` (`date | artist`); `kind: my_seats`; and `cardForm`
+> (`wide | poster | portrait`). One addition I had not asked for: `kind` also gained
+> `artists_to_follow`, so the artists row is **named** as well as typed — nine values where there
+> were seven. `Rail.required` is now `[id, titleCode, kind, itemKind, cardForm, items]`, and a
+> per-rail `extendRail` operation consumes `nextCursor`. The reasons are quoted back into the
+> schema descriptions rather than summarised, including *"variety of format is what stops the
+> screen looking like a spreadsheet"* and, on `my_seats`, that filing it under `editorial` *"would
+> have erased that difference"*. My cited line for `ArtistSummary` (L4279) is dead — now L6017.
+
 #### C3 — The race between `cancelPairing` and `decidePairing` can orphan a real purchase
 
 This is the case the lead asked me to look for, and it exists.
@@ -1396,6 +1427,17 @@ the TV then staying on the waiting screen instead of leaving. It is the same fam
 `PAIRING_IDENTITY_MISMATCH`: it protects money against a gesture of the interface. Failing that,
 it must be written down who wins the race, and what becomes of the purchase that loses.
 
+> **↪ Outcome (added after the confrontation).** **Closed, and with exactly the family of guard I
+> asked for.** A pairing now moves `pending → engaged` through
+> `POST /v1/pairings/{pairingId}/engagement` (`engagePairing`, idempotent) when the phone enters
+> the payment journey; from then on `cancelPairing` answers `409 PAIRING_EXECUTION_ENGAGED`,
+> carrying `state` and `engagedAt` in `params`. What I could not write myself is written for me:
+> the contract states the surface behaviour rather than leaving it to my judgement — *"it **stays
+> on the waiting screen** and keeps polling. It does not go back. This is the only case in the
+> contract where pressing Back does not go up one level, and the reason is written down: we do not
+> let a remote control cancel a payment it triggered itself."* I could name the race; ruling on it
+> was not mine to do.
+
 #### C4 — `Error.nature` is the only hard `enum` on a response, and it is in the worst place
 
 **On the evidence.** Over 5,072 lines, critical rule no. 10 is held with a rigour I want to
@@ -1420,6 +1462,15 @@ no. 10 exists to prevent, at the place where it does the most damage.
 
 **What I ask for.** An `x-arthome-vocabulary` like the other 59, and an unknown nature treated as
 `unavailable` (retryable) rather than as nothing. The fix costs one line.
+
+> **↪ Outcome (added after the confrontation).** **Closed, one line as predicted, and the argument
+> was kept rather than the conclusion.** `Error.nature` is now
+> `x-arthome-vocabulary: [refused, unavailable, offline_forbidden]` plus
+> `x-arthome-unknown-fallback: unavailable`, so an unknown nature is retryable rather than fatal.
+> The reasoning is quoted in the description: a frozen enum here *"would not lose a card, it would
+> lose its ability to **read errors**, precisely when something is already wrong, and on a fleet we
+> cannot update"*. My cited line (L3616) is dead — now L5238 — and so are the counts in the
+> finding: 59 `x-arthome-vocabulary` against 25 `enum:` on the day, 67 against 34 today.
 
 ### What is satisfied differently, and whether that suits me
 
@@ -1457,6 +1508,23 @@ no. 10 exists to prevent, at the place where it does the most damage.
   guessing. **It is minor and I can live with it** — I can treat every `previewUrl` as tearable
   down by default — but a declared height would cost one field and would spare me capping blind on
   devices I cannot test.
+
+> **↪ Outcome (added after the confrontation).** Two of these four moved, and one closed itself.
+>
+> - **"Holding a seat is not a field" closed on its own, exactly as I said it would.** I wrote that
+>   if the "Your seats" row got its `kind`, the question would shut by itself. It did: `kind:
+>   my_seats` exists, so the row is now named rather than inferred. `viewerRelations` is otherwise
+>   unchanged — `inWatchlist`, `reminderSet`, `followsArtist`, still no `owned` — so the inference
+>   by negation from `watchVerdict.reasonCode != NO_SEAT` remains, and is now the only route. I
+>   accept it: I said I would.
+> - **Q12 was hardened past what I asked.** The output shape is prescribed rather than
+>   recommended — `z.union([z.enum(VALUES), z.string()])` on output, strict `z.enum(VALUES)` on
+>   input, *"a bare `z.enum()` on output would fail a television's **whole page** the day the
+>   catalogue gains a 22nd discipline"* — and R14 of `definition-of-done.md` makes a frozen output
+>   vocabulary fail the verifier.
+> - **`previewUrl` is unchanged and still bare** (`{ type: [string, 'null'], format: uri }`). No
+>   height, no bitrate. I said it was minor and that I could live with it; I still can, and I still
+>   cap blind on the devices I cannot test. Recorded, not re-argued.
 
 ### My call budget: it holds
 
@@ -1520,3 +1588,20 @@ Two wins I want on the record, because they were the most fragile:
    applies it; what is missing is the guard rail that will stop a `z.enum()` getting in at stage 1.
    I ask for a contract test that sends an unheard-of value into every closed vocabulary and checks
    that the response is **rendered**, not rejected.
+
+> **↪ Outcome (added after the confrontation).** **Three closed, the fourth partly — and the
+> residue is mine.**
+>
+> 1. **Closed** by C3: the `engaged` state decides the race, and the losing purchase can no longer
+>    exist, because cancellation is refused before it can orphan anything.
+> 2. **Closed** by C1, and in the direction I preferred: the page was added, not removed.
+> 3. **Closed** by C2. `itemKind: artist` with the `oneOf` means the artists row is served inside
+>    the same `GET /v1/home`. The second round trip I disputed in advance never appeared.
+> 4. **Partly.** The guard rail exists, but it checks a **shape**, not a **behaviour**: R14 and the
+>    verifier stop a frozen enum entering the spec, and the zod output union stops one being
+>    generated. Neither proves that a client **renders** a response carrying an unheard-of member.
+>    What I asked for — send an unknown value into every closed vocabulary, assert the response is
+>    rendered — is a runtime test, and I find none in `definition-of-done.md`. The gap is narrow
+>    and it is mine to carry at stage 1, but it is not zero, and I would rather it be written here
+>    than discovered in a living room.
+
