@@ -1,0 +1,88 @@
+// Types partagés par tous les contextes.
+//
+// Règles qui commandent ce fichier :
+//   - un montant est une unité mineure entière + un code devise ISO 4217 ;
+//     jamais une chaîne formatée, le formatage est de la présentation ;
+//   - un instant est un `google.protobuf.Timestamp`, toujours en UTC ;
+//     au passage à la frontière JSON il devient une chaîne ISO 8601 ;
+//   - un fuseau est un identifiant IANA, jamais un décalage en minutes (D3) ;
+//   - un libellé d'interface ne voyage JAMAIS : l'API rend des codes.
+//     Les deux seules exceptions sont du CONTENU et portent leur langue de
+//     rédaction : le message d'écran d'attente écrit par la régie, et les
+//     textes de la boîte du studio. D'où `LocalizedText`.
+syntax = "proto3";
+
+package arthome.common.v1;
+
+// Un montant. Unité canonique : la plus petite unité de la devise, en entier.
+message Money {
+  // Centimes pour EUR et CHF. Peut être négatif (avoir, remboursement).
+  int64 amount_minor = 1;
+  // ISO 4217, majuscules. « EUR », « CHF », « CAD ».
+  string currency_code = 2;
+}
+
+// Un texte RÉDIGÉ, par opposition à un libellé d'interface.
+// N'apparaît que là où un humain a écrit une phrase que nul ne traduira par clé.
+message LocalizedText {
+  // BCP 47 : « fr », « en ».
+  string content_language = 1;
+  string text = 2;
+}
+
+// Un visuel DÉJÀ décliné à une taille réellement affichée.
+// Jamais une recette d'URL avec un gabarit de largeur : sur un téléviseur à 1 Go,
+// un fond 4K décodé pour une vignette coûte autant qu'un plein écran.
+message ImageRendition {
+  string url = 1;
+  uint32 width_px = 2;
+  uint32 height_px = 3;
+}
+
+// Le jeu de visuels d'une entité, aux deux formats que les surfaces affichent.
+message MediaSet {
+  // 16/9, du plus petit au plus grand.
+  repeated ImageRendition wide = 1;
+  // 2/3 ou 3/4 selon la surface, du plus petit au plus grand.
+  repeated ImageRendition poster = 2;
+}
+
+// La surface depuis laquelle un geste a été posé. Le journal du studio est
+// nominatif ET situé : « qui a décidé, quand, depuis quelle surface ».
+enum Surface {
+  SURFACE_UNSPECIFIED = 0;
+  SURFACE_STOREFRONT_WEB = 1;
+  SURFACE_STOREFRONT_MOBILE = 2;
+  SURFACE_STOREFRONT_TV = 3;
+  SURFACE_STUDIO_WEB = 4;
+  SURFACE_STUDIO_MOBILE = 5;
+  // Une règle serveur : écran d'attente automatique, expiration d'un bail,
+  // ramasse-miettes. Un acteur non humain est un acteur quand même.
+  SURFACE_SYSTEM = 6;
+}
+
+// Qui a causé le fait. Absent quand le fait n'a pas d'auteur humain.
+message Actor {
+  // Vide pour SURFACE_SYSTEM.
+  string account_id = 1;
+  // L'intervenant, quand le geste est studio. Vide côté storefront.
+  string person_id = 2;
+  Surface surface = 3;
+}
+
+// Le fuseau de la salle, servi à côté de l'instant UTC qu'il qualifie.
+// « L'heure du spectateur d'abord, l'heure de salle en second quand elle
+// diffère » est un principe du dossier, et il est inapplicable si l'un des deux
+// manque. L'instant lui-même est porté par le message qui inclut ce bloc.
+message VenueClock {
+  // Identifiant IANA, « Europe/Paris ». Jamais une abréviation, jamais un
+  // décalage stocké (D3) : un décalage figé ne survit pas à un changement
+  // d'heure, et une date programmée dans six mois s'afficherait fausse.
+  string venue_timezone = 1;
+
+  // Le décalage CALCULÉ PAR LE SERVEUR pour l'instant qualifié, en minutes.
+  // Ce n'est pas un retour au décalage figé de D3 : c'est une valeur servie,
+  // recalculée à chaque service, jamais stockée. Elle évite d'embarquer une base
+  // de fuseaux dans cinq applications, et le calcul n'a donc lieu qu'une fois.
+  int32 venue_utc_offset_min = 2;
+}

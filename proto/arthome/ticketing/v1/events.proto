@@ -1,0 +1,305 @@
+// Événements du contexte `ticketing` — ce que le spectateur achète, et ce que
+// cet achat ouvre.
+//
+// Ce contexte absorbe les deux orphelins C7 (abonnements) et C8 (boutique).
+// Son langage n'est pas « les billets » : c'est le COMMERCE DU SPECTATEUR.
+// Motif : même client Stripe, même enveloppe de commande, même flux de
+// versement, même politique de remboursement — et `plan.opens[]` conditionne
+// le droit de lire, que ce contexte sert déjà.
+//
+// Sujets Kafka :
+//   arthome.ticketing.date_sales    clé date_id     12 partitions
+//   arthome.ticketing.order         clé order_id
+//   arthome.ticketing.subscription  clé account_id
+//
+// Maturité : STABLE (palier 3).
+syntax = "proto3";
+
+package arthome.ticketing.v1;
+
+import "arthome/common/v1/common.proto";
+import "google/protobuf/timestamp.proto";
+
+// Vocabulaire fermé tranché par `shared` : `enums.priceTier`.
+enum PriceTier {
+  PRICE_TIER_UNSPECIFIED = 0;
+  PRICE_TIER_FULL = 1;
+  PRICE_TIER_REDUCED = 2;
+  PRICE_TIER_SUPPORT = 3;
+}
+
+// D-011 : deux commandes DISTINCTES, jamais une commande mixte.
+// Elles n'ont ni les mêmes garanties (une place a une jauge, un code, une
+// fenêtre d'annulation), ni le même prestataire d'expédition, ni le même
+// destinataire de versement — et aucune maquette ne montre de commande mixte.
+enum OrderKind {
+  ORDER_KIND_UNSPECIFIED = 0;
+  ORDER_KIND_SEAT = 1;
+  ORDER_KIND_MERCH = 2;
+  ORDER_KIND_SUBSCRIPTION = 3;
+}
+
+// Le vocabulaire de `plans[]` de `catalogue.json` fait autorité.
+// E1 est l'écart le plus grave du dossier : QUATRE vocabulaires disjoints
+// coexistent, `helpers.planOf()` fait retomber TOUS les comptes sur `free`, et
+// `plan.opens[]` conditionne l'accès à la lecture. C'est un défaut
+// d'AUTORISATION, pas d'affichage. `monthly`, `season` et `none` sont retirés :
+// aucune donnée ne les référence. La place à l'unité n'est pas un abonnement,
+// c'est un mode d'achat : elle n'entre pas dans ce vocabulaire.
+enum PlanTier {
+  PLAN_TIER_UNSPECIFIED = 0;
+  PLAN_TIER_FREE = 1;
+  PLAN_TIER_PASS = 2;
+  PLAN_TIER_PREMIUM = 3;
+}
+
+// Les neuf ouvertures réellement portées par `catalogue.json`.
+// `multi-screen` n'est pas une ligne de marketing : c'est une contrainte
+// d'exécution, qui impose un décompte serveur tenu par `streaming`.
+enum PlanOpening {
+  PLAN_OPENING_UNSPECIFIED = 0;
+  PLAN_OPENING_BROWSE = 1;
+  PLAN_OPENING_TRAILERS = 2;
+  PLAN_OPENING_FREE_DATES = 3;
+  PLAN_OPENING_REPLAYS = 4;
+  PLAN_OPENING_NO_ADS = 5;
+  PLAN_OPENING_ONE_LIVE_MONTH = 6;
+  PLAN_OPENING_ALL_LIVES = 7;
+  PLAN_OPENING_MULTI_SCREEN = 8;
+  PLAN_OPENING_ARCHIVE = 9;
+}
+
+enum SubscriptionState {
+  SUBSCRIPTION_STATE_UNSPECIFIED = 0;
+  SUBSCRIPTION_STATE_ACTIVE = 1;
+  SUBSCRIPTION_STATE_PAST_DUE = 2;
+  SUBSCRIPTION_STATE_CANCELLED = 3;
+  SUBSCRIPTION_STATE_TRIALING = 4;
+}
+
+// Cinq motifs relevés dans la conception, avec des règles distinctes.
+// LATE_RATE est au PRORATA du temps restant : le prix dépend de l'instant de
+// lecture, donc il voyage avec sa validité et n'est jamais une chaîne figée.
+enum PromotionReason {
+  PROMOTION_REASON_UNSPECIFIED = 0;
+  PROMOTION_REASON_PRE_SALE = 1;
+  PROMOTION_REASON_PREVIEW_NIGHT = 2;
+  PROMOTION_REASON_DISCOVERY_RATE = 3;
+  PROMOTION_REASON_FINAL_DATE = 4;
+  PROMOTION_REASON_LATE_RATE = 5;
+}
+
+enum SeatCancelReason {
+  SEAT_CANCEL_REASON_UNSPECIFIED = 0;
+  SEAT_CANCEL_REASON_VIEWER_REQUEST = 1;
+  SEAT_CANCEL_REASON_DATE_CANCELLED = 2;
+  SEAT_CANCEL_REASON_ACCOUNT_DELETION = 3;
+  SEAT_CANCEL_REASON_PAYMENT_FAILED = 4;
+}
+
+// L'avoir est une MONNAIE INTERNE, donc un passif, donc un agrégat.
+// Il apparaît dans la copie du storefront et nulle part ailleurs dans le
+// dossier : sans ce type, il n'existerait pas au contrat.
+enum CreditOrigin {
+  CREDIT_ORIGIN_UNSPECIFIED = 0;
+  CREDIT_ORIGIN_INTERRUPTED_DATE = 1;
+  CREDIT_ORIGIN_GOODWILL = 2;
+}
+
+// Une ligne de TVA, par marché de facturation.
+// La FORME est sûre et ne bougera pas, quel que soit le modèle fiscal retenu :
+// un modèle à taux unique produit une ventilation à une ligne. Le modèle
+// lui-même n'est PAS tranché — voir adr-payments.md §5. `studio-web` a trouvé
+// que la maquette des versements ventile « par pays d'achat » alors que la
+// fixture applique un taux unique au brut : deux affirmations incompatibles,
+// aucune instruite (D5).
+message VatLine {
+  // « eur », « chf », « cad ».
+  string market_id = 1;
+  // Taux en points de base : 550 = 5,5 %. Un entier, jamais un flottant :
+  // un taux en virgule flottante finit par produire un centime d'écart.
+  uint32 rate_bps = 2;
+  arthome.common.v1.Money base = 3;
+  arthome.common.v1.Money amount = 4;
+}
+
+message PriceTierAmount {
+  PriceTier tier = 1;
+  arthome.common.v1.Money amount = 2;
+  bool active = 3;
+}
+
+message Promotion {
+  PromotionReason reason = 1;
+  arthome.common.v1.Money struck_price = 2;
+  arthome.common.v1.Money current_price = 3;
+  google.protobuf.Timestamp valid_from = 4;
+  google.protobuf.Timestamp valid_until = 5;
+}
+
+// ------------------------------------------------------- jauge et tarifs
+
+// LE fait le plus consommé du système : il alimente la carte publique de
+// `catalog`, l'index de recherche, l'agenda du studio et le seuil « bientôt
+// complet » de `notifications`.
+message DateSalesAvailabilityChanged {
+  string date_id = 1;
+  string channel_id = 2;
+  uint32 seats_available = 3;
+  uint32 waitlist_count = 4;
+  // Le TAUX de remplissage, pas la capacité. La surface a besoin du taux ;
+  // servir la capacité et laisser calculer recrée la valeur composée à deux
+  // endroits que le projet interdit — et la maquette le prouve, en appliquant
+  // une constante de 2000 places indépendante de la salle.
+  uint32 fill_rate_bps = 5;
+  // Le tarif d'appel, promotion appliquée. Absent si aucun tarif actif.
+  arthome.common.v1.Money lowest_price = 6;
+  bool sold_out = 7;
+  google.protobuf.Timestamp occurred_at = 8;
+}
+
+message DateSalesPricingChanged {
+  string date_id = 1;
+  string channel_id = 2;
+  repeated PriceTierAmount tiers = 3;
+  repeated Promotion promotions = 4;
+  // Vrai dès que `catalog.publication.engaged` a été consommé : `ticketing`
+  // applique SON verrou, il ne demande rien à `catalog`.
+  bool prices_locked = 5;
+  google.protobuf.Timestamp occurred_at = 6;
+  arthome.common.v1.Actor changed_by = 7;
+}
+
+// La jauge s'élargit PAR PALIERS et ne se réduit jamais après la mise en vente.
+// Ouvrir un palier prévient la liste d'attente DANS LE MÊME GESTE, avec une
+// fenêtre de priorité : deux appels laisseraient la rareté se dissiper entre eux.
+message DateSalesCapacitySet {
+  string date_id = 1;
+  string channel_id = 2;
+  uint32 capacity_total = 3;
+  // Vrai au-delà du seuil de provision technique (10 000 spectateurs
+  // simultanés) : l'infrastructure se provisionne à l'avance et un prévisionnel
+  // très au-dessus du réel expose à un malus. Seuil, provision, échéance de
+  // révision (72 h) et exposition sont des DONNÉES du contrat, pas des
+  // constantes recopiées sur cinq surfaces.
+  bool technical_provision_required = 4;
+  google.protobuf.Timestamp provision_revisable_until = 5;
+  google.protobuf.Timestamp occurred_at = 6;
+  arthome.common.v1.Actor set_by = 7;
+}
+
+// ---------------------------------------------------------------- place
+
+message SeatActivated {
+  string seat_id = 1;
+  string order_id = 2;
+  string date_id = 3;
+  string account_id = 4;
+  // Le profil qui a acheté, quand l'achat vient d'un téléviseur partagé.
+  string profile_id = 5;
+  PriceTier tier = 6;
+  // ÉMIS PAR LE SERVEUR. Il s'affiche à l'identique sur le web, le mobile et la
+  // TV : la maquette le calcule par hachage, ce qui donnerait TROIS codes
+  // différents pour la même place dès qu'une surface change de fonction.
+  string seat_code = 7;
+  // L'échéance d'annulation, comme un INSTANT. « Jusqu'à 1 h avant le début »
+  // est une règle de domaine, pas une mention d'écran.
+  google.protobuf.Timestamp cancel_deadline = 8;
+  google.protobuf.Timestamp occurred_at = 9;
+}
+
+message SeatCancelled {
+  string seat_id = 1;
+  string date_id = 2;
+  string account_id = 3;
+  SeatCancelReason reason = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+}
+
+// ---------------------------------------------------------------- commande
+
+// La matière du droit à versement. `payouts` ne consomme que ceci et les
+// remboursements : il ne reconstruit jamais le grand livre de Stripe.
+message OrderPaid {
+  string order_id = 1;
+  OrderKind kind = 2;
+  // UNE commande de marchandise est MONO-VENDEUR : un panier à deux chaînes se
+  // scinde en deux commandes au paiement. Motif métier (deux expéditions, deux
+  // commissions) et motif technique (le modèle Stripe retenu n'admet qu'une
+  // seule destination par paiement).
+  string channel_id = 3;
+  // Présent pour ORDER_KIND_SEAT.
+  string date_id = 4;
+  string account_id = 5;
+
+  arthome.common.v1.Money gross_ttc = 6;
+  // Ventilation par marché de facturation. Voir VatLine.
+  repeated VatLine vat = 7;
+  arthome.common.v1.Money service_fee = 8;
+  // Remise appliquée : d'abonnement OU promotion, jamais les deux — la règle
+  // retient la plus favorable au spectateur, et elle vit dans @arthome/core.
+  arthome.common.v1.Money discount = 9;
+  // Part financée par un avoir de compte plutôt que par Stripe. Le versement de
+  // l'artiste n'en dépend pas : la plateforme finance cette part sur ses fonds
+  // (adr-payments.md §6).
+  arthome.common.v1.Money credit_applied = 10;
+
+  // La référence Stripe. On ne reconstruit jamais son grand livre : on
+  // RÉCONCILIE le nôtre avec lui, et une période ne se clôt pas avec un écart
+  // non expliqué.
+  string payment_intent_ref = 11;
+  google.protobuf.Timestamp paid_at = 12;
+}
+
+message OrderRefunded {
+  string order_id = 1;
+  string channel_id = 2;
+  arthome.common.v1.Money amount = 3;
+  SeatCancelReason reason = 4;
+  string refund_ref = 5;
+  google.protobuf.Timestamp occurred_at = 6;
+}
+
+message CreditIssued {
+  string credit_id = 1;
+  string account_id = 2;
+  // Portée recommandée : la même chaîne. Un avoir utilisable ailleurs
+  // obligerait la plateforme à financer la part d'un autre artiste sur ses
+  // propres fonds. Restriction réversible ; l'ignorer ne l'est pas.
+  string channel_id = 3;
+  arthome.common.v1.Money amount = 4;
+  CreditOrigin origin = 5;
+  string origin_date_id = 6;
+  google.protobuf.Timestamp expires_at = 7;
+  google.protobuf.Timestamp occurred_at = 8;
+}
+
+// ---------------------------------------------------------------- abonnement
+
+// Consommé par `streaming` pour son `entitlement_projection` — la seule
+// duplication d'une donnée de `ticketing` que j'assume, parce que `streaming`
+// est le seul à pouvoir décider d'un droit et le seul à émettre un jeton.
+message SubscriptionChanged {
+  string account_id = 1;
+  PlanTier plan = 2;
+  SubscriptionState state = 3;
+  repeated PlanOpening opens = 4;
+  // Remise sur les PLACES, en points de base : 1000 = 10 %.
+  // À ne pas confondre avec la remise boutique de 15 % : deux remises, deux
+  // assiettes, et ni le taux ni l'assiette ne coïncident dans les sources (E1).
+  uint32 seat_discount_bps = 5;
+  // Plafond d'écrans simultanés, dérivé de PLAN_OPENING_MULTI_SCREEN.
+  // `ticketing` publie le plafond ; `streaming` le fait respecter.
+  uint32 concurrent_streams_allowed = 6;
+  google.protobuf.Timestamp current_period_end = 7;
+  google.protobuf.Timestamp occurred_at = 8;
+}
+
+// Ouvrir un palier prévient la liste d'attente dans le même geste, avec une
+// fenêtre de priorité (2 h) avant l'ouverture publique.
+message WaitlistNotified {
+  string date_id = 1;
+  repeated string account_ids = 2;
+  google.protobuf.Timestamp priority_until = 3;
+  google.protobuf.Timestamp occurred_at = 4;
+}

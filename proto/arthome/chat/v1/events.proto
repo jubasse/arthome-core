@@ -1,0 +1,218 @@
+// Événements du contexte `chat` — la parole dans une chaîne, et sa police.
+//
+// Sujets Kafka :
+//   arthome.chat.message     clé date_id   12 partitions
+//   arthome.chat.moderation  clé date_id    6 partitions
+//
+// Kafka est le JOURNAL durable — modération, audit, rejeu, historique.
+// Redis assure la DIFFUSION aux clients connectés. Confondre les deux est
+// l'erreur classique, et `streaming.md` la nomme.
+//
+// Maturité : PROVISOIRE (palier 5). Quatre vocabulaires de sanction existaient ;
+// j'en tranche trois axes, mais AUCUN écran n'a jamais exercé la modération vue
+// du spectateur — `storefront-mobile` a vérifié que `chatOf` n'est jamais
+// appelée dans sa maquette. Un contrat conçu et non observé ne se fige pas.
+syntax = "proto3";
+
+package arthome.chat.v1;
+
+import "arthome/common/v1/common.proto";
+import "google/protobuf/timestamp.proto";
+
+// Vocabulaire de `catalogue.json`, qui fait autorité.
+// Trois tables parallèles existent dans les maquettes — `free | emoji | off`
+// côté web et console de régie, `read` au lieu de `read-only` — et l'i18n ne
+// résout que le premier jeu. C'est le défaut D2 sur un autre champ (E2).
+enum ChatMode {
+  CHAT_MODE_UNSPECIFIED = 0;
+  CHAT_MODE_OPEN = 1;
+  CHAT_MODE_EMOJI = 2;
+  CHAT_MODE_READ_ONLY = 3;
+  CHAT_MODE_OFF = 4;
+}
+
+// AXE 1 — l'état du MESSAGE. Deux valeurs, et deux seulement.
+// `muted` et `banned` DISPARAISSENT de cet axe : ils n'y ont jamais eu de sens,
+// ils portent sur la personne. `ok` est renommé `published`, qui est le
+// vocabulaire de l'i18n et le seul qui dise ce qu'il fait (D6, E3).
+enum MessageState {
+  MESSAGE_STATE_UNSPECIFIED = 0;
+  MESSAGE_STATE_PUBLISHED = 1;
+  MESSAGE_STATE_REMOVED = 2;
+}
+
+// AXE 2 — la nature de la LIGNE DE FILE.
+// `reported` est un état de TRIAGE, et il était logé dans le champ des
+// sanctions : c'est pour cela que la file se construisait en filtrant
+// `state === 'reported'`, ce qui n'est pas un filtre d'état mais un filtre de
+// nature. Séparé ici.
+enum ModerationItemState {
+  MODERATION_ITEM_STATE_UNSPECIFIED = 0;
+  MODERATION_ITEM_STATE_REPORTED = 1;
+  MODERATION_ITEM_STATE_CLAIMED = 2;
+  MODERATION_ITEM_STATE_SETTLED = 3;
+}
+
+enum ModerationVerdict {
+  MODERATION_VERDICT_UNSPECIFIED = 0;
+  MODERATION_VERDICT_PUBLISH = 1;
+  MODERATION_VERDICT_REMOVE = 2;
+  MODERATION_VERDICT_MUTE = 3;
+  MODERATION_VERDICT_BAN = 4;
+}
+
+enum ModerationReason {
+  MODERATION_REASON_UNSPECIFIED = 0;
+  MODERATION_REASON_SPAM = 1;
+  MODERATION_REASON_HARASSMENT = 2;
+  MODERATION_REASON_HATE = 3;
+  MODERATION_REASON_OFF_TOPIC = 4;
+  MODERATION_REASON_FILTER = 5;
+}
+
+// AXE 3 — la sanction sur la PERSONNE, AU SEIN D'UNE CHAÎNE.
+// La même personne est bannie chez un artiste et bienvenue chez un autre :
+// c'est pourquoi la sanction appartient à `chat` et non à `identity`. Y loger
+// la sanction obligerait chaque verdict — geste le plus fréquent d'un direct
+// saturé — à une écriture croisée vers le service le plus sensible du système.
+enum AudienceSanctionKind {
+  AUDIENCE_SANCTION_KIND_UNSPECIFIED = 0;
+  AUDIENCE_SANCTION_KIND_NONE = 1;
+  AUDIENCE_SANCTION_KIND_MUTED = 2;
+  AUDIENCE_SANCTION_KIND_BANNED = 3;
+}
+
+// Deux vocabulaires existent dans le MÊME fichier de maquette
+// (`souple/normale/haute` en réglages de chaîne, `basse/moyenne/haute` en page
+// de modération) et aucun n'est dans `shared/`. Le contrat en fixe un.
+enum FilterSeverity {
+  FILTER_SEVERITY_UNSPECIFIED = 0;
+  FILTER_SEVERITY_LOW = 1;
+  FILTER_SEVERITY_MEDIUM = 2;
+  FILTER_SEVERITY_HIGH = 3;
+}
+
+// Ajouter un mot au dictionnaire en direct RECLASSE les messages déjà publiés
+// si l'option rétroactive est active. Le journal doit distinguer un
+// reclassement automatique d'une décision humaine.
+enum StateChangeOrigin {
+  STATE_CHANGE_ORIGIN_UNSPECIFIED = 0;
+  STATE_CHANGE_ORIGIN_HUMAN_VERDICT = 1;
+  STATE_CHANGE_ORIGIN_RETROACTIVE_FILTER = 2;
+  STATE_CHANGE_ORIGIN_AUTHOR_SANCTIONED = 3;
+}
+
+// ---------------------------------------------------------------- régime
+
+// Consommé par `catalog` : la carte publique porte `chatMode`, et le lecteur
+// en a besoin dans le même aller-retour que le jeton de lecture.
+message DateChatPolicyChanged {
+  string date_id = 1;
+  string channel_id = 2;
+  ChatMode mode = 3;
+  FilterSeverity filter_severity = 4;
+  // Mode lent : délai minimal entre deux messages d'une même personne.
+  uint32 slow_mode_sec = 5;
+  // Réserve aux détenteurs de place.
+  bool holders_only = 6;
+  // Vrai dès que `catalog.publication.engaged` a été consommé. `chat` applique
+  // SON verrou : après engagement on peut toujours FERMER un tchat en direct,
+  // jamais l'ouvrir davantage.
+  bool locked = 7;
+  google.protobuf.Timestamp occurred_at = 8;
+  arthome.common.v1.Actor changed_by = 9;
+}
+
+// ---------------------------------------------------------------- message
+
+// Journal durable : rejeu de rediffusion, audit, historique. La DIFFUSION aux
+// clients connectés passe par Redis et n'entre pas ici.
+message MessagePosted {
+  string message_id = 1;
+  string date_id = 2;
+  string channel_id = 3;
+  string audience_member_id = 4;
+  string author_handle = 5;
+
+  // LA POSITION DANS LE MÉDIA, en secondes depuis le lever de rideau.
+  // Sans elle, le tchat rejoué sur une rediffusion est décalé de tout ce que le
+  // spectateur a mis à lancer la lecture. Les maquettes prévoient des
+  // rediffusions avec chapitres : le problème est certain. Ça ne coûte rien si
+  // on y pense au départ, c'est irrattrapable ensuite.
+  int32 at_media_sec = 6;
+
+  // L'instant absolu, EN PLUS : le studio horodate en heure de salle et le
+  // journal de modération en a besoin. Les deux sont portés, jamais l'un seul.
+  google.protobuf.Timestamp sent_at = 7;
+
+  // Monotone par date. C'est le POINT DE REPRISE du flux temps réel : une
+  // console rouverte à 21 h 40 doit pouvoir rejouer depuis 20 h 30, et un
+  // mobile revenu d'arrière-plan doit savoir ce qu'il a manqué.
+  uint64 seq = 8;
+
+  arthome.common.v1.LocalizedText body = 9;
+}
+
+// Un message retiré qui reste affiché est un échec de modération : cet
+// événement doit atteindre les écrans ouverts en moins de deux secondes.
+// La surface PUBLIQUE ne reçoit jamais un message retiré ; le studio voit les
+// deux états.
+message MessageStateChanged {
+  string message_id = 1;
+  string date_id = 2;
+  MessageState state = 3;
+  StateChangeOrigin origin = 4;
+  uint64 seq = 5;
+  google.protobuf.Timestamp occurred_at = 6;
+  arthome.common.v1.Actor changed_by = 7;
+}
+
+// ---------------------------------------------------------------- modération
+
+// Le second verdict est REFUSÉ et transporte la décision gagnante — auteur et
+// verdict — pour que l'écran affiche « X a déjà supprimé ce message » au lieu
+// d'un échec nu. Un refus nu obligerait à un second aller-retour en plein direct.
+//
+// La prise en charge est un BAIL COURT, pas une écriture : un modérateur dont
+// le téléphone s'éteint ne doit pas geler une ligne pendant tout le direct.
+// « Prendre en charge n'est pas trancher : tant que le confrère n'a pas rendu
+// de verdict, votre sanction s'applique » — c'est une supersession, donc une
+// règle de préséance, et c'est pourquoi les commandes de modération sont
+// CONDITIONNELLES et non idempotentes aveugles (E3).
+message ModerationSettled {
+  string moderation_item_id = 1;
+  string message_id = 2;
+  string date_id = 3;
+  string channel_id = 4;
+  ModerationItemState state = 5;
+  ModerationVerdict verdict = 6;
+  ModerationReason reason = 7;
+  uint32 reports_count = 8;
+  int32 at_media_sec = 9;
+  google.protobuf.Timestamp settled_at = 10;
+  arthome.common.v1.Actor settled_by = 11;
+}
+
+// Une sanction porte un INSTANT d'expiration, jamais une étiquette :
+// « sans limite », 1 min, 10 min, 1 h et la durée libre sont un seul champ,
+// calculé une fois. `expires_at` absent = sans limite.
+message AudienceSanctioned {
+  string audience_member_id = 1;
+  string channel_id = 2;
+  string account_id = 3;
+  AudienceSanctionKind kind = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  ModerationReason reason = 6;
+  google.protobuf.Timestamp occurred_at = 7;
+  arthome.common.v1.Actor sanctioned_by = 8;
+}
+
+message AudienceSanctionLifted {
+  string audience_member_id = 1;
+  string channel_id = 2;
+  google.protobuf.Timestamp occurred_at = 3;
+  arthome.common.v1.Actor lifted_by = 4;
+  // Vrai quand c'est l'expiration, et non un geste humain, qui a levé la
+  // sanction. Le journal doit distinguer les deux.
+  bool expired = 5;
+}

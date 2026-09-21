@@ -1,0 +1,289 @@
+# ADR — L'accès au direct
+
+**Statut** : accepté. **Date** : 21 septembre 2026. **Auteur** : `backend-domain`.
+**Portée** : `streaming`, la périphérie du CDN, et les trois storefronts.
+**Maturité** : **provisoire** — le fournisseur média n'est pas choisi, et ses capacités déclarées
+changeront la forme du jeton. La *mécanique* ci-dessous, elle, ne dépend d'aucun fournisseur.
+
+---
+
+## 1. Ce qu'il faut tenir, formulé comme une exigence
+
+> **Changer d'adresse IP et vider ses cookies ne doit rien changer.
+> Un lien partagé ne doit pas ouvrir le direct à qui n'a pas de droit.**
+
+Et la contrainte qui élimine d'emblée la moitié des réponses habituelles :
+
+> **Toute heuristique fondée sur l'adresse IP ou sur un cookie est contournable et ne compte pas
+> comme réponse.** Une IP se partage dans un foyer et change en itinérance ; un cookie se copie.
+> Ni l'un ni l'autre ne porte un droit.
+
+Ce qui traite réellement le partage, c'est **la limite de sessions simultanées**, tenue par le plan
+de contrôle, avec révocation. Pas l'adresse.
+
+---
+
+## 2. Le problème que le CDN crée
+
+Un CDN devant le LL-HLS signifie que **ce n'est plus notre serveur média qui sert les segments**.
+La vérification « cette personne détient une place » ne peut donc plus se faire à la lecture : au
+moment où un segment part, aucun de nos processus n'est dans la boucle.
+
+```
+@arthome/core       dit si le droit est valide
+service streaming   émet un jeton court contre ce droit
+client              renouvelle le jeton tant que le droit tient
+CDN                 refuse tout ce qui n'est pas signé
+```
+
+Le port `PlaybackProvider` doit exposer cette capacité **explicitement** : un fournisseur futur
+sans URL signées casserait la règle métier sans qu'on s'en aperçoive.
+
+---
+
+## 3. Les quatre pièces
+
+### 3.1 Le jeton de lecture — signé, court, renouvelé pendant la diffusion
+
+Émis par `streaming`, **contre un droit vérifié**, jamais contre une session.
+
+```
+claims
+  sub   profileId          did   deviceId
+  dat   dateId             sid   playbackSessionId
+  qmax  plafond de qualité que le niveau de sécurité matériel autorise
+  scope full | preview     jti   identifiant unique, pour la révocation
+  exp   +120 s             kid   dans l'en-tête, pour la rotation
+```
+
+**Durée : 120 secondes. Intervalle de renouvellement : 45 secondes.**
+Le plafond exigé par `storefront-tv` est **≤ 60 s**, et le motif est décisif : c'est le
+renouvellement qui porte la limite de sessions simultanées, donc **la fenêtre pendant laquelle on
+regarde un flux auquel on n'a plus droit est exactement l'intervalle de renouvellement**. Au-delà
+d'une minute, la limite ne limite plus rien.
+
+**Le renouvellement ne doit pas redémarrer la lecture.** C'est une contrainte sur la **forme** du
+jeton, pas sur sa durée : un jeton dans le **chemin** forcerait un rechargement de manifeste et
+produirait un micro-gel toutes les N minutes, visible sur un plan fixe de théâtre. Donc :
+
+> **Jamais de jeton dans le chemin d'une URL.** Il vit dans une requête signée ou dans un cookie
+> signé, et le chemin du manifeste comme celui des segments reste stable.
+
+**Le refus de renouvellement porte un code, et quatre codes distincts sont nécessaires** — la TV
+affiche quatre messages différents :
+
+| Code | Ce que la surface dit |
+|---|---|
+| `SEAT_EXPIRED` | votre place a expiré |
+| `CONCURRENT_LIMIT_REACHED` | la limite d'écrans simultanés est atteinte |
+| `SIGNED_OUT_ELSEWHERE` | vous avez été déconnecté depuis un autre appareil |
+| `SERVICE_UNAVAILABLE` | nos serveurs ne répondent pas |
+
+Un code générique en produirait un faux trois fois sur quatre.
+
+**Ce que le jeton emporte en plus, et pourquoi c'est ici** : le protocole et le système de DRM
+**choisis par le serveur pour cet appareil**, et le **plafond de qualité** que son niveau de
+sécurité matériel autorise. Le parc impose HLS + FairPlay sur tvOS et DASH + Widevine ailleurs,
+avec PlayReady sur certaines références ; **un client qui devine se trompe**, et il se trompe sur
+les appareils qu'on ne peut pas tester. Une clé HDMI d'entrée de gamme n'offre que du Widevine
+logiciel, plafonné en SD : le serveur **dégrade proprement** plutôt que de refuser la lecture, et
+la TV **sait** qu'elle a été plafonnée pour ne pas proposer « 4K » dans son panneau de qualité.
+
+**Le DRM sert ici au tiérage d'appareil et de qualité, pas à une promesse anti-copie.** §7 le dit
+franchement.
+
+### 3.2 La vérification à la périphérie du CDN — manifeste **et** segments
+
+> **Une URL de segment ne doit pas fuir seule.**
+
+Signer le manifeste et laisser les segments ouverts, c'est ne rien signer : il suffit de recopier
+un lien de segment. La signature porte donc sur un **préfixe de chemin**, avec une expiration :
+
+```
+/playback/{dateId}/{sessionScope}/*     signé, expire avec le jeton
+  ├── master.m3u8
+  ├── {rendition}/index.m3u8
+  └── {rendition}/seg-000123.m4s        couvert par la MÊME signature de préfixe
+```
+
+Deux mécanismes, **déclarés par une capacité du port** parce qu'ils ne sont pas également
+disponibles partout :
+
+| Mécanisme | Où | Renouvellement |
+|---|---|---|
+| **cookies signés** de préfixe | navigateur (storefront web, studio web) | un appel même-origine repose le cookie : **zéro changement d'URL, zéro interruption** |
+| **signature en paramètre de requête**, chemin stable | lecteurs natifs (TV, mobile) | le lecteur ré-appose le jeton courant sur chaque requête via son filtre de requêtes |
+
+**Le cas dur, et il faut le nommer** : `AVPlayer` sur tvOS ne partage pas les cookies du WebView et
+n'offre pas de filtre de requêtes générique. La réponse est `AVAssetResourceLoaderDelegate`, qui
+intercepte les requêtes du lecteur et y appose l'en-tête ou le paramètre courant. C'est du travail
+de surface, et **c'est le point à valider sur un appareil réel avant de promettre quoi que ce
+soit** : `PlaybackProvider` doit donc déclarer `supportsSignedCookies` et
+`supportsQueryTokenRenewal`, et le `PlaybackTicket` dire lequel s'applique à cet appareil.
+
+**Les chemins de flux sont aléatoires et non prédictibles** — `streaming.md` le pose pour le mode
+démonstration, et cela vaut partout : un chemin devinable est une signature en moins.
+
+### 3.3 La limite de sessions simultanées — **c'est elle qui traite le partage**
+
+Tenue par le plan de contrôle, **par droit** (le compte et sa formule), pas par appareil ni par
+adresse.
+
+```
+PlaybackSession   { id, accountId, profileId, deviceId, dateId,
+                    leaseExpiresAt = now + 90 s }
+```
+
+**Le bail expire faute de renouvellement. Il ne se libère pas par une commande.**
+C'est la décision la plus importante de cette section, et elle vient de deux surfaces
+indépendamment :
+
+- `storefront-tv` : *« `releasePlayback` ne peut pas être garantie : un téléviseur se débranche,
+  une box se coupe »* ;
+- `storefront-mobile` : *« le système d'exploitation tue une application sans préavis et sans lui
+  laisser le temps de fermer quoi que ce soit. Une session qui ne se ferme que sur un événement du
+  client laisse un écran fantôme, et l'utilisateur se voit refuser sa propre seconde lecture. »*
+
+Donc : **bail de 90 s, renouvelé toutes les 45 s par le renouvellement du jeton.** `releasePlayback`
+existe et accélère la libération quand le client y arrive, mais **rien n'en dépend**. Un foyer ne
+peut pas se retrouver bloqué par des sessions fantômes.
+
+**Le client peut reprendre sa propre session**, identifiée par `deviceId` : rouvrir le lecteur sur
+le même appareil réutilise le bail au lieu d'en ouvrir un second.
+
+**Au-delà du plafond** (`PLAN_OPENING_MULTI_SCREEN` : 2 écrans en Premium, 1 sinon), le
+renouvellement est refusé avec `CONCURRENT_LIMIT_REACHED` **et la liste des sessions actives** —
+appareil, ville, instant d'ouverture — pour que la surface propose d'en **libérer une**. Un refus
+nu laisserait le spectateur sans issue, ce que le principe n°8 du dossier interdit.
+
+**Ce que voit le troisième écran** (`storefront-web` Q21) : un refus explicite, la liste, et un
+geste. Jamais une erreur réseau, jamais un lecteur qui tourne sans image.
+
+**Révocation immédiate, deux chemins :**
+- `identity.device_revoked.v1` consommé par `streaming` → les baux de cet appareil passent à
+  `revoked`. Effet visible au prochain renouvellement, **≤ 60 s** : c'est ce qui fait que
+  « déconnecter ce téléviseur depuis le web » coupe réellement la lecture ;
+- issue `interrupted` déclarée → les baux de la date sont révoqués avec `DATE_INTERRUPTED`, **à la
+  fin du renouvellement en cours**, pas par une coupure brutale : un flux coupé sans explication
+  est exactement ce que le principe n°6 interdit.
+
+### 3.4 La rotation des clés
+
+Deux jeux de clés, **jamais le même** :
+
+| Jeu | Usage | Rotation |
+|---|---|---|
+| **session** (BFF → services) | vérifié par JWKS, localement, par chaque service | 24 h, deux clés vivantes, `kid` dans l'en-tête |
+| **lecture** (streaming → CDN) | vérifié à la périphérie | 24 h, deux clés vivantes, `kid` dans l'en-tête |
+
+**Les séparer est le point.** Une compromission de la clé de lecture ne doit pas donner de session,
+et réciproquement. Le jeu de lecture est en plus **par environnement** : une clé de démonstration
+publique ne signe jamais rien en production.
+
+La rotation est **à recouvrement** : la nouvelle clé est publiée, les deux sont acceptées pendant
+une fenêtre au moins égale à la durée de vie maximale d'un jeton (120 s) plus une marge, puis
+l'ancienne est retirée. Sans recouvrement, une rotation coupe toutes les lectures en cours.
+
+---
+
+## 4. L'aperçu gratuit — imposé par le jeton, pas par le client
+
+Le non-détenteur voit les premières minutes puis le verrou. **Un aperçu que l'on prolonge en
+rechargeant la page n'est pas un aperçu** (`storefront-web` Q20), et une application réinstallée
+remettrait un compteur client à zéro (`storefront-mobile` Q6).
+
+```
+PreviewBudget  (accountId, dateId) → secondsUsed        décompté SERVEUR
+```
+
+Le jeton d'un non-détenteur est émis avec `scope: preview` et
+`exp = min(now + 120 s, now + secondsLeft)`. Quand le budget est épuisé, le renouvellement est
+refusé avec `PREVIEW_EXHAUSTED`, et la surface pose son verrou — avec l'action qui sort de
+l'impasse, jamais un écran mort.
+
+**La portée est le compte, pas l'appareil** : sinon un foyer à quatre appareils obtient quatre
+aperçus. Et le budget est **servi** dans le verdict de droit, pour que la surface puisse afficher
+le décompte sans le compter elle-même.
+
+---
+
+## 5. Ce que `streaming` doit savoir pour décider — et pourquoi il le sait
+
+`decideWatch` a cinq entrées, qui appartiennent à trois contextes. **Aucun appel synchrone entre
+services n'étant permis**, `streaming` tient une **projection locale** alimentée par Kafka :
+
+| Entrée | Source | Arrive par |
+|---|---|---|
+| possession d'une place | `ticketing` | `ticketing.seat.activated` / `.cancelled` |
+| formule et `opens[]`, plafond d'écrans | `ticketing` | `ticketing.subscription.changed` |
+| état de la date et ses bornes | `catalog` | `catalog.date.scheduled` / `.rescheduled` / `.outcome_declared` |
+| politique et fenêtre de rediffusion | `catalog` | `catalog.date.replay_policy_set` |
+| droits territoriaux | `catalog` | `catalog.date.rights_changed` |
+
+C'est **la seule duplication de donnée que j'assume dans tout le système**, et elle est assumée
+parce que les deux alternatives sont pires : un appel synchrone entre services est interdit, et un
+droit décidé par le BFF n'a aucune autorité — il ne produit pas de jeton.
+
+**Fraîcheur tolérée : ≤ 5 s.** Au-delà, l'alerte `read_model_staleness_seconds` de
+`context-map.md` §11 se déclenche. Et le pays du spectateur est **résolu à chaque ouverture**, pas
+projeté : il change entre deux lectures (déplacement, itinérance, réseau d'entreprise), et sur
+mobile ce délai se compte en heures.
+
+**Le droit est revérifié au démarrage de la lecture, jamais hérité du catalogue.** Le verdict servi
+sur une carte est **indicatif et non opposable**, et le contrat le déclare tel.
+
+---
+
+## 6. L'ingestion — l'autre bout du même problème
+
+Le droit de **lire** et le droit de **diffuser** sont deux choses, mais la discipline est la même :
+une vérification synchrone **avant** d'accepter quoi que ce soit.
+
+| Mécanisme | Rôle |
+|---|---|
+| **authentification HTTP externe** du serveur média → API NestJS | **synchrone, AVANT acceptation du flux** : jeton, session, propriétaire, expiration, quota |
+| crochets `runOnOnline` / `runOnOffline` / `runOnRead` | **cycle de vie seulement** : ils signalent l'état, ils ne décident de rien |
+| métriques Prometheus | surveiller et couper, **jamais autoriser** |
+
+**Les crochets ne servent pas à autoriser** — `streaming.md` est explicite, et le motif est concret :
+`runOnConnect` est un événement de cycle de vie, donc **un flux peut entrer avant d'être refusé**.
+
+**La clé de flux est un secret affiché sur un téléphone, dans une salle, souvent devant un
+prestataire.** D'où quatre garanties, déjà posées dans `data-model.md` §5.2 : jamais dans une
+charge utile de liste, révélation par une commande distincte et auditée, renouvellement immédiat
+avec arrêt instantané de l'ancienne, et `Cache-Control: no-store` — la clé ne doit se retrouver ni
+dans le cache HTTP du téléphone ni dans un instantané d'application pris par le système au passage
+en arrière-plan.
+
+---
+
+## 7. La limite assumée
+
+> **Rien de ce qui précède n'empêche un enregistrement d'écran.**
+
+Un spectateur qui filme son téléviseur, ou qui capture son écran avec un logiciel, obtient une
+copie. Aucune signature de segment, aucune limite de sessions et aucune rotation de clé n'y change
+quoi que ce soit : ces mécanismes protègent **l'accès**, pas la **copie**.
+
+Seul un **DRM** avec chemin média protégé et sortie contrôlée (HDCP) le ferait, et encore : contre
+une caméra pointée sur un écran, rien ne le fait.
+
+**Le DRM est hors de proportion ici**, et pour trois raisons qu'on peut écrire :
+
+1. **Le coût.** Une licence Widevine/PlayReady/FairPlay, un serveur de licences, un empaquetage
+   chiffré par rendition et un plan de test sur un parc de téléviseurs hétérogène — pour une
+   plateforme de spectacle vivant tenue par une personne seule.
+2. **Le rendement.** La valeur d'une captation de spectacle vivant est très largement dans
+   l'instant : le direct, le tchat, le public. Une copie basse définition d'un plan fixe de théâtre
+   n'entame ni la billetterie ni la rediffusion.
+3. **Le vrai risque n'est pas la copie, c'est le partage de compte** — et c'est exactement ce que
+   la limite de sessions simultanées traite, sans DRM et sans heuristique d'adresse.
+
+**Ce qu'on garde du DRM malgré tout** : le champ `drm_system` et le plafond `qmax` du
+`PlaybackTicket`. Ils ne sont pas là pour empêcher la copie ; ils sont là parce que **le parc
+l'exige** — un lecteur qui devine son système de DRM se trompe, et une clé HDMI qui n'a que du
+Widevine logiciel doit recevoir du SD plutôt qu'un refus.
+
+C'est ce genre d'arbitrage — **une architecture composable, instanciée au minimum viable, avec un
+paragraphe expliquant ce qui n'a délibérément pas été déployé et pourquoi** — que `streaming.md`
+demande d'écrire, et qui envoie un signal plus fort qu'une tentative inachevée de tout monter.

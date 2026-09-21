@@ -1,0 +1,99 @@
+// Événements du contexte `payouts` — ce que la plateforme doit à une chaîne.
+//
+// Sujet Kafka :
+//   arthome.payouts.payout   clé channel_id
+//
+// STRIPE RESTE LA SOURCE DE VÉRITÉ DU MOUVEMENT D'ARGENT. On ne reconstruit
+// jamais son grand livre : on RÉCONCILIE le nôtre avec lui, et une période ne
+// se clôt pas avec un écart non expliqué.
+//
+// Maturité : PROVISOIRE. La question fiscale n'est pas tranchée
+// (adr-payments.md §5, D5) : l'assiette et le redevable de la TVA changeront
+// les champs. La FORME — une ventilation par marché — est en revanche sûre.
+syntax = "proto3";
+
+package arthome.payouts.v1;
+
+import "arthome/common/v1/common.proto";
+import "arthome/ticketing/v1/events.proto";
+import "google/protobuf/timestamp.proto";
+
+// `held` tant qu'une issue est OUVERTE (reportée, interrompue) ;
+// `refunded` si la date est annulée ;
+// `suspended` tant qu'un changement de coordonnées bancaires attend sa
+// contre-signature. Ce qui fait autorité dans `shared/` et qu'on porte :
+// commission 12 %, délai 14 jours, arrondi à l'unité sur chaque composante
+// prise séparément, retenue tant qu'une issue est ouverte.
+enum PayoutState {
+  PAYOUT_STATE_UNSPECIFIED = 0;
+  PAYOUT_STATE_SCHEDULED = 1;
+  PAYOUT_STATE_HELD = 2;
+  PAYOUT_STATE_PAID = 3;
+  PAYOUT_STATE_REFUNDED = 4;
+  PAYOUT_STATE_SUSPENDED = 5;
+}
+
+message PayoutStateChanged {
+  string payout_id = 1;
+  string channel_id = 2;
+  string date_id = 3;
+  PayoutState state = 4;
+
+  arthome.common.v1.Money gross_ttc = 5;
+  // Ventilation PAR MARCHÉ, chaque ligne portant son assiette, son taux et son
+  // montant. Elle porte quel que soit le modèle fiscal retenu : un modèle à
+  // taux unique produit une ventilation à une ligne. C'est ce qui réconcilie la
+  // maquette des versements (« le taux applicable est celui du pays de
+  // l'acheteur ») et la fixture (un taux unique au brut), sans supposer laquelle
+  // a raison.
+  repeated arthome.ticketing.v1.VatLine vat = 6;
+  arthome.common.v1.Money gross_ht = 7;
+
+  // SERVI, jamais redérivé de commission / gross : la maquette le redérive et
+  // retombe sur 12 % par défaut quand le brut est nul. 1200 = 12 %.
+  uint32 commission_rate_bps = 8;
+  arthome.common.v1.Money commission = 9;
+  arthome.common.v1.Money net = 10;
+  arthome.common.v1.Money refunded = 11;
+  arthome.common.v1.Money credited = 12;
+
+  // Fin du direct + 14 jours. L'échéance court depuis la FIN, pas depuis le
+  // paiement : `payouts` consomme `streaming.run.ended.v1` pour la poser.
+  google.protobuf.Timestamp due_at = 13;
+  string stripe_transfer_ref = 14;
+  google.protobuf.Timestamp occurred_at = 15;
+}
+
+// Une DEMANDE en attente d'un second accord, avec son propre cycle de vie et sa
+// propre trace — pas une écriture. Deux acteurs, deux rôles distincts
+// (propriétaire ET trésorerie), un délai, une trace. Et elle SUSPEND le
+// virement en cours le temps de la signature : une écriture ne peut pas porter
+// cela.
+message BankChangeRequested {
+  string request_id = 1;
+  string channel_id = 2;
+  // Les quatre derniers caractères seulement. Un IBAN complet n'a rien à faire
+  // dans un journal d'événements qui se rejoue.
+  string masked_account_tail = 3;
+  google.protobuf.Timestamp requested_at = 4;
+  arthome.common.v1.Actor requested_by = 5;
+  google.protobuf.Timestamp expires_at = 6;
+}
+
+message BankChangeCountersigned {
+  string request_id = 1;
+  string channel_id = 2;
+  google.protobuf.Timestamp countersigned_at = 3;
+  arthome.common.v1.Actor countersigned_by = 4;
+}
+
+// Une période ne se clôt pas avec un écart non expliqué : cet événement route
+// une alerte vers le rôle `treasury`.
+message ReconciliationDiscrepancyFound {
+  string period_id = 1;
+  string channel_id = 2;
+  arthome.common.v1.Money expected = 3;
+  arthome.common.v1.Money observed = 4;
+  arthome.common.v1.Money discrepancy = 5;
+  google.protobuf.Timestamp found_at = 6;
+}

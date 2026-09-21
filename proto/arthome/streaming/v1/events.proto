@@ -1,0 +1,232 @@
+// Événements du contexte `streaming` — la conduite, et le droit de lire
+// maintenant.
+//
+// Sujet Kafka :
+//   arthome.streaming.run   clé date_id   12 partitions
+//
+// Maturité : PROVISOIRE (palier 5). Le choix du fournisseur média n'est pas
+// fait, et les capacités déclarées — signature de segments, DRM, renditions —
+// changeront la forme du jeton de lecture. Figer maintenant, c'est figer contre
+// MediaMTX. `buf breaking` est ignoré sur ce répertoire (voir buf.yaml).
+syntax = "proto3";
+
+package arthome.streaming.v1;
+
+import "arthome/common/v1/common.proto";
+import "google/protobuf/timestamp.proto";
+
+// L'axe TECHNIQUE, et rien d'autre.
+// `postponed` et `cancelled` sont RETIRÉS de cet axe : c'étaient des échos de
+// `catalog.DateOutcome` logés dans l'état technique — la même faute que
+// `reported` dans le champ des sanctions. Une régie n'a pas d'état « annulée » :
+// elle a un plateau qui n'envoie rien (E4).
+enum RunState {
+  RUN_STATE_UNSPECIFIED = 0;
+  RUN_STATE_IDLE = 1;
+  RUN_STATE_REHEARSAL = 2;
+  RUN_STATE_ON_AIR = 3;
+  RUN_STATE_INTERRUPTED = 4;
+  RUN_STATE_ENDED = 5;
+}
+
+// Le protocole d'entrée DÉCIDE des métriques réellement disponibles.
+// `streaming.md` est formel : le gigue et les paquets perdus n'existent qu'en
+// entrée WebRTC ; en RTMP, transporté sur TCP, ils n'ont pas de sens.
+enum IngestProtocol {
+  INGEST_PROTOCOL_UNSPECIFIED = 0;
+  INGEST_PROTOCOL_RTMPS = 1;
+  INGEST_PROTOCOL_SRT = 2;
+  INGEST_PROTOCOL_WHIP = 3;
+}
+
+// La voie de retour de régie RÉELLEMENT ouverte. Le studio doit la SAVOIR pour
+// ne pas promettre à l'opérateur une latence qu'il n'a pas : WHEP sous la
+// seconde sur entrée WHIP, LL-HLS à quelques secondes sur entrée RTMP.
+// `streaming.md` refuse de créer une branche média pour uniformiser un schéma :
+// le contrat porte donc la vérité, pas l'uniformité.
+enum MonitorPath {
+  MONITOR_PATH_UNSPECIFIED = 0;
+  MONITOR_PATH_WHEP = 1;
+  MONITOR_PATH_LL_HLS = 2;
+}
+
+// L'ISSUE visible du spectateur. Quatre valeurs, celles de
+// `catalogue.incidentMessages`.
+enum IncidentKind {
+  INCIDENT_KIND_UNSPECIFIED = 0;
+  INCIDENT_KIND_HOLD_SCREEN = 1;
+  INCIDENT_KIND_POSTPONED = 2;
+  INCIDENT_KIND_CANCELLED = 3;
+  INCIDENT_KIND_INTERRUPTED = 4;
+}
+
+// La CAUSE, vocabulaire NOUVEAU et distinct de l'issue.
+// `catalogue.incidentMessages` ne connaît que quatre entrées, qui sont des
+// issues. La régie mobile en distingue trois de plus qui n'existent dans aucun
+// vocabulaire : flux perdu côté salle, poste de régie déconnecté, débit
+// effondré. `streaming.md` en nomme une quatrième,
+// COMPATIBILITY_WORKER_FAILED : un worker FFmpeg ne doit jamais mourir en
+// silence, sinon la régie voit un lecteur qui ne démarre jamais sans cause.
+enum IncidentCause {
+  INCIDENT_CAUSE_UNSPECIFIED = 0;
+  INCIDENT_CAUSE_VENUE_FEED_LOST = 1;
+  INCIDENT_CAUSE_RUN_DESK_DISCONNECTED = 2;
+  INCIDENT_CAUSE_BITRATE_COLLAPSED = 3;
+  INCIDENT_CAUSE_COMPATIBILITY_WORKER_FAILED = 4;
+  INCIDENT_CAUSE_PROVIDER_ERROR = 5;
+  INCIDENT_CAUSE_MANUAL = 6;
+}
+
+// L'écran d'attente AUTOMATIQUE — règle de chaîne « si le flux se perd plus de
+// 15 s » — produit un incident de MÊME NATURE qu'un déclenchement manuel.
+// C'est la bonne réponse au cas « le régisseur est injoignable », et c'est une
+// règle serveur, pas un comportement d'application. Le journal doit néanmoins
+// distinguer les deux.
+enum IncidentTrigger {
+  INCIDENT_TRIGGER_UNSPECIFIED = 0;
+  INCIDENT_TRIGGER_MANUAL = 1;
+  INCIDENT_TRIGGER_AUTO = 2;
+}
+
+// ---------------------------------------------------------------- conduite
+
+// Déverrouille la liste de contrôle de publication : `technical_check_passed`
+// est l'un des sept éléments, et il vient d'ici. `catalog` le projette, il ne
+// le demande pas.
+message TechnicalCheckPassed {
+  string date_id = 1;
+  string channel_id = 2;
+  IngestProtocol protocol = 3;
+  google.protobuf.Timestamp passed_at = 4;
+  arthome.common.v1.Actor checked_by = 5;
+}
+
+// Consommé par `catalog`, qui avance la publication de `technical` à `live`.
+// La commande « passer à l'antenne » va à `streaming`, pas à `catalog` : seul
+// `streaming` sait si le flux entre. Deux transitions de la machine à états de
+// publication sur huit sont donc CAUSÉES par un événement, ce qui laisse
+// `Publication` agrégat d'un seul contexte.
+message RunStarted {
+  string date_id = 1;
+  string channel_id = 2;
+  IngestProtocol protocol = 3;
+  MonitorPath monitor_path = 4;
+  google.protobuf.Timestamp started_at = 5;
+  arthome.common.v1.Actor started_by = 6;
+}
+
+message RunEnded {
+  string date_id = 1;
+  string channel_id = 2;
+  google.protobuf.Timestamp ended_at = 3;
+  uint32 duration_sec = 4;
+  uint32 peak_viewers = 5;
+  google.protobuf.Timestamp peak_at = 6;
+  uint32 avg_viewers = 7;
+  // L'échéance de versement (14 jours) court depuis LA FIN DU DIRECT, pas
+  // depuis le paiement : `payouts` consomme donc cet événement.
+  google.protobuf.Timestamp occurred_at = 8;
+}
+
+message RunStateChanged {
+  string date_id = 1;
+  RunState state = 2;
+  // Renseignée seulement pour RUN_STATE_INTERRUPTED.
+  IncidentCause cause = 3;
+  // Vrai quand l'état est celui d'APRÈS amortissement du délai de grâce.
+  // Une coupure réseau de deux secondes en salle ne doit produire ni incident
+  // en régie ni manifeste HLS reparti de zéro : le studio distingue « accroc
+  // amorti » de « publieur parti », et ce sont deux champs, pas un.
+  bool after_grace_period = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+}
+
+// ---------------------------------------------------------------- incident
+
+// L'écran d'attente est un VOILE CLIENT, jamais une bascule de flux : le plan
+// de contrôle publie l'état, le lecteur l'affiche par-dessus une vidéo intacte.
+// Instantané, identique sur web, mobile et TV, et le média reste intact pour la
+// reprise. Basculer le flux amont chez un fournisseur managé est lent et coûteux.
+message IncidentRaised {
+  string incident_id = 1;
+  string date_id = 2;
+  string channel_id = 3;
+  IncidentKind kind = 4;
+  IncidentCause cause = 5;
+  IncidentTrigger trigger = 6;
+  // Le message écrit par la régie voyage AVEC l'état, dans sa langue de
+  // rédaction. C'est du contenu, pas une clé i18n : le catalogue en fournit des
+  // modèles par nature d'incident, que la régie reprend ou remplace.
+  arthome.common.v1.LocalizedText message = 7;
+  google.protobuf.Timestamp raised_at = 8;
+  arthome.common.v1.Actor raised_by = 9;
+}
+
+// Quand l'incident se résout, l'état change et le lecteur RETIRE le voile.
+// Le client ne doit pas avoir à redemander un jeton de lecture, sinon la
+// reprise se paie d'un rechargement de flux.
+message IncidentResolved {
+  string incident_id = 1;
+  string date_id = 2;
+  google.protobuf.Timestamp resolved_at = 3;
+  arthome.common.v1.Actor resolved_by = 4;
+}
+
+// ---------------------------------------------------------------- rediffusion
+
+// La POLITIQUE appartient à `catalog` (la promesse), la MISE EN VENTE à
+// `ticketing` (le prix), le FICHIER et son EXPIRATION à `streaming`.
+// `expires_at` se dérive de la fin du run et de `replay_window_hours` servi par
+// `catalog` : c'est @arthome/core qui décide de la durée, sinon la politique de
+// rediffusion finirait encodée dans un cycle de vie de stockage, hors de portée
+// des tests.
+message ReplayAssetReady {
+  string date_id = 1;
+  string channel_id = 2;
+  uint32 duration_sec = 3;
+  google.protobuf.Timestamp available_from = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  google.protobuf.Timestamp occurred_at = 6;
+}
+
+message ReplayExpired {
+  string date_id = 1;
+  google.protobuf.Timestamp occurred_at = 2;
+}
+
+// ---------------------------------------------------------------- chapitres
+
+// Posés en régie, repris dans la rediffusion. Ils portent leur POSITION DANS LE
+// MÉDIA : c'est gratuit maintenant, irrattrapable ensuite.
+message ChapterPosted {
+  string chapter_id = 1;
+  string date_id = 2;
+  // Identifiant du vocabulaire de chapitres, jamais un libellé rédigé.
+  string chapter_vocab_id = 3;
+  int32 at_media_sec = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+  arthome.common.v1.Actor posted_by = 6;
+}
+
+message ChapterRemoved {
+  string chapter_id = 1;
+  string date_id = 2;
+  google.protobuf.Timestamp occurred_at = 3;
+}
+
+// ---------------------------------------------------------------- audience
+
+// UNE FOIS PAR MINUTE, pas par seconde. Le compteur à la seconde circule sur
+// Redis (diffusion Socket.IO) ; seul l'agrégat à la minute entre dans le
+// journal durable. Un échantillon par seconde et par direct dans Kafka est du
+// gâchis, et c'est la frontière Kafka/Redis de `streaming.md`.
+//
+// Le compteur est ABSENT — jamais zéro — quand la date n'est pas à l'antenne :
+// la règle du dossier interdit « 0 EN DIRECT », et un zéro se lit « personne »,
+// pas « non mesuré ».
+message ViewerCountSampled {
+  string date_id = 1;
+  // Début de la minute échantillonnée, UTC.
+  google.protobuf.Timestamp minute = 2;
+  uint32 viewers = 3;
+}

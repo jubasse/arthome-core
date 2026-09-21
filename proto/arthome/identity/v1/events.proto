@@ -1,0 +1,199 @@
+// Événements du contexte `identity` — la personne, l'appareil, et le droit d'agir.
+//
+// Sujets Kafka :
+//   arthome.identity.account   clé account_id
+//   arthome.identity.device    clé device_id
+//   arthome.identity.channel   clé channel_id
+//
+// Maturité : STABLE (palier 2). `buf breaking` bloque toute rupture.
+syntax = "proto3";
+
+package arthome.identity.v1;
+
+import "arthome/common/v1/common.proto";
+import "google/protobuf/timestamp.proto";
+
+// Les HUIT rôles canoniques de `catalogue.json`.
+// Le repli à six personas de `studio-data.js` est un LIBELLÉ de présentation et
+// n'apparaît dans aucune charge utile : il écrase `director`, `video` et `sound`
+// en un seul « regie », alors que `grants` les distingue — `director` peut
+// inviter `video` et `sound`, les deux autres ne peuvent inviter personne.
+// Autoriser sur le rôle court accorderait un droit d'invitation inexistant (E6).
+enum MemberRole {
+  MEMBER_ROLE_UNSPECIFIED = 0;
+  MEMBER_ROLE_ARTIST = 1;
+  MEMBER_ROLE_PRODUCTION = 2;
+  MEMBER_ROLE_COORDINATION = 3;
+  MEMBER_ROLE_DIRECTOR = 4;
+  MEMBER_ROLE_VIDEO = 5;
+  MEMBER_ROLE_SOUND = 6;
+  MEMBER_ROLE_MODERATION = 7;
+  MEMBER_ROLE_TREASURY = 8;
+}
+
+// Le poste tenu sur UNE date, par opposition au rôle tenu dans la chaîne.
+// Deux échelles, deux cycles de vie : les confondre ferait d'une révocation de
+// renfort une exclusion de chaîne.
+enum CrewRole {
+  CREW_ROLE_UNSPECIFIED = 0;
+  CREW_ROLE_DIRECTOR = 1;
+  CREW_ROLE_VIDEO = 2;
+  CREW_ROLE_SOUND = 3;
+  CREW_ROLE_MODERATION = 4;
+}
+
+enum MembershipAction {
+  MEMBERSHIP_ACTION_UNSPECIFIED = 0;
+  MEMBERSHIP_ACTION_JOINED = 1;
+  MEMBERSHIP_ACTION_ROLES_CHANGED = 2;
+  MEMBERSHIP_ACTION_REMOVED = 3;
+}
+
+// Un appareil EST une session (context-map §7.1). `catalogue.json` déclare
+// `devices` comme un entier et `fixtures.js` comme une liste d'objets : deux
+// formes sous un identifiant (E13). Le contrat tranche pour la seconde.
+enum DeviceKind {
+  DEVICE_KIND_UNSPECIFIED = 0;
+  DEVICE_KIND_TV = 1;
+  DEVICE_KIND_MOBILE = 2;
+  DEVICE_KIND_TABLET = 3;
+  DEVICE_KIND_DESKTOP = 4;
+  DEVICE_KIND_STICK = 5;
+  DEVICE_KIND_CONSOLE = 6;
+  DEVICE_KIND_BOX = 7;
+}
+
+// ---------------------------------------------------------------- compte
+
+message AccountRegistered {
+  string account_id = 1;
+  google.protobuf.Timestamp occurred_at = 2;
+  string locale = 3;
+  // ISO 3166-1 alpha-2, tel que résolu à l'inscription. Sert aux droits
+  // territoriaux et au marché de facturation ; il est réévalué à chaque lecture.
+  string country = 4;
+}
+
+// Point d'entrée de la saga d'effacement. La suppression de compte est une
+// commande FINANCIÈRE autant que personnelle : « la suppression annule les
+// places non utilisées », ce qui déclenche des remboursements, touche des
+// versements déjà calculés, et se heurte à la conservation comptable de dix ans.
+// Elle ne peut donc être ni synchrone ni totale (data-model.md §7.5).
+message AccountDeletionRequested {
+  string account_id = 1;
+  google.protobuf.Timestamp requested_at = 2;
+  // Fin du délai de grâce : le compte est réactivable sur simple connexion
+  // jusque-là. C'est ce qui rend l'irréversible acceptable.
+  google.protobuf.Timestamp grace_until = 3;
+}
+
+// Terme de la saga. Les factures gardent leur contenu figé (un document est la
+// seule exception assumée à « jamais de chaîne formatée transportée ») ; les
+// messages de tchat sont dissociés de la personne, pas supprimés, tant que leur
+// rétention de 24 mois court.
+message AccountAnonymised {
+  string account_id = 1;
+  google.protobuf.Timestamp occurred_at = 2;
+}
+
+// ---------------------------------------------------------------- appareil
+
+// Consommé par `streaming`, qui invalide les BAUX DE LECTURE de cet appareil.
+// C'est ce qui fait que « déconnecter cet appareil » coupe réellement la lecture
+// sur le téléviseur visé, et non seulement une ligne dans une liste.
+// Effet visible au prochain renouvellement de jeton, donc au plus 60 s.
+message DeviceRevoked {
+  string device_id = 1;
+  string account_id = 2;
+  DeviceKind kind = 3;
+  google.protobuf.Timestamp occurred_at = 4;
+  arthome.common.v1.Actor revoked_by = 5;
+}
+
+// ---------------------------------------------------------------- relations
+
+// Suivre un artiste et être alerté sont DEUX réglages. Le premier est une
+// relation de catalogue, le second un drapeau porté par `notifications`.
+// Les confondre rendrait impossible de suivre sans être notifié.
+message ArtistFollowed {
+  string account_id = 1;
+  string artist_id = 2;
+  google.protobuf.Timestamp occurred_at = 3;
+}
+
+message ArtistUnfollowed {
+  string account_id = 1;
+  string artist_id = 2;
+  google.protobuf.Timestamp occurred_at = 3;
+}
+
+// ---------------------------------------------------------------- chaîne
+
+// La chaîne comme ESPACE DE TRAVAIL. Sa face publique — nom, biographie, avatar,
+// abonnés — appartient à `catalog.Artist`, en relation 1:1 par `channel_id`.
+// C'est la coupe qui résout C9 : l'autorisation d'un côté, la publication de
+// l'autre, et aucune commande du studio ne traverse les deux.
+message ChannelCreated {
+  string channel_id = 1;
+  string owner_account_id = 2;
+  string owner_person_id = 3;
+  google.protobuf.Timestamp occurred_at = 4;
+}
+
+message ChannelMembershipChanged {
+  string channel_id = 1;
+  string person_id = 2;
+  // Un ENSEMBLE de rôles : une personne en tient plusieurs sur une même chaîne,
+  // et la navigation du studio est l'UNION de leurs accès, jamais un rang.
+  // Vide quand `action` vaut MEMBERSHIP_ACTION_REMOVED.
+  repeated MemberRole roles = 3;
+  MembershipAction action = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+  arthome.common.v1.Actor changed_by = 6;
+}
+
+// Exige que le destinataire soit DÉJÀ membre et dispose de la double
+// authentification. Le compte bancaire (payouts) et la page publique (catalog)
+// suivent le transfert.
+message ChannelOwnershipTransferred {
+  string channel_id = 1;
+  string from_person_id = 2;
+  string to_person_id = 3;
+  google.protobuf.Timestamp occurred_at = 4;
+}
+
+// Le renfort ponctuel : portée UNE date, expiration explicite et SERVIE.
+// « Expire au salut + 1 h » est une phrase d'écran ; le contrat porte l'instant.
+message DateAccessGranted {
+  string grant_id = 1;
+  string channel_id = 2;
+  string date_id = 3;
+  string person_id = 4;
+  CrewRole crew_role = 5;
+  google.protobuf.Timestamp expires_at = 6;
+  arthome.common.v1.Actor granted_by = 7;
+}
+
+message DateAccessRevoked {
+  string grant_id = 1;
+  string channel_id = 2;
+  string date_id = 3;
+  string person_id = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+  // Vrai quand c'est l'expiration du bail, et non un geste humain, qui a
+  // révoqué l'accès. Le journal doit distinguer les deux.
+  bool expired = 6;
+}
+
+// Les droits changent PENDANT que l'application est ouverte : une invitation
+// acceptée ajoute une chaîne au sélecteur, un accès ponctuel expire seul au
+// tomber du rideau, un rôle est retiré. Sans ce compteur, la personne garde un
+// onglet qui ouvre un 403 et le découvre en pleine garde.
+// Porté aussi sur chaque réponse HTTP et poussé sur le canal temps réel.
+message RightsVersionBumped {
+  string account_id = 1;
+  uint64 rights_version = 2;
+  // Les chaînes touchées, pour que le client sache quoi recharger.
+  repeated string channel_ids = 3;
+  google.protobuf.Timestamp occurred_at = 4;
+}

@@ -1,0 +1,54 @@
+// Événements du contexte `notifications` — atteindre une personne hors de
+// l'application.
+//
+// Ce contexte NE POSSÈDE PAS les seuils qui déclenchent une alerte : ils sont du
+// domaine et vivent dans @arthome/core — « 30 minutes avant », « 85 % des
+// places », « 6 heures avant expiration », « file au-delà de dix messages »,
+// « poste non affecté à J-1 ». Il les lit, il ne les invente pas. Recopiés par
+// surface, ils divergeraient : le web dirait 30 minutes, la TV 15, et le mobile
+// aurait raison par hasard.
+//
+// Maturité : PROVISOIRE (palier 6).
+syntax = "proto3";
+
+package arthome.notifications.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Le TROISIÈME canal n'est nommé nulle part dans le dossier : la grille offre
+// trois canaux par déclencheur, deux seulement sont nommés (`push`, `email`), et
+// le champ téléphone porte la mention « pour les SMS de rappel ».
+//
+// Je propose NOTIFICATION_CHANNEL_IN_APP et non `sms`. Motif : un canal SMS a
+// un coût par message, une réglementation propre (consentement, horaires,
+// désinscription) et un prestataire de plus, pour une valeur que rien n'a
+// éprouvée. `in_app` est gratuit, déjà servi par le centre de notifications
+// existant, et ne promet rien qu'on ne tienne. À CONFIRMER PAR LE CHEF : c'est
+// une proposition, pas un constat.
+enum NotificationChannel {
+  NOTIFICATION_CHANNEL_UNSPECIFIED = 0;
+  NOTIFICATION_CHANNEL_PUSH = 1;
+  NOTIFICATION_CHANNEL_EMAIL = 2;
+  NOTIFICATION_CHANNEL_IN_APP = 3;
+}
+
+enum DeliveryFailureReason {
+  DELIVERY_FAILURE_REASON_UNSPECIFIED = 0;
+  // Jeton de poussée mort : l'application a été désinstallée ou le jeton a
+  // tourné. Le nettoyage est une conséquence, pas une erreur.
+  DELIVERY_FAILURE_REASON_TOKEN_INVALID = 1;
+  DELIVERY_FAILURE_REASON_PROVIDER_REJECTED = 2;
+  DELIVERY_FAILURE_REASON_BOUNCED = 3;
+  DELIVERY_FAILURE_REASON_RATE_LIMITED = 4;
+}
+
+message DeliveryFailed {
+  string notification_id = 1;
+  string account_id = 2;
+  NotificationChannel channel = 3;
+  DeliveryFailureReason reason = 4;
+  // Présent pour NOTIFICATION_CHANNEL_PUSH. Consommé par `identity` pour
+  // détacher un jeton mort de l'appareil.
+  string device_id = 5;
+  google.protobuf.Timestamp occurred_at = 6;
+}
