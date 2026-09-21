@@ -16,3 +16,4 @@
 12. **Une clé d'idempotence rejouée rend la réponse d'origine**, jamais une erreur de doublon.
 13. **`traceparent` propagé** de la surface au service, **et injecté dans `outbox_event.tracecontext` au moment de l'écriture** — injecté plus tard, le lien est perdu.
 14. **Migrations additives seulement sur les tables capturées par la CDC** : un renommage de colonne casse la réplication en silence.
+15. **Une constante d'exploitation a un document propriétaire** — cadence, durée, seuil, plafond : ailleurs on y **renvoie**, jamais on ne la recopie. Un nombre plausible recopié est faux en silence, aucun test ne le contredit, et c'est E2 sur un nombre.
