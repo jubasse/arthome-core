@@ -1039,3 +1039,375 @@ niveaux de sanction, décalages en minutes). Ce qui suit est **en plus**.
     applique une constante de 2000 places indépendante de la salle. Commodité de maquette, mais
     elle montre que le taux de remplissage et le nombre de places restantes sont aujourd'hui
     deux valeurs indépendantes : le contrat doit n'en servir qu'une source.
+
+---
+
+## Confrontation
+
+> **Temps 3.** L'offre est écrite ; je la conteste sur pièces. Documents lus :
+> `answers-to-surfaces.md` (mes 30 questions), `context-map.md`, `data-model.md`, `events.md`,
+> `realtime.md`, `transport.md`, `critical-rules.md`, `adr-auth.md`, `adr-payments.md`,
+> `adr-stream-entitlement.md`, `openapi/storefront.yaml`, `DECISIONS.md`.
+>
+> Le contrat est bon. Il est même meilleur que ce que je demandais sur une dizaine de points, et
+> je le dis ci-dessous. Mais **trois trous l'empêchent de faire tourner ma surface**, et deux
+> d'entre eux touchent la raison d'être du storefront web : être indexable, et encaisser.
+
+---
+
+### Ce qui est satisfait — bref, parce que c'est l'essentiel du volume
+
+Mes **30 questions ont toutes une réponse** (`answers-to-surfaces.md`, section « storefront web »),
+et aucune n'est une esquive. Les points où le contrat fait exactement ce que je demandais :
+
+- **L'unité de pagination de la recherche est le spectacle**, avec la date représentative *et*
+  `matchingDatesCount` (`ShowGroup`). C'était ma première question structurante ; elle est tranchée
+  dans le bon sens, avec la précision qui manquait — « le filtre *ce week-end* s'applique **avant**
+  le regroupement ». Le libellé « voir plus de dates (2) » est enfin vrai sous filtre.
+- **L'effectif approximatif existe et déclare sa garantie** (`CursorPageInfo.approximateTotal` +
+  `totalIsLowerBound`, exact jusqu'à 10 000). « Voir plus · N restants » devient honnête sans
+  promettre un comptage qu'un index ne donne pas. Je n'attendais pas que la tension curseur/reste
+  soit résolue si proprement.
+- **Les facettes sont génériques** (`Facet { facetId, values[{id, count}] }` + `StructuredFilter`),
+  comptées sur la requête courante, **dans la même réponse**. Ajouter « accessible en fauteuil »
+  n'est plus un changement de contrat.
+- **Chaque valeur périssable voyage avec son instant** : `displayStateValidUntil`, `roomOpensAt`,
+  `replay.expiresAt`, `promotion.validUntil`, `PriceTier.validUntil`, `cancelDeadline`,
+  `EnvelopeMeta.servedAt` / `validUntil`. C'était mon deuxième besoin structurant. Il est tenu
+  partout, et `realtime.md` §2.4 en tire la bonne conclusion : ces transitions **ne passent pas**
+  par le canal.
+- **Idempotence** : clé rejouée → réponse d'origine, `Idempotency-Replayed` en en-tête, 24 h
+  (`transport.md` §5.4). C'est la différence entre reprise sûre et place perdue, et elle est
+  tranchée du bon côté.
+- **`PRICE_STALE`** distinct de l'échec de paiement, avec le prix courant en paramètre, et
+  `expectedTotal` obligatoire sur `purchaseSeat`. `SOLD_OUT`, `SEAT_EXPIRED`, `PAYMENT_DECLINED`
+  existent aussi. L'écart structurel entre prix affiché et prix valide est traité comme structurel.
+- **Le code de place est émis par le serveur** (`TicketCard.seatCode`), le barème de frais de
+  service est servi (`DateDetail.serviceFee.perSeat`), le non-cumul remise/promotion est une règle
+  de `@arthome/core` (D-017), le panier est sur le compte avec un **rang serveur** par ligne, le
+  devis est opposable 15 minutes et le port est calculé **au devis**.
+- **`canonicalUrl` servie, jamais construite** : c'est le manque de premier ordre que j'avais
+  relevé (« il n'existe pas d'URL canonique pour une date »), et il est comblé, avec `slug` par
+  langue.
+- **`x-arthome-invalidates` est déclaré opération par opération.** Je demandais « qui nomme les
+  clés » ; j'obtiens mieux : chaque écriture dit ce qu'elle périme.
+- **`emptyReason` + `emptyActionCode` dans `CursorPageInfo`.** Je demandais un motif de vide ;
+  j'obtiens motif **et** action qui sort de l'impasse.
+- **`WatchVerdict` avec `advisory: true`** et le même vocabulaire de refus des deux côtés. Deux
+  sites d'évaluation, une implémentation. C'est la meilleure réponse possible à ma question 19.
+- **`degraded[]` dans l'enveloppe** : une surcouche qui échoue dégrade la carte au lieu de couler
+  l'écran. C'est exactement l'échec partiel que je demandais à pouvoir exprimer (§États, point 4).
+
+Sur le nombre d'allers-retours, le compte annoncé se vérifie **écran par écran, côté surface** :
+`home` 1 appel, `browse` 1, `categories` 1, `category` 1, `artists` 1, `artist` 1,
+`plans` 1, `account` 1 (+1 par liste paginée ouverte), panier 1 par étape, achat 2 avant paiement,
+`live` 3 (fiche, lecteur, tchat) — et les trois sont séquentiels par nature, pas par maladresse.
+**Le budget est tenu.** La mise en lot des compteurs (`counters:subscribe { dateIds }`, tick
+différentiel) répond précisément à ce que je réclamais : jamais un canal par carte.
+
+---
+
+### Ce qui ne l'est pas
+
+#### ❶ Tout le catalogue est derrière une session — et ma surface existe pour être indexée
+
+**Sur pièces.** `openapi/storefront.yaml`, l. 102-105 :
+
+```yaml
+security:
+  - sessionCookie: []
+  - bearerToken: []
+```
+
+Cette exigence globale n'est surchargée que **quatre fois** dans tout le fichier : `/v1/devices`
+(`security: []`), `/v1/viewer-context` et les trois chemins d'appairage (qui ajoutent
+`deviceToken`). Tout le reste en hérite. Donc **`/v1/home`, `/v1/search`, `/v1/dates/{dateId}`,
+`/v1/categories`, `/v1/categories/{categoryId}`, `/v1/artists`, `/v1/artists/{artistId}` et
+`/v1/plans` exigent une session authentifiée ou un jeton porteur.** `/v1/home` liste d'ailleurs
+`401` explicitement.
+
+**Trois conséquences, et elles sont graves.**
+
+1. **Un robot d'indexation n'a ni cookie ni jeton porteur.** Il n'exécute pas de `POST
+   /v1/devices` pour s'en fabriquer un, et il ne le ferait pas même s'il le pouvait. Le rendu
+   serveur d'une page de date, d'artiste ou de discipline ne peut donc produire **que** la page
+   d'erreur d'authentification. Un catalogue de billetterie public dont aucune fiche n'est
+   lisible sans compte n'est pas indexable — c'est-à-dire qu'il ne remplit pas la fonction pour
+   laquelle cette surface a été choisie en Next.js. Le `README.md` §2 la définit exactement
+   ainsi : « Référencement et rendu serveur décisifs : c'est un catalogue de billetterie ».
+2. **Le mode visiteur n'a pas de contrat.** La maquette en fait un état de premier ordre :
+   `account.guest.banner` (« Vous regardez en visiteur : les aperçus gratuits sont ouverts, la
+   place débloque le spectacle entier »), `account.auth.alt` (« Ou continuer sans compte »), et
+   quatre portes distinctes (`guest.chat`, `guest.follow`, `guest.save`, `guest.bannerCta`). Le
+   contrat reconnaît pourtant la notion : `ViewerContext.signedIn: boolean` et
+   `currentProfileId: null` l'admettent, et `deviceToken` existe. **Mais `deviceToken` n'est
+   accepté sur aucun chemin de catalogue.** Un visiteur enregistré ne peut donc pas voir la
+   page d'accueil.
+3. **`GET /v1/changes` exige aussi une session** (`401` listé) et n'accepte que
+   `scope: profile | device`. Voir ❸.
+
+**Ce n'est pas une omission de détail** : c'est la seule chose que `nextjs-how-to` signale comme
+piège spécifique de ma pile — *« Bots and crawlers bypass the shell entirely — detected by user
+agent and rendered dynamically »*. Le chemin du robot est le chemin **dynamique**, donc le chemin
+qui appelle le BFF. S'il exige une session, il n'y a pas de repli.
+
+**Ce que je demande** : que les huit chemins de catalogue déclarent `security: []` — ou au minimum
+acceptent `deviceToken` **et** l'absence totale d'authentification — et que le contrat écrive ce
+qu'une réponse anonyme contient (sans `watchVerdict`, sans `viewerRelations`, sans
+`viewerProgress`). Ce n'est pas un aménagement : sans cela, le rendu serveur de ma surface n'a
+rien à rendre.
+
+#### ❷ Aucun pas de confirmation de paiement — le web ne peut pas encaisser
+
+**Sur pièces.** `adr-payments.md` §2 :
+
+| storefront web | **Payment Element** (Stripe.js) | rend le prix, la 3-D Secure et les moyens locaux sans que la carte touche notre domaine |
+
+et §(état de commande) : `awaiting_action` ← « 3-D Secure en cours » ← `requires_action`. Le
+vocabulaire est repris dans le contrat : `Order.state` vaut
+`[pending, awaiting_action, processing, paid, failed, refunded, partially_refunded, disputed]`.
+
+**Mais aucune opération ne permet d'atteindre cet état, ni d'en sortir.**
+`POST /v1/orders/seats` ne répond que `201` avec `order.state: paid` ;
+`POST /v1/orders/merch` idem ; `PUT /v1/subscription` idem. Aucune des trois ne rend de
+`clientSecret`, de `paymentIntentRef`, de `nextAction`, ni d'URL de retour ; aucune ne déclare de
+réponse `202`. Le Payment Element de Stripe **exige** un `client_secret` produit côté serveur, et
+`confirmPayment()` **exige** un `return_url` pour la redirection 3-D Secure.
+
+Ce n'est pas un raffinement : en Europe, l'authentification forte du payeur est obligatoire sur une
+part significative des paiements par carte. Un parcours d'achat qui ne prévoit pas
+`requires_action` **échoue en production sur des paiements parfaitement valides**, et il échoue
+silencieusement — la commande reste `awaiting_action` et rien ne la reprend.
+
+**Et le corollaire, sur le même écran** : `AccountScreen.paymentMethods[]` est **en lecture seule**
+et il n'existe **aucune commande** pour ajouter ou retirer un moyen de paiement depuis le web.
+L'intention `payment-method` existe pour l'appairage TV (`adr-auth.md` §4), c'est-à-dire que la
+seule surface capable d'enregistrer une carte est celle qui n'a pas de clavier. La section
+`security` du compte affiche pourtant « Moyens de paiement · 2 CARTES ENREGISTRÉES · **Gérer** ».
+
+#### ❸ Le flux d'invalidation qui alimente `revalidateTag` n'existe pas dans le contrat
+
+C'était ma question 6, et la réponse est « oui, par le BFF » — ce que j'avais anticipé et ce qui
+est juste. Mais **la moitié serveur de cette réponse n'a pas d'opération.**
+
+`realtime.md` §5.2 écrit :
+
+> « Pour le rendu serveur de Next, le BFF expose **en plus** un flux d'invalidations par étiquette
+> que le serveur Next consomme pour appeler `revalidateTag`. »
+
+Ce flux **n'existe nulle part dans `openapi/storefront.yaml`**. Le seul mécanisme livré est
+`GET /v1/changes`, et ses trois propriétés le disqualifient pour cet usage :
+
+- il exige une session (`401` listé) ;
+- son `scope` vaut `profile` ou `device` — **le serveur Next n'est ni l'un ni l'autre**. Il rend
+  des pages pour tout le monde et pour personne ;
+- il est en **tirage** (`?since=`), pas en poussée. Un serveur de rendu ne va pas interroger un
+  point de terminaison toutes les secondes pour savoir si une date est passée en direct.
+
+**Pire, la contradiction est interne au contrat.** Le vocabulaire de `ChangeFeed.invalidated`
+déclare huit étiquettes :
+
+```
+date:{id} · date:{id}:availability · artist:{id} · category:{id}
+account:tickets · account:orders · account:subscription · home:rails
+```
+
+Or l'union de tous les `x-arthome-invalidates` du fichier est :
+
+```
+account:cart · account:devices · account:orders · account:profile
+account:subscription · account:tickets · date:{dateId}:availability · home:rails
+```
+
+**Les deux listes ne coïncident pas, dans les deux sens :**
+
+- `account:cart`, `account:devices` et `account:profile` sont **émis** par des écritures mais
+  **absents** du vocabulaire du flux. Le panier modifié sur un autre appareil — cas que
+  `realtime.md` §2 prévoit explicitement sur la salle `viewer:{profileId}` — n'invalide donc
+  jamais rien côté serveur Next ;
+- **`date:{id}`, `artist:{id}` et `category:{id}` sont au vocabulaire et ne sont émis par
+  aucune opération.** Ce sont précisément les trois étiquettes des pages **publiques et
+  indexables**, donc les trois seules que le rendu serveur a besoin d'invalider. Elles ont un nom
+  et aucun producteur déclaré.
+
+Autrement dit : le cas exact que ma question 6 posait — *une date passe en direct, une promotion
+expire, un artiste publie une rediffusion, et le storefront n'en est pas la cause* — a reçu une
+réponse de principe, un nom d'étiquette, et aucun mécanisme.
+
+**Ce que je demande** : une opération nommée, non authentifiée par session (le serveur de rendu
+s'authentifie par un secret de service, pas par un cookie de spectateur), qui pousse ou expose les
+étiquettes **publiques** ; et l'alignement des deux listes, dans le même fichier.
+
+#### ❹ Cinq écrans — ou moitiés d'écran — ne sont pas servis
+
+**(a) `following` — la page entière n'a aucun point d'entrée.**
+Elle affiche les artistes suivis, leurs prochaines dates, et la section « Suivis en direct »
+(`discovery.side.followLive`, `discovery.search.emptyFollowLive`). Or :
+
+- `/v1/me/follows/{artistId}` n'expose que `PUT` et `DELETE` — **il n'y a pas de collection**
+  `GET /v1/me/follows` ;
+- `/v1/artists` accepte `categoryId`, `sort` et `liveOnly`, **pas `followedOnly`** ;
+- `AccountScreen` ne porte pas la liste des suivis ;
+- `HomeScreen.rails[].kind` contient bien `followed`, mais c'est **une rangée de l'accueil**, pas
+  une page : elle n'a ni tri, ni bascule d'affichage, ni retrait sur place, ni ses états vides.
+
+Le seul moyen actuel de peindre cette page est de parcourir `/v1/artists` en entier et de filtrer
+sur `followedByViewer` côté client — c'est-à-dire exactement ce que le contrat interdit ailleurs,
+et à juste titre (`Rail`, note : « la maquette charge 1 814 dates et filtre côté client, ce que le
+contrat doit rendre impossible »).
+
+**(b) `account/faves` est servie à moitié.** « Mes favoris » porte deux collections : les
+**artistes suivis** et les **spectacles mis de côté** (`account.alerts.savedShows`). La seconde a
+`/v1/me/watchlist` ; la première est le même trou qu'en (a).
+
+**(c) `account/security` est en lecture seule.** `AccountScreen.security` rend
+`{ twoFactorEnabled, passkeyCount, hasPassword }`. Les quatre lignes de l'écran ont chacune une
+action — *modifier* le mot de passe, *gérer* la 2FA, *ajouter* une clé d'accès, *gérer* les moyens
+de paiement — et **aucune n'a d'opération**. `adr-auth.md` §7 place ces fonctions chez `identity`
+via better-auth, ce qui est un bon choix ; mais le document ne dit nulle part **comment la surface
+web les atteint**, alors que `critical-rules.md` n°1 pose qu'un service n'est appelé que par le
+BFF. Le contrat que le chef me désigne comme le mien est muet sur quatre actions d'un écran que
+j'ai énuméré.
+
+**(d) L'authentification elle-même n'a pas de contrat sur ma surface.** Créer un compte, se
+connecter par courriel et mot de passe, se connecter par Google ou Facebook, se déconnecter,
+réinitialiser un mot de passe : aucune opération dans `openapi/storefront.yaml`. Les seuls chemins
+d'identité livrés sont l'appairage d'appareil (le parcours TV) et
+`DELETE /v1/me/device-sessions/{sessionId}`. La modale d'authentification du web est la **porte
+d'entrée** du produit ; elle n'est pas dans le contrat du produit.
+
+Je comprends l'intention — better-auth monte ses propres routes. Mais alors le contrat doit
+**dire** où elles sont montées, sous quel domaine (la portée du cookie de session en dépend, et
+avec elle la capacité du serveur Next à lire la session), et comment elles se composent avec le
+BFF. Sinon trois surfaces feront trois hypothèses.
+
+**(e) `category` filtrée n'est pas servie.** `GET /v1/categories/{categoryId}` n'accepte que
+`categoryId`, `Surface` et `Traceparent` : **ni `section`, ni `cursor`, ni `limit`, ni filtre, ni
+sous-genre.** Or la réponse porte `sections[].nextCursor` et `facets[]`, et sa description
+annonce : « Les quatre autres sections portent chacune leur curseur ». **Aucune opération
+n'accepte ce curseur.** Les quatre boutons « Voir plus » de la page ne mènent nulle part, et le
+panneau de filtres propre à la discipline (tarif, date, statut, bientôt complet, en promotion,
+tri, sous-genre) n'a aucun paramètre où se poser.
+
+Le même défaut touche l'accueil : `Rail.nextCursor` existe et **aucune opération ne le consomme**.
+Trois curseurs servis, zéro consommateur.
+
+#### ❺ Le rendu serveur ne tient pas — et je reconnais que je ne l'avais pas posé en question
+
+C'était ma contrainte Next.js n°2, pas l'une de mes 30 questions : **les lectures publiques et
+personnalisées doivent être séparables**, parce qu'une fonction mise en cache par Next ne peut lire
+ni cookies, ni en-têtes, ni `searchParams`. Le contrat ne m'a donc rien refusé — il n'a pas été
+interrogé. Je le remonte maintenant parce que c'est la question 4 du chef, et la réponse est non.
+
+**Sur pièces** : `DateCard` porte dans le **même objet** le corps public (titre, instants, jauge,
+tarifs, droits) **et** trois surcouches par spectateur — `watchVerdict`, `viewerRelations`,
+`viewerProgress`. `HomeScreen.rails[].items`, `CategoryScreen.sections[].items`,
+`ShowGroup.representativeDate`, `ArtistDetail.upcomingDates` et `listMyReplays` renvoient tous des
+`DateCard`. Il n'existe **aucune variante publique**, aucun paramètre qui demande d'omettre les
+surcouches, aucun en-tête `Vary` ni `Cache-Control` déclaré.
+
+`answers-to-surfaces.md` Q6 (storefront TV) répond bien à cette famille de problème — « composer au
+BFF avec un cache court : le corps public en cache Redis, la surcouche fusionnée à la requête ».
+**C'est la bonne réponse au problème du BFF, et ce n'est pas une réponse au mien.** Elle produit,
+côté client, une réponse unique qui varie par spectateur. Pour Next, deux issues seulement :
+
+- mettre cette réponse en cache → **on sert à un visiteur l'état personnel d'un autre**. C'est une
+  fuite, pas un compromis ;
+- ne rien mettre en cache sur les routes indexables → chaque visite et chaque passage de robot
+  traverse le BFF de bout en bout, et le gain de la coquille pré-rendue est nul.
+
+L'`ETag` de `GET /v1/dates/{dateId}` aggrave le point plutôt qu'il ne l'aide : le corps variant par
+spectateur, le validateur varie avec lui, et le pré-chargement mutualisé qu'il promet à la TV ne
+vaut pas pour un cache partagé.
+
+**Ce que je demande** est petit et mécanique : que les chemins de catalogue acceptent une **lecture
+anonyme**, dont le contrat déclare qu'elle omet `watchVerdict`, `viewerRelations` et
+`viewerProgress` et qu'elle est **identique pour tous les appelants non authentifiés**. C'est
+`degraded[]` élevé au rang de mode explicite — la forme existe déjà, il lui manque d'être
+demandable. Avec ❶ et ❸, cela referme les trois trous d'un coup.
+
+#### ❻ Les petites choses, vérifiables en une minute chacune
+
+1. **`/v1/search` perd un tri.** `sort: [relevance, soon, popularity, price_asc]` — il manque
+   `price_desc`, alors que `shared/i18n/storefront.json` porte
+   `discovery.filter.sortPriceDown | Prix ↓` et que la maquette l'expose dans la même liste que les
+   quatre autres. Quatre tris sur cinq.
+2. **`filters` est un `{ type: string }` sans grammaire.** C'est le paramètre le plus important de
+   l'écran le plus utilisé, et le seul du fichier qui ne soit pas typé. L'OpenAPI étant **généré
+   depuis zod**, une chaîne libre signifie que zod ne valide rien. Trois surfaces le sérialiseront
+   de trois façons, et `SavedSearch.criteria` (`additionalProperties: true`) ne les départagera
+   pas — alors même que `criteriaSignature` est produite par `normalizeSearchCriteria()` dans
+   `@arthome/core`, donc qu'une forme normalisée **existe déjà**. Il faut la publier.
+3. **Le budget d'aperçu gratuit n'est nulle part.** `WatchVerdict.previewSecondsLeft` donne le
+   **reste** ; `DomainConstants` ne porte pas le **total**. Le compte à rebours « il vous reste
+   4 min 12 » a donc un reste et pas de total, et le libellé de la copie dit « les 5 premières
+   minutes ». `critical-rules.md` n°15 exige qu'une constante d'exploitation ait un document
+   propriétaire : celle-ci n'en a pas.
+4. **Deux codes d'erreur annoncés et jamais nommés.** `cancelSeat` : « le refus après échéance
+   porte son propre code » — le code n'existe dans aucune liste. `quoteSeat` : « minimum et maximum
+   [de la contribution libre] sont des règles du domaine, et le refus porte son propre code » —
+   idem. Un code non nommé sera inventé trois fois.
+5. **L'adresse du devis et celle du paiement peuvent diverger.** `quoteCart` calcule le port sur
+   `{ shippingCountryCode, shippingPostalCode }` ; `checkoutCart` reçoit un `shippingAddress`
+   complet et rien ne dit qu'il doit correspondre. Un devis « opposable » dont l'adresse change
+   entre-temps n'est plus opposable, et aucun code de refus ne couvre ce cas.
+6. **`emptyReason` porte sept valeurs** pour une quinzaine d'états vides rédigés dans `shared/i18n`.
+   Manquent au moins : aucun artiste **suivi** (distinct de `no_followed_artist_live`), panier vide,
+   aucune recherche enregistrée, et les trois vides de la page discipline que la copie distingue
+   (`emptyCatLive`, `emptyCatUpcoming`, `emptyCatReplays`) là où `nothing_in_category_yet` les
+   confond.
+7. **La langue de sous-titrage préférée a disparu.** `ViewerPreferences.account` porte
+   `subtitlesDefault: boolean` ; la maquette porte `prefs.subs: 'fr'`, une **langue**. Activer les
+   sous-titres et choisir leur langue sont deux réglages.
+
+---
+
+### Ce qui est satisfait autrement que demandé — et si ça me va
+
+| Ce que je demandais | Ce que j'obtiens | Verdict |
+|---|---|---|
+| Un compteur de correspondances par recherche enregistrée | **« Nouvelles depuis votre dernière visite »**, poussé par le *percolator*, remis à zéro à la lecture (Q23) | **Mieux.** Dix recherches coûtent zéro requête de comptage au lieu de dix. Je retire ma question. |
+| Savoir si le prix est vérifié à l'achat | `PRICE_STALE` **plus** `expectedTotal` obligatoire dans le corps | **Mieux** : le contrat rend le défaut impossible à ignorer, au lieu de le signaler après coup. |
+| Un motif de liste vide | Motif **et** `emptyActionCode` | **Mieux** — sous réserve du point ❻.6. |
+| Que `decideWatch` me donne de quoi peindre sans second appel | Deux sites d'évaluation, `advisory: true`, **même vocabulaire de refus** des deux côtés | **Mieux.** Le drapeau `advisory` est la précision qui empêche la surface de croire qu'elle décide. |
+| Qui nomme les clés d'invalidation | `x-arthome-invalidates` **par opération** | **Mieux** dans le principe — inutilisable en l'état, voir ❸. |
+| La devise d'affichage comme préférence (Q29) | **Retirée** (D-016), retrait déclaré réversible | **Ça me va, et je ne conteste pas.** L'argument est juste : afficher un prix converti qu'on ne peut pas débiter est un mensonge, et D4 montre qu'aucune règle n'a été éprouvée sur deux taux. **Une conséquence à écrire quand même** : ma surface est celle où un visiteur suisse ou canadien atterrit depuis un moteur de recherche, et la page indexée affichera un prix en euros à tout le monde — y compris dans les données structurées qu'un moteur lit. Ce n'est pas un défaut, c'est un fait à assumer explicitement plutôt qu'à découvrir. |
+| Deux commandes, places et marchandise | **D-011 : deux commandes distinctes** | **Ça me va** — c'est ce que j'avais vérifié contre l'instruction du chef, et le contrat suit la conception plutôt que l'intention. |
+| Que le catalogue de libellés ne soit pas sur le chemin de rendu | Le web résout ses codes **depuis l'instantané embarqué au build** (Q30) | **Ça me va, avec sa conséquence assumée** : le catalogue dynamique ne sert jamais le web, et une coquille attend un déploiement. C'est cohérent — le besoin qui le motivait était mobile et TV. |
+| Le port au devis | Calculé au devis sur pays + code postal, opposable 15 min, **groupé par vendeur** | **Mieux** — sous réserve de ❻.5. |
+
+---
+
+### Les questions restées sans réponse
+
+Aucune de mes 30 questions n'est sans réponse — `answers-to-surfaces.md` tient sa promesse. Les
+questions ci-dessous sont **nouvelles**, nées de la lecture de l'offre :
+
+1. **Que reçoit exactement un robot d'indexation ?** (❶) Quelle authentification, quel corps, quels
+   champs omis, quelle fraîcheur. Tant que ce n'est pas écrit, le rendu serveur de ma surface est
+   une intention.
+2. **Où sont montées les routes d'authentification, sous quel domaine, et comment le serveur Next
+   lit-il la session ?** (❹d) La portée du cookie décide de tout : si le cookie est posé par
+   `identity` sur un autre domaine que le BFF, le serveur Next ne le voit pas et aucune page
+   personnalisée ne se rend côté serveur.
+3. **Quelle opération rend le `client_secret` et l'URL de retour du paiement, et quelle opération
+   reprend une commande restée `awaiting_action` ?** (❷)
+4. **Quelle opération ajoute ou retire un moyen de paiement depuis le web ?** (❷)
+5. **Quelle opération consomme `Rail.nextCursor` et `CategoryScreen.sections[].nextCursor` ?** Et
+   par quels paramètres la page discipline filtre-t-elle ? (❹e)
+6. **Qui émet `date:{id}`, `artist:{id}` et `category:{id}` ?** Aucune opération ne les déclare, et
+   ce sont les trois seules qui comptent pour une page publique mise en cache. (❸)
+7. **Existe-t-il une collection des artistes suivis**, ou un `followedOnly` sur `/v1/artists` ? (❹a)
+8. **Le total de l'aperçu gratuit est-il une constante de domaine servie**, et où ? (❻.3)
+9. **Quelle est la grammaire publiée du paramètre `filters`**, et est-ce la même forme que
+   `SavedSearch.criteria` ? (❻.2)
+
+---
+
+### Une incohérence de source, repérée en chemin
+
+À ajouter aux onze déjà relevées, parce qu'elle sera rencontrée au portage :
+**`shared/i18n/storefront.json` porte `support.topic3Hint` sans `support.topic3`.** Le troisième
+sujet du formulaire d'aide — celui des rediffusions — a son texte d'aide et pas son libellé, alors
+que les cinq autres ont les deux. Le contrat côté serveur est juste (`topic: enum [..., replay,
+...]`) ; c'est la copie qui manque.
