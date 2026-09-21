@@ -191,3 +191,98 @@ c'est qu'il est sorti du périmètre.
 **Ce qui reste légitime** : les contraintes propres à la surface, quand elles contraignent le
 contrat — la TV et ses cinq touches, Capacitor et ses liens profonds, Next et le rendu serveur qui
 fait de la session son affaire, React Native et son cycle de vie.
+
+---
+
+## Temps 1 — 21 septembre 2026
+
+### D-010 — La pagination reste choisie par le motif d'interface, avec deux exceptions nommées
+
+**La décision d'origine, confirmée.** Storefront = **curseur** (défilement infini, plus fluide
+pour le spectateur) ; studio = **page + total** (on épingle une page et on l'envoie à un
+collègue). La raison est une affordance d'interface, pas une propriété de la donnée.
+
+**Ce que la recherche a confirmé.** Le cadre que l'industrie recommande est exactement celui-là :
+choisir d'abord selon le **motif d'interface**, ensuite selon la donnée, enfin selon le cache.
+Curseur pour les flux et le défilement infini ; décalage pour les tableaux de back-office où l'on
+veut des numéros de page et des signets. Slack n'a migré d'offset vers curseur que lorsque ses
+volumes ont explosé. Et le compromis est précisément celui qui a été pesé : le curseur ne donne
+**ni total ni saut de page**, ce que la littérature signale comme problématique pour un
+back-office. Épingler et partager une page, c'est `?page=3`.
+
+**Correction d'une erreur du chef.** Le chef avait annoncé « quatre agents contestent cette
+décision par quatre chemins ». Relecture faite, **deux seulement** portent sur curseur contre
+décalage :
+
+| Agent | Objection | Porte-t-elle sur le mécanisme ? |
+|---|---|---|
+| `studio-web`, `studio-mobile` | file de modération et tchat grossissent pendant la lecture | **oui** |
+| `storefront-web` | la recherche regroupe les dates sous une carte de spectacle | non — c'est l'**unité** paginée |
+| `storefront-mobile` | un curseur doit survivre à une nuit | non — c'est la **durée de vie** du curseur |
+
+Quatre objections avaient été rangées sous une étiquette qui n'en couvrait que deux.
+
+**Les deux exceptions, et pas une de plus.** La **file de modération** et le **tchat en direct**
+passent au curseur. Motif : ce sont des flux, pas des tableaux, même hébergés dans le studio — une
+pagination par décalage y duplique et y saute mécaniquement, puisque des lignes s'insèrent pendant
+la lecture. La règle reste « selon le motif d'interface » ; ces deux collections ont le motif d'un
+flux.
+
+**Le journal reste en page + total.** `studio-web` le demandait au curseur, pour cause de décalage
+profond sur 24 mois de conservation. Écarté : personne ne pagine jusqu'au 50 000ᵉ élément d'un
+journal, on filtre par période d'abord. **Décalage + filtre de période obligatoire** garde les
+numéros de page — donc l'affordance voulue — et reste rapide. Passer au curseur échangerait un
+problème qu'on n'a pas contre la perte de ce qu'on voulait.
+
+**Deux sujets orthogonaux, renvoyés au backend comme questions** et non tranchés ici :
+l'**unité** de pagination de la recherche (spectacles ou dates), et la **durée de vie d'un
+curseur**, avec un code explicite « trop ancien, recharge tout ».
+
+**Une pratique confirmée**, qui rejoint une décision déjà prise : Stripe, GitHub et Slack encodent
+le curseur en **Base64 opaque** sur une clé de tri composite (`created_at` + identifiant). C'est
+le « tri déterministe avec départage par identifiant » déjà acté.
+
+### D-011 — Deux commandes distinctes : places et marchandise
+
+**Le constat.** Le chef avait donné aux spécialistes une instruction fausse — un panier portant
+« places **et** marchandise ». `storefront-web` a vérifié plutôt que de le croire :
+`ticketing.cart.head` et `.title` valent « Panier merch », l'état vide dit « Le merch s'ajoute
+depuis la boutique d'un live », et l'achat d'une place est un parcours séparé en modale.
+
+**La décision.** Le contrat porte **deux commandes distinctes**. C'est ce que la conception montre
+réellement sur les trois storefronts, et les deux n'ont ni les mêmes garanties (une place a une
+jauge, un code, une fenêtre d'annulation), ni le même prestataire d'expédition, ni le même
+destinataire de versement.
+
+**Écarté** : la commande mixte. Elle est sans doute inévitable un jour — acheter une place et le
+t-shirt du spectacle en un paiement — mais **aucune maquette ne la montre**. La graver maintenant
+reviendrait à mettre dans le contrat une intention que rien n'a éprouvée, ce que la mission
+interdit explicitement.
+
+**À relier** : les commandes externes (E14) et la boutique (C8) attendent toujours un contexte
+propriétaire.
+
+### D-012 — `@arthome/contracts` expose une entrée sans barillet
+
+**Les mesures.** Deux agents ont mesuré indépendamment, et convergent :
+
+| Entrée | `storefront-mobile` | `storefront-tv` |
+|---|---|---|
+| `zod` classique | 93 Ko gzip | 92 Ko gzip |
+| `zod/mini` élagué | 7,5 Ko | 7,7 Ko |
+
+**La cause, identifiée par `storefront-mobile`** : l'entrée classique rend joignables **64 fichiers
+de traduction** des messages d'erreur (341 Ko de source), poids mort intégral pour un projet en
+**i18n par codes** — qui interdit de toute façon d'afficher un message de bibliothèque.
+`storefront-tv` ajoute que le coût est **fixe, pas marginal** : 267 octets d'écart entre un schéma
+trivial et un schéma de vingt champs. On ne peut donc pas s'en tirer en limitant le nombre de
+schémas sur les surfaces contraintes ; le coupable est l'espace de noms `z`, un import barillet.
+
+**La décision.** `@arthome/contracts` **expose une entrée sans fichier baril**, et c'est une
+exigence de `definition-of-done.md`. Aucun des deux agents ne rouvre la décision zod elle-même, et
+elle n'est pas rouverte.
+
+**Réserve consignée** : les deux mesures portent sur un schéma isolé compilé par esbuild, pas sur
+un bundle applicatif réel, et le gain de `zod/mini` est **conditionnel à un élagage que
+l'empaqueteur React Native n'active pas par défaut**. À revérifier sur un vrai bundle au palier
+mobile. La concordance des deux mesures à 1 Ko près rend l'ordre de grandeur sûr.
