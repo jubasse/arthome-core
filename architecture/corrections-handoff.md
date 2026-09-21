@@ -1,9 +1,10 @@
 # Corrections to the handoff folder
 
-> **Seventy-nine discrepancies** found in `arthome-design/design_handoff_arthome/` over the course
+> **Eighty-two discrepancies** found in `arthome-design/design_handoff_arthome/` over the course
 > of the "interface contracts, backend architecture, authentication" session (21 September 2026):
 > **27 in phase 0**, by the lead, reading the folder against the decisions already taken;
-> **52 at time 1**, by the five surface specialists, reading their mockup against `shared/`.
+> **52 at time 1**, by the five surface specialists, reading their mockup against `shared/`;
+> **3 more** during the English translation of the imported copy, the same day.
 >
 > **Status of the corrections.**
 >
@@ -14,6 +15,7 @@
 > | **C** (9) | the folder is silent where the contract must decide | section added or cross-reference placed |
 > | **D** (7) | `shared/` carries data that is wrong, incomplete or misleading | to be corrected **at the port** |
 > | **E** (15) | discrepancies found by the surface specialists at time 1 | to be corrected **at the port** |
+> | **F** (3) | found by translating the imported copy into English | **corrected** in `docs/` |
 >
 > Families A, B and C were corrected in the folder's documents on the project owner's decision; the
 > originals are kept beside them as `*.pre-corrections.md`.
@@ -151,11 +153,13 @@ recent state.
 
 ### B1 — "The nine disciplines" when there are twenty-one
 
-**Where**: `Prompt - Storefront TV.md`, "Screen by screen" §8, entry **Categories**.
+**Where**: `Prompt - Storefront TV.md` (imported here as `docs/storefront-tv.md`), "Screen by
+screen" §8, entry **Categories**.
 
 **The discrepancy**: "the nine disciplines as typographic tiles". The real count is **21**
 (`taxonomy.json`: 14 in the Music universe, 7 in the Stage universe), confirmed by `README.md` §3
-("facets over 21 disciplines, 176 genres, 205 tags") and by `Taxonomie - projet.md`.
+("facets over 21 disciplines, 176 genres, 205 tags") and by `Taxonomie - projet.md`
+(`docs/taxonomy.md`).
 
 **The correction**: the TV's Categories page is designed for **21 disciplines**, grouped by the two
 universes (Music, Stage) that exist precisely to give a long list structure. If a shorter editorial
@@ -169,14 +173,15 @@ therefore to the contract.
 
 ### B2 — Wrong discipline vocabulary at the head of the TV brief
 
-**Where**: `Prompt - Storefront TV.md`, first paragraph.
+**Where**: `Prompt - Storefront TV.md` (`docs/storefront-tv.md`), first paragraph.
 
 **The discrepancy**: "theatre, dance, **ballet**, **concerts**, comedy, classical, opera, jazz,
 circus". `ballet` (precisely `ballet classique`) is a **subgenre** of the Dance discipline;
 `concerts` is not a discipline but a format.
 
 **The correction**: the sentence uses `taxonomy.json`'s vocabulary. This is exactly the slippage
-`Taxonomie - projet.md` sets out to prevent — a discipline is a **form**, never a format nor a
+`Taxonomie - projet.md` (`docs/taxonomy.md`) sets out to prevent — a discipline is a **form**,
+never a format nor a
 period.
 
 ### B3 — Redis's uses, incomplete
@@ -672,6 +677,64 @@ Three lessons that go beyond the list:
    **designed, not observed**. A silence is not an agreement.
 3. **Four agents found E1 separately**, and none had been pointed at it. The convergence of
    independent readings is the only reliable way to tell a detail from a structural defect.
+
+---
+
+## F — Found by translating the imported copy into English
+
+Three more, found the same day by the agent translating `docs/`. They are recorded in their own
+family rather than folded into A, B and C, because **how a discrepancy was found is part of what it
+teaches** — and these were found by a reading nobody had planned, of documents that had already been
+corrected once and read by five specialists.
+
+Translating a document is the most attentive reading it will ever get. That is the general lesson,
+and it is why the family exists.
+
+### F1 — A7, a second time, in the same document
+
+**Where**: `docs/README.md` §3 lists NativeScript among the runtimes `@arthome/core` must support;
+§7 rules NativeScript out explicitly, and `PROMPT.md` stage 1 gives the same runtime list without
+it.
+
+**The discrepancy**: two sources against one, and the one is a list rather than an argument. §3 is
+the stale line.
+
+**The correction**: §3 is aligned on §7. Exactly as in A7 — a decision changed during writing, and
+only the later section received it. A7 was called the most instructive of its lot on the grounds
+that a long document desynchronises from itself; it did it twice, in the same file, and the second
+time survived a correction pass and five specialist readings.
+
+### F2 — A count asserted above a list that does not reach it
+
+**Where**: `docs/taxonomy.md` enumerates **196** tags, while it and six other documents in the
+repository assert **205**.
+
+**The verification**: `prototypes/shared/taxonomy.json` holds exactly 205 tags across 21
+categories. So 205 is right and the document's illustrative list is nine short. The French original
+listed the same 196 — this was carried in, not introduced.
+
+**The correction**: the list is marked **illustrative and not exhaustive**, and names
+`shared/taxonomy.json` as the count's source. Completing the list was rejected: it would put a
+second copy of the vocabulary into a document, which is fault E2, in the one document written to
+warn against it.
+
+Critical rule 15 in its textbook form — count it or reference it, do not assert it. The number was
+true, the list below it was not, and nothing in the document connected the two.
+
+### F3 — Three archives referenced and never imported
+
+**Where**: the dated notes in `docs/README.md`, `docs/PROMPT.md` and `docs/storefront-tv.md` point
+at `*.pre-corrections.md`.
+
+**The discrepancy**: those three archives exist — in `arthome-design/design_handoff_arthome/`,
+beside the originals, as D-004 says — but they were never imported here. A reader inside this
+repository follows the reference and finds nothing.
+
+**The correction**: the references say so, rather than being deleted or satisfied. The archives stay
+with the source folder; the note now states it. Same family as the two broken pointers `auth` found
+in `adr-auth.md` on the same day — a table row citing a "§8.2.5 c" that has no item c, and a
+three-column row carrying two cells. A reference that looks plausible is never followed, so it never
+reports that it is broken.
 
 ---
 

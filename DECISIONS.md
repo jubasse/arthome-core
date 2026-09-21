@@ -103,7 +103,8 @@ discrepancies.
 correct folder, not a wrong one accompanied by an erratum.
 
 **The scope of the correction, arbitrated by the lead.** The folder's **documents** are corrected
-(`README.md`, `Prompt - Storefront TV.md`, `PROMPT.md`) — families A, B and C of
+(`README.md`, `Prompt - Storefront TV.md`, `PROMPT.md` — imported here as `docs/`, where the
+first two were renamed `storefront-tv.md` and `taxonomy.md`) — families A, B and C of
 `architecture/corrections-handoff.md`. **`shared/` is not touched**: the prompt declares it read
 only, and it is the source the specialists are going to read. The seven data discrepancies
 (family D) remain the shopping list for the port at stage 1.
