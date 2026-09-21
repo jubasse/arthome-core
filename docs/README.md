@@ -1,424 +1,425 @@
-# Arthome — dossier de passation
+# Arthome — handover dossier
 
-Plateforme de diffusion en direct de spectacle vivant : billetterie, direct,
-tchat, rediffusions, boutique, versements aux artistes.
+Live-broadcast platform for the performing arts: ticketing, live, chat,
+replays, shop, artist payouts.
 
-Ce dossier est la référence de départ pour l'implémentation réelle. **À
-committer à la racine d'`arthome-core`**, dans `docs/` — chaque session Claude
-Code doit pouvoir le relire.
+This dossier is the starting reference for the real implementation. **To be
+committed at the root of `arthome-core`**, under `docs/` — every Claude Code
+session must be able to re-read it.
 
-> **Corrigé le 21 septembre 2026.** Ce document a été rédigé avant plusieurs
-> décisions structurantes, et il les contredisait. Les écarts sont détaillés dans
-> `arthome-core/architecture/corrections-handoff.md` ; la version d'origine est
-> conservée à côté sous `README.pre-corrections.md`.
-> Les corrections portent sur : le multi-dépôts (§3, §8), les deux paquets de
-> `arthome-core` (§3), Protobuf seul (§3), l'observabilité (§3), les usages de
-> Redis (§3), et les ADR à écrire (§9). Trois sections ont été ajoutées pour
-> combler des silences : authentification, topologie d'entrée et paiement (§3).
+> **Corrected on 21 September 2026.** This document was written before several
+> structuring decisions, and it contradicted them. The discrepancies are
+> detailed in `arthome-core/architecture/corrections-handoff.md`; the original
+> version is kept alongside it under `README.pre-corrections.md`.
+> The corrections cover: the multi-repository layout (§3, §8), the two packages
+> of `arthome-core` (§3), Protobuf alone (§3), observability (§3), the uses of
+> Redis (§3), and the ADRs still to be written (§9). Three sections were added
+> to fill silences: authentication, entry topology and payment (§3).
 
 ---
 
-## 1. Ce que contient ce dossier, et comment le traiter
+## 1. What this dossier contains, and how to treat it
 
-Deux natures bien distinctes. Les confondre coûterait des semaines.
+Two clearly distinct natures. Confusing them would cost weeks.
 
-### `shared/` — à reprendre, pas à réécrire
+### `shared/` — to be carried over, not rewritten
 
-Du JavaScript sans framework, déjà en production dans les cinq maquettes comme
-**source unique de vérité**. Ces fichiers portent la taxonomie, le contenu
-rédigé, les règles du domaine et toute la copie bilingue.
+Framework-free JavaScript, already in production in the five mockups as the
+**single source of truth**. These files carry the taxonomy, the written
+content, the domain rules and all the bilingual copy.
 
-| Fichier | Rôle |
+| File | Role |
 |---|---|
-| `taxonomy.json` | 21 disciplines, 176 sous-genres, 205 tags, rang éditorial |
-| `catalogue.json` | Contenu rédigé : artistes, salles, spectacles de référence, réserve de photos, annuaire des intervenants, barème de commission |
-| `fixtures.js` | Génération déterministe du jeu de données complet, sens studio → storefront |
-| `helpers.js` | Accesseurs, formatage, horodatage, i18n |
-| `studio-data.js` | Remodelage vers les formes attendues par les deux régies |
-| `i18n/` | Copie fr/en, découpée par domaine + plans de correspondance |
-| `i18n-compile.js` | Compile les dictionnaires dans chaque surface, avec contrôle d'intégrité |
+| `taxonomy.json` | 21 disciplines, 176 subgenres, 205 tags, editorial rank |
+| `catalogue.json` | Written content: artists, venues, reference shows, photo pool, directory of contributors, commission scale |
+| `fixtures.js` | Deterministic generation of the complete dataset, studio → storefront direction |
+| `helpers.js` | Accessors, formatting, timestamping, i18n |
+| `studio-data.js` | Reshaping into the forms the two control rooms expect |
+| `i18n/` | fr/en copy, split by domain + mapping plans |
+| `i18n-compile.js` | Compiles the dictionaries into each surface, with an integrity check |
 
-**Le travail attendu** : porter ces fichiers en TypeScript typé dans
-`@arthome/core`. Pas les réinventer. Les règles qu'ils portent — état d'une date,
-fenêtre de rediffusion, calcul d'un versement, droits par rôle — ont été
-éprouvées écran par écran.
+**The expected work**: port these files to typed TypeScript in
+`@arthome/core`. Not reinvent them. The rules they carry — the state of a date,
+replay window, payout computation, per-role permissions — have been proven
+screen by screen.
 
-⚠ **`shared/` fait autorité sur les règles et le vocabulaire, pas sur les
-formes.** Un générateur de fixtures est optimisé pour afficher des maquettes, pas
-pour tenir un modèle réparti sur sept contextes. Champs d'audit, versions, états
-intermédiaires, multiplicité réelle des relations, nullabilité, médias, plans de
-salle : tout cela en est absent, et la réalité sera plus complexe. **On porte les
-règles, on remodèle les formes.**
+⚠ **`shared/` is authoritative on the rules and the vocabulary, not on the
+shapes.** A fixture generator is optimised to display mockups, not to hold a
+model spread across seven contexts. Audit fields, versions, intermediate
+states, the real cardinality of relations, nullability, media, seating plans:
+all of that is absent from it, and reality will be more complex. **We port the
+rules, we reshape the forms.**
 
-Sept points où `shared/` porte une donnée fausse, incomplète ou trompeuse sont
-relevés dans `corrections-handoff.md`, famille D. Deux méritent d'être connus
-avant d'ouvrir le fichier :
+Seven points where `shared/` carries data that is wrong, incomplete or
+misleading are listed in `corrections-handoff.md`, family D. Two are worth
+knowing before opening the file:
 
-- le vocabulaire fermé de `languageDependency` ne contient pas `essential`, alors
-  que c'est la valeur dont dépend `hasLanguageBarrier` et que cinq spectacles la
-  portent ;
-- la formule de versement (`net = brut − commission − TVA`) **ressemble** à une
-  règle fiscale éprouvée. Ce n'en est pas une : elle produit un nombre plausible
-  pour une maquette. Ce qui fait autorité, c'est la commission de 12 %, le délai
-  de 14 jours et la politique de retenue — pas l'assiette de la TVA.
+- the closed vocabulary of `languageDependency` does not contain `essential`,
+  even though that is the value `hasLanguageBarrier` depends on and five shows
+  carry it;
+- the payout formula (`net = gross − commission − VAT`) **looks** like a proven
+  tax rule. It is not one: it produces a plausible number for a mockup. What is
+  authoritative is the 12 % commission, the 14-day delay and the withholding
+  policy — not the VAT base.
 
-`fixtures.js` a une seconde vie après le portage : il reste le **jeu de données
-de test et de démonstration**. Déterministe, il produit le même catalogue à
-chaque exécution — un socle solide pour les tests d'intégration et les
-environnements de recette.
+`fixtures.js` has a second life after the port: it remains the **test and
+demonstration dataset**. Being deterministic, it produces the same catalogue on
+every run — a solid base for integration tests and acceptance environments.
 
-### `mockups/` — des références visuelles à recréer
+### `mockups/` — visual references to recreate
 
-Cinq fichiers HTML qui montrent l'intention : mise en page, comportements,
-états, copie exacte. **Ce ne sont pas des composants à porter.** Chaque
-application les recrée avec les conventions de sa propre pile.
+Five HTML files that show the intent: layout, behaviours, states, exact copy.
+**These are not components to port.** Each application recreates them with the
+conventions of its own stack.
 
-Fidélité : **haute**. Couleurs, typographie, espacements et transitions sont
-définitifs. Le rendu attendu est fidèle au pixel.
+Fidelity: **high**. Colours, typography, spacing and transitions are final. The
+expected rendering is pixel-faithful.
 
-⚠ **Dans la disposition actuelle de ce dossier, les maquettes ne s'ouvrent
-PAS.** Chacune résout `helpers.js`, `fixtures.js`, `catalogue.json`,
-`taxonomy.json` et `i18n/` **à côté de son propre fichier HTML**
-(`new URL(p, document.baseURI)`), alors que ces fichiers sont dans `shared/`.
-L'import échoue et le `try/catch` l'avale : la maquette rend en état dégradé,
-sans dire pourquoi. **`shared/` doit être placé à côté des `.dc.html`** — copie
-ou lien symbolique — sinon la galerie du palier 0 sera vide de données. À traiter
-au moment de déplacer les maquettes vers `prototypes/`.
+⚠ **In the current layout of this dossier, the mockups do NOT open.** Each one
+resolves `helpers.js`, `fixtures.js`, `catalogue.json`, `taxonomy.json` and
+`i18n/` **next to its own HTML file** (`new URL(p, document.baseURI)`), whereas
+those files are in `shared/`. The import fails and the `try/catch` swallows it:
+the mockup renders in a degraded state, without saying why. **`shared/` must be
+placed next to the `.dc.html` files** — a copy or a symlink — otherwise the
+stage 0 gallery will have no data. To be handled when moving the mockups to
+`prototypes/`.
 
-Une fois `shared/` à côté d'eux, ces fichiers s'ouvrent directement dans un
-navigateur (par un serveur local : les modules ES et `fetch` n'aiment pas
-`file://`). Ils sont destinés à
-`prototypes/`, publiés sur GitHub Pages (voir §3 et §8).
+Once `shared/` sits next to them, these files open directly in a browser
+(through a local server: ES modules and `fetch` do not like `file://`). They
+are destined for
+`prototypes/`, published on GitHub Pages (see §3 and §8).
 
 ---
 
-## 2. Les cinq surfaces
+## 2. The five surfaces
 
-| Surface | Fichier | Pile visée | Particularité |
+| Surface | File | Target stack | Particularity |
 |---|---|---|---|
-| **Storefront Web** | `Storefront Web.dc.html` | Next.js | 1440 px. Référencement et rendu serveur décisifs : c'est un catalogue de billetterie |
-| **Storefront Mobile** | `Storefront Mobile.dc.html` | React Native | 430 px. Portrait et paysage, cinq onglets bas |
-| **Storefront TV** | `Storefront TV.dc.html` | react-native-tvos | 1920×1080. **Tout se pilote à cinq touches** — voir §6 |
-| **Studio** | `Studio.dc.html` | Angular | 1440 px. Régie, modération, billetterie, versements |
-| **Studio Mobile** | `Studio Mobile.dc.html` | Angular (voir §7) | 430 px. Outil de garde, portrait et paysage |
+| **Storefront Web** | `Storefront Web.dc.html` | Next.js | 1440 px. Search engine visibility and server rendering are decisive: this is a ticketing catalogue |
+| **Storefront Mobile** | `Storefront Mobile.dc.html` | React Native | 430 px. Portrait and landscape, five bottom tabs |
+| **Storefront TV** | `Storefront TV.dc.html` | react-native-tvos | 1920×1080. **Everything is driven with five keys** — see §6 |
+| **Studio** | `Studio.dc.html` | Angular | 1440 px. Control room, moderation, ticketing, payouts |
+| **Studio Mobile** | `Studio Mobile.dc.html` | Angular (see §7) | 430 px. On-call tool, portrait and landscape |
 
-Le storefront et le studio sont **deux produits séparés**. Le studio n'existe
-pas sur TV : la télévision est une surface de spectateur, rien d'autre.
+The storefront and the studio are **two separate products**. The studio does
+not exist on TV: television is a viewer surface, nothing else.
 
 ---
 
-## 3. Architecture : multi-dépôts, microservices, événements
+## 3. Architecture: multi-repository, microservices, events
 
-Le découpage est volontairement ambitieux : **démontrer une architecture
-distribuée est un objectif du projet**, pas un moyen. Un monolithe modulaire
-serait plus rapide à livrer mais ne montrerait pas ce qu'il s'agit de montrer.
+The split is deliberately ambitious: **demonstrating a distributed
+architecture is one of the project's goals**, not a means. A modular monolith
+would be faster to deliver but would not show what there is to show.
 
-### Multi-dépôts
+### Multi-repository
 
-Trois natures de dépôt. **« Multi-dépôts » ne veut pas dire « un dépôt par
-service »** : les sept services restent ensemble.
+Three kinds of repository. **"Multi-repository" does not mean "one repository
+per service"**: the seven services stay together.
 
 ```
-arthome-core/              le domaine, les contrats, la vitrine
-├── README.md              schéma système, galerie, lecture en 30 secondes
-├── docs/                  ce dossier de passation, corrigé
-├── prototypes/            les cinq maquettes, publiées sur GitHub Pages
-├── architecture/          carte des contextes, modèle de données, événements, ADR
-├── proto/                 schémas d'événements et services gRPC
-├── openapi/               un contrat par BFF
+arthome-core/              the domain, the contracts, the showcase
+├── README.md              system diagram, gallery, 30-second read
+├── docs/                  this handover dossier, corrected
+├── prototypes/            the five mockups, published on GitHub Pages
+├── architecture/          context map, data model, events, ADRs
+├── proto/                 event schemas and gRPC services
+├── openapi/               one contract per BFF
 └── packages/
-    ├── core/              @arthome/core — le domaine, zéro dépendance framework
-    └── contracts/         @arthome/contracts — DTO de frontière et code généré
+    ├── core/              @arthome/core — the domain, zero framework dependency
+    └── contracts/         @arthome/contracts — boundary DTOs and generated code
 
-arthome-platform/          les sept services NestJS et l'infrastructure
+arthome-platform/          the seven NestJS services and the infrastructure
 ├── services/
-└── infra/                 docker-compose, Kubernetes, observabilité
+└── infra/                 docker-compose, Kubernetes, observability
 
-arthome-storefront-web/    Next.js          un dépôt par application
+arthome-storefront-web/    Next.js          one repository per application
 arthome-storefront-mobile/ React Native
 arthome-storefront-tv/     react-native-tvos
 arthome-studio-web/        Angular
 arthome-studio-mobile/     Angular + Ionic + Capacitor
 ```
 
-**Deux paquets, pas un.** Le domaine et les contrats sont publiés séparément sur
-GitHub Packages, parce que le code Protobuf généré embarque un **runtime** que
-`@arthome/core` s'interdit. Les mélanger contaminerait le domaine et casserait la
-règle qui fait tout son intérêt.
+**Two packages, not one.** The domain and the contracts are published
+separately on GitHub Packages, because the generated Protobuf code carries a
+**runtime** that `@arthome/core` forbids itself. Mixing them would contaminate
+the domain and break the rule that gives it all its value.
 
-**Pourquoi les services restent ensemble.** C'est ce qui donne encore un sens au
-cache de tâches et à l'« exécution par service touché » : avec sept dépôts, ces
-deux dispositifs tomberaient, et une personne seule paierait sept chaînes de CI
-pour un seul système.
+**Why the services stay together.** That is what still gives meaning to the
+task cache and to "running only the services touched": with seven
+repositories, both mechanisms would collapse, and one person alone would pay
+for seven CI pipelines for a single system.
 
-Gestionnaire de paquets : **pnpm**. Outillage minimal — pnpm workspaces à
-l'intérieur d'`arthome-core` et d'`arthome-platform`, turborepo uniquement pour
-le cache de tâches. **Pas de Nx** : ses générateurs, exécuteurs et migrations
-deviennent un projet dans le projet.
+Package manager: **pnpm**. Minimal tooling — pnpm workspaces inside
+`arthome-core` and `arthome-platform`, turborepo only for the task cache. **No
+Nx**: its generators, executors and migrations become a project inside the
+project.
 
-> La friction Metro/pnpm documentée dans la version d'origine de ce document
-> — liens symboliques mal supportés, conflit entre `react-native-tvos` et les
-> autres projets Expo d'un même espace de travail — **disparaît avec le
-> multi-dépôts** : chaque application mobile a son dépôt, son `node_modules` et
-> son lockfile. Le `.npmrc` `node-linker=hoisted` n'a plus d'objet.
+> The Metro/pnpm friction documented in the original version of this document
+> — poorly supported symlinks, a conflict between `react-native-tvos` and the
+> other Expo projects in the same workspace — **disappears with the
+> multi-repository layout**: each mobile application has its own repository,
+> its own `node_modules` and its own lockfile. The `.npmrc`
+> `node-linker=hoisted` no longer has any purpose.
 
-### `@arthome/core` — le domaine
+### `@arthome/core` — the domain
 
 ```
 arthome-core/packages/core/src/
-├── taxonomy/      disciplines, genres, tags, rang éditorial
+├── taxonomy/      disciplines, genres, tags, editorial rank
 ├── catalog/
-├── fixtures/      jeu de données déterministe (tests et démonstration)
-├── i18n/          clés fr/en + compilation
+├── fixtures/      deterministic dataset (tests and demonstration)
+├── i18n/          fr/en keys + compilation
 └── domain/
-    ├── booking/       état d'une date, issues, jauge, code de place
-    ├── replay/        fenêtre de rediffusion, heures restantes
-    ├── payout/        commission, TVA, net à verser, retenue
-    ├── permissions/   droits par rôle, invitations
-    └── timezone/      heure de salle contre heure du spectateur
+    ├── booking/       state of a date, outcomes, capacity, seat code
+    ├── replay/        replay window, hours remaining
+    ├── payout/        commission, VAT, net payable, withholding
+    ├── permissions/   per-role rights, invitations
+    └── timezone/      venue time versus viewer time
 ```
 
-**Règle stricte : zéro dépendance framework.** Pas de React, pas d'Angular, pas
-de Nest, pas d'API navigateur, pas de Node spécifique dans les règles métier. Le
-paquet doit fonctionner sous Node, Next, Metro, `react-native-tvos`, Angular et
-NativeScript. La sophistication va dans le domaine, jamais dans le
-`package.json`.
+**Strict rule: zero framework dependency.** No React, no Angular, no Nest, no
+browser API, no Node-specific code in the business rules. The package must work
+under Node, Next, Metro, `react-native-tvos`, Angular and NativeScript.
+Sophistication goes into the domain, never into the `package.json`.
 
-C'est ce qui rend l'histoire lisible d'un coup d'œil : **le domaine appartient à
-Arthome, pas aux frameworks.** React, Angular et NestJS n'en sont que des
-consommateurs.
+That is what makes the story readable at a glance: **the domain belongs to
+Arthome, not to the frameworks.** React, Angular and NestJS are only consumers
+of it.
 
-Ce projet en a fait la démonstration pendant la conception : **l'essentiel des
-défauts corrigés étaient des valeurs composées à deux endroits** — un code de
-place, un compteur d'audience, un libellé d'état, un total de commande. Si une
-valeur apparaît sur deux écrans, elle vient de `@arthome/core`. Sans exception.
+This project demonstrated it during design: **most of the defects corrected
+were values composed in two places** — a seat code, an audience counter, a
+state label, an order total. If a value appears on two screens, it comes from
+`@arthome/core`. Without exception.
 
-### Les services
+### The services
 
-Sept services, découpés par **contexte métier** et non par entité. Un
-`artist-service` et un `venue-service` séparés seraient le contresens à
-éviter : ils appartiennent au même contexte.
+Seven services, split by **business context** and not by entity. A separate
+`artist-service` and `venue-service` would be exactly the misreading to
+avoid: they belong to the same context.
 
 ```
-identity        comptes, sessions, rôles
-catalog         artistes, spectacles, salles, dates — un seul contexte
-ticketing       places, commandes, paiements, issues
-streaming       sessions de diffusion, clés, incidents, jetons de lecture
-chat            messages, modération, régimes
-payouts         commission, TVA, versements, trésorerie
-notifications   alertes, rappels, courriels
+identity        accounts, sessions, roles
+catalog         artists, shows, venues, dates — a single context
+ticketing       seats, orders, payments, outcomes
+streaming       broadcast sessions, keys, incidents, playback tokens
+chat            messages, moderation, modes
+payouts         commission, VAT, payouts, treasury
+notifications   alerts, reminders, emails
 ```
 
-⚠ **Trois familles de données n'ont, à ce jour, aucun contexte propriétaire** —
-elles existent dans `shared/`, s'affichent sur plusieurs surfaces, et n'entrent
-dans aucun des sept contextes ci-dessus :
+⚠ **Three families of data have, to this day, no owning context** — they exist
+in `shared/`, are displayed on several surfaces, and fit into none of the seven
+contexts above:
 
-- les **abonnements** (`plans` : free, pass, premium, avec leurs droits `opens[]`
-  et la remise `seatDiscount`), qui **conditionnent l'accès à la lecture** ;
-- la **boutique** (`merch` : stock, ventes, état, et des frais de port dans le
-  panier du storefront web) ;
-- l'**annuaire des intervenants** (`people`, dont des indépendants travaillant
-  sur plusieurs chaînes) et les **chaînes** (`channels`, une par artiste, avec
-  leurs membres et la table `grants` qui dit qui peut inviter qui) — à cheval
-  entre `identity` et `catalog`.
+- **subscriptions** (`plans`: free, pass, premium, with their `opens[]` rights
+  and the `seatDiscount` discount), which **govern access to playback**;
+- the **shop** (`merch`: stock, sales, state, and shipping costs in the web
+  storefront's basket);
+- the **directory of contributors** (`people`, including freelancers working
+  across several channels) and the **channels** (`channels`, one per artist,
+  with their members and the `grants` table that says who may invite whom) —
+  straddling `identity` and `catalog`.
 
-À rattacher ou à isoler dans `architecture/context-map.md`. Un service de plus se
-paie en exploitation, pour une personne seule.
+To be attached or isolated in `architecture/context-map.md`. One more service
+is paid for in operations, for a single person.
 
-### Aucun appel synchrone entre services
+### No synchronous call between services
 
-Kafka est le **seul** canal inter-services. Si un appel synchrone existe, il ne
-peut aller que **du BFF vers un service** — c'est de l'entrée. **Jamais entre
-services**, quel que soit le transport (HTTP, gRPC, TCP Nest).
+Kafka is the **only** inter-service channel. If a synchronous call exists, it
+can only go **from the BFF to a service** — that is entry traffic. **Never
+between services**, whatever the transport (HTTP, gRPC, Nest TCP).
 
-### Événements
+### Events
 
-**Kafka** comme épine dorsale, avec les pratiques qui rendent le découpage
-crédible plutôt que récité :
+**Kafka** as the backbone, with the practices that make the split credible
+rather than recited:
 
-- **Schémas d'événements versionnés** — **Protobuf**, outillé par `buf`
-  (`buf lint`, `buf breaking`), avec Schema Registry. Le choix entre Avro et
-  Protobuf est tranché : c'est Protobuf. Conséquence à tenir : un événement
-  décodé depuis Kafka n'est **jamais** revalidé par zod — le registre fait foi.
-  C'est le vrai signal technique, bien plus que le nombre de services.
-- **Motif outbox** pour la cohérence entre l'écriture en base et la publication :
-  l'écriture métier et la ligne d'outbox dans la **même transaction**, publiée
-  par Debezium. Jamais un envoi Kafka depuis le code applicatif après un commit.
-- **Consommateurs idempotents**, avec clé de déduplication.
-- **Kafka Connect avec Debezium** pour la capture de changements PostgreSQL et
-  la synchronisation vers l'index de recherche. C'est là qu'il gagne sa place —
-  pas en simple tuyau entre deux services.
-- **Deux mécanismes de rebut distincts**, à ne pas amalgamer : la DLQ native de
-  Kafka Connect (`errors.deadletterqueue.topic.name`) pour les échecs de
-  connecteur, et un motif propre aux consommateurs — sujet de reprise avec délai
-  croissant, puis sujet de rebut — pour les échecs métier.
+- **Versioned event schemas** — **Protobuf**, tooled with `buf`
+  (`buf lint`, `buf breaking`), with a Schema Registry. The choice between Avro
+  and Protobuf is settled: it is Protobuf. The consequence to hold to: an event
+  decoded from Kafka is **never** revalidated by zod — the registry is
+  authoritative. That is the real technical signal, far more than the number of
+  services.
+- **Outbox pattern** for consistency between the database write and
+  publication: the business write and the outbox row in the **same
+  transaction**, published by Debezium. Never a Kafka send from application code
+  after a commit.
+- **Idempotent consumers**, with a deduplication key.
+- **Kafka Connect with Debezium** for PostgreSQL change capture and
+  synchronisation to the search index. That is where it earns its place — not
+  as a mere pipe between two services.
+- **Two distinct dead-letter mechanisms**, not to be conflated: Kafka Connect's
+  native DLQ (`errors.deadletterqueue.topic.name`) for connector failures, and
+  a consumer-specific pattern — a retry topic with increasing delay, then a
+  dead-letter topic — for business failures.
 
 ### Infrastructure
 
-| Brique | Rôle |
+| Component | Role |
 |---|---|
-| **PostgreSQL 18** | une base par service. ORM **TypeORM ^1.1** — syntaxe objet uniquement pour `relations`/`select`. Identifiants en **UUIDv7** (`uuidv7()` natif) |
-| **Kafka + Kafka Connect** | journal d'événements, CDC Debezium, DLQ |
-| **Redis** | **quatre usages séparés** — voir ci-dessous |
-| **OpenSearch** | recherche et facettes du catalogue |
-| **MinIO** | stockage objet compatible S3 — enregistrements, rediffusions |
-| **Observabilité** | simple pour l'instant. **`traceparent` (W3C) propagé dès le premier producteur**, en HTTP **et** en Kafka. OpenTelemetry complet plus tard |
+| **PostgreSQL 18** | one database per service. ORM **TypeORM ^1.1** — object syntax only for `relations`/`select`. Identifiers in **UUIDv7** (native `uuidv7()`) |
+| **Kafka + Kafka Connect** | event log, Debezium CDC, DLQ |
+| **Redis** | **four separate uses** — see below |
+| **OpenSearch** | catalogue search and facets |
+| **MinIO** | S3-compatible object storage — recordings, replays |
+| **Observability** | simple for now. **`traceparent` (W3C) propagated from the very first producer**, over HTTP **and** over Kafka. Full OpenTelemetry later |
 
-**Les quatre usages de Redis, à ne jamais confondre :**
+**The four uses of Redis, never to be confused:**
 
 ```
-sessions              au BFF SEULEMENT — aucun service ne lit le magasin
-cache                 par service, jamais partagé entre services
-adaptateur Socket.IO  diffusion aux clients connectés
-BullMQ                jobs INTERNES à un service, jamais entre deux services
+sessions              at the BFF ONLY — no service reads the store
+cache                 per service, never shared between services
+Socket.IO adapter     broadcast to connected clients
+BullMQ                jobs INTERNAL to a service, never between two services
 ```
 
-La dernière règle est la plus facile à enfreindre : BullMQ entre deux services
-rouvrirait par la porte de derrière le couplage synchrone que Kafka existe pour
-interdire.
+The last rule is the easiest to break: BullMQ between two services would
+reopen through the back door the synchronous coupling that Kafka exists to
+forbid.
 
-**Validation : zod, partout.** Configuration, DTO, entrées de formulaire, côté
-serveur comme côté client. Découpage par nature et non par couche : les
-invariants du domaine restent du TypeScript pur dans `@arthome/core` ; les
-schémas de base partagés (Money, ShowId, Locale) vivent dans `core` en zod ; les
-DTO de frontière vivent dans `@arthome/contracts` ; la configuration est validée
-au démarrage **dans chaque service**, jamais par un schéma d'env centralisé.
-zod devient de ce fait une dépendance d'exécution partagée par sept services et
-cinq applications : `peerDependency`, version épinglée, et une montée majeure
-traitée comme un changement de contrat.
+**Validation: zod, everywhere.** Configuration, DTOs, form input, server side
+as well as client side. Split by nature and not by layer: the domain invariants
+stay pure TypeScript in `@arthome/core`; the shared base schemas (Money,
+ShowId, Locale) live in `core` as zod; the boundary DTOs live in
+`@arthome/contracts`; configuration is validated at startup **in each
+service**, never by a centralised env schema.
+zod thereby becomes a runtime dependency shared by seven services and five
+applications: `peerDependency`, pinned version, and a major bump treated as a
+contract change.
 
-**Pourquoi OpenSearch** plutôt qu'Elasticsearch : licence Apache 2.0, réellement
-libre, et le connecteur *sink* Elasticsearch de Kafka Connect fonctionne tel quel
-— décisif puisque la synchronisation passe par Connect. Son modèle d'agrégations
-colle à la taxonomie : facettes sur 21 disciplines, 176 genres, 205 tags, plus
-ville, date, tarif et disponibilité. **Penser à l'analyseur `french`** (élisions,
-radicaux), sans quoi « l'opéra » et « opéra » ne se trouveront pas.
+**Why OpenSearch** rather than Elasticsearch: Apache 2.0 licence, genuinely
+free, and Kafka Connect's Elasticsearch *sink* connector works as is —
+decisive since the synchronisation goes through Connect. Its aggregation model
+fits the taxonomy: facets over 21 disciplines, 176 genres, 205 tags, plus city,
+date, price and availability. **Remember the `french` analyser** (elisions,
+stems), without which "l'opéra" and "opéra" will not find each other.
 
-Meilisearch serait meilleur en qualité de recherche par heure investie, mais n'a
-pas de connecteur Kafka Connect officiel.
+Meilisearch would be better in search quality per hour invested, but has no
+official Kafka Connect connector.
 
-**La propagation de `traceparent` dès le premier producteur.** L'outillage
-d'observabilité est reportable ; la **propagation** ne l'est pas. Un événement
-publié sans `traceparent` est définitivement orphelin — on ne le rattache pas
-après coup. OpenTelemetry viendra ensuite, et il viendra bien moins cher si
-`traceparent` circule déjà. La trace complète
-`POST /tickets → ticketing → paiement → calcul de versement → base` impressionne
-davantage à la lecture qu'un dossier de manifestes Kubernetes.
+**Propagating `traceparent` from the very first producer.** Observability
+tooling can be deferred; **propagation** cannot. An event published without
+`traceparent` is orphaned for good — you do not reattach it after the fact.
+OpenTelemetry will come later, and it will come far cheaper if `traceparent` is
+already circulating. The complete trace
+`POST /tickets → ticketing → payment → payout computation → database` impresses
+a reader more than a folder of Kubernetes manifests.
 
-### Topologie d'entrée, et les deux BFF
+### Entry topology, and the two BFFs
 
-Rien dans la version d'origine de ce document ne reliait les applications aux
-services. Il manquait deux briques :
+Nothing in the original version of this document connected the applications to
+the services. Two components were missing:
 
-- une **passerelle d'infrastructure** (Traefik, Envoy) pour TLS, routage et
-  limites de débit. Router est un travail d'infrastructure ; le réécrire en code
-  serait refaire, moins bien, ce qu'un reverse proxy standard fait en
-  configuration. **Écartée d'avance** : une passerelle applicative NestJS qui ne
-  ferait que redispatcher ;
-- **un BFF par produit** (storefront, studio). Il ne garde que ce qui est métier :
-  composer les réponses, adapter par surface, et **échanger la session contre un
-  jeton signé de courte durée**. C'est ce mécanisme qui fait qu'aucun service
-  n'appelle jamais le service d'identité ni ne lit le magasin de sessions — le
-  jeton se vérifie par JWKS, localement.
+- an **infrastructure gateway** (Traefik, Envoy) for TLS, routing and rate
+  limits. Routing is infrastructure work; rewriting it in code would mean
+  redoing, less well, what a standard reverse proxy does in configuration.
+  **Ruled out in advance**: a NestJS application gateway that would do nothing
+  but re-dispatch;
+- **one BFF per product** (storefront, studio). It keeps only what is business:
+  composing the responses, adapting per surface, and **exchanging the session
+  for a short-lived signed token**. It is this mechanism that ensures no service
+  ever calls the identity service or reads the session store — the token is
+  verified via JWKS, locally.
 
-L'usage de gRPC se décide **sur preuve** : compter, à partir des besoins de
-chaque surface, le nombre d'appels synchrones BFF → service réellement
-nécessaires. En lecture, souvent aucun — si les modèles de lecture sont projetés
-là où le BFF les lit. En écriture, souvent oui : « acheter une place » exige une
-réponse immédiate. Une poignée de commandes appelle HTTP/JSON décrit en OpenAPI ;
-beaucoup d'appels, ou des schémas déjà en Protobuf, appellent gRPC.
+The use of gRPC is decided **on evidence**: count, from each surface's needs,
+how many synchronous BFF → service calls are really necessary. On reads, often
+none — if the read models are projected where the BFF reads them. On writes,
+often yes: "buying a seat" demands an immediate response. A handful of commands
+calls for HTTP/JSON described in OpenAPI; many calls, or schemas already in
+Protobuf, call for gRPC.
 → `architecture/context-map.md`.
 
-### Authentification
+### Authentication
 
-Absente de la version d'origine de ce document. Les besoins réels : 2FA,
-réinitialisation de mot de passe, **connexion sur téléviseur**, connexions
-sociales (Google, Facebook) et par courriel — sur cinq surfaces dont deux sans
-clavier utilisable.
+Absent from the original version of this document. The real needs: 2FA,
+password reset, **signing in on a television**, social sign-in (Google,
+Facebook) and by email — across five surfaces, two of which have no usable
+keyboard.
 
-Le point décisif : **sur une télévision, le lien magique est le mauvais outil**.
-Le standard est le **device flow OAuth (RFC 8628)** — un code court affiché sur
-l'écran, saisi sur le téléphone. C'est d'ailleurs le mécanisme que la maquette TV
-emploie déjà pour quatre parcours distincts : se connecter, acheter une place,
-s'abonner et acheter du merch. **Une seule primitive**, pas quatre.
+The decisive point: **on a television, the magic link is the wrong tool**. The
+standard is the **OAuth device flow (RFC 8628)** — a short code displayed on
+the screen, typed on the phone. It is, moreover, the mechanism the TV mockup
+already uses for four distinct journeys: signing in, buying a seat, subscribing
+and buying merch. **A single primitive**, not four.
 → `architecture/adr-auth.md`.
 
-### Paiement et versements
+### Payment and payouts
 
-La version d'origine décrivait `ticketing` comme portant « places, commandes,
-paiements » sans un mot de plus — alors que `shared/catalogue.json` fixe déjà la
-commission (**12 %**) et le délai de versement (**14 jours**).
+The original version described `ticketing` as carrying "seats, orders,
+payments" and not a word more — whereas `shared/catalogue.json` already fixes
+the commission (**12 %**) and the payout delay (**14 days**).
 
-Le cas canonique est **Stripe Connect** : la plateforme encaisse pour le compte
-d'artistes, prélève une commission, reverse. Traité en **mode test**, gratuit et
-sans argent réel. Le découpage : `ticketing` encaisse, `payouts` calcule le droit,
-et **Stripe reste la source de vérité du mouvement d'argent** — on ne reconstruit
-jamais son grand livre, on **réconcilie**. Périmètre PCI évité (Checkout ou
-Elements, aucun numéro de carte ne transite). Un port dans le domaine et deux
-adaptateurs : un **factice par défaut**, pour que la démonstration publique et
-les tests tournent sans clé ni réseau, et un **Stripe en mode test**.
+The canonical case is **Stripe Connect**: the platform collects on behalf of
+artists, takes a commission, pays out. Handled in **test mode**, free and with
+no real money. The split: `ticketing` collects, `payouts` computes the
+entitlement, and **Stripe remains the source of truth for the movement of
+money** — we never rebuild its ledger, we **reconcile**. PCI scope avoided
+(Checkout or Elements, no card number passes through). One port in the domain
+and two adapters: a **fake one by default**, so that the public demonstration
+and the tests run without a key or a network, and a **Stripe one in test mode**.
 → `architecture/adr-payments.md`.
 
-### Internationalisation : catalogue de libellés servi dynamiquement
+### Internationalisation: a label catalogue served dynamically
 
-`i18n-compile.js` compile les dictionnaires dans chaque surface au build. Cela
-reste vrai, mais ne suffit plus : corriger une coquille sur mobile ou sur TV
-demanderait d'attendre une revue de magasin.
+`i18n-compile.js` compiles the dictionaries into each surface at build time.
+That remains true, but is no longer enough: fixing a typo on mobile or on TV
+would mean waiting for a store review.
 
-Le modèle retenu : `core` garde les **clés** et le catalogue de référence, un
-service sert les **mises à jour par-dessus**, la lecture passe par des
-**artefacts versionnés immuables** en CDN (`/i18n/<locale>/v<N>.json`) et non par
-un appel à chaque page, et chaque application embarque un **instantané au build**
-comme repli obligatoire — jamais un code brut affiché si le service est
-indisponible. Les clés sont typées depuis `core`, le catalogue est **additif**,
-avec validation ICU à la publication et échappement systématique : une traduction
-est un vecteur d'injection.
+The model chosen: `core` keeps the **keys** and the reference catalogue, a
+service serves the **updates on top**, reads go through **immutable versioned
+artefacts** on a CDN (`/i18n/<locale>/v<N>.json`) and not through a call on
+every page, and each application embeds a **build-time snapshot** as a
+mandatory fallback — never a raw code displayed if the service is unavailable.
+The keys are typed from `core`, the catalogue is **additive**, with ICU
+validation at publication and systematic escaping: a translation is an
+injection vector.
 
-**i18n par codes** : l'API renvoie des codes et leurs paramètres, jamais des
-phrases — enveloppe d'erreur comprise. Un échec de validation zod se traduit en
-**code**, jamais en message anglais de zod, sinon l'i18n fuit dès la première
-erreur de formulaire. Dates, montants et pluriels sont formatés côté client avec
+**i18n by codes**: the API returns codes and their parameters, never sentences
+— error envelope included. A zod validation failure is translated into a
+**code**, never into zod's English message, otherwise i18n leaks at the very
+first form error. Dates, amounts and plurals are formatted client-side with
 `Intl`.
 
-**Montants** : une unité canonique (centimes entiers + code devise) en base et
-dans les contrats. La règle d'arrondi est du domaine et vit dans `@arthome/core` ;
-le formatage est de la présentation. Jamais de chaîne formatée stockée ni
-transportée, sauf dans un document (facture).
+**Amounts**: one canonical unit (integer cents + currency code) in the database
+and in the contracts. The rounding rule is domain and lives in
+`@arthome/core`; formatting is presentation. Never a formatted string stored or
+transported, except inside a document (an invoice).
 
-### Diffusion vidéo
+### Video broadcasting
 
-Voir `streaming.md`, dans ce dossier. En résumé : plan de contrôle en NestJS,
-plan média délégué (MediaMTX en développement et en démonstration, fournisseur
-managé en production), derrière des ports. Trois points où le domaine touche
-l'infrastructure y sont traités : lecture signée en périphérie de CDN, écran
-d'attente en voile client, fenêtre de rediffusion propriété du domaine.
+See `streaming.md`, in this dossier. In summary: control plane in NestJS, media
+plane delegated (MediaMTX in development and in demonstration, managed provider
+in production), behind ports. Three points where the domain touches the
+infrastructure are dealt with there: signed playback at the CDN edge, the
+standby screen as a client-side overlay, the replay window owned by the domain.
 
-## 4. Jetons de design
+## 4. Design tokens
 
-Deux palettes distinctes, assumées : le storefront est chaleureux et éditorial,
-le studio est un outil de travail.
+Two distinct palettes, deliberately so: the storefront is warm and editorial,
+the studio is a working tool.
 
 ### Storefront (web, mobile, TV)
 
 ```
-Fond          #0B0A09
-Panneaux      #100F0D  #17140F  #1A1815
+Background    #0B0A09
+Panels        #100F0D  #17140F  #1A1815
 Surfaces      #1F1C19  #221F1B  #262320
-Bordures      #2E2A24  #332E28  #4A423A  #575047
-Encre         #EDE7DC (principale)  #C9C0B2  #9B948A  #857E73  #8B857C  #6B6459
-LIVE          oklch(0.62 0.21 27)   le rouge d'antenne — jamais décoratif
-ACCENT        oklch(0.78 0.13 42)   ambre des rappels et rediffusions
-OR            oklch(0.9 0.07 84)    places détenues, rareté
+Borders       #2E2A24  #332E28  #4A423A  #575047
+Ink           #EDE7DC (primary)  #C9C0B2  #9B948A  #857E73  #8B857C  #6B6459
+LIVE          oklch(0.62 0.21 27)   the on-air red — never decorative
+ACCENT        oklch(0.78 0.13 42)   amber for reminders and replays
+GOLD          oklch(0.9 0.07 84)    seats held, scarcity
 OK            oklch(0.7 0.13 150)   confirmations
 ```
 
 ### Studio
 
 ```
-Fond          #0E0F10
-Panneaux      #15171A  #111316
-Bordures      #23272C  #2A2F35  #1D2126
-Encre         #E6E9EC (principale)  #C6CDD4  #98A0A8  #8B949E  #6E7681  #5B636B  #4A535C
+Background    #0E0F10
+Panels        #15171A  #111316
+Borders       #23272C  #2A2F35  #1D2126
+Ink           #E6E9EC (primary)  #C6CDD4  #98A0A8  #8B949E  #6E7681  #5B636B  #4A535C
 OK            oklch(0.72 0.14 155)
 WARN          oklch(0.78 0.13 75)
 LIVE          oklch(0.7 0.19 27)
@@ -426,169 +427,170 @@ INFO          oklch(0.72 0.11 235)
 MUTE          oklch(0.75 0.12 300)
 ```
 
-**Règle du rouge** : `LIVE` ne sert qu'à l'antenne. Une promotion n'est jamais
-rouge. Une pastille d'antenne ne s'affiche que s'il y a effectivement un direct
-— jamais « 0 EN DIRECT ».
+**The red rule**: `LIVE` is only ever used for on-air. A promotion is never
+red. An on-air badge is displayed only if there actually is a live broadcast —
+never "0 LIVE".
 
-### Typographie
+### Typography
 
-- **Instrument Serif** — titres de spectacle, noms d'artistes, accroches. La signature Arthome.
-- **Archivo** — texte courant, boutons, descriptions.
-- **JetBrains Mono** — heures, durées, prix, compteurs, codes, libellés de section.
+- **Instrument Serif** — show titles, artist names, editorial hooks. The Arthome signature.
+- **Archivo** — body text, buttons, descriptions.
+- **JetBrains Mono** — times, durations, prices, counters, codes, section labels.
 
-### Formes
+### Shapes
 
-Rayon 4 px sur cartes et boutons, cercles pour les avatars. Pastilles d'état :
-bordure 1 px à la couleur de l'état, texte à la même couleur, fond voilé à 14 %
-via `color-mix(in oklch, <couleur> 14%, transparent)`.
+4 px radius on cards and buttons, circles for avatars. State badges: 1 px
+border in the state's colour, text in the same colour, background veiled at
+14 % via `color-mix(in oklch, <colour> 14%, transparent)`.
 
-### Planchers de taille
+### Size floors
 
 | Surface | Minimum |
 |---|---|
-| Storefront web / studio | 12 px, mono 9 px pour les libellés de section |
-| Mobile | cibles tactiles 44 px minimum |
-| **TV** | **18 px absolu**, texte courant 26 px, titre de carte 26→30 px, bouton 24 px |
+| Storefront web / studio | 12 px, mono 9 px for section labels |
+| Mobile | touch targets 44 px minimum |
+| **TV** | **18 px absolute**, body text 26 px, card title 26→30 px, button 24 px |
 
 ---
 
-## 5. Principes de conception à ne pas perdre
+## 5. Design principles not to be lost
 
-Ils ont coûté cher à établir. Les réintroduire serait une régression.
+They were expensive to establish. Reintroducing them would be a regression.
 
-1. **Une seule source de vérité.** Chaque affichage dérive de la donnée, jamais
-   d'un littéral parallèle. Aucun compteur, aucune pastille, aucun code écrit en dur.
-2. **Le rouge d'antenne ne sert qu'à l'antenne.**
-3. **Une place détenue ouvre le spectacle.** Ne jamais proposer « prendre ma
-   place » à qui l'a déjà. Le verrou d'aperçu ne s'applique qu'aux non-détenteurs.
-4. **Les états d'issue priment sur tout le reste** : annulée et remboursée,
-   reportée avec places valables, interrompue avec avoirs. En rouge, avec
-   l'explication en clair et ce que le spectateur doit en faire.
-5. **La politique de rediffusion est lisible avant l'achat** — c'est elle qui
-   justifie l'écart de tarif.
-6. **Jamais de spinner muet.** Un incident dit toujours si le problème vient du
-   spectateur ou de la salle.
-7. **Squelettes de chargement**, jamais de page blanche.
-8. **États vides explicites**, avec une action qui sort de l'impasse.
-9. **Deux fuseaux** : l'heure du spectateur d'abord, l'heure de salle en second
-   quand elle diffère.
-10. **Les actions inertes sont proscrites.** Un état d'interface répond toujours.
-    Ne restent inertes que les appels à un service externe.
-
----
-
-## 6. Le storefront TV — le sujet à part
-
-`Prompt - Storefront TV.md` (dans ce dossier) contient le cahier des charges
-complet. L'essentiel :
-
-**Tout se pilote à cinq touches.** C'est ce qui sépare une vraie application TV
-d'un site affiché en grand.
-
-- Un et un seul élément focalisé, toujours visible sans défilement
-- Déplacement en croix, vers le voisin géométrique le plus proche dans l'axe demandé
-- Trois signaux de focus simultanés : échelle 1,08 · cerne 3 px + ombre portée ·
-  révélation du titre et de la métadonnée
-- **Mémoire de focus** : revenir sur une page retrouve la carte quittée
-- `:hover` n'existe pas. Tout ce que le web fait au survol se fait au focus
-- Aucune saisie au-delà de six caractères : QR code vers le téléphone
-- Touches couleur : rouge tchat · vert sous-titres · jaune qualité · bleu infos
-- Le lecteur est une page, pas une modale. Sur TV, une modale **est** une page
-- Zone sûre : rien d'utile hors d'un cadre de 60 px sur les quatre bords
-
-Le moteur de focus de la maquette est fonctionnel et documenté dans le fichier.
-C'est la partie à étudier de près avant d'écrire la version `react-native-tvos`.
+1. **A single source of truth.** Every display derives from the data, never
+   from a parallel literal. No counter, no badge, no code written by hand.
+2. **The on-air red is only ever used for on-air.**
+3. **A seat held opens the show.** Never offer "get my seat" to someone who
+   already has one. The preview lock applies only to non-holders.
+4. **Outcome states take precedence over everything else**: cancelled and
+   refunded, postponed with valid seats, interrupted with credit notes. In red,
+   with the explanation in plain words and what the viewer must do about it.
+5. **The replay policy is readable before purchase** — it is what justifies the
+   price difference.
+6. **Never a mute spinner.** An incident always says whether the problem comes
+   from the viewer or from the venue.
+7. **Loading skeletons**, never a blank page.
+8. **Explicit empty states**, with an action that gets out of the dead end.
+9. **Two time zones**: the viewer's time first, the venue's time second when
+   they differ.
+10. **Inert actions are forbidden.** An interface state always responds. The
+    only things that stay inert are calls to an external service.
 
 ---
 
-## 7. Le studio mobile
+## 6. The TV storefront — the subject apart
 
-**Angular + Ionic + Capacitor.** NativeScript est écarté : investir dans une
-sixième chaîne d'outillage pour démontrer un sixième framework, alors que Next,
-React Native, Angular et Nest établissent déjà le signal technique, a un mauvais
-rendement.
+`storefront-tv.md` (in this dossier) contains the full specification. The
+essentials:
 
-Capacitor fournit l'enveloppe native, Ionic la coquille — navigation, gestes,
-transitions. La maquette `Studio Mobile.dc.html` gère déjà portrait et paysage.
+**Everything is driven with five keys.** That is what separates a real TV
+application from a website displayed large.
 
-**Imposer les jetons Arthome via les variables CSS d'Ionic.** Sans cela son thème
-par défaut écrasera l'identité visuelle, et le studio mobile ne ressemblera plus
-au studio web. Ionic sert la mécanique, pas l'apparence.
+- One and only one focused element, always visible without scrolling
+- Movement on a cross, to the nearest geometric neighbour on the requested axis
+- Three simultaneous focus signals: scale 1.08 · 3 px ring + drop shadow ·
+  revealing the title and the metadata
+- **Focus memory**: returning to a page finds the card you left
+- `:hover` does not exist. Everything the web does on hover is done on focus
+- No input beyond six characters: QR code to the phone
+- Colour keys: red chat · green subtitles · yellow quality · blue information
+- The player is a page, not a modal. On TV, a modal **is** a page
+- Safe area: nothing useful outside a 60 px frame on all four edges
 
----
-
-## 8. Ordre de travail — livrer par paliers présentables
-
-Le risque principal n'est pas technique : c'est de passer six mois sans rien de
-publiable. Chaque palier doit se tenir seul.
-
-**Palier 0 — la vitrine, avant toute ligne d'application**
-`arthome-core` : son README avec le schéma système, ce dossier de passation dans
-`docs/`, les premiers ADR, et les cinq maquettes publiées sur GitHub Pages en
-galerie cliquable. Une après-midi de travail pour une démonstration vivante —
-dont une interface TV pilotable à la télécommande. **Le meilleur rapport
-signal/temps disponible aujourd'hui.**
-
-Deux précisions ajoutées depuis : les maquettes doivent être **découpées par
-écran** avant d'être utilisables par un agent — les fichiers actuels font jusqu'à
-560 Ko, bien plus qu'un context pack ne peut porter. Et `corrections-handoff.md`
-sert de liste de courses pour finir d'aligner ce dossier.
-
-**Palier 1 — le domaine**
-`@arthome/core` : portage en TypeScript typé, tests sur les règles qui font mal
-(fuseaux, expiration de rediffusion, droits, TVA et arrondis, versements, codes
-de place, transitions d'état), CI. **On porte les règles, on remodèle les
-formes** — voir la famille D de `corrections-handoff.md`, qui liste les sept
-points où `shared/` doit être corrigé au passage.
-
-**Palier 2 — le socle distribué**
-`docker-compose` complet : PostgreSQL, Kafka, Kafka Connect avec Debezium,
-Redis, OpenSearch, MinIO. Deux services seulement — `identity` et `catalog` —
-mais le chemin événementiel de bout en bout : outbox dans la transaction, schéma
-Protobuf versionné, CDC vers l'index, et `traceparent` propagé de la requête
-HTTP jusqu'à l'indexation.
-
-C'est le palier qui coûte le plus et qui prouve le plus. Une fois franchi, chaque
-service suivant est rapide.
-
-**Palier 3 — un produit de bout en bout**
-`ticketing`, puis `storefront-web` en Next.js. Un déploiement, un lien vivant.
-Le cas d'usage complet : acheter une place, du storefront jusqu'au versement.
-
-**Palier 4 — la démonstration d'architecture**
-`studio-web` en Angular, consommant le même `@arthome/core`. Deux piles
-hétérogènes, un seul domaine. C'est le palier qui distingue ce projet.
-
-**Palier 5 — la diffusion**
-`streaming` et `chat`, MediaMTX en docker-compose, le mode démonstration
-interactive avec publication WHIP depuis le navigateur. Voir `streaming.md`.
-
-**Palier 6 — Kubernetes, puis le mobile si l'envie tient**
-Les surfaces non développées ne sont pas un manque : les maquettes du palier 0
-montrent le travail de conception sans engager des mois de développement.
-
-## 9. Ce qui fait signal auprès d'un recruteur
-
-À traiter comme des livrables, pas comme de la décoration.
-
-- **Une démonstration accessible en moins de trente secondes** — captures, lien
-  vivant, produit compris d'un coup d'œil.
-- **Un schéma d'architecture lisible**, avec les dépendances *et leurs raisons*.
-- **Des ADR courts** sur les choix contestables : pourquoi React côté public et
-  Angular côté studio, pourquoi le multi-dépôts, pourquoi un domaine partagé,
-  pourquoi la TV est une interface à part, pourquoi aucun appel synchrone entre
-  services, et le choix d'authentification.
-- **Un cas d'usage suivi verticalement** — acheter une place : storefront →
-  contrat d'API → domaine billetterie → code de place → paiement → commission et
-  TVA → versement artiste → base → studio. Avec les tests correspondants.
-- **Une section « ce que je n'ai délibérément pas construit »**, avec les
-  arbitrages assumés. C'est ce qui distingue le plus nettement un profil senior.
+The mockup's focus engine is functional and documented in the file. That is the
+part to study closely before writing the `react-native-tvos` version.
 
 ---
 
-## 10. Autres documents de ce dossier
+## 7. The mobile studio
 
-- `PROMPT.md` — les textes à coller dans les premières sessions Claude Code
-- `streaming.md` — plan média, protocoles, fournisseurs, mode démonstration
-- `Prompt - Storefront TV.md` — cahier des charges complet de la TV
-- `Taxonomie - projet.md` — la réflexion sur le découpage des disciplines et genres
+**Angular + Ionic + Capacitor.** NativeScript is ruled out: investing in a
+sixth toolchain to demonstrate a sixth framework, when Next, React Native,
+Angular and Nest already establish the technical signal, has a poor return.
+
+Capacitor provides the native wrapper, Ionic the shell — navigation, gestures,
+transitions. The `Studio Mobile.dc.html` mockup already handles portrait and
+landscape.
+
+**Impose the Arthome tokens through Ionic's CSS variables.** Without that, its
+default theme will override the visual identity, and the mobile studio will no
+longer look like the web studio. Ionic provides the mechanics, not the
+appearance.
+
+---
+
+## 8. Order of work — deliver in presentable stages
+
+The main risk is not technical: it is spending six months with nothing
+publishable. Each stage must stand on its own.
+
+**Stage 0 — the showcase, before a single line of application code**
+`arthome-core`: its README with the system diagram, this handover dossier under
+`docs/`, the first ADRs, and the five mockups published on GitHub Pages as a
+clickable gallery. An afternoon's work for a living demonstration — including a
+TV interface driveable by remote control. **The best signal-to-time ratio
+available today.**
+
+Two clarifications added since: the mockups must be **split by screen** before
+they can be used by an agent — the current files run to 560 KB, far more than a
+context pack can carry. And `corrections-handoff.md` serves as the shopping
+list for finishing the alignment of this dossier.
+
+**Stage 1 — the domain**
+`@arthome/core`: port to typed TypeScript, tests on the rules that hurt (time
+zones, replay expiry, permissions, VAT and rounding, payouts, seat codes, state
+transitions), CI. **We port the rules, we reshape the forms** — see family D of
+`corrections-handoff.md`, which lists the seven points where `shared/` must be
+corrected along the way.
+
+**Stage 2 — the distributed foundation**
+A complete `docker-compose`: PostgreSQL, Kafka, Kafka Connect with Debezium,
+Redis, OpenSearch, MinIO. Two services only — `identity` and `catalog` — but
+the event path end to end: outbox inside the transaction, versioned Protobuf
+schema, CDC to the index, and `traceparent` propagated from the HTTP request
+all the way to indexing.
+
+This is the stage that costs the most and proves the most. Once it is behind
+you, every following service is fast.
+
+**Stage 3 — one product end to end**
+`ticketing`, then `storefront-web` in Next.js. One deployment, one living link.
+The complete use case: buying a seat, from the storefront through to the payout.
+
+**Stage 4 — the architecture demonstration**
+`studio-web` in Angular, consuming the same `@arthome/core`. Two heterogeneous
+stacks, a single domain. This is the stage that sets this project apart.
+
+**Stage 5 — broadcasting**
+`streaming` and `chat`, MediaMTX in docker-compose, the interactive
+demonstration mode with WHIP publishing from the browser. See `streaming.md`.
+
+**Stage 6 — Kubernetes, then mobile if the appetite holds**
+The surfaces that are not developed are not a gap: the stage 0 mockups show the
+design work without committing months of development.
+
+## 9. What signals quality to a recruiter
+
+To be treated as deliverables, not as decoration.
+
+- **A demonstration reachable in under thirty seconds** — screenshots, a living
+  link, a product understood at a glance.
+- **A readable architecture diagram**, with the dependencies *and their reasons*.
+- **Short ADRs** on the debatable choices: why React on the public side and
+  Angular on the studio side, why multi-repository, why a shared domain, why the
+  TV is an interface apart, why no synchronous call between services, and the
+  authentication choice.
+- **One use case followed vertically** — buying a seat: storefront → API
+  contract → ticketing domain → seat code → payment → commission and VAT →
+  artist payout → database → studio. With the corresponding tests.
+- **A "what I deliberately did not build" section**, with the trade-offs owned.
+  That is what most clearly distinguishes a senior profile.
+
+---
+
+## 10. Other documents in this dossier
+
+- `PROMPT.md` — the texts to paste into the first Claude Code sessions
+- `streaming.md` — media plane, protocols, providers, demonstration mode
+- `storefront-tv.md` — the complete TV specification
+- `taxonomy.md` — the reasoning behind the split of disciplines and genres

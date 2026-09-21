@@ -1,160 +1,159 @@
-# Prompts de démarrage — sessions Claude Code
+# Starting prompts — Claude Code sessions
 
-> ## ⚠ Document largement dépassé — ne pas coller tel quel
+> ## ⚠ Document largely superseded — do not paste as is
 >
-> **Corrigé le 21 septembre 2026.** Ces trois prompts ont été rédigés avant
-> plusieurs décisions structurantes et avant la session « contrats d'interface,
-> architecture backend, authentification ». Les corrections ponctuelles ci-dessous
-> alignent le vocabulaire, mais **l'ordre de travail lui-même a changé** :
+> **Corrected on 21 September 2026.** These three prompts were written before
+> several structuring decisions and before the "interface contracts, backend
+> architecture, authentication" session. The point corrections below align the
+> vocabulary, but **the order of work itself has changed**:
 >
-> - le palier 0 ne monte plus un monorepo, mais le dépôt `arthome-core` ;
-> - le palier 1 est désormais précédé de la **session de contrats**, qui produit
->   `architecture/` et les deux OpenAPI — et c'est elle qui dit au palier 1 quelles
->   formes porter ;
-> - le palier 2 ne monte plus OpenTelemetry, seulement la propagation de
->   `traceparent` ;
-> - les schémas d'événements sont en **Protobuf**, le choix n'est plus ouvert.
+> - stage 0 no longer stands up a monorepo, but the `arthome-core` repository;
+> - stage 1 is now preceded by the **contracts session**, which produces
+>   `architecture/` and the two OpenAPI files — and it is that session which
+>   tells stage 1 which shapes to carry;
+> - stage 2 no longer stands up OpenTelemetry, only the propagation of
+>   `traceparent`;
+> - the event schemas are in **Protobuf**, the choice is no longer open.
 >
-> **La référence vivante est `README.md` corrigé, plus
-> `arthome-core/architecture/`.** Version d'origine de ce document sous
-> `PROMPT.pre-corrections.md`.
+> **The living reference is the corrected `README.md`, plus
+> `arthome-core/architecture/`.** The original version of this document is
+> under `PROMPT.pre-corrections.md`.
 
-Trois prompts, pour les trois premiers paliers. Les sessions suivantes n'ont plus
-besoin de prompt : il suffit de demander la lecture de
-`design_handoff_arthome/README.md`.
-
----
-
-## Palier 0 — `arthome-core` et la vitrine
-
-À coller après avoir committé `design_handoff_arthome/` dans `docs/` d'`arthome-core`.
+Three prompts, for the first three stages. The sessions that follow no longer
+need a prompt: it is enough to ask for
+`design_handoff_arthome/README.md` to be read.
 
 ---
 
-Je démarre Arthome, une plateforme de diffusion en direct de spectacle vivant :
-billetterie, direct, tchat modéré, rediffusions, boutique, versements aux
-artistes. C'est un projet personnel, dont l'objectif est de servir de vitrine
-technique sur GitHub.
+## Stage 0 — `arthome-core` and the showcase
 
-Lis d'abord `design_handoff_arthome/README.md` en entier : architecture, jetons
-de design, principes de conception, ordre de travail. Puis `streaming.md`.
-
-**Tâche de cette session** : monter `arthome-core` et la vitrine. Aucun code métier,
-aucun service.
-
-1. Structure du dépôt `arthome-core` telle que décrite au §3 du README :
-   `docs/`, `prototypes/`, `architecture/`, `proto/`, `openapi/`, et
-   `packages/core` + `packages/contracts`. Les services et l'infrastructure
-   vivent dans un second dépôt, `arthome-platform` ; chaque application a le sien.
-
-2. Outillage **minimal** : pnpm workspaces, turborepo uniquement pour le cache de
-   tâches. **Pas de Nx.** Le `.npmrc` `node-linker=hoisted` n'a plus d'objet :
-   en multi-dépôts, chaque application mobile a son dépôt et son lockfile, donc
-   la friction Metro/pnpm disparaît avec l'espace de travail partagé qui la
-   causait.
-
-3. Déplacer `design_handoff_arthome/mockups/` vers `prototypes/` et configurer
-   GitHub Pages. Une page d'index les présente : ce qu'est chaque surface, pour
-   qui, sur quel appareil. Les maquettes doivent être cliquables et navigables —
-   celle de la TV se pilote aux flèches du clavier.
-
-4. Les premiers ADR, courts et argumentés. Le format compte moins que l'honnêteté
-   des arbitrages :
-   - ADR-001 React pour le public, Angular pour le studio
-   - ADR-002 Multi-dépôts : `arthome-core`, `arthome-platform`, un dépôt par application
-   - ADR-003 Un paquet de domaine sans dépendance framework
-   - ADR-004 Microservices et Kafka dès le départ — et pourquoi ce choix est
-     assumé malgré son coût
-   - ADR-005 Plan de contrôle et plan média séparés
-   - ADR-006 La TV est une interface à part entière, pas une adaptation
-
-5. Le README doit faire comprendre le produit et l'architecture en moins de
-   trente secondes, avec le lien vers la galerie en évidence.
-
-Propose-moi la structure et le plan du README avant d'écrire.
+To be pasted after committing `design_handoff_arthome/` into `arthome-core`'s `docs/`.
 
 ---
 
-## Palier 1 — le domaine `@arthome/core`
+I am starting Arthome, a live-broadcast platform for the performing arts:
+ticketing, live, moderated chat, replays, shop, artist payouts. It is a
+personal project, whose purpose is to serve as a technical showcase on GitHub.
+
+First read `design_handoff_arthome/README.md` in full: architecture, design
+tokens, design principles, order of work. Then `streaming.md`.
+
+**Task for this session**: stand up `arthome-core` and the showcase. No
+business code, no services.
+
+1. Structure of the `arthome-core` repository as described in §3 of the README:
+   `docs/`, `prototypes/`, `architecture/`, `proto/`, `openapi/`, and
+   `packages/core` + `packages/contracts`. The services and the infrastructure
+   live in a second repository, `arthome-platform`; each application has its own.
+
+2. **Minimal** tooling: pnpm workspaces, turborepo only for the task cache.
+   **No Nx.** The `.npmrc` `node-linker=hoisted` no longer has any purpose:
+   with multiple repositories, each mobile application has its own repository
+   and its own lockfile, so the Metro/pnpm friction disappears along with the
+   shared workspace that caused it.
+
+3. Move `design_handoff_arthome/mockups/` to `prototypes/` and configure
+   GitHub Pages. An index page introduces them: what each surface is, for whom,
+   on which device. The mockups must be clickable and navigable — the TV one is
+   driven with the keyboard arrows.
+
+4. The first ADRs, short and argued. The format matters less than the honesty
+   of the trade-offs:
+   - ADR-001 React for the public side, Angular for the studio
+   - ADR-002 Multi-repository: `arthome-core`, `arthome-platform`, one repository per application
+   - ADR-003 A domain package with no framework dependency
+   - ADR-004 Microservices and Kafka from the start — and why this choice is
+     owned despite its cost
+   - ADR-005 Control plane and media plane kept separate
+   - ADR-006 The TV is an interface in its own right, not an adaptation
+
+5. The README must make the product and the architecture understandable in
+   under thirty seconds, with the link to the gallery prominent.
+
+Propose the structure and the outline of the README to me before writing.
 
 ---
 
-Je construis `@arthome/core`, le paquet de domaine d'Arthome. Il sera consommé
-par cinq applications (Next.js, React Native, react-native-tvos, Angular,
-Angular/Ionic) et par sept services NestJS.
-
-Lis `design_handoff_arthome/README.md`, en particulier le §3.
-
-`design_handoff_arthome/shared/` contient du code **déjà éprouvé** : la
-taxonomie, le contenu rédigé, les règles du domaine et la copie bilingue. C'est
-la source unique de vérité des cinq maquettes de ce projet. Il faut le **porter
-en TypeScript typé**, pas le réécrire.
-
-**Tâche de cette session :**
-
-1. Porter `shared/` vers l'arborescence du §3, avec exports par sous-chemin
-   (`/taxonomy`, `/i18n`, `/fixtures`). **On porte les règles, on remodèle les
-   formes** : voir la famille D de `arthome-core/architecture/corrections-handoff.md`,
-   qui liste les sept points où `shared/` doit être corrigé au passage.
-
-2. **Règle stricte : zéro dépendance framework.** Pas de React, pas d'Angular,
-   pas de Nest, pas d'API navigateur, pas de Node spécifique dans les règles
-   métier. Le paquet doit fonctionner sous Node, Next, Metro, react-native-tvos
-   et Angular. Aussi peu de dépendances que possible, tout court.
-
-3. Des tests sur les règles qui font réellement mal : changements de fuseau,
-   expiration d'une fenêtre de rediffusion, droits par rôle, TVA et arrondis,
-   calcul d'un versement, codes de place, transitions d'état d'une date.
-
-4. CI : lint, typecheck, tests, build.
-
-Ce paquet est ce qu'on ouvrira en premier pour juger la qualité du code.
-
-Propose-moi le découpage des modules avant d'écrire le premier fichier.
+## Stage 1 — the `@arthome/core` domain
 
 ---
 
-## Palier 2 — le socle distribué
+I am building `@arthome/core`, Arthome's domain package. It will be consumed
+by five applications (Next.js, React Native, react-native-tvos, Angular,
+Angular/Ionic) and by seven NestJS services.
+
+Read `design_handoff_arthome/README.md`, in particular §3.
+
+`design_handoff_arthome/shared/` contains **already proven** code: the
+taxonomy, the written content, the domain rules and the bilingual copy. It is
+the single source of truth for this project's five mockups. It must be **ported
+to typed TypeScript**, not rewritten.
+
+**Task for this session:**
+
+1. Port `shared/` to the tree in §3, with subpath exports
+   (`/taxonomy`, `/i18n`, `/fixtures`). **We port the rules, we reshape the
+   forms**: see family D of `arthome-core/architecture/corrections-handoff.md`,
+   which lists the seven points where `shared/` must be corrected along the way.
+
+2. **Strict rule: zero framework dependency.** No React, no Angular, no Nest,
+   no browser API, no Node-specific code in the business rules. The package
+   must work under Node, Next, Metro, react-native-tvos and Angular. As few
+   dependencies as possible, full stop.
+
+3. Tests on the rules that really hurt: time zone changes, expiry of a replay
+   window, per-role permissions, VAT and rounding, computing a payout, seat
+   codes, state transitions of a date.
+
+4. CI: lint, typecheck, tests, build.
+
+This package is the first thing anyone will open to judge the quality of the code.
+
+Propose the module split to me before writing the first file.
 
 ---
 
-Je monte l'infrastructure d'Arthome et les deux premiers services.
-
-Lis `design_handoff_arthome/README.md` §3.
-
-**Tâche de cette session** : le chemin événementiel de bout en bout, avec deux
-services seulement. C'est le palier qui coûte le plus et qui prouve le plus ;
-une fois franchi, chaque service suivant sera rapide.
-
-1. `infra/docker-compose.yml` : PostgreSQL, Kafka, Kafka Connect, Schema
-   Registry, Redis, OpenSearch, MinIO. Pas de collecteur OpenTelemetry à ce
-   stade : observabilité simple, mais `traceparent` (W3C) propagé dès le premier
-   producteur, en HTTP et en Kafka.
-
-2. Deux services NestJS : `identity` et `catalog`. Chacun sa base.
-
-3. Le chemin complet, démontrable :
-   - écriture en base avec **motif outbox**
-   - publication Kafka avec **schéma versionné** en **Protobuf**, outillé par `buf`
-   - **Debezium** en capture de changements
-   - **connecteur sink** vers OpenSearch, avec l'analyseur `french`
-   - **`traceparent` propagé** de la requête HTTP jusqu'à l'indexation, visible
-     dans les journaux. Le tableau de bord vient plus tard ; la propagation, non :
-     un événement publié sans `traceparent` est définitivement orphelin
-   - **DLQ** : celle de Kafka Connect pour les échecs de connecteur, et un motif
-     reprise/rebut propre aux consommateurs pour les échecs métier
-
-4. Un consommateur **idempotent**, avec clé de déduplication et un test qui
-   rejoue le même événement deux fois.
-
-`catalog` consomme la taxonomie de `@arthome/core` : les facettes de recherche
-en dérivent, elles ne sont pas redéclarées.
-
-Propose-moi le schéma des sujets Kafka et le modèle d'événements avant d'écrire.
+## Stage 2 — the distributed foundation
 
 ---
 
-**Point de vigilance valable pour toutes les sessions** : tout ce qui est calculé
-deux fois divergera. Avec sept services et cinq applications, la tentation de
-recalculer une valeur localement sera permanente. Si une valeur apparaît sur deux
-écrans, elle vient de `@arthome/core` — jamais recomposée.
+I am standing up Arthome's infrastructure and the first two services.
+
+Read `design_handoff_arthome/README.md` §3.
+
+**Task for this session**: the event path end to end, with only two services.
+This is the stage that costs the most and proves the most; once it is behind
+you, every following service will be fast.
+
+1. `infra/docker-compose.yml`: PostgreSQL, Kafka, Kafka Connect, Schema
+   Registry, Redis, OpenSearch, MinIO. No OpenTelemetry collector at this
+   stage: simple observability, but `traceparent` (W3C) propagated from the
+   very first producer, over HTTP and over Kafka.
+
+2. Two NestJS services: `identity` and `catalog`. Each with its own database.
+
+3. The complete path, demonstrable:
+   - a database write with the **outbox pattern**
+   - Kafka publication with a **versioned schema** in **Protobuf**, tooled with `buf`
+   - **Debezium** for change capture
+   - a **sink connector** to OpenSearch, with the `french` analyser
+   - **`traceparent` propagated** from the HTTP request all the way to
+     indexing, visible in the logs. The dashboard comes later; the propagation
+     does not: an event published without `traceparent` is orphaned for good
+   - **DLQ**: Kafka Connect's for connector failures, and a consumer-specific
+     retry/dead-letter pattern for business failures
+
+4. An **idempotent** consumer, with a deduplication key and a test that replays
+   the same event twice.
+
+`catalog` consumes the taxonomy from `@arthome/core`: the search facets derive
+from it, they are not redeclared.
+
+Propose the Kafka topic scheme and the event model to me before writing.
+
+---
+
+**A point of vigilance valid for every session**: anything that is computed
+twice will diverge. With seven services and five applications, the temptation
+to recompute a value locally will be constant. If a value appears on two
+screens, it comes from `@arthome/core` — never recomposed.

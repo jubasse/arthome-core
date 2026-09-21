@@ -1,76 +1,76 @@
-# Arthome — plan média et diffusion
+# Arthome — media plane and broadcasting
 
-Complément au README de passation. Couvre le streaming : protocoles, plan de
-contrôle contre plan média, abstraction de fournisseur, et le mode démonstration.
-
----
-
-## 1. Le principe : deux plans strictement séparés
-
-```
-PLAN DE CONTRÔLE          NestJS / TypeScript
-PLAN MÉDIA                infrastructure vidéo spécialisée
-```
-
-NestJS **pilote** la diffusion : cycle de vie d'un direct, clés de flux, droits,
-chapitres posés en régie, incidents, billetterie, politique de rediffusion,
-métriques métier.
-
-NestJS ne **transcode ni ne segmente jamais** lui-même. Le traitement média est
-du travail temps réel : il revient à des outils éprouvés (MediaMTX, FFmpeg,
-fournisseur managé), pilotés par le code, jamais réimplémentés en JavaScript.
+A companion to the handover README. Covers streaming: protocols, control plane
+versus media plane, provider abstraction, and the demonstration mode.
 
 ---
 
-## 2. Protocoles
-
-### Entrée
+## 1. The principle: two strictly separated planes
 
 ```
-RTMP / RTMPS   compatibilité maximale (OBS, encodeurs)
-SRT            contribution professionnelle, réseaux instables
-WHIP           publication WebRTC depuis le navigateur
+CONTROL PLANE             NestJS / TypeScript
+MEDIA PLANE               specialised video infrastructure
 ```
 
-### Distribution publique
+NestJS **drives** the broadcast: the lifecycle of a live show, stream keys,
+entitlements, chapters set in the control room, incidents, ticketing, replay
+policy, business metrics.
+
+NestJS **never transcodes or segments** anything itself. Media processing is
+real-time work: it belongs to proven tools (MediaMTX, FFmpeg, a managed
+provider), driven by the code, never reimplemented in JavaScript.
+
+---
+
+## 2. Protocols
+
+### Ingest
+
+```
+RTMP / RTMPS   maximum compatibility (OBS, encoders)
+SRT            professional contribution, unstable networks
+WHIP           WebRTC publishing from the browser
+```
+
+### Public distribution
 
 ```
 LL-HLS + CDN
 ```
 
-HTTP, donc cacheable et distribuable. Compatible web, mobile et TV. Sur le web,
-`hls.js` quand le navigateur n'a pas HLS natif.
+HTTP, therefore cacheable and distributable. Compatible with web, mobile and
+TV. On the web, `hls.js` when the browser has no native HLS.
 
-**H.264 pour tout, au moins d'abord.** Le parc de téléviseurs connectés est trop
-hétérogène ; HEVC et AV1 feraient perdre des appareils sans bénéfice visible aux
-débits visés.
+**H.264 for everything, at least to begin with.** The installed base of
+connected televisions is too heterogeneous; HEVC and AV1 would lose devices
+with no visible benefit at the target bitrates.
 
-### Retour de régie
+### Control-room return feed
 
 ```
 WebRTC / WHEP
 ```
 
-Sous la seconde pour surveiller le plateau. **Le public n'a pas besoin de
-WebRTC** : LL-HLS à quelques secondes suffit, et coûte infiniment moins cher.
+Sub-second, for monitoring the stage. **The audience does not need WebRTC**:
+LL-HLS at a few seconds is enough, and costs infinitely less.
 
 ```
-OBS / encodeur
+OBS / encoder
       │
  RTMPS / SRT / WHIP
       ▼
- Fournisseur média
+ Media provider
       │
-      ├── WebRTC/WHEP ──────────► Studio          latence sous la seconde
+      ├── WebRTC/WHEP ──────────► Studio          sub-second latency
       │
       └── LL-HLS ──► CDN ───────► Storefront      web · mobile · TV
 ```
 
 ---
 
-## 3. Abstraction de fournisseur
+## 3. Provider abstraction
 
-Arthome ne dépend d'aucun fournisseur. Des ports, dans le plan de contrôle :
+Arthome depends on no provider. Ports, in the control plane:
 
 ```ts
 interface LiveIngestProvider {}
@@ -79,349 +79,346 @@ interface RecordingProvider {}
 interface StreamingMetricsProvider {}
 ```
 
-Aucun identifiant propre à un fournisseur ne traverse le domaine. Les capacités
-sont déclarées explicitement — RTMP, SRT, WHIP, HLS, LL-HLS, WHEP, enregistrement,
-DRM, restrictions géographiques — parce que tous les fournisseurs n'offrent pas
-la même chose.
+No provider-specific identifier crosses the domain. Capabilities are declared
+explicitly — RTMP, SRT, WHIP, HLS, LL-HLS, WHEP, recording, DRM, geographic
+restrictions — because not every provider offers the same things.
 
-### Par environnement
+### By environment
 
-| Environnement | Fournisseur |
+| Environment | Provider |
 |---|---|
 | Tests | `FakeStreamingProvider` |
-| Développement | `MediaMtxStreamingProvider` (docker-compose) |
-| Démonstration simple | `FixtureStreamingProvider` — vidéo préenregistrée présentée comme un direct |
-| Démonstration interactive | `SandboxMediaMtxProvider` — MediaMTX auto-hébergé, sans transcodage vidéo |
+| Development | `MediaMtxStreamingProvider` (docker-compose) |
+| Simple demonstration | `FixtureStreamingProvider` — pre-recorded video presented as a live broadcast |
+| Interactive demonstration | `SandboxMediaMtxProvider` — self-hosted MediaMTX, no video transcoding |
 | Production | `CloudStreamingProvider` — Cloudflare Stream |
 
-En production, un plan média managé plutôt qu'une ferme FFmpeg/GPU à entretenir :
-Arthome possède le métier, pas les codecs.
+In production, a managed media plane rather than an FFmpeg/GPU farm to
+maintain: Arthome owns the business, not the codecs.
 
 ---
 
-## 4. Trois points où le domaine touche l'infrastructure
+## 4. Three points where the domain touches the infrastructure
 
-Ces trois-là ne sont pas des détails d'implémentation. Chacun mérite un ADR.
+These three are not implementation details. Each deserves an ADR.
 
-### La lecture signée, en périphérie
+### Signed playback, at the edge
 
-Un CDN devant le LL-HLS signifie que **ce n'est plus votre serveur média qui sert
-les segments**. La vérification « cette personne détient une place » ne peut donc
-plus se faire à la lecture.
+A CDN in front of the LL-HLS means that **it is no longer your media server
+that serves the segments**. The check "this person holds a seat" can therefore
+no longer be done at playback time.
 
 ```
-@arthome/core   dit si la place est valide
-service streaming   demande un jeton court au PlaybackProvider
-client          renouvelle le jeton tant que la place tient
-CDN             refuse tout ce qui n'est pas signé
+@arthome/core       says whether the seat is valid
+streaming service   asks the PlaybackProvider for a short token
+client              renews the token for as long as the seat holds
+CDN                 refuses anything that is not signed
 ```
 
-Le port `PlaybackProvider` doit exposer cette capacité **explicitement** : un
-fournisseur futur sans URL signées casserait la règle métier sans qu'on s'en
-aperçoive.
+The `PlaybackProvider` port must expose this capability **explicitly**: a
+future provider without signed URLs would break the business rule without
+anyone noticing.
 
-### L'écran d'attente est un voile client, pas une bascule de flux
+### The standby screen is a client-side overlay, not a stream switch
 
-La régie peut diffuser un écran d'attente pendant un incident — c'est le parcours
-à quatre temps de `Studio.dc.html`. Avec un fournisseur managé, basculer le flux
-amont est lent et coûteux.
+The control room can show a standby screen during an incident — that is the
+four-step journey in `Studio.dc.html`. With a managed provider, switching the
+upstream feed is slow and expensive.
 
-La solution juste : **le plan de contrôle publie un état d'incident, le lecteur
-affiche l'écran d'attente par-dessus la vidéo.** Instantané, identique sur web,
-mobile et TV, et le média reste intact pour la reprise. Le message écrit par la
-régie voyage avec l'état.
+The right solution: **the control plane publishes an incident state, the
+player shows the standby screen over the video.** Instantaneous, identical on
+web, mobile and TV, and the media stays intact for the resumption. The message
+written by the control room travels with the state.
 
-### La fenêtre de rediffusion appartient au domaine
+### The replay window belongs to the domain
 
-Le `RecordingProvider` stocke et supprime. C'est `@arthome/core` qui décide de la
-durée de la fenêtre et de son inclusion dans le tarif. Sinon la politique de
-rediffusion — celle qui justifie l'écart de prix — finirait encodée dans un cycle
-de vie de stockage, hors de portée des tests.
+The `RecordingProvider` stores and deletes. It is `@arthome/core` that decides
+the length of the window and whether it is included in the price. Otherwise the
+replay policy — the one that justifies the price difference — would end up
+encoded in a storage lifecycle, out of reach of the tests.
 
-Enregistrer **le flux maître à l'entrée**, pas seulement les variantes HLS : on
-peut ainsi régénérer proprement les rediffusions.
+Record **the master stream at ingest**, not only the HLS variants: replays can
+then be regenerated cleanly.
 
 ---
 
-## 5. Le tchat doit être ancré sur le temps média
+## 5. Chat must be anchored to media time
 
-Un message de tchat porte **sa position dans le média**, pas seulement son heure
-d'envoi.
+A chat message carries **its position in the media**, not only the time it was
+sent.
 
-Sans cela, le tchat rejoué sur une rediffusion sera décalé de tout ce que le
-spectateur a mis à lancer la lecture. Les maquettes prévoient des rediffusions
-avec chapitres : le problème est certain.
+Without that, chat replayed over a recording will be offset by however long the
+viewer took to start playback. The mockups provide for replays with chapters:
+the problem is certain.
 
-Ça ne coûte rien si on y pense au départ. C'est irrattrapable ensuite.
+It costs nothing if you think of it at the start. It cannot be recovered
+afterwards.
 
-**Frontière Kafka / Redis** : Kafka est le journal durable — modération, audit,
-rejeu, historique. Redis assure la diffusion aux clients connectés (pub/sub comme
-adaptateur Socket.IO). Confondre les deux est l'erreur classique.
+**Kafka / Redis boundary**: Kafka is the durable log — moderation, audit,
+replay, history. Redis handles delivery to connected clients (pub/sub as the
+Socket.IO adapter). Confusing the two is the classic mistake.
 
 ---
 
-## 6. Mode démonstration
+## 6. Demonstration mode
 
-Deux niveaux. Le premier est le chemin par défaut, le second le moment mémorable.
+Two levels. The first is the default path, the second the memorable moment.
 
-### Démonstration déterministe
+### Deterministic demonstration
 
-Un flux préenregistré présenté comme un direct. Fonctionne immédiatement, sans
-rien installer, sans coût. **C'est ce que voit un visiteur par défaut.**
+A pre-recorded stream presented as a live broadcast. Works immediately, with
+nothing to install, at no cost. **This is what a visitor sees by default.**
 
-### Démonstration interactive
+### Interactive demonstration
 
-Un visiteur authentifié diffuse réellement et voit son flux traverser toute la
-plateforme. **Deux entrées vers le même plan média.**
+An authenticated visitor genuinely broadcasts and watches their stream cross
+the whole platform. **Two entry points into the same media plane.**
 
-**Parcours par défaut — le navigateur, en WHIP**
+**Default journey — the browser, over WHIP**
 
 ```
-visiteur authentifié → « Tester une diffusion » → autorise caméra et micro
-  → getUserMedia → publication WHIP vers MediaMTX
-  → Studio affiche l'état À L'ANTENNE et les métriques
-  → le Storefront lit le flux
+authenticated visitor → "Try a broadcast" → grants camera and microphone
+  → getUserMedia → WHIP publish to MediaMTX
+  → Studio shows the ON AIR state and the metrics
+  → the Storefront plays the stream
 ```
 
-Aucune installation, quelques secondes. **C'est ce parcours qu'on met en avant** :
-personne n'installera OBS pour essayer une démonstration. C'est la différence
-entre une démonstration que dix personnes essaient et une que tout le monde
-essaie.
+No installation, a few seconds. **This is the journey to put forward**: nobody
+will install OBS to try a demonstration. It is the difference between a
+demonstration that ten people try and one that everybody tries.
 
-**Parcours avancé — OBS**, présenté comme une option et jamais comme un
-prérequis : session créée, URL et identifiants temporaires, publication RTMPS,
-SRT ou WHIP. Même aboutissement, workflow proche d'un usage professionnel.
+**Advanced journey — OBS**, presented as an option and never as a
+prerequisite: session created, temporary URL and credentials, publishing over
+RTMPS, SRT or WHIP. Same end result, a workflow close to professional use.
 
-Flux attendu dans les deux cas : H.264 *baseline*, 720p30, ~2 à 2,5 Mbps,
-image-clé toutes les 2 s.
+Expected stream in both cases: H.264 *baseline*, 720p30, ~2 to 2.5 Mbps, a
+keyframe every 2 s.
 
-**Pas de fournisseur cloud sur ce mode** : la facturation à la minute livrée sur
-une démonstration publique est un risque à ne pas prendre. MediaMTX auto-hébergé,
-sans CDN.
+**No cloud provider in this mode**: per-minute billing exposed on a public
+demonstration is a risk not worth taking. Self-hosted MediaMTX, no CDN.
 
-### Contraintes de codec — le point qui fait échouer la démonstration
+### Codec constraints — the point that makes the demonstration fail
 
-Sans transcodage vidéo, ce qui entre doit être directement remultiplexable en
-HLS. Deux pièges :
+Without video transcoding, whatever comes in must be directly remuxable into
+HLS. Two traps:
 
-**Vidéo — forcer H.264.** Un navigateur négociera volontiers VP8, VP9 ou AV1 en
-WebRTC, et rien de cela ne se remultiplexe en HLS. Contraindre le SDP au H.264,
-profil *baseline*. Prévoir un **échec explicite** : certains navigateurs et
-appareils Android n'offrent pas d'encodeur H.264 matériel. Un message clair vaut
-mieux qu'un flux qui n'arrive jamais — « votre navigateur ne peut pas diffuser en
-H.264, essayez le parcours OBS ».
+**Video — force H.264.** A browser will happily negotiate VP8, VP9 or AV1 over
+WebRTC, and none of that remuxes into HLS. Constrain the SDP to H.264,
+*baseline* profile. Plan for an **explicit failure**: some browsers and Android
+devices offer no hardware H.264 encoder. A clear message is worth more than a
+stream that never arrives — "your browser cannot broadcast in H.264, try the
+OBS journey".
 
-**Audio — Opus vers AAC, transcodage obligatoire.** Le navigateur émet de l'Opus
-en WebRTC, par défaut et sans alternative. HLS attend de l'AAC : Safari et la
-plupart des téléviseurs ne liront pas de l'Opus dans un conteneur HLS. Il faut
-donc une **branche de transcodage audio seul** — négligeable en CPU face à la
-vidéo, quelques pourcents d'un cœur par flux, mais indispensable. À vérifier sur
-la version de MediaMTX retenue : selon les cas elle le fait seule, sinon c'est
-une passe FFmpeg audio.
+**Audio — Opus to AAC, transcoding mandatory.** The browser emits Opus over
+WebRTC, by default and with no alternative. HLS expects AAC: Safari and most
+televisions will not play Opus inside an HLS container. So an **audio-only
+transcoding branch** is needed — negligible in CPU next to video, a few percent
+of a core per stream, but indispensable. To be verified against the chosen
+MediaMTX version: depending on the case it does this on its own, otherwise it
+is an FFmpeg audio pass.
 
-La chaîne n'est donc pas « aucun transcodage » mais **« aucun transcodage
-vidéo »**. La nuance change tout : l'un est gratuit, l'autre ne l'est pas.
+So the chain is not "no transcoding" but **"no video transcoding"**. The
+distinction changes everything: one is free, the other is not.
 
-**La branche WHEP vers la régie garde l'Opus** : seule la branche HLS convertit.
-La régie n'a aucun besoin d'AAC, et c'est le chemin le plus sensible à la
-latence.
+**The WHEP branch to the control room keeps the Opus**: only the HLS branch
+converts. The control room has no need for AAC, and it is the path most
+sensitive to latency.
 
-### Où atterrit le flux converti — la topologie décide de la latence
+### Where the converted stream lands — the topology decides the latency
 
-Deux montages possibles, un seul acceptable.
+Two possible arrangements, only one acceptable.
 
-FFmpeg lit depuis MediaMTX et **produit lui-même le HLS** : on perd le muxeur
-LL-HLS de MediaMTX et on récupère le HLS classique de FFmpeg. Le « quelques
-secondes » devient huit, et l'argument de synchronisation du tchat s'effondre.
+FFmpeg reads from MediaMTX and **produces the HLS itself**: you lose MediaMTX's
+LL-HLS muxer and get FFmpeg's classic HLS back. The "few seconds" becomes
+eight, and the chat synchronisation argument collapses.
 
-FFmpeg lit depuis MediaMTX, convertit l'audio, et **republie dans MediaMTX** sur
-un second chemin. MediaMTX garde la main sur le LL-HLS. C'est celle-là.
+FFmpeg reads from MediaMTX, converts the audio, and **republishes into
+MediaMTX** on a second path. MediaMTX keeps control of the LL-HLS. That is the
+one.
 
 ```
 WHIP → mediamtx/live/xxx          H.264 + Opus
-         ├── WHEP ──────────────► Studio              sans transcodage
-         └── FFmpeg ────────────► mediamtx/hls/xxx    vidéo copiée, audio AAC
+         ├── WHEP ──────────────► Studio              no transcoding
+         └── FFmpeg ────────────► mediamtx/hls/xxx    video copied, audio AAC
                                       └── LL-HLS ───► Storefront
 ```
 
-Sur la passe FFmpeg : `-c:v copy`, `-fflags nobuffer`, `-max_delay` bas. Sans
-cela FFmpeg ajoutera son propre tampon, et l'on paiera en latence ce qu'on a
-économisé en CPU.
+On the FFmpeg pass: `-c:v copy`, `-fflags nobuffer`, a low `-max_delay`.
+Without that FFmpeg will add its own buffer, and you will pay in latency what
+you saved in CPU.
 
-**Règle générale du bac à sable : remultiplexer avant de transcoder.** Le
-transcodage n'est introduit que là où la compatibilité l'exige — ici, l'audio, et
-uniquement sur la branche HLS. En parcours OBS avec H.264 et AAC en entrée,
-aucune passe n'est nécessaire : remultiplexage seul.
+**General sandbox rule: remux before transcoding.** Transcoding is introduced
+only where compatibility demands it — here, the audio, and only on the HLS
+branch. On the OBS journey with H.264 and AAC on input, no pass is necessary:
+remuxing alone.
 
-### Autorisation, cycle de vie, télémétrie — trois mécanismes distincts
-
-```
-Autorisation   authentification HTTP externe de MediaMTX → API NestJS
-               synchrone, AVANT acceptation du flux
-               vérifie : jeton, session, propriétaire, expiration, quota
-
-Cycle de vie   crochets runOnOnline · runOnOffline · runOnRead · runOnUnread
-               signalent l'état, ne décident de rien
-
-Télémétrie     métriques Prometheus de MediaMTX
-```
-
-**Les crochets ne servent pas à autoriser.** `runOnConnect` est un événement de
-cycle de vie ; l'autorisation passe par le mécanisme dédié, sans quoi un flux
-peut entrer avant d'être refusé.
-
-### Des métriques réelles, et honnêtes
-
-Sans transcodage vidéo, les métriques de MediaMTX sont exposées directement. Les
-indicateurs de la régie — débit entrant et sortant, paquets RTP, *jitter*,
-lecteurs connectés, octets transférés, durée — **cessent d'être simulés et
-deviennent de vraies mesures**. C'est exactement ce que la maquette promet ; le
-dire explicitement dans le README.
-
-Deux règles d'honnêteté :
-
-- **Ne jamais présenter une métrique comme native si elle ne l'est pas.** La
-  latence bout-en-bout demande une mesure dédiée — `RTCPeerConnection.getStats()`
-  côté client, ou des horodatages applicatifs.
-- **Adapter le tableau au protocole d'entrée.** Les paquets perdus et le *jitter*
-  n'existent qu'en entrée WebRTC ; en RTMP, transporté sur TCP, ils n'ont pas de
-  sens. Masquer ce qui n'est pas mesuré plutôt qu'afficher zéro : un zéro se lit
-  « parfait », pas « non mesuré ».
-
-### Le monitoring s'adapte au protocole d'entrée
-
-WHEP n'est pas obligatoire pour toutes les sources. **Ne jamais créer une branche
-média pour uniformiser un schéma** : une transformation ne se justifie que si
-elle apporte une propriété mesurable — compatibilité, latence ou qualité.
+### Authorisation, lifecycle, telemetry — three distinct mechanisms
 
 ```
-Source WHIP (H.264 + Opus)
-  → WHEP direct vers Studio : la sous-seconde est réellement accessible
-  → branche audio Opus → AAC pour le Storefront uniquement
+Authorisation   MediaMTX external HTTP authentication → NestJS API
+                synchronous, BEFORE the stream is accepted
+                checks: token, session, owner, expiry, quota
 
-Source RTMPS/SRT (H.264 + AAC)
-  → LL-HLS pour Studio ET Storefront : même sortie, aucun transcodage
+Lifecycle       runOnOnline · runOnOffline · runOnRead · runOnUnread hooks
+                report the state, decide nothing
+
+Telemetry       MediaMTX Prometheus metrics
 ```
 
-Sur entrée RTMP, l'ingestion porte déjà une à trois secondes de latence : le
-plancher est atteint avant la sortie. Transcoder AAC vers Opus pour obtenir un
-WHEP qui ne sera jamais sous la seconde, c'est payer pour une promesse
-inatteignable. La branche `monitor/{id}` ne se crée que si elle apporte un gain
-mesuré.
+**The hooks are not there to authorise.** `runOnConnect` is a lifecycle event;
+authorisation goes through the dedicated mechanism, failing which a stream can
+get in before being refused.
 
-### Cycle de vie des workers de compatibilité
+### Real metrics, and honest ones
 
-Chaque flux nécessitant une représentation manquante engendre un processus
-FFmpeg. **Ce sont des ressources de premier ordre**, à superviser comme telles.
+Without video transcoding, MediaMTX's metrics are exposed directly. The control
+room's indicators — inbound and outbound bitrate, RTP packets, *jitter*,
+connected players, bytes transferred, duration — **stop being simulated and
+become real measurements**. That is exactly what the mockup promises; say so
+explicitly in the README.
 
-**Démarrage et arrêt liés au cycle de vie MediaMTX** — `runOnOnline` démarre le
-worker, la mise hors ligne l'arrête. Les crochets servent au cycle de vie, jamais
-à l'autorisation.
+Two rules of honesty:
 
-**Délai de grâce à la mise hors ligne.** Une coupure réseau de deux secondes côté
-salle fait passer `live/{id}` hors ligne puis en ligne : sans garde-fou, le
-worker est tué et relancé, `playback/{id}` détruit et recréé, le manifeste HLS
-repart de zéro — et tous les lecteurs connectés calent pour un simple accroc. On
-ne tue donc le worker qu'après quelques secondes sans publieur, et un retour dans
-ce délai le réutilise. C'est un cas distinct de l'échec du worker, et bien plus
-fréquent.
+- **Never present a metric as native if it is not.** End-to-end latency
+  requires a dedicated measurement — `RTCPeerConnection.getStats()` on the
+  client, or application timestamps.
+- **Adapt the dashboard to the input protocol.** Lost packets and *jitter*
+  only exist on WebRTC input; over RTMP, carried on TCP, they make no sense.
+  Hide what is not measured rather than showing zero: a zero reads as
+  "perfect", not as "not measured".
 
-**Supervision** — un worker ne doit jamais mourir en silence. Code de sortie,
-signal, plantage remontent au domaine comme un incident (`COMPATIBILITY_WORKER_FAILED`)
-pour que la régie affiche une cause explicite au lieu d'un lecteur qui ne démarre
-jamais.
+### Monitoring adapts to the input protocol
 
-**Reprise bornée** — trois tentatives avec délai croissant, puis échec déclaré.
-Jamais de redémarrage infini : un FFmpeg qui plante en boucle consomme la machine
-sans rien produire.
-
-**Ramasse-miettes** — il compare périodiquement les sessions vivantes et les
-workers actifs. Un worker sans session est tué ; une session qui devrait avoir un
-worker et n'en a pas déclenche un incident et une récupération contrôlée. Le
-cycle de vie MediaMTX reste le mécanisme normal ; le ramasse-miettes est le filet.
-**Ne jamais dépendre d'un seul mécanisme de nettoyage.**
-
-### Quotas séparés par nature de ressource
-
-Toutes les sessions n'ont pas le même coût : une entrée OBS déjà en H.264/AAC ne
-consomme aucun CPU de transcodage, une entrée navigateur en consomme.
+WHEP is not mandatory for every source. **Never create a media branch just to
+make a diagram uniform**: a transformation is only justified if it brings a
+measurable property — compatibility, latency or quality.
 
 ```
-MAX_ACTIVE_STREAMS    connexions, mémoire, bande passante entrante
-MAX_AUDIO_TRANSCODES  CPU, RAM, latence système
-MAX_EGRESS_MBIT       bande passante sortante, coût du serveur
+WHIP source (H.264 + Opus)
+  → WHEP straight to the Studio: sub-second is genuinely reachable
+  → Opus → AAC audio branch for the Storefront only
+
+RTMPS/SRT source (H.264 + AAC)
+  → LL-HLS for Studio AND Storefront: same output, no transcoding
 ```
 
-**`MAX_AUDIO_TRANSCODES` se mesure, il ne se choisit pas.** Banc d'essai sur
-l'hôte réel — 1, 4, 8, 12 workers — puis observation du CPU, de la mémoire, de la
-latence et de la stabilité. Machine confortable jusqu'à douze, dégradée à seize :
-on retient huit ou dix. Le quota reflète la capacité réelle, pas un nombre
-esthétique.
+On RTMP input, ingest already carries one to three seconds of latency: the
+floor is reached before the output. Transcoding AAC to Opus to obtain a WHEP
+that will never be sub-second is paying for an unreachable promise. The
+`monitor/{id}` branch is created only if it brings a measured gain.
 
-### Sécurité
+### Lifecycle of the compatibility workers
 
-Jamais anonyme. Plusieurs couches :
+Every stream that needs a missing representation spawns an FFmpeg process.
+**These are first-class resources**, to be supervised as such.
+
+**Start and stop tied to the MediaMTX lifecycle** — `runOnOnline` starts the
+worker, going offline stops it. The hooks serve the lifecycle, never
+authorisation.
+
+**Grace period on going offline.** A two-second network cut at the venue takes
+`live/{id}` offline and then online again: without a safeguard, the worker is
+killed and restarted, `playback/{id}` destroyed and recreated, the HLS manifest
+starts again from zero — and every connected player stalls over a simple
+hiccup. So the worker is only killed after a few seconds with no publisher, and
+a return within that window reuses it. This is a case distinct from the failure
+of the worker, and far more frequent.
+
+**Supervision** — a worker must never die in silence. Exit code, signal, crash
+all surface to the domain as an incident (`COMPATIBILITY_WORKER_FAILED`) so
+that the control room shows an explicit cause instead of a player that never
+starts.
+
+**Bounded retry** — three attempts with increasing delay, then declared
+failure. Never an infinite restart: an FFmpeg that crashes in a loop consumes
+the machine without producing anything.
+
+**Garbage collector** — it periodically compares the live sessions with the
+active workers. A worker without a session is killed; a session that should
+have a worker and does not triggers an incident and a controlled recovery. The
+MediaMTX lifecycle remains the normal mechanism; the garbage collector is the
+safety net. **Never depend on a single cleanup mechanism.**
+
+### Quotas separated by kind of resource
+
+Not every session costs the same: an OBS input already in H.264/AAC consumes no
+transcoding CPU, a browser input does.
 
 ```
-authentification · anti-bot (Turnstile) · limitation par IP
-quota utilisateur · quota global · jeton de flux temporaire
-chemins de flux aléatoires et non prédictibles
+MAX_ACTIVE_STREAMS    connections, memory, inbound bandwidth
+MAX_AUDIO_TRANSCODES  CPU, RAM, system latency
+MAX_EGRESS_MBIT       outbound bandwidth, server cost
 ```
 
-**Autorisation par crochets, pas par sondage** : `runOnConnect` et `runOnPublish`
-de MediaMTX appellent l'API NestJS au moment de la publication — le jeton est
-validé avant que le flux n'entre. Le sondage Prometheus reste utile pour
-surveiller le débit et couper, pas pour autoriser.
+**`MAX_AUDIO_TRANSCODES` is measured, it is not chosen.** A bench test on the
+real host — 1, 4, 8, 12 workers — then observation of CPU, memory, latency and
+stability. Machine comfortable up to twelve, degraded at sixteen: you settle on
+eight or ten. The quota reflects real capacity, not an aesthetic number.
+
+### Security
+
+Never anonymous. Several layers:
+
+```
+authentication · anti-bot (Turnstile) · per-IP rate limiting
+per-user quota · global quota · temporary stream token
+random, unpredictable stream paths
+```
+
+**Authorisation by hooks, not by polling**: MediaMTX's `runOnConnect` and
+`runOnPublish` call the NestJS API at the moment of publication — the token is
+validated before the stream gets in. Prometheus polling remains useful for
+watching the bitrate and cutting off, not for authorising.
 
 ### Quotas
 
 ```
-1 flux actif par utilisateur          3 créations par jour
-5 à 10 minutes par session            720p30, ~3 Mbps maximum
-1 diffuseur, 1 ou 2 spectateurs       enregistrement désactivé
-TTL ~15 minutes                       flux privé, non indexable
+1 active stream per user              3 creations per day
+5 to 10 minutes per session           720p30, ~3 Mbps maximum
+1 broadcaster, 1 or 2 viewers         recording disabled
+TTL ~15 minutes                       private stream, not indexable
 ```
 
-Et des plafonds globaux : `MAX_ACTIVE_STREAMS`, `MAX_DEMO_EGRESS`,
-`MAX_DAILY_STREAM_MINUTES`, `MAX_CREATIONS_PER_MINUTE`. La démonstration n'a pas
-vocation à monter en charge : capacité atteinte, on refuse ou on bascule sur la
-démonstration préenregistrée.
+And global ceilings: `MAX_ACTIVE_STREAMS`, `MAX_DEMO_EGRESS`,
+`MAX_DAILY_STREAM_MINUTES`, `MAX_CREATIONS_PER_MINUTE`. The demonstration is
+not meant to scale: once capacity is reached, you refuse or fall back to the
+pre-recorded demonstration.
 
-Un **plafond de dépense au niveau du compte** du fournisseur, en plus des quotas
-applicatifs. Ceinture et bretelles.
+A **spending cap at the provider account level**, on top of the application
+quotas. Belt and braces.
 
-### Nettoyage
+### Cleanup
 
-Toute ressource de démonstration est éphémère. Une session porte au minimum
-`id`, `ownerId`, `createdAt`, `expiresAt`, `providerResourceId`, `status`.
+Every demonstration resource is ephemeral. A session carries at minimum `id`,
+`ownerId`, `createdAt`, `expiresAt`, `providerResourceId`, `status`.
 
-Un ramasse-miettes périodique repère les sessions expirées, arrête le flux,
-révoque les identifiants, supprime les ressources et nettoie les orphelins.
-**Ne jamais dépendre de la fermeture propre du navigateur** ni d'un appel client
-de fin de session.
-
----
-
-## 7. Ce qu'Arthome possède, et ce qu'il ne réimplémente pas
-
-**Arthome développe et possède** : cycle de vie des directs, droits, clés de flux,
-orchestration, sécurité, billetterie, politique de rediffusion, métriques métier.
-
-**Arthome ne réimplémente pas** : codecs, transcodage, mise en paquets HLS,
-moteur de débit adaptatif, distribution CDN.
-
-**Le plan média doit rester remplaçable sans toucher au domaine.**
+A periodic garbage collector spots expired sessions, stops the stream, revokes
+the credentials, deletes the resources and cleans up orphans. **Never depend on
+the browser closing cleanly** nor on a client end-of-session call.
 
 ---
 
-## 8. Arbitrage assumé, à écrire dans le README
+## 7. What Arthome owns, and what it does not reimplement
 
-L'architecture ci-dessus est celle d'une vraie plateforme vidéo. En projet solo,
-ce qui sera réellement construit : l'ingestion, la lecture LL-HLS, le retour de
-régie en WHEP, le mode démonstration, les jetons signés. L'ingestion
-multi-région, la ferme GPU et le multi-CDN resteront un schéma.
+**Arthome develops and owns**: the lifecycle of live shows, entitlements,
+stream keys, orchestration, security, ticketing, replay policy, business
+metrics.
 
-Ce n'est pas un manque. **Une architecture composable, documentée, instanciée au
-minimum viable, avec un paragraphe expliquant ce qui n'a délibérément pas été
-déployé et pourquoi**, envoie un signal plus fort qu'une tentative inachevée de
-tout monter.
+**Arthome does not reimplement**: codecs, transcoding, HLS packaging, adaptive
+bitrate engine, CDN distribution.
+
+**The media plane must remain replaceable without touching the domain.**
+
+---
+
+## 8. An owned trade-off, to be written in the README
+
+The architecture above is that of a real video platform. In a solo project,
+what will actually be built: ingest, LL-HLS playback, the WHEP control-room
+return feed, the demonstration mode, the signed tokens. Multi-region ingest,
+the GPU farm and multi-CDN will remain a diagram.
+
+That is not a gap. **A composable architecture, documented, instantiated at the
+minimum viable level, with a paragraph explaining what was deliberately not
+deployed and why**, sends a stronger signal than an unfinished attempt to stand
+everything up.
