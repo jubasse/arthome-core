@@ -221,25 +221,76 @@ exclut bien `0/O` et `1/I`, mais **conserve `5` avec `S` et `8` avec `B`** — l
 que la TV nomme explicitement. Nous le remplaçons par `generateUserCode`.
 
 ```
-PAIRING_CODE_ALPHABET = "ACDEFHJKLMNPQRTUVWXY23456789"   // 28 symboles
+PAIRING_CODE_ALPHABET = "ACDEFHJKLMNPQRTVWXY23456789"   // 27 symboles
 PAIRING_CODE_LENGTH   = 6
 ```
 
-Retirés du jeu par défaut : **`B`** (vs `8`), **`S`** (vs `5`), **`Z`** (vs `2`), **`G`** (vs
-`6`). `L` reste : sans `1` ni `I` dans le jeu, il n'est plus ambigu. On garde le **chiffre** et
-on retire la **lettre**, parce qu'un chiffre est aussi moins ambigu à dire à voix haute — un
-code de téléviseur se lit souvent à quelqu'un d'autre dans la pièce.
+**Le principe, et il est plus fort que « retirer les glyphes confusables » :** pour toute paire
+couramment confondue, **garder exactement un membre**. C'est le membre gardé qui rend la
+correction *sûre* au lieu de devinée — la règle que `backend-domain` a formulée en écrivant la
+normalisation du code de place, et qu'il faut lui reprendre.
 
-- **28⁶ ≈ 4,8 × 10⁸**, soit **28,8 bits** — au-dessus du seuil que la §5.1 de la RFC 8628 juge
-  acceptable **dès lors qu'un plafond de tentatives existe**, ce qui est le cas (§6.2).
-- L'alphabet retenu est un **sous-ensemble strict** de celui de better-auth : la normalisation
-  décrite par la documentation (insensible à la casse, espaces et ponctuation de lisibilité
-  ignorés) continue donc de s'appliquer. *À confirmer par le spike (§11), c'est une lecture de la
+**La normalisation, déclarée — c'est ce qui manquait à ma première rédaction.** Un alphabet sans
+sa table de normalisation est une moitié de contrat : chaque surface devinerait la sienne.
+
+| Saisi | Ramené à | | Saisi | Ramené à |
+|---|---|---|---|---|
+| `S`, `s` | `5` | | `I`, `i`, `1` | `L` |
+| `B`, `b` | `8` | | `U`, `u` | `V` |
+| `Z`, `z` | `2` | | minuscules | majuscules |
+| `G`, `g` | `6` | | espaces, `-`, `.` | supprimés |
+
+**Le cas `0`/`O`, où j'exclus les deux membres — et c'est délibéré.** `backend-domain` a raison
+qu'exclure les deux interdit toute correction. Je le fais quand même, parce que sur **un écran lu
+à trois mètres** `0` n'est pas le membre d'une paire mais d'une **classe** : `0`, `O`, `D`, `Q`,
+`C` s'effondrent ensemble. Garder `0` ne récupère qu'une arête de cette classe et autorise en
+échange la production de codes qui contiennent le glyphe rond — donc davantage d'erreurs qu'elle
+n'en corrige. Retirer la classe du domaine des codes en supprime la totalité. Un `O` saisi est
+alors **nécessairement** la mélecture d'autre chose, sans cible correcte : le contrat répond
+`PAIRING_CODE_AMBIGUOUS_GLYPH`, qui dit à la TV de désigner la position plutôt que de rejeter le
+code en bloc. Mieux qu'un refus muet, et mieux qu'une correction inventée.
+
+**Pourquoi je n'aligne pas sur Crockford, mesuré paire par paire.** L'alignement aurait l'air de
+la bonne réponse ; il est l'inverse, et c'est le seul point de ce document où j'ai dû vérifier
+avant de croire :
+
+| Paire | Cet ADR (lecture à 3 m) | Crockford (dictée) |
+|---|---|---|
+| `5/S` · `8/B` · `2/Z` · `6/G` | garde le chiffre — **correction sûre** | **les deux présents** — une mélecture donne un code *valide mais faux* |
+| `1/I/L` | garde `L` | garde `1` |
+| `0/O` | les deux absents — classe retirée | garde `0` |
+| `U/V` | garde `V` | garde `V` |
+
+Crockford conserve `0` et `1` **parce qu'un encodage en base 32 doit avoir exactement 32
+symboles** : sa table de normalisation est une compensation d'une contrainte de cardinalité, pas
+un idéal d'ergonomie. Mon code n'encode rien — c'est un jeton aléatoire, sa cardinalité est
+libre. Hériter du compromis sans hériter de la contrainte ferait de `5/S`, `8/B`, `2/Z` et `6/G`
+**quatre paires à deux membres présents**, c'est-à-dire le pire mode d'échec pour cette
+surface : une mélecture qui produit un code valide échoue *sans que rien ne signale où*.
+
+**`U` est retiré**, pour les deux raisons de Crockford : `U`/`V` se confondent à trois mètres, et
+l'absence de `U` écarte les codes de six lettres qui forment un mot malheureux — un code
+s'affiche en 120 points sur un téléviseur de salon.
+
+- **27⁶ ≈ 3,9 × 10⁸**, soit **28,5 bits** — au-dessus du seuil que la §5.1 de la RFC 8628 juge
+  acceptable **dès lors qu'un plafond de tentatives existe**, ce qui est le cas (§6.2). Les
+  0,3 bit cédés par rapport à mon premier jet achètent une paire confusable de moins.
+- L'alphabet reste un **sous-ensemble strict** de celui de better-auth : la normalisation
+  décrite par sa documentation (insensible à la casse, espaces et ponctuation ignorés) continue
+  de s'appliquer, et la nôtre s'y ajoute. *À confirmer par le spike (§11), c'est une lecture de
   documentation et non une mesure.*
 - L'unicité est exigée **parmi les appairages en cours seulement**. Un code expiré redevient
   disponible, sinon l'espace s'épuise. `deviceCode`/`userCode` portent un index unique dans
   better-auth ; l'unicité partielle demande un **index unique partiel PostgreSQL** sur
   `status = 'pending'`.
+
+**Un alphabet unique pour les deux codes est écarté, et la raison est le canal.** Le code de
+place est **dicté au téléphone** ; le code d'appairage est **lu à trois mètres**. Les deux jeux
+de confusions ne se recouvrent pas : l'un est phonétique (`B`/`P`/`V`, `M`/`N`, `F`/`S`), l'autre
+purement visuel. Un alphabet commun devrait exclure l'**union** des deux, et ne servirait
+correctement ni l'un ni l'autre. Ce qui doit être partagé, c'est la **forme** — un alphabet
+déclaré *plus* sa table de normalisation — et elle vit dans `@arthome/core` en deux instances
+nommées, `PAIRING_CODE` et le code de place. Aucune des deux ne cite l'autre.
 
 ### 5.2 La durée de validité est **servie**, jamais copiée
 
@@ -305,7 +356,7 @@ points d'entrée 2FA, `slow_down` sur l'interrogation. **Insuffisant pour nous**
 sont par session ou par adresse, or un salon derrière un NAT partage son adresse. Nous ajoutons,
 au BFF, un plafond **par `device_id`** (`@nestjs/throttler` + Redis, qui est déjà au BFF) et un
 **verrouillage après N tentatives de code erroné**, par code et par appareil. C'est la défense
-que les 28,8 bits d'entropie supposent.
+que les 28,5 bits d'entropie supposent.
 
 ### 6.3 La garde de propriété, écrite par nous
 
@@ -749,7 +800,7 @@ ni les écrans simultanés (§7.1).
 | **R4** | ~~**`@better-auth/expo` exige Expo**, et le choix Expo / RN nu n'est pas fait (D-001).~~ **Éteint** par §8.2.7. | ~~moyenne~~ → **nulle** | Le relais `/v1/auth/*` rend le client officiel inutilisable de toute façon : nous n'installons **pas** `@better-auth/expo`. La décision d'authentification est donc **entièrement indifférente** au choix Expo / React Native nu. Éteint par un chemin que je n'avais pas prévu — c'est le relais, décidé pour une tout autre raison, qui a supprimé ce risque. |
 | **R5** | **Quatre intentions sur cinq ne sont pas du RFC 8628**, et je les fais passer par le même automate. Un lecteur pressé y verra un détournement du standard. | moyenne | C'est délibéré et écrit (§3, D-A2) : la **forme** est celle de la RFC parce que le client TV doit être unique ; seul `signin` emprunte le **protocole**. Les quatre autres n'émettent aucun jeton OAuth. |
 | **R6** | **La limite de débit par adresse est inopérante** : un salon derrière un NAT, un opérateur en CGNAT. | faible | Plafond par **`device_id`** (§6.2), rendu possible par la décision Q3. C'est la raison pratique qui tranche Q3, en plus des quatre raisons de la TV. |
-| **R7** | **28,8 bits d'entropie sur six caractères** est confortable mais pas énorme. | faible | Fenêtres courtes (5–15 min), unicité **partielle** aux seuls appairages en cours, plafond de tentatives et verrouillage. La RFC 8628 §5.1 admet cette entropie **sous condition de limitation de débit** — la condition est tenue. |
+| **R7** | **28,5 bits d'entropie sur six caractères** est confortable mais pas énorme. | faible | Fenêtres courtes (5–15 min), unicité **partielle** aux seuls appairages en cours, plafond de tentatives et verrouillage. La RFC 8628 §5.1 admet cette entropie **sous condition de limitation de débit** — la condition est tenue. |
 | **R8** | **Je fais de `identity` le propriétaire de l'appairage**, y compris pour des intentions d'achat. | faible | `identity` ne porte qu'un rendez-vous et un **pointeur opaque** ; il ignore places, formules et paiements. L'alternative — `ticketing` propriétaire — obligerait `identity` à l'appeler pour `signin`, ce que « aucun appel synchrone entre services » interdit. |
 
 **Le risque principal que j'assume est R1** : je retiens, sur le point le plus décisif du
@@ -781,7 +832,10 @@ expirer, annule, et **approuve puis échoue**. *Succès* : les cinq issues sont 
 un code, `slow_down` est reçu, la bascule tient **sous deux secondes**, et un `pairingId`
 persisté se **rattache après redémarrage** du faux client. *À mesurer aussi* : qu'un code en
 minuscules, avec un espace au milieu, soit bien accepté — c'est la lecture de documentation que
-j'ai signalée comme non mesurée (§5.1).
+j'ai signalée comme non mesurée (§5.1). *Et depuis la correction de §5.1* : la **table de
+normalisation** entière — `S`→`5`, `B`→`8`, `Z`→`2`, `G`→`6`, `I`/`1`→`L`, `U`→`V` — plus le fait
+qu'un `O` saisi rende `PAIRING_CODE_AMBIGUOUS_GLYPH` et non un échec générique. Une normalisation
+non testée est une normalisation qui diverge entre cinq surfaces.
 
 **S3 — La garde qui a fait la CVE.** Deux comptes. Le compte A ouvre un appairage `seat` ; le
 compte B, **authentifié**, tente `approve` avec le `user_code` de A. *Succès* :
