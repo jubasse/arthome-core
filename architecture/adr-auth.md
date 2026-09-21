@@ -450,9 +450,8 @@ surface ──(cookie | Bearer)──► BFF ──(JWT ES256, ~60 s, aud=<servi
 ### 8.1 Le point sensible : où vit le JWKS
 
 Un service qui va chercher le JWKS chez un BFF réintroduit une dépendance vers l'entrée.
-**Décision : un document JWKS unique, statique, servi par le CDN**, écrit par un travail de
-rotation de clés. Il contient les clés publiques des **trois** émetteurs, distinguées par un
-préfixe de `kid` :
+**Décision : un document JWKS unique, statique, servi par le CDN.** Il contient les clés publiques
+des **quatre** émetteurs, distinguées par un préfixe de `kid` :
 
 | Émetteur | `kid` | `aud` | Rotation |
 |---|---|---|---|
@@ -461,13 +460,30 @@ préfixe de `kid` :
 | Entitlement (lecture) | `play-<date>` | `arthome.cdn` | **90 j, grâce 7 j** |
 | `identity` (device_token) | `dev-<date>` | `arthome.device` | 90 j, grâce 7 j |
 
-Aucun appel de service à service, un seul objet à faire tourner, une seule chose à surveiller —
-ce qui compte quand on est seul à l'exploiter. Publier la nouvelle clé **avant** de signer avec,
-retirer l'ancienne **après** la plus longue durée de vie de jeton.
+Aucun appel de service à service : c'est le seul bénéfice que le document unique achète, et il
+suffit à le justifier.
+
+**Ce que j'avais écrit et qui était faux : « un seul objet à faire tourner ».** J'en tirais un
+argument pour un **travail de rotation unique**. `definition-of-done.md` §7.6 l'a réfuté, et la
+réfutation vaut d'être reprise ici plutôt que de vivre seulement là-bas : **la simplification
+était illusoire, et mon propre tableau le montrait.** Mes quatre lignes portent déjà deux
+calendriers et deux fenêtres de grâce — 30 j / 24 h pour les BFF, 90 j / 7 j pour la lecture et
+l'appareil. Un travail unique n'aurait donc pas été *un* travail, mais *un travail à quatre
+branches* : il aurait payé le prix de réunir **quatre clés privées** sous un seul processus sans
+jamais acheter la simplicité qui le motivait.
+
+**La décision retenue : quatre rotations indépendantes, une par émetteur, plus un assembleur sans
+secret.** Chaque émetteur fait tourner sa clé à sa cadence et publie sa **partie publique** ;
+l'assembleur concatène les quatre parties publiques en un document et le dépose. Il ne détient
+aucune clé privée : il n'est donc pas une cible, et une rotation qui échoue n'en bloque aucune
+autre. C'est précisément ce qu'un travail unique aurait perdu.
+
+Règle de séquence, inchangée : publier la nouvelle clé **avant** de signer avec, retirer
+l'ancienne **après** la fenêtre calculée ci-dessous.
 
 **Pourquoi les deux cadences divergent — la raison, qui manquait.** J'avais écrit ces chiffres
 sans les argumenter ; `backend-contracts` a formulé le mécanisme, et il est contre-intuitif assez
-pour qu'il faille l'écrire, sous peine que quelqu'un « simplifie » en alignant les deux lignes :
+pour qu'il faille l'écrire, sous peine que quelqu'un « simplifie » en alignant les cadences :
 
 > **La fenêtre de grâce doit couvrir le cache du CDN, pas la durée du jeton.** La périphérie met
 > le document JWKS en cache pendant des heures. Publier la nouvelle clé puis signer avec elle
@@ -476,7 +492,7 @@ pour qu'il faille l'écrire, sous peine que quelqu'un « simplifie » en alignan
 
 D'où la règle, et elle est chiffrée : le document est servi en **`Cache-Control: max-age=3600`**,
 et **toute fenêtre de grâce est ≥ 2 × max-age**. Les deux cadences respectent ce plancher de 2 h
-(24 h pour les BFF, 7 j pour la lecture et l'appareil) ; ce qui les sépare, c'est la marge
+(24 h pour les BFF, 7 j pour la lecture et l'appareil) ; ce qui les sépare, c'est donc la marge
 au-dessus, et elle est délibérée : une périphérie de CDN se réchauffe moins bien qu'un service que
 nous exploitons, et son cache est le seul des quatre que nous ne pouvons pas vider.
 
@@ -494,7 +510,7 @@ d'Ed25519 est plus récent et plus inégal que celui de P-256. Un seul algorithm
 
 ## 9. Articulation avec `adr-stream-entitlement.md`
 
-C'est la question explicitement posée. **Deux systèmes de jetons, quatre points de contact.**
+C'est la question explicitement posée. **Deux systèmes de jetons, cinq points de contact.**
 
 | | Session / jeton interne (cet ADR) | Jeton de lecture (`adr-stream-entitlement`) |
 |---|---|---|
@@ -505,10 +521,12 @@ C'est la question explicitement posée. **Deux systèmes de jetons, quatre point
 | **Algorithme** | **ES256** | **ES256** — même famille, obligatoire pour la périphérie |
 | **Clés** | `kid` `bff-*` | `kid` `play-*` — **même document JWKS**, cadence de rotation **plus lente** (§8.1) |
 
-**Quatre points de contact, écrits :**
+**Cinq points de contact, écrits :**
 
-1. **La rotation est commune, la cadence ne l'est pas.** Même document, même travail, même
-   convention de `kid`. Mais la périphérie du CDN met le JWKS en cache agressivement : une clé de
+1. **Le document est commun, la rotation ne l'est pas.** Même document publié, même convention
+   de `kid` — mais **quatre rotations indépendantes** (§8.1), parce que les cadences diffèrent et
+   qu'un travail unique réunirait quatre clés privées sans rien simplifier. La périphérie du CDN
+   met par ailleurs le JWKS en cache agressivement : une clé de
    lecture tourne **tous les 90 jours avec 7 jours de grâce**, quand une clé de BFF tourne tous
    les 30 jours avec 24 h. Aligner les deux cadences ferait rejeter des jetons valides en
    périphérie. **C'est le piège principal de cette articulation**, et le mécanisme exact qui le
@@ -518,7 +536,10 @@ C'est la question explicitement posée. **Deux systèmes de jetons, quatre point
    appareil » révoque la `DeviceSession` dans `identity`, qui publie `session.revoked` /
    `device.revoked` ; l'entitlement consomme l'événement et refuse le renouvellement suivant.
    **Latence maximale = retard de l'événement + 120 s** — le cas où le jeton vient d'être
-   renouvelé à l'instant de la révocation ; en régime courant, 45 à 75 s. C'est la réponse
+   renouvelé à l'instant de la révocation. La fourchette réelle est **75 à 120 s** : le dernier
+   renouvellement date de 0 à 45 s, et le jeton qu'il a produit vit 120 s à partir de là. (Ma
+   première rédaction disait « 45 à 75 s » : c'était la même confusion entre l'intervalle et la
+   durée, commise une ligne après l'avoir dénoncée.) C'est la réponse
    chiffrée à la question 25 de `storefront-web` (« déconnecter cet appareil coupe-t-il la
    lecture, et en combien de temps ? ») et à `DeviceSession` de la TV.
 3. **Le bail expire, il ne se ferme pas.** La limite de sessions simultanées repose sur un
@@ -528,7 +549,33 @@ C'est la question explicitement posée. **Deux systèmes de jetons, quatre point
    (« qui libère une session tuée ? »). La session de lecture est identifiée par le `device_id`
    de cet ADR, ce qui permet à une personne de **reprendre sa propre session** au lieu d'être
    bloquée par son propre écran fantôme.
-4. **Les horloges.** Tous les émetteurs sont disciplinés par NTP ; tolérance déclarée **± 30 s**
+4. **L'intervalle de renouvellement n'est pas la durée du jeton — et c'est la faute dont tout
+   est parti.** `adr-stream-entitlement.md` §3.1 écrivait que « la fenêtre pendant laquelle on
+   regarde un flux auquel on n'a plus droit est *exactement l'intervalle de renouvellement* ».
+   C'est faux, et c'est de cette phrase que le « 60 s » a voyagé dans cinq documents, le mien
+   compris. Deux délais distincts, deux bornes distinctes :
+
+   | Délai | Borné par | Valeur |
+   |---|---|---|
+   | avant que **le client** apprenne le refus | l'intervalle de renouvellement | **≤ 45 s** |
+   | avant que **la périphérie cesse de servir** | la **durée du jeton** | jusqu'à **120 s** |
+
+   La garantie de sécurité est la **seconde ligne**, toujours. La première n'est qu'une
+   commodité : elle décrit à quelle vitesse un client coopératif s'arrête de lui-même.
+
+   **Un signal poussé peut arrêter la lecture plus tôt ; il est une courtoisie, pas une
+   frontière.** Le chef en a demandé un pour le cas visible, et il doit être étiqueté comme tel
+   dans le contrat : un client modifié l'ignore, et la garantie reste **120 s**. J'ai tenu dans
+   tout ce document que toute heuristique contournable ne compte pas comme réponse ; elle ne
+   compte pas davantage ici parce qu'elle est confortable.
+
+   **Comment l'erreur s'est produite**, dit par son auteur et recopié ici pour que la forme de la
+   faute reste lisible : *« `storefront-tv` demandait ≤ 60 s, j'ai choisi le nombre qui faisait
+   plaisir à la question. »* Je l'avais reprise sans la vérifier — une exigence de client lue
+   comme une valeur de serveur. C'est le même geste que celui qui a produit E1 et E12 : un
+   littéral adopté parce qu'il était là.
+
+5. **Les horloges.** Tous les émetteurs sont disciplinés par NTP ; tolérance déclarée **± 30 s**
    des deux côtés ; `exp`/`iat` numériques (RFC 7519) dans les jetons, ISO dans les charges
    utiles d'API. Une périphérie de CDN dont l'horloge dérive rejette silencieusement : la
    tolérance doit être écrite dans les deux ADR, avec la même valeur.
@@ -607,14 +654,21 @@ sans rien trancher.
 ## 12. Ce que je remonte au chef
 
 Aucune impossibilité technique : **aucune décision contraignante n'est rouverte.** Trois points
-qui appellent un arbitrage et qui ne sont pas à moi.
+avaient été remontés ; deux sont clos depuis, et je les laisse ici avec leur issue plutôt que de
+les effacer — une question résolue sans trace se repose.
 
-1. **La durée d'appairage `seat` doit être la durée d'un `hold` de places** (§4/Q4). Cela engage
-   `ticketing`, pas `identity`. Sans ce maintien, la jauge affichée sur la TV est fausse pendant
-   toute la durée du code — le défaut exact que la TV signale.
-2. **Une exception écrite à la règle « les dates voyagent en chaînes ISO »** : l'intérieur d'un
-   JWT reste en secondes numériques (RFC 7519). Ce n'est pas une entorse, c'est une frontière —
-   mais elle doit figurer dans `critical-rules.md`, sinon quelqu'un la « corrigera ».
-3. **Le document JWKS statique servi par le CDN** (§8.1) est une pièce d'infrastructure que
-   personne ne possède aujourd'hui. Elle est la condition pour que « aucun service n'appelle le
-   service d'identité » reste vrai *y compris pour la découverte des clés*. À attribuer.
+1. **~~La durée d'appairage `seat` doit être la durée d'un `hold` de places~~ — clos.** (§4/Q4.)
+   `backend-domain` en a tiré un agrégat qu'il n'avait pas, **`SeatHold`**, dont l'invariant est
+   « un seul instant porté par les deux objets, jamais deux durées qui dérivent ». Cela justifie
+   après coup les 5 minutes que j'avais retenues pour `seat` sans pouvoir les argumenter : **une
+   durée d'appairage est un engagement de jauge**, pas un confort d'interface.
+2. **Une exception écrite à la règle « les dates voyagent en chaînes ISO »** — *ouvert*.
+   L'intérieur d'un JWT reste en secondes numériques (RFC 7519). Ce n'est pas une entorse, c'est
+   une frontière — mais elle doit figurer dans `critical-rules.md`, sinon quelqu'un la
+   « corrigera ». Pour `backend-contracts`.
+3. **~~Le document JWKS statique n'a pas de propriétaire~~ — clos, et ma proposition était
+   mauvaise.** (§8.1.) Je demandais qu'on attribue *un travail de rotation unique* ;
+   `definition-of-done.md` §7.6 a montré que la simplification était illusoire, mon propre
+   tableau portant déjà deux calendriers. La forme retenue est **quatre rotations indépendantes
+   plus un assembleur sans secret** — ce qui, accessoirement, n'a plus besoin d'un propriétaire
+   unique, puisque chaque émetteur fait tourner sa clé et que l'assembleur ne détient rien.
