@@ -1,0 +1,25 @@
+{
+  "_comment": [
+    "Les exceptions a arthome-check-enums, CHACUNE AVEC SA RAISON.",
+    "",
+    "Ce fichier reste court ou la regle est mauvaise. Au-dela de vingt lignes,",
+    "c'est le signe qu'une valeur manque dans @arthome/core — pas que la porte",
+    "est trop severe.",
+    "",
+    "Une exception legitime a une forme reconnaissable : la valeur appartient a",
+    "un ESPACE PARTAGE par deux vocabulaires distincts, et importer la constante",
+    "serait SEMANTIQUEMENT FAUX. Toute autre justification est suspecte."
+  ],
+  "allow": [
+    {
+      "file": "packages/core/src/fixtures/build.ts",
+      "value": "fr",
+      "reason": "Code BCP 47 de la langue JOUEE d'un spectacle, pas la locale d'affichage. Les deux partagent l'espace BCP 47 sans etre le meme vocabulaire : un spectacle peut etre joue en italien alors que l'interface ne connait que fr et en. Importer LOCALES ici graverait la confusion au lieu de la corriger."
+    },
+    {
+      "file": "packages/core/src/fixtures/build.ts",
+      "value": "en",
+      "reason": "Idem : code BCP 47 d'une piste de sous-titres, pas la locale d'affichage."
+    }
+  ]
+}

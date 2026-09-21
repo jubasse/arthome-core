@@ -41,3 +41,6 @@ export * from './search/index.js';
 // Vague 5 — les deux qui composent le plus, donc les dernieres des regles.
 export * from './entitlement/index.js';
 export * from './payout/index.js';
+
+// Vague 7 — le jeu deterministe. Depend de tout, dependu par rien.
+export * from './fixtures/index.js';
