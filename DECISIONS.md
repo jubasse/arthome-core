@@ -7,26 +7,40 @@
 
 ## Phase 0 — 21 septembre 2026
 
-### D-001 — Les deux surfaces React Native n'ont pas d'orchestrateur
+### D-001 — L'orchestrateur des deux surfaces React Native dépend d'un choix non fait
 
-**Le constat.** Le prompt de mission prévoit `react-how-to` pour `storefront-mobile` et
-`storefront-tv`. Vérification faite, ça ne peut pas fonctionner : `react-how-to` s'exclut
-explicitement de React Native (« Not for Next.js, Expo or React Native ») et renvoie vers
-`expo-overview` — qui à son tour refuse les projets React Native nus (« a bare React Native
-project with no `expo` dependency is not Expo work »). Avec `react-native-tvos`, le projet sera
-très probablement en RN nu.
+**Le constat.** `react-how-to` **est installé** — il fait bien partie des cinq orchestrateurs
+vérifiés. Mais il s'exclut lui-même de React Native : « Router for React 19 **on the web — no
+Next, no React Native** […] Not for Next.js (→ nextjs-how-to), Expo or React Native
+(→ expo-overview) ». Le prompt de mission, qui le prévoit pour `storefront-mobile` et
+`storefront-tv`, se trompe donc de porte.
 
-**La décision.** Pour ces deux surfaces seulement, pas d'orchestrateur. Chargement explicite de
-`react-core` (sémantique React), `react-native-best-practices`, `react-navigation`, et pour la TV
-`react-native-tv-best-practices` — qui couvre le moteur de focus, la croix directionnelle, l'UI à
-trois mètres et la lecture sur matériel contraint.
+`expo-overview` est la porte suivante — mais il pose sa propre condition : « a bare React Native
+project with no `expo` dependency is not Expo work ».
+
+**Ce qui en découle, et qui est conditionnel.**
+
+| Choix de pile | Orchestrateur |
+|---|---|
+| **Expo** (y compris Expo TV) | `expo-overview` — aucun trou, la règle s'applique normalement |
+| **React Native nu** (`react-native-tvos` seul) | **aucun orchestrateur n'existe** |
+
+Le choix Expo / RN nu **n'est pas fait** et sort du périmètre de cette session. Le libellé initial
+de cette décision — « les deux surfaces React Native n'ont pas d'orchestrateur » — était donc trop
+absolu : le trou est conditionnel.
+
+**La décision, valable dans les deux cas.** Au temps 1, les spécialistes **expriment un besoin de
+données** ; ils n'écrivent pas de code React Native. L'orchestrateur ne mord qu'au moment de
+construire. Ils chargent donc `react-core` (sémantique React), `react-native-best-practices`,
+`react-navigation`, et pour la TV `react-native-tv-best-practices` — qui couvre le moteur de
+focus, la croix directionnelle, l'UI à trois mètres et la lecture sur matériel contraint, et qui
+vise explicitement « react-native-tvos, Expo TV » : il vaut dans les deux hypothèses.
 
 **La règle qui reste.** « L'orchestrateur d'abord, la skill spécialisée ensuite, la décision en
-dernier » s'applique partout ailleurs sans exception. Ici l'orchestrateur n'existe pas ; ce n'est
-pas une dispense, c'est un manque, et il est consigné comme tel.
+dernier » s'applique partout ailleurs sans exception.
 
-**Resté ouvert.** Expo ou React Native nu pour les deux applications mobiles : hors périmètre de
-cette session, mais le choix déterminera rétroactivement quel orchestrateur s'applique.
+**Resté ouvert, et à trancher avant le palier mobile** : Expo ou React Native nu. Le choix
+déterminera rétroactivement s'il y avait un trou ou non.
 
 ### D-002 — L'agent `backend` est scindé en deux
 
