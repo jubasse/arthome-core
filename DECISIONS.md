@@ -356,3 +356,76 @@ redéfinir et ce qui est verrouillé**. Sans cette dernière liste, `extends` n'
 
 **La seule preuve acceptée** que la contrainte tient : compiler les `.d.ts` publiés contre les deux
 versions de TypeScript. En local — le quota d'Actions du compte est épuisé.
+
+---
+
+## Temps 2 — 21 septembre 2026
+
+### D-015 — Modèle fiscal : commissionnaire, à valider par un conseil
+
+**Le problème (D5).** La fixture calcule `net = brut − 12 % − TVA(brut)` à taux unique ; la maquette
+des versements ventile la TVA **par marché de facturation**. Les deux sont incompatibles et
+**aucune n'est instruite**. `backend-domain` a instruit plutôt que de supposer.
+
+**La décision.** Le **modèle commissionnaire** : Arthome agit en son nom propre, l'assiette est le
+**billet entier**, le taux est celui du **pays du spectateur**, le redevable est **Arthome**.
+Fondé sur six indices convergents de la conception — Arthome affiche le prix, encaisse, facture,
+tient la politique d'annulation, rembourse, émet l'avoir ; le spectateur ne contracte jamais avec
+l'artiste.
+
+**Et la commission porte sur le HT, pas le TTC.** Sur le TTC, les 12 % annoncés aux artistes
+varieraient avec le pays de l'acheteur — une commission qui change selon l'acheteur n'est pas une
+commission.
+
+**⚠ Ce n'est pas un avis fiscal.** `adr-payments.md` doit le porter en tête : le modèle est à
+**valider par un conseil avant tout encaissement réel**. Le risque est nul aujourd'hui — Stripe en
+mode test, aucun argent réel.
+
+**Ce qui est sûr dans les deux modèles, et qui est le vrai enjeu** : la **ventilation par marché**.
+Un `vat_amount` scalaire unique aurait été le seul choix réellement irréversible, et c'est
+précisément celui que la fixture invitait à faire.
+
+### D-016 — La préférence de devise d'affichage est retirée au palier 1
+
+**Le constat.** `backend-domain` refuse d'honorer `storefront-web` Q29. C'est le seul endroit de
+toute la session où un agent demande à la **conception** de reculer, et l'argument est juste :
+afficher un prix converti qu'on ne peut pas débiter est un mensonge, et D4 a montré qu'**aucune
+règle n'a jamais été éprouvée sur deux taux** — les trois marchés sont déclarés, un seul est
+exercé.
+
+**La décision.** La préférence de devise **disparaît des écrans** au palier 1. Les prix s'affichent
+dans la devise du marché de facturation de la date, formatés côté client selon la locale.
+
+**Réversible** : la préférence pourra revenir le jour où une vraie règle de conversion existera —
+source du taux, date de change, arrondi, qui porte l'écart. Le coût immédiat est une case en moins
+dans les réglages du compte.
+
+### D-017 — Quatre arbitrages secondaires, acceptés tels que proposés
+
+Remontés par `backend-domain`, acceptés avec son raisonnement :
+
+- **Portée de l'avoir : la chaîne émettrice.** Un avoir utilisable partout obligerait la plateforme
+  à financer la part d'un autre artiste sur ses fonds propres. Borne l'engagement de trésorerie.
+- **Troisième canal de notification : `in_app`, pas `sms`.** Coût par message, réglementation
+  propre, prestataire de plus — pour une valeur que rien n'a éprouvée.
+- **Commande de marchandise mono-vendeur.** Un panier à deux chaînes se scinde au paiement ; le
+  motif métier et le motif Stripe sont indépendants et concordent.
+- **Remise et promotion ne se cumulent pas** : la plus favorable au spectateur s'applique.
+
+### D-018 — `answers-to-surfaces.md` est conservé
+
+`backend-domain` a ajouté un huitième fichier hors table de livraison, index des 99 réponses aux
+questions des surfaces, et demande s'il doit fusionner.
+
+**Il reste.** Motif : au temps 3, les cinq surfaces vérifieront que leurs questions ont reçu une
+réponse — c'est exactement l'usage d'un index. Fondre 99 réponses dans `context-map.md` le rendrait
+illisible pour `backend-contracts`, et un index qui renvoie ailleurs ne duplique rien.
+
+### D-019 — Le retour de régie WHEP n'est pas promis sur la coquille native
+
+`studio-mobile` Q8. Réservé au studio **web** au palier 5 ; le studio mobile reçoit LL-HLS avec sa
+**latence réelle annoncée**, jamais une sous-seconde promise et non tenue.
+
+Motif : `capacitor://localhost` comme **contexte sécurisé** dans WKWebView n'est pas vérifié, et il
+conditionne aussi `getUserMedia` et Web Crypto. **À mesurer sur appareil réel avant toute
+promesse** — c'est une vérification, pas une opinion.
