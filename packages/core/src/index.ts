@@ -31,3 +31,9 @@ export * from './i18n/index.js';
 export * from './catalog/index.js';
 export * from './replay/index.js';
 export * from './permissions/index.js';
+
+// Vague 4 — ce qui s'achete, ce qui se dit, ce qui s'alerte, ce qui se cherche.
+export * from './ticketing/index.js';
+export * from './moderation/index.js';
+export * from './notification/index.js';
+export * from './search/index.js';
