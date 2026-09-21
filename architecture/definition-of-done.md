@@ -55,7 +55,7 @@ typage, énumérations, tests unitaires. Ce document ajoute les trois autres.
 | `.d.ts` de `@arthome/core`, `@arthome/contracts`, `@arthome/tooling` | TypeScript | `tsc` | à chaque `build` | `code-conventions.md` §2.4 |
 | artefacts i18n `/{surface}/{locale}/v{N}.json` | catalogue de `@arthome/core` | travail de CI, publication immuable sur MinIO → CDN | à chaque changement de copie | §7.5 |
 | artefacts de taxonomie `/taxonomy/{locale}/v{N}.json` | `@arthome/core` | idem | idem | §7.5 |
-| **document JWKS statique** | travail de rotation de clés | **sans propriétaire aujourd'hui — §9** | 30 j (BFF) / 90 j (lecture) | §7.4 |
+| **document JWKS statique** | **quatre** rotations, une par émetteur, plus un assembleur sans secret | 30 j / grâce 24 h (BFF) · 90 j / grâce 7 j (lecture, appareil) | **§7.6** |
 
 > **La règle, formulée une fois** : un artefact généré est **commité**, et la porte vérifie que sa
 > régénération ne produit **aucun diff**. Committé sans porte, il dérive ; généré sans être
@@ -470,6 +470,72 @@ travail de CI sur MinIO puis CDN. Trois obligations :
 - la version courante est servie dans la charge utile d'amorçage, **jamais par un appel par page**,
   et elle **ne bloque jamais le premier rendu**.
 
+### 7.6 Le document JWKS — quatre rotations, un assembleur
+
+**Arbitrage rendu**, en accord avec `context-map.md` §7.0 de `backend-domain`, qui pose le cadre et
+me laisse le découpage :
+
+> **Quatre rotations indépendantes, une par émetteur, chacune ne publiant que sa clé publique.
+> Un seul assembleur, qui n'a aucun secret. L'asymétrie est le point.**
+
+`backend-domain` penchait pour ce découpage ; je le tranche, et voici les trois raisons, dont la
+deuxième n'avait pas été dite.
+
+1. **Un travail unique détenant quatre clés privées deviendrait le composant le plus sensible du
+   système** — et ce serait un travail d'infrastructure, pas un service. Il concentrerait la
+   signature des deux BFF, celle du jeton de lecture (à laquelle la **périphérie du CDN** fait
+   confiance pour tout accès au média) et celle du `device_token`. Aujourd'hui ces quatre secrets
+   vivent à quatre endroits avec quatre rayons d'explosion ; les réunir **crée une cible qui
+   n'existe pas encore**.
+2. **La simplification serait illusoire, parce que les deux cadences diffèrent déjà.** 30 j /
+   grâce 24 h pour les BFF, 90 j / grâce 7 j pour la lecture et l'appareil. Un travail unique
+   porterait de toute façon deux calendriers et deux fenêtres de grâce : ce ne serait pas *un*
+   travail, ce serait *un travail à quatre branches*. On paierait le risque sans acheter la
+   simplicité.
+3. **Une clé privée ne quitte jamais son émetteur** — c'est la même discipline que les ports de
+   paiement et de média. Un générateur central devrait **distribuer** des clés privées, ce qui est
+   exactement le geste qu'on ne veut jamais faire.
+
+**Le contre-argument — « quatre choses à surveiller » — s'answère sans fusionner.** Ce qu'il faut
+surveiller n'est pas quatre travaux : c'est **un seul nombre**, l'âge de la clé la plus ancienne du
+document publié, comparé à sa cadence. L'assembleur est l'endroit naturel de ce contrôle, et il
+échoue bruyamment si un émetteur a cessé de publier.
+
+**Les quatre règles d'exploitation qui rendent ce découpage sûr.** Elles sont ici parce que trois
+d'entre elles, mal faites, ne se voient qu'en production.
+
+- **Publier avant de signer, retirer après.** La nouvelle clé publique entre dans le document
+  **avant** que son émetteur commence à signer avec ; l'ancienne n'est retirée qu'**après** la plus
+  longue durée de vie de jeton, plus marge. Sans recouvrement, une rotation coupe **toutes** les
+  lectures en cours.
+- **La fenêtre de grâce doit couvrir le cache du CDN, pas seulement la durée du jeton** — et c'est
+  le vrai mécanisme derrière les deux cadences, que je n'ai vu écrit nulle part. La périphérie met
+  le document en cache pendant des heures : publier la nouvelle clé puis signer soixante secondes
+  plus tard ne sert à rien, l'arête sert encore l'ancien document et **rejette des jetons
+  parfaitement valides**. D'où une valeur de contrat : le document est servi avec
+  `Cache-Control: max-age=3600`, et **toute fenêtre de grâce est ≥ 2 × max-age**. La plus courte
+  (24 h) garde un facteur 24 : c'est confortable, et c'est délibéré.
+- **Une rotation en échec ne retire jamais une clé.** L'assembleur ne fait qu'**unir** ce que les
+  émetteurs publient. Le retrait est une étape **séparée et explicite**, conditionnée à la fenêtre
+  de grâce. Un assembleur qui reconstruit le document « à l'identique de ce qu'il voit » supprime
+  la clé d'un émetteur temporairement muet — et invalide tous ses jetons en vol.
+- **L'assembleur vit dans `arthome-platform`, hors des sept services.** Il ne lit la base
+  d'aucun service, ne consomme aucun sujet, et n'expose aucun point d'entrée : il lit quatre
+  préfixes de stockage objet et pousse un fichier.
+
+**Trois portes, et la première coûte une ligne.**
+
+| # | Porte | Commande | Ce qu'elle empêche |
+|---|---|---|---|
+| **J1** | **aucune clé privée publiée** | `curl -s $JWKS_URL \| jq -e '[.keys[] \| has("d")] \| any \| not'` | la faute catastrophique : un `d` dans un JWK publié, c'est la signature du système donnée au monde. Une ligne, à lancer après **chaque** publication |
+| **J2** | les quatre émetteurs sont présents | `jq -e '[.keys[].kid] \| map(split("-")[0]) \| unique \| length == 4'` — préfixes `bff-sf`, `bff-st`, `play`, `dev` | un émetteur muet dont les jetons seront refusés au prochain redémarrage d'un service |
+| **J3** | aucune clé n'a dépassé cadence + grâce | contrôle de l'assembleur, alerte | une rotation en panne silencieuse — le mode de défaillance le plus probable des trois |
+
+**Et la porte de recette, qui est un test et non un contrôle** : une rotation complète en
+environnement de recette, avec un jeton signé par l'**ancienne** clé qui **doit encore être
+accepté** pendant toute la fenêtre de grâce, et refusé après. C'est le spike S4 d'`adr-auth.md`
+§11, et il doit entrer dans la suite de non-régression — pas rester dans le spike.
+
 ---
 
 ## 8. La ligne de revue : un BFF qui devient épais
@@ -497,19 +563,20 @@ Trois mesures accompagnent la revue, et chacune commande un geste précis :
 
 ---
 
-## 9. Ce que je remonte — deux artefacts sans propriétaire
+## 9. Ce que je remonte
 
-**1. Le document JWKS statique servi par le CDN** (`adr-auth.md` §8.1, §12.3). C'est la pièce qui
-rend vraie la règle « aucun service n'appelle `identity` » **y compris pour la découverte des
-clés** — sans elle, un service qui va chercher le JWKS chez un BFF réintroduit une dépendance vers
-l'entrée, et la règle tombe pour la raison la plus bête.
+**1. Le document JWKS a maintenant un découpage, il lui manque une main.** `backend-domain` a posé
+le cadre (`context-map.md` §7.0 : artefact d'infrastructure, sans contexte propriétaire, parce que
+`identity` le servant violerait littéralement « aucun service n'appelle `identity` », et un BFF le
+servant inverserait la dépendance). **J'ai tranché le découpage au §7.6** : quatre rotations
+indépendantes, un assembleur sans secret, trois portes.
 
-Ce qu'il faut attribuer : **qui écrit le travail de rotation, où il tourne, et qui surveille**. Il
-porte les clés de **quatre** émetteurs (BFF storefront, BFF studio, entitlement de lecture,
-`device_token`) avec **deux cadences différentes** — 30 jours / grâce 24 h pour les BFF, 90 jours /
-grâce 7 j pour la lecture, parce que la périphérie du CDN met le JWKS en cache agressivement et
-qu'aligner les deux ferait rejeter des jetons valides. C'est le piège principal de l'articulation
-entre les deux systèmes de jetons, et il n'a personne.
+Ce qui reste au chef, et c'est une ligne de calendrier, plus une question d'architecture :
+**l'assembleur et ses trois portes appartiennent au palier 2**, avec le `wal_level = logical` et
+les sept connecteurs Debezium — c'est le premier palier où plus d'un émetteur existe. Avant lui,
+un seul émetteur signe et la question ne se pose pas. **Le nommer maintenant et le construire au
+palier 2** est la bonne cadence ; le construire plus tôt serait de l'outillage pour un seul
+émetteur, plus tard serait le découvrir le jour d'une rotation ratée.
 
 **2. Le générateur de client des cinq surfaces.** Personne n'a été désigné pour choisir l'outil,
 l'épingler et décider où le client publié vit. Ma recommandation : `src/generated/**` dans chaque

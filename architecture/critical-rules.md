@@ -5,7 +5,7 @@
 1. **Aucun appel synchrone entre services** : le BFF appelle un service, un service ne parle qu'à Kafka. BullMQ reste interne à un service.
 2. **Toute valeur affichée deux fois vient de `@arthome/core`** : deux *appels* sont permis, deux *implémentations* jamais.
 3. **Écriture métier et ligne d'outbox dans la même transaction**, par le même `manager` — jamais `save()` puis `emit()`. Un consommateur déduplique sur `message-id` **dans cette même transaction**.
-4. **Jeton vérifié par JWKS en local**, `algorithms`/`issuer`/`audience` épinglés : aucun service n'appelle `identity`, jamais d'`x-user-id`. Le JWKS est **un document statique servi par le CDN**, seule source de clés.
+4. **Jeton vérifié par JWKS en local**, `algorithms`/`issuer`/`audience` épinglés : aucun service n'appelle `identity`, jamais d'`x-user-id`. Le JWKS est **un document statique servi par le CDN**, seule source de clés — **aucune clé privée n'y entre, et une clé publiée avant d'être retirée**.
 5. **Chaque service autorise lui-même, sur l'instance chargée** — jamais « seul le BFF m'appelle » : un accès ponctuel expire pendant la vie d'un jeton.
 6. **Les dates voyagent en chaînes ISO 8601 UTC.** *Exception : à l'intérieur d'un JWT, `exp`/`iat`/`nbf` restent des secondes numériques (RFC 7519) — ce n'est pas une faute, ne pas « corriger ».*
 7. **Montants en unité mineure entière + code devise ISO.** Le formatage est du client et ne voyage jamais.
