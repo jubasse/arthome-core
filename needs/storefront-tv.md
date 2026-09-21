@@ -1257,3 +1257,311 @@ d'annulation d'une réservation (« jusqu'à 1 h avant »), délai de crédit d'
 remboursement (« 3 à 5 jours ouvrés »). Toutes sont aujourd'hui recopiées dans des
 libellés d'écran. Si elles ne viennent pas du contrat, elles divergeront entre cinq
 surfaces. *Bloque : `ViewerContext`, `tickets`, `book`.*
+
+---
+
+## Confrontation
+
+> Temps 3. Lu : `answers-to-surfaces.md`, `adr-auth.md`, `adr-stream-entitlement.md`,
+> `context-map.md` §10, `data-model.md` §3.2, `events.md`, `realtime.md`, `transport.md`,
+> `critical-rules.md`, `openapi/storefront.yaml` (5 072 lignes), `DECISIONS.md`.
+>
+> Verdict d'ensemble : **mes quatorze questions sont répondues, aucune esquivée**, et plusieurs le
+> sont mieux que je ne le demandais. Je conteste **quatre points**, dont trois produisent un défaut
+> visible à l'écran et un quatrième qui casse le parc à retardement. Mon budget d'appels **tient**.
+
+### Ce qui est satisfait
+
+Bref, parce que c'est long et que l'essentiel est ailleurs.
+
+- **L'appairage.** Primitive unique, cinq intentions, `signin` seul vrai RFC 8628 et les quatre
+  autres en rendez-vous de transaction : l'analyse est reprise et améliorée. Les cinq issues y
+  sont, `approved_with_failure` comprise. `pollPairing` fonctionne **avec le seul jeton
+  d'appareil**, donc le rattachement après redémarrage marche par construction. `cancelPairing`
+  rejouée rend l'issue d'origine. L'alphabet est déclaré (28 symboles, `B`, `S`, `Z`, `G` retirés),
+  la durée est **par intention et servie**, le plafond de débit est par `device_id` et non par
+  adresse — le NAT d'un salon était le bon argument. `PAIRING_IDENTITY_MISMATCH` sans bascule
+  implicite de profil. Et `account-deep-link` est **séparé par le nom**, pas par une option : la
+  distinction renvoi / appairage que je demandais est gravée.
+- **Le maintien de jauge.** `SeatHold` est posé **à l'ouverture** de l'appairage, `seats_available`
+  est servi **net des holds actifs**, et l'expiration republie
+  `ticketing.date_sales.availability_changed.v1` (`data-model.md` §3.2, points 1 et 2). L'invariant
+  « un seul instant porté par les deux objets » est écrit. C'est l'argument qui manquait à mes cinq
+  minutes, et il est meilleur que le mien : je raisonnais sur l'affichage, il raisonne sur
+  l'engagement.
+- **Le lecteur.** `POST /v1/playback/{dateId}/open` porte tout : protocole, DRM, plafond de
+  qualité choisis par le serveur depuis `capabilities`, chapitres, pistes, régime de tchat,
+  incident, reprise, bord du direct. Jeton 120 s, renouvellement 45 s, bail 90 s qui **expire**,
+  `edgeRenewalMode: query_token` et « rien qui forcerait un rechargement de manifeste ».
+  `CONCURRENT_LIMIT_REACHED` porte la liste des sessions actives. `Cache-Control: no-store`. Mes
+  quatre exigences du §*Le temps réel* sont tenues, la troisième avec marge.
+- **La tolérance à l'inconnu.** Règle critique n° 10, et elle est **appliquée** : 59
+  `x-arthome-vocabulary` sur les champs de réponse contre 25 `enum:` tous situés en requête,
+  paramètre ou en-tête. Une discipline tenue sur 5 072 lignes, avec **une** exception (voir C4).
+- **Le reste.** `EnvelopeMeta` avec `servedAt`/`validUntil`/`degraded` ; `DomainConstants` servies
+  (les onze) ; `emptyReason` + `emptyActionCode` au lieu d'une phrase ; `canonicalUrl` servie et
+  explicitement destinée au QR de partage ; `reasonCode` de géo-blocage en **code** ; `viewers`
+  absent et jamais zéro ; `rights.reasonCode` codé ; aucun champ de billetterie ni de régie sur
+  `DateCard` ; `ETag` sur la fiche pour que mon pré-chargement ne se paie pas deux fois ;
+  quota de réactions **dans la réponse** ; plafond de tchat à 2 msg/s pour la TV ; toutes les
+  commandes rendent l'état projeté. D-012 acte l'entrée sans barillet.
+
+### Ce qui n'est pas satisfait
+
+#### C1 — La page `replays` n'est pas servie. Vingt et un écrans sur vingt-deux.
+
+**Sur pièces.** `openapi/storefront.yaml` n'expose aucun point d'entrée public de rediffusions.
+Le seul chemin portant le mot est `/v1/me/replays` (ligne 2226) : `tags: [account]`,
+`summary: Mes rediffusions`, `x-arthome-upstream: [ticketing, catalog, streaming]`,
+`'401': Unauthorized`.
+
+**Pourquoi ce n'est pas la même chose.** « Rediffusions » est la **huitième entrée de ma barre
+latérale**, et c'est une page de découverte, au même titre que « En direct » ou « Catégories ».
+Elle n'est pas préfixée « Mes », contrairement à « Mes places » et « Ma liste » qui le sont
+explicitement. Son contenu est le catalogue des rediffusions en ligne, ordonné par fenêtre
+restante croissante — « qui expirent bientôt » d'abord —, pas les rediffusions que je détiens.
+
+Trois conséquences, toutes visibles :
+
+1. **Un visiteur non connecté reçoit 401 sur une entrée de menu permanente.** Le profil `visiteur`
+   est l'un des quatre du contrat. Sur TV, la barre latérale est toujours là : on ne peut pas
+   masquer une entrée selon la session sans que le menu change de taille sous le focus, ce qui
+   casse la mémoire de focus.
+2. **Même connecté, ce n'est pas le bon contenu.** `/v1/me/replays` remonte de `ticketing` : il
+   rend ce que j'ai acheté. Ma page rend ce qui est **en vente ou inclus**, y compris des
+   rediffusions que je n'ai jamais vues — c'est une page de découverte, c'est son intérêt.
+3. **`/v1/search?tab=replays` ne s'y substitue pas**, et sur trois points : `q` est
+   `minLength: 2` donc il n'y a pas de recherche vide ; l'unité paginée est le **spectacle**
+   (`ShowGroup`), pas la date ; or une fenêtre de rediffusion expire **par date**, et regrouper
+   par spectacle rend le tri « qui expire d'abord » impossible à exprimer.
+
+**Ce que je demande.** Un `GET /v1/replays`, public, cursor, `items: DateCard[]`, trié par
+`replay.expiresAt` croissant, avec le même `CursorPageInfo`. C'est le jumeau de `/v1/live` : une
+page de découverte sur un état de date. Le coût est d'un modèle de lecture que `catalog` projette
+déjà pour le rail `replay_expiring` de l'accueil — la matière existe, il lui manque une porte.
+
+#### C2 — `Rail` ne peut exprimer que six de mes neuf rangées d'accueil, et ne porte pas son compteur
+
+C'est la contestation la plus lourde, parce qu'elle touche l'écran le plus regardé de la surface.
+
+**Sur pièces.** Le schéma `Rail` porte exactement cinq propriétés : `id`, `titleCode`, `kind`,
+`items`, `nextCursor`. `kind` a sept valeurs :
+`[resume, live_now, upcoming_tonight, followed, editorial, category, replay_expiring]`.
+`items` est typé `array of DateCard`, sans alternative. `Rail` n'est référencé qu'une fois, dans
+`HomeScreen.rails`.
+
+**Trois rangées du cahier des charges n'ont pas de place.**
+
+| Rangée (ordre imposé par le cahier des charges) | `kind` disponible | Exprimable ? |
+|---|---|---|
+| 1. Reprendre | `resume` | oui |
+| 2. À l'antenne en ce moment | `live_now` | oui |
+| **3. Vos places** | — | **non** : aucun `kind` |
+| 4. Ce soir sur Arthome | `upcoming_tonight` | oui |
+| 5. Parce que vous suivez *[artiste]* | `followed` | oui |
+| 6. Rediffusions qui expirent bientôt | `replay_expiring` | oui |
+| 7. Deux à trois rangées par discipline | `category` | oui |
+| **8. Affiches** (format 2/3 vertical) | — | **non** : aucune forme de carte déclarée |
+| **9. Artistes à suivre** (portraits ronds) | — | **non** : `items` n'accepte que `DateCard` |
+
+La rangée 9 est la plus nette : `ArtistSummary` **existe** au contrat (ligne 4279) mais aucune
+rangée ne peut la porter. La rangée 3 n'a pas de `kind` — et `editorial` ne convient pas, puisque
+c'est précisément la rangée qui n'est pas éditoriale mais personnelle, et que son comportement est
+propre (la carte devient « Entrer dans la salle » trente minutes avant le lever de rideau). La
+rangée 8 est la moins grave : `MediaSet` porte `wide` **et** `poster`, donc la TV pourrait choisir
+l'affiche — mais elle choisirait sur quoi ? Sur l'identifiant de rangée, c'est-à-dire sur une
+constante recopiée dans la surface. C'est un littéral parallèle, et le principe n° 1 l'interdit.
+
+**Et ce n'est pas cosmétique.** Le cahier des charges est explicite sur le motif : *« la variété de
+format est ce qui empêche l'écran de ressembler à un tableur »*. Neuf rangées de cartes 16/9
+identiques, c'est exactement l'écueil n° 1 de mon document — « le site en grand ».
+
+**Le compteur manque aussi.** Chaque rangée affiche un effectif à droite de son titre. `Rail` ne
+porte ni `total`, ni `approximateTotal`, ni `CursorPageInfo` — alors que `CursorPageInfo` porte
+`approximateTotal` et `totalIsLowerBound`, et que toutes les listes paginées du contrat en
+bénéficient. Une rangée servie en tranche de vingt sur soixante ne peut donc afficher que
+`items.length`, soit **vingt**, soit un chiffre faux. C'était écrit noir sur blanc dans ma section
+*Pagination et volumes* : « `total` est une exigence, pas un confort ». Il est tombé entre les
+mailles parce que `Rail` n'utilise pas l'enveloppe de page commune.
+
+**Ce que je demande**, dans l'ordre de gravité :
+1. `Rail.total` (ou l'adoption de `CursorPageInfo`) — sans quoi le compteur est un littéral ;
+2. `items` en union discriminée `DateCard | ArtistSummary`, avec un `itemKind` porté par la
+   rangée — sinon la rangée d'artistes n'existe pas ;
+3. `kind: my_seats` ajouté au vocabulaire ;
+4. une forme de carte déclarée par la rangée (`cardForm: wide | poster | portrait`) — c'est un
+   choix éditorial, il appartient au serveur comme l'ordre des rangées.
+
+Les quatre sont additifs et n'ont d'effet sur aucune autre surface.
+
+#### C3 — La course entre `cancelPairing` et `decidePairing` peut orpheliner un achat réel
+
+C'est le cas que le chef m'a demandé de chercher, et il existe.
+
+**Sur pièces.** Deux affirmations du contrat, prises ensemble :
+
+- `POST /v1/pairings/{pairingId}/decision`, description d'`outcomeRef` : *« le pointeur opaque vers
+  ce que le parcours normal du téléphone a produit — **posé par le BFF après que `ticketing` a
+  exécuté**, avec sa propre `Idempotency-Key` »*. L'exécution précède donc la décision.
+- Le même point d'entrée, première vérification : *« l'appairage est `pending` et non expiré »*.
+  Un appairage `cancelled` ne l'est plus, et la réponse est `410 Gone`.
+
+**La séquence.** Le spectateur choisit son tarif, la TV affiche le QR. Il scanne, paie sur son
+téléphone. Pendant que le paiement s'exécute, il appuie sur **Retour** — la touche la plus
+sollicitée d'une télécommande, et mon propre contrat de surface dit que Retour remonte d'un niveau
+depuis n'importe quel écran. La TV envoie `DELETE /v1/pairings/{id}`. Trois instants : `ticketing`
+a encaissé ; le `DELETE` arrive ; `decision` arrive et reçoit `410`.
+
+**Résultat : la place est achetée et payée, et aucun des deux écrans ne le dit.** Le téléphone
+affiche un échec (`410`), la TV est revenue à l'écran de réservation. L'argent est parti.
+
+Le contrat traite bien l'ordre inverse — « Annulé, ou déjà tranché : un second appel rend l'issue
+d'origine » couvre le cas où l'approbation précède l'annulation. C'est **cet ordre-là** qui n'est
+pas couvert, et c'est le plus probable des deux : l'exécution du paiement dure des secondes,
+l'appui sur Retour est instantané.
+
+**Trois remarques qui aggravent le cas plutôt qu'elles ne l'atténuent.**
+
+- Mon propre document a écrit « la TV quitte souvent sans attendre la réponse », et le contrat l'a
+  repris tel quel dans la description de `cancelPairing`. Nous avons donc tous les deux vu que la
+  TV annule vite ; ni l'un ni l'autre n'a regardé ce qui se passait en face.
+- Le rattrapage existe mais n'est pas armé : `/v1/changes` porte bien `account:tickets`, mais rien
+  au contrat ne dit que la TV doit l'interroger après un appairage abandonné — et sur l'accueil,
+  elle n'a aucune raison de le faire.
+- Le `SeatHold` ne protège pas ici : il garantit la jauge, pas la réconciliation d'un paiement déjà
+  passé.
+
+**Ce que je demande.** Que `cancelPairing` **n'annule pas un appairage dont l'exécution est
+engagée**. Concrètement : un état intermédiaire — l'appairage devient non annulable dès que le
+téléphone entre dans le parcours de paiement — et un `DELETE` sur cet état qui répond `409` avec
+un code explicite, la TV restant alors sur l'écran d'attente au lieu de partir. C'est la même
+famille de garde que `PAIRING_IDENTITY_MISMATCH` : elle protège l'argent contre un geste
+d'interface. À défaut, il faut écrire qui gagne la course, et ce que devient l'achat qui perd.
+
+#### C4 — `Error.nature` est le seul `enum` dur d'une réponse, et c'est le pire endroit
+
+**Sur pièces.** Sur 5 072 lignes, la règle critique n° 10 est tenue avec une rigueur que je tiens à
+saluer : 59 vocabulaires fermés de réponse en `x-arthome-vocabulary`, 25 `enum:` **tous** en
+requête, paramètre ou en-tête. Une exception, ligne 3616 :
+
+```
+nature:
+  type: string
+  enum: [refused, unavailable, offline_forbidden]
+```
+
+`Error.nature` est `required` dans `Error`, qui est `required` dans `ErrorEnvelope`, qui est le
+corps de **toutes** les réponses d'erreur du contrat.
+
+**Pourquoi ça compte plus qu'ailleurs.** Si une quatrième nature apparaît — `degraded`,
+`rate_limited`, `needs_reauth` — un téléviseur d'une version antérieure, appliquant le contrat tel
+qu'il est écrit, rejette l'enveloppe. Il ne perd pas une carte : il perd sa capacité à **lire les
+erreurs**, c'est-à-dire précisément au moment où quelque chose ne va déjà pas. Le défaut se
+manifeste en cascade, sur le chemin de récupération, et sur un parc que je ne peux pas mettre à
+jour. C'est le scénario exact que la règle n° 10 existe pour empêcher, à l'endroit où il fait le
+plus de dégâts.
+
+**Ce que je demande.** Un `x-arthome-vocabulary` comme les 59 autres, et une nature inconnue
+traitée comme `unavailable` (réessayable) plutôt que comme rien. La correction coûte une ligne.
+
+### Ce qui est satisfait autrement, et si ça me va
+
+- **Q1, l'appairage par interrogation et non par le canal.** J'avais laissé les trois mécanismes
+  ouverts en demandant ≤ 2 s. Le choix retenu est l'interrogation, avec une **décroissance servie**
+  (2 s pendant soixante secondes, puis 5 s), au motif que faire entrer une identité d'appareil dans
+  l'espace de noms WebSocket au moment de `signin` élargirait sa surface d'attaque. **Cela me va,
+  et l'argument est meilleur que le mien** : je pesais la latence, il pèse la surface d'attaque, et
+  la décroissance servie me donne les deux secondes là où elles comptent — la première minute. Un
+  point de vigilance : l'intervalle est servi, donc il faut que ma surface le **relise à chaque
+  réponse** et non le capture à la création. Le contrat le dit ; c'est à moi de le tenir.
+- **Q6, la mutualisation.** Ma troisième issue est retenue — composition au BFF, corps public en
+  cache Redis court, surcouches fusionnées par **lot d'identifiants**. Ajout que je n'avais pas
+  demandé et qui vaut mieux que ce que je demandais : `EnvelopeMeta.degraded`, qui nomme les
+  surcouches non composées. Une surcouche qui échoue **dégrade** la carte au lieu de couler
+  l'écran. C'est exactement le bon compromis pour trois mètres : mieux vaut une carte sans badge
+  de progression qu'un écran vide.
+- **La détention d'une place n'est pas un champ.** `viewerRelations` porte `inWatchlist`,
+  `reminderSet`, `followsArtist` — pas `owned`. La détention se déduit de
+  `watchVerdict.reasonCode != NO_SEAT`. **Ça passe**, parce que le vocabulaire de refus est le même
+  des deux côtés et que `fallbackAction` me donne l'action sans que j'aie à la choisir. Mais c'est
+  une déduction, et le principe n° 3 du dossier (« une place détenue ouvre le spectacle, ne jamais
+  proposer une place à qui l'a déjà ») mériterait mieux qu'une inférence par la négative. Je le
+  signale sans en faire une contestation : si la rangée « Vos places » obtient son `kind` (C2), la
+  question se referme d'elle-même.
+- **Q12 et la validation.** La règle est posée au niveau projet et appliquée dans l'OpenAPI, mais
+  la traduction en zod reste à écrire — `answers-to-surfaces` le dit lui-même : « un `z.enum()` nu
+  ne le fait pas ». Avec D-012 et l'entrée `zod/mini`, cela tombe sur `@arthome/contracts` au
+  palier 1. **Ça me va**, à une condition : que ce soit un **test**, pas une convention. Un schéma
+  qui rejette une valeur inconnue passe toutes les revues et casse en production six mois plus
+  tard.
+- **`previewUrl` est nu.** `HomeScreen.billboard.previewUrl` est une URL sans métadonnée. J'avais
+  demandé que l'aperçu du billboard soit servi en **rendition légère et déclaré comme tel**, parce
+  qu'un décodeur de téléviseur ne décode souvent qu'un flux haute définition et que l'aperçu doit
+  être démonté avant d'ouvrir le lecteur. Servir une URL sans hauteur ni débit me laisse deviner.
+  **C'est mineur et je m'en accommode** — je peux traiter tout `previewUrl` comme démontable
+  d'office — mais une hauteur déclarée coûterait un champ et m'éviterait de plafonner à l'aveugle
+  sur les appareils que je ne peux pas tester.
+
+### Mon budget d'appels : il tient
+
+Le chef me signale que `backend-domain` annonce « 1 à 4 appels par écran ». **Ce n'est pas le même
+axe, et il n'y a pas de conflit.** `context-map.md` §10.1 compte les appels **synchrones
+BFF → service**, internes, *« tous parallèles »*, derrière **une seule** requête de surface. Mon
+budget comptait les allers-retours **surface → BFF**. Les deux tiennent ensemble, et le document le
+dit explicitement : *« le compte que `storefront-tv` annonçait est donc confirmé »*.
+
+Vérification écran par écran, contre les chemins réellement publiés :
+
+| Écran | Budget annoncé | Chemin servi | Verdict |
+|---|---|---|---|
+| `boot` | 1 | `GET /v1/viewer-context` | ✅ |
+| `gate` | 0 | profils dans `ViewerContext` | ✅ |
+| `signin` | 1 + attente | `POST /v1/pairings` + interrogation | ✅ |
+| `home` | 1 | `GET /v1/home` | ✅ (4 appels internes parallèles, 1 à 2 en régime établi) |
+| `search` | 1 par état | `GET /v1/search`, annulable, ≤ 200 ms | ✅ |
+| `live` | 1 | `GET /v1/live`, groupement horaire **serveur** | ✅ |
+| `categories` | 1 | `GET /v1/categories` | ✅ |
+| `category` | 1 | `GET /v1/categories/{id}` | ✅ |
+| `artists` | 1 + curseur | `GET /v1/artists` | ✅ |
+| `artist` | 1 | `GET /v1/artists/{id}` | ✅ |
+| `title` | 1 | `GET /v1/dates/{id}`, avec `ETag` | ✅ |
+| `book` | 0 ou 1 | `GET /v1/dates/{id}/availability` | ✅ |
+| `pay` | 1 + attente | `POST /v1/pairings` | ✅ |
+| `confirm` | **0** | `PairingOutcome` complet | ✅ **confirmé, 0 appel interne** |
+| `player` | **1** | `POST /v1/playback/{id}/open` | ✅ **1 appel interne, budget ≤ 1 s** |
+| `dateinfo` | 0 | dérivé du `PlaybackTicket` | ✅ |
+| `tickets` | 1 | `GET /v1/me/tickets` | ✅ |
+| `list` | 1 | `GET /v1/me/watchlist` | ✅ |
+| `replays` | 1 | **aucun chemin public** | ❌ **C1** |
+| `plans` | 1 | `GET /v1/plans` | ✅ |
+| `account` | 1 | `GET /v1/me/account` | ✅ |
+| `help` | 0 | embarqué | ✅ |
+| `ambient` | **0** | affiches en main, aucune transition poussée | ✅ **confirmé par `realtime.md` §2.4** |
+
+**Vingt et un écrans sur vingt-deux au budget annoncé. Un seul n'est pas servi.**
+
+Deux acquis que je tiens à consigner parce qu'ils étaient les plus fragiles :
+
+- **La veille à zéro appel est explicitement défendue.** `realtime.md` §2.4 refuse de pousser les
+  transitions d'état et livre les instants à la place, avec la conclusion écrite :
+  *« un mode veille qui tourne huit heures ne fait aucune requête »*. C'était le point que je
+  craignais de perdre le premier, parce qu'il est contre-intuitif : on pousse par réflexe.
+- **`confirm` à zéro appel est tenu par la forme, pas par une promesse.** `PairingOutcome` porte
+  `ticket`, `order`, `subscription` et, pour `signin`, un `viewerContext` complet — *« la TV n'a
+  pas à réamorcer »*. C'est plus que ce que je demandais.
+
+### Les questions qui restent
+
+1. **Qui gagne la course de C3, et que devient l'achat qui perd ?** C'est la seule des quatre dont
+   la réponse engage de l'argent réel.
+2. **`GET /v1/replays` est-il ajouté, ou la page est-elle retirée de ma barre latérale ?** Les deux
+   sont des réponses acceptables — mais pas le silence, parce qu'une entrée de menu qui répond 401
+   à un visiteur est pire que pas d'entrée.
+3. **Comment la rangée d'artistes de l'accueil est-elle servie ?** `ArtistSummary` existe et aucune
+   rangée ne peut le porter. Si la réponse est « la TV fait un second appel pour cette rangée », je
+   la conteste d'avance : ce serait le seul écran à deux allers-retours, et pour la rangée la moins
+   importante des neuf.
+4. **La tolérance à l'énumération inconnue sera-t-elle un test ?** La règle est écrite, l'OpenAPI
+   l'applique ; il manque le garde-fou qui empêchera un `z.enum()` de rentrer au palier 1. Je
+   demande un test de contrat qui envoie une valeur inédite dans chaque vocabulaire fermé et vérifie
+   que la réponse est **rendue**, pas rejetée.
