@@ -286,3 +286,73 @@ elle n'est pas rouverte.
 un bundle applicatif réel, et le gain de `zod/mini` est **conditionnel à un élagage que
 l'empaqueteur React Native n'active pas par défaut**. À revérifier sur un vrai bundle au palier
 mobile. La concordance des deux mesures à 1 Ko près rend l'ordre de grandeur sûr.
+
+### D-013 — Des conventions de développement communes, et l'outillage qui les tient
+
+**Demandé par le chef de projet**, en ajout à la mission. Celle-ci disait « rien d'autre » ; le
+chef de projet l'élargit, et c'est consigné comme tel. La raison est de calendrier : cinq dépôts
+d'application plus `arthome-platform` vont naître, et des conventions écrites après coup ne sont
+jamais appliquées.
+
+**Livrable** : `architecture/code-conventions.md`, écrit par un septième coéquipier lancé au
+temps 2, en parallèle de `backend-domain` et d'`auth` — le travail ne dépend d'aucun des deux.
+
+**Outillage : ESLint + Prettier, sur les sept dépôts.** Biome a été écarté malgré sa rapidité et
+son unicité : le projet veut démontrer la qualité, et ce sont les greffons de framework — lint de
+template Angular, règles des hooks et du compilateur React, `eslint-config-next` — qui attrapent
+les vraies fautes. Biome n'a pas cet écosystème.
+
+**La contrainte n°1, posée par le chef de projet : ESLint et Prettier ne doivent jamais se
+contredire.** La réponse est établie et a été vérifiée en ligne pour septembre 2026 :
+
+1. `eslint-config-prettier` désactive toutes les règles ESLint touchant au formatage, et il est
+   **le dernier élément** du tableau de configuration à plat — placé avant, il ne désactive rien
+   de ce qui suit ;
+2. **`eslint-plugin-prettier` est proscrit.** Faire tourner Prettier comme une règle ESLint est
+   explicitement déconseillé aujourd'hui : cela ralentit ESLint et produit des erreurs
+   incompréhensibles. C'est le montage qui *crée* les conflits qu'on veut éviter ;
+3. une **porte locale** : `npx eslint-config-prettier <fichier>` énumère les règles encore en
+   conflit et doit rendre une liste vide, sur chaque dépôt ;
+4. deux règles gênent même ainsi — `arrow-body-style` et `prefer-arrow-callback` — et sont
+   nommées dans le document.
+
+Partage écrit noir sur blanc : **Prettier possède le formatage, ESLint ne possède que la qualité
+de code.** Recouvrement zéro, vérifié par une commande et non par la discipline.
+
+**Ce document n'est pas `critical-rules.md`.** Celui-ci reste sous vingt lignes et porte les
+règles métier impératives, parce qu'au-delà il n'est plus lu à chaque session. Des conventions de
+style n'y ont pas leur place.
+
+### D-014 — `@arthome/tooling`, troisième paquet publié de `arthome-core`
+
+**La décision, et son nom, viennent du chef de projet.** Un paquet à côté de `@arthome/core` et
+`@arthome/contracts`, publié sur GitHub Packages, portant la configuration de base que chaque
+dépôt **étend** : ESLint, Prettier, **TypeScript** et Vitest.
+
+**Écarté** : la recopie avec porte anti-dérive, et l'autonomie complète de chaque dépôt. Avec sept
+dépôts et une seule personne, des configurations autonomes divergeront — c'est exactement la faute
+E2 (la table littérale parallèle) appliquée à l'outillage.
+
+**La fracture TypeScript, découverte en vérifiant les épinglages des orchestrateurs.**
+
+| Pile | TypeScript | Vitest |
+|---|---|---|
+| Angular 22 — studio web, studio mobile | **`>=6.0 <6.1`** | `^4.0.8` |
+| React 19.3 — storefront mobile, TV | **`7.0.2`** | `5.0.1` |
+| Next 16 — storefront web | `5.1+` (plancher) | — |
+| NestJS 12 — les services | non épinglé | — |
+
+**`@arthome/core` et `@arthome/contracts` seront consommés simultanément par un dépôt en TS 6.0.x
+et par des dépôts en TS 7.x.** Leurs `.d.ts` publiés doivent être lisibles par les deux, et leurs
+types publics s'interdire toute syntaxe propre à TS 7. Ce n'est pas une convention de style : c'est
+une contrainte de publication qui pèse sur les contrats, donc elle relève bien de cette session.
+
+Conséquence directe sur `@arthome/tooling` : **un seul tsconfig de base ne peut pas suffire** —
+certaines options n'existent pas dans les deux versions, ou ne s'y comportent pas pareil. Le
+coéquipier doit dire combien de fichiers de base sont nécessaires, vérifier que `extends` à travers
+une frontière de paquet tient dans les sept contextes (pnpm et ses liens symboliques, la résolution
+d'`exports`, l'empaqueteur Metro, le CLI Angular), et **énumérer ce qu'un dépôt a le droit de
+redéfinir et ce qui est verrouillé**. Sans cette dernière liste, `extends` n'est qu'une suggestion.
+
+**La seule preuve acceptée** que la contrainte tient : compiler les `.d.ts` publiés contre les deux
+versions de TypeScript. En local — le quota d'Actions du compte est épuisé.
