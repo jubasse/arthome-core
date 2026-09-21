@@ -1018,3 +1018,79 @@ reading both sides **as data** — core's `as const` arrays parsed out of TypeSc
 parsed out of YAML — and comparing sets. *A grep finds what you thought to look for; a set
 difference finds what nobody thought to look for.* Six shared values and two factually wrong names
 fell out of a question that was only ever about hyphens.
+
+### D-036 — Four rulings from the conversion, and my surface-name exemption was wrong
+
+**1. `SURFACES` converts on the wire. My exemption was wrong and core was right to move past it.**
+
+I ruled the five surface names *"plainly justify themselves"* because they are repository names.
+`backend-contracts` left them kebab on that basis; `backend-domain` converted core anyway; and the
+two now disagree on a value that is **a required header validated on every request to both BFFs**:
+
+| | |
+|---|---|
+| core | `storefront_web` `storefront_mobile` `storefront_tv` `studio_web` `studio_mobile` |
+| wire | `storefront-web` `storefront-mobile` `storefront-tv` `studio-web` `studio-mobile` |
+
+`X-Arthome-Surface`, `required: true`. If the BFF validates the header against core's `SURFACES`,
+**every request from every surface is a 400, from the first deploy.** Not a display defect.
+
+**The exemption was reasoned from resemblance, not from function.** Nothing requires the header
+value to equal a directory name — the resemblance is a coincidence, and I turned it into a rule. A
+required input enum is a wire vocabulary in the fullest sense there is. **The wire converts.**
+
+`account:payment-methods` keeps its exemption, and on a different basis that survives the same test:
+it carries a colon and belongs to Next's `revalidateTag` namespace, not to ours.
+
+**2. Error and failure codes are a named third family, not a minority exception.**
+
+`conventions` asked whether `WatchVerdict.reasonCode` and `PairingOutcome.failureCode` — entirely
+`SCREAMING_SNAKE` — are a family or a divergence, and flagged that "the minority is the exception"
+was the reasoning that got reversed in D-033.
+
+It was right to flag it, and this is not that. **D-033 reasoned from a count; this reasons from a
+kind.** The test is predictive: what would a *new* error code be? Obviously `SCREAMING_SNAKE`. What
+would a new domain value be? Obviously `snake_case`. Two rules, each of which decides the next case
+without being consulted. A count decides nothing about the next case.
+
+So §5.2 names three families: `snake_case` for domain vocabulary, `SCREAMING_SNAKE` for error and
+failure codes, and the declared exemptions.
+
+**3. The gate is blind to exactly the half that fails hard.** Measured by `backend-contracts`:
+
+| | blocks | distinct values | seen by `check-vocabulary` |
+|---|---|---|---|
+| `x-arthome-vocabulary` (output) | 149 | 374 | **yes** |
+| `enum` (input) | 77 | 191 | **no** |
+| values existing only in an `enum` | | **60** | **no** |
+
+And the asymmetry runs the wrong way. An **output** vocabulary degrades gracefully — critical rule
+10 keeps an unknown value raw and treats it as neutral. An **input** enum **rejects**: a 400 on
+every request from the first deploy, which is precisely how `SURFACES` would have failed.
+
+**The gate covers the half that fails softly and misses the half that fails hard.** The fix is not
+to make inputs into vocabularies — that would destroy the strict-on-input, tolerant-on-output
+asymmetry the contract is built on. `check-vocabulary.py` reads `enum` as well, under the same
+annotation.
+
+**4. `check-enums` has lost a capability, and the trade is accepted deliberately.**
+
+The debranding collapsed twenty values onto ones that already existed, so it now reports 182 rather
+than 202. The 44 vocabularies are intact and it still passes — but it maps a value to the **first**
+vocabulary that declared it, so **it still catches a copied literal and can no longer name where the
+literal came from.**
+
+Accepted, because `check-vocabulary` compares per vocabulary and is the replacement. But it is a
+real loss in the anti-E2 gate and it is recorded as a choice rather than discovered later — and
+there is a **gap in the meantime**: `check-vocabulary` covers 3 of 149 blocks today and no input
+enums at all. Until both close, the anti-E2 coverage is thinner than it was a week ago.
+
+**5. `automatic_filter` stays**, and not on forward-compatibility grounds, which D-022 would refuse.
+The project owner stated automatic moderation as a direction — *"nous on pourra faire de la
+modération automatique à terme aussi"* — so it is a **stated** intention rather than an untested
+one. And the distinction `backend-domain` draws is real and not a synonym: **`automatic_filter`
+decides at ingestion, `retroactive_filter` reclassifies what already exists.** Two moments, not two
+names. What matters is not the enum member, which rule 10 makes additive and safe; it is the three
+constraints it carries — an automatic moderator takes no lease, precedence is one-way, and the
+origin survives settlement so *"removed by the filter, confirmed by X"* does not collapse into
+*"removed by X"*.
