@@ -1,6 +1,6 @@
 # Corrections au dossier de passation
 
-> Vingt-sept écarts relevés dans `arthome-design/design_handoff_arthome/` pendant la phase 0 de la session
+> Vingt-sept écarts de phase 0, plus cinquante-deux relevés au temps 1, dans dans `arthome-design/design_handoff_arthome/` pendant la phase 0 de la session
 > « contrats d'interface, architecture backend, authentification » (21 septembre 2026).
 >
 > **Statut des corrections.** Les écarts des familles **A**, **B** et **C** ont été corrigés
@@ -455,6 +455,224 @@ Le stockage est en `timestamptz`, en UTC.
 tests et la démonstration — mais il produira des **instants**, et la conversion en décalages
 relatifs, si elle est encore utile, deviendra une commodité de présentation et non une forme
 transportée.
+
+---
+
+## E — Écarts relevés par les cinq spécialistes de surface (temps 1)
+
+**Cinquante-deux écarts nouveaux**, relevés indépendamment par les cinq spécialistes en lisant
+leur maquette contre `shared/`. Consolidés ici par thème et non par surface : plusieurs ont été
+trouvés par deux, trois ou quatre agents séparément, et cette convergence est elle-même une
+information — elle distingue un accident d'une faute structurelle.
+
+Aucun n'est corrigé : ils portent sur `shared/` et sur les maquettes, qui restent en lecture
+seule. C'est la suite de la liste de courses du portage (palier 1), et la matière que les agents
+du temps 2 doivent avoir lue.
+
+### E1 — Les abonnements sont cassés, et cela conditionne l'accès à la lecture
+
+*Trouvé par `storefront-web`, `storefront-tv`, `storefront-mobile`.*
+
+**Quatre vocabulaires disjoints** pour la même notion :
+
+| Source | Valeurs |
+|---|---|
+| `catalogue.json` → `plans[]` | `free` (0 €) · `pass` (12 €) · `premium` (24 €) |
+| `catalogue.json` → `accounts[].plan` | `season` · `monthly` · `none` |
+| `i18n/storefront.json` → `enums.plan.*` | les six réunies |
+| maquette web | `free` · `unit` (7 €) · `sub` (14 €) |
+| maquette TV | `saison` (14 €) · `mécène` (39 €) |
+
+**La conséquence est un défaut d'autorisation, vérifié.** `helpers.planOf()` fait
+`plans().filter(p => p.id === account.plan)[0] || plans()[0]`. Aucun des quatre comptes de
+référence ne porte un identifiant présent dans `plans[]` : **tous retombent silencieusement sur
+`free`**. Or `plan.opens[]` porte `replays`, `one-live-month`, `all-lives`, `multi-screen`,
+`archive` — c'est-à-dire les droits de lecture. L'i18n traduit les six valeurs, ce qui masque
+entièrement le problème à l'écran.
+
+S'y ajoutent : les droits `opens[]` ne coïncident pas entre les sources, et **deux remises sur
+deux assiettes différentes** (`seatDiscount` 10/20 % sur les places dans la donnée, 15 % sur la
+boutique dans la maquette mobile).
+
+### E2 — La faute D2 se répète sur huit champs
+
+*Trouvé par les cinq. `storefront-mobile` classe 7 de ses 11 écarts dans cette seule famille.*
+
+D2 signalait deux vocabulaires concurrents pour l'état d'une publication. Ce n'était pas un
+accident : c'est le mode de défaillance dominant du dossier. Une maquette tient une table
+littérale parallèle à `shared/`, et les deux divergent.
+
+| Champ | Vocabulaires concurrents |
+|---|---|
+| état de publication (D2) | `catalogue.json` contre les deux maquettes de studio |
+| régime de tchat | **trois** — dont une famille de copie `chat.*` (`free`) doublant `enums.chatMode.*` (`open`) |
+| politique de rediffusion | **trois** — `sub`/`unit` dans la maquette mobile contre `subscription`/`none` |
+| fenêtre de rediffusion | **trois** formulations, dont une dans la copie traduisible |
+| sévérité du filtre de tchat | deux, **dans le même fichier** |
+| liste de contrôle avant publication | deux — 4 entrées dans les fixtures, 7 dans la fiche de date |
+| devises | `eur`/`usd`/`chf` proposés, `cad` déclaré et manquant |
+| abonnement du compte | entièrement littéral dans la maquette mobile |
+
+**Conséquence pour les contrats** : chaque énumération de frontière doit être déclarée une fois,
+dans `@arthome/core`, et typée. Une valeur d'énumération écrite en dur dans une application est la
+faute la plus fréquente de ce projet, et elle est silencieuse.
+
+### E3 — Les sanctions : quatre échelles, et l'i18n n'en suit aucune
+
+*Trouvé par `studio-web` et `studio-mobile`. Étend D6, qui n'en comptait que trois.*
+
+`catalogue.messageStates` (`ok`…) · `audience[].state` (la personne dans une chaîne) ·
+`moderation[].state` (qui introduit **`reported`**) · `studio-data.js` (`ok` / `held` pour la
+régie) · et `i18n/studio.json` → `enums.moderationState.*` qui dit `published` là où le catalogue
+dit `ok`, et ne correspond à aucune des quatre.
+
+Le défaut de fond : **`reported` est un état de triage logé dans le champ des sanctions**. Trois
+axes à séparer au contrat — nature de la ligne (signalée, prise en charge, tranchée), état du
+message, état de la personne.
+
+S'y ajoute une règle de conduite que seule la maquette porte : *« Prendre en charge n'est pas
+trancher : tant que le confrère n'a pas rendu de verdict, votre sanction s'applique. »* C'est une
+**supersession**, donc un bail sur une ligne de file et une règle de préséance — à porter au
+contrat, et la raison pour laquelle les commandes de modération doivent être **conditionnelles**
+et non idempotentes aveugles.
+
+### E4 — Trois axes d'état sur une même date, sans hiérarchie écrite
+
+*Trouvé par `studio-web` et `studio-mobile`.*
+
+`publication.state` (sept valeurs), `run.state` (six), `date.outcome` (trois). L'état affiché
+d'une date est la **composition des trois**, et aucun ne la porte. Chaque surface recompose donc
+la hiérarchie à sa façon — la définition même d'une valeur calculée deux fois.
+
+### E5 — Le verrou porte sur des états, la maquette le pose sur des transitions
+
+*Trouvé par `studio-web`.*
+
+Les fixtures encodent `lockedTransitions: ['scheduled', 'replay-online']` — une liste d'**états**.
+La maquette traite ces deux passages comme des **transitions sans retour**. C'est la seconde
+sémantique qui est juste : publier engage le tarif, mettre la rediffusion en ligne la met en
+vente. Le serveur doit **refuser** l'inverse avec un code et la promesse engagée.
+
+### E6 — Les rôles : le repli à six détruit un droit
+
+*Trouvé par `studio-web` et `studio-mobile`.*
+
+`studio-data.js` rabat les huit `memberRoles` sur six personas, écrasant `director`, `video` et
+`sound` en `regie`. Or `grants` les distingue : `director` peut inviter `video` et `sound`, les
+deux autres ne peuvent inviter personne. **La projection à six n'est pas sûre pour
+l'autorisation** — c'est un libellé, jamais un droit.
+
+Deux défauts de navigation dans la même famille : `TAB_PREF.regie` nomme une page que `ACCESS`
+refuse ; et **`team` est une page morte**, absente de la table d'accès des six personas (la ligne
+qui la fait absorber par `crew` est elle-même du code mort).
+
+### E7 — Le fuseau du spectateur n'a aucun porteur
+
+*Trouvé par `storefront-tv` et `studio-mobile`.*
+
+« Deux fuseaux : l'heure du spectateur d'abord, l'heure de salle en second » est un principe du
+dossier. Pourtant la maquette TV lit `fixtures.geography.viewerUtcOffsetMin`, qui **n'existe nulle
+part** dans `shared/` : il vaut `undefined`, et l'heure de salle est donc calculée contre UTC. La
+surface n'a aucune entrée pour le fuseau du spectateur. Croise D3 (les fuseaux gelés en décalage
+fixe).
+
+### E8 — Le modèle public fuit de la donnée de régie
+
+*Trouvé par `storefront-tv`.*
+
+L'objet date que lit un client public porte `prices[].sold`, `prices[].revenue`, `seats.sold`,
+`publication`, `publishedBy` : des recettes et des références de studio. Deux fuites voisines :
+les raisons de géo-blocage portent `label`/`labelEn` — du texte rédigé **dans la donnée**, alors
+que tout le reste passe par `enums.*` ; et le classement éditorial des sous-genres est **calculé
+sur la surface**, à partir de cette donnée de billetterie.
+
+### E9 — La taxonomie est déclarée plus riche qu'elle n'est portée
+
+*Trouvé par `storefront-web`.*
+
+Le sous-genre est déclaré « optionnel, multiple » et porté au singulier ; le champ `attributes`
+d'une date porte en réalité des **étiquettes** ; **six des sept groupes d'attributs** sont
+déclarés et jamais portés — dont `accessibility`, que le dossier présente comme un filtre de
+premier plan qui ne doit « pas dépendre de la vigilance d'un régisseur » ; et `shows[].tags` est
+vide dans tout le catalogue rédigé.
+
+### E10 — L'i18n se contredit sur ses propres effectifs
+
+*Trouvé par `storefront-web`, complété par le chef.*
+
+`i18n/index.json` se présente comme le contrôle d'intégrité de la copie. Il est faux sur la moitié
+de ses entrées, **et dans les deux sens** :
+
+| Fichier | Annoncé | Réel |
+|---|---|---|
+| `storefront.json` | 243 | **671** |
+| `taxonomy.json` | 627 | **437** |
+| `studio.json` | 61 | 61 |
+| `system.json` | 18 | 18 |
+
+S'y ajoute : les libellés de marchandise n'existent qu'en français (`merchPool` sans champ
+anglais), sur un produit déclaré bilingue.
+
+### E11 — Les constantes de domaine sont recopiées en dur
+
+*Trouvé par `storefront-tv` et `storefront-mobile`.*
+
+`roomOpensBeforeMin: 30` et `previewIdleSec: 4` vivent dans la donnée — et les maquettes les
+recopient en littéral. Ces constantes doivent arriver **par le contrat**, sinon elles divergeront
+entre cinq surfaces. C'est le principe « aucune valeur calculée deux fois » appliqué aux
+constantes.
+
+### E12 — L'appairage d'appareil : sa politique n'est nulle part
+
+*Trouvé par `storefront-tv`.*
+
+« CODE VALABLE 15 MINUTES » n'existe que dans une **chaîne de copie**, et les codes eux-mêmes sont
+des littéraux (`H4T9RD`, `K7QM2P`). La durée de validité est une politique : elle appartient au
+contrat et doit être servie dans la réponse. De même, **l'alphabet du code n'est déclaré nulle
+part** — ce qui est une exigence de contrat et non de typographie, puisqu'un code lu à trois
+mètres et ressaisi sur un téléphone ne doit pas mêler `0/O`, `1/I`, `5/S`, `8/B`.
+
+### E13 — `devices` a deux formes sous un seul nom
+
+*Trouvé par `storefront-tv`.*
+
+`catalogue.json` déclare `devices` comme un **entier** (3, 2, 1, 1). `fixtures.js` en fait ensuite
+une **liste d'objets**. Deux formes, un identifiant.
+
+### E14 — Les commandes externes n'ont aucun contexte propriétaire
+
+*Trouvé par `storefront-web`.*
+
+« Mes commandes » fusionne les commandes Arthome et celles passées sur la boutique propre de
+l'artiste (Shopify, WooCommerce, PrestaShop, Drupal, API), avec référence marchand et domaine,
+sans facture, ni suivi, ni remboursement chez nous. À rattacher au même arbitrage que C8 (la
+boutique).
+
+### E15 — Écarts de maquette sans portée contractuelle directe
+
+Utiles au portage, sans conséquence sur les contrats : l'action **Partager** est câblée vers
+l'écran de paiement (et révèle qu'**aucune commande de partage n'a jamais été définie** — sur TV
+elle ne peut vouloir dire qu'un QR vers une **URL canonique servie**) ; la page `plans` de la TV
+est spécifiée et absente de la maquette ; taux de remplissage et places restantes sont deux
+valeurs indépendantes ; le débit du tchat est mesuré dans une unité et comparé dans une autre ;
+deux débits différents portent le même nom sur l'écran de diffusion ; le troisième canal de
+notification n'est nommé nulle part ; appareils et sessions sont traités comme deux choses.
+
+### Ce que la famille E apprend
+
+Trois enseignements qui dépassent la liste :
+
+1. **La faute dominante du projet est la table littérale parallèle** (E2). Elle a été commise sur
+   au moins huit champs, par cinq maquettes, malgré un principe explicite qui l'interdit. Un
+   principe ne suffit pas : il faut que l'énumération soit **typée depuis `core`** et qu'une porte
+   de CI le vérifie.
+2. **Ce qui n'est jamais appelé n'a jamais été éprouvé.** `storefront-mobile` a vérifié seize
+   fonctions de `helpers.js` : **quatorze ne sont jamais appelées** par sa maquette — droits
+   territoriaux, barrière de langue, places restantes, reprise, appareils, abonnements, modération
+   du tchat. Leur contrat doit être **conçu, pas observé**. Un silence n'est pas un accord.
+3. **Quatre agents ont trouvé E1 séparément**, et aucun n'avait été orienté vers lui. La
+   convergence de lectures indépendantes est le seul moyen fiable de distinguer un détail d'un
+   défaut structurel.
 
 ---
 
