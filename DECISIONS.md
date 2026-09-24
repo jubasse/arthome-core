@@ -2251,3 +2251,78 @@ first form error, and it is the payment form that leaks it.
 
 **The moment of truth is `contracts:emit` producing an empty diff** against the two hand-written
 documents. They are the target precisely because they were written first and reviewed as prose.
+
+### D-058 — The empty diff is scoped to `components/schemas`, because that is where the second copy is
+
+**`backend-contracts` measured the emit gap before anyone wrote a schema, and the measurement
+changes the question. Verified on both documents:**
+
+| | storefront | studio |
+|---|---|---|
+| `paths` | 4,814 lines — **65 %** | 5,797 — **71 %** |
+| `components` | 2,354 — 32 % | 2,124 — 26 % |
+| `#` comments | 78 | 31 |
+
+`z.toJSONSchema()` emits **schemas**. Two thirds of each document is `paths` — operations,
+parameters, security, the maturity and upstream extensions on 174 operations — and **none of it has
+a zod source**. Of ~38,600 words of prose, roughly two thirds hangs off nothing a schema could carry:
+an operation's `summary`, the motive for an idempotency exemption, the reason `/v1/changes` keeps its
+`401`. And **109 comments that JSON Schema cannot represent at all** — not hard to emit, impossible
+to derive.
+
+**THE RULING: EMIT `components/schemas`. THE EMPTY DIFF IS SCOPED THERE AND SAYS SO.** `paths` stays
+hand-written and keeps being checked by `check-openapi.py`'s nineteen rules and by
+`check-vocabulary`.
+
+**This is not a retreat from "zod is the source, OpenAPI is generated" — it is that decision applied
+to where its purpose lives.** The purpose was to eliminate **a second copy of the shapes services
+validate against**: a service validates against `MoneySchema` and the contract publishes a `Money`
+schema, which is one fact in two artefacts. **`paths` has no second copy to eliminate.** An
+operation's summary exists once, in one place, and nothing anywhere duplicates it.
+
+*The scope of "generated" follows the scope of the duplication, not the scope of the file.*
+
+**And `backend-contracts`' argument is the one that decides it**, because it is about what a test is
+worth rather than what it costs:
+
+> ***The empty diff is a test, and a test is only worth what it asserts.*** Over `components/schemas`
+> it asserts that the schemas the services validate against are the schemas the contract publishes.
+> Over `paths` it would assert that a generator reproduces prose a human wrote — **which is not a
+> property anyone needs true.**
+
+**THE OPTION I AM REFUSING IS THE ONE THAT SOUNDED MOST PRINCIPLED.** Emitting everything would put
+38,600 words of English inside `@arthome/contracts` and turn the two documents into build output.
+*"The documents stop being reviewable as prose, which is how every finding this week was made — I
+found `targetPage` and `reasonCode` by reading, not by diffing."*
+
+That lands on D-055 directly. The only reliable detector this week was **a reader disagreeing with
+something**, and the substrate for that is readable prose. This project has one person; the detector
+is already thin. **Trading the artefact that produced every finding for a property nobody needs true
+is not a trade.**
+
+**WHAT IT GIVES UP, STATED RATHER THAN GLOSSED.** `paths` is hand-written for good, so an operation
+added to a service has no mechanical link to an operation added to the contract. Nothing catches
+that but `check-openapi.py` and the BFF's own tests. *That gap is real, it is narrower than the one
+option 2 would open, and it is named here so nobody discovers it as a surprise.*
+
+### D-059 — What is already inside a total cannot sit in the list of things added to it
+
+**Three applications of TTC, and the second is a finding rather than an application.**
+
+**`Money` stays neutral and says so.** It carries credits, refunds, commissions and payouts as well
+as prices. **A price is tax-inclusive, and every field that is one says so where it is declared** —
+`Money` is not the place that can warn a reader, *and a reader on the wrong side of a rate is wrong
+by exactly that rate.*
+
+**`SeatQuote` gains `vatIncluded` as a separate field, not a fifth line.** `lines` are **addends**. A
+VAT line among them would be summed by somebody eventually, and the total would be wrong **in the
+direction nobody checks, because it would look larger.**
+
+> ***What is already inside a total cannot sit in the list of things added to it.***
+
+That is a shape, not a detail — the same family as a rule carried by an omission (D-042) and a
+member that answers nothing (D-044): *a value placed in a structure whose semantics contradict it.*
+
+**`PayoutLine.grossTtc` is named as fixed and the breakdown as the explanation.** Under TTC the gross
+is constant and the net moves with the buyer's country, so a payout without per-jurisdiction lines is
+**incomplete rather than terse**: the artist sees a number that changed and no reason for it.
