@@ -279,11 +279,29 @@ export const DomainErrorCode = {
  *   surface cannot provoke these and has nothing to render for them, so
  *   publishing them would be a contract promising errors it cannot produce.
  *
- *   The ones I am least sure of are `money.count_invalid` and
- *   `content.empty_in_both_languages`: the first could surface on a studio form,
- *   and the second is on the published side for exactly that reason. If a BFF
- *   ever serves one of these verbatim, it moves — and the gate will say so the
- *   day the member reaches a wire.
+ *   TWO WERE FLAGGED AS UNCERTAIN AND BOTH WERE THEN CHECKED. Both hold, and
+ *   one of the two REASONS was wrong, which is the part worth keeping:
+ *
+ *     `money.count_invalid` — guard, confirmed. It protects
+ *     `multiplyByCount(price, count)`, and a count reaching that function has
+ *     already passed `order.quantity_invalid` upstream. A negative one arriving
+ *     here means we let it through, not that a buyer asked for it.
+ *
+ *     `content.empty_in_both_languages` — published, confirmed, WRONG REASON.
+ *     It was justified as an artist submitting an empty form. It is not a write
+ *     at all: `pickLanguage` throws it ON READ, when the server composes a
+ *     response and finds stored content empty in both languages. A surface meets
+ *     it while rendering a page, which is a better argument for publishing than
+ *     the one first given.
+ *
+ *   ⚠ AND THE QUESTION UNDERNEATH IS NOT SETTLED, because no service exists yet:
+ *     WHERE IS THE VALIDATION BOUNDARY? A badly filled form field either stops
+ *     at the door as `api.schema_invalid` or reaches the rule. Until a BFF is
+ *     written, every line of this split rests on the first answer.
+ *
+ *     Nothing here has to remember that. `check-vocabulary` runs the inverse
+ *     check: a member declared domain-only that reaches a contract is a failure,
+ *     so the day one of these is served the gate says so.
  */
 export const DOMAIN_GUARD_CODES = [
   'i18n.key_malformed',
