@@ -1793,3 +1793,79 @@ payment provider's, theirs to change and ours to reflect*; *the two answers this
 accepts, a third answer would be a third command*.
 
 **A per-item reason cannot be wrong. A family reason can**, which is what makes it worth writing.
+
+### D-049 — A ruling implemented as a literal list, and the gate that checks must never fix
+
+**1. MY OWN RULING SURVIVED ONE LEVEL DOWN AS THE THING IT FORBADE.**
+
+D-038 merged the publication checklist into one vocabulary of nine, *"blocking as a property of the
+item"*, on the grounds that promoting a warning to blocking should **flip a boolean** rather than
+move an item between vocabularies.
+
+Twenty-eight lines below that declaration sat `BLOCKING_ITEMS` — **seven of the nine members written
+out again as a literal array.** So promoting `chapters_planned` meant editing a literal list: *the
+same edit, in the same shape, as moving it between two vocabularies.*
+
+> ***The merge changed what is exported without changing what has to be edited — which is the part
+> the argument was about.***
+
+**And it drifted in the direction nothing catches.** A tenth item added to the vocabulary was
+**silently non-blocking**, because `includes` on a list that never heard of it returns `false`. No
+type error: the union admits the member and the array simply lacks it.
+
+It is now `Readonly<Record<PublicationChecklistItem, boolean>>`, which makes a missing member a
+**compile error** — the boolean flip the ruling promised, checked by `tsc` rather than by a
+reviewer. *A ruling is not implemented until the thing it makes cheap is actually cheap.*
+
+**It was invisible for the reason D-046 found**: the file declares a vocabulary, and `check-enums`
+excludes a declaring file from the sweep entirely rather than excluding it from its own values.
+`backend-contracts` scanned the other nine skipped files by hand — **seven hits, all this one list;
+the rest came back clean.**
+
+**2. THE STOPGAP WAS WORSE THAN ITS OWN AUTHOR REPORTED, AND THE PROOF IS THE POINT.**
+
+`backend-domain` flagged its ambient `vitest.d.ts` as a shape its package does not own and reasoned
+about **drift**: if the tooling object grew a field, the copy would be stale. `conventions` replaced
+the real declarations with `{ deliberatelyWrong: number }` **and the package still type-checked.**
+
+An ambient `declare module` **shadows** a package's types rather than supplementing them. There was
+never going to be a disagreement to notice.
+
+> ***That is the difference between "this copy may drift" and "this copy cannot be corrected", and
+> only the second is unrecoverable.***
+
+**And it is its own shape, distinct from the four measurement faults**: *the right file reported as a
+defect for the wrong reason, where the wrong reason was less serious than the truth.* Flagging it
+with an exit condition is what got it looked at — but had nobody **constructed the test**, it would
+have been deleted for tidiness and the mechanism never recorded.
+
+**3. A HOLE UNDERNEATH THE ZERO-DEPENDENCY RULE, WHICH NEITHER THE TOOL NOR ITS AUTHOR COULD SEE.**
+
+The root `tsconfig.json`'s `types: ["node"]` would have pulled Node's globals into the program that
+checks `@arthome/core` — and **`check-core-entry` would not have seen a thing**, because it walks
+the **import graph** and a global is not an import.
+
+The gate that guarantees the domain has no platform dependency had a blind spot directly under it,
+and the configuration that was about to open it had been failing since the day it was written. *Two
+invisible things cancelling to look like a working system.*
+
+**4. THE FLOOR QUESTION, RULED: A GATE CHECKS. IT NEVER FIXES.**
+
+`backend-domain` found that `eslint --fix` and `prettier --write` **do not converge in one pass** —
+fixing `import-x/order` reorders imports, which changes line lengths, which leaves fresh Prettier
+diffs in the files just fixed. It needed prettier → eslint → prettier.
+
+This is the project owner's founding constraint — *ESLint and Prettier must never contradict each
+other* — in a form D-013 did not anticipate. `eslint-config-prettier` stops the two **disagreeing
+about a rule**; it cannot stop **a fixer producing text the formatter then reflows.** Nothing is
+misconfigured; the two are simply sequential transformations that do not commute.
+
+**The ruling: `verify` runs `--check` and `--list-different` only, and never a fixer.** A gate
+reports; it does not edit. Convergence then cannot affect it, because nothing changes underneath.
+
+Fixing is a **separate, ordered, human-invoked script** — prettier, eslint, prettier — and it is
+allowed to run the formatter twice, because that is what a non-commuting pair costs.
+
+*A gate that fixes cannot fail honestly: it either reports a defect it has already removed, or fails
+on a tree that was correct before it touched it.* `backend-domain` is right that the second is a red
+gate on no defect, which is the thing this week has been spent removing.
