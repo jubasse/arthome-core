@@ -1748,3 +1748,48 @@ before either message was written. **All three reports were true when measured.*
 *The staleness hazard is no longer a hazard, it is the working condition.* It is why the only
 reports worth acting on are the ones that name what they measured and when — and why both agents
 converged, in the end, not by exchanging conclusions but by going back to the same function.
+
+### D-048 — A tell that only fires on defects would have found none of them
+
+**Closing the vocabulary arc. 193 of 234 blocks declare what they are, against 7 when the gate was
+written; zero disagreements on either side; the inverse check at zero with no exemptions claimed by
+the domain.**
+
+**1. THE TELL FOUND SOMETHING TRUE BY POINTING AT SOMETHING FALSE.**
+
+`SessionEstablishedBearer.mode` carried `[bearer, device]` where its sibling carries `const: cookie`
+and the studio's pair carry two constants. That asymmetry looked exactly like a broken discriminator.
+
+It was not. `device` is a real third mode, token-shaped, and the discriminator deliberately maps two
+values to one schema. What the field **is** is a narrowing of `SessionMode` — **and the missing
+member carries the rule**: `cookie` cannot appear there because a cookie response carries *nothing
+in the body*, which is the whole reason the shape is two schemas rather than one with an optional
+field.
+
+> ***A tell that only fired on defects would have missed all seven narrowings.***
+
+That is the epistemics of a detector, stated properly: its value is not its precision. It is that it
+points at places where **something is unstated** — and an undocumented deliberate choice and a
+defect look identical from outside, which is the whole reason D-042 exists.
+
+**2. THE RECURSION DOES NOT BOTTOM OUT, AND THAT IS THE ANSWER RATHER THAN A PROBLEM.**
+
+`backend-contracts` closed the scope thread better than D-041 or D-045 did. Its subset test read the
+description on the block rather than on its parent, so three documented narrowings read as
+undocumented — *incidental scope inside the check built to expose incidental scope*. It fixed that
+by making the check parent-aware, **which is itself a scope decision it made and did not announce.**
+
+> ***What it argues for is not a perfect instrument but the habit of reporting what a check looked
+> at.***
+
+That is the terminus of the whole thread. Scope cannot be eliminated — every fix introduces a new
+one, and the check that exposes the fault commits it. It can only be **made visible**, which is the
+one thing that lets the next reader see the next narrowing.
+
+**3. AND THE EXEMPTIONS ARE WRITTEN AS TWELVE REASONS FOR EIGHTY BLOCKS.** *"Eighty individual
+reasons would have produced eighty sentences nobody reads; a family reason says what the class has
+in common and is therefore falsifiable."* — *a state machine local to this resource*; *mirrors the
+payment provider's, theirs to change and ours to reflect*; *the two answers this one command
+accepts, a third answer would be a third command*.
+
+**A per-item reason cannot be wrong. A family reason can**, which is what makes it worth writing.
