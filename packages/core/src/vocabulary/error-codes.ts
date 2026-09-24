@@ -122,12 +122,16 @@ export const ChatErrorCode = {
 export const MODERATION_ERROR_CODES = [
   'moderation.already_claimed',
   'moderation.already_settled',
+  'moderation.automatic_cannot_override_human',
+  'moderation.decision_version_stale',
 ] as const;
 export type ModerationErrorCode = (typeof MODERATION_ERROR_CODES)[number];
 
 export const ModerationErrorCode = {
   ALREADY_CLAIMED: 'moderation.already_claimed',
   ALREADY_SETTLED: 'moderation.already_settled',
+  AUTOMATIC_CANNOT_OVERRIDE_HUMAN: 'moderation.automatic_cannot_override_human',
+  DECISION_VERSION_STALE: 'moderation.decision_version_stale',
 } as const;
 
 /**
@@ -233,9 +237,6 @@ export const DOMAIN_ERROR_CODES = [
   'hold.quantity_invalid',
   'media.size_invalid',
   'media.url_empty',
-  'moderation.already_settled',
-  'moderation.automatic_cannot_override_human',
-  'moderation.decision_version_stale',
   'order.quantity_invalid',
   'pairing_code.ambiguous_glyph',
   'publication.checklist_incomplete',
@@ -252,9 +253,6 @@ export const DomainErrorCode = {
   HOLD_QUANTITY_INVALID: 'hold.quantity_invalid',
   MEDIA_SIZE_INVALID: 'media.size_invalid',
   MEDIA_URL_EMPTY: 'media.url_empty',
-  MODERATION_ALREADY_SETTLED: 'moderation.already_settled',
-  MODERATION_AUTOMATIC_CANNOT_OVERRIDE_HUMAN: 'moderation.automatic_cannot_override_human',
-  MODERATION_DECISION_VERSION_STALE: 'moderation.decision_version_stale',
   ORDER_QUANTITY_INVALID: 'order.quantity_invalid',
   PAIRING_CODE_AMBIGUOUS_GLYPH: 'pairing_code.ambiguous_glyph',
   PUBLICATION_CHECKLIST_INCOMPLETE: 'publication.checklist_incomplete',

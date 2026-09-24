@@ -89,11 +89,13 @@ export declare const ChatErrorCode: {
  * Both mean another moderator got there first, and they are NOT the same event:
  * `already_claimed` is recoverable by waiting, `already_settled` is final.
  */
-export declare const MODERATION_ERROR_CODES: readonly ["moderation.already_claimed", "moderation.already_settled"];
+export declare const MODERATION_ERROR_CODES: readonly ["moderation.already_claimed", "moderation.already_settled", "moderation.automatic_cannot_override_human", "moderation.decision_version_stale"];
 export type ModerationErrorCode = (typeof MODERATION_ERROR_CODES)[number];
 export declare const ModerationErrorCode: {
     readonly ALREADY_CLAIMED: "moderation.already_claimed";
     readonly ALREADY_SETTLED: "moderation.already_settled";
+    readonly AUTOMATIC_CANNOT_OVERRIDE_HUMAN: "moderation.automatic_cannot_override_human";
+    readonly DECISION_VERSION_STALE: "moderation.decision_version_stale";
 };
 /**
  * Refusals about a DATE and what may still be changed on it.
@@ -164,7 +166,7 @@ export declare const OrderErrorCode: {
  * THE DOMAIN'S refusals THAT REACH A SURFACE — a rule said no and somebody has
  * to be told why.
  */
-export declare const DOMAIN_ERROR_CODES: readonly ["capacity.tier_must_widen", "content.empty_in_both_languages", "hold.quantity_invalid", "media.size_invalid", "media.url_empty", "moderation.already_settled", "moderation.automatic_cannot_override_human", "moderation.decision_version_stale", "order.quantity_invalid", "pairing_code.ambiguous_glyph", "publication.checklist_incomplete", "publication.transition_forbidden", "publication.transition_irreversible", "search.unknown_flag", "seat_code.malformed"];
+export declare const DOMAIN_ERROR_CODES: readonly ["capacity.tier_must_widen", "content.empty_in_both_languages", "hold.quantity_invalid", "media.size_invalid", "media.url_empty", "order.quantity_invalid", "pairing_code.ambiguous_glyph", "publication.checklist_incomplete", "publication.transition_forbidden", "publication.transition_irreversible", "search.unknown_flag", "seat_code.malformed"];
 export type DomainErrorCode = (typeof DOMAIN_ERROR_CODES)[number];
 export declare const DomainErrorCode: {
     readonly CAPACITY_TIER_MUST_WIDEN: "capacity.tier_must_widen";
@@ -172,9 +174,6 @@ export declare const DomainErrorCode: {
     readonly HOLD_QUANTITY_INVALID: "hold.quantity_invalid";
     readonly MEDIA_SIZE_INVALID: "media.size_invalid";
     readonly MEDIA_URL_EMPTY: "media.url_empty";
-    readonly MODERATION_ALREADY_SETTLED: "moderation.already_settled";
-    readonly MODERATION_AUTOMATIC_CANNOT_OVERRIDE_HUMAN: "moderation.automatic_cannot_override_human";
-    readonly MODERATION_DECISION_VERSION_STALE: "moderation.decision_version_stale";
     readonly ORDER_QUANTITY_INVALID: "order.quantity_invalid";
     readonly PAIRING_CODE_AMBIGUOUS_GLYPH: "pairing_code.ambiguous_glyph";
     readonly PUBLICATION_CHECKLIST_INCOMPLETE: "publication.checklist_incomplete";
@@ -198,11 +197,29 @@ export declare const DomainErrorCode: {
  *   surface cannot provoke these and has nothing to render for them, so
  *   publishing them would be a contract promising errors it cannot produce.
  *
- *   The ones I am least sure of are `money.count_invalid` and
- *   `content.empty_in_both_languages`: the first could surface on a studio form,
- *   and the second is on the published side for exactly that reason. If a BFF
- *   ever serves one of these verbatim, it moves — and the gate will say so the
- *   day the member reaches a wire.
+ *   TWO WERE FLAGGED AS UNCERTAIN AND BOTH WERE THEN CHECKED. Both hold, and
+ *   one of the two REASONS was wrong, which is the part worth keeping:
+ *
+ *     `money.count_invalid` — guard, confirmed. It protects
+ *     `multiplyByCount(price, count)`, and a count reaching that function has
+ *     already passed `order.quantity_invalid` upstream. A negative one arriving
+ *     here means we let it through, not that a buyer asked for it.
+ *
+ *     `content.empty_in_both_languages` — published, confirmed, WRONG REASON.
+ *     It was justified as an artist submitting an empty form. It is not a write
+ *     at all: `pickLanguage` throws it ON READ, when the server composes a
+ *     response and finds stored content empty in both languages. A surface meets
+ *     it while rendering a page, which is a better argument for publishing than
+ *     the one first given.
+ *
+ *   ⚠ AND THE QUESTION UNDERNEATH IS NOT SETTLED, because no service exists yet:
+ *     WHERE IS THE VALIDATION BOUNDARY? A badly filled form field either stops
+ *     at the door as `api.schema_invalid` or reaches the rule. Until a BFF is
+ *     written, every line of this split rests on the first answer.
+ *
+ *     Nothing here has to remember that. `check-vocabulary` runs the inverse
+ *     check: a member declared domain-only that reaches a contract is a failure,
+ *     so the day one of these is served the gate says so.
  */
 export declare const DOMAIN_GUARD_CODES: readonly ["i18n.key_malformed", "instant.invalid", "money.amount_not_integer", "money.count_invalid", "money.currency_invalid", "money.currency_mismatch", "rate.invalid", "timezone.not_iana", "timezone.offset_out_of_range", "window.end_before_start"];
 export type DomainGuardCode = (typeof DOMAIN_GUARD_CODES)[number];

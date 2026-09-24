@@ -181,6 +181,29 @@ export const PUBLICATION_CHECKLIST_ITEMS = [
 export type PublicationChecklistItem = (typeof PUBLICATION_CHECKLIST_ITEMS)[number];
 
 /**
+ * The NAMED members, so that nothing writes one of these as a string.
+ *
+ * ⚠ IT WAS THE ONLY VOCABULARY IN THIS PACKAGE WITHOUT ONE, and the absence
+ *   was found the way absences are: something needed a member and had to
+ *   write a literal instead. `@arthome/contracts`' error examples carry
+ *   `poster`, `capacity` and `technical_check_passed`, and `check-enums`
+ *   reported all three — correctly, because a literal is a literal whatever
+ *   it is illustrating. An example written as the constant cannot drift when
+ *   the constant is renamed, which is a better example than a quoted string.
+ */
+export const PublicationChecklistItem = {
+  TITLE_AND_DISCIPLINE: 'title_and_discipline',
+  POSTER: 'poster',
+  DESCRIPTION: 'description',
+  AT_LEAST_ONE_ACTIVE_PRICE: 'at_least_one_active_price',
+  CAPACITY: 'capacity',
+  TECHNICAL_CHECK_PASSED: 'technical_check_passed',
+  CHAT_MODE_SET: 'chat_mode_set',
+  CHAPTERS_PLANNED: 'chapters_planned',
+  MODERATOR_ASSIGNED: 'moderator_assigned',
+} as const;
+
+/**
  * BLOCKING IS A PROPERTY OF THE ITEM, NOT A SEPARATE VOCABULARY.
  *
  * This was two vocabularies — seven blocking items and two warnings — and the

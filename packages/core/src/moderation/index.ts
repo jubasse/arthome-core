@@ -10,7 +10,7 @@
 import type { Instant } from '../kernel/clock.js';
 import { DomainError } from '../kernel/errors.js';
 import { isAfter, plusMinutes } from '../time/instant.js';
-import { DomainErrorCode, ModerationErrorCode } from '../vocabulary/error-codes.js';
+import { ModerationErrorCode } from '../vocabulary/error-codes.js';
 import type { ModerationVerdict } from '../vocabulary/moderation.js';
 import {
   AudienceSanction,
@@ -151,7 +151,7 @@ export function evaluateSettlement(
   if (attempt.expectedDecisionVersion !== snapshot.decisionVersion) {
     return {
       accepted: false,
-      code: DomainErrorCode.MODERATION_DECISION_VERSION_STALE,
+      code: ModerationErrorCode.DECISION_VERSION_STALE,
       winner: null,
     };
   }
@@ -184,7 +184,7 @@ export function assertCanOverride(
 ): void {
   if (!canOverride(existingOrigin, incomingOrigin)) {
     throw new DomainError({
-      code: DomainErrorCode.MODERATION_AUTOMATIC_CANNOT_OVERRIDE_HUMAN,
+      code: ModerationErrorCode.AUTOMATIC_CANNOT_OVERRIDE_HUMAN,
       params: { existing: existingOrigin, incoming: incomingOrigin },
     });
   }

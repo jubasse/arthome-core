@@ -48,7 +48,13 @@
 
 import { z } from 'zod';
 
-import { InstantSchema, int64 } from '@arthome/core/schema';
+import {
+  DomainErrorCode,
+  FailureNature,
+  PublicationChecklistItem,
+  PublicationState,
+} from '@arthome/core';
+import { ErrorSchema, InstantSchema, int64 } from '@arthome/core/schema';
 
 /** The meta every STOREFRONT response composes. */
 export const StorefrontEnvelopeMetaSchema: z.ZodObject<
@@ -117,3 +123,99 @@ export const StudioEnvelopeMetaSchema: z.ZodObject<
     .optional()
     .describe('The optional parts that could not be composed. The console paints anyway.'),
 });
+
+/**
+ * `Error` — ONE SHAPE, TWO SETS OF PROSE, and the split is the smallest version
+ * of D-065 §G there is.
+ *
+ * The two contracts declare byte-identical PROPERTIES and different
+ * DESCRIPTIONS. That is legitimate: `code`'s example is
+ * `publication.transition_irreversible` for a viewer and
+ * `publication.checklist_incomplete` for a control room, because those are the
+ * refusals each one actually meets. An example from the wrong product is worse
+ * than none — it teaches a reader a code their surface will never see.
+ *
+ * ⚠ SO ONLY THE PROSE IS HERE. The shape, the regex and the sixty-four-member
+ *   vocabulary all come from `ErrorSchema` in `@arthome/core/schema`, reached
+ *   through `.shape`, and `.extend()` REPLACES a field with the same field plus
+ *   metadata. Nothing is redeclared: delete the `.describe()` calls below and
+ *   both products still emit a correct `Error`.
+ *
+ * ⚠ AND THE NARROWING THAT WAS HERE AN HOUR AGO IS GONE, WHICH IS THE PART
+ *   WORTH READING.
+ *
+ *   Each document briefly declared its own subset — 24 codes for the storefront,
+ *   33 for the studio — with prose explaining why a viewer cannot close a
+ *   reconciliation period. The families made that argument well and the list did
+ *   not: it was built from WHICH CODES EACH DOCUMENT HAPPENED TO MENTION, so the
+ *   studio got `api.rate_limited` and the storefront did not, for no reason
+ *   anybody could state. A rate limit is not a studio notion.
+ *
+ *   *A narrowing that is a snapshot of examples is a claim with nobody behind
+ *   it* — and it had already rotted: both narrowing texts carried a count, and
+ *   both counts were wrong within the hour, in opposite directions.
+ *
+ *   So both contracts publish the whole vocabulary. A client that never receives
+ *   a code simply never renders it; a client told a code cannot arrive, wrongly,
+ *   has no screen for it on the day it does. The narrowing comes back when
+ *   somebody DESIGNS one, per product, with an argument — not as the residue of
+ *   an extraction.
+ */
+
+export const StorefrontErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose> =
+  ErrorSchema.extend({
+    code: ErrorSchema.shape.code
+      .meta({ examples: [DomainErrorCode.PUBLICATION_TRANSITION_IRREVERSIBLE] })
+      .describe(
+        'Closed vocabulary, i18n by codes. **Never a sentence.** A code unknown to one version of the\napplication falls back on the snapshot embedded at build time — that is an operating\ncondition on mobile, where store review is slow.\n',
+      ),
+    nature: ErrorSchema.shape.nature
+      .meta({ examples: [FailureNature.REFUSED] })
+      .describe(
+        'The decision the person has to make. `refused`: do not retry, understand. `unavailable`:\nretry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by\nthe server**, present in the vocabulary so the surface has only one error shape to render.\n\n**Open vocabulary on read, and this is where it matters most.** An unknown nature —\n`degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen\n`enum` here would make a television on an earlier version reject the whole envelope: it would\nnot lose a card, it would lose its ability to **read errors**, precisely when something is\nalready wrong, and on a fleet we cannot update.\n',
+      ),
+    params: ErrorSchema.shape.params
+      .meta({
+        examples: [
+          {
+            from: PublicationState.SCHEDULED,
+            to: PublicationState.RESERVE,
+            promise: 'prices_engaged',
+          },
+        ],
+      })
+      .describe("The message's parameters, never the message."),
+    traceId: ErrorSchema.shape.traceId
+      .meta({ examples: ['4bf92f3577b34da6a3ce929d0e0e4736'] })
+      .describe(
+        'The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on\nmobile it is the only link between "my application crashed" and a server log.\n',
+      ),
+  });
+
+export const StudioErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose> =
+  ErrorSchema.extend({
+    code: ErrorSchema.shape.code
+      .meta({ examples: [DomainErrorCode.PUBLICATION_CHECKLIST_INCOMPLETE] })
+      .describe(
+        'Closed vocabulary, i18n by codes, **with a snapshot embedded at build time as a mandatory\nfallback**. That is vital here: **a store review is slow**. If a new code arrives from the\nbackend before the application is updated, the person on duty must see a sentence, not\n`moderation.verdict.conflict`.\n',
+      ),
+    nature: ErrorSchema.shape.nature.describe(
+      '`offline_forbidden` is a **local** refusal, never emitted by the server.\n\n**Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence\nretryable. A frozen `enum` here would make an earlier version of the application reject the\n**whole** error envelope — that is, lose the ability to read errors at the precise moment\nsomething is wrong, on duty, on an application a store review takes days to replace.\n',
+    ),
+    params: ErrorSchema.shape.params.meta({
+      examples: [
+        {
+          missing: [
+            PublicationChecklistItem.POSTER,
+            PublicationChecklistItem.CAPACITY,
+            PublicationChecklistItem.TECHNICAL_CHECK_PASSED,
+          ],
+        },
+      ],
+    }),
+    traceId: ErrorSchema.shape.traceId
+      .meta({ examples: ['4bf92f3577b34da6a3ce929d0e0e4736'] })
+      .describe(
+        'The one moment left where the person can read out a number and dictate it to support.',
+      ),
+  });

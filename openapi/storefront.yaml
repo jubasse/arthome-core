@@ -5336,9 +5336,9 @@ components:
             application falls back on the snapshot embedded at build time — that is an operating
             condition on mobile, where store review is slow.
           examples: [publication.transition_irreversible]
-          x-arthome-vocabulary: [api.cursor_too_old, api.forbidden, api.not_found, api.schema_invalid, api.unauthenticated, api.upstream_unavailable, chat.holders_only, chat.rate_limited, hold.quantity_invalid, identity.email_taken, identity.signed_out_elsewhere, identity.two_factor_required, order.payment_declined, order.price_stale, order.quantity_invalid, order.quote_address_mismatch, pairing.execution_engaged, pairing.identity_mismatch, pairing.intent_not_engageable, pairing.slow_down, pairing_code.ambiguous_glyph, search.unknown_flag, seat_code.malformed, watch.concurrent_limit_reached]
+          pattern: '^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$'
+          x-arthome-vocabulary: [api.unauthenticated, api.forbidden, api.not_found, api.rate_limited, api.schema_invalid, api.upstream_unavailable, api.cursor_too_old, api.sort_key_forbidden, api.period_filter_required, api.rights_version_stale, identity.email_taken, identity.two_factor_required, identity.signed_out_elsewhere, pairing.slow_down, pairing.identity_mismatch, pairing.intent_not_engageable, pairing.execution_engaged, chat.holders_only, chat.rate_limited, moderation.already_claimed, moderation.already_settled, moderation.automatic_cannot_override_human, moderation.decision_version_stale, date.has_sold_seats, date.outcome_decision_forbidden, date.prices_locked, date.replay_policy_final, date.technical_check_required, date.technical_provision_required, date.stream_key_rotation_during_run, channel.has_open_obligations, channel.crew_role_reserved, channel.role_not_assignable, channel.transfer_target_ineligible, channel.same_actor_forbidden, payout.reconciliation_discrepancy_unexplained, order.quote_address_mismatch, order.sold_out, order.payment_declined, order.price_stale, order.plan_unavailable, capacity.tier_must_widen, content.empty_in_both_languages, hold.quantity_invalid, media.size_invalid, media.url_empty, order.quantity_invalid, pairing_code.ambiguous_glyph, publication.checklist_incomplete, publication.transition_forbidden, publication.transition_irreversible, search.unknown_flag, seat_code.malformed, watch.no_seat, watch.room_not_open, watch.out_of_territory, watch.subscription_required, watch.no_replay, watch.replay_expired, watch.replay_not_on_sale, watch.preview_exhausted, watch.concurrent_limit_reached, watch.date_cancelled, watch.not_published]
           x-arthome-vocabulary-source: ERROR_CODES
-          x-arthome-vocabulary-narrowing: "The 32 a viewer-facing surface can receive. The studio's crew, payout and reconciliation refusals cannot reach this contract: a viewer has no channel to close a period on. A code the storefront cannot produce would be one every storefront still has to carry a translation for."
         nature:
           type: string
           description: |
@@ -5362,6 +5362,7 @@ components:
           examples: [{ from: scheduled, to: reserve, promise: prices_engaged }]
         traceId:
           type: string
+          minLength: 1
           description: |
             The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
             mobile it is the only link between "my application crashed" and a server log.

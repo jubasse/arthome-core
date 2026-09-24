@@ -46,6 +46,7 @@
  *   week on.
  */
 import { z } from 'zod';
+import { ErrorSchema } from '@arthome/core/schema';
 /** The meta every STOREFRONT response composes. */
 export declare const StorefrontEnvelopeMetaSchema: z.ZodObject<{
     servedAt: z.ZodString;
@@ -65,4 +66,43 @@ export declare const StudioEnvelopeMetaSchema: z.ZodObject<{
     lastEventSeq: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     degraded: z.ZodOptional<z.ZodArray<z.ZodString>>;
 }, z.core.$loose>;
+/**
+ * `Error` — ONE SHAPE, TWO SETS OF PROSE, and the split is the smallest version
+ * of D-065 §G there is.
+ *
+ * The two contracts declare byte-identical PROPERTIES and different
+ * DESCRIPTIONS. That is legitimate: `code`'s example is
+ * `publication.transition_irreversible` for a viewer and
+ * `publication.checklist_incomplete` for a control room, because those are the
+ * refusals each one actually meets. An example from the wrong product is worse
+ * than none — it teaches a reader a code their surface will never see.
+ *
+ * ⚠ SO ONLY THE PROSE IS HERE. The shape, the regex and the sixty-four-member
+ *   vocabulary all come from `ErrorSchema` in `@arthome/core/schema`, reached
+ *   through `.shape`, and `.extend()` REPLACES a field with the same field plus
+ *   metadata. Nothing is redeclared: delete the `.describe()` calls below and
+ *   both products still emit a correct `Error`.
+ *
+ * ⚠ AND THE NARROWING THAT WAS HERE AN HOUR AGO IS GONE, WHICH IS THE PART
+ *   WORTH READING.
+ *
+ *   Each document briefly declared its own subset — 24 codes for the storefront,
+ *   33 for the studio — with prose explaining why a viewer cannot close a
+ *   reconciliation period. The families made that argument well and the list did
+ *   not: it was built from WHICH CODES EACH DOCUMENT HAPPENED TO MENTION, so the
+ *   studio got `api.rate_limited` and the storefront did not, for no reason
+ *   anybody could state. A rate limit is not a studio notion.
+ *
+ *   *A narrowing that is a snapshot of examples is a claim with nobody behind
+ *   it* — and it had already rotted: both narrowing texts carried a count, and
+ *   both counts were wrong within the hour, in opposite directions.
+ *
+ *   So both contracts publish the whole vocabulary. A client that never receives
+ *   a code simply never renders it; a client told a code cannot arrive, wrongly,
+ *   has no screen for it on the day it does. The narrowing comes back when
+ *   somebody DESIGNS one, per product, with an argument — not as the residue of
+ *   an extraction.
+ */
+export declare const StorefrontErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>;
+export declare const StudioErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>;
 //# sourceMappingURL=index.d.ts.map

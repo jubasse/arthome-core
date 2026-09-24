@@ -19,12 +19,16 @@ export { hasLanguageBarrier, isLanguageNeutral, isUnderstandable } from './langu
 
 export type {
   PublicationChecklistEntry,
-  PublicationChecklistItem,
   PublicationReadiness,
   PublicationTransition,
 } from './publication.js';
 export {
   PUBLICATION_CHECKLIST_ITEMS,
+  // The NAMED members, beside the list — exported as a VALUE, which the type of
+  // the same name above is not. Every other vocabulary in this package publishes
+  // both; this one published only the list, so a consumer that wanted a member
+  // had a literal as its only option.
+  PublicationChecklistItem,
   isBlockingChecklistItem,
   assertTransitionAllowed,
   irreversiblePromiseBlocking,

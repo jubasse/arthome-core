@@ -47,6 +47,26 @@
  *   `enum` against a document that has none (D-065 §H). Core now exports
  *   `LocaleIn` and `LocaleOut` and no `LocaleSchema` at all, so the choice has to
  *   be made rather than defaulted.
+ *
+ * ⚠ AND IT IS A BARE `string` NOW, WHICH IS NOT THE SAME CORRECTION AND IS
+ *   WORTH SEPARATING FROM IT.
+ *
+ *   The fix above was about DIRECTION: strict on a response is what fails a
+ *   television. Making it tolerant was right. Then the gate showed that neither
+ *   document publishes a vocabulary here at all — both carry
+ *   `{ type: string, examples: [fr] }` and nothing else — so `LocaleOut` was
+ *   emitting `x-arthome-vocabulary` the contracts do not have. The document is
+ *   authoritative (D-058), so the code matches it.
+ *
+ *   ⚠ WHETHER THE DOCUMENT IS RIGHT IS A SEPARATE, OPEN QUESTION, and it is
+ *     left open deliberately rather than settled by a tidy-up. Publishing the
+ *     vocabulary would tell a generated client which languages to expect
+ *     without making it refuse a third — that is exactly what
+ *     `x-arthome-vocabulary` is for, and it is the difference between a client
+ *     that can label an unexpected language and one that can only show it.
+ *     **The change belongs in the two documents first**, and then here, in that
+ *     order. Making it here first would be a schema publishing a vocabulary its
+ *     own contract never declared.
  */
 import { z } from 'zod';
 /** Authored text as the storefront documents it. */

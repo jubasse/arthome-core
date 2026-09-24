@@ -58,6 +58,28 @@ export declare function assertTransitionAllowed(from: PublicationState, to: Publ
  */
 export declare const PUBLICATION_CHECKLIST_ITEMS: readonly ["title_and_discipline", "poster", "description", "at_least_one_active_price", "capacity", "technical_check_passed", "chat_mode_set", "chapters_planned", "moderator_assigned"];
 export type PublicationChecklistItem = (typeof PUBLICATION_CHECKLIST_ITEMS)[number];
+/**
+ * The NAMED members, so that nothing writes one of these as a string.
+ *
+ * ⚠ IT WAS THE ONLY VOCABULARY IN THIS PACKAGE WITHOUT ONE, and the absence
+ *   was found the way absences are: something needed a member and had to
+ *   write a literal instead. `@arthome/contracts`' error examples carry
+ *   `poster`, `capacity` and `technical_check_passed`, and `check-enums`
+ *   reported all three — correctly, because a literal is a literal whatever
+ *   it is illustrating. An example written as the constant cannot drift when
+ *   the constant is renamed, which is a better example than a quoted string.
+ */
+export declare const PublicationChecklistItem: {
+    readonly TITLE_AND_DISCIPLINE: "title_and_discipline";
+    readonly POSTER: "poster";
+    readonly DESCRIPTION: "description";
+    readonly AT_LEAST_ONE_ACTIVE_PRICE: "at_least_one_active_price";
+    readonly CAPACITY: "capacity";
+    readonly TECHNICAL_CHECK_PASSED: "technical_check_passed";
+    readonly CHAT_MODE_SET: "chat_mode_set";
+    readonly CHAPTERS_PLANNED: "chapters_planned";
+    readonly MODERATOR_ASSIGNED: "moderator_assigned";
+};
 export declare function isBlockingChecklistItem(item: PublicationChecklistItem): boolean;
 /** One checklist item, with everything a surface needs to render its row. */
 export interface PublicationChecklistEntry {

@@ -22,10 +22,12 @@ A declaration longer than 160 characters is listed by kind only — read the `.d
 
 #### @arthome/contracts/envelope
 
-Declarations: `dist/envelope/index.d.ts` — 2 exported names.
+Declarations: `dist/envelope/index.d.ts` — 4 exported names.
 
 - `StorefrontEnvelopeMetaSchema` (const) — The meta every STOREFRONT response composes.
+- `StorefrontErrorSchema` (const) — `StorefrontErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>` — 'Error' — ONE SHAPE, TWO SETS OF PROSE, and the split is the smallest version of D-065 §G there is.
 - `StudioEnvelopeMetaSchema` (const) — The meta every STUDIO response composes.
+- `StudioErrorSchema` (const) — `StudioErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>`
 
 #### @arthome/contracts/money
 
@@ -155,7 +157,7 @@ Declarations: `dist/index.d.ts` — 377 exported names.
 - `MESSAGE_STATES` (const) — `MESSAGE_STATES: readonly ["published", "removed"]` — AXIS 1 — the MESSAGE's state.
 - `MINUTE_MS` (const) — `MINUTE_MS = 60000`
 - `MODERATION_BADGES` (const) — `MODERATION_BADGES: readonly ["banned", "muted", "removed", "published"]` — THE SINGLE BADGE — derived from the three axes, never recomposed by a surface.
-- `MODERATION_ERROR_CODES` (const) — `MODERATION_ERROR_CODES: readonly ["moderation.already_claimed", "moderation.already_settled"]` — The moderation queue's two concurrency refusals.
+- `MODERATION_ERROR_CODES` (const) — The moderation queue's two concurrency refusals.
 - `MODERATION_ITEM_STATES` (const) — `MODERATION_ITEM_STATES: readonly ["reported", "claimed", "settled"]` — AXIS 2 — the nature of the QUEUE ITEM.
 - `MODERATION_QUEUE_ALERT_SIZE` (const) — `MODERATION_QUEUE_ALERT_SIZE = 10` — Moderation queue saturated — had no owner anywhere.
 - `MODERATION_REASONS` (const) — `MODERATION_REASONS: readonly ["spam", "insult", "spoiler", "off_topic", "harassment"]` — Vocabulary from 'shared/catalogue.json' 'moderationReasons', which has authority — and which, unlike the other enums, had NO competitor her…
@@ -215,7 +217,7 @@ Declarations: `dist/index.d.ts` — 377 exported names.
 - `Promotion` (interface)
 - `PromotionReason` (type+const)
 - `PublicationChecklistEntry` (interface) — One checklist item, with everything a surface needs to render its row.
-- `PublicationChecklistItem` (type) — `type PublicationChecklistItem = (typeof PUBLICATION_CHECKLIST_ITEMS)[number];`
+- `PublicationChecklistItem` (type+const) — The NAMED members, so that nothing writes one of these as a string.
 - `PublicationReadiness` (interface)
 - `PublicationState` (type+const)
 - `PublicationTransition` (interface) — An offered transition, with what it commits to.
@@ -449,7 +451,7 @@ Declarations: `dist/schema/index.d.ts` — 44 exported names.
 - `CurrencyCodeSchema` (const) — `CurrencyCodeSchema: z.ZodString` — ISO 4217, uppercase.
 - `DateIdSchema` (const) — `DateIdSchema: z.ZodString`
 - `DeviceIdSchema` (const) — `DeviceIdSchema: z.ZodString`
-- `ErrorSchema` (const) — `ErrorSchema: z.ZodObject<{ code: z.ZodString; params: z.ZodRecord<z.ZodString, z.ZodUnknown>; traceId: z.ZodString; nature: VocabularyOut; }, z.core.$loose>` — ⚠ 'params' carries the MESSAGE'S PARAMETERS, never the message.
+- `ErrorSchema` (const) — ⚠ 'params' carries the MESSAGE'S PARAMETERS, never the message.
 - `FailureNatureOut` (const) — `FailureNatureOut: VocabularyOut` — The failure nature, tolerant — and the ONLY vocabulary in either contract that declares what an unknown member falls back to.
 - `IanaTimeZoneSchema` (const) — `IanaTimeZoneSchema: z.ZodString` — An IANA time zone identifier: 'Europe/Paris'.
 - `InstantSchema` (const) — `InstantSchema: z.ZodString` — An instant on the wire: an ISO 8601 string in UTC.

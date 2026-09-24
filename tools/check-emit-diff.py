@@ -37,6 +37,8 @@ EQUIVALENCES = [
     "`required: []` == absent `required` -- an all-optional shape; the documents never write the empty list",
     "`anyOf: [{X}, {type: null}]` == `type: [X, 'null']`, X's keywords merged up",
     "key order is not compared, at any depth",
+    "`required` is compared as a SET -- JSON Schema gives its order no meaning",
+    "an empty `properties: {}` == absent -- it names nothing, so it constrains nothing",
     "a description's trailing whitespace is not compared -- YAML block scalars end in a newline",
 ]
 
@@ -72,6 +74,12 @@ def normalise(node):
     for key, value in node.items():
         if key in ("$schema", "$id"):
             continue
+        if key == "properties" and value == {}:
+            # An empty `properties` names nothing, so it constrains nothing --
+            # the same relationship `{}` has with an absent
+            # `additionalProperties`. `z.looseObject({})` emits it; a
+            # hand-written map never does.
+            continue
         if key == "additionalProperties":
             # `{}` and absence are two artefacts spelling one thing: always equal.
             #
@@ -85,12 +93,24 @@ def normalise(node):
             #
             # `Error.params` is the case that forced the distinction, and the
             # document settled it by carrying an array in its own example.
-            if value == {} or (value is True and "properties" not in node):
+            # `not node.get("properties")` rather than `"properties" not in
+            # node`: an EMPTY properties map is dropped just above, so a node
+            # carrying one is a map exactly like a node carrying none, and the
+            # two must reach the same verdict. Testing membership alone would
+            # have made the answer depend on which artefact spelled it.
+            if value == {} or (value is True and not node.get("properties")):
                 continue
         if key == "required" and value == []:
             continue
         if key == "description" and isinstance(value, str):
             out[key] = value.strip()
+            continue
+        if key == "required" and isinstance(value, list):
+            # JSON Schema defines `required` as an array of UNIQUE strings with
+            # no ordering semantics, so two orders are the same schema. A
+            # hand-written document groups it by meaning and an emitter follows
+            # declaration order; neither is more correct.
+            out[key] = sorted(value)
             continue
         out[key] = normalise(value)
 

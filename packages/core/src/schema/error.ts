@@ -39,6 +39,7 @@ import { z } from 'zod';
 
 import { vocabularyOut, type VocabularyOut } from './vocabulary.js';
 import { FAILURE_NATURES, FailureNature } from '../kernel/errors.js';
+import { ERROR_CODES } from '../vocabulary/error-codes.js';
 
 /**
  * The failure nature, tolerant — and the ONLY vocabulary in either contract that
@@ -88,15 +89,29 @@ export const FailureNatureOut: VocabularyOut = vocabularyOut(FAILURE_NATURES).me
  */
 export const ErrorSchema: z.ZodObject<
   {
-    code: z.ZodString;
-    params: z.ZodRecord<z.ZodString, z.ZodUnknown>;
+    code: VocabularyOut;
+    params: z.ZodObject<Record<string, never>, z.core.$loose>;
     traceId: z.ZodString;
     nature: VocabularyOut;
   },
   z.core.$loose
 > = z.looseObject({
-  code: z.string().regex(/^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$/),
-  params: z.record(z.string(), z.unknown()),
+  // THE VOCABULARY BELONGS HERE, NOT IN THE PRODUCT LAYER. Which codes exist is
+  // a fact about the domain; only the PROSE around them differs per product. A
+  // contract that listed them again would be the sixty-four-member parallel
+  // table this package exists to prevent.
+  //
+  // The regex rides along and is now TRUE, which it was not this morning: it
+  // demands a dotted lowercase code and every example in both contracts was
+  // SCREAMING_SNAKE, so it refused all of them. D-067 converted the codes; the
+  // same regex now accepts all sixty-four.
+  code: vocabularyOut(ERROR_CODES).regex(/^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$/),
+  // `looseObject({})`, NOT `record()`. Both accept any key with any value; the
+  // record form additionally emits `propertyNames: { type: string }`, which is
+  // vacuous — every key in a JSON object is a string — and is in neither
+  // contract. The emitted document should say what the contract says and no
+  // more, so the narrower emission wins where the meaning is identical.
+  params: z.looseObject({}),
   traceId: z.string().min(1),
   nature: FailureNatureOut,
 });

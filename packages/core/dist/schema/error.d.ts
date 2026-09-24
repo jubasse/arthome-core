@@ -75,8 +75,8 @@ export declare const FailureNatureOut: VocabularyOut;
  * mobile it is the only link between "my application crashed" and a server log.
  */
 export declare const ErrorSchema: z.ZodObject<{
-    code: z.ZodString;
-    params: z.ZodRecord<z.ZodString, z.ZodUnknown>;
+    code: VocabularyOut;
+    params: z.ZodObject<Record<string, never>, z.core.$loose>;
     traceId: z.ZodString;
     nature: VocabularyOut;
 }, z.core.$loose>;
