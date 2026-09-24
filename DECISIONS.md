@@ -1296,3 +1296,68 @@ That is D-032's fifth instance with a different surface: I reported "1015 lines 
 measured and invariant under the defect it was ruling out. **The short thing has to be able to fail
 for the reason you care about** — and a bucket named for what it contains, rather than for what put
 things in it, will be read as the first and used as the second.
+
+### D-041 — A check is scoped by something, and the scope is invisible unless the output says so
+
+**`backend-contracts` wrote the sentence that unifies every measurement failure of this week**, and
+it generalises further than the finding it came from:
+
+> *A check is scoped by something, and the scope is invisible in the output unless the output says
+> so.*
+
+Every one of these was an honest measurement read as an answer to a question it never asked:
+
+| the check | scoped by | what fell outside |
+|---|---|---|
+| the separator conversion | **a directory** | nine vocabularies living outside `vocabulary/` |
+| `backend-domain`'s divergence check | **a separator** | ten values differing only by case, in a bucket labelled *"absent from the wire"* |
+| my *"1015 lines in HEAD"* | **a line count** | a same-line substitution, invariant by construction |
+| my read of a gate's status | **the last command in a pipe** | the gate's own exit code |
+| my `verbatim` rule for quotations | **existence, not narrowness** | a quotation of `"e"`, which skips every line and passes the whole file |
+
+**And the counter-example is the one that proves the rule.** `backend-contracts`' comparison is a
+**set difference**, and *"only the third announces its scope, by construction, because a set
+comparison has nowhere to hide a narrowing."* That is the design principle: **prefer a check whose
+scope is structurally visible** over one whose scope lives in the author's head and in a label
+nobody rereads.
+
+**Two agents read one number wrongly, which is what makes it structural rather than careless.**
+`backend-domain` reported *"divergence 0"* from a separator-only check; `backend-contracts` read
+that number as *"no divergence"* and reported the case divergence two days later as a fresh finding,
+without asking what could have produced a zero. Neither was wrong to trust the other. **The number
+had no scope attached, so it could not be trusted correctly.**
+
+**MY `verbatim` RULE DID NOT DO WHAT IT SAYS, AND `conventions` FOUND IT.**
+
+I designed the quotation exemption so that the text must appear verbatim in the file, *"so an entry
+cannot widen into a blanket pass"*. Verbatim guarantees a quotation **exists**. It guarantees
+nothing about how **narrow** it is. A quotation of `"e"` appears on nearly every line, skips every
+line, and passes the entire file — **a blanket pass through the front door**, defeating exactly the
+property the rule was written to provide. Demonstrated, then fixed, then verified: a single-letter
+entry now fails.
+
+**And its first fix was worse than the hole, for a reason worth more than either.** It required the
+quotation to contain a word from the gate's `FRENCH` list — which rejected *"les quatorze entrées de
+navigation"*, manifestly French, because that list is deliberately **narrow**: it holds only words
+that cannot be English or an identifier.
+
+> **Detection wants few false positives, so its list is narrow. Validation wants few false
+> negatives, so it would need a broad one. Not the same instrument.**
+
+The bound that works is **structural** — a quotation may cover a quotation, not a document: at most
+three lines. It has no view about language, refuses `"e"` on the ground that actually matters, and
+**cannot be wrong about French**. The floor rule: *when a rule can be enforced by counting instead
+of by judging, count.*
+
+**A RULING THAT CREATES A FAMILY CREATES WORK IN EVERY GATE THAT ASSUMED THERE WAS ONE.** D-036
+created the `SCREAMING_SNAKE` family a day after the twins check was written, so the check's
+case-insensitive grouping began merging a refusal code with a refund reason — a false positive
+manufactured by a correct ruling arriving after the tool. Now grouped separator-insensitively but
+**case-sensitively**, with a case difference reported as a **note**: legitimate across families,
+suspicious within one, and *the gate cannot tell while a human can.*
+
+**AND THE GATE IS DELIBERATELY RED, WHICH IS THE RIGHT ANSWER.** `backend-contracts` annotated
+`WATCH_FALLBACK_ACTIONS` knowing it disagrees, rather than leaving it undeclared until core catches
+up: *"un-annotating it would hide a real divergence behind 'undeclared', which is widening the
+allowance by another name."* A gate red on one named divergence in live work is worth more than a
+gate green because nobody declared the thing it would have caught.
