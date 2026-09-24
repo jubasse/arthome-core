@@ -1309,7 +1309,7 @@ Every one of these was an honest measurement read as an answer to a question it 
 
 | the check | scoped by | what fell outside |
 |---|---|---|
-| the separator conversion | **a directory** | nine vocabularies living outside `vocabulary/` |
+| ~~the separator conversion~~ | ~~a directory~~ | **retracted — see D-043.** The conversion globbed the whole tree; the row was my own unchecked inference |
 | `backend-domain`'s divergence check | **a separator** | ten values differing only by case, in a bucket labelled *"absent from the wire"* |
 | my *"1015 lines in HEAD"* | **a line count** | a same-line substitution, invariant by construction |
 | my read of a gate's status | **the last command in a pipe** | the gate's own exit code |
@@ -1420,3 +1420,69 @@ they are the ones the gate cannot currently classify.
 equality would have turned one deliberate red into three. Correct: the gate learns the third verdict
 first. It wrote the reason into the four blocks that had no description meanwhile, so the rule is at
 least *stated* where it is enforced even before it is checkable.
+
+### D-043 — Retraction: the directory theory was wrong, and I endorsed the judgement that replaced it
+
+**`backend-domain` checked the claim I had built two entries on, and it does not hold.**
+
+D-038 attributed the untouched vocabularies to a conversion *"scoped by a directory"*, and D-041
+made that the first row of its scope table. **The conversion passes globbed `packages/core/src/**`,
+not `vocabulary/`.** Verified: zero kebab-case literals remain in `entitlement/`, `replay/`,
+`kernel/`, `moderation/` or `catalog/`. They were all reached. `WATCH_DENIAL_REASONS` was converted
+twice; `REPLAY_UNAVAILABILITY_REASONS` and `FAILURE_NATURES` already agreed with the wire.
+
+**So `MODERATION_BADGES` was never missed. It was kept deliberately, on a reason I endorsed in the
+strongest terms I have used for anything this week** — that a badge is a **derived** fact, so
+`badge_banned` is not the sanction `banned`, and the suffix carried a distinction rather than
+dodging a collision. I called it the sharpest application of the criterion anyone had made.
+
+**It was wrong, and one look at the wire shows it.** The field is named `badge` and carries
+`[published, removed, muted, banned]`. So `badge_banned` says *badge* twice — the `crew_director`
+fault exactly, which is the fault the criterion exists to catch.
+
+**The real cause is worse than location, and it is shared.** *A judgement made from the value alone,
+without looking at the field that carries it.* Nothing reads a value without reading the field it
+arrived in, and neither of us fetched that context before ruling. `backend-contracts`' sentence
+still applies, one level in: **location was not the property that mattered — context was, and nobody
+went and got it.**
+
+**And the instruction I gave would have made it worse.** I told `backend-domain` to re-run the pass
+over the whole tree. Had it done so mechanically it would have converted `badge_*` **and recorded my
+wrong reason for it** — a correct change filed under a false explanation, which is the one outcome
+this log is least able to detect later.
+
+*A retraction is cheap; an endorsement is not. I spent more force on that judgement than on any
+ruling of the week, and force is what stops the next person checking.*
+
+**THE INVERSE CHECK, RUN RATHER THAN COMMISSIONED, FOUND A DUPLICATE VOCABULARY INSIDE THE DOMAIN.**
+
+`backend-contracts` did not wait for the gate. Parse every `as const` out of core, parse every
+vocabulary and `enum` out of both contracts, subtract. First run: three vocabularies, eight members.
+
+**`REPLAY_UNAVAILABILITY_REASONS` duplicates two members of `WATCH_DENIAL_REASONS`.**
+`no_replay_policy` / `NO_REPLAY` are the same fact — the date never had a replay. `replay_window_expired` /
+`REPLAY_EXPIRED` are the same fact — it had one and the window closed. **Two vocabularies, two
+spellings, two cases, one pair of facts** — and its own doc comment reads *"Why the replay is not
+watchable — as a CODE"*, which is the other vocabulary's job description.
+
+**What surfaced it is the point**: only one of the two reached the wire. The forward check compares
+what the contract **declared**, so a domain vocabulary nothing declares is invisible to it **by
+construction**. That is the fourth instance of the missing direction, found in the first minute of
+looking.
+
+**THE TELL, SHARPENED BY `backend-contracts` AND BETTER THAN MINE.** I had it as *"anything a viewer
+never sees"*. `LOCALES` breaks that — nobody omitted it for being studio-only. The common factor in
+all four instances is the one named for `reasonCode`: **the author was picturing a screen.**
+
+> *`draft` is not on a screen, a locale is not on a screen, a replay-unavailability code is not on a
+> screen. **The wire is short wherever the value is not something you can imagine reading.***
+
+**AND THE PAIRING RULE WENT AGAINST ITS OWN AUTHOR TWICE, WHICH IS WHY IT WAS WORTH HAVING.**
+`join_waitlist` did not add a member — it exposed a defect: `decideWatch` offered `buy_seat` on a
+sold-out date, *a button that leads nowhere*, which is principle no. 8's dead end wearing an
+action's costume. And `see_replay_policy` answers a better question than `see_other_dates` did: the
+viewer is not looking for another date, they are asking why **this** one has no replay.
+
+The coupling is now **data** — `WATCH_FALLBACK_FOR` maps every reason to its permitted actions, and
+the spec asserts both directions *and* that `decideWatch` never returns a pairing the table forbids.
+The table cannot drift from the function.
