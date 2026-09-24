@@ -6779,7 +6779,7 @@ components:
               signal_quality,
             ]
           x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist."
+          x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently."
         value: { type: number }
         unit: { type: string, x-arthome-vocabulary: [currency_minor, count, percent, points], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it." }
         currencyCode: { type: [string, "null"], pattern: "^[A-Z]{3}$" }
@@ -6904,7 +6904,7 @@ components:
                 number.
               x-arthome-vocabulary: [channel_period, listed_rows]
               x-arthome-vocabulary-source: none
-              x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist."
+              x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently."
             items:
               type: array
               items:

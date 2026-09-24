@@ -113,7 +113,7 @@ export const MetricTileSchema: z.ZodObject<
         'moderated_messages',
         'signal_quality',
       ],
-      'A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.',
+      'A screen composition the server decides so that five surfaces do not each decide it differently.',
     ),
     value: z.number(),
     unit: localVocabulary(['currency_minor', 'count', 'percent', 'points'], PRESENTATION_REASON),
@@ -194,7 +194,7 @@ const EXCLUSIVE = { 'x-arthome-tax-basis': 'exclusive' } as const;
 const INHERITED = { 'x-arthome-tax-basis': 'inherited' } as const;
 
 const RAILS_REASON =
-  'A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.';
+  'A screen composition the server decides so that five surfaces do not each decide it differently.';
 
 const STATE_MACHINE_REASON =
   "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got.";

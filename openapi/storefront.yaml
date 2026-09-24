@@ -1290,7 +1290,7 @@ paths:
             sections; with it, it serves that one section, paginated. This is what consumes the
             `sections[].nextCursor` the response already carried — four cursors served and no consumer,
             that is, four "See more" buttons that led nowhere.
-          schema: { type: string, enum: [overview, live, upcoming, replays, artists], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist." }
+          schema: { type: string, enum: [overview, live, upcoming, replays, artists], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently." }
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
         - name: subGenreId
@@ -1756,7 +1756,7 @@ paths:
           schema: { type: string, format: uri }
         - name: kind
           in: query
-          schema: { type: string, enum: [date, show, artist, category], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist." }
+          schema: { type: string, enum: [date, show, artist, category], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently." }
         - name: slug
           in: query
           schema: { type: string }
@@ -1778,7 +1778,7 @@ paths:
                         type: object
                         required: [kind, id, canonicalUrl]
                         properties:
-                          kind: { type: string, x-arthome-vocabulary: [date, show, artist, category], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist." }
+                          kind: { type: string, x-arthome-vocabulary: [date, show, artist, category], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently." }
                           id: { type: string }
                           canonicalUrl:
                             type: string
@@ -6274,7 +6274,7 @@ components:
         surface reorders**. Served in **one** call, never one call per tile.
       properties:
         id: { type: string }
-        universe: { type: string, x-arthome-vocabulary: [music, stage], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist." }
+        universe: { type: string, x-arthome-vocabulary: [music, stage], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently." }
         rank: { type: integer }
         datesCount: { type: integer }
         liveCount: { type: integer }
@@ -6307,7 +6307,7 @@ components:
             type: object
             required: [id, items]
             properties:
-              id: { type: string, x-arthome-vocabulary: [overview, live, upcoming, replays, artists], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist." }
+              id: { type: string, x-arthome-vocabulary: [overview, live, upcoming, replays, artists], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently." }
               titleCode: { type: string }
               items: { type: array, items: { $ref: '#/components/schemas/DateCard' } }
               nextCursor: { type: [string, 'null'] }
@@ -6386,7 +6386,7 @@ components:
       required: [filterId, kind]
       properties:
         filterId: { type: string, examples: [price] }
-        kind: { type: string, x-arthome-vocabulary: [money_range, date_range, boolean], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist." }
+        kind: { type: string, x-arthome-vocabulary: [money_range, date_range, boolean], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently." }
         min: { type: [integer, 'null'] }
         max: { type: [integer, 'null'] }
 

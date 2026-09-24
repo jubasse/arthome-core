@@ -669,7 +669,7 @@ export const ScheduleSlotSchema: z.ZodObject<
   );
 
 const SCREEN_COMPOSITION_REASON =
-  'A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.';
+  'A screen composition the server decides so that five surfaces do not each decide it differently.';
 
 const LOCAL_CONTRACT_REASON =
   'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.';
