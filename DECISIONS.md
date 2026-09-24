@@ -2584,3 +2584,156 @@ of re-sends.
 3. **Model by role.** Opus for arbitration; the mechanical work — extraction, translation,
    annotation — does not need it. 175 screen extractions did not need Opus.
 4. **Three in parallel, not eleven.**
+
+### D-065 — The empty-diff gate, and the nine families it found the first time it ran
+
+**It was built and it was pointed at what already exists. Fourteen schemas have a zod source;
+fourteen disagree with the document they must emit.** Nothing was agreeing before, and nothing said
+so — `verify` was green the whole time, because no gate compared the two artefacts.
+
+```
+storefront   65 schema(s) ·  8 sourced · 57 not yet written
+studio       46 schema(s) ·  6 sourced · 40 not yet written
+                            14 sourced · 14 disagree · 0 agree
+```
+
+*That is D-055 again and it is the cheapest possible demonstration of it: not one of these was found
+by rereading the schemas, and all of them were found by something short that could fail.*
+
+**The gate is two halves for one reason.** `tools/emit-contracts.mjs` imports the built packages and
+prints JSON; `tools/check-emit-diff.py` holds the normaliser, beside `check-openapi.py`'s. The Node
+half resolves zod **from `packages/contracts` rather than from the root**: a root copy would work,
+and it would be the second copy that manifest argues against at length. It is load-bearing rather
+than tidy — the `instanceof` test compares class identity, so under two copies the gate reports
+every export as "not a zod schema" instead of quietly measuring the wrong one.
+
+**THE LOOKUP RUNS FROM THE DOCUMENT TO THE CODE, AND THE FIRST VERSION HAD IT BACKWARDS.** It began
+by reading every export named `XSchema` as a claim on the document's schema `X`. The first run
+refuted it: `WireInstantSchema`, `SlugSchema`, `DeviceIdSchema` name nothing in either document and
+none of them is a defect — most schemas are building blocks the document **inlines**. A tool cannot
+tell a building block from a typo. So the document indexes and the code answers, which is D-058's
+ruling about authority applied to the direction of a loop.
+
+---
+
+#### A · `z.object()` where the document is open — five schemas, and the rule already existed
+
+`MoneySchema`, `TaxEvidenceSchema`, `VenueClockSchema`, `BuyerTaxLocationSchema` and core's error
+schema all emit `additionalProperties: false`. **D-060 §1 ruled `z.looseObject()` on output shapes
+three days ago. It was applied in `@arthome/contracts` and never in `@arthome/core/schema`.**
+
+**The documents settle it without an argument: 110 of the 111 schemas are open.** The single
+exception is `SearchCriteria`, which is a **parameter of `/v1/search` and the body of
+`SavedSearch.criteria`** — an input. *The one closed schema in either document is the one input
+published as a schema, which confirms D-060's asymmetry rather than excepting it.*
+
+**Ruling: every output schema is `looseObject`. A schema that crosses in both directions needs both
+forms and gets both** — the strict one is not a variant of the loose one, it is a different
+obligation.
+
+#### B · `vocabularyOut` omits `x-arthome-vocabulary-source`, and that defeats the other gate
+
+```ts
+return z.string().meta({ 'x-arthome-vocabulary': values });   // and nothing else
+```
+
+`check-vocabulary` compares 120 blocks **indexed on `x-arthome-vocabulary-source`**. A generated
+document would carry the members and not the provenance, so the gate that currently proves the
+domain and the contracts share one vocabulary would find **nothing to compare** and say PASS.
+
+*A gate silenced by a generator is worse than a gate that fails, because its verdict does not
+change.* This is the emit path's version of reading an exit code through a pipe.
+
+**The obvious fix is the fault this project exists to prevent.** `vocabularyOut(EMPTY_REASONS,
+'EMPTY_REASONS')` transcribes an identifier into a string beside itself — E2 in one line.
+
+**Ruling: the name is attached where the vocabulary is DECLARED, not where it is used, and a gate
+asserts the string equals the exported identifier.** One transcription, on the line that already
+carries the name, mechanically checked. `arthome-check-enums` already reads these declarations.
+
+#### C · `.meta({ format: 'int64' })` adds the format and does not remove the bounds
+
+D-060 §3 ruled this **fixed in the source with `.meta()`**. The emitted schema carries
+`format: int64` **and** `minimum: -9007199254740991, maximum: 9007199254740991` — JavaScript's safe
+range, which is not the contract's and is in no document.
+
+*The remedy was verified to add the format. It was never verified to remove what it was replacing.*
+
+**Ruling: core gains an `int64()` helper that emits what the documents carry, and no call site
+writes `z.int()` directly.** The same applies to `InstantSchema`, which emits its regex as `pattern`
+beside the `format: date-time` the meta added — see E.
+
+#### D · The zod source is stricter than the contract it publishes
+
+`maxLength: 128` on a city, `maxLength: 64` on an evidence source, `pattern` on an IANA zone and on
+a page cursor, `minimum: -720 / maximum: 840` on a UTC offset, `minLength: 1` on a trace id. **None
+of it is in either document.**
+
+This is not symmetrical with a missing description. A constraint in the code that the contract does
+not publish means **a generated client will send what the document permits and the server will
+refuse it** — the contract lying in the direction nobody checks, which is the same shape as a closed
+schema on a response, inverted.
+
+**Ruling: the DOCUMENT gains the constraint.** A bound worth enforcing is worth publishing, and
+`-720`/`+840` is a fact about timezones rather than a local precaution. This also settles the
+instant `pattern` the same way, and it is the direction already agreed before this gate existed.
+
+#### E · Descriptions and examples live in the document and nowhere in the source
+
+Six schema-level descriptions and a dozen `examples` — `2400`, `EUR`, `Europe/Paris`, `120`,
+`edge.geoip` — exist only in the YAML. **Ruling: they move into the source**, because after the
+migration the YAML is output and prose that lives only in output is prose that gets regenerated
+away. This is the part of D-058 that costs real work and it was priced in there.
+
+#### F · `ErrorEnvelopeSchema` in `@arthome/core` is the document's `Error`
+
+The document: `ErrorEnvelope = { error: $ref Error, servedAt }`. Core's export:
+`{ code, params, traceId, nature }` — **the payload, under the envelope's name.**
+
+A service importing `ErrorEnvelopeSchema` to validate an error response validates the inner object
+against the outer name and passes. **Ruling: rename it `ErrorSchema`; the envelope is written and
+takes the name back.** The gate found it only because it indexes by the document's names, which is
+the second thing the direction of the loop bought.
+
+#### G · One name, two shapes, two documents
+
+`EnvelopeMeta`, `CursorPageInfo` and `LocalizedText` each exist in both documents **with different
+shapes**: studio's `EnvelopeMeta` carries `rightsVersion` and storefront's does not; studio's
+`CursorPageInfo` carries `pendingCount` for the moderation badge and none of the storefront's
+fourteen empty reasons. One zod export cannot emit both, and the shared modules in
+`@arthome/contracts` currently claim to.
+
+*That is D-039's shape a fourth time — one name, two meanings, disambiguated only by where you are
+standing.* Harmless to two separately generated clients; not harmless to a reader, and not harmless
+to anything that indexes by name.
+
+**Ruling: the gate's index is `(document, name)`, and the export name carries the product when the
+shapes differ** — `StorefrontEnvelopeMetaSchema`, `StudioEnvelopeMetaSchema`, with the shared
+`EnvelopeMetaSchema` kept for the shapes that genuinely are one. Derived, still: the gate looks for
+`<Product><Name>Schema` and falls back to `<Name>Schema`, so there is no table anywhere.
+
+#### H · A strict vocabulary on a response, and the missing export that caused it
+
+`LocalizedTextSchema.contentLanguage` is `LocaleSchema`, which is `vocabularyIn(LOCALES)` — **strict,
+on an output shape.** It emits `enum: [fr, en]`, so the day a third content language is authored,
+**a television rejects the whole payload the text sits in.** That is critical rule 10, broken on the
+member while honoured on the shape, in a module written two days after the rule.
+
+**And the cause is an absence rather than a careless call site.** Of the four `vocabularyIn` call
+sites in `@arthome/core/schema`, three are in `tax.ts` and every one of them is named for its
+direction — `TaxEvidenceKindIn`, with `TaxEvidenceKindOut` beside it. The fourth is
+`LocaleSchema`. **It is the only strict vocabulary in the package that does not say it is strict,
+it has no `Out` counterpart at all, and it is the one that got used on a response.**
+
+> ***The convention that would have prevented this was already in the package. It was applied in one
+> module and not the other, and the defect landed in exactly the gap.***
+
+**Ruling: every vocabulary-derived export in `@arthome/core/schema` is named `…In` or `…Out`, with
+no `…Schema` spelling available for either.** A name that does not state the direction is a name
+that will be used in the wrong one.
+
+---
+
+**The gate is committed and is NOT in `verify` yet.** It would fail, and a gate wired in red is a
+gate switched off within a day. It goes into `verify` in the commit that turns it green, and the
+README's gate count goes from eight to nine in that same commit and not before.

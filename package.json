@@ -25,6 +25,8 @@
     "check:tsconfig": "arthome-check-tsconfig",
     "check:openapi": "python3 tools/check-openapi.py openapi/storefront.yaml openapi/studio.yaml",
     "check:vocabulary": "python3 tools/check-vocabulary.py openapi/storefront.yaml openapi/studio.yaml",
+    "_comment:emit-diff": "NOT in `verify`, and that is the point. It is RED (D-065): fourteen sourced schemas, fourteen disagreements. A gate wired in red is a gate switched off within a day, so it joins `verify` in the commit that turns it green and not before. It reads dist/, so build first.",
+    "check:emit-diff": "pnpm -r run build && python3 tools/check-emit-diff.py openapi/storefront.yaml openapi/studio.yaml",
     "verify": "pnpm run verify:offline && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test",
     "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:language && pnpm run check:core-entry && pnpm run check:openapi && pnpm run check:vocabulary && node -e \"console.log('\\n  NOTE verify:offline is the subset that needs no install. It does NOT run format:check, lint, typecheck or test. Run pnpm run verify before pushing.')\""
   },
