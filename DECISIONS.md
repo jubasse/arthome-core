@@ -1601,3 +1601,73 @@ where you happened to look."*
 **That is the difference between a scope that is an accident of the instrument and a scope that is
 part of the question** — and it is the sentence I should have written instead of "scoped by
 nothing".
+
+### D-046 — The anti-E2 gate was scoped by an invisible property, and it hid three literals
+
+**`backend-domain` found the scope fault inside the tool built to catch the fault it is an instance
+of.** Verified at `check-enums.mjs:185`:
+
+```js
+listFiles(CWD, SCAN).filter((f) => !SKIP.test(f) && !declaringFiles.has(f))
+```
+
+**A file that declares a vocabulary is excluded from the scan entirely.** Sensible on its face — a
+file should not be reported for using its own values — so `entitlement/index.ts` **had never been
+scanned since it was written**, because it declared two vocabularies of its own.
+
+Moving those two out, for an unrelated reason, made the file visible for the first time and the gate
+immediately found three inline literals on `WatchVerdict.scope`. They had been there since the
+module was written.
+
+**And the output says nothing.** It prints *"42 file(s) swept"* — not how many it declined, not
+which, not why. Incidental scope, invisible in the output, in the gate whose whole purpose is
+finding copies. D-041 in its purest form.
+
+**THE FIX IS NOT TO ANNOUNCE THE SCOPE, IT IS TO NARROW IT CORRECTLY.** The skip is too coarse:
+**a file should be exempt from its own declared values, not from the scan.** `entitlement/index.ts`
+legitimately used `WATCH_DENIAL_REASONS`' members; it was also copying `PRICE_TIERS`' and
+`REPLAY_POLICIES`' — and the second is exactly what the gate exists to catch. Scan every file,
+ignore the values that file declares.
+
+*That is D-045 applied to the gate itself: scope by a property of the thing you are looking for — a
+copied value — not by a property of where it sits.*
+
+**`MESSAGE_DOMAINS` IS NOT EXEMPTED. THE CONTRACT GAINS A FIELD.**
+
+`backend-domain` was asked which core members are deliberately domain-only and **claimed none**,
+arguing the single open item is a defect rather than an exemption. It is right. The served
+`labelCatalog` carries `{ locale, version, url }` and the theme survives **only inside the URL**, so
+a client wanting to know which theme it holds must take a path apart.
+
+Its own framing decides it: ***a value recoverable only by parsing a string is a value the contract
+did not serve*** — `imageUrl(kind, key, width)` in another costume, the fault the media renditions
+exist to prevent. And this is not D-022 territory: `LabelCatalogRef` in core **already carries
+`domain`**; the wire dropped it. One field, restored rather than invented, and it removes a parse
+from every client caching by theme.
+
+**TWO AGENTS SWAPPED POSITIONS SIMULTANEOUSLY ON `watch_preview`.** The gate said *contract only*,
+then *domain only* — `backend-domain` added it on `backend-contracts`' argument at the same moment
+`backend-contracts` removed it on `backend-domain`'s. Each was persuaded by the other and neither
+knew.
+
+**And the rejection had been right only on the path it was looking at.** On a live date a preview is
+an **allowed** verdict, never a way out of a refusal. On a **replay** nothing offered a preview at
+all, so it genuinely had no entry point in the refusal vocabulary. *Two correct arguments about two
+different paths, each stated as a fact about the vocabulary.*
+
+**THE COUPLING-AS-DATA DECISION PAID IMMEDIATELY.** `backend-domain` took the pairing table verbatim
+and its own assertion — *`decideWatch` never returns a pairing the table forbids* — failed at once:
+the table omitted `join_waitlist` from `PREVIEW_EXHAUSTED`, and preview-spent-and-sold-out is
+reachable, where `buy_seat` is the button-that-leads-nowhere just removed from `NO_SEAT`. **The test
+was worth more than the review** — which is the whole argument for writing a coupling as data rather
+than as prose.
+
+**Two smaller things worth keeping.** `DashboardReminder.targetPage` was **two vocabularies merged
+in one field**, carrying `moderation` where everything else says `moderation_page` — so a surface
+routing on it matched nothing for the destination `moderation_backlog` points at, which is the most
+frequent reminder the dashboard produces. The generic-name tell found it on the first pass.
+
+And 38 exemptions were written with **four family reasons rather than thirty-eight**: transport and
+media capability, sort and filter keys, external provider vocabularies, presentation choices. *A
+family reason is stronger than a per-block one because it says what the whole class has in common* —
+and it is the difference between an exemption list and thirty-eight separate excuses.
