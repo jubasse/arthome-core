@@ -7,12 +7,12 @@
  * composed in two places" case the file cites as a typical defect.
  */
 
-import { DomainError } from '../kernel/errors.js';
 import type { Instant } from '../kernel/clock.js';
-import { isBefore } from '../time/instant.js';
+import { DomainError } from '../kernel/errors.js';
 import { add, money, subtract, type Money } from '../money/money.js';
 import { applyRate, roundMinor, type BasisPoints } from '../money/rounding.js';
-import { PriceTier, PromotionReason } from '../vocabulary/commerce.js';
+import { isBefore } from '../time/instant.js';
+import type { PriceTier, PromotionReason } from '../vocabulary/commerce.js';
 
 export interface TierPrice {
   readonly tier: PriceTier;

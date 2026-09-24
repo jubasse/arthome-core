@@ -2,8 +2,8 @@
  * Capacity, tiers, and the HOLD that stops capacity lying.
  */
 
-import { DomainError } from '../kernel/errors.js';
 import type { Instant } from '../kernel/clock.js';
+import { DomainError } from '../kernel/errors.js';
 import { isAfter, plusMinutes } from '../time/instant.js';
 
 /**

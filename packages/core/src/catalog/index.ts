@@ -18,14 +18,14 @@ export type { LanguageProfile } from './language.js';
 export { hasLanguageBarrier, isLanguageNeutral, isUnderstandable } from './language.js';
 
 export type {
+  PublicationChecklistEntry,
   PublicationChecklistItem,
   PublicationReadiness,
   PublicationTransition,
-  PublicationWarningItem,
 } from './publication.js';
 export {
   PUBLICATION_CHECKLIST_ITEMS,
-  PUBLICATION_WARNING_ITEMS,
+  isBlockingChecklistItem,
   assertTransitionAllowed,
   irreversiblePromiseBlocking,
   isEventDriven,

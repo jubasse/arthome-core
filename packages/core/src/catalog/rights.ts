@@ -12,7 +12,8 @@
  * kind the "i18n by codes" decision exists to forbid.
  */
 
-import { BlackoutReason, RightsScope } from '../vocabulary/catalog.js';
+import type { BlackoutReason } from '../vocabulary/catalog.js';
+import { RightsScope } from '../vocabulary/catalog.js';
 
 export interface TerritoryRights {
   readonly scope: RightsScope;

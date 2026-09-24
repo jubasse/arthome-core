@@ -34,7 +34,7 @@ const gauge = (over: Partial<Gauge> = {}): Gauge => ({
  *   exist.
  */
 describe('the capacity hold', () => {
-  it('takes the intent\'s expiry instant, not a duration of its own', () => {
+  it("takes the intent's expiry instant, not a duration of its own", () => {
     // The signature ENFORCES the invariant: you do not pass a duration, you pass
     // the intent's expiry instant. There is nothing to keep in sync.
     const intentExpiry = tvPairingIntentExpiry('2026-09-21T18:00:00.000Z');

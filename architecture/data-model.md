@@ -31,31 +31,34 @@
 > domain's internal spelling can — and it points at the wire. The reversal is better argued than
 > what it replaced, and my own E1 argument above never depended on the separator.
 >
-> **Measured before converting, because the ruling's count was taken on the contracts and the
-> domain is a different population.** `@arthome/core` declared **95** multi-word members. Against
-> the two contracts they split three ways:
+> **Measured before converting — and then measured again, because the first measurement was
+> taken against the wrong text.** `@arthome/core` declared **95** multi-word members. My first pass
+> compared them to the contracts by grepping the YAML, concluded that **13 were still spelled
+> `kebab-case` on the wire**, and held them as needing a contract edit and a second owner's
+> decision.
 >
-> | | Members | What it meant |
-> |---|---:|---|
-> | contract already spelled it `snake_case` | **36** | core was simply wrong — 36 live disagreements |
-> | contract does not know the value at all | **46** | domain-only, free to convert |
-> | contract still spells it `kebab-case` | **13** | the "justify or convert" set of §5.2 |
+> **They did not.** Grepping the whole document matched those values in **descriptions and prose**;
+> parsing only the `x-arthome-vocabulary:` blocks — which is where a vocabulary actually lives — the
+> wire was `snake_case` throughout and had been all along. Nothing needed coordinating. The
+> thirteen were core being wrong on its own, and they were held for a week on a measurement
+> artefact.
 >
-> **The first 82 are converted.** Both halves are core-only edits — the contract already said
-> `snake_case` for the 36, and had never heard of the 46 — so neither needed a coordinated window,
-> and converting them removed 36 disagreements that were live in both directions.
+> **The lesson is the one this file keeps relearning: assert against the structure, never against a
+> transcription.** `adr-auth.md` §5.1 says to read `SEAT_CODE_ALPHABET` from the import and never
+> from a copy. Grepping a contract's prose instead of parsing its vocabulary blocks is the same
+> move, one level out.
 >
-> **The remaining 13 are held, because converting them means editing a contract**, which is
-> `backend-contracts`' file and a second owner's decision: `all_lives`, `free_dates`, `hold_screen`,
-> `multi_screen`, `no_ads`, `one_live_month`, `read_only`, `replay_online`, and the five surface
-> names `storefront-web|mobile|tv`, `studio-web|mobile`. Seven of them are `shared/`'s own spelling,
-> verified in the handoff, so converting them makes the domain diverge from the source D2 makes
-> authoritative on vocabulary. That is not an objection — `shared/` is a mockup, not a wire — but it
-> is the reason the decision is not mine alone.
+> **All 95 are converted, and core-vs-wire separator divergence is 0.** That includes the seven
+> members whose spelling comes from `shared/` — `all_lives`, `free_dates`, `multi_screen`, `no_ads`,
+> `one_live_month`, `read_only`, `replay_online` — under D-034: `shared/` → `@arthome/core` is a
+> **one-time port** that already normalises by design, while `core` ↔ the wire is a **live
+> boundary**, and only a live boundary turns a mapping into a parallel table with a codec's costume.
 >
-> **Two of the thirteen are a defect under any ruling**: `hold_screen` and `read_only` appear in
-> **both** spellings across the two contracts, the same class as `co-production` / `co_production`.
-> Same value, two strings, one per contract.
+> **One of them was a live defect, not a style question.** Core exported `'read-only'` while both
+> contracts carried `read_only`, so `mode === ChatMode.READ_ONLY` was `false` **in silence** on
+> every payload — on the vocabulary that gates what a viewer may do in a live chat. That is the
+> `multi_screen` authorisation defect a second time, inside the package written to prevent it.
+> `hold-screen` and `co-production` were the same class: a defect found once is rarely alone.
 
 > **⚠ A premise of mine that was empirically false, and a ruling was built on it (D-035).**
 > I argued that two closed vocabularies **cannot** share a value here, "since `arthome-check-enums`
@@ -327,7 +330,7 @@ knows whether the feed is coming in. So two of the eight transitions are caused 
 - The transitions offered are served **for this operator**, computed by
   `nextPublicationTransitions(state, effectiveRights)`. Otherwise each surface recomputes the table.
 
-**The checklist, seven items, and three come from elsewhere:**
+**The checklist, NINE items, seven of them blocking, and three come from elsewhere:**
 
 | Item | Source |
 |---|---|

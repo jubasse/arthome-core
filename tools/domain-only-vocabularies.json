@@ -1,0 +1,32 @@
+{
+  "_comment": [
+    "Vocabularies @arthome/core keeps to itself: every member appears in NEITHER",
+    "contract, deliberately. `check-vocabulary.py` reads this file and RETRACTS an",
+    "entry the day one of its members reaches a wire — a stale exemption is an",
+    "error here, not a silent pass.",
+    "",
+    "Keyed by NAME rather than by location, and that distinction is the rule: put an",
+    "exemption in the artefact when the only stable key would be a LOCATION (a",
+    "contract block has no name, so its `source: none` lives inline), and in a side",
+    "file when there is a stable NAME. A vocabulary has one.",
+    "",
+    "It is a side file for a second reason: the claim is about the PAIR, not about",
+    "the domain. @arthome/core should not carry assertions about what the wire does.",
+    "",
+    "⚠ Being domain-only is a claim that nothing serves these values. It is not a",
+    "  place to park a vocabulary that has not been published yet — that one is a",
+    "  finding, and it should stay red until it is published or genuinely internal.",
+    "",
+    "EMPTY, AND THAT IS THE POINT. `MESSAGE_DOMAINS` was exempted here on 2026-09-24",
+    "and the exemption has been WITHDRAWN: the project lead ruled it a contract defect,",
+    "not a domain-only vocabulary. The i18n theme survives only inside an artifact URL,",
+    "and `a value recoverable only by parsing a string is a value the contract did not",
+    "serve` — `LabelCatalogRef` already carries `domain`, so publishing it restores a",
+    "field rather than inventing one.",
+    "",
+    "The lesson for whoever adds the next entry: being hard to express on the wire is",
+    "not the same as being internal. The test is whether anything OUTSIDE the domain",
+    "needs the value — not whether a way to send it already exists."
+  ],
+  "allow": []
+}

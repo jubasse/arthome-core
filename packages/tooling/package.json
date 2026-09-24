@@ -17,11 +17,26 @@
     "directory": "packages/tooling"
   },
   "exports": {
-    "./eslint/base": "./eslint/base.js",
-    "./eslint/node": "./eslint/node.js",
-    "./eslint/browser": "./eslint/browser.js",
-    "./prettier": "./prettier.js",
-    "./vitest": "./vitest.js",
+    "./eslint/base": {
+      "types": "./eslint/base.d.ts",
+      "default": "./eslint/base.js"
+    },
+    "./eslint/node": {
+      "types": "./eslint/node.d.ts",
+      "default": "./eslint/node.js"
+    },
+    "./eslint/browser": {
+      "types": "./eslint/browser.d.ts",
+      "default": "./eslint/browser.js"
+    },
+    "./prettier": {
+      "types": "./prettier.d.ts",
+      "default": "./prettier.js"
+    },
+    "./vitest": {
+      "types": "./vitest.d.ts",
+      "default": "./vitest.js"
+    },
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/lib.json": "./tsconfig/lib.json",
     "./tsconfig/app.json": "./tsconfig/app.json",
@@ -44,7 +59,9 @@
     "vitest.js",
     "versions.json",
     "tsconfig-locks.json",
-    "README.md"
+    "README.md",
+    "prettier.d.ts",
+    "vitest.d.ts"
   ],
   "peerDependencies": {
     "@eslint/js": "^9.39.5 || ^10.0.1",

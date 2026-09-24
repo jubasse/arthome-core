@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { SCARCITY_THRESHOLD_BPS } from '../ticketing/seats.js';
 import {
   ALMOST_FULL_THRESHOLD_BPS,
   CREW_UNASSIGNED_ALERT_HOURS,
@@ -12,6 +11,7 @@ import {
   reminderStillValid,
   shouldDeliverNow,
 } from './index.js';
+import { SCARCITY_THRESHOLD_BPS } from '../ticketing/seats.js';
 
 /**
  * PROTECTED INVARIANT
@@ -33,7 +33,7 @@ describe('the five thresholds', () => {
     expect(reminderInstantFor('2026-09-21T19:00:00.000Z')).toBe('2026-09-21T18:30:00.000Z');
   });
 
-  it('shares EXACTLY a card\'s scarcity threshold', () => {
+  it("shares EXACTLY a card's scarcity threshold", () => {
     // The test that protects an invisible consistency: a card saying "almost
     // full" while no alert fires would be incomprehensible to the viewer who
     // turned that alert on.
@@ -51,7 +51,7 @@ describe('the five thresholds', () => {
  *   an interface setting".
  */
 describe('quiet hours', () => {
-  it('is computed in the sleeper\'s offset, not the server\'s', () => {
+  it("is computed in the sleeper's offset, not the server's", () => {
     // 23:30 in Paris (UTC+2) = 21:30 UTC. A server reasoning in UTC would wake
     // everybody up.
     const instant = '2026-09-21T21:30:00.000Z';

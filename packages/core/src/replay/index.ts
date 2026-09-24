@@ -14,10 +14,11 @@
  * and whether they can watch.
  */
 
+import { replayEndsAt, type DateTiming } from '../catalog/date-state.js';
 import type { Instant } from '../kernel/clock.js';
 import { minutesBetween } from '../time/instant.js';
 import { ReplayPolicy } from '../vocabulary/catalog.js';
-import { replayEndsAt, type DateTiming } from '../catalog/date-state.js';
+import { WatchDenialReason } from '../vocabulary/entitlement.js';
 
 /**
  * The replay hours remaining — a DECREASING value.
@@ -68,14 +69,15 @@ export function isReplaySoldSeparately(timing: DateTiming): boolean {
   return timing.replayPolicy === ReplayPolicy.UNIT;
 }
 
-/** Why the replay is not watchable — as a CODE. */
-export const REPLAY_UNAVAILABILITY_REASONS = ['no_replay_policy', 'replay_window_expired'] as const;
-export type ReplayUnavailabilityReason = (typeof REPLAY_UNAVAILABILITY_REASONS)[number];
-
-export const ReplayUnavailabilityReason = {
-  NO_POLICY: 'no_replay_policy',
-  WINDOW_EXPIRED: 'replay_window_expired',
-} as const;
+// Why a replay is not watchable is ALREADY a vocabulary, and it is
+// `WATCH_DENIAL_REASONS`. This module used to declare its own two members —
+// `no_replay_policy` and `replay_window_expired` — which are the same two facts
+// as `NO_REPLAY` and `REPLAY_EXPIRED`, in a second spelling and a second case.
+//
+// Two vocabularies for one pair of facts is E2 inside the package written to
+// prevent it, and only one of the two reached the wire, so a surface could not
+// have matched on both even if it wanted to. Retired in favour of the denial
+// reasons; the granularity was never different, only the name.
 
 /**
  * The full diagnosis, in one pass.
@@ -86,8 +88,8 @@ export const ReplayUnavailabilityReason = {
 export function replayUnavailabilityReason(
   timing: DateTiming,
   now: Instant,
-): ReplayUnavailabilityReason | null {
-  if (!hasReplayPolicy(timing)) return ReplayUnavailabilityReason.NO_POLICY;
-  if (!isReplayWindowOpen(timing, now)) return ReplayUnavailabilityReason.WINDOW_EXPIRED;
+): WatchDenialReason | null {
+  if (!hasReplayPolicy(timing)) return WatchDenialReason.NO_REPLAY;
+  if (!isReplayWindowOpen(timing, now)) return WatchDenialReason.REPLAY_EXPIRED;
   return null;
 }

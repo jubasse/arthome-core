@@ -38,6 +38,24 @@ info:
     receive it. Strictness applies to the **shape** — required fields, types — never to the
     **member** of a vocabulary.
 
+    ## A coded field is named after its vocabulary, never `reasonCode`
+
+    `reasonCode` was carried by **five fields over four unrelated vocabularies** across the two
+    contracts — playback refusals, blackout reasons, refund reasons, cancellation reasons — plus two
+    price lines where it was a bare string. Nothing collided on the wire, since each lives in its own
+    schema, and that is exactly what made it survive: **it was disambiguated only by where the reader
+    was standing.** A generated client may hoist one `ReasonCode` type out of all of them, and a human
+    reading both documents assumes one vocabulary and is wrong.
+
+    So every coded field now names its own vocabulary — `denialReasonCode`, `blackoutReasonCode`,
+    `refundReasonCode`, `cancelReasonCode`, `discountReasonCode` — which is the convention
+    `failureCode`, `originCode` and `emptyReason` were already following. The generic name was the
+    exception, not the rule.
+
+    **The one place a bare `reasonCode` remains is inside `error.params`**, and it is not an exception
+    to this: `params` is a bag whose keys are defined **per error `code`**, so the code that carries it
+    is the disambiguator, stated rather than inferred.
+
     ## Public read and identified read — two bodies, one path
 
     **Ten catalogue operations are callable with no authentication at all**, and that is the
@@ -163,7 +181,7 @@ paths:
               type: object
               required: [kind, label]
               properties:
-                kind: { type: string, enum: [tv, mobile, tablet, desktop, stick, console, box] }
+                kind: { type: string, enum: [tv, mobile, tablet, desktop, stick, console, box], x-arthome-vocabulary-source: DEVICE_KINDS }
                 label: { type: string, maxLength: 80 }
                 osVersion: { type: string }
                 appVersion: { type: string }
@@ -421,7 +439,15 @@ paths:
               required: [email]
               properties:
                 email: { type: string, format: email }
-                locale: { type: string, examples: [fr] }
+                locale:
+                  type: string
+                  description: |
+                    **The domain declares exactly two.** This one is an **input**, so the enum is strict:
+                    a locale we cannot render is refused rather than silently answered in another
+                    language.
+                  enum: [fr, en]
+                  x-arthome-vocabulary-source: LOCALES
+                  examples: [fr]
             example: { email: marie@example.org, locale: fr }
       responses:
         '202':
@@ -509,7 +535,7 @@ paths:
         - name: provider
           in: path
           required: true
-          schema: { type: string, enum: [google, facebook] }
+          schema: { type: string, enum: [google, facebook], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "An external provider or platform identifier. It is their vocabulary, not ours, and it changes when they change." }
         - $ref: '#/components/parameters/Surface'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
@@ -1014,7 +1040,7 @@ paths:
 
             A **closed** vocabulary, and legitimately so: this is an input, and the server must
             refuse a scope it does not know rather than silently widen the answer.
-          schema: { type: string, enum: [profile, device], default: profile }
+          schema: { type: string, enum: [profile, device], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "An account-management shape, local to this endpoint: what the person asked for, not a fact the domain reasons about.", default: profile }
       responses:
         '200':
           description: A list of invalidations.
@@ -1264,7 +1290,7 @@ paths:
             sections; with it, it serves that one section, paginated. This is what consumes the
             `sections[].nextCursor` the response already carried — four cursors served and no consumer,
             that is, four "See more" buttons that led nowhere.
-          schema: { type: string, enum: [overview, live, upcoming, replays, artists] }
+          schema: { type: string, enum: [overview, live, upcoming, replays, artists], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist." }
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
         - name: subGenreId
@@ -1280,7 +1306,7 @@ paths:
           schema: { $ref: '#/components/schemas/SearchCriteria' }
         - name: sort
           in: query
-          schema: { type: string, enum: [relevance, soon, popularity, price_asc, price_desc], default: soon }
+          schema: { type: string, enum: [relevance, soon, popularity, price_asc, price_desc], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.", default: soon }
       responses:
         '200':
           description: The discipline.
@@ -1343,7 +1369,7 @@ paths:
           schema: { type: string }
         - name: sort
           in: query
-          schema: { type: string, enum: [alpha, followers], default: alpha }
+          schema: { type: string, enum: [alpha, followers], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.", default: alpha }
         - name: liveOnly
           in: query
           schema: { type: boolean, default: false }
@@ -1472,11 +1498,11 @@ paths:
           schema: { type: string, minLength: 2 }
         - name: tab
           in: query
-          schema: { type: string, enum: [best, lives, replays, artists], default: best }
+          schema: { type: string, enum: [best, lives, replays, artists], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.", default: best }
         - name: sort
           in: query
           description: '**Five sorts**, not four: `price_desc` exists in the design, exactly like the other four.'
-          schema: { type: string, enum: [relevance, soon, popularity, price_asc, price_desc], default: relevance }
+          schema: { type: string, enum: [relevance, soon, popularity, price_asc, price_desc], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.", default: relevance }
         - name: filters
           in: query
           description: |
@@ -1605,7 +1631,7 @@ paths:
         - name: sort
           in: query
           description: '`expiring_first` is the default, and it is the sort the page announces.'
-          schema: { type: string, enum: [expiring_first, recent, popularity], default: expiring_first }
+          schema: { type: string, enum: [expiring_first, recent, popularity], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.", default: expiring_first }
         - name: categoryId
           in: query
           schema: { type: string }
@@ -1730,7 +1756,7 @@ paths:
           schema: { type: string, format: uri }
         - name: kind
           in: query
-          schema: { type: string, enum: [date, show, artist, category] }
+          schema: { type: string, enum: [date, show, artist, category], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist." }
         - name: slug
           in: query
           schema: { type: string }
@@ -1752,7 +1778,7 @@ paths:
                         type: object
                         required: [kind, id, canonicalUrl]
                         properties:
-                          kind: { type: string, x-arthome-vocabulary: [date, show, artist, category] }
+                          kind: { type: string, x-arthome-vocabulary: [date, show, artist, category], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist." }
                           id: { type: string }
                           canonicalUrl:
                             type: string
@@ -1844,13 +1870,13 @@ paths:
                   displayState: live
                   displayStateValidUntil: '2026-09-21T20:35:00Z'
                   replay: { policy: included, windowHours: 72 }
-                  rights: { scope: restricted, blackoutCountries: [CA], reasonCode: broadcaster }
+                  rights: { scope: restricted, blackoutCountries: [CA], blackoutReasonCode: broadcaster }
                   media: { wide: [], poster: [] }
                   totalSeriesDates: 3
                   watchVerdict:
                     allowed: false
                     advisory: true
-                    reasonCode: NO_SEAT
+                    denialReasonCode: NO_SEAT
                     fallbackAction: buy_seat
                     validUntil: '2026-09-21T18:03:21.000Z'
         '304': { description: Unchanged since the `ETag` supplied. }
@@ -1959,7 +1985,7 @@ paths:
               type: object
               required: [tier, quantity]
               properties:
-                tier: { type: string, enum: [full, reduced, support] }
+                tier: { type: string, enum: [full, reduced, support], x-arthome-vocabulary-source: PRICE_TIERS }
                 quantity: { type: integer, minimum: 1, maximum: 10 }
                 contributionMinor:
                   type: [integer, 'null']
@@ -1989,7 +2015,7 @@ paths:
                   lines:
                     - { kind: tier, amount: { amountMinor: 4800, currencyCode: EUR } }
                     - { kind: service_fee, amount: { amountMinor: 300, currencyCode: EUR } }
-                    - { kind: subscription_discount, reasonCode: plan_pass, amount: { amountMinor: -480, currencyCode: EUR } }
+                    - { kind: subscription_discount, discountReasonCode: plan_pass, amount: { amountMinor: -480, currencyCode: EUR } }
                   total: { amountMinor: 4620, currencyCode: EUR }
                   validUntil: '2026-09-21T18:42:10.000Z'
         '404': { $ref: '#/components/responses/NotFound' }
@@ -2031,7 +2057,7 @@ paths:
               required: [dateId, tier, quantity, expectedTotal]
               properties:
                 dateId: { type: string, format: uuid }
-                tier: { type: string, enum: [full, reduced, support] }
+                tier: { type: string, enum: [full, reduced, support], x-arthome-vocabulary-source: PRICE_TIERS }
                 quantity: { type: integer, minimum: 1, maximum: 10 }
                 expectedTotal: { $ref: '#/components/schemas/Money' }
                 contributionMinor: { type: [integer, 'null'] }
@@ -2289,8 +2315,24 @@ paths:
             schema:
               type: object
               properties:
-                reasonCode: { type: string, enum: [viewer_request] }
-            example: { reasonCode: viewer_request }
+                cancelReasonCode:
+                  type: string
+                  description: |
+                    **One member, and that is a question rather than a vocabulary.** A field whose
+                    enum has a single value carries no information: every request that reaches this
+                    path says the same thing. It is here because the audit line must record *who*
+                    asked — and a viewer cancelling their own seat is the only actor this path has.
+
+                    **What would make it a vocabulary is a second actor**, and there is one in the
+                    domain already: the studio cancels seats too, through `refundSeat`, with its own
+                    four-member `refundReasonCode`. If those two paths ever merge, this field becomes
+                    the merged reason and the single member becomes the first of several. Until then
+                    it is a placeholder that is honest about being one.
+                  enum: [viewer_request]
+                  x-arthome-vocabulary-source: none
+                  x-arthome-vocabulary-reason: "A single-member enum: it records the actor on an audit line, and this path has exactly one actor. Flagged in the description as a question, not settled as a vocabulary."
+
+            example: { cancelReasonCode: viewer_request }
       responses:
         '200':
           description: Seat cancelled, with the refund and its delay code.
@@ -2609,7 +2651,7 @@ paths:
                     - channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
                       subtotal: { amountMinor: 5000, currencyCode: EUR }
                       shipping: { amountMinor: 590, currencyCode: EUR }
-                      discount: { reasonCode: plan_shop_discount, amount: { amountMinor: -750, currencyCode: EUR } }
+                      discount: { discountReasonCode: plan_shop_discount, amount: { amountMinor: -750, currencyCode: EUR } }
                       total: { amountMinor: 4840, currencyCode: EUR }
         '409': { $ref: '#/components/responses/Conflict' }
 
@@ -2739,7 +2781,7 @@ paths:
               type: object
               required: [planTier]
               properties:
-                planTier: { type: string, enum: [free, pass, premium] }
+                planTier: { type: string, enum: [free, pass, premium], x-arthome-vocabulary-source: PLAN_TIERS }
                 paymentMethodRef: { type: [string, 'null'] }
             example: { planTier: premium, paymentMethodRef: pm_1Ab2Cd }
       responses:
@@ -2867,7 +2909,15 @@ paths:
                     a second one and does not consume another screen. The promise "you can resume your own
                     session, identified by the device" was written in the answers to the surfaces and was carried
                     nowhere in the contract.
-                kind: { type: string, enum: [live, replay] }
+                kind:
+                  type: string
+                  description: |
+                    **A strict narrowing of `DISPLAY_STATES`, and the narrowing is the rule.** Only two
+                    of the eleven states can be opened: you watch a date that is on air, or a replay.
+                    The other nine are not refused here as unknown values, they are **not openable**.
+                  enum: [live, replay]
+                  x-arthome-vocabulary-source: DISPLAY_STATES
+                  x-arthome-vocabulary-narrowing: "Only two of the eleven states can be opened. The other nine are not refused as unknown values, they are not openable."
                 profileId: { type: [string, 'null'], format: uuid }
                 capabilities:
                   type: object
@@ -2875,7 +2925,7 @@ paths:
                     What the device **can do**, declared. The server chooses protocol, DRM and quality cap; **a
                     client that guesses gets it wrong**, and it gets it wrong on the devices we cannot test.
                   properties:
-                    drmSystems: { type: array, items: { type: string, enum: [fairplay, widevine, playready] } }
+                    drmSystems: { type: array, items: { type: string, enum: [fairplay, widevine, playready], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared." } }
                     hardwareSecureDecode: { type: boolean }
                     maxHeightPx: { type: integer }
             example:
@@ -3254,7 +3304,7 @@ paths:
               type: object
               required: [reactionId, atMediaSec]
               properties:
-                reactionId: { type: string, enum: [applause, heart, bravo, laugh, wow, sad] }
+                reactionId: { type: string, enum: [applause, heart, bravo, laugh, wow, sad], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
                 atMediaSec: { type: integer, minimum: 0 }
             example: { reactionId: applause, atMediaSec: 2165 }
       responses:
@@ -3306,6 +3356,7 @@ paths:
                     invented, and `filter` is not a reason but an **origin** — the contract already carries it
                     correctly elsewhere, and putting it in `reason` as well gave one field two axes.
                   enum: [spam, insult, spoiler, off_topic, harassment]
+                  x-arthome-vocabulary-source: MODERATION_REASONS
             example: { reason: harassment }
       responses:
         '202':
@@ -3362,7 +3413,7 @@ paths:
               type: object
               required: [intent, deviceId]
               properties:
-                intent: { type: string, enum: [signin, seat, plan, payment_method, merch] }
+                intent: { type: string, enum: [signin, seat, plan, payment_method, merch], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
                 deviceId: { type: string, format: uuid }
                 payload:
                   type: object
@@ -3636,7 +3687,7 @@ paths:
               type: object
               required: [decision]
               properties:
-                decision: { type: string, enum: [approve, deny] }
+                decision: { type: string, enum: [approve, deny], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "The two answers this one command accepts. It is the command's shape, not a vocabulary: a third answer would be a third command." }
                 outcomeRef:
                   type: [string, 'null']
                   description: |
@@ -3756,7 +3807,7 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - name: window
           in: query
-          schema: { type: string, enum: [upcoming, past], default: upcoming }
+          schema: { type: string, enum: [upcoming, past], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.", default: upcoming }
       responses:
         '200':
           description: Page of seats.
@@ -3935,7 +3986,7 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - name: sort
           in: query
-          schema: { type: string, enum: [alpha, followers, next_date], default: next_date }
+          schema: { type: string, enum: [alpha, followers, next_date], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.", default: next_date }
         - name: liveOnly
           in: query
           description: '**The "Following live" section**, served rather than filtered client-side.'
@@ -4173,12 +4224,12 @@ paths:
               type: object
               required: [scope, criteria]
               properties:
-                scope: { type: string, enum: [search, category] }
+                scope: { type: string, enum: [search, category], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
                 categoryId: { type: [string, 'null'] }
                 name: { type: [string, 'null'], maxLength: 80 }
                 queryText: { type: [string, 'null'] }
                 criteria: { type: object, additionalProperties: true }
-                channels: { type: array, items: { type: string, enum: [push, email, in_app] } }
+                channels: { type: array, items: { type: string, enum: [push, email, in_app], x-arthome-vocabulary-source: NOTIFICATION_CHANNELS } }
             example:
               scope: search
               name: Danse à Paris
@@ -4228,7 +4279,7 @@ paths:
               properties:
                 name: { type: [string, 'null'] }
                 active: { type: boolean }
-                channels: { type: array, items: { type: string, enum: [push, email, in_app] } }
+                channels: { type: array, items: { type: string, enum: [push, email, in_app], x-arthome-vocabulary-source: NOTIFICATION_CHANNELS } }
             example: { active: false }
       responses:
         '200':
@@ -4511,7 +4562,7 @@ paths:
                   type: object
                   additionalProperties:
                     type: array
-                    items: { type: string, enum: [push, email, in_app] }
+                    items: { type: string, enum: [push, email, in_app], x-arthome-vocabulary-source: NOTIFICATION_CHANNELS }
                 quietHours:
                   type: object
                   properties:
@@ -4709,7 +4760,7 @@ paths:
               type: object
               required: [kind]
               properties:
-                kind: { type: string, enum: [personal_data, invoices] }
+                kind: { type: string, enum: [personal_data, invoices], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A document or export format. It names an accounting tool or a file type, which is the outside world's vocabulary rather than ours." }
                 fromDate: { type: [string, 'null'], format: date }
                 toDate: { type: [string, 'null'], format: date }
             example: { kind: invoices, fromDate: '2026-01-01', toDate: '2026-09-21' }
@@ -4877,6 +4928,8 @@ paths:
                 topic:
                   type: string
                   enum: [ticketing_refund, playback_quality, replay, store_shipping, account_signin, personal_data]
+                  x-arthome-vocabulary-source: none
+                  x-arthome-vocabulary-reason: "An account-management shape, local to this endpoint: what the person asked for, not a fact the domain reasons about."
                 message: { type: string, minLength: 10, maxLength: 4000 }
                 context:
                   type: object
@@ -4965,10 +5018,17 @@ components:
         ceiling (television 2 msg/s, mobile 6, web 10), the size of the catch-up on entering a room
         (television 20 messages, 50 elsewhere) and which slice of the label and taxonomy catalogue to
         load.
+        **A strict narrowing of `SURFACES`, and the strictness is the point.** The domain
+        vocabulary has six members; this header accepts the three that can legitimately call the
+        storefront BFF and **refuses the rest**, because an input is refused where an output is kept
+        raw and treated as neutral. A studio surface reaching this header is not a value to tolerate,
+        it is a caller in the wrong place.
       schema:
         type: string
-        enum: [storefront-web, storefront-mobile, storefront-tv]
-        examples: [storefront-tv]
+        enum: [storefront_web, storefront_mobile, storefront_tv]
+        x-arthome-vocabulary-source: SURFACES
+        x-arthome-vocabulary-narrowing: "The three that may call the storefront BFF. A studio surface reaching this header is not a value to tolerate, it is a caller in the wrong place."
+        examples: [storefront_tv]
 
     ViewerTimezone:
       name: X-Arthome-Timezone
@@ -5016,6 +5076,8 @@ components:
       schema:
         type: string
         enum: [forward, backward]
+        x-arthome-vocabulary-source: none
+        x-arthome-vocabulary-reason: "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change."
         default: forward
 
     Limit:
@@ -5249,6 +5311,8 @@ components:
              no_live_in_category, no_upcoming_in_category, no_replay_in_category,
              no_followed_artist, no_followed_artist_live, no_order_yet, no_ticket_yet,
              no_replay_available, empty_cart, no_saved_search, no_watchlist_entry]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
         emptyActionCode:
           type: [string, 'null']
           description: |
@@ -5280,6 +5344,7 @@ components:
             not lose a card, it would lose its ability to **read errors**, precisely when something is
             already wrong, and on a fleet we cannot update.
           x-arthome-vocabulary: [refused, unavailable, offline_forbidden]
+          x-arthome-vocabulary-source: FAILURE_NATURES
           x-arthome-unknown-fallback: unavailable
           examples: [refused]
         params:
@@ -5374,6 +5439,8 @@ components:
         `device` for the television, which has **neither cookie nor token** at the moment it opens a
         sign-in pairing — which is what device identity solves.
       enum: [cookie, bearer, device]
+      x-arthome-vocabulary-source: none
+      x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
 
     SessionEstablished:
       description: |
@@ -5413,7 +5480,19 @@ components:
         Keychain, Keystore, `@capacitor/preferences` — **never in `localStorage`**, which is tied to
         the origin, can be cleared by the system, and travels in no way at all.
       properties:
-        mode: { type: string, x-arthome-vocabulary: [bearer, device] }
+        mode:
+          type: string
+          description: |
+            **A narrowing of `SessionMode` to the two token-bearing modes.** `cookie` is absent
+            because a cookie response carries **nothing in the body** — that is the whole point of the
+            split — so this branch cannot describe it. `device` shares this schema rather than having
+            its own: a device session is token-shaped, and the discriminator maps both values here.
+
+            The studio has no such branch because it has no device sessions; only a television carries
+            a device token.
+          x-arthome-vocabulary: [bearer, device]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A narrowing of a vocabulary named elsewhere in this document, with the reason in the description above: the members left out are the rule, not an omission."
         accessToken: { type: string }
         refreshToken: { type: [string, 'null'] }
         expiresAt: { type: string, format: date-time }
@@ -5475,14 +5554,34 @@ components:
 
     LabelArtifactRef:
       type: object
-      required: [locale, version, url]
+      required: [domain, locale, version, url]
       description: |
         The label catalogue is **not a service**: it is an immutable versioned artefact published on
         the CDN. The current version is served here, **never through a per-page call**, and every
         application embeds a build-time snapshot as a **mandatory fallback** — that is the only thing
         guaranteeing no raw code ever reaches the screen.
       properties:
-        locale: { type: string, examples: [fr] }
+        domain:
+          type: string
+          description: |
+            **Which catalogue this reference is for**, served rather than recoverable by taking the
+            URL apart. The theme lived only inside the path (`/i18n/studio/fr/v41.json`), so a client
+            caching catalogues by theme had to parse a string to learn what it was holding — which is
+            `imageUrl(kind, key, width)` in another costume, and the same rule answers it: **a value
+            recoverable only by parsing a string is a value the contract did not serve.**
+          x-arthome-vocabulary: [common, storefront, studio, taxonomy, system]
+          x-arthome-vocabulary-source: MESSAGE_DOMAINS
+          examples: [storefront]
+        locale:
+          type: string
+          description: |
+            **The domain declares exactly two**, and the contract says so rather than serving an
+            open string: a surface choosing a fallback needs to know the set it is choosing from.
+            Tolerant on output like every other served vocabulary — a third locale is kept raw and
+            treated as neutral, never rejected.
+          x-arthome-vocabulary: [fr, en]
+          x-arthome-vocabulary-source: LOCALES
+          examples: [fr]
         version: { type: integer, examples: [41] }
         url: { type: string, format: uri }
 
@@ -5496,6 +5595,8 @@ components:
         kind:
           type: string
           x-arthome-vocabulary: [adult, child]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "An account-management shape, local to this endpoint: what the person asked for, not a fact the domain reasons about."
           examples: [adult]
         avatar: { $ref: '#/components/schemas/ImageRendition' }
         allowedCategoryIds:
@@ -5533,6 +5634,8 @@ components:
             liveOpenBehaviour:
               type: string
               x-arthome-vocabulary: [peek, muted, 'off']
+              x-arthome-vocabulary-source: none
+              x-arthome-vocabulary-reason: "A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it."
             chatOpenByDefault: { type: boolean }
             readingTimezone:
               type: string
@@ -5541,7 +5644,7 @@ components:
         device:
           type: object
           properties:
-            defaultQuality: { type: string, x-arthome-vocabulary: [auto, low, medium, high] }
+            defaultQuality: { type: string, x-arthome-vocabulary: [auto, low, medium, high], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it." }
             subtitleSizeStep: { type: integer }
             reduceMotion: { type: boolean }
             autoplayPreview: { type: boolean }
@@ -5575,8 +5678,8 @@ components:
             watch: that right is returned by `streaming` when the player opens, on fresh data
             (`adr-auth.md` §7.1).
           properties:
-            tier: { type: string, x-arthome-vocabulary: [free, pass, premium] }
-            state: { type: string, x-arthome-vocabulary: [active, past_due, cancelled, trialing] }
+            tier: { type: string, x-arthome-vocabulary: [free, pass, premium], x-arthome-vocabulary-source: PLAN_TIERS }
+            state: { type: string, x-arthome-vocabulary: [active, past_due, cancelled, trialing], x-arthome-vocabulary-source: SUBSCRIPTION_STATES }
             seatDiscountBps: { type: integer, examples: [1000] }
             concurrentStreamsAllowed: { type: integer, examples: [2] }
         preferences: { $ref: '#/components/schemas/ViewerPreferences' }
@@ -5661,20 +5764,51 @@ components:
         limit: a right read back from disk is a false right. `validUntil` never exceeds 60 seconds.
       properties:
         allowed: { type: boolean }
+        scope:
+          type: string
+          description: |
+            **`allowed` alone cannot say what kind of access was allowed**, and that was a real gap
+            rather than a nicety. `PlaybackTicket` — the binding verdict — has carried `full` versus
+            `preview` since it was written; this one, the advisory verdict a card is painted from,
+            carried only a boolean. So a card for a subscription-required date with budget remaining
+            had to infer preview-ness from `previewSecondsLeft > 0`, which is a rule evaluated on
+            three storefronts instead of served once (rule 2), and the card must say "Watch 5 min
+            free" rather than "Watch" **without a second call**.
+
+            It is the same vocabulary as `PlaybackTicket.scope`, deliberately: two evaluation sites,
+            one implementation, and now one shape.
+          x-arthome-vocabulary: [full, preview, none]
+          x-arthome-vocabulary-source: WATCH_SCOPES
+          examples: [preview]
         advisory:
           type: boolean
           description: |
             `true` everywhere in this document. The binding verdict is the one from `POST /v1/playback/{dateId}/open`.
-        reasonCode:
+        denialReasonCode:
           type: [string, 'null']
           description: |
             The **same refusal vocabulary** as the player: a card announcing "subscription required" and
             a player refusing for the same reason say the same code. Each produces a different screen on
             the three storefronts; a generic code would produce a false one.
+
+            **`SCREAMING_SNAKE`, and that is a family rather than a preference.** This rides on
+            `reasonParams`, which is the error envelope's `code` + `params` shape, and it stands beside
+            `PRICE_STALE`, `STATE_CONFLICT` and `CURSOR_TOO_OLD`. It is a refusal-code family, not a
+            domain vocabulary — which is why `@arthome/core` now exports it in this case too. It spent
+            this whole contract's life lowercase there, so `denialReasonCode === WatchDenialReason.NO_SEAT`
+            was **false for all ten values**, silently, on the entire refusal experience of the
+            storefront. A separator-insensitive comparison cannot see a case difference, which is why
+            this one outlived two passes that were looking for exactly this defect.
+
+            **`NOT_PUBLISHED` is the eleventh**, and it was missing here for the same reason
+            `displayState` was missing three members: `decideWatch` returns it for a `draft`, `reserve`
+            or `technical` date, and the non-public states keep falling out of contracts because no
+            public screen shows them.
           x-arthome-vocabulary:
             [NO_SEAT, ROOM_NOT_OPEN, OUT_OF_TERRITORY, SUBSCRIPTION_REQUIRED, NO_REPLAY,
              REPLAY_EXPIRED, REPLAY_NOT_ON_SALE, PREVIEW_EXHAUSTED, CONCURRENT_LIMIT_REACHED,
-             DATE_CANCELLED]
+             DATE_CANCELLED, NOT_PUBLISHED]
+          x-arthome-vocabulary-source: WATCH_DENIAL_REASONS
           examples: [SUBSCRIPTION_REQUIRED]
         reasonParams:
           type: object
@@ -5682,8 +5816,45 @@ components:
           description: What the screen must display — the territory, the plan required, the expiry instant.
         fallbackAction:
           type: [string, 'null']
-          description: The action that leads out of the dead end. A code, never a sentence, and never a dead screen.
-          x-arthome-vocabulary: [buy_seat, join_waitlist, subscribe, watch_preview, see_replay_policy, none]
+          description: |
+            The action that leads out of the dead end. A code, never a sentence, and never a dead screen.
+
+            **The two vocabularies are coupled, and the coupling is data rather than prose.**
+            A fallback action exists to answer a denial reason, so the invariant is: every reason maps
+            to an action that leads out of it, and every action answers at least one reason.
+            **`WATCH_FALLBACK_FOR` in `@arthome/core` holds the mapping**, with a spec asserting both
+            directions and asserting that `decideWatch` never returns a pairing the table forbids.
+
+            **This description used to restate that table row by row, and that was a parallel literal
+            table** — eleven rows of it, written to prevent drift, in a document that cannot be
+            executed, next to a table that can. So it is gone: the rule is here, the rows are in core,
+            and a surface that needs to know which action answers which reason reads the constant.
+
+            **One row deserves its argument in the contract rather than in the domain**, because it is
+            a contract obligation and not a domain preference: `adr-stream-entitlement.md` §3.3
+            requires a `CONCURRENT_LIMIT_REACHED` refusal to be served with the list of active
+            sessions *"so the surface can offer to release one. A bare refusal would leave the viewer
+            with no way out"*. This contract stated that refusal for its whole life and had no action
+            expressing the remedy, which is the dead end principle 8 forbids. `release_a_screen` is
+            what closes it.
+
+            **`watch_preview` is not here, and the round trip that removed it is worth recording.** It
+            crossed this boundary three times in a day because two people were each answering the
+            other's last message instead of the code. The test that ends that, and the one this
+            contract now defers to: **does a function return it?** `decideWatch` does not — the free
+            preview is expressed by an **allowed** verdict carrying `scope: preview` on both the live
+            and the replay path, with `buy_seat` beside it. A preview a viewer can still watch is not
+            a way out of a refusal, because there is no refusal.
+
+            What the member was compensating for is the finding worth keeping: `WatchVerdict` had no
+            way to say "allowed, but only as a preview", so preview-ness was inferred from
+            `previewSecondsLeft > 0` on three storefronts instead of being served once. The fix was the
+            `scope` field, not a fallback action. **When a vocabulary member answers nothing, look for
+            the field that is missing.**
+          x-arthome-vocabulary:
+            [buy_seat, join_waitlist, subscribe, see_replay_policy, see_other_dates,
+             release_a_screen, none]
+          x-arthome-vocabulary-source: WATCH_FALLBACK_ACTIONS
         previewSecondsLeft:
           type: [integer, 'null']
           description: |
@@ -5759,6 +5930,14 @@ components:
             The **only** state value the cards display, and nobody recomposes it. Produced by
             `displayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`. The hierarchy,
             written once: `outcome` outranks `run.state`, which outranks `publication.state`.
+
+            **One vocabulary, eleven members, and the narrowing is said here rather than written as a
+            second list.** A storefront never receives `draft`, `reserve` or `technical` — not by
+            filtering, but **by construction**: a date reaches a public surface only once it is
+            published. Declaring only the eight would be a second authored list for a field the
+            domain already defines, and two independently authored lists for one field is how E4
+            started. A surface that wants to know what it can actually receive reads this sentence;
+            the vocabulary stays the domain's.
           x-arthome-vocabulary:
             [draft, reserve, scheduled, technical, room_open, live, replay, ended,
              postponed, cancelled, interrupted]
@@ -5771,6 +5950,7 @@ components:
             The outcome **replaces the state on every card**, not only on the detail page. It is a fact
             about the performance: never rewritten, never erased.
           x-arthome-vocabulary: [postponed, cancelled, interrupted]
+          x-arthome-vocabulary-source: DATE_OUTCOMES
         rescheduledTo: { type: [string, 'null'], format: date-time }
         viewers:
           type: [integer, 'null']
@@ -5798,6 +5978,7 @@ components:
                   type: string
                   x-arthome-vocabulary:
                     [pre_sale, preview_night, discovery_rate, final_date, late_rate]
+                  x-arthome-vocabulary-source: PROMOTION_REASONS
                 struckPrice: { $ref: '#/components/schemas/Money' }
                 currentPrice: { $ref: '#/components/schemas/Money' }
                 validUntil: { type: string, format: date-time }
@@ -5811,6 +5992,7 @@ components:
             policy:
               type: string
               x-arthome-vocabulary: [included, subscription, unit, none]
+              x-arthome-vocabulary-source: REPLAY_POLICIES
             windowHours: { type: [integer, 'null'] }
             availableFrom: { type: [string, 'null'], format: date-time }
             expiresAt:
@@ -5822,12 +6004,13 @@ components:
           type: object
           required: [scope]
           properties:
-            scope: { type: string, x-arthome-vocabulary: [worldwide, restricted] }
+            scope: { type: string, x-arthome-vocabulary: [worldwide, restricted], x-arthome-vocabulary-source: RIGHTS_SCOPES }
             blackoutCountries: { type: array, items: { type: string, pattern: '^[A-Z]{2}$' } }
-            reasonCode:
+            blackoutReasonCode:
               type: [string, 'null']
               description: 'A **code**, never a sentence. The current data carries `label`/`labelEn` authored inside the data: an i18n leak (E8).'
               x-arthome-vocabulary: [co_production, broadcaster, festival]
+              x-arthome-vocabulary-source: BLACKOUT_REASONS
         chatMode:
           type: string
           x-arthome-vocabulary: [open, emoji, read_only, 'off']
@@ -5836,6 +6019,7 @@ components:
         languageDependency:
           type: string
           x-arthome-vocabulary: [none, helpful, essential]
+          x-arthome-vocabulary-source: LANGUAGE_DEPENDENCIES
         watchVerdict:
           allOf: [{ $ref: '#/components/schemas/WatchVerdict' }]
           description: |
@@ -5913,7 +6097,7 @@ components:
       type: object
       required: [tier, amount, active]
       properties:
-        tier: { type: string, x-arthome-vocabulary: [full, reduced, support] }
+        tier: { type: string, x-arthome-vocabulary: [full, reduced, support], x-arthome-vocabulary-source: PRICE_TIERS }
         amount: { $ref: '#/components/schemas/Money' }
         active: { type: boolean }
         validUntil:
@@ -5959,6 +6143,8 @@ components:
           x-arthome-vocabulary:
             [resume, live_now, my_seats, upcoming_tonight, followed, editorial, category,
              replay_expiring, artists_to_follow]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist."
         itemKind:
           type: string
           description: |
@@ -5966,6 +6152,8 @@ components:
             `ArtistSummary` exists in the contract but no rail could transport it, and the surface would
             have had to guess the type from the rail identifier — that is, from a parallel literal.
           x-arthome-vocabulary: [date, artist]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist."
           examples: [date]
         cardForm:
           type: string
@@ -5976,6 +6164,8 @@ components:
             is what stops the screen looking like a spreadsheet"* — nine rails of identical 16:9 cards is
             a television's defect number one.
           x-arthome-vocabulary: [wide, poster, portrait]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it."
           examples: [wide]
         items:
           type: array
@@ -6042,7 +6232,7 @@ components:
         surface reorders**. Served in **one** call, never one call per tile.
       properties:
         id: { type: string }
-        universe: { type: string, x-arthome-vocabulary: [music, stage] }
+        universe: { type: string, x-arthome-vocabulary: [music, stage], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist." }
         rank: { type: integer }
         datesCount: { type: integer }
         liveCount: { type: integer }
@@ -6075,7 +6265,7 @@ components:
             type: object
             required: [id, items]
             properties:
-              id: { type: string, x-arthome-vocabulary: [overview, live, upcoming, replays, artists] }
+              id: { type: string, x-arthome-vocabulary: [overview, live, upcoming, replays, artists], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist." }
               titleCode: { type: string }
               items: { type: array, items: { $ref: '#/components/schemas/DateCard' } }
               nextCursor: { type: [string, 'null'] }
@@ -6154,7 +6344,7 @@ components:
       required: [filterId, kind]
       properties:
         filterId: { type: string, examples: [price] }
-        kind: { type: string, x-arthome-vocabulary: [money_range, date_range, boolean] }
+        kind: { type: string, x-arthome-vocabulary: [money_range, date_range, boolean], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist." }
         min: { type: [integer, 'null'] }
         max: { type: [integer, 'null'] }
 
@@ -6176,9 +6366,17 @@ components:
         artistIds: { type: array, items: { type: string, format: uuid } }
         cityIds: { type: array, items: { type: string } }
         countryCodes: { type: array, items: { type: string, pattern: '^[A-Z]{2}$' } }
-        languageDependency: { type: array, items: { type: string, enum: [none, helpful, essential] } }
-        replayPolicy: { type: array, items: { type: string, enum: [included, subscription, unit, none] } }
-        displayStates: { type: array, items: { type: string, enum: [scheduled, room_open, live, replay, ended] } }
+        languageDependency: { type: array, items: { type: string, enum: [none, helpful, essential], x-arthome-vocabulary-source: LANGUAGE_DEPENDENCIES } }
+        replayPolicy: { type: array, items: { type: string, enum: [included, subscription, unit, none], x-arthome-vocabulary-source: REPLAY_POLICIES } }
+        displayStates:
+          type: array
+          description: |
+            **A strict narrowing of `DISPLAY_STATES`** to the five a public search can filter on. The
+            other six are either non-public (`draft`, `reserve`, `technical`) or outcomes that replace
+            the state on the card rather than being searched for (`postponed`, `cancelled`,
+            `interrupted`). A filter on a state no public list can contain returns nothing and says
+            nothing, which is worse than refusing it.
+          items: { type: string, enum: [scheduled, room_open, live, replay, ended], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A narrowing of a vocabulary named elsewhere in this document, with the reason in the description above: the members left out are the rule, not an omission." }
         priceMinMinor: { type: [integer, 'null'], minimum: 0 }
         priceMaxMinor: { type: [integer, 'null'], minimum: 0 }
         startsAfter: { type: [string, 'null'], format: date-time }
@@ -6218,8 +6416,8 @@ components:
             design computes it by hashing, which would give **three different codes for the same seat** as
             soon as one surface changed its hash function.
           examples: ['ATH-7QK2-4M']
-        tier: { type: string, x-arthome-vocabulary: [full, reduced, support] }
-        state: { type: string, x-arthome-vocabulary: [held, active, cancelled, refunded, transferred, credited] }
+        tier: { type: string, x-arthome-vocabulary: [full, reduced, support], x-arthome-vocabulary-source: PRICE_TIERS }
+        state: { type: string, x-arthome-vocabulary: [held, active, cancelled, refunded, transferred, credited], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
         cancelDeadline:
           type: [string, 'null']
           format: date-time
@@ -6235,7 +6433,7 @@ components:
           properties:
             amount: { $ref: '#/components/schemas/Money' }
             delayCode: { type: string, examples: [refund_delay_business_days_3_5] }
-            method: { type: string, x-arthome-vocabulary: [original_payment_method, account_credit] }
+            method: { type: string, x-arthome-vocabulary: [original_payment_method, account_credit], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends." }
 
     MerchItem:
       type: object
@@ -6259,13 +6457,15 @@ components:
               inStock: { type: boolean }
               price: { $ref: '#/components/schemas/Money' }
         price: { $ref: '#/components/schemas/Money' }
-        state: { type: string, x-arthome-vocabulary: [on_sale, out_of_stock] }
+        state: { type: string, x-arthome-vocabulary: [on_sale, out_of_stock], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
         source:
           type: string
           description: |
             The item's origin. An external source is not sold by us: it links out to `merchantUrl`, and
             no cart accepts it.
           x-arthome-vocabulary: [arthome, shopify, woocommerce, prestashop, drupal, api]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "An external provider or platform identifier. It is their vocabulary, not ours, and it changes when they change."
         merchantUrl: { type: [string, 'null'], format: uri }
         pinnedDuringLive: { type: boolean }
         media: { $ref: '#/components/schemas/MediaSet' }
@@ -6334,7 +6534,7 @@ components:
                   (10 / 20%), which applies to **seats**: two discounts, two bases, and they coincide in no
                   source (E1).
                 properties:
-                  reasonCode: { type: string }
+                  discountReasonCode: { type: string }
                   amount: { $ref: '#/components/schemas/Money' }
               total: { $ref: '#/components/schemas/Money' }
         validUntil: { type: string, format: date-time, description: 15 minutes. }
@@ -6354,8 +6554,8 @@ components:
             type: object
             required: [kind, amount]
             properties:
-              kind: { type: string, x-arthome-vocabulary: [tier, service_fee, subscription_discount, promotion, credit_applied] }
-              reasonCode: { type: [string, 'null'] }
+              kind: { type: string, x-arthome-vocabulary: [tier, service_fee, subscription_discount, promotion, credit_applied], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
+              discountReasonCode: { type: [string, 'null'] }
               amount: { $ref: '#/components/schemas/Money' }
         total: { $ref: '#/components/schemas/Money' }
         validUntil: { type: string, format: date-time }
@@ -6375,6 +6575,7 @@ components:
           type: string
           x-arthome-vocabulary:
             [billing_address, ip_address, bank_country, card_country, sim_country, declared_by_buyer]
+          x-arthome-vocabulary-source: TAX_EVIDENCE_KINDS
         country:
           type: string
           pattern: '^[A-Z]{2}$'
@@ -6429,7 +6630,7 @@ components:
         it authorises nothing else and replaces no session.
       properties:
         orderId: { type: string, format: uuid }
-        state: { type: string, x-arthome-vocabulary: [pending, awaiting_action, processing] }
+        state: { type: string, x-arthome-vocabulary: [pending, awaiting_action, processing], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends." }
         paymentIntentRef:
           type: string
           description: '**Opaque** reference to the domain. Only the adapter knows how to read it.'
@@ -6440,7 +6641,7 @@ components:
             What the surface must do next, **declared** rather than guessed: a strong-authentication
             redirect, or nothing.
           properties:
-            kind: { type: string, x-arthome-vocabulary: [redirect_to_url, use_stripe_sdk, none] }
+            kind: { type: string, x-arthome-vocabulary: [redirect_to_url, use_stripe_sdk, none], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends." }
             redirectUrl: { type: [string, 'null'], format: uri }
         returnUrl:
           type: string
@@ -6463,9 +6664,9 @@ components:
           type: string
           description: '**Readable** reference, the one support reads out over the phone.'
           examples: ['ATH-2026-00042']
-        kind: { type: string, x-arthome-vocabulary: [seat, merch, subscription] }
+        kind: { type: string, x-arthome-vocabulary: [seat, merch, subscription], x-arthome-vocabulary-source: ORDER_KINDS }
         channelId: { type: string, format: uuid }
-        state: { type: string, x-arthome-vocabulary: [pending, awaiting_action, processing, paid, failed, refunded, partially_refunded, disputed] }
+        state: { type: string, x-arthome-vocabulary: [pending, awaiting_action, processing, paid, failed, refunded, partially_refunded, disputed], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends." }
         total: { $ref: '#/components/schemas/Money' }
         placedAt: { type: string, format: date-time }
         invoiceAvailable: { type: boolean }
@@ -6500,6 +6701,7 @@ components:
         tier:
           type: string
           x-arthome-vocabulary: [free, pass, premium]
+          x-arthome-vocabulary-source: PLAN_TIERS
           description: |
             The authoritative vocabulary. `monthly`, `season` and `none` are **withdrawn**: no data
             references them, and four disjoint vocabularies made **every** account fall back to `free` —
@@ -6532,6 +6734,7 @@ components:
             x-arthome-vocabulary:
               [browse, trailers, free_dates, replays, no_ads, one_live_month, all_lives,
                multi_screen, archive]
+            x-arthome-vocabulary-source: PLAN_OPENINGS
         seatDiscountBps: { type: integer, examples: [2000] }
         concurrentStreamsAllowed:
           type: integer
@@ -6541,8 +6744,8 @@ components:
       type: object
       required: [planTier, state, currentPeriodEnd]
       properties:
-        planTier: { type: string, x-arthome-vocabulary: [free, pass, premium] }
-        state: { type: string, x-arthome-vocabulary: [active, past_due, cancelled, trialing] }
+        planTier: { type: string, x-arthome-vocabulary: [free, pass, premium], x-arthome-vocabulary-source: PLAN_TIERS }
+        state: { type: string, x-arthome-vocabulary: [active, past_due, cancelled, trialing], x-arthome-vocabulary-source: SUBSCRIPTION_STATES }
         startedAt: { type: string, format: date-time }
         currentPeriodEnd: { type: string, format: date-time }
         cancelAtPeriodEnd: { type: boolean }
@@ -6584,12 +6787,19 @@ components:
         scope:
           type: string
           x-arthome-vocabulary: [full, preview]
+          x-arthome-vocabulary-source: WATCH_SCOPES
+          x-arthome-vocabulary-narrowing: "`none` is a verdict, not a ticket: a ticket exists only where playback was allowed, so a scope of `none` here would be a token for watching nothing."
           description: |
+            **A strict narrowing of `WATCH_SCOPES`, and the missing member is the rule.** `none` is a
+            verdict, not a ticket: a ticket exists only where playback was allowed, so a scope of
+            `none` here would be a token for watching nothing. `WatchVerdict.scope` carries all three
+            because a verdict can say no; this one cannot.
+
             `preview` for a non-holder. Its token expires at `min(now + 120 s, now + secondsLeft)`:
             **reloading the page extends nothing**, and a reinstalled app resets no counter — the budget
             is **server-side**, per **account**.
         previewSecondsLeft: { type: [integer, 'null'] }
-        protocol: { type: string, x-arthome-vocabulary: [hls, dash] }
+        protocol: { type: string, x-arthome-vocabulary: [hls, dash], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared." }
         drmSystem:
           type: [string, 'null']
           description: |
@@ -6597,6 +6807,8 @@ components:
             DASH + Widevine elsewhere, PlayReady on certain models: **a client that guesses gets it
             wrong**, and it gets it wrong on the devices we cannot test.
           x-arthome-vocabulary: [fairplay, widevine, playready]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared."
         qualityCap:
           type: string
           description: |
@@ -6604,6 +6816,8 @@ components:
             only software Widevine: the server **degrades cleanly** rather than refusing, and the surface
             **knows** it has been capped — so it does not offer "4K" in its quality panel.
           x-arthome-vocabulary: [sd, hd, fhd, uhd]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared."
         manifestUrl:
           type: string
           format: uri
@@ -6627,6 +6841,8 @@ components:
             `AVAssetResourceLoaderDelegate`, and that is **the point to validate on a real device before
             promising anything**.
           x-arthome-vocabulary: [signed_cookie, query_token]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared."
         expiresAt:
           type: string
           format: date-time
@@ -6658,7 +6874,7 @@ components:
             properties:
               id: { type: string }
               language: { type: string }
-              kind: { type: string, x-arthome-vocabulary: [main, audio_description] }
+              kind: { type: string, x-arthome-vocabulary: [main, audio_description], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
         subtitleTracks:
           type: array
           items:
@@ -6666,8 +6882,12 @@ components:
             properties:
               id: { type: string }
               language: { type: string }
-              kind: { type: string, x-arthome-vocabulary: [subtitles, captions, surtitles] }
-        chatMode: { type: string, x-arthome-vocabulary: [open, emoji, read_only, 'off'] }
+              kind:
+                type: string
+                x-arthome-vocabulary: [subtitles, captions, surtitles]
+                x-arthome-vocabulary-source: none
+                x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
+        chatMode: { type: string, x-arthome-vocabulary: [open, emoji, read_only, 'off'], x-arthome-vocabulary-source: CHAT_MODES }
         chatRateLimitPerSecond: { type: integer }
         incident: { $ref: '#/components/schemas/Incident' }
         date: { $ref: '#/components/schemas/DateCard' }
@@ -6687,7 +6907,7 @@ components:
           properties:
             queryToken: { type: [string, 'null'] }
             cookieSet: { type: [boolean, 'null'] }
-        qualityCap: { type: string, x-arthome-vocabulary: [sd, hd, fhd, uhd] }
+        qualityCap: { type: string, x-arthome-vocabulary: [sd, hd, fhd, uhd], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared." }
 
     ActivePlaybackSession:
       type: object
@@ -6717,7 +6937,7 @@ components:
         the media stays intact for the resume. Latency **≤ 2 s, non-negotiable**.
       properties:
         id: { type: string, format: uuid }
-        kind: { type: string, x-arthome-vocabulary: [hold_screen, postponed, cancelled, interrupted] }
+        kind: { type: string, x-arthome-vocabulary: [hold_screen, postponed, cancelled, interrupted], x-arthome-vocabulary-source: INCIDENT_KINDS }
         message:
           allOf: [{ $ref: '#/components/schemas/LocalizedText' }]
           description: |
@@ -6754,6 +6974,7 @@ components:
             Precedence: banned > silenced > removed > published. Three separate axes on the model side —
             message state, nature of the queue line, sanction on the person — never stacked.
           x-arthome-vocabulary: [published, removed, muted, banned]
+          x-arthome-vocabulary-source: MODERATION_BADGES
         body: { $ref: '#/components/schemas/LocalizedText' }
 
     ReactionQuota:
@@ -6784,7 +7005,7 @@ components:
             **Persisted by the surface**, so it can reattach after a restart rather than opening a second
             pairing. Without it, a television restarted during payment shows the home screen while the
             payment completes into the void.
-        intent: { type: string, x-arthome-vocabulary: [signin, seat, plan, payment_method, merch] }
+        intent: { type: string, x-arthome-vocabulary: [signin, seat, plan, payment_method, merch], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
         userCode:
           type: string
           description: |
@@ -6822,6 +7043,8 @@ components:
             pairing whose payment is already in flight, and the seat is charged without either screen
             saying so.
           x-arthome-vocabulary: [pending, engaged, approved, denied, expired, cancelled, approved_with_failure]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got."
 
     PairingOutcome:
       type: object
@@ -6836,7 +7059,7 @@ components:
         message four times out of five, and the TV must **never** display "reserved" in that case.
       properties:
         pairingId: { type: string, format: uuid }
-        intent: { type: string, x-arthome-vocabulary: [signin, seat, plan, payment_method, merch] }
+        intent: { type: string, x-arthome-vocabulary: [signin, seat, plan, payment_method, merch], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
         state:
           type: string
           description: |
@@ -6846,8 +7069,10 @@ components:
             pairing whose payment is already in flight, and the seat is charged without either screen
             saying so.
           x-arthome-vocabulary: [pending, engaged, approved, denied, expired, cancelled, approved_with_failure]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got."
         pollIntervalSec: { type: integer }
-        failureCode: { type: [string, 'null'], x-arthome-vocabulary: [SOLD_OUT, PAYMENT_DECLINED, PRICE_STALE, PLAN_UNAVAILABLE] }
+        failureCode: { type: [string, 'null'], x-arthome-vocabulary: [SOLD_OUT, PAYMENT_DECLINED, PRICE_STALE, PLAN_UNAVAILABLE], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A refusal-code family, SCREAMING_SNAKE like the error envelope's `code` it rides beside. It names why THIS command refused, which is the contract's business rather than the domain's." }
         ticket: { $ref: '#/components/schemas/TicketCard' }
         order: { $ref: '#/components/schemas/Order' }
         subscription: { $ref: '#/components/schemas/Subscription' }
@@ -6872,7 +7097,7 @@ components:
       required: [id, scope, criteria, criteriaVersion, criteriaSignature, channels, active, newMatchesSinceLastVisit]
       properties:
         id: { type: string, format: uuid }
-        scope: { type: string, x-arthome-vocabulary: [search, category] }
+        scope: { type: string, x-arthome-vocabulary: [search, category], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
         categoryId: { type: [string, 'null'] }
         name: { type: [string, 'null'] }
         queryText: { type: [string, 'null'] }
@@ -6894,7 +7119,7 @@ components:
         stale: { type: boolean }
         channels:
           type: array
-          items: { type: string, x-arthome-vocabulary: [push, email, in_app] }
+          items: { type: string, x-arthome-vocabulary: [push, email, in_app], x-arthome-vocabulary-source: NOTIFICATION_CHANNELS }
         active: { type: boolean }
         newMatchesSinceLastVisit:
           type: integer
@@ -6922,7 +7147,7 @@ components:
           type: object
           additionalProperties:
             type: array
-            items: { type: string, x-arthome-vocabulary: [push, email, in_app] }
+            items: { type: string, x-arthome-vocabulary: [push, email, in_app], x-arthome-vocabulary-source: NOTIFICATION_CHANNELS }
         quietHours:
           type: object
           description: |
@@ -6964,7 +7189,7 @@ components:
         up to five sessions on a single device.
       properties:
         id: { type: string, format: uuid }
-        kind: { type: string, x-arthome-vocabulary: [tv, mobile, tablet, desktop, stick, console, box] }
+        kind: { type: string, x-arthome-vocabulary: [tv, mobile, tablet, desktop, stick, console, box], x-arthome-vocabulary-source: DEVICE_KINDS }
         label: { type: string }
         city: { type: [string, 'null'] }
         lastSeenAt: { type: string, format: date-time }
@@ -7009,7 +7234,7 @@ components:
               id: { type: string, format: uuid }
               channelId: { type: string, format: uuid }
               amount: { $ref: '#/components/schemas/Money' }
-              originCode: { type: string, x-arthome-vocabulary: [interrupted_date, goodwill] }
+              originCode: { type: string, x-arthome-vocabulary: [interrupted_date, goodwill], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
               expiresAt: { type: string, format: date-time }
         paymentMethods:
           type: array
@@ -7040,7 +7265,7 @@ components:
             **30 days of grace** — reactivable on a simple sign-in until then — and it **anonymises**
             instead of deleting.
           properties:
-            state: { type: string, x-arthome-vocabulary: [requested, anonymised] }
+            state: { type: string, x-arthome-vocabulary: [requested, anonymised], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
             requestedAt: { type: string, format: date-time }
             graceUntil: { type: string, format: date-time }
 
@@ -7054,8 +7279,8 @@ components:
         by a cookie is undownloadable from a native shell.
       properties:
         exportId: { type: string, format: uuid }
-        kind: { type: string, x-arthome-vocabulary: [personal_data, invoices] }
-        state: { type: string, x-arthome-vocabulary: [queued, running, ready, failed, expired] }
+        kind: { type: string, x-arthome-vocabulary: [personal_data, invoices], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A document or export format. It names an accounting tool or a file type, which is the outside world's vocabulary rather than ours." }
+        state: { type: string, x-arthome-vocabulary: [queued, running, ready, failed, expired], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
         requestedAt: { type: string, format: date-time }
         downloadUrl: { type: [string, 'null'], format: uri }
         downloadExpiresAt: { type: [string, 'null'], format: date-time }

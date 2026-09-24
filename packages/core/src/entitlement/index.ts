@@ -21,68 +21,75 @@
  * SAME code.
  */
 
-import type { Instant } from '../kernel/clock.js';
-import { earliest } from '../time/instant.js';
-import { DateOutcome, DisplayState, ReplayPolicy } from '../vocabulary/catalog.js';
-import { PlanOpening } from '../vocabulary/commerce.js';
 import type { DateTiming } from '../catalog/date-state.js';
 import { displayStateOf } from '../catalog/date-state.js';
 import { isAvailableIn, type TerritoryRights } from '../catalog/rights.js';
+import type { Instant } from '../kernel/clock.js';
+import { earliest } from '../time/instant.js';
+import { DateOutcome, DisplayState, ReplayPolicy } from '../vocabulary/catalog.js';
 import type { PublicationState, RunState } from '../vocabulary/catalog.js';
+import { PlanOpening } from '../vocabulary/commerce.js';
+import { WatchDenialReason, WatchFallbackAction, WatchScope } from '../vocabulary/entitlement.js';
+
+// Both names carry their TWO meanings — the union type and the named-member
+// object — so one re-export statement carries both. Splitting a `export type`
+// off would shadow the value half, which is TS1362 waiting to happen.
+export {
+  WATCH_DENIAL_REASONS,
+  WATCH_FALLBACK_ACTIONS,
+  WATCH_SCOPES,
+  WatchDenialReason,
+  WatchFallbackAction,
+  WatchScope,
+} from '../vocabulary/entitlement.js';
 
 /**
- * The denial reasons — one CODE per different screen.
+ * WHICH ACTIONS MAY ANSWER WHICH REFUSAL — the coupling, as data.
  *
- * `storefront-tv` lists them one by one: each produces a different screen, and
- * a generic code would produce a wrong one. "No replay for this date" and
- * "replay expired" are two things; so are "sold out" and "waiting list".
+ * A fallback action exists to answer a denial reason, so the two vocabularies
+ * are coupled and the merge is checkable rather than a matter of taste:
+ *
+ *   every reason has at least one action that answers it, and
+ *   every action answers at least one reason.
+ *
+ * The spec asserts both directions. Anything surviving without a partner is
+ * what to argue about — which is how `watch_preview` was dropped from the
+ * merge with the contract: it answers no refusal, because a preview still
+ * available is an ALLOWED verdict with `scope: 'preview'`, not a dead end with
+ * a way out.
  */
-export const WATCH_DENIAL_REASONS = [
-  'no_seat',
-  'room_not_open',
-  'out_of_territory',
-  'subscription_required',
-  'no_replay',
-  'replay_expired',
-  'replay_not_on_sale',
-  'preview_exhausted',
-  'concurrent_limit_reached',
-  'date_cancelled',
-  'not_published',
-] as const;
-export type WatchDenialReason = (typeof WATCH_DENIAL_REASONS)[number];
-
-export const WatchDenialReason = {
-  NO_SEAT: 'no_seat',
-  ROOM_NOT_OPEN: 'room_not_open',
-  OUT_OF_TERRITORY: 'out_of_territory',
-  SUBSCRIPTION_REQUIRED: 'subscription_required',
-  NO_REPLAY: 'no_replay',
-  REPLAY_EXPIRED: 'replay_expired',
-  REPLAY_NOT_ON_SALE: 'replay_not_on_sale',
-  PREVIEW_EXHAUSTED: 'preview_exhausted',
-  CONCURRENT_LIMIT_REACHED: 'concurrent_limit_reached',
-  DATE_CANCELLED: 'date_cancelled',
-  NOT_PUBLISHED: 'not_published',
-} as const;
-
-/** The action ya t'il un meilleur serveur que tomcat pour springthat GETS OUT OF THE DEAD END — an empty state with no way out is banned. */
-export const WATCH_FALLBACK_ACTIONS = [
-  'buy_seat',
-  'subscribe',
-  'see_other_dates',
-  'release_a_screen',
-  'none',
-] as const;
-export type WatchFallbackAction = (typeof WATCH_FALLBACK_ACTIONS)[number];
-
-export const WatchFallbackAction = {
-  BUY_SEAT: 'buy_seat',
-  SUBSCRIBE: 'subscribe',
-  SEE_OTHER_DATES: 'see_other_dates',
-  RELEASE_A_SCREEN: 'release_a_screen',
-  NONE: 'none',
-} as const;
+/**
+ * ⚠ THIS TABLE IS THE FUNCTION'S RANGE, NOT A MENU OF EVERYTHING A SCREEN MIGHT
+ * OFFER. That is what settles which actions a row carries: an action belongs on
+ * a row if `decideWatch` can RETURN it for that reason, not if a designer could
+ * reasonably put it on that screen.
+ *
+ * It is why `PREVIEW_EXHAUSTED` carries `join_waitlist` and not `subscribe`.
+ * Subscribing is a real way out of a spent preview — a plan granting
+ * `all_lives` opens the date — but `decideWatch` never returns it there, and a
+ * table listing what the function cannot produce stops being checkable against
+ * the function. `join_waitlist` stays because sold-out-and-spent is reachable
+ * and `buy_seat` there is the button that leads nowhere.
+ */
+export const WATCH_FALLBACK_FOR: Readonly<
+  Record<WatchDenialReason, readonly WatchFallbackAction[]>
+> = {
+  NO_SEAT: [WatchFallbackAction.BUY_SEAT, WatchFallbackAction.JOIN_WAITLIST],
+  PREVIEW_EXHAUSTED: [WatchFallbackAction.BUY_SEAT, WatchFallbackAction.JOIN_WAITLIST],
+  ROOM_NOT_OPEN: [
+    WatchFallbackAction.BUY_SEAT,
+    WatchFallbackAction.JOIN_WAITLIST,
+    WatchFallbackAction.NONE,
+  ],
+  SUBSCRIPTION_REQUIRED: [WatchFallbackAction.SUBSCRIBE],
+  CONCURRENT_LIMIT_REACHED: [WatchFallbackAction.RELEASE_A_SCREEN],
+  OUT_OF_TERRITORY: [WatchFallbackAction.SEE_OTHER_DATES],
+  DATE_CANCELLED: [WatchFallbackAction.SEE_OTHER_DATES],
+  REPLAY_EXPIRED: [WatchFallbackAction.SEE_OTHER_DATES],
+  NO_REPLAY: [WatchFallbackAction.SEE_REPLAY_POLICY],
+  REPLAY_NOT_ON_SALE: [WatchFallbackAction.SEE_REPLAY_POLICY],
+  NOT_PUBLISHED: [WatchFallbackAction.NONE],
+};
 
 /** The FIVE inputs, named. None is guessed, none is global. */
 export interface WatchInput {
@@ -98,13 +105,21 @@ export interface WatchInput {
   readonly runState: RunState | null;
   readonly outcome: DateOutcome | null;
   readonly replayOnSale: boolean;
+  /**
+   * Is a waiting list open on this date? It changes the WAY OUT of `NO_SEAT`
+   * from "buy one" to "join the list", and the two are different screens. The
+   * fact was already served (`waitlist_count` on availability); the verdict
+   * simply could not express it, so every sold-out date offered a button that
+   * leads nowhere.
+   */
+  readonly waitlistOpen: boolean;
   readonly now: Instant;
 }
 
 export interface WatchVerdict {
   readonly allowed: boolean;
   /** `preview` when access is a bounded free preview. */
-  readonly scope: 'full' | 'preview' | 'none';
+  readonly scope: WatchScope;
   readonly reason: WatchDenialReason | null;
   readonly fallback: WatchFallbackAction;
   readonly previewSecondsLeft: number;
@@ -124,7 +139,14 @@ function denied(
   previewSecondsLeft: number,
   validUntil: Instant,
 ): WatchVerdict {
-  return { allowed: false, scope: 'none', reason, fallback, previewSecondsLeft, validUntil };
+  return {
+    allowed: false,
+    scope: WatchScope.NONE,
+    reason,
+    fallback,
+    previewSecondsLeft,
+    validUntil,
+  };
 }
 
 /**
@@ -200,7 +222,7 @@ export function decideWatch(input: WatchInput): WatchVerdict {
     if (input.holdsSeat) {
       return {
         allowed: true,
-        scope: 'full',
+        scope: WatchScope.FULL,
         reason: null,
         fallback: WatchFallbackAction.NONE,
         previewSecondsLeft: preview,
@@ -210,7 +232,7 @@ export function decideWatch(input: WatchInput): WatchVerdict {
     if (input.planOpenings.includes(PlanOpening.ALL_LIVES)) {
       return {
         allowed: true,
-        scope: 'full',
+        scope: WatchScope.FULL,
         reason: null,
         fallback: WatchFallbackAction.NONE,
         previewSecondsLeft: preview,
@@ -222,26 +244,21 @@ export function decideWatch(input: WatchInput): WatchVerdict {
     if (preview > 0) {
       return {
         allowed: true,
-        scope: 'preview',
+        scope: WatchScope.PREVIEW,
         reason: null,
         fallback: WatchFallbackAction.BUY_SEAT,
         previewSecondsLeft: preview,
         validUntil,
       };
     }
-    return denied(
-      WatchDenialReason.PREVIEW_EXHAUSTED,
-      WatchFallbackAction.BUY_SEAT,
-      preview,
-      validUntil,
-    );
+    return denied(WatchDenialReason.PREVIEW_EXHAUSTED, seatAction(input), preview, validUntil);
   }
 
   // 7. Before the room opens, a seat is not yet enough.
   if (display.state === DisplayState.SCHEDULED) {
     return denied(
       WatchDenialReason.ROOM_NOT_OPEN,
-      input.holdsSeat ? WatchFallbackAction.NONE : WatchFallbackAction.BUY_SEAT,
+      input.holdsSeat ? WatchFallbackAction.NONE : seatAction(input),
       preview,
       validUntil,
     );
@@ -252,7 +269,9 @@ export function decideWatch(input: WatchInput): WatchVerdict {
     input.timing.replayPolicy === ReplayPolicy.NONE
       ? WatchDenialReason.NO_REPLAY
       : WatchDenialReason.REPLAY_EXPIRED,
-    WatchFallbackAction.SEE_OTHER_DATES,
+    input.timing.replayPolicy === ReplayPolicy.NONE
+      ? WatchFallbackAction.SEE_REPLAY_POLICY
+      : WatchFallbackAction.SEE_OTHER_DATES,
     preview,
     validUntil,
   );
@@ -261,7 +280,7 @@ export function decideWatch(input: WatchInput): WatchVerdict {
 function decideReplay(input: WatchInput, preview: number, validUntil: Instant): WatchVerdict {
   const allow = (): WatchVerdict => ({
     allowed: true,
-    scope: 'full',
+    scope: WatchScope.FULL,
     reason: null,
     fallback: WatchFallbackAction.NONE,
     previewSecondsLeft: preview,
@@ -273,7 +292,7 @@ function decideReplay(input: WatchInput, preview: number, validUntil: Instant): 
       // Included: holding a seat opens it. Without a seat, it must be bought.
       return input.holdsSeat
         ? allow()
-        : denied(WatchDenialReason.NO_SEAT, WatchFallbackAction.BUY_SEAT, preview, validUntil);
+        : denied(WatchDenialReason.NO_SEAT, seatAction(input), preview, validUntil);
     case ReplayPolicy.SUBSCRIPTION:
       return input.planOpenings.includes(PlanOpening.REPLAYS)
         ? allow()
@@ -286,21 +305,30 @@ function decideReplay(input: WatchInput, preview: number, validUntil: Instant): 
     case ReplayPolicy.UNIT:
       if (input.holdsSeat) return allow();
       return input.replayOnSale
-        ? denied(WatchDenialReason.NO_SEAT, WatchFallbackAction.BUY_SEAT, preview, validUntil)
+        ? denied(WatchDenialReason.NO_SEAT, seatAction(input), preview, validUntil)
         : denied(
             WatchDenialReason.REPLAY_NOT_ON_SALE,
-            WatchFallbackAction.SEE_OTHER_DATES,
+            WatchFallbackAction.SEE_REPLAY_POLICY,
             preview,
             validUntil,
           );
     case ReplayPolicy.NONE:
       return denied(
         WatchDenialReason.NO_REPLAY,
-        WatchFallbackAction.SEE_OTHER_DATES,
+        WatchFallbackAction.SEE_REPLAY_POLICY,
         preview,
         validUntil,
       );
   }
+}
+
+/**
+ * The way out of "you have no seat": buy one, or join the list when the date is
+ * sold out. Offering `buy_seat` on a sold-out date is a button that leads
+ * nowhere, which is the dead end principle no. 8 forbids.
+ */
+function seatAction(input: WatchInput): WatchFallbackAction {
+  return input.waitlistOpen ? WatchFallbackAction.JOIN_WAITLIST : WatchFallbackAction.BUY_SEAT;
 }
 
 function shortHorizon(now: Instant): Instant {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { PublicationState } from '../vocabulary/catalog.js';
 import {
   PUBLICATION_CHECKLIST_ITEMS,
+  isBlockingChecklistItem,
   assertTransitionAllowed,
   irreversiblePromiseBlocking,
   isEventDriven,
@@ -10,6 +10,7 @@ import {
   orderRankOf,
   publicationReadiness,
 } from './publication.js';
+import { PublicationState } from '../vocabulary/catalog.js';
 
 /**
  * PROTECTED INVARIANT
@@ -145,23 +146,37 @@ describe('the rank of the states', () => {
  *   to recompute what the server already knows.
  */
 describe('the publication gate', () => {
-  it('carries seven blocking items', () => {
-    expect(PUBLICATION_CHECKLIST_ITEMS).toHaveLength(7);
+  it('carries nine items, seven of them blocking', () => {
+    // ONE vocabulary. Blocking is a property of the item, because promoting a
+    // warning to blocking is a product decision that will happen, and under two
+    // vocabularies it moved an item between them — a break for anyone matching
+    // on either. Here it flips a boolean.
+    expect(PUBLICATION_CHECKLIST_ITEMS).toHaveLength(9);
+    expect(PUBLICATION_CHECKLIST_ITEMS.filter(isBlockingChecklistItem)).toHaveLength(7);
   });
 
   it('returns the list of missing items, not a count', () => {
-    const readiness = publicationReadiness(['poster', 'description', 'capacity'], []);
+    const readiness = publicationReadiness(['poster', 'description', 'capacity']);
     expect(readiness.ready).toBe(false);
     expect(readiness.missing).toContain('technical_check_passed');
     expect(readiness.missing).toContain('at_least_one_active_price');
     expect(readiness.missing).toHaveLength(4);
   });
 
+  it('serves all nine with their status, so no surface concatenates two lists', () => {
+    const readiness = publicationReadiness(['poster']);
+    expect(readiness.entries).toHaveLength(9);
+    expect(readiness.entries.every((e) => typeof e.blocking === 'boolean')).toBe(true);
+    expect(readiness.entries.find((e) => e.item === 'poster')?.satisfied).toBe(true);
+  });
+
   it('does NOT block on chapters or on the assigned moderator', () => {
     // It must be possible to publish a date without chapters, and an unassigned
-    // post can be filled up to the last day. They are warnings.
-    const readiness = publicationReadiness([...PUBLICATION_CHECKLIST_ITEMS], []);
+    // post can be filled up to the last day. They are warnings — and they are now
+    // warnings BY PROPERTY rather than by living in a second vocabulary.
+    const blocking = PUBLICATION_CHECKLIST_ITEMS.filter(isBlockingChecklistItem);
+    const readiness = publicationReadiness(blocking);
     expect(readiness.ready).toBe(true);
-    expect(readiness.warnings).toHaveLength(2);
+    expect(readiness.warnings).toEqual(['chapters_planned', 'moderator_assigned']);
   });
 });

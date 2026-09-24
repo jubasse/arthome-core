@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { LanguageDependency } from '../vocabulary/catalog.js';
 import {
   hasLanguageBarrier,
   isLanguageNeutral,
   isUnderstandable,
   type LanguageProfile,
 } from './language.js';
+import { LanguageDependency } from '../vocabulary/catalog.js';
 
 const profile = (over: Partial<LanguageProfile> = {}): LanguageProfile => ({
   spoken: ['fr'],

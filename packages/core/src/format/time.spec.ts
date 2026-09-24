@@ -63,7 +63,7 @@ describe('the time, in the offset it is given', () => {
  *   thing.
  */
 describe('duration and countdown', () => {
-  it('declares a show\'s running time', () => {
+  it("declares a show's running time", () => {
     expect(formatDuration(150, Locale.FR)).toBe('2 h 30');
     expect(formatDuration(120, Locale.FR)).toBe('2 h');
     expect(formatDuration(45, Locale.FR)).toBe('45 min');

@@ -29,12 +29,13 @@
  */
 
 import type { Instant } from '../kernel/clock.js';
-import { DAY_MS, fromEpochMs, toEpochMs } from '../time/instant.js';
 import { money, subtract, sum, type Money } from '../money/money.js';
 import { applyRate, basisPoints, taxIncludedIn, type BasisPoints } from '../money/rounding.js';
+import { DAY_MS, fromEpochMs, toEpochMs } from '../time/instant.js';
 import type { DateOutcome } from '../vocabulary/catalog.js';
 import { DateOutcome as Outcome } from '../vocabulary/catalog.js';
-import { PayoutState, TaxJurisdictionLevel, TaxSupplyKind } from '../vocabulary/commerce.js';
+import type { TaxJurisdictionLevel, TaxSupplyKind } from '../vocabulary/commerce.js';
+import { PayoutState } from '../vocabulary/commerce.js';
 
 /** `commissionRate: 0.12` from `catalogue.json`, in basis points. */
 export const COMMISSION_RATE_BPS: BasisPoints = basisPoints(1_200);

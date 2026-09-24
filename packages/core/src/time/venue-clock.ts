@@ -18,8 +18,8 @@
  * recomputed for the instant concerned. So the computation happens ONCE.
  */
 
-import { DomainError } from '../kernel/errors.js';
 import { toEpochMs, type Instant, MINUTE_MS } from './instant.js';
+import { DomainError } from '../kernel/errors.js';
 
 /** A venue's time zone, served alongside the UTC instant it qualifies. */
 export interface VenueClock {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { MemberRole, NavigationEntry } from '../vocabulary/people.js';
 import { assignableRolesOf } from './grants.js';
 import { canDecide, canRevenue, effectiveRightsOf } from './rights.js';
+import { MemberRole, NavigationEntry } from '../vocabulary/people.js';
 
 /**
  * PROTECTED INVARIANT

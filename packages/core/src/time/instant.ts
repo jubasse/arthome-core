@@ -12,8 +12,8 @@
  * converted to JSON Schema.
  */
 
-import { DomainError } from '../kernel/errors.js';
 import type { Instant } from '../kernel/clock.js';
+import { DomainError } from '../kernel/errors.js';
 
 export type { Instant };
 

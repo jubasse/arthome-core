@@ -1195,6 +1195,33 @@ pnpm exec prettier --write .        # fix
 **What Prettier does not own is prose** — §3.7 gives the measurement and the reason. `.prettierignore`
 excludes Markdown, the mockups and the handoff dossier in all seven repositories.
 
+**[floor] The fix order is the reverse of the check order, and it is ESLint first.**
+
+```bash
+pnpm run fix      # eslint . --fix && prettier --write .   — structure, then formatting
+pnpm run verify   # ... format:check, then lint, ...       — cheapest signal first
+```
+
+`eslint --fix` changes **structure**: it reorders imports, and `consistent-type-imports` splits one
+statement into two. Prettier then reflows whatever that produced. Prettier never does the reverse — it
+cannot reorder an import or split a type import — so **one pass of each converges when ESLint goes
+first, and needs a third pass when Prettier does.**
+
+Reported from the other side: running `prettier --write`, then `eslint --fix`, left Prettier diffs in
+the files just fixed, and a second `prettier --write` was needed. That is exactly this mechanism, and
+it is not a disagreement between the two tools — `eslint-config-prettier` guarantees they never
+disagree about formatting (§3.2). **It is a fixer producing text that the formatter then reflows**,
+which no amount of rule-disabling prevents.
+
+So the two orders are deliberately opposite, and the reason differs for each:
+
+- **fixing**: structure before formatting, or you format text that is about to change.
+- **checking**: `format:check` before `lint`, because it is far cheaper and its failure is unambiguous.
+
+One consequence worth knowing, because it looks like a bug: **a failing `format:check` can be caused by
+a pending lint fix.** If `verify` fails on formatting in a tree you believe is correct, run
+`pnpm run fix` rather than `prettier --write` alone.
+
 ### 5.2 Naming
 
 **Files and directories — [floor]:** `kebab-case`, always, in all seven repositories and for every
@@ -1261,6 +1288,60 @@ costume: two spellings, both live, with a function asserting they mean the same 
 > **[floor]** `@arthome/core` exports **exactly the value that goes on the wire**, and that value is
 > `snake_case`. The twelve `kebab-case` members are exceptions that each justify themselves or
 > convert. Enumerating them belongs to `backend-domain` and `backend-contracts`, not here.
+
+**Three families, and the third is named rather than tolerated (D-036).**
+
+| Family | Spelling | Example |
+|---|---|---|
+| domain vocabulary | `snake_case` | `read_only`, `replay_online`, `moderation_page` |
+| **error and failure codes** | **`SCREAMING_SNAKE`** | `NO_SEAT`, `SUBSCRIPTION_REQUIRED`, `PAYMENT_DECLINED` |
+| declared exemptions | whatever they are, with a reason in place | cache tags, input filters (§5.3.1 b) |
+
+**The reasoning is the part to keep, because it is what D-033 got wrong.** D-033 reasoned from a
+**count** — three snake vocabularies looked like outliers against a kebab domain — and the count was
+taken on the wrong population. This reasons from a **kind**, and the test is predictive: *what would a
+new error code be?* Obviously `SCREAMING_SNAKE`. *What would a new domain value be?* Obviously
+`snake_case`.
+
+> **Two rules, each of which decides the next case without being consulted.** A count decides nothing
+> about the next case, which is exactly why it failed. Prefer a rule you can apply to a value that
+> does not exist yet.
+
+**The worked example, because this is the first time the family rule decided a case it was not written
+for.** The classification test is the part that transfers:
+
+> **Does a member answer *why something was refused*, or does it state *a domain fact*?**
+> `no_seat` exists only inside a verdict that says no. `co_production` is a fact about the production
+> whether or not anything was ever refused.
+
+Applied to the six vocabularies in `@arthome/core` whose names suggest a reason:
+
+| Vocabulary | Members | Answers | Family |
+|---|---|---|---|
+| `WATCH_DENIAL_REASONS` | `NO_SEAT`, `ROOM_NOT_OPEN`, … | why watching was refused | **`SCREAMING_SNAKE`** ✓ |
+| `REPLAY_UNAVAILABILITY_REASONS` | `no_replay_policy`, `replay_window_expired` | why the replay was refused | **`SCREAMING_SNAKE`** — currently lowercase, **the one inconsistency** |
+| `BLACKOUT_REASONS` | `co_production`, `broadcaster`, `festival` | a fact about the rights arrangement | `snake_case` ✓ |
+| `MODERATION_REASONS` | `spam`, `insult`, `spoiler` | a fact about the message | `snake_case` ✓ |
+| `PROMOTION_REASONS` | `pre_sale`, `preview_night` | a fact about the date | `snake_case` ✓ |
+| `FAILURE_NATURES` | `refused`, `unavailable`, `offline_forbidden` | *arguable* — classifies a failure rather than giving its reason | **open question** |
+
+Five decided without being consulted, one inconsistency found, one genuine borderline surfaced rather
+than guessed. That is what distinguishes a rule from a preference: **a preference tells you about the
+cases you already have; a rule tells you about the next one.** The borderline is the useful part of the
+output, because it is the one place the test does not reach and therefore the one place a human is
+needed.
+
+**And naming the family changed what counts as a divergence, which broke a gate.** Gate 18 grouped
+values case-insensitively to find one value spelled two ways. Once `SCREAMING_SNAKE` became a
+legitimate family, that grouping merged `WatchVerdict.reasonCode`'s `DATE_CANCELLED` — a refusal code —
+with the refund `reasonCode`'s `date_cancelled` — a domain reason — and reported two genuinely
+different vocabularies as one value misspelled. A real false positive, created by a correct ruling
+landing after the check was written.
+
+The fix is the shape of the ruling: group **separator-insensitively but case-sensitively**, so a
+separator difference still fails, and report a case difference as a **note** — legitimate across
+families, suspicious within one, and the gate cannot tell which while a human can. **A ruling that
+creates a family creates work in every gate that assumed there was one.**
 
 **One defect that is a defect under either ruling**, found while counting and now caught by gate 18:
 `co-production` in `storefront.yaml` against `co_production` in `studio.yaml`. The same value, two
@@ -1499,6 +1580,48 @@ In the artefact, not in a side file — because a side file would have to identi
 number, and line numbers are what §3.7 learned not to key on. The reason is mandatory: an exception
 that does not say why is not an exception, it is a hole.
 
+**b-bis. It reads `enum` as well, and the comparison is asymmetric — because the contract is.**
+
+The first version read only `x-arthome-vocabulary` and was therefore blind to the half that fails
+hard. Measured: 149 output blocks carrying 374 values, **77 input `enum` blocks carrying 191 values,
+60 of them existing nowhere else.** And the asymmetry runs the wrong way for a gate that only sees
+outputs:
+
+| | Divergence behaviour |
+|---|---|
+| `x-arthome-vocabulary` — **served** | **degrades.** Rule 10 keeps an unknown value raw and treats it as neutral. |
+| `enum` — **accepted** | **rejects.** A 400 on every request carrying the value, from the first deploy. |
+
+The proof arrived while this was being written: `SURFACES` diverged as domain `storefront_web` against
+wire `storefront-web`, on `X-Arthome-Surface` — a **required** header validated on every request to
+both BFFs. **The one divergence capable of taking the platform down sat in the sixty the gate could
+not see.**
+
+So `enum` is read under the same `-source` key — and inputs are **not** turned into
+`x-arthome-vocabulary`, because that would erase the strict-on-input, tolerant-on-output distinction,
+which is a design property of the contract rather than a notation accident. What the gate does instead
+is compare asymmetrically:
+
+| | only in the contract | only in the domain |
+|---|---|---|
+| output | **fail** — we would serve a value the domain cannot represent | **fail** — the contract cannot describe something the domain can emit |
+| input | **fail** — we would *accept* one. The dangerous direction, and the one that caught `SURFACES` | **note** — narrowing an input is legitimate: not every domain value is settable by a client |
+
+**The dangerous direction fails in both kinds; only outputs require equality.** Demanding equality on
+inputs would shout at every deliberately-restricted enum — a "set state" input properly accepts only
+the transitions a client may request — and a gate that shouts wrongly gets switched off.
+
+**With one qualifier, added once a third verdict existed:** an output may narrow too, provided it says
+so. `PlaybackTicket.scope` omits `none` from `WATCH_SCOPES` because a ticket that grants nothing is
+never issued — a real rule about a real field. So the equality requirement holds for a block that
+*mirrors* a vocabulary, and a block that *restricts* one declares `x-arthome-vocabulary-narrowing`
+with its reason and is checked as a subset instead. Without that qualifier the rule would have been
+right about six inputs and wrong about the first output it met.
+
+**And the two migrations get two ratchets, with the input one dated earlier.** One shared allowance
+would let the safe migration mask the dangerous one: outputs could fall to zero while all 77 inputs
+stayed unchecked, and the number would look like progress.
+
 **c. The migration is a ratchet, not a truce.** `tools/vocabulary-migration.json` records how many
 blocks are still unannotated, so the gate is useful **today** against contracts nobody has annotated
 yet. Three properties make it a ratchet: the number may go **down and never up**, so new drift fails
@@ -1584,12 +1707,207 @@ either, so **neither branch had executed against real data**. A gate whose branc
 a gate whose behaviour is a hypothesis. All four verdict states — inactive, agree, disagree, exemption
 without a reason — are now exercised against fixtures built from the real contracts.
 
-**Two notes on testing gates, learned by getting both wrong here.** A fixture assembled with `grep`
-or string replacement broke the YAML twice — once by orphaning a block scalar, once by inserting a
-duplicate key that the parser silently discarded, keeping the last. In both cases the gate then
-*passed*, and I was one step from concluding it had a gap. So: **build a fixture in the object model,
-not in the text**; and **a broken fixture and a broken gate are indistinguishable from outside** —
-both are "the gate did not fire" — so verify the fixture before believing the result.
+**[floor] Never put prose in a double-quoted shell string.**
+
+The only fault this week that can **execute**. A backtick inside double quotes is command
+substitution, so a helpful note reading `` Run `pnpm run verify` before pushing `` embedded in an npm
+script does not print that sentence — it **runs the command**. In `verify:offline`, that was `verify`
+invoking itself, and it was never reached only because the chain failed earlier.
+
+Three instances this week, two authors, each caught by accident rather than by review. The remedy is
+not attention:
+
+> **A sentence for a human does not go inside a double-quoted shell string.** Put it in a file, or a
+> single-quoted string, or a `node -e` reading from a separate module — anywhere the shell is not
+> parsing English for syntax.
+
+Backticks are the sharp edge, but `$`, `!` and `\` are all live in the same position. Prose contains
+punctuation; shell double quotes give punctuation meaning. The two should not meet.
+
+**[floor] A check is scoped by something, and the scope is invisible in the output unless the output
+says so.**
+
+This is the sentence that unifies every measurement fault in this document, and it was
+`backend-contracts` who wrote it. Each of these was a correct measurement whose scope did not appear
+in its result:
+
+| The check | Scoped by | What it could not see |
+|---|---|---|
+| the `snake_case` conversion | a **directory** | nine vocabularies outside `vocabulary/` |
+| a divergence scan | a **separator** | ten values differing only by case |
+| "1015 lines, unchanged" | a **line count** | invariant under the very defect it was ruling out |
+| a gate's status | the **last command in a pipe** | the gate's own exit code |
+| the quotation exemption | **existence**, not narrowness | a one-character quote passing a whole file |
+| `check-enums`' attribution | the **first** declarer | 25 of 179 values have more than one, `'none'` has five |
+| `check-enums`' sweep | the **declaring file** | ten files never scanned at all, one of them since it was written |
+
+**The last row is the purest instance, and it is worth its own paragraph.** `check-enums` excluded from
+its sweep *any file that declared a vocabulary*. The skip had a real reason — a file legitimately uses
+the members of the vocabulary it declares — but it was scoped by the **file** when the thing being
+excused is a **value**. So `entitlement/index.ts` was never scanned at all: it declared two
+vocabularies of its own, and three inline literals copied from *other* vocabularies sat in it from the
+day it was written. Moving the declarations out, for an unrelated reason, revealed them instantly.
+
+The output said `42 file(s) swept` and nothing about the ten it declined. **Incidental scope, invisible
+in the output, inside the gate whose entire purpose is finding copies** — this document's own lesson
+landing on the tool that taught it.
+
+The fix is not to announce the scope but to **narrow it correctly**: scan every file, ignore only the
+values *that file declares*. The sweep went from 42 files to 52, and it now prints both numbers.
+Announcing is worth doing on top, and that is the verdict-line rule one level down: **a sweep that
+names its coverage cannot quietly become a sweep that covers less.**
+
+**And the counter-example is the instruction.** A set difference has nowhere to hide a narrowing: it
+announces its scope by construction, because the scope *is* the question. The asymmetric input/output
+table (§5.3.1 b-bis) does that; the case-insensitive grouping did not, which is exactly why a ruling
+could break it silently.
+
+> **Prefer a check whose scope is structurally visible.**
+
+**[floor] Incidental scope versus intrinsic scope (D-045).**
+
+The distinction that decides how every gate here gets written:
+
+- **Incidental scope** — a directory, a separator, a line count, a pipe, a naming convention. A
+  property of the **instrument**. Invisible in the output, and everything outside it is a silent miss.
+- **Intrinsic scope** — *"narrows something that has a name."* A property of the **question**. Visible
+  because it **is** the question.
+
+> **Scope the check by a property of the thing you are looking for, never by a property of where you
+> happened to look.**
+
+Measured, not argued. The narrowing predicate was tried three ways:
+
+| Scoped by | Hits | Real | Noise |
+|---|---|---|---|
+| a name | — | missed eight | |
+| nothing | 14 | 6 | **8** |
+| *"an unannotated block that is a strict subset of a named vocabulary"* | **6** | **6** | **0** |
+
+The eight noise hits were four vocabularies that legitimately nest (`CREW_ROLES ⊂ MEMBER_ROLES` is
+true and means something), one pure coincidence (`[low, medium, high]` inside
+`[auto, low, medium, high]`), and three artefacts of **where it looked** — a description written on the
+array rather than on its `items`. Noise is how a gate gets switched off, so **six that are all real
+beats fourteen that are mostly right**, and "unscoped" is not the goal but the other failure mode.
+
+**[floor] The inverse of E2: a fact stated zero times.**
+
+Every remedy in this document attacks one shape — a fact stated **twice**, the copies drifting. One
+owning declaration, reference it, a gate comparing two artefacts. The narrowing finding is the
+**inverse**, and it is harder:
+
+> `PUT /run/state` accepts `idle rehearsal on_air ended` and not `interrupted`, because an
+> interruption is **declared by `raiseIncident`** and never commanded — a control room able to set it
+> directly would have two ways into one state and only one raises the incident viewers see.
+
+That is one of the most important rules in either contract, and it was **written nowhere**. It was
+carried by an omission. Six such rules sat in the most carefully reviewed blocks of the documents.
+
+**An absence has no owning document.** There is no line to reread, no copy to compare, nothing for a
+gate to point at, and — worst — no way to distinguish a deliberate omission from an oversight. Every
+instrument here was built for the first shape, which is why the second went unnoticed.
+
+The remedy is to make the absence say its own name: `x-arthome-vocabulary-narrowing`, with a mandatory
+reason, checked as "every member is a member of the source". Same discipline as `source: none`, and for
+the same reason — **an omission that does not say why is not a rule, it is a gap.**
+
+**[floor] Four ways to mis-measure, and they are one family.**
+
+Each of these is a thing you build and then trust without re-reading. All four cost real time in this
+repository, three of them mine.
+
+1. **A forecast wearing a number's clothes.** An allowance set to "what the count will be once X
+   lands" fails inscrutably when the forecast is off by one, and the failure does not say
+   *your prediction was wrong* — it says whatever the gate normally says. **Is this a count someone
+   took, or a count someone expects?** (§5.3.1 c)
+2. **A bucket named for what you expect to find in it.** A check compared only separators and filed
+   case-divergent values under *"absent from the wire"*, which was read as *"domain-only, not yet
+   published"*. Ten values comparing false in silence were sitting in a list that had been printed and
+   read. A correct measurement of the wrong quantity, whose **label invited the wrong reading**.
+   > **Name a bucket for the criterion that puts things in it, never for what you expect to find
+   > there.** "Absent from the wire" describes a conclusion; "no exact match after separator
+   > normalisation" describes the test. The first gets read as the second by the person who wrote it,
+   > within the hour.
+3. **A status read through a pipe.** `$?` after a pipeline is the *last* command's status, so
+   `gate | head` reports `head`'s success and a red gate reads as green. This has now happened twice
+   here, to two different people, against two different gates — including once while measuring whether
+   a gate was red. Measure the gate, then pipe; or use `PIPESTATUS`.
+4. **A fixture that is the bug.** Covered below, and it happened three times in one session.
+
+**[floor] A gate fails; it does not throw.**
+
+An unhandled exception reads **exactly** like a finding. Two teammates independently reported
+`verify:offline` down for everyone on a `NameError`, and both were right that it was down — but
+neither the chain nor a human can tell a traceback from a verdict. A crashing gate and a red gate are
+the same observation from outside.
+
+So every gate here wraps its entry point and reports a crash as **a defect in the gate**, with a
+distinct exit code — `3`, against `1` for a finding and `2` for a malformed exemption — and a message
+that says *nothing has been verified, treat this as UNKNOWN rather than as pass or fail*. The three
+states a caller must be able to distinguish are **pass, fail, and did-not-run**; a gate that collapses
+the third into the second is the green-gate problem inverted.
+
+**[floor] A gate that discovers beats a gate that is pointed.**
+
+The `snake_case` conversion pass was scoped to `packages/core/src/vocabulary/`. **Nine vocabularies
+live outside that directory** — in `i18n/`, `replay/`, `entitlement/` — and the pass did not see them,
+while `check-vocabulary` did, because it walks the whole tree and keys on the **shape** of a
+declaration rather than on where it sits.
+
+> *"Location is not a property anyone intended to matter, which is exactly why it did."*
+
+Any procedure scoped by path inherits this, and a gate scoped by path inherits it silently. So a gate
+here **discovers its inputs**: `check-enums` and `check-vocabulary` find every `as const` export by
+walking; `check-language` takes its file list from `git ls-files`; `check-tsconfig` globs for projects
+rather than being handed a list. The cost is that a gate sees more than you expected, which is the
+point.
+
+**[floor] A word list tuned for detection is not a word list you can reuse for validation.**
+
+`arthome-check-language` exempts a quoted French sentence — a mockup string, a stale comment, the
+project owner's own words — because translating a quotation destroys what it is doing. The exemption
+names its file, its exact text and its reason, and the text must appear **verbatim**, which was meant
+to stop an entry widening into a blanket pass.
+
+It did not. Verbatim guarantees the quotation **exists**; it does not guarantee it is **narrow**. A
+quotation of `"e"` appears in almost every line, skips every line, and passes the whole file — a
+blanket pass through the front door. Demonstrated in a scratch repository rather than argued, because
+the first attempt to demonstrate it used the wrong key name in the fixture and reported a clean pass,
+which is the house rule below doing its work.
+
+**The first fix was worse than the hole.** Requiring the quotation to contain a word from the gate's
+French list rejected `les quatorze entrées de navigation` — manifestly French — because that list is
+deliberately **narrow**: it holds only words that cannot be English and cannot be an identifier, which
+is exactly what makes it precise when **detecting**. Reusing it to **validate** inverted its purpose.
+
+> **Detection wants few false positives, so its list is narrow. Validation wants few false negatives,
+> so it would need a broad one.** They are not the same instrument, and a list built for one is a
+> liability in the other.
+
+The bound that works is **structural, not linguistic**: a quotation may cover a quotation, not a
+document — at most three lines. It needs no view about language, it refuses `"e"` on the ground that
+actually matters, and it cannot be wrong about French. When a rule can be enforced by counting instead
+of by judging, count.
+
+**[floor] Testing a gate: verify the fixture, not just the outcome.**
+
+A fixture assembled with `grep` or string replacement broke the YAML twice in one hour — once by
+orphaning a block scalar, once by inserting a duplicate key that the parser silently discarded,
+keeping the last. Both times the gate then **passed**, and both times the next step would have been to
+conclude the gate had a gap.
+
+> **A broken fixture and a broken gate are indistinguishable from outside.** Both are "the gate did
+> not fire". So: **build a fixture in the object model, not in the text**, and **verify the fixture
+> before believing the result.**
+
+This is a house rule rather than a note, because two people reached it independently within the hour
+from opposite directions — one by breaking their own fixtures, one by deliberately probing all three
+branches of this gate on a copy rather than trusting its happy path. **Two independent arrivals at the
+same rule in one hour is a rule, not a coincidence.**
+
+It is the same shape as "eight, not five": a scan that looks in the wrong place returns an
+honest-looking zero. And it is why every branch of a gate here is exercised against a fixture — a gate
+whose branches have never run is a gate whose behaviour is a hypothesis.
 
 **Where the YAML-type rule lives, which is a different question from where it was found.** "Every
 vocabulary and enum member must be a string" is the **contract's own conformance rule**, so it belongs
@@ -2297,6 +2615,25 @@ The account's Actions quota is exhausted. No gate assumes a remote runner.
 | 17 | No French prose committed | `pnpm exec arthome-check-language` | `PASS` | D-024 |
 | 18 | **Contracts and domain share one vocabulary** | `python3 tools/check-vocabulary.py openapi/*.yaml` | `PASS` | §5.3.1 |
 
+Gate 18 is five checks, and **three of them need no annotation**, which is why it was worth
+building before the 120-block migration rather than after it:
+
+| Check | Needs `-source`? | Catches |
+|---|---|---|
+| agreement, per block | yes | a member on one side only, asymmetric by kind (§5.3.1 b-bis) |
+| **cross-boundary spelling** | **no** | a whole member set matching the domain only once case and separators are ignored — `WATCH_DENIAL_REASONS`' ten values, each differently cased |
+| **one value, one spelling** | **no** | the same value spelled two ways across the two contracts — `co-production` / `co_production` |
+| **domain member unreachable** | **no** | a value the domain can return that appears in neither contract — the `NOT_PUBLISHED` class |
+| **undocumented narrowing** | **no** | an unannotated block that is a strict subset of a named vocabulary — a rule carried by an omission |
+| **wire vocabulary with no owner** | **no** | the same member set in *both* contracts that no domain vocabulary declares — two copies, no owner |
+| declared narrowing | yes | a `narrowing` label that adds members, or that narrows nothing |
+| YAML 1.1 type trap | no | a member that parses as a boolean or null rather than a string |
+
+**Five of the eight need no annotation.** That is not an accident of design; it is §5.3.1 a-bis applied
+each time the gate had to grow: when a check needs data that does not exist yet, look for the
+formulation that needs none. The three that do need it are the three that genuinely cannot be answered
+without knowing *which* vocabulary a block mirrors.
+
 **Gates 9, 10, 11, 16, 17 and 18 run without `node_modules`** — the first three are pure Node shipped by
 `@arthome/tooling`, the fourth is Python with no dependency beyond PyYAML. That is deliberate: a gate
 that needs an install in order to exist does not exist on the day a repository is created, which is
@@ -2341,6 +2678,21 @@ way never to have to wonder how verification works here.
 It runs on a freshly cloned repository, before the first `pnpm install`, and that is what makes it
 possible to create the other six repositories with their gates already green. `verify` calls it and
 then adds what requires `node_modules`.
+
+**⚠ And the split has a failure mode this document walked into.** Because `verify:offline` is the one
+everybody runs — it is fast, it needs no install, and it is what gets quoted as "green" — the four
+steps that exist only in `verify` can go unexercised indefinitely. They did: the root `typecheck` had
+been failing with `TS2688` since the day `types: ["node"]` was written into `tsconfig.json` against a
+`@types/node` that was never installed. **A broken step in a chain nobody runs is indistinguishable
+from a step that works.**
+
+Two things follow, and the second is the general one:
+
+1. `verify:offline` now **prints what it did not run**, so "green" cannot be read as "verified".
+   A subset that does not announce itself as one gets quoted as the whole.
+2. **The routine command is `verify`; `verify:offline` is for bootstrapping.** If a chain has two
+   entry points, the shorter one becomes the real one — so the shorter one has to say what it leaves
+   out.
 
 **The order is deliberate and must not change:** versions and `tsconfig` locks first (a gate going red
 because a package slipped or a `strict: false` is lying around is time wasted reading an error that

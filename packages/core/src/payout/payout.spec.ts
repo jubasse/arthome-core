@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { money } from '../money/money.js';
-import { DateOutcome } from '../vocabulary/catalog.js';
-import { PayoutState, TaxJurisdictionLevel, TaxSupplyKind } from '../vocabulary/commerce.js';
 import {
   COMMISSION_RATE_BPS,
   PAYOUT_DELAY_DAYS,
@@ -11,6 +8,9 @@ import {
   payoutStateFor,
   vatLineFor,
 } from './index.js';
+import { money } from '../money/money.js';
+import { DateOutcome } from '../vocabulary/catalog.js';
+import { PayoutState, TaxJurisdictionLevel, TaxSupplyKind } from '../vocabulary/commerce.js';
 
 const eur = (amountMinor: number) => money(amountMinor, 'EUR');
 const chf = (amountMinor: number) => money(amountMinor, 'CHF');
@@ -215,7 +215,7 @@ describe('the breakdown by jurisdiction', () => {
  *   14 days, withholding while an outcome is open. It is the only part of the
  *   fixtures' formula that is a real rule.
  */
-describe('a payout\'s state', () => {
+describe("a payout's state", () => {
   it('withholds while an outcome is open', () => {
     expect(payoutStateFor(DateOutcome.POSTPONED, false, false)).toBe(PayoutState.HELD);
     expect(payoutStateFor(DateOutcome.INTERRUPTED, false, false)).toBe(PayoutState.HELD);

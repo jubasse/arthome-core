@@ -15,8 +15,8 @@
  * able to say where it came from.
  */
 
-import { DomainError } from '../kernel/errors.js';
 import { money, type Money } from './money.js';
+import { DomainError } from '../kernel/errors.js';
 
 /**
  * Rates travel in BASIS POINTS, as integers: 1200 = 12%, 550 = 5.5%.

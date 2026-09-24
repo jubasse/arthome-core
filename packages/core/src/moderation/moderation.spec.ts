@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  AudienceSanction,
-  MessageState,
-  ModerationItemState,
-  ModerationVerdict,
-  StateChangeOrigin,
-} from '../vocabulary/moderation.js';
-import {
   ModerationBadge,
   canOverride,
   evaluateSettlement,
@@ -15,6 +8,13 @@ import {
   shouldCollapseToQueue,
   type ModerationItemSnapshot,
 } from './index.js';
+import {
+  AudienceSanction,
+  MessageState,
+  ModerationItemState,
+  ModerationVerdict,
+  StateChangeOrigin,
+} from '../vocabulary/moderation.js';
 
 /**
  * PROTECTED INVARIANT
@@ -130,7 +130,7 @@ describe('the human / automatic precedence', () => {
  *   the MESSAGE.
  */
 describe('the single badge', () => {
-  it('makes the person\'s sanction outrank the message\'s state', () => {
+  it("makes the person's sanction outrank the message's state", () => {
     expect(moderationBadgeOf(MessageState.PUBLISHED, AudienceSanction.BANNED)).toBe(
       ModerationBadge.BANNED,
     );

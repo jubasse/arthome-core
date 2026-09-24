@@ -96,14 +96,7 @@ export const NavigationEntry = {
 } as const;
 
 /** The six panes of a date sheet, opened according to effective rights. */
-export const DATE_PANES = [
-  'public',
-  'tickets',
-  'chat',
-  'tech',
-  'crew',
-  'replay',
-] as const;
+export const DATE_PANES = ['public', 'tickets', 'chat', 'tech', 'crew', 'replay'] as const;
 export type DatePane = (typeof DATE_PANES)[number];
 
 export const DatePane = {

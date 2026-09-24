@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { BlackoutReason, RightsScope } from '../vocabulary/catalog.js';
 import { blackoutReasonOf, isAvailableIn, restrictedRights, worldwideRights } from './rights.js';
+import { BlackoutReason, RightsScope } from '../vocabulary/catalog.js';
 
 /**
  * PROTECTED INVARIANT

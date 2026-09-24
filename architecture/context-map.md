@@ -518,19 +518,29 @@ Concretely:
   its own code, its own trace, its own message. It does not need to ask `catalog`.
 - `chat` likewise refuses `setChatMode` after the commitment, except to restrict (you can always
   **close** a live chat; you can no longer open it further after the commitment).
-- The **publication gate** (the checklist) is served by `catalog`, but **three of its seven items are
+- The **publication gate** (the checklist) is served by `catalog`, but **three of its nine items are
   projected facts**: "at least one active price" and "capacity" come from `ticketing`, "technical
   check passed" comes from `streaming`. `catalog` keeps them up to date by event and **serves the
   list of missing items** with an identifier per item — never a percentage, which the client would
   compute.
 
-**The authoritative checklist** (`studio-web` Q7, inconsistency 5): **seven items**, the sheet's, not
-the fixtures' four. The fixtures' four are an arbitrary subset; the seven are the ones a screen
+**The authoritative checklist** (`studio-web` Q7, inconsistency 5): **nine items**, the sheet's, not
+the fixtures' four. The fixtures' four are an arbitrary subset; the nine are the ones a screen
 actually exercised:
 `title_and_discipline` · `poster` · `description` · `at_least_one_active_price` · `capacity` ·
-`technical_check_passed` · `chat_mode_set`.
-"Chapters planned" leaves the blocking list and becomes a **warning**: you must be able to publish a
-date without chapters, and the studio must be able to do it.
+`technical_check_passed` · `chat_mode_set` · `chapters_planned` · `moderator_assigned`.
+
+**Seven block publication and two do not — and blocking is a property of the ITEM, not a second
+vocabulary.** "Chapters planned" and "moderator assigned" are non-blocking warnings: it must be
+possible to publish a date without chapters, and an unassigned post can be filled up to the last
+day.
+
+> **This was two vocabularies and it was wrong on two counts.** Promoting a warning to blocking is
+> a product decision that *will* happen — under the split it moves an item from one vocabulary to
+> another, which breaks anyone matching on either; as a property it flips a boolean. And a client
+> rendering the checklist wants all nine with their status, so two lists forced every surface to
+> concatenate them — a composition the server should have served, which is the same fault as making
+> a surface recompose `displayState`.
 
 **The lock is on the transition, not on the state** (E5, `studio-web` inconsistency 6). The contract
 carries **pairs** `from > to`, not a list of states. Two one-way pairs, with the promise they commit,

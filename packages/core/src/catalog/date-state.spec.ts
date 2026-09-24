@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { DateOutcome, DisplayState, PublicationState, RunState } from '../vocabulary/catalog.js';
-import { ReplayPolicy } from '../vocabulary/catalog.js';
 import { displayStateOf, isRoomOpen, progressOf, type DateTiming } from './date-state.js';
+import {
+  DateOutcome,
+  DisplayState,
+  PublicationState,
+  RunState,
+  ReplayPolicy,
+} from '../vocabulary/catalog.js';
 
 const timing: DateTiming = {
   startsAt: '2026-09-21T19:00:00.000Z',

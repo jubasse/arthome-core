@@ -12,8 +12,8 @@
  * "superior" role.
  */
 
-import { DatePane, MemberRole, NavigationEntry } from '../vocabulary/people.js';
 import { assignableRolesOf } from './grants.js';
+import { DatePane, MemberRole, NavigationEntry } from '../vocabulary/people.js';
 
 const NAVIGATION: Readonly<Record<MemberRole, readonly NavigationEntry[]>> = {
   artist: [

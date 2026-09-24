@@ -1,13 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import { isReplayWindowOpen, replayHoursLeft, replayUnavailabilityReason } from './index.js';
 import type { DateTiming } from '../catalog/date-state.js';
 import { ReplayPolicy } from '../vocabulary/catalog.js';
-import {
-  ReplayUnavailabilityReason,
-  isReplayWindowOpen,
-  replayHoursLeft,
-  replayUnavailabilityReason,
-} from './index.js';
+import { WatchDenialReason } from '../vocabulary/entitlement.js';
 
 const timing: DateTiming = {
   startsAt: '2026-09-21T19:00:00.000Z',
@@ -80,10 +76,10 @@ describe('the two replay refusals', () => {
   it('tells an absent policy apart from a closed window', () => {
     const none: DateTiming = { ...timing, replayPolicy: ReplayPolicy.NONE, replayWindowHours: 0 };
     expect(replayUnavailabilityReason(none, '2026-09-21T22:00:00.000Z')).toBe(
-      ReplayUnavailabilityReason.NO_POLICY,
+      WatchDenialReason.NO_REPLAY,
     );
     expect(replayUnavailabilityReason(timing, '2026-10-01T00:00:00.000Z')).toBe(
-      ReplayUnavailabilityReason.WINDOW_EXPIRED,
+      WatchDenialReason.REPLAY_EXPIRED,
     );
   });
 

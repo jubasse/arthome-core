@@ -7,11 +7,11 @@
  * recomputed for the instant concerned (D3).
  */
 
+import { Locale } from './locale.js';
 import { toEpochMs, type Instant } from '../time/instant.js';
 import { wallClockAt } from '../time/venue-clock.js';
 // `Locale` is both a type and an object of named members: one import carries
 // both meanings of the name.
-import { Locale } from './locale.js';
 
 const DAY_NAMES: Readonly<Record<Locale, readonly string[]>> = {
   fr: ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'],

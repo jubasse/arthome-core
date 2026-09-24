@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { money } from '../money/money.js';
-import { PriceTier, PromotionReason } from '../vocabulary/commerce.js';
 import {
   applyBestDiscount,
   lateRatePrice,
@@ -9,6 +7,8 @@ import {
   quoteSeats,
   type TierPrice,
 } from './pricing.js';
+import { money } from '../money/money.js';
+import { PriceTier, PromotionReason } from '../vocabulary/commerce.js';
 
 const eur = (amountMinor: number) => money(amountMinor, 'EUR');
 const fee = { perSeat: eur(150), rateBps: 0 };
@@ -85,7 +85,7 @@ describe('the summary, line by line', () => {
  *   recomputed — it is never a frozen string.
  */
 describe('the pro-rata price', () => {
-  it('decreases with the live show\'s progress', () => {
+  it("decreases with the live show's progress", () => {
     expect(lateRatePrice(eur(2600), 0).amountMinor).toBe(2600);
     expect(lateRatePrice(eur(2600), 0.5).amountMinor).toBe(1300);
     expect(lateRatePrice(eur(2600), 1).amountMinor).toBe(0);

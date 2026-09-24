@@ -7,20 +7,28 @@
  * `state === 'reported'`, which is not a state filter but a kind filter.
  */
 
-import { DomainError } from '../kernel/errors.js';
 import type { Instant } from '../kernel/clock.js';
+import { DomainError } from '../kernel/errors.js';
 import { isAfter, plusMinutes } from '../time/instant.js';
+import type { ModerationVerdict } from '../vocabulary/moderation.js';
 import {
   AudienceSanction,
   MessageState,
   ModerationItemState,
-  ModerationVerdict,
   StateChangeOrigin,
 } from '../vocabulary/moderation.js';
 
 /**
  * THE SINGLE BADGE — derived from the three axes, never recomposed by a
  * surface.
+ *
+ * ⚠ The members are BARE — `banned`, not `badge_banned` — and they deliberately
+ * collide with `AUDIENCE_SANCTIONS` and `MESSAGE_STATES`. The field is named
+ * `badge` on the wire, so a `badge_` prefix says "badge" twice; the field name
+ * disambiguates, not the value. I kept the prefix once on the argument that a
+ * badge is a DERIVED fact and `badge_banned` is not the sanction `banned` —
+ * which is true about the concepts and irrelevant to the wire, because nothing
+ * reads a value without reading the field it arrived in.
  *
  * Only one badge appears on screen, so there can be only one owner of the
  * truth. The precedence, written once:
@@ -30,19 +38,14 @@ import {
  * It runs from the person towards the message: a sanction on the PERSON covers
  * all their messages, whereas a removal bears on one message only.
  */
-export const MODERATION_BADGES = [
-  'badge_banned',
-  'badge_muted',
-  'badge_removed',
-  'badge_published',
-] as const;
+export const MODERATION_BADGES = ['banned', 'muted', 'removed', 'published'] as const;
 export type ModerationBadge = (typeof MODERATION_BADGES)[number];
 
 export const ModerationBadge = {
-  BANNED: 'badge_banned',
-  MUTED: 'badge_muted',
-  REMOVED: 'badge_removed',
-  PUBLISHED: 'badge_published',
+  BANNED: 'banned',
+  MUTED: 'muted',
+  REMOVED: 'removed',
+  PUBLISHED: 'published',
 } as const;
 
 export function moderationBadgeOf(

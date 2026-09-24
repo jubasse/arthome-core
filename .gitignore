@@ -19,3 +19,7 @@ tools/*/dist/
 # Extraction scratch from the OpenAPI translation harness (backend-contracts).
 # Regenerated on demand; 140 KB of French source units, not a deliverable.
 *.units.json
+
+# Python bytecode, created by importing a tools/ gate as a module while testing it.
+__pycache__/
+*.pyc

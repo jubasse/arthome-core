@@ -28,6 +28,24 @@ info:
     - **a notification never carries an amount if the recipient role lacks `canRevenue`**: it is
       displayed on a locked screen.
 
+    ## A coded field is named after its vocabulary, never `reasonCode`
+
+    `reasonCode` was carried by **five fields over four unrelated vocabularies** across the two
+    contracts — playback refusals, blackout reasons, refund reasons, cancellation reasons — plus two
+    price lines where it was a bare string. Nothing collided on the wire, since each lives in its own
+    schema, and that is exactly what made it survive: **it was disambiguated only by where the reader
+    was standing.** A generated client may hoist one `ReasonCode` type out of all of them, and a human
+    reading both documents assumes one vocabulary and is wrong.
+
+    So every coded field now names its own vocabulary — `denialReasonCode`, `blackoutReasonCode`,
+    `refundReasonCode`, `cancelReasonCode`, `discountReasonCode` — which is the convention
+    `failureCode`, `originCode` and `emptyReason` were already following. The generic name was the
+    exception, not the rule.
+
+    **The one place a bare `reasonCode` remains is inside `error.params`**, and it is not an exception
+    to this: `params` is a bag whose keys are defined **per error `code`**, so the code that carries it
+    is the disambiguator, stated rather than inferred.
+
     ## Eight roles, never six
 
     Authorisation bears on the **eight** canonical values — `artist`, `production`,
@@ -325,7 +343,15 @@ paths:
               required: [email]
               properties:
                 email: { type: string, format: email }
-                locale: { type: string }
+                locale:
+                  type: string
+                  description: |
+                    **The domain declares exactly two.** This one is an **input**, so the enum is strict:
+                    a locale we cannot render is refused rather than silently answered in another
+                    language.
+                  enum: [fr, en]
+                  x-arthome-vocabulary-source: LOCALES
+                  examples: [fr]
             example: { email: claire@example.org, locale: fr }
       responses:
         "202":
@@ -586,7 +612,9 @@ paths:
                       delete_channel,
                       change_bank_details,
                     ]
-                factor: { type: string, enum: [platform_biometric, password, totp, backup_code] }
+                  x-arthome-vocabulary-source: none
+                  x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
+                factor: { type: string, enum: [platform_biometric, password, totp, backup_code], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "An account-management shape, local to this endpoint: what the person asked for, not a fact the domain reasons about." }
                 proof:
                   type: [string, "null"]
                   description: |
@@ -657,7 +685,7 @@ paths:
                               {
                                 type: string,
                                 x-arthome-vocabulary:
-                                  [platform_biometric, password, totp, backup_code],
+                                  [platform_biometric, password, totp, backup_code], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "An account-management shape, local to this endpoint: what the person asked for, not a fact the domain reasons about.",
                               }
                           platformBiometricEnrolled: { type: boolean }
               example:
@@ -710,7 +738,7 @@ paths:
                           properties:
                             deviceId: { type: string, format: uuid }
                             label: { type: string }
-                            platform: { type: string, x-arthome-vocabulary: [ios, android, web] }
+                            platform: { type: string, x-arthome-vocabulary: [ios, android, web], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "An external provider or platform identifier. It is their vocabulary, not ours, and it changes when they change." }
                             city: { type: [string, "null"] }
                             lastSeenAt: { type: string, format: date-time }
                             isCurrent: { type: boolean }
@@ -836,10 +864,18 @@ paths:
               type: object
               required: [platform, token, deviceId]
               properties:
-                platform: { type: string, enum: [fcm, apns] }
+                platform: { type: string, enum: [fcm, apns], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "An external provider or platform identifier. It is their vocabulary, not ours, and it changes when they change." }
                 token: { type: string }
                 deviceId: { type: string, format: uuid }
-                locale: { type: string }
+                locale:
+                  type: string
+                  description: |
+                    **The domain declares exactly two.** This one is an **input**, so the enum is strict:
+                    a locale we cannot render is refused rather than silently answered in another
+                    language.
+                  enum: [fr, en]
+                  x-arthome-vocabulary-source: LOCALES
+                  examples: [fr]
             example:
               {
                 platform: apns,
@@ -928,6 +964,8 @@ paths:
                               "person:inbox",
                               "person:rights",
                             ]
+                          x-arthome-vocabulary-source: none
+                          x-arthome-vocabulary-reason: "Cache tags, not a domain vocabulary. They name what a surface must revalidate, and the domain has no notion of them: @arthome/core knows a date, not `date:{id}`."
                       complete: { type: boolean }
               example:
                 servedAt: "2026-09-21T19:45:00.000Z"
@@ -1022,7 +1060,7 @@ paths:
         - $ref: "#/components/parameters/SortDir"
         - name: window
           in: query
-          schema: { type: string, enum: [upcoming, past], default: upcoming }
+          schema: { type: string, enum: [upcoming, past], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.", default: upcoming }
         - name: states
           in: query
           description: '**Multi-state** filter, comma-separated.'
@@ -1103,7 +1141,7 @@ paths:
           schema:
             {
               type: string,
-              enum: [last_7_days, last_30_days, last_90_days, season, custom],
+              enum: [last_7_days, last_30_days, last_90_days, season, custom], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A period selector for this screen. The bounds it resolves to are served (`seasonBounds`, `periodStart`/`periodEnd`); this only names which preset the person chose.",
               default: last_30_days,
             }
         - name: from
@@ -1211,13 +1249,13 @@ paths:
         - $ref: "#/components/parameters/Traceparent"
         - name: tab
           in: query
-          schema: { type: string, enum: [audience, series], default: audience }
+          schema: { type: string, enum: [audience, series], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.", default: audience }
         - name: period
           in: query
           schema:
             {
               type: string,
-              enum: [last_7_days, last_30_days, last_90_days, season, custom],
+              enum: [last_7_days, last_30_days, last_90_days, season, custom], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A period selector for this screen. The bounds it resolves to are served (`seasonBounds`, `periodStart`/`periodEnd`); this only names which preset the person chose.",
               default: last_30_days,
             }
         - name: from
@@ -1366,7 +1404,7 @@ paths:
                 showId: { type: string, format: uuid }
                 venueId: { type: string, format: uuid }
                 startsAt: { type: string, format: date-time }
-                replayPolicy: { type: string, enum: [included, subscription, unit, none] }
+                replayPolicy: { type: string, enum: [included, subscription, unit, none], x-arthome-vocabulary-source: REPLAY_POLICIES }
                 replayWindowHours: { type: [integer, "null"] }
             example:
               dateId: 019928c0-0000-7000-8000-000000000001
@@ -1579,13 +1617,13 @@ paths:
                           rights:
                             type: object
                             properties:
-                              scope: { type: string, x-arthome-vocabulary: [worldwide, restricted] }
+                              scope: { type: string, x-arthome-vocabulary: [worldwide, restricted], x-arthome-vocabulary-source: RIGHTS_SCOPES }
                               blackoutCountries:
                                 { type: array, items: { type: string, pattern: "^[A-Z]{2}$" } }
-                              reasonCode:
+                              blackoutReasonCode:
                                 {
                                   type: [string, "null"],
-                                  x-arthome-vocabulary: [co_production, broadcaster, festival],
+                                  x-arthome-vocabulary: [co_production, broadcaster, festival], x-arthome-vocabulary-source: BLACKOUT_REASONS,
                                 }
                           version: { type: integer }
               example:
@@ -1699,10 +1737,10 @@ paths:
                           runState:
                             {
                               type: string,
-                              x-arthome-vocabulary: [idle, rehearsal, on_air, interrupted, ended],
+                              x-arthome-vocabulary: [idle, rehearsal, on_air, interrupted, ended], x-arthome-vocabulary-source: RUN_STATES,
                             }
-                          ingestProtocol: { type: string, x-arthome-vocabulary: [rtmps, srt, whip] }
-                          monitorPath: { type: string, x-arthome-vocabulary: [whep, ll_hls] }
+                          ingestProtocol: { type: string, x-arthome-vocabulary: [rtmps, srt, whip], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared." }
+                          monitorPath: { type: string, x-arthome-vocabulary: [whep, ll_hls], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared." }
                           ingestUrl: { type: string, format: uri }
                           technicalCheckPassedAt: { type: [string, "null"], format: date-time }
                           preflight:
@@ -1788,7 +1826,7 @@ paths:
                                 crewRole:
                                   {
                                     type: string,
-                                    x-arthome-vocabulary: [director, video, sound, moderation],
+                                    x-arthome-vocabulary: [director, video, sound, moderation], x-arthome-vocabulary-source: CREW_ROLES,
                                   }
                                 covered: { type: boolean }
                                 personId: { type: [string, "null"], format: uuid }
@@ -1800,6 +1838,8 @@ paths:
                                     membership assigned to a post, `grant` is a one-off stand-in
                                     that expires.
                                   x-arthome-vocabulary: [member, grant]
+                                  x-arthome-vocabulary-source: none
+                                  x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
                           grants:
                             type: array
                             items: { $ref: "#/components/schemas/DateAccessGrant" }
@@ -1868,7 +1908,7 @@ paths:
                           policy:
                             {
                               type: string,
-                              x-arthome-vocabulary: [included, subscription, unit, none],
+                              x-arthome-vocabulary: [included, subscription, unit, none], x-arthome-vocabulary-source: REPLAY_POLICIES,
                             }
                           windowHours: { type: [integer, "null"] }
                           assetReady: { type: boolean }
@@ -1945,7 +1985,18 @@ paths:
               type: object
               required: [to, expectedVersion]
               properties:
-                to: { type: string, enum: [draft, reserve, scheduled, technical, replay_online] }
+                to:
+                  type: string
+                  description: |
+                    **A strict narrowing of `PUBLICATION_STATES`, and the two missing members carry the
+                    document's most important rule about this path.** `live` and `ended` are **not
+                    commands**: they are caused by a `streaming` event, because only `streaming` knows
+                    whether the feed is arriving. Publication does not command the broadcast, it learns
+                    of it. Offering them here would let a studio declare a date on air that is sending
+                    nothing.
+                  enum: [draft, reserve, scheduled, technical, replay_online]
+                  x-arthome-vocabulary-source: PUBLICATION_STATES
+                  x-arthome-vocabulary-narrowing: "`live` and `ended` are not commands: they are caused by a streaming event, because only streaming knows whether the feed is arriving. Offering them would let a studio declare a date on air that is sending nothing."
                 expectedVersion: { type: integer }
                 acknowledgedPromiseCode:
                   type: [string, "null"]
@@ -1953,6 +2004,8 @@ paths:
                     **Mandatory for a transition with no way back.** The confirmation carries the promise's
                     code, and its wording comes from the contract: the interface does not invent it.
                   enum: [prices_engaged, replay_sold, null]
+                  x-arthome-vocabulary-source: none
+                  x-arthome-vocabulary-reason: "The two promises a transition can commit, plus `null` for one that commits none — which its own type admits. Local to this command."
             example: { to: scheduled, expectedVersion: 7, acknowledgedPromiseCode: prices_engaged }
       responses:
         "200":
@@ -2031,7 +2084,7 @@ paths:
                     type: object
                     required: [tier, amountMinor, currencyCode, active]
                     properties:
-                      tier: { type: string, enum: [full, reduced, support] }
+                      tier: { type: string, enum: [full, reduced, support], x-arthome-vocabulary-source: PRICE_TIERS }
                       amountMinor: { type: integer, minimum: 0 }
                       currencyCode: { type: string, pattern: "^[A-Z]{3}$" }
                       active: { type: boolean }
@@ -2185,8 +2238,8 @@ paths:
               required: [expectedVersion]
               properties:
                 expectedVersion: { type: integer }
-                mode: { type: string, enum: [open, emoji, read_only, 'off'] }
-                filterSeverity: { type: string, enum: [low, medium, high] }
+                mode: { type: string, enum: [open, emoji, read_only, 'off'], x-arthome-vocabulary-source: CHAT_MODES }
+                filterSeverity: { type: string, enum: [low, medium, high], x-arthome-vocabulary-source: FILTER_SEVERITIES }
                 slowModeSec: { type: integer, minimum: 0, maximum: 300 }
                 holdersOnly: { type: boolean }
                 retroactiveFilter: { type: boolean }
@@ -2244,7 +2297,7 @@ paths:
               type: object
               required: [policy, expectedVersion]
               properties:
-                policy: { type: string, enum: [included, subscription, unit, none] }
+                policy: { type: string, enum: [included, subscription, unit, none], x-arthome-vocabulary-source: REPLAY_POLICIES }
                 windowHours: { type: [integer, "null"], minimum: 1 }
                 expectedVersion: { type: integer }
             example: { policy: unit, windowHours: 72, expectedVersion: 7 }
@@ -2430,7 +2483,7 @@ paths:
               type: object
               required: [outcome, message, expectedVersion]
               properties:
-                outcome: { type: string, enum: [postponed, cancelled, interrupted] }
+                outcome: { type: string, enum: [postponed, cancelled, interrupted], x-arthome-vocabulary-source: DATE_OUTCOMES }
                 message:
                   type: object
                   required: [contentLanguage, text]
@@ -2643,7 +2696,17 @@ paths:
               type: object
               required: [state, expectedVersion]
               properties:
-                state: { type: string, enum: [idle, rehearsal, on_air, ended] }
+                state:
+                  type: string
+                  description: |
+                    **A strict narrowing of `RUN_STATES`, and what it leaves out is the rule.**
+                    `interrupted` is missing because **it cannot be commanded**: an interruption is
+                    declared by `raiseIncident` and reached by consequence, never by asking for it. A
+                    control room that could set `interrupted` directly would have two ways into the same
+                    state and only one of them would raise the incident the viewers see.
+                  enum: [idle, rehearsal, on_air, ended]
+                  x-arthome-vocabulary-source: RUN_STATES
+                  x-arthome-vocabulary-narrowing: "`interrupted` cannot be commanded: it is declared by raiseIncident and reached by consequence. A control room able to set it directly would have two ways into one state and only one raises the incident viewers see."
                 expectedVersion: { type: integer }
             example: { state: on_air, expectedVersion: 3 }
       responses:
@@ -3001,7 +3064,7 @@ paths:
               required: [incidentId, kind, cause, message]
               properties:
                 incidentId: { type: string, format: uuid }
-                kind: { type: string, enum: [hold_screen, postponed, cancelled, interrupted] }
+                kind: { type: string, enum: [hold_screen, postponed, cancelled, interrupted], x-arthome-vocabulary-source: INCIDENT_KINDS }
                 cause:
                   type: string
                   enum:
@@ -3013,6 +3076,7 @@ paths:
                       provider_error,
                       manual,
                     ]
+                  x-arthome-vocabulary-source: INCIDENT_CAUSES
                 message:
                   type: object
                   required: [contentLanguage, text]
@@ -3314,7 +3378,7 @@ paths:
           schema: { type: string, format: uuid }
         - name: filter
           in: query
-          schema: { type: string, enum: [all, pending, settled], default: pending }
+          schema: { type: string, enum: [all, pending, settled], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.", default: pending }
         - name: q
           in: query
           description: '**Server-side** search on the nickname and the text.'
@@ -3504,7 +3568,7 @@ paths:
               type: object
               required: [verdict, expectedDecisionVersion]
               properties:
-                verdict: { type: string, enum: [publish, remove, mute, ban] }
+                verdict: { type: string, enum: [publish, remove, mute, ban], x-arthome-vocabulary-source: MODERATION_VERDICTS }
                 expectedDecisionVersion:
                   type: integer
                   description: |
@@ -3512,7 +3576,7 @@ paths:
                     no other verdict has been rendered — including when a colleague holds the row
                     claimed. Refused only by `MODERATION_ALREADY_SETTLED`, which carries the winning
                     verdict and its author.
-                reason: { type: string, enum: [spam, insult, spoiler, off_topic, harassment] }
+                reason: { type: string, enum: [spam, insult, spoiler, off_topic, harassment], x-arthome-vocabulary-source: MODERATION_REASONS }
                 muteUntil:
                   type: [string, "null"]
                   format: date-time
@@ -3597,7 +3661,7 @@ paths:
           schema: { type: string, format: uuid }
         - name: sanction
           in: query
-          schema: { type: string, enum: [none, muted, banned] }
+          schema: { type: string, enum: [none, muted, banned], x-arthome-vocabulary-source: AUDIENCE_SANCTIONS }
       responses:
         "200":
           description: A page of the audience.
@@ -3660,9 +3724,9 @@ paths:
               type: object
               required: [kind]
               properties:
-                kind: { type: string, enum: [none, muted, banned] }
+                kind: { type: string, enum: [none, muted, banned], x-arthome-vocabulary-source: AUDIENCE_SANCTIONS }
                 expiresAt: { type: [string, "null"], format: date-time }
-                reason: { type: string, enum: [spam, insult, spoiler, off_topic, harassment] }
+                reason: { type: string, enum: [spam, insult, spoiler, off_topic, harassment], x-arthome-vocabulary-source: MODERATION_REASONS }
             example: { kind: muted, expiresAt: "2026-09-21T20:30:00Z", reason: harassment }
       responses:
         "200":
@@ -3826,11 +3890,12 @@ paths:
                             authorHandle: { type: string }
                             atMediaSec: { type: integer }
                             sentAt: { type: string, format: date-time }
-                            state: { type: string, x-arthome-vocabulary: [published, removed] }
+                            state: { type: string, x-arthome-vocabulary: [published, removed], x-arthome-vocabulary-source: MESSAGE_STATES }
                             badge:
                               type: string
                               description: "**Derived** by `moderationBadgeOf` and served. Precedence: banned > silenced > removed > published."
                               x-arthome-vocabulary: [published, removed, muted, banned]
+                              x-arthome-vocabulary-source: MODERATION_BADGES
                             body: { $ref: "#/components/schemas/LocalizedText" }
                       page: { $ref: "#/components/schemas/CursorPageInfo" }
               example:
@@ -3881,7 +3946,7 @@ paths:
             {
               type: string,
               enum:
-                [artist, production, coordination, director, video, sound, moderation, treasury],
+                [artist, production, coordination, director, video, sound, moderation, treasury], x-arthome-vocabulary-source: MEMBER_ROLES,
             }
       responses:
         "200":
@@ -3961,7 +4026,7 @@ paths:
                           sound,
                           moderation,
                           treasury,
-                        ],
+                        ], x-arthome-vocabulary-source: MEMBER_ROLES,
                     }
                 note: { type: [string, "null"], maxLength: 200 }
             example: { email: yann@example.org, roles: [video], note: "Renfort captation novembre" }
@@ -4032,7 +4097,7 @@ paths:
               type: object
               required: [decision]
               properties:
-                decision: { type: string, enum: [accept, decline] }
+                decision: { type: string, enum: [accept, decline], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "The two answers this one command accepts. It is the command's shape, not a vocabulary: a third answer would be a third command." }
             example: { decision: accept }
       responses:
         "200":
@@ -4110,7 +4175,7 @@ paths:
                           sound,
                           moderation,
                           treasury,
-                        ],
+                        ], x-arthome-vocabulary-source: MEMBER_ROLES,
                     }
                 expectedVersion: { type: integer }
             example: { roles: [video, sound], expectedVersion: 2 }
@@ -4207,7 +4272,7 @@ paths:
               required: [personId, crewRole, expiresAt]
               properties:
                 personId: { type: string, format: uuid }
-                crewRole: { type: string, enum: [director, video, sound, moderation] }
+                crewRole: { type: string, enum: [director, video, sound, moderation], x-arthome-vocabulary-source: CREW_ROLES }
                 expiresAt: { type: string, format: date-time }
             example:
               {
@@ -4240,7 +4305,7 @@ paths:
                     {
                       personId: 019928b0-0000-7000-8000-000000000001,
                       displayName: "Claire D.",
-                      surface: studio-web,
+                      surface: studio_web,
                     }
         "403":
           description: "`CREW_ROLE_RESERVED` — the `director` assignment grants access to the stream key."
@@ -4447,7 +4512,7 @@ paths:
         - $ref: "#/components/parameters/SortDir"
         - name: state
           in: query
-          schema: { type: string, enum: [scheduled, held, paid, refunded, suspended] }
+          schema: { type: string, enum: [scheduled, held, paid, refunded, suspended], x-arthome-vocabulary-source: PAYOUT_STATES }
       responses:
         "200":
           description: A page of payout lines, and the balances **per currency**.
@@ -4554,7 +4619,7 @@ paths:
                     {
                       personId: 019928b0-0000-7000-8000-000000000001,
                       displayName: "Claire D.",
-                      surface: studio-web,
+                      surface: studio_web,
                     }
                   requestedAt: "2026-09-21T18:26:00Z"
                   expiresAt: "2026-09-28T18:26:00Z"
@@ -4590,7 +4655,7 @@ paths:
               type: object
               required: [decision, reauthToken]
               properties:
-                decision: { type: string, enum: [countersign, reject] }
+                decision: { type: string, enum: [countersign, reject], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "The two answers this one command accepts. It is the command's shape, not a vocabulary: a third answer would be a third command." }
                 reauthToken: { type: string }
             example: { decision: countersign, reauthToken: ott_4d77e2 }
       responses:
@@ -4617,7 +4682,7 @@ paths:
                     {
                       personId: 019928b4-0000-7000-8000-000000000001,
                       displayName: "Léa M.",
-                      surface: studio-web,
+                      surface: studio_web,
                     }
         "403":
           description: "`SAME_ACTOR_FORBIDDEN` — a dual signature requires two people."
@@ -4736,11 +4801,11 @@ paths:
           application/json:
             schema:
               type: object
-              required: [reasonCode]
+              required: [refundReasonCode]
               properties:
-                reasonCode: { type: string, enum: [goodwill, date_cancelled, duplicate, dispute] }
+                refundReasonCode: { type: string, enum: [goodwill, date_cancelled, duplicate, dispute], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
                 partialAmountMinor: { type: [integer, "null"], minimum: 1 }
-            example: { reasonCode: goodwill }
+            example: { refundReasonCode: goodwill }
       responses:
         "200":
           description: Refund recorded, with its effect on the payout.
@@ -4864,7 +4929,7 @@ paths:
                         properties:
                           ingestUrl: { type: string, format: uri }
                           recommendedProtocol:
-                            { type: string, x-arthome-vocabulary: [rtmps, srt, whip] }
+                            { type: string, x-arthome-vocabulary: [rtmps, srt, whip], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared." }
                           recommendedBitrateKbps: { type: integer }
                           lastMeasuredUpKbps: { type: [integer, "null"] }
                           defaults:
@@ -4872,7 +4937,7 @@ paths:
                             description: Applied to **new** dates, never retroactively.
                             properties:
                               ingestProtocol:
-                                { type: string, x-arthome-vocabulary: [rtmps, srt, whip] }
+                                { type: string, x-arthome-vocabulary: [rtmps, srt, whip], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared." }
                               qualityLadder: { type: array, items: { type: string } }
                               holdScreenAutoAfterSec: { type: integer }
                           recentChecks:
@@ -4928,7 +4993,7 @@ paths:
         - $ref: "#/components/parameters/SortDir"
         - name: state
           in: query
-          schema: { type: string, enum: [online, expired, archived] }
+          schema: { type: string, enum: [online, expired, archived], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
       responses:
         "200":
           description: A page of replays, **projected according to the role** — revenue is absent without `canRevenue`.
@@ -4949,7 +5014,7 @@ paths:
                             dateId: { type: string, format: uuid }
                             title: { type: string }
                             state:
-                              { type: string, x-arthome-vocabulary: [online, expired, archived] }
+                              { type: string, x-arthome-vocabulary: [online, expired, archived], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
                             expiresAt: { type: [string, "null"], format: date-time }
                             durationSec: { type: [integer, "null"] }
                             views: { type: [integer, "null"] }
@@ -5018,7 +5083,7 @@ paths:
                               type: object
                               properties:
                                 tier:
-                                  { type: string, x-arthome-vocabulary: [full, reduced, support] }
+                                  { type: string, x-arthome-vocabulary: [full, reduced, support], x-arthome-vocabulary-source: PRICE_TIERS }
                                 seatsSold: { type: integer }
                                 gross: { $ref: "#/components/schemas/Money" }
                           waitlistByDate:
@@ -5051,7 +5116,7 @@ paths:
                                 kind:
                                   {
                                     type: string,
-                                    x-arthome-vocabulary: [refund, seat_transfer, chargeback],
+                                    x-arthome-vocabulary: [refund, seat_transfer, chargeback], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.",
                                   }
                                 dateId: { type: [string, "null"], format: uuid }
                                 seatId: { type: [string, "null"], format: uuid }
@@ -5143,14 +5208,14 @@ paths:
                               regime of a live show in progress.
                             properties:
                               filterSeverity:
-                                { type: string, x-arthome-vocabulary: [low, medium, high] }
+                                { type: string, x-arthome-vocabulary: [low, medium, high], x-arthome-vocabulary-source: FILTER_SEVERITIES }
                               slowModeSec: { type: integer }
                               holdersOnly: { type: boolean }
                               retroactiveFilter: { type: boolean }
                               chatMode:
                                 {
                                   type: string,
-                                  x-arthome-vocabulary: [open, emoji, read_only, 'off'],
+                                  x-arthome-vocabulary: [open, emoji, read_only, 'off'], x-arthome-vocabulary-source: CHAT_MODES,
                                 }
                               version: { type: integer }
                           merchIntegration:
@@ -5161,7 +5226,7 @@ paths:
                                 {
                                   type: string,
                                   x-arthome-vocabulary:
-                                    [shopify, woocommerce, prestashop, drupal, api],
+                                    [shopify, woocommerce, prestashop, drupal, api], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "An external provider or platform identifier. It is their vocabulary, not ours, and it changes when they change.",
                                 }
                               merchantUrl: { type: string, format: uri }
                               connectedAt: { type: string, format: date-time }
@@ -5224,15 +5289,15 @@ paths:
                 moderationDefaults:
                   type: object
                   properties:
-                    filterSeverity: { type: string, enum: [low, medium, high] }
+                    filterSeverity: { type: string, enum: [low, medium, high], x-arthome-vocabulary-source: FILTER_SEVERITIES }
                     slowModeSec: { type: integer, minimum: 0, maximum: 300 }
                     holdersOnly: { type: boolean }
                     retroactiveFilter: { type: boolean }
-                    chatMode: { type: string, enum: [open, emoji, read_only, 'off'] }
+                    chatMode: { type: string, enum: [open, emoji, read_only, 'off'], x-arthome-vocabulary-source: CHAT_MODES }
                 broadcastDefaults:
                   type: object
                   properties:
-                    ingestProtocol: { type: string, enum: [rtmps, srt, whip] }
+                    ingestProtocol: { type: string, enum: [rtmps, srt, whip], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared." }
                     holdScreenAutoAfterSec: { type: integer, minimum: 5, maximum: 120 }
             example:
               { expectedVersion: 2, moderationDefaults: { filterSeverity: high, slowModeSec: 5 } }
@@ -5303,7 +5368,7 @@ paths:
           schema: { type: string, format: date-time }
         - name: nature
           in: query
-          schema: { type: string, enum: [air, mod, event, access, money] }
+          schema: { type: string, enum: [air, mod, event, access, money], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
         - name: dateId
           in: query
           schema: { type: string, format: uuid }
@@ -5331,7 +5396,7 @@ paths:
                       {
                         personId: 019928b0-0000-7000-8000-000000000001,
                         displayName: "Claire D.",
-                        surface: studio-web,
+                        surface: studio_web,
                       }
                     code: publication.transition.applied
                     params: { from: reserve, to: scheduled }
@@ -5379,7 +5444,7 @@ paths:
                         journal,
                         schedule_ics,
                         stats_csv,
-                      ],
+                      ], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A document or export format. It names an accounting tool or a file type, which is the outside world's vocabulary rather than ours.",
                   }
                 from: { type: string, format: date }
                 to: { type: string, format: date }
@@ -5470,8 +5535,12 @@ paths:
               type: object
               required: [purpose, contentType, sizeBytes]
               properties:
-                purpose: { type: string, enum: [poster, wide, avatar, merch_image] }
-                contentType: { type: string, enum: ["image/jpeg", "image/png", "image/webp"] }
+                purpose:
+                  type: string
+                  enum: [poster, wide, avatar, merch_image]
+                  x-arthome-vocabulary-source: none
+                  x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
+                contentType: { type: string, enum: ["image/jpeg", "image/png", "image/webp"], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared." }
                 sizeBytes: { type: integer, minimum: 1, maximum: 20971520 }
             example: { purpose: poster, contentType: "image/jpeg", sizeBytes: 842000 }
       responses:
@@ -5914,7 +5983,9 @@ components:
         actor all the same, and carries `system`.
       schema:
         type: string
-        enum: [studio-web, studio-mobile]
+        enum: [studio_web, studio_mobile]
+        x-arthome-vocabulary-source: SURFACES
+        x-arthome-vocabulary-narrowing: "The two that may call the studio BFF. An input refuses where an output keeps an unknown value raw."
         examples: [studio-mobile]
 
     IdempotencyKey:
@@ -5992,7 +6063,7 @@ components:
       name: sortDir
       in: query
       required: false
-      schema: { type: string, enum: [asc, desc], default: asc }
+      schema: { type: string, enum: [asc, desc], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.", default: asc }
 
     Cursor:
       name: cursor
@@ -6225,6 +6296,7 @@ components:
             **whole** error envelope — that is, lose the ability to read errors at the precise moment
             something is wrong, on duty, on an application a store review takes days to replace.
           x-arthome-vocabulary: [refused, unavailable, offline_forbidden]
+          x-arthome-vocabulary-source: FAILURE_NATURES
           x-arthome-unknown-fallback: unavailable
         params:
           type: object
@@ -6271,7 +6343,17 @@ components:
         accountId: { type: [string, "null"], format: uuid }
         personId: { type: [string, "null"], format: uuid }
         displayName: { type: [string, "null"] }
-        surface: { type: string, x-arthome-vocabulary: [studio-web, studio-mobile, system] }
+        surface:
+          type: string
+          description: |
+            **One vocabulary, six members** — `SURFACES` — with the narrowing said here rather than
+            written as a second, shorter list. A studio payload carries `studio_web`, `studio_mobile`
+            or `system` and never the three storefront surfaces, **by construction**: the actor is
+            whoever called this BFF. Declaring only three would be a second authored list for a field
+            the domain already defines, which is how E4 started.
+          x-arthome-vocabulary:
+            [storefront_web, storefront_mobile, storefront_tv, studio_web, studio_mobile, system]
+          x-arthome-vocabulary-source: SURFACES
 
     SessionMode:
       type: string
@@ -6280,6 +6362,8 @@ components:
         forgeable. `cookie` for the studio web; `bearer` for the native shell, where
         `capacitor://localhost` is a third-party context on iOS and where no cookie would survive.
       enum: [cookie, bearer]
+      x-arthome-vocabulary-source: none
+      x-arthome-vocabulary-reason: "A narrowing of a vocabulary named elsewhere in this document, with the reason in the description above: the members left out are the rule, not an omission."
 
     SessionEstablished:
       description: |
@@ -6346,6 +6430,7 @@ components:
             type: string
             x-arthome-vocabulary:
               [artist, production, coordination, director, video, sound, moderation, treasury]
+            x-arthome-vocabulary-source: MEMBER_ROLES
           examples: [[production, coordination]]
         isOwner:
           type: boolean
@@ -6402,7 +6487,7 @@ components:
             `regie` had been removed from the vocabulary to make an inconsistency between two tables go
             away, that is, **the duty's main destination was deleted in order to silence the symptom
             that pointed at it**. The two tables are reconciled here, and the page is given back.
-          items: { type: string, x-arthome-vocabulary: [regie, wizard, event, inbox] }
+          items: { type: string, x-arthome-vocabulary: [regie, wizard, event, inbox], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
           examples: [[regie, wizard, event, inbox]]
         tabBar:
           type: array
@@ -6425,7 +6510,7 @@ components:
             The date-record panes open **to this person**. A detail screen whose very layout depends on
             rights: it is not only the root navigation that must know the rights before painting, it is
             every record too.
-          items: { type: string, x-arthome-vocabulary: [public, tickets, chat, tech, crew, replay] }
+          items: { type: string, x-arthome-vocabulary: [public, tickets, chat, tech, crew, replay], x-arthome-vocabulary-source: DATE_PANES }
         canRevenue:
           type: boolean
           description: "**Decides the content of the response**, not its display."
@@ -6454,7 +6539,7 @@ components:
             properties:
               grantId: { type: string, format: uuid }
               dateId: { type: string, format: uuid }
-              crewRole: { type: string, x-arthome-vocabulary: [director, video, sound, moderation] }
+              crewRole: { type: string, x-arthome-vocabulary: [director, video, sound, moderation], x-arthome-vocabulary-source: CREW_ROLES }
               expiresAt: { type: string, format: date-time }
 
     StudioCounters:
@@ -6511,7 +6596,18 @@ components:
             this document served: a `video` role received `[events, stream, replays, help]`, with no
             `agenda`, although a stage manager's duty page is precisely that one. The `dutiesTonight`
             counter was served all the same, which presupposes that duties count.
-          items: { type: string, x-arthome-vocabulary: [agenda, inbox, help] }
+
+            **Two vocabularies in one field, like `DashboardReminder.targetPage`, and here it is
+            correct.** `agenda` and `help` are `NAVIGATION_ENTRIES`; `inbox` is a contextual page.
+            They sit together because what they have in common is the **scope** — the person rather
+            than the channel — not which menu they came from. Saying so is the difference between
+            this and the `targetPage` defect, where the same merge had gone unremarked and one member
+            was spelled wrong.
+          items:
+            type: string
+            x-arthome-vocabulary: [agenda, inbox, help]
+            x-arthome-vocabulary-source: none
+            x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
           examples: [[agenda, inbox, help]]
         rightsVersion: { type: integer, format: int64 }
         constants:
@@ -6556,7 +6652,27 @@ components:
             `studio`, `taxonomy`, `system`, `storefront` — and its number of enumeration keys is high: the
             split by surface exists precisely for that. **No service** serves it: it is a CDN artifact.
           properties:
-            locale: { type: string }
+            domain:
+              type: string
+              description: |
+                **Which catalogue this reference is for**, served rather than recoverable by taking the
+                URL apart. The theme lived only inside the path (`/i18n/studio/fr/v41.json`), so a client
+                caching catalogues by theme had to parse a string to learn what it was holding — which is
+                `imageUrl(kind, key, width)` in another costume, and the same rule answers it: **a value
+                recoverable only by parsing a string is a value the contract did not serve.**
+              x-arthome-vocabulary: [common, storefront, studio, taxonomy, system]
+              x-arthome-vocabulary-source: MESSAGE_DOMAINS
+              examples: [storefront]
+            locale:
+              type: string
+              description: |
+                **The domain declares exactly two**, and the contract says so rather than serving an
+                open string: a surface choosing a fallback needs to know the set it is choosing from.
+                Tolerant on output like every other served vocabulary — a third locale is kept raw and
+                treated as neutral, never rejected.
+              x-arthome-vocabulary: [fr, en]
+              x-arthome-vocabulary-source: LOCALES
+              examples: [fr]
             version: { type: integer }
             url: { type: string, format: uri }
         counters: { $ref: "#/components/schemas/StudioCounters" }
@@ -6590,7 +6706,7 @@ components:
         preset:
           {
             type: string,
-            x-arthome-vocabulary: [last_7_days, last_30_days, last_90_days, season, custom],
+            x-arthome-vocabulary: [last_7_days, last_30_days, last_90_days, season, custom], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A period selector for this screen. The bounds it resolves to are served (`seasonBounds`, `periodStart`/`periodEnd`); this only names which preset the person chose.",
           }
         from: { type: string, format: date }
         to: { type: string, format: date }
@@ -6629,8 +6745,10 @@ components:
               moderated_messages,
               signal_quality,
             ]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist."
         value: { type: number }
-        unit: { type: string, x-arthome-vocabulary: [currency_minor, count, percent, points] }
+        unit: { type: string, x-arthome-vocabulary: [currency_minor, count, percent, points], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it." }
         currencyCode: { type: [string, "null"], pattern: "^[A-Z]{3}$" }
         series:
           type: array
@@ -6652,6 +6770,8 @@ components:
             addable later **without breaking a client**: it reads what the server announces instead of
             assuming.
           x-arthome-vocabulary: [per_date, per_day]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it."
           examples: [per_date]
 
     DashboardReminder:
@@ -6674,10 +6794,24 @@ components:
               near_sold_out,
               moderation_backlog,
             ]
-        severity: { type: string, x-arthome-vocabulary: [info, warning, urgent] }
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
+        severity: { type: string, x-arthome-vocabulary: [info, warning, urgent], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it." }
         textCode: { type: string, description: "An i18n **code**, never the authored sentence." }
         params: { type: object, additionalProperties: true }
-        targetPage: { type: string, x-arthome-vocabulary: [event, regie, crew, events, moderation] }
+        targetPage:
+          type: string
+          description: |
+            **The union of two vocabularies, and it carried a stale spelling of one of them.** A
+            reminder points either at a menu entry (`NAVIGATION_ENTRIES` — `crew`, `events`,
+            `moderation_page`) or at a contextual page (`event`, `regie`), because those are the two
+            kinds of destination this studio has. It read `moderation` here while core and
+            `EffectiveRights.navigation` read `moderation_page`, so a surface routing on this field
+            matched nothing for that one destination — and `moderation_backlog` is the most frequent
+            reminder the dashboard produces.
+          x-arthome-vocabulary: [event, regie, crew, events, moderation_page]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
         dateId: { type: [string, "null"], format: uuid }
         countdownTo:
           type: [string, "null"]
@@ -6734,6 +6868,8 @@ components:
                 and **says so**, rather than letting two surfaces add up six bars and arrive at a different
                 number.
               x-arthome-vocabulary: [channel_period, listed_rows]
+              x-arthome-vocabulary-source: none
+              x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist."
             items:
               type: array
               items:
@@ -6807,7 +6943,7 @@ components:
                   type: string,
                   x-arthome-vocabulary:
                     [draft, reserve, scheduled, technical, room_open, live, replay, ended,
-                     postponed, cancelled, interrupted],
+                     postponed, cancelled, interrupted], x-arthome-vocabulary-source: DISPLAY_STATES,
                 }
               seatsSold: { type: integer }
               liveViewersPeak: { type: [integer, "null"] }
@@ -6883,7 +7019,7 @@ components:
                             postponed,
                             cancelled,
                             interrupted,
-                          ],
+                          ], x-arthome-vocabulary-source: DISPLAY_STATES,
                       }
                     fillRateBps: { type: integer }
                     seatsSold: { type: integer }
@@ -6942,8 +7078,19 @@ components:
               chapters_planned,
               moderator_assigned,
             ]
+          x-arthome-vocabulary-source: PUBLICATION_CHECKLIST_ITEMS
         satisfied: { type: boolean }
-        source: { type: string, x-arthome-vocabulary: [catalog, ticketing, streaming, chat] }
+        source:
+          type: string
+          description: |
+            **Which context owns the fact**, served because three of the nine items are **projected**
+            rather than held: `catalog` keeps them up to date by event and asks nobody for them. It is
+            four of the seven services and not a vocabulary of services — a context that never feeds
+            the checklist has no member here, and gaining one would be a new projection rather than a
+            new name.
+          x-arthome-vocabulary: [catalog, ticketing, streaming, chat]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
         blocking:
           type: boolean
           description: |
@@ -6968,6 +7115,8 @@ components:
             `prices_engaged` for `draft|reserve → scheduled`, `replay_sold` for
             `ended → replay_online`. A code, never the sentence.
           x-arthome-vocabulary: [prices_engaged, replay_sold]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
 
     Publication:
       type: object
@@ -6981,6 +7130,7 @@ components:
             `replay` does not: **the replay is on sale**. The parallel tables in the two studio designs
             are never adopted.
           x-arthome-vocabulary: [draft, reserve, scheduled, technical, live, ended, replay_online]
+          x-arthome-vocabulary-source: PUBLICATION_STATES
         orderRank:
           type: integer
           description: |
@@ -7028,7 +7178,7 @@ components:
             venueUtcOffsetMin: { type: integer }
         runtimeMin: { type: integer }
         outcome:
-          { type: [string, "null"], x-arthome-vocabulary: [postponed, cancelled, interrupted] }
+          { type: [string, "null"], x-arthome-vocabulary: [postponed, cancelled, interrupted], x-arthome-vocabulary-source: DATE_OUTCOMES }
         displayState:
           type: string
           description: The composed value, served. Never recomposed by the surface.
@@ -7041,7 +7191,7 @@ components:
         openPanes:
           type: array
           description: The panes open **to this person**. The overview appears only beyond three panes.
-          items: { type: string, x-arthome-vocabulary: [public, tickets, chat, tech, crew, replay] }
+          items: { type: string, x-arthome-vocabulary: [public, tickets, chat, tech, crew, replay], x-arthome-vocabulary-source: DATE_PANES }
 
     EventsRow:
       type: object
@@ -7058,7 +7208,7 @@ components:
           {
             type: string,
             x-arthome-vocabulary:
-              [draft, reserve, scheduled, technical, live, ended, replay_online],
+              [draft, reserve, scheduled, technical, live, ended, replay_online], x-arthome-vocabulary-source: PUBLICATION_STATES,
           }
         orderRank: { type: integer }
         outcome: { type: [string, "null"] }
@@ -7103,7 +7253,7 @@ components:
         channelId: { type: string, format: uuid }
         channelName: { type: string }
         title: { type: string }
-        crewRole: { type: string, x-arthome-vocabulary: [director, video, sound, moderation] }
+        crewRole: { type: string, x-arthome-vocabulary: [director, video, sound, moderation], x-arthome-vocabulary-source: CREW_ROLES }
         startsAt: { type: string, format: date-time }
         venueClock:
           type: object
@@ -7128,7 +7278,7 @@ components:
         runState:
           {
             type: [string, "null"],
-            x-arthome-vocabulary: [idle, rehearsal, on_air, interrupted, ended],
+            x-arthome-vocabulary: [idle, rehearsal, on_air, interrupted, ended], x-arthome-vocabulary-source: RUN_STATES,
           }
         overlapsWith:
           type: array
@@ -7166,7 +7316,7 @@ components:
             type: object
             required: [tier, amount, active]
             properties:
-              tier: { type: string, x-arthome-vocabulary: [full, reduced, support] }
+              tier: { type: string, x-arthome-vocabulary: [full, reduced, support], x-arthome-vocabulary-source: PRICE_TIERS }
               amount: { $ref: "#/components/schemas/Money" }
               active: { type: boolean }
         promotions:
@@ -7178,7 +7328,7 @@ components:
                 {
                   type: string,
                   x-arthome-vocabulary:
-                    [pre_sale, preview_night, discovery_rate, final_date, late_rate],
+                    [pre_sale, preview_night, discovery_rate, final_date, late_rate], x-arthome-vocabulary-source: PROMOTION_REASONS,
                 }
               struckPrice: { $ref: "#/components/schemas/Money" }
               currentPrice: { $ref: "#/components/schemas/Money" }
@@ -7237,6 +7387,8 @@ components:
             `RTCPeerConnection.getStats()` on the WHEP return path and **submitted** — never a native
             figure presented as end-to-end. If it is not measured, it is **absent**.
           x-arthome-vocabulary: [ingest_server, client_submitted]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
         ingestUpKbps:
           type: [integer, "null"]
           description: |
@@ -7272,11 +7424,14 @@ components:
             it: they were echoes of the outcome lodged in the technical state. A control room has no
             "cancelled" state — it has a stage sending nothing.
           x-arthome-vocabulary: [idle, rehearsal, on_air, interrupted, ended]
+          x-arthome-vocabulary-source: RUN_STATES
         afterGracePeriod: { type: boolean }
         ingestProtocol:
           type: string
           description: "**Decides which metrics are actually available.**"
           x-arthome-vocabulary: [rtmps, srt, whip]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared."
         monitorPath:
           type: string
           description: |
@@ -7285,6 +7440,8 @@ components:
             latency it does not have** — the contract carries the truth, not uniformity. On the native
             shell, `whep` is not promised at tier 5 (D-019).
           x-arthome-vocabulary: [whep, ll_hls]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared."
         monitorUrl: { type: [string, "null"], format: uri }
         qualityLadder:
           type: array
@@ -7355,6 +7512,7 @@ components:
             type: string
             x-arthome-vocabulary:
               [artist, production, coordination, director, video, sound, moderation, treasury]
+            x-arthome-vocabulary-source: MEMBER_ROLES
         lastActivityAt:
           type: string
           format: date-time
@@ -7412,6 +7570,7 @@ components:
           type: string
           description: The **outcome** the viewer sees.
           x-arthome-vocabulary: [hold_screen, postponed, cancelled, interrupted]
+          x-arthome-vocabulary-source: INCIDENT_KINDS
         cause:
           type: string
           description: |
@@ -7427,6 +7586,7 @@ components:
               provider_error,
               manual,
             ]
+          x-arthome-vocabulary-source: INCIDENT_CAUSES
         trigger:
           type: string
           description: |
@@ -7434,6 +7594,8 @@ components:
             trigger — that is the right answer to the "the stage manager is unreachable" case. The log
             must nonetheless tell the two apart.
           x-arthome-vocabulary: [manual, auto]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
         message:
           allOf: [{ $ref: "#/components/schemas/LocalizedText" }]
           description: |
@@ -7476,14 +7638,14 @@ components:
         messageId: { type: string, format: uuid }
         dateId: { type: string, format: uuid }
         channelId: { type: string, format: uuid }
-        state: { type: string, x-arthome-vocabulary: [reported, claimed, settled] }
+        state: { type: string, x-arthome-vocabulary: [reported, claimed, settled], x-arthome-vocabulary-source: MODERATION_ITEM_STATES }
         reason:
-          { type: string, x-arthome-vocabulary: [spam, insult, spoiler, off_topic, harassment] }
+          { type: string, x-arthome-vocabulary: [spam, insult, spoiler, off_topic, harassment], x-arthome-vocabulary-source: MODERATION_REASONS }
         reportsCount: { type: integer }
         atMediaSec: { type: integer }
         sentAt: { type: string, format: date-time }
         authorHandle: { type: string }
-        authorSanction: { type: string, x-arthome-vocabulary: [none, muted, banned] }
+        authorSanction: { type: string, x-arthome-vocabulary: [none, muted, banned], x-arthome-vocabulary-source: AUDIENCE_SANCTIONS }
         body: { $ref: "#/components/schemas/LocalizedText" }
         claimedBy: { $ref: "#/components/schemas/Actor" }
         claimExpiresAt:
@@ -7493,7 +7655,7 @@ components:
             **A short lease**, renewed while the person is present, **released by the server** on
             expiry. Without it, a moderator who closes their browser freezes a row for the whole live
             show.
-        verdict: { type: [string, "null"], x-arthome-vocabulary: [publish, remove, mute, ban] }
+        verdict: { type: [string, "null"], x-arthome-vocabulary: [publish, remove, mute, ban], x-arthome-vocabulary-source: MODERATION_VERDICTS }
         settledBy: { $ref: "#/components/schemas/Actor" }
         settledAt: { type: [string, "null"], format: date-time }
         origin:
@@ -7501,7 +7663,22 @@ components:
           description: |
             The log must tell an **automatic reclassification** from a **human decision**.
             `retroactive_filter` marks the items produced by adding a word to the dictionary.
-          x-arthome-vocabulary: [human_verdict, retroactive_filter, author_sanctioned]
+
+            **`automatic_filter` and `retroactive_filter` are two moments, not two names.**
+            `automatic_filter` decides **at ingestion**, before anything is published;
+            `retroactive_filter` **reclassifies what already exists**, when a word enters the
+            dictionary. Collapsing them would lose the only distinction that makes the filter
+            measurable.
+
+            **Nothing produces `automatic_filter` today, and writing it now is the point.** It
+            carries three constraints that are cheap today and unrecoverable later: an automatic
+            moderator **takes no lease**, because there is nobody to hold one; precedence is
+            **one-way**, a human overturns a machine and never the reverse; and the origin
+            **survives the settlement**, so "removed by the filter, confirmed by X" does not collapse
+            into "removed by X" — which is what it takes to measure how often the filter is right.
+          x-arthome-vocabulary:
+            [human_verdict, automatic_filter, retroactive_filter, author_sanctioned]
+          x-arthome-vocabulary-source: STATE_CHANGE_ORIGINS
         version:
           type: integer
           description: |
@@ -7533,7 +7710,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         handle: { type: string, examples: ["@marie.j"] }
-        sanction: { type: string, x-arthome-vocabulary: [none, muted, banned] }
+        sanction: { type: string, x-arthome-vocabulary: [none, muted, banned], x-arthome-vocabulary-source: AUDIENCE_SANCTIONS }
         sanctionExpiresAt:
           type: [string, "null"]
           format: date-time
@@ -7542,7 +7719,7 @@ components:
             single field, computed once. Absent = no limit.
         messagesCount: { type: integer }
         firstSeenAt: { type: string, format: date-time }
-        subscriberTier: { type: [string, "null"], x-arthome-vocabulary: [free, pass, premium] }
+        subscriberTier: { type: [string, "null"], x-arthome-vocabulary: [free, pass, premium], x-arthome-vocabulary-source: PLAN_TIERS }
         holdsSeat: { type: boolean }
         present:
           type: boolean
@@ -7553,7 +7730,7 @@ components:
       required: [dateId, mode, filterSeverity, slowModeSec, holdersOnly, locked]
       properties:
         dateId: { type: string, format: uuid }
-        mode: { type: string, x-arthome-vocabulary: [open, emoji, read_only, 'off'] }
+        mode: { type: string, x-arthome-vocabulary: [open, emoji, read_only, 'off'], x-arthome-vocabulary-source: CHAT_MODES }
         filterSeverity:
           type: string
           description: |
@@ -7561,6 +7738,7 @@ components:
             channel settings, "low/medium/high" on the moderation page — and neither was in the shared
             sources.
           x-arthome-vocabulary: [low, medium, high]
+          x-arthome-vocabulary-source: FILTER_SEVERITIES
         slowModeSec: { type: integer }
         holdersOnly: { type: boolean }
         retroactiveFilter: { type: boolean }
@@ -7587,7 +7765,7 @@ components:
             {
               type: string,
               x-arthome-vocabulary:
-                [artist, production, coordination, director, video, sound, moderation, treasury],
+                [artist, production, coordination, director, video, sound, moderation, treasury], x-arthome-vocabulary-source: MEMBER_ROLES,
             }
         isOwner:
           type: boolean
@@ -7595,7 +7773,7 @@ components:
         joinedAt: { type: string, format: date-time }
         note: { type: [string, "null"] }
         invitationState:
-          { type: [string, "null"], x-arthome-vocabulary: [pending, accepted, declined, expired] }
+          { type: [string, "null"], x-arthome-vocabulary: [pending, accepted, declined, expired], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
         version: { type: integer }
 
     DateAccessGrant:
@@ -7610,7 +7788,7 @@ components:
         dateId: { type: string, format: uuid }
         personId: { type: string, format: uuid }
         displayName: { type: string }
-        crewRole: { type: string, x-arthome-vocabulary: [director, video, sound, moderation] }
+        crewRole: { type: string, x-arthome-vocabulary: [director, video, sound, moderation], x-arthome-vocabulary-source: CREW_ROLES }
         expiresAt: { type: string, format: date-time }
         grantedBy: { $ref: "#/components/schemas/Actor" }
 
@@ -7638,6 +7816,7 @@ components:
             **Driven by the date's outcome**: `held` while an outcome is open, `refunded` if cancelled,
             `suspended` while a change of bank details awaits its counter-signature.
           x-arthome-vocabulary: [scheduled, held, paid, refunded, suspended]
+          x-arthome-vocabulary-source: PAYOUT_STATES
         grossTtc: { $ref: "#/components/schemas/Money" }
         vat:
           type: array
@@ -7669,7 +7848,7 @@ components:
                 description: "\"FR\" · \"US-CA-94103\" · \"CH-ZH\". **Precise enough to replay the calculation.**"
                 examples: [FR]
               jurisdictionLevel:
-                { type: string, x-arthome-vocabulary: [country, state, county, city] }
+                { type: string, x-arthome-vocabulary: [country, state, county, city], x-arthome-vocabulary-source: TAX_JURISDICTION_LEVELS }
               supplyKind:
                 type: string
                 description: |
@@ -7677,6 +7856,7 @@ components:
                   market: the exemption a theatre seat enjoys does not extend to watching it live — a seat and a
                   broadcast live show are not the same supply.
                 x-arthome-vocabulary: [live_stream_access, replay_access, subscription, merchandise]
+                x-arthome-vocabulary-source: TAX_SUPPLY_KINDS
         grossHt: { $ref: "#/components/schemas/Money" }
         commissionRateBps:
           type: integer
@@ -7718,7 +7898,7 @@ components:
         state:
           {
             type: string,
-            x-arthome-vocabulary: [pending_countersignature, countersigned, rejected, expired],
+            x-arthome-vocabulary: [pending_countersignature, countersigned, rejected, expired], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got.",
           }
         maskedAccountTail:
           type: string
@@ -7744,7 +7924,9 @@ components:
           type: string
           x-arthome-vocabulary:
             [sales_csv, fec, sage, cegid, grouped_invoices, journal, schedule_ics, stats_csv]
-        state: { type: string, x-arthome-vocabulary: [queued, running, ready, failed, expired] }
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A document or export format. It names an accounting tool or a file type, which is the outside world's vocabulary rather than ours."
+        state: { type: string, x-arthome-vocabulary: [queued, running, ready, failed, expired], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
         requestedAt: { type: string, format: date-time }
         downloadUrl: { type: [string, "null"], format: uri }
         downloadExpiresAt: { type: [string, "null"], format: date-time }
@@ -7770,7 +7952,22 @@ components:
         price appears in it too: that is in itself a piece of operational information.
       properties:
         id: { type: string, format: uuid }
-        nature: { type: string, x-arthome-vocabulary: [air, mod, event, access, money] }
+        nature:
+          type: string
+          description: |
+            **The five axes a studio log is filtered by**, and they are deliberately not the services
+            that produced the entries: someone reading a log at midnight asks "what touched the
+            money", not "what did `payouts` emit".
+
+            **The abbreviations are a wart and they are named as one.** `mod` and `air` are the only
+            shortened members in either contract — everything else spells `moderation` out, including
+            the role, the tag and the page. A reader who writes `moderation` here gets nothing back,
+            silently, which is the shape this whole document spent a week removing. They are kept for
+            now because the filter is a query parameter on a path that already ships in fixtures; they
+            should become `moderation` and `on_air` the first time that path changes.
+          x-arthome-vocabulary: [air, mod, event, access, money]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
         occurredAt: { type: string, format: date-time }
         actor: { $ref: "#/components/schemas/Actor" }
         code: { type: string, description: "A **code**, never an authored sentence." }
@@ -7789,7 +7986,7 @@ components:
           {
             type: string,
             x-arthome-vocabulary:
-              [invitation, alert, duty, incident, payout, bank_change, reconciliation],
+              [invitation, alert, duty, incident, payout, bank_change, reconciliation], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.",
           }
         channelId: { type: [string, "null"], format: uuid }
         dateId: { type: [string, "null"], format: uuid }
@@ -7818,11 +8015,13 @@ components:
               label: { type: string }
               stock: { type: integer }
               price: { $ref: "#/components/schemas/Money" }
-        state: { type: string, x-arthome-vocabulary: [on_sale, out_of_stock] }
+        state: { type: string, x-arthome-vocabulary: [on_sale, out_of_stock], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
         source:
           type: string
           description: "**One external integration at a time** per channel."
           x-arthome-vocabulary: [arthome, shopify, woocommerce, prestashop, drupal, api]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "An external provider or platform identifier. It is their vocabulary, not ours, and it changes when they change."
         merchantUrl: { type: [string, "null"], format: uri }
         pinnedDateId: { type: [string, "null"], format: uuid }
         version: { type: integer }

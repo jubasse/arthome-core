@@ -103,6 +103,21 @@ export const base = tseslint.config(
           message:
             '`enum` is forbidden: declare an `as const` literal union in @arthome/core (code-conventions.md section 5.3).',
         },
+        {
+          // An ambient `declare module '@arthome/…'` does not merely duplicate the
+          // package's own types — it SHADOWS them. Proven: with @arthome/tooling's
+          // real vitest types deliberately replaced by `{ deliberatelyWrong: number }`,
+          // a consumer carrying such a declaration still type-checked clean.
+          //
+          // So a "temporary" declaration for an @arthome package does not expire when
+          // the real types arrive. It keeps winning, silently, and the consumer is
+          // checking against a shape it wrote itself: a parallel table in a .d.ts
+          // costume. If types are missing, add them to the package.
+          selector:
+            'TSModuleDeclaration > Literal[value=/^@arthome\\//], TSModuleDeclaration > StringLiteral[value=/^@arthome\\//]',
+          message:
+            "Never `declare module '@arthome/…'`: an ambient declaration SHADOWS the package's own types rather than filling a gap, so it silently outlives the reason for it. Add the types to the package instead (code-conventions.md section 4.2).",
+        },
       ],
       '@typescript-eslint/no-namespace': 'error',
       '@typescript-eslint/no-require-imports': 'error',

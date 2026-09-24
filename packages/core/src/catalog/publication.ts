@@ -171,31 +171,92 @@ export const PUBLICATION_CHECKLIST_ITEMS = [
   'capacity',
   'technical_check_passed',
   'chat_mode_set',
+  'chapters_planned',
+  'moderator_assigned',
 ] as const;
 export type PublicationChecklistItem = (typeof PUBLICATION_CHECKLIST_ITEMS)[number];
 
 /**
- * The NON-BLOCKING warnings.
+ * BLOCKING IS A PROPERTY OF THE ITEM, NOT A SEPARATE VOCABULARY.
  *
- * "Chapters planned" and "moderator assigned" leave the blocking list: it must
- * be possible to publish a date without chapters, and an unassigned post can be
- * filled up to the last day.
+ * This was two vocabularies — seven blocking items and two warnings — and the
+ * split was wrong on two counts.
+ *
+ * Promoting a warning to blocking is a product decision that WILL happen. Under
+ * the split it moves an item from one vocabulary to another, which breaks
+ * anyone matching on either. Here it flips a boolean.
+ *
+ * And a client rendering the checklist wants all nine with their status. Two
+ * lists forced every surface to concatenate them — a composition the server
+ * should have served, which is the same fault as making a surface recompose
+ * `displayState`.
  */
-export const PUBLICATION_WARNING_ITEMS = ['chapters_planned', 'moderator_assigned'] as const;
-export type PublicationWarningItem = (typeof PUBLICATION_WARNING_ITEMS)[number];
+/**
+ * A TABLE KEYED BY THE TYPE, NOT A LIST OF THE BLOCKING SEVEN.
+ *
+ * This was an array of seven members written out again twenty-eight lines below
+ * the declaration — **the split this comment argues against, surviving one level
+ * down**. Merging the two vocabularies changed what is exported without
+ * changing what has to be edited, which is the part the argument was about:
+ * promoting `chapters_planned` meant editing a literal list, the same edit in
+ * the same shape as moving it between two vocabularies.
+ *
+ * And it drifted in the direction nothing catches. A tenth item added to
+ * `PUBLICATION_CHECKLIST_ITEMS` was silently NON-BLOCKING, because `includes`
+ * on a list that never heard of it returns `false` — no type error, since
+ * `PublicationChecklistItem` admits the member and the array simply lacks it.
+ *
+ * A `Record` keyed by the union makes a missing member a **compile error**, so
+ * the tenth item cannot be added without a decision about whether it blocks.
+ * That is the boolean flip the paragraph above promises, checked by `tsc`
+ * rather than by a reviewer.
+ *
+ * It was invisible to `arthome-check-enums` because this file DECLARES a
+ * vocabulary, and the gate excludes a declaring file from the sweep entirely
+ * rather than excluding it from its own values.
+ */
+const BLOCKING: Readonly<Record<PublicationChecklistItem, boolean>> = {
+  title_and_discipline: true,
+  poster: true,
+  description: true,
+  at_least_one_active_price: true,
+  capacity: true,
+  technical_check_passed: true,
+  chat_mode_set: true,
+  chapters_planned: false,
+  moderator_assigned: false,
+};
+
+export function isBlockingChecklistItem(item: PublicationChecklistItem): boolean {
+  return BLOCKING[item];
+}
+
+/** One checklist item, with everything a surface needs to render its row. */
+export interface PublicationChecklistEntry {
+  readonly item: PublicationChecklistItem;
+  readonly satisfied: boolean;
+  readonly blocking: boolean;
+}
 
 export interface PublicationReadiness {
   readonly ready: boolean;
-  /** The MISSING identifiers — never a percentage, which the client computes. */
+  /** All NINE, in declaration order — the surface renders this, it composes nothing. */
+  readonly entries: readonly PublicationChecklistEntry[];
+  /** The MISSING blocking identifiers — never a percentage, which the client computes. */
   readonly missing: readonly PublicationChecklistItem[];
-  readonly warnings: readonly PublicationWarningItem[];
+  /** The unmet NON-blocking items. Derived from `entries`; served because the screen labels them differently. */
+  readonly warnings: readonly PublicationChecklistItem[];
 }
 
 export function publicationReadiness(
   satisfied: readonly PublicationChecklistItem[],
-  satisfiedWarnings: readonly PublicationWarningItem[],
 ): PublicationReadiness {
-  const missing = PUBLICATION_CHECKLIST_ITEMS.filter((item) => !satisfied.includes(item));
-  const warnings = PUBLICATION_WARNING_ITEMS.filter((item) => !satisfiedWarnings.includes(item));
-  return { ready: missing.length === 0, missing, warnings };
+  const entries = PUBLICATION_CHECKLIST_ITEMS.map((item) => ({
+    item,
+    satisfied: satisfied.includes(item),
+    blocking: isBlockingChecklistItem(item),
+  }));
+  const missing = entries.filter((e) => e.blocking && !e.satisfied).map((e) => e.item);
+  const warnings = entries.filter((e) => !e.blocking && !e.satisfied).map((e) => e.item);
+  return { ready: missing.length === 0, entries, missing, warnings };
 }

@@ -97,8 +97,22 @@ function discoverEnums(sourceRoot) {
   const files = listFiles(sourceRoot, ['**/*.ts', '**/*.mts']).filter(
     (f) => !f.endsWith('.d.ts') && !/\.spec\.|\.test\./.test(f),
   );
-  /** @type {Map<string, {constant: string, file: string}>} */
+  // ⚠ ALL declarers, not the first. Keeping only the first was a real defect: after
+  //   the debranding collapsed twenty values onto existing ones, 25 of 179 values are
+  //   declared by more than one vocabulary and `'none'` by FIVE. The gate then named
+  //   whichever happened to be parsed first and stated it as fact — it told an author
+  //   that `'full'` on the line `scope: 'full' | 'preview' | 'none'` belonged to
+  //   PRICE_TIERS, and obeying that would have imported a price tier into a playback
+  //   verdict.
+  //
+  //   A wrong reason attached to a correct verdict is worse than no reason: it teaches
+  //   people to obey the verdict and skip the reasoning, which is how a gate stops
+  //   being read. Where the gate cannot know, it now says it cannot know and lists the
+  //   candidates — the author knows which they meant.
+  /** @type {Map<string, {constant: string, file: string}[]>} */
   const byValue = new Map();
+  /** Per file, the values THAT file declares — not the files to skip. @type {Map<string, Set<string>>} */
+  const declaredByFile = new Map();
   const constants = [];
   for (const file of files) {
     const src = stripComments(fs.readFileSync(file, 'utf8'));
@@ -111,12 +125,17 @@ function discoverEnums(sourceRoot) {
       }
       if (!values.length) continue;
       constants.push({ name, file, values });
+      const own = declaredByFile.get(file) ?? new Set();
+      for (const value of values) own.add(value);
+      declaredByFile.set(file, own);
       for (const value of values) {
-        if (!byValue.has(value)) byValue.set(value, { constant: name, file });
+        const declarers = byValue.get(value) ?? [];
+        if (!declarers.some((d) => d.constant === name)) declarers.push({ constant: name, file });
+        byValue.set(value, declarers);
       }
     }
   }
-  return { byValue, constants, declaringFiles: new Set(constants.map((c) => c.file)) };
+  return { byValue, constants, declaredByFile };
 }
 
 // ------------------------------------------------------------ 2. the allow-list
@@ -172,7 +191,7 @@ function main() {
     process.exit(0);
   }
 
-  const { byValue, constants, declaringFiles } = discoverEnums(sourceRoot);
+  const { byValue, constants, declaredByFile } = discoverEnums(sourceRoot);
   if (!constants.length) {
     console.error(
       `WARN arthome-check-enums: no \`as const\` constant in ${path.relative(CWD, sourceRoot)}.`,
@@ -182,24 +201,49 @@ function main() {
   }
 
   const { entries: allow, file: allowFile } = loadAllow();
-  const files = listFiles(CWD, SCAN).filter((f) => !SKIP.test(f) && !declaringFiles.has(f));
+
+  // ⚠ SCAN EVERY FILE. IGNORE ONLY THE VALUES A FILE DECLARES.
+  //
+  //   The previous version excluded any file that declared a vocabulary from the
+  //   sweep ENTIRELY — `!declaringFiles.has(f)`. So `entitlement/index.ts` had never
+  //   been scanned since it was written, because it declared two vocabularies of its
+  //   own. Moving those out for an unrelated reason made it visible for the first
+  //   time, and three inline literals that had been there since the module existed
+  //   appeared immediately.
+  //
+  //   The skip existed for a real reason — a file legitimately uses the members of
+  //   the vocabulary it declares — but it was scoped by the FILE when the thing being
+  //   excused is a VALUE. So it excused the legitimate use and hid everything else in
+  //   the same file, which is precisely what this gate exists to catch.
+  //
+  //   That is D-045 applied to this gate: scope by a property of the thing you are
+  //   looking for — a copied value — never by a property of where it sits. And it is
+  //   the fault this gate taught everyone else to look for, committed inside it.
+  const declined = listFiles(CWD, SCAN).filter((f) => SKIP.test(f));
+  const files = listFiles(CWD, SCAN).filter((f) => !SKIP.test(f));
 
   const findings = [];
   for (const file of files) {
     const rel = path.relative(CWD, file);
+    // The values this file declares itself. A declaring file may use its own members
+    // freely; it may not copy anyone else's.
+    const own = declaredByFile.get(file) ?? new Set();
     const src = stripComments(fs.readFileSync(file, 'utf8'));
     src.split('\n').forEach((line, i) => {
       for (const m of line.matchAll(STRING_LITERAL)) {
         const value = m[1] ?? m[2];
         if (!value || !byValue.has(value)) continue;
+        if (own.has(value)) continue; // declared here: its own to use
         if (isAllowed(allow, rel, value)) continue;
-        const owner = byValue.get(value);
+        const declarers = byValue.get(value);
         findings.push({
           file: rel,
           line: i + 1,
           value,
-          constant: owner.constant,
-          from: path.relative(CWD, owner.file),
+          declarers: declarers.map((d) => ({
+            constant: d.constant,
+            from: path.relative(CWD, d.file),
+          })),
         });
       }
     });
@@ -208,7 +252,8 @@ function main() {
   if (!QUIET) {
     console.log(
       `arthome-check-enums: ${constants.length} enumeration(s), ${byValue.size} value(s), ` +
-        `${files.length} file(s) swept — source ${path.relative(CWD, sourceRoot) || '.'}`,
+        `${files.length} file(s) swept, ${declined.length} declined by pattern ` +
+        `— source ${path.relative(CWD, sourceRoot) || '.'}`,
     );
   }
 
@@ -216,9 +261,25 @@ function main() {
     console.error(`\nFAIL ${findings.length} parallel literal table(s) — E2:\n`);
     for (const f of findings) {
       console.error(`  ${f.file}:${f.line}  '${f.value}'`);
-      console.error(
-        `    -> belongs to ${f.constant} (${f.from}). Import the constant; do not copy the value.`,
-      );
+      if (f.declarers.length === 1) {
+        const [d] = f.declarers;
+        console.error(
+          `    -> declared by ${d.constant} (${d.from}). Import the constant; do not copy the value.`,
+        );
+      } else {
+        // The gate knows the value is declared; it does NOT know which vocabulary was
+        // meant here, and saying so is the whole point.
+        console.error(
+          `    -> declared by ${f.declarers.length} vocabularies: ` +
+            f.declarers.map((d) => `${d.constant} (${d.from})`).join(', '),
+        );
+        console.error(
+          '       This gate cannot tell which one you meant. Import the one you did mean —',
+        );
+        console.error(
+          '       or, if the value belongs to neither, declare the vocabulary that owns it.',
+        );
+      }
     }
     console.error(
       `\n  A legitimate exception? Register it in ${path.relative(CWD, allowFile)} WITH ITS REASON.`,

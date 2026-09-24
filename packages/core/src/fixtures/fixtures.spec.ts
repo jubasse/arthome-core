@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { FixedClock } from '../kernel/clock.js';
-import { displayStateOf } from '../catalog/date-state.js';
-import { DisplayState } from '../vocabulary/catalog.js';
-import { replayHoursLeft } from '../replay/index.js';
 import { buildFixtures, fixtureDate } from './index.js';
 import { DeterministicRandom } from './random.js';
+import { displayStateOf } from '../catalog/date-state.js';
+import { FixedClock } from '../kernel/clock.js';
+import { replayHoursLeft } from '../replay/index.js';
+import { DisplayState } from '../vocabulary/catalog.js';
 
 const clock = (): FixedClock => new FixedClock('2026-09-21T20:00:00.000Z');
 
@@ -46,7 +46,7 @@ describe('determinism', () => {
  *   carries the reason for its existence in `covers`, readable in a test
  *   failure.
  */
-describe('the set\'s coverage', () => {
+describe("the set's coverage", () => {
   const fixtures = buildFixtures(42, clock());
 
   it('exercises the three outcomes', () => {

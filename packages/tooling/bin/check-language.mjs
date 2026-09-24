@@ -189,12 +189,36 @@ const isAllowed = (file) => ALLOWED.some((p) => matchesGlob(file, p));
 // reason — the shape this repository already uses for an enum literal and for an
 // idempotency exemption. Two properties make it safe to have at all:
 //
-//   - the quoted text must appear VERBATIM in the file, so an entry cannot widen
-//     into a blanket pass;
+//   - the quoted text must appear VERBATIM in the file, so an entry cannot name a
+//     sentence that was never there;
 //   - an entry whose quotation is GONE is an error, not a silent no-op, so the
 //     exemption expires the day the sentence it protects does. A stale allowance
-//     is the rot this gate exists to find.
+//     is the rot this gate exists to find;
+//   - the quotation must cover at most MAX_QUOTED_LINES lines.
+//
+// The third property was added after the first two proved insufficient. Verbatim
+// guarantees the quote EXISTS; it does not guarantee it is NARROW. A quotation of
+// `"e"` appears verbatim in almost every line, so it skipped every line and the
+// whole file passed — a blanket pass through the front door, defeating exactly the
+// property the verbatim rule was there to provide. Demonstrated in a scratch
+// repository rather than argued.
+//
+// The first attempt at a fix was worse than the hole: require the quotation to
+// contain a word from FRENCH. That rejected `les quatorze entrées de navigation`,
+// which is manifestly French, because this list is deliberately NARROW — it holds
+// only words that cannot be English or an identifier, which is what makes it
+// precise at DETECTION. A list tuned for precision in detection is the wrong
+// instrument for judging coverage in validation, and reusing it inverted its
+// purpose.
+//
+// So the bound is structural rather than linguistic: a quotation may cover a
+// quotation, not a document. It needs no view about language, and it is what
+// actually limits the damage — `"e"` covers every line and is refused on that
+// ground alone. Needing more lines than the cap means the right category is a file
+// exemption, which has to be declared and read as one.
 const QUOTATIONS = allow.quotations?.allow ?? [];
+
+const MAX_QUOTED_LINES = 3;
 
 function quotationsFor(file) {
   return QUOTATIONS.filter((q) => q.file === file);
@@ -375,7 +399,20 @@ for (const file of files) {
       );
     }
   }
-  const live = quotes.filter((q) => text.includes(q.quote));
+  const live = quotes.filter((q) => text.includes(q.quote) && q.reason);
+  // A quotation may cover a quotation, not a document. More lines than this and the
+  // right category is a file exemption — which must be declared, and read, as one.
+  for (const q of live) {
+    const covered = text.split('\n').filter((l) => l.includes(q.quote)).length;
+    if (covered > MAX_QUOTED_LINES) {
+      staleQuotations.push(
+        `${file}: the exempted quotation covers ${covered} lines, the limit is ${MAX_QUOTED_LINES} —\n` +
+          `      ${JSON.stringify(q.quote)}\n` +
+          `      A quotation that matches this much of a file is acting as a file exemption.\n` +
+          `      Quote the specific sentence, or declare a file exemption and say why.`,
+      );
+    }
+  }
   const words = new Map(); // word -> first line
   for (const [n, line] of lines) {
     if (src && src.has(line.trim())) continue;

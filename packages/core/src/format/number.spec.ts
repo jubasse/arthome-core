@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { money } from '../money/money.js';
 import { Locale } from './locale.js';
 import { formatCompact, formatInteger, formatMoney } from './number.js';
+import { money } from '../money/money.js';
 
 /**
  * PROTECTED INVARIANT

@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
-import { FAILURE_NATURES, FailureNature } from '../kernel/errors.js';
-import { LOCALES, Locale } from '../format/locale.js';
-import { MESSAGE_DOMAINS, MessageDomain } from '../i18n/index.js';
-import { MODERATION_BADGES, ModerationBadge } from '../moderation/index.js';
-import { REPLAY_UNAVAILABILITY_REASONS, ReplayUnavailabilityReason } from '../replay/index.js';
-import {
-  WATCH_DENIAL_REASONS,
-  WATCH_FALLBACK_ACTIONS,
-  WatchDenialReason,
-  WatchFallbackAction,
-} from '../entitlement/index.js';
 import * as catalog from './catalog.js';
 import * as commerce from './commerce.js';
 import * as moderation from './moderation.js';
 import * as people from './people.js';
+import {
+  WATCH_DENIAL_REASONS,
+  WATCH_FALLBACK_ACTIONS,
+  WATCH_SCOPES,
+  WatchDenialReason,
+  WatchFallbackAction,
+  WatchScope,
+} from '../entitlement/index.js';
+import { LOCALES, Locale } from '../format/locale.js';
+import { MESSAGE_DOMAINS, MessageDomain } from '../i18n/index.js';
+import { FAILURE_NATURES, FailureNature } from '../kernel/errors.js';
+import { MODERATION_BADGES, ModerationBadge } from '../moderation/index.js';
 
 /**
  * INVARIANT UNDER TEST
@@ -46,12 +47,8 @@ const PAIRS: readonly VocabularyPair[] = [
   { name: 'Locale', values: LOCALES, members: Locale },
   { name: 'MessageDomain', values: MESSAGE_DOMAINS, members: MessageDomain },
   { name: 'ModerationBadge', values: MODERATION_BADGES, members: ModerationBadge },
-  {
-    name: 'ReplayUnavailabilityReason',
-    values: REPLAY_UNAVAILABILITY_REASONS,
-    members: ReplayUnavailabilityReason,
-  },
   { name: 'WatchDenialReason', values: WATCH_DENIAL_REASONS, members: WatchDenialReason },
+  { name: 'WatchScope', values: WATCH_SCOPES, members: WatchScope },
   { name: 'WatchFallbackAction', values: WATCH_FALLBACK_ACTIONS, members: WatchFallbackAction },
 
   {

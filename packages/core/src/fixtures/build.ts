@@ -18,10 +18,16 @@
  * expire and a territorial blackout prove something.
  */
 
+import { DeterministicRandom } from './random.js';
+import type { DateTiming } from '../catalog/date-state.js';
+import type { LanguageProfile } from '../catalog/language.js';
+import { restrictedRights, worldwideRights, type TerritoryRights } from '../catalog/rights.js';
 import type { Clock, Instant } from '../kernel/clock.js';
+import { money, type Money } from '../money/money.js';
+import type { TierPrice } from '../ticketing/pricing.js';
+import type { Gauge } from '../ticketing/seats.js';
 import { plusHours, plusMinutes } from '../time/instant.js';
 import { venueClock, type VenueClock } from '../time/venue-clock.js';
-import { money, type Money } from '../money/money.js';
 import {
   DateOutcome,
   LanguageDependency,
@@ -31,12 +37,6 @@ import {
   BlackoutReason,
 } from '../vocabulary/catalog.js';
 import { PriceTier } from '../vocabulary/commerce.js';
-import type { DateTiming } from '../catalog/date-state.js';
-import { restrictedRights, worldwideRights, type TerritoryRights } from '../catalog/rights.js';
-import type { LanguageProfile } from '../catalog/language.js';
-import type { Gauge } from '../ticketing/seats.js';
-import type { TierPrice } from '../ticketing/pricing.js';
-import { DeterministicRandom } from './random.js';
 
 export interface FixtureVenue {
   readonly id: string;

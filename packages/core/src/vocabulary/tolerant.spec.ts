@@ -19,7 +19,7 @@ import { isMember, memberOr, parseTolerant } from './tolerant.js';
  *
  *   Written BEFORE the rule, like the two other risky rules.
  */
-describe('parseTolerant — the fleet\'s survival', () => {
+describe("parseTolerant — the fleet's survival", () => {
   it('keeps an unknown 22nd discipline instead of rejecting it', () => {
     const result = parseTolerant(DATE_OUTCOMES, 'rescheduled-twice');
 
@@ -76,7 +76,7 @@ describe('parseTolerant — the fleet\'s survival', () => {
  *   reproduce exactly that defect.
  */
 describe('memberOr — the fallback does not hide', () => {
-  it('returns the requested fallback, not the vocabulary\'s first member', () => {
+  it("returns the requested fallback, not the vocabulary's first member", () => {
     expect(memberOr(DATE_OUTCOMES, 'unknown-value', 'cancelled')).toBe('cancelled');
     // And above all: the fallback is NOT `DATE_OUTCOMES[0]`.
     expect(memberOr(DATE_OUTCOMES, 'unknown-value', 'interrupted')).toBe('interrupted');
@@ -88,7 +88,7 @@ describe('memberOr — the fallback does not hide', () => {
 });
 
 describe('the named members equal the wire values', () => {
-  it('exposes the same string as shared/\'s spelling', () => {
+  it("exposes the same string as shared/'s spelling", () => {
     // K6: three spellings for a value `decideWatch` depends on. On the wire, it
     // is `shared/`'s kebab-case that has authority.
     expect(PlanOpening.MULTI_SCREEN).toBe('multi_screen');

@@ -14,10 +14,10 @@
  * implementations.
  */
 
+import { Locale } from './locale.js';
 import type { Money } from '../money/money.js';
 // `Locale` is both a type and an object of named members: one import carries
 // both meanings of the name.
-import { Locale } from './locale.js';
 
 const NARROW_NO_BREAK_SPACE = ' ';
 const NO_BREAK_SPACE = ' ';

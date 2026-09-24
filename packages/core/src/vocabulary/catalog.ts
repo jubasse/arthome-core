@@ -182,12 +182,7 @@ export const LanguageDependency = {
 } as const;
 
 /** The four incident kinds a viewer can see. */
-export const INCIDENT_KINDS = [
-  'hold_screen',
-  'postponed',
-  'cancelled',
-  'interrupted',
-] as const;
+export const INCIDENT_KINDS = ['hold_screen', 'postponed', 'cancelled', 'interrupted'] as const;
 export type IncidentKind = (typeof INCIDENT_KINDS)[number];
 
 export const IncidentKind = {

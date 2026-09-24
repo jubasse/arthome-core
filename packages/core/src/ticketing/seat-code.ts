@@ -80,11 +80,7 @@ export function seatCode(body: string): string {
  * else's seat.
  */
 export function normalizeSeatCodeInput(raw: string): string {
-  const typed = raw
-    .toUpperCase()
-    .replace(/[\s-]/g, '')
-    .replace(/[IL]/g, '1')
-    .replace(/O/g, '0');
+  const typed = raw.toUpperCase().replace(/[\s-]/g, '').replace(/[IL]/g, '1').replace(/O/g, '0');
 
   // TWO READINGS, AND THEY CANNOT BOTH BE VALID.
   //

@@ -76,6 +76,24 @@ export function enumKey(vocabulary: string, member: string): MessageKey {
  * knows neither the profile, nor the language, nor the labels.
  */
 export interface LabelCatalogRef {
+  /**
+   * ⚠ THE INVERSE CHECK'S ONE OPEN ITEM, AND MY ANSWER IS THAT IT SHOULD BE
+   * SERVED RATHER THAN EXEMPTED.
+   *
+   * `MESSAGE_DOMAINS` is expressible nowhere in either contract: the served
+   * `labelCatalog` carries `{ locale, version, url }` and the theme survives
+   * only INSIDE the URL — `/i18n/studio/fr/v41.json`. So a client that wants to
+   * know which theme it holds must parse a path to recover it.
+   *
+   * That is the `imageUrl(kind, key, width)` fault in another costume: a value
+   * recoverable only by taking a string apart is a value the contract did not
+   * serve. It costs one field to fix and it removes a parse from every client
+   * that caches catalogues by theme.
+   *
+   * So I am NOT claiming this member as deliberately domain-only. It is the one
+   * place where the inverse check found a real gap rather than an internal
+   * vocabulary, and it belongs to `backend-contracts`.
+   */
   readonly domain: MessageDomain;
   readonly locale: string;
   readonly version: number;
