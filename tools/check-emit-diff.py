@@ -264,24 +264,40 @@ def main(argv):
         return 1
     emitted = payload["emitted"]
 
-    names = set()
+    # ⚠ ONE REGISTRY PER DOCUMENT, and the first version had ONE FOR BOTH.
+    #
+    #   A registry id is the DOCUMENT's schema name, and the two contracts share
+    #   names for shapes that differ — CursorPageInfo, EnvelopeMeta, Error,
+    #   LocalizedText, SessionEstablished*. So StorefrontCursorPageInfoSchema and
+    #   StudioCursorPageInfoSchema both claimed the id `CursorPageInfo`, the
+    #   second registration won, and the STOREFRONT was compared against the
+    #   STUDIO's schema. Six failures that all read as prose mismatches, every one
+    #   of them the same collision.
+    #
+    #   It stayed invisible while only one product-prefixed pair existed. It
+    #   surfaced the moment two workers filled nine modules at once, which is the
+    #   ordinary way a latent bug becomes a visible one.
+    #
+    #   A `$ref` is resolved WITHIN a document, so a registry that spans two
+    #   documents was wrong in the first place — not merely unlucky.
+    per_document = {}
     for document in documents:
-        names |= set(
-            yaml.safe_load(Path(document).read_text(encoding="utf-8"))["components"]["schemas"]
-        )
-    ids = {}
-    for name in sorted(names):
-        export, _entry = source_of(name, emitted)
-        if export is not None:
-            ids[export] = name
-
-    payload = emit(ids)
-    if payload is None:
-        return 1
-    emitted, problems = payload["emitted"], payload["problems"]
+        schemas = yaml.safe_load(Path(document).read_text(encoding="utf-8"))["components"][
+            "schemas"
+        ]
+        ids = {}
+        for name in sorted(schemas):
+            export, _entry = source_of(name, emitted, document)
+            if export is not None:
+                ids[export] = name
+        payload = emit(ids)
+        if payload is None:
+            return 1
+        per_document[document] = (schemas, payload["emitted"])
+        problems = payload["problems"]
 
     if problems:
-        print("✗ the emitter reported a problem with the packages themselves:\n")
+        print("\u2717 the emitter reported a problem with the packages themselves:\n")
         for p in problems:
             print(f"  {p}")
         return 1
@@ -289,7 +305,7 @@ def main(argv):
     total = sourced = agreed = 0
     failures = []
     for document in documents:
-        schemas = yaml.safe_load(Path(document).read_text(encoding="utf-8"))["components"]["schemas"]
+        schemas, emitted = per_document[document]
         unsourced = []
         for name in sorted(schemas):
             total += 1

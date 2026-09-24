@@ -49,54 +49,67 @@
   ],
   "exports": {
     "./catalog": {
+      "@arthome/source": "./src/catalog/index.ts",
       "types": "./dist/catalog/index.d.ts",
       "import": "./dist/catalog/index.js"
     },
     "./engagement": {
+      "@arthome/source": "./src/engagement/index.ts",
       "types": "./dist/engagement/index.d.ts",
       "import": "./dist/engagement/index.js"
     },
     "./envelope": {
+      "@arthome/source": "./src/envelope/index.ts",
       "types": "./dist/envelope/index.d.ts",
       "import": "./dist/envelope/index.js"
     },
     "./identity": {
+      "@arthome/source": "./src/identity/index.ts",
       "types": "./dist/identity/index.d.ts",
       "import": "./dist/identity/index.js"
     },
     "./money": {
+      "@arthome/source": "./src/money/index.ts",
       "types": "./dist/money/index.d.ts",
       "import": "./dist/money/index.js"
     },
     "./pagination": {
+      "@arthome/source": "./src/pagination/index.ts",
       "types": "./dist/pagination/index.d.ts",
       "import": "./dist/pagination/index.js"
     },
     "./streaming": {
+      "@arthome/source": "./src/streaming/index.ts",
       "types": "./dist/streaming/index.d.ts",
       "import": "./dist/streaming/index.js"
     },
     "./studio-access": {
+      "@arthome/source": "./src/studio-access/index.ts",
       "types": "./dist/studio-access/index.d.ts",
       "import": "./dist/studio-access/index.js"
     },
     "./studio-desk": {
+      "@arthome/source": "./src/studio-desk/index.ts",
       "types": "./dist/studio-desk/index.d.ts",
       "import": "./dist/studio-desk/index.js"
     },
     "./studio-money": {
+      "@arthome/source": "./src/studio-money/index.ts",
       "types": "./dist/studio-money/index.d.ts",
       "import": "./dist/studio-money/index.js"
     },
     "./studio-stage": {
+      "@arthome/source": "./src/studio-stage/index.ts",
       "types": "./dist/studio-stage/index.d.ts",
       "import": "./dist/studio-stage/index.js"
     },
     "./text": {
+      "@arthome/source": "./src/text/index.ts",
       "types": "./dist/text/index.d.ts",
       "import": "./dist/text/index.js"
     },
     "./ticketing": {
+      "@arthome/source": "./src/ticketing/index.ts",
       "types": "./dist/ticketing/index.d.ts",
       "import": "./dist/ticketing/index.js"
     },

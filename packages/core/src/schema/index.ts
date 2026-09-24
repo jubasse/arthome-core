@@ -35,7 +35,15 @@ export { BasisPointsSchema, MoneyIn, MoneyOut } from './money.js';
 export { VenueClockSchema } from './time.js';
 
 export type { VocabularyIn, VocabularyOut, VocabularyOutNullable } from './vocabulary.js';
-export { sourceNameOf, vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
+export {
+  VOCABULARY_SOURCE_LOCAL,
+  sourceNameOf,
+  vocabularyIn,
+  vocabularyOut,
+  vocabularyOutLocal,
+  vocabularyOutLocalNullable,
+  vocabularyOutNullable,
+} from './vocabulary.js';
 
 export {
   AccountIdSchema,

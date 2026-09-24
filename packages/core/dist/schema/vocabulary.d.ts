@@ -59,7 +59,56 @@ export type VocabularyOutNullable = z.ZodNullable<z.ZodString>;
  * STRICT — for a request. An unknown member is refused, with a code.
  */
 export declare function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T>;
+/**
+ * The same marker, exported — for a call site that attaches its reason through
+ * its own `.meta()` rather than through `vocabularyOutLocal`.
+ *
+ * ⚠ `vocabularyOutLocal` IS THE PREFERRED FORM and this is the escape hatch, not
+ *   an alternative. The function makes the reason MANDATORY; this constant
+ *   cannot, so a call site using it can still emit `source: none` with nothing
+ *   saying why — the false declaration D-065 §B is about.
+ *
+ *   It exists because three call sites in `@arthome/contracts` chain `.meta()`
+ *   with an `examples` key beside the reason, and rewriting them mechanically
+ *   failed three times against a formatter that reflowed the code between
+ *   attempts. Spelling `'none'` in four files to avoid that was the worse of the
+ *   two: `none` is a member of five domain vocabularies, so every one of those
+ *   literals was reported as a copy, correctly, by a gate that cannot tell an
+ *   annotation value from a vocabulary member.
+ */
+export declare const VOCABULARY_SOURCE_LOCAL: string;
 export declare function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;
+/**
+ * A vocabulary the DOCUMENT declares local to itself — `source: none`, with the
+ * reason the contract gives for it.
+ *
+ * ⚠ IT LIVES HERE BECAUSE FOUR FILES INVENTED IT SEPARATELY. Writing schemas for
+ *   the two contracts, four workers each needed the same thing — a vocabulary
+ *   the domain neither produces nor consumes, like a payment provider's state
+ *   machine — and each wrote `const LOCAL_VOCABULARY = 'none'` at the top of
+ *   their file. Four copies of one marker, and `arthome-check-enums` reported
+ *   every one, correctly: `none` is a member of five core vocabularies, and it
+ *   could not tell an annotation value from one of them.
+ *
+ *   *Four people reaching for the same missing thing is the shape of an export
+ *   that should exist.*
+ *
+ * ⚠ AND THE REASON IS MANDATORY, which the bare string was not. `source: none`
+ *   without one is the false declaration D-065 §B is about — "I could not find
+ *   the name" wearing the appearance of a decision. The contract has to say why
+ *   the domain owns nothing here.
+ */
+export declare function vocabularyOutLocal<const T extends Members>(values: T, reason: string): VocabularyOut;
+/**
+ * A contract-local vocabulary on a field that may also be absent.
+ *
+ * It exists for the same reason `vocabularyOutNullable` does: `.nullable()`
+ * WRAPS, so `vocabularyOutLocal(V, why).nullable()` emits the annotation inside
+ * `anyOf[0]`, where the contracts do not carry it and `check-vocabulary` does
+ * not read it. The schema still validates correctly, which is what makes that
+ * shape dangerous — the code works and only the document is wrong.
+ */
+export declare function vocabularyOutLocalNullable<const T extends Members>(values: T, reason: string): VocabularyOutNullable;
 /**
  * The name this vocabulary is published under, or the one the caller declares.
  *

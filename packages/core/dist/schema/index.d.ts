@@ -22,7 +22,7 @@ export { CountryCodeSchema, CurrencyCodeSchema, IanaTimeZoneSchema, InstantSchem
 export { BasisPointsSchema, MoneyIn, MoneyOut } from './money.js';
 export { VenueClockSchema } from './time.js';
 export type { VocabularyIn, VocabularyOut, VocabularyOutNullable } from './vocabulary.js';
-export { sourceNameOf, vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
+export { VOCABULARY_SOURCE_LOCAL, sourceNameOf, vocabularyIn, vocabularyOut, vocabularyOutLocal, vocabularyOutLocalNullable, vocabularyOutNullable, } from './vocabulary.js';
 export { AccountIdSchema, ArtistIdSchema, ChannelIdSchema, DateIdSchema, DeviceIdSchema, OrderIdSchema, PersonIdSchema, ProfileIdSchema, PublicHandleSchema, SeatIdSchema, ShowIdSchema, VenueIdSchema, } from './identifiers.js';
 export { BuyerTaxLocationSchema, TaxEvidenceKindIn, TaxEvidenceKindOut, TaxEvidenceSchema, TaxJurisdictionLevelIn, TaxJurisdictionLevelOut, TaxSupplyKindIn, TaxSupplyKindOut, VatLineSchema, } from './tax.js';
 export { ErrorSchema, FailureNatureOut, issueToCode } from './error.js';

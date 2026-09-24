@@ -2187,7 +2187,7 @@ paths:
                           order: { $ref: '#/components/schemas/Order' }
                           tickets: { type: array, items: { $ref: '#/components/schemas/TicketCard' } }
                           handoff:
-                            allOf: [{ $ref: '#/components/schemas/PaymentHandoff' }]
+                            $ref: '#/components/schemas/PaymentHandoff'
                             description: Present while the order is `awaiting_action` — this is what allows an abandoned authentication to be **resumed**.
               example:
                 servedAt: '2026-09-21T18:43:00.000Z'
@@ -5485,7 +5485,7 @@ components:
       properties:
         mode: { type: string, const: cookie }
         viewerContext:
-          allOf: [{ $ref: '#/components/schemas/ViewerContext' }]
+          $ref: '#/components/schemas/ViewerContext'
           description: |
             **Projected, never the authentication library's raw shape.** The surface receives the context
             it uses everywhere else, and does not have two session shapes to know about.
@@ -5704,7 +5704,7 @@ components:
         constants: { $ref: '#/components/schemas/DomainConstants' }
         labelCatalog: { $ref: '#/components/schemas/LabelArtifactRef' }
         taxonomyArtifact:
-          allOf: [{ $ref: '#/components/schemas/LabelArtifactRef' }]
+          $ref: '#/components/schemas/LabelArtifactRef'
           description: |
             Same regime as the i18n catalogue, **served per slice and per surface**: mobile loads
             neither the studio vocabulary nor the television key table. 59.5 KB raw / 8.4 KB gzipped for
@@ -6058,7 +6058,7 @@ components:
           x-arthome-vocabulary: [none, helpful, essential]
           x-arthome-vocabulary-source: LANGUAGE_DEPENDENCIES
         watchVerdict:
-          allOf: [{ $ref: '#/components/schemas/WatchVerdict' }]
+          $ref: '#/components/schemas/WatchVerdict'
           description: |
             Per-viewer overlay. **Absent — not null — on an anonymous read**, which makes the public body
             identical for every caller and therefore shareable in a common cache.
@@ -6344,7 +6344,7 @@ components:
             Conflating them would make it impossible to follow an artist without being notified — and the
             design shows the two separately. **Absent on an anonymous read.**
         nextDate:
-          allOf: [{ $ref: '#/components/schemas/DateCard' }]
+          $ref: '#/components/schemas/DateCard'
           description: |
             The next announced date, when there is one. Served so that the "Following" page distinguishes
             artists **who have a date** from those who do not — that is the split the screen displays, and
@@ -6767,7 +6767,7 @@ components:
         placedAt: { type: string, format: date-time }
         invoiceAvailable: { type: boolean }
         buyerTaxLocation:
-          allOf: [{ $ref: '#/components/schemas/BuyerTaxLocation' }]
+          $ref: '#/components/schemas/BuyerTaxLocation'
           description: |
             **Resolved and frozen at the instant of the sale.** It is not reread later: a viewer's
             country changes between two reads, and an invoice is kept for ten years.
@@ -7037,7 +7037,7 @@ components:
         id: { type: string, format: uuid }
         kind: { type: string, x-arthome-vocabulary: [hold_screen, postponed, cancelled, interrupted], x-arthome-vocabulary-source: INCIDENT_KINDS }
         message:
-          allOf: [{ $ref: '#/components/schemas/LocalizedText' }]
+          $ref: '#/components/schemas/LocalizedText'
           description: |
             Written by the control room: it is **content**, not an i18n key, and it travels with its
             authoring language like a synopsis. One of the only two acknowledged exceptions to "i18n by
@@ -7175,7 +7175,7 @@ components:
         order: { $ref: '#/components/schemas/Order' }
         subscription: { $ref: '#/components/schemas/Subscription' }
         viewerContext:
-          allOf: [{ $ref: '#/components/schemas/ViewerContext' }]
+          $ref: '#/components/schemas/ViewerContext'
           description: Present for an approved `signin` — the TV does not have to re-bootstrap.
 
     AccountDeepLink:

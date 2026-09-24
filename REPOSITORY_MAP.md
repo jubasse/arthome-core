@@ -22,13 +22,24 @@ A declaration longer than 160 characters is listed by kind only — read the `.d
 
 #### @arthome/contracts/catalog
 
-Declarations: `dist/catalog/index.d.ts` — 0 exported names.
+Declarations: `dist/catalog/index.d.ts` — 10 exported names.
 
+- `ArtistSummarySchema` (const)
+- `ChapterSchema` (const) — `ChapterSchema: z.ZodObject<{ id: z.ZodString; vocabId: z.ZodString; atMediaSec: z.ZodNumber; }, z.core.$loose>`
+- `DateCardSchema` (const)
+- `DomainConstantsSchema` (const)
+- `FacetSchema` (const) — `FacetSchema: z.ZodObject<{ facetId: z.ZodString; values: z.ZodArray<z.ZodObject<{ id: z.ZodString; count: z.ZodNumber; }, z.core.$loose>>; }, z.core.$loose>`
+- `ImageRenditionSchema` (const) — `ImageRenditionSchema: z.ZodObject<{ url: z.ZodString; widthPx: z.ZodNumber; heightPx: z.ZodNumber; }, z.core.$loose>`
+- `LabelArtifactRefSchema` (const) — `LabelArtifactRefSchema: z.ZodObject<{ domain: VocabularyOut; locale: VocabularyOut; version: z.ZodNumber; url: z.ZodString; }, z.core.$loose>`
+- `MediaSetSchema` (const)
+- `RailSchema` (const)
+- `ScheduleSlotSchema` (const)
 
 #### @arthome/contracts/engagement
 
-Declarations: `dist/engagement/index.d.ts` — 0 exported names.
+Declarations: `dist/engagement/index.d.ts` — 1 exported names.
 
+- `NotificationPreferencesSchema` (const)
 
 #### @arthome/contracts/envelope
 
@@ -41,8 +52,15 @@ Declarations: `dist/envelope/index.d.ts` — 4 exported names.
 
 #### @arthome/contracts/identity
 
-Declarations: `dist/identity/index.d.ts` — 0 exported names.
+Declarations: `dist/identity/index.d.ts` — 7 exported names.
 
+- `ConsentsSchema` (const)
+- `DeviceSchema` (const)
+- `ProfileSummarySchema` (const)
+- `SessionEstablishedBearerSchema` (const)
+- `SessionEstablishedCookieSchema` (const) — `SessionEstablishedCookieSchema: z.ZodObject<{ mode: z.ZodLiteral<'cookie'>; viewerContext: typeof ViewerContextSchema; }, z.core.$loose>`
+- `ViewerContextSchema` (const)
+- `ViewerPreferencesSchema` (const)
 
 #### @arthome/contracts/money
 
@@ -64,13 +82,20 @@ Declarations: `dist/pagination/index.d.ts` — 4 exported names.
 
 #### @arthome/contracts/streaming
 
-Declarations: `dist/streaming/index.d.ts` — 0 exported names.
+Declarations: `dist/streaming/index.d.ts` — 2 exported names.
 
+- `IncidentSchema` (const)
+- `WatchVerdictSchema` (const)
 
 #### @arthome/contracts/studio-access
 
-Declarations: `dist/studio-access/index.d.ts` — 0 exported names.
+Declarations: `dist/studio-access/index.d.ts` — 5 exported names.
 
+- `ActorSchema` (const) — Who caused the fact.
+- `EffectiveRightsSchema` (const) — The rights of one person on one channel, computed once in '@arthome/core'.
+- `StudioBootstrapSchema` (const) — The first paint waits for this and for nothing else.
+- `StudioSessionEstablishedBearerSchema` (const) — A bearer session: an opaque token in the body, no cookie.
+- `StudioSessionEstablishedCookieSchema` (const) — `StudioSessionEstablishedCookieSchema: z.ZodObject<{ mode: z.ZodLiteral<'cookie'>; bootstrap: typeof StudioBootstrapSchema; }, z.core.$loose>` — A cookie session: nothing in the body but the bootstrap.
 
 #### @arthome/contracts/studio-desk
 
@@ -79,13 +104,23 @@ Declarations: `dist/studio-desk/index.d.ts` — 0 exported names.
 
 #### @arthome/contracts/studio-money
 
-Declarations: `dist/studio-money/index.d.ts` — 0 exported names.
+Declarations: `dist/studio-money/index.d.ts` — 4 exported names.
 
+- `DashboardReminderSchema` (const) — A routed list, like the inbox: kind, severity, target and role scope decided server-side.
+- `MetricTileSchema` (const) — A single template: identifier, value, unit, series.
+- `PeriodBoundsSchema` (const) — `PeriodBoundsSchema: z.ZodObject<{ preset: z.ZodString; from: z.ZodString; to: z.ZodString; days: z.ZodNumber; datesCovered: z.ZodNumber; }, z.core.$loose>` — The period's effective bounds, computed by the server.
+- `StudioCountersSchema` (const) — The badges, served at bootstrap and kept up to date by the real-time channel.
 
 #### @arthome/contracts/studio-stage
 
-Declarations: `dist/studio-stage/index.d.ts` — 0 exported names.
+Declarations: `dist/studio-stage/index.d.ts` — 6 exported names.
 
+- `CrewPresenceSchema` (const) — A crew member online on the channel.
+- `HealthSampleSchema` (const) — One measurement of the feed.
+- `PublicationChecklistItemSchema` (const) — `PublicationChecklistItemSchema: z.ZodObject<{ id: z.ZodString; satisfied: z.ZodBoolean; source: z.ZodString; blocking: z.ZodBoolean; }, z.core.$loose>` — One line of the pre-publication checklist.
+- `PublicationSchema` (const) — A date's publication, with its checklist and the transitions this operator may make.
+- `PublicationTransitionSchema` (const) — A transition offered to this operator, with the promise it commits to.
+- `StudioIncidentSchema` (const) — An incident: the outcome the viewer sees, the cause, and who or what triggered it.
 
 #### @arthome/contracts/text
 
@@ -96,8 +131,14 @@ Declarations: `dist/text/index.d.ts` — 2 exported names.
 
 #### @arthome/contracts/ticketing
 
-Declarations: `dist/ticketing/index.d.ts` — 0 exported names.
+Declarations: `dist/ticketing/index.d.ts` — 6 exported names.
 
+- `CartLineSchema` (const)
+- `MerchItemSchema` (const)
+- `OrderSchema` (const)
+- `PriceTierSchema` (const)
+- `SubscriptionSchema` (const)
+- `TicketCardSchema` (const)
 
 ### @arthome/core
 
@@ -485,7 +526,7 @@ Declarations: `dist/index.d.ts` — 377 exported names.
 
 #### @arthome/core/schema
 
-Declarations: `dist/schema/index.d.ts` — 44 exported names.
+Declarations: `dist/schema/index.d.ts` — 47 exported names.
 
 - `AccountIdSchema` (const) — `AccountIdSchema: z.ZodString`
 - `ArtistIdSchema` (const) — `ArtistIdSchema: z.ZodString`
@@ -519,6 +560,7 @@ Declarations: `dist/schema/index.d.ts` — 44 exported names.
 - `TaxJurisdictionLevelOut` (const) — `TaxJurisdictionLevelOut: VocabularyOut`
 - `TaxSupplyKindIn` (const) — `TaxSupplyKindIn: VocabularyIn<typeof TAX_SUPPLY_KINDS>`
 - `TaxSupplyKindOut` (const) — `TaxSupplyKindOut: VocabularyOut`
+- `VOCABULARY_SOURCE_LOCAL` (const) — `VOCABULARY_SOURCE_LOCAL: string` — The same marker, exported — for a call site that attaches its reason through its own '.meta()' rather than through 'vocabularyOutLocal'.
 - `VatLineSchema` (const) — One VAT line.
 - `VenueClockSchema` (const) — `VenueClockSchema: z.ZodObject<{ venueTimezone: z.ZodString; venueUtcOffsetMin: z.ZodInt; }, z.core.$loose>`
 - `VenueIdSchema` (const) — `VenueIdSchema: z.ZodString`
@@ -530,6 +572,8 @@ Declarations: `dist/schema/index.d.ts` — 44 exported names.
 - `sourceNameOf` (function) — `function sourceNameOf(values: readonly string[], name?: string): string;` — The name this vocabulary is published under, or the one the caller declares.
 - `vocabularyIn` (function) — `function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T>;` — STRICT — for a request.
 - `vocabularyOut` (function) — `function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;`
+- `vocabularyOutLocal` (function) — `function vocabularyOutLocal<const T extends Members>(values: T, reason: string): VocabularyOut;` — A vocabulary the DOCUMENT declares local to itself — 'source: none', with the reason the contract gives for it.
+- `vocabularyOutLocalNullable` (function) — `function vocabularyOutLocalNullable<const T extends Members>(values: T, reason: string): VocabularyOutNullable;` — A contract-local vocabulary on a field that may also be absent.
 - `vocabularyOutNullable` (function) — `function vocabularyOutNullable<const T extends Members>(values: T, name?: string): VocabularyOutNullable;` — TOLERANT AND NULLABLE — the same thing for a field that may be absent.
 
 ## Local tree

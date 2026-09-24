@@ -1,13 +1,173 @@
 /**
- * `@arthome/contracts/catalog` — The catalogue a viewer browses: dates, artists, shows, categories, media and the screens composed from them.
+ * `@arthome/contracts/catalog` — The catalogue a viewer browses: dates, artists, rails, media, and the constants and label artefacts a surface boots with.
  *
- * EMPTY ON PURPOSE, FOR NOW. The subpath exists and resolves, so the `exports`
- * list stays honest rather than pointing at a file that is not there — which
- * this package's manifest calls out as unreachable with a laconic error.
+ * EVERY SCHEMA HERE EMITS A NAMED SCHEMA OF `openapi/storefront.yaml` EXACTLY, and
+ * `pnpm run check:emit-diff` is what proves it: the document is authoritative
+ * (D-058), so where the two differ the schema changes.
  *
- * Schemas land here one at a time, each verified against the contract it must
- * emit by `pnpm run check:emit-diff`. That gate is green and in `verify`, so a
- * schema that does not reproduce its document cannot be committed.
+ * The rules this file follows, each of which was a defect the gate found (D-060, D-065):
+ *
+ *   - `z.looseObject()` on everything a server sends — a closed schema makes a
+ *     generated client reject a server that added a field.
+ *   - `int64()`, never `z.int()` — the latter emits JavaScript's safe range,
+ *     which is in no document.
+ *   - `vocabularyOut` / `vocabularyOutNullable` for every enumerated value, never
+ *     `z.enum()`: a strict enum fails the whole payload when a member is added,
+ *     and televisions run year-old builds. A vocabulary local to the contract
+ *     is declared here, passed as `'none'` and carries its reason.
+ *   - vocabulary members in `examples` are the named constants, never literals.
+ *   - identifiers and instants are `format: uuid` / `format: date-time` WITHOUT a
+ *     `pattern`, because that is what the document publishes for these fields;
+ *     core's `*IdSchema` and `InstantSchema` add a `pattern` the document does
+ *     not carry here. Once the document gains it (D-065 family D), the local
+ *     `uuid()` and `instant()` become those core schemas, one edit per file.
  */
-export {};
+import { z } from 'zod';
+import { MoneyOut, VenueClockSchema, type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
+import { WatchVerdictSchema } from '../streaming/index.js';
+export declare const ImageRenditionSchema: z.ZodObject<{
+    url: z.ZodString;
+    widthPx: z.ZodNumber;
+    heightPx: z.ZodNumber;
+}, z.core.$loose>;
+export declare const MediaSetSchema: z.ZodObject<{
+    wide: z.ZodOptional<z.ZodArray<typeof ImageRenditionSchema>>;
+    poster: z.ZodOptional<z.ZodArray<typeof ImageRenditionSchema>>;
+}, z.core.$loose>;
+export declare const DomainConstantsSchema: z.ZodObject<{
+    roomOpensMinutesBefore: z.ZodNumber;
+    cancelDeadlineMinutesBefore: z.ZodNumber;
+    scarcityThresholdBps: z.ZodNumber;
+    billboardPreviewDelaySec: z.ZodNumber;
+    waitlistPriorityWindowHours: z.ZodNumber;
+    chatRateLimitPerSecond: z.ZodNumber;
+    chatCatchUpMessages: z.ZodOptional<z.ZodNumber>;
+    reactionQuotaPerDate: z.ZodNumber;
+    reminderLeadMinutes: z.ZodNumber;
+    replayExpiryWarningHours: z.ZodNumber;
+    previewSecondsTotal: z.ZodOptional<z.ZodNumber>;
+    searchExactTotalLimit: z.ZodOptional<z.ZodNumber>;
+    creditDelayCode: z.ZodOptional<z.ZodString>;
+}, z.core.$loose>;
+export declare const LabelArtifactRefSchema: z.ZodObject<{
+    domain: VocabularyOut;
+    locale: VocabularyOut;
+    version: z.ZodNumber;
+    url: z.ZodString;
+}, z.core.$loose>;
+export declare const ChapterSchema: z.ZodObject<{
+    id: z.ZodString;
+    vocabId: z.ZodString;
+    atMediaSec: z.ZodNumber;
+}, z.core.$loose>;
+export declare const FacetSchema: z.ZodObject<{
+    facetId: z.ZodString;
+    values: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        count: z.ZodNumber;
+    }, z.core.$loose>>;
+}, z.core.$loose>;
+export declare const DateCardSchema: z.ZodObject<{
+    id: z.ZodString;
+    showId: z.ZodString;
+    channelId: z.ZodString;
+    artist: z.ZodOptional<z.ZodObject<{
+        id: z.ZodString;
+        name: z.ZodString;
+        verified: z.ZodOptional<z.ZodBoolean>;
+        avatar: z.ZodOptional<typeof ImageRenditionSchema>;
+    }, z.core.$loose>>;
+    slug: z.ZodString;
+    canonicalUrl: z.ZodString;
+    title: z.ZodString;
+    categoryId: z.ZodOptional<z.ZodString>;
+    genreIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    tagIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    startsAt: z.ZodString;
+    venueClock: typeof VenueClockSchema;
+    runtimeMin: z.ZodNumber;
+    venue: z.ZodOptional<z.ZodObject<{
+        id: z.ZodOptional<z.ZodString>;
+        name: z.ZodOptional<z.ZodString>;
+        city: z.ZodOptional<z.ZodString>;
+        countryCode: z.ZodOptional<z.ZodString>;
+    }, z.core.$loose>>;
+    roomOpensAt: z.ZodOptional<z.ZodString>;
+    displayState: VocabularyOut;
+    displayStateValidUntil: z.ZodString;
+    outcome: z.ZodOptional<VocabularyOutNullable>;
+    rescheduledTo: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    viewers: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    availability: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        seatsAvailable: z.ZodOptional<z.ZodNumber>;
+        waitlistCount: z.ZodOptional<z.ZodNumber>;
+        fillRateBps: z.ZodOptional<z.ZodNumber>;
+        soldOut: z.ZodOptional<z.ZodBoolean>;
+        lowestPrice: z.ZodOptional<typeof MoneyOut>;
+        promotion: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+            reason: z.ZodOptional<VocabularyOut>;
+            struckPrice: z.ZodOptional<typeof MoneyOut>;
+            currentPrice: z.ZodOptional<typeof MoneyOut>;
+            validUntil: z.ZodOptional<z.ZodString>;
+        }, z.core.$loose>>>;
+    }, z.core.$loose>>>;
+    replay: z.ZodObject<{
+        policy: VocabularyOut;
+        windowHours: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        availableFrom: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        expiresAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        unitPrice: z.ZodOptional<typeof MoneyOut>;
+    }, z.core.$loose>;
+    rights: z.ZodObject<{
+        scope: VocabularyOut;
+        blackoutCountries: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        blackoutReasonCode: z.ZodOptional<VocabularyOutNullable>;
+    }, z.core.$loose>;
+    chatMode: z.ZodOptional<VocabularyOut>;
+    media: typeof MediaSetSchema;
+    languageDependency: z.ZodOptional<VocabularyOut>;
+    watchVerdict: z.ZodOptional<typeof WatchVerdictSchema>;
+    viewerRelations: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        inWatchlist: z.ZodOptional<z.ZodBoolean>;
+        reminderSet: z.ZodOptional<z.ZodBoolean>;
+        followsArtist: z.ZodOptional<z.ZodBoolean>;
+    }, z.core.$loose>>>;
+    viewerProgress: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        positionSec: z.ZodOptional<z.ZodNumber>;
+        durationSec: z.ZodOptional<z.ZodNumber>;
+        completed: z.ZodOptional<z.ZodBoolean>;
+    }, z.core.$loose>>>;
+}, z.core.$loose>;
+export declare const ArtistSummarySchema: z.ZodObject<{
+    id: z.ZodString;
+    channelId: z.ZodString;
+    name: z.ZodString;
+    slug: z.ZodOptional<z.ZodString>;
+    categoryId: z.ZodString;
+    countryCode: z.ZodOptional<z.ZodString>;
+    verified: z.ZodOptional<z.ZodBoolean>;
+    media: z.ZodOptional<typeof MediaSetSchema>;
+    followers: z.ZodOptional<z.ZodNumber>;
+    avgViewers: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    isLiveNow: z.ZodOptional<z.ZodBoolean>;
+    followedByViewer: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
+    alertEnabled: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
+    nextDate: z.ZodOptional<typeof DateCardSchema>;
+}, z.core.$loose>;
+export declare const RailSchema: z.ZodObject<{
+    id: z.ZodString;
+    titleCode: z.ZodString;
+    kind: VocabularyOut;
+    itemKind: VocabularyOut;
+    cardForm: VocabularyOut;
+    items: z.ZodArray<z.ZodXor<readonly [typeof DateCardSchema, typeof ArtistSummarySchema]>>;
+    total: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    totalIsLowerBound: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
+    nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+}, z.core.$loose>;
+export declare const ScheduleSlotSchema: z.ZodObject<{
+    localHourLabelKey: z.ZodString;
+    startsAt: z.ZodOptional<z.ZodString>;
+    dates: z.ZodArray<typeof DateCardSchema>;
+}, z.core.$loose>;
 //# sourceMappingURL=index.d.ts.map

@@ -93,10 +93,50 @@ function stripComments(src) {
 const DECL = /export\s+const\s+([A-Z][A-Z0-9_]*)\s*(?::[^=]+?)?=\s*\[([\s\S]*?)\]\s*as\s+const/g;
 const STRING_LITERAL = /'([^'\\\r\n]*)'|"([^"\\\r\n]*)"/g;
 
+// EVERY PUBLISHED PACKAGE DECLARES, not only @arthome/core.
+//
+//   This gate looked in one directory, and the narrowness had a cost the moment
+//   @arthome/contracts started declaring vocabularies of its own: the payment
+//   provider's state machine spells `paid` and `refunded`, so does core's
+//   PAYOUT_STATES, and they are NOT the same vocabulary — the contract says so
+//   itself, `source: none`, "theirs to change, ours to reflect". Unable to see
+//   the contracts' declaration, the gate read every one of those members as a
+//   copy of core's.
+//
+//   The remedy proposed from inside that state was fifteen allow-list entries,
+//   which is past the allow file's own twenty-line warning — and that file says
+//   plainly that passing it means the RULE is wrong, not the code.
+//
+//   `check-vocabulary` had exactly this fault and it was fixed there this
+//   afternoon: its universe is now every published package. The same answer
+//   belongs here. A package is published when it has a `src/` and is not
+//   `private`.
+function publishedSources(root) {
+  const out = [];
+  const packages = path.resolve(root, 'packages');
+  if (!fs.existsSync(packages)) return out;
+  for (const name of fs.readdirSync(packages)) {
+    const manifest = path.join(packages, name, 'package.json');
+    const src = path.join(packages, name, 'src');
+    if (!fs.existsSync(manifest) || !fs.existsSync(src)) continue;
+    try {
+      if (JSON.parse(fs.readFileSync(manifest, 'utf8')).private === true) continue;
+    } catch {
+      continue;
+    }
+    out.push(src);
+  }
+  return out;
+}
+
 function discoverEnums(sourceRoot) {
-  const files = listFiles(sourceRoot, ['**/*.ts', '**/*.mts']).filter(
-    (f) => !f.endsWith('.d.ts') && !/\.spec\.|\.test\./.test(f),
-  );
+  const roots = [sourceRoot];
+  for (const extra of publishedSources(CWD)) {
+    if (!roots.some((r) => path.resolve(extra) === path.resolve(r))) roots.push(extra);
+  }
+  const files = roots
+    .flatMap((r) => listFiles(r, ['**/*.ts', '**/*.mts']))
+    .filter((f) => !f.endsWith('.d.ts') && !/\.spec\.|\.test\./.test(f));
   // ⚠ ALL declarers, not the first. Keeping only the first was a real defect: after
   //   the debranding collapsed twenty values onto existing ones, 25 of 179 values are
   //   declared by more than one vocabulary and `'none'` by FIVE. The gate then named
@@ -227,7 +267,27 @@ function main() {
     const rel = path.relative(CWD, file);
     // The values this file declares itself. A declaring file may use its own members
     // freely; it may not copy anyone else's.
-    const own = declaredByFile.get(file) ?? new Set();
+    //
+    // ⚠ EXPORTED OR NOT. `export` is about VISIBILITY, not about authorship, and
+    //   conflating them cost a whole afternoon's worth of false findings: the
+    //   contract-local vocabularies in @arthome/contracts are declared
+    //   `const TICKET_STATES = [...] as const` without `export`, because the
+    //   documents name their source `none` and there is no identifier for a
+    //   consumer to reach for. The gate saw no declaration and read every member
+    //   as a copy of core's — `held`, `paid`, `refunded` against PAYOUT_STATES,
+    //   which the contract itself says are the payment provider's words and not
+    //   ours.
+    //
+    //   The authority list above stays EXPORTS ONLY: a published vocabulary is
+    //   what another package can be wrong about. This exemption is narrower and
+    //   local — what THIS file wrote down for itself, on the line above where it
+    //   uses it.
+    const own = new Set(declaredByFile.get(file) ?? []);
+    for (const m of stripComments(fs.readFileSync(file, 'utf8')).matchAll(
+      /(?:^|\n)\s*(?:export\s+)?const\s+[A-Z][A-Z0-9_]*\s*(?::[^=]+?)?=\s*\[([\s\S]*?)\]\s*as\s+const/g,
+    )) {
+      for (const v of m[1].matchAll(/'([^'\\\r\n]*)'|"([^"\\\r\n]*)"/g)) own.add(v[1] ?? v[2]);
+    }
     const src = stripComments(fs.readFileSync(file, 'utf8'));
     src.split('\n').forEach((line, i) => {
       // ⚠ SKIP THE TYPE ANNOTATION, KEEP THE INITIALISER.

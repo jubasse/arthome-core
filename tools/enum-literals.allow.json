@@ -20,6 +20,11 @@
       "file": "packages/core/src/fixtures/build.ts",
       "value": "en",
       "reason": "Same: BCP 47 code of a subtitle track, not the display locale."
+    },
+    {
+      "file": "packages/core/src/schema/vocabulary.ts",
+      "value": "none",
+      "reason": "THE ANNOTATION MARKER, not a vocabulary member. `x-arthome-vocabulary-source: none` is how a contract says the domain owns nothing here — a payment provider's state machine, a transport capability. `none` is also a member of five domain vocabularies, and no gate can tell an annotation value from one of them by looking at the string. This is the ONE line that spells it: `vocabularyOutLocal` emits it, and four contract files that had each invented `const LOCAL_VOCABULARY = 'none'` now call that instead. One entry, and it does not grow — a fifth file reaching for the marker imports the function."
     }
   ]
 }

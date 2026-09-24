@@ -1,13 +1,666 @@
 /**
- * `@arthome/contracts/catalog` — The catalogue a viewer browses: dates, artists, shows, categories, media and the screens composed from them.
+ * `@arthome/contracts/catalog` — The catalogue a viewer browses: dates, artists, rails, media, and the constants and label artefacts a surface boots with.
  *
- * EMPTY ON PURPOSE, FOR NOW. The subpath exists and resolves, so the `exports`
- * list stays honest rather than pointing at a file that is not there — which
- * this package's manifest calls out as unreachable with a laconic error.
+ * EVERY SCHEMA HERE EMITS A NAMED SCHEMA OF `openapi/storefront.yaml` EXACTLY, and
+ * `pnpm run check:emit-diff` is what proves it: the document is authoritative
+ * (D-058), so where the two differ the schema changes.
  *
- * Schemas land here one at a time, each verified against the contract it must
- * emit by `pnpm run check:emit-diff`. That gate is green and in `verify`, so a
- * schema that does not reproduce its document cannot be committed.
+ * The rules this file follows, each of which was a defect the gate found (D-060, D-065):
+ *
+ *   - `z.looseObject()` on everything a server sends — a closed schema makes a
+ *     generated client reject a server that added a field.
+ *   - `int64()`, never `z.int()` — the latter emits JavaScript's safe range,
+ *     which is in no document.
+ *   - `vocabularyOut` / `vocabularyOutNullable` for every enumerated value, never
+ *     `z.enum()`: a strict enum fails the whole payload when a member is added,
+ *     and televisions run year-old builds. A vocabulary local to the contract
+ *     is declared here, passed as `'none'` and carries its reason.
+ *   - vocabulary members in `examples` are the named constants, never literals.
+ *   - identifiers and instants are `format: uuid` / `format: date-time` WITHOUT a
+ *     `pattern`, because that is what the document publishes for these fields;
+ *     core's `*IdSchema` and `InstantSchema` add a `pattern` the document does
+ *     not carry here. Once the document gains it (D-065 family D), the local
+ *     `uuid()` and `instant()` become those core schemas, one edit per file.
  */
 
-export {};
+import { z } from 'zod';
+
+import {
+  BLACKOUT_REASONS,
+  CHAT_MODES,
+  DATE_OUTCOMES,
+  DISPLAY_STATES,
+  DisplayState,
+  LANGUAGE_DEPENDENCIES,
+  LOCALES,
+  Locale,
+  MESSAGE_DOMAINS,
+  MessageDomain,
+  PROMOTION_REASONS,
+  REPLAY_POLICIES,
+  RIGHTS_SCOPES,
+} from '@arthome/core';
+import {
+  CountryCodeSchema,
+  MoneyOut,
+  VOCABULARY_SOURCE_LOCAL,
+  VenueClockSchema,
+  int64,
+  type VocabularyOut,
+  type VocabularyOutNullable,
+  vocabularyOut,
+  vocabularyOutLocal,
+  vocabularyOutNullable,
+} from '@arthome/core/schema';
+
+import { WatchVerdictSchema } from '../streaming/index.js';
+
+// The document's name for a vocabulary local to the contract. The preferred
+// form is `vocabularyOutLocal`, which makes the reason mandatory; these three
+// call sites chain their own `.meta()` with an `examples` key beside it.
+const LOCAL_VOCABULARY = VOCABULARY_SOURCE_LOCAL;
+
+const RAIL_KINDS = [
+  'resume',
+  'live_now',
+  'my_seats',
+  'upcoming_tonight',
+  'followed',
+  'editorial',
+  'category',
+  'replay_expiring',
+  'artists_to_follow',
+] as const;
+const RAIL_ITEM_KINDS = ['date', 'artist'] as const;
+const CARD_FORMS = ['wide', 'poster', 'portrait'] as const;
+
+const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
+
+const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
+
+export const ImageRenditionSchema: z.ZodObject<
+  {
+    url: z.ZodString;
+    widthPx: z.ZodNumber;
+    heightPx: z.ZodNumber;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    url: z.string().meta({ format: 'uri' }),
+    widthPx: int64().meta({ format: undefined }).min(1),
+    heightPx: int64().meta({ format: undefined }).min(1),
+  })
+  .describe(
+    'A visual **already rendered at a size actually displayed**, never a URL recipe with a width\ntemplate: on a television with 1 GB, a 4K backdrop decoded for a thumbnail costs as much as a\nfull screen.\n',
+  );
+
+export const MediaSetSchema: z.ZodObject<
+  {
+    wide: z.ZodOptional<z.ZodArray<typeof ImageRenditionSchema>>;
+    poster: z.ZodOptional<z.ZodArray<typeof ImageRenditionSchema>>;
+  },
+  z.core.$loose
+> = z.looseObject({
+  wide: z.array(ImageRenditionSchema).optional().describe('16:9, smallest to largest.'),
+  poster: z
+    .array(ImageRenditionSchema)
+    .optional()
+    .describe('2:3 or 3:4 depending on the surface, smallest to largest.'),
+});
+
+export const DomainConstantsSchema: z.ZodObject<
+  {
+    roomOpensMinutesBefore: z.ZodNumber;
+    cancelDeadlineMinutesBefore: z.ZodNumber;
+    scarcityThresholdBps: z.ZodNumber;
+    billboardPreviewDelaySec: z.ZodNumber;
+    waitlistPriorityWindowHours: z.ZodNumber;
+    chatRateLimitPerSecond: z.ZodNumber;
+    chatCatchUpMessages: z.ZodOptional<z.ZodNumber>;
+    reactionQuotaPerDate: z.ZodNumber;
+    reminderLeadMinutes: z.ZodNumber;
+    replayExpiryWarningHours: z.ZodNumber;
+    previewSecondsTotal: z.ZodOptional<z.ZodNumber>;
+    searchExactTotalLimit: z.ZodOptional<z.ZodNumber>;
+    creditDelayCode: z.ZodOptional<z.ZodString>;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    roomOpensMinutesBefore: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [30] }),
+    cancelDeadlineMinutesBefore: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [60] }),
+    scarcityThresholdBps: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [8500] })
+      .describe('Fill rate above which a date is "nearly sold out", in basis points.'),
+    billboardPreviewDelaySec: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [4] }),
+    waitlistPriorityWindowHours: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [2] }),
+    chatRateLimitPerSecond: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [2] })
+      .describe(
+        'Ceiling **enforced at the source**, for the calling surface — television 2, mobile 6, web 10.',
+      ),
+    chatCatchUpMessages: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [20] })
+      .optional()
+      .describe(
+        'Number of catch-up messages served on entering a room — television 20, elsewhere 50.',
+      ),
+    reactionQuotaPerDate: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [20] }),
+    reminderLeadMinutes: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [30] }),
+    replayExpiryWarningHours: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [6] }),
+    previewSecondsTotal: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [300] })
+      .optional()
+      .describe(
+        '**The total of the free preview.** `WatchVerdict.previewSecondsLeft` served the **remainder**\nand nothing served the total: the countdown "4 min 12 left" had a remainder with no\ndenominator, and the copy says "the first 5 minutes". Rule 15 — the constant had no owning\ndocument.\n',
+      ),
+    searchExactTotalLimit: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [10000] })
+      .optional()
+      .describe(
+        '**The threshold beyond which `approximateTotal` becomes a lower bound.** It was carved into\nthe prose as "exact up to 10,000": we were serving the default of a search engine parameter,\nin a vendor\'s name. Served as a constant, it survives a change of engine.\n',
+      ),
+    creditDelayCode: z
+      .string()
+      .meta({ examples: ['refund_delay_business_days_3_5'] })
+      .optional()
+      .describe(
+        'The refund delay is a **code**, never the sentence "3 to 5 business days" — which is a\npolicy, hence translatable, hence i18n.\n',
+      ),
+  })
+  .describe(
+    'The domain constants, **served**. They live in `@arthome/core` and are copied nowhere:\ncopied, "the web will say 30 minutes, the television 15, and mobile will be right by\naccident" (E11, `storefront-mobile` Q10).\n',
+  );
+
+export const LabelArtifactRefSchema: z.ZodObject<
+  {
+    domain: VocabularyOut;
+    locale: VocabularyOut;
+    version: z.ZodNumber;
+    url: z.ZodString;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    domain: vocabularyOut(MESSAGE_DOMAINS)
+      .meta({ examples: [MessageDomain.STOREFRONT] })
+      .describe(
+        '**Which catalogue this reference is for**, served rather than recoverable by taking the\nURL apart. The theme lived only inside the path (`/i18n/studio/fr/v41.json`), so a client\ncaching catalogues by theme had to parse a string to learn what it was holding — which is\n`imageUrl(kind, key, width)` in another costume, and the same rule answers it: **a value\nrecoverable only by parsing a string is a value the contract did not serve.**\n',
+      ),
+    locale: vocabularyOut(LOCALES)
+      .meta({ examples: [Locale.FR] })
+      .describe(
+        '**The domain declares exactly two**, and the contract says so rather than serving an\nopen string: a surface choosing a fallback needs to know the set it is choosing from.\nTolerant on output like every other served vocabulary — a third locale is kept raw and\ntreated as neutral, never rejected.\n',
+      ),
+    version: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [41] }),
+    url: z.string().meta({ format: 'uri' }),
+  })
+  .describe(
+    'The label catalogue is **not a service**: it is an immutable versioned artefact published on\nthe CDN. The current version is served here, **never through a per-page call**, and every\napplication embeds a build-time snapshot as a **mandatory fallback** — that is the only thing\nguaranteeing no raw code ever reaches the screen.\n',
+  );
+
+export const ChapterSchema: z.ZodObject<
+  {
+    id: z.ZodString;
+    vocabId: z.ZodString;
+    atMediaSec: z.ZodNumber;
+  },
+  z.core.$loose
+> = z.looseObject({
+  id: uuid(),
+  vocabId: z.string().describe('Chapter vocabulary identifier, **never an authored label**.'),
+  atMediaSec: int64()
+    .meta({ format: undefined })
+    .describe(
+      'Position **in the media**, not the time it was posted. Free now, unrecoverable later.',
+    ),
+});
+
+export const FacetSchema: z.ZodObject<
+  {
+    facetId: z.ZodString;
+    values: z.ZodArray<
+      z.ZodObject<
+        {
+          id: z.ZodString;
+          count: z.ZodNumber;
+        },
+        z.core.$loose
+      >
+    >;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    facetId: z.string().meta({ examples: ['category'] }),
+    values: z.array(
+      z.looseObject({
+        id: z.string(),
+        count: int64().meta({ format: undefined }),
+      }),
+    ),
+  })
+  .describe(
+    '**Generic**, never an enumeration of facets in the contract: adding "wheelchair accessible"\nmust not be a contract change. The counts are computed on the current query and returned **in\nthe same response** as the results — no second call.\n',
+  );
+
+export const DateCardSchema: z.ZodObject<
+  {
+    id: z.ZodString;
+    showId: z.ZodString;
+    channelId: z.ZodString;
+    artist: z.ZodOptional<
+      z.ZodObject<
+        {
+          id: z.ZodString;
+          name: z.ZodString;
+          verified: z.ZodOptional<z.ZodBoolean>;
+          avatar: z.ZodOptional<typeof ImageRenditionSchema>;
+        },
+        z.core.$loose
+      >
+    >;
+    slug: z.ZodString;
+    canonicalUrl: z.ZodString;
+    title: z.ZodString;
+    categoryId: z.ZodOptional<z.ZodString>;
+    genreIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    tagIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    startsAt: z.ZodString;
+    venueClock: typeof VenueClockSchema;
+    runtimeMin: z.ZodNumber;
+    venue: z.ZodOptional<
+      z.ZodObject<
+        {
+          id: z.ZodOptional<z.ZodString>;
+          name: z.ZodOptional<z.ZodString>;
+          city: z.ZodOptional<z.ZodString>;
+          countryCode: z.ZodOptional<z.ZodString>;
+        },
+        z.core.$loose
+      >
+    >;
+    roomOpensAt: z.ZodOptional<z.ZodString>;
+    displayState: VocabularyOut;
+    displayStateValidUntil: z.ZodString;
+    outcome: z.ZodOptional<VocabularyOutNullable>;
+    rescheduledTo: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    viewers: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    availability: z.ZodOptional<
+      z.ZodNullable<
+        z.ZodObject<
+          {
+            seatsAvailable: z.ZodOptional<z.ZodNumber>;
+            waitlistCount: z.ZodOptional<z.ZodNumber>;
+            fillRateBps: z.ZodOptional<z.ZodNumber>;
+            soldOut: z.ZodOptional<z.ZodBoolean>;
+            lowestPrice: z.ZodOptional<typeof MoneyOut>;
+            promotion: z.ZodOptional<
+              z.ZodNullable<
+                z.ZodObject<
+                  {
+                    reason: z.ZodOptional<VocabularyOut>;
+                    struckPrice: z.ZodOptional<typeof MoneyOut>;
+                    currentPrice: z.ZodOptional<typeof MoneyOut>;
+                    validUntil: z.ZodOptional<z.ZodString>;
+                  },
+                  z.core.$loose
+                >
+              >
+            >;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+    replay: z.ZodObject<
+      {
+        policy: VocabularyOut;
+        windowHours: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+        availableFrom: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        expiresAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        unitPrice: z.ZodOptional<typeof MoneyOut>;
+      },
+      z.core.$loose
+    >;
+    rights: z.ZodObject<
+      {
+        scope: VocabularyOut;
+        blackoutCountries: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        blackoutReasonCode: z.ZodOptional<VocabularyOutNullable>;
+      },
+      z.core.$loose
+    >;
+    chatMode: z.ZodOptional<VocabularyOut>;
+    media: typeof MediaSetSchema;
+    languageDependency: z.ZodOptional<VocabularyOut>;
+    watchVerdict: z.ZodOptional<typeof WatchVerdictSchema>;
+    viewerRelations: z.ZodOptional<
+      z.ZodNullable<
+        z.ZodObject<
+          {
+            inWatchlist: z.ZodOptional<z.ZodBoolean>;
+            reminderSet: z.ZodOptional<z.ZodBoolean>;
+            followsArtist: z.ZodOptional<z.ZodBoolean>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+    viewerProgress: z.ZodOptional<
+      z.ZodNullable<
+        z.ZodObject<
+          {
+            positionSec: z.ZodOptional<z.ZodNumber>;
+            durationSec: z.ZodOptional<z.ZodNumber>;
+            completed: z.ZodOptional<z.ZodBoolean>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    id: uuid(),
+    showId: uuid(),
+    channelId: uuid(),
+    artist: z
+      .looseObject({
+        id: uuid(),
+        name: z.string().meta({ examples: ['Compagnie Verticale'] }),
+        verified: z.boolean().optional(),
+        avatar: ImageRenditionSchema.optional(),
+      })
+      .optional(),
+    slug: z.string().meta({ examples: ['nuit-blanche-2026-09-21'] }),
+    canonicalUrl: z
+      .string()
+      .meta({ format: 'uri' })
+      .describe(
+        '**Served, never built by the surface.** It is what gets shared, bookmarked, what a reminder\nand a notification point at, and what gets indexed — and it is what the television encodes in\na QR code for the Share action, since a television has neither a clipboard nor a useful\nmessaging app.\n',
+      ),
+    title: z.string(),
+    categoryId: z
+      .string()
+      .meta({ examples: ['dance-contemporary'] })
+      .optional(),
+    genreIds: z
+      .array(z.string())
+      .optional()
+      .describe(
+        '**Multiple**: a show is both "contemporary" and "repertoire" at once. The singular forbade it (E9).',
+      ),
+    tagIds: z.array(z.string()).optional(),
+    startsAt: instant(),
+    venueClock: VenueClockSchema,
+    runtimeMin: int64().meta({ format: undefined }),
+    venue: z
+      .looseObject({
+        id: uuid().optional(),
+        name: z.string().optional(),
+        city: z.string().optional(),
+        countryCode: CountryCodeSchema.optional(),
+      })
+      .optional(),
+    roomOpensAt: instant()
+      .optional()
+      .describe(
+        'The **instant** the room opens, served. The surface schedules the switch locally, to the\nsecond, **without a single call**: a standby mode running for eight hours therefore makes no\nrequest at all.\n',
+      ),
+    displayState: vocabularyOut(DISPLAY_STATES)
+      .meta({ examples: [DisplayState.LIVE] })
+      .describe(
+        "The **only** state value the cards display, and nobody recomposes it. Produced by\n`displayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`. The hierarchy,\nwritten once: `outcome` outranks `run.state`, which outranks `publication.state`.\n\n**One vocabulary, eleven members, and the narrowing is said here rather than written as a\nsecond list.** A storefront never receives `draft`, `reserve` or `technical` — not by\nfiltering, but **by construction**: a date reaches a public surface only once it is\npublished. Declaring only the eight would be a second authored list for a field the\ndomain already defines, and two independently authored lists for one field is how E4\nstarted. A surface that wants to know what it can actually receive reads this sentence;\nthe vocabulary stays the domain's.\n",
+      ),
+    displayStateValidUntil: instant(),
+    outcome: vocabularyOutNullable(DATE_OUTCOMES)
+      .optional()
+      .describe(
+        'The outcome **replaces the state on every card**, not only on the detail page. It is a fact\nabout the performance: never rewritten, never erased.\n',
+      ),
+    rescheduledTo: instant().nullable().optional(),
+    viewers: int64()
+      .meta({ format: undefined })
+      .nullable()
+      .optional()
+      .describe(
+        '**Absent — never zero — when the date is not on air.** A zero reads as "nobody", not as "not\nmeasured", and the brief\'s rule forbids "0 WATCHING".\n',
+      ),
+    availability: z
+      .looseObject({
+        seatsAvailable: int64().meta({ format: undefined }).optional(),
+        waitlistCount: int64().meta({ format: undefined }).optional(),
+        fillRateBps: int64()
+          .meta({ format: undefined })
+          .optional()
+          .describe(
+            'The **rate**, not the capacity. Serving the capacity and letting the client compute recreates\nthe value composed in two places, and the design proves it by applying a constant of 2,000\nseats regardless of the venue.\n',
+          ),
+        soldOut: z.boolean().optional(),
+        lowestPrice: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
+        promotion: z
+          .looseObject({
+            reason: vocabularyOut(PROMOTION_REASONS).optional(),
+            struckPrice: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
+            currentPrice: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
+            validUntil: instant().optional(),
+          })
+          .nullable()
+          .optional(),
+      })
+      .nullable()
+      .optional()
+      .describe('Projected from `ticketing`. Absent while no price is active.'),
+    replay: z
+      .looseObject({
+        policy: vocabularyOut(REPLAY_POLICIES),
+        windowHours: int64().meta({ format: undefined }).nullable().optional(),
+        availableFrom: instant().nullable().optional(),
+        expiresAt: instant()
+          .nullable()
+          .optional()
+          .describe(
+            'Derived from the end of the live show and `windowHours`. Served as an instant, never as "41 h left".',
+          ),
+        unitPrice: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
+      })
+      .describe(
+        'The **promise** made before purchase — it is what justifies the price difference. `none` is\n**final** for this date.\n',
+      ),
+    rights: z.looseObject({
+      scope: vocabularyOut(RIGHTS_SCOPES),
+      blackoutCountries: z.array(CountryCodeSchema).optional(),
+      blackoutReasonCode: vocabularyOutNullable(BLACKOUT_REASONS)
+        .optional()
+        .describe(
+          'A **code**, never a sentence. The current data carries `label`/`labelEn` authored inside the data: an i18n leak (E8).',
+        ),
+    }),
+    chatMode: vocabularyOut(CHAT_MODES).optional(),
+    media: MediaSetSchema,
+    languageDependency: vocabularyOut(LANGUAGE_DEPENDENCIES).optional(),
+    watchVerdict: WatchVerdictSchema.optional().describe(
+      'Per-viewer overlay. **Absent — not null — on an anonymous read**, which makes the public body\nidentical for every caller and therefore shareable in a common cache.\n',
+    ),
+    viewerRelations: z
+      .looseObject({
+        inWatchlist: z.boolean().optional(),
+        reminderSet: z.boolean().optional(),
+        followsArtist: z.boolean().optional(),
+      })
+      .nullable()
+      .optional()
+      .describe(
+        'Per-viewer overlay, merged from a **batched** read, never one call per card. **Absent on an\nanonymous read.**\n',
+      ),
+    viewerProgress: z
+      .looseObject({
+        positionSec: int64().meta({ format: undefined }).optional(),
+        durationSec: int64().meta({ format: undefined }).optional(),
+        completed: z.boolean().optional(),
+      })
+      .nullable()
+      .optional()
+      .describe('Per-viewer overlay. **Absent on an anonymous read.**'),
+  })
+  .describe(
+    '**The most consumed shape in the product.** It must stand alone: a card never triggers a call\nin order to paint itself.\n\nIt carries the **inputs** of the perishable rules **and** their result at serving time **and**\nthe instant that result stops being true. That is what lets a response cached for eight hours\nstay correct: the surface calls the same `@arthome/core` function again once\n`displayStateValidUntil` has passed, it does not rewrite the rule.\n\n**No ticketing or control-room field appears here** (E8): no `sold`, no `revenue`, no\n`publication`, no `publishedBy`.\n',
+  );
+
+export const ArtistSummarySchema: z.ZodObject<
+  {
+    id: z.ZodString;
+    channelId: z.ZodString;
+    name: z.ZodString;
+    slug: z.ZodOptional<z.ZodString>;
+    categoryId: z.ZodString;
+    countryCode: z.ZodOptional<z.ZodString>;
+    verified: z.ZodOptional<z.ZodBoolean>;
+    media: z.ZodOptional<typeof MediaSetSchema>;
+    followers: z.ZodOptional<z.ZodNumber>;
+    avgViewers: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    isLiveNow: z.ZodOptional<z.ZodBoolean>;
+    followedByViewer: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
+    alertEnabled: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
+    nextDate: z.ZodOptional<typeof DateCardSchema>;
+  },
+  z.core.$loose
+> = z.looseObject({
+  id: uuid(),
+  channelId: uuid(),
+  name: z.string(),
+  slug: z.string().optional(),
+  categoryId: z.string(),
+  countryCode: CountryCodeSchema.optional(),
+  verified: z.boolean().optional(),
+  media: MediaSetSchema.optional(),
+  followers: int64()
+    .meta({ format: undefined })
+    .optional()
+    .describe(
+      '**Projected** counter, with its declared freshness. A counter wrong by 3% does not matter; a\ncounter that differs between the detail page and the list does — which is why it comes from a\nsingle projection.\n',
+    ),
+  avgViewers: int64().meta({ format: undefined }).nullable().optional(),
+  isLiveNow: z.boolean().optional(),
+  followedByViewer: z.boolean().nullable().optional(),
+  alertEnabled: z
+    .boolean()
+    .nullable()
+    .optional()
+    .describe(
+      '**Following and being alerted are two settings**, and the contract separates them:\n`followedByViewer` is a catalogue relation, `alertEnabled` a flag carried by `notifications`.\nConflating them would make it impossible to follow an artist without being notified — and the\ndesign shows the two separately. **Absent on an anonymous read.**\n',
+    ),
+  nextDate: DateCardSchema.optional().describe(
+    'The next announced date, when there is one. Served so that the "Following" page distinguishes\nartists **who have a date** from those who do not — that is the split the screen displays, and\nit would otherwise be computed by one call per artist.\n',
+  ),
+});
+
+export const RailSchema: z.ZodObject<
+  {
+    id: z.ZodString;
+    titleCode: z.ZodString;
+    kind: VocabularyOut;
+    itemKind: VocabularyOut;
+    cardForm: VocabularyOut;
+    items: z.ZodArray<z.ZodXor<readonly [typeof DateCardSchema, typeof ArtistSummarySchema]>>;
+    total: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    totalIsLowerBound: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
+    nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    id: z.string(),
+    titleCode: z
+      .string()
+      .meta({ examples: ['home.rail.resume'] })
+      .describe('An i18n **code**, never an authored title.'),
+    kind: vocabularyOutLocal(
+      RAIL_KINDS,
+      'A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.',
+    ).describe(
+      '`my_seats` carries "Your seats": it is **not** editorial but personal, and its behaviour is\nits own — the card becomes "Enter the room" when the room opens. Filing it under `editorial`\nwould have erased that difference.\n',
+    ),
+    itemKind: vocabularyOut(RAIL_ITEM_KINDS, LOCAL_VOCABULARY)
+      .meta({
+        'x-arthome-vocabulary-reason':
+          'A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.',
+        examples: [RAIL_ITEM_KINDS[0]],
+      })
+      .describe(
+        '**What the rail carries.** Without this field, an artist rail is inexpressible:\n`ArtistSummary` exists in the contract but no rail could transport it, and the surface would\nhave had to guess the type from the rail identifier — that is, from a parallel literal.\n',
+      ),
+    cardForm: vocabularyOut(CARD_FORMS, LOCAL_VOCABULARY)
+      .meta({
+        'x-arthome-vocabulary-reason':
+          'A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it.',
+        examples: [CARD_FORMS[0]],
+      })
+      .describe(
+        '**The card form is an editorial choice, hence server-side**, exactly like the order of the\nrails. `poster` serves the "Posters" rail in vertical 2:3, `portrait` the artists as circles.\nWithout this field the surface would choose from the rail identifier, and *"variety of format\nis what stops the screen looking like a spreadsheet"* — nine rails of identical 16:9 cards is\na television\'s defect number one.\n',
+      ),
+    items: z
+      .array(z.xor([DateCardSchema, ArtistSummarySchema]))
+      .describe(
+        '**Union discriminated by `itemKind`**: `DateCard` when `itemKind` is `date`,\n`ArtistSummary` when it is `artist`.\n',
+      ),
+    total: int64()
+      .meta({ format: undefined })
+      .nullable()
+      .optional()
+      .describe(
+        "**The rail's count, not the served slice's.** Every rail displays a counter to the right of\nits title; without this field it can only display `items.length`, that is, the page size — a\nfalse number. Same guarantee as `CursorPageInfo.approximateTotal`: exact up to the served\nthreshold, a lower bound beyond it.\n",
+      ),
+    totalIsLowerBound: z.boolean().default(false).optional(),
+    nextCursor: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        '**Per-rail** cursor, consumed by `extendRail`. A rail is an excerpt; it does not paginate on\nscreen, it extends.\n',
+      ),
+  })
+  .describe(
+    'A home rail. **Composition and order are server-side**: the design loads 1,814 dates\n(1.79 MB) and filters client-side, which the contract must make impossible on a device that\nhas 300 to 500 MB for everything, video included.\n',
+  );
+
+export const ScheduleSlotSchema: z.ZodObject<
+  {
+    localHourLabelKey: z.ZodString;
+    startsAt: z.ZodOptional<z.ZodString>;
+    dates: z.ZodArray<typeof DateCardSchema>;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    localHourLabelKey: z.string().meta({ examples: ['20'] }),
+    startsAt: instant().optional(),
+    dates: z.array(DateCardSchema),
+  })
+  .describe(
+    "Tonight's grid, **already grouped in the viewer's local time**. The grouping depends on the\ntimezone: the surface sends it in a header, the server groups. A grid grouped client-side\nwould be grouped five different ways.\n",
+  );

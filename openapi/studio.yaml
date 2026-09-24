@@ -1923,7 +1923,7 @@ paths:
                             x-arthome-tax-basis: inclusive
                           views: { type: [integer, "null"] }
                           revenue:
-                            allOf: [{ $ref: "#/components/schemas/Money" }]
+                            $ref: "#/components/schemas/Money"
                             x-arthome-tax-basis: inclusive
                             description: "**Absent** without `canRevenue`."
                           version: { type: integer }
@@ -5028,7 +5028,7 @@ paths:
                             durationSec: { type: [integer, "null"] }
                             views: { type: [integer, "null"] }
                             revenue:
-                              allOf: [{ $ref: "#/components/schemas/Money" }]
+                              $ref: "#/components/schemas/Money"
                               x-arthome-tax-basis: inclusive
                               description: "**Absent** without `canRevenue`."
                       page: { $ref: "#/components/schemas/OffsetPageInfo" }
@@ -6947,7 +6947,7 @@ components:
               type: integer
               description: "**All** the channels dates over the period, with no state filter — the way the design counts them."
             netRevenue:
-              allOf: [{ $ref: "#/components/schemas/Money" }]
+              $ref: "#/components/schemas/Money"
               x-arthome-tax-basis: exclusive
               description: "**Absent** without `canRevenue`."
         fillByDate:
@@ -7061,7 +7061,7 @@ components:
                     fillRateBps: { type: integer }
                     seatsSold: { type: integer }
                     revenue:
-                      allOf: [{ $ref: "#/components/schemas/Money" }]
+                      $ref: "#/components/schemas/Money"
                       x-arthome-tax-basis: inclusive
                       description: "**Absent** without `canRevenue`."
                     isReference: { type: boolean }
@@ -7278,7 +7278,7 @@ components:
             give the M. A client deriving it (`seatsSold / fillRateBps`) would recompute a value the
             server already holds, with a division and a rounding thrown in. A field, not a route.
         grossRevenue:
-          allOf: [{ $ref: "#/components/schemas/Money" }]
+          $ref: "#/components/schemas/Money"
           x-arthome-tax-basis: inclusive
           description: "**Absent** from the response when the role lacks `canRevenue`. Never present and null."
 
@@ -7382,7 +7382,7 @@ components:
               validFrom: { type: string, format: date-time }
               validUntil: { type: string, format: date-time }
         serviceFeePerSeat:
-          allOf: [{ $ref: "#/components/schemas/Money" }]
+          $ref: "#/components/schemas/Money"
           x-arthome-tax-basis: inclusive
           description: "**Per seat**, and the scale is served, never a screen constant."
         pricesLocked: { type: boolean }
@@ -7412,7 +7412,7 @@ components:
               $ref: "#/components/schemas/Money"
               x-arthome-tax-basis: inherited
         grossRevenue:
-          allOf: [{ $ref: "#/components/schemas/Money" }]
+          $ref: "#/components/schemas/Money"
           x-arthome-tax-basis: inclusive
           description: "**Absent** when the role lacks `canRevenue`."
         version: { type: integer }
@@ -7542,7 +7542,7 @@ components:
             against **that measurement** — not against "number of messages ÷ hours elapsed", which is not
             the same thing.
         grossRevenue:
-          allOf: [{ $ref: "#/components/schemas/Money" }]
+          $ref: "#/components/schemas/Money"
           x-arthome-tax-basis: inclusive
           description: "**Absent** without `canRevenue`. The `:revenue` real-time room is separate for the same reason."
         version: { type: integer }
@@ -7651,7 +7651,7 @@ components:
           x-arthome-vocabulary-source: none
           x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
         message:
-          allOf: [{ $ref: "#/components/schemas/LocalizedText" }]
+          $ref: "#/components/schemas/LocalizedText"
           description: |
             Written by the control room: **content**, with its authoring language. The catalogue supplies
             **templates** per kind of incident, which the control room reuses or replaces.
@@ -7882,7 +7882,7 @@ components:
           x-arthome-vocabulary: [scheduled, held, paid, refunded, suspended]
           x-arthome-vocabulary-source: PAYOUT_STATES
         grossTtc:
-          allOf: [{ $ref: "#/components/schemas/Money" }]
+          $ref: "#/components/schemas/Money"
           x-arthome-tax-basis: inclusive
           description: |
             **Tax-inclusive: what the viewer paid, and what the artist's price said.** Fixed across
@@ -7959,7 +7959,7 @@ components:
         stripeTransferRef: { type: [string, "null"] }
         reconciledAt: { type: [string, "null"], format: date-time }
         discrepancy:
-          allOf: [{ $ref: "#/components/schemas/Money" }]
+          $ref: "#/components/schemas/Money"
           x-arthome-tax-basis: inherited
           description: "**A period does not close with an unexplained discrepancy.**"
         taxEvidenceConflicts:
@@ -8091,7 +8091,7 @@ components:
         channelId: { type: [string, "null"], format: uuid }
         dateId: { type: [string, "null"], format: uuid }
         body:
-          allOf: [{ $ref: "#/components/schemas/LocalizedText" }]
+          $ref: "#/components/schemas/LocalizedText"
           description: The inbox texts are one of the **only two** acknowledged exceptions to "i18n by codes".
         deepLinkCode: { type: [string, "null"] }
         createdAt: { type: string, format: date-time }
@@ -8104,7 +8104,7 @@ components:
         id: { type: string, format: uuid }
         showId: { type: [string, "null"], format: uuid }
         label:
-          allOf: [{ $ref: "#/components/schemas/LocalizedText" }]
+          $ref: "#/components/schemas/LocalizedText"
           description: "**Bilingual.** The absence of an English label in the sources is a **data gap** to be filled during the port, not a translation gap (E10)."
         variants:
           type: array
