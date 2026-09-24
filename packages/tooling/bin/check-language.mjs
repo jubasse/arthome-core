@@ -576,4 +576,32 @@ if (reported.length) {
   process.exit(1);
 }
 
-if (!QUIET) console.log('PASS no French prose in a committed file');
+if (!QUIET) {
+  // THE VERDICT STATES ITS MECHANISM, because the name promises more than the
+  // mechanism delivers — the same correction check-core-entry carries.
+  //
+  //   `translator-docs` found, on its last turn, that this gate decides on a
+  //   stop-word list of FUNCTION WORDS while the product's vocabulary is
+  //   entirely CONTENT WORDS, so a French label or copy string passes and a
+  //   later tidy-up that anglicises one looks exactly as clean as leaving it.
+  //
+  //   `conventions` disagreed about the remedy and is right: this is a NAMING
+  //   defect, not a detection defect. Function words are where SENTENCES live,
+  //   and a sentence is what this gate detects. It cannot detect French TERMS,
+  //   and no stop-word list can, because a content word is exactly what a
+  //   legitimate product vocabulary is made of — `billetterie` is French AND a
+  //   domain term. The two are separable only by POSITION, which this gate
+  //   already handles structurally: the same term is data in a vocabulary
+  //   constant and a defect in a comment. A gate that shouts on `billetterie`
+  //   gets switched off, which is D-024.
+  //
+  //   So the scope is said out loud rather than widened. What is still owed is
+  //   the rename itself — this remains `check-language` while guaranteeing
+  //   something narrower than that name claims.
+  console.log('PASS no French prose in a committed file');
+  console.log(
+    `  (scope: French SENTENCES — function words at a threshold of ${THRESHOLD}. An isolated`,
+  );
+  console.log('   French TERM in a comment is not detected, and cannot be by a word list:');
+  console.log('   a content word is exactly what a product vocabulary is made of.)');
+}

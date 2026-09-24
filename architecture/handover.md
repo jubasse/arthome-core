@@ -18,6 +18,8 @@ to one document is six conflicts, and six agents committing into one repository 
 | [`handover/auth.md`](handover/auth.md) | §12.5 is closeable and the ADR does not know it; two routes that must NOT be relayed |
 | [`handover/translator-docs.md`](handover/translator-docs.md) | **`check-language` is structurally blind to the product's vocabulary and passes either way** |
 | [`handover/backend-contracts.md`](handover/backend-contracts.md) | registry mode exactly; **which of the emit gate's equivalences to refuse**; what holds `paths` and what does not |
+| [`handover/backend-domain.md`](handover/backend-domain.md) | rules that live where you would not look; **the one misdeclared block among the 114 exempt ones** |
+| [`handover/conventions.md`](handover/conventions.md) | how to build the repository map (D-061); **where §5.3.1 does *not* substitute** for the D-055 detector |
 
 **Three of the six correct something already committed**, which is the reason they were worth the
 cost. `studio-mobile` contradicts the one section written before them; `storefront-mobile` shows

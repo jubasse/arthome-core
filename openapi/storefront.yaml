@@ -6411,7 +6411,7 @@ components:
             the state on the card rather than being searched for (`postponed`, `cancelled`,
             `interrupted`). A filter on a state no public list can contain returns nothing and says
             nothing, which is worse than refusing it.
-          items: { type: string, enum: [scheduled, room_open, live, replay, ended], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A narrowing of a vocabulary named elsewhere in this document, with the reason in the description above: the members left out are the rule, not an omission." }
+          items: { type: string, enum: [scheduled, room_open, live, replay, ended], x-arthome-vocabulary-source: DISPLAY_STATES, x-arthome-vocabulary-narrowing: "The five a public search can filter on. The other six are non-public states or outcomes that replace the state on the card, so a filter on them returns nothing and says nothing." }
         priceMinMinor: { type: [integer, 'null'], minimum: 0 }
         priceMaxMinor: { type: [integer, 'null'], minimum: 0 }
         startsAfter: { type: [string, 'null'], format: date-time }
