@@ -88,3 +88,31 @@ export function workspacePackageGlobs(root) {
 export function workspaceGlobs(root, suffix) {
   return workspacePackageGlobs(root).map((g) => `${g}/${suffix}`);
 }
+
+/**
+ * The workspace package directories that actually exist on disk.
+ *
+ * `workspacePackageGlobs` answers "where does this repository say packages
+ * live"; this answers "which ones are there". Only the trailing `/*` form is
+ * expanded, which is the only form pnpm workspaces use in this project.
+ *
+ * @param {string} root
+ * @returns {string[]} absolute directories
+ */
+export function workspacePackageDirs(root) {
+  const out = [];
+  for (const glob of workspacePackageGlobs(root)) {
+    if (!glob.endsWith('/*')) {
+      const fixed = path.join(root, glob);
+      if (fs.existsSync(path.join(fixed, 'package.json'))) out.push(fixed);
+      continue;
+    }
+    const parent = path.join(root, glob.slice(0, -2));
+    if (!fs.existsSync(parent)) continue;
+    for (const entry of fs.readdirSync(parent)) {
+      const dir = path.join(parent, entry);
+      if (fs.existsSync(path.join(dir, 'package.json'))) out.push(dir);
+    }
+  }
+  return out;
+}

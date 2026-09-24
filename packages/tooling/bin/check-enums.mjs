@@ -30,7 +30,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { workspaceGlobs } from '../lib/workspace.mjs';
+import { workspaceGlobs, workspacePackageDirs } from '../lib/workspace.mjs';
 
 const CWD = process.cwd();
 
@@ -53,6 +53,18 @@ function findEnumSources() {
         '../core/src',
         'node_modules/@arthome/core/src',
         'node_modules/@arthome/core/dist',
+        // ⚠ A WORKSPACE PUTS IT SOMEWHERE ELSE, and this gate matters most in
+        //   exactly those repositories. pnpm installs a dependency under the
+        //   node_modules of the PACKAGE that declares it, so in arthome-platform
+        //   @arthome/core sits in `libs/config/node_modules/…`, not at the root.
+        //   Without these candidates the gate printed "GATE INACTIVE" in the one
+        //   repository where seven services reach for the same domain words.
+        //   It says so out loud rather than passing quietly, which is the only
+        //   reason this was caught the same hour it appeared — see D-071.
+        ...workspacePackageDirs(CWD).flatMap((dir) => [
+          path.join(dir, 'node_modules/@arthome/core/src'),
+          path.join(dir, 'node_modules/@arthome/core/dist'),
+        ]),
       ];
   for (const c of candidates) {
     const abs = path.resolve(CWD, c);
