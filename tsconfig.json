@@ -3,9 +3,27 @@
   "extends": "@arthome/tooling/tsconfig/app.json",
   "compilerOptions": {
     "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "types": ["node"]
+    "moduleResolution": "nodenext"
+    // ⚠ NO `types: ["node"]` here, and it was wrong to have had it. This project
+    //   includes `packages/*/src`, and `@arthome/core` forbids itself any platform
+    //   dependency (README section 3): pulling Node's globals into the program that
+    //   checks it would let a Node API in without anything noticing — the exact
+    //   thing `types: []` in the base exists to prevent (section 2.3 d).
+    //   It also named a package that was never installed, so this file had been
+    //   failing with TS2688 since the line was written. Nobody saw it because
+    //   `verify` is the only chain that runs `typecheck`, and everyone runs
+    //   `verify:offline`. See section 8.2.
   },
-  "include": ["packages/*/src", "tools/**/*.ts"],
+  "include": [
+    "packages/*/src",
+    // The tooling package's own declarations. A .ts or .d.ts file that no
+    // tsconfig claims cannot be linted at all — typescript-eslint's project
+    // service refuses it ("not found by the project service"), which is the
+    // same wall `@arthome/core`'s vitest.config.ts hit. Claiming a file is a
+    // precondition of checking it.
+    "packages/tooling/*.d.ts",
+    "packages/tooling/eslint/*.d.ts",
+    "tools/**/*.ts"
+  ],
   "exclude": ["node_modules", "packages/*/dist", "prototypes", "docs"]
 }

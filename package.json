@@ -12,6 +12,7 @@
   "prettier": "@arthome/tooling/prettier",
   "scripts": {
     "format": "prettier --write .",
+    "fix": "eslint . --fix && prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0 --report-unused-disable-directives",
     "typecheck": "tsc --noEmit",
@@ -25,7 +26,7 @@
     "check:openapi": "python3 tools/check-openapi.py openapi/storefront.yaml openapi/studio.yaml",
     "check:vocabulary": "python3 tools/check-vocabulary.py openapi/storefront.yaml openapi/studio.yaml",
     "verify": "pnpm run verify:offline && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test",
-    "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:language && pnpm run check:core-entry && pnpm run check:openapi && pnpm run check:vocabulary"
+    "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:language && pnpm run check:core-entry && pnpm run check:openapi && pnpm run check:vocabulary && node -e \"console.log('\\n  NOTE verify:offline is the subset that needs no install. It does NOT run format:check, lint, typecheck or test. Run pnpm run verify before pushing.')\""
   },
   "devDependencies": {
     "@arthome/tooling": "workspace:*",
