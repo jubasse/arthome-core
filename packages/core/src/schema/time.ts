@@ -16,10 +16,13 @@ import { z } from 'zod';
 
 import { IanaTimeZoneSchema } from './primitives.js';
 
-export const VenueClockSchema: z.ZodObject<{
-  venueTimezone: z.ZodString;
-  venueUtcOffsetMin: z.ZodInt;
-}> = z.object({
+export const VenueClockSchema: z.ZodObject<
+  {
+    venueTimezone: z.ZodString;
+    venueUtcOffsetMin: z.ZodInt;
+  },
+  z.core.$loose
+> = z.looseObject({
   venueTimezone: IanaTimeZoneSchema,
   // Real offsets run from −12:00 to +14:00. A wider bound would accept a value
   // no clock on earth produces, which is how a frozen offset got in once.

@@ -36,8 +36,9 @@
  *   `backend-contracts`, not here. This module provides the type-level half and
  *   states plainly that it is a half.
  *
- * NOTHING IS REDECLARED HERE. There is no `MoneySchema` in this file and there must
- * never be one: `@arthome/core/schema` owns it, and this package will `.extend()` it
+ * NOTHING IS REDECLARED HERE. There is no `Money` schema in this file and there must
+ * never be one: `@arthome/core/schema` owns both forms — `MoneyOut` for a served
+ * amount, `MoneyIn` for one a client sends, and this package will `.extend()` it
  * once wave 6 lands. Redeclaring the most manipulated value in the system would be
  * E2 at its most expensive.
  */

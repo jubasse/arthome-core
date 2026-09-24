@@ -37,6 +37,13 @@ quote the two numbers with none of the condition attached.
 *That is D-055 in its own words — the only reliable detector all week was a teammate disagreeing
 with something.* These notes were the last chance to run it.
 
+> **Editorial note, and the only one.** These files are kept **verbatim** — an agent's own words, not
+> the lead's summary of them, which is the same treatment `skeptic.md` gets. Two names they use have
+> changed since: `LocaleSchema` is now `LocaleIn` / `LocaleOut`, and `MoneySchema` is now `MoneyOut`
+> / `MoneyIn`. Both splits happened *because* of findings in these notes, so the stale name is part
+> of the record rather than a defect in it. Code copied from `backend-contracts.md` needs that one
+> substitution.
+
 ---
 
 ## storefront-web

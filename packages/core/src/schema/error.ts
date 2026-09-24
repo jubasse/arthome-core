@@ -23,12 +23,15 @@ export const FailureNatureOut: VocabularyOut = vocabularyOut(FAILURE_NATURES);
  * `traceId` is readable and copyable from the error screen on purpose: on
  * mobile it is the only link between "my application crashed" and a server log.
  */
-export const ErrorEnvelopeSchema: z.ZodObject<{
-  code: z.ZodString;
-  params: z.ZodRecord<z.ZodString, z.ZodString>;
-  traceId: z.ZodString;
-  nature: VocabularyOut;
-}> = z.object({
+export const ErrorEnvelopeSchema: z.ZodObject<
+  {
+    code: z.ZodString;
+    params: z.ZodRecord<z.ZodString, z.ZodString>;
+    traceId: z.ZodString;
+    nature: VocabularyOut;
+  },
+  z.core.$loose
+> = z.looseObject({
   code: z.string().regex(/^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$/),
   params: z.record(z.string(), z.string()),
   traceId: z.string().min(1),

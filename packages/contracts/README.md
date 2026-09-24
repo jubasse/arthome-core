@@ -22,7 +22,7 @@ export const SeatDto = SeatSchema.pick({ id: true, row: true }).extend({ href: z
 export const SeatDto = z.object({ id: z.string(), row: z.number() });
 ```
 
-Redeclaring `MoneySchema` would be E2 on **the most manipulated value in the system** — and E2 is this
+Redeclaring `MoneyOut` would be E2 on **the most manipulated value in the system** — and E2 is this
 project's dominant failure mode, committed on eight fields by five mockups despite an explicit
 principle forbidding it. The two copies would agree on the day they were written and diverge on the
 first rounding change.

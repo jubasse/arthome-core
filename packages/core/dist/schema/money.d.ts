@@ -14,7 +14,43 @@
  * the catalogue publicly cacheable with no `Vary` on a buyer's country.
  */
 import { z } from 'zod';
-export declare const MoneySchema: z.ZodObject<{
+/**
+ * ⚠ TWO SCHEMAS, AND `Money` IS THE ONLY SHAPE IN THIS PACKAGE THAT NEEDS BOTH.
+ *
+ *   D-060 §1: an OUTPUT shape is `looseObject`, because a client generated from
+ *   a closed schema **rejects a server that added a field** — the TV-fleet
+ *   failure one level up from enums, on the shape instead of the member. An
+ *   INPUT shape is `z.object()`, because a command that accepts an unrecognised
+ *   field has accepted something no rule evaluated.
+ *
+ *   Nearly every schema here is served and never submitted, so one form is
+ *   honest. `Money` is not: `POST /v1/orders/seats` carries `expectedTotal` as a
+ *   `$ref` to this schema — **the buyer's stated total, which is the whole
+ *   anti-price-drift check.** That one field is why both exist.
+ *
+ * ⚠ AND THERE IS NO `MoneySchema`, WHICH IS D-065 §H APPLIED BEFORE IT COSTS
+ *   ANYTHING RATHER THAN AFTER.
+ *
+ *   `LocaleSchema` was a strict vocabulary whose name did not say so; it had no
+ *   tolerant counterpart, so a response field used the only locale schema there
+ *   was and would have failed a whole payload on a third content language. The
+ *   lesson was not "add the missing export" — it was that **a name which does
+ *   not state its direction will be used in the wrong one.**
+ *
+ *   So the two forms are named for their direction and the ambiguous spelling
+ *   does not exist. A call site has to choose, and choosing wrongly is visible
+ *   in the diff rather than three months later in a bundle.
+ *
+ *   The five other object schemas in this package keep their `…Schema` name,
+ *   deliberately: they have exactly one form. The fault §H names is a MISSING
+ *   COUNTERPART, not a suffix.
+ */
+export declare const MoneyOut: z.ZodObject<{
+    amountMinor: z.ZodInt;
+    currencyCode: z.ZodString;
+}, z.core.$loose>;
+/** The same shape, STRICT — for a `Money` a client sends. */
+export declare const MoneyIn: z.ZodObject<{
     amountMinor: z.ZodInt;
     currencyCode: z.ZodString;
 }>;

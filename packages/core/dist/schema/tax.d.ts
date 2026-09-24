@@ -22,7 +22,7 @@
  * default arriving by omission rather than by decision.
  */
 import { z } from 'zod';
-import { MoneySchema } from './money.js';
+import { MoneyOut } from './money.js';
 import { type VocabularyIn, type VocabularyOut } from './vocabulary.js';
 import { TAX_EVIDENCE_KINDS, TAX_JURISDICTION_LEVELS, TAX_SUPPLY_KINDS } from '../vocabulary/commerce.js';
 export declare const TaxEvidenceKindIn: VocabularyIn<typeof TAX_EVIDENCE_KINDS>;
@@ -41,7 +41,7 @@ export declare const TaxEvidenceSchema: z.ZodObject<{
     subdivision: z.ZodOptional<z.ZodString>;
     source: z.ZodString;
     collectedAt: z.ZodString;
-}>;
+}, z.core.$loose>;
 /**
  * The location adopted, with the evidence that produced it.
  *
@@ -60,7 +60,7 @@ export declare const BuyerTaxLocationSchema: z.ZodObject<{
     evidence: z.ZodArray<typeof TaxEvidenceSchema>;
     evidenceConflicting: z.ZodBoolean;
     resolvedAt: z.ZodString;
-}>;
+}, z.core.$loose>;
 /**
  * One VAT line. `rateBps` is THE RATE APPLIED AT THE SALE, kept on the line —
  * never the current rate. An invoice is kept for ten years and rates change.
@@ -70,7 +70,7 @@ export declare const VatLineSchema: z.ZodObject<{
     jurisdictionLevel: VocabularyOut;
     supplyKind: VocabularyOut;
     rateBps: z.ZodInt;
-    base: typeof MoneySchema;
-    amount: typeof MoneySchema;
-}>;
+    base: typeof MoneyOut;
+    amount: typeof MoneyOut;
+}, z.core.$loose>;
 //# sourceMappingURL=tax.d.ts.map

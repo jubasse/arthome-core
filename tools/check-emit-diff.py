@@ -125,6 +125,30 @@ def diff(want, got, path=""):
     return [] if want == got else [(path or "<root>", want, got)]
 
 
+# WHICH EXPORT ANSWERS FOR A DOCUMENT SCHEMA, in order.
+#
+#   `Money` is served in a response AND accepted in `POST /v1/orders/seats` as
+#   `expectedTotal`, so core exports MoneyOut (loose) and MoneyIn (strict) and no
+#   ambiguous `MoneySchema` at all -- D-065 section H: a name that does not state
+#   its direction will be used in the wrong one.
+#
+#   `components/schemas` publishes the SERVED shape wherever a shape has two, so
+#   `...Out` wins. `...Schema` is the ordinary case of a shape with exactly one
+#   form. `...In` is last, for a schema the documents publish only as an input --
+#   `SearchCriteria` is one today, and the day it has a zod source this is what
+#   finds it.
+SUFFIX_PRECEDENCE = ("Out", "Schema", "In")
+
+
+def source_of(name, emitted):
+    """The export that answers for the document's schema `name`, and its spelling."""
+    for suffix in SUFFIX_PRECEDENCE:
+        export = f"{name}{suffix}"
+        if export in emitted:
+            return export, emitted[export]
+    return None, None
+
+
 def brief(value, width=72):
     text = json.dumps(value, ensure_ascii=False, sort_keys=True)
     return text if len(text) <= width else text[: width - 1] + "…"
@@ -160,7 +184,7 @@ def main(argv):
         unsourced = []
         for name in sorted(schemas):
             total += 1
-            entry = emitted.get(name)
+            export, entry = source_of(name, emitted)
             if entry is None:
                 unsourced.append(name)
                 continue
@@ -169,7 +193,7 @@ def main(argv):
             if not found:
                 agreed += 1
             else:
-                failures.append((document, name, entry, found))
+                failures.append((document, name, export, entry, found))
         print(
             f"{document}: {len(schemas)} schema(s) · "
             f"{len(schemas) - len(unsourced)} sourced · {len(unsourced)} not yet written"

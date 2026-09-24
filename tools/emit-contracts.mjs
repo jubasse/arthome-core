@@ -76,24 +76,39 @@ for (const pkgDir of PACKAGES) {
     }
     const mod = await import(pathToFileURL(abs).href);
     for (const [name, value] of Object.entries(mod)) {
-      if (!name.endsWith('Schema')) continue;
-      if (!(value instanceof z.ZodType)) {
-        problems.push(`${key} exports ${name}, which is not a zod schema`);
+      // EVERY EXPORTED ZOD SCHEMA, keyed BY ITS EXPORT NAME. Which export
+      // answers for which document schema is the Python half's decision — see
+      // the precedence in `source_of`. Deciding it here would put half a lookup
+      // in each file, and the half in this one cannot see the documents.
+      //
+      // The selector is the TYPE, not the name, and the first version had it the
+      // other way round. It filtered on a `Schema|In|Out` suffix, which is fine
+      // for `MoneyOut` and catches `isAvailableIn` and `taxIncludedIn` — two
+      // ordinary predicates whose names simply end in `In`. A name-shaped filter
+      // over a package that names things for their direction was always going to
+      // collide with English.
+      //
+      // So: a zod schema is emitted whatever it is called. What is still an
+      // ERROR is an export named `…Schema` that is NOT one, because that name
+      // makes a promise.
+      const isSchema = value instanceof z.ZodType;
+      if (!isSchema) {
+        if (name.endsWith('Schema')) {
+          problems.push(`${key} exports ${name}, which is named for a schema and is not one`);
+        }
         continue;
       }
-      const schemaName = name.slice(0, -'Schema'.length);
-      if (emitted[schemaName]) {
+      if (emitted[name]) {
         problems.push(
-          `${schemaName}: claimed by ${emitted[schemaName].from} and by ${key} — ` +
-            'two sources for one document schema is the duplication this gate exists to find',
+          `${name}: exported by ${emitted[name].from} and by ${key} — ` +
+            'two sources for one name is the duplication this gate exists to find',
         );
         continue;
       }
       // `io: 'output'` is the only correct mode for a response shape: it is what
       // a client receives, and it is where `.default()` stops being optional.
-      emitted[schemaName] = {
+      emitted[name] = {
         from: key,
-        export: name,
         schema: z.toJSONSchema(value, { io: 'output' }),
       };
     }

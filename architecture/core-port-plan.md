@@ -171,7 +171,7 @@ global is not an import. What closes that hole is `types: []` on the shared base
 
 | Schema | Why here and not in `contracts` |
 |---|---|
-| `MoneySchema` | seven services and five applications exchange it; redeclaring it would be E2 on the most manipulated value in the system |
+| `MoneyOut` / `MoneyIn` | seven services and five applications exchange it; redeclaring it would be E2 on the most manipulated value in the system. **Two forms because it is the one shape that crosses both ways** — served in responses, and accepted as `expectedTotal` on `POST /v1/orders/seats` |
 | `InstantSchema` | **ISO 8601 UTC string** — `z.date()` is inconvertible to JSON Schema, so never a `z.date()` at a boundary |
 | `VenueClockSchema` | `{ venueTimezone, venueUtcOffsetMin }` — the two always travel together (D3) |
 | `IanaTimeZoneSchema` | shape validation, not existence: the IANA database is not bundled |

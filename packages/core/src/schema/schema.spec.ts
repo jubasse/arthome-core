@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ErrorEnvelopeSchema, issueToCode } from './error.js';
 import { AccountIdSchema, PublicHandleSchema } from './identifiers.js';
-import { MoneySchema } from './money.js';
+import { MoneyIn, MoneyOut } from './money.js';
 import { IanaTimeZoneSchema, InstantSchema, LocaleIn, LocaleOut } from './primitives.js';
 import { vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
 import { DATE_OUTCOMES } from '../vocabulary/catalog.js';
@@ -103,7 +103,7 @@ describe('the in / out asymmetry', () => {
  */
 describe('failures leave as codes', () => {
   it('turns an issue into a code and parameters, keeping the field', () => {
-    const result = MoneySchema.safeParse({ amountMinor: 1.5, currencyCode: 'EUR' });
+    const result = MoneyIn.safeParse({ amountMinor: 1.5, currencyCode: 'EUR' });
     expect(result.success).toBe(false);
     if (result.success) return;
     const { code, params } = issueToCode(result.error.issues[0]!);
@@ -160,11 +160,11 @@ describe('the primitives refuse what bit us before', () => {
   });
 
   it('keeps money in whole minor units', () => {
-    expect(MoneySchema.safeParse({ amountMinor: 2600, currencyCode: 'EUR' }).success).toBe(true);
+    expect(MoneyOut.safeParse({ amountMinor: 2600, currencyCode: 'EUR' }).success).toBe(true);
     // Negative is legal — refunds and credit notes are money too.
-    expect(MoneySchema.safeParse({ amountMinor: -2600, currencyCode: 'EUR' }).success).toBe(true);
-    expect(MoneySchema.safeParse({ amountMinor: 26.5, currencyCode: 'EUR' }).success).toBe(false);
-    expect(MoneySchema.safeParse({ amountMinor: 2600, currencyCode: 'eur' }).success).toBe(false);
+    expect(MoneyOut.safeParse({ amountMinor: -2600, currencyCode: 'EUR' }).success).toBe(true);
+    expect(MoneyOut.safeParse({ amountMinor: 26.5, currencyCode: 'EUR' }).success).toBe(false);
+    expect(MoneyOut.safeParse({ amountMinor: 2600, currencyCode: 'eur' }).success).toBe(false);
   });
 
   it('is strict on a locale IN and tolerant on a locale OUT', () => {

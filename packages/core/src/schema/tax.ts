@@ -24,7 +24,7 @@
 
 import { z } from 'zod';
 
-import { MoneySchema, BasisPointsSchema } from './money.js';
+import { MoneyOut, BasisPointsSchema } from './money.js';
 import { InstantSchema, CountryCodeSchema } from './primitives.js';
 import {
   vocabularyIn,
@@ -52,13 +52,16 @@ export const TaxSupplyKindOut: VocabularyOut = vocabularyOut(TAX_SUPPLY_KINDS);
  * One piece of evidence, WITH ITS PROVENANCE. Evidence with no source is not
  * evidence — `source` is what makes a disputed line auditable two years later.
  */
-export const TaxEvidenceSchema: z.ZodObject<{
-  kind: VocabularyOut;
-  country: z.ZodString;
-  subdivision: z.ZodOptional<z.ZodString>;
-  source: z.ZodString;
-  collectedAt: z.ZodString;
-}> = z.object({
+export const TaxEvidenceSchema: z.ZodObject<
+  {
+    kind: VocabularyOut;
+    country: z.ZodString;
+    subdivision: z.ZodOptional<z.ZodString>;
+    source: z.ZodString;
+    collectedAt: z.ZodString;
+  },
+  z.core.$loose
+> = z.looseObject({
   kind: TaxEvidenceKindOut,
   country: CountryCodeSchema,
   subdivision: z.string().max(8).optional(),
@@ -76,15 +79,18 @@ export const TaxEvidenceSchema: z.ZodObject<{
  * conflict would produce a false and silent declaration, which is worse than a
  * flagged one.
  */
-export const BuyerTaxLocationSchema: z.ZodObject<{
-  country: z.ZodString;
-  subdivision: z.ZodOptional<z.ZodString>;
-  postalCode: z.ZodOptional<z.ZodString>;
-  city: z.ZodOptional<z.ZodString>;
-  evidence: z.ZodArray<typeof TaxEvidenceSchema>;
-  evidenceConflicting: z.ZodBoolean;
-  resolvedAt: z.ZodString;
-}> = z.object({
+export const BuyerTaxLocationSchema: z.ZodObject<
+  {
+    country: z.ZodString;
+    subdivision: z.ZodOptional<z.ZodString>;
+    postalCode: z.ZodOptional<z.ZodString>;
+    city: z.ZodOptional<z.ZodString>;
+    evidence: z.ZodArray<typeof TaxEvidenceSchema>;
+    evidenceConflicting: z.ZodBoolean;
+    resolvedAt: z.ZodString;
+  },
+  z.core.$loose
+> = z.looseObject({
   country: CountryCodeSchema,
   subdivision: z.string().max(8).optional(),
   postalCode: z.string().max(16).optional(),
@@ -98,18 +104,21 @@ export const BuyerTaxLocationSchema: z.ZodObject<{
  * One VAT line. `rateBps` is THE RATE APPLIED AT THE SALE, kept on the line —
  * never the current rate. An invoice is kept for ten years and rates change.
  */
-export const VatLineSchema: z.ZodObject<{
-  jurisdictionCode: z.ZodString;
-  jurisdictionLevel: VocabularyOut;
-  supplyKind: VocabularyOut;
-  rateBps: z.ZodInt;
-  base: typeof MoneySchema;
-  amount: typeof MoneySchema;
-}> = z.object({
+export const VatLineSchema: z.ZodObject<
+  {
+    jurisdictionCode: z.ZodString;
+    jurisdictionLevel: VocabularyOut;
+    supplyKind: VocabularyOut;
+    rateBps: z.ZodInt;
+    base: typeof MoneyOut;
+    amount: typeof MoneyOut;
+  },
+  z.core.$loose
+> = z.looseObject({
   jurisdictionCode: z.string().min(2).max(16),
   jurisdictionLevel: TaxJurisdictionLevelOut,
   supplyKind: TaxSupplyKindOut,
   rateBps: BasisPointsSchema,
-  base: MoneySchema,
-  amount: MoneySchema,
+  base: MoneyOut,
+  amount: MoneyOut,
 });

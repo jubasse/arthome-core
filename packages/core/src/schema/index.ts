@@ -30,7 +30,7 @@ export {
   SlugSchema,
 } from './primitives.js';
 
-export { BasisPointsSchema, MoneySchema } from './money.js';
+export { BasisPointsSchema, MoneyIn, MoneyOut } from './money.js';
 export { VenueClockSchema } from './time.js';
 
 export type { VocabularyIn, VocabularyOut, VocabularyOutNullable } from './vocabulary.js';

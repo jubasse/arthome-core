@@ -19,7 +19,7 @@
  * an entitlement, on the hottest path in the system.
  */
 export { CountryCodeSchema, CurrencyCodeSchema, IanaTimeZoneSchema, InstantSchema, LocaleIn, LocaleOut, PageCursorSchema, SlugSchema, } from './primitives.js';
-export { BasisPointsSchema, MoneySchema } from './money.js';
+export { BasisPointsSchema, MoneyIn, MoneyOut } from './money.js';
 export { VenueClockSchema } from './time.js';
 export type { VocabularyIn, VocabularyOut, VocabularyOutNullable } from './vocabulary.js';
 export { vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';

@@ -12,7 +12,7 @@ API, nothing Node-specific. The package runs under Node, Next, **Metro** and Ang
 
 ```ts
 import { displayStateOf, roundMinor, PlanOpening } from '@arthome/core';        // the rules
-import { MoneySchema } from '@arthome/core/schema';                            // the schemas
+import { MoneyOut } from '@arthome/core/schema';                               // the schemas
 ```
 
 | Entry point | Contents | Dependency |

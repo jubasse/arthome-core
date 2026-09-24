@@ -23,7 +23,7 @@ export declare const ErrorEnvelopeSchema: z.ZodObject<{
     params: z.ZodRecord<z.ZodString, z.ZodString>;
     traceId: z.ZodString;
     nature: VocabularyOut;
-}>;
+}, z.core.$loose>;
 /**
  * The ONLY sanctioned way out of a zod failure.
  *

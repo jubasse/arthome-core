@@ -15,5 +15,5 @@ import { z } from 'zod';
 export declare const VenueClockSchema: z.ZodObject<{
     venueTimezone: z.ZodString;
     venueUtcOffsetMin: z.ZodInt;
-}>;
+}, z.core.$loose>;
 //# sourceMappingURL=time.d.ts.map
