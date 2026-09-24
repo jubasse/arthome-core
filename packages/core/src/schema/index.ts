@@ -24,7 +24,8 @@ export {
   CurrencyCodeSchema,
   IanaTimeZoneSchema,
   InstantSchema,
-  LocaleSchema,
+  LocaleIn,
+  LocaleOut,
   PageCursorSchema,
   SlugSchema,
 } from './primitives.js';

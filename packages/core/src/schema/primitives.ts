@@ -40,7 +40,12 @@
 
 import { z } from 'zod';
 
-import { vocabularyIn, type VocabularyIn } from './vocabulary.js';
+import {
+  vocabularyIn,
+  vocabularyOut,
+  type VocabularyIn,
+  type VocabularyOut,
+} from './vocabulary.js';
 import { LOCALES } from '../format/locale.js';
 
 /**
@@ -87,11 +92,37 @@ export const CountryCodeSchema: z.ZodString = z.string().regex(/^[A-Z]{2}$/);
  * schema that restates it is the parallel literal table with a validator's
  * costume.
  *
- * STRICT, because a locale arrives on a REQUEST — an unknown one is refused
- * rather than kept. The tolerant reading (§vocabulary.ts) is for responses, and
- * this is the side where a wrong value would be stored.
+ * ⚠ TWO EXPORTS, AND THE NAMES ARE THE MECHANISM RATHER THAN A STYLE.
+ *
+ *   This was one export called `LocaleSchema`, with the paragraph above
+ *   explaining that it is strict because a locale arrives on a REQUEST. The
+ *   paragraph was right and it was not enough: `@arthome/contracts`'
+ *   `LocalizedText.contentLanguage` — a RESPONSE field — used it, because it was
+ *   the only locale schema there was. It emitted `enum: ['fr','en']`, so the day
+ *   a third content language is authored, a television rejects the whole payload
+ *   the text sits in. Critical rule 10, broken on the member while honoured on
+ *   the shape.
+ *
+ *   The cause was an absence, not a careless call site. Of the four
+ *   `vocabularyIn` call sites in this package, the three in `tax.ts` are all
+ *   named `…In` and all have an `…Out` beside them. This one was named
+ *   `…Schema` and had no counterpart at all, so the nearest available name was
+ *   the wrong direction.
+ *
+ *   **So there is no `LocaleSchema` any more, deliberately.** An alias would
+ *   keep the trap open under a familiar name; a removed export is a compile
+ *   error at every site that has to choose again. Found by the empty-diff gate
+ *   on its first run — D-065 §H.
  */
-export const LocaleSchema: VocabularyIn<typeof LOCALES> = vocabularyIn(LOCALES);
+export const LocaleIn: VocabularyIn<typeof LOCALES> = vocabularyIn(LOCALES);
+
+/**
+ * The same vocabulary, TOLERANT — for a locale a server SERVES.
+ *
+ * An unknown member is kept as a raw string and treated as neutral, never
+ * rejected: a store review is slow and a television runs a year-old build.
+ */
+export const LocaleOut: VocabularyOut = vocabularyOut(LOCALES);
 
 /** Lowercase, hyphenated, no leading or trailing hyphen. */
 export const SlugSchema: z.ZodString = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);

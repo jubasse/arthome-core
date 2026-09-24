@@ -2728,6 +2728,25 @@ it has no `Out` counterpart at all, and it is the one that got used on a respons
 > ***The convention that would have prevented this was already in the package. It was applied in one
 > module and not the other, and the defect landed in exactly the gap.***
 
+**AND THERE WAS A TEST ON IT, ASSERTING THE DEFECT.** `text.spec.ts` carried
+`expect(...contentLanguage?.enum).toEqual(['fr', 'en'])` under the name *"constrains contentLanguage
+to the two the product has"*, with this reason written out:
+
+> *"a third **product** language is a catalogue, a build and a store review — never a value that
+> turns up unannounced in a payload."*
+
+Every word of that is true of the viewer's locale and none of it is true of this field.
+**`contentLanguage` is the language an author typed** — an artist can write a hold-screen message in
+Spanish tomorrow afternoon with no catalogue, no build and nobody's permission.
+
+*The module header opens by naming that exact conflation — "`contentLanguage` IS NOT THE VIEWER'S
+LOCALE, AND THE TWO ARE EASY TO CONFLATE" — and the test committed it in the file next door.*
+
+**So the test did not miss the defect. It stated the case for it, and passed.** That is worth more
+than the bug: a test pins a bug exactly as firmly as it pins a guarantee, and nothing in a green
+suite distinguishes the two. What distinguished them here was an artefact that had never seen the
+test — the document.
+
 **Ruling: every vocabulary-derived export in `@arthome/core/schema` is named `…In` or `…Out`, with
 no `…Schema` spelling available for either.** A name that does not state the direction is a name
 that will be used in the wrong one.

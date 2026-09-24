@@ -177,7 +177,7 @@ global is not an import. What closes that hole is `types: []` on the shared base
 | `IanaTimeZoneSchema` | shape validation, not existence: the IANA database is not bundled |
 | the **22 vocabularies** | strict `z.enum` on the **way in**, `z.union([z.enum, z.string])` on the **way out** — `backend-contracts`'s rule R14 |
 | branded identifiers | `AccountId`, `ProfileId`, `DateId`, `ShowId`, `ArtistId`, `VenueId`, `ChannelId`, `SeatId`, `OrderId` — UUIDv7 validated by shape |
-| `SlugSchema`, `LocaleSchema`, `CountryCodeSchema`, `CurrencyCodeSchema` | boundary vocabularies |
+| `SlugSchema`, `LocaleIn`/`LocaleOut`, `CountryCodeSchema`, `CurrencyCodeSchema` | boundary vocabularies |
 | `PageCursorSchema` | opaque Base64 over `(created_at, id)` |
 | `BuyerTaxLocationSchema`, `TaxEvidenceSchema` | §5 — new, and they cross |
 | `ErrorEnvelopeSchema` | `code`, `params`, `traceId`, **`nature`** |

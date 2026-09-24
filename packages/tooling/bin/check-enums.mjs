@@ -236,7 +236,7 @@ function main() {
       //   explicit annotation on every exported schema, and an annotation of a zod
       //   enum necessarily restates its members:
       //
-      //     export const LocaleSchema: z.ZodEnum<{ fr: 'fr'; en: 'en' }> = z.enum(['fr', 'en']);
+      //     export const LocaleIn: z.ZodEnum<{ fr: 'fr'; en: 'en' }> = z.enum(['fr', 'en']);
       //
       //   So one of this document's rules manufactures a literal that another of its
       //   gates then reports — and the author cannot remove it. Left alone it would

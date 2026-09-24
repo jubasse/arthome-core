@@ -23,18 +23,35 @@
  * ⚠ `contentLanguage` IS NOT THE VIEWER'S LOCALE, AND THE TWO ARE EASY TO
  *   CONFLATE.
  *
- *   `LocaleSchema` is the viewer's preference and governs which catalogue a
- *   surface loads. `contentLanguage` is a property of THIS TEXT — the language
- *   its author typed. A viewer reading in English may be shown a hold-screen
- *   message in French, and the field is what lets the surface say so rather than
- *   pretend otherwise. They share a vocabulary and mean different things, which
- *   is the `reasonCode` shape (D-039) waiting to happen; naming it here is the
- *   cheapest place to stop it.
+ *   `LocaleIn` is the viewer's preference and governs which catalogue a surface
+ *   loads. `contentLanguage` is a property of THIS TEXT — the language its
+ *   author typed. A viewer reading in English may be shown a hold-screen message
+ *   in French, and the field is what lets the surface say so rather than pretend
+ *   otherwise. They share a vocabulary and mean different things, which is the
+ *   `reasonCode` shape (D-039) waiting to happen; naming it here is the cheapest
+ *   place to stop it.
+ *
+ * ⚠ AND THE FIRST VERSION OF THIS FILE GOT THE OTHER HALF WRONG — the direction,
+ *   not the concept.
+ *
+ *   It used `LocaleSchema`, which was `vocabularyIn(LOCALES)`: STRICT. On a
+ *   RESPONSE. It emitted `enum: ['fr','en']`, so the day a third content language
+ *   is authored, a television running a year-old build rejects **the whole
+ *   payload this text sits in** rather than showing the text and shrugging at the
+ *   language. That is critical rule 10 broken on the member while honoured on the
+ *   shape — in a module written two days after the rule, by someone who had just
+ *   written a paragraph about `contentLanguage` versus the viewer's locale and
+ *   never asked which DIRECTION the field travelled.
+ *
+ *   The empty-diff gate found it on its first run, by comparing the emitted
+ *   `enum` against a document that has none (D-065 §H). Core now exports
+ *   `LocaleIn` and `LocaleOut` and no `LocaleSchema` at all, so the choice has to
+ *   be made rather than defaulted.
  */
 import { z } from 'zod';
-import { LocaleSchema } from '@arthome/core/schema';
+import { type VocabularyOut } from '@arthome/core/schema';
 export declare const LocalizedTextSchema: z.ZodObject<{
-    contentLanguage: typeof LocaleSchema;
+    contentLanguage: VocabularyOut;
     text: z.ZodString;
 }, z.core.$loose>;
 //# sourceMappingURL=index.d.ts.map

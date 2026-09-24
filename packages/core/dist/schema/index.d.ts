@@ -18,7 +18,7 @@
  * DECIDES. Putting zod there would charge the dependency to every evaluation of
  * an entitlement, on the hottest path in the system.
  */
-export { CountryCodeSchema, CurrencyCodeSchema, IanaTimeZoneSchema, InstantSchema, LocaleSchema, PageCursorSchema, SlugSchema, } from './primitives.js';
+export { CountryCodeSchema, CurrencyCodeSchema, IanaTimeZoneSchema, InstantSchema, LocaleIn, LocaleOut, PageCursorSchema, SlugSchema, } from './primitives.js';
 export { BasisPointsSchema, MoneySchema } from './money.js';
 export { VenueClockSchema } from './time.js';
 export type { VocabularyIn, VocabularyOut, VocabularyOutNullable } from './vocabulary.js';

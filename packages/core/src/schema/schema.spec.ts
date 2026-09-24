@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ErrorEnvelopeSchema, issueToCode } from './error.js';
 import { AccountIdSchema, PublicHandleSchema } from './identifiers.js';
 import { MoneySchema } from './money.js';
-import { IanaTimeZoneSchema, InstantSchema, LocaleSchema } from './primitives.js';
+import { IanaTimeZoneSchema, InstantSchema, LocaleIn, LocaleOut } from './primitives.js';
 import { vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
 import { DATE_OUTCOMES } from '../vocabulary/catalog.js';
 
@@ -167,9 +167,12 @@ describe('the primitives refuse what bit us before', () => {
     expect(MoneySchema.safeParse({ amountMinor: 2600, currencyCode: 'eur' }).success).toBe(false);
   });
 
-  it('is strict on a locale, because it arrives on a request', () => {
-    expect(LocaleSchema.safeParse('fr').success).toBe(true);
-    expect(LocaleSchema.safeParse('de').success).toBe(false);
+  it('is strict on a locale IN and tolerant on a locale OUT', () => {
+    expect(LocaleIn.safeParse('fr').success).toBe(true);
+    expect(LocaleIn.safeParse('de').success).toBe(false);
+    // And the OUT side keeps it, which is the whole asymmetry: a television
+    // must render a text whose language it has never heard of.
+    expect(LocaleOut.safeParse('de').success).toBe(true);
   });
 
   it('exposes a handle, never an internal identifier', () => {
