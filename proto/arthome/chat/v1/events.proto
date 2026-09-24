@@ -21,7 +21,7 @@ import "google/protobuf/timestamp.proto";
 
 // Vocabulary from `catalogue.json`, which has authority.
 // Three parallel tables exist in the mockups — `free | emoji | off` on the web
-// and the run-desk console, `read` instead of `read-only` — and the i18n
+// and the run-desk console, `read` instead of `read_only` — and the i18n
 // resolves only the first set. It is defect D2 on another field (E2).
 enum ChatMode {
   CHAT_MODE_UNSPECIFIED = 0;

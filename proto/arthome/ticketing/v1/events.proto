@@ -54,7 +54,7 @@ enum PlanTier {
 }
 
 // The nine openings actually carried by `catalogue.json`.
-// `multi-screen` is not a marketing line: it is an execution constraint, which
+// `multi_screen` is not a marketing line: it is an execution constraint, which
 // forces a server-side count held by `streaming`.
 enum PlanOpening {
   PLAN_OPENING_UNSPECIFIED = 0;

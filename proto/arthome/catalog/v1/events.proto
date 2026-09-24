@@ -15,7 +15,7 @@ import "arthome/common/v1/common.proto";
 import "google/protobuf/timestamp.proto";
 
 // The channel's ACT. Vocabulary from `catalogue.json`, which has authority (D2):
-// `replay-online` says what `replay` does not — the replay is ON SALE.
+// `replay_online` says what `replay` does not — the replay is ON SALE.
 // The parallel tables of the two studio mockups (`hidden`, `sched`, `tech`,
 // `done`) are never adopted.
 enum PublicationState {

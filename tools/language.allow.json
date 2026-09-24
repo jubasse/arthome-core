@@ -45,5 +45,54 @@
     ],
     "open": "<script type=\"text/x-arthome-extract\"",
     "close": "</script>"
+  },
+  "quotations": {
+    "_why": [
+      "A THIRD CATEGORY, and the only one that is not a file.",
+      "",
+      "A record of why something was corrected quotes the thing it corrected, and",
+      "here that thing is often French. Translating the quotation destroys what it",
+      "is doing: \"les quatorze entrées de navigation\", translated, stops BEING the",
+      "defect and becomes a claim about one.",
+      "",
+      "Neither file-level exemption covers this and neither should. The arbitration",
+      "log is written in English; exempting the whole file would exempt the prose",
+      "that is the point of it.",
+      "",
+      "So an exemption names one QUOTATION, in one file, with its reason. Two",
+      "properties keep it honest: the text must appear VERBATIM in the file, so an",
+      "entry cannot widen into a blanket pass; and an entry whose quotation has gone",
+      "is an ERROR rather than a silent no-op, so it expires the day the sentence it",
+      "protects does.",
+      "",
+      "If this list grows past a handful, the log has started quoting instead of",
+      "arguing.",
+      "",
+      "An entry is a SINGLE-LINE fragment, because the check is per line. A quotation",
+      "that wraps needs one entry per line — which the gate told me on its first run,",
+      "about my own entry."
+    ],
+    "allow": [
+      {
+        "file": "DECISIONS.md",
+        "quote": "Le merch s'ajoute depuis la boutique d'un live",
+        "reason": "D-011. The mockup's own empty-state copy, quoted as the EVIDENCE that the cart carries merchandise and not seats — the finding that corrected an instruction I had given the surfaces. The arbitration rests on what the string says; a translation would be my paraphrase of the evidence rather than the evidence."
+      },
+      {
+        "file": "DECISIONS.md",
+        "quote": "les quatorze entrées de navigation",
+        "reason": "D-027b. A stale comment that said fourteen above a list of fifteen. The quotation IS the defect; translated it becomes a description of a defect, and the reader loses the ability to see that the count and the list disagreed."
+      },
+      {
+        "file": "DECISIONS.md",
+        "quote": "nous on pourra faire de la",
+        "reason": "D-036. The project owner's own words, and the whole basis for treating automatic moderation as a STATED direction rather than an invented one — which is what distinguishes `automatic_filter` from a D-022 violation. A ruling that rests on what someone said must quote them, not summarise them. Wraps across two lines, so two entries."
+      },
+      {
+        "file": "DECISIONS.md",
+        "quote": "modération automatique à terme aussi",
+        "reason": "D-036. The project owner's own words, and the whole basis for treating automatic moderation as a STATED direction rather than an invented one — which is what distinguishes `automatic_filter` from a D-022 violation. A ruling that rests on what someone said must quote them, not summarise them. Wraps across two lines, so two entries."
+      }
+    ]
   }
 }

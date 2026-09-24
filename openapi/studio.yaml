@@ -6910,11 +6910,22 @@ components:
       type: object
       required: [id, satisfied, source, blocking]
       description: |
-        **Seven items, the ones on the record** — not the four in the fixtures, which are an
+        **Nine items, the ones on the record** — not the four in the fixtures, which are an
         arbitrary subset. Served as a **list of identifiers**, never a percentage, which the client
         would compute.
 
-        **Three of the seven are facts projected** from other contexts: `catalog` keeps them up to
+        **Seven block publication and two do not.** `chapters_planned` and `moderator_assigned` are
+        **non-blocking warnings**: a date must be publishable without chapters. They are in the same
+        vocabulary because they are the same kind of thing on the same screen — the blocking part is
+        a property of the item, not of the list, and splitting the list would make "publish —
+        3 missing" count two things.
+
+        **This description said "seven" while the vocabulary below listed nine**, and the count was
+        the stale half: `moderator_assigned` is quoted elsewhere in this document as a checklist item
+        that `datesToCover` counts against. A number in prose beside the list it counts is rule 15 in
+        miniature, and it is corrected here rather than by making the list shorter.
+
+        **Three of the nine are facts projected** from other contexts: `catalog` keeps them up to
         date by event, it asks nobody for them.
       properties:
         id:

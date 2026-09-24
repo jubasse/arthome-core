@@ -131,8 +131,8 @@ const FRENCH_RE = new RegExp(
 );
 
 // How many DISTINCT French words a file must show before it is reported.
-// Three, because two is reachable by accident — `fait` in a French show title,
-// `est` in a German word list — and four would miss a short header comment.
+// Three, because two is reachable by accident — a stop-word can surface inside a
+// show title or a foreign word list — and four would miss a short header comment.
 const THRESHOLD = 3;
 
 // ---------------------------------------------------------------- file lists
@@ -171,6 +171,34 @@ function matchesGlob(file, pattern) {
 }
 
 const isAllowed = (file) => ALLOWED.some((p) => matchesGlob(file, p));
+
+// ------------------------------------------------------------------ quotations
+// A THIRD CATEGORY, AND THE ONLY ONE THAT IS NOT A FILE.
+//
+// A record of why something was corrected will quote the thing it corrected, and
+// here that thing is often French: a mockup string, a stale comment, the project
+// owner's own words. Translating the quotation destroys what it is doing: a
+// stale comment quoted for its wrong count, once translated, stops BEING the
+// defect and becomes a claim about one (D-027b).
+//
+// The two file-level exemptions do not cover this, and neither should cover it:
+// the arbitration log is English, and exempting the whole file would exempt the
+// prose that is the point of it.
+//
+// So exemptions are per QUOTATION, each naming its file, its exact text and its
+// reason — the shape this repository already uses for an enum literal and for an
+// idempotency exemption. Two properties make it safe to have at all:
+//
+//   - the quoted text must appear VERBATIM in the file, so an entry cannot widen
+//     into a blanket pass;
+//   - an entry whose quotation is GONE is an error, not a silent no-op, so the
+//     exemption expires the day the sentence it protects does. A stale allowance
+//     is the rot this gate exists to find.
+const QUOTATIONS = allow.quotations?.allow ?? [];
+
+function quotationsFor(file) {
+  return QUOTATIONS.filter((q) => q.file === file);
+}
 
 // ------------------------------------------------------------------ provenance
 // A LINE THAT ALREADY EXISTS IN THE READ-ONLY SOURCE IS NOT OURS TO TRANSLATE.
@@ -311,6 +339,7 @@ function commentsOfSource(text, ext) {
 const files = tracked();
 const reported = [];
 const skipped = [];
+const staleQuotations = [];
 let checked = 0;
 
 for (const file of files) {
@@ -334,9 +363,23 @@ for (const file of files) {
   // Inside prototypes/, a line lifted verbatim from a mockup is the designer's,
   // not ours. Checked by provenance, never assumed from the directory.
   const src = file.startsWith('prototypes/') ? sourceLineSet(files) : null;
+  // Declared quotations, checked against the file before they are honoured: one
+  // that has gone is an error rather than a silent no-op.
+  const quotes = quotationsFor(file);
+  for (const q of quotes) {
+    if (!q.reason || !String(q.reason).trim()) {
+      staleQuotations.push(`${file}: a quotation exemption carries no reason.`);
+    } else if (!text.includes(q.quote)) {
+      staleQuotations.push(
+        `${file}: the exempted quotation is no longer in the file —\n      ${JSON.stringify(q.quote)}\n      Remove the entry from tools/language.allow.json; it now exempts nothing.`,
+      );
+    }
+  }
+  const live = quotes.filter((q) => text.includes(q.quote));
   const words = new Map(); // word -> first line
   for (const [n, line] of lines) {
     if (src && src.has(line.trim())) continue;
+    if (live.some((q) => line.includes(q.quote))) continue;
     for (const m of line.matchAll(FRENCH_RE)) {
       const w = m[1].toLowerCase();
       if (!words.has(w)) words.set(w, n);
@@ -350,6 +393,17 @@ if (!QUIET) {
     `arthome-check-language: ${checked} file(s) checked, ${skipped.length} allowed by tools/language.allow.json`,
   );
   if (VERBOSE) for (const s of skipped) console.log(`  allowed  ${s}`);
+}
+
+if (staleQuotations.length) {
+  console.error(`\nFAIL ${staleQuotations.length} stale quotation exemption(s):\n`);
+  for (const s of staleQuotations) console.error(`  ${s}`);
+  console.error(
+    '\n  A quotation exemption is honoured only while the quotation is there. One\n' +
+      '  that outlives its sentence is a standing hole with nobody behind it, which\n' +
+      '  is the rot this gate exists to find.',
+  );
+  process.exit(1);
 }
 
 if (reported.length) {
