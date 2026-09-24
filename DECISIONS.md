@@ -1978,3 +1978,61 @@ senior has now agreed. `backend-domain` wrote the `badge_*` reasoning from the v
 field it travels in, and the force I put behind it is what kept it from rechecking its own argument.
 
 *That is the cost of a strong opinion stated by whoever arbitrates, and it is paid by someone else.*
+
+### D-052 — State the bound, not the hit; and do not claim a reproduction you did not get
+
+**`pnpm run verify` — the full chain, not the subset — passes for the first time in the project's
+life.** Nine gates, `typecheck`, 313 tests. Zero undeclared blocks. The ratchet is deleted, because
+its own comment said to at zero and its author confirmed the gate passes without it **before**
+removing it.
+
+**1. THE BEST FORM OF A RESULT IS THE BOUND, NOT THE HIT.**
+
+`backend-contracts` found seven copied literals by hand-scanning the files `check-enums` had never
+swept. `backend-domain` re-ran the same scan independently and reported it differently:
+
+> ***The gate has never swept ten declaring files, and exactly one of them had something to find.***
+
+That states **how much was never looked at**, not how much was wrong. A hit count tells you what a
+search found; a bound tells you what the search space was — and only the second lets the next reader
+judge whether the absence of further findings means anything.
+
+*Every "we found N" in this log would have been more useful as "we looked at M and found N".*
+
+**2. DO NOT CLAIM A REPRODUCTION YOU DID NOT GET.**
+
+`conventions` set out to answer `backend-domain`'s report that `eslint --fix` and `prettier --write`
+do not converge. Its **first test was invalid** — it passed `--config /dev/null`, so ESLint loaded
+no rules, fixed nothing, and both orders "converged" trivially. **Fourth broken fixture this week**,
+and the tell was not a failure: *its result contradicted a teammate's direct observation.*
+
+With the real configuration it still could not reproduce the symptom. So it **documented the
+mechanism and said it had not reproduced it** — ESLint changes *structure*, Prettier reflows the
+result and never does the reverse, so ESLint-first converges and Prettier-first needs a third pass,
+which is exactly what was observed.
+
+*A mechanism that explains an observation is not the same as having reproduced it, and saying which
+one you have is the whole of the claim's value.* The rule follows either way, and `pnpm run fix`
+now runs structure-then-formatting, verified across the repository.
+
+**3. `backend-contracts` SHARPENED WHY `BLOCKING_ITEMS` WAS THE DANGEROUS KIND.**
+
+> ***A duplicate that drifts is a nuisance; a duplicate whose drift silently picks a side is the one
+> that ships.***
+
+A tenth checklist item would not have produced a disagreement to notice — it would have been
+**non-blocking by omission rather than by decision**, the same shape as `planOf()` dropping every
+account to `free`. And the fix was **demonstrated** rather than asserted: a tenth member added, the
+`TS2741` observed, the member reverted. *The right standard for a claim whose entire content is
+"this becomes a type error".*
+
+**4. AND TWO RESIDUE FINDINGS WERE NAMED RATHER THAN EXEMPTED.** `JournalEntry.nature` carries `mod`
+and `air` — the only abbreviated members in either contract, where everything else spells
+`moderation` out, so a reader who writes `moderation` gets nothing back in silence. Kept as **a wart
+with an expiry**: they become `moderation` and `on_air` the first time that path changes, because
+fixing them today breaks a shipped query parameter for a defect that has not bitten.
+
+And `cancelReasonCode` has **one member** — a field whose enum has a single value carries no
+information, since every request says the same thing. Not exempted quietly: the description names
+what would make it a vocabulary and names the candidate. *A placeholder that is honest about being
+one is worth more than an exemption that is not.*
