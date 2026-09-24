@@ -32,11 +32,30 @@ import yaml
 
 EQUIVALENCES = [
     "`$schema` and `$id` are stripped -- emitter bookkeeping, not contract",
-    "`additionalProperties` absent == `{}` == `true` -- three spellings of 'open'",
+    "`additionalProperties` absent == `{}` -- looseObject's emitted form against the document's silence",
+    "`required: []` == absent `required` -- an all-optional shape; the documents never write the empty list",
     "`anyOf: [{X}, {type: null}]` == `type: [X, 'null']`, X's keywords merged up",
-    "key order is not compared",
+    "key order is not compared, at any depth",
     "a description's trailing whitespace is not compared -- YAML block scalars end in a newline",
 ]
+
+# WHAT IS DELIBERATELY *NOT* GRANTED, because the list above would otherwise be
+# read as the whole truth:
+#
+#   `additionalProperties: true` is NOT equated with `{}` or with absence.
+#   backend-contracts refused that one on its last turn and the refusal is right:
+#   absent and `{}` are two artefacts spelling one thing, but `true` IS A VALUE A
+#   HUMAN TYPES. Granting it means the gate can no longer tell a schema that is
+#   open by design from one somebody opened by hand to make a diff go away.
+#
+#   It costs something real and the cost is the point: the storefront's
+#   `WatchVerdict.reasonParams` carries `additionalProperties: true` today, so it
+#   will fail here until the document says `{}` or the source emits `true`. That
+#   is a document change made deliberately, which is what the ruling below asks
+#   for, rather than an exemption that makes it invisible.
+#
+#   `examples` is likewise never equated with a media type's `example`. Different
+#   keys, different owners, and the resemblance is the whole hazard.
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -52,7 +71,10 @@ def normalise(node):
     for key, value in node.items():
         if key in ("$schema", "$id"):
             continue
-        if key == "additionalProperties" and value in ({}, True):
+        # `{}` only -- see the note above EQUIVALENCES for why `True` is not here.
+        if key == "additionalProperties" and value == {}:
+            continue
+        if key == "required" and value == []:
             continue
         if key == "description" and isinstance(value, str):
             out[key] = value.strip()

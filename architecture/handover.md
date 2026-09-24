@@ -17,6 +17,7 @@ to one document is six conflicts, and six agents committing into one repository 
 | [`handover/studio-mobile.md`](handover/studio-mobile.md) | **the grep advice here is the inverse of `storefront-web`'s**; why `regie`/`sanct`/`ov`/`q` keep their names |
 | [`handover/auth.md`](handover/auth.md) | §12.5 is closeable and the ADR does not know it; two routes that must NOT be relayed |
 | [`handover/translator-docs.md`](handover/translator-docs.md) | **`check-language` is structurally blind to the product's vocabulary and passes either way** |
+| [`handover/backend-contracts.md`](handover/backend-contracts.md) | registry mode exactly; **which of the emit gate's equivalences to refuse**; what holds `paths` and what does not |
 
 **Three of the six correct something already committed**, which is the reason they were worth the
 cost. `studio-mobile` contradicts the one section written before them; `storefront-mobile` shows
