@@ -2479,3 +2479,75 @@ node and annotated at their parent*.
 *The check that settled it took two minutes and was shorter than the round trip I had already
 started.* Recorded here because a number left open in a log is a number someone will later quote as
 though it were closed.
+
+### D-063 — One change in one place, and the first time the generated artefact beat the written one
+
+**`backend-contracts` received opposite instructions from `backend-domain` and from me on the same
+call, and raised it once rather than writing either silently.** That was right, and its reason is
+the ruling:
+
+> *Writing `.meta()` directly in `@arthome/contracts` while core exports a union would be a second
+> implementation of the same rule — in the package built to prevent exactly that.*
+
+**So the change is inside `vocabularyOut` itself, in `@arthome/core`. One change, one place, call
+sites untouched.** My ruling was about the emitted shape, never about bypassing the helper; it was
+right to read it as ambiguous and stop.
+
+**AND IT MEASURED THE HALF I HAD NOT.** I measured the JSON Schema side. It measured TypeScript,
+which is the half the union was presumably for — and I re-ran it:
+
+```ts
+type U = 'open' | 'emoji' | string;
+type Verdict = string extends U ? 'collapses' : 'keeps the literals';
+const v: Verdict = 'collapses';     // tsc --strict: passes
+```
+
+**`string extends U` is true, so `U` *is* `string`.** No autocomplete, no exhaustive switch, no
+narrowing. **The union is validation-equivalent on the wire and type-equivalent in the editor** —
+it buys nothing in either artefact, which neither of us knew when the helper was written.
+
+**`.nullable()` AND `.meta()` ARE ORDER-SENSITIVE, AND THAT IS THIS WEEK'S SHAPE AGAIN.**
+
+```
+.meta({format}).nullable()   ->  anyOf: [{…, format}, {type: null}]    format buried in a branch
+.nullable().meta({format})   ->  { anyOf: […], format }                format on the field
+```
+
+The contracts carry the format on the field, so the second is the match — and the first loses it
+where **no generator looks**. *Two spellings that read identically and emit differently, with the
+difference visible only in the output.* Into the module, not the log.
+
+**THE NORMALISER TAKES THE EQUIVALENCES; THE DOCUMENTS AND THE EMITTER BOTH STAY IDIOMATIC.**
+
+zod collapses a nullable union into `type: [T,'null']` **only when the branches are bare** — a
+`format` is precisely what blocks it. Both contracts write `type: [string,'null']` with
+`format: date-time`, a form zod cannot produce.
+
+**The documents do not move.** `type: [string,'null']` is the 3.1 idiom and what a generator reads.
+The rewrite `anyOf: [{X}, {type: null}]` → `type: [X.type,'null']` is **lossless and mechanical** —
+a two-branch `anyOf` whose second branch is exactly `{type: null}` has one meaning — and it is a
+**comparison** concern, so it belongs in the normaliser rather than the emitter.
+
+**Four equivalences so far, and the distinction that governs what may join them**: `$schema`/`$id`
+stripped, `additionalProperties: {}` ≡ absent, `anyOf:[{X},{type:null}]` ≡ `type:[X,'null']`, key
+order. *None is about style. All four are two artefacts saying the same thing two ways* — and that
+is the test for the fifth.
+
+**AND THE FIRST CASE THIS WEEK WHERE THE GENERATED OUTPUT BEAT THE HAND-WRITTEN DOCUMENT.**
+`InstantSchema` emits **both** its `pattern` and `format: date-time`; the documents carry the format
+alone. The pattern is **stricter** — it refuses a `+02:00` spelling that the format permits, and
+`backend-domain` built it to refuse exactly that.
+
+**So the documents gain the pattern.** Not the emitter dropping it. *`backend-contracts` said so
+plainly about its own artefact, which is the harder direction to argue in.*
+
+**AND A FINDING FROM `backend-domain` WORTH KEEPING ON ITS OWN.** It wrote the `no z.transform()`
+rule as a spec using `node:fs`, and `tsc` refused it — `packages/core` sets `types: []` precisely so
+a Node API is unreachable, and the spec shares that project.
+
+> ***The test would have had to open a hole in the wall it was testing.***
+
+It moved into `check-core-entry.mjs`, which already walks that import graph in Node, **scoped to the
+modules reached from the entry point rather than to the directory** — a file in `src/schema/` that
+nothing imports sits at no boundary, and a boundary schema placed elsewhere and re-exported sits at
+one. Proved by planting a transform, which also exposed a line-number drift in its own gate.
