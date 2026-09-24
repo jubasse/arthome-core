@@ -43,12 +43,23 @@ const HEADER = (name) =>
 
 function main() {
   if (!fs.existsSync(SOURCE)) {
-    // Not an error: the package was installed from a tree that had not been
-    // built. Say so and exit 0 — a postinstall that fails blocks an install,
-    // and a missing document is not worth blocking one.
-    console.warn('arthome-sync-agent-docs: no docs/ in @arthome/tooling — nothing to copy.');
-    console.warn('  (run `pnpm --filter @arthome/tooling run build` in arthome-core first)');
-    return 0;
+    // ⚠ EXIT 1, AND THE REASONING CHANGED — the comment here used to argue the
+    //   opposite, that an unbuilt tree is not worth blocking an install over.
+    //   That held until `prepack` existed. Now building is part of packing, so
+    //   a tarball CANNOT arrive without docs/ unless the package is malformed
+    //   — and this branch no longer means "not built yet", it means broken.
+    //
+    //   It also runs as a postinstall hook, where a warning scrolls past inside
+    //   pnpm's output and the install still succeeds. A repository would come
+    //   up with no rules, no conventions and no surface map, and nothing
+    //   anywhere would have failed. Absence reads exactly like success — D-070
+    //   again. Being allowed to stop things is the whole reason this is a hook
+    //   rather than a line in a README.
+    console.error('arthome-sync-agent-docs: @arthome/tooling shipped no docs/ — REFUSING to');
+    console.error('  report success. This repository would have come up with no rules at all.');
+    console.error('  The package is at fault, not this repository: docs/ is build output and');
+    console.error('  `prepack` is what puts it into the tarball. Re-pack @arthome/tooling.');
+    return 1;
   }
   if (path.resolve(DESTINATION_ROOT) === path.resolve(PACKAGE_ROOT)) {
     console.warn('arthome-sync-agent-docs: refusing to copy a package onto itself.');

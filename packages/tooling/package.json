@@ -103,6 +103,7 @@
     "internal"
   ],
   "scripts": {
-    "build": "node bin/collect-agent-docs.mjs"
+    "build": "node bin/collect-agent-docs.mjs",
+    "prepack": "node bin/collect-agent-docs.mjs"
   }
 }

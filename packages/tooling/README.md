@@ -299,5 +299,13 @@ and this project's dominant fault class is exactly that — the parallel table t
 a link. They are reference rather than rules, they are large, and five copies of them is the
 parallel table this project spends its gates preventing.
 
+**Packing builds, and the hook refuses an empty package.** `docs/` is build output, and `pnpm pack`
+does not build — so the first tarball ever produced here carried `bin/` and no documents at all,
+and the hook reported success over it. Two changes closed that: `prepack` makes building part of
+packing, so a tarball cannot lack the documents; and the hook now **exits 1** when it finds none,
+because a postinstall warning scrolls past inside pnpm's output and a repository would come up with
+no rules while nothing anywhere failed. Being allowed to stop an install is the entire reason this
+is a hook and not a line in a README.
+
 ⚠ **It overwrites.** A local edit at the destination is lost at the next install rather than
 reported — which is the point of a projection, and worth knowing before someone fixes a typo there.
