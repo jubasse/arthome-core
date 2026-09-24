@@ -35,6 +35,22 @@ import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
 const CWD = process.cwd();
+
+// `--ids '{"ExportName":"DocumentSchemaName", …}'` switches on REGISTRY MODE.
+//
+// WHY THE MAP COMES IN RATHER THAN BEING COMPUTED HERE. Without a registry,
+// `z.toJSONSchema` INLINES every nested object: `BuyerTaxLocation` holding an
+// array of `TaxEvidence` emits a copy of it, and the document gains a second
+// `TaxEvidence` under no name at all — E2, produced by the tool meant to remove
+// it. A registry fixes that, and it needs each schema's DOCUMENT name, which
+// only the Python half knows because only it reads the documents.
+//
+// So this stays a tool that decides nothing. Run without `--ids` it emits each
+// schema standalone, which is what the first pass needs in order to learn the
+// export names in the first place.
+const idsArg = process.argv.indexOf('--ids');
+const IDS = idsArg !== -1 ? JSON.parse(process.argv[idsArg + 1]) : null;
+
 const PACKAGES = ['packages/core', 'packages/contracts'].map((p) => path.resolve(CWD, p));
 
 // ZOD IS RESOLVED FROM THE PACKAGE, NEVER FROM THIS REPOSITORY'S ROOT.
@@ -107,12 +123,43 @@ for (const pkgDir of PACKAGES) {
       }
       // `io: 'output'` is the only correct mode for a response shape: it is what
       // a client receives, and it is where `.default()` stops being optional.
-      emitted[name] = {
-        from: key,
-        schema: z.toJSONSchema(value, { io: 'output' }),
-      };
+      emitted[name] = IDS
+        ? { from: key, zod: value }
+        : { from: key, schema: z.toJSONSchema(value, { io: 'output' }) };
     }
   }
 }
 
-process.stdout.write(JSON.stringify({ emitted, problems }, null, 2));
+if (IDS) {
+  // ⚠ THE ID LIVES ON THE SCHEMA, so a schema nobody registers is SILENTLY
+  //   INLINED and the emitted document stays VALID. That is the failure to watch
+  //   for here — it does not throw, it does not warn, it just produces a second
+  //   copy of a shape under no name. Everything the Python half could name is
+  //   registered, and anything it could not is emitted standalone below with the
+  //   omission stated rather than hidden.
+  const registry = z.registry();
+  const registered = [];
+  for (const [name, entry] of Object.entries(emitted)) {
+    if (!IDS[name]) continue;
+    registry.add(entry.zod, { id: IDS[name] });
+    registered.push(name);
+  }
+  const { schemas } = z.toJSONSchema(registry, {
+    io: 'output',
+    uri: (id) => `#/components/schemas/${id}`,
+  });
+  for (const [name, entry] of Object.entries(emitted)) {
+    emitted[name] = IDS[name]
+      ? { from: entry.from, schema: schemas[IDS[name]] }
+      : {
+          from: entry.from,
+          schema: z.toJSONSchema(entry.zod, { io: 'output' }),
+          unregistered: true,
+        };
+  }
+  process.stdout.write(
+    JSON.stringify({ emitted, problems, registered: registered.length }, null, 2),
+  );
+} else {
+  process.stdout.write(JSON.stringify({ emitted, problems }, null, 2));
+}

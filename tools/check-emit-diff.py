@@ -204,14 +204,45 @@ def main(argv):
         print("usage: check-emit-diff.py openapi/*.yaml [--all]", file=sys.stderr)
         return 2
 
-    run = subprocess.run(
-        ["node", "tools/emit-contracts.mjs"], cwd=ROOT, capture_output=True, text=True
-    )
-    if run.returncode != 0:
-        print("✗ the emitter failed. Build the packages first.\n", file=sys.stderr)
-        print(run.stderr.strip()[:2000], file=sys.stderr)
+    def emit(ids=None):
+        argv = ["node", "tools/emit-contracts.mjs"]
+        if ids is not None:
+            argv += ["--ids", json.dumps(ids)]
+        run = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True)
+        if run.returncode != 0:
+            print("\u2717 the emitter failed. Build the packages first.\n", file=sys.stderr)
+            print(run.stderr.strip()[:2000], file=sys.stderr)
+            return None
+        return json.loads(run.stdout)
+
+    # PASS ONE learns the export names. PASS TWO emits them as a REGISTRY, which
+    # is the only way a `$ref` survives: without one, `z.toJSONSchema` INLINES
+    # every nested object, so a schema holding a `TaxEvidence` emits a copy of it
+    # and the document gains a second one under no name at all -- E2, produced by
+    # the tool built to remove it.
+    #
+    # The id has to be the DOCUMENT's name, so the mapping is computed here,
+    # where the documents are read, and handed to a Node half that still decides
+    # nothing.
+    payload = emit()
+    if payload is None:
         return 1
-    payload = json.loads(run.stdout)
+    emitted = payload["emitted"]
+
+    names = set()
+    for document in documents:
+        names |= set(
+            yaml.safe_load(Path(document).read_text(encoding="utf-8"))["components"]["schemas"]
+        )
+    ids = {}
+    for name in sorted(names):
+        export, _entry = source_of(name, emitted)
+        if export is not None:
+            ids[export] = name
+
+    payload = emit(ids)
+    if payload is None:
+        return 1
     emitted, problems = payload["emitted"], payload["problems"]
 
     if problems:

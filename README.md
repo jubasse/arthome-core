@@ -112,6 +112,11 @@ exits 3 — not 0 — when it could not compare (a package not installed, declar
 Regenerate with `pnpm exec arthome-generate-map`. The one hand-written input is
 [`repo-map.purposes.json`](repo-map.purposes.json): the purpose of each directory.
 
+*A generated map is a projection with a checker; a written one is a claim with nobody behind it.*
+The checker's reach stops where the declarations do: it proves the map matches the published
+`.d.ts`, never the runtime, and for the 41 directory purposes it proves only that every directory
+has an entry and every entry has a directory. **It cannot tell you a purpose is true.**
+
 A consuming repository runs the same two bins against its own `node_modules`, so its map describes the
 version of `@arthome/*` actually installed there. `check:map` is not in `verify` yet.
 
