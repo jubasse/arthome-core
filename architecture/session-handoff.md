@@ -10,10 +10,12 @@
 
 ```
 repo      ~/Dev/arthome/arthome-core   (public: github.com/jubasse/arthome-core)
-HEAD      848d87e · 116 commits · working tree clean
-verify    pnpm run verify → exit 0   (9 gates, typecheck, 336 tests)
-vocab     120 of 234 blocks compared, 0 disagree, 0 undeclared
-log       DECISIONS.md — 66 arbitrations
+HEAD      8f1d805 · 124 commits · working tree clean · NOT PUSHED (7 ahead)
+verify    pnpm run verify → exit 0   (9 gates, typecheck, 339 tests)
+vocab     121 of 234 blocks compared, 0 disagree, 0 undeclared, 113 exempt
+emit      pnpm run check:emit-diff → RED BY DESIGN. 14 sourced, 14 disagree.
+          Deliberately out of `verify` until it is green — D-065.
+log       DECISIONS.md — 68 arbitrations
 ```
 
 **The foundation is built.** `@arthome/core` (domain, two entry points, `./schema` added this
@@ -30,15 +32,27 @@ scoping READMEs only.
 - the two OpenAPI documents are **hand-written and authoritative**; the schemas must reproduce them
 - **`paths` is NOT generated** — D-058 scoped the empty diff to `components/schemas` only, because
   `paths` is 65–71 % of each document and has no zod source
-- the **emit diff gate is not built**. It compares **trees, not text**, and takes four known
-  equivalences: `$schema`/`$id` stripped, `additionalProperties: {}` ≡ absent,
-  `anyOf:[{X},{type:null}]` ≡ `type:[X,'null']` with X's keywords merged up, key order
-- when it is built it needs `^build` in its Turbo `dependsOn`, or it diffs against a stale core
+- **the emit diff gate is BUILT** — `tools/emit-contracts.mjs` + `tools/check-emit-diff.py`,
+  `pnpm run check:emit-diff`. It compares **trees, not text**, indexes **by the document**, and
+  grants six equivalences it prints on every run. It is **red and out of `verify` on purpose**: a
+  gate wired in red is a gate switched off within a day (D-065)
+- **what it found is the work**: 14 sourced schemas, 14 disagreements, nine families, ruled in
+  D-065. Two are fixed (§H the strict locale, and the misdeclared narrowing). Seven are open
+- `additionalProperties: true` is **not** granted as an equivalence — `backend-contracts` refused it
+  and the refusal is right: `true` is a value a human types, so granting it hides a schema somebody
+  opened by hand to silence a diff. It will fail on `WatchVerdict.reasonParams` until the document
+  is changed deliberately
+- it reads `dist/`, so it needs `^build` upstream or it diffs against a stale core. The
+  `check:emit-diff` script runs `pnpm -r run build` first; a Turbo wiring would need `^build` in
+  `dependsOn`
+- **registry mode, when refs are wired**: the id lives on the schema, so a schema you forget to
+  register is **silently inlined** and the emitted document stays valid. That is the failure to
+  watch for — `architecture/handover/backend-contracts.md` has the exact call
 
 **Open and unassigned**: the repository map (D-061) — generated from installed packages'
-declarations, committed, freshness-gated. `conventions` settled its three design questions (one
-registry per repository; one map per repository; only what is reachable through `exports`, organised
-by subpath) and did not implement it.
+declarations, committed, freshness-gated. `conventions` settled its three design questions and did
+not implement it; **`architecture/handover/conventions.md` §1 is now the only place that design
+exists**, including which of the three answers its author trusted least.
 
 ---
 
@@ -58,9 +72,13 @@ on every turn it takes afterwards.
 3. **Model by role.** Opus for arbitration; extraction, translation and annotation do not need it.
 4. **Three in parallel, not eleven.**
 
-**Agent state right now**: all eleven hit a session limit at 08:34, reset 16:00. Six of the seven
-being stood down never wrote their handover section; `architecture/handover.md` has one section
-(`storefront-web`). Their *work* is committed — only the notes are missing.
+**Agent state: there are none. All eleven were stood down on 24 September 2026, each after writing
+its own handover note.** `architecture/handover.md` is the index; the ten notes are in
+`architecture/handover/`. Read them before touching a mockup or the emit path — four of them correct
+something that was already committed, including two gates and one arbitration.
+
+**This project is now solo.** That changes which detectors are available, and D-066 says which ones
+survive. It is the first thing to read after this file.
 
 ---
 
@@ -96,13 +114,23 @@ being stood down never wrote their handover section; `architecture/handover.md` 
 
 ## The one finding that outlives the project
 
-**D-055.** The only reliable detector all week was **a teammate disagreeing with something** — not
-rereading. Almost nothing was caught by care; nearly everything by a short check that could fail for
-the reason it mattered.
+**D-055 said the only reliable detector was a teammate disagreeing, and that it does not survive a
+solo project. D-066 corrects it, and the correction is the part to keep.** What is gone is *one*
+kind — the scope error inside an instrument, invisible from within the instrument. Two kinds are not
+gone, both are cheap, and both work with nobody else in the room:
 
-This is a solo project. That detector does not survive. `code-conventions.md` §5.3.1 is an attempt
-at a substitute and its author would not claim it fully succeeds.
+**A — make an OUTSIDE AUTHORITY contradict the document.** An internally coherent document can be
+wrong about the world, and no internal review reaches that. *Every sentence of the form "vendor X
+does Y" is a URL nobody has opened yet.* Cost: minutes.
 
-What does substitute, on the evidence: **construct the discriminating case rather than reason about
-the mechanism**, and **run something short that can fail for the reason you care about.** Both work
-without a second party.
+**B — RECOUNT what a document says about itself.** *Any sentence carrying a number about this
+repository is a script, usually a one-liner.* It is not a hunt: some counts come back true, which is
+what makes it a detector.
+
+**B caught the lead twice on 24 September**, both times within an hour of the claim being written —
+once on a line count, once on an arbitration entry whose own prescribed fix had reached one file of
+five.
+
+And the standing instruction `skeptic` left, which is B pointed at this log: **take any entry that
+names the files it says must change, and check the files.** Two entries were checked that way and
+both were wrong the same way.
