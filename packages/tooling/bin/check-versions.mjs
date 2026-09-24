@@ -227,6 +227,21 @@ function checkPackageManager() {
  * directly, because the store is where duplication is visible and package.json
  * is where it is invisible.
  */
+/**
+ * The second copies this repository has declared harmless, with their reason.
+ *
+ * ⚠ SCOPED TO ONE REPOSITORY ON PURPOSE. The same duplicate may be benign where
+ *   a generator runs and a genuine fault where it does not, so an entry names
+ *   the repository it applies to. `versions.json` holds the reasons.
+ */
+function allowedDuplicates(name) {
+  const declared = TABLE.duplicatesAllowed?.[name];
+  if (!Array.isArray(declared)) return [];
+  return declared.filter((d) => d.repo === REPO);
+}
+
+const granted = [];
+
 function checkSingleCopy() {
   const store = path.join(CWD, 'node_modules', '.pnpm');
   if (!fs.existsSync(store)) return;
@@ -251,6 +266,13 @@ function checkSingleCopy() {
       const v = /^(\d+\.\d+\.\d+[^_]*)/.exec(rest)?.[1];
       if (v) versions.add(v);
     }
+    // A declared exception is removed from the count and printed, never hidden.
+    for (const allowed of allowedDuplicates(name)) {
+      if (versions.delete(allowed.version)) {
+        granted.push(`${name}@${allowed.version} via ${allowed.broughtBy}`);
+      }
+    }
+
     if (versions.size > 1) {
       problems.push(
         `${name} is installed in ${versions.size} versions: ${[...versions].sort().join(', ')}.\n` +
@@ -344,6 +366,10 @@ if (!QUIET) {
   );
 }
 for (const n of notes) console.log(`  - ${n}`);
+// Printed on EVERY run, pass or fail. An exception nobody sees is a lowered
+// threshold that does not say its name — the same reason the emit gate lists
+// its nine granted equivalences each time it runs.
+for (const g of granted) console.log(`  - second copy allowed: ${g} (versions.json)`);
 
 if (problems.length) {
   console.error(`\nFAIL ${problems.length} version discrepancy(ies):\n`);

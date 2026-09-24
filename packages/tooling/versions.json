@@ -24,7 +24,6 @@
     "  which is exactly what happened at the first install of this repository."
   ],
   "verifiedOn": "2026-09-21",
-
   "runtime": {
     "node": {
       "range": "^22.22.3 || ^24.15.0 || >=26",
@@ -37,7 +36,6 @@
       "why": "packageManager makes Corepack install the right version. minimumReleaseAge has defaulted to 1440 since pnpm 11."
     }
   },
-
   "A": {
     "_why": "Shared at runtime by several repositories. A major bump is a contract change.",
     "zod": {
@@ -49,7 +47,6 @@
       "why": "One version per repository, and the same across all seven. Angular's hard ceiling (@angular/compiler-cli peer >=6.0 <6.1), joined by nest build (aborts on TS 7) and by typescript-eslint (peer >=4.8.4 <6.1.0). Nothing pushes upward: react-native has no typescript peer and @types/react accepts TS 5.1+."
     }
   },
-
   "B": {
     "_why": "Tooling that decides whether the build passes. Exact pin, bumped in the order of section 7.3.",
     "eslint": {
@@ -80,9 +77,15 @@
       "version": "8.70.0",
       "why": "Peer typescript >=4.8.4 <6.1.0: this is the fleet's real ceiling. The TS 7 support request (issue #12518) was closed 'not planned' for lack of a TypeScript 7 API; it is expected in 7.1."
     },
-    "eslint-plugin-import-x": { "version": "4.17.1" },
-    "eslint-import-resolver-typescript": { "version": "4.4.5" },
-    "globals": { "version": "16.4.0" },
+    "eslint-plugin-import-x": {
+      "version": "4.17.1"
+    },
+    "eslint-import-resolver-typescript": {
+      "version": "4.4.5"
+    },
+    "globals": {
+      "version": "16.4.0"
+    },
     "vitest": {
       "version": "5.0.1",
       "exceptions": {
@@ -97,7 +100,6 @@
       "why": "Task cache only. The five applications have none: a single-application repository has no task graph to cache. No Nx, in any of the seven."
     }
   },
-
   "forbidden": {
     "_why": "Installing any of these cancels a decision. The gate says so before review does.",
     "eslint-plugin-prettier": "Forbidden: running Prettier as an ESLint rule is the very setup that CREATES the conflicts we are avoiding (section 3.3).",
@@ -111,5 +113,29 @@
     "husky": "No: core.hooksPath plus two ten-line hooks do the same work without three packages to maintain in seven copies (section 8.4).",
     "lint-staged": "Same reason as husky.",
     "@commitlint/cli": "Same reason: the commit-msg hook fits in ten lines."
+  },
+  "duplicatesAllowed": {
+    "_why": [
+      "A SECOND COPY THAT IS NOT A FAULT, named, per repository, with its reason.",
+      "",
+      "checkSingleCopy exists because two copies of a shared tool make the plugin",
+      "loaded by one invisible to the other — both work, differently, and the",
+      "diagnosis is long. That reasoning applies to a tool the repository RUNS.",
+      "It does not apply to a compiler vendored inside a code generator, which",
+      "never meets the repository's own tsconfig.",
+      "",
+      "The test for an entry here: could the second copy ever be resolved by our",
+      "build, our editor or our linter? If yes, it is a fault and belongs nowhere",
+      "but in a fix. If no, it belongs here WITH THE PACKAGE THAT BRINGS IT — and",
+      "every run prints it, because a silent exception is a lowered threshold."
+    ],
+    "typescript": [
+      {
+        "version": "5.4.5",
+        "repo": "arthome-platform",
+        "broughtBy": "@bufbuild/protoplugin",
+        "reason": "protoplugin depends on typescript 5.4.5 EXACTLY — not a peer range resolved badly, a deliberate pin: it drives the TS compiler API to emit the generated files. Overriding it to 6.0.3 would change the compiler a code generator runs on to fix a problem that does not exist. It lives inside protoplugin's own subtree, and pnpm's strict layout means our tsc, our eslint and the editor all resolve 6.0.3 from the root. The two never meet."
+      }
+    ]
   }
 }
