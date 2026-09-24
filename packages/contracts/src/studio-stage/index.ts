@@ -16,16 +16,16 @@ import { z } from 'zod';
 import {
   DATE_OUTCOMES,
   DATE_PANES,
-  DatePane,
-  DisplayState,
   DISPLAY_STATES,
-  RUN_STATES,
+  DisplayState,
   INCIDENT_CAUSES,
-  IncidentCause,
   INCIDENT_KINDS,
+  IncidentCause,
   MEMBER_ROLES,
   PUBLICATION_CHECKLIST_ITEMS,
   PUBLICATION_STATES,
+  RUN_STATES,
+  Service,
 } from '@arthome/core';
 import {
   int64,
@@ -78,7 +78,16 @@ export const PublicationChecklistItemSchema: z.ZodObject<
   .looseObject({
     id: vocabularyOut(PUBLICATION_CHECKLIST_ITEMS),
     satisfied: z.boolean(),
-    source: localVocabulary(['catalog', 'ticketing', 'streaming', DatePane.CHAT]).describe(
+    source: localVocabulary([
+      // The named members of SERVICES, which did not exist when this was
+      // written. `DatePane.CHAT` stood in for the service `chat` — the right
+      // string from the wrong vocabulary, the same fault as an export format
+      // borrowing a navigation entry. The emitted values are unchanged.
+      Service.CATALOG,
+      Service.TICKETING,
+      Service.STREAMING,
+      Service.CHAT,
+    ]).describe(
       '**Which context owns the fact**, served because three of the nine items are **projected**\nrather than held: `catalog` keeps them up to date by event and asks nobody for them. It is\nfour of the seven services and not a vocabulary of services — a context that never feeds\nthe checklist has no member here, and gaining one would be a new projection rather than a\nnew name.\n',
     ),
     blocking: z

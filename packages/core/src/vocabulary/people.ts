@@ -135,6 +135,60 @@ export const DeviceKind = {
 } as const;
 
 /**
+ * THE SEVEN SERVICES, and until today no constant owned them.
+ *
+ * 174 operations across the two contracts declare `x-arthome-upstream`, which is
+ * what makes fan-out countable — how many services one request touches, and
+ * therefore what a single slow one costs. Nothing compared those names to
+ * anything. `backend-contracts` found three operations declaring services they
+ * never call, two of them its own, by reading rather than by any gate.
+ *
+ * ⚠ AND A NAME WAS IN USE THAT IS NOT A SERVICE. Two operations declare
+ *   `realtime`, and their own comments say plainly what they are: a read of the
+ *   real-time GATEWAY's Redis resume buffer, *"not a query against the six
+ *   services"*. The annotation was right about the dependency and wrong about
+ *   the category, so anyone counting upstreams got eight services out of seven.
+ *
+ * Listed beside `SURFACES` because it is the same kind of fact — who calls whom
+ * — and because that constant's absence is what let `X-Arthome-Surface` drift
+ * once already (D-036).
+ */
+export const SERVICES = [
+  'identity',
+  'catalog',
+  'ticketing',
+  'streaming',
+  'chat',
+  'payouts',
+  'notifications',
+] as const;
+export type Service = (typeof SERVICES)[number];
+
+export const Service = {
+  IDENTITY: 'identity',
+  CATALOG: 'catalog',
+  TICKETING: 'ticketing',
+  STREAMING: 'streaming',
+  CHAT: 'chat',
+  PAYOUTS: 'payouts',
+  NOTIFICATIONS: 'notifications',
+} as const;
+
+/**
+ * Everything a BFF operation may declare as its upstream: the seven services,
+ * and the things that are NOT services but are still depended on.
+ *
+ * ⚠ SPREAD, so the seven are stated once. A gate compares every
+ *   `x-arthome-upstream` member against this list, which is the only reason the
+ *   category error above could be caught rather than counted.
+ */
+export const UPSTREAMS: readonly [...typeof SERVICES, 'realtime'] = [
+  ...SERVICES,
+  'realtime',
+] as const;
+export type Upstream = (typeof UPSTREAMS)[number];
+
+/**
  * The studio journal is by-name AND situated: "who decided, when, from which
  * surface". `system` is an actor like any other — automatic standby screen,
  * lease expiry, automatic moderation.

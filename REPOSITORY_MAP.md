@@ -205,7 +205,7 @@ Declarations: `dist/ticketing/index.d.ts` — 11 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 377 exported names.
+Declarations: `dist/index.d.ts` — 381 exported names.
 
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — THE SAME number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's OWN refusals, and the only family here that is not a domain notion.
@@ -384,6 +384,7 @@ Declarations: `dist/index.d.ts` — 377 exported names.
 - `SEASON_START_MONTH` (const) — `SEASON_START_MONTH = 9` — The changeover month, in human numbering: 9 = September.
 - `SEAT_CODE_ALPHABET` (const) — `SEAT_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"` — The alphabet: Crockford base 32 — the ten digits, and the letters EXCEPT 'I', 'L', 'O' and 'U'.
 - `SEAT_CODE_BODY_LENGTH` (const) — `SEAT_CODE_BODY_LENGTH = 6`
+- `SERVICES` (const) — `SERVICES: readonly ["identity", "catalog", "ticketing", "streaming", "chat", "payouts", "notifications"]` — THE SEVEN SERVICES, and until today no constant owned them.
 - `STATE_CHANGE_ORIGINS` (const) — `STATE_CHANGE_ORIGINS: readonly ["human_verdict", "automatic_filter", "retroactive_filter", "author_sanctioned"]` — Where a state change came from — and the origin SURVIVES the settlement.
 - `SUBSCRIPTION_STATES` (const) — `SUBSCRIPTION_STATES: readonly ["active", "past_due", "cancelled", "trialing"]`
 - `SURFACES` (const) — `SURFACES: readonly ["storefront_web", "storefront_mobile", "storefront_tv", "studio_web", "studio_mobile", "system"]` — The studio journal is by-name AND situated: "who decided, when, from which surface".
@@ -391,6 +392,7 @@ Declarations: `dist/index.d.ts` — 377 exported names.
 - `SeatAvailability` (type) — The capacity state, as a DISCRIMINATED UNION.
 - `SeatHold` (interface)
 - `SeatId` (type) — `type SeatId = Brand<'SeatId'>;`
+- `Service` (type+const)
 - `ServiceFeeSchedule` (interface) — Service fees: PER SEAT, and the schedule is SERVED.
 - `SettlementAttempt` (interface)
 - `SettlementOutcome` (type)
@@ -413,7 +415,9 @@ Declarations: `dist/index.d.ts` — 377 exported names.
 - `TerritoryRights` (interface)
 - `TierPrice` (interface)
 - `Tolerant` (type) — `type Tolerant<T extends string> = KnownMember<T> | UnknownMember;`
+- `UPSTREAMS` (const) — `UPSTREAMS: readonly [...typeof SERVICES, 'realtime']` — Everything a BFF operation may declare as its upstream: the seven services, and the things that are NOT services but are still depended on.
 - `UnknownMember` (interface)
+- `Upstream` (type) — `type Upstream = (typeof UPSTREAMS)[number];`
 - `VatLine` (interface) — One VAT line, PER JURISDICTION — and not per billing market.
 - `VenueClock` (interface) — A venue's time zone, served alongside the UTC instant it qualifies.
 - `VenueId` (type) — `type VenueId = Brand<'VenueId'>;`

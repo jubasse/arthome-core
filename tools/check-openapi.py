@@ -2,6 +2,8 @@
 """OpenAPI 3.1 conformance checker — Arthome rules.
 Usage: python3 check-openapi.py openapi/*.yaml
 No dependency beyond PyYAML. Everything is verified locally."""
+import os
+import re
 import sys, re, yaml
 
 counts = {}
@@ -40,6 +42,36 @@ _DuplicateKeyLoader.add_constructor(
 _DUPLICATES = []
 
 
+def _known_upstreams():
+    """`UPSTREAMS` from @arthome/core, resolved through the constants it spreads.
+
+    Read from the SOURCE rather than the build, for the same reason
+    arthome-check-enums does: the gate must work before anything is built. It
+    returns an empty set when the package is absent, and R22 then declines to
+    run rather than passing everything.
+    """
+    root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "packages/core/src")
+    if not os.path.isdir(root):
+        return set()
+    consts = {}
+    decl = re.compile(r"export const ([A-Z][A-Z0-9_]*) = \[([\s\S]*?)\] as const;")
+    for dirpath, _dirs, files in os.walk(root):
+        for name in files:
+            if not name.endswith(".ts") or name.endswith(".d.ts") or ".spec." in name:
+                continue
+            with open(os.path.join(dirpath, name), encoding="utf-8") as handle:
+                src = handle.read()
+            for m in decl.finditer(src):
+                consts[m.group(1)] = m.group(2)
+    body = consts.get("UPSTREAMS")
+    if body is None:
+        return set()
+    out = set(re.findall(r"'([^']*)'", body))
+    for spread in re.findall(r"\.\.\.([A-Z][A-Z0-9_]*)", body):
+        out |= set(re.findall(r"'([^']*)'", consts.get(spread, "")))
+    return out
+
+
 def check(fn):
     # R21 — NO DUPLICATE KEY, because YAML resolves one by DESTROYING the other.
     #
@@ -64,6 +96,34 @@ def check(fn):
         )
 
     d = yaml.safe_load(open(fn, encoding="utf-8"))
+
+    # R22 — every `x-arthome-upstream` names a KNOWN upstream.
+    #
+    #   174 operations declare one. It is what makes fan-out countable — how many
+    #   services a request touches, and therefore what one slow service costs —
+    #   and nothing had ever compared those names to anything. backend-contracts
+    #   found three operations declaring services they never call, two of them
+    #   its own, BY READING. A claim that only a reader can check is a claim that
+    #   goes unchecked.
+    #
+    #   The list comes from @arthome/core, discovered the way check-vocabulary
+    #   discovers a vocabulary, so the seven service names live in exactly one
+    #   place. This gate cannot tell whether an operation REALLY calls what it
+    #   declares — only a service can — and it says so rather than implying more.
+    known = _known_upstreams()
+    if known:
+        for path, node in walk(d, "$"):
+            up = node.get("x-arthome-upstream")
+            if up is None:
+                continue
+            for name in up if isinstance(up, list) else [up]:
+                if name not in known:
+                    err(
+                        fn,
+                        f"R22 x-arthome-upstream: {name!r} is not a known upstream — {path}. "
+                        f"Known: {', '.join(sorted(known))}. Declare it in UPSTREAMS "
+                        "(@arthome/core) or correct the operation.",
+                    )
 
     # R1 — OpenAPI 3.1
     if not str(d.get("openapi","")).startswith("3.1"):

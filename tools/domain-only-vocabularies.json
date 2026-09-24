@@ -32,6 +32,14 @@
     {
       "vocabulary": "DOMAIN_GUARD_CODES",
       "reason": "Internal guards, not refusals. Every member fires on a value that never came from a client: summing two currencies, a malformed instant INSIDE the system, a rate outside 0-10000. A malformed value arriving from a surface is refused at the boundary as `api.schema_invalid`, before any rule runs, so no contract can produce these and no surface has anything to render for one. Publishing them would be a contract promising errors it cannot emit. The split was made when check-vocabulary's inverse check reported 23 domain codes reaching neither contract - a true finding with two causes mixed together, and this is the half that is correct rather than pending."
+    },
+    {
+      "vocabulary": "SERVICES",
+      "reason": "Reaches the documents through `x-arthome-upstream`, not through `x-arthome-vocabulary`, so this gate cannot see it — it reads member lists on fields, and an upstream is an annotation on an OPERATION. R22 in check-openapi.py compares all 174 of them against UPSTREAMS, which spreads this list. Declared here so the inverse check states what it cannot reach rather than reporting a gap that another gate covers."
+    },
+    {
+      "vocabulary": "UPSTREAMS",
+      "reason": "Same position as SERVICES, which it spreads. It adds `realtime`, which is NOT a service: two operations read the real-time gateway's Redis resume buffer, and their own comments say so — the annotation was right about the dependency and wrong about the category, so anyone counting upstreams got eight services out of seven. R22 is what compares it."
     }
   ]
 }
