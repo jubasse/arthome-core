@@ -1550,3 +1550,54 @@ precisely the case `enum-literals.allow.json` was written to describe.
 **A gate that has lost the ability to name a source must stop naming one.** Where a value is
 declared by more than one vocabulary, say so and list them; the author knows which they meant, and a
 gate that guesses teaches people to ignore its reasons while obeying its verdicts.
+
+### D-045 — Not all scope is a hazard: incidental scope versus intrinsic scope
+
+**I told `backend-contracts` its generic-name tell was *"scoped by names"* and that a subset test
+was *"scoped by nothing"*, as though unscoped were the goal. It ran the unscoped version and the
+negative result corrects me.**
+
+| | hits | of which |
+|---|---|---|
+| scoped by **a name** | — | missed eight |
+| scoped by **nothing** | **14** | 6 real · **8 noise** |
+| scoped by **the right predicate** | **6** | 6 real, all documented |
+
+**What the eight noise hits were**, and none is a defect:
+
+- **four vocabularies that legitimately nest.** `CREW_ROLES ⊂ MEMBER_ROLES` is true and means
+  something — a crew role *is* a member role. Verified. That is a fact about the domain, not a rule
+  about the wire. `MESSAGE_STATES ⊂ MODERATION_BADGES` is the three-axes doctrine appearing as set
+  inclusion;
+- **three artefacts of where it looked** — the description sat one level up, on the array rather
+  than on its `items`, so a documented narrowing read as undocumented. *Incidental scope inside the
+  check built to expose incidental scope;*
+- **one pure coincidence.** `filterSeverity` `[low, medium, high]` nests inside `defaultQuality`
+  `[auto, low, medium, high]`. Two unrelated vocabularies, one happening to contain the other.
+  Verified.
+
+**THE PREDICATE THAT PUTS IT RIGHT IS ONE SENTENCE: the subset must be *unannotated*, and the
+superset must be *named*.** A block carrying its own `x-arthome-vocabulary-source` is not narrowing
+anything — it is its own vocabulary, and containment is then a domain fact. A superset that is
+nobody's declared vocabulary is a coincidence. With that predicate the test returns **exactly the
+six narrowings, all six documented**.
+
+**SO D-041 NEEDED A SECOND HALF, AND THIS IS IT.**
+
+> **Incidental scope** is a property of the instrument, or of where you happened to look — a
+> directory, a separator, a line count, the last command in a pipe, a naming convention. It is
+> invisible in the output and everything outside it is a silent miss.
+>
+> **Intrinsic scope** is a property of the question being asked — *"narrows something that has a
+> name"*. It is visible because it **is** the question, and what falls outside it is genuinely not
+> being asked about.
+
+*Scoped by nothing is not the goal; it is the other failure mode.* An unscoped check finds
+everything including the noise, and **noise is how a gate gets switched off** — D-024, which this
+project learned by nearly disabling R14. `backend-contracts`' formulation: the useful scope was
+neither, *"it is scoped by a property of the thing being looked for rather than by a property of
+where you happened to look."*
+
+**That is the difference between a scope that is an accident of the instrument and a scope that is
+part of the question** — and it is the sentence I should have written instead of "scoped by
+nothing".
