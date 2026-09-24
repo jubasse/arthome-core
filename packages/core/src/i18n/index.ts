@@ -19,6 +19,7 @@
  */
 
 import { DomainError } from '../kernel/errors.js';
+import { DomainGuardCode } from '../vocabulary/error-codes.js';
 
 /** The five copy domains, split so the embedded snapshot stays small. */
 export const MESSAGE_DOMAINS = ['common', 'storefront', 'studio', 'taxonomy', 'system'] as const;
@@ -45,7 +46,7 @@ const KEY_SHAPE = /^[a-z][a-zA-Z0-9]*(?:\.[a-zA-Z0-9][a-zA-Z0-9-]*)+$/;
 
 export function messageKey(raw: string): MessageKey {
   if (!KEY_SHAPE.test(raw)) {
-    throw new DomainError({ code: 'i18n.key_malformed', params: { key: raw } });
+    throw new DomainError({ code: DomainGuardCode.I18N_KEY_MALFORMED, params: { key: raw } });
   }
   return raw;
 }

@@ -20,6 +20,7 @@
 
 import { toEpochMs, type Instant, MINUTE_MS } from './instant.js';
 import { DomainError } from '../kernel/errors.js';
+import { DomainGuardCode } from '../vocabulary/error-codes.js';
 
 /** A venue's time zone, served alongside the UTC instant it qualifies. */
 export interface VenueClock {
@@ -38,11 +39,11 @@ const IANA_SHAPE = /^[A-Za-z]+(?:[_+-][A-Za-z0-9]+)*(?:\/[A-Za-z0-9]+(?:[_+-][A-
  */
 export function venueClock(timeZone: string, utcOffsetMinutes: number): VenueClock {
   if (!IANA_SHAPE.test(timeZone)) {
-    throw new DomainError({ code: 'timezone.not_iana', params: { timeZone } });
+    throw new DomainError({ code: DomainGuardCode.TIMEZONE_NOT_IANA, params: { timeZone } });
   }
   if (!Number.isInteger(utcOffsetMinutes) || Math.abs(utcOffsetMinutes) > 16 * 60) {
     throw new DomainError({
-      code: 'timezone.offset_out_of_range',
+      code: DomainGuardCode.TIMEZONE_OFFSET_OUT_OF_RANGE,
       params: { offset: String(utcOffsetMinutes) },
     });
   }

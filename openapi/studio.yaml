@@ -240,7 +240,7 @@ paths:
               example:
                 error:
                   {
-                    code: TWO_FACTOR_REQUIRED,
+                    code: identity.two_factor_required,
                     nature: refused,
                     params: { challengeId: chl_7ab2 },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -1106,7 +1106,7 @@ paths:
               example:
                 error:
                   {
-                    code: SORT_KEY_FORBIDDEN,
+                    code: api.sort_key_forbidden,
                     nature: refused,
                     params: { sortBy: grossRevenue },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -2127,7 +2127,7 @@ paths:
               example:
                 error:
                   {
-                    code: PRICES_LOCKED,
+                    code: date.prices_locked,
                     nature: refused,
                     params: { lockedAt: "2026-09-21T18:04:00Z" },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -2208,7 +2208,7 @@ paths:
               example:
                 error:
                   {
-                    code: TECHNICAL_PROVISION_REQUIRED,
+                    code: date.technical_provision_required,
                     nature: refused,
                     params: { threshold: 10000, revisableUntil: "2026-09-18T19:00:00Z" },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -2335,7 +2335,7 @@ paths:
               example:
                 error:
                   {
-                    code: REPLAY_POLICY_FINAL,
+                    code: date.replay_policy_final,
                     nature: refused,
                     params: { currentPolicy: none },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -2382,7 +2382,7 @@ paths:
               example:
                 error:
                   {
-                    code: DATE_HAS_SOLD_SEATS,
+                    code: date.has_sold_seats,
                     nature: refused,
                     params: { seatsSold: 174 },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -2542,7 +2542,7 @@ paths:
               example:
                 error:
                   {
-                    code: OUTCOME_DECISION_FORBIDDEN,
+                    code: date.outcome_decision_forbidden,
                     nature: refused,
                     params: { canEscalateTo: [artist, production] },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -2743,7 +2743,7 @@ paths:
               example:
                 error:
                   {
-                    code: TECHNICAL_CHECK_REQUIRED,
+                    code: date.technical_check_required,
                     nature: refused,
                     params: {},
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -3342,7 +3342,7 @@ paths:
               example:
                 error:
                   {
-                    code: STREAM_KEY_ROTATION_DURING_RUN,
+                    code: date.stream_key_rotation_during_run,
                     nature: refused,
                     params: { runState: on_air },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -3484,7 +3484,7 @@ paths:
               example:
                 error:
                   {
-                    code: MODERATION_ALREADY_CLAIMED,
+                    code: moderation.already_claimed,
                     nature: refused,
                     params: { claimedBy: "Yann P.", claimExpiresAt: "2026-09-21T19:32:00Z" },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -3631,7 +3631,7 @@ paths:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
               example:
                 error:
-                  code: MODERATION_ALREADY_SETTLED
+                  code: moderation.already_settled
                   nature: refused
                   params:
                     { verdict: remove, settledBy: "Yann P.", settledAt: "2026-09-21T19:31:18Z" }
@@ -4065,7 +4065,7 @@ paths:
               example:
                 error:
                   {
-                    code: ROLE_NOT_ASSIGNABLE,
+                    code: channel.role_not_assignable,
                     nature: refused,
                     params: { assignableRoles: [video, sound], contactRoles: [artist, production] },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -4318,7 +4318,7 @@ paths:
               example:
                 error:
                   {
-                    code: CREW_ROLE_RESERVED,
+                    code: channel.crew_role_reserved,
                     nature: refused,
                     params:
                       {
@@ -4422,7 +4422,7 @@ paths:
               example:
                 error:
                   {
-                    code: TRANSFER_TARGET_INELIGIBLE,
+                    code: channel.transfer_target_ineligible,
                     nature: refused,
                     params: { reasonCode: two_factor_missing },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -4481,7 +4481,7 @@ paths:
               example:
                 error:
                   {
-                    code: CHANNEL_HAS_OPEN_OBLIGATIONS,
+                    code: channel.has_open_obligations,
                     nature: refused,
                     params: { datesOnSale: 3, payoutsDue: 1 },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -4697,7 +4697,7 @@ paths:
               example:
                 error:
                   {
-                    code: SAME_ACTOR_FORBIDDEN,
+                    code: channel.same_actor_forbidden,
                     nature: refused,
                     params: {},
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -4767,7 +4767,7 @@ paths:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
               example:
                 error:
-                  code: RECONCILIATION_DISCREPANCY_UNEXPLAINED
+                  code: payout.reconciliation_discrepancy_unexplained
                   nature: refused
                   params:
                     {
@@ -5818,7 +5818,7 @@ paths:
               example:
                 error:
                   {
-                    code: REPLAY_POLICY_FINAL,
+                    code: date.replay_policy_final,
                     nature: refused,
                     params: { currentPolicy: none },
                     traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -6089,7 +6089,7 @@ components:
       required: false
       description: |
         **The only two exceptions to "page + total"**: the moderation queue and the live chat.
-        Opaque Base64 cursor on `(created_at, id)`, valid 24 h, `410 CURSOR_TOO_OLD` beyond.
+        Opaque Base64 cursor on `(created_at, id)`, valid 24 h, `410 api.cursor_too_old` beyond.
       schema: { type: string }
 
     Limit:
@@ -6123,7 +6123,7 @@ components:
           example:
             error:
               {
-                code: PERIOD_FILTER_REQUIRED,
+                code: api.period_filter_required,
                 nature: refused,
                 params: { maxRangeDays: 92 },
                 traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -6138,7 +6138,7 @@ components:
           example:
             error:
               {
-                code: UNAUTHENTICATED,
+                code: api.unauthenticated,
                 nature: refused,
                 params: {},
                 traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -6156,7 +6156,7 @@ components:
           example:
             error:
               {
-                code: RIGHTS_VERSION_STALE,
+                code: api.rights_version_stale,
                 nature: refused,
                 params: { currentRightsVersion: 412 },
                 traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -6171,7 +6171,7 @@ components:
           example:
             error:
               {
-                code: NOT_FOUND,
+                code: api.not_found,
                 nature: refused,
                 params: {},
                 traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -6189,7 +6189,7 @@ components:
           schema: { $ref: "#/components/schemas/ErrorEnvelope" }
           example:
             error:
-              code: MODERATION_ALREADY_SETTLED
+              code: moderation.already_settled
               nature: refused
               params: { verdict: remove, settledBy: "Claire D.", settledAt: "2026-09-21T20:30:58Z" }
               traceId: 4bf92f3577b34da6a3ce929d0e0e4736
@@ -6203,7 +6203,7 @@ components:
           example:
             error:
               {
-                code: CURSOR_TOO_OLD,
+                code: api.cursor_too_old,
                 nature: refused,
                 params: { maxAgeHours: 24 },
                 traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -6218,7 +6218,7 @@ components:
           example:
             error:
               {
-                code: RATE_LIMITED,
+                code: api.rate_limited,
                 nature: unavailable,
                 params: { retryAfterMs: 2000 },
                 traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -6233,7 +6233,7 @@ components:
           example:
             error:
               {
-                code: UPSTREAM_UNAVAILABLE,
+                code: api.upstream_unavailable,
                 nature: unavailable,
                 params: { service: streaming },
                 traceId: 4bf92f3577b34da6a3ce929d0e0e4736,
@@ -6305,6 +6305,9 @@ components:
             backend before the application is updated, the person on duty must see a sentence, not
             `moderation.verdict.conflict`.
           examples: [publication.checklist_incomplete]
+          x-arthome-vocabulary: [api.cursor_too_old, api.not_found, api.period_filter_required, api.rate_limited, api.rights_version_stale, api.sort_key_forbidden, api.unauthenticated, api.upstream_unavailable, capacity.tier_must_widen, channel.crew_role_reserved, channel.has_open_obligations, channel.role_not_assignable, channel.same_actor_forbidden, channel.transfer_target_ineligible, content.empty_in_both_languages, date.has_sold_seats, date.outcome_decision_forbidden, date.prices_locked, date.replay_policy_final, date.stream_key_rotation_during_run, date.technical_check_required, date.technical_provision_required, identity.two_factor_required, media.size_invalid, media.url_empty, moderation.already_claimed, moderation.already_settled, moderation.automatic_cannot_override_human, moderation.decision_version_stale, payout.reconciliation_discrepancy_unexplained, publication.checklist_incomplete, publication.transition_forbidden, publication.transition_irreversible]
+          x-arthome-vocabulary-source: ERROR_CODES
+          x-arthome-vocabulary-narrowing: "The 25 an operating surface can receive. The storefront's watch and purchase refusals are not among them: the studio does not buy seats or open a player, and a refusal it cannot provoke is a screen nobody builds."
         nature:
           type: string
           description: |

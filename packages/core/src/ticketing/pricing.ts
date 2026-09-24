@@ -13,6 +13,7 @@ import { add, money, subtract, type Money } from '../money/money.js';
 import { applyRate, roundMinor, type BasisPoints } from '../money/rounding.js';
 import { isBefore } from '../time/instant.js';
 import type { PriceTier, PromotionReason } from '../vocabulary/commerce.js';
+import { DomainErrorCode, DomainGuardCode } from '../vocabulary/error-codes.js';
 
 export interface TierPrice {
   readonly tier: PriceTier;
@@ -82,7 +83,7 @@ export function applyBestDiscount(
   if (promotionPrice === null) return discounted;
   if (promotionPrice.currencyCode !== basePrice.currencyCode) {
     throw new DomainError({
-      code: 'money.currency_mismatch',
+      code: DomainGuardCode.MONEY_CURRENCY_MISMATCH,
       params: { left: basePrice.currencyCode, right: promotionPrice.currencyCode },
     });
   }
@@ -126,7 +127,7 @@ export function quoteSeats(
 ): OrderQuote {
   if (!Number.isSafeInteger(quantity) || quantity <= 0) {
     throw new DomainError({
-      code: 'order.quantity_invalid',
+      code: DomainErrorCode.ORDER_QUANTITY_INVALID,
       params: { quantity: String(quantity) },
     });
   }

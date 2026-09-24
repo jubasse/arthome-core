@@ -9,6 +9,7 @@
  */
 
 import { DomainError } from '../kernel/errors.js';
+import { DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /** The product's two languages. BCP 47, short form. */
 export const LOCALES = ['fr', 'en'] as const;
@@ -43,7 +44,7 @@ export function pickLanguage(value: Bilingual, locale: Locale): string {
   const fallback = locale === Locale.FR ? value.en : value.fr;
   const chosen = preferred.length > 0 ? preferred : fallback;
   if (chosen.length === 0) {
-    throw new DomainError({ code: 'content.empty_in_both_languages' });
+    throw new DomainError({ code: DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES });
   }
   return chosen;
 }

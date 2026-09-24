@@ -10,6 +10,7 @@
 import type { Instant } from '../kernel/clock.js';
 import { DomainError } from '../kernel/errors.js';
 import { isAfter, plusMinutes } from '../time/instant.js';
+import { DomainErrorCode, ModerationErrorCode } from '../vocabulary/error-codes.js';
 import type { ModerationVerdict } from '../vocabulary/moderation.js';
 import {
   AudienceSanction,
@@ -140,7 +141,7 @@ export function evaluateSettlement(
   if (snapshot.state === ModerationItemState.SETTLED) {
     return {
       accepted: false,
-      code: 'moderation.already_settled',
+      code: ModerationErrorCode.ALREADY_SETTLED,
       winner:
         snapshot.verdict !== null && snapshot.settledBy !== null
           ? { verdict: snapshot.verdict, settledBy: snapshot.settledBy }
@@ -148,7 +149,11 @@ export function evaluateSettlement(
     };
   }
   if (attempt.expectedDecisionVersion !== snapshot.decisionVersion) {
-    return { accepted: false, code: 'moderation.decision_version_stale', winner: null };
+    return {
+      accepted: false,
+      code: DomainErrorCode.MODERATION_DECISION_VERSION_STALE,
+      winner: null,
+    };
   }
   return { accepted: true };
 }
@@ -179,7 +184,7 @@ export function assertCanOverride(
 ): void {
   if (!canOverride(existingOrigin, incomingOrigin)) {
     throw new DomainError({
-      code: 'moderation.automatic_cannot_override_human',
+      code: DomainErrorCode.MODERATION_AUTOMATIC_CANNOT_OVERRIDE_HUMAN,
       params: { existing: existingOrigin, incoming: incomingOrigin },
     });
   }

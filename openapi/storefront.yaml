@@ -289,7 +289,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
               example:
-                error: { code: EMAIL_TAKEN, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                error: { code: identity.email_taken, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
                 servedAt: '2026-09-21T18:00:00.000Z'
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
@@ -365,7 +365,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
               example:
-                error: { code: TWO_FACTOR_REQUIRED, nature: refused, params: { challengeId: chl_7ab2 }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                error: { code: identity.two_factor_required, nature: refused, params: { challengeId: chl_7ab2 }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
                 servedAt: '2026-09-21T18:00:10.000Z'
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
@@ -2756,7 +2756,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
               example:
-                error: { code: QUOTE_ADDRESS_MISMATCH, nature: refused, params: { quotedCountryCode: FR, quotedPostalCode: '75011' }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                error: { code: order.quote_address_mismatch, nature: refused, params: { quotedCountryCode: FR, quotedPostalCode: '75011' }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
                 servedAt: '2026-09-21T18:46:00.000Z'
         '410': { $ref: '#/components/responses/Gone' }
 
@@ -3054,7 +3054,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
               example:
-                error: { code: SIGNED_OUT_ELSEWHERE, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                error: { code: identity.signed_out_elsewhere, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
                 servedAt: '2026-09-21T19:06:30.000Z'
         '404': { $ref: '#/components/responses/NotFound' }
         '503': { $ref: '#/components/responses/Unavailable' }
@@ -3277,7 +3277,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
               example:
-                error: { code: CHAT_HOLDERS_ONLY, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                error: { code: chat.holders_only, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
                 servedAt: '2026-09-21T19:36:02.000Z'
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
@@ -3523,7 +3523,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
               example:
-                error: { code: PAIRING_SLOW_DOWN, nature: unavailable, params: { retryAfterMs: 5000 }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                error: { code: pairing.slow_down, nature: unavailable, params: { retryAfterMs: 5000 }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
                 servedAt: '2026-09-21T18:52:10.000Z'
     delete:
       operationId: cancelPairing
@@ -3573,7 +3573,7 @@ paths:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
               example:
                 error:
-                  code: PAIRING_EXECUTION_ENGAGED
+                  code: pairing.execution_engaged
                   nature: refused
                   params: { state: engaged, engagedAt: '2026-09-21T18:52:04Z' }
                   traceId: 4bf92f3577b34da6a3ce929d0e0e4736
@@ -3647,7 +3647,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
               example:
-                error: { code: PAIRING_INTENT_NOT_ENGAGEABLE, nature: refused, params: { intent: signin }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                error: { code: pairing.intent_not_engageable, nature: refused, params: { intent: signin }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
                 servedAt: '2026-09-21T18:52:04.000Z'
         '410': { $ref: '#/components/responses/Gone' }
 
@@ -3719,7 +3719,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
               example:
-                error: { code: PAIRING_IDENTITY_MISMATCH, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                error: { code: pairing.identity_mismatch, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
                 servedAt: '2026-09-21T18:52:00.000Z'
         '410': { $ref: '#/components/responses/Gone' }
 
@@ -5164,7 +5164,7 @@ components:
           schema: { $ref: '#/components/schemas/ErrorEnvelope' }
           example:
             error:
-              code: SCHEMA_INVALID
+              code: api.schema_invalid
               nature: refused
               params: { fields: ['tier'] }
               traceId: 4bf92f3577b34da6a3ce929d0e0e4736
@@ -5176,7 +5176,7 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorEnvelope' }
           example:
-            error: { code: UNAUTHENTICATED, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+            error: { code: api.unauthenticated, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
             servedAt: '2026-09-21T20:31:04.118Z'
 
     Forbidden:
@@ -5185,7 +5185,7 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorEnvelope' }
           example:
-            error: { code: FORBIDDEN, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+            error: { code: api.forbidden, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
             servedAt: '2026-09-21T20:31:04.118Z'
 
     NotFound:
@@ -5194,7 +5194,7 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorEnvelope' }
           example:
-            error: { code: NOT_FOUND, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+            error: { code: api.not_found, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
             servedAt: '2026-09-21T20:31:04.118Z'
 
     Conflict:
@@ -5218,7 +5218,7 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorEnvelope' }
           example:
-            error: { code: CURSOR_TOO_OLD, nature: refused, params: { maxAgeHours: 24 }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+            error: { code: api.cursor_too_old, nature: refused, params: { maxAgeHours: 24 }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
             servedAt: '2026-09-21T20:31:04.118Z'
 
     TooManyRequests:
@@ -5229,7 +5229,7 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorEnvelope' }
           example:
-            error: { code: CHAT_RATE_LIMITED, nature: unavailable, params: { retryAfterMs: 3000 }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+            error: { code: chat.rate_limited, nature: unavailable, params: { retryAfterMs: 3000 }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
             servedAt: '2026-09-21T20:31:04.118Z'
 
     Unavailable:
@@ -5241,7 +5241,7 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/ErrorEnvelope' }
           example:
-            error: { code: UPSTREAM_UNAVAILABLE, nature: unavailable, params: { service: catalog }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+            error: { code: api.upstream_unavailable, nature: unavailable, params: { service: catalog }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
             servedAt: '2026-09-21T20:31:04.118Z'
 
   schemas:
@@ -5336,6 +5336,9 @@ components:
             application falls back on the snapshot embedded at build time — that is an operating
             condition on mobile, where store review is slow.
           examples: [publication.transition_irreversible]
+          x-arthome-vocabulary: [api.cursor_too_old, api.forbidden, api.not_found, api.schema_invalid, api.unauthenticated, api.upstream_unavailable, chat.holders_only, chat.rate_limited, hold.quantity_invalid, identity.email_taken, identity.signed_out_elsewhere, identity.two_factor_required, order.payment_declined, order.price_stale, order.quantity_invalid, order.quote_address_mismatch, pairing.execution_engaged, pairing.identity_mismatch, pairing.intent_not_engageable, pairing.slow_down, pairing_code.ambiguous_glyph, search.unknown_flag, seat_code.malformed, watch.concurrent_limit_reached]
+          x-arthome-vocabulary-source: ERROR_CODES
+          x-arthome-vocabulary-narrowing: "The 32 a viewer-facing surface can receive. The studio's crew, payout and reconciliation refusals cannot reach this contract: a viewer has no channel to close a period on. A code the storefront cannot produce would be one every storefront still has to carry a translation for."
         nature:
           type: string
           description: |
@@ -7166,7 +7169,7 @@ components:
           x-arthome-vocabulary-source: none
           x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got."
         pollIntervalSec: { type: integer }
-        failureCode: { type: [string, 'null'], x-arthome-vocabulary: [order.sold_out, order.payment_declined, order.price_stale, order.plan_unavailable], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A refusal-code family, SCREAMING_SNAKE like the error envelope's `code` it rides beside. It names why THIS command refused, which is the contract's business rather than the domain's." }
+        failureCode: { type: [string, 'null'], x-arthome-vocabulary: [order.sold_out, order.payment_declined, order.price_stale, order.plan_unavailable], x-arthome-vocabulary-source: ORDER_ERROR_CODES, x-arthome-vocabulary-narrowing: "The four a purchase command can refuse with. `order.quote_address_mismatch` is not among them: it is raised by the quote, before a command exists to refuse." }
         ticket: { $ref: '#/components/schemas/TicketCard' }
         order: { $ref: '#/components/schemas/Order' }
         subscription: { $ref: '#/components/schemas/Subscription' }

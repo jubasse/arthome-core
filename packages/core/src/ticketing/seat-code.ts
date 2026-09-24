@@ -14,6 +14,7 @@
  */
 
 import { DomainError } from '../kernel/errors.js';
+import { DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /**
  * The alphabet: Crockford base 32 — the ten digits, and the letters EXCEPT
@@ -52,7 +53,7 @@ export function seatCode(body: string): string {
   const normalized = body.toUpperCase();
   const code = `${SEAT_CODE_PREFIX}-${normalized}`;
   if (!isSeatCode(code)) {
-    throw new DomainError({ code: 'seat_code.malformed', params: { body } });
+    throw new DomainError({ code: DomainErrorCode.SEAT_CODE_MALFORMED, params: { body } });
   }
   return code;
 }

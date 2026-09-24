@@ -16,6 +16,7 @@
  */
 
 import { DomainError } from '../kernel/errors.js';
+import { DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /** One image at a size that is actually displayed. */
 export interface Rendition {
@@ -37,10 +38,10 @@ export interface MediaSet {
 }
 
 export function rendition(url: string, widthPx: number, heightPx: number): Rendition {
-  if (url.length === 0) throw new DomainError({ code: 'media.url_empty' });
+  if (url.length === 0) throw new DomainError({ code: DomainErrorCode.MEDIA_URL_EMPTY });
   if (!Number.isInteger(widthPx) || widthPx <= 0 || !Number.isInteger(heightPx) || heightPx <= 0) {
     throw new DomainError({
-      code: 'media.size_invalid',
+      code: DomainErrorCode.MEDIA_SIZE_INVALID,
       params: { width: String(widthPx), height: String(heightPx) },
     });
   }

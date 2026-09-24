@@ -11,6 +11,7 @@
  */
 
 import { DomainError } from '../kernel/errors.js';
+import { DomainGuardCode } from '../vocabulary/error-codes.js';
 
 export interface Money {
   /** The currency's smallest unit, as an integer. May be negative. */
@@ -24,12 +25,15 @@ const CURRENCY_SHAPE = /^[A-Z]{3}$/;
 export function money(amountMinor: number, currencyCode: string): Money {
   if (!Number.isSafeInteger(amountMinor)) {
     throw new DomainError({
-      code: 'money.amount_not_integer',
+      code: DomainGuardCode.MONEY_AMOUNT_NOT_INTEGER,
       params: { amount: String(amountMinor) },
     });
   }
   if (!CURRENCY_SHAPE.test(currencyCode)) {
-    throw new DomainError({ code: 'money.currency_invalid', params: { currency: currencyCode } });
+    throw new DomainError({
+      code: DomainGuardCode.MONEY_CURRENCY_INVALID,
+      params: { currency: currencyCode },
+    });
   }
   return { amountMinor, currencyCode };
 }
@@ -57,7 +61,7 @@ export function isNegative(value: Money): boolean {
 function assertSameCurrency(left: Money, right: Money): void {
   if (left.currencyCode !== right.currencyCode) {
     throw new DomainError({
-      code: 'money.currency_mismatch',
+      code: DomainGuardCode.MONEY_CURRENCY_MISMATCH,
       params: { left: left.currencyCode, right: right.currencyCode },
     });
   }
@@ -92,7 +96,10 @@ export function max(left: Money, right: Money): Money {
 
 export function multiplyByCount(value: Money, count: number): Money {
   if (!Number.isSafeInteger(count) || count < 0) {
-    throw new DomainError({ code: 'money.count_invalid', params: { count: String(count) } });
+    throw new DomainError({
+      code: DomainGuardCode.MONEY_COUNT_INVALID,
+      params: { count: String(count) },
+    });
   }
   return money(value.amountMinor * count, value.currencyCode);
 }

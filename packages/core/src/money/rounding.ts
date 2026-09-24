@@ -17,6 +17,7 @@
 
 import { money, type Money } from './money.js';
 import { DomainError } from '../kernel/errors.js';
+import { DomainGuardCode } from '../vocabulary/error-codes.js';
 
 /**
  * Rates travel in BASIS POINTS, as integers: 1200 = 12%, 550 = 5.5%.
@@ -31,7 +32,7 @@ export const BASIS_POINTS_SCALE = 10_000;
 
 export function basisPoints(value: number): BasisPoints {
   if (!Number.isSafeInteger(value) || value < 0) {
-    throw new DomainError({ code: 'rate.invalid', params: { rate: String(value) } });
+    throw new DomainError({ code: DomainGuardCode.RATE_INVALID, params: { rate: String(value) } });
   }
   return value;
 }
@@ -47,7 +48,10 @@ export function basisPoints(value: number): BasisPoints {
 export function roundMinor(value: number): number {
   const rounded = value < 0 ? -Math.round(-value) : Math.round(value);
   if (!Number.isSafeInteger(rounded)) {
-    throw new DomainError({ code: 'money.amount_not_integer', params: { amount: String(value) } });
+    throw new DomainError({
+      code: DomainGuardCode.MONEY_AMOUNT_NOT_INTEGER,
+      params: { amount: String(value) },
+    });
   }
   return rounded;
 }

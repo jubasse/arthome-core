@@ -31,6 +31,7 @@
  */
 
 import { DomainError } from '../kernel/errors.js';
+import { DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /**
  * 27 symbols. Read from `adr-auth.md` §5.1, which owns the design.
@@ -119,7 +120,7 @@ export function normalizePairingCodeInput(raw: string): string {
   for (const character of typed) {
     if (PAIRING_CODE_AMBIGUOUS_GLYPHS.includes(character)) {
       throw new DomainError({
-        code: 'pairing_code.ambiguous_glyph',
+        code: DomainErrorCode.PAIRING_CODE_AMBIGUOUS_GLYPH,
         params: { glyph: character, position: String(typed.indexOf(character) + 1) },
       });
     }

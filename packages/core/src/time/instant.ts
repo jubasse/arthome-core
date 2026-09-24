@@ -14,6 +14,7 @@
 
 import type { Instant } from '../kernel/clock.js';
 import { DomainError } from '../kernel/errors.js';
+import { DomainGuardCode } from '../vocabulary/error-codes.js';
 
 export type { Instant };
 
@@ -24,14 +25,17 @@ export const DAY_MS = 86_400_000;
 export function toEpochMs(instant: Instant): number {
   const ms = Date.parse(instant);
   if (Number.isNaN(ms)) {
-    throw new DomainError({ code: 'instant.invalid', params: { instant } });
+    throw new DomainError({ code: DomainGuardCode.INSTANT_INVALID, params: { instant } });
   }
   return ms;
 }
 
 export function fromEpochMs(ms: number): Instant {
   if (!Number.isFinite(ms)) {
-    throw new DomainError({ code: 'instant.invalid', params: { instant: String(ms) } });
+    throw new DomainError({
+      code: DomainGuardCode.INSTANT_INVALID,
+      params: { instant: String(ms) },
+    });
   }
   return new Date(ms).toISOString();
 }
@@ -72,7 +76,10 @@ export interface Window {
 
 export function windowOf(start: Instant, end: Instant): Window {
   if (!isBefore(start, end)) {
-    throw new DomainError({ code: 'window.end_before_start', params: { start, end } });
+    throw new DomainError({
+      code: DomainGuardCode.WINDOW_END_BEFORE_START,
+      params: { start, end },
+    });
   }
   return { start, end };
 }

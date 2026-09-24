@@ -5,6 +5,7 @@
 import type { Instant } from '../kernel/clock.js';
 import { DomainError } from '../kernel/errors.js';
 import { isAfter, plusMinutes } from '../time/instant.js';
+import { DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /**
  * The capacity state, as a DISCRIMINATED UNION.
@@ -102,7 +103,7 @@ export interface SeatHold {
 export function holdFor(quantity: number, intentExpiresAt: Instant): SeatHold {
   if (!Number.isSafeInteger(quantity) || quantity <= 0) {
     throw new DomainError({
-      code: 'hold.quantity_invalid',
+      code: DomainErrorCode.HOLD_QUANTITY_INVALID,
       params: { quantity: String(quantity) },
     });
   }
@@ -132,7 +133,7 @@ export function isHoldExpired(hold: SeatHold, now: Instant): boolean {
 export function assertTierWidens(currentCapacity: number, nextCapacity: number): void {
   if (nextCapacity <= currentCapacity) {
     throw new DomainError({
-      code: 'capacity.tier_must_widen',
+      code: DomainErrorCode.CAPACITY_TIER_MUST_WIDEN,
       params: { current: String(currentCapacity), next: String(nextCapacity) },
     });
   }

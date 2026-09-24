@@ -15,6 +15,7 @@
  */
 
 export * from './tolerant.js';
+export * from './error-codes.js';
 export * from './catalog.js';
 export * from './moderation.js';
 export * from './commerce.js';

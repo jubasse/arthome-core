@@ -84,6 +84,7 @@ DECL = re.compile(
     r"export\s+const\s+([A-Z][A-Z0-9_]*)\s*(?::[^=]+?)?=\s*\[([\s\S]*?)\]\s*as\s+const"
 )
 STRING = re.compile(r"'([^'\\\r\n]*)'|\"([^\"\\\r\n]*)\"")
+SPREAD = re.compile(r"\.\.\.([A-Z][A-Z0-9_]*)")
 
 VOCAB = "x-arthome-vocabulary"   # an OUTPUT vocabulary: served, tolerant
 ENUM = "enum"                    # an INPUT enum: accepted, strict
@@ -138,10 +139,45 @@ def core_vocabularies(root):
             src = re.sub(r"/\*[\s\S]*?\*/", "", src)
             src = re.sub(r"(?m)^\s*//.*$", "", src)
             for m in DECL.finditer(src):
-                values = [a or b for a, b in STRING.findall(m.group(2))]
-                if values:
-                    found[m.group(1)] = (values, path)
-    return found
+                body = m.group(2)
+                values = [a or b for a, b in STRING.findall(body)]
+                spreads = SPREAD.findall(body)
+                if values or spreads:
+                    found[m.group(1)] = (values, spreads, path)
+
+    # A VOCABULARY COMPOSED OF OTHERS IS STILL A VOCABULARY.
+    #
+    #   `ERROR_CODES` is `[...API_ERROR_CODES, ...IDENTITY_ERROR_CODES, …]` --
+    #   spread rather than retyped, because writing the members out would be the
+    #   parallel literal table this gate exists to find, assembled by hand inside
+    #   the file that declares the parts.
+    #
+    #   Until this pass existed, such a constant was DISCOVERED AND DISCARDED: it
+    #   matched the declaration shape, contributed no string literals, and fell
+    #   out on `if values`. The contract that named it as its source was then
+    #   reported as naming a vocabulary no package exports -- the gate calling a
+    #   true declaration a lie, which is worse than missing it.
+    #
+    #   Resolution is iterative because a composition may compose a composition,
+    #   and it stops rather than looping on a cycle: a vocabulary that spreads
+    #   itself keeps whatever literals it has and is reported by its members, not
+    #   by a stack overflow here.
+    for _ in range(len(found) + 1):
+        changed = False
+        for name, (values, spreads, path) in list(found.items()):
+            if not spreads:
+                continue
+            if any(s not in found or found[s][1] for s in spreads):
+                continue
+            resolved = []
+            for s in spreads:
+                resolved.extend(found[s][0])
+            found[name] = (values + resolved, [], path)
+            changed = True
+        if not changed:
+            break
+
+    return {n: (v, p) for n, (v, _s, p) in found.items() if v}
 
 
 def walk(node, path="$", parent=None):

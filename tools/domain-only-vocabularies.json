@@ -28,5 +28,10 @@
     "not the same as being internal. The test is whether anything OUTSIDE the domain",
     "needs the value — not whether a way to send it already exists."
   ],
-  "allow": []
+  "allow": [
+    {
+      "vocabulary": "DOMAIN_GUARD_CODES",
+      "reason": "Internal guards, not refusals. Every member fires on a value that never came from a client: summing two currencies, a malformed instant INSIDE the system, a rate outside 0-10000. A malformed value arriving from a surface is refused at the boundary as `api.schema_invalid`, before any rule runs, so no contract can produce these and no surface has anything to render for one. Publishing them would be a contract promising errors it cannot emit. The split was made when check-vocabulary's inverse check reported 23 domain codes reaching neither contract - a true finding with two causes mixed together, and this is the half that is correct rather than pending."
+    }
+  ]
 }

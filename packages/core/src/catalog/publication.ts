@@ -13,6 +13,7 @@
 
 import { DomainError } from '../kernel/errors.js';
 import { PublicationState } from '../vocabulary/catalog.js';
+import { DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /** An offered transition, with what it commits to. */
 export interface PublicationTransition {
@@ -140,13 +141,16 @@ export function assertTransitionAllowed(
   const promise = irreversiblePromiseBlocking(from, to);
   if (promise !== null) {
     throw new DomainError({
-      code: 'publication.transition_irreversible',
+      code: DomainErrorCode.PUBLICATION_TRANSITION_IRREVERSIBLE,
       params: { from, to, promise },
     });
   }
   const allowed = nextPublicationTransitions(from, canDecide);
   if (!allowed.some((transition) => transition.to === to)) {
-    throw new DomainError({ code: 'publication.transition_forbidden', params: { from, to } });
+    throw new DomainError({
+      code: DomainErrorCode.PUBLICATION_TRANSITION_FORBIDDEN,
+      params: { from, to },
+    });
   }
 }
 

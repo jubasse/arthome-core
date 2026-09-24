@@ -56,11 +56,13 @@ Declarations: `dist/text/index.d.ts` — 2 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 353 exported names.
+Declarations: `dist/index.d.ts` — 377 exported names.
 
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — THE SAME number as a card's scarcity threshold.
+- `API_ERROR_CODES` (const) — The BFF's OWN refusals, and the only family here that is not a domain notion.
 - `AUDIENCE_SANCTIONS` (const) — `AUDIENCE_SANCTIONS: readonly ["none", "muted", "banned"]` — AXIS 3 — the sanction on the PERSON, WITHIN ONE CHANNEL.
 - `AccountId` (type) — `type AccountId = Brand<'AccountId'>;`
+- `ApiErrorCode` (type+const)
 - `ArtistId` (type) — `type ArtistId = Brand<'ArtistId'>;`
 - `AttributeGroup` (interface) — A facetable attribute group: 'audience', 'accessibility', …
 - `AttributeValue` (interface)
@@ -71,7 +73,10 @@ Declarations: `dist/index.d.ts` — 353 exported names.
 - `Bilingual` (interface) — Choosing between bilingual content: the READER's language when it exists, the other one otherwise.
 - `BlackoutReason` (type+const)
 - `Brand` (type) — `type Brand<TBrand extends string> = string & { readonly [brand]: TBrand; };` — A nominal type: structurally a string, distinct at compile time.
+- `CATALOG_ERROR_CODES` (const) — Refusals about a DATE and what may still be changed on it.
+- `CHANNEL_ERROR_CODES` (const) — Channel membership, crew and ownership refusals.
 - `CHAT_BURST_THRESHOLD_PER_MINUTE` (const) — `CHAT_BURST_THRESHOLD_PER_MINUTE = 60`
+- `CHAT_ERROR_CODES` (const) — `CHAT_ERROR_CODES: readonly ["chat.holders_only", "chat.rate_limited"]` — Chat refusals.
 - `CHAT_MODES` (const) — `CHAT_MODES: readonly ["open", "emoji", "read_only", "off"]` — Vocabulary from 'catalogue.json'.
 - `CHAT_RATE_WINDOW_SECONDS` (const) — `CHAT_RATE_WINDOW_SECONDS = 60` — The chat's RATE, measured in a DECLARED unit.
 - `CLAIM_LEASE_MINUTES` (const) — `CLAIM_LEASE_MINUTES = 3` — THE CLAIM LEASE — short, and it EXPIRES.
@@ -80,7 +85,10 @@ Declarations: `dist/index.d.ts` — 353 exported names.
 - `CREW_ROLES` (const) — `CREW_ROLES: readonly ["director", "video", "sound", "moderation"]` — The post held on ONE date, as opposed to the role held in the channel.
 - `CREW_UNASSIGNED_ALERT_HOURS` (const) — `CREW_UNASSIGNED_ALERT_HOURS = 24` — Crew post unassigned at D-1 — had no owner either.
 - `CRITERIA_VERSION` (const) — `CRITERIA_VERSION = 1` — The VERSION of the criteria grammar.
+- `CatalogErrorCode` (type+const)
+- `ChannelErrorCode` (type+const)
 - `ChannelId` (type) — `type ChannelId = Brand<'ChannelId'>;`
+- `ChatErrorCode` (type+const)
 - `ChatMode` (type+const) — `type ChatMode = (typeof CHAT_MODES)[number]; ChatMode: { readonly OPEN: "open"; readonly EMOJI: "emoji"; readonly READ_ONLY: "read_only"; readonly OFF: "off"; }`
 - `Clock` (interface)
 - `CrewRole` (type+const)
@@ -91,6 +99,8 @@ Declarations: `dist/index.d.ts` — 353 exported names.
 - `DEFAULT_CHANNELS` (const) — `DEFAULT_CHANNELS: readonly NotificationChannel[]` — The THIRD channel is 'in-app', not 'sms' (D-017).
 - `DEVICE_KINDS` (const) — `DEVICE_KINDS: readonly ["tv", "mobile", "tablet", "desktop", "stick", "console", "box"]` — A device IS registered; a SESSION is the (device, profile) pair.
 - `DISPLAY_STATES` (const) — `DISPLAY_STATES: readonly ["draft", "reserve", "scheduled", "technical", "room_open", "live", "replay", "ended", "postponed", "cancelled", "interrupted"]` — The FOURTH value, derived and unique — WHAT THE BADGE SAYS.
+- `DOMAIN_ERROR_CODES` (const) — THE DOMAIN'S refusals THAT REACH A SURFACE — a rule said no and somebody has to be told why.
+- `DOMAIN_GUARD_CODES` (const) — THE DOMAIN'S INTERNAL GUARDS, which no contract publishes and none should.
 - `DateId` (type) — `type DateId = Brand<'DateId'>;`
 - `DateOutcome` (type+const)
 - `DatePane` (type+const)
@@ -104,9 +114,13 @@ Declarations: `dist/index.d.ts` — 353 exported names.
 - `DisplayStateInput` (interface)
 - `DisplayStateResult` (interface)
 - `DomainError` (class) — An invariant violation.
+- `DomainErrorCode` (type+const)
 - `DomainErrorInit` (interface)
+- `DomainGuardCode` (type+const)
+- `ERROR_CODES` (const) — EVERY error code, composed — the vocabulary the two contracts declare against.
 - `EffectiveRights` (interface)
 - `Err` (interface)
+- `ErrorCode` (type) — `type ErrorCode = (typeof ERROR_CODES)[number];`
 - `FAILURE_NATURES` (const) — `FAILURE_NATURES: readonly ["refused", "unavailable", "offline_forbidden"]` — The NATURE of a failure, which 'studio-mobile' asked for and which was missing.
 - `FILTER_SEVERITIES` (const) — `FILTER_SEVERITIES: readonly ["low", "medium", "high"]` — Two vocabularies existed in the SAME mockup file — 'souple / normale / haute' in channel settings, 'basse / moyenne / haute' on the moderat…
 - `FailureNature` (type+const)
@@ -121,8 +135,10 @@ Declarations: `dist/index.d.ts` — 353 exported names.
 - `HOLD_MINUTES_CHECKOUT` (const) — `HOLD_MINUTES_CHECKOUT = 15` — THE CAPACITY HOLD, and its SINGLE-INSTANT invariant.
 - `HOLD_MINUTES_TV_PAIRING` (const) — `HOLD_MINUTES_TV_PAIRING = 5`
 - `HOUR_MS` (const) — `HOUR_MS = 3600000`
+- `IDENTITY_ERROR_CODES` (const) — `IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.two_factor_required", "identity.signed_out_elsewhere"]` — Sign-in, sign-up and session refusals.
 - `INCIDENT_CAUSES` (const) — `INCIDENT_CAUSES: readonly ["venue_feed_lost", "run_desk_disconnected", "bitrate_collapsed", "compatibility_worker_failed", "provider_error", "manual"]` — The CAUSE — a NEW vocabulary, distinct from the outcome.
 - `INCIDENT_KINDS` (const) — `INCIDENT_KINDS: readonly ["hold_screen", "postponed", "cancelled", "interrupted"]` — The four incident kinds a viewer can see.
+- `IdentityErrorCode` (type+const)
 - `IncidentCause` (type+const)
 - `IncidentKind` (type+const)
 - `Instant` (type) — `type Instant = string;` — An instant, in ISO 8601 UTC.
@@ -139,6 +155,7 @@ Declarations: `dist/index.d.ts` — 353 exported names.
 - `MESSAGE_STATES` (const) — `MESSAGE_STATES: readonly ["published", "removed"]` — AXIS 1 — the MESSAGE's state.
 - `MINUTE_MS` (const) — `MINUTE_MS = 60000`
 - `MODERATION_BADGES` (const) — `MODERATION_BADGES: readonly ["banned", "muted", "removed", "published"]` — THE SINGLE BADGE — derived from the three axes, never recomposed by a surface.
+- `MODERATION_ERROR_CODES` (const) — `MODERATION_ERROR_CODES: readonly ["moderation.already_claimed", "moderation.already_settled"]` — The moderation queue's two concurrency refusals.
 - `MODERATION_ITEM_STATES` (const) — `MODERATION_ITEM_STATES: readonly ["reported", "claimed", "settled"]` — AXIS 2 — the nature of the QUEUE ITEM.
 - `MODERATION_QUEUE_ALERT_SIZE` (const) — `MODERATION_QUEUE_ALERT_SIZE = 10` — Moderation queue saturated — had no owner anywhere.
 - `MODERATION_REASONS` (const) — `MODERATION_REASONS: readonly ["spam", "insult", "spoiler", "off_topic", "harassment"]` — Vocabulary from 'shared/catalogue.json' 'moderationReasons', which has authority — and which, unlike the other enums, had NO competitor her…
@@ -151,6 +168,7 @@ Declarations: `dist/index.d.ts` — 353 exported names.
 - `MessageParams` (type) — `type MessageParams = Readonly<Record<string, string | number | boolean>>;` — Message parameters, resolved by the surface against its catalogue.
 - `MessageState` (type+const) — `type MessageState = (typeof MESSAGE_STATES)[number]; MessageState: { readonly PUBLISHED: "published"; readonly REMOVED: "removed"; }`
 - `ModerationBadge` (type+const)
+- `ModerationErrorCode` (type+const)
 - `ModerationItemSnapshot` (interface) — THE TWO COUNTERS — and this is the correction to 'studio-mobile''s C3.
 - `ModerationItemState` (type+const)
 - `ModerationReason` (type+const)
@@ -160,8 +178,10 @@ Declarations: `dist/index.d.ts` — 353 exported names.
 - `NOTIFICATION_CHANNELS` (const) — `NOTIFICATION_CHANNELS: readonly ["push", "email", "in_app"]` — The third channel, proposed and not observed: 'in-app', not 'sms' (D-017).
 - `NavigationEntry` (type+const)
 - `NotificationChannel` (type+const)
+- `ORDER_ERROR_CODES` (const) — `ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.sold_out", "order.payment_declined", "order.price_stale", "order.plan_unavailable"]` — Purchase refusals beyond the four already carried by 'failureCode'.
 - `ORDER_KINDS` (const) — `ORDER_KINDS: readonly ["seat", "merch", "subscription"]` — D-011: two DISTINCT orders, never a mixed one.
 - `Ok` (interface)
+- `OrderErrorCode` (type+const)
 - `OrderId` (type) — `type OrderId = Brand<'OrderId'>;`
 - `OrderKind` (type+const) — `type OrderKind = (typeof ORDER_KINDS)[number]; OrderKind: { readonly SEAT: "seat"; readonly MERCH: "merch"; readonly SUBSCRIPTION: "subscription"; }`
 - `OrderQuote` (interface) — The four lines of the summary, composed ONCE.
@@ -170,7 +190,9 @@ Declarations: `dist/index.d.ts` — 353 exported names.
 - `PAIRING_CODE_LENGTH` (const) — `PAIRING_CODE_LENGTH = 6` — Six characters.
 - `PAIRING_CODE_NORMALISATION` (const) — `PAIRING_CODE_NORMALISATION: Readonly<Record<string, string>>` — The normalisation table, exhaustive over the mappable excluded glyphs.
 - `PAIRING_CONFUSABLE_CLASSES` (const) — `PAIRING_CONFUSABLE_CLASSES: readonly (readonly string[])[]` — The CONFUSABLE CLASSES this channel recognises, written as data so the invariant below can be computed rather than asserted by hand.
+- `PAIRING_ERROR_CODES` (const) — `PAIRING_ERROR_CODES: readonly ["pairing.slow_down", "pairing.identity_mismatch", "pairing.intent_not_engageable", "pairing.execution_engaged"]` — Device pairing — the television's way in, where the same code is polled repeatedly.
 - `PAYOUT_DELAY_DAYS` (const) — `PAYOUT_DELAY_DAYS = 14` — 'payoutDelayDays: 14'.
+- `PAYOUT_ERROR_CODES` (const) — `PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained"]` — Payout and reconciliation refusals.
 - `PAYOUT_STATES` (const) — `PAYOUT_STATES: readonly ["scheduled", "held", "paid", "refunded", "suspended"]` — 'held' while an OUTCOME is open, 'refunded' if the date is cancelled, 'suspended' while a bank-details change waits for its counter-signatu…
 - `PLAN_OPENINGS` (const) — `PLAN_OPENINGS: readonly ["browse", "trailers", "free_dates", "replays", "no_ads", "one_live_month", "all_lives", "multi_screen", "archive"]` — The NINE openings 'catalogue.json' actually carries.
 - `PLAN_TIERS` (const) — `PLAN_TIERS: readonly ["free", "pass", "premium"]` — E1 — THE MOST SERIOUS GAP IN THE HANDOVER FILE, and it is not a display defect.
@@ -180,7 +202,9 @@ Declarations: `dist/index.d.ts` — 353 exported names.
 - `PROVISION_REVISION_HOURS` (const) — `PROVISION_REVISION_HOURS = 72`
 - `PUBLICATION_CHECKLIST_ITEMS` (const) — THE AUTHORITATIVE CHECKLIST: SEVEN items, the ones on the sheet.
 - `PUBLICATION_STATES` (const) — `PUBLICATION_STATES: readonly ["draft", "reserve", "scheduled", "technical", "live", "ended", "replay_online"]` — The channel's act.
+- `PairingErrorCode` (type+const)
 - `PayoutBreakdown` (interface)
+- `PayoutErrorCode` (type+const)
 - `PayoutInput` (interface)
 - `PayoutState` (type+const)
 - `PersonId` (type) — `type PersonId = Brand<'PersonId'>;`
@@ -248,7 +272,7 @@ Declarations: `dist/index.d.ts` — 353 exported names.
 - `WAITLIST_PRIORITY_HOURS` (const) — `WAITLIST_PRIORITY_HOURS = 2` — The priority window granted to the waiting list when a tier opens.
 - `WATCH_DENIAL_REASONS` (const) — The denial reasons — one CODE per different screen.
 - `WATCH_FALLBACK_ACTIONS` (const) — `WATCH_FALLBACK_ACTIONS: readonly ["buy_seat", "join_waitlist", "subscribe", "see_replay_policy", "see_other_dates", "release_a_screen", "none"]` — The action that GETS OUT OF THE DEAD END — an empty state with no way out is banned (principle no.
-- `WATCH_FALLBACK_FOR` (const) — `WATCH_FALLBACK_FOR: Readonly<Record<WatchDenialReason, readonly WatchFallbackAction[]>>` — ⚠ THIS TABLE IS THE FUNCTION'S RANGE, NOT A MENU OF EVERYTHING A SCREEN MIGHT OFFER.
+- `WATCH_FALLBACK_FOR` (const) — `WATCH_FALLBACK_FOR: Readonly<Record<WatchDenialReason, readonly WatchFallbackAction[]>>` — ⚠ THE KEYS ARE COMPUTED, and they were bare literals until the values became translation keys.
 - `WATCH_SCOPES` (const) — `WATCH_SCOPES: readonly ["full", "preview", "none"]` — How much of the date the verdict opens.
 - `WallClock` (interface) — The wall-clock components of an instant in a given offset.
 - `WatchDenialReason` (type+const)

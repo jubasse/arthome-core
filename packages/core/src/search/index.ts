@@ -12,6 +12,7 @@
  */
 
 import { DomainError } from '../kernel/errors.js';
+import { DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /**
  * The VERSION of the criteria grammar.
@@ -148,6 +149,6 @@ export function migrateCriteria(criteria: SearchCriteria): CriteriaMigration {
 
 export function assertKnownFlag(flag: string, knownFlags: readonly string[]): void {
   if (!knownFlags.includes(flag)) {
-    throw new DomainError({ code: 'search.unknown_flag', params: { flag } });
+    throw new DomainError({ code: DomainErrorCode.SEARCH_UNKNOWN_FLAG, params: { flag } });
   }
 }
