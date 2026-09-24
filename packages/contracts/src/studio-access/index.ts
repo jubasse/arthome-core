@@ -466,7 +466,6 @@ export const StudioSessionEstablishedBearerSchema: z.ZodObject<
   .describe(
     'Opaque token in the body, **no cookie**, stored in the native store —\n`@capacitor/preferences`, **never `localStorage`**.\n',
   );
-('A narrowing of a vocabulary named elsewhere in this document, with the reason in the description above: the members left out are the rule, not an omission.');
 
 /** The session mode, chosen by the caller and never inferred. */
 export const StudioSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bearer' }> = z
