@@ -3003,3 +3003,42 @@ does.
 
 > ***A classification nobody can verify yet is better held as a default with a detector behind it
 > than as a decision with a signature under it.***
+
+---
+
+### D-070 — Three documents travel to the consuming repositories, and the third is generated rather than committed
+
+**The rules were already travelling; what existed nowhere was a list of what exists.**
+`critical-rules.md` and `code-conventions.md` say how to write. Neither says which helper is
+already written. The evidence that this is a real gap and not a hypothetical one is in this
+repository's own history: on the day the contracts were written, **ten modules independently wrote
+the same `instant()`, and four wrote the same local-vocabulary helper.** Their authors were not
+careless — nothing told them.
+
+So `available-surface.md` joins them: 543 exported names under 16 subpaths, with a sentence per
+subpath saying what it is for, in 128 lines against `REPOSITORY_MAP.md`'s 705.
+
+**It is derived from the long map, not from the TypeScript.** Re-reading the declarations would
+have produced a second extractor that could disagree with the first — the parallel table again, in
+the tool that exists to prevent parallel tables. One source, and one freshness check: `check:map`
+already fails when the long map is stale, so a short map generated from it *cannot be fresher or
+staler than the thing already guarded.*
+
+**And it is regenerated on every build rather than committed.** A committed copy would have needed
+its own gate, or would have been a third thing to remember. Build output cannot drift.
+
+**The preamble names subpaths, never individual symbols.** A hand-written list of helpers is
+precisely the artefact that goes quietly wrong when one is renamed.
+
+**⚠ THE FAULT THIS NEARLY SHIPPED WITH, because it is the one this document cannot survive.** The
+first parser read the entry kind as `\w+`. The kind `type+const` does not match `\w+` — and
+`type+const` is not an exotic case, it *is* the vocabulary pattern: `ChatMode`, `CrewRole`,
+`ApiErrorCode`. Fifty-five names were dropped, **every one of them an enumeration**, from the
+document whose entire purpose is stopping somebody from writing a second one. It was caught only by
+comparing two counts that had no reason to be compared: 488 here against `check-map`'s 543.
+
+> ***An incomplete list of what exists reads exactly like a complete one.*** That is the whole
+> danger of this artefact — it cannot be wrong in an interesting way, only short, and short is
+> invisible. So the generator now refuses to write a map at all when any entry line under a subpath
+> heading fails to parse, and says which line. Proven by injecting `(type & const)`: exit 1, the
+> offending line printed.

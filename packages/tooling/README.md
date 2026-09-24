@@ -258,9 +258,15 @@ what happened at this repository's first install.
 
 ## Carrying the rules into a consuming repository
 
-Every repository but this one has to follow `critical-rules.md` and
-`code-conventions.md`, and none of them can read `architecture/` — it is in another repository. So
-this package ships both and copies them in on install.
+Every repository but this one has to follow `critical-rules.md` and `code-conventions.md`, and none
+of them can read `architecture/` — it is in another repository. So this package ships them and
+copies them in on install.
+
+A third one travels with them, answering a different question. The rules say *how* to write; the
+map says **what already exists and what it is for** — which helper, which contract, which
+subpath. The day the contracts were written, ten modules independently wrote the same `instant()`
+and four wrote the same local-vocabulary helper, because nothing told their authors those already
+existed. `available-surface.md` is that telling: 543 names under 16 subpaths, in 128 lines.
 
 Two lines in the consuming repository:
 
@@ -275,15 +281,23 @@ The project's rules are in `docs/arthome/`, copied from `@arthome/tooling` on in
 
 - `docs/arthome/critical-rules.md` — nineteen lines, re-read every session
 - `docs/arthome/code-conventions.md` — how the code is written, and why
+- `docs/arthome/available-surface.md` — what `@arthome/core` and `@arthome/contracts` already
+  export, and what each subpath is for. **Read it before writing a helper.**
 ```
 
 **The copy is COMMITTED, and that is what makes it trustworthy.** An install rewrites it, so a stale
 one shows up in `git status` the first time anybody installs after a pull. *The freshness check is
 the diff, and the diff already exists* — which is why there is no gate here and no generator.
 
-**Why only those two.** The ADRs, the context map and the data model stay in arthome-core behind a
-link. They are reference rather than rules, they are large, and five copies of them is the parallel
-table this project spends its gates preventing.
+**Two are collected, one is generated.** `available-surface.md` is derived from
+`REPOSITORY_MAP.md` on every build, never committed at the source. That is not tidiness: the long
+map already has a freshness gate (`check:map`), so a short map regenerated from it *cannot be
+staler than something already guarded*. Committing it would have added a third thing to remember,
+and this project's dominant fault class is exactly that — the parallel table that drifts.
+
+**Why only those three.** The ADRs, the context map and the data model stay in arthome-core behind
+a link. They are reference rather than rules, they are large, and five copies of them is the
+parallel table this project spends its gates preventing.
 
 ⚠ **It overwrites.** A local edit at the destination is lost at the next install rather than
 reported — which is the point of a projection, and worth knowing before someone fixes a typo there.

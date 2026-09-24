@@ -12,6 +12,7 @@
 // The copy in the CONSUMER is committed, and that is a different decision made
 // for a different reason — see `sync-agent-docs.mjs`.
 
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -32,9 +33,22 @@ const REPO_ROOT = path.resolve(PACKAGE_ROOT, '..', '..');
 //   removing. A consumer follows the link to arthome-core for those.
 const WANTED = ['critical-rules.md', 'code-conventions.md'];
 
+// ⚠ THE THIRD DOCUMENT IS GENERATED HERE RATHER THAN COLLECTED, and that is what
+//   keeps it honest. `available-surface.md` is derived from `REPOSITORY_MAP.md`,
+//   so regenerating it on every build means the shipped copy cannot be staler
+//   than the long map — which `check:map` already guards. A committed copy with
+//   no gate behind it would have been a third thing to remember.
+function generateSurface() {
+  execFileSync(process.execPath, [path.join(HERE, 'generate-agent-map.mjs')], {
+    cwd: REPO_ROOT,
+    stdio: 'inherit',
+  });
+}
+
 function main() {
   const out = path.join(PACKAGE_ROOT, 'docs');
   fs.mkdirSync(out, { recursive: true });
+  generateSurface();
   let n = 0;
   for (const name of WANTED) {
     const from = path.join(REPO_ROOT, 'architecture', name);
@@ -45,7 +59,9 @@ function main() {
     fs.copyFileSync(from, path.join(out, name));
     n += 1;
   }
-  console.log(`arthome-collect-agent-docs: ${n} document(s) collected into packages/tooling/docs/`);
+  console.log(
+    `arthome-collect-agent-docs: ${n} collected + 1 generated into packages/tooling/docs/`,
+  );
   return 0;
 }
 

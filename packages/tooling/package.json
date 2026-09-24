@@ -53,7 +53,8 @@
     "arthome-check-map": "./bin/check-map.mjs",
     "arthome-generate-map": "./bin/generate-map.mjs",
     "arthome-sync-agent-docs": "./bin/sync-agent-docs.mjs",
-    "arthome-collect-agent-docs": "./bin/collect-agent-docs.mjs"
+    "arthome-collect-agent-docs": "./bin/collect-agent-docs.mjs",
+    "arthome-generate-agent-map": "./bin/generate-agent-map.mjs"
   },
   "files": [
     "docs",
