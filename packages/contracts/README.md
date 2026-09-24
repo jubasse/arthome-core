@@ -34,7 +34,10 @@ structural rather than written down.
 
 D-012 measured it: zod's classic entry made 64 translation files reachable — **93 KB gzip against
 7.5 KB** — at a cost that is *fixed and tied to the import*, not marginal and tied to the number of
-schemas. A barrel defeats tree-shaking on any bundler without cross-module analysis, which includes
+schemas. **With tree shaking off, `zod/mini` measures 85 KB**, which is the classic entry's level:
+the saving is not smaller there, it is nothing, and the two headline numbers must never be quoted
+without that third one. What the rule below rests on is the cost being *fixed*, which holds either
+way. A barrel defeats tree-shaking on any bundler without cross-module analysis, which includes
 Metro by default. A rule against barrels is a rule someone breaks in a hurry; a missing export is a
 resolution failure.
 

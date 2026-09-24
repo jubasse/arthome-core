@@ -36,7 +36,12 @@
 //   zod's cost is FIXED and tied to the import, not marginal and tied to the
 //   number of schemas: two agents measured it independently and converge to
 //   within 1 KB — 93 KB gzipped for a single `z.string()` on the classic entry
-//   point, 7.5 KB on tree-shaken `zod/mini` (D-012). So a single `import { z }`
+//   point, 7.5 KB on tree-shaken `zod/mini` (D-012). ⚠ The third number belongs
+//   beside those two: with tree shaking OFF, which is Metro's default, zod/mini
+//   measures 85 KB — the classic entry's level, so the saving is ZERO rather
+//   than reduced. This gate does not rest on the saving. It rests on the cost
+//   being FIXED and tied to the import, which holds either way. So a single
+//   `import { z }`
 //   added deep inside a rules module is enough to hand the whole bill to TV and
 //   mobile, WITH NOTHING REPORTING IT: the code compiles, the tests pass, and
 //   the bundle grows by 93 KB.

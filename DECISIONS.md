@@ -283,7 +283,9 @@ conditional case costs. **85 KB — the classic entry's level, so the saving is 
 zero.** That number was measured the same day as the other two and recorded in
 `needs/storefront-mobile.md`, and it reached neither this table nor any of the four places that
 quote this table: `packages/contracts/package.json`, `packages/contracts/README.md`,
-`tools/check-core-entry.mjs`, `code-conventions.md` §5.5. All four carry the word *conditional* or
+`tools/check-core-entry.mjs`, `code-conventions.md` §5.5. **All five now carry it** — see D-066,
+which exists because the first version of this entry fixed only the table and `skeptic` caught it
+with one grep. All four carry the word *conditional* or
 the Metro caveat, and a reader of any of them would price the risk as a reduced saving rather than
 as no saving at all.
 
@@ -2774,3 +2776,60 @@ that will be used in the wrong one.
 **The gate is committed and is NOT in `verify` yet.** It would fail, and a gate wired in red is a
 gate switched off within a day. It goes into `verify` in the commit that turns it green, and the
 README's gate count goes from eight to nine in that same commit and not before.
+
+
+### D-066 — An entry that diagnoses a propagation failure, whose fix propagated nowhere
+
+**`skeptic`'s last act was to check this log, and the first thing it checked was the entry written
+twenty minutes earlier.**
+
+D-065's companion, the D-012 correction, says in its own words that the 85 KB figure *"reached
+neither this table nor any of the four places that quote this table"* — and names all four. **The
+table was fixed. The four files were not.** `rg "85 KB"` on each: nothing, four times.
+
+> ***The diagnosis landed in the place that records diagnoses, and nowhere else. One grep.***
+
+Now propagated, with the reason attached rather than just the number: *with tree shaking off the
+saving is zero, so `93 → 7.5` must never again be quoted without the third figure beside it.* The
+rule those four files defend is unharmed, because it rests on the cost being **fixed and tied to the
+import**, which holds under every bundler.
+
+**And the pattern generalises past this entry, which is why it gets its own number.** `skeptic`
+checked two entries closely and both were wrong the same way — *an entry that correctly diagnoses a
+defect and whose fix lands only in the log.* Two of two is a hit rate rather than a survey, and the
+standing instruction it leaves is: **take any entry that names the files it says must change, and
+check the files.**
+
+---
+
+#### D-055 is corrected, and this is the correction that matters most
+
+**D-055 concludes that a teammate disagreeing was the only reliable detector, and that it does not
+survive a solo project.** `skeptic` shows the premise is drawn too narrowly, and the objection is
+sharper than a caveat:
+
+> ***"None of K1–K7 came from a teammate disagreeing. Two detectors found all of them, and both work
+> alone."***
+
+**Detector A — make an OUTSIDE AUTHORITY contradict the document.** K1 came from fetching Stripe's
+page, not from thinking harder about Stripe. `adr-payments.md` was internally coherent and wrong
+about the world, *and no internal review reaches that.* The rule: **every sentence of the form
+"vendor X does Y" is a URL nobody has opened yet.**
+
+**Detector B — RECOUNT what a document says about itself.** K4's topic count, G1's fan-out of four
+and R3's fifteen OpenAPI rules all came from running the count the document asserted. Two came back
+false and one true, *which is what makes it a detector rather than a hunt.* The rule: **any sentence
+carrying a number about this repository is a script, usually a one-liner.**
+
+**Detector B is what caught the failure above**, on the same day, against the entry that had just
+been written — which is as close to a demonstration as this log is going to get.
+
+**Why the correction is urgent rather than tidy.** D-055 is *advice*, not a fact, and it will be
+read at exactly the moment there is nobody left to disagree. As written it tells a solo reader the
+detector is gone. What is gone is **one** kind — the scope error inside an instrument, invisible from
+within the instrument. Two kinds are not gone, both are cheap, and both are the ones that work
+without a second party.
+
+*D-055's own surviving half said it already: construct the discriminating case rather than reason
+about the mechanism. A and B are what that looks like when written down as procedures instead of as
+a disposition.*

@@ -2135,7 +2135,9 @@ Alphabetical within each group, case-insensitive.
 **[floor] A barrel file (an `index.ts` re-exporting everything) is forbidden in
 `@arthome/contracts`**, and discouraged everywhere else. This is not a taste: it is **D-012**,
 measured independently by two agents — zod's barrel entry point made 64 translation files reachable,
-**93 KB gzip versus 7.5 KB**, at a cost that is **fixed, not marginal**. A barrel defeats tree-shaking
+**93 KB gzip versus 7.5 KB**, at a cost that is **fixed, not marginal**. **And versus 85 KB when tree
+shaking is off**, which is Metro's default: the third row of D-012's table, without which the first
+two read as a saving somebody has collected. The rule holds on the *fixed* half, not on the saving. A barrel defeats tree-shaking
 on any bundler that does not do cross-module analysis — which includes Metro by default.
 
 ### 5.6 Error handling

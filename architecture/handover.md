@@ -20,6 +20,7 @@ to one document is six conflicts, and six agents committing into one repository 
 | [`handover/backend-contracts.md`](handover/backend-contracts.md) | registry mode exactly; **which of the emit gate's equivalences to refuse**; what holds `paths` and what does not |
 | [`handover/backend-domain.md`](handover/backend-domain.md) | rules that live where you would not look; **the one misdeclared block among the 114 exempt ones** |
 | [`handover/conventions.md`](handover/conventions.md) | how to build the repository map (D-061); **where §5.3.1 does *not* substitute** for the D-055 detector |
+| [`handover/skeptic.md`](handover/skeptic.md) | findings closed by answers it would reopen; **the two detectors that work with nobody else in the room** |
 
 **Three of the six correct something already committed**, which is the reason they were worth the
 cost. `studio-mobile` contradicts the one section written before them; `storefront-mobile` shows
