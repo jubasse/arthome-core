@@ -3030,3 +3030,23 @@ revealed, each recorded in the section it corrects.
 | `eslint-config-prettier` unresolvable from the repository root | running the §3.5 gate | §3.5, §4.2 |
 | Prettier would rewrite all fifteen architecture documents | `prettier --check .` | §3.7 |
 | `minimumReleaseAge` refuses versions pinned on their publication day | the first `pnpm install` | §7.6 |
+
+### 5.5.1 The fast loop — which check answers which question
+
+**Measured, not estimated (D-068):**
+
+| command | time | the question it answers |
+|---|---|---|
+| `pnpm run typecheck` | **2 s** | does it compile? a missing import, a wrong name, a bad shape |
+| `pnpm run check:emit-diff` | 5 s | does this schema reproduce the document it publishes? |
+| `pnpm run verify` | **29 s** | is this ready to hand back? |
+
+**Iterate on the first, finish on the second, hand back on the third.** Four workers writing schemas
+in parallel ran `verify` after every edit — fourteen times the price per turn, to find a missing
+import that `typecheck` names in two seconds. Nothing told them otherwise, and nothing in `verify`'s
+own output says it is the wrong tool for that.
+
+**And `verify` is the only one of the three that is a promise.** The other two are questions. A
+green `typecheck` says the file compiles and nothing more; it says nothing about whether the schema
+emits its contract, which is what this package exists to do.
+

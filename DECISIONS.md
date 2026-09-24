@@ -2930,3 +2930,43 @@ settled by whoever happened to be propagating a regex.
 documents. Writing it there would have encoded core's spelling as the contract's, in the one place a
 generated client reads — converting an open question into a published answer, silently, as a side
 effect of a tidy-up.
+
+### D-068 — No LSP, and the measurement that closes the question D-061 left open
+
+**D-061 deferred it in one sentence**: *"an agent with the published `.d.ts` and a working `tsc`
+already has the export list and go-to-definition… the LSP is worth revisiting once a map exists; it
+is not the cheap half."* The map exists now, so the question is live, and the project owner asked it.
+
+**Measured on this repository, today:**
+
+| | |
+|---|---|
+| `pnpm run typecheck` | **2.1 s**, cold and warm alike |
+| `pnpm run check:emit-diff` | 5.3 s |
+| `pnpm run verify` | **29 s** |
+
+**A language server buys nothing an agent here lacks.** Its three offers are answered already:
+the export list with kinds, signatures and a first documentation sentence is `REPOSITORY_MAP.md`,
+535 names, generated and freshness-gated; find-references is `rg`; diagnostics are a two-second
+`tsc`. *The cost of adding one is a client, a lifecycle and a second source of truth about types —
+against a saving of two seconds.*
+
+**WHAT ACTUALLY COST TIME TODAY WAS NONE OF THAT, AND ALL THREE CAUSES ARE FIXED.**
+
+1. **Type resolution went through `dist`.** `@arthome/core` is a symlink whose `exports` point at
+   build output, so an editor read a moving artefact and lit every contracts file red. Each package
+   now offers an `@arthome/source` condition and the shared tsconfig asks for it. *Proven by
+   deleting core's entire `dist`: typecheck and eslint both exit 0.*
+2. **Concurrent gates raced on the same `dist`.** Two workers each running a gate that builds first
+   produced torn declaration files and a wall of `no-unsafe-*` in correct code. The build takes an
+   exclusive lock now. *Proven: three simultaneous runs, one distinct output.*
+3. **The loop was fourteen times too slow.** Workers iterated on `verify` at 29 s when `typecheck`
+   answers in 2. Nothing told them otherwise, and nothing about `verify` says it is the wrong tool
+   for finding a missing import.
+
+> ***The instrument was never the bottleneck. What an agent needed was to be told which of the
+> instruments already there answers the question it is actually asking.***
+
+**Ruling: no LSP. `code-conventions.md` gains the fast loop instead** — `typecheck` while writing,
+`check:emit-diff` when a schema is meant to be finished, `verify` before handing back. Revisit only
+if a measurement changes, and record the measurement rather than the impression.

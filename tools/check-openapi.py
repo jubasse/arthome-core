@@ -20,7 +20,49 @@ def walk(node, path=""):
         for i, v in enumerate(node):
             yield from walk(v, f"{path}/{i}")
 
+class _DuplicateKeyLoader(yaml.SafeLoader):
+    """A loader that REMEMBERS the keys `yaml.safe_load` silently overwrites."""
+
+
+def _remember_duplicates(loader, node, deep=False):
+    seen = {}
+    for key_node, _value in node.value:
+        key = loader.construct_object(key_node, deep=True)
+        if key in seen:
+            _DUPLICATES.append((key, key_node.start_mark.line + 1, seen[key]))
+        seen[key] = key_node.start_mark.line + 1
+    return yaml.SafeLoader.construct_mapping(loader, node, deep)
+
+
+_DuplicateKeyLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _remember_duplicates
+)
+_DUPLICATES = []
+
+
 def check(fn):
+    # R21 — NO DUPLICATE KEY, because YAML resolves one by DESTROYING the other.
+    #
+    #   `yaml.safe_load` keeps the last and discards the first without a word, so
+    #   a document can carry a sentence nobody will ever read and every gate
+    #   stays green. Found in `JournalEntry.nature`, where a specific reason —
+    #   that renaming the `money` member would falsify two domain documents — was
+    #   written first and destroyed by generic boilerplate two lines later. The
+    #   loss ran in the worse direction: the argued text lost to the template.
+    #
+    #   It is R21 rather than a linter setting because it is a CONTENT loss, not
+    #   a style one, and because this gate is the thing that reads these two
+    #   files. Prettier formats YAML and says nothing about it.
+    _DUPLICATES.clear()
+    with open(fn, encoding="utf-8") as handle:
+        yaml.load(handle, _DuplicateKeyLoader)
+    for key, line, first in _DUPLICATES:
+        err(
+            fn,
+            f"R21 duplicate key `{key}` at line {line} — already set at line {first}. "
+            "YAML keeps the last and DISCARDS the first, silently.",
+        )
+
     d = yaml.safe_load(open(fn, encoding="utf-8"))
 
     # R1 — OpenAPI 3.1

@@ -20,9 +20,9 @@ was.
 | Directory | What lives there | Authored by |
 |---|---|---|
 | `packages/core/` | `@arthome/core` — the domain. **Zero framework dependencies.** Two entry points: `.` has no dependency at all, `./schema` is the only one that may import zod | the domain |
-| `packages/contracts/` | `@arthome/contracts` — the boundary schemas, which **extend** core's base schemas rather than redeclaring them | the contracts |
+| `packages/contracts/` | `@arthome/contracts` — the boundary schemas, which **extend** core's base schemas rather than redeclaring them. **Fourteen subpaths, one per bounded context**, and no `.` entry point: a barrel would hand zod's fixed cost to every surface, so the constraint is the mechanism rather than a written rule | the contracts |
 | `packages/tooling/` | `@arthome/tooling` — ESLint, Prettier, TypeScript and Vitest configuration shared by all seven repositories, plus five of the gates |
-| `openapi/` | The two API contracts — one per product. **Hand-written and reviewed as prose**; `components/schemas` is being moved to generation from zod | the contracts |
+| `openapi/` | The two API contracts — one per product. **Hand-written and reviewed as prose**, and every one of their 111 schemas now has a zod source that a gate compares against it | the contracts |
 | `proto/` | Kafka event schemas. 109 types, **zero `service` declarations** — Protobuf serves the event log, never a synchronous call | the domain |
 | `architecture/` | 15 documents, ~11,600 lines: the context map, the data model, the ADRs, the conventions, and the sceptic's adversarial review | the whole team |
 | `needs/` | What each of the five surfaces asked the contract for, and what it contested when it got the answer. One file per surface, each its sole author | the surfaces |

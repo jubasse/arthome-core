@@ -10,14 +10,20 @@
 
 ```
 repo      ~/Dev/arthome/arthome-core   (public: github.com/jubasse/arthome-core)
-HEAD      fc57b17 · 131 commits · working tree clean · PUSHED
-verify    pnpm run verify → exit 0   (9 gates, typecheck, 342 tests)
-vocab     124 of 236 blocks compared, 0 disagree, 0 undeclared, 112 exempt
-emit      pnpm run check:emit-diff → 3 disagreements, down from 14. Still RED
-          by design and still out of `verify` — D-065.
-map       pnpm run check:map → exit 0. REPOSITORY_MAP.md, 433 names, 6 subpaths.
-log       DECISIONS.md — 69 arbitrations
+HEAD      see `git log -1` · working tree clean · pushed
+verify    pnpm run verify → exit 0   (TEN gates, typecheck, 342 tests) — 29 s
+emit      pnpm run check:emit-diff → 111 of 111. Both contracts fully sourced,
+          and the gate is in `verify`, so a schema that stops reproducing its
+          document cannot be committed.
+map       pnpm run check:map → exit 0. REPOSITORY_MAP.md, 535 names, 15 subpaths.
+vocab     124 of 236 blocks compared, 0 disagree, 0 undeclared
+log       DECISIONS.md — 70 arbitrations
 ```
+
+**THE FAST LOOP, because four workers each paid fourteen times over for not knowing it (D-068):**
+`typecheck` is 2 s and answers "does it compile"; `check:emit-diff` is 5 s and answers "does this
+schema reproduce its document"; `verify` is 29 s and is the only one of the three that is a promise
+rather than a question. Iterate on the first, finish on the second, hand back on the third.
 
 **The foundation is built.** `@arthome/core` (domain, two entry points, `./schema` added this
 session), `@arthome/tooling` (five gates), `@arthome/contracts` (four modules: envelope, money,

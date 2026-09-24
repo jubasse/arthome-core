@@ -45,9 +45,41 @@ So: **one subpath per bounded context**, added as each lands and never before.
 
 | Subpath | Status |
 |---|---|
-| `./money` | the tax-basis types (below) |
-| `./identity` `./catalog` `./ticketing` `./chat` `./payouts` `./streaming` `./notifications` | one per service, as they land |
-| `./envelope` | the shared response and error envelope |
+| `./envelope` | the response envelope and both products' `Error` — 6 |
+| `./money` | the tax-basis TYPES. No schema: `MoneyOut` and `MoneyIn` belong to `@arthome/core` |
+| `./text` | authored text with the language it was written in — 2 |
+| `./pagination` | the cursor page and the offset page, which are deliberately different — 3 |
+| `./entitlement` | the right to watch — 1. It exists to sit BELOW `catalog` and `streaming`, which both need it |
+| `./catalog` | dates, artists, shows, categories, media, merchandise, prices — 22 |
+| `./ticketing` | carts, quotes, orders, tickets, plans — 11 |
+| `./streaming` | playback tickets, renewals, live sessions — 4 |
+| `./identity` | sessions, devices, pairing, consents, the viewer's context — 13 |
+| `./engagement` | chat, reactions, notifications, the change feed — 5 |
+| `./studio-access` | the actor, their rights, the bootstrap a control room is handed — 11 |
+| `./studio-stage` | operating a date: its sheet, its run console, its health, its uploads — 13 |
+| `./studio-desk` | moderation, the audience, the inbox, the journal — 5 |
+| `./studio-money` | payouts, bank changes, statistics, the dashboard — 10 |
+
+**Fourteen subpaths, 106 schemas, and together with `@arthome/core` they emit all 111 schemas of both
+contracts exactly.** `pnpm run check:emit-diff` compares every one against the document it publishes
+and is part of `pnpm run verify`.
+
+⚠ **THE IMPORT GRAPH IS A DAG, AND IT IS NOT AN ACCIDENT.** A zod schema is built at MODULE LOAD, so
+a cycle between two modules is a load-order hazard: it holds until a declaration moves, then fails
+with an error naming a symbol unrelated to whatever was just edited. Two of them formed while these
+modules were being written, and both were broken by moving a shape rather than by `z.lazy` — which
+emits an identical schema and defers the cost to whoever moves a declaration next. **There is no
+`z.lazy` in this package.**
+
+```
+entitlement  <-  catalog  <-  ticketing, streaming, identity
+studio-access  <-  studio-desk, studio-money, studio-stage
+```
+
+*`./chat`, `./payouts` and `./notifications` were in this list as plans and never existed.* What
+the domain calls chat and notifications is served to a viewer, so it is in `./engagement`; payouts
+are operated, so they are in `./studio-money`. The list is a record of what exists, which is what
+the paragraph below promises and what it had stopped being.
 
 A subpath in `exports` pointing at a file that does not exist is unreachable with a laconic error; a
 subpath missing from `exports` is unreachable too. Both are silent, so the list stays a record of what

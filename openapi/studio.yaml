@@ -8066,8 +8066,6 @@ components:
           x-arthome-vocabulary: [air, mod, event, access, money]
           x-arthome-vocabulary-source: none
           x-arthome-vocabulary-reason: "A vocabulary local to this contract: four of the five are endpoint concerns and a vocabulary of query filters does not belong in the domain. The exception is `money`, which @arthome/core does not produce but DOES reason about — data-model.md:624 and context-map.md:402 key the redaction rule to it, so the `money` kind is absent from the response without canRevenue. Renaming that one member silently falsifies two domain documents; the other four are ours alone."
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
         occurredAt: { type: string, format: date-time }
         actor: { $ref: "#/components/schemas/Actor" }
         code: { type: string, description: "A **code**, never an authored sentence." }
