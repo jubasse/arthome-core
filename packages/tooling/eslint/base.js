@@ -96,6 +96,34 @@ export const base = tseslint.config(
       // enum forbidden: emits runtime code (unacceptable in @arthome/core), does
       // not survive isolatedModules as `const enum`, does not serialise to JSON,
       // and does not narrow like a literal union. Section 5.3.
+      //
+      // THE LAST REASON IS THE ONE THAT BITES DAILY, AND IT IS MEASURED RATHER
+      // THAN ASSERTED. Compiled under --strict:
+      //
+      //   enum WatchScopeEnum { FULL = 'full' }
+      //   const WATCH_SCOPES = ['full', 'preview'] as const;
+      //   declare const fromWire: 'full';          // what JSON.parse hands you
+      //
+      //   const a: WatchScopeEnum = fromWire;      // TS2322 — NOT assignable
+      //   const b: WatchScope     = fromWire;      // fine
+      //
+      // A string whose value IS the member's value is refused by the enum,
+      // because a TypeScript enum is NOMINAL. Every boundary in this system
+      // receives strings, so every one of them would need an `as` — and `as` is
+      // forbidden two rows above, for the reason that it silences the checker
+      // instead of employing it.
+      //
+      // The second failure is what the gates and zod need:
+      //
+      //   const t: readonly ['full','preview'] = WATCH_SCOPES;              // fine
+      //   const u: readonly ['full','preview'] = Object.values(WatchScopeEnum);
+      //     // TS2322 — 'WatchScopeEnum[]', "source may have fewer"
+      //
+      // An enum yields its members and never the ORDERED TUPLE. That tuple is
+      // what `z.enum()` consumes and what `arthome-check-enums` reads out of the
+      // declaration, so an enum would force it to be written a second time by
+      // hand — the parallel literal table this repository is organised against,
+      // manufactured by the construct chosen to avoid one.
       'no-restricted-syntax': [
         'error',
         {
