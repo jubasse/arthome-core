@@ -29,29 +29,41 @@ export const node = tseslint.config(...base, {
     // The `node:` prefix is mandatory: it distinguishes a built-in module from a
     // same-named registry package without ambiguity, which is a real
     // supply-chain attack surface.
+    //
+    // ⚠ `paths`, NOT `patterns`, AND THE DIFFERENCE IS NOT COSMETIC. These are
+    //   exact module names, and `patterns` interprets its entries with GITIGNORE
+    //   semantics: an unanchored `events` matches any path segment called
+    //   `events`, so `@arthome-platform/events` was refused with a message about
+    //   prefixing built-in modules. Every one of these names is a plausible
+    //   library name — `path`, `stream`, `crypto`, `util` — so the trap was
+    //   waiting for whichever repository named a package first. arthome-platform
+    //   did, on its second service.
+    //
+    //   `paths` matches the specifier exactly, which is what "the built-in
+    //   called fs" actually means.
     'no-restricted-imports': [
       'error',
       {
+        paths: [
+          'fs',
+          'path',
+          'os',
+          'crypto',
+          'http',
+          'https',
+          'stream',
+          'url',
+          'util',
+          'child_process',
+          'buffer',
+          'events',
+          'assert',
+          'zlib',
+        ].map((name) => ({
+          name,
+          message: 'Prefix built-in modules: `node:fs`, `node:path`, and so on.',
+        })),
         patterns: [
-          {
-            group: [
-              'fs',
-              'path',
-              'os',
-              'crypto',
-              'http',
-              'https',
-              'stream',
-              'url',
-              'util',
-              'child_process',
-              'buffer',
-              'events',
-              'assert',
-              'zlib',
-            ],
-            message: 'Prefix built-in modules: `node:fs`, `node:path`, and so on.',
-          },
           {
             group: ['**/dist/**', '@arthome/*/dist/**', '@arthome/*/src/**'],
             message:
