@@ -1195,32 +1195,43 @@ pnpm exec prettier --write .        # fix
 **What Prettier does not own is prose** — §3.7 gives the measurement and the reason. `.prettierignore`
 excludes Markdown, the mockups and the handoff dossier in all seven repositories.
 
-**[floor] The fix order is the reverse of the check order, and it is ESLint first.**
+**[floor] A gate checks. It never fixes. (D-049)**
 
 ```bash
-pnpm run fix      # eslint . --fix && prettier --write .   — structure, then formatting
-pnpm run verify   # ... format:check, then lint, ...       — cheapest signal first
+pnpm run verify   # --check and --list-different only. Nothing is edited.
+pnpm run fix      # prettier --write . && eslint . --fix && prettier --write .
 ```
 
+**Why the fixer runs the formatter twice, and why that is not a redundancy to simplify away.**
+
 `eslint --fix` changes **structure**: it reorders imports, and `consistent-type-imports` splits one
-statement into two. Prettier then reflows whatever that produced. Prettier never does the reverse — it
-cannot reorder an import or split a type import — so **one pass of each converges when ESLint goes
-first, and needs a third pass when Prettier does.**
+statement into two. Prettier then reflows whatever that produced. The two are **sequential
+transformations that do not commute**, and no configuration makes them commute —
+`eslint-config-prettier` stops the two *disagreeing about a rule* (§3.2), but nothing stops **a fixer
+producing text that the formatter then reflows.** Measured from a dirty tree: `prettier --write` then
+`eslint --fix` left fresh Prettier diffs in the files just fixed.
 
-Reported from the other side: running `prettier --write`, then `eslint --fix`, left Prettier diffs in
-the files just fixed, and a second `prettier --write` was needed. That is exactly this mechanism, and
-it is not a disagreement between the two tools — `eslint-config-prettier` guarantees they never
-disagree about formatting (§3.2). **It is a fixer producing text that the formatter then reflows**,
-which no amount of rule-disabling prevents.
+So the third pass is what a non-commuting pair costs. **If you "simplify" this to one pass each, you
+will rediscover it** — which is why the reason is written here rather than in a commit message.
 
-So the two orders are deliberately opposite, and the reason differs for each:
+**And the ruling that follows is stronger than the ordering.** A gate must not edit, because:
 
-- **fixing**: structure before formatting, or you format text that is about to change.
-- **checking**: `format:check` before `lint`, because it is far cheaper and its failure is unambiguous.
+> **A gate that fixes cannot fail honestly: it either reports a defect it has already removed, or it
+> fails on a tree that was correct before it touched it.**
 
-One consequence worth knowing, because it looks like a bug: **a failing `format:check` can be caused by
-a pending lint fix.** If `verify` fails on formatting in a tree you believe is correct, run
-`pnpm run fix` rather than `prettier --write` alone.
+The second is a red gate on no defect, which is the thing that gets a gate switched off. Once `verify`
+only ever reports, convergence cannot affect it at all — nothing changes underneath it while it looks.
+That is why the fix is a **separate, ordered, human-invoked script**, and why `verify` contains no
+`--fix` and no `--write` anywhere.
+
+**A note on what I could not measure**, because the failure is more instructive than the answer would
+have been. I tried six times to determine whether `eslint --fix` **first** converges in one pass each,
+and every attempt was confounded by a different scope artefact: ESLint silently ignoring files outside
+its config's base path; a fixture whose imports did not resolve, so unfixable errors masked the
+question; and finally typescript-eslint refusing files no tsconfig claimed, so the type-aware rules
+never ran and the "residual errors" were parse refusals. **Three different invisible scopes, in six
+attempts to measure one thing** — §5.3.1's lesson arriving in the attempt to measure it. The ruling
+above is safe under either mechanism, so the optimisation was not worth a seventh attempt.
 
 ### 5.2 Naming
 
@@ -1706,6 +1717,28 @@ There is a sharper version worth keeping: `0 exempt` meant the `source: none` br
 either, so **neither branch had executed against real data**. A gate whose branches have never run is
 a gate whose behaviour is a hypothesis. All four verdict states — inactive, agree, disagree, exemption
 without a reason — are now exercised against fixtures built from the real contracts.
+
+**[floor] A gate's guarantee is only as wide as its mechanism.**
+
+`check-core-entry` guarantees that `@arthome/core`'s public entry reaches neither `zod` nor a Node
+API — the rule the whole package is premised on. Its **mechanism** is walking the import graph.
+
+And a global is not an import. So `types: ["node"]` in the root `tsconfig.json` would have pulled
+Node's globals into the very program that checks the domain, and **that gate would not have seen a
+thing**: `process`, `Buffer` and `__dirname` would have type-checked clean inside a package whose
+entire premise is that it cannot reach them. The configuration about to open that hole had itself been
+failing since the day it was written, invisibly, because the chain everyone ran omitted `typecheck`
+(§8.2). **Two invisible things cancelling out to look like a working system.**
+
+The lesson is not about Node types:
+
+> **A gate's name states an intention; its mechanism states its coverage. Where the two differ, say so
+> in the gate — because the name is what people will rely on.**
+
+A gate that walks imports should say it does not cover ambient types. A gate that reads declarations
+should say it does not cover computed values. The alternative is a guarantee everyone trusts one level
+wider than it holds, which is worse than no guarantee, because nobody looks where they believe a gate
+is already looking.
 
 **[floor] Never put prose in a double-quoted shell string.**
 
