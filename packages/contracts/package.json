@@ -42,9 +42,21 @@
     "See architecture/code-conventions.md section 5.5 and DECISIONS.md D-012."
   ],
   "exports": {
+    "./envelope": {
+      "types": "./dist/envelope/index.d.ts",
+      "import": "./dist/envelope/index.js"
+    },
     "./money": {
       "types": "./dist/money/index.d.ts",
       "import": "./dist/money/index.js"
+    },
+    "./pagination": {
+      "types": "./dist/pagination/index.d.ts",
+      "import": "./dist/pagination/index.js"
+    },
+    "./text": {
+      "types": "./dist/text/index.d.ts",
+      "import": "./dist/text/index.js"
     },
     "./package.json": "./package.json"
   },

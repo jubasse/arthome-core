@@ -5315,8 +5315,7 @@ components:
              no_live_in_category, no_upcoming_in_category, no_replay_in_category,
              no_followed_artist, no_followed_artist_live, no_order_yet, no_ticket_yet,
              no_replay_available, empty_cart, no_saved_search, no_watchlist_entry]
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
+          x-arthome-vocabulary-source: EMPTY_REASONS
         emptyActionCode:
           type: [string, 'null']
           description: |
@@ -5825,9 +5824,20 @@ components:
           additionalProperties: true
           description: What the screen must display — the territory, the plan required, the expiry instant.
         fallbackAction:
-          type: [string, 'null']
+          type: string
           description: |
             The action that leads out of the dead end. A code, never a sentence, and never a dead screen.
+
+            **Not nullable, and that is the point of `none` being a member.** `decideWatch` returns
+            `none` when there is nothing to offer, so the absence is **spelled** rather than left to a
+            null. Nullable would make `null` and `none` two spellings of one state, and a third
+            meaning — "not denied" — would attach itself to whichever the writer had in mind.
+
+            **And an ALLOWED verdict carries a real action.** A viewer watching on `scope: preview`
+            gets `buy_seat` beside it. A surface reading `null` as "no action" would be right for
+            `denialReasonCode`, where null genuinely means *not denied*, and would silently drop the
+            preview-to-purchase step — the one path that turns a free viewer into a paying one. The
+            two fields look alike and must not be read alike.
 
             **The two vocabularies are coupled, and the coupling is data rather than prose.**
             A fallback action exists to answer a denial reason, so the invariant is: every reason maps

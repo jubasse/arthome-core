@@ -60,7 +60,24 @@ import re
 import sys
 from datetime import date
 
-CORE_SRC = "packages/core/src"
+# ⚠ THE UNIVERSE IS EVERY PUBLISHED PACKAGE, DISCOVERED — NOT `packages/core/src`.
+#
+#   This was `CORE_SRC = "packages/core/src"`, and the day `@arthome/contracts`
+#   landed that single root became the scope fault this file keeps naming (D-045):
+#   scoped by the package I happened to know about, rather than by a property of the
+#   thing sought, which is "a vocabulary a published package exports".
+#
+#   The cost was not a miss, it was worse. `emptyReason` in storefront.yaml carries
+#   the same fourteen values as `EMPTY_REASONS` in @arthome/contracts, and naming
+#   that source was ILLEGAL — the check below rejected any name not exported by
+#   @arthome/core. So the only annotation the gate would accept was
+#   `x-arthome-vocabulary-source: none`, which is false. A gate that makes the false
+#   declaration the only legal one manufactures the lie it then fails to detect.
+#
+#   Discovered rather than listed, for the reason core_vocabularies already gives:
+#   a list of the packages would be one more parallel table. A fourth published
+#   package is covered the day it has a `src/`, with no edit here.
+PACKAGES_DIR = "packages"
 RATCHET = "tools/vocabulary-migration.json"
 
 DECL = re.compile(
@@ -78,8 +95,33 @@ problems = []
 notes = []
 
 
+def published_sources():
+    """(package name, src dir) for every package this repository publishes.
+
+    `private: true` is excluded because an unpublished package's constants are not
+    a shared surface, and a package with no `src/` drops out on its own —
+    `@arthome/tooling` has none, and it exports configuration rather than values.
+    """
+    out = []
+    if not os.path.isdir(PACKAGES_DIR):
+        return out
+    for entry in sorted(os.listdir(PACKAGES_DIR)):
+        manifest = os.path.join(PACKAGES_DIR, entry, "package.json")
+        src = os.path.join(PACKAGES_DIR, entry, "src")
+        if not os.path.isfile(manifest) or not os.path.isdir(src):
+            continue
+        try:
+            meta = json.load(open(manifest, encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if meta.get("private") is True:
+            continue
+        out.append((meta.get("name", entry), src))
+    return out
+
+
 def core_vocabularies(root):
-    """Every `export const NAME = [...] as const` in the domain's sources.
+    """Every `export const NAME = [...] as const` in one package's sources.
 
     Discovered, never listed: a list of the vocabularies would be one more
     parallel table, sitting next to the vocabularies.
@@ -176,13 +218,38 @@ def load_ratchet():
 
 
 def main(files):
-    if not os.path.isdir(CORE_SRC):
-        print(f"WARN arthome-check-vocabulary: {CORE_SRC} not found. GATE INACTIVE.")
+    sources = published_sources()
+    if not sources:
+        print(f"WARN arthome-check-vocabulary: no published package with a src/ under "
+              f"{PACKAGES_DIR}/. GATE INACTIVE.")
         return 0
 
-    core = core_vocabularies(CORE_SRC)
+    core = {}
+    origin = {}      # vocabulary name -> package that exports it
+    collisions = {}  # vocabulary name -> [packages], when more than one
+    for pkg_name, src in sources:
+        for name, entry in core_vocabularies(src).items():
+            if name in core:
+                collisions.setdefault(name, [origin[name]]).append(pkg_name)
+                continue
+            core[name] = entry
+            origin[name] = pkg_name
+    # One name exported by two published packages is E2 ACROSS A PACKAGE BOUNDARY —
+    # the precise thing @arthome/contracts exists to avoid by extending rather than
+    # redeclaring. Reported rather than silently resolved: taking the first would
+    # make the gate's answer depend on directory order.
+    for name, pkgs in sorted(collisions.items()):
+        problems.append(
+            f"{name}\n"
+            f"      exported as a vocabulary by {len(pkgs)} published packages: {', '.join(pkgs)}\n"
+            "      One vocabulary, one owner. A second declaration is E2 across a package\n"
+            "      boundary: the copies agree today and the equality comparison between them\n"
+            "      fails silently the day one moves. Derive it instead — .extend()/.pick() —\n"
+            "      or move it to the package that owns the concept."
+        )
     if not core:
-        print("WARN arthome-check-vocabulary: no `as const` vocabulary in the domain. GATE INACTIVE.")
+        packages = ", ".join(n for n, _ in sources)
+        print(f"WARN arthome-check-vocabulary: no `as const` vocabulary in {packages}. GATE INACTIVE.")
         return 0
 
     import yaml  # imported here so the two WARN paths above need no dependency
@@ -308,7 +375,8 @@ def main(files):
             if source not in core:
                 problems.append(
                     f"{where}\n"
-                    f"      {SOURCE}: {source} — no such vocabulary is exported by @arthome/core.\n"
+                    f"      {SOURCE}: {source} — no such vocabulary is exported by any published\n"
+                    f"      package ({', '.join(n for n, _ in sources)}).\n"
                     f"      (this block is an {label})\n"
                     f"      Exported: {', '.join(sorted(core))}"
                 )
@@ -491,6 +559,56 @@ def main(files):
                 "      straddle the domain/wire boundary, so this is one vocabulary spelled twice."
             )
             break
+
+    # ── `source: none` contradicted by a vocabulary that exists ───────────────
+    #
+    # THE EXEMPTION IS A CLAIM, AND UNTIL NOW NOTHING CHECKED IT.
+    #
+    # `source: none` asserts "no published package declares these values". Every
+    # other verdict in this gate is tested against the packages; that one was taken
+    # on trust, and it is the only verdict that SUPPRESSES the comparison. An
+    # untested exemption is the widest hole a gate can have, because it is the branch
+    # a future author reaches for when the comparison is inconvenient.
+    #
+    # It fired the day it was written. `emptyReason` in storefront.yaml declares
+    # fourteen values and `source: none` with the reason "a vocabulary local to this
+    # contract. The domain neither produces nor consumes these values". That was TRUE
+    # when written and became false when @arthome/contracts landed EMPTY_REASONS with
+    # the same fourteen. Two artefacts, one fact, and the annotation pointing away
+    # from the copy.
+    #
+    # WHY WHOLE-SET EQUALITY AND NOTHING WEAKER. A subset is a narrowing and has its
+    # own check below; an overlap is a guess, and the guess is what made an earlier
+    # version of this gate unusable. Equal sets are not a guess about which
+    # vocabulary it is — it is the same standard the folding check above rests on.
+    #
+    # The two checks are disjoint by construction and each has ONE cause: folding
+    # reports "same set, spelled differently", this one reports "same set, spelled
+    # identically, declared as having no source". A block cannot trip both.
+    for where, label, members, node, _p in all_blocks:
+        if not members:
+            continue
+        source = node.get(SOURCE)
+        if source is None or str(source).lower() != "none":
+            continue
+        same = [name for name, (vals, _f) in core.items() if set(vals) == members]
+        if not same:
+            continue
+        for name in sorted(same):
+            problems.append(
+                f"{where}  [{label}]\n"
+                f"      {SOURCE}: none — but {name} ({origin[name]}, {core[name][1]})\n"
+                f"      declares exactly these {len(members)} values.\n"
+                f"      The exemption says no package owns this vocabulary, and one does. The two\n"
+                f"      agree today, which is what E2 looks like on the day it is committed: the\n"
+                f"      copies drift on the first change and the annotation points away from the\n"
+                f"      other copy.\n"
+                f"      Name it instead, and the comparison starts running:\n"
+                f"        {SOURCE}: {name}\n"
+                f"      If the wire really must differ from {name}, that is a narrowing or a\n"
+                f"      rename, and both are declarable. `none` is for a vocabulary NO package\n"
+                f"      declares."
+            )
 
     # ── Undocumented narrowings ───────────────────────────────────────────────
     # THE PREDICATE, measured rather than guessed. `backend-contracts` ran the test
@@ -786,7 +904,10 @@ def main(files):
             f"{st['narrowed']} narrowed, {st['exempt']} exempt, "
             f"{len(st['undeclared'])} undeclared"
         )
-    print(f"  against {len(core)} vocabularies exported by @arthome/core")
+    print(
+        f"  against {len(core)} vocabularies exported by "
+        + ", ".join(sorted({origin[n] for n in core}))
+    )
 
     for kind, _a, _r, _k in KINDS:
         shown = stats[kind]["undeclared"][:4]
