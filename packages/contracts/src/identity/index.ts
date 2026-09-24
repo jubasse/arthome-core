@@ -465,8 +465,10 @@ export const StorefrontSessionModeSchema: z.ZodEnum<{
 }> = z
   .enum(SESSION_MODES)
   .meta({
-    'x-arthome-vocabulary-source': LOCAL_VOCABULARY,
-    'x-arthome-vocabulary-reason': LOCAL_ENDPOINT_REASON,
+    // Named, not `none`: these three ARE a declared vocabulary now, and a
+    // `none` beside a list that a package exports is the false declaration
+    // check-vocabulary fails on.
+    'x-arthome-vocabulary-source': 'SESSION_MODES',
   })
   .describe(
     '**An explicit, validated parameter, never inferred from the `User-Agent`** — that is\nforgeable, and a bypassable heuristic does not count as an answer.\n\n`cookie` for the web surfaces; `bearer` for the native shells, where\n`capacitor://localhost` is a third-party context on iOS and no cookie would survive;\n`device` for the television, which has **neither cookie nor token** at the moment it opens a\nsign-in pairing — which is what device identity solves.\n',

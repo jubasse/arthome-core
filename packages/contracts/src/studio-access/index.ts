@@ -466,23 +466,7 @@ export const StudioSessionEstablishedBearerSchema: z.ZodObject<
   .describe(
     'Opaque token in the body, **no cookie**, stored in the native store —\n`@capacitor/preferences`, **never `localStorage`**.\n',
   );
-
-const SESSION_MODE_REASON =
-  'A narrowing of a vocabulary named elsewhere in this document, with the reason in the description above: the members left out are the rule, not an omission.';
-
-/**
- * The metadata of a local vocabulary WITHOUT its `x-arthome-vocabulary` list: the document
- * carries the members as an `enum` here, and only the source and the reason as extensions.
- */
-const narrowedMeta = (
-  values: readonly [string, ...string[]],
-  reason: string,
-): Record<string, unknown> => {
-  const { 'x-arthome-vocabulary': _members, ...rest } = z.globalRegistry.get(
-    localVocabulary(values, reason),
-  ) as Record<string, unknown>;
-  return rest;
-};
+('A narrowing of a vocabulary named elsewhere in this document, with the reason in the description above: the members left out are the rule, not an omission.');
 
 /** The session mode, chosen by the caller and never inferred. */
 export const StudioSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bearer' }> = z
@@ -491,7 +475,11 @@ export const StudioSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bea
   // `SESSION_MODES` rather than spelled again — the members were literals
   // here, copied from a const the other module did not export.
   .enum([SessionMode.COOKIE, SessionMode.BEARER])
-  .meta(narrowedMeta([SessionMode.COOKIE, SessionMode.BEARER], SESSION_MODE_REASON))
+  .meta({
+    'x-arthome-vocabulary-source': 'SESSION_MODES',
+    'x-arthome-vocabulary-narrowing':
+      'Two of the three. The studio has no device sessions: only a television opens a sign-in pairing with neither cookie nor token, and a control room is not one.',
+  })
   .describe(
     '**An explicit parameter, validated, never inferred from the `User-Agent`** — that one is\nforgeable. `cookie` for the studio web; `bearer` for the native shell, where\n`capacitor://localhost` is a third-party context on iOS and where no cookie would survive.\n',
   );
