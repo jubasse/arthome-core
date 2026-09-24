@@ -24,14 +24,7 @@
  */
 import { z } from 'zod';
 import { BuyerTaxLocationSchema, MoneyOut, type VocabularyOut } from '@arthome/core/schema';
-import { DateCardSchema, MediaSetSchema } from '../catalog/index.js';
-import { StorefrontLocalizedTextSchema } from '../text/index.js';
-export declare const PriceTierSchema: z.ZodObject<{
-    tier: VocabularyOut;
-    amount: typeof MoneyOut;
-    active: z.ZodBoolean;
-    validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-}, z.core.$loose>;
+import { DateCardSchema } from '../catalog/index.js';
 export declare const TicketCardSchema: z.ZodObject<{
     seatId: z.ZodString;
     dateId: z.ZodString;
@@ -46,24 +39,6 @@ export declare const TicketCardSchema: z.ZodObject<{
         delayCode: z.ZodOptional<z.ZodString>;
         method: z.ZodOptional<VocabularyOut>;
     }, z.core.$loose>>>;
-}, z.core.$loose>;
-export declare const MerchItemSchema: z.ZodObject<{
-    id: z.ZodString;
-    channelId: z.ZodString;
-    showId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    label: typeof StorefrontLocalizedTextSchema;
-    variants: z.ZodOptional<z.ZodArray<z.ZodObject<{
-        id: z.ZodString;
-        label: z.ZodString;
-        inStock: z.ZodBoolean;
-        price: z.ZodOptional<typeof MoneyOut>;
-    }, z.core.$loose>>>;
-    price: z.ZodOptional<typeof MoneyOut>;
-    state: VocabularyOut;
-    source: VocabularyOut;
-    merchantUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    pinnedDuringLive: z.ZodOptional<z.ZodBoolean>;
-    media: z.ZodOptional<typeof MediaSetSchema>;
 }, z.core.$loose>;
 export declare const CartLineSchema: z.ZodObject<{
     id: z.ZodString;

@@ -26,16 +26,6 @@ import { z } from 'zod';
 import { type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
 import { ChapterSchema, DateCardSchema } from '../catalog/index.js';
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
-export declare const WatchVerdictSchema: z.ZodObject<{
-    allowed: z.ZodBoolean;
-    scope: z.ZodOptional<VocabularyOut>;
-    advisory: z.ZodBoolean;
-    denialReasonCode: z.ZodOptional<VocabularyOutNullable>;
-    reasonParams: z.ZodOptional<z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodUnknown>>>;
-    fallbackAction: z.ZodOptional<VocabularyOut>;
-    previewSecondsLeft: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
-    validUntil: z.ZodString;
-}, z.core.$loose>;
 export declare const IncidentSchema: z.ZodNullable<z.ZodObject<{
     id: z.ZodOptional<z.ZodString>;
     kind: z.ZodOptional<VocabularyOut>;
@@ -81,7 +71,7 @@ export declare const PlaybackTicketSchema: z.ZodObject<{
         writtenAt: z.ZodOptional<z.ZodString>;
     }, z.core.$loose>>>;
     liveEdgeSec: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
-    chapters: z.ZodOptional<z.ZodArray<z.ZodLazy<typeof ChapterSchema>>>;
+    chapters: z.ZodOptional<z.ZodArray<typeof ChapterSchema>>;
     audioTracks: z.ZodOptional<z.ZodArray<z.ZodObject<{
         id: z.ZodOptional<z.ZodString>;
         language: z.ZodOptional<z.ZodString>;
@@ -95,7 +85,7 @@ export declare const PlaybackTicketSchema: z.ZodObject<{
     chatMode: VocabularyOut;
     chatRateLimitPerSecond: z.ZodOptional<z.ZodNumber>;
     incident: z.ZodOptional<typeof IncidentSchema>;
-    date: z.ZodOptional<z.ZodLazy<typeof DateCardSchema>>;
+    date: z.ZodOptional<typeof DateCardSchema>;
 }, z.core.$loose>;
 export {};
 //# sourceMappingURL=index.d.ts.map

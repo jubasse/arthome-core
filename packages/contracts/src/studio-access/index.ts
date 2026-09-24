@@ -39,8 +39,6 @@ import {
   vocabularyOutNullable,
 } from '@arthome/core/schema';
 
-import { StudioCountersSchema } from '../studio-money/index.js';
-
 const LOCAL_REASON =
   'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.';
 
@@ -70,6 +68,52 @@ const instantNullable = (): z.ZodNullable<z.ZodString> =>
 const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
 const uuidNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'uuid' });
+
+/**
+ * ⚠ `StudioCounters` LIVES HERE AND NOT IN `studio-money`, WHICH IS WHERE IT
+ *   READS AS BELONGING.
+ *
+ *   `StudioBootstrap` carries it — a control room is handed its counters on
+ *   sign-in — and `DashboardScreen` in `studio-money` carries it too. With it in
+ *   `studio-money`, those two modules imported each other: a load-order cycle
+ *   that held only by declaration order, and that a worker had already papered
+ *   with `z.lazy` on `Actor`.
+ *
+ *   It references NOTHING, measured rather than assumed, so it can sit at the
+ *   base. That makes `studio-access` what the other three studio modules already
+ *   treat it as: the one they all import and that imports none of them.
+ */
+/** The badges, served at bootstrap and kept up to date by the real-time channel. */
+export const StudioCountersSchema: z.ZodObject<
+  {
+    moderationPending: z.ZodOptional<z.ZodNumber>;
+    inboxUnread: z.ZodOptional<z.ZodNumber>;
+    dutiesTonight: z.ZodOptional<z.ZodNumber>;
+    invitationsPending: z.ZodOptional<z.ZodNumber>;
+    datesToCover: z.ZodOptional<z.ZodNumber>;
+    payoutsDue: z.ZodOptional<z.ZodNumber>;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    moderationPending: int()
+      .optional()
+      .meta({ examples: [14] }),
+    inboxUnread: int()
+      .optional()
+      .meta({ examples: [2] }),
+    dutiesTonight: int()
+      .optional()
+      .meta({ examples: [3] }),
+    invitationsPending: int().optional(),
+    datesToCover: int().optional(),
+    payoutsDue: int().optional(),
+  })
+  .describe(
+    '**The badges, served at bootstrap and kept up to date by the real-time channel.** None of\nthese numbers may require fetching a page: otherwise the bottom bar costs five requests every\ntime it opens.\n',
+  );
+
+/** The period's effective bounds, computed by the server. */
 
 /** Who caused the fact. */
 export const ActorSchema: z.ZodObject<

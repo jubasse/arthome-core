@@ -9,6 +9,7 @@
   "packages/contracts/src": "Sources of @arthome/contracts, one directory per exported subpath plus internal wire primitives.",
   "packages/contracts/src/catalog": "The catalogue a viewer browses: dates, artists, shows, categories, media, and the screens composed from them.",
   "packages/contracts/src/engagement": "Chat, reactions, notifications and the change feed a surface polls.",
+  "packages/contracts/src/entitlement": "The right to watch, served per date. It sits below `catalog` and `streaming` because both need it and each needed the other.",
   "packages/contracts/src/envelope": "The shared response envelope and its meta instants (subpath @arthome/contracts/envelope).",
   "packages/contracts/src/identity": "Who is asking: sessions, devices, pairing, consents, and the context a surface is handed.",
   "packages/contracts/src/money": "The tax basis of an amount on the wire (subpath @arthome/contracts/money).",

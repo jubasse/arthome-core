@@ -22,13 +22,15 @@ A declaration longer than 160 characters is listed by kind only — read the `.d
 
 #### @arthome/contracts/catalog
 
-Declarations: `dist/catalog/index.d.ts` — 18 exported names.
+Declarations: `dist/catalog/index.d.ts` — 22 exported names.
 
+- `ArtistDetailSchema` (const) — 'ArtistDetail' and 'DateDetail' — the two pages, and the last two schemas in either contract to gain a source.
 - `ArtistSummarySchema` (const)
 - `CategoryScreenSchema` (const)
 - `CategoryTileSchema` (const)
 - `ChapterSchema` (const) — `ChapterSchema: z.ZodObject<{ id: z.ZodString; vocabId: z.ZodString; atMediaSec: z.ZodNumber; }, z.core.$loose>`
 - `DateCardSchema` (const)
+- `DateDetailSchema` (const) — `DateDetailSchema: z.ZodIntersection<typeof DateCardSchema, z.ZodObject<z.ZodRawShape, z.core.$loose>>`
 - `DomainConstantsSchema` (const)
 - `FacetSchema` (const) — `FacetSchema: z.ZodObject<{ facetId: z.ZodString; values: z.ZodArray<z.ZodObject<{ id: z.ZodString; count: z.ZodNumber; }, z.core.$loose>>; }, z.core.$loose>`
 - `HomeScreenSchema` (const)
@@ -36,6 +38,8 @@ Declarations: `dist/catalog/index.d.ts` — 18 exported names.
 - `LabelArtifactRefSchema` (const) — `LabelArtifactRefSchema: z.ZodObject<{ domain: VocabularyOut; locale: VocabularyOut; version: z.ZodNumber; url: z.ZodString; }, z.core.$loose>`
 - `LiveScreenSchema` (const) — `LiveScreenSchema: z.ZodObject<{ featured: z.ZodOptional<typeof DateCardSchema>; slots: z.ZodArray<typeof ScheduleSlotSchema>; }, z.core.$loose>`
 - `MediaSetSchema` (const)
+- `MerchItemSchema` (const) — ⚠ 'MerchItem' AND 'PriceTier' LIVE IN THE CATALOGUE, WHICH IS NOT WHERE THEY WERE FIRST PUT.
+- `PriceTierSchema` (const)
 - `RailSchema` (const)
 - `SavedSearchSchema` (const)
 - `ScheduleSlotSchema` (const)
@@ -53,13 +57,21 @@ Declarations: `dist/engagement/index.d.ts` — 5 exported names.
 - `NotificationPreferencesSchema` (const)
 - `ReactionQuotaSchema` (const) — `ReactionQuotaSchema: z.ZodObject<{ remaining: z.ZodNumber; rechargesAt: z.ZodString; }, z.core.$loose>`
 
+#### @arthome/contracts/entitlement
+
+Declarations: `dist/entitlement/index.d.ts` — 1 exported names.
+
+- `WatchVerdictSchema` (const)
+
 #### @arthome/contracts/envelope
 
-Declarations: `dist/envelope/index.d.ts` — 4 exported names.
+Declarations: `dist/envelope/index.d.ts` — 6 exported names.
 
 - `StorefrontEnvelopeMetaSchema` (const) — The meta every STOREFRONT response composes.
+- `StorefrontErrorEnvelopeSchema` (const) — `StorefrontErrorEnvelopeSchema: z.ZodObject<{ error: typeof StorefrontErrorSchema; servedAt: z.ZodString; }, z.core.$loose>` — 'ErrorEnvelope' — the shape every failure arrives in, and the one schema that waited for the emitter rather than for a decision.
 - `StorefrontErrorSchema` (const) — `StorefrontErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>` — 'Error' — ONE SHAPE, TWO SETS OF PROSE, and the split is the smallest version of D-065 §G there is.
 - `StudioEnvelopeMetaSchema` (const) — The meta every STUDIO response composes.
+- `StudioErrorEnvelopeSchema` (const) — `StudioErrorEnvelopeSchema: z.ZodObject<{ error: typeof StudioErrorSchema; servedAt: z.ZodString; }, z.core.$loose>`
 - `StudioErrorSchema` (const) — `StudioErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>`
 
 #### @arthome/contracts/identity
@@ -100,17 +112,16 @@ Declarations: `dist/pagination/index.d.ts` — 4 exported names.
 
 #### @arthome/contracts/streaming
 
-Declarations: `dist/streaming/index.d.ts` — 5 exported names.
+Declarations: `dist/streaming/index.d.ts` — 4 exported names.
 
 - `ActivePlaybackSessionSchema` (const)
 - `IncidentSchema` (const)
 - `PlaybackRenewalSchema` (const)
 - `PlaybackTicketSchema` (const)
-- `WatchVerdictSchema` (const)
 
 #### @arthome/contracts/studio-access
 
-Declarations: `dist/studio-access/index.d.ts` — 10 exported names.
+Declarations: `dist/studio-access/index.d.ts` — 11 exported names.
 
 - `ActorSchema` (const) — Who caused the fact.
 - `ChannelMemberSchema` (const) — `ChannelMemberSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>` — A member of a channel's team.
@@ -118,6 +129,7 @@ Declarations: `dist/studio-access/index.d.ts` — 10 exported names.
 - `DutySchema` (const) — `DutySchema: z.ZodObject<z.ZodRawShape, z.core.$loose>` — A duty, across all channels.
 - `EffectiveRightsSchema` (const) — The rights of one person on one channel, computed once in '@arthome/core'.
 - `StudioBootstrapSchema` (const) — The first paint waits for this and for nothing else.
+- `StudioCountersSchema` (const) — The badges, served at bootstrap and kept up to date by the real-time channel.
 - `StudioSessionEstablishedBearerSchema` (const) — A bearer session: an opaque token in the body, no cookie.
 - `StudioSessionEstablishedCookieSchema` (const) — `StudioSessionEstablishedCookieSchema: z.ZodObject<{ mode: z.ZodLiteral<'cookie'>; bootstrap: typeof StudioBootstrapSchema; }, z.core.$loose>` — A cookie session: nothing in the body but the bootstrap.
 - `StudioSessionEstablishedSchema` (const) — `StudioSessionEstablishedSchema: z.ZodDiscriminatedUnion<[ typeof StudioSessionEstablishedCookieSchema, typeof StudioSessionEstablishedBearerSchema ]>` — Exactly one of a cookie or a bearer session, discriminated by the mode.
@@ -135,7 +147,7 @@ Declarations: `dist/studio-desk/index.d.ts` — 5 exported names.
 
 #### @arthome/contracts/studio-money
 
-Declarations: `dist/studio-money/index.d.ts` — 11 exported names.
+Declarations: `dist/studio-money/index.d.ts` — 10 exported names.
 
 - `BankChangeRequestSchema` (const) — A change of bank details, countersigned by a second role.
 - `DashboardReminderSchema` (const) — A routed list, like the inbox: kind, severity, target and role scope decided server-side.
@@ -144,10 +156,9 @@ Declarations: `dist/studio-money/index.d.ts` — 11 exported names.
 - `ExportJobSchema` (const) — An asynchronous export.
 - `MetricTileSchema` (const) — A single template: identifier, value, unit, series.
 - `PayoutLineSchema` (const) — One payout, with the whole derivation served.
-- `PeriodBoundsSchema` (const) — `PeriodBoundsSchema: z.ZodObject<{ preset: z.ZodString; from: z.ZodString; to: z.ZodString; days: z.ZodNumber; datesCovered: z.ZodNumber; }, z.core.$loose>` — The period's effective bounds, computed by the server.
+- `PeriodBoundsSchema` (const) — `PeriodBoundsSchema: z.ZodObject<{ preset: z.ZodString; from: z.ZodString; to: z.ZodString; days: z.ZodNumber; datesCovered: z.ZodNumber; }, z.core.$loose>`
 - `StatsAudienceSchema` (const)
 - `StatsSeriesSchema` (const)
-- `StudioCountersSchema` (const) — The badges, served at bootstrap and kept up to date by the real-time channel.
 
 #### @arthome/contracts/studio-stage
 
@@ -176,18 +187,16 @@ Declarations: `dist/text/index.d.ts` — 2 exported names.
 
 #### @arthome/contracts/ticketing
 
-Declarations: `dist/ticketing/index.d.ts` — 13 exported names.
+Declarations: `dist/ticketing/index.d.ts` — 11 exported names.
 
 - `CartLineSchema` (const)
 - `CartQuoteSchema` (const)
 - `CartSchema` (const)
 - `ExportRequestSchema` (const)
 - `ExternalOrderRefSchema` (const)
-- `MerchItemSchema` (const)
 - `OrderSchema` (const)
 - `PaymentHandoffSchema` (const)
 - `PlanSchema` (const)
-- `PriceTierSchema` (const)
 - `SeatQuoteSchema` (const)
 - `SubscriptionSchema` (const)
 - `TicketCardSchema` (const)
@@ -642,6 +651,7 @@ each directory is covered and each entry has a directory, not that the sentence 
 - `packages/contracts/src/` — Sources of @arthome/contracts, one directory per exported subpath plus internal wire primitives.
 - `packages/contracts/src/catalog/` — The catalogue a viewer browses: dates, artists, shows, categories, media, and the screens composed from them.
 - `packages/contracts/src/engagement/` — Chat, reactions, notifications and the change feed a surface polls.
+- `packages/contracts/src/entitlement/` — The right to watch, served per date. It sits below `catalog` and `streaming` because both need it and each needed the other.
 - `packages/contracts/src/envelope/` — The shared response envelope and its meta instants (subpath @arthome/contracts/envelope).
 - `packages/contracts/src/identity/` — Who is asking: sessions, devices, pairing, consents, and the context a surface is handed.
 - `packages/contracts/src/money/` — The tax basis of an amount on the wire (subpath @arthome/contracts/money).

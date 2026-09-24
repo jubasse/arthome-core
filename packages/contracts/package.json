@@ -58,6 +58,11 @@
       "types": "./dist/engagement/index.d.ts",
       "import": "./dist/engagement/index.js"
     },
+    "./entitlement": {
+      "@arthome/source": "./src/entitlement/index.ts",
+      "types": "./dist/entitlement/index.d.ts",
+      "import": "./dist/entitlement/index.js"
+    },
     "./envelope": {
       "@arthome/source": "./src/envelope/index.ts",
       "types": "./dist/envelope/index.d.ts",

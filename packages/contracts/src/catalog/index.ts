@@ -31,12 +31,13 @@ import {
   DATE_OUTCOMES,
   DISPLAY_STATES,
   DisplayState,
-  NOTIFICATION_CHANNELS,
   LANGUAGE_DEPENDENCIES,
   LOCALES,
   Locale,
   MESSAGE_DOMAINS,
   MessageDomain,
+  NOTIFICATION_CHANNELS,
+  PRICE_TIERS,
   PROMOTION_REASONS,
   REPLAY_POLICIES,
   RIGHTS_SCOPES,
@@ -56,7 +57,8 @@ import {
   vocabularyOutNullable,
 } from '@arthome/core/schema';
 
-import { WatchVerdictSchema } from '../streaming/index.js';
+import { WatchVerdictSchema } from '../entitlement/index.js';
+import { StorefrontLocalizedTextSchema } from '../text/index.js';
 
 // The document's name for a vocabulary local to the contract. The preferred
 // form is `vocabularyOutLocal`, which makes the reason mandatory; these three
@@ -80,6 +82,9 @@ const CARD_FORMS = ['wide', 'poster', 'portrait'] as const;
 const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
 
 const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
+
+const MERCH_STATES = ['on_sale', 'out_of_stock'] as const;
+const MERCH_SOURCES = ['arthome', 'shopify', 'woocommerce', 'prestashop', 'drupal', 'api'] as const;
 
 export const ImageRenditionSchema: z.ZodObject<
   {
@@ -974,3 +979,201 @@ export const SavedSearchSchema: z.ZodObject<
       '**"New since your last visit"**, incremented by the index\'s *percolator* and reset to zero on\nread. Ten searches then cost **zero** counting queries when the page opens; the other two\noptions cost ten.\n',
     ),
 });
+
+/**
+ * ⚠ `MerchItem` AND `PriceTier` LIVE IN THE CATALOGUE, WHICH IS NOT WHERE THEY
+ *   WERE FIRST PUT.
+ *
+ *   They began in `ticketing`, and `ArtistDetail` and `DateDetail` could not
+ *   then be written at all: an artist's page lists their merchandise, a date's
+ *   page lists its prices, and `ticketing` already imports this module. The
+ *   import back would have closed a load-order cycle, so two schemas were left
+ *   unwritten rather than papered over — which was the right call by the worker
+ *   who met it.
+ *
+ *   The direction that resolves it is the honest one: **the catalogue describes
+ *   what exists, and ticketing describes transactions over it.** A cart line
+ *   references a merch item; a merch item knows nothing about carts. Moving
+ *   these two here makes `ticketing -> catalog` one-way and lets the two detail
+ *   pages be written as the documents have them.
+ */
+
+export const MerchItemSchema: z.ZodObject<
+  {
+    id: z.ZodString;
+    channelId: z.ZodString;
+    showId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    label: typeof StorefrontLocalizedTextSchema;
+    variants: z.ZodOptional<
+      z.ZodArray<
+        z.ZodObject<
+          {
+            id: z.ZodString;
+            label: z.ZodString;
+            inStock: z.ZodBoolean;
+            price: z.ZodOptional<typeof MoneyOut>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+    price: z.ZodOptional<typeof MoneyOut>;
+    state: VocabularyOut;
+    source: VocabularyOut;
+    merchantUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    pinnedDuringLive: z.ZodOptional<z.ZodBoolean>;
+    media: z.ZodOptional<typeof MediaSetSchema>;
+  },
+  z.core.$loose
+> = z.looseObject({
+  id: uuid(),
+  channelId: uuid(),
+  showId: uuid().nullable().optional(),
+  label: StorefrontLocalizedTextSchema,
+  variants: z
+    .array(
+      z.looseObject({
+        id: z.string(),
+        label: z.string().meta({ examples: ['M'] }),
+        inStock: z.boolean(),
+        price: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
+      }),
+    )
+    .optional()
+    .describe(
+      '**A T-shirt without a size is not sellable.** The contract carries the variants; a cart line\nreferences a variant, never a bare item.\n',
+    ),
+  price: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
+  state: vocabularyOutLocal(
+    MERCH_STATES,
+    "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got.",
+  ),
+  source: vocabularyOutLocal(
+    MERCH_SOURCES,
+    'An external provider or platform identifier. It is their vocabulary, not ours, and it changes when they change.',
+  ).describe(
+    "The item's origin. An external source is not sold by us: it links out to `merchantUrl`, and\nno cart accepts it.\n",
+  ),
+  merchantUrl: z.string().meta({ format: 'uri' }).nullable().optional(),
+  pinnedDuringLive: z.boolean().optional(),
+  media: MediaSetSchema.optional(),
+});
+
+export const PriceTierSchema: z.ZodObject<
+  {
+    tier: VocabularyOut;
+    amount: typeof MoneyOut;
+    active: z.ZodBoolean;
+    validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    tier: vocabularyOut(PRICE_TIERS),
+    amount: MoneyOut.meta({ 'x-arthome-tax-basis': 'inherited' }),
+    active: z.boolean(),
+    validUntil: instant()
+      .nullable()
+      .optional()
+      .describe(
+        'Present when the current price depends on the instant — the "show already started" price is\n**pro rata to the time remaining** and cannot be a frozen string. 60 s.\n',
+      ),
+  })
+  .meta({ 'x-arthome-price-basis': 'tax_inclusive' });
+
+/**
+ * `ArtistDetail` and `DateDetail` — the two pages, and the last two schemas in
+ * either contract to gain a source.
+ *
+ * ⚠ THEY ARE `z.intersection`, WHICH IS `allOf` WITH TWO REAL MEMBERS. Not the
+ *   `allOf: [{$ref}]` wrapper that was removed from these documents: that one
+ *   was an OpenAPI 3.0 habit for generators that ignored `$ref` siblings, and
+ *   these declare 3.1.1. These two compose a base schema with a page's own
+ *   fields, which is what `allOf` is for.
+ *
+ * ⚠ AND THEY COULD NOT BE WRITTEN AT ALL UNTIL `MerchItem` AND `PriceTier` MOVED
+ *   HERE. An artist's page lists merchandise, a date's page lists prices, and
+ *   both lived in `ticketing` — which already imports this module. The worker
+ *   who met that left them unwritten and said why, rather than closing a
+ *   load-order cycle with `z.lazy`. That was the right call: the emitted schema
+ *   would have been identical and the next person to move a declaration would
+ *   have paid for it.
+ */
+export const ArtistDetailSchema: z.ZodIntersection<
+  typeof ArtistSummarySchema,
+  z.ZodObject<
+    {
+      biography: z.ZodOptional<typeof StorefrontLocalizedTextSchema>;
+      joinedAt: z.ZodOptional<z.ZodString>;
+      upcomingDates: z.ZodOptional<z.ZodArray<typeof DateCardSchema>>;
+      pastDates: z.ZodOptional<z.ZodArray<typeof DateCardSchema>>;
+      replays: z.ZodOptional<z.ZodArray<typeof DateCardSchema>>;
+      merchItems: z.ZodOptional<z.ZodArray<typeof MerchItemSchema>>;
+    },
+    z.core.$loose
+  >
+> = z.intersection(
+  ArtistSummarySchema,
+  z.looseObject({
+    biography: StorefrontLocalizedTextSchema.optional(),
+    joinedAt: instant().optional(),
+    upcomingDates: z.array(DateCardSchema).optional(),
+    pastDates: z.array(DateCardSchema).optional(),
+    replays: z.array(DateCardSchema).optional(),
+    merchItems: z.array(MerchItemSchema).optional(),
+  }),
+);
+
+export const DateDetailSchema: z.ZodIntersection<
+  typeof DateCardSchema,
+  z.ZodObject<z.ZodRawShape, z.core.$loose>
+> = z.intersection(
+  DateCardSchema,
+  z
+    .looseObject({
+      synopsis: StorefrontLocalizedTextSchema.optional(),
+      castAndCrew: z
+        .array(
+          z.looseObject({
+            personId: uuid().optional(),
+            name: z.string().optional(),
+            roleCode: z.string().optional(),
+          }),
+        )
+        .optional(),
+      spokenLanguages: z.array(z.string()).optional(),
+      subtitleLanguages: z.array(z.string()).optional(),
+      surtitleLanguages: z.array(z.string()).optional(),
+      attributes: z
+        .looseObject({})
+        .optional()
+        .describe(
+          'The seven attribute groups. Distinct from **tags** (`tagIds`) — a name collision between two notions, separated by the contract.',
+        ),
+      priceTiers: z.array(PriceTierSchema).optional(),
+      serviceFee: z
+        .looseObject({
+          perSeat: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
+          capped: MoneyOut.meta({ 'x-arthome-tax-basis': 'inherited' }).optional(),
+        })
+        .nullable()
+        .optional()
+        .describe(
+          'The service-fee **scale**, **per seat**, served by the contract. Never a screen constant: the\nsummary displays a "service fee" line, and it must be computable once only.\n',
+        ),
+      chapters: z.array(ChapterSchema).optional(),
+      seriesDates: z.array(DateCardSchema).optional().describe('The other dates of the same show.'),
+      totalSeriesDates: int64()
+        .meta({ format: undefined })
+        .optional()
+        .describe('"All dates (N)": the N is **served**, not counted from the visible slice.'),
+      suggestions: z.array(DateCardSchema).optional(),
+      merchItems: z
+        .array(MerchItemSchema)
+        .optional()
+        .describe("The show's shop, served with the detail page."),
+    })
+    .describe(
+      'The detail page. Served in **one** call, with its series, the same artist and the suggestions.',
+    ),
+);

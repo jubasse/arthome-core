@@ -13,16 +13,6 @@
 import { z } from 'zod';
 import { MoneyOut } from '@arthome/core/schema';
 import { ActorSchema } from '../studio-access/index.js';
-/** The badges, served at bootstrap and kept up to date by the real-time channel. */
-export declare const StudioCountersSchema: z.ZodObject<{
-    moderationPending: z.ZodOptional<z.ZodNumber>;
-    inboxUnread: z.ZodOptional<z.ZodNumber>;
-    dutiesTonight: z.ZodOptional<z.ZodNumber>;
-    invitationsPending: z.ZodOptional<z.ZodNumber>;
-    datesToCover: z.ZodOptional<z.ZodNumber>;
-    payoutsDue: z.ZodOptional<z.ZodNumber>;
-}, z.core.$loose>;
-/** The period's effective bounds, computed by the server. */
 export declare const PeriodBoundsSchema: z.ZodObject<{
     preset: z.ZodString;
     from: z.ZodString;
@@ -215,15 +205,20 @@ export declare const PayoutLineSchema: z.ZodObject<{
     discrepancy: z.ZodOptional<Money>;
     taxEvidenceConflicts: z.ZodOptional<z.ZodNumber>;
 }, Looseness>;
+/**
+ * `studio-access` imports `StudioCountersSchema` from this module, so importing `ActorSchema`
+ * back at module scope is a cycle that reads it before it is initialised. Deferring the read to
+ * first use breaks it without redeclaring the schema.
+ */
 /** A change of bank details, countersigned by a second role. */
 export declare const BankChangeRequestSchema: z.ZodObject<{
     requestId: z.ZodString;
     state: z.ZodString;
     maskedAccountTail: z.ZodString;
-    requestedBy: z.ZodOptional<z.ZodLazy<typeof ActorSchema>>;
+    requestedBy: z.ZodOptional<typeof ActorSchema>;
     requestedAt: z.ZodString;
     expiresAt: z.ZodString;
-    countersignedBy: z.ZodOptional<z.ZodLazy<typeof ActorSchema>>;
+    countersignedBy: z.ZodOptional<typeof ActorSchema>;
     suspendsPayoutIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
 }, Looseness>;
 /** An asynchronous export. */

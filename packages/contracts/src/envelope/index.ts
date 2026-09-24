@@ -219,3 +219,35 @@ export const StudioErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$lo
         'The one moment left where the person can read out a number and dictate it to support.',
       ),
   });
+
+/**
+ * `ErrorEnvelope` — the shape every failure arrives in, and the one schema that
+ * waited for the emitter rather than for a decision.
+ *
+ * It was deliberately left unwritten until `$ref` emission existed. Without a
+ * registry, `z.toJSONSchema` INLINES every nested object, so an envelope written
+ * earlier would have emitted a copy of `Error` inside itself and the document
+ * would have gained a second `Error` under no name at all — E2, produced by the
+ * tool built to remove it. Registry mode landed with one registry per document,
+ * and `error` now emits as `$ref`.
+ *
+ * Two of them, because `Error` itself carries per-product prose: a viewer's
+ * example code is `publication.transition_irreversible`, a control room's is
+ * `publication.checklist_incomplete`. The ENVELOPE is identical in both
+ * contracts; only what it wraps differs.
+ */
+export const StorefrontErrorEnvelopeSchema: z.ZodObject<
+  { error: typeof StorefrontErrorSchema; servedAt: z.ZodString },
+  z.core.$loose
+> = z.looseObject({
+  error: StorefrontErrorSchema,
+  servedAt: InstantSchema.meta({ format: 'date-time', pattern: undefined }),
+});
+
+export const StudioErrorEnvelopeSchema: z.ZodObject<
+  { error: typeof StudioErrorSchema; servedAt: z.ZodString },
+  z.core.$loose
+> = z.looseObject({
+  error: StudioErrorSchema,
+  servedAt: InstantSchema.meta({ format: 'date-time', pattern: undefined }),
+});

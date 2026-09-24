@@ -25,7 +25,8 @@
 import { z } from 'zod';
 import { DisplayState, LANGUAGE_DEPENDENCIES, REPLAY_POLICIES } from '@arthome/core';
 import { MoneyOut, VenueClockSchema, type VocabularyIn, type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
-import { WatchVerdictSchema } from '../streaming/index.js';
+import { WatchVerdictSchema } from '../entitlement/index.js';
+import { StorefrontLocalizedTextSchema } from '../text/index.js';
 export declare const ImageRenditionSchema: z.ZodObject<{
     url: z.ZodString;
     widthPx: z.ZodNumber;
@@ -258,5 +259,73 @@ export declare const SavedSearchSchema: z.ZodObject<{
     active: z.ZodBoolean;
     newMatchesSinceLastVisit: z.ZodNumber;
 }, z.core.$loose>;
+/**
+ * ⚠ `MerchItem` AND `PriceTier` LIVE IN THE CATALOGUE, WHICH IS NOT WHERE THEY
+ *   WERE FIRST PUT.
+ *
+ *   They began in `ticketing`, and `ArtistDetail` and `DateDetail` could not
+ *   then be written at all: an artist's page lists their merchandise, a date's
+ *   page lists its prices, and `ticketing` already imports this module. The
+ *   import back would have closed a load-order cycle, so two schemas were left
+ *   unwritten rather than papered over — which was the right call by the worker
+ *   who met it.
+ *
+ *   The direction that resolves it is the honest one: **the catalogue describes
+ *   what exists, and ticketing describes transactions over it.** A cart line
+ *   references a merch item; a merch item knows nothing about carts. Moving
+ *   these two here makes `ticketing -> catalog` one-way and lets the two detail
+ *   pages be written as the documents have them.
+ */
+export declare const MerchItemSchema: z.ZodObject<{
+    id: z.ZodString;
+    channelId: z.ZodString;
+    showId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    label: typeof StorefrontLocalizedTextSchema;
+    variants: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        label: z.ZodString;
+        inStock: z.ZodBoolean;
+        price: z.ZodOptional<typeof MoneyOut>;
+    }, z.core.$loose>>>;
+    price: z.ZodOptional<typeof MoneyOut>;
+    state: VocabularyOut;
+    source: VocabularyOut;
+    merchantUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    pinnedDuringLive: z.ZodOptional<z.ZodBoolean>;
+    media: z.ZodOptional<typeof MediaSetSchema>;
+}, z.core.$loose>;
+export declare const PriceTierSchema: z.ZodObject<{
+    tier: VocabularyOut;
+    amount: typeof MoneyOut;
+    active: z.ZodBoolean;
+    validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+}, z.core.$loose>;
+/**
+ * `ArtistDetail` and `DateDetail` — the two pages, and the last two schemas in
+ * either contract to gain a source.
+ *
+ * ⚠ THEY ARE `z.intersection`, WHICH IS `allOf` WITH TWO REAL MEMBERS. Not the
+ *   `allOf: [{$ref}]` wrapper that was removed from these documents: that one
+ *   was an OpenAPI 3.0 habit for generators that ignored `$ref` siblings, and
+ *   these declare 3.1.1. These two compose a base schema with a page's own
+ *   fields, which is what `allOf` is for.
+ *
+ * ⚠ AND THEY COULD NOT BE WRITTEN AT ALL UNTIL `MerchItem` AND `PriceTier` MOVED
+ *   HERE. An artist's page lists merchandise, a date's page lists prices, and
+ *   both lived in `ticketing` — which already imports this module. The worker
+ *   who met that left them unwritten and said why, rather than closing a
+ *   load-order cycle with `z.lazy`. That was the right call: the emitted schema
+ *   would have been identical and the next person to move a declaration would
+ *   have paid for it.
+ */
+export declare const ArtistDetailSchema: z.ZodIntersection<typeof ArtistSummarySchema, z.ZodObject<{
+    biography: z.ZodOptional<typeof StorefrontLocalizedTextSchema>;
+    joinedAt: z.ZodOptional<z.ZodString>;
+    upcomingDates: z.ZodOptional<z.ZodArray<typeof DateCardSchema>>;
+    pastDates: z.ZodOptional<z.ZodArray<typeof DateCardSchema>>;
+    replays: z.ZodOptional<z.ZodArray<typeof DateCardSchema>>;
+    merchItems: z.ZodOptional<z.ZodArray<typeof MerchItemSchema>>;
+}, z.core.$loose>>;
+export declare const DateDetailSchema: z.ZodIntersection<typeof DateCardSchema, z.ZodObject<z.ZodRawShape, z.core.$loose>>;
 export {};
 //# sourceMappingURL=index.d.ts.map

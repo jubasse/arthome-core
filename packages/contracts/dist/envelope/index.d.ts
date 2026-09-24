@@ -105,4 +105,28 @@ export declare const StudioEnvelopeMetaSchema: z.ZodObject<{
  */
 export declare const StorefrontErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>;
 export declare const StudioErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>;
+/**
+ * `ErrorEnvelope` — the shape every failure arrives in, and the one schema that
+ * waited for the emitter rather than for a decision.
+ *
+ * It was deliberately left unwritten until `$ref` emission existed. Without a
+ * registry, `z.toJSONSchema` INLINES every nested object, so an envelope written
+ * earlier would have emitted a copy of `Error` inside itself and the document
+ * would have gained a second `Error` under no name at all — E2, produced by the
+ * tool built to remove it. Registry mode landed with one registry per document,
+ * and `error` now emits as `$ref`.
+ *
+ * Two of them, because `Error` itself carries per-product prose: a viewer's
+ * example code is `publication.transition_irreversible`, a control room's is
+ * `publication.checklist_incomplete`. The ENVELOPE is identical in both
+ * contracts; only what it wraps differs.
+ */
+export declare const StorefrontErrorEnvelopeSchema: z.ZodObject<{
+    error: typeof StorefrontErrorSchema;
+    servedAt: z.ZodString;
+}, z.core.$loose>;
+export declare const StudioErrorEnvelopeSchema: z.ZodObject<{
+    error: typeof StudioErrorSchema;
+    servedAt: z.ZodString;
+}, z.core.$loose>;
 //# sourceMappingURL=index.d.ts.map

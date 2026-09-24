@@ -54,37 +54,6 @@ const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
 const uuidNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'uuid' });
 
-/** The badges, served at bootstrap and kept up to date by the real-time channel. */
-export const StudioCountersSchema: z.ZodObject<
-  {
-    moderationPending: z.ZodOptional<z.ZodNumber>;
-    inboxUnread: z.ZodOptional<z.ZodNumber>;
-    dutiesTonight: z.ZodOptional<z.ZodNumber>;
-    invitationsPending: z.ZodOptional<z.ZodNumber>;
-    datesToCover: z.ZodOptional<z.ZodNumber>;
-    payoutsDue: z.ZodOptional<z.ZodNumber>;
-  },
-  z.core.$loose
-> = z
-  .looseObject({
-    moderationPending: int()
-      .optional()
-      .meta({ examples: [14] }),
-    inboxUnread: int()
-      .optional()
-      .meta({ examples: [2] }),
-    dutiesTonight: int()
-      .optional()
-      .meta({ examples: [3] }),
-    invitationsPending: int().optional(),
-    datesToCover: int().optional(),
-    payoutsDue: int().optional(),
-  })
-  .describe(
-    '**The badges, served at bootstrap and kept up to date by the real-time channel.** None of\nthese numbers may require fetching a page: otherwise the bottom bar costs five requests every\ntime it opens.\n',
-  );
-
-/** The period's effective bounds, computed by the server. */
 export const PeriodBoundsSchema: z.ZodObject<
   {
     preset: z.ZodString;
@@ -724,18 +693,16 @@ export const PayoutLineSchema: z.ZodObject<
  * back at module scope is a cycle that reads it before it is initialised. Deferring the read to
  * first use breaks it without redeclaring the schema.
  */
-const lazyActor = (): z.ZodLazy<typeof ActorSchema> => z.lazy(() => ActorSchema);
-
 /** A change of bank details, countersigned by a second role. */
 export const BankChangeRequestSchema: z.ZodObject<
   {
     requestId: z.ZodString;
     state: z.ZodString;
     maskedAccountTail: z.ZodString;
-    requestedBy: z.ZodOptional<z.ZodLazy<typeof ActorSchema>>;
+    requestedBy: z.ZodOptional<typeof ActorSchema>;
     requestedAt: z.ZodString;
     expiresAt: z.ZodString;
-    countersignedBy: z.ZodOptional<z.ZodLazy<typeof ActorSchema>>;
+    countersignedBy: z.ZodOptional<typeof ActorSchema>;
     suspendsPayoutIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
   },
   Looseness
@@ -752,10 +719,10 @@ export const BankChangeRequestSchema: z.ZodObject<
       .describe(
         '**The last four characters only.** A full IBAN has no business in a log that gets replayed.',
       ),
-    requestedBy: lazyActor().optional(),
+    requestedBy: ActorSchema.optional(),
     requestedAt: instant(),
     expiresAt: instant(),
-    countersignedBy: lazyActor().optional(),
+    countersignedBy: ActorSchema.optional(),
     suspendsPayoutIds: z.array(uuid()).optional(),
   })
   .describe(

@@ -42,8 +42,7 @@ import {
   vocabularyOutLocal,
 } from '@arthome/core/schema';
 
-import { DateCardSchema, MediaSetSchema } from '../catalog/index.js';
-import { StorefrontLocalizedTextSchema } from '../text/index.js';
+import { DateCardSchema } from '../catalog/index.js';
 
 const TICKET_STATES = [
   'held',
@@ -54,8 +53,6 @@ const TICKET_STATES = [
   'credited',
 ] as const;
 const REFUND_METHODS = ['original_payment_method', 'account_credit'] as const;
-const MERCH_STATES = ['on_sale', 'out_of_stock'] as const;
-const MERCH_SOURCES = ['arthome', 'shopify', 'woocommerce', 'prestashop', 'drupal', 'api'] as const;
 const ORDER_STATES = [
   'pending',
   'awaiting_action',
@@ -70,28 +67,6 @@ const ORDER_STATES = [
 const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
 
 const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
-
-export const PriceTierSchema: z.ZodObject<
-  {
-    tier: VocabularyOut;
-    amount: typeof MoneyOut;
-    active: z.ZodBoolean;
-    validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-  },
-  z.core.$loose
-> = z
-  .looseObject({
-    tier: vocabularyOut(PRICE_TIERS),
-    amount: MoneyOut.meta({ 'x-arthome-tax-basis': 'inherited' }),
-    active: z.boolean(),
-    validUntil: instant()
-      .nullable()
-      .optional()
-      .describe(
-        'Present when the current price depends on the instant — the "show already started" price is\n**pro rata to the time remaining** and cannot be a frozen string. 60 s.\n',
-      ),
-  })
-  .meta({ 'x-arthome-price-basis': 'tax_inclusive' });
 
 export const TicketCardSchema: z.ZodObject<
   {
@@ -156,67 +131,6 @@ export const TicketCardSchema: z.ZodObject<
     .describe(
       'What the viewer gets back, and **where**. The amount and a **delay code** — never the\nsentence "3 to 5 business days", which is a policy.\n',
     ),
-});
-
-export const MerchItemSchema: z.ZodObject<
-  {
-    id: z.ZodString;
-    channelId: z.ZodString;
-    showId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    label: typeof StorefrontLocalizedTextSchema;
-    variants: z.ZodOptional<
-      z.ZodArray<
-        z.ZodObject<
-          {
-            id: z.ZodString;
-            label: z.ZodString;
-            inStock: z.ZodBoolean;
-            price: z.ZodOptional<typeof MoneyOut>;
-          },
-          z.core.$loose
-        >
-      >
-    >;
-    price: z.ZodOptional<typeof MoneyOut>;
-    state: VocabularyOut;
-    source: VocabularyOut;
-    merchantUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    pinnedDuringLive: z.ZodOptional<z.ZodBoolean>;
-    media: z.ZodOptional<typeof MediaSetSchema>;
-  },
-  z.core.$loose
-> = z.looseObject({
-  id: uuid(),
-  channelId: uuid(),
-  showId: uuid().nullable().optional(),
-  label: StorefrontLocalizedTextSchema,
-  variants: z
-    .array(
-      z.looseObject({
-        id: z.string(),
-        label: z.string().meta({ examples: ['M'] }),
-        inStock: z.boolean(),
-        price: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
-      }),
-    )
-    .optional()
-    .describe(
-      '**A T-shirt without a size is not sellable.** The contract carries the variants; a cart line\nreferences a variant, never a bare item.\n',
-    ),
-  price: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
-  state: vocabularyOutLocal(
-    MERCH_STATES,
-    "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got.",
-  ),
-  source: vocabularyOutLocal(
-    MERCH_SOURCES,
-    'An external provider or platform identifier. It is their vocabulary, not ours, and it changes when they change.',
-  ).describe(
-    "The item's origin. An external source is not sold by us: it links out to `merchantUrl`, and\nno cart accepts it.\n",
-  ),
-  merchantUrl: z.string().meta({ format: 'uri' }).nullable().optional(),
-  pinnedDuringLive: z.boolean().optional(),
-  media: MediaSetSchema.optional(),
 });
 
 export const CartLineSchema: z.ZodObject<
