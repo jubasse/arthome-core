@@ -4,6 +4,8 @@ Usage: python3 check-openapi.py openapi/*.yaml
 No dependency beyond PyYAML. Everything is verified locally."""
 import sys, re, yaml
 
+counts = {}
+
 HTTP = {"get","put","post","delete","patch","head","options","trace"}
 ERRS = []
 
@@ -269,8 +271,76 @@ def check(fn):
                         err(fn, f"R19 {k} is not a string ({type(v).__name__}) — {path}/{k}")
             scan(v, f"{path}/{k}", typ)
 
+    # R20 — every money-bearing field declares its TAX BASIS.
+    #
+    # D-056 makes a price tax-inclusive. `Money` itself cannot say so: it carries
+    # credits, refunds, commissions and payouts as well as prices, so the basis is
+    # a property of the FIELD and not of the shape.
+    #
+    # `@arthome/contracts` brands it for TypeScript consumers — `Taxed<Money,
+    # 'inclusive'>` — and states plainly that a brand's mechanism is the compiler,
+    # so it does not reach a generated client in another language, a webhook
+    # recipient or a partner reading this document. A guarantee is only as wide as
+    # its mechanism. This is the wire half, and it reaches all of them.
+    #
+    # THREE VALUES, because two would force a lie:
+    #   inclusive  — what a viewer pays or sees. The price, the total, the fee.
+    #   exclusive  — the payout chain below grossTtc: grossHt, base, commission, net.
+    #   inherited  — a movement rather than a price. A refund, a credit, a
+    #                discrepancy: its basis is that of the thing it moves, and
+    #                asserting one would invent a fact.
+    #
+    # NOT A PER-VALUE FIELD IN THE PAYLOAD. The basis of `grossTtc` never varies,
+    # so carrying it beside every amount would put a schema fact in the data — the
+    # inverse of the `vatIncluded` case, where a datum sat in a structure whose
+    # semantics contradicted it.
+    BASES = ("inclusive", "exclusive", "inherited")
+    MONEY = "#/components/schemas/Money"
+
+    def money_fields(node, path=""):
+        if isinstance(node, list):
+            for i, v in enumerate(node):
+                yield from money_fields(v, f"{path}[{i}]")
+            return
+        if not isinstance(node, dict):
+            return
+        ref = node.get("$ref")
+        allof = node.get("allOf")
+        bare_ref = ref == MONEY and len(node) == 1 and path.endswith("]")
+        is_money = (ref == MONEY and not bare_ref) or (
+            isinstance(allof, list)
+            and any(isinstance(x, dict) and x.get("$ref") == MONEY for x in allof)
+        )
+        if is_money:
+            yield path, node
+        for k, v in node.items():
+            yield from money_fields(v, f"{path}/{k}")
+
+    # The count is PRINTED, because a number nobody can see is a number two people
+    # measure separately and disagree about — which is exactly what happened on the
+    # first run of this rule: a survey said 65 money fields, the gate said 55, and
+    # the survey was counting each `allOf: [{$ref: Money}]` field twice, once as the
+    # property and once as the `$ref` inside it. The gate was right and unfalsifiable
+    # at the same time, which is the worse half. A gate that reports what it counted
+    # can be argued with.
+    money_basis = {b: 0 for b in BASES}
+    money_seen = 0
+    for path, node in money_fields(d):
+        money_seen += 1
+        basis = node.get("x-arthome-tax-basis")
+        if basis is None:
+            err(fn, f"R20 money field without x-arthome-tax-basis — {path}")
+        elif basis not in BASES:
+            err(fn, f"R20 x-arthome-tax-basis must be one of {BASES}, found {basis!r} — {path}")
+        else:
+            money_basis[basis] += 1
+    counts[fn] = (money_seen, money_basis)
+
     scan(d, "")
 
+    seen, by_basis = counts.get(fn, (0, {}))
+    print(f"{fn}: {seen} money field(s) — "
+          + " · ".join(f"{k} {v}" for k, v in by_basis.items()))
     print(f"{fn}: {len(d.get('paths',{}))} paths, {len(ops)} operations, "
           f"{len(d.get('components',{}).get('schemas',{}))} schemas")
 

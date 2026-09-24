@@ -259,6 +259,39 @@ function sourceLineSet(files) {
 }
 
 // ------------------------------------------------------------ prose extraction
+/**
+ * A cited token is data, not prose: `\`jamais\`` in a sentence about detecting French
+ * is the WORD, the way a fenced block is the CODE.
+ *
+ * ⚠ THE CAP IS STRUCTURAL — NO WHITESPACE INSIDE THE SPAN — AND THAT IS THE WHOLE
+ *   DIFFERENCE BETWEEN A CITED TOKEN AND A QUOTED SENTENCE.
+ *
+ *   A document about a French-detection gate has to be able to name the words it
+ *   detects. `jamais`, `dans`, `depuis`, `fichier` written as evidence for WHY a
+ *   miss would have been caught are data — the same data the FRENCH array below
+ *   holds, which passes only because in a .js file an array is code and not a
+ *   comment. The same tokens must not become prose by being discussed.
+ *
+ *   `les quatorze entrées de navigation` is a different thing: a French SENTENCE,
+ *   and it stays reported. A span with spaces in it is a quotation, and a quotation
+ *   goes through tools/language.allow.json with its reason — not through a silent
+ *   widening here.
+ *
+ *   This is the narrow instrument again (§5.3.1): stripping every inline span would
+ *   let a paragraph of French hide behind backticks, and stripping none makes the
+ *   document unable to cite its own subject. Whitespace separates the two cases
+ *   without a word list, so it does not drift.
+ *
+ *   Applied to BOTH kinds of prose — Markdown and code comments — from one place.
+ *   The backtick convention is the same in a `.md` paragraph and in a `//` comment,
+ *   and this gate's own source is the proof: it cites those four words in a comment
+ *   explaining this very function. Two copies of this rule would be a parallel table
+ *   in the gate that exists to keep prose honest.
+ */
+function stripCitedTokens(line) {
+  return line.replace(/`+[^`\s]+`+/g, ' ');
+}
+
 /** Markdown minus its fenced code blocks: a code sample is not prose. */
 function proseOfMarkdown(text) {
   const out = [];
@@ -302,9 +335,43 @@ const MARKERS = {
       ['/*', '*/'],
     ],
   },
-  // JSON has no comments at all. Its prose lives in the named keys below.
+  // ⚠ JSON IS NOT COMMENT-FREE IN THIS PROJECT, BUT IT IS NOT HANDLED HERE EITHER.
+  //   Both of its prose forms — `//` comments and `_comment` arrays — are handled in
+  //   the JSON branch of commentsOfSource, against a STRING-MASKED projection of the
+  //   line. Putting them in this table was the first attempt and it was wrong: a
+  //   block marker of `/*` is opened by the glob `"prototypes/*.dc.html"`, which
+  //   never closes, so every remaining line of tools/language.allow.json was read as
+  //   comment prose and the file reported four French words it does not have.
+  //   A glob looks exactly like a comment marker. Deciding by raw text cannot tell
+  //   them apart; deciding outside string literals can.
   '.json': { line: [], block: [] },
 };
+
+/** The keys this project uses to carry prose inside JSON. */
+const JSON_PROSE_KEY =
+  /"(_comment[\p{L}\p{N}_]*|_why|why|reason|description|summary)"\s*:\s*(.*)$/u;
+
+/**
+ * The line with every string literal's CONTENTS blanked out, same length.
+ *
+ * Length-preserving on purpose: callers need indices into the original line, so
+ * deleting the strings instead of masking them would shift every position after the
+ * first quote. What is left is the line's STRUCTURE — its real brackets and its real
+ * comment markers — with the data removed.
+ */
+function maskStrings(line) {
+  return line.replace(/"(?:[^"\\]|\\.)*"/g, (m) => `"${'x'.repeat(Math.max(0, m.length - 2))}"`);
+}
+
+/** Net bracket depth of a line, counting only brackets outside string literals. */
+function brackets(line) {
+  let d = 0;
+  for (const c of maskStrings(line)) {
+    if (c === '[') d += 1;
+    else if (c === ']') d -= 1;
+  }
+  return d;
+}
 
 /**
  * Source files: the comments only. A French STRING is data — the taxonomy, a
@@ -316,6 +383,8 @@ function commentsOfSource(text, ext) {
   const out = [];
   let block = null;
   let inExtract = false;
+  // Open-bracket depth of a JSON prose value currently being consumed.
+  let jsonProse = 0;
   text.split('\n').forEach((raw, i) => {
     const n = i + 1;
     const line = raw;
@@ -327,6 +396,13 @@ function commentsOfSource(text, ext) {
         return;
       }
       if (inExtract) return;
+    }
+
+    // Inside a multi-line JSON prose array: every element line is prose.
+    if (jsonProse > 0) {
+      out.push([n, line]);
+      jsonProse += brackets(line);
+      return;
     }
 
     if (block) {
@@ -351,10 +427,43 @@ function commentsOfSource(text, ext) {
         break;
       }
     }
-    // A JSON file has no comments, but this project uses `_comment` and
-    // `reason` keys for exactly that purpose, so they count as prose.
-    const j = line.match(/"(?:_comment|_why|reason|why|description)"\s*:\s*(.*)$/);
-    if (j) out.push([n, j[1]]);
+    // This project's JSON prose lives in `_comment` and a few named keys, so those
+    // ARE its comments. Both halves below were defects, found by a French comment
+    // that sat in `packages/core/tsconfig.build.json` for three days:
+    //
+    //   ⚠ THE VALUE IS USUALLY A MULTI-LINE ARRAY, AND A SINGLE-LINE REGEX SEES `[`.
+    //     Every `_comment` in this repository is written as an array of lines. The
+    //     previous pattern captured the rest of the KEY's line — which is `[` — and
+    //     the element lines that hold the actual prose were never looked at. The word
+    //     list was never the problem: the missed text scored four distinct French
+    //     words against a threshold of three. The mechanism covered the one form the
+    //     project barely uses (`"description": "one line"`) and missed the form it
+    //     uses everywhere. A gate's guarantee is only as wide as its mechanism.
+    //
+    //   ⚠ `_comment_exports` AND `_comment_peer` ARE ALSO PROSE.
+    //     `@arthome/contracts` names its blocks that way because one file carries
+    //     several. An exact-match key list silently exempted them.
+    if (ext === '.json') {
+      // A `//` that is really a comment, and not one inside a string: tsconfig.json
+      // is JSONC and the root one carries its reasoning in `//` lines. Decided on the
+      // masked projection, which is what keeps the glob `"a/*.html"` and the URL
+      // `"https://…"` from looking like markers.
+      const slashes = maskStrings(line).indexOf('//');
+      if (slashes !== -1) {
+        out.push([n, line.slice(slashes + 2)]);
+        return;
+      }
+    }
+
+    const j = line.match(JSON_PROSE_KEY);
+    if (j) {
+      out.push([n, j[2]]);
+      // Depth is counted on the line with STRING CONTENTS REMOVED. A `_comment`
+      // line may legitimately contain a bracket as prose — the root tsconfig.json
+      // writes `types: ["node"]` inside one — and counting those would end the
+      // array early or never.
+      jsonProse += brackets(j[2]);
+    }
   });
   return out;
 }
@@ -383,7 +492,10 @@ for (const file of files) {
   }
   checked += 1;
 
-  const lines = prose ? proseOfMarkdown(text) : commentsOfSource(text, ext);
+  const lines = (prose ? proseOfMarkdown(text) : commentsOfSource(text, ext)).map(([n, line]) => [
+    n,
+    stripCitedTokens(line),
+  ]);
   // Inside prototypes/, a line lifted verbatim from a mockup is the designer's,
   // not ours. Checked by provenance, never assumed from the directory.
   const src = file.startsWith('prototypes/') ? sourceLineSet(files) : null;

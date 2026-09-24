@@ -230,7 +230,32 @@ function main() {
     const own = declaredByFile.get(file) ?? new Set();
     const src = stripComments(fs.readFileSync(file, 'utf8'));
     src.split('\n').forEach((line, i) => {
-      for (const m of line.matchAll(STRING_LITERAL)) {
+      // ⚠ SKIP THE TYPE ANNOTATION, KEEP THE INITIALISER.
+      //
+      //   `isolatedDeclarations` (this project's own rule, section 2.3 c) FORCES an
+      //   explicit annotation on every exported schema, and an annotation of a zod
+      //   enum necessarily restates its members:
+      //
+      //     export const LocaleSchema: z.ZodEnum<{ fr: 'fr'; en: 'en' }> = z.enum(['fr', 'en']);
+      //
+      //   So one of this document's rules manufactures a literal that another of its
+      //   gates then reports — and the author cannot remove it. Left alone it would
+      //   need an allow-list entry per exported schema, and an allow file that grows
+      //   with the codebase is the rule being wrong (section 5.3).
+      //
+      //   The distinction that resolves it: E2 is about copies that drift SILENTLY. A
+      //   type annotation is checked against its own initialiser by the compiler, so
+      //   it cannot drift without `tsc` failing — it is a derived restatement, not a
+      //   parallel table. The initialiser is the real copy, and it stays reported:
+      //   `z.enum(LOCALES)` is the fix, and the gate should still ask for it.
+      //
+      //   Heuristic, and its limit stated: a declaration's annotation precedes its
+      //   first `=`, so only the part after it is scanned. `===` is unaffected (the
+      //   remainder still holds the literal). This UNDER-reports in type positions
+      //   only, which is the class the compiler already guards.
+      const eq = line.indexOf('=');
+      const scanned = eq === -1 ? line : line.slice(eq);
+      for (const m of scanned.matchAll(STRING_LITERAL)) {
         const value = m[1] ?? m[2];
         if (!value || !byValue.has(value)) continue;
         if (own.has(value)) continue; // declared here: its own to use

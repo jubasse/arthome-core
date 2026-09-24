@@ -2,7 +2,17 @@
 // arthome-check-core-entry — the gate on @arthome/core's TWO ENTRY POINTS.
 //
 // WHAT IT GUARANTEES
-//   @arthome/core's `.` entry point imports zod AT NO DEPTH.
+//   1. @arthome/core's `.` entry point imports zod AT NO DEPTH.
+//   2. no module of the `./schema` entry point writes a boundary form that
+//      cannot be expressed in JSON Schema — `.transform()` or `z.date()`.
+//
+//   The second lives here rather than in a spec for a reason worth recording.
+//   It is a rule about what may be WRITTEN, not about what happens at runtime,
+//   so the honest assertion is a scan of the sources — and a scan needs `fs`,
+//   which `packages/core` cannot import: its tsconfig carries `types: []`
+//   precisely so that a Node API is unreachable from the package. The test
+//   would have had to punch a hole in the wall it was testing. The gate already
+//   walks exactly the right graph, in Node, where reading a file is ordinary.
 //
 // WHAT IT DOES NOT COVER, STATED BECAUSE THE NAME IMPLIES MORE THAN THE
 // MECHANISM DELIVERS
@@ -157,9 +167,47 @@ function main() {
       console.error('  schemas, or it must not exist.');
       process.exit(1);
     }
+
+    // THE BOUNDARY RULES, asserted over the sources of the graph just walked.
+    //
+    // `.transform()` and `z.date()` are inconvertible to JSON Schema. A schema
+    // carrying either still compiles, still validates, and still EMITS a
+    // document — a document describing a shape the API does not accept. That is
+    // a contract that lies in the one direction nobody checks, because nothing
+    // fails. Hence a gate.
+    //
+    // Scoped to the modules REACHED from the schema entry point, not to the
+    // directory: a file added to src/schema/ and imported by nothing is not at
+    // any boundary, and a boundary schema placed elsewhere and re-exported is.
+    const banned = [
+      { re: /\.transform\s*\(/, why: 'z.transform() — inconvertible to JSON Schema (D-057)' },
+      { re: /\bz\.date\s*\(/, why: 'z.date() — an instant crosses a boundary as an ISO string' },
+    ];
+    const breaches = [];
+    for (const file of schema.visited) {
+      const src = fs
+        .readFileSync(file, 'utf8')
+        // Blank the comments, KEEPING their newlines: a reported line number
+        // that is off by the length of the doc comment above it sends the
+        // reader to the wrong place, and this file is full of doc comments.
+        .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+        .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+      for (const { re, why } of banned) {
+        const m = re.exec(src);
+        if (m) breaches.push({ file, why, line: src.slice(0, m.index).split('\n').length });
+      }
+    }
+    if (breaches.length) {
+      console.error(`\n✗ the "./schema" entry point breaks ${breaches.length} boundary rule(s):\n`);
+      for (const b of breaches) console.error(`  ${rel(b.file)}:${b.line}\n    ${b.why}`);
+      console.error('\n  Parse, do not transform: the boundary decides what a value IS, and the');
+      console.error('  domain decides what it becomes.');
+      process.exit(1);
+    }
+
     if (!QUIET)
       console.log(
-        `arthome-check-core-entry: "./schema" entry point — ${schema.visited.size} module(s), zod present`,
+        `arthome-check-core-entry: "./schema" entry point — ${schema.visited.size} module(s), zod present, boundary rules held`,
       );
   } else if (!QUIET) {
     console.log('arthome-check-core-entry: "./schema" entry point not written yet (wave 6)');

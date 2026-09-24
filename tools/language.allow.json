@@ -52,7 +52,7 @@
       "",
       "A record of why something was corrected quotes the thing it corrected, and",
       "here that thing is often French. Translating the quotation destroys what it",
-      "is doing: \"les quatorze entrées de navigation\", translated, stops BEING the",
+      "is doing: a stale comment quoted for its wrong count, once translated, stops BEING the",
       "defect and becomes a claim about one.",
       "",
       "Neither file-level exemption covers this and neither should. The arbitration",
@@ -70,7 +70,11 @@
       "",
       "An entry is a SINGLE-LINE fragment, because the check is per line. A quotation",
       "that wraps needs one entry per line — which the gate told me on its first run,",
-      "about my own entry."
+      "about my own entry.",
+      "",
+      "This file does not exempt ITSELF. An allow list that needs an entry for its own",
+      "explanation has no standing to grant one — so the explanation describes its",
+      "examples instead of quoting them. The gate's own source was fixed the same way."
     ],
     "allow": [
       {

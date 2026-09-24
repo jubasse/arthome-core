@@ -136,7 +136,14 @@ mobile client's bill.
 It is the same lesson as D-012, applied one notch earlier: zod's cost is **fixed and tied to the
 import**, not marginal and tied to the number of schemas. If `@arthome/core` imported zod from its
 main entry point, no barrel-free entry point of `@arthome/contracts` could claw the bill back. **A
-CI gate verifies it**: `import('@arthome/core')` must resolve no `zod` module.
+CI gate verifies it**: `arthome-check-core-entry` walks the import graph of the sources from
+`src/index.ts` and fails if any path reaches `zod` or a `node:` specifier.
+
+Stated as the mechanism rather than as the guarantee, because the two are not the same size. The
+gate reads **imports**, so anything arriving another way is invisible to it — and one such route
+was live here: the root tsconfig carried `types: ["node"]` against an uninstalled `@types/node`,
+which would have put a Node global in scope across the package with the gate still green, since a
+global is not an import. What closes that hole is `types: []` on the shared base, not this tool.
 
 ### What stays pure TypeScript — zero dependencies
 
@@ -175,14 +182,30 @@ CI gate verifies it**: `import('@arthome/core')` must resolve no `zod` module.
 | `BuyerTaxLocationSchema`, `TaxEvidenceSchema` | §5 — new, and they cross |
 | `ErrorEnvelopeSchema` | `code`, `params`, `traceId`, **`nature`** |
 
-**Three boundary rules, to be written into the package itself:**
+**Three boundary rules, written into the package — and each one says where it is held:**
 
 1. **no `z.transform()` in a boundary schema** — inconvertible to JSON Schema, so the generated
-   OpenAPI would lie;
+   OpenAPI would lie, and lie in the one direction nobody checks: the document still generates
+   cleanly. Held by `arthome-check-core-entry`, which scans the sources of the modules **reached
+   from the `./schema` entry point** for `.transform(` and `z.date(`.
+
+   It is a rule about what may be *written*, so the honest assertion is a scan rather than a
+   behavioural test — and the first draft was a spec using `node:fs`, which `tsc` refused: the
+   package sets `types: []` so a Node API is unreachable from it, and the spec shares that project.
+   The test would have had to open a hole in the wall it was testing. Scoped to what the entry
+   point **reaches**, not to the directory: a file in `src/schema/` that nothing imports sits at no
+   boundary, and a boundary schema placed elsewhere and re-exported sits at one.
+
 2. **`io: "input"` describes a request, the output describes a response** — those are two schemas,
-   not one read twice;
+   not one read twice. Held by `vocabularyIn` / `vocabularyOut` in `src/schema/vocabulary.ts`: the
+   asymmetry is the signature, so it cannot be forgotten at a call site. A bare `z.enum()` on a
+   response does the wrong thing by default — it fails the whole payload the unknown value sits in,
+   not the one field — which is why this is a constructor and not a note. Pinned by
+   `schema.spec.ts`, "the in / out asymmetry".
+
 3. **a validation failure translates into a code**, never into a zod message in English — otherwise
-   i18n leaks at the first form error, and it is the payment form that leaks it.
+   i18n leaks at the first form error, and it is the payment form that leaks it. Held by
+   `issueToCode` in `src/schema/error.ts`, pinned by `schema.spec.ts`, "failures leave as codes".
 
 **What is NOT in zod, and what one would be tempted to put there**: the rules. `decideWatch` does
 not validate its input with a schema — it receives types already checked at the boundary and

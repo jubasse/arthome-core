@@ -1366,6 +1366,36 @@ across all 148 unannotated blocks.
 private `_` (TypeScript has `#` and `private`). These conventions come from languages without
 inference; here they are noise.
 
+**[floor] A monetary amount on the wire names its tax basis (D-056).**
+
+`@arthome/core`'s `Money` is `{ amountMinor, currencyCode }` — no tax semantics, which is right for the
+domain, because rounding, summing and commission arithmetic do not care. At the boundary it is not
+enough: **a price field is tax-inclusive**, and `Money` alone cannot say so.
+
+So two amounts of the **same shape** mean different things according to which field they sit in, with
+nothing in the type to tell them apart. A reader who takes a price for a bare amount is wrong by a VAT
+rate — silently, and in the direction that under-charges or over-pays.
+
+That is the `reasonCode` shape a third time (§5.2's worked example): **one name, two meanings,
+disambiguated only by where you are standing.** And it is the E2 shape inverted — the fact that a price
+includes tax is stated *nowhere* and carried by convention, which is the absence with no owning
+document (§5.3.1).
+
+The rule, in two halves because one is not enough:
+
+1. **For TypeScript consumers**, the distinction is a type: `@arthome/contracts/money` exports
+   `Taxed<T, B>`, so `TaxInclusive<Money>` and `TaxExclusive<Money>` are mutually unassignable and
+   mixing a price into a net calculation is a compile error rather than a wrong number.
+2. **On the wire, the basis is in the data.** A brand is erased at runtime and absent from the payload,
+   so it reaches a TypeScript consumer and nobody else — not a generated client in another language,
+   not a webhook recipient, not a partner reading the OpenAPI document.
+
+> **A guarantee is only as wide as its mechanism, and a brand's mechanism is the compiler.** A contract
+> whose consumers are not all compiled against it cannot rely on a compile-time distinction.
+
+That second half is the one worth carrying past money. Every branded type in a *contract* has this
+property, and the brand is the more tempting half because it is the one that produces an error message.
+
 **The `@arthome/contracts` DTO case** — decided, because that is where names travel most: a boundary
 object's type carries the concept's name **with no suffix** (`Booking`, not `BookingDto`); a command's
 type carries the `Command` suffix; an event's, the `Event` suffix; a paginated response's, `Page<T>`.
@@ -1740,6 +1770,63 @@ should say it does not cover computed values. The alternative is a guarantee eve
 wider than it holds, which is worse than no guarantee, because nobody looks where they believe a gate
 is already looking.
 
+A second instance, sharper because the gate's *judgement* was right and only its *reach* was wrong.
+
+`check-language` guarantees that no committed file carries French prose. For a `.json` file its
+mechanism was a single-line regex over the keys that hold prose here — `_comment`, `_why`, `reason`,
+`description`.
+
+Every `_comment` in this repository is written as an **array of lines**. The regex captured the rest
+of the key's line, which is `[`, and the element lines that hold the actual prose were never read. A
+French comment sat in `packages/core/tsconfig.build.json` for three days while the gate printed
+`PASS — 330 file(s) checked`.
+
+**The word list was never the problem.** The missed text scores four distinct French words —
+`jamais`, `dans`, `depuis`, `fichier` — against a threshold of three. It would have fired the instant
+those lines reached it. And the key list looked complete: it covered `"description": "one line"`, the
+one form this project barely uses, and missed the form it uses everywhere. Two holes of the same shape
+sat beside it — `_comment_exports` and `_comment_peer` were exempted by an **exact-match** key name,
+and `.json` was declared comment-free although every `tsconfig.json` here is JSONC and carries its
+reasoning in `//` lines.
+
+It also explains why nobody caught it by eye: the French was **de-accented** (`partage`, `ecrit`,
+`etendu`, `resoudrait`), so it does not read as French at a glance, and it sat in a JSON value, which
+this document had already written off as data by design.
+
+Then the fix committed the rule it was written to fix. Declaring `/* */` a block-comment marker for
+`.json` made the glob `"prototypes/*.dc.html"` open a comment that never closed, so every remaining
+line of `tools/language.allow.json` was read as prose and the gate reported four French words the file
+does not contain — a **false** positive on the registry of allowed French, one step after a **false
+negative** on real French.
+
+> **A glob looks exactly like a comment marker, and a URL looks exactly like one too.** Deciding by
+> raw text cannot tell them apart. Deciding on a projection of the line with every string literal's
+> contents masked out — same length, so indices still point at the original — can.
+
+Both faults are one fault. The gate's coverage was assumed from its key list and its word list, which
+are the parts a reader checks, while the reach was decided by a regex's line discipline, which is the
+part nobody reads. The word list had been argued over word by word; that the matcher only ever saw one
+line at a time was never stated anywhere.
+
+> **State a gate's reach next to its judgement.** A word list, a rule set or a threshold is the part
+> people review; the traversal that feeds it is the part that decides what the review was worth.
+
+Writing this section then produced a **third** instance, from the other side. Citing the four missed
+words as evidence made the gate fail on the document that documents it, and on its own source, which
+cites them in the comment explaining the fix. That is not a false positive to be waved through: a
+single-token backtick span is the WORD being discussed, exactly as a fenced block is the CODE, and both
+are data. So a span with **no whitespace in it** is stripped from prose, in Markdown and in comments
+alike, from one shared helper — while a span with spaces stays reported, because
+`les quatorze entrées de navigation` is a quotation and a quotation goes through
+`tools/language.allow.json` with its reason. Whitespace tells the two apart without a word list, so the
+distinction cannot drift.
+
+The ten fixtures now pin both directions: five that the old mechanism got wrong and the new one gets
+right — the verbatim missed text, a `//` comment in JSONC, a `_comment_peer` block, French after a
+bracket written as prose, and the French *sentence* in backticks that must still fire — and five that
+must stay silent, and do: English prose containing `types: ["node"]`, French in a non-prose key, a `/*`
+glob followed by French data, `//` inside a string, and the cited tokens of this very paragraph.
+
 **[floor] Never put prose in a double-quoted shell string.**
 
 The only fault this week that can **execute**. A backtick inside double quotes is command
@@ -1756,6 +1843,33 @@ not attention:
 
 Backticks are the sharp edge, but `$`, `!` and `\` are all live in the same position. Prose contains
 punctuation; shell double quotes give punctuation meaning. The two should not meet.
+
+**[floor] When a file must be duplicated, the comment is the only thing carrying the reason.**
+
+`vitest.config.ts` cannot move into `@arthome/tooling`: `defineConfig` has to be resolved by the
+consumer, because the consumer is what knows the vitest version (§4.3). So the file is duplicated per
+package **by design**, and `@arthome/contracts` got its copy by reading `@arthome/core`'s.
+
+The copy kept the paragraph explaining the bare-object design and dropped the paragraph explaining
+`const config: ReturnType<typeof defineConfig>` — which is not decoration. `lib.json` carries
+`isolatedDeclarations`, that option applies to the type check **even under `noEmit`**, and it refuses
+an inferred default export:
+
+```
+vitest.config.ts(8,16): error TS9037: Default exports can't be inferred with --isolatedDeclarations.
+```
+
+The copy kept what looked like design and dropped what looked like verbosity. The load-bearing half
+was the verbose one.
+
+> **A duplicate made by reading the code keeps the design and loses the fix.** Where duplication is
+> structural, the comment explaining the workaround is part of the file's contract — copy the comment
+> first.
+
+This one was cheap: `typecheck` failed on the first run, by name, with a line number. That is the
+difference between a duplicated file inside a chain and a duplicated **fact** across artefacts, which
+is E2 and stays silent. It is an argument for keeping the copy small and the chain complete, not for
+trusting copies.
 
 **[floor] A check is scoped by something, and the scope is invisible in the output unless the output
 says so.**
