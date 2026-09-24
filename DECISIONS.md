@@ -1128,3 +1128,58 @@ type from both, and a human reading the two contracts will assume one vocabulary
 That is the `displayState` shape and the `la surface` shape a third time: **one name, two meanings,
 disambiguated only by where you are standing.** It is a question for `backend-contracts`, not a
 ruling: either the two names differ, or the contract says in both places that they are unrelated.
+
+### D-038 — `decideWatch` diverges in case, and the conversion was scoped by a directory
+
+**Found by `backend-contracts` annotating the 78 blocks that did not match. Verified before ruling.**
+
+**1. The whole refusal vocabulary is `read_only` again, in upper case.**
+
+| | |
+|---|---|
+| wire, `WatchVerdict.reasonCode` | `NO_SEAT` `ROOM_NOT_OPEN` `OUT_OF_TERRITORY` `SUBSCRIPTION_REQUIRED` `NO_REPLAY` … |
+| core, `WATCH_DENIAL_REASONS` | `no_seat` `room_not_open` `out_of_territory` `subscription_required` `no_replay` … |
+
+**Ten concepts, ten matches, every one differently cased** — so `reasonCode === WatchDenialReason.NO_SEAT` is false for all ten. This is `decideWatch`, whose refusal codes are the entire refusal experience of the storefront, and the contract's own text promises that *"a card announcing 'subscription required' and a player refusing for the same reason say the same code."* They do not. Core also carries an eleventh, `not_published`, that the wire never serves.
+
+**The ruling follows from two decisions already made and does not need a third.** D-036 names `SCREAMING_SNAKE` the family for refusal and failure codes, and D-037 places `WatchVerdict.reasonCode` in that family by name. D-033's floor rule says `@arthome/core` exports exactly the value that goes on the wire. **So core moves up**, and the wire gains `NOT_PUBLISHED` — because `decideWatch` returning a value no contract can express is the `displayState` defect with a different field.
+
+*That is the third silent equality failure in the same shape* — `multi_screen`, then `read-only`, now a whole vocabulary at once. The first two differed by a separator; this one differs only by case, which no separator-insensitive check would ever have caught.
+
+**2. `fallbackAction` is two independently authored lists, and the merge has a rule rather than a taste.**
+
+Wire: `buy_seat` `join_waitlist` `none` `see_replay_policy` `subscribe` `watch_preview`.
+Core: `buy_seat` `none` `release_a_screen` `see_other_dates` `subscribe`.
+Three shared, three wire-only, two core-only — on the field that decides **which button a dead-end
+screen offers**.
+
+Neither side is simply right, so the union is not the answer either. **A fallback action exists to
+answer a denial reason**, which makes the two vocabularies coupled and the merge checkable: every
+denial reason must have an action that answers it, and every action must answer at least one denial
+reason. `concurrent_limit_reached` wants `release_a_screen`; `date_cancelled` wants
+`see_other_dates`; `no_seat` wants `buy_seat` or `join_waitlist`. Any member surviving that pass
+without a partner is the one to argue about.
+
+**3. THE SYSTEMATIC CAUSE, AND IT IS THE FINDING OF THE ROUND.**
+
+Nine vocabularies live outside `packages/core/src/vocabulary/` — in `entitlement/`, `moderation/`,
+`catalog/`, `replay/`, `i18n/`, `format/`, `kernel/`. **The suffix and separator pass covered the
+directory; the gate discovers the whole tree.** So `MODERATION_BADGES` still reads `badge_banned`
+against a bare wire, on a field *named* `badge` — the `crew_director` fault, still standing, because
+its file sits in `moderation/` rather than `vocabulary/`.
+
+`backend-contracts` named it better than I can: **location is not a property anyone intended to
+matter, which is exactly why it did.** A conversion scoped by a directory is a conversion scoped by
+where someone happened to put a file, and nothing announces the omission — the gate that would have
+caught it was being written at the same time.
+
+**4. The publication checklist: one vocabulary of nine, blocking as a property of the item.**
+
+Core splits `PUBLICATION_CHECKLIST_ITEMS` (7) from `PUBLICATION_WARNING_ITEMS` (2); the contract
+serves nine with blocking as a field. Both are defensible and `backend-contracts` asked for a pick.
+
+**The contract's shape wins, on two grounds.** Promoting a warning to blocking is a product decision
+that will happen; under the split it moves an item between vocabularies, which is a breaking change
+for anyone matching on either, while under one vocabulary it flips a boolean. And a client rendering
+the checklist wants all nine with their status — two lists force it to concatenate, which is a value
+composed twice on every surface. Core moves.
