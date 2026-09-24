@@ -48,9 +48,21 @@
     "See architecture/code-conventions.md section 5.5 and DECISIONS.md D-012."
   ],
   "exports": {
+    "./catalog": {
+      "types": "./dist/catalog/index.d.ts",
+      "import": "./dist/catalog/index.js"
+    },
+    "./engagement": {
+      "types": "./dist/engagement/index.d.ts",
+      "import": "./dist/engagement/index.js"
+    },
     "./envelope": {
       "types": "./dist/envelope/index.d.ts",
       "import": "./dist/envelope/index.js"
+    },
+    "./identity": {
+      "types": "./dist/identity/index.d.ts",
+      "import": "./dist/identity/index.js"
     },
     "./money": {
       "types": "./dist/money/index.d.ts",
@@ -60,9 +72,33 @@
       "types": "./dist/pagination/index.d.ts",
       "import": "./dist/pagination/index.js"
     },
+    "./streaming": {
+      "types": "./dist/streaming/index.d.ts",
+      "import": "./dist/streaming/index.js"
+    },
+    "./studio-access": {
+      "types": "./dist/studio-access/index.d.ts",
+      "import": "./dist/studio-access/index.js"
+    },
+    "./studio-desk": {
+      "types": "./dist/studio-desk/index.d.ts",
+      "import": "./dist/studio-desk/index.js"
+    },
+    "./studio-money": {
+      "types": "./dist/studio-money/index.d.ts",
+      "import": "./dist/studio-money/index.js"
+    },
+    "./studio-stage": {
+      "types": "./dist/studio-stage/index.d.ts",
+      "import": "./dist/studio-stage/index.js"
+    },
     "./text": {
       "types": "./dist/text/index.d.ts",
       "import": "./dist/text/index.js"
+    },
+    "./ticketing": {
+      "types": "./dist/ticketing/index.d.ts",
+      "import": "./dist/ticketing/index.js"
     },
     "./package.json": "./package.json"
   },

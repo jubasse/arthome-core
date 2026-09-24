@@ -20,6 +20,16 @@ A declaration longer than 160 characters is listed by kind only — read the `.d
 
 `@arthome/contracts` has NO root entry: `import ... from '@arthome/contracts'` does not resolve.
 
+#### @arthome/contracts/catalog
+
+Declarations: `dist/catalog/index.d.ts` — 0 exported names.
+
+
+#### @arthome/contracts/engagement
+
+Declarations: `dist/engagement/index.d.ts` — 0 exported names.
+
+
 #### @arthome/contracts/envelope
 
 Declarations: `dist/envelope/index.d.ts` — 4 exported names.
@@ -28,6 +38,11 @@ Declarations: `dist/envelope/index.d.ts` — 4 exported names.
 - `StorefrontErrorSchema` (const) — `StorefrontErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>` — 'Error' — ONE SHAPE, TWO SETS OF PROSE, and the split is the smallest version of D-065 §G there is.
 - `StudioEnvelopeMetaSchema` (const) — The meta every STUDIO response composes.
 - `StudioErrorSchema` (const) — `StudioErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>`
+
+#### @arthome/contracts/identity
+
+Declarations: `dist/identity/index.d.ts` — 0 exported names.
+
 
 #### @arthome/contracts/money
 
@@ -47,12 +62,42 @@ Declarations: `dist/pagination/index.d.ts` — 4 exported names.
 - `StorefrontCursorPageInfoSchema` (const) — The storefront's cursor page.
 - `StudioCursorPageInfoSchema` (const) — The studio's cursor page: the moderation queue and the live chat, with a separate badge total.
 
+#### @arthome/contracts/streaming
+
+Declarations: `dist/streaming/index.d.ts` — 0 exported names.
+
+
+#### @arthome/contracts/studio-access
+
+Declarations: `dist/studio-access/index.d.ts` — 0 exported names.
+
+
+#### @arthome/contracts/studio-desk
+
+Declarations: `dist/studio-desk/index.d.ts` — 0 exported names.
+
+
+#### @arthome/contracts/studio-money
+
+Declarations: `dist/studio-money/index.d.ts` — 0 exported names.
+
+
+#### @arthome/contracts/studio-stage
+
+Declarations: `dist/studio-stage/index.d.ts` — 0 exported names.
+
+
 #### @arthome/contracts/text
 
 Declarations: `dist/text/index.d.ts` — 2 exported names.
 
 - `StorefrontLocalizedTextSchema` (const) — `StorefrontLocalizedTextSchema: z.ZodObject<{ contentLanguage: z.ZodString; text: z.ZodString; }, z.core.$loose>` — Authored text as the storefront documents it.
 - `StudioLocalizedTextSchema` (const) — `StudioLocalizedTextSchema: z.ZodObject<{ contentLanguage: z.ZodString; text: z.ZodString; }, z.core.$loose>` — Authored text as the studio documents it — the same shape, the console's own prose (D-065 family G).
+
+#### @arthome/contracts/ticketing
+
+Declarations: `dist/ticketing/index.d.ts` — 0 exported names.
+
 
 ### @arthome/core
 
@@ -499,10 +544,19 @@ each directory is covered and each entry has a directory, not that the sentence 
 - `packages/` — The three workspace packages: the domain, the wire contracts, the shared tooling.
 - `packages/contracts/` — @arthome/contracts — boundary DTO schemas derived from @arthome/core; one subpath per module, no root entry.
 - `packages/contracts/src/` — Sources of @arthome/contracts, one directory per exported subpath plus internal wire primitives.
+- `packages/contracts/src/catalog/` — The catalogue a viewer browses: dates, artists, shows, categories, media, and the screens composed from them.
+- `packages/contracts/src/engagement/` — Chat, reactions, notifications and the change feed a surface polls.
 - `packages/contracts/src/envelope/` — The shared response envelope and its meta instants (subpath @arthome/contracts/envelope).
+- `packages/contracts/src/identity/` — Who is asking: sessions, devices, pairing, consents, and the context a surface is handed.
 - `packages/contracts/src/money/` — The tax basis of an amount on the wire (subpath @arthome/contracts/money).
 - `packages/contracts/src/pagination/` — Cursor pagination primitives (subpath @arthome/contracts/pagination).
+- `packages/contracts/src/streaming/` — Watching: the entitlement verdict, the playback ticket and its renewal, and what interrupts a run.
+- `packages/contracts/src/studio-access/` — Who may operate, and with what: the actor, their effective rights, and the bootstrap a studio surface is handed on sign-in. Separate from `identity` because the two products' session shapes genuinely differ — a viewer receives a ViewerContext, a control room receives a StudioBootstrap.
+- `packages/contracts/src/studio-desk/` — Moderation, the audience, the inbox and the journal — the duty desk.
+- `packages/contracts/src/studio-money/` — Payouts, bank changes, reconciliation periods, statistics, and the dashboard they feed.
+- `packages/contracts/src/studio-stage/` — Operating a date: its sheet, its run console, its health, its uploads and its stream key.
 - `packages/contracts/src/text/` — Localized authored prose on the wire (subpath @arthome/contracts/text).
+- `packages/contracts/src/ticketing/` — Buying: the cart, the quote, the order, the ticket, prices, merchandise and subscriptions.
 - `packages/core/` — @arthome/core — the domain: rules without zod at `.`, boundary schemas with zod at `./schema`.
 - `packages/core/src/` — Sources of @arthome/core, one directory per bounded module; index.ts re-exports the rules entry point.
 - `packages/core/src/catalog/` — The catalogue: what is published, its displayed state, rights and language.

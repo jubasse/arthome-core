@@ -174,10 +174,23 @@ function readPackage(ts, cwd, name) {
         summary: summaryOf(ts, real),
       });
     }
-    // An empty subpath is not an empty map: it is a mapping that did not happen.
-    if (!entries.length)
+    // AN EMPTY SUBPATH IS NOT AN EMPTY MAP -- unless the declarations were
+    // actually read and actually say nothing.
+    //
+    //   The refusal below exists because an uninstalled dependency yields an
+    //   empty map that compares equal to an empty map and passes. That is the
+    //   case worth refusing. But it caught a second one it should not: a module
+    //   whose `.d.ts` parses cleanly and exports nothing, which is a FACT about
+    //   the package rather than a failure to read it. This repository grew eight
+    //   of those in one commit -- context subpaths published ahead of their
+    //   contents, so the list in `exports` resolves instead of pointing at files
+    //   that are not there.
+    //
+    //   So the test is now whether the DECLARATION FILE was found. No file is
+    //   "did not run"; a file with no exports is zero, reported as zero.
+    if (!entries.length && !modSym)
       throw new NotRun(
-        `${name}${s.key.slice(1)} resolved to ZERO exported names. Refusing an empty map.`,
+        `${name}${s.key.slice(1)} has no readable declarations. Refusing an empty map.`,
       );
     entries.sort((a, b) => cmp(a.name, b.name));
     const specifier = s.key === '.' ? name : `${name}${s.key.slice(1)}`;
