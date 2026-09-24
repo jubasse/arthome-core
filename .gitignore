@@ -12,9 +12,25 @@ coverage/
 #   See architecture/code-conventions.md section 2.4, gate 8.
 #   (git cannot re-include a file under an excluded directory, so we exclude
 #   `dist/` only where it really is an artefact.)
+#
+#   ⚠ BUT ONLY THE `.d.ts`. The reason above is "a contract change visible in a
+#   REVIEW", and that reason covers the declarations and nothing else:
+#     - a `.d.ts.map` is Base64 VLQ. It is unreadable, it regenerates on every
+#       build, and it DEFEATS the stated purpose — a one-line contract change
+#       arrives buried under a hundred lines of mapping;
+#     - a `.js` in dist duplicates a source file sitting in the same repository,
+#       where a reviewer can read it better.
+#   122 of 244 tracked dist files were maps before this line existed.
+#
+#   What SHIPS is built at publish time; what is TRACKED is what a reviewer
+#   reads. Those are different sets, and tracking `dist/` wholesale conflated
+#   them. `declarationMap` and `sourceMap` stay on in lib.json — the maps are
+#   still produced and still published, they are just not committed.
 /dist/
 packages/tooling/dist/
 tools/*/dist/
+packages/*/dist/**/*.map
+packages/*/dist/**/*.js
 
 # Extraction scratch from the OpenAPI translation harness (backend-contracts).
 # Regenerated on demand; 140 KB of French source units, not a deliverable.

@@ -1,1 +1,0 @@
-{"version":3,"file":"grants.d.ts","sourceRoot":"","sources":["../../src/permissions/grants.ts"],"names":[],"mappings":"AAAA;;;;;;;;;;;;;;;GAeG;AAEH,OAAO,EAAE,UAAU,EAAE,MAAM,yBAAyB,CAAC;AA2BrD;;;;;;;GAOG;AACH,wBAAgB,iBAAiB,CAAC,SAAS,EAAE,SAAS,UAAU,EAAE,GAAG,SAAS,UAAU,EAAE,CAMzF;AAED,wBAAgB,SAAS,CAAC,SAAS,EAAE,SAAS,UAAU,EAAE,EAAE,MAAM,EAAE,UAAU,GAAG,OAAO,CAEvF"}
