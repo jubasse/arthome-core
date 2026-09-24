@@ -2326,3 +2326,84 @@ member that answers nothing (D-044): *a value placed in a structure whose semant
 **`PayoutLine.grossTtc` is named as fixed and the breakdown as the explanation.** Under TTC the gross
 is constant and the net moves with the buyer's country, so a payout without per-jurisdiction lines is
 **incomplete rather than terse**: the artist sees a number that changed and no reason for it.
+
+### D-060 — Four emit findings, and the union that buys nothing
+
+**`backend-contracts` ran the first emit against real installed zod rather than predicting it. Three
+of four differences are semantic.**
+
+**1. `additionalProperties: false` on every object — refused on outputs.** `z.object()` emits a
+**closed** schema; the contracts never say that anywhere. On a **response**, a client generated from
+a closed schema **rejects a server that added a field** — the TV-fleet failure one level up from
+enums, on the shape instead of the member.
+
+**Ruling: `z.looseObject()` on output shapes, `z.object()` on input.** Same asymmetry the
+vocabularies already have, and it puts the rule in the source rather than in a post-processing step.
+
+*This sharpens critical rule 10 rather than contradicting it.* Rule 10 says strictness applies to
+the shape and never to the member; `backend-contracts` supplies the missing half — **strictness
+belongs to the shape's *required fields*, never to its *extensibility*.**
+
+**2. `vocabularyOut` emits a union that buys nothing, and `.meta()` is strictly better.** Measured,
+not argued:
+
+```
+z.union([z.enum(V), z.string()])  ->  anyOf: [ {type: string, enum: [...]}, {type: string} ]
+z.string().meta({'x-arthome-vocabulary': V})  ->  {type: string, x-arthome-vocabulary: [...]}
+
+union accepts "anything"?  true
+meta  accepts "anything"?  true
+```
+
+**They are validation-equivalent.** The second branch accepts everything, so the enum branch
+constrains nothing — forty lines that assert what `type: string` asserts. And a generator turns
+`"open" | "emoji" | string` into `string`, so the union loses the autocomplete it was written for in
+TypeScript too.
+
+`backend-contracts` proposed the emitter special-case it into the documented shape. **`.meta()` is
+better, because it needs no emitter logic at all** — it emits the documented shape directly, the key
+`check-vocabulary` already compares 119 blocks against. *Emitter logic is where the imitation risk
+lives; this removes it rather than justifying it.*
+
+**3. `z.int()` and `InstantSchema` lose their formats.** `z.int()` emits ±2⁵³−1 — JavaScript's safe
+range, not the contract's — and drops `format: int64`, which every generator reads. `InstantSchema`
+emits its regex as `pattern` where the documents carry `format: date-time`. **Fixed in the source
+with `.meta()`**, not in the emitter.
+
+**4. Structural, and mechanical.** Single-schema mode inlines everything; the two documents hold
+**1,458 `$ref`s**. Registry mode with a `uri` callback restores them. Every schema needs an `id`;
+`$schema` and `$id` are stripped.
+
+**AND THE FORMATTING WORRY I RAISED WAS MISPLACED, WHICH IS WORTH SAYING.** I told
+`backend-contracts` the documents were written as prose and the emitter would have to reproduce a
+hand-written style. Its answer retires the question: ***key order, block style and quoting are a
+normaliser — parse both sides to a tree and compare trees***, which is what `check-openapi.py`
+already does. **The empty-diff gate compares trees, not text.** The large part of the first diff is
+not the interesting part.
+
+### D-061 — The map is generated, because a hand-written map is a parallel table of the repository
+
+**The project owner's requirement**: every repository's `README.md` links to a complete map — what
+lives where, what each directory is for, the functions available — and **whatever is shared
+(contracts, helpers, utilities) must be documented in the repositories that consume it**, because a
+future agent working in `arthome-storefront-web` cannot guess what `@arthome/core` exports.
+
+**The requirement is right and the obvious implementation is the fault this project spent a week
+removing.** Documenting `@arthome/core`'s surface by hand in five application repositories is **five
+copies of one fact** — E2, on the artefact whose whole purpose is to stop E2. And it drifts in the
+worst direction: a map that is subtly wrong is more expensive than no map, because it is trusted.
+
+**So the map is generated and its freshness is gated.**
+
+- a tool reads the **installed** `@arthome/core` and `@arthome/contracts` — their published `.d.ts`,
+  which `isolatedDeclarations` already guarantees is complete — and emits the consuming repository's
+  map from the version actually installed there;
+- the map is **committed** so an agent reads it without running anything;
+- a gate **fails when the committed map does not match what regenerating would produce**, which is
+  `check-tsconfig`'s shape: read the *resolved* result, never the file that claims it.
+
+*A generated map is a projection with a checker. A written one is a claim with nobody behind it.*
+
+**On the LSP**: an agent with the published `.d.ts` and a working `tsc` already has the export list
+and go-to-definition, and `isolatedDeclarations` is why those declarations are readable rather than
+inferred. The LSP is worth revisiting once a map exists; it is not the cheap half.
