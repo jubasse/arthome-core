@@ -2138,3 +2138,48 @@ difference would show was cheaper than reasoning about TypeScript's resolution o
 **Construct the discriminating case rather than reason about the mechanism.** It is cheaper, it
 settles what argument cannot, and it is the one habit from this week to reach for first rather than
 last.
+
+### D-055 — The detector that does not survive this session
+
+**`conventions` stood down with three observations it had deliberately left out of the document.
+The third is the most important thing produced this week, and it is the one thing that does not
+transfer.**
+
+> ***The teammate disagreement was the only reliable detector. Four of my false answers were caught
+> because a result contradicted something a teammate had observed, not because I re-read my work.
+> On a solo project that signal does not exist.***
+
+Count the week against that claim and it holds. The directory theory fell because `backend-domain`
+read a glob. The `both members excluded` generalisation fell to arithmetic someone else ran. Six
+confounded fixtures were exposed because an answer disagreed with a colleague's report. `924` and
+`966` fell to two `git show`s by the agent whose file it was. **Almost nothing was caught by
+rereading, and nothing at all by care.**
+
+**This is a solo project.** Eleven agents were a scaffold for one session; the scaffold comes down
+and the detector goes with it. `code-conventions.md` §5.3.1 is an attempt to leave a substitute —
+and its author's own assessment is the honest one: *"I would not claim it fully does."*
+
+**What actually substitutes, on this week's evidence, is not a rule but a habit**: build the
+discriminating case instead of rereading, and run something short that can fail for the reason you
+care about. Those worked without a second party. Rereading did not.
+
+**THE SECOND OBSERVATION EXPLAINS WHY CARE WAS NEVER THE VARIABLE.** Of `conventions`' own defects —
+the file-level skip, the case-insensitive grouping, the ambient declaration, the backticks,
+`types: ["node"]`, six confounded fixtures — ***not one was a logic error.*** Every one was *"this
+instrument measures something adjacent to what I mean."* A logic error yields to attention. **A
+scope error is invisible from inside the instrument, which is why more care never reached any of
+them.**
+
+**AND THE FIRST IS AN ARGUMENT FOR WORKING UNDER CONSTRAINT.** Five of gate 18's eight checks need
+no annotation, **and not one was designed that way** — each came from being unable to build the
+version that needed data. Its own verdict: *"Given a cooperative contract I would have built the
+annotated-only version, and it would have found none of the three real divergences."*
+
+*The constraint produced the design. Comfort would have produced a gate that found nothing.*
+
+**A NOTE ON WHAT THIS LOG IS.** Fifty-five entries, and its author wrote several of them to correct
+himself. `conventions`' closing line is the right standard to judge it by:
+
+> *If it earns anything, it will be because almost every rule in it is a mistake with its evidence
+> attached rather than a principle — including the three I committed inside the sections warning
+> against them.*
