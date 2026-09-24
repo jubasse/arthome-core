@@ -292,7 +292,20 @@ export const DomainErrorCode = {
  *     it while rendering a page, which is a better argument for publishing than
  *     the one first given.
  *
- *   ⚠ AND THE QUESTION UNDERNEATH IS NOT SETTLED, because no service exists yet:
+ *   ⚠ THE QUESTION UNDERNEATH IS SETTLED, AND THE ANSWER IS "AS YOU GO" (D-069).
+ *     The project owner ruled that the boundary depends on the case and moves
+ *     with the code: the population of rules is small, the codes will shift
+ *     during implementation anyway, and the rules that need naming cluster in
+ *     the studio. So this split is a STARTING POSITION the first service may
+ *     move, not a decision awaiting ratification.
+ *
+ *     ⚠ ONE STANDING EXCEPTION: `identity.*` STAYS VAGUE ON PURPOSE. An
+ *       authentication refusal that says which check failed is an oracle, and
+ *       answers a question the caller was not entitled to ask. It is the one
+ *       family where "be more specific" is the wrong instinct.
+ *
+ *   ⚠ THE OLD PHRASING OF THE QUESTION, kept because it is still the right one
+ *     to ask of any individual code:
  *     WHERE IS THE VALIDATION BOUNDARY? A badly filled form field either stops
  *     at the door as `api.schema_invalid` or reaches the rule. Until a BFF is
  *     written, every line of this split rests on the first answer.

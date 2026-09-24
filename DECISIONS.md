@@ -2970,3 +2970,36 @@ against a saving of two seconds.*
 **Ruling: no LSP. `code-conventions.md` gains the fast loop instead** — `typecheck` while writing,
 `check:emit-diff` when a schema is meant to be finished, `verify` before handing back. Revisit only
 if a measurement changes, and record the measurement rather than the impression.
+
+### D-069 — The validation boundary is decided during implementation, and authentication is the exception
+
+**D-067 left a question open and flagged it as blocking: where does validation stop?** A badly
+filled field either dies at the door as `api.schema_invalid` or reaches a rule that refuses it by
+name. The whole published/guard split of the error codes rests on the answer, and no service exists
+to have made it.
+
+**The project owner's ruling: it depends on the case, and it is settled as the code is written.**
+Three reasons, and the second is the one that makes deferring safe rather than lazy.
+
+1. **Arthome does not have fifty thousand business rules.** The population is small enough that
+   classifying it wholesale, in advance, would be inventing a taxonomy for cases nobody has met.
+2. **The codes will move during implementation anyway.** A classification made now would be
+   re-litigated by the first service that disagrees with it — so the honest artefact is one that
+   expects to move, not one that pretends to be final.
+3. **Where rules actually live is the studio**, not the storefront. A viewer browses and buys; a
+   control room decides. The refusals that need naming cluster on one side.
+
+**THE ONE STANDING EXCEPTION: AUTHENTICATION STAYS DELIBERATELY VAGUE.** Its codes do not explain
+themselves, and that is a security property rather than an omission — a refusal that says *which*
+check failed is an oracle, and answers a question the caller was not entitled to ask. So
+`identity.*` is the one family where a generic code is the correct one, and where "be more
+specific" is the wrong instinct.
+
+**What this changes in practice.** The 15/10 split in `error-codes.ts` stops being a decision
+awaiting ratification and becomes **a starting position that the first service may move**. The
+instrument that makes that safe already exists and needs nobody to remember it: `check-vocabulary`
+runs the inverse check, so a member declared domain-only that reaches a contract fails on the day it
+does.
+
+> ***A classification nobody can verify yet is better held as a default with a detector behind it
+> than as a decision with a signature under it.***
