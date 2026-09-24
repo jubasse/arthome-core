@@ -1183,3 +1183,53 @@ that will happen; under the split it moves an item between vocabularies, which i
 for anyone matching on either, while under one vocabulary it flips a boolean. And a client rendering
 the checklist wants all nine with their status — two lists force it to concatenate, which is a value
 composed twice on every surface. Core moves.
+
+### D-039 — A coded field names its own vocabulary, and how a family is decided
+
+**1. `reasonCode` was five fields over four unrelated vocabularies, and the breadth chose the fix.**
+
+I had asked for one of two things: either the names differ, or the contract says in both places that
+they are unrelated. `backend-contracts` went looking and found the question was wider than the two
+blocks I had:
+
+| where | vocabulary |
+|---|---|
+| storefront `WatchVerdict.reasonCode` | ten refusal codes |
+| storefront `DateCard.rights.reasonCode` | `co_production` `broadcaster` `festival` |
+| storefront `cancelSeat` request | `viewer_request` |
+| storefront `CartQuote.discount.reasonCode` | **bare string, open** |
+| storefront `SeatQuote` line | **bare string, open** |
+| studio `rights.reasonCode` | `co_production` `broadcaster` `festival` |
+| studio `refund` request | `goodwill` `date_cancelled` `duplicate` `dispute` |
+
+**At that spread the second option stops being a fix**: it is seven notes saying the same thing, and
+the eighth field added next month will not have one. Two of the seven were not even closed
+vocabularies — open strings carrying `plan_pass` and `plan_shop_discount`.
+
+**So every coded field names its own vocabulary**: `denialCode`, `blackoutReasonCode`,
+`refundReasonCode`, `cancelReasonCode`, `discountReasonCode`.
+
+**And the part that makes this a convention rather than a rename**: `failureCode`, `originCode` and
+`emptyReason` were already doing it. **The generic name was the exception, not the rule** — written
+seven times by an author who had followed the rule everywhere else without noticing they had one.
+
+*A convention you can violate seven times without noticing is a convention nobody has written down.*
+
+**The one bare `reasonCode` left is inside `error.params`, and it is not an exception.** `params` is
+a bag whose keys are defined **per error `code`**, so the code carrying it is the disambiguator —
+**stated rather than inferred**, which is the distinction the whole item turns on.
+
+**2. How a vocabulary's family is decided, because D-036 sharpened this rather than settling it.**
+
+`backend-contracts` was right that D-036 did not classify `WATCH_DENIAL_REASONS`: it says refusal
+codes are `SCREAMING_SNAKE` and domain reasons are `snake_case`, but *one vocabulary spelled both
+ways* is precisely the case where the families do not tell you which one applies. Either core's list
+is misfiled as a domain vocabulary, or the wire should carry it in snake.
+
+**The test is D-036's own, applied to the concept rather than to the spelling**: does a member answer
+*why something was refused*, or does it state a *domain fact*? `no_seat`, `room_not_open`,
+`subscription_required` are refusals — they exist only inside a verdict that says no. `goodwill`,
+`duplicate`, `dispute` are facts about a refund that exist whether or not anything was refused.
+
+So `WATCH_DENIAL_REASONS` is the refusal family, core moves up, and D-038's ruling stands on a
+reason rather than on an assertion.
