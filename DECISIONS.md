@@ -1233,3 +1233,66 @@ is misfiled as a domain vocabulary, or the wire should carry it in snake.
 
 So `WATCH_DENIAL_REASONS` is the refusal family, core moves up, and D-038's ruling stands on a
 reason rather than on an assertion.
+
+### D-040 — The non-public states keep falling out, and acting ahead of a document was right
+
+**1. `backend-domain` asks whether moving core ahead of §5.2 was wrong. It was right, and the order
+is the point.**
+
+§5.2 prescribes lowercase `snake_case`, so core was arguably conformant and the wire was not. It
+moved core anyway, because **D-036 had already created the refusal-code family** — §5.2 simply had
+not been updated yet, and `conventions` was asked for the row on the same day.
+
+*A decision precedes the document that records it.* Waiting for §5.2 would have left ten values
+comparing false in silence in order to respect a sentence already superseded — which is the
+`data-model.md` §0 fault inverted: not a document saying what the code does not do, but code waiting
+for a document to catch up.
+
+What makes it safe rather than reckless is what it did next: **it wrote the reasoning into the
+module, so nobody silently "corrects" it back**, and it flagged the missing row rather than assuming
+someone would notice. Act on the decision, then make the document catch up, and leave a trace where
+the next reader will stand.
+
+**2. THE PATTERN, AND IT IS A BLIND SPOT RATHER THAN THREE ACCIDENTS.**
+
+Two core vocabularies carry `draft`, `reserve`, `technical` — `PUBLICATION_STATES` and
+`DISPLAY_STATES`. Both wire counterparts had lost them, and `WATCH_DENIAL_REASONS`' `NOT_PUBLISHED`
+— the value returned **for** exactly those three states — is also missing from the wire.
+
+So it is one blind spot expressed three times, not three incidents: **the three non-public states
+are invisible to whoever authored the wire vocabularies, because they are invisible to a viewer.**
+The author was picturing what a spectator sees, and a date in `draft` is not something a spectator
+sees. But the **studio** sees it, the domain returns it, and a contract that cannot express what the
+domain returns is the `displayState` defect wherever it appears.
+
+**The remedy is a gate, not vigilance.** Every member of a domain vocabulary must be expressible
+somewhere in the contracts, or carry a named exemption saying why it is domain-only. That is the
+inverse of what `check-vocabulary` does today — it compares annotated blocks against core; nothing
+asks whether core has members the wire can never carry. *A vocabulary's members are checked in one
+direction only, which is why the gap ran three deep before anyone saw it.*
+
+**3. `fallbackAction` is not a vocabulary merge, it violates a written requirement.**
+
+`adr-stream-entitlement.md` §3.3 requires that a `CONCURRENT_LIMIT_REACHED` refusal be served **with
+the list of active sessions**, because a bare refusal *"would leave the viewer with no way out,
+which the file's principle no. 8 forbids"*. The contract carries the refusal and has no action
+expressing its remedy.
+
+So the pairing rule of D-038 — every denial reason gets an action, every action answers a reason —
+is not a tidiness principle I invented. **An independent document had already required it for the
+hardest case**, and the divergence is a contract failing an ADR rather than two lists disagreeing.
+
+**4. A fourth form of the same fault, and it is the subtlest so far.**
+
+`backend-domain` reported "separator divergence 0" while its check compared **only separators**.
+Case-divergent values fell into a bucket its script labelled *"absent from the wire"*, which it read
+as *"domain-only, not yet published"*. Ten of them were in a list it printed and read.
+
+Its own words: ***asserting against my own tool's output without re-reading what the tool
+measured.*** Not a transcription, not the wrong text — a correct measurement of the wrong quantity,
+whose label invited the wrong reading.
+
+That is D-032's fifth instance with a different surface: I reported "1015 lines in HEAD", true and
+measured and invariant under the defect it was ruling out. **The short thing has to be able to fail
+for the reason you care about** — and a bucket named for what it contains, rather than for what put
+things in it, will be read as the first and used as the second.
