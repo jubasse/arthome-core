@@ -10,12 +10,13 @@
 
 ```
 repo      ~/Dev/arthome/arthome-core   (public: github.com/jubasse/arthome-core)
-HEAD      8f1d805 · 124 commits · working tree clean · NOT PUSHED (7 ahead)
-verify    pnpm run verify → exit 0   (9 gates, typecheck, 339 tests)
-vocab     121 of 234 blocks compared, 0 disagree, 0 undeclared, 113 exempt
-emit      pnpm run check:emit-diff → RED BY DESIGN. 14 sourced, 14 disagree.
-          Deliberately out of `verify` until it is green — D-065.
-log       DECISIONS.md — 68 arbitrations
+HEAD      fc57b17 · 131 commits · working tree clean · PUSHED
+verify    pnpm run verify → exit 0   (9 gates, typecheck, 342 tests)
+vocab     124 of 236 blocks compared, 0 disagree, 0 undeclared, 112 exempt
+emit      pnpm run check:emit-diff → 3 disagreements, down from 14. Still RED
+          by design and still out of `verify` — D-065.
+map       pnpm run check:map → exit 0. REPOSITORY_MAP.md, 433 names, 6 subpaths.
+log       DECISIONS.md — 69 arbitrations
 ```
 
 **The foundation is built.** `@arthome/core` (domain, two entry points, `./schema` added this
@@ -36,8 +37,12 @@ scoping READMEs only.
   `pnpm run check:emit-diff`. It compares **trees, not text**, indexes **by the document**, and
   grants six equivalences it prints on every run. It is **red and out of `verify` on purpose**: a
   gate wired in red is a gate switched off within a day (D-065)
-- **what it found is the work**: 14 sourced schemas, 14 disagreements, nine families, ruled in
-  D-065. Two are fixed (§H the strict locale, and the misdeclared narrowing). Seven are open
+- **what it found was the work, and most of it is done**: 14 disagreements → 3. Families A, C, D,
+  E and G are closed; F is half-closed (the misnamed schema is renamed, the envelope itself waits on
+  `$ref`); B is closed by deriving the source name from the export identifier
+- **the three that remain are structural, not cosmetic**. `BuyerTaxLocation.evidence.items` needs
+  `$ref` emission, i.e. registry mode. `Error` twice — its prose legitimately differs per product,
+  so it needs `StorefrontErrorSchema` / `StudioErrorSchema` extending core's base
 - `additionalProperties: true` is **not** granted as an equivalence — `backend-contracts` refused it
   and the refusal is right: `true` is a value a human types, so granting it hides a schema somebody
   opened by hand to silence a diff. It will fail on `WatchVerdict.reasonParams` until the document
@@ -49,10 +54,19 @@ scoping READMEs only.
   register is **silently inlined** and the emitted document stays valid. That is the failure to
   watch for — `architecture/handover/backend-contracts.md` has the exact call
 
-**Open and unassigned**: the repository map (D-061) — generated from installed packages'
-declarations, committed, freshness-gated. `conventions` settled its three design questions and did
-not implement it; **`architecture/handover/conventions.md` §1 is now the only place that design
-exists**, including which of the three answers its author trusted least.
+**THE ONE DECISION WAITING ON THE PROJECT OWNER: D-067 is settled in principle and half applied.**
+One format for every served code, because a served code IS its own translation key. 15 of ~49 codes
+converted, then the remaining 34 turned out to be the real finding: **33 were published in a
+contract and declared in no constant anywhere**, living only inside response examples where no gate
+looks. Now declared in eleven families, with the contracts publishing what they can return. What is
+NOT settled: the 15/10 split between published refusals and internal guards was the lead's
+judgement, and the two members it is least sure of are named in
+`packages/core/src/vocabulary/error-codes.ts`.
+
+**The repository map (D-061) is BUILT** — `REPOSITORY_MAP.md`, generated from the installed `.d.ts`
+resolved through each package's `exports`, with `check:map` comparing structure and exiting 3 when it
+did not run. It is not in `verify` yet. Its own two-way coverage check fired on real data within
+minutes of landing, on a purpose entry for a directory that had been removed.
 
 ---
 
