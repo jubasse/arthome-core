@@ -259,6 +259,7 @@ context.
 |---|---|---|
 | classic `zod` | 93 KB gzip | 92 KB gzip |
 | `zod/mini` tree-shaken | 7.5 KB | 7.7 KB |
+| **`zod/mini`, tree shaking OFF** | **85 KB** | not measured |
 
 **The cause, identified by `storefront-mobile`**: the classic entry point makes **64 translation
 files** of error messages reachable (341 KB of source), entirely dead weight for a project using
@@ -275,6 +276,23 @@ reopened.
 real application bundle, and the `zod/mini` gain is **conditional on tree shaking that the React
 Native bundler does not enable by default**. To be re-verified on a real bundle at the mobile stage.
 The two measurements agreeing to within 1 KB makes the order of magnitude safe.
+
+**The third row was added on 24 September 2026, and it is the row that makes the reservation
+legible.** The reservation above has always said the gain is *conditional*; it never said what the
+conditional case costs. **85 KB — the classic entry's level, so the saving is not smaller, it is
+zero.** That number was measured the same day as the other two and recorded in
+`needs/storefront-mobile.md`, and it reached neither this table nor any of the four places that
+quote this table: `packages/contracts/package.json`, `packages/contracts/README.md`,
+`tools/check-core-entry.mjs`, `code-conventions.md` §5.5. All four carry the word *conditional* or
+the Metro caveat, and a reader of any of them would price the risk as a reduced saving rather than
+as no saving at all.
+
+> ***"Conditional" is not a number, and the four documents that repeated it were repeating the
+> hedge rather than the measurement.***
+
+*Surfaced because `storefront-mobile`'s handover note restated the caveat on its last turn, and the
+lead first mistook the restatement for a correction — D-012 said it already. Checking that
+accusation is what found the row that was genuinely missing.*
 
 ### D-013 — Common development conventions, and the tooling that holds them
 
