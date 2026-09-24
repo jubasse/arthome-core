@@ -1094,3 +1094,37 @@ names. What matters is not the enum member, which rule 10 makes additive and saf
 constraints it carries — an automatic moderator takes no lease, precedence is one-way, and the
 origin survives settlement so *"removed by the filter, confirmed by X"* does not collapse into
 *"removed by X"*.
+
+### D-037 — `DATE_CANCELLED` / `date_cancelled` is not a twin, and the twins check must learn the families
+
+**The gate is red on a false positive**, which is the one state a gate must not stay in for long:
+*a gate that shouts wrongly gets disabled.*
+
+It flags the same value spelled two ways across the contracts. Read as data, the two blocks are not
+the same vocabulary:
+
+| block | members |
+|---|---|
+| `WatchVerdict.reasonCode` (storefront) | `NO_SEAT` `ROOM_NOT_OPEN` `OUT_OF_TERRITORY` `SUBSCRIPTION_REQUIRED` `NO_REPLAY` `REPLAY_EXPIRED` `REPLAY_NOT_ON_SALE` `PREVIEW_EXHAUSTED` `CONCURRENT_LIMIT_REACHED` `DATE_CANCELLED` |
+| refund `reasonCode` (studio) | `goodwill` `date_cancelled` `duplicate` `dispute` |
+
+One answers **why a viewer is refused playback** — a refusal code, and `SCREAMING_SNAKE` is the
+family D-036 named. The other answers **why a refund is being issued** — a domain reason, and
+`snake_case` is its family. *The same fact appears in two vocabularies, spelled correctly in each.*
+
+**So the twins check is comparing across families, and it must compare within one.** Two values are
+twins when they differ only by separator or case **and belong to vocabularies of the same family** —
+never otherwise. A check that flattens case cannot tell a family from a typo.
+
+This is not a retreat from the twins check, which found three real defects. It is the same
+correction this gate has taken twice already: **judging a value by its shape without asking what it
+belongs to.**
+
+**And it surfaced a question nobody had asked, which is worth more than the false positive.** The
+two blocks share the field name **`reasonCode`** while carrying unrelated vocabularies. Different
+schemas, so nothing collides on the wire — but a generated client may well produce one `ReasonCode`
+type from both, and a human reading the two contracts will assume one vocabulary and be wrong.
+
+That is the `displayState` shape and the `la surface` shape a third time: **one name, two meanings,
+disambiguated only by where you are standing.** It is a question for `backend-contracts`, not a
+ruling: either the two names differ, or the contract says in both places that they are unrelated.
