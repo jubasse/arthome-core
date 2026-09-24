@@ -1671,3 +1671,80 @@ And 38 exemptions were written with **four family reasons rather than thirty-eig
 media capability, sort and filter keys, external provider vocabularies, presentation choices. *A
 family reason is stronger than a per-block one because it says what the whole class has in common* —
 and it is the difference between an exemption list and thirty-eight separate excuses.
+
+### D-047 — The chain nobody runs, and three agents reporting a gate red that was already green
+
+**Nine gates pass. `check-vocabulary` compares 113 of 234 blocks with zero disagreements, the
+inverse check is at zero, and `typecheck` passes for the first time — because it had never passed.**
+
+**1. `verify` HAD A STEP NOBODY HAS EVER RUN.**
+
+The root `tsconfig.json` declared `types: ["node"]` against an `@types/node` that was never
+installed, so `pnpm run typecheck` had been failing with TS2688 **since the day it was written**.
+
+It was invisible for a reason that is the week's lesson in its most consequential form:
+**`verify:offline` is the chain everyone actually runs, and it does not include `typecheck`.** The
+subset did not announce itself as a subset, so it was quoted as the whole.
+
+> ***A broken step in a chain nobody runs is indistinguishable from one that works.***
+
+And it was wrong on the merits as well as broken: the root project includes `packages/*/src`, so
+pulling Node's globals into the program that checks `@arthome/core` would have let a platform API in
+**with nothing noticing** — in the package whose entire premise is that it has none.
+`verify:offline` now prints what it did not run.
+
+**2. A NEAR-MISS I HAVE COMMITTED TWICE MYSELF.** `conventions`' first version of that notice put
+`` `pnpm run verify` `` in backticks inside a double-quoted shell string — **command substitution,
+`verify` invoking itself.** It never fired only because the chain failed earlier.
+
+I did the same thing twice this week, in commit messages, and repaired both. Three instances across
+two agents of one shell fault, each caught by accident rather than by a rule. *The remedy is not
+attention: it is never to put prose in a double-quoted shell string.*
+
+**3. `watch_preview` CROSSED THE BOUNDARY THREE TIMES.**
+
+```
+round 1   contracts had it,  domain dropped it   -> contract only
+round 2   contracts dropped it, domain added it  -> domain only
+round 3   contracts added it,  domain dropped it -> contract only
+```
+
+**Each was answering the other's last *message* rather than the other's *code*** — and both had a
+correct argument for the position they were leaving. What broke it was both sides independently
+going back to `decideWatch` and asking a question that does not depend on whose message arrived
+last: ***does a function return it?***
+
+It does not. `entitlement/index.ts:233` returns `allowed: true, scope: PREVIEW, fallback: BUY_SEAT`
+on **both** the live and the replay path, so the replay gap was closed by the **field**, not by a
+fallback action. The original argument was right for a reason neither of them had at the time.
+
+**And the copy deleted two rounds earlier is what ended it.** `backend-contracts`: *"removing my
+eleven-row copy of their table cost me the ability to disagree, and losing it was correct — the copy
+I deleted is the copy that would have had me arguing this a fourth time."*
+
+**4. `PREVIEW_EXHAUSTED` SETTLED ON A PRINCIPLE, NOT A PREFERENCE.** `subscribe` genuinely is a way
+out of a spent preview — a plan granting `all_lives` opens the date — but `decideWatch` never
+returns it there.
+
+> **The table is the function's RANGE, not a menu of everything a screen might offer.**
+
+A table listing what the function cannot produce stops being checkable against the function, which
+is the entire reason the coupling was written as data.
+
+**5. I SPECIFIED A NAME WITHOUT CHECKING WHETHER ONE EXISTED.** I told `backend-domain` to declare
+`PLAYBACK_SCOPES`. It had already declared **`WATCH_SCOPES`** two rounds earlier, for the reason I
+gave, and the wire was already annotated against it. Renaming would have **broken a live annotation
+to gain a better name, turning the gate red on the rename rather than on a defect.** It refused, and
+was right.
+
+`PlaybackTicket.scope` carrying `[full, preview]` is a **narrowing** of that same vocabulary rather
+than a second one — a ticket is only issued for a granted verdict, so `none` is unreachable there.
+The D-042 shape, correct for the same reason.
+
+**6. AND THREE AGENTS REPORTED A GATE RED THAT WAS ALREADY GREEN.** `backend-contracts` reported 20
+literals, I reported 6, `backend-domain` had already fixed the table and declared the vocabulary
+before either message was written. **All three reports were true when measured.**
+
+*The staleness hazard is no longer a hazard, it is the working condition.* It is why the only
+reports worth acting on are the ones that name what they measured and when — and why both agents
+converged, in the end, not by exchanging conclusions but by going back to the same function.
