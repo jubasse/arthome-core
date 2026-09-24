@@ -21,7 +21,7 @@
 export { CountryCodeSchema, CurrencyCodeSchema, IanaTimeZoneSchema, InstantSchema, LocaleSchema, PageCursorSchema, SlugSchema, } from './primitives.js';
 export { BasisPointsSchema, MoneySchema } from './money.js';
 export { VenueClockSchema } from './time.js';
-export { vocabularyIn, vocabularyOut } from './vocabulary.js';
+export { vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
 export { AccountIdSchema, ArtistIdSchema, ChannelIdSchema, DateIdSchema, DeviceIdSchema, OrderIdSchema, PersonIdSchema, ProfileIdSchema, PublicHandleSchema, SeatIdSchema, ShowIdSchema, VenueIdSchema, } from './identifiers.js';
 export { BuyerTaxLocationSchema, TaxEvidenceKindIn, TaxEvidenceKindOut, TaxEvidenceSchema, TaxJurisdictionLevelIn, TaxJurisdictionLevelOut, TaxSupplyKindIn, TaxSupplyKindOut, VatLineSchema, } from './tax.js';
 export { ErrorEnvelopeSchema, FailureNatureOut, issueToCode } from './error.js';
