@@ -25,7 +25,7 @@
 
 import { z } from 'zod';
 
-import { ModerationBadge, NOTIFICATION_CHANNELS } from '@arthome/core';
+import { MODERATION_BADGES, NOTIFICATION_CHANNELS } from '@arthome/core';
 import { type VocabularyOut, int64, vocabularyOut, vocabularyOutLocal } from '@arthome/core/schema';
 
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
@@ -44,21 +44,6 @@ const CACHE_TAGS = [
   'account:payment-methods',
   'home:rails',
 ] as const;
-
-// The document lists the badges from least to most severe; core's
-// `MODERATION_BADGES` lists them in precedence order, most severe first. Same
-// four members, the document's order (D-058), named after their real source.
-const MODERATION_BADGES_AS_DOCUMENTED: readonly [
-  typeof ModerationBadge.PUBLISHED,
-  typeof ModerationBadge.REMOVED,
-  typeof ModerationBadge.MUTED,
-  typeof ModerationBadge.BANNED,
-] = [
-  ModerationBadge.PUBLISHED,
-  ModerationBadge.REMOVED,
-  ModerationBadge.MUTED,
-  ModerationBadge.BANNED,
-];
 
 const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
 
@@ -162,7 +147,7 @@ export const ChatMessageSchema: z.ZodObject<
   sentAt: instant().describe(
     'The absolute instant, **in addition**. Both are carried, never one alone.',
   ),
-  badge: vocabularyOut(MODERATION_BADGES_AS_DOCUMENTED, 'MODERATION_BADGES').describe(
+  badge: vocabularyOut(MODERATION_BADGES).describe(
     'The single badge, **derived** by `moderationBadgeOf` and **served**, never recomposed.\nPrecedence: banned > silenced > removed > published. Three separate axes on the model side —\nmessage state, nature of the queue line, sanction on the person — never stacked.\n',
   ),
   body: StorefrontLocalizedTextSchema,

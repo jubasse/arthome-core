@@ -384,7 +384,7 @@ Declarations: `dist/index.d.ts` — 377 exported names.
 - `SEASON_START_MONTH` (const) — `SEASON_START_MONTH = 9` — The changeover month, in human numbering: 9 = September.
 - `SEAT_CODE_ALPHABET` (const) — `SEAT_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"` — The alphabet: Crockford base 32 — the ten digits, and the letters EXCEPT 'I', 'L', 'O' and 'U'.
 - `SEAT_CODE_BODY_LENGTH` (const) — `SEAT_CODE_BODY_LENGTH = 6`
-- `STATE_CHANGE_ORIGINS` (const) — `STATE_CHANGE_ORIGINS: readonly ["human_verdict", "retroactive_filter", "automatic_filter", "author_sanctioned"]` — Where a state change came from — and the origin SURVIVES the settlement.
+- `STATE_CHANGE_ORIGINS` (const) — `STATE_CHANGE_ORIGINS: readonly ["human_verdict", "automatic_filter", "retroactive_filter", "author_sanctioned"]` — Where a state change came from — and the origin SURVIVES the settlement.
 - `SUBSCRIPTION_STATES` (const) — `SUBSCRIPTION_STATES: readonly ["active", "past_due", "cancelled", "trialing"]`
 - `SURFACES` (const) — `SURFACES: readonly ["storefront_web", "storefront_mobile", "storefront_tv", "studio_web", "studio_mobile", "system"]` — The studio journal is by-name AND situated: "who decided, when, from which surface".
 - `SearchCriteria` (interface)

@@ -3897,7 +3897,7 @@ paths:
                             badge:
                               type: string
                               description: "**Derived** by `moderationBadgeOf` and served. Precedence: banned > silenced > removed > published."
-                              x-arthome-vocabulary: [published, removed, muted, banned]
+                              x-arthome-vocabulary: [banned, muted, removed, published]
                               x-arthome-vocabulary-source: MODERATION_BADGES
                             body: { $ref: "#/components/schemas/LocalizedText" }
                       page: { $ref: "#/components/schemas/CursorPageInfo" }

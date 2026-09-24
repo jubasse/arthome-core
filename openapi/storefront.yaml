@@ -7071,7 +7071,7 @@ components:
             The single badge, **derived** by `moderationBadgeOf` and **served**, never recomposed.
             Precedence: banned > silenced > removed > published. Three separate axes on the model side —
             message state, nature of the queue line, sanction on the person — never stacked.
-          x-arthome-vocabulary: [published, removed, muted, banned]
+          x-arthome-vocabulary: [banned, muted, removed, published]
           x-arthome-vocabulary-source: MODERATION_BADGES
         body: { $ref: '#/components/schemas/LocalizedText' }
 

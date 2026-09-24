@@ -92,19 +92,35 @@ export const ModerationReason = {
  *
  * `automatic-filter` (at ingestion) and `retroactive-filter` (reclassifying
  * what already exists) are TWO MOMENTS, not two names.
+ *
+ * ⚠ AND THE ORDER IS THOSE TWO MOMENTS, IN ORDER — which this list had backwards.
+ *
+ *   Ingestion comes before reclassification, so `automatic_filter` precedes
+ *   `retroactive_filter`. Both contracts had it that way; this list did not, and
+ *   a worker writing the schema had to restate the members in a different
+ *   sequence from the constant it named as their source.
+ *
+ *   ⚠ TWO GATES DISAGREED ABOUT WHETHER ORDER MATTERS AT ALL, which is why
+ *     nothing had ever reported it. `check-vocabulary` compares MEMBER SETS, so
+ *     it read these as agreeing and always had. The emit gate compares LISTS,
+ *     because a JSON Schema `enum` is an array. One artefact, two instruments,
+ *     two answers — and the second only started asking when a schema existed.
+ *
+ *   The sentence above settles it on the merits rather than by precedence of
+ *   artefact: the order is chronological because the two members are moments.
  */
 export const STATE_CHANGE_ORIGINS = [
   'human_verdict',
-  'retroactive_filter',
   'automatic_filter',
+  'retroactive_filter',
   'author_sanctioned',
 ] as const;
 export type StateChangeOrigin = (typeof STATE_CHANGE_ORIGINS)[number];
 
 export const StateChangeOrigin = {
   HUMAN_VERDICT: 'human_verdict',
-  RETROACTIVE_FILTER: 'retroactive_filter',
   AUTOMATIC_FILTER: 'automatic_filter',
+  RETROACTIVE_FILTER: 'retroactive_filter',
   AUTHOR_SANCTIONED: 'author_sanctioned',
 } as const;
 

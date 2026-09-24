@@ -28,6 +28,23 @@ import { AudienceSanction, MessageState, ModerationItemState, StateChangeOrigin 
  *
  * It runs from the person towards the message: a sanction on the PERSON covers
  * all their messages, whereas a removal bears on one message only.
+ *
+ * ⚠ AND THE CONTRACTS LIST IT BACKWARDS, WHICH IS NOW FIXED IN THE CONTRACTS.
+ *
+ *   Both documents carried `published, removed, muted, banned` — this list
+ *   reversed. `check-vocabulary` compares MEMBER SETS and reported them as
+ *   agreeing, always had; the emit gate compares LISTS, because a JSON Schema
+ *   `enum` is an array, so it saw the difference the moment a schema existed.
+ *
+ *   The lead resolved that by reordering THIS list to match the documents,
+ *   having grepped a window that stopped six lines short of the precedence
+ *   above and concluded the order meant nothing. It means the difference between
+ *   a banned person's message showing `banned` and showing `removed`. Reverted;
+ *   the documents were changed instead.
+ *
+ *   *The rule was written once, in the place it belongs, and a reader with too
+ *   narrow a window still managed to miss it. The window was the defect, not
+ *   the documentation.*
  */
 export declare const MODERATION_BADGES: readonly ["banned", "muted", "removed", "published"];
 export type ModerationBadge = (typeof MODERATION_BADGES)[number];
