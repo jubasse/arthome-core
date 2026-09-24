@@ -1869,3 +1869,71 @@ allowed to run the formatter twice, because that is what a non-commuting pair co
 *A gate that fixes cannot fail honestly: it either reports a defect it has already removed, or fails
 on a tree that was correct before it touched it.* `backend-domain` is right that the second is a red
 gate on no defect, which is the thing this week has been spent removing.
+
+### D-050 — Measured before fixing, and the gate that names its own blind spot
+
+**234 blocks, 6 undeclared. Eight gates, `verify:offline` green. The vocabulary migration is
+effectively complete.**
+
+**1. `check-enums` STOPPED GUESSING, AND THE MEASUREMENT CAME FIRST.** `conventions` did not take my
+word that misattribution mattered — it counted: **25 of 179 values are declared by more than one
+vocabulary, and `'none'` by five.** So naming the first declarer was not an edge case, it was the
+common case for any literal the gate catches.
+
+It now lists **every** declarer and says it cannot tell which was meant. The reason is in the code:
+*a wrong reason attached to a correct verdict is worse than no reason, because it teaches people to
+obey the verdict and skip the reasoning.*
+
+**2. THE NARROWING PREDICATE CORRECTED THE ASYMMETRY THAT COMMISSIONED IT.**
+
+`conventions`' input/output rule said *only outputs require equality*. The predicate's seventh hit
+is an **output**: `PlaybackTicket.scope` omits `none` from `WATCH_SCOPES`, because **a ticket that
+grants nothing is never issued**. A real rule, on the safe side of its own asymmetry.
+
+So the rule gains its qualifier: **equality holds for a block that *mirrors* a vocabulary; a block
+that *restricts* one declares the narrowing and is checked as a subset.** Without it the rule would
+have been right about six inputs and wrong about the first output it met.
+
+**And the predicate gets quieter as the migration progresses** — stripping annotations from a
+fixture produced 23 hits including the legitimate nestings; on the real documents annotation
+suppresses all of them. `conventions` declined to hardcode the nesting pairs, correctly: *a list of
+those would itself be a parallel table.*
+
+**3. `backend-domain` PROVED THE FIX INSTEAD OF SHIPPING THE ARGUMENT.** It added a tenth member to
+the checklist union and ran `tsc`:
+
+```
+TS2741: Property 'tenth_item_probe' is missing in type '{ … }'
+```
+
+then reverted. Its reason: *"After this week I didn't want to ship it on the strength of the
+argument alone."* And it ran `backend-contracts`' hand-scan itself rather than relay it: **10
+declaring files the gate has never swept, 0 remaining literals** — a number that **bounds the blind
+spot** its own finding opened, which is the part a report usually leaves out.
+
+**Its diagnosis of the drift direction connects two findings a week apart**: a tenth item would have
+been non-blocking by default, because `includes` on a list that never heard of it returns `false`.
+The same shape as `helpers.planOf()` dropping every account to `free` — ***a default arriving by
+omission rather than by decision.***
+
+**4. AND `check-core-entry` NOW NAMES ITS OWN BLIND SPOT, IN ITS VERDICT LINE.**
+
+```
+✓ no import path from the "." entry point reaches zod or a Node API
+  (scope: the import graph only — ambient types and tsconfig `types` are not walked)
+```
+
+*The verdict says what was walked, not what is true of the package.* That is D-041 implemented
+rather than recorded — and it is there because `types: ["node"]` would have put a Node global in
+scope throughout `@arthome/core` while this gate stayed green, since **a global is not an import**.
+
+> ***A gate's guarantee is only as wide as its mechanism, and a gate that does not say where its
+> mechanism stops will be read as covering the whole of what its name suggests.***
+
+**5. ONE UNPLANNED OBSERVATION, WORTH MORE THAN THE GATE.** Five of gate 18's eight checks need **no
+annotation** — and `conventions` notes that this was not foresight: *"the annotation-free
+formulation usually exists, but it tends to be found by being forced to look."*
+
+Each time the gate had to grow, the cheap version was reachable only because waiting for data was
+not an option. **The constraint produced the better design**, which is an argument for building
+under one rather than before one.

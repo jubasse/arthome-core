@@ -4,6 +4,24 @@
 // WHAT IT GUARANTEES
 //   @arthome/core's `.` entry point imports zod AT NO DEPTH.
 //
+// WHAT IT DOES NOT COVER, STATED BECAUSE THE NAME IMPLIES MORE THAN THE
+// MECHANISM DELIVERS
+//   It walks the IMPORT GRAPH. A dependency that arrives any other way is
+//   invisible to it, and one such route was live in this repository: the root
+//   tsconfig carried `types: ["node"]` against an @types/node that was never
+//   installed, and that project includes `packages/*/src`. Had it resolved, a
+//   Node global would have been in scope throughout @arthome/core — and this
+//   gate would have stayed green, because A GLOBAL IS NOT AN IMPORT.
+//
+//   So: ambient types, `types` and `typeRoots`, triple-slash directives and
+//   globals injected by a tsconfig are all OUT OF SCOPE here. They belong to
+//   whoever owns the tsconfig, and the thing that catches them is `types: []`
+//   on the shared base rather than this tool.
+//
+//   A gate's guarantee is only as wide as its mechanism, and a gate that does
+//   not say where its mechanism stops will be read as covering the whole of
+//   what its name suggests.
+//
 // WHY THIS IS A GATE AND NOT A CONVENTION
 //   zod's cost is FIXED and tied to the import, not marginal and tied to the
 //   number of schemas: two agents measured it independently and converge to
@@ -147,7 +165,15 @@ function main() {
     console.log('arthome-check-core-entry: "./schema" entry point not written yet (wave 6)');
   }
 
-  if (!QUIET) console.log('✓ the "." entry point reaches neither zod nor a Node API');
+  if (!QUIET) {
+    // The verdict says what was WALKED, not what is true of the package. A
+    // global injected by a tsconfig never appears in an import graph, so this
+    // line would read the same with one in scope — see the header.
+    console.log('✓ no import path from the "." entry point reaches zod or a Node API');
+    console.log(
+      '  (scope: the import graph only — ambient types and tsconfig `types` are not walked)',
+    );
+  }
 }
 
 main();
