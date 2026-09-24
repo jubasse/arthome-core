@@ -96,6 +96,16 @@
         "file": "DECISIONS.md",
         "quote": "modération automatique à terme aussi",
         "reason": "D-036. The project owner's own words, and the whole basis for treating automatic moderation as a STATED direction rather than an invented one — which is what distinguishes `automatic_filter` from a D-022 violation. A ruling that rests on what someone said must quote them, not summarise them. Wraps across two lines, so two entries."
+      },
+      {
+        "file": "architecture/handover/translator-docs.md",
+        "quote": "- **`Router est un travail d'infrastructure`** → \"Routing is infrastructure work.\" `Router` is the",
+        "reason": "The translator's own handover, recording a judgement call a later reader could undo without knowing it was one: `Router` is both the French infinitive and a component name, and only the source sentence shows the ambiguity that was resolved. Translate the quotation and the note documents nothing — the English it produces is the very thing under discussion."
+      },
+      {
+        "file": "architecture/handover/translator-docs.md",
+        "quote": "- **`On porte les règles, on remodèle les formes`** → \"We port the rules, we reshape the forms.\"",
+        "reason": "Same note. The point of the entry is that impersonal `on` forces an agent in English that the French withholds, and that the phrase recurs three times as a slogan whose wordings must stay identical. Without the original there is no way to see what was added in translation, which is the whole content of the warning."
       }
     ]
   }

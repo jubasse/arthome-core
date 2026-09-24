@@ -16,7 +16,9 @@
 >
 > This document states **what the contract must carry or guarantee**. It
 > describes no layout: the `Storefront TV.dc.html` mockup and
-> `Prompt - Storefront TV.md` are the design, and they are authoritative.
+> `docs/storefront-tv.md` — the same document as `Prompt - Storefront TV.md`, the name it
+> still carries in the unrenamed source folder `arthome-design/design_handoff_arthome/` —
+> are the design, and they are authoritative.
 >
 > Sources read: the full TV specification, `README.md`, `streaming.md`,
 > `shared/helpers.js` (in full), `taxonomy.json`, `catalogue.json`, `fixtures.js`

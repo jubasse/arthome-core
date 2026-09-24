@@ -4,6 +4,35 @@
 > fresh agent get wrong, or waste a day rediscovering?** Anything already written in another file
 > is deliberately left out.
 
+**Seven agents were stood down on 24 September 2026 and each wrote its own file first.** They are
+separate files rather than sections here for a mechanical reason worth keeping: six agents appending
+to one document is six conflicts, and six agents committing into one repository contends on
+`.git/index.lock`. Each wrote a file and committed nothing; the lead committed the set.
+
+| | |
+|---|---|
+| [`handover/storefront-tv.md`](handover/storefront-tv.md) | the mockup is not organised by screen; the parked generator and the one anchor fix it needs |
+| [`handover/storefront-mobile.md`](handover/storefront-mobile.md) | why the web's line numbers do not transfer; the 2000-seat gauge trap is a **mobile** bug too, at line 5431 |
+| [`handover/studio-web.md`](handover/studio-web.md) | twelve of nineteen screens share one markup block; the extraction is indexed by line number |
+| [`handover/studio-mobile.md`](handover/studio-mobile.md) | **the grep advice here is the inverse of `storefront-web`'s**; why `regie`/`sanct`/`ov`/`q` keep their names |
+| [`handover/auth.md`](handover/auth.md) | §12.5 is closeable and the ADR does not know it; two routes that must NOT be relayed |
+| [`handover/translator-docs.md`](handover/translator-docs.md) | **`check-language` is structurally blind to the product's vocabulary and passes either way** |
+
+**Three of the six correct something already committed**, which is the reason they were worth the
+cost. `studio-mobile` contradicts the one section written before them; `storefront-mobile` shows
+that a trap recorded as a web finding is in the mobile mockup too, at line 5431; and
+`translator-docs` finds that a gate the lead wrote cannot see the thing it was written for.
+
+**A fourth was claimed and withdrawn, which belongs here rather than nowhere.** `storefront-mobile`
+section 6 warns that D-012's 7.5 KB is conditional on tree shaking the React Native bundler does not
+enable by default. The lead read that as a correction to D-012. **D-012 already says it**, under
+*Reservation recorded*, four lines past the window the lead had read — and `code-conventions.md`
+cites it correctly. What is genuinely open is the propagation rather than the finding: four files
+quote the two numbers with none of the condition attached.
+
+*That is D-055 in its own words — the only reliable detector all week was a teammate disagreeing
+with something.* These notes were the last chance to run it.
+
 ---
 
 ## storefront-web
