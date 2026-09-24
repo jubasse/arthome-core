@@ -2085,3 +2085,56 @@ in `MEMBER_ROLES` because the field name disambiguates it, but here the field is
 value abbreviates a *different* concept, so that protection does not apply. `backend-domain` offered
 it as reinforcement for keeping the abbreviation; `backend-contracts` inverted it correctly. **It
 makes the rename more urgent, not less.**
+
+### D-054 — Six attempts to measure one thing, and the decision to record the failure instead
+
+**`conventions` tried to settle whether `eslint --fix` first converges in one pass. It failed six
+times, stopped, and wrote the six failures into the document in place of the answer.** That is the
+last and best entry of the week.
+
+**Each failure was an invisible scope, and none of them looked like a failure:**
+
+| attempt | what actually happened | what it looked like |
+|---|---|---|
+| `--config /dev/null` | ESLint loaded **no rules** and fixed nothing | both orders converged |
+| files outside the config's base path | ESLint **silently ignored them** | both arms converged |
+| a fixture whose imports did not resolve | permanent unfixable errors masked the fixable ones | neither order converged |
+| files no tsconfig claimed | typescript-eslint **refused to parse**, type-aware rules never ran | parse refusals wearing the shape of findings |
+
+**And the diagnostic was the same every time, and it was never the output**: *the result looked like
+an answer, and what exposed it was noticing the answer disagreed with someone else's observation.*
+
+That is the fifth, sixth and seventh broken fixture of the week. **A tool that is misconfigured
+reports the same shape as a tool that found nothing** — and the only signal available was a
+teammate's contradictory report.
+
+**IT STOPPED RATHER THAN TAKE A SEVENTH RUN, AND RECORDED WHY.** §3.7 now carries the six failures
+as *what could not be measured*, and the reason is the part worth keeping:
+
+> *A reader who sees only the three-pass form deserves to know it was not chosen by measurement.*
+
+**A decision's provenance is part of the decision.** The three-pass fixer is safe under either
+mechanism, the optimisation was worth nothing, and the document says so — rather than letting a
+conservative choice acquire the authority of a measured one by silence. *That is the opposite of the
+fault this log spent the week finding: not a claim asserted without evidence, but a claim correctly
+refusing the evidence it does not have.*
+
+**THE MECHANISM-WIDTH RULE, GENERALISED PAST THE CASE THAT PRODUCED IT:**
+
+> ***A gate's name states an intention; its mechanism states its coverage. Where the two differ, say
+> so in the gate — because the name is what people will rely on.***
+>
+> ***A guarantee everyone trusts one level wider than it holds is worse than no guarantee, because
+> nobody looks where they believe a gate already is.***
+
+`check-core-entry` walks imports, and a global is not an import, so `process` and `Buffer` would
+have type-checked clean inside the package premised on never reaching them.
+
+**AND THE TECHNIQUE OF THE WEEK, NAMED BY THE AGENT WHO USED IT BEST.** On proving that an ambient
+`declare module` shadows rather than supplements: *"the reason it worked is that I had no argument,
+only a suspicion that 'no conflict' was too easy an answer. Constructing the case where the
+difference would show was cheaper than reasoning about TypeScript's resolution order."*
+
+**Construct the discriminating case rather than reason about the mechanism.** It is cheaper, it
+settles what argument cannot, and it is the one habit from this week to reach for first rather than
+last.
