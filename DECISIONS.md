@@ -2551,3 +2551,36 @@ It moved into `check-core-entry.mjs`, which already walks that import graph in N
 modules reached from the entry point rather than to the directory** — a file in `src/schema/` that
 nothing imports sits at no boundary, and a boundary schema placed elsewhere and re-exported sits at
 one. Proved by planting a transform, which also exposed a line-number drift in its own gate.
+
+### D-064 — The lead was the cost, and the fault was rule 15 applied to himself
+
+**The project owner observed that a reloaded session was exhausted in under thirty minutes and asked
+whether tmux or Opus was to blame. Measured instead of guessed:**
+
+```
+messages sent to teammates    162
+total                         487,669 characters  (~122,000 tokens)
+average                         3,010 characters
+```
+
+**Neither hypothesis was the cause.** A tmux pane is a terminal and costs nothing. Opus is the
+most expensive model per token, so it **multiplies** volume rather than creating it.
+
+**The cause was the volume, and the volume was mine.** And the real cost is not those 122,000
+tokens — it is their **re-billing**: a message lands permanently in its recipient's context, and
+every subsequent turn that agent takes re-sends it. Long-lived agents turn one essay into thousands
+of re-sends.
+
+> ***I wrote the reasoning into every recipient's permanent context instead of referencing the log —
+> rule 15, violated a hundred and sixty-two times by the person enforcing it.***
+
+**Four changes.**
+
+1. **A ruling is ~400 characters, not 3,000.** The reasoning lives in this log, which is read **on
+   demand, once**. Stating a fact once and referencing it afterwards is the project's own rule.
+2. **Agents are short-lived.** One task, then closed. A two-day-old agent re-sends two days of
+   context every turn — and D-055 already established that a **fresh** agent disagrees better than a
+   stale one agrees. The instinct to keep them warm for their context was wrong on both counts.
+3. **Model by role.** Opus for arbitration; the mechanical work — extraction, translation,
+   annotation — does not need it. 175 screen extractions did not need Opus.
+4. **Three in parallel, not eleven.**
