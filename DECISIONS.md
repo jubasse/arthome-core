@@ -2454,9 +2454,28 @@ than glossed: **it checks that a basis is *declared*, not that it is *right*** �
 `exclusive` would pass. The mitigation is the family-reason argument: three values are few enough to
 review by eye, and the classification lives in one place rather than in sixty readers' heads.
 
-**⚠ ONE NUMBER IS OPEN AND IS DELIBERATELY NOT WRITTEN HERE.** The report says sixty-five fields
-classified; walking both documents I count **fifty-five**, the gap entirely in `inherited`. R20
-passes either way — which raises the possibility that **the survey found more money fields than
-R20's detector matches**, and a gate green on a smaller set than the survey found is *a guarantee
-only as wide as its mechanism*, landing on the gate built to close this. Referred back rather than
-recorded: **count it or reference it, do not assert it.**
+**THE COUNT WAS OPEN FOR AN HOUR AND IS NOW CLOSED, WHICH IS WHY IT WAS NOT WRITTEN DOWN.** The
+report said sixty-five classified; walking both documents I counted **fifty-five**, the gap entirely
+in `inherited`, and I recorded the number as open rather than picking one.
+
+**Resolved by construction rather than by waiting.** R20 already prints what it counted — *"a gate
+that reports what it counted can be argued with"*, in its own comment — and it says **55**, agreeing
+with my walk. Then:
+
+```
+$ref to Money, total                                    55
+of those, BARE refs inside a list (allOf[0], one key)   10
+```
+
+A bare `$ref` in an array **cannot carry a sibling extension key** — there is nowhere to put it
+without breaking the reference. So the detector excludes it and matches **its `allOf` parent
+instead**, which is where the annotation lives. Forty-five direct refs plus ten `allOf` wrappers is
+exactly fifty-five, counted once each.
+
+**So the detector is sound and complete, and the sharper reading I feared is false**: there is no
+set of money fields the gate cannot see. The ten are not missing, they are *unannotatable at that
+node and annotated at their parent*.
+
+*The check that settled it took two minutes and was shorter than the round trip I had already
+started.* Recorded here because a number left open in a log is a number someone will later quote as
+though it were closed.
