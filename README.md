@@ -8,7 +8,9 @@ API contracts every surface reads, and records why each irreversible decision wa
 was.
 
 > **Status: the foundation is built, the applications are not.** The domain, the contracts, the
-> tooling and nine gates exist and are verified. No application code has been written yet. What is
+> tooling and ten gates exist and are verified. **Every schema in both contracts is generated from a
+> zod source and checked against the document it publishes.** No application code has been written
+> yet. What is
 > here is the part that is expensive to change later.
 
 ---
@@ -56,8 +58,8 @@ Then, depending on what you are doing:
 
 | | paths | schemas |
 |---|---|---|
-| `openapi/storefront.yaml` | 75 | 65 |
-| `openapi/studio.yaml` | 79 | 46 |
+| `openapi/storefront.yaml` | 75 | 65 — **all sourced** |
+| `openapi/studio.yaml` | 79 | 46 — **all sourced** |
 
 Two products, two contracts, one domain. The storefront is what a viewer sees; the studio is what an
 artist and their crew operate. They share `@arthome/core`'s vocabulary and nothing else.
@@ -73,10 +75,18 @@ pnpm run verify:offline   # the subset that needs no install — it prints what 
 pnpm run fix              # prettier, eslint, prettier — in that order, and the order matters
 ```
 
-**Eight gates, and each says what it looked at.** They check that no enumeration value is copied,
-that the domain and the contracts share one vocabulary, that the `.` entry point reaches neither zod
-nor a Node API, that every version is pinned, that ESLint and Prettier do not overlap, that the two
-contracts conform to twenty rules, and that everything committed is written in English.
+**Ten gates, and each says what it looked at — including where it stops looking.** They check that
+no enumeration value is copied, that the domain and the contracts share one vocabulary, that the `.`
+entry point reaches neither zod nor a Node API, that every version is pinned, that ESLint and
+Prettier do not overlap, that the two contracts conform to twenty rules, that everything committed
+is written in English, that the repository map still matches the installed declarations, and that
+**every schema emits exactly what the contract publishes.**
+
+That last one compares trees rather than text and prints every equivalence it grants, because an
+equivalence nobody can see is an exemption nobody audits. It found fourteen disagreements on its
+first run, out of fourteen schemas that then had a source — nothing had been agreeing, and no gate
+had ever compared the two artefacts. **All 111 agree now**, and `verify` refuses a commit where one
+of them stops.
 
 **A gate here reports; it never fixes.** A gate that fixes cannot fail honestly — it either reports
 a defect it has already removed, or it fails on a tree that was correct before it touched it.
