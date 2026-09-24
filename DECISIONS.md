@@ -1361,3 +1361,62 @@ suspicious within one, and *the gate cannot tell while a human can.*
 up: *"un-annotating it would hide a real divergence behind 'undeclared', which is widening the
 allowance by another name."* A gate red on one named divergence in live work is worth more than a
 gate green because nobody declared the thing it would have caught.
+
+### D-042 — A rule expressed by an omission, and the third verdict an input needs
+
+**`backend-contracts` followed the generic-name tell and found a class rather than a defect: six
+blocks are a strict subset of a domain vocabulary, every one an input, and what each one leaves out
+IS the rule.** Two verified against the documents:
+
+| | accepted | domain vocabulary | omitted |
+|---|---|---|---|
+| `PUT /run/state` | `idle` `rehearsal` `on_air` `ended` | `RUN_STATES` | **`interrupted`** |
+| `POST …/publication/transitions` | `draft` `reserve` `scheduled` `technical` `replay_online` | `PUBLICATION_STATES` | **`live` `ended`** |
+
+**`interrupted` is absent because an interruption is *declared by `raiseIncident`*, never asked
+for** — a control room able to set it directly would have two ways into one state and only one of
+them raises the incident viewers see. **`live` and `ended` are absent because they are *caused by a
+`streaming` event*** — publication does not command the broadcast, it learns of it, and offering
+them would let a studio declare a date on air that is sending nothing.
+
+Those are two of the most important sentences in either contract, and **neither is written
+anywhere. Both are expressed by an omission.**
+
+**THIS IS THE EXACT INVERSE OF E2, AND IT IS WORSE.**
+
+E2 is a fact stated **twice**, the copies drifting apart — and every remedy this project has built
+attacks that shape: one owning document, reference it, a gate that compares two artefacts. This is a
+fact stated **zero times**, carried entirely by an absence.
+
+An absence has no owning document. There is no line to reread, no copy to compare, nothing for a
+gate to point at, and **no way to tell a deliberate omission from an oversight** — which is exactly
+what the six look like today. `backend-contracts` put it in the form of D-039's sentence: *nobody
+wrote down that an input enum may narrow its vocabulary, so six of them did it silently, correctly,
+and unverifiably.*
+
+**THE GATE HAS TWO VERDICTS WHERE AN INPUT NEEDS THREE.** A narrowing is not `source: none` — it is
+not *"no domain counterpart"*, it **is** the domain vocabulary, restricted, and the restriction is
+the contract's content. Today it can only be recorded as **undeclared**, which is indistinguishable
+from a block nobody has looked at. *Six of the 47 undeclared inputs are the most reviewed blocks in
+the document.*
+
+**Adopted, in the shape proposed:**
+
+```
+x-arthome-vocabulary-source:    RUN_STATES
+x-arthome-vocabulary-narrowing: interrupted is declared by raiseIncident, never commanded.
+```
+
+checked as **every member is a member of the source**, with a **mandatory reason** — the same
+discipline `source: none` already carries, and for the same reason: *an omission that does not say
+why is not a rule, it is a gap.*
+
+**And this is the input asymmetry a second time.** An output vocabulary is tolerant, so a missing
+member degrades under rule 10. An input enum is strict, so a missing member is a **refusal**. Which
+is why the interesting inputs are precisely the ones that deliberately refuse something — and why
+they are the ones the gate cannot currently classify.
+
+**`backend-contracts` did not add the keys**, because annotating with a source the gate compares by
+equality would have turned one deliberate red into three. Correct: the gate learns the third verdict
+first. It wrote the reason into the four blocks that had no description meanwhile, so the rule is at
+least *stated* where it is enforced even before it is checkable.
