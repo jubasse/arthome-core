@@ -1,0 +1,97 @@
+{
+  "name": "@arthome/contracts",
+  "version": "0.1.0",
+  "description": "Arthome boundary contracts: the DTO schemas the BFFs serve and accept, derived from @arthome/core and never redeclared.",
+  "license": "UNLICENSED",
+  "private": false,
+  "type": "module",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julien-metral/arthome-core.git",
+    "directory": "packages/contracts"
+  },
+  "_comment_exports": [
+    "NO \".\" ENTRY POINT, AND THAT IS THE BARREL RULE MADE STRUCTURAL.",
+    "",
+    "D-012 forbids a barrel here, measured: zod's classic entry made 64 translation",
+    "files reachable — 93 KB gzip against 7.5 KB — at a cost that is FIXED and tied",
+    "to the import rather than marginal and tied to the number of schemas. A barrel",
+    "defeats tree-shaking on any bundler without cross-module analysis, which",
+    "includes Metro by default.",
+    "",
+    "A written rule against barrels would be a rule someone breaks in a hurry. With",
+    "no \".\" export, `import { X } from '@arthome/contracts'` fails to RESOLVE — the",
+    "same trick @arthome/tooling uses to stay out of production. The constraint is",
+    "the mechanism, not a convention.",
+    "",
+    "So one subpath per bounded context, added as each lands, never before: a",
+    "subpath in `exports` that points at a file which does not exist is unreachable",
+    "with a laconic error, and a subpath missing from `exports` is unreachable too.",
+    "Both are silent, so the list stays honest rather than aspirational.",
+    "",
+    "  ./identity  ./catalog  ./ticketing  ./chat  ./payouts  ./streaming",
+    "  ./notifications                        — one per service",
+    "  ./envelope                             — the shared response and error envelope",
+    "",
+    "See architecture/code-conventions.md section 5.5 and DECISIONS.md D-012."
+  ],
+  "exports": {
+    "./money": {
+      "types": "./dist/money/index.d.ts",
+      "import": "./dist/money/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "_comment_peer": [
+    "BOTH DEPENDENCIES ARE PEERS, EXACTLY PINNED, AND THE TEST DECIDES IT RATHER",
+    "THAN CONVENIENCE.",
+    "",
+    "The question from code-conventions.md 4.2 is: does the consuming repository",
+    "name this package itself? For both of these it does — a surface imports",
+    "@arthome/core for the rules and zod for its own validation — and the regime-A",
+    "membership test then applies: if two copies exist at once, does something break",
+    "at runtime in a way that is hard to diagnose?",
+    "",
+    "  zod            yes. Two copies is two schema registries and unintelligible",
+    "                 validation errors. Regime A of versions.json.",
+    "  @arthome/core  yes, and this one is easy to miss. Two copies means two sets",
+    "                 of `as const` vocabulary constants, so `mode === ChatMode.OPEN`",
+    "                 is false against the other copy's constant — the silent",
+    "                 equality failure that D-038 and D-033 both are, arriving",
+    "                 through the dependency graph instead of through a spelling.",
+    "",
+    "A regular dependency would let pnpm install a second copy beside the app's own.",
+    "Declared as peers, there is exactly one of each and the consumer owns it.",
+    "",
+    "And both are ALSO pinned in devDependencies, which is not redundant: a package",
+    "that declares a peer without pinning it for itself gets an auto-installed peer",
+    "at the LOWEST member of the range. That is how @arthome/tooling ended up",
+    "resolving eslint 9.39.5 while the root had 10.11.0 — two copies, both working,",
+    "differently, nothing red."
+  ],
+  "peerDependencies": {
+    "@arthome/core": "0.1.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@arthome/core": "workspace:*",
+    "zod": "4.6.5"
+  }
+}

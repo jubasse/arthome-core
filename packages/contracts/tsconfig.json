@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": [
+    "Type-checking for the package, tests included. The BUILD is tsconfig.build.json:",
+    "that one alone emits, and it excludes the tests.",
+    "",
+    "vitest.config.ts is in `include` on purpose: it is TypeScript this package owns,",
+    "and typescript-eslint's project service refuses to lint a file no tsconfig claims",
+    "('not found by the project service'). Claiming a file is a precondition of",
+    "checking it — and a config file nothing type-checks is a config file that drifts."
+  ],
+  "extends": "@arthome/tooling/tsconfig/lib.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "vitest.config.ts"]
+}

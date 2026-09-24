@@ -17,8 +17,9 @@ const chf = (amountMinor: number) => money(amountMinor, 'CHF');
 
 /**
  * PROTECTED INVARIANT
- *   The commission is taken on the net-of-tax amount. For the SAME net, it is
- *   IDENTICAL whatever the buyer's jurisdiction.
+ *   The commission is a RATE on the net-of-tax base, and the RATE is what is
+ *   constant. Under TTC the absolute amount varies with the buyer's
+ *   jurisdiction, and that variance must be DISCLOSED rather than absorbed.
  *
  * WHY THIS TEST EXISTS
  *   D5: `fixtures.js` computes `net = gross − 12% − VAT(gross)` with a single
@@ -26,14 +27,29 @@ const chf = (amountMinor: number) => money(amountMinor, 'CHF');
  *   rule" trap in its most expensive form: the naive port consists of copying
  *   exactly three lines that look right.
  *
- *   On the tax-inclusive amount, the 12% announced to artists would VARY with
- *   the buyer's country. A commission is the price of a service; it has no
- *   reason to follow a foreign VAT rate.
+ *   Written BEFORE the rule — and the rule it was written against has since
+ *   been reversed, which is the more interesting half.
  *
- *   Written BEFORE the rule.
+ * ⚠ WHAT D-056 CHANGED, AND WHAT SURVIVED IT
+ *   This file used to assert that the commission is "IDENTICAL whatever the
+ *   buyer's jurisdiction", on the premise that an artist sets a NET price. TTC
+ *   reverses the premise: **the price an artist sets is what the viewer pays**,
+ *   so the gross is fixed per date per billing market and the VAT comes OUT of
+ *   it. The net therefore moves with the buyer's country, by construction.
+ *
+ *   The invariant was always the RATE, not the amount — D-015 becomes derived
+ *   rather than declared. What the reversal buys is a catalogue that stays
+ *   publicly cacheable: one displayed price, no `Vary` on a buyer's country, no
+ *   price computed per request.
+ *
+ *   And what it costs has to be visible. A net that moves for a reason the
+ *   artist cannot see is `planOf()` with money attached — a default arriving by
+ *   omission rather than by decision. That is why the breakdown carries a
+ *   `VatLine` PER JURISDICTION with the rate applied at the sale: the variance
+ *   is disclosed, not absorbed.
  */
 describe('the commission is taken on the net-of-tax amount', () => {
-  it('is identical in France and Switzerland for the same net', () => {
+  it('is identical in France and Switzerland for the same net-of-tax base', () => {
     // An artist earning €24.64 net of tax earns the same whatever the buyer's
     // country. THAT is what "12%" promises.
     const htAmount = 2464;
@@ -69,6 +85,78 @@ describe('the commission is taken on the net-of-tax amount', () => {
     expect(switzerland.grossHt.amountMinor).toBe(htAmount);
     expect(france.commission.amountMinor).toBe(switzerland.commission.amountMinor);
     expect(france.net.amountMinor).toBe(switzerland.net.amountMinor);
+  });
+
+  it('DOES vary with the buyer country under TTC — and the rate does not', () => {
+    // THE TEST D-056 ASKED FOR. The displayed price is the same in both
+    // jurisdictions, because the artist set it and the catalogue is cached for
+    // everyone. The VAT comes out of it, so the net-of-tax base differs, so the
+    // absolute commission differs — and the RATE is identical, which is the
+    // only thing that was ever promised.
+    const displayed = 2600;
+    const fr = payoutOf({
+      grossTtc: eur(displayed),
+      vatLines: [
+        vatLineFor(
+          eur(displayed),
+          'FR',
+          TaxJurisdictionLevel.COUNTRY,
+          550,
+          TaxSupplyKind.LIVE_STREAM_ACCESS,
+        ),
+      ],
+      commissionRateBps: COMMISSION_RATE_BPS,
+    });
+    const be = payoutOf({
+      grossTtc: eur(displayed),
+      vatLines: [
+        vatLineFor(
+          eur(displayed),
+          'BE',
+          TaxJurisdictionLevel.COUNTRY,
+          2100,
+          TaxSupplyKind.LIVE_STREAM_ACCESS,
+        ),
+      ],
+      commissionRateBps: COMMISSION_RATE_BPS,
+    });
+
+    expect(fr.grossTtc.amountMinor).toBe(be.grossTtc.amountMinor);
+    expect(fr.grossHt.amountMinor).not.toBe(be.grossHt.amountMinor);
+    expect(fr.commission.amountMinor).not.toBe(be.commission.amountMinor);
+    expect(fr.net.amountMinor).not.toBe(be.net.amountMinor);
+
+    // The rate is the invariant, and it is constant.
+    expect(fr.commissionRateBps).toBe(be.commissionRateBps);
+    expect(fr.commission.amountMinor).toBe(Math.round((fr.grossHt.amountMinor * 1200) / 10_000));
+    expect(be.commission.amountMinor).toBe(Math.round((be.grossHt.amountMinor * 1200) / 10_000));
+  });
+
+  it('DISCLOSES the variance rather than absorbing it', () => {
+    // A net that moves for a reason the artist cannot see is `planOf()` with
+    // money attached. The breakdown carries the jurisdiction and the rate
+    // APPLIED AT THE SALE, so "why is this payout smaller" has an answer on the
+    // line itself rather than in a support ticket.
+    const breakdown = payoutOf({
+      grossTtc: eur(2600),
+      vatLines: [
+        vatLineFor(
+          eur(2600),
+          'BE',
+          TaxJurisdictionLevel.COUNTRY,
+          2100,
+          TaxSupplyKind.LIVE_STREAM_ACCESS,
+        ),
+      ],
+      commissionRateBps: COMMISSION_RATE_BPS,
+    });
+    const line = breakdown.vatLines[0];
+    expect(line?.jurisdictionCode).toBe('BE');
+    expect(line?.jurisdictionLevel).toBe(TaxJurisdictionLevel.COUNTRY);
+    expect(line?.rateBps).toBe(2100);
+    expect(line?.supplyKind).toBe(TaxSupplyKind.LIVE_STREAM_ACCESS);
+    // And it closes: the disclosed line accounts for the whole gap.
+    expect(breakdown.grossHt.amountMinor + (line?.amount.amountMinor ?? 0)).toBe(2600);
   });
 
   it('would NOT be identical if the commission were taken on the gross', () => {

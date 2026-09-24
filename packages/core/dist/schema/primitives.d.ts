@@ -1,0 +1,95 @@
+/**
+ * The boundary primitives — the shapes every other schema is built from.
+ *
+ * ⚠ THIS DIRECTORY IS THE ONLY ONE IN THE PACKAGE THAT MAY IMPORT ZOD, and
+ * `tools/check-core-entry.mjs` enforces it in BOTH directions: it fails if any
+ * import path from `.` reaches zod, and it fails if `./schema` exists and does
+ * not. The cost is fixed and tied to the import — 93 KB gzipped for a single
+ * `z.string()` on the classic entry point — so one `import { z }` in a rules
+ * module hands the whole bill to the TV and to mobile with nothing reporting it
+ * (D-012).
+ *
+ * THREE BOUNDARY RULES, AND THEY LIVE IN THE PACKAGE RATHER THAN IN A LOG.
+ *
+ * 1. NO `z.transform()` AT A BOUNDARY. A transform is inconvertible to JSON
+ *    Schema, so the generated OpenAPI would describe a shape the API does not
+ *    accept. A boundary schema validates; it does not reshape. Reshaping is the
+ *    domain's job and it happens after the value is known good.
+ *
+ * 2. AN INPUT AND AN OUTPUT ARE TWO SCHEMAS, NOT ONE READ TWICE. They differ on
+ *    purpose — see `vocabularyIn` / `vocabularyOut` below, where the difference
+ *    is the whole survival strategy of the TV fleet.
+ *
+ * 3. A FAILURE BECOMES A CODE, NEVER A ZOD MESSAGE. zod's messages are English
+ *    prose; surfacing one is an i18n leak, and the first place it leaks is a
+ *    payment form. `issueToCode` is the only sanctioned way out.
+ *
+ * ⚠ AND A FOURTH, WHICH THE COMPILER IMPOSES RATHER THAN THE DESIGN.
+ *    `isolatedDeclarations` refuses an exported schema whose type it cannot
+ *    write without inferring through zod's builder chain, so **every exported
+ *    schema carries an explicit annotation** — `z.ZodString`, `z.ZodEnum<…>`,
+ *    `z.ZodObject<…>`. It is mechanical and it is not optional: without it the
+ *    published `.d.ts` cannot be emitted at all.
+ *
+ *    It is the same constraint `core-port-plan.md` §6 predicted for the rules,
+ *    arriving one wave later and biting harder, because a zod type is wider
+ *    than a function signature. The upside is the same one: the shape a
+ *    consumer sees is written down rather than inferred, so it cannot drift
+ *    when a builder call is added in the middle of a chain.
+ */
+import { z } from 'zod';
+import { type VocabularyIn } from './vocabulary.js';
+import { LOCALES } from '../format/locale.js';
+/**
+ * An instant on the wire: an ISO 8601 string in UTC.
+ *
+ * ⚠ NEVER `z.date()`. It is inconvertible to JSON Schema, so the emitted
+ * OpenAPI could not describe it — and a `Date` is not a wire value anyway, it
+ * is a parsed one. D7 is the same lesson from the other side: the mockup's
+ * relative offsets were convenient and untransportable.
+ *
+ * The `Z` is required rather than tolerated. An offset-bearing instant would be
+ * a second way to say the same moment, and two spellings of one value is the
+ * fault this package exists to prevent.
+ */
+export declare const InstantSchema: z.ZodString;
+/**
+ * An IANA time zone identifier: `Europe/Paris`.
+ *
+ * Validated by SHAPE, never by existence — the IANA database is not bundled,
+ * and bundling it would cost hundreds of kilobytes in five applications. This
+ * refuses the two forms D3 replaces: an abbreviation (`CEST`) and a numeric
+ * offset (`+02:00`).
+ */
+export declare const IanaTimeZoneSchema: z.ZodString;
+/** ISO 4217, uppercase. The contract never transports a symbol or a position. */
+export declare const CurrencyCodeSchema: z.ZodString;
+/** ISO 3166-1 alpha-2, uppercase. */
+export declare const CountryCodeSchema: z.ZodString;
+/**
+ * BCP 47, short form — the product's two languages.
+ *
+ * ⚠ Built from `LOCALES` rather than written out. The first draft of this line
+ * was `z.enum(['fr', 'en'])`, and `arthome-check-enums` refused it within the
+ * minute: a hand-written vocabulary in the module whose whole job is to carry
+ * vocabularies to the boundary. It is `LOCALES` that has authority, and a
+ * schema that restates it is the parallel literal table with a validator's
+ * costume.
+ *
+ * STRICT, because a locale arrives on a REQUEST — an unknown one is refused
+ * rather than kept. The tolerant reading (§vocabulary.ts) is for responses, and
+ * this is the side where a wrong value would be stored.
+ */
+export declare const LocaleSchema: VocabularyIn<typeof LOCALES>;
+/** Lowercase, hyphenated, no leading or trailing hyphen. */
+export declare const SlugSchema: z.ZodString;
+/**
+ * An opaque Base64 cursor over `(created_at, id)`.
+ *
+ * Opaque is the point: a client that can read a cursor will eventually build
+ * one, and then the server cannot change its ordering without breaking it.
+ * Validated for shape only, and a stale one is refused with `CURSOR_TOO_OLD`
+ * rather than silently restarting the page (D-010).
+ */
+export declare const PageCursorSchema: z.ZodString;
+//# sourceMappingURL=primitives.d.ts.map

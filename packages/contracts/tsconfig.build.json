@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": [
+    "outDir, rootDir, include and exclude belong to the package, never to the shared",
+    "tsconfig: a relative path written in an extended file resolves from",
+    "node_modules/@arthome/tooling/tsconfig/ (code-conventions.md 4.4.4).",
+    "",
+    "lib.json carries isolatedDeclarations and stableTypeOrdering — the two options",
+    "that make the published .d.ts readable by TypeScript 6 and 7 alike. This package",
+    "is the third consumer of that guarantee and the one it matters most for: a DTO",
+    "schema's inferred type is exactly the kind of thing isolatedDeclarations refuses",
+    "to let cross a package boundary un-annotated."
+  ],
+  "extends": "@arthome/tooling/tsconfig/lib.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
+}

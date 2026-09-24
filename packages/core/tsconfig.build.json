@@ -1,9 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "_comment": [
-    "outDir, rootDir, include et exclude appartiennent au paquet, jamais au",
-    "tsconfig partage : un chemin relatif ecrit dans un fichier etendu se",
-    "resoudrait depuis node_modules/@arthome/tooling/tsconfig/."
+    "outDir, rootDir, include and exclude belong to the package, never to the",
+    "shared tsconfig: a relative path written in an extended file would resolve",
+    "from node_modules/@arthome/tooling/tsconfig/."
   ],
   "extends": "@arthome/tooling/tsconfig/lib.json",
   "compilerOptions": {

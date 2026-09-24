@@ -1,0 +1,48 @@
+/**
+ * Territorial rights — and the reason is a CODE, never a sentence.
+ *
+ * `geography.rightsPolicy.note` states it and the rule ports as it stands: "a
+ * broadcast is WORLDWIDE BY DEFAULT, a territorial restriction is the
+ * exception, and it is declared". That is the opposite of VOD, and it is right
+ * for live performance.
+ *
+ * E8 — what does not port: `blackoutReasons[]` carries `label` and `labelEn`,
+ * PROSE WRITTEN INTO THE DATA, while all the rest of the vocabulary goes
+ * through `enums.*`. That is an i18n leak into the model, and it is exactly the
+ * kind the "i18n by codes" decision exists to forbid.
+ */
+import { RightsScope } from '../vocabulary/catalog.js';
+export function worldwideRights() {
+    return { scope: RightsScope.WORLDWIDE, blackoutCountries: [], reason: null };
+}
+export function restrictedRights(blackoutCountries, reason) {
+    return { scope: RightsScope.RESTRICTED, blackoutCountries, reason };
+}
+/**
+ * Can the viewer watch from this country?
+ *
+ * ⚠ The country is an ARGUMENT, never a global. `helpers.js` reads
+ * `viewerCountry` at module level, with a `setViewerCountry()` — two concurrent
+ * requests of one service would share the same country.
+ *
+ * ⚠ And the country is RESOLVED AT EVERY OPENING, never from a projection: it
+ * changes between two reads — travel, roaming, corporate network — and on
+ * mobile that gap is measured in hours.
+ */
+export function isAvailableIn(rights, viewerCountry) {
+    if (rights.scope === RightsScope.WORLDWIDE)
+        return true;
+    return !rights.blackoutCountries.includes(viewerCountry.toUpperCase());
+}
+/**
+ * The reason for the refusal, as a CODE — to be served with the error.
+ *
+ * `storefront-mobile` asks for it explicitly: the copy promises that "the other
+ * dates of this show remain available", so the error must carry the reason AND
+ * enough to keep the promise. An error that promises a way out without carrying
+ * it forces the client into a second request at the worst moment.
+ */
+export function blackoutReasonOf(rights, viewerCountry) {
+    return isAvailableIn(rights, viewerCountry) ? null : rights.reason;
+}
+//# sourceMappingURL=rights.js.map
