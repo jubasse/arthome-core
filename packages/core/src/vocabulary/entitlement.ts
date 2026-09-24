@@ -27,32 +27,32 @@
  * dangerous.
  */
 export const WATCH_DENIAL_REASONS = [
-  'NO_SEAT',
-  'ROOM_NOT_OPEN',
-  'OUT_OF_TERRITORY',
-  'SUBSCRIPTION_REQUIRED',
-  'NO_REPLAY',
-  'REPLAY_EXPIRED',
-  'REPLAY_NOT_ON_SALE',
-  'PREVIEW_EXHAUSTED',
-  'CONCURRENT_LIMIT_REACHED',
-  'DATE_CANCELLED',
-  'NOT_PUBLISHED',
+  'watch.no_seat',
+  'watch.room_not_open',
+  'watch.out_of_territory',
+  'watch.subscription_required',
+  'watch.no_replay',
+  'watch.replay_expired',
+  'watch.replay_not_on_sale',
+  'watch.preview_exhausted',
+  'watch.concurrent_limit_reached',
+  'watch.date_cancelled',
+  'watch.not_published',
 ] as const;
 export type WatchDenialReason = (typeof WATCH_DENIAL_REASONS)[number];
 
 export const WatchDenialReason = {
-  NO_SEAT: 'NO_SEAT',
-  ROOM_NOT_OPEN: 'ROOM_NOT_OPEN',
-  OUT_OF_TERRITORY: 'OUT_OF_TERRITORY',
-  SUBSCRIPTION_REQUIRED: 'SUBSCRIPTION_REQUIRED',
-  NO_REPLAY: 'NO_REPLAY',
-  REPLAY_EXPIRED: 'REPLAY_EXPIRED',
-  REPLAY_NOT_ON_SALE: 'REPLAY_NOT_ON_SALE',
-  PREVIEW_EXHAUSTED: 'PREVIEW_EXHAUSTED',
-  CONCURRENT_LIMIT_REACHED: 'CONCURRENT_LIMIT_REACHED',
-  DATE_CANCELLED: 'DATE_CANCELLED',
-  NOT_PUBLISHED: 'NOT_PUBLISHED',
+  NO_SEAT: 'watch.no_seat',
+  ROOM_NOT_OPEN: 'watch.room_not_open',
+  OUT_OF_TERRITORY: 'watch.out_of_territory',
+  SUBSCRIPTION_REQUIRED: 'watch.subscription_required',
+  NO_REPLAY: 'watch.no_replay',
+  REPLAY_EXPIRED: 'watch.replay_expired',
+  REPLAY_NOT_ON_SALE: 'watch.replay_not_on_sale',
+  PREVIEW_EXHAUSTED: 'watch.preview_exhausted',
+  CONCURRENT_LIMIT_REACHED: 'watch.concurrent_limit_reached',
+  DATE_CANCELLED: 'watch.date_cancelled',
+  NOT_PUBLISHED: 'watch.not_published',
 } as const;
 
 /**

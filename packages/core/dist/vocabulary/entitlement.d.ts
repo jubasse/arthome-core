@@ -25,20 +25,20 @@
  * and be **false in silence** — on the value this system calls its most
  * dangerous.
  */
-export declare const WATCH_DENIAL_REASONS: readonly ["NO_SEAT", "ROOM_NOT_OPEN", "OUT_OF_TERRITORY", "SUBSCRIPTION_REQUIRED", "NO_REPLAY", "REPLAY_EXPIRED", "REPLAY_NOT_ON_SALE", "PREVIEW_EXHAUSTED", "CONCURRENT_LIMIT_REACHED", "DATE_CANCELLED", "NOT_PUBLISHED"];
+export declare const WATCH_DENIAL_REASONS: readonly ["watch.no_seat", "watch.room_not_open", "watch.out_of_territory", "watch.subscription_required", "watch.no_replay", "watch.replay_expired", "watch.replay_not_on_sale", "watch.preview_exhausted", "watch.concurrent_limit_reached", "watch.date_cancelled", "watch.not_published"];
 export type WatchDenialReason = (typeof WATCH_DENIAL_REASONS)[number];
 export declare const WatchDenialReason: {
-    readonly NO_SEAT: "NO_SEAT";
-    readonly ROOM_NOT_OPEN: "ROOM_NOT_OPEN";
-    readonly OUT_OF_TERRITORY: "OUT_OF_TERRITORY";
-    readonly SUBSCRIPTION_REQUIRED: "SUBSCRIPTION_REQUIRED";
-    readonly NO_REPLAY: "NO_REPLAY";
-    readonly REPLAY_EXPIRED: "REPLAY_EXPIRED";
-    readonly REPLAY_NOT_ON_SALE: "REPLAY_NOT_ON_SALE";
-    readonly PREVIEW_EXHAUSTED: "PREVIEW_EXHAUSTED";
-    readonly CONCURRENT_LIMIT_REACHED: "CONCURRENT_LIMIT_REACHED";
-    readonly DATE_CANCELLED: "DATE_CANCELLED";
-    readonly NOT_PUBLISHED: "NOT_PUBLISHED";
+    readonly NO_SEAT: "watch.no_seat";
+    readonly ROOM_NOT_OPEN: "watch.room_not_open";
+    readonly OUT_OF_TERRITORY: "watch.out_of_territory";
+    readonly SUBSCRIPTION_REQUIRED: "watch.subscription_required";
+    readonly NO_REPLAY: "watch.no_replay";
+    readonly REPLAY_EXPIRED: "watch.replay_expired";
+    readonly REPLAY_NOT_ON_SALE: "watch.replay_not_on_sale";
+    readonly PREVIEW_EXHAUSTED: "watch.preview_exhausted";
+    readonly CONCURRENT_LIMIT_REACHED: "watch.concurrent_limit_reached";
+    readonly DATE_CANCELLED: "watch.date_cancelled";
+    readonly NOT_PUBLISHED: "watch.not_published";
 };
 /**
  * How much of the date the verdict opens.

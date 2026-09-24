@@ -71,24 +71,41 @@ export {
  * the function. `join_waitlist` stays because sold-out-and-spent is reachable
  * and `buy_seat` there is the button that leads nowhere.
  */
+/**
+ * ⚠ THE KEYS ARE COMPUTED, and they were bare literals until the values became
+ *   translation keys.
+ *
+ *   `NO_SEAT: [...]` was a literal that happened to equal the vocabulary's
+ *   value. The day the value changed — to `watch.no_seat`, so that a served code
+ *   IS its own i18n key — every one of these eleven keys became wrong at once.
+ *   `tsc` caught all eleven, which is exactly what the `Record` keyed by the
+ *   union is for, and it is the reason this table was written that way rather
+ *   than as an array.
+ *
+ *   `[WatchDenialReason.NO_SEAT]` cannot drift: there is no second copy of the
+ *   string to keep in step, only the name.
+ */
 export const WATCH_FALLBACK_FOR: Readonly<
   Record<WatchDenialReason, readonly WatchFallbackAction[]>
 > = {
-  NO_SEAT: [WatchFallbackAction.BUY_SEAT, WatchFallbackAction.JOIN_WAITLIST],
-  PREVIEW_EXHAUSTED: [WatchFallbackAction.BUY_SEAT, WatchFallbackAction.JOIN_WAITLIST],
-  ROOM_NOT_OPEN: [
+  [WatchDenialReason.NO_SEAT]: [WatchFallbackAction.BUY_SEAT, WatchFallbackAction.JOIN_WAITLIST],
+  [WatchDenialReason.PREVIEW_EXHAUSTED]: [
+    WatchFallbackAction.BUY_SEAT,
+    WatchFallbackAction.JOIN_WAITLIST,
+  ],
+  [WatchDenialReason.ROOM_NOT_OPEN]: [
     WatchFallbackAction.BUY_SEAT,
     WatchFallbackAction.JOIN_WAITLIST,
     WatchFallbackAction.NONE,
   ],
-  SUBSCRIPTION_REQUIRED: [WatchFallbackAction.SUBSCRIBE],
-  CONCURRENT_LIMIT_REACHED: [WatchFallbackAction.RELEASE_A_SCREEN],
-  OUT_OF_TERRITORY: [WatchFallbackAction.SEE_OTHER_DATES],
-  DATE_CANCELLED: [WatchFallbackAction.SEE_OTHER_DATES],
-  REPLAY_EXPIRED: [WatchFallbackAction.SEE_OTHER_DATES],
-  NO_REPLAY: [WatchFallbackAction.SEE_REPLAY_POLICY],
-  REPLAY_NOT_ON_SALE: [WatchFallbackAction.SEE_REPLAY_POLICY],
-  NOT_PUBLISHED: [WatchFallbackAction.NONE],
+  [WatchDenialReason.SUBSCRIPTION_REQUIRED]: [WatchFallbackAction.SUBSCRIBE],
+  [WatchDenialReason.CONCURRENT_LIMIT_REACHED]: [WatchFallbackAction.RELEASE_A_SCREEN],
+  [WatchDenialReason.OUT_OF_TERRITORY]: [WatchFallbackAction.SEE_OTHER_DATES],
+  [WatchDenialReason.DATE_CANCELLED]: [WatchFallbackAction.SEE_OTHER_DATES],
+  [WatchDenialReason.REPLAY_EXPIRED]: [WatchFallbackAction.SEE_OTHER_DATES],
+  [WatchDenialReason.NO_REPLAY]: [WatchFallbackAction.SEE_REPLAY_POLICY],
+  [WatchDenialReason.REPLAY_NOT_ON_SALE]: [WatchFallbackAction.SEE_REPLAY_POLICY],
+  [WatchDenialReason.NOT_PUBLISHED]: [WatchFallbackAction.NONE],
 };
 
 /** The FIVE inputs, named. None is guessed, none is global. */

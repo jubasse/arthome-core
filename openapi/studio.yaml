@@ -2039,14 +2039,14 @@ paths:
         "409":
           description: |
             `STATE_CONFLICT` (with the current state and version), `TRANSITION_IRREVERSIBLE` (with the
-            promise committed), or `PUBLICATION_CHECKLIST_INCOMPLETE` (with the list of what is
+            promise committed), or `publication.checklist_incomplete` (with the list of what is
             missing).
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
               example:
                 error:
-                  code: PUBLICATION_CHECKLIST_INCOMPLETE
+                  code: publication.checklist_incomplete
                   nature: refused
                   params: { missing: [poster, at_least_one_active_price, technical_check_passed] }
                   traceId: 4bf92f3577b34da6a3ce929d0e0e4736
@@ -6304,7 +6304,7 @@ components:
             fallback**. That is vital here: **a store review is slow**. If a new code arrives from the
             backend before the application is updated, the person on duty must see a sentence, not
             `moderation.verdict.conflict`.
-          examples: [PUBLICATION_CHECKLIST_INCOMPLETE]
+          examples: [publication.checklist_incomplete]
         nature:
           type: string
           description: |

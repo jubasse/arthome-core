@@ -56,6 +56,20 @@ export { WATCH_DENIAL_REASONS, WATCH_FALLBACK_ACTIONS, WATCH_SCOPES, WatchDenial
  * the function. `join_waitlist` stays because sold-out-and-spent is reachable
  * and `buy_seat` there is the button that leads nowhere.
  */
+/**
+ * ⚠ THE KEYS ARE COMPUTED, and they were bare literals until the values became
+ *   translation keys.
+ *
+ *   `NO_SEAT: [...]` was a literal that happened to equal the vocabulary's
+ *   value. The day the value changed — to `watch.no_seat`, so that a served code
+ *   IS its own i18n key — every one of these eleven keys became wrong at once.
+ *   `tsc` caught all eleven, which is exactly what the `Record` keyed by the
+ *   union is for, and it is the reason this table was written that way rather
+ *   than as an array.
+ *
+ *   `[WatchDenialReason.NO_SEAT]` cannot drift: there is no second copy of the
+ *   string to keep in step, only the name.
+ */
 export declare const WATCH_FALLBACK_FOR: Readonly<Record<WatchDenialReason, readonly WatchFallbackAction[]>>;
 /** The FIVE inputs, named. None is guessed, none is global. */
 export interface WatchInput {
