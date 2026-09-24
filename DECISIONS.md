@@ -2036,3 +2036,52 @@ And `cancelReasonCode` has **one member** — a field whose enum has a single va
 information, since every request says the same thing. Not exempted quietly: the description names
 what would make it a vocabulary and names the candidate. *A placeholder that is honest about being
 one is worth more than an exemption that is not.*
+
+### D-053 — The week in one line, and a member that sits outside a vocabulary while reasoning about it
+
+**`backend-contracts` wrote the honest summary of the whole exercise, and it belongs at the end of
+this log rather than in a message:**
+
+> ***The two artefacts built to prevent the parallel literal table were themselves diverging in
+> eleven vocabularies, in four different shapes — separator, case, suffix, and pure absence — and
+> none of the five gates then standing could see any of them.***
+
+That is why the gates matter more than the fixes. Eleven divergences are a morning's work to repair
+and were invisible for a month; the instruments that make the next eleven visible are the
+deliverable.
+
+**AND THE LAST DISPUTE OF THE WEEK WAS THE RIGHT SIZE.**
+
+`backend-domain` challenged an exemption reason rather than the exemption. `JournalEntry.nature`
+carried `source: none` with *"the domain neither produces nor consumes these values"* — and of the
+five members, `money` is one the domain **reasons about**: `data-model.md:624` and
+`context-map.md:402` key the **redaction rule** to it, the rule that makes the field absent rather
+than null when a role may not see revenue.
+
+It did not ask for the vocabulary to move. `source: none` is right — the other four really are
+endpoint concerns. It asked for one clause in the reason, so that **a future rename has one place to
+look** instead of leaving two domain documents describing a rule keyed to a string that no longer
+exists, with every gate green.
+
+**`backend-contracts` then named what its own phrasing had hidden**, and that is the rule worth
+keeping: *"neither produces nor consumes" is two facts with different owners, and writing them as
+one clause is exactly what hides the second half.*
+
+> ***A member can sit outside a vocabulary and still be load-bearing in reasoning about it.***
+
+One of 115 exemptions needed that distinction. The other fourteen family reasons cover values
+nothing outside the contract reasons about at all — which is worth knowing, because it says the
+exemptions were not lazy.
+
+**TWO SMALLER THINGS, BOTH INVERSIONS OF THEIR OWN AUTHOR'S POINT.**
+
+An exit condition was improved from *"the first time that path changes"* — an event that might not
+arrive for a year — to *"the day anything compares this field against `RUN_STATES.on_air`"*. **An
+exit condition tied to the comparison that would break beats one tied to a file that might not be
+touched.**
+
+And `mod` turned out to be a **collision rather than an inconsistency**: `moderation` survives bare
+in `MEMBER_ROLES` because the field name disambiguates it, but here the field is `nature` and the
+value abbreviates a *different* concept, so that protection does not apply. `backend-domain` offered
+it as reinforcement for keeping the abbreviation; `backend-contracts` inverted it correctly. **It
+makes the rename more urgent, not less.**
