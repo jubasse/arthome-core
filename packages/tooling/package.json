@@ -51,9 +51,12 @@
     "arthome-check-prettier-conflict": "./bin/check-prettier-conflict.mjs",
     "arthome-check-language": "./bin/check-language.mjs",
     "arthome-check-map": "./bin/check-map.mjs",
-    "arthome-generate-map": "./bin/generate-map.mjs"
+    "arthome-generate-map": "./bin/generate-map.mjs",
+    "arthome-sync-agent-docs": "./bin/sync-agent-docs.mjs",
+    "arthome-collect-agent-docs": "./bin/collect-agent-docs.mjs"
   },
   "files": [
+    "docs",
     "bin",
     "lib",
     "eslint",
@@ -97,5 +100,8 @@
     "prettier-config",
     "tsconfig",
     "internal"
-  ]
+  ],
+  "scripts": {
+    "build": "node bin/collect-agent-docs.mjs"
+  }
 }

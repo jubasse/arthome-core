@@ -255,3 +255,35 @@ publisher first**, before it is ever published.
 **And a bump pins a version that is already mature, never the day's** — see code-conventions.md
 section 7.6. Pinning the day's latest guarantees `minimumReleaseAge` will refuse it, which is exactly
 what happened at this repository's first install.
+
+## Carrying the rules into a consuming repository
+
+Every repository but this one has to follow `critical-rules.md` and
+`code-conventions.md`, and none of them can read `architecture/` — it is in another repository. So
+this package ships both and copies them in on install.
+
+Two lines in the consuming repository:
+
+```jsonc
+// package.json
+"scripts": { "postinstall": "arthome-sync-agent-docs" }
+```
+
+```markdown
+<!-- AGENTS.md -->
+The project's rules are in `docs/arthome/`, copied from `@arthome/tooling` on install:
+
+- `docs/arthome/critical-rules.md` — nineteen lines, re-read every session
+- `docs/arthome/code-conventions.md` — how the code is written, and why
+```
+
+**The copy is COMMITTED, and that is what makes it trustworthy.** An install rewrites it, so a stale
+one shows up in `git status` the first time anybody installs after a pull. *The freshness check is
+the diff, and the diff already exists* — which is why there is no gate here and no generator.
+
+**Why only those two.** The ADRs, the context map and the data model stay in arthome-core behind a
+link. They are reference rather than rules, they are large, and five copies of them is the parallel
+table this project spends its gates preventing.
+
+⚠ **It overwrites.** A local edit at the destination is lost at the next install rather than
+reported — which is the point of a projection, and worth knowing before someone fixes a typo there.
