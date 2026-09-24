@@ -49,9 +49,14 @@
  *   be made rather than defaulted.
  */
 import { z } from 'zod';
-import { type VocabularyOut } from '@arthome/core/schema';
-export declare const LocalizedTextSchema: z.ZodObject<{
-    contentLanguage: VocabularyOut;
+/** Authored text as the storefront documents it. */
+export declare const StorefrontLocalizedTextSchema: z.ZodObject<{
+    contentLanguage: z.ZodString;
+    text: z.ZodString;
+}, z.core.$loose>;
+/** Authored text as the studio documents it — the same shape, the console's own prose (D-065 family G). */
+export declare const StudioLocalizedTextSchema: z.ZodObject<{
+    contentLanguage: z.ZodString;
     text: z.ZodString;
 }, z.core.$loose>;
 //# sourceMappingURL=index.d.ts.map

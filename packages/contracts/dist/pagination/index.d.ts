@@ -50,14 +50,22 @@ import type { VocabularyOutNullable } from '@arthome/core/schema';
  * describe what an endpoint offers, and a fifteenth is an endpoint change.
  */
 export declare const EMPTY_REASONS: readonly ["no_match_for_query", "no_match_with_filters", "nothing_in_category_yet", "no_live_in_category", "no_upcoming_in_category", "no_replay_in_category", "no_followed_artist", "no_followed_artist_live", "no_order_yet", "no_ticket_yet", "no_replay_available", "empty_cart", "no_saved_search", "no_watchlist_entry"];
-export declare const CursorPageInfoSchema: z.ZodObject<{
-    nextCursor: z.ZodNullable<z.ZodString>;
-    prevCursor: z.ZodNullable<z.ZodString>;
+/** The storefront's cursor page. Its studio counterpart carries `pendingCount` instead — D-065 family G. */
+export declare const StorefrontCursorPageInfoSchema: z.ZodObject<{
+    nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    prevCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     hasMore: z.ZodBoolean;
-    approximateTotal: z.ZodNullable<z.ZodInt>;
-    totalIsLowerBound: z.ZodDefault<z.ZodBoolean>;
-    emptyReason: VocabularyOutNullable;
-    emptyActionCode: z.ZodNullable<z.ZodString>;
+    approximateTotal: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    totalIsLowerBound: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
+    emptyReason: z.ZodOptional<VocabularyOutNullable>;
+    emptyActionCode: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+}, z.core.$loose>;
+/** The studio's cursor page: the moderation queue and the live chat, with a separate badge total. */
+export declare const StudioCursorPageInfoSchema: z.ZodObject<{
+    nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    prevCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    hasMore: z.ZodBoolean;
+    pendingCount: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
 }, z.core.$loose>;
 /**
  * `OffsetPageInfo` — the studio's pagination primitive, and the deliberate
@@ -85,10 +93,10 @@ export declare const CursorPageInfoSchema: z.ZodObject<{
  * shared list to make the two shapes rhyme would be a vocabulary nobody serves.
  */
 export declare const OffsetPageInfoSchema: z.ZodObject<{
-    page: z.ZodInt;
-    pageSize: z.ZodInt;
-    totalItems: z.ZodInt;
-    totalPages: z.ZodInt;
-    emptyReason: z.ZodNullable<z.ZodString>;
+    page: z.ZodNumber;
+    pageSize: z.ZodNumber;
+    totalItems: z.ZodNumber;
+    totalPages: z.ZodNumber;
+    emptyReason: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$loose>;
 //# sourceMappingURL=index.d.ts.map

@@ -102,10 +102,18 @@ the entry named.
 
 ## Repository map
 
-A generated map of the published surface — what each package exports, and what a consumer may call —
-is being built as `@arthome/tooling`'s next gate. **It will be generated from the installed packages'
-declarations and checked for freshness**, because a hand-written map of a moving surface is a claim
-with nobody behind it. This section will link to it when it exists rather than before.
+**[`REPOSITORY_MAP.md`](REPOSITORY_MAP.md)** is the map: what each directory is for, and every name
+`@arthome/core` and `@arthome/contracts` export, organised by the import specifier under which it is
+reachable. It is **generated** from the packages' published declarations (through their `exports` maps)
+and **committed**, so it can be read without running anything.
+
+Do not edit it. `pnpm run check:map` fails when it differs from what regenerating would produce, and
+exits 3 — not 0 — when it could not compare (a package not installed, declarations not built).
+Regenerate with `pnpm exec arthome-generate-map`. The one hand-written input is
+[`repo-map.purposes.json`](repo-map.purposes.json): the purpose of each directory.
+
+A consuming repository runs the same two bins against its own `node_modules`, so its map describes the
+version of `@arthome/*` actually installed there. `check:map` is not in `verify` yet.
 
 ---
 

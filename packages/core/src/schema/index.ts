@@ -24,6 +24,7 @@ export {
   CurrencyCodeSchema,
   IanaTimeZoneSchema,
   InstantSchema,
+  int64,
   LocaleIn,
   LocaleOut,
   PageCursorSchema,
@@ -34,7 +35,7 @@ export { BasisPointsSchema, MoneyIn, MoneyOut } from './money.js';
 export { VenueClockSchema } from './time.js';
 
 export type { VocabularyIn, VocabularyOut, VocabularyOutNullable } from './vocabulary.js';
-export { vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
+export { sourceNameOf, vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
 
 export {
   AccountIdSchema,
@@ -63,4 +64,4 @@ export {
   VatLineSchema,
 } from './tax.js';
 
-export { ErrorEnvelopeSchema, FailureNatureOut, issueToCode } from './error.js';
+export { ErrorSchema, FailureNatureOut, issueToCode } from './error.js';

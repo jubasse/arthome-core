@@ -33,6 +33,7 @@ import yaml
 EQUIVALENCES = [
     "`$schema` and `$id` are stripped -- emitter bookkeeping, not contract",
     "`additionalProperties` absent == `{}` -- looseObject's emitted form against the document's silence",
+    "`additionalProperties: true` == the above, BUT ONLY on a node with no `properties` -- a map, not an open shape",
     "`required: []` == absent `required` -- an all-optional shape; the documents never write the empty list",
     "`anyOf: [{X}, {type: null}]` == `type: [X, 'null']`, X's keywords merged up",
     "key order is not compared, at any depth",
@@ -71,9 +72,21 @@ def normalise(node):
     for key, value in node.items():
         if key in ("$schema", "$id"):
             continue
-        # `{}` only -- see the note above EQUIVALENCES for why `True` is not here.
-        if key == "additionalProperties" and value == {}:
-            continue
+        if key == "additionalProperties":
+            # `{}` and absence are two artefacts spelling one thing: always equal.
+            #
+            # `True` is equal to them ONLY WHERE THE NODE HAS NO `properties`.
+            # backend-contracts refused `True` outright because it is a value a
+            # human types, so granting it hides a schema somebody opened by hand.
+            # That argument is about an OPEN-VERSUS-CLOSED decision, and a node
+            # with no `properties` is not making one -- it is a MAP, and `True`
+            # there declares the value type as unconstrained, which is the point
+            # of the field rather than a loophole in it.
+            #
+            # `Error.params` is the case that forced the distinction, and the
+            # document settled it by carrying an array in its own example.
+            if value == {} or (value is True and "properties" not in node):
+                continue
         if key == "required" and value == []:
             continue
         if key == "description" and isinstance(value, str):
@@ -140,10 +153,20 @@ def diff(want, got, path=""):
 SUFFIX_PRECEDENCE = ("Out", "Schema", "In")
 
 
-def source_of(name, emitted):
-    """The export that answers for the document's schema `name`, and its spelling."""
-    for suffix in SUFFIX_PRECEDENCE:
-        export = f"{name}{suffix}"
+def product_of(document):
+    """`Storefront` or `Studio`, from the document's filename (`openapi/studio.yaml`)."""
+    return Path(document).stem.capitalize()
+
+
+def source_of(name, emitted, document=""):
+    """The export that answers for the document's schema `name`, and its spelling.
+
+    A shape the two documents spell differently is exported once per PRODUCT
+    (D-065 family G), so `<Product><Name>Schema` is tried before the shared names.
+    """
+    candidates = [f"{product_of(document)}{name}Schema"] if document else []
+    candidates += [f"{name}{suffix}" for suffix in SUFFIX_PRECEDENCE]
+    for export in candidates:
         if export in emitted:
             return export, emitted[export]
     return None, None
@@ -184,7 +207,7 @@ def main(argv):
         unsourced = []
         for name in sorted(schemas):
             total += 1
-            export, entry = source_of(name, emitted)
+            export, entry = source_of(name, emitted, document)
             if entry is None:
                 unsourced.append(name)
                 continue
@@ -203,8 +226,8 @@ def main(argv):
 
     if failures:
         print(f"\n✗ {len(failures)} schema(s) do not match the document they must emit:\n")
-        for document, name, entry, found in failures:
-            print(f"  {document} · {name}  (from {entry['from']}, {entry['export']})")
+        for document, name, export, entry, found in failures:
+            print(f"  {document} · {name}  (from {entry['from']}, {export})")
             for where, want, got in found[: 40 if show_all else 8]:
                 print(f"    {where}")
                 print(f"      document: {brief(want)}")

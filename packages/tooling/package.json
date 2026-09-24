@@ -49,10 +49,13 @@
     "arthome-check-versions": "./bin/check-versions.mjs",
     "arthome-check-tsconfig": "./bin/check-tsconfig.mjs",
     "arthome-check-prettier-conflict": "./bin/check-prettier-conflict.mjs",
-    "arthome-check-language": "./bin/check-language.mjs"
+    "arthome-check-language": "./bin/check-language.mjs",
+    "arthome-check-map": "./bin/check-map.mjs",
+    "arthome-generate-map": "./bin/generate-map.mjs"
   },
   "files": [
     "bin",
+    "lib",
     "eslint",
     "tsconfig",
     "prettier.js",

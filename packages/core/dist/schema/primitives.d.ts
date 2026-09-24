@@ -54,6 +54,19 @@ import { LOCALES } from '../format/locale.js';
  */
 export declare const InstantSchema: z.ZodString;
 /**
+ * A 64-bit integer on the wire: `type: integer, format: int64`, and NO bounds.
+ *
+ * ⚠ NOT `z.int()`. `z.int()` emits JavaScript's safe range as `minimum` and
+ * `maximum` — numbers that are in no document, and that would tell a generated
+ * client in another language that int64 stops at 2^53. The documents carry the
+ * format and nothing else, so this emits exactly that.
+ *
+ * The runtime keeps the guarantee the bounds would have given: a value that is
+ * not a safe integer is refused, because a JavaScript number cannot carry more
+ * without losing digits silently.
+ */
+export declare const int64: () => z.ZodNumber;
+/**
  * An IANA time zone identifier: `Europe/Paris`.
  *
  * Validated by SHAPE, never by existence — the IANA database is not bundled,

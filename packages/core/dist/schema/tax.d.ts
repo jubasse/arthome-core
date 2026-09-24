@@ -38,7 +38,7 @@ export declare const TaxSupplyKindOut: VocabularyOut;
 export declare const TaxEvidenceSchema: z.ZodObject<{
     kind: VocabularyOut;
     country: z.ZodString;
-    subdivision: z.ZodOptional<z.ZodString>;
+    subdivision: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     source: z.ZodString;
     collectedAt: z.ZodString;
 }, z.core.$loose>;
@@ -54,12 +54,12 @@ export declare const TaxEvidenceSchema: z.ZodObject<{
  */
 export declare const BuyerTaxLocationSchema: z.ZodObject<{
     country: z.ZodString;
-    subdivision: z.ZodOptional<z.ZodString>;
-    postalCode: z.ZodOptional<z.ZodString>;
-    city: z.ZodOptional<z.ZodString>;
+    subdivision: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    postalCode: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     evidence: z.ZodArray<typeof TaxEvidenceSchema>;
     evidenceConflicting: z.ZodBoolean;
-    resolvedAt: z.ZodString;
+    resolvedAt: z.ZodOptional<z.ZodString>;
 }, z.core.$loose>;
 /**
  * One VAT line. `rateBps` is THE RATE APPLIED AT THE SALE, kept on the line —

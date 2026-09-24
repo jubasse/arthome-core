@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
-import { ErrorEnvelopeSchema, issueToCode } from './error.js';
+import { ErrorSchema, issueToCode } from './error.js';
 import { AccountIdSchema, PublicHandleSchema } from './identifiers.js';
 import { MoneyIn, MoneyOut } from './money.js';
-import { IanaTimeZoneSchema, InstantSchema, LocaleIn, LocaleOut } from './primitives.js';
+import { IanaTimeZoneSchema, InstantSchema, LocaleIn, LocaleOut, int64 } from './primitives.js';
 import { vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
 import { DATE_OUTCOMES } from '../vocabulary/catalog.js';
 
@@ -123,7 +124,7 @@ describe('failures leave as codes', () => {
 
   it('accepts the envelope every surface depends on', () => {
     expect(
-      ErrorEnvelopeSchema.safeParse({
+      ErrorSchema.safeParse({
         code: 'publication.transition_irreversible',
         params: { from: 'scheduled', to: 'draft' },
         traceId: '00-4bf92f-00f067aa-01',
@@ -180,5 +181,26 @@ describe('the primitives refuse what bit us before', () => {
     expect(PublicHandleSchema.safeParse('019928fa-0000-7000-8000-000000000001').success).toBe(
       false,
     );
+  });
+});
+
+describe('int64', () => {
+  it('emits the format and no bounds, which is what the documents carry', () => {
+    const emitted = z.toJSONSchema(int64(), { io: 'output' });
+    expect(emitted).toMatchObject({ type: 'integer', format: 'int64' });
+    expect(emitted).not.toHaveProperty('minimum');
+    expect(emitted).not.toHaveProperty('maximum');
+  });
+
+  it('still refuses what a JavaScript number cannot carry', () => {
+    expect(int64().safeParse(-3).success).toBe(true);
+    expect(int64().safeParse(1.5).success).toBe(false);
+    expect(int64().safeParse(2 ** 60).success).toBe(false);
+  });
+
+  it('emits the instant as a date-time carrying its pattern', () => {
+    const emitted = z.toJSONSchema(InstantSchema, { io: 'output' });
+    expect(emitted).toMatchObject({ format: 'date-time' });
+    expect(emitted).toHaveProperty('pattern');
   });
 });

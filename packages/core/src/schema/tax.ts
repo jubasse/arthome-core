@@ -56,18 +56,33 @@ export const TaxEvidenceSchema: z.ZodObject<
   {
     kind: VocabularyOut;
     country: z.ZodString;
-    subdivision: z.ZodOptional<z.ZodString>;
+    subdivision: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     source: z.ZodString;
     collectedAt: z.ZodString;
   },
   z.core.$loose
-> = z.looseObject({
-  kind: TaxEvidenceKindOut,
-  country: CountryCodeSchema,
-  subdivision: z.string().max(8).optional(),
-  source: z.string().min(1).max(64),
-  collectedAt: InstantSchema,
-});
+> = z
+  .looseObject({
+    kind: TaxEvidenceKindOut,
+    country: CountryCodeSchema.describe(
+      'What **this item** indicates — not the outcome of the arbitration.',
+    ),
+    subdivision: z
+      .string()
+      .max(8)
+      .nullable()
+      .optional()
+      .describe('ISO 3166-2, when the item carries it.'),
+    source: z
+      .string()
+      .min(1)
+      .max(64)
+      .meta({ examples: ['edge.geoip'] }),
+    collectedAt: InstantSchema,
+  })
+  .describe(
+    '**One item of location evidence, with its provenance.** A B2C sale inside the Union\nrequires **two non-contradictory items** — and a tax provider generally prefers a single\naddress over comparing them, so the evidence rule cannot be delegated to it: our own\nregister carries it.\n\n`source` is not decorative: **evidence without provenance is not evidence**.',
+  );
 
 /**
  * The location adopted, with the evidence that produced it.
@@ -82,23 +97,31 @@ export const TaxEvidenceSchema: z.ZodObject<
 export const BuyerTaxLocationSchema: z.ZodObject<
   {
     country: z.ZodString;
-    subdivision: z.ZodOptional<z.ZodString>;
-    postalCode: z.ZodOptional<z.ZodString>;
-    city: z.ZodOptional<z.ZodString>;
+    subdivision: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    postalCode: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     evidence: z.ZodArray<typeof TaxEvidenceSchema>;
     evidenceConflicting: z.ZodBoolean;
-    resolvedAt: z.ZodString;
+    resolvedAt: z.ZodOptional<z.ZodString>;
   },
   z.core.$loose
-> = z.looseObject({
-  country: CountryCodeSchema,
-  subdivision: z.string().max(8).optional(),
-  postalCode: z.string().max(16).optional(),
-  city: z.string().max(128).optional(),
-  evidence: z.array(TaxEvidenceSchema),
-  evidenceConflicting: z.boolean(),
-  resolvedAt: InstantSchema,
-});
+> = z
+  .looseObject({
+    country: CountryCodeSchema,
+    subdivision: z.string().max(8).nullable().optional(),
+    postalCode: z.string().max(16).nullable().optional(),
+    city: z.string().max(128).nullable().optional(),
+    evidence: z.array(TaxEvidenceSchema),
+    evidenceConflicting: z
+      .boolean()
+      .describe(
+        'True when two items contradict each other. **The sale goes through anyway** and the line is\nflagged for review: refusing the purchase would punish the viewer for an ambiguity that is\nnot theirs, and hiding the conflict would produce a false and silent declaration.',
+      ),
+    resolvedAt: InstantSchema.optional(),
+  })
+  .describe(
+    "**The buyer's tax location, carried by the order.** Neither a market identifier nor a plain\ncountry: in the United States the rate changes from one street to the next, so the postal\ncode is indispensable; in the Union the evidence is **double** and must be retained.\n\n**Not to be confused with the identity verification of the signed-in account**, which bears\non the **artist** and has nothing to do with the **viewer's** location. The two are often\nconflated.",
+  );
 
 /**
  * One VAT line. `rateBps` is THE RATE APPLIED AT THE SALE, kept on the line —

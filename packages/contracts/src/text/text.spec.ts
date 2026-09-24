@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { LocalizedTextSchema } from './index.js';
+import { StorefrontLocalizedTextSchema } from './index.js';
 
 interface EmittedObject {
   readonly additionalProperties?: unknown;
@@ -14,7 +14,7 @@ const emit = (schema: z.ZodType): EmittedObject =>
 
 describe('LocalizedText', () => {
   it('is open, like every other shape a server sends', () => {
-    expect(emit(LocalizedTextSchema).additionalProperties).not.toBe(false);
+    expect(emit(StorefrontLocalizedTextSchema).additionalProperties).not.toBe(false);
   });
 
   it('keeps contentLanguage OPEN, because a television must render a language it has never heard of', () => {
@@ -32,16 +32,16 @@ describe('LocalizedText', () => {
     //   using the exact conflation the module header opens by naming. A test can
     //   pin a bug as firmly as it pins a guarantee, and this one did it in the
     //   file next door to the warning. D-065 section H.
-    const contentLanguage = emit(LocalizedTextSchema).properties.contentLanguage;
+    const contentLanguage = emit(StorefrontLocalizedTextSchema).properties.contentLanguage;
     expect(contentLanguage?.enum).toBeUndefined();
     expect(contentLanguage?.type).toBe('string');
-    // The members are still PUBLISHED — a client knows what to expect, it is
-    // simply not entitled to refuse the rest. That is rule 10 exactly.
-    expect(contentLanguage?.['x-arthome-vocabulary']).toEqual(['fr', 'en']);
+    // Both documents publish `contentLanguage` as a bare string with an example and
+    // no vocabulary block (D-065 family G: the document wins), so none is emitted.
+    expect(contentLanguage?.['x-arthome-vocabulary']).toBeUndefined();
   });
 
   it('requires both halves — text without its language is the defect', () => {
-    expect(emit(LocalizedTextSchema).required).toEqual(
+    expect(emit(StorefrontLocalizedTextSchema).required).toEqual(
       expect.arrayContaining(['contentLanguage', 'text']),
     );
   });

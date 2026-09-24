@@ -59,47 +59,15 @@ export type VocabularyOutNullable = z.ZodNullable<z.ZodString>;
  * STRICT — for a request. An unknown member is refused, with a code.
  */
 export declare function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T>;
+export declare function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;
 /**
- * TOLERANT — for a response. An unknown member is KEPT as a raw string and
- * treated as neutral by the surface, never rejected.
+ * The name this vocabulary is published under, or the one the caller declares.
  *
- * ⚠ THIS WAS `z.union([z.enum(values), z.string()])`, AND THE COMMENT ABOVE IT
- * CLAIMED THE UNION LET A SURFACE `switch` EXHAUSTIVELY ON A KNOWN MEMBER.
- * THAT CLAIM WAS FALSE. `backend-contracts` disproved it and I reproduced it:
- *
- *     type U = 'open' | 'emoji' | string;
- *     type C = string extends U ? 'collapses' : 'keeps literals';  // 'collapses'
- *
- * TypeScript reduces a literal union with a `string` arm to `string`, so there
- * was never a literal to keep, never an exhaustive switch, never a completion.
- * The `(string & {})` idiom does not rescue it either — I probed that too, and
- * `string extends 'open' | 'emoji' | (string & {})` is equally true.
- *
- * The union bought nothing in the emitted schema either: it produced
- * `anyOf: [{type: string, enum: […]}, {type: string}]`, whose second branch
- * accepts everything, so the enum branch constrained nothing. Forty lines
- * spelling `type: string`.
- *
- * So the union was validation-equivalent on the wire and type-equivalent in the
- * editor, and I had written a justification for a property neither artefact had.
- * I asserted rather than measured, in a module comment, which is worse than in a
- * message: a message gets answered and a module comment gets believed.
- *
- * What replaces it keeps every property the union was written for — any string
- * accepted, so the TV fleet survives a member added after its build shipped —
- * and emits the shape both contracts already carry in 154 blocks, with no
- * emitter logic to write and therefore none to get wrong.
- *
- * What is genuinely given up: `z.infer` produces `string` rather than
- * `'open' | 'emoji' | string`. Those are the same type, so nothing observable
- * is lost; the hover text is shorter and now honest.
- *
- * The known members do not disappear — they travel as metadata, under the key
- * `check-vocabulary` already reads, and remain discoverable by
- * `arthome-check-enums` at the call site because the vocabulary is passed by
- * name.
+ * Exported because `@arthome/contracts` declares vocabularies of its own —
+ * `EMPTY_REASONS` is one, and `check-vocabulary`'s universe is every vocabulary
+ * exported by every published package, not just core's.
  */
-export declare function vocabularyOut<const T extends Members>(values: T): VocabularyOut;
+export declare function sourceNameOf(values: readonly string[], name?: string): string;
 /**
  * TOLERANT AND NULLABLE — the same thing for a field that may be absent.
  *
@@ -124,6 +92,6 @@ export declare function vocabularyOut<const T extends Members>(values: T): Vocab
  * Found by `backend-contracts` on `.meta({format}).nullable()`, and it applies
  * here for the same reason.
  */
-export declare function vocabularyOutNullable<const T extends Members>(values: T): VocabularyOutNullable;
+export declare function vocabularyOutNullable<const T extends Members>(values: T, name?: string): VocabularyOutNullable;
 export {};
 //# sourceMappingURL=vocabulary.d.ts.map

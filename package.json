@@ -23,6 +23,7 @@
     "check:core-entry": "node tools/check-core-entry.mjs",
     "check:versions": "arthome-check-versions",
     "check:tsconfig": "arthome-check-tsconfig",
+    "check:map": "arthome-check-map",
     "check:openapi": "python3 tools/check-openapi.py openapi/storefront.yaml openapi/studio.yaml",
     "check:vocabulary": "python3 tools/check-vocabulary.py openapi/storefront.yaml openapi/studio.yaml",
     "_comment:emit-diff": "NOT in `verify`, and that is the point. It is RED (D-065): fourteen sourced schemas, fourteen disagreements. A gate wired in red is a gate switched off within a day, so it joins `verify` in the commit that turns it green and not before. It reads dist/, so build first.",

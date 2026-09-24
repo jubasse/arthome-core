@@ -48,40 +48,72 @@
 
 import { z } from 'zod';
 
-import { InstantSchema } from '@arthome/core/schema';
+import { InstantSchema, int64 } from '@arthome/core/schema';
 
-/** An instant as the contracts document it: ISO 8601 UTC, `format: date-time`. */
-export const WireInstantSchema: z.ZodString = InstantSchema.meta({
-  format: 'date-time',
-  examples: ['2026-09-21T20:31:04.118Z'],
-});
-
-/**
- * The meta every response composes.
- *
- * `servedAt` is mandatory and `validUntil` is not: a response with no perishable
- * value has nothing to expire, and serving a null there would invite a surface
- * to count down to it.
- */
-export const EnvelopeMetaSchema: z.ZodObject<{
-  servedAt: z.ZodString;
-  validUntil: z.ZodNullable<z.ZodString>;
-  lastEventSeq: z.ZodNullable<z.ZodInt>;
-}> = z.looseObject({
-  servedAt: WireInstantSchema.describe(
-    'Server instant. **Every** displayed countdown is computed against it, never against the ' +
-      "client's clock.",
+/** The meta every STOREFRONT response composes. */
+export const StorefrontEnvelopeMetaSchema: z.ZodObject<
+  {
+    servedAt: z.ZodString;
+    validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    lastEventSeq: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    degraded: z.ZodOptional<z.ZodArray<z.ZodString>>;
+  },
+  z.core.$loose
+> = z.looseObject({
+  servedAt: InstantSchema.meta({
+    format: 'date-time',
+    examples: ['2026-09-21T20:31:04.118Z'],
+  }).describe(
+    "Server instant. **Every** displayed countdown is computed against it, never against the\nclient's clock.\n",
   ),
   validUntil: InstantSchema.nullable()
     .meta({ format: 'date-time', examples: ['2026-09-21T20:31:34.118Z'] })
+    .optional()
     .describe(
-      'Present as soon as a perishable value is in the response. Past that instant, the surface ' +
-        '**calls the same `@arthome/core` function again** with the inputs it already has — it does ' +
-        'not rewrite the rule, it re-runs it.',
+      'Present as soon as a perishable value is in the response. Past that instant, the surface\n**calls the same `@arthome/core` function again** with the inputs it already has — it does\nnot rewrite the rule, it re-runs it.\n',
     ),
-  lastEventSeq: z
-    .int()
+  lastEventSeq: int64()
     .nullable()
-    .meta({ format: 'int64' })
+    .optional()
+
     .describe('Sequence number of the last event applied to the read model. Resume point.'),
+  degraded: z
+    .array(z.string())
+    .optional()
+    .meta({ examples: [['viewerProgress']] })
+    .describe(
+      'The **optional** parts that could not be composed. The response is served anyway: a\nper-viewer overlay that fails degrades the card, it does not sink the screen.\n',
+    ),
+});
+
+/**
+ * The meta every STUDIO response composes. It differs from the storefront's:
+ * `rightsVersion` is mandatory here (a changed value means the navigation is stale)
+ * and the prose is the console's, not the viewer's — D-065 family G.
+ */
+export const StudioEnvelopeMetaSchema: z.ZodObject<
+  {
+    servedAt: z.ZodString;
+    validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    rightsVersion: z.ZodNumber;
+    lastEventSeq: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    degraded: z.ZodOptional<z.ZodArray<z.ZodString>>;
+  },
+  z.core.$loose
+> = z.looseObject({
+  servedAt: InstantSchema.meta({
+    format: 'date-time',
+    examples: ['2026-09-21T20:31:04.118Z'],
+  }).describe(
+    'The reference clock. The duty countdown, the length of a silencing, "the replay expires in\n41 h", the expiry of a one-off access: everything is counted against it and a measured offset,\n**never against the workstation\'s clock**.\n',
+  ),
+  validUntil: InstantSchema.nullable().meta({ format: 'date-time' }).optional(),
+  rightsVersion: int64()
+    .meta({ examples: [412] })
+    .describe('**On every response.** When it changes, the navigation is stale.'),
+  lastEventSeq: int64().nullable().optional(),
+  degraded: z
+    .array(z.string())
+    .optional()
+    .describe('The optional parts that could not be composed. The console paints anyway.'),
 });

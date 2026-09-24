@@ -46,12 +46,12 @@ import { z } from 'zod';
  *   COUNTERPART, not a suffix.
  */
 export declare const MoneyOut: z.ZodObject<{
-    amountMinor: z.ZodInt;
+    amountMinor: z.ZodNumber;
     currencyCode: z.ZodString;
 }, z.core.$loose>;
 /** The same shape, STRICT — for a `Money` a client sends. */
 export declare const MoneyIn: z.ZodObject<{
-    amountMinor: z.ZodInt;
+    amountMinor: z.ZodNumber;
     currencyCode: z.ZodString;
 }>;
 /**

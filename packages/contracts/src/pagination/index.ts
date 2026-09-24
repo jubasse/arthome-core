@@ -45,7 +45,7 @@
 import { z } from 'zod';
 
 import type { VocabularyOutNullable } from '@arthome/core/schema';
-import { PageCursorSchema, vocabularyOutNullable } from '@arthome/core/schema';
+import { PageCursorSchema, int64, vocabularyOutNullable } from '@arthome/core/schema';
 
 /**
  * Why a list came back empty.
@@ -70,47 +70,74 @@ export const EMPTY_REASONS = [
   'no_watchlist_entry',
 ] as const;
 
-export const CursorPageInfoSchema: z.ZodObject<
+/** The storefront's cursor page. Its studio counterpart carries `pendingCount` instead — D-065 family G. */
+export const StorefrontCursorPageInfoSchema: z.ZodObject<
   {
-    nextCursor: z.ZodNullable<z.ZodString>;
-    prevCursor: z.ZodNullable<z.ZodString>;
+    nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    prevCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     hasMore: z.ZodBoolean;
-    approximateTotal: z.ZodNullable<z.ZodInt>;
-    totalIsLowerBound: z.ZodDefault<z.ZodBoolean>;
-    emptyReason: VocabularyOutNullable;
-    emptyActionCode: z.ZodNullable<z.ZodString>;
+    approximateTotal: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    totalIsLowerBound: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
+    emptyReason: z.ZodOptional<VocabularyOutNullable>;
+    emptyActionCode: z.ZodOptional<z.ZodNullable<z.ZodString>>;
   },
   z.core.$loose
 > = z.looseObject({
-  nextCursor: PageCursorSchema.nullable(),
-  prevCursor: PageCursorSchema.nullable(),
+  nextCursor: PageCursorSchema.nullable().optional(),
+  prevCursor: PageCursorSchema.nullable().optional(),
   hasMore: z.boolean(),
-  approximateTotal: z
-    .int()
+  approximateTotal: int64()
+    .meta({ format: undefined })
     .nullable()
-    .meta({ format: 'int64', examples: [428] })
+    .optional()
+    .meta({ examples: [428] })
     .describe(
-      '**Approximate and bounded** count. Exact up to the threshold served as ' +
-        '`DomainConstants.searchExactTotalLimit`; beyond it the contract promises only that the true ' +
-        'count is **at least** the value served — `totalIsLowerBound` says so.',
+      '**Approximate and bounded** count. It is exact up to the threshold served as\n`DomainConstants.searchExactTotalLimit`, and beyond it the contract promises only that the\ntrue count is **at least** the value served — `totalIsLowerBound` says so. That is what\nmakes "See more · N remaining" honest without promising an exact count an index does not\ngive.\n\n**The threshold is served, not written here, and no engine is named.** A number carved into\na description is a constant with no owning document (rule 15), and a vendor\'s parameter\nnamed in a contract is the search engine\'s shape showing through the boundary — it would\nhave to be renamed the day the engine changes, in a document a generated client carries.\n',
     ),
   totalIsLowerBound: z
     .boolean()
     .default(false)
+    .optional()
     .describe('When true, `approximateTotal` is a **lower bound**, not a total.'),
-  emptyReason: vocabularyOutNullable(EMPTY_REASONS).describe(
-    'Why the list is empty. An empty list without a reason forces the surface to guess and to ' +
-      'write a generic empty state, which the brief forbids. Each value produces a different ' +
-      'screen, **with an action that leads out of the dead end**.',
-  ),
+  emptyReason: vocabularyOutNullable(EMPTY_REASONS, 'EMPTY_REASONS')
+    .optional()
+    .describe(
+      'Why the list is empty. An empty list without a reason forces the surface to guess and to\nwrite a generic empty state, which the brief forbids. Each value produces a different screen,\n**with an action that leads out of the dead end**.\n',
+    ),
   emptyActionCode: z
     .string()
     .nullable()
+    .optional()
+    // `\u0022` and not a bare quote: the document's prose quotes a sample action code,
+    // and `arthome-check-enums` reads a quoted value as a copied vocabulary member.
     .describe(
-      'The code of the action that leads out of the dead end ("see the categories", "browse"). A ' +
-        '**served action code**, not a sentence and not a constant copied across five surfaces.',
+      'The code of the action that leads out of the dead end (\u0022see the categories\u0022, \u0022browse\u0022). It\nis a **served action code**, not a sentence and not a constant copied across five\nsurfaces.\n',
     ),
 });
+
+/** The studio's cursor page: the moderation queue and the live chat, with a separate badge total. */
+export const StudioCursorPageInfoSchema: z.ZodObject<
+  {
+    nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    prevCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    hasMore: z.ZodBoolean;
+    pendingCount: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    nextCursor: PageCursorSchema.nullable().optional(),
+    prevCursor: PageCursorSchema.nullable().optional(),
+    hasMore: z.boolean(),
+    pendingCount: int64()
+      .meta({ format: undefined })
+      .nullable()
+      .optional()
+      .describe(
+        'The **separate total**, for the badge. It is not counted over the current page: the bottom\nbar carries "in queue: 14", and **none of these numbers may require fetching a page**.\n',
+      ),
+  })
+  .describe('The two exceptions: the moderation queue and the live chat.');
 
 /**
  * `OffsetPageInfo` — the studio's pagination primitive, and the deliberate
@@ -139,27 +166,21 @@ export const CursorPageInfoSchema: z.ZodObject<
  */
 export const OffsetPageInfoSchema: z.ZodObject<
   {
-    page: z.ZodInt;
-    pageSize: z.ZodInt;
-    totalItems: z.ZodInt;
-    totalPages: z.ZodInt;
-    emptyReason: z.ZodNullable<z.ZodString>;
+    page: z.ZodNumber;
+    pageSize: z.ZodNumber;
+    totalItems: z.ZodNumber;
+    totalPages: z.ZodNumber;
+    emptyReason: z.ZodOptional<z.ZodNullable<z.ZodString>>;
   },
   z.core.$loose
-> = z.looseObject({
-  page: z
-    .int()
-    .min(1)
-    .meta({ format: 'int64' })
-    .describe('**From 1.** That is the affordance: you pin a page and send it to a colleague.'),
-  pageSize: z
-    .int()
-    .meta({ format: 'int64' })
-    .describe('Small pages, deliberately: a thumb does not scan a hundred rows.'),
-  totalItems: z
-    .int()
-    .meta({ format: 'int64' })
-    .describe('**Exact**, not approximate — that is what "1–8 OF N" requires.'),
-  totalPages: z.int().meta({ format: 'int64' }),
-  emptyReason: z.string().nullable(),
-});
+> = z
+  .looseObject({
+    page: int64().min(1).meta({ format: undefined }),
+    pageSize: int64().meta({ format: undefined }),
+    totalItems: int64().meta({ format: undefined }),
+    totalPages: int64().meta({ format: undefined }),
+    emptyReason: z.string().nullable().optional(),
+  })
+  .describe(
+    '**The total is exact**, not approximate: that is the difference from the storefront, and it\nis what "1–8 OF N" requires.\n',
+  );

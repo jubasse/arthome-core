@@ -2671,6 +2671,32 @@ change.* This is the emit path's version of reading an exit code through a pipe.
 asserts the string equals the exported identifier.** One transcription, on the line that already
 carries the name, mechanically checked. `arthome-check-enums` already reads these declarations.
 
+> **CORRECTION, on implementing it the same day: there is no transcription, so there is no gate.**
+>
+> The ruling assumed the name had to be *written down* somewhere and then checked. It does not.
+> `Object.entries` on `@arthome/core`'s `.` entry namespace yields `['WATCH_SCOPES', [...]]` —
+> **the export identifier is already the name**, and a map keyed by ARRAY IDENTITY hands it back
+> from the array alone. Rename the export and the emitted source name follows, because they are one
+> string rather than two that agree.
+>
+> *A ruling that prescribes a checked duplicate is still a ruling that accepts a duplicate.* The
+> gate it ordered would have been an instrument guarding a copy that did not need to exist — and
+> this project has spent a week removing exactly those.
+>
+> **Two details that are load-bearing rather than incidental.**
+>
+> It reads the **`.` entry point**, not `vocabulary/`. `check-vocabulary`'s universe is *every
+> vocabulary exported by every published package*, so the set this map must cover **is** the
+> published surface, by definition; any narrower import is a second definition of the same set and
+> will drift from it. The first attempt read `vocabulary/` and threw on `LOCALES`, which is declared
+> in `format/` and published all the same — the narrower definition failed inside a minute.
+>
+> And an unknown vocabulary **throws** rather than emitting `none`. `none` is a real value in these
+> documents, meaning *local to this contract*, so defaulting to it would convert "I could not find
+> the name" into a legitimate-looking declaration — the false declaration this family is about,
+> reintroduced by the fix for it. A contract-local vocabulary passes its own name explicitly;
+> anything else fails where it is written rather than in a document nobody diffs.
+
 #### C · `.meta({ format: 'int64' })` adds the format and does not remove the bounds
 
 D-060 §3 ruled this **fixed in the source with `.meta()`**. The emitted schema carries
@@ -2833,3 +2859,74 @@ without a second party.
 *D-055's own surviving half said it already: construct the discriminating case rather than reason
 about the mechanism. A and B are what that looks like when written down as procedures instead of as
 a disposition.*
+
+### D-067 — Two error-code families, no mapping between them, and nothing that could report it
+
+**Found while propagating `ErrorSchema`'s `code` pattern into the two contracts — which would have
+written a contradiction into them, because the pattern refuses the examples the contracts publish.**
+
+```
+core   ErrorSchema.code   ^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$
+docs   Error.code         examples: TRANSITION_IRREVERSIBLE · PUBLICATION_CHECKLIST_INCOMPLETE
+```
+
+**Every error-code example in either contract is `SCREAMING_SNAKE`, and the boundary schema in
+`@arthome/core` refuses all of them.** Measured, not sampled: the dotted examples in the documents
+are rail identifiers and locale codes, not error codes.
+
+**D-036 §2 already ruled on this and the ruling favours the documents.** *"§5.2 names three
+families: `snake_case` for domain vocabulary, `SCREAMING_SNAKE` for error and failure codes, and the
+declared exemptions."* Its test was deliberately predictive rather than statistical: *what would a
+NEW error code be? Obviously `SCREAMING_SNAKE`.*
+
+**But the interesting half is not the regex, and changing it would have hidden the finding.**
+
+`@arthome/core` declares **24 distinct `DomainError` codes**, every one of them dotted lowercase —
+`publication.transition_irreversible`, `moderation.already_settled`, `hold.quantity_invalid` — and
+they are internally consistent. `issueToCode`, the only sanctioned way out of a zod failure, returns
+`validation.${issue.code}`, also dotted.
+
+So there are two coherent families, and **`TRANSITION_IRREVERSIBLE` is `publication.transition_irreversible`.**
+Same refusal, two spellings, one on each side of a boundary.
+
+> ***Nothing in this repository converts between them, and nothing could report that it is
+> missing.***
+
+**That is the fault the whole project is organised against, arriving one level up from where the
+defences are.** `check-enums` compares literals, `check-vocabulary` compares member sets — both work
+on a vocabulary's VALUES. This is a mapping between two vocabularies that do not share a value by
+construction, so every instrument here reads it as two unrelated lists agreeing with themselves.
+*The only reason it surfaced is that a gate compared a REGEX to an EXAMPLE.*
+
+**AND ONE INSTRUMENT HAS BEEN PRINTING THIS FINDING ON EVERY RUN FOR DAYS.** `check-vocabulary` ends
+each pass with:
+
+> *case differs for `DATE_CANCELLED` / `date_cancelled` — legitimate if these are an error code and
+> a domain value in two different vocabularies (D-036), a defect if they are one vocabulary. Not
+> failed, because this gate cannot tell and a human can.*
+
+That is this entry, on one pair, offered as a question every single time `verify` runs. **It was
+read as an ambiguity about two values and it is a symptom of a missing conversion between two
+families.** The gate was right to refuse to decide and right to say so; what it could not do is
+notice that the same relationship holds twenty-four times over.
+
+> ***An instrument that hands a question to a human on every run is only as good as the human
+> reading it, and this one had been answering "not now" by default.***
+
+**And the consequence is the README's first surprising convention, inverted.** *A value displayed
+twice comes from `@arthome/core`.* There is no conversion in core, so the first service to catch a
+`DomainError` and serve an `Error` will write one — and so will the second, differently. Seven
+services, seven transliterations of twenty-four codes, and the one that is wrong produces a code no
+surface has a translation for, at the moment something is already failing.
+
+**NOT DECIDED HERE, deliberately.** Three options exist and they are not equivalent — core exports
+the mapping; the domain adopts the wire's family; or the wire adopts the domain's and D-036 §2 is
+reopened. The first looks obvious and the third is the only one that removes the two-families
+problem rather than managing it. It is a product-wide naming decision with twenty-four call sites
+and a ruled arbitration behind one of the answers, so it goes to the project owner rather than being
+settled by whoever happened to be propagating a regex.
+
+**What was done meanwhile: nothing, and that is the point.** The pattern was NOT propagated into the
+documents. Writing it there would have encoded core's spelling as the contract's, in the one place a
+generated client reads — converting an open question into a published answer, silently, as a side
+effect of a tidy-up.

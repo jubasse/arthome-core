@@ -16,19 +16,22 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { CursorPageInfoSchema, EMPTY_REASONS, OffsetPageInfoSchema } from './index.js';
+import { StorefrontCursorPageInfoSchema, EMPTY_REASONS, OffsetPageInfoSchema } from './index.js';
 
 const emit = (schema: z.ZodType): Record<string, unknown> =>
   z.toJSONSchema(schema, { io: 'output' });
 
 describe('CursorPageInfo', () => {
   it('is open, because a client must not reject a server that added a field', () => {
-    const out = emit(CursorPageInfoSchema);
+    const out = emit(StorefrontCursorPageInfoSchema);
     expect(out.additionalProperties).not.toBe(false);
   });
 
   it('carries the vocabulary ON THE FIELD, not inside an anyOf branch', () => {
-    const props = emit(CursorPageInfoSchema).properties as Record<string, Record<string, unknown>>;
+    const props = emit(StorefrontCursorPageInfoSchema).properties as Record<
+      string,
+      Record<string, unknown>
+    >;
     const emptyReason = props.emptyReason!;
 
     // The whole point: `vocabularyOut(V).nullable()` would put the key inside
@@ -39,15 +42,22 @@ describe('CursorPageInfo', () => {
   });
 
   it('keeps the description beside the vocabulary rather than replacing it', () => {
-    const props = emit(CursorPageInfoSchema).properties as Record<string, Record<string, unknown>>;
+    const props = emit(StorefrontCursorPageInfoSchema).properties as Record<
+      string,
+      Record<string, unknown>
+    >;
     const emptyReason = props.emptyReason!;
     expect(typeof emptyReason.description).toBe('string');
     expect(emptyReason['x-arthome-vocabulary']).toBeDefined();
   });
 
-  it('declares int64 on the field, not JavaScript safe-integer bounds', () => {
-    const props = emit(CursorPageInfoSchema).properties as Record<string, Record<string, unknown>>;
-    expect(props.approximateTotal!.format).toBe('int64');
+  it('carries no JavaScript safe-integer bounds — the documents state none', () => {
+    const props = emit(StorefrontCursorPageInfoSchema).properties as Record<
+      string,
+      Record<string, unknown>
+    >;
+    expect(props.approximateTotal).not.toHaveProperty('minimum');
+    expect(props.approximateTotal).not.toHaveProperty('maximum');
   });
 });
 

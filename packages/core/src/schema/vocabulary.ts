@@ -24,6 +24,8 @@
 
 import { z } from 'zod';
 
+import * as PUBLISHED from '../index.js';
+
 /** A non-empty vocabulary, the shape every `as const` list in this package has. */
 type Members = readonly [string, ...string[]];
 
@@ -106,8 +108,79 @@ export function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T
  * `arthome-check-enums` at the call site because the vocabulary is passed by
  * name.
  */
-export function vocabularyOut<const T extends Members>(values: T): VocabularyOut {
-  return z.string().meta({ 'x-arthome-vocabulary': values });
+/**
+ * THE SOURCE NAME IS DERIVED FROM THE EXPORT IDENTIFIER, NOT TRANSCRIBED.
+ *
+ * This helper used to emit `x-arthome-vocabulary` and nothing else, and that
+ * omission would have silenced a different gate entirely. `check-vocabulary`
+ * compares 121 blocks and INDEXES THEM ON `x-arthome-vocabulary-source`: a
+ * generated document carrying the members without the provenance leaves it with
+ * nothing to compare, and it says PASS. *A gate silenced by a generator is worse
+ * than a gate that fails, because its verdict does not change.* (D-065 §B.)
+ *
+ * ⚠ THE OBVIOUS FIX IS THE FAULT THIS PACKAGE EXISTS TO PREVENT.
+ *   `vocabularyOut(WATCH_SCOPES, 'WATCH_SCOPES')` writes an identifier into a
+ *   string beside itself — E2 in a single line, in the module that argues
+ *   against E2.
+ *
+ * So the name comes from THE PACKAGE'S OWN EXPORT KEYS. `Object.entries` on the
+ * `.` entry point's namespace gives `['WATCH_SCOPES', [...]]`, and the map is
+ * keyed by ARRAY IDENTITY, so `vocabularyOut(WATCH_SCOPES)` finds the name the
+ * package exported it under. There is nothing to keep in step: rename the export
+ * and the emitted source name follows, because they are the same string.
+ *
+ * ⚠ IT READS THE `.` ENTRY POINT, NOT `../vocabulary/`, AND THAT IS THE WHOLE
+ *   REGISTRY RATHER THAN A CONVENIENT ONE. `check-vocabulary`'s universe is
+ *   *every vocabulary exported by every published package* — so the set this map
+ *   must cover is the PUBLISHED SURFACE, by definition, and any narrower import
+ *   is a second definition of the same set that will drift from it. The first
+ *   version read `../vocabulary/` and threw on `LOCALES`, which is declared in
+ *   `format/` and published all the same.
+ *
+ *   There is no import cycle, and the reason is a guarantee that already exists:
+ *   `check-core-entry` proves the `.` entry point never reaches zod, therefore
+ *   never reaches this module.
+ *
+ * ⚠ AND AN UNKNOWN VOCABULARY THROWS RATHER THAN EMITTING `none`.
+ *   `none` is a real value in these documents — it means "local to this
+ *   contract" — so defaulting to it would turn "I could not find the name" into
+ *   a legitimate-looking declaration, which is precisely the false declaration
+ *   D-065 §B is about. A contract-local vocabulary passes its own name; anything
+ *   else is a mistake, and it fails where it is written instead of in a document
+ *   nobody diffs.
+ */
+const NAME_OF = new Map<readonly string[], string>();
+for (const [name, value] of Object.entries(PUBLISHED)) {
+  if (Array.isArray(value) && value.every((member) => typeof member === 'string')) {
+    NAME_OF.set(value, name);
+  }
+}
+
+export function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut {
+  return z.string().meta({
+    'x-arthome-vocabulary': values,
+    'x-arthome-vocabulary-source': sourceNameOf(values, name),
+  });
+}
+
+/**
+ * The name this vocabulary is published under, or the one the caller declares.
+ *
+ * Exported because `@arthome/contracts` declares vocabularies of its own —
+ * `EMPTY_REASONS` is one, and `check-vocabulary`'s universe is every vocabulary
+ * exported by every published package, not just core's.
+ */
+export function sourceNameOf(values: readonly string[], name?: string): string {
+  const source = name ?? NAME_OF.get(values);
+  if (source === undefined) {
+    throw new Error(
+      `vocabularyOut: [${values.slice(0, 3).join(', ')}…] is not exported by ` +
+        '@arthome/core/vocabulary, so its source name cannot be derived. Pass the name ' +
+        'explicitly if this vocabulary is local to a contract — and pass the identifier it ' +
+        'is exported under, because check-vocabulary looks it up in the published packages.',
+    );
+  }
+  return source;
 }
 
 /**
@@ -134,6 +207,15 @@ export function vocabularyOut<const T extends Members>(values: T): VocabularyOut
  * Found by `backend-contracts` on `.meta({format}).nullable()`, and it applies
  * here for the same reason.
  */
-export function vocabularyOutNullable<const T extends Members>(values: T): VocabularyOutNullable {
-  return z.string().nullable().meta({ 'x-arthome-vocabulary': values });
+export function vocabularyOutNullable<const T extends Members>(
+  values: T,
+  name?: string,
+): VocabularyOutNullable {
+  return z
+    .string()
+    .nullable()
+    .meta({
+      'x-arthome-vocabulary': values,
+      'x-arthome-vocabulary-source': sourceNameOf(values, name),
+    });
 }

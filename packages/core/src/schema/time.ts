@@ -22,9 +22,17 @@ export const VenueClockSchema: z.ZodObject<
     venueUtcOffsetMin: z.ZodInt;
   },
   z.core.$loose
-> = z.looseObject({
-  venueTimezone: IanaTimeZoneSchema,
-  // Real offsets run from −12:00 to +14:00. A wider bound would accept a value
-  // no clock on earth produces, which is how a frozen offset got in once.
-  venueUtcOffsetMin: z.int().min(-720).max(840),
-});
+> = z
+  .looseObject({
+    venueTimezone: IanaTimeZoneSchema.meta({ examples: ['Europe/Paris'] }),
+    // Real offsets run from −12:00 to +14:00. A wider bound would accept a value
+    // no clock on earth produces, which is how a frozen offset got in once.
+    venueUtcOffsetMin: z
+      .int()
+      .min(-720)
+      .max(840)
+      .meta({ examples: [120] }),
+  })
+  .describe(
+    "The venue's timezone, served alongside the UTC instant it qualifies. The offset is\n**computed by the server for that instant**, never stored: this is not a return to a frozen\noffset, it is a served value, and it avoids embedding a timezone database in five\napplications.",
+  );

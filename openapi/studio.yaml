@@ -6248,12 +6248,13 @@ components:
         servedAt:
           type: string
           format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$'
           description: |
             The reference clock. The duty countdown, the length of a silencing, "the replay expires in
             41 h", the expiry of a one-off access: everything is counted against it and a measured offset,
             **never against the workstation's clock**.
           examples: ["2026-09-21T20:31:04.118Z"]
-        validUntil: { type: [string, "null"], format: date-time }
+        validUntil: { type: [string, "null"], format: date-time, pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$' }
         rightsVersion:
           type: integer
           format: int64
@@ -6283,8 +6284,8 @@ components:
       required: [hasMore]
       description: "The two exceptions: the moderation queue and the live chat."
       properties:
-        nextCursor: { type: [string, "null"] }
-        prevCursor: { type: [string, "null"] }
+        nextCursor: { type: [string, "null"], pattern: '^[A-Za-z0-9_-]+=*$' }
+        prevCursor: { type: [string, "null"], pattern: '^[A-Za-z0-9_-]+=*$' }
         hasMore: { type: boolean }
         pendingCount:
           type: [integer, "null"]
@@ -6335,7 +6336,16 @@ components:
     Money:
       type: object
       required: [amountMinor, currencyCode]
-      description: Integer minor unit + ISO 4217 currency code. Formatting belongs to the client.
+      description: |
+        An amount. **Integer minor unit** — cents for EUR and CHF — plus an ISO 4217 currency code.
+        Never a formatted string: formatting is presentation and happens client-side. May be negative
+        (credit, refund).
+
+        **`Money` says nothing about tax, and that is deliberate.** It carries credits, refunds,
+        commissions and payouts as well as prices. **A price, however, is tax-inclusive** (D-056),
+        and every field that is one says so where it is declared rather than relying on this shape —
+        a reader who assumes the wrong side of a VAT rate computes a total that is wrong by that
+        rate, and `Money` is not the place that can warn them.
       properties:
         amountMinor: { type: integer, format: int64, examples: [2400] }
         currencyCode: { type: string, pattern: "^[A-Z]{3}$", examples: [EUR] }

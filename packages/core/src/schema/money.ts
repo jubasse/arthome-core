@@ -16,7 +16,10 @@
 
 import { z } from 'zod';
 
-import { CurrencyCodeSchema } from './primitives.js';
+import { CurrencyCodeSchema, int64 } from './primitives.js';
+
+const MONEY_DESCRIPTION =
+  'An amount. **Integer minor unit** — cents for EUR and CHF — plus an ISO 4217 currency code.\nNever a formatted string: formatting is presentation and happens client-side. May be negative\n(credit, refund).\n\n**`Money` says nothing about tax, and that is deliberate.** It carries credits, refunds,\ncommissions and payouts as well as prices. **A price, however, is tax-inclusive** (D-056),\nand every field that is one says so where it is declared rather than relying on this shape —\na reader who assumes the wrong side of a VAT rate computes a total that is wrong by that\nrate, and `Money` is not the place that can warn them.';
 
 /**
  * ⚠ TWO SCHEMAS, AND `Money` IS THE ONLY SHAPE IN THIS PACKAGE THAT NEEDS BOTH.
@@ -51,23 +54,27 @@ import { CurrencyCodeSchema } from './primitives.js';
  */
 export const MoneyOut: z.ZodObject<
   {
-    amountMinor: z.ZodInt;
+    amountMinor: z.ZodNumber;
     currencyCode: z.ZodString;
   },
   z.core.$loose
-> = z.looseObject({
-  amountMinor: z.int(),
-  currencyCode: CurrencyCodeSchema,
-});
+> = z
+  .looseObject({
+    amountMinor: int64().meta({ examples: [2400] }),
+    currencyCode: CurrencyCodeSchema.meta({ examples: ['EUR'] }),
+  })
+  .describe(MONEY_DESCRIPTION);
 
 /** The same shape, STRICT — for a `Money` a client sends. */
 export const MoneyIn: z.ZodObject<{
-  amountMinor: z.ZodInt;
+  amountMinor: z.ZodNumber;
   currencyCode: z.ZodString;
-}> = z.object({
-  amountMinor: z.int(),
-  currencyCode: CurrencyCodeSchema,
-});
+}> = z
+  .object({
+    amountMinor: int64().meta({ examples: [2400] }),
+    currencyCode: CurrencyCodeSchema.meta({ examples: ['EUR'] }),
+  })
+  .describe(MONEY_DESCRIPTION);
 
 /**
  * A rate in BASIS POINTS: 1200 = 12%, 550 = 5.5%.

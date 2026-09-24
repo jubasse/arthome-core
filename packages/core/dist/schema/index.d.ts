@@ -18,12 +18,12 @@
  * DECIDES. Putting zod there would charge the dependency to every evaluation of
  * an entitlement, on the hottest path in the system.
  */
-export { CountryCodeSchema, CurrencyCodeSchema, IanaTimeZoneSchema, InstantSchema, LocaleIn, LocaleOut, PageCursorSchema, SlugSchema, } from './primitives.js';
+export { CountryCodeSchema, CurrencyCodeSchema, IanaTimeZoneSchema, InstantSchema, int64, LocaleIn, LocaleOut, PageCursorSchema, SlugSchema, } from './primitives.js';
 export { BasisPointsSchema, MoneyIn, MoneyOut } from './money.js';
 export { VenueClockSchema } from './time.js';
 export type { VocabularyIn, VocabularyOut, VocabularyOutNullable } from './vocabulary.js';
-export { vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
+export { sourceNameOf, vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
 export { AccountIdSchema, ArtistIdSchema, ChannelIdSchema, DateIdSchema, DeviceIdSchema, OrderIdSchema, PersonIdSchema, ProfileIdSchema, PublicHandleSchema, SeatIdSchema, ShowIdSchema, VenueIdSchema, } from './identifiers.js';
 export { BuyerTaxLocationSchema, TaxEvidenceKindIn, TaxEvidenceKindOut, TaxEvidenceSchema, TaxJurisdictionLevelIn, TaxJurisdictionLevelOut, TaxSupplyKindIn, TaxSupplyKindOut, VatLineSchema, } from './tax.js';
-export { ErrorEnvelopeSchema, FailureNatureOut, issueToCode } from './error.js';
+export { ErrorSchema, FailureNatureOut, issueToCode } from './error.js';
 //# sourceMappingURL=index.d.ts.map

@@ -856,6 +856,25 @@ subscriptions **have never been exercised on screen**: the contract covering the
 **designed, not observed**. I flag it because it is exactly the kind of silence that gets mistaken
 for agreement.
 
+> **CORRECTION — 24 September 2026, by this file's author on its last turn, and verified by the lead
+> before it was written in.** The counts above are right and **the comparison is wrong**. The two
+> mockups call **exactly the same thirty-nine** `A.*` helpers: not the same number, the same set —
+> nothing is exclusive to either side. All fourteen of the never-called helpers are dead in the
+> **web** mockup too.
+>
+> So `designed, not observed` does not distinguish mobile from web. **It covers the whole storefront
+> family**, and only `chat` was ever marked provisional for it.
+>
+> *That makes the warning larger rather than smaller, which is why it is worth correcting.* Written
+> as a difference between two surfaces, it reads as a gap one of them will close. It is not a gap
+> between surfaces — it is a gap between the mockups and the contract, and there is no surface
+> standing on the other side of it.
+>
+> **And the original sentence is the fault it warns about, committed in the act of warning:** it
+> mistook a silence for a difference, having measured only one side. The measurement that settles it
+> is one line per mockup. [Verified: `comm` over the two sorted sets — 39 shared, 0 exclusive either
+> way.]
+
 ---
 
 ## What I cannot obtain on my own — questions to the backend

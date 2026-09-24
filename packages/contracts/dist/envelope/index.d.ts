@@ -46,18 +46,23 @@
  *   week on.
  */
 import { z } from 'zod';
-/** An instant as the contracts document it: ISO 8601 UTC, `format: date-time`. */
-export declare const WireInstantSchema: z.ZodString;
-/**
- * The meta every response composes.
- *
- * `servedAt` is mandatory and `validUntil` is not: a response with no perishable
- * value has nothing to expire, and serving a null there would invite a surface
- * to count down to it.
- */
-export declare const EnvelopeMetaSchema: z.ZodObject<{
+/** The meta every STOREFRONT response composes. */
+export declare const StorefrontEnvelopeMetaSchema: z.ZodObject<{
     servedAt: z.ZodString;
-    validUntil: z.ZodNullable<z.ZodString>;
-    lastEventSeq: z.ZodNullable<z.ZodInt>;
-}>;
+    validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    lastEventSeq: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    degraded: z.ZodOptional<z.ZodArray<z.ZodString>>;
+}, z.core.$loose>;
+/**
+ * The meta every STUDIO response composes. It differs from the storefront's:
+ * `rightsVersion` is mandatory here (a changed value means the navigation is stale)
+ * and the prose is the console's, not the viewer's — D-065 family G.
+ */
+export declare const StudioEnvelopeMetaSchema: z.ZodObject<{
+    servedAt: z.ZodString;
+    validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    rightsVersion: z.ZodNumber;
+    lastEventSeq: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    degraded: z.ZodOptional<z.ZodArray<z.ZodString>>;
+}, z.core.$loose>;
 //# sourceMappingURL=index.d.ts.map

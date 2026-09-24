@@ -51,25 +51,30 @@
 
 import { z } from 'zod';
 
-import { LocaleOut, type VocabularyOut } from '@arthome/core/schema';
+import { LOCALES } from '@arthome/core';
 
-export const LocalizedTextSchema: z.ZodObject<
-  {
-    // `VocabularyOut`, NOT `z.ZodEnum<{ fr: 'fr'; en: 'en' }>`. Writing the
-    // members here would be a parallel literal table in a type position — the one
-    // place nobody greps — and `arthome-check-enums` catches it, which is how this
-    // line came to be written the second way.
-    contentLanguage: VocabularyOut;
-    text: z.ZodString;
-  },
+/** Authored text as the storefront documents it. */
+export const StorefrontLocalizedTextSchema: z.ZodObject<
+  { contentLanguage: z.ZodString; text: z.ZodString },
   z.core.$loose
-> = z.looseObject({
-  contentLanguage: LocaleOut.describe(
-    'The language this text was **written in** — a property of the text, not of the reader. ' +
-      'A viewer reading in English may be shown a message written in French, and this is what ' +
-      'lets the surface say so.',
-  ),
-  text: z
-    .string()
-    .describe('The authored text itself. Never an interface label: those travel as codes.'),
-});
+> = z
+  .looseObject({
+    contentLanguage: z.string().meta({ examples: [LOCALES[0]] }),
+    text: z.string(),
+  })
+  .describe(
+    '**Authored** text, as opposed to an interface label. It travels with the language it was\nwritten in. The only two accepted exceptions to "i18n by codes": the hold-screen message\nwritten by the control room, and the studio inbox texts.\n',
+  );
+
+/** Authored text as the studio documents it — the same shape, the console's own prose (D-065 family G). */
+export const StudioLocalizedTextSchema: z.ZodObject<
+  { contentLanguage: z.ZodString; text: z.ZodString },
+  z.core.$loose
+> = z
+  .looseObject({
+    contentLanguage: z.string().meta({ examples: [LOCALES[0]] }),
+    text: z.string(),
+  })
+  .describe(
+    'An **authored** text. The only two acknowledged exceptions to "i18n by codes": the holding\nscreen message written by the control room, and the inbox texts.\n',
+  );
