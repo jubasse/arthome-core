@@ -68,6 +68,19 @@ doubles it.
 (`errors.deadletterqueue.topic.name`) for **connector** failures, and `arthome.<context>.retry` +
 `arthome.<context>.dlq` for consumers' **business** failures. Alert on the depth of both.
 
+> ⚠ **CORRECTED AGAINST A RUNNING STACK (2026-09-25). The first mechanism does not exist on the
+> outbox path.** Kafka Connect implements `errors.deadletterqueue.*` for **sink** connectors only,
+> and the outbox router is a **source** connector. What makes this worth writing down rather than
+> quietly dropping: Connect *accepts* the properties, and Debezium *echoes them back* in the task
+> configuration at startup, so the log reads exactly as though a dead-letter queue were configured.
+> Verified on Debezium 3.0 — the topic is never created and nothing is ever written to it.
+>
+> So a source connector has **no DLQ**, and `errors.tolerance` stays at `none`. `all` would skip a
+> record the converter cannot handle, which on `outbox_event` means losing a business fact that is
+> already committed — the application never reads that table back, so nothing would notice. Failing
+> loudly is the recoverable posture: the connector stops, the slot retains the WAL, and the lag is
+> measurable. It is also the posture that fills a disk if nobody watches §7.4's alert.
+
 **One `groupId` per consuming service and per client module.** `@nestjs/microservices`'s default is
 shared (`nestjs-group-server`): the group leader assigns only its own topics, and the other
 services' topics go unconsumed — silently.
