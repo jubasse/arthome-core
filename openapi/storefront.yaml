@@ -5455,8 +5455,7 @@ components:
         `device` for the television, which has **neither cookie nor token** at the moment it opens a
         sign-in pairing — which is what device identity solves.
       enum: [cookie, bearer, device]
-      x-arthome-vocabulary-source: none
-      x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
+      x-arthome-vocabulary-source: SESSION_MODES
 
     SessionEstablished:
       description: |

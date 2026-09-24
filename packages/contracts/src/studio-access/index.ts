@@ -41,6 +41,8 @@ import {
   vocabularyOutNullable,
 } from '@arthome/core/schema';
 
+import { SessionMode } from '../identity/index.js';
+
 const LOCAL_REASON =
   'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.';
 
@@ -432,11 +434,11 @@ export const StudioBootstrapSchema: z.ZodObject<
 
 /** A cookie session: nothing in the body but the bootstrap. */
 export const StudioSessionEstablishedCookieSchema: z.ZodObject<
-  { mode: z.ZodLiteral<'cookie'>; bootstrap: typeof StudioBootstrapSchema },
+  { mode: z.ZodLiteral<typeof SessionMode.COOKIE>; bootstrap: typeof StudioBootstrapSchema },
   z.core.$loose
 > = z
   .looseObject({
-    mode: z.literal('cookie'),
+    mode: z.literal(SessionMode.COOKIE),
     bootstrap: StudioBootstrapSchema,
   })
   .describe(
@@ -446,7 +448,7 @@ export const StudioSessionEstablishedCookieSchema: z.ZodObject<
 /** A bearer session: an opaque token in the body, no cookie. */
 export const StudioSessionEstablishedBearerSchema: z.ZodObject<
   {
-    mode: z.ZodLiteral<'bearer'>;
+    mode: z.ZodLiteral<typeof SessionMode.BEARER>;
     accessToken: z.ZodString;
     refreshToken: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     expiresAt: z.ZodString;
@@ -455,7 +457,7 @@ export const StudioSessionEstablishedBearerSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    mode: z.literal('bearer'),
+    mode: z.literal(SessionMode.BEARER),
     accessToken: z.string(),
     refreshToken: z.string().nullable().optional(),
     expiresAt: InstantOut,
@@ -484,8 +486,12 @@ const narrowedMeta = (
 
 /** The session mode, chosen by the caller and never inferred. */
 export const StudioSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bearer' }> = z
-  .enum(['cookie', 'bearer'])
-  .meta(narrowedMeta(['cookie', 'bearer'], SESSION_MODE_REASON))
+  // The studio narrows the three transport modes to two: it has no device
+  // sessions, because only a television carries a device token. Taken from
+  // `SESSION_MODES` rather than spelled again — the members were literals
+  // here, copied from a const the other module did not export.
+  .enum([SessionMode.COOKIE, SessionMode.BEARER])
+  .meta(narrowedMeta([SessionMode.COOKIE, SessionMode.BEARER], SESSION_MODE_REASON))
   .describe(
     '**An explicit parameter, validated, never inferred from the `User-Agent`** — that one is\nforgeable. `cookie` for the studio web; `bearer` for the native shell, where\n`capacitor://localhost` is a third-party context on iOS and where no cookie would survive.\n',
   );

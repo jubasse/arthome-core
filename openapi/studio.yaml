@@ -6395,8 +6395,8 @@ components:
         forgeable. `cookie` for the studio web; `bearer` for the native shell, where
         `capacitor://localhost` is a third-party context on iOS and where no cookie would survive.
       enum: [cookie, bearer]
-      x-arthome-vocabulary-source: none
-      x-arthome-vocabulary-reason: "A narrowing of a vocabulary named elsewhere in this document, with the reason in the description above: the members left out are the rule, not an omission."
+      x-arthome-vocabulary-source: SESSION_MODES
+      x-arthome-vocabulary-narrowing: "Two of the three. The studio has no device sessions: only a television opens a sign-in pairing with neither cookie nor token, and a control room is not one."
 
     SessionEstablished:
       description: |

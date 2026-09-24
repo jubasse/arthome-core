@@ -403,7 +403,37 @@ export const DeviceSchema: z.ZodObject<
     'The **registered** device, durable, revocable, identified **before any session**. Distinct\nfrom `DeviceSession`, which is the (device, profile) pair: a living-room television carries\nup to five sessions on a single device.\n',
   );
 
-const SESSION_MODES = ['cookie', 'bearer', 'device'] as const;
+/**
+ * The three transport modes a session can be established in.
+ *
+ * ⚠ EXPORTED, because the studio narrows it to two and was copying them. It was
+ *   a file-local `const`, so `studio-access` could not import it and wrote
+ *   `['cookie', 'bearer']` as literals — and `arthome-check-enums` did not
+ *   report that, because its declaring-file exemption is scoped to THE FILE and
+ *   the declaration was in another one. *The gate is blind to a copy made across
+ *   two modules of the same package, which is exactly where one is most likely.*
+ *
+ *   Contract-local on purpose: both documents annotate it `source: none`, and
+ *   they are right — the domain neither produces nor consumes a cookie.
+ */
+export const SESSION_MODES = ['cookie', 'bearer', 'device'] as const;
+
+/**
+ * The NAMED members, so nothing writes one of these as a string — and so nothing
+ * reaches for `SESSION_MODES[0]` either.
+ *
+ * ⚠ POSITION IS WORSE THAN A LITERAL, which is why this object exists rather
+ *   than an index. The first attempt at sharing these wrote
+ *   `z.literal(SESSION_MODES[0])` in the studio's cookie branch: reordering the
+ *   list would then have silently changed which mode that branch discriminates
+ *   on, and nothing would have failed. A literal `'cookie'` is at least stable
+ *   when the list moves. A NAME is both stable and checked.
+ */
+export const SessionMode = {
+  COOKIE: 'cookie',
+  BEARER: 'bearer',
+  DEVICE: 'device',
+} as const;
 const PAIRING_INTENTS = ['signin', 'seat', 'plan', 'payment_method', 'merch'] as const;
 const PAIRING_STATES = [
   'pending',

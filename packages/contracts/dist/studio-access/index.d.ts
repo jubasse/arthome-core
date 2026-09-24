@@ -15,6 +15,7 @@
  *   which emits the reason the document gives instead of inventing a source name.
  */
 import { z } from 'zod';
+import { SessionMode } from '../identity/index.js';
 /**
  * ⚠ `StudioCounters` LIVES HERE AND NOT IN `studio-money`, WHICH IS WHERE IT
  *   READS AS BELONGING.
@@ -110,12 +111,12 @@ export declare const StudioBootstrapSchema: z.ZodObject<{
 }, z.core.$loose>;
 /** A cookie session: nothing in the body but the bootstrap. */
 export declare const StudioSessionEstablishedCookieSchema: z.ZodObject<{
-    mode: z.ZodLiteral<'cookie'>;
+    mode: z.ZodLiteral<typeof SessionMode.COOKIE>;
     bootstrap: typeof StudioBootstrapSchema;
 }, z.core.$loose>;
 /** A bearer session: an opaque token in the body, no cookie. */
 export declare const StudioSessionEstablishedBearerSchema: z.ZodObject<{
-    mode: z.ZodLiteral<'bearer'>;
+    mode: z.ZodLiteral<typeof SessionMode.BEARER>;
     accessToken: z.ZodString;
     refreshToken: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     expiresAt: z.ZodString;

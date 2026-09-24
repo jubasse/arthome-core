@@ -112,6 +112,36 @@ export declare const DeviceSchema: z.ZodObject<{
         profileName: z.ZodOptional<z.ZodString>;
     }, z.core.$loose>>>;
 }, z.core.$loose>;
+/**
+ * The three transport modes a session can be established in.
+ *
+ * ⚠ EXPORTED, because the studio narrows it to two and was copying them. It was
+ *   a file-local `const`, so `studio-access` could not import it and wrote
+ *   `['cookie', 'bearer']` as literals — and `arthome-check-enums` did not
+ *   report that, because its declaring-file exemption is scoped to THE FILE and
+ *   the declaration was in another one. *The gate is blind to a copy made across
+ *   two modules of the same package, which is exactly where one is most likely.*
+ *
+ *   Contract-local on purpose: both documents annotate it `source: none`, and
+ *   they are right — the domain neither produces nor consumes a cookie.
+ */
+export declare const SESSION_MODES: readonly ["cookie", "bearer", "device"];
+/**
+ * The NAMED members, so nothing writes one of these as a string — and so nothing
+ * reaches for `SESSION_MODES[0]` either.
+ *
+ * ⚠ POSITION IS WORSE THAN A LITERAL, which is why this object exists rather
+ *   than an index. The first attempt at sharing these wrote
+ *   `z.literal(SESSION_MODES[0])` in the studio's cookie branch: reordering the
+ *   list would then have silently changed which mode that branch discriminates
+ *   on, and nothing would have failed. A literal `'cookie'` is at least stable
+ *   when the list moves. A NAME is both stable and checked.
+ */
+export declare const SessionMode: {
+    readonly COOKIE: "cookie";
+    readonly BEARER: "bearer";
+    readonly DEVICE: "device";
+};
 export declare const StorefrontSessionModeSchema: z.ZodEnum<{
     cookie: 'cookie';
     bearer: 'bearer';
