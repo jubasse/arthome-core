@@ -1935,7 +1935,9 @@ paths:
                           fillRateBps: { type: integer }
                           soldOut: { type: boolean }
                           priceTiers: { type: array, items: { $ref: '#/components/schemas/PriceTier' } }
-                          serviceFeePerSeat: { $ref: '#/components/schemas/Money' }
+                          serviceFeePerSeat:
+                            $ref: '#/components/schemas/Money'
+                            x-arthome-tax-basis: inclusive
               example:
                 servedAt: '2026-09-21T18:40:00.000Z'
                 validUntil: '2026-09-21T18:41:00.000Z'
@@ -2059,7 +2061,9 @@ paths:
                 dateId: { type: string, format: uuid }
                 tier: { type: string, enum: [full, reduced, support], x-arthome-vocabulary-source: PRICE_TIERS }
                 quantity: { type: integer, minimum: 1, maximum: 10 }
-                expectedTotal: { $ref: '#/components/schemas/Money' }
+                expectedTotal:
+                  $ref: '#/components/schemas/Money'
+                  x-arthome-tax-basis: inclusive
                 contributionMinor: { type: [integer, 'null'] }
                 applyCreditId: { type: [string, 'null'], format: uuid }
                 profileId: { type: [string, 'null'], format: uuid }
@@ -5375,6 +5379,12 @@ components:
         An amount. **Integer minor unit** — cents for EUR and CHF — plus an ISO 4217 currency code.
         Never a formatted string: formatting is presentation and happens client-side. May be negative
         (credit, refund).
+
+        **`Money` says nothing about tax, and that is deliberate.** It carries credits, refunds,
+        commissions and payouts as well as prices. **A price, however, is tax-inclusive** (D-056),
+        and every field that is one says so where it is declared rather than relying on this shape —
+        a reader who assumes the wrong side of a VAT rate computes a total that is wrong by that
+        rate, and `Money` is not the place that can warn them.
       properties:
         amountMinor: { type: integer, format: int64, examples: [2400] }
         currencyCode: { type: string, pattern: '^[A-Z]{3}$', examples: [EUR] }
@@ -5970,7 +5980,9 @@ components:
                 the value composed in two places, and the design proves it by applying a constant of 2,000
                 seats regardless of the venue.
             soldOut: { type: boolean }
-            lowestPrice: { $ref: '#/components/schemas/Money' }
+            lowestPrice:
+              $ref: '#/components/schemas/Money'
+              x-arthome-tax-basis: inclusive
             promotion:
               type: [object, 'null']
               properties:
@@ -5979,8 +5991,12 @@ components:
                   x-arthome-vocabulary:
                     [pre_sale, preview_night, discovery_rate, final_date, late_rate]
                   x-arthome-vocabulary-source: PROMOTION_REASONS
-                struckPrice: { $ref: '#/components/schemas/Money' }
-                currentPrice: { $ref: '#/components/schemas/Money' }
+                struckPrice:
+                  $ref: '#/components/schemas/Money'
+                  x-arthome-tax-basis: inclusive
+                currentPrice:
+                  $ref: '#/components/schemas/Money'
+                  x-arthome-tax-basis: inclusive
                 validUntil: { type: string, format: date-time }
         replay:
           type: object
@@ -5999,7 +6015,9 @@ components:
               type: [string, 'null']
               format: date-time
               description: Derived from the end of the live show and `windowHours`. Served as an instant, never as "41 h left".
-            unitPrice: { $ref: '#/components/schemas/Money' }
+            unitPrice:
+              $ref: '#/components/schemas/Money'
+              x-arthome-tax-basis: inclusive
         rights:
           type: object
           required: [scope]
@@ -6073,8 +6091,12 @@ components:
                 The service-fee **scale**, **per seat**, served by the contract. Never a screen constant: the
                 summary displays a "service fee" line, and it must be computable once only.
               properties:
-                perSeat: { $ref: '#/components/schemas/Money' }
-                capped: { $ref: '#/components/schemas/Money' }
+                perSeat:
+                  $ref: '#/components/schemas/Money'
+                  x-arthome-tax-basis: inclusive
+                capped:
+                  $ref: '#/components/schemas/Money'
+                  x-arthome-tax-basis: inherited
             chapters:
               type: array
               items: { $ref: '#/components/schemas/Chapter' }
@@ -6095,10 +6117,13 @@ components:
 
     PriceTier:
       type: object
+      x-arthome-price-basis: tax_inclusive
       required: [tier, amount, active]
       properties:
         tier: { type: string, x-arthome-vocabulary: [full, reduced, support], x-arthome-vocabulary-source: PRICE_TIERS }
-        amount: { $ref: '#/components/schemas/Money' }
+        amount:
+          $ref: '#/components/schemas/Money'
+          x-arthome-tax-basis: inherited
         active: { type: boolean }
         validUntil:
           type: [string, 'null']
@@ -6431,7 +6456,9 @@ components:
             What the viewer gets back, and **where**. The amount and a **delay code** — never the
             sentence "3 to 5 business days", which is a policy.
           properties:
-            amount: { $ref: '#/components/schemas/Money' }
+            amount:
+              $ref: '#/components/schemas/Money'
+              x-arthome-tax-basis: inherited
             delayCode: { type: string, examples: [refund_delay_business_days_3_5] }
             method: { type: string, x-arthome-vocabulary: [original_payment_method, account_credit], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends." }
 
@@ -6455,8 +6482,12 @@ components:
               id: { type: string }
               label: { type: string, examples: [M] }
               inStock: { type: boolean }
-              price: { $ref: '#/components/schemas/Money' }
-        price: { $ref: '#/components/schemas/Money' }
+              price:
+                $ref: '#/components/schemas/Money'
+                x-arthome-tax-basis: inclusive
+        price:
+          $ref: '#/components/schemas/Money'
+          x-arthome-tax-basis: inclusive
         state: { type: string, x-arthome-vocabulary: [on_sale, out_of_stock], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
         source:
           type: string
@@ -6479,7 +6510,9 @@ components:
         variantId: { type: string }
         channelId: { type: string, format: uuid }
         quantity: { type: integer, minimum: 1 }
-        unitPrice: { $ref: '#/components/schemas/Money' }
+        unitPrice:
+          $ref: '#/components/schemas/Money'
+          x-arthome-tax-basis: inclusive
         version:
           type: integer
           description: |
@@ -6524,8 +6557,12 @@ components:
             required: [channelId, subtotal, total]
             properties:
               channelId: { type: string, format: uuid }
-              subtotal: { $ref: '#/components/schemas/Money' }
-              shipping: { $ref: '#/components/schemas/Money' }
+              subtotal:
+                $ref: '#/components/schemas/Money'
+                x-arthome-tax-basis: inclusive
+              shipping:
+                $ref: '#/components/schemas/Money'
+                x-arthome-tax-basis: inclusive
               discount:
                 type: [object, 'null']
                 description: |
@@ -6535,8 +6572,12 @@ components:
                   source (E1).
                 properties:
                   discountReasonCode: { type: string }
-                  amount: { $ref: '#/components/schemas/Money' }
-              total: { $ref: '#/components/schemas/Money' }
+                  amount:
+                    $ref: '#/components/schemas/Money'
+                    x-arthome-tax-basis: inherited
+              total:
+                $ref: '#/components/schemas/Money'
+                x-arthome-tax-basis: inclusive
         validUntil: { type: string, format: date-time, description: 15 minutes. }
 
     SeatQuote:
@@ -6547,7 +6588,34 @@ components:
         contract: `tier + service fee − subscription discount − promotion = total`. This is exactly
         the "a total composed in two places" case the brief cites as a typical defect, and it is
         closed here.
+
+        **Prices are tax-inclusive (D-056), so the VAT does not move the total — and it is served
+        anyway**, in `vatIncluded`. EU invoicing requires the line, and the artist needs it. **A total
+        that does not change is exactly why someone will be tempted to omit it.**
+
+        **It is a separate field rather than a fifth line, and that is the point.** `lines` are
+        addends; a VAT line inside them would be summed by somebody, on some surface, eventually —
+        and the total would be wrong by a VAT rate in the direction nobody checks, because it would
+        look larger rather than smaller. What is already inside a total cannot sit in the list of
+        things added to it.
       properties:
+        vatIncluded:
+          type: array
+          description: |
+            **Already inside `total`, never added to it.** One line per jurisdiction, computed at the
+            instant of sale from `BuyerTaxLocation` — which is why it appears here and **never on the
+            catalogue**: a price carrying its VAT would be a price that varies by viewer, and the
+            catalogue would stop being publicly cacheable. That cacheability is the reason tax-inclusive
+            pricing was chosen.
+          items:
+            type: object
+            required: [rateBps, amount, jurisdictionCode]
+            properties:
+              rateBps: { type: integer, examples: [550] }
+              amount:
+                $ref: '#/components/schemas/Money'
+                x-arthome-tax-basis: inherited
+              jurisdictionCode: { type: string, examples: [FR] }
         lines:
           type: array
           items:
@@ -6556,8 +6624,12 @@ components:
             properties:
               kind: { type: string, x-arthome-vocabulary: [tier, service_fee, subscription_discount, promotion, credit_applied], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
               discountReasonCode: { type: [string, 'null'] }
-              amount: { $ref: '#/components/schemas/Money' }
-        total: { $ref: '#/components/schemas/Money' }
+              amount:
+                $ref: '#/components/schemas/Money'
+                x-arthome-tax-basis: inherited
+        total:
+          $ref: '#/components/schemas/Money'
+          x-arthome-tax-basis: inclusive
         validUntil: { type: string, format: date-time }
 
     TaxEvidence:
@@ -6667,7 +6739,9 @@ components:
         kind: { type: string, x-arthome-vocabulary: [seat, merch, subscription], x-arthome-vocabulary-source: ORDER_KINDS }
         channelId: { type: string, format: uuid }
         state: { type: string, x-arthome-vocabulary: [pending, awaiting_action, processing, paid, failed, refunded, partially_refunded, disputed], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends." }
-        total: { $ref: '#/components/schemas/Money' }
+        total:
+          $ref: '#/components/schemas/Money'
+          x-arthome-tax-basis: inclusive
         placedAt: { type: string, format: date-time }
         invoiceAvailable: { type: boolean }
         buyerTaxLocation:
@@ -6706,7 +6780,9 @@ components:
             The authoritative vocabulary. `monthly`, `season` and `none` are **withdrawn**: no data
             references them, and four disjoint vocabularies made **every** account fall back to `free` —
             an **authorisation** defect, not a display one (E1).
-        price: { $ref: '#/components/schemas/Money' }
+        price:
+          $ref: '#/components/schemas/Money'
+          x-arthome-tax-basis: inclusive
         opens:
           type: array
           items:
@@ -7233,7 +7309,9 @@ components:
             properties:
               id: { type: string, format: uuid }
               channelId: { type: string, format: uuid }
-              amount: { $ref: '#/components/schemas/Money' }
+              amount:
+                $ref: '#/components/schemas/Money'
+                x-arthome-tax-basis: inherited
               originCode: { type: string, x-arthome-vocabulary: [interrupted_date, goodwill], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
               expiresAt: { type: string, format: date-time }
         paymentMethods:

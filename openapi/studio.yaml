@@ -1918,10 +1918,13 @@ paths:
                             type: [string, "null"]
                             format: date-time
                             description: "**Derived** from the end of the live show and the served window, never set by hand."
-                          unitPrice: { $ref: "#/components/schemas/Money" }
+                          unitPrice:
+                            $ref: "#/components/schemas/Money"
+                            x-arthome-tax-basis: inclusive
                           views: { type: [integer, "null"] }
                           revenue:
                             allOf: [{ $ref: "#/components/schemas/Money" }]
+                            x-arthome-tax-basis: inclusive
                             description: "**Absent** without `canRevenue`."
                           version: { type: integer }
               example:
@@ -4528,7 +4531,9 @@ paths:
                       balances:
                         type: array
                         description: "**One balance per currency.** Never aggregated."
-                        items: { $ref: "#/components/schemas/Money" }
+                        items:
+                          $ref: "#/components/schemas/Money"
+                          x-arthome-tax-basis: inclusive
                       pendingBankChange: { $ref: "#/components/schemas/BankChangeRequest" }
                       page: { $ref: "#/components/schemas/OffsetPageInfo" }
               example:
@@ -4819,8 +4824,12 @@ paths:
                       data:
                         type: object
                         properties:
-                          refunded: { $ref: "#/components/schemas/Money" }
-                          commissionRefunded: { $ref: "#/components/schemas/Money" }
+                          refunded:
+                            $ref: "#/components/schemas/Money"
+                            x-arthome-tax-basis: inherited
+                          commissionRefunded:
+                            $ref: "#/components/schemas/Money"
+                            x-arthome-tax-basis: inherited
                           payoutId: { type: [string, "null"], format: uuid }
               example:
                 servedAt: "2026-09-21T18:35:00.000Z"
@@ -5020,6 +5029,7 @@ paths:
                             views: { type: [integer, "null"] }
                             revenue:
                               allOf: [{ $ref: "#/components/schemas/Money" }]
+                              x-arthome-tax-basis: inclusive
                               description: "**Absent** without `canRevenue`."
                       page: { $ref: "#/components/schemas/OffsetPageInfo" }
               example:
@@ -5085,7 +5095,9 @@ paths:
                                 tier:
                                   { type: string, x-arthome-vocabulary: [full, reduced, support], x-arthome-vocabulary-source: PRICE_TIERS }
                                 seatsSold: { type: integer }
-                                gross: { $ref: "#/components/schemas/Money" }
+                                gross:
+                                  $ref: "#/components/schemas/Money"
+                                  x-arthome-tax-basis: inclusive
                           waitlistByDate:
                             type: array
                             items:
@@ -5120,7 +5132,9 @@ paths:
                                   }
                                 dateId: { type: [string, "null"], format: uuid }
                                 seatId: { type: [string, "null"], format: uuid }
-                                amount: { $ref: "#/components/schemas/Money" }
+                                amount:
+                                  $ref: "#/components/schemas/Money"
+                                  x-arthome-tax-basis: inherited
                                 openedAt: { type: string, format: date-time }
                                 respondBy: { type: [string, "null"], format: date-time }
               example:
@@ -6862,7 +6876,9 @@ components:
           type: [object, "null"]
           description: "**Absent** without `canRevenue`."
           properties:
-            total: { $ref: "#/components/schemas/Money" }
+            total:
+              $ref: "#/components/schemas/Money"
+              x-arthome-tax-basis: inclusive
             totalScope:
               type: string
               description: |
@@ -6882,7 +6898,9 @@ components:
                   dateId: { type: string, format: uuid }
                   title: { type: string }
                   startsAt: { type: string, format: date-time }
-                  gross: { $ref: "#/components/schemas/Money" }
+                  gross:
+                    $ref: "#/components/schemas/Money"
+                    x-arthome-tax-basis: inclusive
 
     StatsAudience:
       type: object
@@ -6916,6 +6934,7 @@ components:
               description: "**All** the channels dates over the period, with no state filter — the way the design counts them."
             netRevenue:
               allOf: [{ $ref: "#/components/schemas/Money" }]
+              x-arthome-tax-basis: exclusive
               description: "**Absent** without `canRevenue`."
         fillByDate:
           type: array
@@ -7029,6 +7048,7 @@ components:
                     seatsSold: { type: integer }
                     revenue:
                       allOf: [{ $ref: "#/components/schemas/Money" }]
+                      x-arthome-tax-basis: inclusive
                       description: "**Absent** without `canRevenue`."
                     isReference: { type: boolean }
                     fillGapPoints:
@@ -7232,7 +7252,9 @@ components:
           x-arthome-vocabulary-source: DISPLAY_STATES
           examples: [live]
         displayStateValidUntil: { type: string, format: date-time }
-        lowestPrice: { $ref: "#/components/schemas/Money" }
+        lowestPrice:
+          $ref: "#/components/schemas/Money"
+          x-arthome-tax-basis: inclusive
         fillRateBps: { type: [integer, "null"] }
         seatsSold: { type: [integer, "null"] }
         capacityTotal:
@@ -7243,6 +7265,7 @@ components:
             server already holds, with a division and a rounding thrown in. A field, not a route.
         grossRevenue:
           allOf: [{ $ref: "#/components/schemas/Money" }]
+          x-arthome-tax-basis: inclusive
           description: "**Absent** from the response when the role lacks `canRevenue`. Never present and null."
 
     Duty:
@@ -7321,7 +7344,9 @@ components:
             required: [tier, amount, active]
             properties:
               tier: { type: string, x-arthome-vocabulary: [full, reduced, support], x-arthome-vocabulary-source: PRICE_TIERS }
-              amount: { $ref: "#/components/schemas/Money" }
+              amount:
+                $ref: "#/components/schemas/Money"
+                x-arthome-tax-basis: inherited
               active: { type: boolean }
         promotions:
           type: array
@@ -7334,15 +7359,22 @@ components:
                   x-arthome-vocabulary:
                     [pre_sale, preview_night, discovery_rate, final_date, late_rate], x-arthome-vocabulary-source: PROMOTION_REASONS,
                 }
-              struckPrice: { $ref: "#/components/schemas/Money" }
-              currentPrice: { $ref: "#/components/schemas/Money" }
+              struckPrice:
+                $ref: "#/components/schemas/Money"
+                x-arthome-tax-basis: inclusive
+              currentPrice:
+                $ref: "#/components/schemas/Money"
+                x-arthome-tax-basis: inclusive
               validFrom: { type: string, format: date-time }
               validUntil: { type: string, format: date-time }
         serviceFeePerSeat:
           allOf: [{ $ref: "#/components/schemas/Money" }]
+          x-arthome-tax-basis: inclusive
           description: "**Per seat**, and the scale is served, never a screen constant."
         pricesLocked: { type: boolean }
-        replayUnitPrice: { $ref: "#/components/schemas/Money" }
+        replayUnitPrice:
+          $ref: "#/components/schemas/Money"
+          x-arthome-tax-basis: inclusive
         complimentaries:
           type: array
           items:
@@ -7362,9 +7394,12 @@ components:
             required: { type: boolean }
             threshold: { type: integer }
             revisableUntil: { type: [string, "null"], format: date-time }
-            malusExposure: { $ref: "#/components/schemas/Money" }
+            malusExposure:
+              $ref: "#/components/schemas/Money"
+              x-arthome-tax-basis: inherited
         grossRevenue:
           allOf: [{ $ref: "#/components/schemas/Money" }]
+          x-arthome-tax-basis: inclusive
           description: "**Absent** when the role lacks `canRevenue`."
         version: { type: integer }
 
@@ -7494,6 +7529,7 @@ components:
             the same thing.
         grossRevenue:
           allOf: [{ $ref: "#/components/schemas/Money" }]
+          x-arthome-tax-basis: inclusive
           description: "**Absent** without `canRevenue`. The `:revenue` real-time room is separate for the same reason."
         version: { type: integer }
 
@@ -7810,6 +7846,16 @@ components:
         The model adopted (D-015) is the **commissionaire**: base = the whole ticket, rate = that of
         the viewer's country, liable party = Arthome. **⚠ This is not tax advice** — to be validated
         by an adviser before any real money is taken.
+
+        **Under tax-inclusive pricing (D-056) this breakdown stops being detail and becomes the
+        explanation.** The artist's price is what the viewer pays, so `grossTtc` is fixed while the
+        VAT inside it varies with the buyer's country — which means **`net` moves for two sales at the
+        same advertised price.** A payout response without the per-jurisdiction lines is therefore
+        **incomplete rather than merely terse**: the artist sees a number that changed and no reason
+        for it, which is `planOf()` falling everyone back to `free` with money attached.
+
+        `grossTtc → vat[] → grossHt → commission → net` is the whole derivation, and every step of it
+        is served rather than recomputed.
       properties:
         payoutId: { type: string, format: uuid }
         dateId: { type: string, format: uuid }
@@ -7821,7 +7867,12 @@ components:
             `suspended` while a change of bank details awaits its counter-signature.
           x-arthome-vocabulary: [scheduled, held, paid, refunded, suspended]
           x-arthome-vocabulary-source: PAYOUT_STATES
-        grossTtc: { $ref: "#/components/schemas/Money" }
+        grossTtc:
+          allOf: [{ $ref: "#/components/schemas/Money" }]
+          x-arthome-tax-basis: inclusive
+          description: |
+            **Tax-inclusive: what the viewer paid, and what the artist's price said.** Fixed across
+            jurisdictions — it is `vat` and therefore `net` that move beneath it.
         vat:
           type: array
           description: |
@@ -7845,8 +7896,12 @@ components:
                   Rate in basis points — 550 = 5.5%. **An integer, never a float**: in floating point it ends
                   up producing a one-cent discrepancy. And it is the rate **applied at the moment of the sale,
                   kept on the line** — not the current rate: an invoice is kept for ten years, rates change.
-              base: { $ref: "#/components/schemas/Money" }
-              amount: { $ref: "#/components/schemas/Money" }
+              base:
+                $ref: "#/components/schemas/Money"
+                x-arthome-tax-basis: exclusive
+              amount:
+                $ref: "#/components/schemas/Money"
+                x-arthome-tax-basis: inherited
               jurisdictionCode:
                 type: string
                 description: "\"FR\" · \"US-CA-94103\" · \"CH-ZH\". **Precise enough to replay the calculation.**"
@@ -7861,7 +7916,9 @@ components:
                   broadcast live show are not the same supply.
                 x-arthome-vocabulary: [live_stream_access, replay_access, subscription, merchandise]
                 x-arthome-vocabulary-source: TAX_SUPPLY_KINDS
-        grossHt: { $ref: "#/components/schemas/Money" }
+        grossHt:
+          $ref: "#/components/schemas/Money"
+          x-arthome-tax-basis: exclusive
         commissionRateBps:
           type: integer
           description: |
@@ -7869,10 +7926,18 @@ components:
             back to 12% by default when the gross is null. **The commission is on the pre-tax amount**: on
             the tax-inclusive amount, the 12% announced to artists would vary with the buyer's country.
           examples: [1200]
-        commission: { $ref: "#/components/schemas/Money" }
-        net: { $ref: "#/components/schemas/Money" }
-        refunded: { $ref: "#/components/schemas/Money" }
-        credited: { $ref: "#/components/schemas/Money" }
+        commission:
+          $ref: "#/components/schemas/Money"
+          x-arthome-tax-basis: exclusive
+        net:
+          $ref: "#/components/schemas/Money"
+          x-arthome-tax-basis: exclusive
+        refunded:
+          $ref: "#/components/schemas/Money"
+          x-arthome-tax-basis: inherited
+        credited:
+          $ref: "#/components/schemas/Money"
+          x-arthome-tax-basis: inherited
         dueAt:
           type: string
           format: date-time
@@ -7881,6 +7946,7 @@ components:
         reconciledAt: { type: [string, "null"], format: date-time }
         discrepancy:
           allOf: [{ $ref: "#/components/schemas/Money" }]
+          x-arthome-tax-basis: inherited
           description: "**A period does not close with an unexplained discrepancy.**"
         taxEvidenceConflicts:
           type: integer
@@ -8034,7 +8100,9 @@ components:
               id: { type: string }
               label: { type: string }
               stock: { type: integer }
-              price: { $ref: "#/components/schemas/Money" }
+              price:
+                $ref: "#/components/schemas/Money"
+                x-arthome-tax-basis: inclusive
         state: { type: string, x-arthome-vocabulary: [on_sale, out_of_stock], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
         source:
           type: string
