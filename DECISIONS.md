@@ -2183,3 +2183,71 @@ himself. `conventions`' closing line is the right standard to judge it by:
 > *If it earns anything, it will be because almost every rule in it is a mistake with its evidence
 > attached rather than a principle — including the three I committed inside the sections warning
 > against them.*
+
+---
+
+## The contracts stage — 24 September 2026
+
+### D-056 — The artist sets a tax-inclusive price, and the variance is disclosed rather than hidden
+
+**The project owner's decision: TTC.** The price an artist sets is **what the viewer pays**, and it
+has been open since the `payoutOf` test raised it. Both options were laid out with their costs; this
+one was chosen knowing them.
+
+**What it buys.** One displayed price per date per billing market, identical for every viewer. The
+catalogue stays **publicly cacheable** — no `Vary` on a buyer's country, no price computed per
+request, and the ten catalogue reads that D-022 put behind `security: [{}]` keep their point.
+
+**What it costs, and the cost is real.** VAT comes out of a fixed gross, so **the artist's net varies
+with the buyer's country** — the same displayed price yields a different payout for a French buyer
+and a Belgian one. Nothing about the sale tells the artist why.
+
+**So the ruling has a second half, and it is not optional: the variance is disclosed, not absorbed.**
+A payout breakdown carries its **`VatLine` per jurisdiction** — the shape D-021 already chose,
+keyed on `jurisdiction_code` / `jurisdiction_level` / `supply_kind` with the rate applied to the
+sale. *A net that moves for a reason the artist cannot see is the `planOf()` fault with money
+attached: a default arriving by omission rather than by decision.*
+
+**D-015 SURVIVES AND BECOMES DERIVED RATHER THAN DECLARED.** The 12 % commission is computed on the
+**net-of-tax** base, because a commission that changes with the buyer is not a commission. Under HT
+that base was the price; under TTC it is `gross − vat`. **The rate is constant, the absolute amount
+varies, and that is exactly what D-015 required** — the invariant was always the rate.
+
+**Consequences for the schemas, which is why this was blocking:**
+
+- a **price** field is tax-**inclusive** and must say so where it is declared — `MoneySchema` is
+  unchanged (minor units + currency code), but a price is not a bare `Money`;
+- the VAT is **computed at sale** from `BuyerTaxLocation`, never carried on the catalogue;
+- checkout shows the VAT as a **line** even though the total does not move — the artist needs it and
+  EU invoicing requires it;
+- a payout response without a per-jurisdiction breakdown is incomplete, not merely terse.
+
+**Reversibility, stated because it is the expensive direction.** TTC → HT later changes **every
+displayed price**. This is the harder decision to undo, and it was taken with that written down
+rather than discovered afterwards.
+
+### D-057 — `@arthome/contracts` opens, and `core/./schema` goes first
+
+**The project owner's decision: open it.** The vocabulary migration is closed — 234 blocks, zero
+undeclared — so the two artefacts the schemas must satisfy now agree with each other.
+
+**The order is not mine to choose; `core-port-plan.md` §2 and §7 already fixed it.**
+
+1. **`@arthome/core` `./schema` — wave 6, the only wave that adds zod.** The **base** schemas, and
+   only what crosses a boundary and must be checked on arrival: `MoneySchema`, `InstantSchema`,
+   `VenueClockSchema`, the vocabularies, the branded identifiers, `BuyerTaxLocationSchema`,
+   `ErrorEnvelopeSchema`.
+2. **`@arthome/contracts` extends them** with `.extend()` and `.pick()` rather than redeclaring —
+   *redeclaring `MoneySchema` would be E2 on the most manipulated value in the system.*
+
+**Schemas come after all the rules**, because a boundary schema describes a shape the domain has
+already fixed, and drawing them first produces rules dictated by a payload.
+
+**The three boundary rules are written into the package itself**, not into this log: no
+`z.transform()` in a boundary schema, since it is inconvertible to JSON Schema and the generated
+OpenAPI would lie; `io: "input"` and the output are **two schemas, not one read twice**; and a
+validation failure becomes a **code**, never a zod message in English — otherwise i18n leaks at the
+first form error, and it is the payment form that leaks it.
+
+**The moment of truth is `contracts:emit` producing an empty diff** against the two hand-written
+documents. They are the target precisely because they were written first and reviewed as prose.
