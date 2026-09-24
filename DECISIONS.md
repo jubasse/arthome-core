@@ -1486,3 +1486,67 @@ viewer is not looking for another date, they are asking why **this** one has no 
 The coupling is now **data** — `WATCH_FALLBACK_FOR` maps every reason to its permitted actions, and
 the spec asserts both directions *and* that `decideWatch` never returns a pairing the table forbids.
 The table cannot drift from the function.
+
+### D-044 — The field was the defect, and a gate that lost the ability to name a source is naming one anyway
+
+**1. `watch_preview` is withdrawn, and what it was hiding is the finding.**
+
+`backend-domain` asked which refusal it answers. The answer is none: a viewer who can still watch a
+preview is not refused, the verdict **allows** them. `backend-contracts` could not name a reason
+because there is none.
+
+**What it was compensating for**: `WatchVerdict` had no way to say *"allowed, but only as a
+preview"*. `PlaybackTicket` — the binding verdict — has carried `scope: full | preview` since it was
+written; the **advisory** verdict a card is painted from carried `allowed: boolean` and nothing
+else. So a card for a subscription-required date with budget remaining had to infer preview-ness
+from `previewSecondsLeft > 0` — **a rule evaluated on three storefronts instead of served once**.
+
+`WatchVerdict` now carries `scope`. In its own words: ***the field was the defect, not the value.***
+A vocabulary member had been reached for because it was the only field that could hold the
+information — which is a shape worth naming, because the symptom appears in the vocabulary and the
+cause is a missing field.
+
+**2. `backend-contracts` found its own parallel literal table, and it had already drifted.**
+
+Its contract description restated the eleven-row pairing table row by row — *"written to prevent
+drift, in a document that cannot be executed, beside a table that can"* — and it had **drifted on
+two rows within the hour**. It conceded one (`ROOM_NOT_OPEN` should offer `buy_seat`, *"I had
+written the dead end I spent this round removing"*) and disputed the other.
+
+E2 committed by the agent removing E2, in the document arguing against it, detected by the copy
+disagreeing with its source inside sixty minutes. The description now states the invariant and
+points at `WATCH_FALLBACK_FOR`. Only `release_a_screen` keeps its prose argument, because it
+discharges an **ADR obligation** rather than a domain preference.
+
+**3. `scope` is an undeclared vocabulary, and that closes two findings at once.**
+
+`WatchVerdict.scope` is an **inline union** — `'full' | 'preview' | 'none'` — declared nowhere.
+`backend-contracts` found the mirror from the wire side: `[full, preview]` exists in both contracts
+and in no core vocabulary. *The inverse check running the other way: a wire vocabulary the domain
+computes and does not declare.*
+
+**Declare `PLAYBACK_SCOPES` in `core` and import it.** One fix, both findings, and it is the shape
+every other vocabulary already has.
+
+**4. AND `check-enums` IS NOW MISATTRIBUTING, WHICH IS WORSE THAN THE CAPABILITY IT LOST.**
+
+It fails on six literals in `entitlement/index.ts` and says:
+
+```
+'full'  -> belongs to PRICE_TIERS.     Import the constant; do not copy the value.
+'none'  -> belongs to REPLAY_POLICIES. Import the constant; do not copy the value.
+```
+
+**Both attributions are wrong.** `'full'` there is a playback scope, not a price tier. `'none'` is a
+playback scope, not a replay policy. The gate maps a value to **the first vocabulary that declared
+it**, and since the debranding collapsed twenty values onto shared ones, that first declarer is now
+frequently not the owner.
+
+D-036 accepted that loss deliberately — *"it still catches a copied literal and can no longer name
+where the literal came from."* **What it does instead is worse than staying silent: it names one,
+confidently, and instructs the author to import a constant that would be semantically wrong** —
+precisely the case `enum-literals.allow.json` was written to describe.
+
+**A gate that has lost the ability to name a source must stop naming one.** Where a value is
+declared by more than one vocabulary, say so and list them; the author knows which they meant, and a
+gate that guesses teaches people to ignore its reasons while obeying its verdicts.
