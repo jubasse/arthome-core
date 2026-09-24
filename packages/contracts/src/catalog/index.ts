@@ -823,7 +823,7 @@ export const CategoryScreenSchema: z.ZodObject<
       }),
     )
     .describe(
-      'Five bounded sections — `ov`, `live`, `up`, `rep`, `art`. The overview **does not\npaginate**: an overview is bounded (8 per section).\n',
+      'Five bounded sections — `overview`, `live`, `upcoming`, `replays`, `artists`. The overview **does not\npaginate**: an overview is bounded (8 per section).\n',
     ),
   facets: z.array(FacetSchema).optional(),
 });

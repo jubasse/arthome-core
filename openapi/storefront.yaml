@@ -6303,7 +6303,7 @@ components:
         sections:
           type: array
           description: |
-            Five bounded sections — `ov`, `live`, `up`, `rep`, `art`. The overview **does not
+            Five bounded sections — `overview`, `live`, `upcoming`, `replays`, `artists`. The overview **does not
             paginate**: an overview is bounded (8 per section).
           items:
             type: object
