@@ -30,6 +30,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
+import { workspaceGlobs } from '../lib/workspace.mjs';
+
 const CWD = process.cwd();
 
 // ---------------------------------------------------------------- arguments
@@ -226,8 +228,8 @@ const SCAN = [
   'src/**/*.jsx',
   'app/**/*.ts',
   'app/**/*.tsx',
-  'packages/*/src/**/*.ts',
-  'services/*/src/**/*.ts',
+  ...workspaceGlobs(CWD, 'src/**/*.ts'),
+  ...workspaceGlobs(CWD, 'src/**/*.tsx'),
 ];
 const SKIP = /(^|\/)(node_modules|dist|build|coverage|generated)(\/|$)|\.spec\.|\.test\.|\.d\.ts$/;
 

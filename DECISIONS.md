@@ -3042,3 +3042,45 @@ comparing two counts that had no reason to be compared: 488 here against `check-
 > invisible. So the generator now refuses to write a map at all when any entry line under a subpath
 > heading fails to parse, and says which line. Proven by injecting `(type & const)`: exit 1, the
 > offending line printed.
+
+---
+
+### D-071 — The gates read where packages live from `pnpm-workspace.yaml`, and packing builds
+
+**Found while scaffolding arthome-platform, which is the point of doing wave 0 by hand.** Three
+gates globbed the workspace layout, and each one guessed a *different* subset of it:
+
+| gate | knew about |
+| --- | --- |
+| `check-versions` | `packages/*`, `services/*`, `apps/*` |
+| `check-tsconfig` | `packages/*`, `services/*`, `tools/*` |
+| `check-enums` | `packages/*`, `services/*` |
+
+arthome-platform keeps services in `apps/*` and shared code in `libs/*` — the NestJS layout. None of
+the three knew `libs/*`, and `check-enums` knew neither. **It would have globbed an empty set, found
+nothing to complain about, and exited 0** in the repository where duplicated vocabulary literals are
+most likely, since seven services each reach for the same domain words.
+
+> ***A gate that scans nothing is indistinguishable from a gate that passes.*** This repository had
+> already written that down, in the note approving `unrs-resolver`: *"a green gate that checks
+> nothing"* is named there as the worse of the two failure modes. Four gates were one repository
+> away from being exactly that, and the guesses are what made it invisible — each gate looked
+> deliberate on its own.
+
+**`pnpm-workspace.yaml` is not a new source of truth, it is the existing one** — the file pnpm
+itself obeys. A repository can no longer declare its layout to pnpm and to the gates separately and
+have the two disagree. `workspacePackageGlobs()` in `lib/workspace.mjs` reads it with a hand-written
+parser rather than a fifth runtime dependency for one list of strings.
+
+**Absent and empty are different answers, and conflating them would have broken two repositories.**
+arthome-storefront-web and arthome-studio-web are single-package: no workspace file, because no
+workspace, and their sources sit at the root where every gate's root-level patterns already find
+them. So a missing file returns `[]`. A file that *exists* and declares nothing throws — somebody
+meant to have packages and every gate would have scanned none of them.
+
+**And packing now builds, in all three packages.** `docs/` and `dist/` are build output; `pnpm pack`
+does not build. The first tarball produced for the platform carried `bin/` and no documents at all,
+and `arthome-sync-agent-docs` reported success over it — a consuming repository would have installed
+cleanly with **no rules, no conventions and no surface map**, with nothing anywhere failing. `prepack`
+in core, contracts and tooling makes building part of packing; the hook exits 1 if the case arises
+anyway, which now means a malformed package rather than an unbuilt tree.

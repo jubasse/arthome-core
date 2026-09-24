@@ -139,7 +139,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "tsc -p tsconfig.build.json"
   },
   "_comment_peer": [
     "BOTH DEPENDENCIES ARE PEERS, EXACTLY PINNED, AND THE TEST DECIDES IT RATHER",

@@ -27,6 +27,8 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
+import { workspaceGlobs } from '../lib/workspace.mjs';
+
 const CWD = process.cwd();
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const LOCKS = JSON.parse(fs.readFileSync(path.join(HERE, '..', 'tsconfig-locks.json'), 'utf8'));
@@ -282,10 +284,8 @@ function findProjects() {
   const out = [];
   for (const pattern of [
     'tsconfig.json',
-    'packages/*/tsconfig.json',
-    'packages/*/tsconfig.build.json',
-    'services/*/tsconfig.json',
-    'tools/*/tsconfig.json',
+    ...workspaceGlobs(CWD, 'tsconfig.json'),
+    ...workspaceGlobs(CWD, 'tsconfig.build.json'),
   ]) {
     try {
       out.push(...fs.globSync(pattern, { cwd: CWD }));

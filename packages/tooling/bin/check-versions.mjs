@@ -20,6 +20,8 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
+import { workspaceGlobs } from '../lib/workspace.mjs';
+
 const CWD = process.cwd();
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const TABLE = JSON.parse(fs.readFileSync(path.join(HERE, '..', 'versions.json'), 'utf8'));
@@ -79,11 +81,11 @@ function manifests() {
   const out = [];
   const root = readJson(path.join(CWD, 'package.json'));
   if (root) out.push({ file: 'package.json', json: root });
-  for (const pattern of [
-    'packages/*/package.json',
-    'services/*/package.json',
-    'apps/*/package.json',
-  ]) {
+  // The layouts used to be guessed here — `packages/*`, `services/*`, `apps/*` —
+  // and each gate guessed a DIFFERENT subset, so a repository using `libs/*`
+  // was scanned by some and silently skipped by others. The workspace file is
+  // the declaration pnpm itself obeys.
+  for (const pattern of workspaceGlobs(CWD, 'package.json')) {
     let hits;
     try {
       hits = fs.globSync(pattern, { cwd: CWD });
