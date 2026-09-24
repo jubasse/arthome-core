@@ -20,13 +20,20 @@
  *     `pattern`, because that is what the document publishes for these fields;
  *     core's `*IdSchema` and `InstantSchema` add a `pattern` the document does
  *     not carry here. Once the document gains it (D-065 family D), the local
- *     `uuid()` and `instant()` become those core schemas, one edit per file.
+ *     `uuidOut()` and `InstantOut` become those core schemas, one edit per file.
  */
 
 import { z } from 'zod';
 
 import { MODERATION_BADGES, NOTIFICATION_CHANNELS } from '@arthome/core';
-import { type VocabularyOut, int64, vocabularyOut, vocabularyOutLocal } from '@arthome/core/schema';
+import {
+  InstantOut,
+  int64,
+  type VocabularyOut,
+  uuidOut,
+  vocabularyOut,
+  vocabularyOutLocal,
+} from '@arthome/core/schema';
 
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
 
@@ -44,10 +51,6 @@ const CACHE_TAGS = [
   'account:payment-methods',
   'home:rails',
 ] as const;
-
-const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
-
-const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
 
 export const NotificationPreferencesSchema: z.ZodObject<
   {
@@ -130,8 +133,8 @@ export const ChatMessageSchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  id: uuid(),
-  dateId: uuid(),
+  id: uuidOut(),
+  dateId: uuidOut(),
   seq: int64().describe('Monotonic per date. **The resume point** of the real-time stream.'),
   authorHandle: z.string().meta({ examples: ['@marie.j'] }),
   authorRoleCode: z
@@ -144,7 +147,7 @@ export const ChatMessageSchema: z.ZodObject<
     .describe(
       '**The position in the media**, not the time it was sent. Without it, chat replayed over a\nrecording is offset by however long the viewer took to start playback.\n',
     ),
-  sentAt: instant().describe(
+  sentAt: InstantOut.describe(
     'The absolute instant, **in addition**. Both are carried, never one alone.',
   ),
   badge: vocabularyOut(MODERATION_BADGES).describe(
@@ -162,7 +165,7 @@ export const ReactionQuotaSchema: z.ZodObject<
 > = z
   .looseObject({
     remaining: int64().meta({ format: undefined }),
-    rechargesAt: instant(),
+    rechargesAt: InstantOut,
   })
   .describe(
     '**Returned with the response.** The surface must **disable** the control rather than let it\nfail: an inert action is proscribed by the brief, but an action that fails silently is worse.\nOne reaction in flight at a time.\n',
@@ -179,10 +182,10 @@ export const NotificationEntrySchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  id: uuid(),
+  id: uuidOut(),
   triggerCode: z.string().meta({ examples: ['date_starts_soon'] }),
   params: z.object({}).catchall(z.unknown()),
   deepLink: z.string().meta({ format: 'uri' }).nullable().optional(),
-  createdAt: instant(),
+  createdAt: InstantOut,
   read: z.boolean(),
 });

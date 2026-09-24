@@ -33,16 +33,16 @@ import {
   WatchScope,
 } from '@arthome/core';
 import {
+  InstantOut,
   int64,
-  vocabularyOut,
-  vocabularyOutNullable,
   type VocabularyOut,
   type VocabularyOutNullable,
+  vocabularyOut,
+  vocabularyOutNullable,
 } from '@arthome/core/schema';
 
 // The documents carry `format: date-time` on these and no pattern, so this is
 // the local shape rather than core's InstantSchema — see D-065 family D.
-const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
 
 export const WatchVerdictSchema: z.ZodObject<
   {
@@ -95,7 +95,7 @@ export const WatchVerdictSchema: z.ZodObject<
       .describe(
         'Remaining preview budget, **counted server-side, per account** — not per device, otherwise a\nhousehold with four devices gets four previews; not per date alone, it is `(account, date)`.\nReloading the page extends nothing.\n',
       ),
-    validUntil: instant(),
+    validUntil: InstantOut,
   })
   .describe(
     'The right to watch, a **first-class shape**, served per date. It exists at **two evaluation\nsites for one implementation** (`decideWatch` in `@arthome/core`):\n\n- **here**, composed by the BFF from its batched reads — **advisory and not binding**, and\n  the contract declares it so with `advisory: true`. It serves to paint the card without a\n  second round trip, which the television requires;\n- **when the player opens**, by `streaming`, from its own projected copies. **This is the\n  only evaluation that is authoritative**, because it is the only one that produces a token.\n\n**It is never cached to disk.** It expires, it depends on territory, it depends on the screen\nlimit: a right read back from disk is a false right. `validUntil` never exceeds 60 seconds.\n',

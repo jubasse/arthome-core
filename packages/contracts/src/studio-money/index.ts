@@ -22,7 +22,14 @@ import {
   TAX_JURISDICTION_LEVELS,
   TAX_SUPPLY_KINDS,
 } from '@arthome/core';
-import { MoneyOut, int64, vocabularyOut, vocabularyOutLocal } from '@arthome/core/schema';
+import {
+  InstantOut,
+  MoneyOut,
+  int64,
+  uuidOut,
+  vocabularyOut,
+  vocabularyOutLocal,
+} from '@arthome/core/schema';
 
 import { ActorSchema } from '../studio-access/index.js';
 
@@ -39,7 +46,6 @@ const localVocabulary = (
  * An instant with `format: date-time` and NO `pattern`: these documents carry the format
  * alone here, where `InstantSchema` would add its regex.
  */
-const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
 const instantNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'date-time' });
 
@@ -48,8 +54,6 @@ const int = (): z.ZodNumber => int64().meta({ format: undefined });
 
 const PRESENTATION_REASON =
   'A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it.';
-
-const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
 
 const uuidNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'uuid' });
@@ -121,7 +125,7 @@ export const MetricTileSchema: z.ZodObject<
     series: z
       .array(
         z.looseObject({
-          at: instant(),
+          at: InstantOut,
           value: z.number(),
           dateId: uuidNullable().optional(),
         }),
@@ -207,9 +211,9 @@ const RevenueByDateRowSchema: z.ZodObject<
   },
   Looseness
 > = z.looseObject({
-  dateId: uuid().optional(),
+  dateId: uuidOut().optional(),
   title: z.string().optional(),
-  startsAt: instant().optional(),
+  startsAt: InstantOut.optional(),
   gross: MoneyOut.meta(INCLUSIVE).optional(),
 });
 
@@ -303,9 +307,9 @@ const FillByDateRowSchema: z.ZodObject<
   },
   Looseness
 > = z.looseObject({
-  dateId: uuid().optional(),
+  dateId: uuidOut().optional(),
   title: z.string().optional(),
-  startsAt: instant().optional(),
+  startsAt: InstantOut.optional(),
   fillRateBps: int().optional(),
   seatsSold: intNullable().optional(),
   capacityTotal: intNullable().optional(),
@@ -325,9 +329,9 @@ const AudienceByDateRowSchema: z.ZodObject<
   },
   Looseness
 > = z.looseObject({
-  dateId: uuid().optional(),
+  dateId: uuidOut().optional(),
   title: z.string().optional(),
-  startsAt: instant().optional(),
+  startsAt: InstantOut.optional(),
   displayState: displayState().optional(),
   seatsSold: int().optional(),
   liveViewersPeak: intNullable().optional(),
@@ -400,8 +404,8 @@ const SeriesDateSchema: z.ZodObject<
   },
   Looseness
 > = z.looseObject({
-  dateId: uuid(),
-  startsAt: instant(),
+  dateId: uuidOut(),
+  startsAt: InstantOut,
   displayState: displayState().optional(),
   fillRateBps: int(),
   seatsSold: int().optional(),
@@ -438,9 +442,9 @@ const SeriesGroupSchema: z.ZodObject<
   },
   Looseness
 > = z.looseObject({
-  showId: uuid(),
+  showId: uuidOut(),
   title: z.string(),
-  referenceDateId: uuid().describe(
+  referenceDateId: uuidOut().describe(
     '**The first date that sold at least one seat**, failing that the first in the\ngroup. It is not the first in chronological order, and that is the whole\ndifference: comparing against a date that sold nothing would make every following\nseries look like a success.\n',
   ),
   dates: z.array(SeriesDateSchema),
@@ -502,8 +506,8 @@ const PromotionSchema: z.ZodObject<
   reason: vocabularyOut(PROMOTION_REASONS).optional(),
   struckPrice: MoneyOut.meta(INCLUSIVE).optional(),
   currentPrice: MoneyOut.meta(INCLUSIVE).optional(),
-  validFrom: instant().optional(),
-  validUntil: instant().optional(),
+  validFrom: InstantOut.optional(),
+  validUntil: InstantOut.optional(),
 });
 
 const ComplimentarySchema: z.ZodObject<
@@ -564,7 +568,7 @@ export const DateSalesPaneSchema: z.ZodObject<
   Looseness
 > = z
   .looseObject({
-    dateId: uuid(),
+    dateId: uuidOut(),
     capacityTotal: int(),
     capacityTiers: z.array(CapacityTierSchema).optional(),
     seatsAvailable: int(),
@@ -644,9 +648,9 @@ export const PayoutLineSchema: z.ZodObject<
   Looseness
 > = z
   .looseObject({
-    payoutId: uuid(),
-    dateId: uuid(),
-    channelId: uuid().optional(),
+    payoutId: uuidOut(),
+    dateId: uuidOut(),
+    channelId: uuidOut().optional(),
     state: vocabularyOut(PAYOUT_STATES).describe(
       "**Driven by the date's outcome**: `held` while an outcome is open, `refunded` if cancelled,\n`suspended` while a change of bank details awaits its counter-signature.\n",
     ),
@@ -670,7 +674,7 @@ export const PayoutLineSchema: z.ZodObject<
     net: MoneyOut.meta(EXCLUSIVE),
     refunded: MoneyOut.meta(INHERITED).optional(),
     credited: MoneyOut.meta(INHERITED).optional(),
-    dueAt: instant().describe(
+    dueAt: InstantOut.describe(
       '**End of the live show + 14 days.** The deadline runs from the end, not from the payment.',
     ),
     stripeTransferRef: z.string().nullable().optional(),
@@ -708,7 +712,7 @@ export const BankChangeRequestSchema: z.ZodObject<
   Looseness
 > = z
   .looseObject({
-    requestId: uuid(),
+    requestId: uuidOut(),
     state: localVocabulary(
       ['pending_countersignature', 'countersigned', 'rejected', 'expired'],
       STATE_MACHINE_REASON,
@@ -720,10 +724,10 @@ export const BankChangeRequestSchema: z.ZodObject<
         '**The last four characters only.** A full IBAN has no business in a log that gets replayed.',
       ),
     requestedBy: ActorSchema.optional(),
-    requestedAt: instant(),
-    expiresAt: instant(),
+    requestedAt: InstantOut,
+    expiresAt: InstantOut,
     countersignedBy: ActorSchema.optional(),
-    suspendsPayoutIds: z.array(uuid()).optional(),
+    suspendsPayoutIds: z.array(uuidOut()).optional(),
   })
   .describe(
     '**An aggregate in its own right, not a field**: two actors, two distinct roles (owner **and**\ntreasury), a delay, a trace — **and it suspends the payout in flight** for the duration of the\nsigning. A write cannot carry that.\n',
@@ -768,7 +772,7 @@ export const ExportJobSchema: z.ZodObject<
   Looseness
 > = z
   .looseObject({
-    exportId: uuid(),
+    exportId: uuidOut(),
     kind: localVocabulary(
       EXPORT_FORMATS,
       "A document or export format. It names an accounting tool or a file type, which is the outside world's vocabulary rather than ours.",
@@ -777,7 +781,7 @@ export const ExportJobSchema: z.ZodObject<
       ['queued', 'running', 'ready', 'failed', 'expired'],
       STATE_MACHINE_REASON,
     ),
-    requestedAt: instant(),
+    requestedAt: InstantOut,
     downloadUrl: z.string().nullable().meta({ format: 'uri' }).optional(),
     downloadExpiresAt: instantNullable().optional(),
   })

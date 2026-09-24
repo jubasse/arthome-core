@@ -20,7 +20,7 @@
  *     `pattern`, because that is what the document publishes for these fields;
  *     core's `*IdSchema` and `InstantSchema` add a `pattern` the document does
  *     not carry here. Once the document gains it (D-065 family D), the local
- *     `uuid()` and `instant()` become those core schemas, one edit per file.
+ *     `uuidOut()` and `InstantOut` become those core schemas, one edit per file.
  */
 
 import { z } from 'zod';
@@ -35,9 +35,11 @@ import {
 } from '@arthome/core';
 import {
   BuyerTaxLocationSchema,
+  InstantOut,
   MoneyOut,
-  type VocabularyOut,
   int64,
+  type VocabularyOut,
+  uuidOut,
   vocabularyOut,
   vocabularyOutLocal,
 } from '@arthome/core/schema';
@@ -64,10 +66,6 @@ const ORDER_STATES = [
   'disputed',
 ] as const;
 
-const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
-
-const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
-
 export const TicketCardSchema: z.ZodObject<
   {
     seatId: z.ZodString;
@@ -93,9 +91,9 @@ export const TicketCardSchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  seatId: uuid(),
-  dateId: uuid(),
-  orderId: uuid().optional(),
+  seatId: uuidOut(),
+  dateId: uuidOut(),
+  orderId: uuidOut().optional(),
   seatCode: z
     .string()
     .meta({ examples: ['ATH-7QK2-4M'] })
@@ -107,8 +105,7 @@ export const TicketCardSchema: z.ZodObject<
     TICKET_STATES,
     "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got.",
   ),
-  cancelDeadline: instant()
-    .nullable()
+  cancelDeadline: InstantOut.nullable()
     .optional()
     .describe(
       'Served as an **instant**. "Up to 1 h before the start" is a domain rule, not a screen\ncaption.\n',
@@ -145,10 +142,10 @@ export const CartLineSchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  id: uuid(),
-  itemId: uuid(),
+  id: uuidOut(),
+  itemId: uuidOut(),
   variantId: z.string(),
-  channelId: uuid(),
+  channelId: uuidOut(),
   quantity: int64().meta({ format: undefined }).min(1),
   unitPrice: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }),
   version: int64()
@@ -172,19 +169,19 @@ export const OrderSchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  id: uuid(),
+  id: uuidOut(),
   reference: z
     .string()
     .meta({ examples: ['ATH-2026-00042'] })
     .describe('**Readable** reference, the one support reads out over the phone.'),
   kind: vocabularyOut(ORDER_KINDS),
-  channelId: uuid().optional(),
+  channelId: uuidOut().optional(),
   state: vocabularyOutLocal(
     ORDER_STATES,
     "Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends.",
   ),
   total: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
-  placedAt: instant(),
+  placedAt: InstantOut,
   invoiceAvailable: z.boolean().optional(),
   buyerTaxLocation: BuyerTaxLocationSchema.optional().describe(
     "**Resolved and frozen at the instant of the sale.** It is not reread later: a viewer's\ncountry changes between two reads, and an invoice is kept for ten years.\n",
@@ -204,8 +201,8 @@ export const SubscriptionSchema: z.ZodObject<
 > = z.looseObject({
   planTier: vocabularyOut(PLAN_TIERS),
   state: vocabularyOut(SUBSCRIPTION_STATES),
-  startedAt: instant().optional(),
-  currentPeriodEnd: instant(),
+  startedAt: InstantOut.optional(),
+  currentPeriodEnd: InstantOut,
   cancelAtPeriodEnd: z.boolean().optional(),
   paymentMethodRef: z.string().nullable().optional(),
 });
@@ -249,8 +246,8 @@ export const CartSchema: z.ZodObject<
     vendorGroups: z
       .array(
         z.looseObject({
-          channelId: uuid().optional(),
-          lineIds: z.array(uuid()).optional(),
+          channelId: uuidOut().optional(),
+          lineIds: z.array(uuidOut()).optional(),
         }),
       )
       .describe(
@@ -292,7 +289,7 @@ export const CartQuoteSchema: z.ZodObject<
   .looseObject({
     groups: z.array(
       z.looseObject({
-        channelId: uuid(),
+        channelId: uuidOut(),
         subtotal: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }),
         shipping: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
         discount: z
@@ -308,7 +305,7 @@ export const CartQuoteSchema: z.ZodObject<
         total: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }),
       }),
     ),
-    validUntil: instant().describe('15 minutes.'),
+    validUntil: InstantOut.describe('15 minutes.'),
   })
   .describe(
     '**The quote is binding**: the total presented is the one that will be charged. Shipping is\ncomputed **at quoting time**, not on adding. Past `validUntil`, a new quote.\n',
@@ -326,15 +323,15 @@ export const ExportRequestSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    exportId: uuid(),
+    exportId: uuidOut(),
     kind: vocabularyOutLocal(
       EXPORT_KINDS,
       "A document or export format. It names an accounting tool or a file type, which is the outside world's vocabulary rather than ours.",
     ),
     state: vocabularyOutLocal(EXPORT_STATES, LOCAL_STATE_REASON),
-    requestedAt: instant(),
+    requestedAt: InstantOut,
     downloadUrl: z.string().meta({ format: 'uri' }).nullable().optional(),
-    downloadExpiresAt: instant().nullable().optional(),
+    downloadExpiresAt: InstantOut.nullable().optional(),
   })
   .describe(
     '**A FEC file or a GDPR export is not an HTTP response.** The command returns an\nacknowledgement and an identifier; the state is queryable; the document arrives through a\n**short-lived signed URL** — usable **without a session cookie**, because an export protected\nby a cookie is undownloadable from a native shell.\n',
@@ -357,7 +354,7 @@ export const ExternalOrderRefSchema: z.ZodObject<
       .literal('external')
       .optional()
       .describe("**Opaque** vocabulary — we do not know the other shop's states."),
-    syncedAt: instant(),
+    syncedAt: InstantOut,
     syncSource: z.string().optional(),
   })
   .describe(
@@ -387,7 +384,7 @@ export const PaymentHandoffSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    orderId: uuid(),
+    orderId: uuidOut(),
     state: vocabularyOutLocal(HANDOFF_STATES, PROVIDER_STATE_REASON),
     paymentIntentRef: z
       .string()
@@ -409,7 +406,7 @@ export const PaymentHandoffSchema: z.ZodObject<
       .describe(
         '**Where the provider returns after authentication.** Allowlist of **literal strings**, never\na pattern.\n\n**And the return confirms nothing**: *a payment confirmed by a URL parameter is a payment\nconfirmed by the client*. The return says **where to go**; it is `getOrder` — fed by the\nverified webhook — that says **what changed**.\n',
       ),
-    expiresAt: instant().optional(),
+    expiresAt: InstantOut.optional(),
   })
   .describe(
     '**The step the contract did not have, and without which no payment subject to European strong\nauthentication completes.** The state vocabulary carried `awaiting_action` ← "3-D Secure in\nprogress", and **no operation could either reach that state or leave it**: the three money\ncommands only answered `201 · paid`, with no `clientSecret`, no `nextAction`, no return\naddress.\n\nThis was not a refinement: a significant share of card payments in Europe requires strong\nauthentication. A flow that does not provide for `requires_action` **fails in production on\nperfectly valid payments**, and it fails silently — the order stays `awaiting_action` and\nnothing picks it up.\n\n**The `clientSecret` is produced server-side** and serves only the surface\'s payment element;\nit authorises nothing else and replaces no session.\n',
@@ -499,7 +496,7 @@ export const SeatQuoteSchema: z.ZodObject<
       }),
     ),
     total: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }),
-    validUntil: instant().optional(),
+    validUntil: InstantOut.optional(),
   })
   .describe(
     'The purchase summary for a seat, **composed server-side**. The four lines come from the\ncontract: `tier + service fee − subscription discount − promotion = total`. This is exactly\nthe "a total composed in two places" case the brief cites as a typical defect, and it is\nclosed here.\n\n**Prices are tax-inclusive (D-056), so the VAT does not move the total — and it is served\nanyway**, in `vatIncluded`. EU invoicing requires the line, and the artist needs it. **A total\nthat does not change is exactly why someone will be tempted to omit it.**\n\n**It is a separate field rather than a fifth line, and that is the point.** `lines` are\naddends; a VAT line inside them would be summed by somebody, on some surface, eventually —\nand the total would be wrong by a VAT rate in the direction nobody checks, because it would\nlook larger rather than smaller. What is already inside a total cannot sit in the list of\nthings added to it.\n',

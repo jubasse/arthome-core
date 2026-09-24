@@ -20,16 +20,18 @@
  *     `pattern`, because that is what the document publishes for these fields;
  *     core's `*IdSchema` and `InstantSchema` add a `pattern` the document does
  *     not carry here. Once the document gains it (D-065 family D), the local
- *     `uuid()` and `instant()` become those core schemas, one edit per file.
+ *     `uuidOut()` and `InstantOut` become those core schemas, one edit per file.
  */
 
 import { z } from 'zod';
 
 import { CHAT_MODES, INCIDENT_KINDS, WatchScope } from '@arthome/core';
 import {
+  InstantOut,
+  int64,
   type VocabularyOut,
   type VocabularyOutNullable,
-  int64,
+  uuidOut,
   vocabularyOut,
   vocabularyOutLocal,
   vocabularyOutLocalNullable,
@@ -37,10 +39,6 @@ import {
 
 import { ChapterSchema, DateCardSchema } from '../catalog/index.js';
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
-
-const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
-
-const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
 
 export const IncidentSchema: z.ZodNullable<
   z.ZodObject<
@@ -54,12 +52,12 @@ export const IncidentSchema: z.ZodNullable<
   >
 > = z
   .looseObject({
-    id: uuid().optional(),
+    id: uuidOut().optional(),
     kind: vocabularyOut(INCIDENT_KINDS).optional(),
     message: StorefrontLocalizedTextSchema.optional().describe(
       'Written by the control room: it is **content**, not an i18n key, and it travels with its\nauthoring language like a synopsis. One of the only two acknowledged exceptions to "i18n by\ncodes".\n',
     ),
-    raisedAt: instant().optional(),
+    raisedAt: InstantOut.optional(),
   })
   .nullable()
   .describe(
@@ -103,8 +101,8 @@ export const ActivePlaybackSessionSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    sessionId: uuid(),
-    deviceId: uuid()
+    sessionId: uuidOut(),
+    deviceId: uuidOut()
       .optional()
       .describe(
         '**Served, because without it the list is not actionable.** The surface must be able to\nrecognise **its own** session in order to offer "resume here" rather than "release another\nscreen", and a device label is not enough: two phones of the same model carry the same one.\n',
@@ -112,7 +110,7 @@ export const ActivePlaybackSessionSchema: z.ZodObject<
     isCurrentDevice: z.boolean().optional(),
     deviceLabel: z.string().meta({ examples: ['Téléviseur du salon'] }),
     city: z.string().nullable().optional(),
-    openedAt: instant(),
+    openedAt: InstantOut,
   })
   .describe(
     'Served **with** the `watch.concurrent_limit_reached` refusal, so the surface can offer to release\none. A bare refusal would leave the viewer with no way out.\n',
@@ -129,9 +127,9 @@ export const PlaybackRenewalSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    expiresAt: instant(),
+    expiresAt: InstantOut,
     renewAfterSec: int64().meta({ format: undefined }),
-    leaseExpiresAt: instant(),
+    leaseExpiresAt: InstantOut,
     signature: playbackSignature().optional(),
     qualityCap: vocabularyOutLocal(QUALITY_CAPS, MEDIA_CAPABILITY_REASON).optional(),
   })
@@ -200,7 +198,7 @@ export const PlaybackTicketSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    sessionId: uuid().describe(
+    sessionId: uuidOut().describe(
       '**Recoverable after an OS kill.** The token being `no-store`, a client killed by the OS no\nlonger has this `sessionId`: it could neither renew, nor release, nor point at its own\nsession in the refusal list. Reopening with the **same `deviceId`** returns the same\nsession — that is the mechanism, and it is declared.\n',
     ),
     resumedExistingSession: z
@@ -209,7 +207,7 @@ export const PlaybackTicketSchema: z.ZodObject<
       .describe(
         "True when this opening **took over this device's existing lease** instead of opening a second\none. This is what stops a household being blocked by its own ghost screens — and it is\ndecisive for a `pass` subscriber, whose ceiling is **one** screen: without takeover,\nreopening the app after an OS kill locks them out of their own phone for the ninety seconds\nof the lease.\n",
       ),
-    dateId: uuid(),
+    dateId: uuidOut(),
     scope: vocabularyOut(TICKET_SCOPES, 'WATCH_SCOPES')
       .meta({
         'x-arthome-vocabulary-narrowing':
@@ -240,7 +238,7 @@ export const PlaybackTicketSchema: z.ZodObject<
     edgeRenewalMode: vocabularyOutLocal(EDGE_RENEWAL_MODES, MEDIA_CAPABILITY_REASON).describe(
       "**Declared, never guessed**: the two mechanisms are not equally available. `signed_cookie` for\na browser — a same-origin call resets the cookie, zero URL change, zero interruption.\n`query_token` for native players, which reapply the current token through their request\nfilter. `AVPlayer` on tvOS does not share the WebView's cookies: it is\n`AVAssetResourceLoaderDelegate`, and that is **the point to validate on a real device before\npromising anything**.\n",
     ),
-    expiresAt: instant().describe(
+    expiresAt: InstantOut.describe(
       "**120 s.** The window during which one watches a stream one is no longer entitled to is the\n**renewal** interval, not the token's lifetime.\n",
     ),
     renewAfterSec: int64()
@@ -249,13 +247,13 @@ export const PlaybackTicketSchema: z.ZodObject<
       .describe(
         '**45 s**, under the 60 s ceiling the TV requires: it is the renewal that carries the concurrent-screen limit.',
       ),
-    leaseExpiresAt: instant().describe(
+    leaseExpiresAt: InstantOut.describe(
       '**90 s.** It is the **lease** that carries the concurrent-screen limit, not a release command:\na television gets unplugged, a set-top box loses power, the OS kills a mobile app without\nwarning. `releasePlayback` speeds it up, **nothing depends on it**.\n',
     ),
     resumePoint: z
       .looseObject({
         positionSec: int64().meta({ format: undefined }).optional(),
-        writtenAt: instant().optional(),
+        writtenAt: InstantOut.optional(),
       })
       .nullable()
       .optional(),

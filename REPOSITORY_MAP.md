@@ -591,7 +591,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 
 #### @arthome/core/schema
 
-Declarations: `dist/schema/index.d.ts` — 47 exported names.
+Declarations: `dist/schema/index.d.ts` — 49 exported names.
 
 - `AccountIdSchema` (const) — `AccountIdSchema: z.ZodString`
 - `ArtistIdSchema` (const) — `ArtistIdSchema: z.ZodString`
@@ -605,7 +605,8 @@ Declarations: `dist/schema/index.d.ts` — 47 exported names.
 - `ErrorSchema` (const) — ⚠ 'params' carries the MESSAGE'S PARAMETERS, never the message.
 - `FailureNatureOut` (const) — `FailureNatureOut: VocabularyOut` — The failure nature, tolerant — and the ONLY vocabulary in either contract that declares what an unknown member falls back to.
 - `IanaTimeZoneSchema` (const) — `IanaTimeZoneSchema: z.ZodString` — An IANA time zone identifier: 'Europe/Paris'.
-- `InstantSchema` (const) — `InstantSchema: z.ZodString` — An instant on the wire: an ISO 8601 string in UTC.
+- `InstantIn` (const) — `InstantIn: z.ZodString` — ⚠ TWO FORMS, AND THE SPLIT IS THE IN/OUT ASYMMETRY APPLIED TO A FORMAT.
+- `InstantOut` (const) — `InstantOut: z.ZodString` — The same instant as a server SENDS it: the format, and no pattern.
 - `LocaleIn` (const) — `LocaleIn: VocabularyIn<typeof LOCALES>` — BCP 47, short form — the product's two languages.
 - `LocaleOut` (const) — `LocaleOut: VocabularyOut` — The same vocabulary, TOLERANT — for a locale a server SERVES.
 - `MoneyIn` (const) — `MoneyIn: z.ZodObject<{ amountMinor: z.ZodNumber; currencyCode: z.ZodString; }>` — The same shape, STRICT — for a 'Money' a client sends.
@@ -635,6 +636,7 @@ Declarations: `dist/schema/index.d.ts` — 47 exported names.
 - `int64` (const) — `int64: () => z.ZodNumber` — A 64-bit integer on the wire: 'type: integer, format: int64', and NO bounds.
 - `issueToCode` (function) — `function issueToCode(issue: z.core.$ZodIssue): { readonly code: string; readonly params: Readonly<Record<string, string>>; };` — The ONLY sanctioned way out of a zod failure.
 - `sourceNameOf` (function) — `function sourceNameOf(values: readonly string[], name?: string): string;` — The name this vocabulary is published under, or the one the caller declares.
+- `uuidOut` (const) — `uuidOut: () => z.ZodString` — A server-issued identifier as it appears ON THE WIRE — 'format: uuid', no pattern.
 - `vocabularyIn` (function) — `function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T>;` — STRICT — for a request.
 - `vocabularyOut` (function) — `function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;`
 - `vocabularyOutLocal` (function) — `function vocabularyOutLocal<const T extends Members>(values: T, reason: string): VocabularyOut;` — A vocabulary the DOCUMENT declares local to itself — 'source: none', with the reason the contract gives for it.

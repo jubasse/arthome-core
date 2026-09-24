@@ -32,7 +32,9 @@ import {
   SURFACES,
 } from '@arthome/core';
 import {
+  InstantOut,
   int64,
+  uuidOut,
   vocabularyOut,
   vocabularyOutLocal,
   vocabularyOutLocalNullable,
@@ -57,7 +59,6 @@ const localVocabularyNullable = (
  * An instant with `format: date-time` and NO `pattern`: these documents carry the format
  * alone here, where `InstantSchema` would add its regex.
  */
-const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
 
 /** An integer with no format, as the document writes `type: integer`. */
 const int = (): z.ZodNumber => int64().meta({ format: undefined });
@@ -65,7 +66,6 @@ const int = (): z.ZodNumber => int64().meta({ format: undefined });
 const instantNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'date-time' });
 
-const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
 const uuidNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'uuid' });
 
@@ -170,7 +170,7 @@ export const EffectiveRightsSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    channelId: uuid(),
+    channelId: uuidOut(),
     channelName: z.string().optional(),
     roles: z
       .array(vocabularyOut(MEMBER_ROLES))
@@ -231,10 +231,10 @@ export const EffectiveRightsSchema: z.ZodObject<
     dateGrants: z
       .array(
         z.looseObject({
-          grantId: uuid(),
-          dateId: uuid(),
+          grantId: uuidOut(),
+          dateId: uuidOut(),
           crewRole: vocabularyOut(CREW_ROLES),
-          expiresAt: instant(),
+          expiresAt: InstantOut,
         }),
       )
       .optional()
@@ -304,7 +304,7 @@ export const StudioBootstrapSchema: z.ZodObject<
 > = z
   .looseObject({
     person: z.looseObject({
-      personId: uuid(),
+      personId: uuidOut(),
       displayName: z.string(),
       isFreelance: z.boolean().optional(),
       runsCalled: int()
@@ -458,7 +458,7 @@ export const StudioSessionEstablishedBearerSchema: z.ZodObject<
     mode: z.literal('bearer'),
     accessToken: z.string(),
     refreshToken: z.string().nullable().optional(),
-    expiresAt: instant(),
+    expiresAt: InstantOut,
     bootstrap: StudioBootstrapSchema,
   })
   .describe(
@@ -513,7 +513,7 @@ export const StudioSessionEstablishedSchema: z.ZodDiscriminatedUnion<
 
 /** A member of a channel's team. */
 export const ChannelMemberSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z.looseObject({
-  personId: uuid(),
+  personId: uuidOut(),
   displayName: z.string(),
   email: z.email().meta({ pattern: undefined }).nullable().optional(),
   roles: z
@@ -524,7 +524,7 @@ export const ChannelMemberSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z.
     .describe(
       '**Never removable, and their roles never editable.** `transferOwnership` moves the flag.',
     ),
-  joinedAt: instant(),
+  joinedAt: InstantOut,
   note: z.string().nullable().optional(),
   invitationState: localVocabularyNullable(
     ['pending', 'accepted', 'declined', 'expired'],
@@ -536,12 +536,12 @@ export const ChannelMemberSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z.
 /** The one-off stand-in, scoped to a date. */
 export const DateAccessGrantSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
   .looseObject({
-    grantId: uuid(),
-    dateId: uuid(),
-    personId: uuid(),
+    grantId: uuidOut(),
+    dateId: uuidOut(),
+    personId: uuidOut(),
     displayName: z.string().optional(),
     crewRole: vocabularyOut(CREW_ROLES),
-    expiresAt: instant(),
+    expiresAt: InstantOut,
     grantedBy: ActorSchema.optional(),
   })
   .describe(
@@ -551,12 +551,12 @@ export const DateAccessGrantSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = 
 /** A duty, across all channels. */
 export const DutySchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
   .looseObject({
-    dateId: uuid(),
-    channelId: uuid(),
+    dateId: uuidOut(),
+    channelId: uuidOut(),
     channelName: z.string().optional(),
     title: z.string().optional(),
     crewRole: vocabularyOut(CREW_ROLES),
-    startsAt: instant(),
+    startsAt: InstantOut,
     venueClock: z
       .looseObject({
         venueTimezone: z
@@ -578,7 +578,7 @@ export const DutySchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
     displayState: vocabularyOut(DISPLAY_STATES).optional(),
     runState: vocabularyOutNullable(RUN_STATES).optional(),
     overlapsWith: z
-      .array(uuid())
+      .array(uuidOut())
       .optional()
       .describe(
         '**Served**, never computed by the surface: `overlapsWith` lives in `@arthome/core`.',

@@ -20,7 +20,7 @@
  *     `pattern`, because that is what the document publishes for these fields;
  *     core's `*IdSchema` and `InstantSchema` add a `pattern` the document does
  *     not carry here. Once the document gains it (D-065 family D), the local
- *     `uuid()` and `instant()` become those core schemas, one edit per file.
+ *     `uuidOut()` and `InstantOut` become those core schemas, one edit per file.
  */
 
 import { z } from 'zod';
@@ -44,6 +44,7 @@ import {
 } from '@arthome/core';
 import {
   CountryCodeSchema,
+  InstantOut,
   MoneyOut,
   VOCABULARY_SOURCE_LOCAL,
   VenueClockSchema,
@@ -51,6 +52,7 @@ import {
   type VocabularyIn,
   type VocabularyOut,
   type VocabularyOutNullable,
+  uuidOut,
   vocabularyIn,
   vocabularyOut,
   vocabularyOutLocal,
@@ -78,10 +80,6 @@ const RAIL_KINDS = [
 ] as const;
 const RAIL_ITEM_KINDS = ['date', 'artist'] as const;
 const CARD_FORMS = ['wide', 'poster', 'portrait'] as const;
-
-const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
-
-const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
 
 const MERCH_STATES = ['on_sale', 'out_of_stock'] as const;
 const MERCH_SOURCES = ['arthome', 'shopify', 'woocommerce', 'prestashop', 'drupal', 'api'] as const;
@@ -237,7 +235,7 @@ export const ChapterSchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  id: uuid(),
+  id: uuidOut(),
   vocabId: z.string().describe('Chapter vocabulary identifier, **never an authored label**.'),
   atMediaSec: int64()
     .meta({ format: undefined })
@@ -393,12 +391,12 @@ export const DateCardSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    id: uuid(),
-    showId: uuid(),
-    channelId: uuid(),
+    id: uuidOut(),
+    showId: uuidOut(),
+    channelId: uuidOut(),
     artist: z
       .looseObject({
-        id: uuid(),
+        id: uuidOut(),
         name: z.string().meta({ examples: ['Compagnie Verticale'] }),
         verified: z.boolean().optional(),
         avatar: ImageRenditionSchema.optional(),
@@ -423,34 +421,32 @@ export const DateCardSchema: z.ZodObject<
         '**Multiple**: a show is both "contemporary" and "repertoire" at once. The singular forbade it (E9).',
       ),
     tagIds: z.array(z.string()).optional(),
-    startsAt: instant(),
+    startsAt: InstantOut,
     venueClock: VenueClockSchema,
     runtimeMin: int64().meta({ format: undefined }),
     venue: z
       .looseObject({
-        id: uuid().optional(),
+        id: uuidOut().optional(),
         name: z.string().optional(),
         city: z.string().optional(),
         countryCode: CountryCodeSchema.optional(),
       })
       .optional(),
-    roomOpensAt: instant()
-      .optional()
-      .describe(
-        'The **instant** the room opens, served. The surface schedules the switch locally, to the\nsecond, **without a single call**: a standby mode running for eight hours therefore makes no\nrequest at all.\n',
-      ),
+    roomOpensAt: InstantOut.optional().describe(
+      'The **instant** the room opens, served. The surface schedules the switch locally, to the\nsecond, **without a single call**: a standby mode running for eight hours therefore makes no\nrequest at all.\n',
+    ),
     displayState: vocabularyOut(DISPLAY_STATES)
       .meta({ examples: [DisplayState.LIVE] })
       .describe(
         "The **only** state value the cards display, and nobody recomposes it. Produced by\n`displayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`. The hierarchy,\nwritten once: `outcome` outranks `run.state`, which outranks `publication.state`.\n\n**One vocabulary, eleven members, and the narrowing is said here rather than written as a\nsecond list.** A storefront never receives `draft`, `reserve` or `technical` — not by\nfiltering, but **by construction**: a date reaches a public surface only once it is\npublished. Declaring only the eight would be a second authored list for a field the\ndomain already defines, and two independently authored lists for one field is how E4\nstarted. A surface that wants to know what it can actually receive reads this sentence;\nthe vocabulary stays the domain's.\n",
       ),
-    displayStateValidUntil: instant(),
+    displayStateValidUntil: InstantOut,
     outcome: vocabularyOutNullable(DATE_OUTCOMES)
       .optional()
       .describe(
         'The outcome **replaces the state on every card**, not only on the detail page. It is a fact\nabout the performance: never rewritten, never erased.\n',
       ),
-    rescheduledTo: instant().nullable().optional(),
+    rescheduledTo: InstantOut.nullable().optional(),
     viewers: int64()
       .meta({ format: undefined })
       .nullable()
@@ -475,7 +471,7 @@ export const DateCardSchema: z.ZodObject<
             reason: vocabularyOut(PROMOTION_REASONS).optional(),
             struckPrice: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
             currentPrice: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
-            validUntil: instant().optional(),
+            validUntil: InstantOut.optional(),
           })
           .nullable()
           .optional(),
@@ -487,9 +483,8 @@ export const DateCardSchema: z.ZodObject<
       .looseObject({
         policy: vocabularyOut(REPLAY_POLICIES),
         windowHours: int64().meta({ format: undefined }).nullable().optional(),
-        availableFrom: instant().nullable().optional(),
-        expiresAt: instant()
-          .nullable()
+        availableFrom: InstantOut.nullable().optional(),
+        expiresAt: InstantOut.nullable()
           .optional()
           .describe(
             'Derived from the end of the live show and `windowHours`. Served as an instant, never as "41 h left".',
@@ -558,8 +553,8 @@ export const ArtistSummarySchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  id: uuid(),
-  channelId: uuid(),
+  id: uuidOut(),
+  channelId: uuidOut(),
   name: z.string(),
   slug: z.string().optional(),
   categoryId: z.string(),
@@ -666,7 +661,7 @@ export const ScheduleSlotSchema: z.ZodObject<
 > = z
   .looseObject({
     localHourLabelKey: z.string().meta({ examples: ['20'] }),
-    startsAt: instant().optional(),
+    startsAt: InstantOut.optional(),
     dates: z.array(DateCardSchema),
   })
   .describe(
@@ -872,7 +867,7 @@ export const SearchCriteriaSchema: z.ZodObject<
     categoryIds: z.array(z.string()).optional(),
     genreIds: z.array(z.string()).optional(),
     tagIds: z.array(z.string()).optional(),
-    artistIds: z.array(uuid()).optional(),
+    artistIds: z.array(uuidOut()).optional(),
     cityIds: z.array(z.string()).optional(),
     countryCodes: z.array(CountryCodeSchema).optional(),
     languageDependency: z
@@ -901,8 +896,8 @@ export const SearchCriteriaSchema: z.ZodObject<
       ),
     priceMinMinor: int64().meta({ format: undefined }).min(0).nullable().optional(),
     priceMaxMinor: int64().meta({ format: undefined }).min(0).nullable().optional(),
-    startsAfter: instant().nullable().optional(),
-    startsBefore: instant().nullable().optional(),
+    startsAfter: InstantOut.nullable().optional(),
+    startsBefore: InstantOut.nullable().optional(),
     almostSoldOut: z.boolean().nullable().optional(),
     onPromotion: z.boolean().nullable().optional(),
     accessibility: z.array(z.string()).optional(),
@@ -921,7 +916,7 @@ export const ShowGroupSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    showId: uuid(),
+    showId: uuidOut(),
     title: z.string(),
     representativeDate: DateCardSchema,
     matchingDatesCount: int64()
@@ -949,7 +944,7 @@ export const SavedSearchSchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  id: uuid(),
+  id: uuidOut(),
   scope: vocabularyOutLocal(SAVED_SEARCH_SCOPES, LOCAL_CONTRACT_REASON),
   categoryId: z.string().nullable().optional(),
   name: z.string().nullable().optional(),
@@ -1026,9 +1021,9 @@ export const MerchItemSchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  id: uuid(),
-  channelId: uuid(),
-  showId: uuid().nullable().optional(),
+  id: uuidOut(),
+  channelId: uuidOut(),
+  showId: uuidOut().nullable().optional(),
   label: StorefrontLocalizedTextSchema,
   variants: z
     .array(
@@ -1072,8 +1067,7 @@ export const PriceTierSchema: z.ZodObject<
     tier: vocabularyOut(PRICE_TIERS),
     amount: MoneyOut.meta({ 'x-arthome-tax-basis': 'inherited' }),
     active: z.boolean(),
-    validUntil: instant()
-      .nullable()
+    validUntil: InstantOut.nullable()
       .optional()
       .describe(
         'Present when the current price depends on the instant — the "show already started" price is\n**pro rata to the time remaining** and cannot be a frozen string. 60 s.\n',
@@ -1116,7 +1110,7 @@ export const ArtistDetailSchema: z.ZodIntersection<
   ArtistSummarySchema,
   z.looseObject({
     biography: StorefrontLocalizedTextSchema.optional(),
-    joinedAt: instant().optional(),
+    joinedAt: InstantOut.optional(),
     upcomingDates: z.array(DateCardSchema).optional(),
     pastDates: z.array(DateCardSchema).optional(),
     replays: z.array(DateCardSchema).optional(),
@@ -1135,7 +1129,7 @@ export const DateDetailSchema: z.ZodIntersection<
       castAndCrew: z
         .array(
           z.looseObject({
-            personId: uuid().optional(),
+            personId: uuidOut().optional(),
             name: z.string().optional(),
             roleCode: z.string().optional(),
           }),

@@ -24,7 +24,7 @@
  *
  * ⚠ `format` IS DECLARED AT THE SOURCE, NOT PATCHED BY THE EMITTER.
  *
- *   `InstantSchema` is a regex, so `z.toJSONSchema()` emits `pattern`. Both
+ *   `InstantOut` is a regex, so `z.toJSONSchema()` emits `pattern`. Both
  *   contracts carry `format: date-time`, which is what every OpenAPI generator
  *   reads — a pattern tells a generator nothing. `.meta()` supplies it here, at
  *   the declaration, so the emitter stays a serialiser rather than acquiring a

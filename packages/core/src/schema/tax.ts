@@ -25,7 +25,7 @@
 import { z } from 'zod';
 
 import { MoneyOut, BasisPointsSchema } from './money.js';
-import { InstantSchema, CountryCodeSchema } from './primitives.js';
+import { InstantOut, CountryCodeSchema } from './primitives.js';
 import {
   vocabularyIn,
   vocabularyOut,
@@ -78,7 +78,7 @@ export const TaxEvidenceSchema: z.ZodObject<
       .min(1)
       .max(64)
       .meta({ examples: ['edge.geoip'] }),
-    collectedAt: InstantSchema,
+    collectedAt: InstantOut,
   })
   .describe(
     '**One item of location evidence, with its provenance.** A B2C sale inside the Union\nrequires **two non-contradictory items** — and a tax provider generally prefers a single\naddress over comparing them, so the evidence rule cannot be delegated to it: our own\nregister carries it.\n\n`source` is not decorative: **evidence without provenance is not evidence**.',
@@ -117,7 +117,7 @@ export const BuyerTaxLocationSchema: z.ZodObject<
       .describe(
         'True when two items contradict each other. **The sale goes through anyway** and the line is\nflagged for review: refusing the purchase would punish the viewer for an ambiguity that is\nnot theirs, and hiding the conflict would produce a false and silent declaration.',
       ),
-    resolvedAt: InstantSchema.optional(),
+    resolvedAt: InstantOut.optional(),
   })
   .describe(
     "**The buyer's tax location, carried by the order.** Neither a market identifier nor a plain\ncountry: in the United States the rate changes from one street to the next, so the postal\ncode is indispensable; in the Union the evidence is **double** and must be retained.\n\n**Not to be confused with the identity verification of the signed-in account**, which bears\non the **artist** and has nothing to do with the **viewer's** location. The two are often\nconflated.",

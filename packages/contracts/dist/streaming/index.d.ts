@@ -20,7 +20,7 @@
  *     `pattern`, because that is what the document publishes for these fields;
  *     core's `*IdSchema` and `InstantSchema` add a `pattern` the document does
  *     not carry here. Once the document gains it (D-065 family D), the local
- *     `uuid()` and `instant()` become those core schemas, one edit per file.
+ *     `uuidOut()` and `InstantOut` become those core schemas, one edit per file.
  */
 import { z } from 'zod';
 import { type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';

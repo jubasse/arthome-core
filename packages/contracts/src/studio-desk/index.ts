@@ -20,10 +20,12 @@ import {
   StateChangeOrigin,
 } from '@arthome/core';
 import {
+  InstantOut,
   int64,
+  sourceNameOf,
+  uuidOut,
   vocabularyOut,
   vocabularyOutLocal,
-  sourceNameOf,
   vocabularyOutNullable,
 } from '@arthome/core/schema';
 
@@ -40,14 +42,12 @@ const localVocabulary = (
 ): z.ZodString => vocabularyOutLocal(values, reason);
 
 /** `format: date-time` alone, with no `pattern`. */
-const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
 const instantNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'date-time' });
 
 /** An integer with no format, as the document writes `type: integer`. */
 const int = (): z.ZodNumber => int64().meta({ format: undefined });
 
-const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
 const uuidNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'uuid' });
 
@@ -90,15 +90,15 @@ export const ModerationItemSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    id: uuid(),
-    messageId: uuid(),
-    dateId: uuid(),
-    channelId: uuid().optional(),
+    id: uuidOut(),
+    messageId: uuidOut(),
+    dateId: uuidOut(),
+    channelId: uuidOut().optional(),
     state: vocabularyOut(MODERATION_ITEM_STATES),
     reason: vocabularyOut(MODERATION_REASONS).optional(),
     reportsCount: int(),
     atMediaSec: int(),
-    sentAt: instant().optional(),
+    sentAt: InstantOut.optional(),
     authorHandle: z.string().optional(),
     authorSanction: vocabularyOut(AUDIENCE_SANCTIONS).optional(),
     body: StudioLocalizedTextSchema.optional(),
@@ -145,7 +145,7 @@ export const AudienceMemberSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    id: uuid(),
+    id: uuidOut(),
     handle: z.string().meta({ examples: ['@marie.j'] }),
     sanction: vocabularyOut(AUDIENCE_SANCTIONS),
     sanctionExpiresAt: instantNullable()
@@ -154,7 +154,7 @@ export const AudienceMemberSchema: z.ZodObject<
         '**An instant, never a label.** "No limit", 1 min, 10 min, 1 h and a free-form duration are a\nsingle field, computed once. Absent = no limit.\n',
       ),
     messagesCount: int(),
-    firstSeenAt: instant().optional(),
+    firstSeenAt: InstantOut.optional(),
     subscriberTier: vocabularyOutNullable(PLAN_TIERS).optional(),
     holdsSeat: z.boolean().optional(),
     present: z.boolean().describe('Presence **on the live show in progress**.'),
@@ -177,7 +177,7 @@ export const ChatPolicySchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  dateId: uuid(),
+  dateId: uuidOut(),
   mode: vocabularyOut(CHAT_MODES),
   filterSeverity: vocabularyOut(FILTER_SEVERITIES).describe(
     '**A single vocabulary.** Two coexisted in the same design file — "lenient/normal/high" in\nchannel settings, "low/medium/high" on the moderation page — and neither was in the shared\nsources.\n',
@@ -207,14 +207,14 @@ export const JournalEntrySchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    id: uuid(),
+    id: uuidOut(),
     nature: localVocabulary(
       ['air', 'mod', 'event', 'access', 'money'],
       'A vocabulary local to this contract: four of the five are endpoint concerns and a vocabulary of query filters does not belong in the domain. The exception is `money`, which @arthome/core does not produce but DOES reason about — data-model.md:624 and context-map.md:402 key the redaction rule to it, so the `money` kind is absent from the response without canRevenue. Renaming that one member silently falsifies two domain documents; the other four are ours alone.',
     ).describe(
       '**The five axes a studio log is filtered by**, and they are deliberately not the services\nthat produced the entries: someone reading a log at midnight asks "what touched the\nmoney", not "what did `payouts` emit".\n\n**The abbreviations are a wart and they are named as one.** `mod` and `air` are the only\nshortened members in either contract — everything else spells `moderation` out, including\nthe role, the tag and the page. A reader who writes `moderation` here gets nothing back,\nsilently, which is the shape this whole document spent a week removing. They are kept for\nnow because the filter is a query parameter on a path that already ships in fixtures; they\nshould become `moderation` and `on_air` the first time that path changes — or sooner, on\na second trigger that is likelier to arrive: **`on_air` has to be spelled out the day\nanything compares this field against `RUN_STATES.on_air`**, which is the most probable\nreason anyone touches it at all.\n\n**And `mod` is worse than inconsistent, it is a collision.** `moderation` survives as a\nbare value in `MEMBER_ROLES` because the field name disambiguates it. Here the field is\n`nature` and the value abbreviates a different concept, so the disambiguation that saved\nthe role does not apply to the abbreviation of it.\n\n**`money` is not ours alone**: `@arthome/core` does not produce it, but the redaction rule\nis keyed to it — `data-model.md:624` and `context-map.md:402` both say the `money` kind is\nabsent from the response without `canRevenue`. Renaming that one member would leave two\ndomain documents describing a rule keyed to a string that no longer exists, with every\ngate green.\n',
     ),
-    occurredAt: instant(),
+    occurredAt: InstantOut,
     actor: ActorSchema,
     code: z.string().describe('A **code**, never an authored sentence.'),
     params: z.looseObject({}),
@@ -239,7 +239,7 @@ export const InboxEntrySchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    id: uuid(),
+    id: uuidOut(),
     kind: localVocabulary([
       'invitation',
       'alert',
@@ -255,7 +255,7 @@ export const InboxEntrySchema: z.ZodObject<
       'The inbox texts are one of the **only two** acknowledged exceptions to "i18n by codes".',
     ),
     deepLinkCode: z.string().nullable().optional(),
-    createdAt: instant(),
+    createdAt: InstantOut,
     read: z.boolean(),
   })
   .describe(

@@ -5255,7 +5255,6 @@ components:
         servedAt:
           type: string
           format: date-time
-          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$'
           description: |
             Server instant. **Every** displayed countdown is computed against it, never against the
             client's clock.
@@ -5263,7 +5262,6 @@ components:
         validUntil:
           type: [string, 'null']
           format: date-time
-          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$'
           description: |
             Present as soon as a perishable value is in the response. Past that instant, the surface
             **calls the same `@arthome/core` function again** with the inputs it already has — it does
@@ -6676,7 +6674,7 @@ components:
           maxLength: 8
           description: 'ISO 3166-2, when the item carries it.'
         source: { type: string, minLength: 1, maxLength: 64, examples: ['edge.geoip'] }
-        collectedAt: { type: string, format: date-time, pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$' }
+        collectedAt: { type: string, format: date-time }
 
     BuyerTaxLocation:
       type: object
@@ -6703,7 +6701,7 @@ components:
             True when two items contradict each other. **The sale goes through anyway** and the line is
             flagged for review: refusing the purchase would punish the viewer for an ambiguity that is
             not theirs, and hiding the conflict would produce a false and silent declaration.
-        resolvedAt: { type: string, format: date-time, pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$' }
+        resolvedAt: { type: string, format: date-time }
 
     PaymentHandoff:
       type: object

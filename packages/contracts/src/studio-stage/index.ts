@@ -28,12 +28,14 @@ import {
   Service,
 } from '@arthome/core';
 import {
+  InstantOut,
+  MoneyOut,
   int64,
+  uuidOut,
   vocabularyOut,
   vocabularyOutLocal,
   vocabularyOutLocalNullable,
   vocabularyOutNullable,
-  MoneyOut,
 } from '@arthome/core/schema';
 
 import { ActorSchema } from '../studio-access/index.js';
@@ -53,7 +55,6 @@ const localVocabulary = (
  * An instant with `format: date-time` and NO `pattern`: these documents carry the format
  * alone here, where `InstantSchema` would add its regex.
  */
-const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
 const instantNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'date-time' });
 
@@ -62,8 +63,6 @@ const int = (): z.ZodNumber => int64().meta({ format: undefined });
 
 const uuidNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'uuid' });
-
-const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
 
 /** One line of the pre-publication checklist. Blocking is a property of the item. */
 export const PublicationChecklistItemSchema: z.ZodObject<
@@ -147,7 +146,7 @@ export const PublicationSchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  dateId: uuid(),
+  dateId: uuidOut(),
   state: vocabularyOut(PUBLICATION_STATES).describe(
     'The vocabulary of `catalogue.json`, which is authoritative. `replay_online` says what\n`replay` does not: **the replay is on sale**. The parallel tables in the two studio designs\nare never adopted.\n',
   ),
@@ -185,7 +184,7 @@ export const HealthSampleSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    measuredAt: instant(),
+    measuredAt: InstantOut,
     source: localVocabulary(['ingest_server', 'client_submitted']).describe(
       '`client_submitted` for the end-to-end latency, measured in the control room by\n`RTCPeerConnection.getStats()` on the WHEP return path and **submitted** — never a native\nfigure presented as end-to-end. If it is not measured, it is **absent**.\n',
     ),
@@ -224,14 +223,14 @@ export const CrewPresenceSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    personId: uuid(),
+    personId: uuidOut(),
     displayName: z.string(),
     roles: z
       .array(vocabularyOut(MEMBER_ROLES))
       .describe(
         '**A set**, as everywhere else in this document: the eight canonical values, never the\nfallback to six. Presence is read next to a cut button, and `director` there is not\n`video`.\n',
       ),
-    lastActivityAt: instant().describe(
+    lastActivityAt: InstantOut.describe(
       '**An instant, never "active 2 min ago".** The sentence belongs to the surface and is\ncomputed against `servedAt`; the contract carries the instant, like every other\ncountdown here.\n',
     ),
     isSelf: z
@@ -260,7 +259,7 @@ export const StudioIncidentSchema: z.ZodNullable<
   >
 > = z
   .looseObject({
-    id: uuid(),
+    id: uuidOut(),
     kind: vocabularyOut(INCIDENT_KINDS).describe('The **outcome** the viewer sees.'),
     cause: vocabularyOut(INCIDENT_CAUSES).describe(
       'The **cause**, a distinct vocabulary. `compatibility_worker_failed` exists because a\ntranscoding *worker* must never die silently — otherwise the control room sees a player that\nnever starts, with no cause.\n',
@@ -271,7 +270,7 @@ export const StudioIncidentSchema: z.ZodNullable<
     message: StudioLocalizedTextSchema.optional().describe(
       'Written by the control room: **content**, with its authoring language. The catalogue supplies\n**templates** per kind of incident, which the control room reuses or replaces.\n',
     ),
-    raisedAt: instant(),
+    raisedAt: InstantOut,
     raisedBy: ActorSchema.optional(),
   })
   .nullable()
@@ -282,10 +281,10 @@ export const StudioIncidentSchema: z.ZodNullable<
 /** The record of a date, served pane by pane. */
 export const DateSheetSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
   .looseObject({
-    dateId: uuid(),
-    channelId: uuid().optional(),
+    dateId: uuidOut(),
+    channelId: uuidOut().optional(),
     title: z.string().optional(),
-    startsAt: instant().optional(),
+    startsAt: InstantOut.optional(),
     venueClock: z
       .looseObject({
         venueTimezone: z.string().optional(),
@@ -297,7 +296,7 @@ export const DateSheetSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
     displayState: vocabularyOut(DISPLAY_STATES)
       .optional()
       .describe('The composed value, served. Never recomposed by the surface.'),
-    displayStateValidUntil: instant().optional(),
+    displayStateValidUntil: InstantOut.optional(),
     publication: PublicationSchema,
     openPanes: z
       .array(vocabularyOut(DATE_PANES))
@@ -310,9 +309,9 @@ export const DateSheetSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
 /** A row of the event board. */
 export const EventsRowSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
   .looseObject({
-    dateId: uuid(),
+    dateId: uuidOut(),
     title: z.string(),
-    startsAt: instant(),
+    startsAt: InstantOut,
     state: vocabularyOut(PUBLICATION_STATES),
     orderRank: int(),
     outcome: z.string().nullable().optional(),
@@ -322,7 +321,7 @@ export const EventsRowSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
       .describe(
         '**The composed value, served to the studio as to the storefront.** It is here that it counts\nmost: the storefront has one axis to display, the studio has **three to reconcile** —\n`publication.state`, `run.state` and `outcome` — and the outcome labels **replace** the state\n(`CANCELLED AND REFUNDED`, `POSTPONED · SEATS STILL VALID`, `INTERRUPTED · CREDITS ISSUED`).\nServing `state + orderRank + outcome` and letting the client compose was the second\nimplementation that critical rule 2 forbids — on the surface where a mistake is not a\nmislabelled card but a control room on the wrong screen.\n',
       ),
-    displayStateValidUntil: instant().optional(),
+    displayStateValidUntil: InstantOut.optional(),
     lowestPrice: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
     fillRateBps: int().nullable().optional(),
     seatsSold: int().nullable().optional(),
@@ -345,7 +344,7 @@ export const EventsRowSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
 /** The state of the run, served in one call. */
 export const RunConsoleSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
   .looseObject({
-    dateId: uuid(),
+    dateId: uuidOut(),
     state: vocabularyOut(RUN_STATES).describe(
       // Plain prose. These words are ENGLISH here, not vocabulary members: the
       // sentence is about two states being absent from this axis. They were
@@ -383,7 +382,7 @@ export const RunConsoleSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
     chapters: z
       .array(
         z.looseObject({
-          id: uuid().optional(),
+          id: uuidOut().optional(),
           vocabId: z.string().optional(),
           atMediaSec: int().optional(),
         }),
@@ -440,7 +439,7 @@ export const StreamKeyRevealSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = 
   .looseObject({
     streamKey: z.string(),
     ingestUrl: z.string().meta({ format: 'uri' }),
-    revealedAt: instant(),
+    revealedAt: InstantOut,
   })
   .describe(
     "**A secret displayed on a phone, in a room, often in front of a contractor.** Four\nguarantees: the key is **never** in a list payload; revealing it is a **separate command,\naudited and by name**; rotating it is immediate and the old one **stops broadcasting at\nonce**; the response carries `Cache-Control: no-store`, so that it ends up neither in the\nphone's HTTP cache nor in the application snapshot the OS takes when it goes to the\nbackground.\n\nAssignment to the `director` slot — **which grants access to the key** — is reserved to\n`artist ∨ production`, and the contract makes that reason explicit rather than leaving it to\nbe guessed.\n",
@@ -449,10 +448,10 @@ export const StreamKeyRevealSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = 
 /** A signed upload URL, obtained by a JSON command. */
 export const UploadTicketSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
   .looseObject({
-    assetId: uuid(),
+    assetId: uuidOut(),
     uploadUrl: z.string().meta({ format: 'uri' }),
     fields: z.object({}).catchall(z.string()),
-    expiresAt: instant(),
+    expiresAt: InstantOut,
   })
   .describe(
     "**Upload through a signed upload URL, obtained by a JSON command** — never `multipart` from\na WebView. Proposed lifetime: **15 minutes**, long enough for a room's 4G, short enough not to\nbe an access token in disguise.\n",
@@ -460,7 +459,7 @@ export const UploadTicketSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
 
 /** An item of a channel's merchandise, as the admin sees it. */
 export const MerchItemAdminSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z.looseObject({
-  id: uuid(),
+  id: uuidOut(),
   showId: uuidNullable().optional(),
   label: StudioLocalizedTextSchema.describe(
     '**Bilingual.** The absence of an English label in the sources is a **data gap** to be filled during the port, not a translation gap (E10).',

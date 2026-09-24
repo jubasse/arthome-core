@@ -20,7 +20,7 @@
  *     `pattern`, because that is what the document publishes for these fields;
  *     core's `*IdSchema` and `InstantSchema` add a `pattern` the document does
  *     not carry here. Once the document gains it (D-065 family D), the local
- *     `uuid()` and `instant()` become those core schemas, one edit per file.
+ *     `uuidOut()` and `InstantOut` become those core schemas, one edit per file.
  */
 
 import { z } from 'zod';
@@ -33,11 +33,13 @@ import {
   SUBSCRIPTION_STATES,
 } from '@arthome/core';
 import {
-  VOCABULARY_SOURCE_LOCAL,
+  InstantOut,
   MoneyOut,
+  VOCABULARY_SOURCE_LOCAL,
   int64,
   type VocabularyOut,
   type VocabularyOutNullable,
+  uuidOut,
   vocabularyOut,
   vocabularyOutLocal,
   vocabularyOutNullable,
@@ -61,10 +63,6 @@ const LIVE_OPEN_BEHAVIOURS = ['peek', 'muted', 'off'] as const;
 const PLAYBACK_QUALITIES = ['auto', 'low', 'medium', 'high'] as const;
 const BEARER_SESSION_MODES = ['bearer', 'device'] as const;
 
-const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
-
-const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
-
 export const ProfileSummarySchema: z.ZodObject<
   {
     id: z.ZodString;
@@ -76,7 +74,7 @@ export const ProfileSummarySchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    id: uuid(),
+    id: uuidOut(),
     name: z.string().meta({ examples: ['Marie'] }),
     kind: vocabularyOut(PROFILE_KINDS, LOCAL_VOCABULARY).meta({
       'x-arthome-vocabulary-reason':
@@ -221,9 +219,9 @@ export const ViewerContextSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    deviceId: uuid(),
+    deviceId: uuidOut(),
     signedIn: z.boolean().optional(),
-    currentProfileId: uuid().nullable().optional(),
+    currentProfileId: uuidOut().nullable().optional(),
     profiles: z.array(ProfileSummarySchema),
     account: z
       .looseObject({
@@ -316,7 +314,7 @@ export const SessionEstablishedBearerSchema: z.ZodObject<
     ),
     accessToken: z.string(),
     refreshToken: z.string().nullable().optional(),
-    expiresAt: instant(),
+    expiresAt: InstantOut,
     viewerContext: ViewerContextSchema,
   })
   .describe(
@@ -355,7 +353,7 @@ export const ConsentsSchema: z.ZodObject<
       .optional(),
     cookieCategories: z.object({}).catchall(z.boolean()).optional(),
     textVersion: int64().meta({ format: undefined }).optional(),
-    recordedAt: instant().optional(),
+    recordedAt: InstantOut.optional(),
   })
   .describe(
     'Four purposes and two tracker categories. **Timestamped by the server and versioned with the\nversion of the text accepted**: a consent without a version or a date is worth nothing. `ads`\nis `false` by default, and **that default is a contract decision**, not a setting.\n',
@@ -385,17 +383,17 @@ export const DeviceSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    id: uuid(),
+    id: uuidOut(),
     kind: vocabularyOut(DEVICE_KINDS),
     label: z.string(),
     city: z.string().nullable().optional(),
-    lastSeenAt: instant(),
+    lastSeenAt: InstantOut,
     isCurrent: z.boolean(),
     sessions: z
       .array(
         z.looseObject({
-          sessionId: uuid(),
-          profileId: uuid(),
+          sessionId: uuidOut(),
+          profileId: uuidOut(),
           profileName: z.string().optional(),
         }),
       )
@@ -563,14 +561,14 @@ export const AccountScreenSchema: z.ZodObject<
     credits: z
       .array(
         z.looseObject({
-          id: uuid().optional(),
-          channelId: uuid().optional(),
+          id: uuidOut().optional(),
+          channelId: uuidOut().optional(),
           amount: MoneyOut.meta({ 'x-arthome-tax-basis': 'inherited' }).optional(),
           originCode: vocabularyOutLocal(
             CREDIT_ORIGINS,
             'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.',
           ).optional(),
-          expiresAt: instant().optional(),
+          expiresAt: InstantOut.optional(),
         }),
       )
       .optional()
@@ -605,8 +603,8 @@ export const AccountScreenSchema: z.ZodObject<
           DELETION_STATES,
           "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got.",
         ).optional(),
-        requestedAt: instant().optional(),
-        graceUntil: instant().optional(),
+        requestedAt: InstantOut.optional(),
+        graceUntil: InstantOut.optional(),
       })
       .nullable()
       .optional()
@@ -632,7 +630,7 @@ export const DevicePairingSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    pairingId: uuid().describe(
+    pairingId: uuidOut().describe(
       '**Persisted by the surface**, so it can reattach after a restart rather than opening a second\npairing. Without it, a television restarted during payment shows the home screen while the\npayment completes into the void.\n',
     ),
     intent: vocabularyOutLocal(PAIRING_INTENTS, LOCAL_ENDPOINT_REASON),
@@ -649,7 +647,7 @@ export const DevicePairingSchema: z.ZodObject<
       .describe(
         '**Served**, never built by the surface. It is what the TV encodes in the QR code.',
       ),
-    expiresAt: instant().describe(
+    expiresAt: InstantOut.describe(
       '**Per intent, and served**: `signin` 15 min (fetch your phone, do a 2FA); `seat` and `merch`\n**5 min** — beyond that the displayed gauge is no longer true; `plan` and `payment_method`\n10 min. Never hardcoded in the surface. **The waiting screen shows no countdown**: the TV\nuses it to give up, not to worry the viewer.\n',
     ),
     pollIntervalSec: int64()
@@ -681,7 +679,7 @@ export const PairingOutcomeSchema: z.ZodObject<
   z.core.$loose
 > = z
   .looseObject({
-    pairingId: uuid(),
+    pairingId: uuidOut(),
     intent: vocabularyOutLocal(PAIRING_INTENTS, LOCAL_ENDPOINT_REASON),
     state: vocabularyOutLocal(PAIRING_STATES, LOCAL_STATE_REASON).describe(
       '**`engaged` is the state that protects the money.** It is set as soon as the phone enters the\npayment flow, and **before** `ticketing` executes. From then on the pairing is no longer\ncancellable: without that state, a press on Back — the most used key on a remote — cancels a\npairing whose payment is already in flight, and the seat is charged without either screen\nsaying so.\n',

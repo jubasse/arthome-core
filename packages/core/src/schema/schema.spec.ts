@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { ErrorSchema, issueToCode } from './error.js';
 import { AccountIdSchema, PublicHandleSchema } from './identifiers.js';
 import { MoneyIn, MoneyOut } from './money.js';
-import { IanaTimeZoneSchema, InstantSchema, LocaleIn, LocaleOut, int64 } from './primitives.js';
+import { IanaTimeZoneSchema, InstantIn, LocaleIn, LocaleOut, int64 } from './primitives.js';
 import { vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
 import { DATE_OUTCOMES } from '../vocabulary/catalog.js';
 
@@ -113,10 +113,16 @@ describe('failures leave as codes', () => {
   });
 
   it('carries no English prose out of zod', () => {
-    const result = InstantSchema.safeParse('2026-09-21 20:30');
+    const result = InstantIn.safeParse('2026-09-21 20:30');
     expect(result.success).toBe(false);
     if (result.success) return;
-    const { code } = issueToCode(result.error.issues[0]!);
+    // Destructured and checked rather than asserted: `!` is banned here
+    // (no-non-null-assertion) and `pnpm run fix` removes it, which breaks the
+    // compile. A rule that rewrites code into something that does not build is
+    // worth writing around once rather than fighting every time.
+    const [issue] = result.error.issues;
+    if (issue === undefined) throw new Error('expected at least one issue');
+    const { code } = issueToCode(issue);
     // A code is a vocabulary; a message is a sentence. Only one can be
     // translated by the surface that has to show it.
     expect(code).not.toMatch(/\s/);
@@ -140,10 +146,10 @@ describe('failures leave as codes', () => {
  */
 describe('the primitives refuse what bit us before', () => {
   it('requires an instant in UTC, and refuses an offset spelling', () => {
-    expect(InstantSchema.safeParse('2026-09-21T20:30:00.000Z').success).toBe(true);
+    expect(InstantIn.safeParse('2026-09-21T20:30:00.000Z').success).toBe(true);
     // Two spellings of one moment is the fault this package exists to prevent.
-    expect(InstantSchema.safeParse('2026-09-21T22:30:00+02:00').success).toBe(false);
-    expect(InstantSchema.safeParse('2026-09-21').success).toBe(false);
+    expect(InstantIn.safeParse('2026-09-21T22:30:00+02:00').success).toBe(false);
+    expect(InstantIn.safeParse('2026-09-21').success).toBe(false);
   });
 
   it('refuses the two time zone forms D3 replaced', () => {
@@ -199,7 +205,7 @@ describe('int64', () => {
   });
 
   it('emits the instant as a date-time carrying its pattern', () => {
-    const emitted = z.toJSONSchema(InstantSchema, { io: 'output' });
+    const emitted = z.toJSONSchema(InstantIn, { io: 'output' });
     expect(emitted).toMatchObject({ format: 'date-time' });
     expect(emitted).toHaveProperty('pattern');
   });

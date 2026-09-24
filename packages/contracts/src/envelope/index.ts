@@ -24,7 +24,7 @@
  *
  * ⚠ `format` IS DECLARED AT THE SOURCE, NOT PATCHED BY THE EMITTER.
  *
- *   `InstantSchema` is a regex, so `z.toJSONSchema()` emits `pattern`. Both
+ *   `InstantOut` is a regex, so `z.toJSONSchema()` emits `pattern`. Both
  *   contracts carry `format: date-time`, which is what every OpenAPI generator
  *   reads — a pattern tells a generator nothing. `.meta()` supplies it here, at
  *   the declaration, so the emitter stays a serialiser rather than acquiring a
@@ -54,7 +54,7 @@ import {
   PublicationChecklistItem,
   PublicationState,
 } from '@arthome/core';
-import { ErrorSchema, InstantSchema, int64 } from '@arthome/core/schema';
+import { ErrorSchema, InstantOut, int64 } from '@arthome/core/schema';
 
 /** The meta every STOREFRONT response composes. */
 export const StorefrontEnvelopeMetaSchema: z.ZodObject<
@@ -66,13 +66,13 @@ export const StorefrontEnvelopeMetaSchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  servedAt: InstantSchema.meta({
+  servedAt: InstantOut.meta({
     format: 'date-time',
     examples: ['2026-09-21T20:31:04.118Z'],
   }).describe(
     "Server instant. **Every** displayed countdown is computed against it, never against the\nclient's clock.\n",
   ),
-  validUntil: InstantSchema.nullable()
+  validUntil: InstantOut.nullable()
     .meta({ format: 'date-time', examples: ['2026-09-21T20:31:34.118Z'] })
     .optional()
     .describe(
@@ -107,13 +107,13 @@ export const StudioEnvelopeMetaSchema: z.ZodObject<
   },
   z.core.$loose
 > = z.looseObject({
-  servedAt: InstantSchema.meta({
+  servedAt: InstantOut.meta({
     format: 'date-time',
     examples: ['2026-09-21T20:31:04.118Z'],
   }).describe(
     'The reference clock. The duty countdown, the length of a silencing, "the replay expires in\n41 h", the expiry of a one-off access: everything is counted against it and a measured offset,\n**never against the workstation\'s clock**.\n',
   ),
-  validUntil: InstantSchema.nullable().meta({ format: 'date-time' }).optional(),
+  validUntil: InstantOut.nullable().meta({ format: 'date-time' }).optional(),
   rightsVersion: int64()
     .meta({ examples: [412] })
     .describe('**On every response.** When it changes, the navigation is stale.'),
@@ -241,7 +241,7 @@ export const StorefrontErrorEnvelopeSchema: z.ZodObject<
   z.core.$loose
 > = z.looseObject({
   error: StorefrontErrorSchema,
-  servedAt: InstantSchema.meta({ format: 'date-time', pattern: undefined }),
+  servedAt: InstantOut.meta({ format: 'date-time', pattern: undefined }),
 });
 
 export const StudioErrorEnvelopeSchema: z.ZodObject<
@@ -249,5 +249,5 @@ export const StudioErrorEnvelopeSchema: z.ZodObject<
   z.core.$loose
 > = z.looseObject({
   error: StudioErrorSchema,
-  servedAt: InstantSchema.meta({ format: 'date-time', pattern: undefined }),
+  servedAt: InstantOut.meta({ format: 'date-time', pattern: undefined }),
 });

@@ -60,10 +60,52 @@ import { LOCALES } from '../format/locale.js';
  * a second way to say the same moment, and two spellings of one value is the
  * fault this package exists to prevent.
  */
-export const InstantSchema: z.ZodString = z
+/**
+ * ⚠ TWO FORMS, AND THE SPLIT IS THE IN/OUT ASYMMETRY APPLIED TO A FORMAT.
+ *
+ *   This pattern is NARROWER THAN `format: date-time`. RFC 3339 admits an
+ *   offset; this admits `Z` only, and at most three decimals. That narrowing is
+ *   real and it was published nowhere: 126 of the 132 instants in the two
+ *   contracts carried `format` and no pattern.
+ *
+ *   It matters on exactly SEVEN fields — measured, not assumed — the ones a
+ *   client SENDS rather than echoes: `startsAt`, `muteUntil`, `expiresAt`,
+ *   `rescheduledTo`, `measuredAt`. A studio in Paris computing a start time
+ *   produces `2026-09-24T20:00:00+02:00`, which is valid RFC 3339, valid
+ *   `date-time`, and refused — by a rule the contract never stated.
+ *
+ *   On the other 119 the pattern constrains a server's own output, which is not
+ *   a promise a client can break. Publishing it there would be noise on a field
+ *   nobody can get wrong, and `format: date-time` is what a generated client
+ *   reads.
+ *
+ *   *Strict on the way in, tolerant on the way out — the same asymmetry as the
+ *   vocabularies, and the same naming as `LocaleIn`/`LocaleOut` and
+ *   `MoneyIn`/`MoneyOut` (D-065 §H). A name that does not state its direction
+ *   will be used in the wrong one, and this one was: ten modules wrote their own
+ *   stripped-down `instant()` because the only export carried a pattern their
+ *   document did not.*
+ */
+export const InstantIn: z.ZodString = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/)
   .meta({ format: 'date-time' });
+
+/** The same instant as a server SENDS it: the format, and no pattern. */
+export const InstantOut: z.ZodString = z.string().meta({ format: 'date-time' });
+
+/**
+ * A server-issued identifier as it appears ON THE WIRE — `format: uuid`, no
+ * pattern.
+ *
+ * ⚠ THE v7 PATTERN IS NOT PUBLISHED, AND THAT IS MEASURED RATHER THAN LAZY.
+ *   The branded `*IdSchema` exports demand UUIDv7 because the outbox's ordering
+ *   depends on it. A client never mints one: `POST /v1/devices` takes no
+ *   `deviceId` and returns it, and all 37 identifiers in request bodies are
+ *   echoes of something a server issued. A malformed one is an id that does not
+ *   exist, and the lookup says so more clearly than a pattern would.
+ */
+export const uuidOut = (): z.ZodString => z.string().meta({ format: 'uuid' });
 
 /**
  * A 64-bit integer on the wire: `type: integer, format: int64`, and NO bounds.
