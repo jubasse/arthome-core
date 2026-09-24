@@ -23,7 +23,9 @@ IT NEEDS `^build` UPSTREAM. It reads `dist/`, for the reason check-tsconfig read
 build it compares the wrong thing and says PASS.
 """
 
+import fcntl
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -204,6 +206,37 @@ def main(argv):
         print("usage: check-emit-diff.py openapi/*.yaml [--all]", file=sys.stderr)
         return 2
 
+    def build():
+        """Build the packages, ONE INVOCATION AT A TIME.
+
+        This gate reads `dist/`, so it has to build first. Two copies of it
+        running at once -- which is what happens the moment more than one worker
+        is writing schemas -- both write `packages/*/dist`, and a reader catching
+        a `.d.ts` half-rewritten gets a type that does not resolve. Everything
+        derived from it then becomes an error type, and eslint reports
+        `no-unsafe-assignment` and `no-unsafe-call` all over files that are
+        perfectly correct.
+
+        The damage is not corruption, it is WASTED ATTENTION: the errors are
+        real-looking, they point at innocent lines, and they disappear on their
+        own. Somebody edits working code to silence them.
+
+        So the build takes an exclusive lock. Concurrent runs queue instead of
+        interleaving, and the second one rebuilds almost nothing.
+        """
+        lock = Path(ROOT) / "node_modules" / ".arthome-build.lock"
+        lock.parent.mkdir(exist_ok=True)
+        with open(lock, "w") as handle:
+            fcntl.flock(handle, fcntl.LOCK_EX)
+            run = subprocess.run(
+                ["pnpm", "-r", "run", "build"], cwd=ROOT, capture_output=True, text=True
+            )
+        if run.returncode != 0:
+            print("\u2717 the packages do not build.\n", file=sys.stderr)
+            print((run.stdout + run.stderr).strip()[:2000], file=sys.stderr)
+            return False
+        return True
+
     def emit(ids=None):
         argv = ["node", "tools/emit-contracts.mjs"]
         if ids is not None:
@@ -224,6 +257,8 @@ def main(argv):
     # The id has to be the DOCUMENT's name, so the mapping is computed here,
     # where the documents are read, and handed to a Node half that still decides
     # nothing.
+    if not build():
+        return 1
     payload = emit()
     if payload is None:
         return 1

@@ -27,7 +27,7 @@
     "check:openapi": "python3 tools/check-openapi.py openapi/storefront.yaml openapi/studio.yaml",
     "check:vocabulary": "python3 tools/check-vocabulary.py openapi/storefront.yaml openapi/studio.yaml",
     "_comment:emit-diff": "IN `verify` since the commit that turned it green, and not before: a gate wired in red is a gate switched off within a day (D-065). It reads dist/, so it builds first. It emits TWICE — once to learn the export names, once as a registry, because without one z.toJSONSchema inlines every nested object and a $ref never survives.",
-    "check:emit-diff": "pnpm -r run build && python3 tools/check-emit-diff.py openapi/storefront.yaml openapi/studio.yaml",
+    "check:emit-diff": "python3 tools/check-emit-diff.py openapi/storefront.yaml openapi/studio.yaml",
     "verify": "pnpm run verify:offline && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run check:emit-diff && pnpm run check:map",
     "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:language && pnpm run check:core-entry && pnpm run check:openapi && pnpm run check:vocabulary && node -e \"console.log('\\n  NOTE verify:offline is the subset that needs no install. It does NOT run format:check, lint, typecheck or test. Run pnpm run verify before pushing.')\""
   },
