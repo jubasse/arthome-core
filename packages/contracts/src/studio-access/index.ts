@@ -19,6 +19,8 @@ import { z } from 'zod';
 
 import {
   CREW_ROLES,
+  DISPLAY_STATES,
+  RUN_STATES,
   DATE_PANES,
   LOCALES,
   MEMBER_ROLES,
@@ -29,7 +31,13 @@ import {
   NavigationEntry,
   SURFACES,
 } from '@arthome/core';
-import { int64, vocabularyOut, vocabularyOutLocal } from '@arthome/core/schema';
+import {
+  int64,
+  vocabularyOut,
+  vocabularyOutLocal,
+  vocabularyOutLocalNullable,
+  vocabularyOutNullable,
+} from '@arthome/core/schema';
 
 import { StudioCountersSchema } from '../studio-money/index.js';
 
@@ -42,6 +50,11 @@ const localVocabulary = (
   reason: string = LOCAL_REASON,
 ): z.ZodString => vocabularyOutLocal(values, reason);
 
+const localVocabularyNullable = (
+  values: readonly [string, ...string[]],
+  reason: string,
+): z.ZodNullable<z.ZodString> => vocabularyOutLocalNullable(values, reason);
+
 /**
  * An instant with `format: date-time` and NO `pattern`: these documents carry the format
  * alone here, where `InstantSchema` would add its regex.
@@ -50,6 +63,9 @@ const instant = (): z.ZodString => z.string().meta({ format: 'date-time' });
 
 /** An integer with no format, as the document writes `type: integer`. */
 const int = (): z.ZodNumber => int64().meta({ format: undefined });
+
+const instantNullable = (): z.ZodNullable<z.ZodString> =>
+  z.string().nullable().meta({ format: 'date-time' });
 
 const uuid = (): z.ZodString => z.string().meta({ format: 'uuid' });
 const uuidNullable = (): z.ZodNullable<z.ZodString> =>
@@ -403,4 +419,128 @@ export const StudioSessionEstablishedBearerSchema: z.ZodObject<
   })
   .describe(
     'Opaque token in the body, **no cookie**, stored in the native store —\n`@capacitor/preferences`, **never `localStorage`**.\n',
+  );
+
+const SESSION_MODE_REASON =
+  'A narrowing of a vocabulary named elsewhere in this document, with the reason in the description above: the members left out are the rule, not an omission.';
+
+/**
+ * The metadata of a local vocabulary WITHOUT its `x-arthome-vocabulary` list: the document
+ * carries the members as an `enum` here, and only the source and the reason as extensions.
+ */
+const narrowedMeta = (
+  values: readonly [string, ...string[]],
+  reason: string,
+): Record<string, unknown> => {
+  const { 'x-arthome-vocabulary': _members, ...rest } = z.globalRegistry.get(
+    localVocabulary(values, reason),
+  ) as Record<string, unknown>;
+  return rest;
+};
+
+/** The session mode, chosen by the caller and never inferred. */
+export const StudioSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bearer' }> = z
+  .enum(['cookie', 'bearer'])
+  .meta(narrowedMeta(['cookie', 'bearer'], SESSION_MODE_REASON))
+  .describe(
+    '**An explicit parameter, validated, never inferred from the `User-Agent`** — that one is\nforgeable. `cookie` for the studio web; `bearer` for the native shell, where\n`capacitor://localhost` is a third-party context on iOS and where no cookie would survive.\n',
+  );
+
+/** Exactly one of a cookie or a bearer session, discriminated by the mode. */
+export const StudioSessionEstablishedSchema: z.ZodDiscriminatedUnion<
+  [typeof StudioSessionEstablishedCookieSchema, typeof StudioSessionEstablishedBearerSchema]
+> = z
+  .discriminatedUnion('mode', [
+    StudioSessionEstablishedCookieSchema,
+    StudioSessionEstablishedBearerSchema,
+  ])
+  .meta({
+    discriminator: {
+      propertyName: 'mode',
+      mapping: {
+        cookie: '#/components/schemas/SessionEstablishedCookie',
+        bearer: '#/components/schemas/SessionEstablishedBearer',
+      },
+    },
+  })
+  .describe(
+    '**Invariant: a response never carries a cookie and a token at once.** Two bearers for one\nsession means two revocations to keep up and one that will be forgotten. So these are **two\nschemas**, discriminated by the mode, and not one schema with an optional field.\n',
+  );
+
+/** A member of a channel's team. */
+export const ChannelMemberSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z.looseObject({
+  personId: uuid(),
+  displayName: z.string(),
+  email: z.email().meta({ pattern: undefined }).nullable().optional(),
+  roles: z
+    .array(vocabularyOut(MEMBER_ROLES))
+    .describe('**A set.** The eight canonical values, never the fallback to six.'),
+  isOwner: z
+    .boolean()
+    .describe(
+      '**Never removable, and their roles never editable.** `transferOwnership` moves the flag.',
+    ),
+  joinedAt: instant(),
+  note: z.string().nullable().optional(),
+  invitationState: localVocabularyNullable(
+    ['pending', 'accepted', 'declined', 'expired'],
+    "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got.",
+  ).optional(),
+  version: int().optional(),
+});
+
+/** The one-off stand-in, scoped to a date. */
+export const DateAccessGrantSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
+  .looseObject({
+    grantId: uuid(),
+    dateId: uuid(),
+    personId: uuid(),
+    displayName: z.string().optional(),
+    crewRole: vocabularyOut(CREW_ROLES),
+    expiresAt: instant(),
+    grantedBy: ActorSchema.optional(),
+  })
+  .describe(
+    'The **one-off stand-in** — scoped to a date, expiry **served as an instant**, revocable\n**without touching channel membership**. Conflating it with a membership would turn revoking a\nstand-in into expulsion from the channel.\n',
+  );
+
+/** A duty, across all channels. */
+export const DutySchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
+  .looseObject({
+    dateId: uuid(),
+    channelId: uuid(),
+    channelName: z.string().optional(),
+    title: z.string().optional(),
+    crewRole: vocabularyOut(CREW_ROLES),
+    startsAt: instant(),
+    venueClock: z
+      .looseObject({
+        venueTimezone: z
+          .string()
+          .optional()
+          .meta({ examples: ['Europe/Paris'] }),
+        venueUtcOffsetMin: int()
+          .optional()
+          .meta({ examples: [120] }),
+      })
+      .optional()
+      .describe(
+        "**The room's timezone, on the duty itself.** The duties screen is this surface's home\nscreen, and for each row it displays the person's time **and** the room's time — \"the\nviewer's time first, the room's time second when it differs\". Without this block, rendering\nit took one call per duty: exactly the N+1 the bootstrap exists to kill, on the one screen a\nstage manager opens on arriving at a venue.\n",
+      ),
+    runtimeMin: int()
+      .nullable()
+      .optional()
+      .describe('The announced duration, the one the row displays.'),
+    displayState: vocabularyOut(DISPLAY_STATES).optional(),
+    runState: vocabularyOutNullable(RUN_STATES).optional(),
+    overlapsWith: z
+      .array(uuid())
+      .optional()
+      .describe(
+        '**Served**, never computed by the surface: `overlapsWith` lives in `@arthome/core`.',
+      ),
+    accessExpiresAt: instantNullable().optional(),
+  })
+  .describe(
+    'A duty. `person_duties` is held by `identity` and carries **all channels together**: a stage\nmanager can be on duty for two live shows the same evening, and the banner flags the\n**overlap**.\n',
   );

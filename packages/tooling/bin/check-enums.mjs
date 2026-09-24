@@ -91,7 +91,21 @@ function stripComments(src) {
 // ------------------------------------------------------ 1. discover the enums
 // `export const NAME = [ ... ] as const`  —  NAME in SCREAMING_SNAKE_CASE.
 const DECL = /export\s+const\s+([A-Z][A-Z0-9_]*)\s*(?::[^=]+?)?=\s*\[([\s\S]*?)\]\s*as\s+const/g;
-const STRING_LITERAL = /'([^'\\\r\n]*)'|"([^"\\\r\n]*)"/g;
+// ⚠ ESCAPES BELONG INSIDE A LITERAL, and excluding them inverted this gate.
+//
+//   The old pattern refused any string containing a backslash. A description
+//   carrying `\n` therefore matched NOTHING as a whole — so the scan fell
+//   through to the quoted words INSIDE it, and reported a `"cancelled"` that is
+//   plain English in a sentence about a state being absent.
+//
+//   An author then interpolated `DateOutcome.CANCELLED` into the prose to
+//   silence it, making a description depend on a constant it is not describing,
+//   for an emitted string that was identical either way. The gate manufactured
+//   the very coupling it exists to prevent.
+//
+//   Matching the escape makes the whole description one literal, which is what
+//   it is, and `byValue` never holds a sentence.
+const STRING_LITERAL = /'((?:[^'\\\r\n]|\\.)*)'|"((?:[^"\\\r\n]|\\.)*)"/g;
 
 // EVERY PUBLISHED PACKAGE DECLARES, not only @arthome/core.
 //
@@ -318,6 +332,27 @@ function main() {
       for (const m of scanned.matchAll(STRING_LITERAL)) {
         const value = m[1] ?? m[2];
         if (!value || !byValue.has(value)) continue;
+        // ⚠ A JSON SCHEMA KEYWORD'S VALUE IS NOT A DOMAIN VOCABULARY MEMBER, and
+        //   it cannot be one: `format: 'email'` names a string format, not a
+        //   notification channel, however exactly the two spellings match.
+        //
+        //   This was found the expensive way. A worker wrote
+        //   `NavigationEntry.JOURNAL` for an EXPORT FORMAT because the gate
+        //   refused the literal `'journal'`, and said so in its own report: "the
+        //   same string but the wrong concept". A gate whose false positives
+        //   make an author write something WORSE than the literal it refused has
+        //   stopped paying for itself — and the author obeyed it, which is the
+        //   part that should worry anyone.
+        //
+        //   Narrow by construction: only the keywords whose value space is JSON
+        //   Schema's own, on the same line, immediately before the literal.
+        if (
+          /\b(?:format|pattern|contentEncoding|contentMediaType|\$ref|\$schema)\s*:\s*$/.test(
+            scanned.slice(0, m.index),
+          )
+        ) {
+          continue;
+        }
         if (own.has(value)) continue; // declared here: its own to use
         if (isAllowed(allow, rel, value)) continue;
         const declarers = byValue.get(value);

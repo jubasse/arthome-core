@@ -23,7 +23,8 @@
  *     `uuid()` and `instant()` become those core schemas, one edit per file.
  */
 import { z } from 'zod';
-import { MoneyOut, VenueClockSchema, type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
+import { DisplayState, LANGUAGE_DEPENDENCIES, REPLAY_POLICIES } from '@arthome/core';
+import { MoneyOut, VenueClockSchema, type VocabularyIn, type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
 import { WatchVerdictSchema } from '../streaming/index.js';
 export declare const ImageRenditionSchema: z.ZodObject<{
     url: z.ZodString;
@@ -170,4 +171,92 @@ export declare const ScheduleSlotSchema: z.ZodObject<{
     startsAt: z.ZodOptional<z.ZodString>;
     dates: z.ZodArray<typeof DateCardSchema>;
 }, z.core.$loose>;
+declare const PUBLIC_SEARCH_STATES: readonly [
+    typeof DisplayState.SCHEDULED,
+    typeof DisplayState.ROOM_OPEN,
+    typeof DisplayState.LIVE,
+    typeof DisplayState.REPLAY,
+    typeof DisplayState.ENDED
+];
+export declare const HomeScreenSchema: z.ZodObject<{
+    billboard: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        date: z.ZodOptional<typeof DateCardSchema>;
+        previewStartsAfterSec: z.ZodOptional<z.ZodNumber>;
+        previewUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    }, z.core.$loose>>>;
+    rails: z.ZodArray<typeof RailSchema>;
+}, z.core.$loose>;
+export declare const LiveScreenSchema: z.ZodObject<{
+    featured: z.ZodOptional<typeof DateCardSchema>;
+    slots: z.ZodArray<typeof ScheduleSlotSchema>;
+}, z.core.$loose>;
+export declare const CategoryTileSchema: z.ZodObject<{
+    id: z.ZodString;
+    universe: VocabularyOut;
+    rank: z.ZodNumber;
+    datesCount: z.ZodNumber;
+    liveCount: z.ZodNumber;
+    media: z.ZodOptional<typeof MediaSetSchema>;
+    featured: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$loose>;
+export declare const CategoryScreenSchema: z.ZodObject<{
+    categoryId: z.ZodString;
+    hero: z.ZodOptional<typeof DateCardSchema>;
+    subGenres: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodOptional<z.ZodString>;
+        rank: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$loose>>>;
+    sections: z.ZodArray<z.ZodObject<{
+        id: VocabularyOut;
+        titleCode: z.ZodOptional<z.ZodString>;
+        items: z.ZodArray<typeof DateCardSchema>;
+        nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    }, z.core.$loose>>;
+    facets: z.ZodOptional<z.ZodArray<typeof FacetSchema>>;
+}, z.core.$loose>;
+export declare const StructuredFilterSchema: z.ZodObject<{
+    filterId: z.ZodString;
+    kind: VocabularyOut;
+    min: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    max: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+}, z.core.$loose>;
+export declare const SearchCriteriaSchema: z.ZodObject<{
+    categoryIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    genreIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    tagIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    artistIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    cityIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    countryCodes: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    languageDependency: z.ZodOptional<z.ZodArray<VocabularyIn<typeof LANGUAGE_DEPENDENCIES>>>;
+    replayPolicy: z.ZodOptional<z.ZodArray<VocabularyIn<typeof REPLAY_POLICIES>>>;
+    displayStates: z.ZodOptional<z.ZodArray<VocabularyIn<typeof PUBLIC_SEARCH_STATES>>>;
+    priceMinMinor: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    priceMaxMinor: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    startsAfter: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    startsBefore: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    almostSoldOut: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
+    onPromotion: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
+    accessibility: z.ZodOptional<z.ZodArray<z.ZodString>>;
+}, z.core.$strict>;
+export declare const ShowGroupSchema: z.ZodObject<{
+    showId: z.ZodString;
+    title: z.ZodString;
+    representativeDate: typeof DateCardSchema;
+    matchingDatesCount: z.ZodNumber;
+}, z.core.$loose>;
+export declare const SavedSearchSchema: z.ZodObject<{
+    id: z.ZodString;
+    scope: VocabularyOut;
+    categoryId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    queryText: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    criteria: z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodUnknown>>;
+    criteriaVersion: z.ZodNumber;
+    criteriaSignature: z.ZodString;
+    stale: z.ZodOptional<z.ZodBoolean>;
+    channels: z.ZodArray<VocabularyOut>;
+    active: z.ZodBoolean;
+    newMatchesSinceLastVisit: z.ZodNumber;
+}, z.core.$loose>;
+export {};
 //# sourceMappingURL=index.d.ts.map

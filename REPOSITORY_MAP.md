@@ -22,24 +22,36 @@ A declaration longer than 160 characters is listed by kind only — read the `.d
 
 #### @arthome/contracts/catalog
 
-Declarations: `dist/catalog/index.d.ts` — 10 exported names.
+Declarations: `dist/catalog/index.d.ts` — 18 exported names.
 
 - `ArtistSummarySchema` (const)
+- `CategoryScreenSchema` (const)
+- `CategoryTileSchema` (const)
 - `ChapterSchema` (const) — `ChapterSchema: z.ZodObject<{ id: z.ZodString; vocabId: z.ZodString; atMediaSec: z.ZodNumber; }, z.core.$loose>`
 - `DateCardSchema` (const)
 - `DomainConstantsSchema` (const)
 - `FacetSchema` (const) — `FacetSchema: z.ZodObject<{ facetId: z.ZodString; values: z.ZodArray<z.ZodObject<{ id: z.ZodString; count: z.ZodNumber; }, z.core.$loose>>; }, z.core.$loose>`
+- `HomeScreenSchema` (const)
 - `ImageRenditionSchema` (const) — `ImageRenditionSchema: z.ZodObject<{ url: z.ZodString; widthPx: z.ZodNumber; heightPx: z.ZodNumber; }, z.core.$loose>`
 - `LabelArtifactRefSchema` (const) — `LabelArtifactRefSchema: z.ZodObject<{ domain: VocabularyOut; locale: VocabularyOut; version: z.ZodNumber; url: z.ZodString; }, z.core.$loose>`
+- `LiveScreenSchema` (const) — `LiveScreenSchema: z.ZodObject<{ featured: z.ZodOptional<typeof DateCardSchema>; slots: z.ZodArray<typeof ScheduleSlotSchema>; }, z.core.$loose>`
 - `MediaSetSchema` (const)
 - `RailSchema` (const)
+- `SavedSearchSchema` (const)
 - `ScheduleSlotSchema` (const)
+- `SearchCriteriaSchema` (const)
+- `ShowGroupSchema` (const)
+- `StructuredFilterSchema` (const)
 
 #### @arthome/contracts/engagement
 
-Declarations: `dist/engagement/index.d.ts` — 1 exported names.
+Declarations: `dist/engagement/index.d.ts` — 5 exported names.
 
+- `ChangeFeedSchema` (const) — `ChangeFeedSchema: z.ZodObject<{ invalidated: z.ZodArray<VocabularyOut>; complete: z.ZodBoolean; }, z.core.$loose>`
+- `ChatMessageSchema` (const)
+- `NotificationEntrySchema` (const)
 - `NotificationPreferencesSchema` (const)
+- `ReactionQuotaSchema` (const) — `ReactionQuotaSchema: z.ZodObject<{ remaining: z.ZodNumber; rechargesAt: z.ZodString; }, z.core.$loose>`
 
 #### @arthome/contracts/envelope
 
@@ -52,13 +64,19 @@ Declarations: `dist/envelope/index.d.ts` — 4 exported names.
 
 #### @arthome/contracts/identity
 
-Declarations: `dist/identity/index.d.ts` — 7 exported names.
+Declarations: `dist/identity/index.d.ts` — 13 exported names.
 
+- `AccountDeepLinkSchema` (const) — `AccountDeepLinkSchema: z.ZodObject<{ url: z.ZodString; }, z.core.$loose>`
+- `AccountScreenSchema` (const)
 - `ConsentsSchema` (const)
+- `DevicePairingSchema` (const)
 - `DeviceSchema` (const)
+- `PairingOutcomeSchema` (const)
 - `ProfileSummarySchema` (const)
 - `SessionEstablishedBearerSchema` (const)
 - `SessionEstablishedCookieSchema` (const) — `SessionEstablishedCookieSchema: z.ZodObject<{ mode: z.ZodLiteral<'cookie'>; viewerContext: typeof ViewerContextSchema; }, z.core.$loose>`
+- `StorefrontSessionEstablishedSchema` (const) — `StorefrontSessionEstablishedSchema: z.ZodXor<readonly [typeof SessionEstablishedCookieSchema, typeof SessionEstablishedBearerSchema]>`
+- `StorefrontSessionModeSchema` (const) — `StorefrontSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bearer'; device: 'device'; }>`
 - `ViewerContextSchema` (const)
 - `ViewerPreferencesSchema` (const)
 
@@ -82,45 +100,72 @@ Declarations: `dist/pagination/index.d.ts` — 4 exported names.
 
 #### @arthome/contracts/streaming
 
-Declarations: `dist/streaming/index.d.ts` — 2 exported names.
+Declarations: `dist/streaming/index.d.ts` — 5 exported names.
 
+- `ActivePlaybackSessionSchema` (const)
 - `IncidentSchema` (const)
+- `PlaybackRenewalSchema` (const)
+- `PlaybackTicketSchema` (const)
 - `WatchVerdictSchema` (const)
 
 #### @arthome/contracts/studio-access
 
-Declarations: `dist/studio-access/index.d.ts` — 5 exported names.
+Declarations: `dist/studio-access/index.d.ts` — 10 exported names.
 
 - `ActorSchema` (const) — Who caused the fact.
+- `ChannelMemberSchema` (const) — `ChannelMemberSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>` — A member of a channel's team.
+- `DateAccessGrantSchema` (const) — `DateAccessGrantSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>` — The one-off stand-in, scoped to a date.
+- `DutySchema` (const) — `DutySchema: z.ZodObject<z.ZodRawShape, z.core.$loose>` — A duty, across all channels.
 - `EffectiveRightsSchema` (const) — The rights of one person on one channel, computed once in '@arthome/core'.
 - `StudioBootstrapSchema` (const) — The first paint waits for this and for nothing else.
 - `StudioSessionEstablishedBearerSchema` (const) — A bearer session: an opaque token in the body, no cookie.
 - `StudioSessionEstablishedCookieSchema` (const) — `StudioSessionEstablishedCookieSchema: z.ZodObject<{ mode: z.ZodLiteral<'cookie'>; bootstrap: typeof StudioBootstrapSchema; }, z.core.$loose>` — A cookie session: nothing in the body but the bootstrap.
+- `StudioSessionEstablishedSchema` (const) — `StudioSessionEstablishedSchema: z.ZodDiscriminatedUnion<[ typeof StudioSessionEstablishedCookieSchema, typeof StudioSessionEstablishedBearerSchema ]>` — Exactly one of a cookie or a bearer session, discriminated by the mode.
+- `StudioSessionModeSchema` (const) — `StudioSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bearer'; }>` — The session mode, chosen by the caller and never inferred.
 
 #### @arthome/contracts/studio-desk
 
-Declarations: `dist/studio-desk/index.d.ts` — 0 exported names.
+Declarations: `dist/studio-desk/index.d.ts` — 5 exported names.
 
+- `AudienceMemberSchema` (const) — A member of a channel's audience.
+- `ChatPolicySchema` (const) — The chat policy of one date.
+- `InboxEntrySchema` (const) — One notification of the studio inbox.
+- `JournalEntrySchema` (const) — One line of the studio log.
+- `ModerationItemSchema` (const) — A moderation queue row.
 
 #### @arthome/contracts/studio-money
 
-Declarations: `dist/studio-money/index.d.ts` — 4 exported names.
+Declarations: `dist/studio-money/index.d.ts` — 11 exported names.
 
+- `BankChangeRequestSchema` (const) — A change of bank details, countersigned by a second role.
 - `DashboardReminderSchema` (const) — A routed list, like the inbox: kind, severity, target and role scope decided server-side.
+- `DashboardScreenSchema` (const)
+- `DateSalesPaneSchema` (const) — The 'tickets' pane of a date.
+- `ExportJobSchema` (const) — An asynchronous export.
 - `MetricTileSchema` (const) — A single template: identifier, value, unit, series.
+- `PayoutLineSchema` (const) — One payout, with the whole derivation served.
 - `PeriodBoundsSchema` (const) — `PeriodBoundsSchema: z.ZodObject<{ preset: z.ZodString; from: z.ZodString; to: z.ZodString; days: z.ZodNumber; datesCovered: z.ZodNumber; }, z.core.$loose>` — The period's effective bounds, computed by the server.
+- `StatsAudienceSchema` (const)
+- `StatsSeriesSchema` (const)
 - `StudioCountersSchema` (const) — The badges, served at bootstrap and kept up to date by the real-time channel.
 
 #### @arthome/contracts/studio-stage
 
-Declarations: `dist/studio-stage/index.d.ts` — 6 exported names.
+Declarations: `dist/studio-stage/index.d.ts` — 13 exported names.
 
 - `CrewPresenceSchema` (const) — A crew member online on the channel.
+- `DateSheetSchema` (const) — `DateSheetSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>` — The record of a date, served pane by pane.
+- `EventsRowSchema` (const) — `EventsRowSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>` — A row of the event board.
 - `HealthSampleSchema` (const) — One measurement of the feed.
+- `HealthSeriesSchema` (const) — `HealthSeriesSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>` — The curve behind the differential.
+- `MerchItemAdminSchema` (const) — `MerchItemAdminSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>` — An item of a channel's merchandise, as the admin sees it.
 - `PublicationChecklistItemSchema` (const) — `PublicationChecklistItemSchema: z.ZodObject<{ id: z.ZodString; satisfied: z.ZodBoolean; source: z.ZodString; blocking: z.ZodBoolean; }, z.core.$loose>` — One line of the pre-publication checklist.
 - `PublicationSchema` (const) — A date's publication, with its checklist and the transitions this operator may make.
 - `PublicationTransitionSchema` (const) — A transition offered to this operator, with the promise it commits to.
+- `RunConsoleSchema` (const) — `RunConsoleSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>` — The state of the run, served in one call.
+- `StreamKeyRevealSchema` (const) — `StreamKeyRevealSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>` — A secret, shown once and never cached.
 - `StudioIncidentSchema` (const) — An incident: the outcome the viewer sees, the cause, and who or what triggered it.
+- `UploadTicketSchema` (const) — `UploadTicketSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>` — A signed upload URL, obtained by a JSON command.
 
 #### @arthome/contracts/text
 
@@ -131,12 +176,19 @@ Declarations: `dist/text/index.d.ts` — 2 exported names.
 
 #### @arthome/contracts/ticketing
 
-Declarations: `dist/ticketing/index.d.ts` — 6 exported names.
+Declarations: `dist/ticketing/index.d.ts` — 13 exported names.
 
 - `CartLineSchema` (const)
+- `CartQuoteSchema` (const)
+- `CartSchema` (const)
+- `ExportRequestSchema` (const)
+- `ExternalOrderRefSchema` (const)
 - `MerchItemSchema` (const)
 - `OrderSchema` (const)
+- `PaymentHandoffSchema` (const)
+- `PlanSchema` (const)
 - `PriceTierSchema` (const)
+- `SeatQuoteSchema` (const)
 - `SubscriptionSchema` (const)
 - `TicketCardSchema` (const)
 

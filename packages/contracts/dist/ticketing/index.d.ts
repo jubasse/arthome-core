@@ -93,4 +93,72 @@ export declare const SubscriptionSchema: z.ZodObject<{
     cancelAtPeriodEnd: z.ZodOptional<z.ZodBoolean>;
     paymentMethodRef: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$loose>;
+export declare const CartSchema: z.ZodObject<{
+    lines: z.ZodArray<typeof CartLineSchema>;
+    vendorGroups: z.ZodArray<z.ZodObject<{
+        channelId: z.ZodOptional<z.ZodString>;
+        lineIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$loose>>;
+}, z.core.$loose>;
+export declare const CartQuoteSchema: z.ZodObject<{
+    groups: z.ZodArray<z.ZodObject<{
+        channelId: z.ZodString;
+        subtotal: typeof MoneyOut;
+        shipping: z.ZodOptional<typeof MoneyOut>;
+        discount: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+            discountReasonCode: z.ZodOptional<z.ZodString>;
+            amount: z.ZodOptional<typeof MoneyOut>;
+        }, z.core.$loose>>>;
+        total: typeof MoneyOut;
+    }, z.core.$loose>>;
+    validUntil: z.ZodString;
+}, z.core.$loose>;
+export declare const ExportRequestSchema: z.ZodObject<{
+    exportId: z.ZodString;
+    kind: VocabularyOut;
+    state: VocabularyOut;
+    requestedAt: z.ZodString;
+    downloadUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    downloadExpiresAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+}, z.core.$loose>;
+export declare const ExternalOrderRefSchema: z.ZodObject<{
+    externalRef: z.ZodString;
+    externalHost: z.ZodString;
+    state: z.ZodOptional<z.ZodLiteral<'external'>>;
+    syncedAt: z.ZodString;
+    syncSource: z.ZodOptional<z.ZodString>;
+}, z.core.$loose>;
+export declare const PaymentHandoffSchema: z.ZodObject<{
+    orderId: z.ZodString;
+    state: VocabularyOut;
+    paymentIntentRef: z.ZodString;
+    clientSecret: z.ZodString;
+    nextAction: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        kind: z.ZodOptional<VocabularyOut>;
+        redirectUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    }, z.core.$loose>>>;
+    returnUrl: z.ZodString;
+    expiresAt: z.ZodOptional<z.ZodString>;
+}, z.core.$loose>;
+export declare const PlanSchema: z.ZodObject<{
+    tier: VocabularyOut;
+    price: typeof MoneyOut;
+    opens: z.ZodArray<VocabularyOut>;
+    seatDiscountBps: z.ZodNumber;
+    concurrentStreamsAllowed: z.ZodOptional<z.ZodNumber>;
+}, z.core.$loose>;
+export declare const SeatQuoteSchema: z.ZodObject<{
+    vatIncluded: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        rateBps: z.ZodNumber;
+        amount: typeof MoneyOut;
+        jurisdictionCode: z.ZodString;
+    }, z.core.$loose>>>;
+    lines: z.ZodArray<z.ZodObject<{
+        kind: VocabularyOut;
+        discountReasonCode: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        amount: typeof MoneyOut;
+    }, z.core.$loose>>;
+    total: typeof MoneyOut;
+    validUntil: z.ZodOptional<z.ZodString>;
+}, z.core.$loose>;
 //# sourceMappingURL=index.d.ts.map

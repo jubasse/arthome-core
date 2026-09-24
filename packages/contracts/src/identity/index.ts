@@ -25,13 +25,22 @@
 
 import { z } from 'zod';
 
-import { DEVICE_KINDS, Locale, PLAN_TIERS, SUBSCRIPTION_STATES } from '@arthome/core';
+import {
+  DEVICE_KINDS,
+  Locale,
+  OrderErrorCode,
+  PLAN_TIERS,
+  SUBSCRIPTION_STATES,
+} from '@arthome/core';
 import {
   VOCABULARY_SOURCE_LOCAL,
+  MoneyOut,
   int64,
   type VocabularyOut,
+  type VocabularyOutNullable,
   vocabularyOut,
   vocabularyOutLocal,
+  vocabularyOutNullable,
 } from '@arthome/core/schema';
 
 import {
@@ -39,6 +48,8 @@ import {
   ImageRenditionSchema,
   LabelArtifactRefSchema,
 } from '../catalog/index.js';
+import { NotificationPreferencesSchema } from '../engagement/index.js';
+import { OrderSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
 
 // The document's name for a vocabulary local to the contract. The preferred
 // form is `vocabularyOutLocal`, which makes the reason mandatory; these three
@@ -392,4 +403,303 @@ export const DeviceSchema: z.ZodObject<
   })
   .describe(
     'The **registered** device, durable, revocable, identified **before any session**. Distinct\nfrom `DeviceSession`, which is the (device, profile) pair: a living-room television carries\nup to five sessions on a single device.\n',
+  );
+
+const SESSION_MODES = ['cookie', 'bearer', 'device'] as const;
+const PAIRING_INTENTS = ['signin', 'seat', 'plan', 'payment_method', 'merch'] as const;
+const PAIRING_STATES = [
+  'pending',
+  'engaged',
+  'approved',
+  'denied',
+  'expired',
+  'cancelled',
+  'approved_with_failure',
+] as const;
+const CREDIT_ORIGINS = ['interrupted_date', 'goodwill'] as const;
+const DELETION_STATES = ['requested', 'anonymised'] as const;
+const PURCHASE_FAILURE_CODES: readonly [string, ...string[]] = [
+  OrderErrorCode.SOLD_OUT,
+  OrderErrorCode.PAYMENT_DECLINED,
+  OrderErrorCode.PRICE_STALE,
+  OrderErrorCode.PLAN_UNAVAILABLE,
+];
+
+const LOCAL_ENDPOINT_REASON =
+  'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.';
+const LOCAL_STATE_REASON =
+  "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got.";
+
+export const StorefrontSessionModeSchema: z.ZodEnum<{
+  cookie: 'cookie';
+  bearer: 'bearer';
+  device: 'device';
+}> = z
+  .enum(SESSION_MODES)
+  .meta({
+    'x-arthome-vocabulary-source': LOCAL_VOCABULARY,
+    'x-arthome-vocabulary-reason': LOCAL_ENDPOINT_REASON,
+  })
+  .describe(
+    '**An explicit, validated parameter, never inferred from the `User-Agent`** — that is\nforgeable, and a bypassable heuristic does not count as an answer.\n\n`cookie` for the web surfaces; `bearer` for the native shells, where\n`capacitor://localhost` is a third-party context on iOS and no cookie would survive;\n`device` for the television, which has **neither cookie nor token** at the moment it opens a\nsign-in pairing — which is what device identity solves.\n',
+  );
+
+export const StorefrontSessionEstablishedSchema: z.ZodXor<
+  readonly [typeof SessionEstablishedCookieSchema, typeof SessionEstablishedBearerSchema]
+> = z
+  .xor([SessionEstablishedCookieSchema, SessionEstablishedBearerSchema])
+  .meta({
+    discriminator: {
+      propertyName: 'mode',
+      mapping: {
+        cookie: '#/components/schemas/SessionEstablishedCookie',
+        bearer: '#/components/schemas/SessionEstablishedBearer',
+        device: '#/components/schemas/SessionEstablishedBearer',
+      },
+    },
+  })
+  .describe(
+    '**Invariant: a response never carries both a cookie and a token.** Two bearers for one\nsession means **two revocations to maintain and one that will be forgotten** — that is what\nstops a session surviving its own sign-out. So this is not a schema with an optional field:\nit is **two schemas**, discriminated by mode.\n',
+  );
+
+export const AccountDeepLinkSchema: z.ZodObject<{ url: z.ZodString }, z.core.$loose> = z
+  .looseObject({
+    url: z.string().meta({ format: 'uri' }),
+  })
+  .describe(
+    '**What is not a pairing.** The QR code on the account page points at account management on a\nphone: nothing waits, the screen does not switch, no pairing row is opened. Two distinct\nshapes in the contract, otherwise someone will implement a wait where there is none.\n',
+  );
+
+export const AccountScreenSchema: z.ZodObject<
+  {
+    profile: z.ZodOptional<
+      z.ZodObject<
+        {
+          publicHandle: z.ZodOptional<z.ZodString>;
+          displayName: z.ZodOptional<z.ZodString>;
+          email: z.ZodOptional<z.ZodEmail>;
+          emailVerified: z.ZodOptional<z.ZodBoolean>;
+          phone: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+          phoneVerified: z.ZodOptional<z.ZodBoolean>;
+          memberNumber: z.ZodOptional<z.ZodString>;
+          city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        },
+        z.core.$loose
+      >
+    >;
+    subscription: z.ZodOptional<typeof SubscriptionSchema>;
+    credits: z.ZodOptional<
+      z.ZodArray<
+        z.ZodObject<
+          {
+            id: z.ZodOptional<z.ZodString>;
+            channelId: z.ZodOptional<z.ZodString>;
+            amount: z.ZodOptional<typeof MoneyOut>;
+            originCode: z.ZodOptional<VocabularyOut>;
+            expiresAt: z.ZodOptional<z.ZodString>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+    paymentMethods: z.ZodOptional<
+      z.ZodArray<
+        z.ZodObject<
+          {
+            id: z.ZodOptional<z.ZodString>;
+            brandCode: z.ZodOptional<z.ZodString>;
+            last4: z.ZodOptional<z.ZodString>;
+            expiryMonth: z.ZodOptional<z.ZodNumber>;
+            expiryYear: z.ZodOptional<z.ZodNumber>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+    security: z.ZodOptional<
+      z.ZodObject<
+        {
+          twoFactorEnabled: z.ZodOptional<z.ZodBoolean>;
+          passkeyCount: z.ZodOptional<z.ZodNumber>;
+          hasPassword: z.ZodOptional<z.ZodBoolean>;
+        },
+        z.core.$loose
+      >
+    >;
+    devices: z.ZodOptional<z.ZodArray<typeof DeviceSchema>>;
+    preferences: z.ZodOptional<typeof ViewerPreferencesSchema>;
+    notificationPreferences: z.ZodOptional<typeof NotificationPreferencesSchema>;
+    consents: z.ZodOptional<typeof ConsentsSchema>;
+    deletion: z.ZodOptional<
+      z.ZodNullable<
+        z.ZodObject<
+          {
+            state: z.ZodOptional<VocabularyOut>;
+            requestedAt: z.ZodOptional<z.ZodString>;
+            graceUntil: z.ZodOptional<z.ZodString>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    profile: z
+      .looseObject({
+        publicHandle: z.string().optional(),
+        displayName: z.string().optional(),
+        // `z.email()` would add a `pattern` the document does not carry; unsetting it leaves `format: email`.
+        email: z.email().meta({ pattern: undefined }).optional(),
+        emailVerified: z.boolean().optional(),
+        phone: z.string().nullable().optional(),
+        phoneVerified: z.boolean().optional(),
+        memberNumber: z.string().optional(),
+        city: z.string().nullable().optional(),
+      })
+      .optional(),
+    subscription: SubscriptionSchema.optional(),
+    credits: z
+      .array(
+        z.looseObject({
+          id: uuid().optional(),
+          channelId: uuid().optional(),
+          amount: MoneyOut.meta({ 'x-arthome-tax-basis': 'inherited' }).optional(),
+          originCode: vocabularyOutLocal(
+            CREDIT_ORIGINS,
+            'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.',
+          ).optional(),
+          expiresAt: instant().optional(),
+        }),
+      )
+      .optional()
+      .describe(
+        'Account credit — an **internal currency**, hence a liability. Issued for an `interrupted`\noutcome, **redeployable on the issuing chain only** (D-017), 12 months.\n',
+      ),
+    paymentMethods: z
+      .array(
+        z.looseObject({
+          id: z.string().optional(),
+          brandCode: z.string().optional(),
+          last4: z.string().optional(),
+          expiryMonth: int64().meta({ format: undefined }).optional(),
+          expiryYear: int64().meta({ format: undefined }).optional(),
+        }),
+      )
+      .optional(),
+    security: z
+      .looseObject({
+        twoFactorEnabled: z.boolean().optional(),
+        passkeyCount: int64().meta({ format: undefined }).optional(),
+        hasPassword: z.boolean().optional(),
+      })
+      .optional(),
+    devices: z.array(DeviceSchema).optional(),
+    preferences: ViewerPreferencesSchema.optional(),
+    notificationPreferences: NotificationPreferencesSchema.optional(),
+    consents: ConsentsSchema.optional(),
+    deletion: z
+      .looseObject({
+        state: vocabularyOutLocal(
+          DELETION_STATES,
+          "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got.",
+        ).optional(),
+        requestedAt: instant().optional(),
+        graceUntil: instant().optional(),
+      })
+      .nullable()
+      .optional()
+      .describe(
+        'Account deletion is a **financial** command as much as a personal one: it cancels unused\nseats, therefore it refunds, therefore it touches payouts that may already have been\ncomputed, and it collides with ten-year accounting retention. It is **asynchronous**, with\n**30 days of grace** — reactivable on a simple sign-in until then — and it **anonymises**\ninstead of deleting.\n',
+      ),
+  })
+  .describe(
+    "**One** aggregate for the account's eleven sections. They justify neither eleven calls nor\neleven schemas: eight are projections of this one, and only `alerts`, `orders` and `privacy`\nintroduce shapes nothing else carries — they are paginated separately.\n",
+  );
+
+export const DevicePairingSchema: z.ZodObject<
+  {
+    pairingId: z.ZodString;
+    intent: VocabularyOut;
+    userCode: z.ZodString;
+    verificationUri: z.ZodString;
+    verificationUriComplete: z.ZodString;
+    expiresAt: z.ZodString;
+    pollIntervalSec: z.ZodNumber;
+    state: VocabularyOut;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    pairingId: uuid().describe(
+      '**Persisted by the surface**, so it can reattach after a restart rather than opening a second\npairing. Without it, a television restarted during payment shows the home screen while the\npayment completes into the void.\n',
+    ),
+    intent: vocabularyOutLocal(PAIRING_INTENTS, LOCAL_ENDPOINT_REASON),
+    userCode: z
+      .string()
+      .meta({ examples: ['K7M2PQ'] })
+      .describe(
+        'Six characters over the alphabet `ACDEFHJKLMNPQRTUVWXY23456789` (28 symbols, **28.8 bits**)\ndeclared by `adr-auth.md` §5.1 — `B`, `S`, `Z` and `G` are removed from it because a\ntelevision code is often read aloud to someone else in the room. Case-insensitive, spaces and\nreadability punctuation ignored.\n',
+      ),
+    verificationUri: z.string().meta({ format: 'uri' }),
+    verificationUriComplete: z
+      .string()
+      .meta({ format: 'uri' })
+      .describe(
+        '**Served**, never built by the surface. It is what the TV encodes in the QR code.',
+      ),
+    expiresAt: instant().describe(
+      '**Per intent, and served**: `signin` 15 min (fetch your phone, do a 2FA); `seat` and `merch`\n**5 min** — beyond that the displayed gauge is no longer true; `plan` and `payment_method`\n10 min. Never hardcoded in the surface. **The waiting screen shows no countdown**: the TV\nuses it to give up, not to worry the viewer.\n',
+    ),
+    pollIntervalSec: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [2] })
+      .describe(
+        '**Backoff served by the server**, hence tunable: **2 s for the first 60 seconds**, then 5 s.\nThirty requests at most per pairing, and the "switch in two seconds at most" requirement is\nmet **without** bringing a device identity into the WebSocket namespace.\n',
+      ),
+    state: vocabularyOutLocal(PAIRING_STATES, LOCAL_STATE_REASON).describe(
+      '**`engaged` is the state that protects the money.** It is set as soon as the phone enters the\npayment flow, and **before** `ticketing` executes. From then on the pairing is no longer\ncancellable: without that state, a press on Back — the most used key on a remote — cancels a\npairing whose payment is already in flight, and the seat is charged without either screen\nsaying so.\n',
+    ),
+  })
+  .describe(
+    '**One primitive, five intents.** Four of the five are not OAuth authorisation flows: buying a\nseat from an already-signed-in television is not a token request, it is a **transaction\nrendezvous**. What is single is the state machine; what differs is the effect of approval.\n',
+  );
+
+export const PairingOutcomeSchema: z.ZodObject<
+  {
+    pairingId: z.ZodString;
+    intent: VocabularyOut;
+    state: VocabularyOut;
+    pollIntervalSec: z.ZodNumber;
+    failureCode: z.ZodOptional<VocabularyOutNullable>;
+    ticket: z.ZodOptional<typeof TicketCardSchema>;
+    order: z.ZodOptional<typeof OrderSchema>;
+    subscription: z.ZodOptional<typeof SubscriptionSchema>;
+    viewerContext: z.ZodOptional<typeof ViewerContextSchema>;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    pairingId: uuid(),
+    intent: vocabularyOutLocal(PAIRING_INTENTS, LOCAL_ENDPOINT_REASON),
+    state: vocabularyOutLocal(PAIRING_STATES, LOCAL_STATE_REASON).describe(
+      '**`engaged` is the state that protects the money.** It is set as soon as the phone enters the\npayment flow, and **before** `ticketing` executes. From then on the pairing is no longer\ncancellable: without that state, a press on Back — the most used key on a remote — cancels a\npairing whose payment is already in flight, and the seat is charged without either screen\nsaying so.\n',
+    ),
+    pollIntervalSec: int64().meta({ format: undefined }),
+    failureCode: vocabularyOutNullable(PURCHASE_FAILURE_CODES, 'ORDER_ERROR_CODES')
+      .meta({
+        'x-arthome-vocabulary-narrowing':
+          'The four a purchase command can refuse with. `order.quote_address_mismatch` is not among them: it is raised by the quote, before a command exists to refuse.',
+      })
+      .optional(),
+    ticket: TicketCardSchema.optional(),
+    order: OrderSchema.optional(),
+    subscription: SubscriptionSchema.optional(),
+    viewerContext: ViewerContextSchema.optional().describe(
+      'Present for an approved `signin` — the TV does not have to re-bootstrap.',
+    ),
+  })
+  .describe(
+    '**The `confirm` screen costs zero calls.** Everything comes from here, composed by the BFF\nfrom the opaque pointer `identity` set: a confirmation that loads is a confirmation nobody\nbelieves.\n\n**Five outcomes, five codes.** `approved_with_failure` says "the phone finished, the purchase\nfailed" — sold out in the meantime, payment declined. A single code would produce a false\nmessage four times out of five, and the TV must **never** display "reserved" in that case.\n',
   );

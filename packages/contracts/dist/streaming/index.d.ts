@@ -24,6 +24,7 @@
  */
 import { z } from 'zod';
 import { type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
+import { ChapterSchema, DateCardSchema } from '../catalog/index.js';
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
 export declare const WatchVerdictSchema: z.ZodObject<{
     allowed: z.ZodBoolean;
@@ -41,4 +42,60 @@ export declare const IncidentSchema: z.ZodNullable<z.ZodObject<{
     message: z.ZodOptional<typeof StorefrontLocalizedTextSchema>;
     raisedAt: z.ZodOptional<z.ZodString>;
 }, z.core.$loose>>;
+declare const playbackSignature: () => z.ZodObject<{
+    queryToken: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    cookieSet: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
+}, z.core.$loose>;
+export declare const ActivePlaybackSessionSchema: z.ZodObject<{
+    sessionId: z.ZodString;
+    deviceId: z.ZodOptional<z.ZodString>;
+    isCurrentDevice: z.ZodOptional<z.ZodBoolean>;
+    deviceLabel: z.ZodString;
+    city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    openedAt: z.ZodString;
+}, z.core.$loose>;
+export declare const PlaybackRenewalSchema: z.ZodObject<{
+    expiresAt: z.ZodString;
+    renewAfterSec: z.ZodNumber;
+    leaseExpiresAt: z.ZodString;
+    signature: z.ZodOptional<ReturnType<typeof playbackSignature>>;
+    qualityCap: z.ZodOptional<VocabularyOut>;
+}, z.core.$loose>;
+export declare const PlaybackTicketSchema: z.ZodObject<{
+    sessionId: z.ZodString;
+    resumedExistingSession: z.ZodOptional<z.ZodBoolean>;
+    dateId: z.ZodString;
+    scope: VocabularyOut;
+    previewSecondsLeft: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    protocol: VocabularyOut;
+    drmSystem: z.ZodOptional<VocabularyOutNullable>;
+    qualityCap: VocabularyOut;
+    manifestUrl: z.ZodString;
+    signature: ReturnType<typeof playbackSignature>;
+    edgeRenewalMode: VocabularyOut;
+    expiresAt: z.ZodString;
+    renewAfterSec: z.ZodNumber;
+    leaseExpiresAt: z.ZodString;
+    resumePoint: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        positionSec: z.ZodOptional<z.ZodNumber>;
+        writtenAt: z.ZodOptional<z.ZodString>;
+    }, z.core.$loose>>>;
+    liveEdgeSec: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    chapters: z.ZodOptional<z.ZodArray<z.ZodLazy<typeof ChapterSchema>>>;
+    audioTracks: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodOptional<z.ZodString>;
+        language: z.ZodOptional<z.ZodString>;
+        kind: z.ZodOptional<VocabularyOut>;
+    }, z.core.$loose>>>;
+    subtitleTracks: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodOptional<z.ZodString>;
+        language: z.ZodOptional<z.ZodString>;
+        kind: z.ZodOptional<VocabularyOut>;
+    }, z.core.$loose>>>;
+    chatMode: VocabularyOut;
+    chatRateLimitPerSecond: z.ZodOptional<z.ZodNumber>;
+    incident: z.ZodOptional<typeof IncidentSchema>;
+    date: z.ZodOptional<z.ZodLazy<typeof DateCardSchema>>;
+}, z.core.$loose>;
+export {};
 //# sourceMappingURL=index.d.ts.map

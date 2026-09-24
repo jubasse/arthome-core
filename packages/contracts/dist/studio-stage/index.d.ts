@@ -70,4 +70,18 @@ export declare const StudioIncidentSchema: z.ZodNullable<z.ZodObject<{
     raisedAt: z.ZodString;
     raisedBy: z.ZodOptional<typeof ActorSchema>;
 }, z.core.$loose>>;
+/** The record of a date, served pane by pane. */
+export declare const DateSheetSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>;
+/** A row of the event board. */
+export declare const EventsRowSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>;
+/** The state of the run, served in one call. */
+export declare const RunConsoleSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>;
+/** The curve behind the differential. */
+export declare const HealthSeriesSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>;
+/** A secret, shown once and never cached. */
+export declare const StreamKeyRevealSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>;
+/** A signed upload URL, obtained by a JSON command. */
+export declare const UploadTicketSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>;
+/** An item of a channel's merchandise, as the admin sees it. */
+export declare const MerchItemAdminSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>;
 //# sourceMappingURL=index.d.ts.map

@@ -23,8 +23,10 @@
  *     `uuid()` and `instant()` become those core schemas, one edit per file.
  */
 import { z } from 'zod';
-import { type VocabularyOut } from '@arthome/core/schema';
+import { MoneyOut, type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
 import { DomainConstantsSchema, ImageRenditionSchema, LabelArtifactRefSchema } from '../catalog/index.js';
+import { NotificationPreferencesSchema } from '../engagement/index.js';
+import { OrderSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
 export declare const ProfileSummarySchema: z.ZodObject<{
     id: z.ZodString;
     name: z.ZodString;
@@ -109,5 +111,76 @@ export declare const DeviceSchema: z.ZodObject<{
         profileId: z.ZodString;
         profileName: z.ZodOptional<z.ZodString>;
     }, z.core.$loose>>>;
+}, z.core.$loose>;
+export declare const StorefrontSessionModeSchema: z.ZodEnum<{
+    cookie: 'cookie';
+    bearer: 'bearer';
+    device: 'device';
+}>;
+export declare const StorefrontSessionEstablishedSchema: z.ZodXor<readonly [typeof SessionEstablishedCookieSchema, typeof SessionEstablishedBearerSchema]>;
+export declare const AccountDeepLinkSchema: z.ZodObject<{
+    url: z.ZodString;
+}, z.core.$loose>;
+export declare const AccountScreenSchema: z.ZodObject<{
+    profile: z.ZodOptional<z.ZodObject<{
+        publicHandle: z.ZodOptional<z.ZodString>;
+        displayName: z.ZodOptional<z.ZodString>;
+        email: z.ZodOptional<z.ZodEmail>;
+        emailVerified: z.ZodOptional<z.ZodBoolean>;
+        phone: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        phoneVerified: z.ZodOptional<z.ZodBoolean>;
+        memberNumber: z.ZodOptional<z.ZodString>;
+        city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    }, z.core.$loose>>;
+    subscription: z.ZodOptional<typeof SubscriptionSchema>;
+    credits: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodOptional<z.ZodString>;
+        channelId: z.ZodOptional<z.ZodString>;
+        amount: z.ZodOptional<typeof MoneyOut>;
+        originCode: z.ZodOptional<VocabularyOut>;
+        expiresAt: z.ZodOptional<z.ZodString>;
+    }, z.core.$loose>>>;
+    paymentMethods: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        id: z.ZodOptional<z.ZodString>;
+        brandCode: z.ZodOptional<z.ZodString>;
+        last4: z.ZodOptional<z.ZodString>;
+        expiryMonth: z.ZodOptional<z.ZodNumber>;
+        expiryYear: z.ZodOptional<z.ZodNumber>;
+    }, z.core.$loose>>>;
+    security: z.ZodOptional<z.ZodObject<{
+        twoFactorEnabled: z.ZodOptional<z.ZodBoolean>;
+        passkeyCount: z.ZodOptional<z.ZodNumber>;
+        hasPassword: z.ZodOptional<z.ZodBoolean>;
+    }, z.core.$loose>>;
+    devices: z.ZodOptional<z.ZodArray<typeof DeviceSchema>>;
+    preferences: z.ZodOptional<typeof ViewerPreferencesSchema>;
+    notificationPreferences: z.ZodOptional<typeof NotificationPreferencesSchema>;
+    consents: z.ZodOptional<typeof ConsentsSchema>;
+    deletion: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        state: z.ZodOptional<VocabularyOut>;
+        requestedAt: z.ZodOptional<z.ZodString>;
+        graceUntil: z.ZodOptional<z.ZodString>;
+    }, z.core.$loose>>>;
+}, z.core.$loose>;
+export declare const DevicePairingSchema: z.ZodObject<{
+    pairingId: z.ZodString;
+    intent: VocabularyOut;
+    userCode: z.ZodString;
+    verificationUri: z.ZodString;
+    verificationUriComplete: z.ZodString;
+    expiresAt: z.ZodString;
+    pollIntervalSec: z.ZodNumber;
+    state: VocabularyOut;
+}, z.core.$loose>;
+export declare const PairingOutcomeSchema: z.ZodObject<{
+    pairingId: z.ZodString;
+    intent: VocabularyOut;
+    state: VocabularyOut;
+    pollIntervalSec: z.ZodNumber;
+    failureCode: z.ZodOptional<VocabularyOutNullable>;
+    ticket: z.ZodOptional<typeof TicketCardSchema>;
+    order: z.ZodOptional<typeof OrderSchema>;
+    subscription: z.ZodOptional<typeof SubscriptionSchema>;
+    viewerContext: z.ZodOptional<typeof ViewerContextSchema>;
 }, z.core.$loose>;
 //# sourceMappingURL=index.d.ts.map

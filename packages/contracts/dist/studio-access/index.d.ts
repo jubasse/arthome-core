@@ -98,4 +98,20 @@ export declare const StudioSessionEstablishedBearerSchema: z.ZodObject<{
     expiresAt: z.ZodString;
     bootstrap: typeof StudioBootstrapSchema;
 }, z.core.$loose>;
+/** The session mode, chosen by the caller and never inferred. */
+export declare const StudioSessionModeSchema: z.ZodEnum<{
+    cookie: 'cookie';
+    bearer: 'bearer';
+}>;
+/** Exactly one of a cookie or a bearer session, discriminated by the mode. */
+export declare const StudioSessionEstablishedSchema: z.ZodDiscriminatedUnion<[
+    typeof StudioSessionEstablishedCookieSchema,
+    typeof StudioSessionEstablishedBearerSchema
+]>;
+/** A member of a channel's team. */
+export declare const ChannelMemberSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>;
+/** The one-off stand-in, scoped to a date. */
+export declare const DateAccessGrantSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>;
+/** A duty, across all channels. */
+export declare const DutySchema: z.ZodObject<z.ZodRawShape, z.core.$loose>;
 //# sourceMappingURL=index.d.ts.map

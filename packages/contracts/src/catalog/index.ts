@@ -31,6 +31,7 @@ import {
   DATE_OUTCOMES,
   DISPLAY_STATES,
   DisplayState,
+  NOTIFICATION_CHANNELS,
   LANGUAGE_DEPENDENCIES,
   LOCALES,
   Locale,
@@ -46,8 +47,10 @@ import {
   VOCABULARY_SOURCE_LOCAL,
   VenueClockSchema,
   int64,
+  type VocabularyIn,
   type VocabularyOut,
   type VocabularyOutNullable,
+  vocabularyIn,
   vocabularyOut,
   vocabularyOutLocal,
   vocabularyOutNullable,
@@ -664,3 +667,310 @@ export const ScheduleSlotSchema: z.ZodObject<
   .describe(
     "Tonight's grid, **already grouped in the viewer's local time**. The grouping depends on the\ntimezone: the surface sends it in a header, the server groups. A grid grouped client-side\nwould be grouped five different ways.\n",
   );
+
+const SCREEN_COMPOSITION_REASON =
+  'A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.';
+
+const LOCAL_CONTRACT_REASON =
+  'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.';
+
+const CATEGORY_UNIVERSES = ['music', 'stage'] as const;
+const CATEGORY_SECTION_IDS = ['overview', 'live', 'upcoming', 'replays', 'artists'] as const;
+const FILTER_KINDS = ['money_range', 'date_range', 'boolean'] as const;
+const SAVED_SEARCH_SCOPES = ['search', 'category'] as const;
+const PUBLIC_SEARCH_STATES: readonly [
+  typeof DisplayState.SCHEDULED,
+  typeof DisplayState.ROOM_OPEN,
+  typeof DisplayState.LIVE,
+  typeof DisplayState.REPLAY,
+  typeof DisplayState.ENDED,
+] = [
+  DisplayState.SCHEDULED,
+  DisplayState.ROOM_OPEN,
+  DisplayState.LIVE,
+  DisplayState.REPLAY,
+  DisplayState.ENDED,
+];
+
+export const HomeScreenSchema: z.ZodObject<
+  {
+    billboard: z.ZodOptional<
+      z.ZodNullable<
+        z.ZodObject<
+          {
+            date: z.ZodOptional<typeof DateCardSchema>;
+            previewStartsAfterSec: z.ZodOptional<z.ZodNumber>;
+            previewUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+    rails: z.ZodArray<typeof RailSchema>;
+  },
+  z.core.$loose
+> = z.looseObject({
+  billboard: z
+    .looseObject({
+      date: DateCardSchema.optional(),
+      previewStartsAfterSec: int64()
+        .meta({ format: undefined })
+        .meta({ examples: [4] })
+        .optional(),
+      previewUrl: z.string().meta({ format: 'uri' }).nullable().optional(),
+    })
+    .nullable()
+    .optional()
+    .describe(
+      'The choice of billboard is **server-side**. `previewStartsAfterSec` is served from the domain\nconstants, never hardcoded in the surface.\n',
+    ),
+  rails: z.array(RailSchema),
+});
+
+export const LiveScreenSchema: z.ZodObject<
+  {
+    featured: z.ZodOptional<typeof DateCardSchema>;
+    slots: z.ZodArray<typeof ScheduleSlotSchema>;
+  },
+  z.core.$loose
+> = z.looseObject({
+  featured: DateCardSchema.optional(),
+  slots: z.array(ScheduleSlotSchema),
+});
+
+export const CategoryTileSchema: z.ZodObject<
+  {
+    id: z.ZodString;
+    universe: VocabularyOut;
+    rank: z.ZodNumber;
+    datesCount: z.ZodNumber;
+    liveCount: z.ZodNumber;
+    media: z.ZodOptional<typeof MediaSetSchema>;
+    featured: z.ZodOptional<z.ZodBoolean>;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    id: z.string(),
+    universe: vocabularyOutLocal(CATEGORY_UNIVERSES, SCREEN_COMPOSITION_REASON),
+    rank: int64().meta({ format: undefined }),
+    datesCount: int64().meta({ format: undefined }),
+    liveCount: int64().meta({ format: undefined }),
+    media: MediaSetSchema.optional(),
+    featured: z
+      .boolean()
+      .optional()
+      .describe(
+        'Editorial selection for the top of the page, **served as a rule**, never hardcoded in a\nsurface (`storefront-tv` Q5).\n',
+      ),
+  })
+  .describe(
+    'The 21 disciplines, with **family and rank**. The editorial rank is authoritative: **no\nsurface reorders**. Served in **one** call, never one call per tile.\n',
+  );
+
+export const CategoryScreenSchema: z.ZodObject<
+  {
+    categoryId: z.ZodString;
+    hero: z.ZodOptional<typeof DateCardSchema>;
+    subGenres: z.ZodOptional<
+      z.ZodArray<
+        z.ZodObject<
+          {
+            id: z.ZodOptional<z.ZodString>;
+            rank: z.ZodOptional<z.ZodNumber>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+    sections: z.ZodArray<
+      z.ZodObject<
+        {
+          id: VocabularyOut;
+          titleCode: z.ZodOptional<z.ZodString>;
+          items: z.ZodArray<typeof DateCardSchema>;
+          nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        },
+        z.core.$loose
+      >
+    >;
+    facets: z.ZodOptional<z.ZodArray<typeof FacetSchema>>;
+  },
+  z.core.$loose
+> = z.looseObject({
+  categoryId: z.string(),
+  hero: DateCardSchema.optional(),
+  subGenres: z
+    .array(
+      z.looseObject({
+        id: z.string().optional(),
+        rank: int64().meta({ format: undefined }).optional(),
+      }),
+    )
+    .optional(),
+  sections: z
+    .array(
+      z.looseObject({
+        id: vocabularyOutLocal(CATEGORY_SECTION_IDS, SCREEN_COMPOSITION_REASON),
+        titleCode: z.string().optional(),
+        items: z.array(DateCardSchema),
+        nextCursor: z.string().nullable().optional(),
+      }),
+    )
+    .describe(
+      'Five bounded sections — `ov`, `live`, `up`, `rep`, `art`. The overview **does not\npaginate**: an overview is bounded (8 per section).\n',
+    ),
+  facets: z.array(FacetSchema).optional(),
+});
+
+export const StructuredFilterSchema: z.ZodObject<
+  {
+    filterId: z.ZodString;
+    kind: VocabularyOut;
+    min: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    max: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    filterId: z.string().meta({ examples: ['price'] }),
+    kind: vocabularyOutLocal(FILTER_KINDS, SCREEN_COMPOSITION_REASON),
+    min: int64().meta({ format: undefined }).nullable().optional(),
+    max: int64().meta({ format: undefined }).nullable().optional(),
+  })
+  .describe(
+    'The filters that are **not** enumerations: price range, date range. They live beside the\nfacets, never inside them.\n',
+  );
+
+export const SearchCriteriaSchema: z.ZodObject<
+  {
+    categoryIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    genreIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    tagIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    artistIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    cityIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    countryCodes: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    languageDependency: z.ZodOptional<z.ZodArray<VocabularyIn<typeof LANGUAGE_DEPENDENCIES>>>;
+    replayPolicy: z.ZodOptional<z.ZodArray<VocabularyIn<typeof REPLAY_POLICIES>>>;
+    displayStates: z.ZodOptional<z.ZodArray<VocabularyIn<typeof PUBLIC_SEARCH_STATES>>>;
+    priceMinMinor: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    priceMaxMinor: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    startsAfter: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    startsBefore: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    almostSoldOut: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
+    onPromotion: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
+    accessibility: z.ZodOptional<z.ZodArray<z.ZodString>>;
+  },
+  z.core.$strict
+> = z
+  .strictObject({
+    categoryIds: z.array(z.string()).optional(),
+    genreIds: z.array(z.string()).optional(),
+    tagIds: z.array(z.string()).optional(),
+    artistIds: z.array(uuid()).optional(),
+    cityIds: z.array(z.string()).optional(),
+    countryCodes: z.array(CountryCodeSchema).optional(),
+    languageDependency: z
+      .array(
+        vocabularyIn(LANGUAGE_DEPENDENCIES).meta({
+          'x-arthome-vocabulary-source': 'LANGUAGE_DEPENDENCIES',
+        }),
+      )
+      .optional(),
+    replayPolicy: z
+      .array(
+        vocabularyIn(REPLAY_POLICIES).meta({ 'x-arthome-vocabulary-source': 'REPLAY_POLICIES' }),
+      )
+      .optional(),
+    displayStates: z
+      .array(
+        vocabularyIn(PUBLIC_SEARCH_STATES).meta({
+          'x-arthome-vocabulary-source': 'DISPLAY_STATES',
+          'x-arthome-vocabulary-narrowing':
+            'The five a public search can filter on. The other six are non-public states or outcomes that replace the state on the card, so a filter on them returns nothing and says nothing.',
+        }),
+      )
+      .optional()
+      .describe(
+        '**A strict narrowing of `DISPLAY_STATES`** to the five a public search can filter on. The\nother six are either non-public (`draft`, `reserve`, `technical`) or outcomes that replace\nthe state on the card rather than being searched for (`postponed`, `cancelled`,\n`interrupted`). A filter on a state no public list can contain returns nothing and says\nnothing, which is worse than refusing it.\n',
+      ),
+    priceMinMinor: int64().meta({ format: undefined }).min(0).nullable().optional(),
+    priceMaxMinor: int64().meta({ format: undefined }).min(0).nullable().optional(),
+    startsAfter: instant().nullable().optional(),
+    startsBefore: instant().nullable().optional(),
+    almostSoldOut: z.boolean().nullable().optional(),
+    onPromotion: z.boolean().nullable().optional(),
+    accessibility: z.array(z.string()).optional(),
+  })
+  .describe(
+    '**The criteria grammar, published.** It is the same shape everywhere: parameter of\n`/v1/search`, parameter of `/v1/categories/{id}`, and body of `SavedSearch.criteria`. One\nshape, therefore one signature — and `criteriaSignature` can only produce it because the\nshape is normalised.\n\n**Every value is a stable identifier**, never an array index: a position survives neither a\nshareable URL, nor a saved search, nor the insertion of a discipline.\n',
+  );
+
+export const ShowGroupSchema: z.ZodObject<
+  {
+    showId: z.ZodString;
+    title: z.ZodString;
+    representativeDate: typeof DateCardSchema;
+    matchingDatesCount: z.ZodNumber;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    showId: uuid(),
+    title: z.string(),
+    representativeDate: DateCardSchema,
+    matchingDatesCount: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [3] }),
+  })
+  .describe(
+    'The paginated unit of search for the `best`, `lives` and `replays` tabs is the **show**, not\nthe date. Each group carries the representative date chosen — the first that satisfies the\nfilters, under the current sort — **and** the total number of dates in the group that satisfy\nthe filters: without that second number, "see 2 more dates" is wrong as soon as a filter is\nactive.\n',
+  );
+
+export const SavedSearchSchema: z.ZodObject<
+  {
+    id: z.ZodString;
+    scope: VocabularyOut;
+    categoryId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    queryText: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    criteria: z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodUnknown>>;
+    criteriaVersion: z.ZodNumber;
+    criteriaSignature: z.ZodString;
+    stale: z.ZodOptional<z.ZodBoolean>;
+    channels: z.ZodArray<VocabularyOut>;
+    active: z.ZodBoolean;
+    newMatchesSinceLastVisit: z.ZodNumber;
+  },
+  z.core.$loose
+> = z.looseObject({
+  id: uuid(),
+  scope: vocabularyOutLocal(SAVED_SEARCH_SCOPES, LOCAL_CONTRACT_REASON),
+  categoryId: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  queryText: z.string().nullable().optional(),
+  criteria: z
+    .object({})
+    .catchall(z.unknown())
+    .describe(
+      '**Filter values are stable identifiers**, never array indices. The design filters on a\nposition (`fCats: [1]`); a position survives neither a shareable URL, nor a saved search, nor\nthe insertion of a discipline.\n',
+    ),
+  criteriaVersion: int64()
+    .meta({ format: undefined })
+    .describe(
+      "When the filter grammar changes, yesterday's search **still runs** if migration is possible;\notherwise it marks itself `stale` **and says so**. It never disappears silently.\n",
+    ),
+  criteriaSignature: z
+    .string()
+    .describe(
+      'Produced by `normalizeSearchCriteria()` in `@arthome/core`, once only, **never client-side**. It is what answers "already saved" and what deduplicates on write.',
+    ),
+  stale: z.boolean().optional(),
+  channels: z.array(vocabularyOut(NOTIFICATION_CHANNELS)),
+  active: z.boolean(),
+  newMatchesSinceLastVisit: int64()
+    .meta({ format: undefined })
+    .describe(
+      '**"New since your last visit"**, incremented by the index\'s *percolator* and reset to zero on\nread. Ten searches then cost **zero** counting queries when the page opens; the other two\noptions cost ten.\n',
+    ),
+});
