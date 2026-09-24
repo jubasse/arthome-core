@@ -2407,3 +2407,56 @@ worst direction: a map that is subtly wrong is more expensive than no map, becau
 **On the LSP**: an agent with the published `.d.ts` and a working `tsc` already has the export list
 and go-to-definition, and `isolatedDeclarations` is why those declarations are readable rather than
 inferred. The LSP is worth revisiting once a map exists; it is not the cheap half.
+
+### D-062 — The tax basis rides on the field, not on the value, and not in the name
+
+**`backend-contracts` answered a question `@arthome/contracts`' own first module addressed to it by
+name — *"the wire representation must carry the basis in the data"* — before writing a price schema.
+It measured first.**
+
+**Exactly two money-typed fields in either document said their basis**, and both were written this
+week under D-056: `grossTtc` and `grossHt`. `price`, `total`, `currentPrice`, `unitPrice`,
+`revenue`, `commission` and `net` said nothing.
+
+**Two implementations refused, and the second refusal is the finding.**
+
+**The naming convention** — `currentPriceTtc`, `totalTtc` — was refused because renaming sixty-odd
+fields is a breaking change to every consumer, bought for a suffix on the one field that already had
+one.
+
+**A per-value field in the payload** was refused for a reason worth keeping: the basis of `grossTtc`
+**never varies**, so carrying it beside every amount puts **a schema fact in the data.**
+
+> ***That is the exact inverse of `vatIncluded` (D-059), where a datum sat in a structure whose
+> semantics contradicted it. Same fault, opposite direction.***
+
+**The ruling: `x-arthome-tax-basis` on the field, three values.**
+
+| | |
+|---|---|
+| `inclusive` | what a viewer pays or sees — price, total, fee, `grossTtc` |
+| `exclusive` | the payout chain below `grossTtc` — `grossHt`, base, commission, net |
+| `inherited` | a movement rather than a price — refund, credit, discrepancy |
+
+**`inherited` is what made the classification honest.** A refund's basis is that of the thing it
+refunds; `inclusive` would invent a fact and `exclusive` would be wrong. **Nothing was left
+unclassified**, which is the check that three is the right number — a fourth would have surfaced as
+something fitting nowhere.
+
+**And the brand-versus-extension argument cites D-054's rule correctly.** `Taxed<Money,'inclusive'>`
+is a TypeScript brand: mutually unassignable, a compile error, **erased at runtime**. Its mechanism
+is the compiler, so it does not reach a generated Python client, a webhook recipient or a partner
+reading the document. *The extension reaches all of them, at zero payload cost, in the artefact they
+actually read.*
+
+**R20 gates it, with both branches proven by injection**, and its residual risk is disclosed rather
+than glossed: **it checks that a basis is *declared*, not that it is *right*** — `total` marked
+`exclusive` would pass. The mitigation is the family-reason argument: three values are few enough to
+review by eye, and the classification lives in one place rather than in sixty readers' heads.
+
+**⚠ ONE NUMBER IS OPEN AND IS DELIBERATELY NOT WRITTEN HERE.** The report says sixty-five fields
+classified; walking both documents I count **fifty-five**, the gap entirely in `inherited`. R20
+passes either way — which raises the possibility that **the survey found more money fields than
+R20's detector matches**, and a gate green on a smaller set than the survey found is *a guarantee
+only as wide as its mechanism*, landing on the gate built to close this. Referred back rather than
+recorded: **count it or reference it, do not assert it.**
