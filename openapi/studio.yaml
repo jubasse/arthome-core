@@ -5368,7 +5368,11 @@ paths:
           schema: { type: string, format: date-time }
         - name: nature
           in: query
-          schema: { type: string, enum: [air, mod, event, access, money], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
+          schema:
+            type: string
+            enum: [air, mod, event, access, money]
+            x-arthome-vocabulary-source: none
+            x-arthome-vocabulary-reason: "A vocabulary local to this contract: four of the five are endpoint concerns and a vocabulary of query filters does not belong in the domain. The exception is `money`, which @arthome/core does not produce but DOES reason about — data-model.md:624 and context-map.md:402 key the redaction rule to it, so the `money` kind is absent from the response without canRevenue. Renaming that one member silently falsifies two domain documents; the other four are ours alone."
         - name: dateId
           in: query
           schema: { type: string, format: uuid }
@@ -7964,8 +7968,24 @@ components:
             the role, the tag and the page. A reader who writes `moderation` here gets nothing back,
             silently, which is the shape this whole document spent a week removing. They are kept for
             now because the filter is a query parameter on a path that already ships in fixtures; they
-            should become `moderation` and `on_air` the first time that path changes.
+            should become `moderation` and `on_air` the first time that path changes — or sooner, on
+            a second trigger that is likelier to arrive: **`on_air` has to be spelled out the day
+            anything compares this field against `RUN_STATES.on_air`**, which is the most probable
+            reason anyone touches it at all.
+
+            **And `mod` is worse than inconsistent, it is a collision.** `moderation` survives as a
+            bare value in `MEMBER_ROLES` because the field name disambiguates it. Here the field is
+            `nature` and the value abbreviates a different concept, so the disambiguation that saved
+            the role does not apply to the abbreviation of it.
+
+            **`money` is not ours alone**: `@arthome/core` does not produce it, but the redaction rule
+            is keyed to it — `data-model.md:624` and `context-map.md:402` both say the `money` kind is
+            absent from the response without `canRevenue`. Renaming that one member would leave two
+            domain documents describing a rule keyed to a string that no longer exists, with every
+            gate green.
           x-arthome-vocabulary: [air, mod, event, access, money]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A vocabulary local to this contract: four of the five are endpoint concerns and a vocabulary of query filters does not belong in the domain. The exception is `money`, which @arthome/core does not produce but DOES reason about — data-model.md:624 and context-map.md:402 key the redaction rule to it, so the `money` kind is absent from the response without canRevenue. Renaming that one member silently falsifies two domain documents; the other four are ours alone."
           x-arthome-vocabulary-source: none
           x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
         occurredAt: { type: string, format: date-time }
