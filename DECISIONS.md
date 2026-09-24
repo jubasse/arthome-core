@@ -1937,3 +1937,44 @@ formulation usually exists, but it tends to be found by being forced to look."*
 Each time the gate had to grow, the cheap version was reachable only because waiting for data was
 not an option. **The constraint produced the better design**, which is an argument for building
 under one rather than before one.
+
+### D-051 — A log is read by someone already looking; a verdict is read by everyone
+
+**`backend-domain` closed the week by putting a correction where it would be met rather than where
+it would be filed.**
+
+I asked `conventions` to record that a gate's guarantee is only as wide as its mechanism. It
+recorded it. But `check-core-entry` is `backend-domain`'s tool, and it made the same point **in the
+output**:
+
+> *A log is read by someone already looking for the answer. A verdict is read by everyone.*
+
+And it fixed an overclaim I had not noticed. The old line read *"the entry point reaches neither zod
+nor a Node API"* — **a statement about the package.** It now reads *"no import path from the entry
+point reaches them"* — **a statement about what was walked** — with the scope on the next line.
+
+*This log is subject to the same rule.* Fifty-one entries are worth something to a reader who comes
+looking; they are worth nothing to the person running a command. **Where a decision here has a
+corresponding line of output, the output is the better home** — and this entry exists to say so
+rather than to be the exception.
+
+**THE WEEK'S THROUGH-LINE, AS `backend-domain` NAMED IT, AND IT IS TIDIER THAN MY SCATTERED VERSION.**
+Four defects, one shape — ***asserting against a description rather than against the structure***:
+
+| | |
+|---|---|
+| a transcribed alphabet | rather than the imported constant |
+| a contract's **prose** | rather than its `x-arthome-vocabulary` blocks |
+| a gate's **name** | rather than its code |
+| a tool's **output** | rather than what the tool measured |
+
+To which mine belong: a reported line count rather than a `git show`, a directory inferred rather
+than a glob read, a pipe's exit code rather than the gate's, and a vocabulary name specified rather
+than grepped.
+
+**And the one I was asked to carry is the one I would least have arrived at alone**: an endorsement
+does not only stop the next reader checking — **it stops the author checking**, because someone
+senior has now agreed. `backend-domain` wrote the `badge_*` reasoning from the value without the
+field it travels in, and the force I put behind it is what kept it from rechecking its own argument.
+
+*That is the cost of a strong opinion stated by whoever arbitrates, and it is paid by someone else.*
