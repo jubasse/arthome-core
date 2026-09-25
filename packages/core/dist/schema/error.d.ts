@@ -17,15 +17,12 @@
  * DOCUMENT'S NAMES rather than by the code's: a comparison keyed on the code would
  * have compared this schema to itself and agreed. D-065 §F.
  *
- * ⚠ THE ENVELOPE IS NOT HERE YET, AND ITS ABSENCE IS DELIBERATE RATHER THAN
- * PENDING. `ErrorEnvelope` carries `error` as a `$ref`, and emitting one needs
- * zod's REGISTRY mode with a `uri` callback; without it `z.toJSONSchema` **inlines
- * every nested object**, so an envelope written today would emit a copy of this
- * schema inside itself and the document would gain a second `Error` under another
- * name — E2, produced by the tool meant to eliminate it. So it lands with registry
- * mode and not before. The trap to know when it does: the id lives on the schema,
- * so a schema nobody registered is silently inlined and the emitted document stays
- * VALID. `architecture/handover/backend-contracts.md` has the exact call.
+ * ⚠ `ErrorEnvelope` LANDS WITH zod's REGISTRY MODE AND NOT BEFORE: it carries
+ * `error` as a `$ref`, and without a registry `z.toJSONSchema` inlines every nested
+ * object, so the document would gain a second `Error` under another name — E2 from
+ * the tool meant to prevent it. The call, and the trap that an unregistered schema
+ * inlines while the document stays VALID, are in
+ * `architecture/handover/backend-contracts.md`.
  */
 import { z } from 'zod';
 import { type VocabularyOut } from './vocabulary.js';
@@ -46,6 +43,8 @@ import { type VocabularyOut } from './vocabulary.js';
  */
 export declare const FailureNatureOut: VocabularyOut;
 /**
+ * The `Error` shape both contracts publish: `{ code, nature, params, traceId }`.
+ *
  * ⚠ `params` CARRIES THE MESSAGE'S PARAMETERS, NEVER THE MESSAGE. The sentence is
  * composed on the surface, in the reader's language, from `code`. A server that
  * sends prose has decided the reader's language for them — and it is the payment

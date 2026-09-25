@@ -27,7 +27,9 @@ import * as PUBLISHED from '../index.js';
 type Members = readonly [string, ...string[]];
 
 /**
- * ⚠ DERIVES THE ANNOTATION FROM THE VOCABULARY, which is the point. Spelling
+ * The type annotation for a STRICT vocabulary schema — what `vocabularyIn` returns.
+ *
+ * ⚠ IT DERIVES THE ANNOTATION FROM THE VOCABULARY, which is the point. Spelling
  * `z.ZodEnum<{ NO_SEAT: 'NO_SEAT'; … }>` by hand at each call site — and
  * `isolatedDeclarations` demands an annotation there (see `index.ts`) — would
  * restate the members: a parallel literal table in a type position, which is the
@@ -38,7 +40,10 @@ type Members = readonly [string, ...string[]];
 export type VocabularyIn<T extends Members> = z.ZodEnum<{ [K in T[number]]: K }>;
 
 /**
- * ⚠ TAKES NO TYPE PARAMETER, AND THE ABSENCE IS DELIBERATE.
+ * The type annotation for a TOLERANT vocabulary schema — what `vocabularyOut`
+ * returns, which is a plain string at runtime.
+ *
+ * ⚠ IT TAKES NO TYPE PARAMETER, AND THE ABSENCE IS DELIBERATE.
  * `VocabularyOut<typeof CHAT_MODES>` would read as though the type carried the
  * members. It cannot — the runtime type is `string`, see `vocabularyOut` — so the
  * parameter would be a claim the annotation does not keep, and nothing would catch
@@ -54,7 +59,7 @@ export type VocabularyOut = z.ZodString;
 /** A tolerant vocabulary that may also be absent — see `vocabularyOutNullable`. */
 export type VocabularyOutNullable = z.ZodNullable<z.ZodString>;
 
-/** STRICT — for a request. An unknown member is refused, with a code. */
+/** A vocabulary schema, STRICT — for a request: an unknown member is refused. */
 export function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T> {
   return z.enum(values);
 }
@@ -90,8 +95,8 @@ for (const [name, value] of Object.entries(PUBLISHED)) {
 }
 
 /**
- * TOLERANT — for a response. An unknown member is KEPT as a raw string and treated
- * as neutral by the surface, never rejected.
+ * A vocabulary schema, TOLERANT — for a response. An unknown member is KEPT as a
+ * raw string and treated as neutral by the surface, never rejected.
  *
  * ⚠ THIS WAS `z.union([z.enum(values), z.string()])`, AND THE COMMENT ABOVE IT
  * CLAIMED THE UNION LET A SURFACE `switch` EXHAUSTIVELY ON A KNOWN MEMBER. THAT

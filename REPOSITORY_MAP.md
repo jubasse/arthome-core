@@ -604,7 +604,7 @@ Declarations: `dist/schema/index.d.ts` — 49 exported names.
 - `CurrencyCodeSchema` (const) — `CurrencyCodeSchema: z.ZodString` — ISO 4217, uppercase.
 - `DateIdSchema` (const) — `DateIdSchema: z.ZodString`
 - `DeviceIdSchema` (const) — `DeviceIdSchema: z.ZodString`
-- `ErrorSchema` (const) — ⚠ 'params' CARRIES THE MESSAGE'S PARAMETERS, NEVER THE MESSAGE.
+- `ErrorSchema` (const) — The 'Error' shape both contracts publish: '{ code, nature, params, traceId }'.
 - `FailureNatureOut` (const) — `FailureNatureOut: VocabularyOut` — The failure nature, tolerant — and the ONLY vocabulary in either contract that declares what an unknown member falls back to.
 - `IanaTimeZoneSchema` (const) — `IanaTimeZoneSchema: z.ZodString` — An IANA time zone identifier: 'Europe/Paris'.
 - `InstantIn` (const) — `InstantIn: z.ZodString` — An instant on the wire, STRICT — for one a client SENDS.
@@ -632,15 +632,15 @@ Declarations: `dist/schema/index.d.ts` — 49 exported names.
 - `VatLineSchema` (const) — One VAT line.
 - `VenueClockSchema` (const) — `VenueClockSchema: z.ZodObject<{ venueTimezone: z.ZodString; venueUtcOffsetMin: z.ZodInt; }, z.core.$loose>`
 - `VenueIdSchema` (const) — `VenueIdSchema: z.ZodString`
-- `VocabularyIn` (type) — `type VocabularyIn<T extends Members> = z.ZodEnum<{ [K in T[number]]: K; }>;` — ⚠ DERIVES THE ANNOTATION FROM THE VOCABULARY, which is the point.
-- `VocabularyOut` (type) — `type VocabularyOut = z.ZodString;` — ⚠ TAKES NO TYPE PARAMETER, AND THE ABSENCE IS DELIBERATE.
+- `VocabularyIn` (type) — `type VocabularyIn<T extends Members> = z.ZodEnum<{ [K in T[number]]: K; }>;` — The type annotation for a STRICT vocabulary schema — what 'vocabularyIn' returns.
+- `VocabularyOut` (type) — `type VocabularyOut = z.ZodString;` — The type annotation for a TOLERANT vocabulary schema — what 'vocabularyOut' returns, which is a plain string at runtime.
 - `VocabularyOutNullable` (type) — `type VocabularyOutNullable = z.ZodNullable<z.ZodString>;` — A tolerant vocabulary that may also be absent — see 'vocabularyOutNullable'.
 - `int64` (const) — `int64: () => z.ZodNumber` — A 64-bit integer on the wire: 'type: integer, format: int64', and NO bounds.
 - `issueToCode` (function) — `function issueToCode(issue: z.core.$ZodIssue): { readonly code: string; readonly params: Readonly<Record<string, string>>; };` — The ONLY sanctioned way out of a zod failure.
 - `sourceNameOf` (function) — `function sourceNameOf(values: readonly string[], name?: string): string;` — The name this vocabulary is published under, or the one the caller declares.
 - `uuidOut` (const) — `uuidOut: () => z.ZodString` — A server-issued identifier ON THE WIRE — 'format: uuid', no pattern.
-- `vocabularyIn` (function) — `function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T>;` — STRICT — for a request.
-- `vocabularyOut` (function) — `function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;` — TOLERANT — for a response.
+- `vocabularyIn` (function) — `function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T>;` — A vocabulary schema, STRICT — for a request: an unknown member is refused.
+- `vocabularyOut` (function) — `function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;` — A vocabulary schema, TOLERANT — for a response.
 - `vocabularyOutLocal` (function) — `function vocabularyOutLocal<const T extends Members>(values: T, reason: string): VocabularyOut;` — A vocabulary the DOCUMENT declares local to itself — 'source: none', with the reason the contract gives for it.
 - `vocabularyOutLocalNullable` (function) — `function vocabularyOutLocalNullable<const T extends Members>(values: T, reason: string): VocabularyOutNullable;` — A contract-local vocabulary on a field that may also be absent.
 - `vocabularyOutNullable` (function) — `function vocabularyOutNullable<const T extends Members>(values: T, name?: string): VocabularyOutNullable;` — TOLERANT AND NULLABLE — the same thing for a field that may be absent.
