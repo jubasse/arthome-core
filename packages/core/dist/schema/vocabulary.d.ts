@@ -70,6 +70,7 @@ export declare function vocabularyOutLocalNullable<const T extends Members>(valu
  *
  * ⚠ It reads the `.` entry point, not `../vocabulary/`, because the set to cover is the published
  * surface: the first version threw on `LOCALES`, declared in `format/` and published all the same.
+ * Not a cycle — `check-core-entry` proves the `.` entry point never reaches zod, so never this file.
  */
 export declare function sourceNameOf(values: readonly string[], name?: string): string;
 /**

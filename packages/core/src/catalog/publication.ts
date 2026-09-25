@@ -168,7 +168,7 @@ export const PublicationChecklistItem = {
 /**
  * Blocking is a property of the item, not a second vocabulary: promoting a warning flips a boolean
  * here, where under two vocabularies it moves an item between them and breaks anyone matching on
- * either.
+ * either. A client rendering the checklist wants all nine with their status, not two lists to join.
  *
  * ⚠ Keyed by the union rather than an array of the blocking seven, because the array drifted where
  * nothing catches it: a tenth item was silently non-blocking, `includes` returning `false` with no

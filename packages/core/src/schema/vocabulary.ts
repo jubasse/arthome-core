@@ -124,6 +124,7 @@ export function vocabularyOutLocalNullable<const T extends Members>(
  *
  * ⚠ It reads the `.` entry point, not `../vocabulary/`, because the set to cover is the published
  * surface: the first version threw on `LOCALES`, declared in `format/` and published all the same.
+ * Not a cycle — `check-core-entry` proves the `.` entry point never reaches zod, so never this file.
  */
 export function sourceNameOf(values: readonly string[], name?: string): string {
   const source = name ?? PUBLISHED_NAME_BY_ARRAY_IDENTITY.get(values);
