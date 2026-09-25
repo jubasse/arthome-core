@@ -267,15 +267,10 @@ function main() {
   const findings = [];
   for (const file of files) {
     const rel = path.relative(CWD, file);
-    // ⚠ EXPORTED OR NOT. `export` is VISIBILITY, not authorship, and conflating them
-    //   cost an afternoon of false findings: @arthome/contracts declares its local
-    //   vocabularies `const TICKET_STATES = [...] as const` without `export`, because
-    //   their source is `none` and there is no identifier for a consumer to reach for.
-    //   The gate saw no declaration and read `held`, `paid`, `refunded` as copies of
-    //   PAYOUT_STATES — which the contract says are the provider's words, not ours.
-    //
-    //   The authority list above stays EXPORTS ONLY: a published vocabulary is what
-    //   another package can be wrong about. This exemption is narrower and local.
+    // ⚠ EXPORTED OR NOT: `export` is VISIBILITY, not authorship. @arthome/contracts
+    //   declares local vocabularies unexported, and reading them as copies cost an
+    //   afternoon of false findings. The authority list above stays EXPORTS ONLY —
+    //   a published vocabulary is what another package can be wrong about.
     const declaredHere = new Set(declaredByFile.get(file) ?? []);
     for (const m of stripComments(fs.readFileSync(file, 'utf8')).matchAll(
       /(?:^|\n)\s*(?:export\s+)?const\s+[A-Z][A-Z0-9_]*\s*(?::[^=]+?)?=\s*\[([\s\S]*?)\]\s*as\s+const/g,
@@ -286,39 +281,23 @@ function main() {
     const src = stripComments(fs.readFileSync(file, 'utf8'));
     src.split('\n').forEach((line, i) => {
       // ⚠ SKIP THE TYPE ANNOTATION, KEEP THE INITIALISER. `isolatedDeclarations`
-      //   (§2.3 c) forces an explicit annotation on every exported schema, and an
-      //   annotation of a zod enum necessarily restates its members:
-      //
-      //     export const LocaleIn: z.ZodEnum<{ fr: 'fr'; en: 'en' }> = z.enum(['fr', 'en']);
-      //
-      //   So one rule manufactures a literal another gate reports, and the author
-      //   cannot remove it — an allow-list entry per exported schema, and an allow file
-      //   that grows with the codebase is the rule being wrong (§5.3).
-      //
-      //   E2 is about copies that drift SILENTLY. An annotation is checked against its
-      //   own initialiser by the compiler, so it cannot drift without `tsc` failing: a
-      //   derived restatement, not a parallel table. The initialiser is the real copy
-      //   and stays reported — `z.enum(LOCALES)` is the fix.
-      //
-      //   Limit, stated: an annotation precedes the first `=`, so only the part after
-      //   it is scanned. This UNDER-reports in type positions only, the class the
-      //   compiler already guards.
+      //   (§2.3 c) forces an annotation that necessarily restates a zod enum's members,
+      //   so one rule manufactures the literal another reports and the author cannot
+      //   remove it. The compiler checks an annotation against its own initialiser, so
+      //   it cannot drift silently — it is a derived restatement, not a parallel table.
+      //   Limit, stated: only the part after the first `=` is scanned, so this
+      //   UNDER-reports in type positions, the class the compiler already guards.
       const eq = line.indexOf('=');
       const scanned = eq === -1 ? line : line.slice(eq);
       for (const m of scanned.matchAll(STRING_LITERAL)) {
         const value = m[1] ?? m[2];
         if (!value || !byValue.has(value)) continue;
         // ⚠ A JSON SCHEMA KEYWORD'S VALUE IS NOT A DOMAIN VOCABULARY MEMBER:
-        //   `format: 'email'` names a string format, not a notification channel,
-        //   however exactly the spellings match. Found the expensive way — a worker
-        //   wrote `NavigationEntry.JOURNAL` for an EXPORT FORMAT because the gate
-        //   refused `'journal'`, and said so in the report: "the same string but the
-        //   wrong concept". A gate whose false positives make an author write something
-        //   WORSE than what it refused has stopped paying for itself, and the author
-        //   obeyed it, which is the part that should worry anyone.
-        //
-        //   Narrow by construction: only keywords whose value space is JSON Schema's
-        //   own, on the same line, immediately before the literal.
+        //   `format: 'email'` names a string format, not a notification channel. Found
+        //   the expensive way — refused `'journal'`, so an author wrote
+        //   `NavigationEntry.JOURNAL` for an EXPORT FORMAT and obeyed the gate into
+        //   something worse than what it refused. Narrow by construction: only keywords
+        //   whose value space is JSON Schema's own, immediately before the literal.
         if (
           /\b(?:format|pattern|contentEncoding|contentMediaType|\$ref|\$schema)\s*:\s*$/.test(
             scanned.slice(0, m.index),

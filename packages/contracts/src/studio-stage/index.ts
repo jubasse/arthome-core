@@ -346,12 +346,9 @@ export const RunConsoleSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
   .looseObject({
     dateId: uuidOut(),
     state: vocabularyOut(RUN_STATES).describe(
-      // Plain prose. These words are ENGLISH here, not vocabulary members: the
-      // sentence is about two states being absent from this axis. They were
-      // interpolated from `DateOutcome` to satisfy check-enums, which made a
-      // description depend on a constant it is not describing — and the emitted
-      // string was identical either way, so the interpolation bought nothing and
-      // cost a reader the ability to read it.
+      // ⚠ Plain prose: these words are ENGLISH, not vocabulary members. Interpolating
+      //   them from `DateOutcome` to satisfy check-enums made a description depend on a
+      //   constant it is not describing, for a byte-identical emitted string.
       'The **technical** axis, and nothing else. `postponed` and `cancelled` are **withdrawn** from\nit: they were echoes of the outcome lodged in the technical state. A control room has no\n"cancelled" state — it has a stage sending nothing.\n',
     ),
     afterGracePeriod: z.boolean(),

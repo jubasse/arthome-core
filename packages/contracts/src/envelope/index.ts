@@ -92,11 +92,7 @@ export const StorefrontEnvelopeMetaSchema: z.ZodObject<
     ),
 });
 
-/**
- * The meta every STUDIO response composes. It differs from the storefront's:
- * `rightsVersion` is mandatory here (a changed value means the navigation is stale)
- * and the prose is the console's, not the viewer's — D-065 family G.
- */
+/** The meta every STUDIO response composes. */
 export const StudioEnvelopeMetaSchema: z.ZodObject<
   {
     servedAt: z.ZodString;
@@ -128,38 +124,15 @@ export const StudioEnvelopeMetaSchema: z.ZodObject<
  * `Error` — ONE SHAPE, TWO SETS OF PROSE, and the split is the smallest version
  * of D-065 §G there is.
  *
- * The two contracts declare byte-identical PROPERTIES and different
- * DESCRIPTIONS. That is legitimate: `code`'s example is
- * `publication.transition_irreversible` for a viewer and
- * `publication.checklist_incomplete` for a control room, because those are the
- * refusals each one actually meets. An example from the wrong product is worse
- * than none — it teaches a reader a code their surface will never see.
+ * ⚠ ONLY THE PROSE IS HERE. Shape, regex and vocabulary come from `ErrorSchema`
+ *   via `.shape`; `.extend()` replaces a field with itself plus metadata. Delete
+ *   every `.describe()` below and both products still emit a correct `Error`.
  *
- * ⚠ SO ONLY THE PROSE IS HERE. The shape, the regex and the sixty-four-member
- *   vocabulary all come from `ErrorSchema` in `@arthome/core/schema`, reached
- *   through `.shape`, and `.extend()` REPLACES a field with the same field plus
- *   metadata. Nothing is redeclared: delete the `.describe()` calls below and
- *   both products still emit a correct `Error`.
- *
- * ⚠ AND THE NARROWING THAT WAS HERE AN HOUR AGO IS GONE, WHICH IS THE PART
- *   WORTH READING.
- *
- *   Each document briefly declared its own subset — 24 codes for the storefront,
- *   33 for the studio — with prose explaining why a viewer cannot close a
- *   reconciliation period. The families made that argument well and the list did
- *   not: it was built from WHICH CODES EACH DOCUMENT HAPPENED TO MENTION, so the
- *   studio got `api.rate_limited` and the storefront did not, for no reason
- *   anybody could state. A rate limit is not a studio notion.
- *
- *   *A narrowing that is a snapshot of examples is a claim with nobody behind
- *   it* — and it had already rotted: both narrowing texts carried a count, and
- *   both counts were wrong within the hour, in opposite directions.
- *
- *   So both contracts publish the whole vocabulary. A client that never receives
- *   a code simply never renders it; a client told a code cannot arrive, wrongly,
- *   has no screen for it on the day it does. The narrowing comes back when
- *   somebody DESIGNS one, per product, with an argument — not as the residue of
- *   an extraction.
+ * ⚠ BOTH CONTRACTS PUBLISH THE WHOLE VOCABULARY. The per-document subsets that
+ *   were here were the residue of which codes each document happened to mention,
+ *   and both carried counts that were wrong within the hour. A client told a code
+ *   cannot arrive, wrongly, has no screen for it on the day it does. A narrowing
+ *   returns when somebody designs one per product.
  */
 
 export const StorefrontErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose> =
@@ -220,22 +193,7 @@ export const StudioErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$lo
       ),
   });
 
-/**
- * `ErrorEnvelope` — the shape every failure arrives in, and the one schema that
- * waited for the emitter rather than for a decision.
- *
- * It was deliberately left unwritten until `$ref` emission existed. Without a
- * registry, `z.toJSONSchema` INLINES every nested object, so an envelope written
- * earlier would have emitted a copy of `Error` inside itself and the document
- * would have gained a second `Error` under no name at all — E2, produced by the
- * tool built to remove it. Registry mode landed with one registry per document,
- * and `error` now emits as `$ref`.
- *
- * Two of them, because `Error` itself carries per-product prose: a viewer's
- * example code is `publication.transition_irreversible`, a control room's is
- * `publication.checklist_incomplete`. The ENVELOPE is identical in both
- * contracts; only what it wraps differs.
- */
+/** `ErrorEnvelope` — the shape every failure arrives in. */
 export const StorefrontErrorEnvelopeSchema: z.ZodObject<
   { error: typeof StorefrontErrorSchema; servedAt: z.ZodString },
   z.core.$loose

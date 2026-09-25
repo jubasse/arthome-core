@@ -1,51 +1,29 @@
-// Where a repository keeps its packages — read from the one file that already
-// says so, instead of each gate carrying its own copy of the answer.
+// Where a repository keeps its packages, read from `pnpm-workspace.yaml` — the
+// EXISTING source of truth, the file pnpm itself obeys.
 //
-// WHY THIS EXISTS
-//   The gates globbed `packages/*` in four places. That is correct in
-//   arthome-core and wrong everywhere else: arthome-platform keeps services in
-//   `apps/*` and shared code in `libs/*`, so every one of those gates would have
-//   globbed an empty set, found nothing to complain about, and exited 0.
+// ⚠ A GATE THAT SCANS NOTHING IS INDISTINGUISHABLE FROM A GATE THAT PASSES. Four
+//   gates globbed `packages/*` by hand; arthome-platform keeps services in `apps/*`
+//   and libraries in `libs/*`, so all four were one repository away from globbing an
+//   empty set and exiting 0.
 //
-//   ⚠ A GATE THAT SCANS NOTHING IS INDISTINGUISHABLE FROM A GATE THAT PASSES.
-//     This repository's own pnpm-workspace.yaml already names that as the worse
-//     of the two failure modes, in the note approving unrs-resolver: "a green
-//     gate that checks nothing". Four gates were one repository away from being
-//     exactly that.
-//
-//   `pnpm-workspace.yaml` is not a new source of truth — it is the EXISTING one,
-//   the file pnpm itself obeys. Reading it means a repository cannot declare its
-//   layout to pnpm and to the gates separately and have them disagree, which is
-//   this project's dominant fault class.
-//
-// WHY A HAND-WRITTEN PARSER RATHER THAN A YAML DEPENDENCY
-//   @arthome/tooling has four runtime dependencies and every one of them earns
-//   its place in an install of every repository. One top-level list of strings
-//   does not justify a fifth. The parser below reads exactly that list and
-//   refuses anything it does not understand, rather than guessing.
+// The parser is hand-written because one top-level list of strings does not justify
+// a fifth runtime dependency in every repository's install. It refuses what it does
+// not understand rather than guessing.
 
 import fs from 'node:fs';
 import path from 'node:path';
 
 /**
- * The package globs a repository declares to pnpm.
- *
- * Throws rather than returning a default. A wrong answer here does not produce
- * an error anywhere — it produces silence, in every gate at once.
- *
- * @param {string} root - repository root, the directory holding pnpm-workspace.yaml
- * @returns {string[]} the globs, in declaration order
+ * The package globs a repository declares to pnpm, in declaration order. Throws
+ * rather than defaulting: a wrong answer here produces no error, only silence, in
+ * every gate at once.
  */
 export function workspacePackageGlobs(root) {
   const file = path.join(root, 'pnpm-workspace.yaml');
 
-  // ABSENT IS LEGITIMATE, EMPTY IS NOT, and the two must not be confused.
-  // arthome-storefront-web and arthome-studio-web are single-package
-  // repositories: they have no workspace file because they have no workspace,
-  // and their sources sit at the root where every gate's root-level patterns
-  // already find them. Returning [] is the correct answer there, not a failure.
-  // A file that EXISTS and declares nothing is the opposite — somebody meant to
-  // have packages and the gates would silently scan none of them.
+  // ⚠ ABSENT IS LEGITIMATE, EMPTY IS NOT. The two single-package repositories have
+  //   no workspace file because they have no workspace; a file that exists and
+  //   declares nothing means somebody meant to have packages.
   if (!fs.existsSync(file)) return [];
 
   const globs = [];
@@ -76,28 +54,14 @@ export function workspacePackageGlobs(root) {
   return globs;
 }
 
-/**
- * Expand the workspace globs into the shape a gate actually wants.
- *
- * `suffix` is appended to each glob: `package.json`, `src/**\/*.ts`, and so on.
- *
- * @param {string} root
- * @param {string} suffix
- * @returns {string[]}
- */
+/** The workspace globs with `suffix` appended to each. */
 export function workspaceGlobs(root, suffix) {
   return workspacePackageGlobs(root).map((g) => `${g}/${suffix}`);
 }
 
 /**
- * The workspace package directories that actually exist on disk.
- *
- * `workspacePackageGlobs` answers "where does this repository say packages
- * live"; this answers "which ones are there". Only the trailing `/*` form is
- * expanded, which is the only form pnpm workspaces use in this project.
- *
- * @param {string} root
- * @returns {string[]} absolute directories
+ * The absolute workspace package directories that exist on disk. Only the trailing
+ * `/*` form is expanded, the only form this project's workspaces use.
  */
 export function workspacePackageDirs(root) {
   const out = [];

@@ -734,19 +734,9 @@ export const BankChangeRequestSchema: z.ZodObject<
   );
 
 /**
- * The export formats, DECLARED rather than written inline — and the reason is a
- * correction.
- *
- * `journal` was written as `NavigationEntry.JOURNAL` because `check-enums`
- * refused the literal, and the author said so plainly in their own report: *"the
- * same string but the wrong concept"*. A studio navigation entry and an
- * accounting journal export share five letters and nothing else. **A gate whose
- * refusal makes an author write something worse than the literal has stopped
- * paying for itself**, and obeying it produced a false reference that would have
- * broken the day the navigation entry was renamed.
- *
- * Declaring the list is the honest fix: a file may use the members of a
- * vocabulary it declares, and `journal` is this vocabulary's member here.
+ * The export formats, DECLARED rather than written inline: a file may use the members
+ * of a vocabulary it declares, and `journal` is this vocabulary's member here — not
+ * `NavigationEntry.JOURNAL`, which shares five letters and nothing else.
  */
 const EXPORT_FORMATS = [
   'sales_csv',

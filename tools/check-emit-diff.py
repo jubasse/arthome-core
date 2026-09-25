@@ -44,23 +44,16 @@ EQUIVALENCES = [
     "a description's trailing whitespace is not compared -- YAML block scalars end in a newline",
 ]
 
-# WHAT IS DELIBERATELY *NOT* GRANTED, because the list above would otherwise be
-# read as the whole truth:
+# WHAT IS DELIBERATELY *NOT* GRANTED, or the list above reads as the whole truth:
 #
-#   `additionalProperties: true` is NOT equated with `{}` or with absence.
-#   backend-contracts refused that one on its last turn and the refusal is right:
-#   absent and `{}` are two artefacts spelling one thing, but `true` IS A VALUE A
-#   HUMAN TYPES. Granting it means the gate can no longer tell a schema that is
-#   open by design from one somebody opened by hand to make a diff go away.
+#   `additionalProperties: true` is NOT equated with `{}` or with absence. Absent and
+#   `{}` are two artefacts spelling one thing; `true` IS A VALUE A HUMAN TYPES, so
+#   granting it loses the difference between open by design and opened by hand to make
+#   a diff go away. It costs something real, and that is the point: the storefront's
+#   `WatchVerdict.reasonParams` fails here until a document change is made deliberately.
 #
-#   It costs something real and the cost is the point: the storefront's
-#   `WatchVerdict.reasonParams` carries `additionalProperties: true` today, so it
-#   will fail here until the document says `{}` or the source emits `true`. That
-#   is a document change made deliberately, which is what the ruling below asks
-#   for, rather than an exemption that makes it invisible.
-#
-#   `examples` is likewise never equated with a media type's `example`. Different
-#   keys, different owners, and the resemblance is the whole hazard.
+#   `examples` is likewise never equated with a media type's `example`: different keys,
+#   different owners, and the resemblance is the whole hazard.
 
 ROOT = Path(__file__).resolve().parent.parent
 

@@ -24,7 +24,7 @@ A declaration longer than 160 characters is listed by kind only — read the `.d
 
 Declarations: `dist/catalog/index.d.ts` — 22 exported names.
 
-- `ArtistDetailSchema` (const) — 'ArtistDetail' and 'DateDetail' — the two pages, and the last two schemas in either contract to gain a source.
+- `ArtistDetailSchema` (const) — 'ArtistDetail' and 'DateDetail' — the two pages.
 - `ArtistSummarySchema` (const)
 - `CategoryScreenSchema` (const)
 - `CategoryTileSchema` (const)
@@ -68,7 +68,7 @@ Declarations: `dist/entitlement/index.d.ts` — 1 exported names.
 Declarations: `dist/envelope/index.d.ts` — 6 exported names.
 
 - `StorefrontEnvelopeMetaSchema` (const) — The meta every STOREFRONT response composes.
-- `StorefrontErrorEnvelopeSchema` (const) — `StorefrontErrorEnvelopeSchema: z.ZodObject<{ error: typeof StorefrontErrorSchema; servedAt: z.ZodString; }, z.core.$loose>` — 'ErrorEnvelope' — the shape every failure arrives in, and the one schema that waited for the emitter rather than for a decision.
+- `StorefrontErrorEnvelopeSchema` (const) — `StorefrontErrorEnvelopeSchema: z.ZodObject<{ error: typeof StorefrontErrorSchema; servedAt: z.ZodString; }, z.core.$loose>` — 'ErrorEnvelope' — the shape every failure arrives in.
 - `StorefrontErrorSchema` (const) — `StorefrontErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>` — 'Error' — ONE SHAPE, TWO SETS OF PROSE, and the split is the smallest version of D-065 §G there is.
 - `StudioEnvelopeMetaSchema` (const) — The meta every STUDIO response composes.
 - `StudioErrorEnvelopeSchema` (const) — `StudioErrorEnvelopeSchema: z.ZodObject<{ error: typeof StudioErrorSchema; servedAt: z.ZodString; }, z.core.$loose>`

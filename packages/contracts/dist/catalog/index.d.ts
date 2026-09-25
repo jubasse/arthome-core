@@ -301,22 +301,11 @@ export declare const PriceTierSchema: z.ZodObject<{
     validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$loose>;
 /**
- * `ArtistDetail` and `DateDetail` — the two pages, and the last two schemas in
- * either contract to gain a source.
+ * `ArtistDetail` and `DateDetail` — the two pages.
  *
- * ⚠ THEY ARE `z.intersection`, WHICH IS `allOf` WITH TWO REAL MEMBERS. Not the
- *   `allOf: [{$ref}]` wrapper that was removed from these documents: that one
- *   was an OpenAPI 3.0 habit for generators that ignored `$ref` siblings, and
- *   these declare 3.1.1. These two compose a base schema with a page's own
- *   fields, which is what `allOf` is for.
- *
- * ⚠ AND THEY COULD NOT BE WRITTEN AT ALL UNTIL `MerchItem` AND `PriceTier` MOVED
- *   HERE. An artist's page lists merchandise, a date's page lists prices, and
- *   both lived in `ticketing` — which already imports this module. The worker
- *   who met that left them unwritten and said why, rather than closing a
- *   load-order cycle with `z.lazy`. That was the right call: the emitted schema
- *   would have been identical and the next person to move a declaration would
- *   have paid for it.
+ * ⚠ THEY ARE `z.intersection`, WHICH IS `allOf` WITH TWO REAL MEMBERS, not the
+ *   `allOf: [{$ref}]` wrapper removed from these documents — an OpenAPI 3.0 habit
+ *   for generators that ignored `$ref` siblings, and these declare 3.1.1.
  */
 export declare const ArtistDetailSchema: z.ZodIntersection<typeof ArtistSummarySchema, z.ZodObject<{
     biography: z.ZodOptional<typeof StorefrontLocalizedTextSchema>;

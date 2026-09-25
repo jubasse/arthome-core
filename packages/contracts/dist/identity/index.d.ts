@@ -113,17 +113,14 @@ export declare const DeviceSchema: z.ZodObject<{
     }, z.core.$loose>>>;
 }, z.core.$loose>;
 /**
- * The three transport modes a session can be established in.
+ * The three transport modes a session can be established in. Contract-local on
+ * purpose: both documents annotate it `source: none`, because the domain neither
+ * produces nor consumes a cookie.
  *
- * ⚠ EXPORTED, because the studio narrows it to two and was copying them. It was
- *   a file-local `const`, so `studio-access` could not import it and wrote
- *   `['cookie', 'bearer']` as literals — and `arthome-check-enums` did not
- *   report that, because its declaring-file exemption is scoped to THE FILE and
- *   the declaration was in another one. *The gate is blind to a copy made across
- *   two modules of the same package, which is exactly where one is most likely.*
- *
- *   Contract-local on purpose: both documents annotate it `source: none`, and
- *   they are right — the domain neither produces nor consumes a cookie.
+ * ⚠ EXPORTED, because `studio-access` narrows it to two and was writing them as
+ *   literals — which `check-enums` did NOT report, its declaring-file exemption
+ *   being scoped to the file. The gate is blind to a copy made across two modules
+ *   of one package, which is where one is most likely.
  */
 export declare const SESSION_MODES: readonly ["cookie", "bearer", "device"];
 /**

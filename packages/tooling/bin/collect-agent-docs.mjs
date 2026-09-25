@@ -22,22 +22,14 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(HERE, '..');
 const REPO_ROOT = path.resolve(PACKAGE_ROOT, '..', '..');
 
-// WHAT A CONSUMING REPOSITORY MUST READ, and nothing else.
-//
-//   `critical-rules.md` is nineteen lines and is meant to be re-read every
-//   session. `code-conventions.md` is how the code is written and why.
-//
-//   The rest of `architecture/` — the ADRs, the context map, the data model —
-//   is deliberately NOT copied: it is reference, it is large, and a copy of it
-//   in five repositories is the parallel table this project spent a week
-//   removing. A consumer follows the link to arthome-core for those.
+// ⚠ WHAT A CONSUMING REPOSITORY MUST READ, and nothing else. The rest of
+//   `architecture/` is reference and large, and a copy of it in five repositories is
+//   the parallel table this project spent a week removing.
 const WANTED = ['critical-rules.md', 'code-conventions.md'];
 
-// ⚠ THE THIRD DOCUMENT IS GENERATED HERE RATHER THAN COLLECTED, and that is what
-//   keeps it honest. `available-surface.md` is derived from `REPOSITORY_MAP.md`,
-//   so regenerating it on every build means the shipped copy cannot be staler
-//   than the long map — which `check:map` already guards. A committed copy with
-//   no gate behind it would have been a third thing to remember.
+// ⚠ `available-surface.md` IS GENERATED HERE RATHER THAN COLLECTED: derived from
+//   `REPOSITORY_MAP.md` on every build, it cannot be staler than the map `check:map`
+//   already guards, where a committed copy would need a gate of its own.
 function generateSurface() {
   execFileSync(process.execPath, [path.join(HERE, 'generate-agent-map.mjs')], {
     cwd: REPO_ROOT,

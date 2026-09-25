@@ -18,20 +18,10 @@ describe('LocalizedText', () => {
   });
 
   it('keeps contentLanguage OPEN, because a television must render a language it has never heard of', () => {
-    // THIS TEST USED TO ASSERT THE OPPOSITE, AND THE ARGUMENT IT CARRIED IS THE
-    // ONE THE MODULE HEADER WARNS ABOUT TWO FILES EARLIER.
-    //
-    //   It read: "a third PRODUCT language is a catalogue, a build and a store
-    //   review — never a value that turns up unannounced in a payload." Every
-    //   word of that is true of the viewer's locale and none of it is true of
-    //   this field. `contentLanguage` is the language AN AUTHOR TYPED. An artist
-    //   can write a hold-screen message in Spanish tomorrow afternoon, with no
-    //   catalogue, no build and nobody's permission.
-    //
-    //   So the test did not merely miss the defect: it stated the case for it,
-    //   using the exact conflation the module header opens by naming. A test can
-    //   pin a bug as firmly as it pins a guarantee, and this one did it in the
-    //   file next door to the warning. D-065 section H.
+    // ⚠ THIS TEST USED TO ASSERT THE OPPOSITE, arguing the viewer-locale case for a
+    //   field that carries the language AN AUTHOR TYPED. It did not miss the defect,
+    //   it stated the case for it: a test pins a bug as firmly as a guarantee.
+    //   D-065 §H.
     const contentLanguage = emit(StorefrontLocalizedTextSchema).properties.contentLanguage;
     expect(contentLanguage?.enum).toBeUndefined();
     expect(contentLanguage?.type).toBe('string');

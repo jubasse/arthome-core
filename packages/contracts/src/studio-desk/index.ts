@@ -52,9 +52,9 @@ const uuidNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'uuid' });
 
 /**
- * The document lists `automatic_filter` before `retroactive_filter`; core's `STATE_CHANGE_ORIGINS`
- * lists them the other way round. The document is authoritative (D-058), so the emitted order
- * follows it while the source name is still derived from the core export, never transcribed.
+ * The document orders `automatic_filter` before `retroactive_filter` and core's
+ * `STATE_CHANGE_ORIGINS` the other way round; the document wins (D-058), while the
+ * members stay derived from the core export rather than transcribed.
  */
 const DOCUMENT_ORIGIN_ORDER = [
   StateChangeOrigin.HUMAN_VERDICT,

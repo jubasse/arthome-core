@@ -212,25 +212,15 @@ def check(fn):
         params = o.get("parameters",[]) or []
         has_idem = any(pa.get("$ref","").endswith("/IdempotencyKey") or pa.get("name")=="Idempotency-Key"
                        for pa in params)
-        # The exemption is read FROM THE DOCUMENT, not from a list kept here.
+        # ⚠ The exemption is read FROM THE DOCUMENT: a hardcoded `SAFE_WRITE` list was
+        #   E2 inside the gate against E2, and it failed the way such a table always
+        #   does — the contract gained `signIn` and `signInStudio` and the list did not
+        #   know. An exempted operation carries `x-arthome-idempotency-exemption` with
+        #   its reason, which is the part that gets reread.
         #
-        # The first version carried a hardcoded `SAFE_WRITE` — that is, a parallel
-        # literal table of the contract, kept inside the very tool that exists to
-        # forbid parallel literal tables. E2 in its own gate. It failed the way
-        # such a table always fails: the contract gained two operations
-        # (`signIn`, `signInStudio`) and the list did not know it.
-        #
-        # An exempted operation therefore carries `x-arthome-idempotency-exemption`
-        # with its reason in plain words — the reason being the useful part, since
-        # it is what gets reread. Two families, both legitimate:
-        #
-        #   · a loss-tolerant write, or one with no cumulative effect, where the key
-        #     would cost more than it protects (playback position, health sample,
-        #     quota-bounded reaction, quote);
-        #   · a session opening, and the reason is serious: the idempotency regime
-        #     replays the original response VERBATIM, so on a `signIn` it would
-        #     return a token without having verified the credentials.
-        #     A replayed key would become a session bearer.
+        # ⚠ A SESSION OPENING IS EXEMPT FOR A SECURITY REASON: the idempotency regime
+        #   replays the original response VERBATIM, so a replayed key on `signIn` would
+        #   return a token without the credentials ever being verified.
         exempt = o.get("x-arthome-idempotency-exemption")
         if m in ("post","put","patch","delete") and not exempt and not has_idem:
             err(fn, f"R11 Idempotency-Key missing on a write — {oid}")
@@ -373,29 +363,15 @@ def check(fn):
                         err(fn, f"R19 {k} is not a string ({type(v).__name__}) — {path}/{k}")
             scan(v, f"{path}/{k}", typ)
 
-    # R20 — every money-bearing field declares its TAX BASIS.
+    # R20 — every money-bearing field declares its TAX BASIS. D-056 makes a price
+    # tax-inclusive, and `Money` cannot say so because it carries credits, refunds and
+    # payouts too: the basis is a property of the FIELD. This is the wire half of
+    # @arthome/contracts' `Taxed<>` brand, which reaches only the compiler.
     #
-    # D-056 makes a price tax-inclusive. `Money` itself cannot say so: it carries
-    # credits, refunds, commissions and payouts as well as prices, so the basis is
-    # a property of the FIELD and not of the shape.
-    #
-    # `@arthome/contracts` brands it for TypeScript consumers — `Taxed<Money,
-    # 'inclusive'>` — and states plainly that a brand's mechanism is the compiler,
-    # so it does not reach a generated client in another language, a webhook
-    # recipient or a partner reading this document. A guarantee is only as wide as
-    # its mechanism. This is the wire half, and it reaches all of them.
-    #
-    # THREE VALUES, because two would force a lie:
-    #   inclusive  — what a viewer pays or sees. The price, the total, the fee.
-    #   exclusive  — the payout chain below grossTtc: grossHt, base, commission, net.
-    #   inherited  — a movement rather than a price. A refund, a credit, a
-    #                discrepancy: its basis is that of the thing it moves, and
-    #                asserting one would invent a fact.
-    #
-    # NOT A PER-VALUE FIELD IN THE PAYLOAD. The basis of `grossTtc` never varies,
-    # so carrying it beside every amount would put a schema fact in the data — the
-    # inverse of the `vatIncluded` case, where a datum sat in a structure whose
-    # semantics contradicted it.
+    # THREE VALUES, because two would force a lie: `inclusive` is what a viewer pays,
+    # `exclusive` the payout chain below grossTtc, and `inherited` a movement whose
+    # basis is that of the thing it moves — asserting one there would invent a fact.
+    # It is a SCHEMA fact, never a per-value field in the payload.
     BASES = ("inclusive", "exclusive", "inherited")
     MONEY = "#/components/schemas/Money"
 

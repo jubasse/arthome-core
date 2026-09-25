@@ -16,20 +16,6 @@
  */
 import { z } from 'zod';
 import { SessionMode } from '../identity/index.js';
-/**
- * ⚠ `StudioCounters` LIVES HERE AND NOT IN `studio-money`, WHICH IS WHERE IT
- *   READS AS BELONGING.
- *
- *   `StudioBootstrap` carries it — a control room is handed its counters on
- *   sign-in — and `DashboardScreen` in `studio-money` carries it too. With it in
- *   `studio-money`, those two modules imported each other: a load-order cycle
- *   that held only by declaration order, and that a worker had already papered
- *   with `z.lazy` on `Actor`.
- *
- *   It references NOTHING, measured rather than assumed, so it can sit at the
- *   base. That makes `studio-access` what the other three studio modules already
- *   treat it as: the one they all import and that imports none of them.
- */
 /** The badges, served at bootstrap and kept up to date by the real-time channel. */
 export declare const StudioCountersSchema: z.ZodObject<{
     moderationPending: z.ZodOptional<z.ZodNumber>;

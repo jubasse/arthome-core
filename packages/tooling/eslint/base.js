@@ -22,10 +22,8 @@ import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescrip
 import importX from 'eslint-plugin-import-x';
 import tseslint from 'typescript-eslint';
 
-/** TypeScript and JavaScript files under contract. */
 export const SOURCE_FILES = ['**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}'];
 
-/** What no repository ever lints. */
 export const COMMON_IGNORES = [
   '**/node_modules/**',
   '**/dist/**',
@@ -35,11 +33,7 @@ export const COMMON_IGNORES = [
   '**/*.min.js',
 ];
 
-/**
- * The floor, as a flat-config array.
- * A repository spreads it at the head of its eslint.config.js, then adds its
- * stack, then its overrides, then `eslint-config-prettier/flat` last.
- */
+/** The floor, as a flat-config array. */
 export const base = tseslint.config(
   { ignores: COMMON_IGNORES },
 
@@ -50,10 +44,8 @@ export const base = tseslint.config(
   },
 
   // ------------------------------------------------------ TypeScript, with types
-  // The type-aware rules are the reason Biome was ruled out (D-013):
-  // no-floating-promises, no-misused-promises and await-thenable only exist
-  // because a type checker is wired in. So `projectService` is mandatory, and a
-  // repository that switches it off to save time has cancelled the decision.
+  // ⚠ The type-aware rules are why Biome was ruled out (D-013), so `projectService`
+  //   is mandatory: a repository that switches it off has cancelled the decision.
   {
     files: ['**/*.{ts,tsx,mts,cts}'],
     extends: [...tseslint.configs.recommendedTypeChecked, ...tseslint.configs.stylisticTypeChecked],
@@ -68,20 +60,14 @@ export const base = tseslint.config(
   {
     files: ['**/*.{ts,tsx,mts,cts}'],
     rules: {
-      // `any`: forbidden. The exception is generated code, and it is declared in
-      // the repository with its reason (section 4.5).
       '@typescript-eslint/no-explicit-any': 'error',
-
-      // An unchecked assertion tells the checker to be quiet; `satisfies` asks it
-      // to check AND THEN keep the precise inferred type.
       '@typescript-eslint/consistent-type-assertions': [
         'error',
         { assertionStyle: 'as', objectLiteralTypeAssertions: 'never' },
       ],
       '@typescript-eslint/no-non-null-assertion': 'error',
 
-      // @ts-expect-error with a description, never @ts-ignore: the difference is
-      // that @ts-expect-error becomes an error the day the problem is fixed.
+      // @ts-expect-error, never @ts-ignore: it becomes an error the day the problem is fixed.
       '@typescript-eslint/ban-ts-comment': [
         'error',
         {
@@ -93,37 +79,12 @@ export const base = tseslint.config(
         },
       ],
 
-      // enum forbidden: emits runtime code (unacceptable in @arthome/core), does
-      // not survive isolatedModules as `const enum`, does not serialise to JSON,
-      // and does not narrow like a literal union. Section 5.3.
-      //
-      // THE LAST REASON IS THE ONE THAT BITES DAILY, AND IT IS MEASURED RATHER
-      // THAN ASSERTED. Compiled under --strict:
-      //
-      //   enum WatchScopeEnum { FULL = 'full' }
-      //   const WATCH_SCOPES = ['full', 'preview'] as const;
-      //   declare const fromWire: 'full';          // what JSON.parse hands you
-      //
-      //   const a: WatchScopeEnum = fromWire;      // TS2322 — NOT assignable
-      //   const b: WatchScope     = fromWire;      // fine
-      //
-      // A string whose value IS the member's value is refused by the enum,
-      // because a TypeScript enum is NOMINAL. Every boundary in this system
-      // receives strings, so every one of them would need an `as` — and `as` is
-      // forbidden two rows above, for the reason that it silences the checker
-      // instead of employing it.
-      //
-      // The second failure is what the gates and zod need:
-      //
-      //   const t: readonly ['full','preview'] = WATCH_SCOPES;              // fine
-      //   const u: readonly ['full','preview'] = Object.values(WatchScopeEnum);
-      //     // TS2322 — 'WatchScopeEnum[]', "source may have fewer"
-      //
-      // An enum yields its members and never the ORDERED TUPLE. That tuple is
-      // what `z.enum()` consumes and what `arthome-check-enums` reads out of the
-      // declaration, so an enum would force it to be written a second time by
-      // hand — the parallel literal table this repository is organised against,
-      // manufactured by the construct chosen to avoid one.
+      // enum forbidden (section 5.3), and the two reasons that bite are measured
+      // under --strict. A TypeScript enum is NOMINAL, so `const a: WatchScopeEnum =
+      // fromWire` is TS2322 for the very string JSON.parse hands you — every boundary
+      // would need an `as`, forbidden two rows above. And `Object.values(Enum)` is not
+      // the ORDERED TUPLE that `z.enum()` and `arthome-check-enums` read, so an enum
+      // manufactures the parallel literal table this repository is organised against.
       'no-restricted-syntax': [
         'error',
         {
@@ -132,15 +93,9 @@ export const base = tseslint.config(
             '`enum` is forbidden: declare an `as const` literal union in @arthome/core (code-conventions.md section 5.3).',
         },
         {
-          // An ambient `declare module '@arthome/…'` does not merely duplicate the
-          // package's own types — it SHADOWS them. Proven: with @arthome/tooling's
-          // real vitest types deliberately replaced by `{ deliberatelyWrong: number }`,
-          // a consumer carrying such a declaration still type-checked clean.
-          //
-          // So a "temporary" declaration for an @arthome package does not expire when
-          // the real types arrive. It keeps winning, silently, and the consumer is
-          // checking against a shape it wrote itself: a parallel table in a .d.ts
-          // costume. If types are missing, add them to the package.
+          // ⚠ Measured: with @arthome/tooling's vitest types replaced by
+          //   `{ deliberatelyWrong: number }`, a consumer carrying such a declaration
+          //   still type-checked clean. It SHADOWS rather than fills, so it never expires.
           selector:
             'TSModuleDeclaration > Literal[value=/^@arthome\\//], TSModuleDeclaration > StringLiteral[value=/^@arthome\\//]',
           message:
@@ -150,15 +105,15 @@ export const base = tseslint.config(
       '@typescript-eslint/no-namespace': 'error',
       '@typescript-eslint/no-require-imports': 'error',
 
-      // Explicit type imports: a type import that survives compilation keeps a
-      // whole module alive — the number one source of dead weight on Metro.
+      // A type import that survives compilation keeps a whole module alive — the
+      // number one source of dead weight on Metro.
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports', fixStyle: 'separate-type-imports' },
       ],
       '@typescript-eslint/consistent-type-exports': 'error',
 
-      // Errors — section 5.6.
+      // Section 5.6.
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/await-thenable': 'error',
@@ -166,8 +121,7 @@ export const base = tseslint.config(
       '@typescript-eslint/use-unknown-in-catch-callback-variable': 'error',
       '@typescript-eslint/return-await': ['error', 'in-try-catch'],
 
-      // An "unused" constructor parameter is used by NestJS and Angular
-      // injection: args after-used, and the _ prefix is ignored.
+      // An "unused" constructor parameter is used by NestJS and Angular injection.
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -182,18 +136,15 @@ export const base = tseslint.config(
   },
 
   // ------------------------------------------------------- imports and their order
-  // Prettier DOES NOT SORT imports, and that is deliberate: import order is
-  // therefore not a shared domain — it belongs entirely to ESLint and creates no
-  // conflict. That holds only as long as no sorting plugin is installed on the
-  // Prettier side, hence the section 3.3 ban on prettier-plugin-organize-imports
-  // and @trivago/prettier-plugin-sort-imports.
+  // ⚠ Import order belongs entirely to ESLint only while no sorting plugin sits on
+  //   the Prettier side — hence section 3.3's ban on prettier-plugin-organize-imports
+  //   and @trivago/prettier-plugin-sort-imports.
   {
     files: SOURCE_FILES,
     plugins: { 'import-x': importX },
     settings: {
-      // TypeScript resolver: without it, import-x/no-cycle and
-      // no-restricted-imports see through neither `paths` nor `exports` — the
-      // rule runs and finds nothing, which is the worse of the two failure modes.
+      // ⚠ Without the resolver, import-x/no-cycle and no-restricted-imports see
+      //   through neither `paths` nor `exports`: the rule runs and finds nothing.
       'import-x/resolver-next': [createTypeScriptImportResolver({ alwaysTryTypes: true })],
     },
     rules: {
@@ -230,13 +181,8 @@ export const base = tseslint.config(
   },
 
   // ------------------------------------------------ two named rules, switched off
-  // Neither is a formatting rule: eslint-config-prettier does not switch them off,
-  // and that is correct. They only become harmful together with
-  // eslint-plugin-prettier, which is forbidden here. We switch them off because
-  // they arbitrate a style without catching a defect — not out of fear of a
-  // conflict. Written explicitly rather than left off by omission: a rule you
-  // decide not to apply must be visible, otherwise the day a preset turns it on
-  // nobody will know whether that was intended. Section 3.4.
+  // Off because they arbitrate a style without catching a defect, and written out
+  // rather than left to omission so that a preset turning one on is visible. Section 3.4.
   {
     files: SOURCE_FILES,
     rules: {
@@ -262,14 +208,12 @@ export const base = tseslint.config(
   },
 
   // ------------------------------------------------- tooling does not enter src/
-  // Four barriers keep @arthome/tooling out of production (section 4.7); this is
-  // the only one that speaks to the author at the moment they write the import.
+  // The one of section 4.7's four barriers that speaks at the moment of the import.
   {
     files: ['src/**', 'app/**'],
     rules: {
-      // ⚠ `rules` fully replaces the previous value of the same rule, so the
-      //   patterns from the "imports" block are REPEATED here — otherwise they
-      //   would be lost for src/, which is exactly what they protect.
+      // ⚠ `rules` fully REPLACES the same rule, so the "imports" block's patterns are
+      //   repeated here or they are lost for src/, which is what they protect.
       'no-restricted-imports': [
         'error',
         {

@@ -932,36 +932,15 @@ def main(files):
                     documented_narrowings.add((where, source))
                 continue
 
-            # ── The comparison is ASYMMETRIC, because the contract's design is ──
-            #
-            # The contract is strict on input and tolerant on output, and that is a
-            # design property rather than a notation accident. Flattening it here —
-            # demanding set equality everywhere — would make the gate disagree with
-            # the thing it is checking.
-            #
-            #   ONLY IN THE CONTRACT — always a failure, both kinds.
-            #     output: we would serve a value the domain cannot represent.
-            #     input:  we would ACCEPT one. This is the dangerous direction and
-            #             the one that takes a platform down: `SURFACES` diverged
-            #             as core `storefront_web` against wire `storefront-web` on
-            #             `X-Arthome-Surface`, a REQUIRED header validated on every
-            #             request to both BFFs. A 400 on everything, from the first
-            #             deploy. This rule is what catches it.
-            #
-            #   ONLY IN THE DOMAIN — depends on the kind.
-            #     output: a failure. An output contract must be able to describe
-            #             every value the domain can emit, or a consumer meets a
-            #             value the contract never mentioned.
-            #     input:  a NOTE, not a failure. Narrowing an input is legitimate
-            #             and common — not every domain value is settable by a
-            #             client, and a "set state" enum properly accepts only the
-            #             transitions a client may request. Failing here would
-            #             shout at every deliberately-restricted input, and a gate
-            #             that shouts wrongly gets switched off.
-            #
-            # So the dangerous direction fails in both kinds; only outputs require
-            # equality. An input that wants equality asserts it by listing every
-            # member — the gate does not need a flag for that.
+            # ⚠ THE COMPARISON IS ASYMMETRIC, because the contract is. Only in the
+            #   CONTRACT fails both kinds: on an input it means we ACCEPT a value the
+            #   domain cannot represent, and `SURFACES` diverging as core
+            #   `storefront_web` against wire `storefront-web` on the required
+            #   `X-Arthome-Surface` header would have been a 400 on everything from
+            #   the first deploy. Only in the DOMAIN fails on outputs only — narrowing
+            #   an input is legitimate and common, and a gate that shouts at every
+            #   deliberately-restricted input gets switched off. An input that wants
+            #   equality asserts it by listing every member.
             narrowing = only_core if kind == "input" else set()
             blocking_core = set() if kind == "input" else only_core
 

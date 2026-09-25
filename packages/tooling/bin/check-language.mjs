@@ -174,26 +174,19 @@ const isAllowed = (file) => ALLOWED.some((p) => matchesGlob(file, p));
 
 // ------------------------------------------------------------------ quotations
 // A THIRD CATEGORY, AND THE ONLY ONE THAT IS NOT A FILE. A record of why something
-// was corrected quotes the thing it corrected, and here that is often French.
-// Translating it destroys what it is doing: a stale comment quoted for its wrong
-// count, once translated, stops BEING the defect (D-027b). A file exemption cannot
-// serve — it would exempt the English prose that is the point of the file.
+// was corrected quotes the thing it corrected, and here that is often French;
+// translating it stops it BEING the defect (D-027b). A file exemption would exempt
+// the English prose that is the point of the file.
 //
-// So: per quotation, each naming its file, its exact text and its reason. Three
-// properties, and the third was added after the first two proved insufficient:
+// So: per quotation, naming its file, its exact text and its reason. VERBATIM, so it
+// cannot name a sentence that was never there; GONE is an error, so the exemption
+// expires with the sentence; and at most MAX_QUOTED_LINES lines.
 //
-//   - VERBATIM, so an entry cannot name a sentence that was never there;
-//   - a quotation that is GONE is an error, never a silent no-op — the exemption
-//     expires with the sentence it protects;
-//   - at most MAX_QUOTED_LINES lines. ⚠ Verbatim guarantees the quote EXISTS, not
-//     that it is NARROW: a quotation of `"e"` appears in almost every line, so it
-//     skipped every line and passed the whole file. Demonstrated, not argued.
-//
-// ⚠ The first fix was worse than the hole — requiring the quotation to contain a
-//   FRENCH word rejected `les quatorze entrées de navigation`, which is manifestly
-//   French. That list is narrow BY DESIGN for detection, and reusing it to judge
-//   coverage inverted its purpose. The bound is structural instead: a quotation may
-//   cover a quotation, not a document, and needs no view about language.
+// ⚠ Verbatim guarantees the quote EXISTS, not that it is NARROW: a quotation of `"e"`
+//   matched almost every line and passed the whole file. The bound is structural
+//   rather than linguistic — requiring a FRENCH word instead rejected `les quatorze
+//   entrées de navigation`, because the detection list is narrow BY DESIGN and judging
+//   coverage with it inverts its purpose.
 const QUOTATIONS = allow.quotations?.allow ?? [];
 
 const MAX_QUOTED_LINES = 3;
@@ -241,17 +234,11 @@ function sourceLineSet(files) {
  * A cited token is data, not prose: a document about a French-detection gate must be
  * able to name the words it detects.
  *
- * ⚠ THE CAP IS STRUCTURAL — NO WHITESPACE IN THE SPAN — and that is the whole
- *   difference between a cited token and a quoted sentence. `\`jamais\`` is the word;
- *   `les quatorze entrées de navigation` is French and stays reported, going through
- *   tools/language.allow.json with its reason rather than a silent widening here.
- *   Stripping every inline span would hide a paragraph behind backticks; stripping
- *   none makes a document unable to cite its own subject. Whitespace separates the
- *   two without a word list, so it does not drift (§5.3.1).
- *
- *   Applied to Markdown and to code comments from ONE place: the backtick convention
- *   is the same in both, and two copies of it would be a parallel table inside the
- *   gate that exists to keep prose honest.
+ * ⚠ THE CAP IS STRUCTURAL — NO WHITESPACE IN THE SPAN. Stripping every inline span
+ *   would hide a paragraph behind backticks; stripping none makes a document unable
+ *   to cite its own subject. Whitespace separates the two without a word list, so it
+ *   cannot drift (§5.3.1), and a quoted sentence still goes through
+ *   tools/language.allow.json with its reason.
  */
 function stripCitedTokens(line) {
   return line.replace(/`+[^`\s]+`+/g, ' ');

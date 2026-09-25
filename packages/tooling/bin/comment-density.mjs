@@ -143,15 +143,13 @@ function maskStrings(line) {
 }
 
 /**
- * ⚠ WHICHEVER MARKER COMES FIRST ON THE LINE DECIDES, both ways round. Testing the
- *   block opener first made `//   - packages/*\/src/*` in check-map.mjs open a `/*`
- *   that never closed: 99 % reported against a true 39 %. Requiring a line to START
- *   with `/*` is the mirror defect — a block opened after code on the same line goes
- *   invisible and every line inside it is uncounted. Both were measured.
+ * ⚠ WHICHEVER MARKER COMES FIRST ON THE LINE DECIDES, both ways round, and both were
+ *   measured: testing the block opener first made `//   - packages/*\/src/*` open a
+ *   `/*` that never closed (99 % against a true 39 %), while requiring a line to START
+ *   with `/*` makes a block opened after code invisible.
  *
- * A line counts only when the comment starts it: a trailing `// note` is not what that
- * line is for. A block opened mid-line still has its state tracked, or the rest of the
- * file is misread.
+ * A line counts only when the comment starts it, but a block opened mid-line still has
+ * its state tracked, or the rest of the file is misread.
  */
 function measure(text, syntax) {
   let comment = 0;

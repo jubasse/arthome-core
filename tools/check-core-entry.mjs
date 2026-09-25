@@ -173,17 +173,13 @@ function main() {
       process.exit(1);
     }
 
-    // THE BOUNDARY RULES, asserted over the sources of the graph just walked.
+    // ⚠ `.transform()` and `z.date()` are inconvertible to JSON Schema, and a schema
+    //   carrying either still compiles, validates and EMITS — a document describing a
+    //   shape the API does not accept, in the one direction nothing fails.
     //
-    // `.transform()` and `z.date()` are inconvertible to JSON Schema. A schema
-    // carrying either still compiles, still validates, and still EMITS a
-    // document — a document describing a shape the API does not accept. That is
-    // a contract that lies in the one direction nobody checks, because nothing
-    // fails. Hence a gate.
-    //
-    // Scoped to the modules REACHED from the schema entry point, not to the
-    // directory: a file added to src/schema/ and imported by nothing is not at
-    // any boundary, and a boundary schema placed elsewhere and re-exported is.
+    // Scoped to the modules REACHED from the schema entry point, not to the directory:
+    // a file in src/schema/ imported by nothing is at no boundary, and a boundary
+    // schema placed elsewhere and re-exported is.
     const banned = [
       { re: /\.transform\s*\(/, why: 'z.transform() — inconvertible to JSON Schema (D-057)' },
       { re: /\bz\.date\s*\(/, why: 'z.date() — an instant crosses a boundary as an ISO string' },

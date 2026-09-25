@@ -1,17 +1,15 @@
 // @arthome/tooling/eslint/node
 //
-// The floor plus Node globals. For arthome-platform (the seven NestJS services)
-// and for the JavaScript tooling of the other repositories.
+// The floor plus Node globals, for arthome-platform and for the other
+// repositories' JavaScript tooling.
 //
-// Three ESLint entry points and not one: a single entry would force browser
-// globals into the services and vice versa, and globals are exactly what
-// produces the false positives that make someone switch a rule off — and then
-// forget to switch it back on.
+// Three entry points and not one, because a single entry would force browser
+// globals into the services and back — and a false positive is what makes someone
+// switch a rule off and forget to switch it on.
 //
-// ⚠ Contains NO stack preset. @nestjs/* appears nowhere here: a stack preset's
-//   version must track the framework major installed in the repository, and
-//   lodging it here would force all seven repositories to upgrade together.
-//   See architecture/code-conventions.md section 4.2.
+// ⚠ Contains NO stack preset: a preset's version tracks the framework major
+//   installed in the repository, so lodging one here would force all seven to
+//   upgrade together. Section 4.2.
 
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -26,21 +24,12 @@ export const node = tseslint.config(...base, {
     sourceType: 'module',
   },
   rules: {
-    // The `node:` prefix is mandatory: it distinguishes a built-in module from a
-    // same-named registry package without ambiguity, which is a real
-    // supply-chain attack surface.
+    // The `node:` prefix separates a built-in from a same-named registry package,
+    // which is a real supply-chain attack surface.
     //
-    // ⚠ `paths`, NOT `patterns`, AND THE DIFFERENCE IS NOT COSMETIC. These are
-    //   exact module names, and `patterns` interprets its entries with GITIGNORE
-    //   semantics: an unanchored `events` matches any path segment called
-    //   `events`, so `@arthome-platform/events` was refused with a message about
-    //   prefixing built-in modules. Every one of these names is a plausible
-    //   library name — `path`, `stream`, `crypto`, `util` — so the trap was
-    //   waiting for whichever repository named a package first. arthome-platform
-    //   did, on its second service.
-    //
-    //   `paths` matches the specifier exactly, which is what "the built-in
-    //   called fs" actually means.
+    // ⚠ `paths`, NOT `patterns`: `patterns` reads its entries with GITIGNORE
+    //   semantics, so an unanchored `events` matched `@arthome-platform/events` and
+    //   refused it. `paths` matches the specifier exactly.
     'no-restricted-imports': [
       'error',
       {

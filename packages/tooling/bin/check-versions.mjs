@@ -213,26 +213,16 @@ function checkPackageManager() {
   }
 }
 
-/**
- * One copy, one version.
- *
- * This check exists because the design failed here once, on the day of the first
- * install: `@arthome/tooling` declared `eslint` as a peer without pinning it in
- * its own devDependencies, so pnpm auto-installed a peer for the workspace
- * package and picked the LOWEST member of the range — 9.39.5, while the root had
- * 10.11.0. Two ESLint copies, both working, differently. Nothing was red.
- *
- * That is precisely the failure mode the dependencies/peerDependencies split
- * exists to prevent, and no gate saw it. This one does: it reads the pnpm store
- * directly, because the store is where duplication is visible and package.json
- * is where it is invisible.
- */
+// ⚠ MEASURED, on the day of the first install: `@arthome/tooling` declared `eslint`
+//   as a peer without pinning it, so pnpm picked the LOWEST member of the range —
+//   9.39.5 beside the root's 10.11.0. Two copies, both working, differently, nothing
+//   red. The duplicate check reads the pnpm store, because package.json is where
+//   duplication is invisible.
 /**
  * The second copies this repository has declared harmless, with their reason.
  *
- * ⚠ SCOPED TO ONE REPOSITORY ON PURPOSE. The same duplicate may be benign where
- *   a generator runs and a genuine fault where it does not, so an entry names
- *   the repository it applies to. `versions.json` holds the reasons.
+ * ⚠ SCOPED TO ONE REPOSITORY: the same duplicate may be benign where a generator runs
+ *   and a fault where it does not. `versions.json` holds the reasons.
  */
 function allowedDuplicates(name) {
   const declared = TABLE.duplicatesAllowed?.[name];
