@@ -25,7 +25,6 @@ export declare const StudioCountersSchema: z.ZodObject<{
     datesToCover: z.ZodOptional<z.ZodNumber>;
     payoutsDue: z.ZodOptional<z.ZodNumber>;
 }, z.core.$loose>;
-/** The period's effective bounds, computed by the server. */
 /** Who caused the fact. */
 export declare const ActorSchema: z.ZodObject<{
     accountId: z.ZodOptional<z.ZodNullable<z.ZodString>>;

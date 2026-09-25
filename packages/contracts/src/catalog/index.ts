@@ -976,21 +976,12 @@ export const SavedSearchSchema: z.ZodObject<
 });
 
 /**
- * ⚠ `MerchItem` AND `PriceTier` LIVE IN THE CATALOGUE, WHICH IS NOT WHERE THEY
- *   WERE FIRST PUT.
+ * An item of merchandise sold alongside an artist or a date.
  *
- *   They began in `ticketing`, and `ArtistDetail` and `DateDetail` could not
- *   then be written at all: an artist's page lists their merchandise, a date's
- *   page lists its prices, and `ticketing` already imports this module. The
- *   import back would have closed a load-order cycle, so two schemas were left
- *   unwritten rather than papered over — which was the right call by the worker
- *   who met it.
- *
- *   The direction that resolves it is the honest one: **the catalogue describes
- *   what exists, and ticketing describes transactions over it.** A cart line
- *   references a merch item; a merch item knows nothing about carts. Moving
- *   these two here makes `ticketing -> catalog` one-way and lets the two detail
- *   pages be written as the documents have them.
+ * ⚠ IT LIVES IN THE CATALOGUE, NOT IN `ticketing`, and so does `PriceTier`: the
+ *   catalogue describes what exists, ticketing describes transactions over it. A cart
+ *   line references a merch item; a merch item knows nothing about carts. That keeps
+ *   `ticketing -> catalog` one-way.
  */
 
 export const MerchItemSchema: z.ZodObject<

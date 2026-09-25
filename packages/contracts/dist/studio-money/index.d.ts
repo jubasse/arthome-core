@@ -205,11 +205,6 @@ export declare const PayoutLineSchema: z.ZodObject<{
     discrepancy: z.ZodOptional<Money>;
     taxEvidenceConflicts: z.ZodOptional<z.ZodNumber>;
 }, Looseness>;
-/**
- * `studio-access` imports `StudioCountersSchema` from this module, so importing `ActorSchema`
- * back at module scope is a cycle that reads it before it is initialised. Deferring the read to
- * first use breaks it without redeclaring the schema.
- */
 /** A change of bank details, countersigned by a second role. */
 export declare const BankChangeRequestSchema: z.ZodObject<{
     requestId: z.ZodString;

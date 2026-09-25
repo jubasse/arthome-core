@@ -38,7 +38,7 @@ Declarations: `dist/catalog/index.d.ts` — 22 exported names.
 - `LabelArtifactRefSchema` (const) — `LabelArtifactRefSchema: z.ZodObject<{ domain: VocabularyOut; locale: VocabularyOut; version: z.ZodNumber; url: z.ZodString; }, z.core.$loose>`
 - `LiveScreenSchema` (const) — `LiveScreenSchema: z.ZodObject<{ featured: z.ZodOptional<typeof DateCardSchema>; slots: z.ZodArray<typeof ScheduleSlotSchema>; }, z.core.$loose>`
 - `MediaSetSchema` (const)
-- `MerchItemSchema` (const) — ⚠ 'MerchItem' AND 'PriceTier' LIVE IN THE CATALOGUE, WHICH IS NOT WHERE THEY WERE FIRST PUT.
+- `MerchItemSchema` (const) — An item of merchandise sold alongside an artist or a date.
 - `PriceTierSchema` (const)
 - `RailSchema` (const)
 - `SavedSearchSchema` (const)

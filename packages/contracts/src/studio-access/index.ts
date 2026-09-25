@@ -46,7 +46,6 @@ import { SessionMode } from '../identity/index.js';
 const LOCAL_REASON =
   'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.';
 
-/** A vocabulary local to this contract: `none` as its source, and the reason the document gives. */
 const localVocabulary = (
   values: readonly [string, ...string[]],
   reason: string = LOCAL_REASON,
@@ -57,14 +56,10 @@ const localVocabularyNullable = (
   reason: string,
 ): z.ZodNullable<z.ZodString> => vocabularyOutLocalNullable(values, reason);
 
-/**
- * An instant with `format: date-time` and NO `pattern`: these documents carry the format
- * alone here, where `InstantSchema` would add its regex.
- */
-
-/** An integer with no format, as the document writes `type: integer`. */
+/** No `format`: these documents write a bare `type: integer`. */
 const int = (): z.ZodNumber => int64().meta({ format: undefined });
 
+/** `format: date-time` and NO `pattern`, which is what these documents carry. */
 const instantNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'date-time' });
 
@@ -103,8 +98,6 @@ export const StudioCountersSchema: z.ZodObject<
   .describe(
     '**The badges, served at bootstrap and kept up to date by the real-time channel.** None of\nthese numbers may require fetching a page: otherwise the bottom bar costs five requests every\ntime it opens.\n',
   );
-
-/** The period's effective bounds, computed by the server. */
 
 /** Who caused the fact. */
 export const ActorSchema: z.ZodObject<

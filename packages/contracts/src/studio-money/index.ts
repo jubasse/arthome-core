@@ -36,20 +36,16 @@ import { ActorSchema } from '../studio-access/index.js';
 const LOCAL_REASON =
   'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.';
 
-/** A vocabulary local to this contract: `none` as its source, and the reason the document gives. */
 const localVocabulary = (
   values: readonly [string, ...string[]],
   reason: string = LOCAL_REASON,
 ): z.ZodString => vocabularyOutLocal(values, reason);
 
-/**
- * An instant with `format: date-time` and NO `pattern`: these documents carry the format
- * alone here, where `InstantSchema` would add its regex.
- */
+/** `format: date-time` and NO `pattern`, which is what these documents carry. */
 const instantNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'date-time' });
 
-/** An integer with no format, as the document writes `type: integer`. */
+/** No `format`: these documents write a bare `type: integer`. */
 const int = (): z.ZodNumber => int64().meta({ format: undefined });
 
 const PRESENTATION_REASON =
@@ -692,11 +688,8 @@ export const PayoutLineSchema: z.ZodObject<
     "**The breakdown by market is the shape, and it is safe under both tax models**: a\nsingle-rate model produces a one-line breakdown. A single scalar `vatAmount` would have been\nthe only genuinely irreversible choice.\n\nThe model adopted (D-015) is the **commissionaire**: base = the whole ticket, rate = that of\nthe viewer's country, liable party = Arthome. **⚠ This is not tax advice** — to be validated\nby an adviser before any real money is taken.\n\n**Under tax-inclusive pricing (D-056) this breakdown stops being detail and becomes the\nexplanation.** The artist's price is what the viewer pays, so `grossTtc` is fixed while the\nVAT inside it varies with the buyer's country — which means **`net` moves for two sales at the\nsame advertised price.** A payout response without the per-jurisdiction lines is therefore\n**incomplete rather than merely terse**: the artist sees a number that changed and no reason\nfor it, which is `planOf()` falling everyone back to `free` with money attached.\n\n`grossTtc → vat[] → grossHt → commission → net` is the whole derivation, and every step of it\nis served rather than recomputed.\n",
   );
 
-/**
- * `studio-access` imports `StudioCountersSchema` from this module, so importing `ActorSchema`
- * back at module scope is a cycle that reads it before it is initialised. Deferring the read to
- * first use breaks it without redeclaring the schema.
- */
+// ⚠ `studio-access` imports `StudioCountersSchema` from here, so reading `ActorSchema`
+//   back at module scope is a cycle. Deferring the read to first use breaks it.
 /** A change of bank details, countersigned by a second role. */
 export const BankChangeRequestSchema: z.ZodObject<
   {
