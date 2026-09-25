@@ -5,16 +5,8 @@ import { formatCompact, formatInteger, formatMoney } from './number.js';
 import { money } from '../money/money.js';
 
 /**
- * PROTECTED INVARIANT
- *   The contract transports a CURRENCY CODE, never a symbol nor a symbol
- *   position. The derivation lives here, once only.
- *
- * WHY
- *   Five surfaces format the same amounts. Five symbol tables would produce
- *   five results, and one of them would put the symbol on the wrong side. And
- *   the formatting is done WITHOUT `Intl`: React Native's engine does not offer
- *   a complete implementation everywhere, and the polyfill costs several
- *   hundred kilobytes in five applications.
+ * The contract transports a CURRENCY CODE, never a symbol nor a position: five symbol tables would
+ * put the symbol on the wrong side at least once.
  */
 describe('formatting amounts', () => {
   it('places the symbol by language, not by currency', () => {
@@ -42,16 +34,7 @@ describe('formatting amounts', () => {
   });
 });
 
-/**
- * PROTECTED INVARIANT
- *   The audience counter is compact above a thousand, exact below it.
- *
- * WHY
- *   Below a thousand, the exact number is more informative and fits the same
- *   width. And the file's rule forbids "0 LIVE": the counter is ABSENT when
- *   nothing is on air, which is a contract decision, not a formatting one —
- *   hence no zero case here.
- */
+/** Below a thousand the exact number is more informative and fits the same width. */
 describe('the compact counter', () => {
   it('stays exact below a thousand', () => {
     expect(formatCompact(860, Locale.FR)).toBe('860');

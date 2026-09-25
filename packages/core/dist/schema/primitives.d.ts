@@ -1,70 +1,45 @@
 /**
- * The boundary primitives — the shapes every other schema is built from. The
- * rules that govern all of them (zod's cost and the gate that contains it, no
- * transforms, codes rather than zod messages, the explicit annotations) are
- * stated once in `index.ts`.
+ * The boundary primitives. The rules governing all of them are stated in `index.ts`.
  */
 import { z } from 'zod';
 import { type VocabularyIn, type VocabularyOut } from './vocabulary.js';
 import { LOCALES } from '../format/locale.js';
 /**
- * An instant on the wire, STRICT — for one a client SENDS. `Z` only, at most
- * three decimals.
+ * An instant on the wire, STRICT — for one a client SENDS. `Z` only, at most three decimals.
  *
- * ⚠ NEVER `z.date()`: inconvertible to JSON Schema, and a `Date` is a parsed
- * value rather than a wire one. D7 is the same lesson from the other side — the
- * mockup's relative offsets were convenient and untransportable.
+ * ⚠ Never `z.date()`: inconvertible to JSON Schema, and a `Date` is a parsed value, not a wire one.
  *
- * ⚠ THE PATTERN IS NARROWER THAN `format: date-time` AND WAS PUBLISHED NOWHERE:
- * of the 132 instants in the two contracts, 125 carry `format` and no pattern.
- * RFC 3339 admits an offset and this does not, so a studio in Paris sending
- * `2026-09-24T20:00:00+02:00` is refused by a rule the contract never stated. It
- * matters only where a client SENDS one rather than echoes it — 13 occurrences
- * over five field names: `startsAt`, `expiresAt` (twice each), `muteUntil`,
- * `rescheduledTo`, `measuredAt`. On the other 119 it would constrain the
- * server's own output, which is not a promise a client can break.
- *
- *   ⚠ Re-derived 2026-09-25 because the counts contradicted each other three
- *     ways: "seven fields" named five, 132 − 7 is not 119, and 126 with `format`
- *     alone leaves six with a pattern, not seven. SEVEN WAS THE PATTERN COUNT,
- *     transcribed into the sentence about request fields — a number that
- *     migrated to the wrong claim, which is why every count here now says what
- *     it counts.
- *
- * ⚠ THE NAME STATES ITS DIRECTION BECAUSE THE UNNAMED ONE WAS USED IN THE WRONG
- * ONE: while this was the only instant export, ten modules wrote their own
- * stripped-down `instant()` because the one on offer carried a pattern their
- * document did not (D-065 §H).
+ * ⚠ The pattern is narrower than `format: date-time` and published nowhere — 125 of the 132
+ * instants in the two contracts carry `format` alone. RFC 3339 admits an offset and this does
+ * not, so `2026-09-24T20:00:00+02:00` is refused by a rule the contract never stated. It applies
+ * only to the 13 request occurrences over five names (`startsAt`, `expiresAt` twice each,
+ * `muteUntil`, `rescheduledTo`, `measuredAt`); elsewhere it would constrain the server's output.
+ * While the name did not state its direction, ten modules wrote their own `instant()` to escape
+ * a pattern their document did not carry (D-065 §H).
  */
 export declare const InstantIn: z.ZodString;
 /** The same instant as a server SENDS it: the format, and no pattern. */
 export declare const InstantOut: z.ZodString;
 /**
- * A server-issued identifier ON THE WIRE — `format: uuid`, no pattern.
+ * A server-issued identifier on the wire — `format: uuid`, no pattern.
  *
- * ⚠ THE v7 PATTERN IS NOT PUBLISHED, AND THAT IS MEASURED RATHER THAN LAZY. The
- * branded `*IdSchema` exports demand UUIDv7 because the outbox's ordering depends
- * on it, but a client never mints one: all 37 identifiers in request bodies echo
- * something a server issued, and `POST /v1/devices` takes no `deviceId`. A
- * malformed one is an id that does not exist, and the lookup says so more clearly
- * than a pattern would.
+ * ⚠ The v7 pattern the branded `*IdSchema` exports demand is deliberately unpublished: all 37
+ * identifiers in request bodies echo something a server issued, and a malformed one is an id that
+ * does not exist, which the lookup says more clearly than a pattern would.
  */
 export declare const uuidOut: () => z.ZodString;
 /**
- * A 64-bit integer on the wire: `type: integer, format: int64`, and NO bounds.
+ * A 64-bit integer on the wire: `type: integer, format: int64`, and no bounds.
  *
- * ⚠ NOT `z.int()`, which emits JavaScript's safe range as `minimum` and `maximum`
- * — numbers that are in no document, and that would tell a generated client in
- * another language that int64 stops at 2^53. The refinement keeps the guarantee
- * those bounds would have given, at runtime, where it costs the document nothing.
+ * ⚠ Not `z.int()`, which emits JavaScript's safe range as `minimum`/`maximum` — numbers in
+ * no document, telling a generated client in another language that int64 stops at 2^53.
+ * The refinement keeps that guarantee at runtime, where it costs the document nothing.
  */
 export declare const int64: () => z.ZodNumber;
 /**
- * An IANA time zone identifier: `Europe/Paris`.
- *
- * Validated by SHAPE, never by existence — the IANA database is not bundled, and
- * bundling it would cost hundreds of kilobytes in five applications. This refuses
- * the two forms D3 replaces: an abbreviation (`CEST`) and an offset (`+02:00`).
+ * An IANA time zone identifier: `Europe/Paris`. Validated by shape, never existence — the IANA
+ * database would cost hundreds of kilobytes in five applications — and it refuses the two forms
+ * D3 replaces, an abbreviation (`CEST`) and an offset (`+02:00`).
  */
 export declare const IanaTimeZoneSchema: z.ZodString;
 /** ISO 4217, uppercase. The contract never transports a symbol or a position. */
@@ -74,39 +49,22 @@ export declare const CountryCodeSchema: z.ZodString;
 /**
  * BCP 47, short form, STRICT — for a locale that arrives on a request.
  *
- * ⚠ BUILT FROM `LOCALES`, never written out. The first draft was
- * `z.enum(['fr', 'en'])` and `arthome-check-enums` refused it inside the minute:
- * a hand-written vocabulary in the module whose whole job is carrying vocabularies
- * to the boundary.
- *
- * ⚠ AND THERE IS NO `LocaleSchema` ANY MORE, DELIBERATELY. Under that name it was
- * the only locale schema there was, so `@arthome/contracts`'
- * `LocalizedText.contentLanguage` — a RESPONSE field — used it and emitted
- * `enum: ['fr','en']`. The day a third content language is authored, a television
- * rejects the whole payload the text sits in: critical rule 10, broken on the
- * member while honoured on the shape. The cause was the absent counterpart rather
- * than a careless call site — the three `vocabularyIn` sites in `tax.ts` are all
- * `…In` with an `…Out` beside them; this one was `…Schema` with none, so the
- * nearest available name was the wrong direction. An alias would keep the trap
- * open under a familiar name, where a removed export is a compile error at every
- * site that has to choose again (D-065 §H).
+ * ⚠ There is no `LocaleSchema` any more, deliberately. Under that name it was the only
+ * locale schema there was, so `LocalizedText.contentLanguage` — a RESPONSE field — used it
+ * and emitted `enum: ['fr','en']`; the day a third content language is authored, a
+ * television rejects the whole payload the text sits in (critical rule 10). The cause was
+ * the absent counterpart, not a careless call site, so an alias would keep the trap open
+ * under a familiar name where a removed export is a compile error (D-065 §H).
  */
 export declare const LocaleIn: VocabularyIn<typeof LOCALES>;
-/**
- * The same vocabulary, TOLERANT — for a locale a server SERVES. An unknown member
- * is kept as a raw string and treated as neutral, never rejected: a store review
- * is slow and a television runs a year-old build.
- */
+/** The same vocabulary, TOLERANT — for a locale a server serves: an unknown member is kept. */
 export declare const LocaleOut: VocabularyOut;
 /** Lowercase, hyphenated, no leading or trailing hyphen. */
 export declare const SlugSchema: z.ZodString;
 /**
- * An opaque Base64 cursor over `(created_at, id)`.
- *
- * Opaque is the point: a client that can read a cursor will eventually build one,
- * and then the server cannot change its ordering without breaking it. Shape only,
- * and a stale one is refused with `CURSOR_TOO_OLD` rather than silently restarting
- * the page (D-010).
+ * An opaque Base64 cursor over `(created_at, id)`. Opaque is the point: a client that can read one
+ * will build one, and then the server cannot change its ordering. A stale cursor is refused with
+ * `CURSOR_TOO_OLD` rather than silently restarting the page (D-010).
  */
 export declare const PageCursorSchema: z.ZodString;
 //# sourceMappingURL=primitives.d.ts.map

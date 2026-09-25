@@ -1,17 +1,10 @@
+/** The vocabularies of people and rights. */
 /**
- * The vocabularies of people and rights.
+ * The eight canonical roles from `catalogue.json`.
  *
- * ⚠ THIS FILE IS A DECLARING FILE (see catalog.ts).
- */
-/**
- * The EIGHT canonical roles from `catalogue.json`.
- *
- * E6 — `studio-data.js` folds them onto six personas and CRUSHES `director`,
- * `video` and `sound` into a single "run desk". But `grants` tells them apart:
- * `director` may invite `video` and `sound`, the other two may invite nobody.
- * Authorising on the short role would grant an invitation right that does not
- * exist. **The six personas are a LABEL, never a right** — they do not exist in
- * this package.
+ * ⚠ The six studio personas are a label, never a right: they crush `director`,
+ * `video` and `sound` into one "run desk", and authorising on that short role
+ * would grant `director`'s invitation right to `video` and `sound` (E6).
  */
 export declare const MEMBER_ROLES: readonly ["artist", "production", "coordination", "director", "video", "sound", "moderation", "treasury"];
 export type MemberRole = (typeof MEMBER_ROLES)[number];
@@ -26,9 +19,8 @@ export declare const MemberRole: {
     readonly TREASURY: "treasury";
 };
 /**
- * The post held on ONE date, as opposed to the role held in the channel.
- * Two scales, two lifecycles: confusing them would turn revoking a stand-in
- * into exclusion from the channel.
+ * The post held on one date, not the role held in the channel: confusing the two
+ * would turn revoking a stand-in into exclusion from the channel.
  */
 export declare const CREW_ROLES: readonly ["director", "video", "sound", "moderation"];
 export type CrewRole = (typeof CREW_ROLES)[number];
@@ -39,10 +31,8 @@ export declare const CrewRole: {
     readonly MODERATION: "moderation";
 };
 /**
- * The studio's navigation entries.
- *
- * Access is the UNION of the roles held, NEVER a rank: someone holding both
- * `video` and `moderation` on the same channel opens the union of the two.
+ * The studio's navigation entries. Access is the union of the roles held, never
+ * a rank: `video` plus `moderation` opens the union of the two.
  */
 export declare const NAVIGATION_ENTRIES: readonly ["agenda", "dashboard", "moderation_page", "crew", "events", "stream", "stats", "tickets", "store", "replays", "team", "payouts", "journal", "settings", "help"];
 export type NavigationEntry = (typeof NAVIGATION_ENTRIES)[number];
@@ -75,9 +65,9 @@ export declare const DatePane: {
     readonly REPLAY: "replay";
 };
 /**
- * A device IS registered; a SESSION is the (device, profile) pair.
- * E13: `catalogue.json` declares `devices` as an INTEGER and `fixtures.js` as
- * a LIST of objects. Two shapes, one name.
+ * A device is registered; a session is the (device, profile) pair. E13:
+ * `catalogue.json` declares `devices` as an integer and `fixtures.js` as a list
+ * of objects — two shapes, one name.
  */
 export declare const DEVICE_KINDS: readonly ["tv", "mobile", "tablet", "desktop", "stick", "console", "box"];
 export type DeviceKind = (typeof DEVICE_KINDS)[number];
@@ -91,23 +81,13 @@ export declare const DeviceKind: {
     readonly BOX: "box";
 };
 /**
- * THE SEVEN SERVICES, and until today no constant owned them.
+ * The seven services.
  *
  * 174 operations across the two contracts declare `x-arthome-upstream`, which is
- * what makes fan-out countable — how many services one request touches, and
- * therefore what a single slow one costs. Nothing compared those names to
- * anything. `backend-contracts` found three operations declaring services they
- * never call, two of them its own, by reading rather than by any gate.
- *
- * ⚠ AND A NAME WAS IN USE THAT IS NOT A SERVICE. Two operations declare
- *   `realtime`, and their own comments say plainly what they are: a read of the
- *   real-time GATEWAY's Redis resume buffer, *"not a query against the six
- *   services"*. The annotation was right about the dependency and wrong about
- *   the category, so anyone counting upstreams got eight services out of seven.
- *
- * Listed beside `SURFACES` because it is the same kind of fact — who calls whom
- * — and because that constant's absence is what let `X-Arthome-Surface` drift
- * once already (D-036).
+ * what makes fan-out countable, and nothing compared those names to anything:
+ * three declared services they never call, and `realtime` — the real-time
+ * gateway's Redis resume buffer, not a service — made upstream counts read eight
+ * services out of seven.
  */
 export declare const SERVICES: readonly ["identity", "catalog", "ticketing", "streaming", "chat", "payouts", "notifications"];
 export type Service = (typeof SERVICES)[number];
@@ -122,18 +102,14 @@ export declare const Service: {
 };
 /**
  * Everything a BFF operation may declare as its upstream: the seven services,
- * and the things that are NOT services but are still depended on.
- *
- * ⚠ SPREAD, so the seven are stated once. A gate compares every
- *   `x-arthome-upstream` member against this list, which is the only reason the
- *   category error above could be caught rather than counted.
+ * plus what is depended on without being one. A gate compares every
+ * `x-arthome-upstream` member against this list.
  */
 export declare const UPSTREAMS: readonly [...typeof SERVICES, 'realtime'];
 export type Upstream = (typeof UPSTREAMS)[number];
 /**
- * The studio journal is by-name AND situated: "who decided, when, from which
- * surface". `system` is an actor like any other — automatic standby screen,
- * lease expiry, automatic moderation.
+ * Where a decision was taken — the studio journal is by-name and situated, and
+ * `system` is an actor like any other (standby screen, lease expiry).
  */
 export declare const SURFACES: readonly ["storefront_web", "storefront_mobile", "storefront_tv", "studio_web", "studio_mobile", "system"];
 export type Surface = (typeof SURFACES)[number];
@@ -145,7 +121,7 @@ export declare const Surface: {
     readonly STUDIO_MOBILE: "studio_mobile";
     readonly SYSTEM: "system";
 };
-/** The third channel, proposed and not observed: `in-app`, not `sms` (D-017). */
+/** The channels a notification takes; the third is `in_app`, not `sms` (D-017). */
 export declare const NOTIFICATION_CHANNELS: readonly ["push", "email", "in_app"];
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 export declare const NotificationChannel: {

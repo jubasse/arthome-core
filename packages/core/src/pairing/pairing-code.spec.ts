@@ -12,27 +12,11 @@ import {
 } from './pairing-code.js';
 
 /**
- * PROTECTED INVARIANT
- *   Every normalisable confusable class keeps EXACTLY ONE member of itself in
- *   the alphabet. No mapped class keeps two. The one class that keeps three is
- *   refused by name rather than corrected.
- *
- * WHY THIS TEST EXISTS
- *   The alphabet lived as a string inside `adr-auth.md` §5.1 and nowhere else.
- *   It drifted twice in two days — the second time as a duplicate copy written
- *   three paragraphs below the first, inside the section arguing against
- *   restating values. Four prose reviews missed it; an assertion caught it
- *   immediately.
- *
- *   So these assertions are computed FROM THE STRING, never written beside it.
- *   A test that restated the expected survivors would be the parallel literal
- *   table again, wearing a test's costume.
- *
- *   And the invariant does not determine the string: 960 alphabets satisfy it
- *   (3 × 2^5 × C(5,3)). That is why the value is imported and not reconstructed
- *   here — shape alone would have produced a conformant alphabet that is not
- *   this one, and nothing would have noticed until a paired television refused
- *   a valid code.
+ * The assertions are computed FROM the imported string, never written beside
+ * it: a restated table of survivors would be the parallel literal again, in a
+ * test's costume. And the invariant does not pin the value — 960 alphabets
+ * satisfy it (3 × 2^5 × C(5,3)) — so the alphabet is imported, never rebuilt
+ * here from its shape.
  */
 describe('the pairing alphabet', () => {
   it('has 27 symbols, all distinct', () => {
@@ -44,12 +28,10 @@ describe('the pairing alphabet', () => {
     for (const excluded of ['0', '1', 'B', 'G', 'I', 'O', 'S', 'U', 'Z']) {
       expect(PAIRING_CODE_ALPHABET).not.toContain(excluded);
     }
-    // 36 alphanumerics minus nine exclusions.
     expect(PAIRING_CODE_ALPHABET).toHaveLength(36 - 9);
   });
 
   it('keeps EXACTLY ONE member of every normalisable class', () => {
-    // THE ASSERTION THAT STOPS A THIRD DRIFT, and it is computed.
     for (const confusableClass of PAIRING_CONFUSABLE_CLASSES) {
       const survivors = survivorsOf(confusableClass);
       const isRefusingClass = survivors.length > 1;
@@ -57,8 +39,7 @@ describe('the pairing alphabet', () => {
       if (!isRefusingClass) {
         expect(survivors).toHaveLength(1);
       }
-      // No class may keep exactly two: a misreading would then produce a code
-      // that is valid but wrong, with nothing to signal where.
+      // Exactly two survivors would let a misreading give a valid but wrong code.
       expect(survivors).not.toHaveLength(2);
     }
   });
@@ -71,9 +52,7 @@ describe('the pairing alphabet', () => {
 
   it('maps every mappable excluded glyph, and only onto a survivor', () => {
     for (const [typed, mapped] of Object.entries(PAIRING_CODE_NORMALISATION)) {
-      // The source is excluded — we never "correct" a character that is legal.
       expect(PAIRING_CODE_ALPHABET).not.toContain(typed);
-      // The target is the class's single survivor.
       expect(PAIRING_CODE_ALPHABET).toContain(mapped);
       const owningClass = PAIRING_CONFUSABLE_CLASSES.find((c) => c.includes(typed));
       expect(owningClass).toBeDefined();
@@ -86,8 +65,7 @@ describe('the pairing alphabet', () => {
       expect(PAIRING_CODE_NORMALISATION[glyph]).toBeUndefined();
       expect(PAIRING_CODE_ALPHABET).not.toContain(glyph);
     }
-    // Every excluded glyph is either mapped or declared ambiguous — no third
-    // category, which is what makes the table exhaustive rather than partial.
+    // No third category: that is what makes the table exhaustive, not partial.
     for (const confusableClass of PAIRING_CONFUSABLE_CLASSES) {
       for (const glyph of confusableClass) {
         if (PAIRING_CODE_ALPHABET.includes(glyph)) continue;
@@ -100,10 +78,6 @@ describe('the pairing alphabet', () => {
   });
 });
 
-/**
- * PROTECTED INVARIANT
- *   Refusing is a named outcome, never a guess — and never a silent pass.
- */
 describe('normalising a typed pairing code', () => {
   it('corrects the six mappable glyphs', () => {
     expect(normalizePairingCodeInput('SBZGIU')).toBe('5826LV');
@@ -116,9 +90,6 @@ describe('normalising a typed pairing code', () => {
   });
 
   it('REFUSES the ambiguous glyphs by name, pointing at the position', () => {
-    // The whole reason `0` and `O` are unmapped: their class keeps three
-    // members, so there is no correct target. One retry on a remote beats a
-    // guess.
     expect(() => normalizePairingCodeInput('ACD0EF')).toThrow(/ambiguous_glyph/);
     expect(() => normalizePairingCodeInput('ACDOEF')).toThrow(/ambiguous_glyph/);
   });

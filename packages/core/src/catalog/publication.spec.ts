@@ -13,19 +13,11 @@ import {
 import { PublicationState } from '../vocabulary/catalog.js';
 
 /**
- * PROTECTED INVARIANT
- *   The lock is on the PAIR `from > to`, never on the STATE.
- *
- * WHY THIS TEST EXISTS
- *   E5: the fixtures encode `lockedTransitions: ['scheduled',
- *   'replay_online']` — a list of STATES — and test membership of the current
- *   state. The mockup encodes pairs. Those are two semantics, and the
- *   difference is not academic: locking a STATE would also prevent ENTERING it.
- *   A date could never be published.
+ * E5: the fixtures locked STATES, the mockup locked PAIRS. Locking a state would also prevent
+ * ENTERING it, and a date could never be published.
  */
 describe('the lock is on the transition', () => {
   it('lets you ENTER a locked state', () => {
-    // This is the case the fixtures' semantics would have broken.
     expect(() =>
       assertTransitionAllowed(PublicationState.DRAFT, PublicationState.SCHEDULED, true),
     ).not.toThrow();
@@ -41,8 +33,6 @@ describe('the lock is on the transition', () => {
   });
 
   it('tells "one-way" apart from "unknown" — two refusals, two messages', () => {
-    // Going back on a committed price is not the same thing as attempting a
-    // transition that does not exist. The first deserves an explanation.
     expect(
       irreversiblePromiseBlocking(PublicationState.RESERVE, PublicationState.DRAFT),
     ).toBeNull();
@@ -62,14 +52,8 @@ describe('the lock is on the transition', () => {
 });
 
 /**
- * PROTECTED INVARIANT
- *   Two transitions are not commands: they are CAUSED by a `streaming` event.
- *
- * WHY
- *   That is what keeps `Publication` the aggregate of a SINGLE context, when it
- *   looked as if it straddled three. The "go on air" command goes to
- *   `streaming`, which alone knows whether the feed is coming in — `catalog`
- *   LEARNS it.
+ * Two transitions are CAUSED by a `streaming` event, never commanded: that is what keeps
+ * `Publication` the aggregate of a SINGLE context, when it looked as if it straddled three.
  */
 describe('what the studio does not command', () => {
   it('never offers `technical -> live` or `live -> ended` to an operator', () => {
@@ -88,14 +72,8 @@ describe('what the studio does not command', () => {
 });
 
 /**
- * PROTECTED INVARIANT
- *   The transitions offered are computed FOR THIS OPERATOR.
- *
- * WHY
- *   Only the owner and production move a date; a run desk sees the sheet and
- *   does not move it. And it is what lets the realtime correction carry the
- *   RECIPIENT's transitions — without which a stale button would stay on
- *   screen, which would only move the defect one notch along.
+ * The transitions offered are computed FOR THIS OPERATOR, which is what lets the realtime
+ * correction carry the RECIPIENT's transitions — otherwise a stale button stays on screen.
  */
 describe('transitions are per operator', () => {
   it('offers nothing to someone who cannot decide', () => {
@@ -109,15 +87,7 @@ describe('transitions are per operator', () => {
   });
 });
 
-/**
- * PROTECTED INVARIANT
- *   The RANK follows the state machine, never alphabetical order.
- *
- * WHY
- *   `studio-web` Q5: the events table sorts by state. Without a served rank,
- *   each surface would reinvent `STATE_ORDER` — and alphabetical order would
- *   put `draft` after `replay-online`.
- */
+/** `studio-web` Q5: without a served rank, each surface reinvents `STATE_ORDER`, alphabetically. */
 describe('the rank of the states', () => {
   it('follows the machine, not the alphabet', () => {
     expect(orderRankOf(PublicationState.DRAFT)).toBeLessThan(
@@ -126,8 +96,6 @@ describe('the rank of the states', () => {
     expect(orderRankOf(PublicationState.LIVE)).toBeLessThan(
       orderRankOf(PublicationState.REPLAY_ONLINE),
     );
-    // The alphabet would put `draft` (d) after `replay-online` (r): that is not
-    // what we want, and it is what a surface would do without a served rank.
     expect(orderRankOf(PublicationState.DRAFT)).toBeLessThan(
       orderRankOf(PublicationState.REPLAY_ONLINE),
     );
@@ -135,22 +103,13 @@ describe('the rank of the states', () => {
 });
 
 /**
- * PROTECTED INVARIANT
- *   The authoritative checklist has SEVEN items, and it returns the MISSING
- *   ones — never a percentage.
- *
- * WHY
- *   `studio-web` Q7: the fixtures carry four, the sheet shows seven, and both
- *   answer the same question. The four are an arbitrary subset. And the screen
- *   counts what is missing ("publish — 3 missing"): a percentage would force it
- *   to recompute what the server already knows.
+ * `studio-web` Q7: the fixtures carried four items and the sheet showed seven, both answering the
+ * same question. The screen counts what is MISSING ("publish — 3 missing"), never a percentage.
  */
 describe('the publication gate', () => {
   it('carries nine items, seven of them blocking', () => {
-    // ONE vocabulary. Blocking is a property of the item, because promoting a
-    // warning to blocking is a product decision that will happen, and under two
-    // vocabularies it moved an item between them — a break for anyone matching
-    // on either. Here it flips a boolean.
+    // Blocking is a PROPERTY of the item: under two vocabularies, promoting a warning moved it
+    // between them — a break for anyone matching on either. Here it flips a boolean.
     expect(PUBLICATION_CHECKLIST_ITEMS).toHaveLength(9);
     expect(PUBLICATION_CHECKLIST_ITEMS.filter(isBlockingChecklistItem)).toHaveLength(7);
   });
@@ -171,9 +130,7 @@ describe('the publication gate', () => {
   });
 
   it('does NOT block on chapters or on the assigned moderator', () => {
-    // It must be possible to publish a date without chapters, and an unassigned
-    // post can be filled up to the last day. They are warnings — and they are now
-    // warnings BY PROPERTY rather than by living in a second vocabulary.
+    // A date can be published without chapters, and a moderator assigned up to the last day.
     const blocking = PUBLICATION_CHECKLIST_ITEMS.filter(isBlockingChecklistItem);
     const readiness = publicationReadiness(blocking);
     expect(readiness.ready).toBe(true);

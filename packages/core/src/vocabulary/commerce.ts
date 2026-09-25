@@ -1,11 +1,9 @@
 /**
  * Viewer-commerce vocabularies: what the viewer buys, and what that purchase
  * opens.
- *
- * ⚠ THIS FILE IS A DECLARING FILE (see catalog.ts).
  */
 
-/** Settled by `shared`: `enums.priceTier`. */
+/** The price tier on a ticket, settled by `shared`: `enums.priceTier`. */
 export const PRICE_TIERS = ['full', 'reduced', 'support'] as const;
 export type PriceTier = (typeof PRICE_TIERS)[number];
 
@@ -16,21 +14,12 @@ export const PriceTier = {
 } as const;
 
 /**
- * E1 — THE MOST SERIOUS GAP IN THE HANDOVER FILE, and it is not a display
- * defect.
+ * The plan a viewer holds; `catalogue.json` has authority.
  *
- * Four disjoint vocabularies coexisted: `plans[]` in `catalogue.json`
- * (`free`/`pass`/`premium`), `accounts[].plan` (`season`/`monthly`/`none`), the
- * i18n files translating all six, and two mockups inventing more. VERIFIED
- * consequence: `helpers.planOf()` does
- * `plans().filter(p => p.id === account.plan)[0] || plans()[0]` — NO reference
- * account matches its own plan, so ALL of them silently fall back to `free`.
- * And since `plan.opens[]` gates playback access, that is an AUTHORIZATION
- * DEFECT.
- *
- * `catalogue.json` has authority. `monthly`, `season` and `none` are removed:
- * no data references them. And a single-ticket purchase is not a plan, it is a
- * PURCHASE MODE: it does not belong in this vocabulary.
+ * E1: of four disjoint vocabularies, `helpers.planOf()` did
+ * `plans().filter(p => p.id === account.plan)[0] || plans()[0]`, and no reference
+ * account matched its own plan, so all of them fell silently back to `free` —
+ * an authorization defect, since `plan.opens[]` gates playback.
  */
 export const PLAN_TIERS = ['free', 'pass', 'premium'] as const;
 export type PlanTier = (typeof PLAN_TIERS)[number];
@@ -41,14 +30,7 @@ export const PlanTier = {
   PREMIUM: 'premium',
 } as const;
 
-/**
- * The NINE openings `catalogue.json` actually carries.
- *
- * Spelling: `shared/`'s, TO THE LETTER — so kebab-case (K6).
- * An `opens.includes('multi_screen')` against a payload carrying `multi_screen`
- * returns `false` IN SILENCE: everyone drops to one screen. That is E1's exact
- * shape, reintroduced by the contract after being fixed on the plans.
- */
+/** The nine openings `catalogue.json` carries. */
 export const PLAN_OPENINGS = [
   'browse',
   'trailers',
@@ -85,10 +67,9 @@ export const SubscriptionState = {
 } as const;
 
 /**
- * Five reasons observed in the design, each with a distinct rule.
- * `late-rate` is PRO RATA of the time remaining: the price depends on the
- * moment of reading, so it travels with its validity and is never a frozen
- * string.
+ * Five reasons observed in the design, each with a distinct rule. `late_rate` is
+ * pro rata of the time remaining, so the price depends on the moment of reading
+ * and travels with its validity rather than as a frozen string.
  */
 export const PROMOTION_REASONS = [
   'pre_sale',
@@ -107,7 +88,7 @@ export const PromotionReason = {
   LATE_RATE: 'late_rate',
 } as const;
 
-/** D-011: two DISTINCT orders, never a mixed one. */
+/** Distinct orders, never a mixed one (D-011). */
 export const ORDER_KINDS = ['seat', 'merch', 'subscription'] as const;
 export type OrderKind = (typeof ORDER_KINDS)[number];
 
@@ -118,9 +99,9 @@ export const OrderKind = {
 } as const;
 
 /**
- * `held` while an OUTCOME is open, `refunded` if the date is cancelled,
- * `suspended` while a bank-details change waits for its counter-signature.
- * What `shared/` carries and what has authority: 12% commission, 14-day delay,
+ * Where a payout stands: `held` while an outcome is open, `refunded` if the date
+ * is cancelled, `suspended` while a bank-details change waits for its
+ * counter-signature. `shared/` has authority: 12% commission, 14-day delay,
  * rounding to the minor unit on each component taken separately.
  */
 export const PAYOUT_STATES = ['scheduled', 'held', 'paid', 'refunded', 'suspended'] as const;
@@ -135,9 +116,9 @@ export const PayoutState = {
 } as const;
 
 /**
- * The rate depends on the pair JURISDICTION x NATURE OF SUPPLY, never on a
- * per-market constant. Derby Quad v HMRC held that the theatre-ticket exemption
- * DOES NOT EXTEND to a live stream.
+ * What is being supplied, for tax. The rate depends on the pair jurisdiction x
+ * nature of supply, never on a per-market constant: Derby Quad v HMRC held that
+ * the theatre-ticket exemption does not extend to a live stream.
  */
 export const TAX_SUPPLY_KINDS = [
   'live_stream_access',
@@ -155,9 +136,9 @@ export const TaxSupplyKind = {
 } as const;
 
 /**
- * The EU requires TWO NON-CONTRADICTORY pieces of evidence for a B2C sale — and
- * Stripe Tax favours a single address instead of comparing them, so the
- * evidence rule CANNOT be delegated to it.
+ * What may evidence a buyer's location. The EU requires two non-contradictory
+ * pieces for a B2C sale, and Stripe Tax favours a single address instead of
+ * comparing them, so the evidence rule cannot be delegated to it.
  */
 export const TAX_EVIDENCE_KINDS = [
   'billing_address',

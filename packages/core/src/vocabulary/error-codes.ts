@@ -1,39 +1,29 @@
 /**
- * THE ERROR CODES, DECLARED — and until D-067 most of them were declared nowhere.
+ * The error codes, declared — and until D-067 most of them were declared nowhere.
  *
- * ⚠ A SERVED CODE IS ITS OWN TRANSLATION KEY. That is the ruling behind the
- *   spelling: the server never sends a sentence, because a sentence chooses the
- *   reader's language for them, so it sends a code the surface looks up. One
- *   format, `context.what_happened`, and the value IS the key.
+ * ⚠ A served code is its own translation key. The server never sends a sentence, because a
+ * sentence chooses the reader's language for them, so it sends a code the surface looks up: one
+ * format, `context.what_happened`, and the value IS the key. The name keeps the capitals and the
+ * value carries the key — code writes `ModerationErrorCode.ALREADY_SETTLED`, the wire carries
+ * `moderation.already_settled`, and nothing at a call site says the value.
  *
- * ⚠ THE NAME KEEPS THE CAPITALS AND THE VALUE CARRIES THE KEY. Code writes
- *   `ModerationErrorCode.ALREADY_SETTLED`; the wire carries
- *   `moderation.already_settled`. Nothing at a call site says the value.
+ * ⚠ The prefix is not decoration, measured rather than asserted: flattening the domain's 24 codes
+ * to capitals merges four errors into two — `instant.invalid` and `rate.invalid` both becoming
+ * `INVALID`, `hold.quantity_invalid` and `order.quantity_invalid` both `QUANTITY_INVALID`.
  *
- * ⚠ WHY THE PREFIX IS NOT DECORATION, measured rather than asserted: flattening
- *   the domain's 24 codes to capitals would have MERGED FOUR ERRORS INTO TWO —
- *   `instant.invalid` and `rate.invalid` both becoming `INVALID`,
- *   `hold.quantity_invalid` and `order.quantity_invalid` both becoming
- *   `QUANTITY_INVALID`. The prefix is what stops two different failures sharing a
- *   name.
- *
- * ⚠ AND WHY THIS FILE EXISTS AT ALL. 35 error codes were published in the two
- *   contracts. Exactly ONE existed in this package. The other 34 lived only inside
- *   response EXAMPLES — a position `check-vocabulary` does not read and
- *   `check-enums` does not sweep, so no instrument here had ever seen them. A code
- *   with no owning constant is one every surface hardcodes and nobody can rename.
- *
- * *The spelling was the symptom. This was the defect.* D-067.
+ * ⚠ Why the file exists at all: 35 error codes were published in the two contracts and exactly
+ * one existed in this package. The other 34 lived only inside response EXAMPLES, a position
+ * `check-vocabulary` does not read and `check-enums` does not sweep, so no instrument here had
+ * ever seen them. A code with no owning constant is one every surface hardcodes and nobody can
+ * rename. The spelling was the symptom; this was the defect. D-067.
  */
 
 import { WATCH_DENIAL_REASONS } from './entitlement.js';
 
 /**
- * The BFF's OWN refusals, and the only family here that is not a domain notion.
- * `api.not_found` is not a missing aggregate: it is a route that does not resolve.
- * A service that reaches for one of these to express a domain rule has put a
- * transport concern where a rule belongs, and the surface will render "not found"
- * for a date that exists and is simply not on sale.
+ * The BFF's own refusals, the only family here that is not a domain notion. `api.not_found` is a
+ * route that does not resolve, not a missing aggregate: a service expressing a domain rule with
+ * one of these makes the surface render "not found" for a date that exists and is not on sale.
  */
 export const API_ERROR_CODES = [
   'api.unauthenticated',
@@ -41,12 +31,10 @@ export const API_ERROR_CODES = [
   'api.not_found',
   'api.rate_limited',
   'api.schema_invalid',
-  // ⚠ THREE DISTINCT FAULTS, THREE MEMBERS — 500, 502 and 503 answered
-  //   `upstream_unavailable` alike until this was written, so a caller could not
-  //   tell "we crashed" from "we are restarting", and those differ on the only
-  //   question the caller asks: retry, or do not. `internal` is never retryable,
-  //   `service_unavailable` always is, `upstream_unavailable` is the BFF saying a
-  //   service behind it failed. transport.md's status table names all three.
+  // ⚠ Three distinct faults, three members: 500, 502 and 503 all answered
+  //   `upstream_unavailable`, so a caller could not tell "we crashed" from "we are restarting" —
+  //   the only question it asks. `internal` is never retryable, `service_unavailable` always is,
+  //   `upstream_unavailable` is a service behind the BFF failing (transport.md's status table).
   'api.internal',
   'api.service_unavailable',
   'api.upstream_unavailable',
@@ -73,31 +61,25 @@ export const ApiErrorCode = {
 } as const;
 
 /**
- * Sign-in, sign-up and session refusals.
- * `identity.signed_out_elsewhere` is served to a session that is STILL OPEN on
- * this device and has been revoked from another. It is not an authentication
- * failure and must not be retried as one.
+ * Sign-in, sign-up and session refusals. `identity.signed_out_elsewhere` is served to a session
+ * still open on this device and revoked from another: not an authentication failure, and not to
+ * be retried as one.
  */
 export const IDENTITY_ERROR_CODES = [
   'identity.email_taken',
-  // ⚠ ADDED BECAUSE A SERVICE HAD NOTHING TRUE TO SAY. `account` carries TWO
-  //   `citext unique` columns and only one of them had a code, so a handle
-  //   collision had to be answered either with `email_taken`, which is false, or
-  //   with a generic code, which the contract's 409 design forbids: eighteen
-  //   `'409'` responses share one `Conflict` whose description is "the `code` says
-  //   which one". A missing member is how a service ends up publishing a false
-  //   statement, and the agent that hit this refused to do it rather than pick the
-  //   least bad option.
+  // ⚠ Added because a service had nothing true to say. `account` carries two `citext unique`
+  //   columns and only one had a code, so a handle collision had to be answered with
+  //   `email_taken`, which is false, or with a generic code, which the contract's 409 design
+  //   forbids — eighteen `'409'` responses share one `Conflict` whose description is "the `code`
+  //   says which one". A missing member is how a service publishes a false statement.
   //
-  //   It is NOT covered by the standing vagueness exception below. That exception
-  //   is about an AUTHENTICATION refusal naming which check failed; a registration
-  //   conflict is not one, and `email_taken`'s own existence proves the scope — it
-  //   would otherwise contradict the rule in this file.
+  //   Not covered by the standing vagueness exception below: that is about an AUTHENTICATION
+  //   refusal naming which check failed, and `email_taken`'s own existence proves the scope.
   //
-  //   ⚠ OPEN, AND ABOVE THIS FILE: whether sign-up should disclose a taken EMAIL
-  //     at all. The standard mitigation is to answer as if it succeeded and
-  //     disambiguate out of band. That is a registration-flow decision, and until
-  //     it is taken, publishing `email_taken` is the project's answer.
+  //   ⚠ Open, and above this file: whether sign-up should disclose a taken EMAIL at all. The
+  //     standard mitigation is to answer as if it succeeded and disambiguate out of band — a
+  //     registration-flow decision, and until it is taken, publishing `email_taken` is the
+  //     project's answer.
   'identity.handle_taken',
   'identity.two_factor_required',
   'identity.signed_out_elsewhere',
@@ -112,10 +94,8 @@ export const IdentityErrorCode = {
 } as const;
 
 /**
- * Device pairing — the television's way in, where the same code is polled
- * repeatedly. `pairing.slow_down` is a RATE signal on a legitimate poll, not a
- * refusal: a surface that treats it as one abandons a pairing that was about to
- * succeed.
+ * Device pairing, where the same code is polled repeatedly. `pairing.slow_down` is a rate signal
+ * on a legitimate poll: a surface treating it as a refusal abandons a pairing about to succeed.
  */
 export const PAIRING_ERROR_CODES = [
   'pairing.slow_down',
@@ -132,10 +112,7 @@ export const PairingErrorCode = {
   EXECUTION_ENGAGED: 'pairing.execution_engaged',
 } as const;
 
-/**
- * Chat refusals. Both are about WHO may write, never about what was written — a
- * removed message is moderation's vocabulary, not this one.
- */
+/** Chat refusals, both about who may write: a removed message is moderation's vocabulary. */
 export const CHAT_ERROR_CODES = ['chat.holders_only', 'chat.rate_limited'] as const;
 export type ChatErrorCode = (typeof CHAT_ERROR_CODES)[number];
 
@@ -145,9 +122,8 @@ export const ChatErrorCode = {
 } as const;
 
 /**
- * The moderation queue's two concurrency refusals. Both mean another moderator got
- * there first, and they are NOT the same event: `already_claimed` is recoverable by
- * waiting, `already_settled` is final.
+ * The moderation queue's concurrency refusals. Another moderator got there first, but not the same
+ * event: `already_claimed` is recoverable by waiting, `already_settled` is final.
  */
 export const MODERATION_ERROR_CODES = [
   'moderation.already_claimed',
@@ -165,9 +141,7 @@ export const ModerationErrorCode = {
 } as const;
 
 /**
- * Refusals about a DATE and what may still be changed on it. Every one is a one-way
- * passage showing through: once seats are sold, once prices are engaged, once a
- * replay policy is final, the door is shut. They are the wire's half of
+ * Refusals about a date and what may still be changed on it — the wire's half of
  * `publication.ts`'s irreversible transitions.
  */
 export const CATALOG_ERROR_CODES = [
@@ -192,9 +166,8 @@ export const CatalogErrorCode = {
 } as const;
 
 /**
- * Channel membership, crew and ownership refusals.
- * `channel.same_actor_forbidden` is the four-eyes rule made into a code: the person
- * who raised a bank-change request may not countersign it.
+ * Channel membership, crew and ownership refusals. `channel.same_actor_forbidden` is the four-eyes
+ * rule as a code: whoever raised a bank-change request may not countersign it.
  */
 export const CHANNEL_ERROR_CODES = [
   'channel.has_open_obligations',
@@ -213,10 +186,7 @@ export const ChannelErrorCode = {
   SAME_ACTOR_FORBIDDEN: 'channel.same_actor_forbidden',
 } as const;
 
-/**
- * Payout and reconciliation refusals. A period does not close over an unexplained
- * discrepancy — the money has to be accounted for before the book shuts.
- */
+/** Payout refusals: a period does not close over an unexplained discrepancy. */
 export const PAYOUT_ERROR_CODES = ['payout.reconciliation_discrepancy_unexplained'] as const;
 export type PayoutErrorCode = (typeof PAYOUT_ERROR_CODES)[number];
 
@@ -243,15 +213,7 @@ export const OrderErrorCode = {
 } as const;
 
 /**
- * THE DOMAIN'S refusals THAT REACH A SURFACE — a rule said no and somebody has to
- * be told why. The 24 codes `DomainError` was already throwing as string literals,
- * plus the studio's checklist refusal the contract published.
- *
- * ⚠ THESE WERE LITERALS AT THEIR THROW SITES and nothing compared them to
- *   anything. Declaring them here is what makes `arthome-check-enums` report the
- *   copy, which it did within the minute for the one that overlapped an
- *   already-declared vocabulary — `moderation.already_settled` — and which it now
- *   does for all of them.
+ * The domain's refusals that reach a surface: a rule said no and somebody has to be told why.
  */
 export const DOMAIN_ERROR_CODES = [
   'capacity.tier_must_widen',
@@ -285,47 +247,29 @@ export const DomainErrorCode = {
 } as const;
 
 /**
- * THE DOMAIN'S INTERNAL GUARDS, which no contract publishes and none should.
+ * The domain's internal guards, which no contract publishes and none should.
  *
- * ⚠ THE SPLIT IS A JUDGEMENT AND IT IS FLAGGED AS ONE. `check-vocabulary`'s inverse
- *   check reported 23 domain codes reaching neither contract — a true finding with
- *   two causes mixed together: some are refusals the contracts have simply not
- *   published yet, and some can only fire on a value that never came from a client.
- *   `money.currency_mismatch` is summing two currencies. `instant.invalid` is a
- *   malformed instant INSIDE the system — a malformed one from a client is
- *   `api.schema_invalid`, rejected at the boundary before any rule runs. A surface
- *   cannot provoke these and has nothing to render for them, so publishing them
- *   would be a contract promising errors it cannot produce.
+ * ⚠ The split is a judgement. `check-vocabulary`'s inverse check reported 23 domain codes
+ * reaching neither contract, a true finding with two causes mixed: some are refusals the
+ * contracts have not published yet, and some can only fire on a value that never came from a
+ * client — `money.currency_mismatch` is summing two currencies, and `instant.invalid` is a
+ * malformed instant INSIDE the system, since a client's is `api.schema_invalid` at the boundary.
+ * A surface cannot provoke these and has nothing to render for them.
  *
- * ⚠ TWO WERE FLAGGED AS UNCERTAIN AND BOTH WERE THEN CHECKED. Both hold, and one of
- *   the two REASONS was wrong, which is the part worth keeping:
+ * Two flagged uncertain were checked. Both hold, and one reason was wrong: `money.count_invalid`
+ * is a guard, because a count reaching `multiplyByCount` has already passed
+ * `order.quantity_invalid`; `content.empty_in_both_languages` is published, but not because an
+ * artist submitted an empty form — `pickLanguage` throws it ON READ, when the server composes a
+ * response and finds stored content empty in both languages.
  *
- *     `money.count_invalid` — guard, confirmed. It protects
- *     `multiplyByCount(price, count)`, and a count reaching that function has
- *     already passed `order.quantity_invalid` upstream. A negative one arriving here
- *     means we let it through, not that a buyer asked for it.
+ * ⚠ The boundary question is settled, and the answer is "as you go" (D-069): it depends on the
+ * case and moves with the code, so this split is a starting position the first service may move.
+ * Nothing here has to remember it — the inverse check fails the day a member declared domain-only
+ * reaches a contract.
  *
- *     `content.empty_in_both_languages` — published, confirmed, WRONG REASON. It was
- *     justified as an artist submitting an empty form. It is not a write at all:
- *     `pickLanguage` throws it ON READ, when the server composes a response and
- *     finds stored content empty in both languages. A surface meets it while
- *     rendering a page, which is a better argument for publishing than the one first
- *     given.
- *
- * ⚠ THE QUESTION UNDERNEATH IS SETTLED, AND THE ANSWER IS "AS YOU GO" (D-069). The
- *   project owner ruled that the boundary depends on the case and moves with the
- *   code: the population of rules is small, the codes will shift during
- *   implementation anyway, and the rules that need naming cluster in the studio. So
- *   this split is a STARTING POSITION the first service may move, not a decision
- *   awaiting ratification. *Where is the validation boundary* remains the right
- *   question to ask of any individual code, and nothing here has to remember the
- *   answer: `check-vocabulary`'s inverse check fails the day a member declared
- *   domain-only reaches a contract.
- *
- *   ⚠ ONE STANDING EXCEPTION: `identity.*` STAYS VAGUE ON PURPOSE. An authentication
- *     refusal that says which check failed is an oracle, and answers a question the
- *     caller was not entitled to ask. It is the one family where "be more specific"
- *     is the wrong instinct.
+ * ⚠ One standing exception: `identity.*` stays vague on purpose. An authentication refusal that
+ * says which check failed is an oracle, and answers a question the caller was not entitled to
+ * ask. It is the one family where "be more specific" is the wrong instinct.
  */
 export const DOMAIN_GUARD_CODES = [
   'i18n.key_malformed',
@@ -355,29 +299,17 @@ export const DomainGuardCode = {
 } as const;
 
 /**
- * EVERY error code, composed — the vocabulary the two contracts declare against.
+ * Every error code, composed — the vocabulary the two contracts declare against.
  *
- * ⚠ SPREAD, NEVER RETYPED. A union written out by hand is a parallel literal table
- *   of nine other tables, and it would drift the first time a family gains a
- *   member. Adding one to any list above puts it here with nothing to edit.
+ * ⚠ Spread, never retyped, in the value and in the annotation alike: a hand-written union is a
+ * parallel literal table of nine other tables, and `isolatedDeclarations` refuses a spread array
+ * without an annotation (`TS9018`).
  *
- * ⚠ AND IT EXISTS BECAUSE THE GATE ASKED FOR IT, from the direction nobody watches.
- *   `check-vocabulary` runs an INVERSE check — every member a domain vocabulary
- *   declares must reach at least one contract — and it failed on all nine families
- *   at once. The codes were in both documents the whole time, in RESPONSE EXAMPLES,
- *   which is a position the gate does not read and cannot. The honest fix was not to
- *   widen the gate's reach: it was that **a contract should publish the error codes
- *   it can return**, so a generated client knows what it may receive instead of
- *   discovering it from an example. `Error.code` now declares this vocabulary,
- *   narrowed per document — 32 in the storefront, 25 in the studio — and the gate
- *   compares both.
- *
- * ⚠ THE ANNOTATION IS DERIVED, NOT WRITTEN OUT. `isolatedDeclarations` refuses a
- *   spread array without one (`TS9018`, because it will not infer what it cannot
- *   check in isolation), and writing the members into the type would be the parallel
- *   literal table this file exists against, in a type position where nobody greps.
- *   `readonly [...typeof API_ERROR_CODES, …]` composes the tuple types the same way
- *   the value composes the tuples.
+ * It exists because `check-vocabulary`'s inverse check — every member a domain vocabulary
+ * declares must reach at least one contract — failed on all nine families at once. The codes were
+ * in both documents the whole time, inside response EXAMPLES, which the gate cannot read. The fix
+ * was not widening the gate: a contract should publish the error codes it can return, so
+ * `Error.code` declares this vocabulary narrowed per document (32 storefront, 25 studio).
  */
 export const ERROR_CODES: readonly [
   ...typeof API_ERROR_CODES,

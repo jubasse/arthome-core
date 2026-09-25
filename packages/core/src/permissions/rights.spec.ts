@@ -5,17 +5,9 @@ import { canDecide, canRevenue, effectiveRightsOf } from './rights.js';
 import { MemberRole, NavigationEntry } from '../vocabulary/people.js';
 
 /**
- * PROTECTED INVARIANT
- *   Folding the eight roles onto six personas NEVER creates a right.
- *
- * WHY THIS TEST EXISTS
- *   E6: `studio-data.js` crushes `director`, `video` and `sound` into a single
- *   "run desk". But `grants` tells them apart — `director` may invite `video`
- *   and `sound`, the other two may invite nobody. Authorising on the short role
- *   grants a sound engineer an invitation right they do not have.
- *
- *   The case that hurts is someone holding TWO roles, because that is where the
- *   temptation of a "rank" comes back.
+ * ⚠ E6: authorising on the six-persona label grants a sound engineer an
+ * invitation right they do not have. The case that hurts is two roles held,
+ * where the temptation of a "rank" comes back.
  */
 describe('the assignable roles', () => {
   it('grants nothing to `video` or to `sound`', () => {
@@ -29,28 +21,17 @@ describe('the assignable roles', () => {
   });
 
   it('returns EMPTY for someone holding `video` AND `moderation`', () => {
-    // The folding case: reduced to "run desk" and "mod", these two roles would
-    // look as if they gave something. They give nothing.
+    // Reduced to "run desk" and "mod", these two would look as if they granted something.
     expect(assignableRolesOf([MemberRole.VIDEO, MemberRole.MODERATION])).toEqual([]);
   });
 
   it('takes the UNION of the roles held, never a maximum', () => {
     const union = assignableRolesOf([MemberRole.DIRECTOR, MemberRole.COORDINATION]);
-    // `coordination` brings `director` and `moderation`; `director` brings
-    // `video` and `sound`. The union of the two, without duplicates.
+    // `coordination` brings `director` and `moderation`, `director` brings the rest.
     expect([...union].sort()).toEqual(['director', 'moderation', 'sound', 'video']);
   });
 });
 
-/**
- * PROTECTED INVARIANT
- *   Access is the UNION of the roles held, never a rank.
- *
- * WHY
- *   It is the rule the studio mobile tab bar applies, and it is arithmetic:
- *   there is no "superior" role. Someone holding `moderation` and `treasury`
- *   opens the union of the two menus, which is neither of them.
- */
 describe('the effective rights', () => {
   it('opens the union of the two menus, which is neither of them', () => {
     const rights = effectiveRightsOf([MemberRole.MODERATION, MemberRole.TREASURY]);
@@ -67,13 +48,8 @@ describe('the effective rights', () => {
 });
 
 /**
- * PROTECTED INVARIANT
- *   `canRevenue` decides WHAT THE RESPONSE CONTAINS, not how it is displayed.
- *
- * WHY
- *   A run desk that received the ticketing gross and did not show it is a LEAK:
- *   the payload is in the clear in a WebView, inspectable, and it survives in
- *   the phone's HTTP cache.
+ * ⚠ `canRevenue` decides what the response CONTAINS: a payload sent and not
+ * displayed is a leak — in the clear in a WebView, and in the phone's HTTP cache.
  */
 describe('the three cross-cutting capabilities', () => {
   it('gives revenue to artist, production and treasury — to them alone', () => {
@@ -86,7 +62,7 @@ describe('the three cross-cutting capabilities', () => {
   });
 
   it('reserves the outcome decision to the owner and to production', () => {
-    // Postpone, cancel, compensate: the others can only REPORT.
+    // Postpone, cancel, compensate: the others can only report.
     expect(canDecide([MemberRole.ARTIST])).toBe(true);
     expect(canDecide([MemberRole.PRODUCTION])).toBe(true);
     expect(canDecide([MemberRole.TREASURY])).toBe(false);

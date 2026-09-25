@@ -1,27 +1,13 @@
 /**
  * `displayStateOf` — THE value the cards show, and the only one.
  *
- * E4: three state axes coexisted on a date with no written hierarchy —
- * `publication.state` (seven values), `run.state` (six) and `outcome` (three) —
- * and NONE of them carried the displayed state. Each surface recomposed the
- * hierarchy its own way: the very definition of a value computed twice.
- *
- * The hierarchy, written once:
- *
- *   outcome  OUTRANKS  run.state  OUTRANKS  publication.state  OUTRANKS  time
- *
- * And the rule that makes all this legitimate (`context-map.md` §0): a rule
- * lives once here and is evaluated everywhere. What is forbidden is two
- * IMPLEMENTATIONS, never two CALLS. The server evaluates at serve time and
- * sends `validUntil`; the surface re-evaluates THE SAME FUNCTION when that
- * instant passes.
+ * E4: three state axes coexisted on a date with no written hierarchy — `publication.state`,
+ * `run.state`, `outcome` — and none carried the displayed state, so each surface recomposed it.
+ * The hierarchy, once: outcome OUTRANKS run.state OUTRANKS publication.state OUTRANKS time.
  */
 
 import type { Instant } from '../kernel/clock.js';
 import { isAfter, isBefore, minutesBetween, plusHours, plusMinutes } from '../time/instant.js';
-// Each name carries BOTH of its meanings: the type (the union of values) and
-// the object of named members. One import is enough, and a rule never writes a
-// string literal — that is what makes `arthome-check-enums` bearable in use.
 import {
   DateOutcome,
   DisplayState,
@@ -30,20 +16,11 @@ import {
   RunState,
 } from '../vocabulary/catalog.js';
 
-/**
- * The BOUNDS of a date — what the contract serves alongside the state.
- *
- * D7: `shared/` carries `startOffsetMin`, an offset relative to the moment the
- * application opens, and `catalogue.json` says it itself — "nothing here
- * expires". Here, instants.
- */
+/** The BOUNDS of a date — what the contract serves alongside the state. */
 export interface DateTiming {
   readonly startsAt: Instant;
   readonly runtimeMin: number;
-  /**
-   * 30 minutes today — and it is a SERVED DOMAIN CONSTANT, not a literal copied
-   * into five surfaces (E11). The TV mockup copied it into several labels.
-   */
+  /** A SERVED domain constant, never a literal copied into five surfaces (E11). */
   readonly roomOpensBeforeMin: number;
   readonly replayPolicy: ReplayPolicy;
   readonly replayWindowHours: number;
@@ -60,12 +37,8 @@ export interface DisplayStateInput {
 export interface DisplayStateResult {
   readonly state: DisplayState;
   /**
-   * The instant at which this state STOPS being true — `null` when only an
-   * event can change it (an outcome is a fact; a draft waits for a command).
-   *
-   * This is what reconciles "no value computed twice" with "a response must
-   * still be right eight hours after being cached". Without it, an application
-   * waking up shows false states AND DOES NOT KNOW THEY ARE FALSE.
+   * The instant at which this state STOPS being true — `null` when only an event can change it.
+   * Without it, an application waking up shows false states and does not know they are false.
    */
   readonly validUntil: Instant | null;
 }
@@ -79,13 +52,8 @@ export function endsAt(timing: DateTiming): Instant {
 }
 
 /**
- * The end of the replay window, or `null` when there is none.
- *
- * It runs from the END of the live show, never from the start. E2: the mobile
- * mockup uses `sub` and `off` where the vocabulary says `subscription` and
- * `none`, and `helpers.stateOf` literally tested `policy !== 'none'` — a date
- * created with `off` would NEVER have been recognised as having no replay.
- * Here the vocabulary is closed and typed: the fault is impossible.
+ * The end of the replay window, or `null` when there is none. It runs from the END of the live
+ * show, never from the start.
  */
 export function replayEndsAt(timing: DateTiming): Instant | null {
   if (timing.replayPolicy === ReplayPolicy.NONE || timing.replayWindowHours <= 0) return null;
@@ -104,7 +72,6 @@ export function progressOf(timing: DateTiming, now: Instant): number {
   return Math.min(1, Math.max(0, elapsed / timing.runtimeMin));
 }
 
-/** The outcome, translated into a displayed state. It REPLACES everything else. */
 function outcomeDisplay(outcome: DateOutcome): DisplayState {
   switch (outcome) {
     case DateOutcome.POSTPONED:
@@ -116,14 +83,7 @@ function outcomeDisplay(outcome: DateOutcome): DisplayState {
   }
 }
 
-/**
- * The publication states that are not yet public: the displayed state IS the
- * publication state.
- *
- * The studio shows those dates, and `displayState` is prescribed on BOTH
- * products — the studio first, since it is the one with three axes to
- * reconcile.
- */
+/** The publication states that are not yet public: the displayed state IS the publication state. */
 function preSaleDisplay(state: PublicationState): DisplayState | null {
   switch (state) {
     case PublicationState.DRAFT:
@@ -140,28 +100,21 @@ function preSaleDisplay(state: PublicationState): DisplayState | null {
 export function displayStateOf(input: DisplayStateInput): DisplayStateResult {
   const { publicationState, runState, outcome, timing, now } = input;
 
-  // 1. THE OUTCOME OUTRANKS EVERYTHING. And it never expires: it is a fact.
   if (outcome !== null) {
     return { state: outcomeDisplay(outcome), validUntil: null };
   }
 
-  // 2. BEING ON AIR outranks time — the run desk can go on air before the
-  //    announced hour, and it is the run desk that is authoritative.
-  //    `interrupted` stays LIVE: `streaming.md` states that the standby screen
-  //    is a VEIL laid over an intact video, never a switch. As long as no
-  //    outcome is declared, the show can resume.
+  // ⚠ `interrupted` stays LIVE: the standby screen is a VEIL over an intact video, never a switch
+  // (`streaming.md`), so the show can resume until an outcome is declared.
   if (runState === RunState.ON_AIR || runState === RunState.INTERRUPTED) {
     return { state: DisplayState.LIVE, validUntil: endsAt(timing) };
   }
 
-  // 3. The non-public states: the badge IS the publication state, and only a
-  //    command changes it.
   const preSale = preSaleDisplay(publicationState);
   if (preSale !== null) {
     return { state: preSale, validUntil: null };
   }
 
-  // 4. TIME, last — and it is time that carries the useful `validUntil`s.
   const opensAt = roomOpensAt(timing);
   if (isBefore(now, opensAt)) {
     return { state: DisplayState.SCHEDULED, validUntil: opensAt };
@@ -183,13 +136,7 @@ export function displayStateOf(input: DisplayStateInput): DisplayStateResult {
   return { state: DisplayState.ENDED, validUntil: null };
 }
 
-/**
- * Is the date behind us, replay included?
- *
- * Used to sort "My tickets": on air and room open first, then upcoming, then
- * replays available, then closed outcomes, then past. That order is a DOMAIN
- * RULE (`storefront-tv`, `TicketCard`), not a screen preference.
- */
+/** Is the date behind us, replay included? */
 export function isFullyOver(timing: DateTiming, now: Instant): boolean {
   const replayUntil = replayEndsAt(timing);
   return isAfter(now, replayUntil ?? endsAt(timing));

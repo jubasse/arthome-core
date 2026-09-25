@@ -1,24 +1,13 @@
-/**
- * A domain error carries a CODE, never a sentence.
- *
- * The "i18n by codes" decision: the API returns codes and their parameters,
- * error envelope included. An English message reaching a screen leaks i18n from
- * the first form error onwards — and it is the payment form that leaks first.
- */
+/** A domain error carries a code and its parameters, never a sentence: i18n by codes. */
 
 /** Message parameters, resolved by the surface against its catalogue. */
 export type MessageParams = Readonly<Record<string, string | number | boolean>>;
 
 /**
- * The NATURE of a failure, which `studio-mobile` asked for and which was
- * missing.
+ * The nature of a failure: retry, understand, or escalate.
  *
- * This is the decision an on-call person has to make in ten seconds: retry,
- * understand, or pick up the escalation phone.
- *
- * `offline_forbidden` is NEVER emitted by a server: it is the nature of a local
- * refusal, before anything is sent. It is in the vocabulary so the surface has
- * a single error shape to render.
+ * ⚠ `offline_forbidden` is never emitted by a server — it is a local refusal,
+ * in the vocabulary so the surface has a single error shape to render.
  */
 export const FAILURE_NATURES = ['refused', 'unavailable', 'offline_forbidden'] as const;
 export type FailureNature = (typeof FAILURE_NATURES)[number];

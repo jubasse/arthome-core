@@ -209,9 +209,9 @@ Declarations: `dist/ticketing/index.d.ts` — 11 exported names.
 
 Declarations: `dist/index.d.ts` — 381 exported names.
 
-- `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — THE SAME number as a card's scarcity threshold.
-- `API_ERROR_CODES` (const) — The BFF's OWN refusals, and the only family here that is not a domain notion.
-- `AUDIENCE_SANCTIONS` (const) — `AUDIENCE_SANCTIONS: readonly ["none", "muted", "banned"]` — AXIS 3 — the sanction on the PERSON, WITHIN ONE CHANNEL.
+- `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
+- `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
+- `AUDIENCE_SANCTIONS` (const) — `AUDIENCE_SANCTIONS: readonly ["none", "muted", "banned"]` — Axis 3 — the sanction on the person, within one channel.
 - `AccountId` (type) — `type AccountId = Brand<'AccountId'>;`
 - `ApiErrorCode` (type+const)
 - `ArtistId` (type) — `type ArtistId = Brand<'ArtistId'>;`
@@ -219,23 +219,23 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `AttributeValue` (interface)
 - `AudienceSanction` (type+const) — `type AudienceSanction = (typeof AUDIENCE_SANCTIONS)[number]; AudienceSanction: { readonly NONE: "none"; readonly MUTED: "muted"; readonly BANNED: "banned"; }`
 - `BASIS_POINTS_SCALE` (const) — `BASIS_POINTS_SCALE = 10000`
-- `BLACKOUT_REASONS` (const) — `BLACKOUT_REASONS: readonly ["co_production", "broadcaster", "festival"]` — A CODE, never a sentence.
-- `BasisPoints` (type) — `type BasisPoints = number;` — Rates travel in BASIS POINTS, as integers: 1200 = 12%, 550 = 5.5%.
+- `BLACKOUT_REASONS` (const) — `BLACKOUT_REASONS: readonly ["co_production", "broadcaster", "festival"]` — A code, never a sentence: 'geography.rightsPolicy.blackoutReasons[]' carries 'label' and 'labelEn', prose written inside the data where eve…
+- `BasisPoints` (type) — `type BasisPoints = number;` — A rate in basis points, as an integer: 1200 = 12%, 550 = 5.5%.
 - `Bilingual` (interface) — Choosing between bilingual content: the READER's language when it exists, the other one otherwise.
 - `BlackoutReason` (type+const)
 - `Brand` (type) — `type Brand<TBrand extends string> = string & { readonly [brand]: TBrand; };` — A nominal type: structurally a string, distinct at compile time.
-- `CATALOG_ERROR_CODES` (const) — Refusals about a DATE and what may still be changed on it.
+- `CATALOG_ERROR_CODES` (const) — Refusals about a date and what may still be changed on it — the wire's half of 'publication.ts''s irreversible transitions.
 - `CHANNEL_ERROR_CODES` (const) — Channel membership, crew and ownership refusals.
 - `CHAT_BURST_THRESHOLD_PER_MINUTE` (const) — `CHAT_BURST_THRESHOLD_PER_MINUTE = 60`
-- `CHAT_ERROR_CODES` (const) — `CHAT_ERROR_CODES: readonly ["chat.holders_only", "chat.rate_limited"]` — Chat refusals.
-- `CHAT_MODES` (const) — `CHAT_MODES: readonly ["open", "emoji", "read_only", "off"]` — Vocabulary from 'catalogue.json'.
-- `CHAT_RATE_WINDOW_SECONDS` (const) — `CHAT_RATE_WINDOW_SECONDS = 60` — The chat's RATE, measured in a DECLARED unit.
-- `CLAIM_LEASE_MINUTES` (const) — `CLAIM_LEASE_MINUTES = 3` — THE CLAIM LEASE — short, and it EXPIRES.
+- `CHAT_ERROR_CODES` (const) — `CHAT_ERROR_CODES: readonly ["chat.holders_only", "chat.rate_limited"]` — Chat refusals, both about who may write: a removed message is moderation's vocabulary.
+- `CHAT_MODES` (const) — `CHAT_MODES: readonly ["open", "emoji", "read_only", "off"]` — The chat mode a channel is in; 'catalogue.json' has authority.
+- `CHAT_RATE_WINDOW_SECONDS` (const) — `CHAT_RATE_WINDOW_SECONDS = 60` — The chat's rate window, in a declared unit.
+- `CLAIM_LEASE_MINUTES` (const) — `CLAIM_LEASE_MINUTES = 3` — The claim lease.
 - `COMMISSION_RATE_BPS` (const) — `COMMISSION_RATE_BPS: BasisPoints` — 'commissionRate: 0.12' from 'catalogue.json', in basis points.
-- `CREDIT_VALIDITY_MONTHS` (const) — `CREDIT_VALIDITY_MONTHS = 12` — THE CREDIT NOTE — an internal currency, therefore a liability.
-- `CREW_ROLES` (const) — `CREW_ROLES: readonly ["director", "video", "sound", "moderation"]` — The post held on ONE date, as opposed to the role held in the channel.
-- `CREW_UNASSIGNED_ALERT_HOURS` (const) — `CREW_UNASSIGNED_ALERT_HOURS = 24` — Crew post unassigned at D-1 — had no owner either.
-- `CRITERIA_VERSION` (const) — `CRITERIA_VERSION = 1` — The VERSION of the criteria grammar.
+- `CREDIT_VALIDITY_MONTHS` (const) — `CREDIT_VALIDITY_MONTHS = 12` — How long a credit note stays valid.
+- `CREW_ROLES` (const) — `CREW_ROLES: readonly ["director", "video", "sound", "moderation"]` — The post held on one date, not the role held in the channel: confusing the two would turn revoking a stand-in into exclusion from the chann…
+- `CREW_UNASSIGNED_ALERT_HOURS` (const) — `CREW_UNASSIGNED_ALERT_HOURS = 24` — Crew post unassigned at D-1.
+- `CRITERIA_VERSION` (const) — `CRITERIA_VERSION = 1` — The version of the criteria grammar: a saved search replays or declares itself stale.
 - `CatalogErrorCode` (type+const)
 - `ChannelErrorCode` (type+const)
 - `ChannelId` (type) — `type ChannelId = Brand<'ChannelId'>;`
@@ -244,23 +244,23 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `Clock` (interface)
 - `CrewRole` (type+const)
 - `CriteriaMigration` (type) — What becomes of a saved search after a grammar change.
-- `DATE_OUTCOMES` (const) — `DATE_OUTCOMES: readonly ["postponed", "cancelled", "interrupted"]` — The OUTCOME.
+- `DATE_OUTCOMES` (const) — `DATE_OUTCOMES: readonly ["postponed", "cancelled", "interrupted"]` — The outcome — a fact about the performance, never rewritten, and it takes precedence over the other two axes.
 - `DATE_PANES` (const) — `DATE_PANES: readonly ["public", "tickets", "chat", "tech", "crew", "replay"]` — The six panes of a date sheet, opened according to effective rights.
 - `DAY_MS` (const) — `DAY_MS = 86400000`
-- `DEFAULT_CHANNELS` (const) — `DEFAULT_CHANNELS: readonly NotificationChannel[]` — The THIRD channel is 'in-app', not 'sms' (D-017).
-- `DEVICE_KINDS` (const) — `DEVICE_KINDS: readonly ["tv", "mobile", "tablet", "desktop", "stick", "console", "box"]` — A device IS registered; a SESSION is the (device, profile) pair.
-- `DISPLAY_STATES` (const) — `DISPLAY_STATES: readonly ["draft", "reserve", "scheduled", "technical", "room_open", "live", "replay", "ended", "postponed", "cancelled", "interrupted"]` — The FOURTH value, derived and unique — WHAT THE BADGE SAYS.
-- `DOMAIN_ERROR_CODES` (const) — THE DOMAIN'S refusals THAT REACH A SURFACE — a rule said no and somebody has to be told why.
-- `DOMAIN_GUARD_CODES` (const) — THE DOMAIN'S INTERNAL GUARDS, which no contract publishes and none should.
+- `DEFAULT_CHANNELS` (const) — `DEFAULT_CHANNELS: readonly NotificationChannel[]` — The channels every trigger offers by default — the third is in-app, not sms (D-017).
+- `DEVICE_KINDS` (const) — `DEVICE_KINDS: readonly ["tv", "mobile", "tablet", "desktop", "stick", "console", "box"]` — A device is registered; a session is the (device, profile) pair.
+- `DISPLAY_STATES` (const) — `DISPLAY_STATES: readonly ["draft", "reserve", "scheduled", "technical", "room_open", "live", "replay", "ended", "postponed", "cancelled", "interrupted"]` — The fourth value, derived: what the badge says.
+- `DOMAIN_ERROR_CODES` (const) — The domain's refusals that reach a surface: a rule said no and somebody has to be told why.
+- `DOMAIN_GUARD_CODES` (const) — The domain's internal guards, which no contract publishes and none should.
 - `DateId` (type) — `type DateId = Brand<'DateId'>;`
 - `DateOutcome` (type+const)
 - `DatePane` (type+const)
 - `DateTiming` (interface) — The BOUNDS of a date — what the contract serves alongside the state.
 - `DeliveryDecision` (interface)
-- `DeterministicRandom` (class) — Mulberry32 — thirty-two bits of state, one multiplication, three shifts.
+- `DeterministicRandom` (class) — Mulberry32 — deterministic, dependency-free, identical under Node, Metro and a browser.
 - `DeviceId` (type) — `type DeviceId = Brand<'DeviceId'>;`
 - `DeviceKind` (type+const)
-- `Discipline` (interface) — A discipline: mandatory, single, closed vocabulary.
+- `Discipline` (interface) — A discipline: mandatory, single, closed vocabulary — and a FORM, never a language, a period or a country (B2).
 - `DisplayState` (type+const)
 - `DisplayStateInput` (interface)
 - `DisplayStateResult` (interface)
@@ -268,16 +268,16 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `DomainErrorCode` (type+const)
 - `DomainErrorInit` (interface)
 - `DomainGuardCode` (type+const)
-- `ERROR_CODES` (const) — EVERY error code, composed — the vocabulary the two contracts declare against.
+- `ERROR_CODES` (const) — Every error code, composed — the vocabulary the two contracts declare against.
 - `EffectiveRights` (interface)
 - `Err` (interface)
 - `ErrorCode` (type) — `type ErrorCode = (typeof ERROR_CODES)[number];`
-- `FAILURE_NATURES` (const) — `FAILURE_NATURES: readonly ["refused", "unavailable", "offline_forbidden"]` — The NATURE of a failure, which 'studio-mobile' asked for and which was missing.
-- `FILTER_SEVERITIES` (const) — `FILTER_SEVERITIES: readonly ["low", "medium", "high"]` — Two vocabularies existed in the SAME mockup file — 'souple / normale / haute' in channel settings, 'basse / moyenne / haute' on the moderat…
+- `FAILURE_NATURES` (const) — `FAILURE_NATURES: readonly ["refused", "unavailable", "offline_forbidden"]` — The nature of a failure: retry, understand, or escalate.
+- `FILTER_SEVERITIES` (const) — `FILTER_SEVERITIES: readonly ["low", "medium", "high"]` — The automatic filter's severity.
 - `FailureNature` (type+const)
 - `Family` (interface) — A universe: NAVIGATION ONLY, never a taxonomic level.
 - `FilterSeverity` (type+const) — `type FilterSeverity = (typeof FILTER_SEVERITIES)[number]; FilterSeverity: { readonly LOW: "low"; readonly MEDIUM: "medium"; readonly HIGH: "high"; }`
-- `FixedClock` (class) — The clock for tests and for the deterministic dataset.
+- `FixedClock` (class) — The clock for tests and for the deterministic data set.
 - `FixtureDate` (interface)
 - `FixtureVenue` (interface)
 - `Fixtures` (interface)
@@ -287,29 +287,29 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `HOLD_MINUTES_TV_PAIRING` (const) — `HOLD_MINUTES_TV_PAIRING = 5`
 - `HOUR_MS` (const) — `HOUR_MS = 3600000`
 - `IDENTITY_ERROR_CODES` (const) — `IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.handle_taken", "identity.two_factor_required", "identity.signed_out_elsewhere"]` — Sign-in, sign-up and session refusals.
-- `INCIDENT_CAUSES` (const) — `INCIDENT_CAUSES: readonly ["venue_feed_lost", "run_desk_disconnected", "bitrate_collapsed", "compatibility_worker_failed", "provider_error", "manual"]` — The CAUSE — a NEW vocabulary, distinct from the outcome.
+- `INCIDENT_CAUSES` (const) — `INCIDENT_CAUSES: readonly ["venue_feed_lost", "run_desk_disconnected", "bitrate_collapsed", "compatibility_worker_failed", "provider_error", "manual"]` — The cause, a vocabulary distinct from the outcome.
 - `INCIDENT_KINDS` (const) — `INCIDENT_KINDS: readonly ["hold_screen", "postponed", "cancelled", "interrupted"]` — The four incident kinds a viewer can see.
 - `IdentityErrorCode` (type+const)
 - `IncidentCause` (type+const)
 - `IncidentKind` (type+const)
 - `Instant` (type) — `type Instant = string;` — An instant, in ISO 8601 UTC.
 - `KnownMember` (interface)
-- `LANGUAGE_DEPENDENCIES` (const) — `LANGUAGE_DEPENDENCIES: readonly ["none", "helpful", "essential"]` — The REAL vocabulary, corrected (D1).
+- `LANGUAGE_DEPENDENCIES` (const) — `LANGUAGE_DEPENDENCIES: readonly ["none", "helpful", "essential"]` — The real vocabulary, corrected (D1).
 - `LIVE_START_LEAD_MINUTES` (const) — `LIVE_START_LEAD_MINUTES = 0` — A followed artist goes on air: as soon as the feed opens.
 - `LOCALES` (const) — `LOCALES: readonly ["fr", "en"]` — The product's two languages.
 - `LabelCatalogRef` (interface) — The catalogue version served to a surface, carried by the bootstrap.
 - `LanguageDependency` (type+const)
 - `LanguageProfile` (interface) — The INGREDIENTS.
 - `Locale` (type+const) — `type Locale = (typeof LOCALES)[number]; Locale: { readonly FR: "fr"; readonly EN: "en"; }`
-- `MEMBER_ROLES` (const) — `MEMBER_ROLES: readonly ["artist", "production", "coordination", "director", "video", "sound", "moderation", "treasury"]` — The EIGHT canonical roles from 'catalogue.json'.
+- `MEMBER_ROLES` (const) — `MEMBER_ROLES: readonly ["artist", "production", "coordination", "director", "video", "sound", "moderation", "treasury"]` — The eight canonical roles from 'catalogue.json'.
 - `MESSAGE_DOMAINS` (const) — `MESSAGE_DOMAINS: readonly ["common", "storefront", "studio", "taxonomy", "system"]` — The five copy domains, split so the embedded snapshot stays small.
-- `MESSAGE_STATES` (const) — `MESSAGE_STATES: readonly ["published", "removed"]` — AXIS 1 — the MESSAGE's state.
+- `MESSAGE_STATES` (const) — `MESSAGE_STATES: readonly ["published", "removed"]` — Axis 1 — the message's state, and there are only two.
 - `MINUTE_MS` (const) — `MINUTE_MS = 60000`
-- `MODERATION_BADGES` (const) — `MODERATION_BADGES: readonly ["banned", "muted", "removed", "published"]` — THE SINGLE BADGE — derived from the three axes, never recomposed by a surface.
-- `MODERATION_ERROR_CODES` (const) — The moderation queue's two concurrency refusals.
-- `MODERATION_ITEM_STATES` (const) — `MODERATION_ITEM_STATES: readonly ["reported", "claimed", "settled"]` — AXIS 2 — the nature of the QUEUE ITEM.
-- `MODERATION_QUEUE_ALERT_SIZE` (const) — `MODERATION_QUEUE_ALERT_SIZE = 10` — Moderation queue saturated — had no owner anywhere.
-- `MODERATION_REASONS` (const) — `MODERATION_REASONS: readonly ["spam", "insult", "spoiler", "off_topic", "harassment"]` — Vocabulary from 'shared/catalogue.json' 'moderationReasons', which has authority — and which, unlike the other enums, had NO competitor her…
+- `MODERATION_BADGES` (const) — `MODERATION_BADGES: readonly ["banned", "muted", "removed", "published"]` — The single badge, derived from the three axes and never recomposed by a surface.
+- `MODERATION_ERROR_CODES` (const) — The moderation queue's concurrency refusals.
+- `MODERATION_ITEM_STATES` (const) — `MODERATION_ITEM_STATES: readonly ["reported", "claimed", "settled"]` — Axis 2 — the nature of the queue item.
+- `MODERATION_QUEUE_ALERT_SIZE` (const) — `MODERATION_QUEUE_ALERT_SIZE = 10` — Moderation queue saturated.
+- `MODERATION_REASONS` (const) — `MODERATION_REASONS: readonly ["spam", "insult", "spoiler", "off_topic", "harassment"]` — Why a message was reported; 'shared/catalogue.json' has authority.
 - `MODERATION_VERDICTS` (const) — `MODERATION_VERDICTS: readonly ["publish", "remove", "mute", "ban"]`
 - `MediaSet` (interface) — An entity's image set, in the two aspect ratios the surfaces display.
 - `MemberRole` (type+const)
@@ -320,17 +320,17 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `MessageState` (type+const) — `type MessageState = (typeof MESSAGE_STATES)[number]; MessageState: { readonly PUBLISHED: "published"; readonly REMOVED: "removed"; }`
 - `ModerationBadge` (type+const)
 - `ModerationErrorCode` (type+const)
-- `ModerationItemSnapshot` (interface) — THE TWO COUNTERS — and this is the correction to 'studio-mobile''s C3.
+- `ModerationItemSnapshot` (interface) — A moderation row as a verdict command read it.
 - `ModerationItemState` (type+const)
 - `ModerationReason` (type+const)
 - `ModerationVerdict` (type+const)
 - `Money` (interface) — Money, in whole minor units.
 - `NAVIGATION_ENTRIES` (const) — The studio's navigation entries.
-- `NOTIFICATION_CHANNELS` (const) — `NOTIFICATION_CHANNELS: readonly ["push", "email", "in_app"]` — The third channel, proposed and not observed: 'in-app', not 'sms' (D-017).
+- `NOTIFICATION_CHANNELS` (const) — `NOTIFICATION_CHANNELS: readonly ["push", "email", "in_app"]` — The channels a notification takes; the third is 'in_app', not 'sms' (D-017).
 - `NavigationEntry` (type+const)
 - `NotificationChannel` (type+const)
 - `ORDER_ERROR_CODES` (const) — `ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.sold_out", "order.payment_declined", "order.price_stale", "order.plan_unavailable"]` — Purchase refusals beyond the four already carried by 'failureCode'.
-- `ORDER_KINDS` (const) — `ORDER_KINDS: readonly ["seat", "merch", "subscription"]` — D-011: two DISTINCT orders, never a mixed one.
+- `ORDER_KINDS` (const) — `ORDER_KINDS: readonly ["seat", "merch", "subscription"]` — Distinct orders, never a mixed one (D-011).
 - `Ok` (interface)
 - `OrderErrorCode` (type+const)
 - `OrderId` (type) — `type OrderId = Brand<'OrderId'>;`
@@ -340,19 +340,19 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `PAIRING_CODE_AMBIGUOUS_GLYPHS` (const) — `PAIRING_CODE_AMBIGUOUS_GLYPHS: readonly string[]` — The glyphs that are excluded AND unmappable — the refusing class's edges.
 - `PAIRING_CODE_LENGTH` (const) — `PAIRING_CODE_LENGTH = 6` — Six characters.
 - `PAIRING_CODE_NORMALISATION` (const) — `PAIRING_CODE_NORMALISATION: Readonly<Record<string, string>>` — The normalisation table, exhaustive over the mappable excluded glyphs.
-- `PAIRING_CONFUSABLE_CLASSES` (const) — `PAIRING_CONFUSABLE_CLASSES: readonly (readonly string[])[]` — The CONFUSABLE CLASSES this channel recognises, written as data so the invariant below can be computed rather than asserted by hand.
-- `PAIRING_ERROR_CODES` (const) — `PAIRING_ERROR_CODES: readonly ["pairing.slow_down", "pairing.identity_mismatch", "pairing.intent_not_engageable", "pairing.execution_engaged"]` — Device pairing — the television's way in, where the same code is polled repeatedly.
+- `PAIRING_CONFUSABLE_CLASSES` (const) — `PAIRING_CONFUSABLE_CLASSES: readonly (readonly string[])[]` — The CONFUSABLE CLASSES this channel recognises, as data so the invariant is computed.
+- `PAIRING_ERROR_CODES` (const) — `PAIRING_ERROR_CODES: readonly ["pairing.slow_down", "pairing.identity_mismatch", "pairing.intent_not_engageable", "pairing.execution_engaged"]` — Device pairing, where the same code is polled repeatedly.
 - `PAYOUT_DELAY_DAYS` (const) — `PAYOUT_DELAY_DAYS = 14` — 'payoutDelayDays: 14'.
-- `PAYOUT_ERROR_CODES` (const) — `PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained"]` — Payout and reconciliation refusals.
-- `PAYOUT_STATES` (const) — `PAYOUT_STATES: readonly ["scheduled", "held", "paid", "refunded", "suspended"]` — 'held' while an OUTCOME is open, 'refunded' if the date is cancelled, 'suspended' while a bank-details change waits for its counter-signatu…
-- `PLAN_OPENINGS` (const) — `PLAN_OPENINGS: readonly ["browse", "trailers", "free_dates", "replays", "no_ads", "one_live_month", "all_lives", "multi_screen", "archive"]` — The NINE openings 'catalogue.json' actually carries.
-- `PLAN_TIERS` (const) — `PLAN_TIERS: readonly ["free", "pass", "premium"]` — E1 — THE MOST SERIOUS GAP IN THE HANDOVER FILE, and it is not a display defect.
-- `PREVIEW_BUDGET_SECONDS` (const) — `PREVIEW_BUDGET_SECONDS = 300` — The free-preview budget — COUNTED DOWN BY THE SERVER, per ACCOUNT.
-- `PRICE_TIERS` (const) — `PRICE_TIERS: readonly ["full", "reduced", "support"]` — Settled by 'shared': 'enums.priceTier'.
+- `PAYOUT_ERROR_CODES` (const) — `PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained"]` — Payout refusals: a period does not close over an unexplained discrepancy.
+- `PAYOUT_STATES` (const) — `PAYOUT_STATES: readonly ["scheduled", "held", "paid", "refunded", "suspended"]` — Where a payout stands: 'held' while an outcome is open, 'refunded' if the date is cancelled, 'suspended' while a bank-details change waits …
+- `PLAN_OPENINGS` (const) — `PLAN_OPENINGS: readonly ["browse", "trailers", "free_dates", "replays", "no_ads", "one_live_month", "all_lives", "multi_screen", "archive"]` — The nine openings 'catalogue.json' carries.
+- `PLAN_TIERS` (const) — `PLAN_TIERS: readonly ["free", "pass", "premium"]` — The plan a viewer holds; 'catalogue.json' has authority.
+- `PREVIEW_BUDGET_SECONDS` (const) — `PREVIEW_BUDGET_SECONDS = 300` — The free-preview budget, counted down by the server, per account.
+- `PRICE_TIERS` (const) — `PRICE_TIERS: readonly ["full", "reduced", "support"]` — The price tier on a ticket, settled by 'shared': 'enums.priceTier'.
 - `PROMOTION_REASONS` (const) — `PROMOTION_REASONS: readonly ["pre_sale", "preview_night", "discovery_rate", "final_date", "late_rate"]` — Five reasons observed in the design, each with a distinct rule.
 - `PROVISION_REVISION_HOURS` (const) — `PROVISION_REVISION_HOURS = 72`
-- `PUBLICATION_CHECKLIST_ITEMS` (const) — THE AUTHORITATIVE CHECKLIST: SEVEN items, the ones on the sheet.
-- `PUBLICATION_STATES` (const) — `PUBLICATION_STATES: readonly ["draft", "reserve", "scheduled", "technical", "live", "ended", "replay_online"]` — The channel's act.
+- `PUBLICATION_CHECKLIST_ITEMS` (const) — The authoritative checklist, in the order the sheet shows.
+- `PUBLICATION_STATES` (const) — `PUBLICATION_STATES: readonly ["draft", "reserve", "scheduled", "technical", "live", "ended", "replay_online"]` — The channel's act; 'catalogue.json' has authority (D2).
 - `PairingErrorCode` (type+const)
 - `PayoutBreakdown` (interface)
 - `PayoutErrorCode` (type+const)
@@ -366,17 +366,17 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `Promotion` (interface)
 - `PromotionReason` (type+const)
 - `PublicationChecklistEntry` (interface) — One checklist item, with everything a surface needs to render its row.
-- `PublicationChecklistItem` (type+const) — The NAMED members, so that nothing writes one of these as a string.
+- `PublicationChecklistItem` (type+const) — The named members, so that nothing writes one of these as a string.
 - `PublicationReadiness` (interface)
 - `PublicationState` (type+const)
 - `PublicationTransition` (interface) — An offered transition, with what it commits to.
 - `QUIET_HOURS_END` (const) — `QUIET_HOURS_END = 9`
-- `QUIET_HOURS_START` (const) — `QUIET_HOURS_START = 23` — QUIET HOURS, and their exception.
+- `QUIET_HOURS_START` (const) — `QUIET_HOURS_START = 23` — Quiet hours, 23:00 -> 09:00, in the sleeper's own offset and never the server's.
 - `REMINDER_LEAD_MINUTES` (const) — `REMINDER_LEAD_MINUTES = 30` — Reminder before a live show for which I hold a seat.
 - `REPLAY_EXPIRY_WARNING_HOURS` (const) — `REPLAY_EXPIRY_WARNING_HOURS = 6` — End of a replay's availability.
-- `REPLAY_POLICIES` (const) — `REPLAY_POLICIES: readonly ["included", "subscription", "unit", "none"]` — The PROMISE made before purchase — it is what justifies the price difference, and the handover file makes it a principle.
+- `REPLAY_POLICIES` (const) — `REPLAY_POLICIES: readonly ["included", "subscription", "unit", "none"]` — The promise made before purchase — what justifies the price difference.
 - `RIGHTS_SCOPES` (const) — `RIGHTS_SCOPES: readonly ["worldwide", "restricted"]`
-- `RUN_STATES` (const) — `RUN_STATES: readonly ["idle", "rehearsal", "on_air", "interrupted", "ended"]` — The TECHNICAL axis, and nothing else.
+- `RUN_STATES` (const) — `RUN_STATES: readonly ["idle", "rehearsal", "on_air", "interrupted", "ended"]` — The technical axis, and nothing else.
 - `Rendition` (interface) — One image at a size that is actually displayed.
 - `ReplayPolicy` (type+const)
 - `Result` (type) — `type Result<T> = Ok<T> | Err;`
@@ -384,12 +384,12 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `RunState` (type+const)
 - `SCARCITY_THRESHOLD_BPS` (const) — `SCARCITY_THRESHOLD_BPS = 8500` — "Almost full" — and the THRESHOLD is a domain rule, not an interface literal.
 - `SEASON_START_MONTH` (const) — `SEASON_START_MONTH = 9` — The changeover month, in human numbering: 9 = September.
-- `SEAT_CODE_ALPHABET` (const) — `SEAT_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"` — The alphabet: Crockford base 32 — the ten digits, and the letters EXCEPT 'I', 'L', 'O' and 'U'.
+- `SEAT_CODE_ALPHABET` (const) — `SEAT_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"` — The alphabet: Crockford base 32 — the ten digits and the letters except 'I', 'L', 'O' and 'U'.
 - `SEAT_CODE_BODY_LENGTH` (const) — `SEAT_CODE_BODY_LENGTH = 6`
-- `SERVICES` (const) — `SERVICES: readonly ["identity", "catalog", "ticketing", "streaming", "chat", "payouts", "notifications"]` — THE SEVEN SERVICES, and until today no constant owned them.
-- `STATE_CHANGE_ORIGINS` (const) — `STATE_CHANGE_ORIGINS: readonly ["human_verdict", "automatic_filter", "retroactive_filter", "author_sanctioned"]` — Where a state change came from — and the origin SURVIVES the settlement.
+- `SERVICES` (const) — `SERVICES: readonly ["identity", "catalog", "ticketing", "streaming", "chat", "payouts", "notifications"]` — The seven services.
+- `STATE_CHANGE_ORIGINS` (const) — `STATE_CHANGE_ORIGINS: readonly ["human_verdict", "automatic_filter", "retroactive_filter", "author_sanctioned"]` — Where a state change came from; the origin survives the settlement, so "removed by the filter, then confirmed by X" does not collapse into …
 - `SUBSCRIPTION_STATES` (const) — `SUBSCRIPTION_STATES: readonly ["active", "past_due", "cancelled", "trialing"]`
-- `SURFACES` (const) — `SURFACES: readonly ["storefront_web", "storefront_mobile", "storefront_tv", "studio_web", "studio_mobile", "system"]` — The studio journal is by-name AND situated: "who decided, when, from which surface".
+- `SURFACES` (const) — `SURFACES: readonly ["storefront_web", "storefront_mobile", "storefront_tv", "studio_web", "studio_mobile", "system"]` — Where a decision was taken — the studio journal is by-name and situated, and 'system' is an actor like any other (standby screen, lease exp…
 - `SearchCriteria` (interface)
 - `SeatAvailability` (type) — The capacity state, as a DISCRIMINATED UNION.
 - `SeatHold` (interface)
@@ -403,9 +403,9 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `SubscriptionState` (type+const)
 - `Surface` (type+const)
 - `SystemClock` (class) — The production clock.
-- `TAX_EVIDENCE_KINDS` (const) — `TAX_EVIDENCE_KINDS: readonly ["billing_address", "ip_address", "bank_country", "card_country", "sim_country", "declared_by_buyer"]` — The EU requires TWO NON-CONTRADICTORY pieces of evidence for a B2C sale — and Stripe Tax favours a single address instead of comparing them…
+- `TAX_EVIDENCE_KINDS` (const) — `TAX_EVIDENCE_KINDS: readonly ["billing_address", "ip_address", "bank_country", "card_country", "sim_country", "declared_by_buyer"]` — What may evidence a buyer's location.
 - `TAX_JURISDICTION_LEVELS` (const) — `TAX_JURISDICTION_LEVELS: readonly ["country", "state", "county", "city"]` — Roughly 9,000 US jurisdictions: a country allows no calculation at all.
-- `TAX_SUPPLY_KINDS` (const) — `TAX_SUPPLY_KINDS: readonly ["live_stream_access", "replay_access", "subscription", "merchandise"]` — The rate depends on the pair JURISDICTION x NATURE OF SUPPLY, never on a per-market constant.
+- `TAX_SUPPLY_KINDS` (const) — `TAX_SUPPLY_KINDS: readonly ["live_stream_access", "replay_access", "subscription", "merchandise"]` — What is being supplied, for tax.
 - `TECHNICAL_PROVISION_THRESHOLD` (const) — `TECHNICAL_PROVISION_THRESHOLD = 10000` — The TECHNICAL PROVISIONING threshold and its parameters — CONTRACT DATA, not constants copied onto five surfaces.
 - `Tag` (interface)
 - `TaxEvidenceKind` (type+const)
@@ -417,7 +417,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `TerritoryRights` (interface)
 - `TierPrice` (interface)
 - `Tolerant` (type) — `type Tolerant<T extends string> = KnownMember<T> | UnknownMember;`
-- `UPSTREAMS` (const) — `UPSTREAMS: readonly [...typeof SERVICES, 'realtime']` — Everything a BFF operation may declare as its upstream: the seven services, and the things that are NOT services but are still depended on.
+- `UPSTREAMS` (const) — `UPSTREAMS: readonly [...typeof SERVICES, 'realtime']` — Everything a BFF operation may declare as its upstream: the seven services, plus what is depended on without being one.
 - `UnknownMember` (interface)
 - `Upstream` (type) — `type Upstream = (typeof UPSTREAMS)[number];`
 - `VatLine` (interface) — One VAT line, PER JURISDICTION — and not per billing market.
@@ -425,9 +425,9 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `VenueId` (type) — `type VenueId = Brand<'VenueId'>;`
 - `Vocabulary` (type) — `type Vocabulary<T extends string> = readonly T[];` — A closed vocabulary: the list that has authority.
 - `WAITLIST_PRIORITY_HOURS` (const) — `WAITLIST_PRIORITY_HOURS = 2` — The priority window granted to the waiting list when a tier opens.
-- `WATCH_DENIAL_REASONS` (const) — The denial reasons — one CODE per different screen.
-- `WATCH_FALLBACK_ACTIONS` (const) — `WATCH_FALLBACK_ACTIONS: readonly ["buy_seat", "join_waitlist", "subscribe", "see_replay_policy", "see_other_dates", "release_a_screen", "none"]` — The action that GETS OUT OF THE DEAD END — an empty state with no way out is banned (principle no.
-- `WATCH_FALLBACK_FOR` (const) — `WATCH_FALLBACK_FOR: Readonly<Record<WatchDenialReason, readonly WatchFallbackAction[]>>` — ⚠ THE KEYS ARE COMPUTED, and they were bare literals until the values became translation keys.
+- `WATCH_DENIAL_REASONS` (const) — The denial reasons — one code per different screen.
+- `WATCH_FALLBACK_ACTIONS` (const) — `WATCH_FALLBACK_ACTIONS: readonly ["buy_seat", "join_waitlist", "subscribe", "see_replay_policy", "see_other_dates", "release_a_screen", "none"]` — The action that gets out of the dead end — an empty state with no way out is banned (principle no.
+- `WATCH_FALLBACK_FOR` (const) — `WATCH_FALLBACK_FOR: Readonly<Record<WatchDenialReason, readonly WatchFallbackAction[]>>` — Which actions may answer which refusal — the coupling, as data.
 - `WATCH_SCOPES` (const) — `WATCH_SCOPES: readonly ["full", "preview", "none"]` — How much of the date the verdict opens.
 - `WallClock` (interface) — The wall-clock components of an instant in a given offset.
 - `WatchDenialReason` (type+const)
@@ -439,21 +439,21 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `activePromotion` (function) — `function activePromotion(promotions: readonly Promotion[], now: Instant): Promotion | null;`
 - `add` (function) — `function add(left: Money, right: Money): Money;`
 - `applyBestDiscount` (function) — `function applyBestDiscount(basePrice: Money, subscriptionDiscountBps: BasisPoints, promotionPrice: Money | null): Money;` — THE DISCOUNT AND THE PROMOTION DO NOT STACK: the one most favourable to the viewer applies (D-017).
-- `applyRate` (function) — `function applyRate(value: Money, rate: BasisPoints): Money;` — Applies a rate to an amount and rounds — THE elementary component.
+- `applyRate` (function) — `function applyRate(value: Money, rate: BasisPoints): Money;` — Applies a rate to an amount and rounds — the one place a rate meets a rounding.
 - `assertCanOverride` (function) — `function assertCanOverride(existingOrigin: StateChangeOrigin, incomingOrigin: StateChangeOrigin): void;`
 - `assertKnownFlag` (function) — `function assertKnownFlag(flag: string, knownFlags: readonly string[]): void;`
 - `assertTierWidens` (function) — `function assertTierWidens(currentCapacity: number, nextCapacity: number): void;` — Capacity tiers: they WIDEN, never shrink after going on sale.
 - `assertTransitionAllowed` (function) — `function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): void;`
-- `assignableRolesOf` (function) — `function assignableRolesOf(heldRoles: readonly MemberRole[]): readonly MemberRole[];` — The roles a person may assign, given the roles they hold.
+- `assignableRolesOf` (function) — `function assignableRolesOf(heldRoles: readonly MemberRole[]): readonly MemberRole[];` — The roles a person may assign, given those they hold — the union, never a rank.
 - `availabilityOf` (function) — `function availabilityOf(gauge: Gauge): SeatAvailability;`
 - `basisPoints` (function) — `function basisPoints(value: number): BasisPoints;`
-- `blackoutReasonOf` (function) — `function blackoutReasonOf(rights: TerritoryRights, viewerCountry: string): BlackoutReason | null;` — The reason for the refusal, as a CODE — to be served with the error.
-- `brandId` (function) — `function brandId<T extends Brand<string>>(value: string): T;` — Brands a string that has already been validated at the boundary.
+- `blackoutReasonOf` (function) — `function blackoutReasonOf(rights: TerritoryRights, viewerCountry: string): BlackoutReason | null;` — The reason for the refusal, as a CODE — served with the error, so no second request.
+- `brandId` (function) — `function brandId<T extends Brand<string>>(value: string): T;` — Brands a string already validated at the boundary.
 - `buildFixtures` (function) — `function buildFixtures(seed: number, clock: Clock): Fixtures;` — Builds the deterministic set.
 - `canAssign` (function) — `function canAssign(heldRoles: readonly MemberRole[], target: MemberRole): boolean;`
 - `canDecide` (function) — `function canDecide(heldRoles: readonly MemberRole[]): boolean;`
 - `canOps` (function) — `function canOps(heldRoles: readonly MemberRole[]): boolean;`
-- `canOverride` (function) — `function canOverride(existingOrigin: StateChangeOrigin, incomingOrigin: StateChangeOrigin): boolean;` — THE HUMAN / AUTOMATIC PRECEDENCE, written in ONE DIRECTION ONLY.
+- `canOverride` (function) — `function canOverride(existingOrigin: StateChangeOrigin, incomingOrigin: StateChangeOrigin): boolean;` — The human / automatic precedence, in one direction only: a human overturns an automatic decision, never the reverse.
 - `canRevenue` (function) — `function canRevenue(heldRoles: readonly MemberRole[]): boolean;` — 'canRevenue' does not hide a column: IT DECIDES WHAT THE RESPONSE CONTAINS.
 - `chatRatePerMinute` (function) — `function chatRatePerMinute(messagesInWindow: number): number;`
 - `checkoutIntentExpiry` (function) — `function checkoutIntentExpiry(openedAt: Instant): Instant;` — The intent duration for a direct checkout journey.
@@ -463,9 +463,9 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `concurrentStreamsAllowedFor` (function) — `function concurrentStreamsAllowedFor(planOpenings: readonly PlanOpening[]): number;` — The concurrent-screen ceiling, derived from the plan.
 - `contains` (function) — `function contains(window: Window, instant: Instant): boolean;`
 - `creditAmountFor` (function) — `function creditAmountFor(paidAmount: Money): Money;`
-- `criteriaSignature` (function) — `function criteriaSignature(criteria: SearchCriteria): string;` — The SIGNATURE — what answers "already saved" on two screens.
+- `criteriaSignature` (function) — `function criteriaSignature(criteria: SearchCriteria): string;` — The signature that answers "already saved" — canonical, not a hash: hashing would need a platform API, which this package forbids itself, a…
 - `dayShift` (function) — `function dayShift(instant: Instant, venue: VenueClock, viewerUtcOffsetMinutes: number): -1 | 0 | 1;` — The DAY shift between the two clocks: -1, 0 or +1.
-- `decideWatch` (function) — `function decideWatch(input: WatchInput): WatchVerdict;` — The order of the refusals is a DECISION, not a convenience.
+- `decideWatch` (function) — `function decideWatch(input: WatchInput): WatchVerdict;` — The watch verdict.
 - `disciplinesInEditorialOrder` (function) — `function disciplinesInEditorialOrder(taxonomy: Taxonomy): readonly Discipline[];` — The disciplines in the declared EDITORIAL RANK, from the most popular to the most specialised, families mixed.
 - `disciplinesOfFamily` (function) — `function disciplinesOfFamily(taxonomy: Taxonomy, familyId: string): readonly Discipline[];` — A universe's disciplines, in editorial rank.
 - `displayStateOf` (function) — `function displayStateOf(input: DisplayStateInput): DisplayStateResult;`
@@ -481,11 +481,11 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `evaluateSettlement` (function) — `function evaluateSettlement(snapshot: ModerationItemSnapshot, attempt: SettlementAttempt): SettlementOutcome;` — Is a verdict admissible?
 - `fillRateBps` (function) — `function fillRateBps(gauge: Gauge): number;` — The fill RATE, in basis points — and not the capacity.
 - `findDiscipline` (function) — `function findDiscipline(taxonomy: Taxonomy, disciplineId: string): Discipline | null;`
-- `findGenre` (function) — `function findGenre(taxonomy: Taxonomy, disciplineId: string, genreId: string): Genre | null;` — A sub-genre is looked up WITHIN ITS DISCIPLINE.
+- `findGenre` (function) — `function findGenre(taxonomy: Taxonomy, disciplineId: string, genreId: string): Genre | null;` — A sub-genre is looked up WITHIN ITS DISCIPLINE: two disciplines can carry one of the same name — 'contemporary' exists in theatre and in da…
 - `findTag` (function) — `function findTag(taxonomy: Taxonomy, tagId: string): Tag | null;`
 - `fixtureDate` (function) — `function fixtureDate(fixtures: Fixtures, id: string): FixtureDate | null;` — Finds a case by its identifier — so a test can name what it exercises.
 - `formatClock` (function) — `function formatClock(instant: Instant, utcOffsetMinutes: number, locale: Locale): string;` — "21 h 04" in French, "9:04 PM" in English.
-- `formatCompact` (function) — `function formatCompact(value: number, locale: Locale): string;` — "12,4 k", "1,2 M" — the audience counter and the subscriber count.
+- `formatCompact` (function) — `function formatCompact(value: number, locale: Locale): string;` — "12,4 k", "1,2 M" — the audience counter and the subscriber count; exact below a thousand.
 - `formatCountdown` (function) — `function formatCountdown(minutes: number, locale: Locale): string;` — "42 min", "2 h 10", "3 days" — a countdown.
 - `formatDuration` (function) — `function formatDuration(minutes: number, locale: Locale): string;` — "2 h 30" / "2h 30m" — a show's running time.
 - `formatInteger` (function) — `function formatInteger(value: number, locale: Locale): string;` — "20 732", with the narrow no-break space in French.
@@ -497,7 +497,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `hasLanguageBarrier` (function) — `function hasLanguageBarrier(profile: LanguageProfile): boolean;` — Is there a language barrier?
 - `hasReplayPolicy` (function) — `function hasReplayPolicy(timing: DateTiming): boolean;` — Does the date promise a replay at all, whatever the window?
 - `holdFor` (function) — `function holdFor(quantity: number, intentExpiresAt: Instant): SeatHold;` — Places a hold whose expiry IS the intent's.
-- `irreversiblePromiseBlocking` (function) — `function irreversiblePromiseBlocking(from: PublicationState, to: PublicationState): string | null;` — The lock is on the PAIR, never on the state.
+- `irreversiblePromiseBlocking` (function) — `function irreversiblePromiseBlocking(from: PublicationState, to: PublicationState): string | null;` — The promise blocking this transition, or 'null' when it is merely unknown — two different refusals, two different messages.
 - `isAfter` (function) — `function isAfter(left: Instant, right: Instant): boolean;`
 - `isAvailableIn` (function) — `function isAvailableIn(rights: TerritoryRights, viewerCountry: string): boolean;` — Can the viewer watch from this country?
 - `isBefore` (function) — `function isBefore(left: Instant, right: Instant): boolean;`
@@ -508,7 +508,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `isFullyOver` (function) — `function isFullyOver(timing: DateTiming, now: Instant): boolean;` — Is the date behind us, replay included?
 - `isHoldExpired` (function) — `function isHoldExpired(hold: SeatHold, now: Instant): boolean;`
 - `isLanguageNeutral` (function) — `function isLanguageNeutral(profile: LanguageProfile): boolean;` — Is the show barrier-free for ANYONE AT ALL?
-- `isMember` (function) — `function isMember<T extends string>(vocabulary: Vocabulary<T>, raw: string): raw is T;` — Type guard, for the paths where an unknown value must be ignored rather than kept — a filter, a sort, an aggregate.
+- `isMember` (function) — `function isMember<T extends string>(vocabulary: Vocabulary<T>, raw: string): raw is T;` — Type guard for the paths where an unknown value is ignored rather than kept — a filter, a sort, an aggregate.
 - `isNegative` (function) — `function isNegative(value: Money): boolean;`
 - `isOk` (function) — `function isOk<T>(result: Result<T>): result is Ok<T>;`
 - `isPairingCode` (function) — `function isPairingCode(value: string): boolean;`
@@ -527,19 +527,19 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `lowestActivePrice` (function) — `function lowestActivePrice(tiers: readonly TierPrice[]): Money | null;` — The headline price: the lowest of the ACTIVE tiers.
 - `matchesTag` (function) — `function matchesTag(tag: Tag, term: string): boolean;` — Does a tag match a free-text term?
 - `max` (function) — `function max(left: Money, right: Money): Money;`
-- `mayCarryAmount` (function) — `function mayCarryAmount(recipientCanRevenue: boolean): boolean;` — REDACTION applies to a notification too.
-- `memberOr` (function) — `function memberOr<T extends string>(vocabulary: Vocabulary<T>, raw: string, fallback: T): T;` — Returns the value if it is known, the fallback otherwise.
+- `mayCarryAmount` (function) — `function mayCarryAmount(recipientCanRevenue: boolean): boolean;` — Redaction reaches a notification too: it appears on a locked screen.
+- `memberOr` (function) — `function memberOr<T extends string>(vocabulary: Vocabulary<T>, raw: string, fallback: T): T;` — Returns the value if it is known, the fallback otherwise — and the fallback stays explicit at the call site: a default hidden here would dr…
 - `messageKey` (function) — `function messageKey(raw: string): MessageKey;`
-- `migrateCriteria` (function) — `function migrateCriteria(criteria: SearchCriteria): CriteriaMigration;` — Replays a saved search against the current grammar.
+- `migrateCriteria` (function) — `function migrateCriteria(criteria: SearchCriteria): CriteriaMigration;` — Replays a saved search against the current grammar, or declares it stale.
 - `min` (function) — `function min(left: Money, right: Money): Money;`
 - `minutesBetween` (function) — `function minutesBetween(from: Instant, to: Instant): number;`
 - `moderationBadgeOf` (function) — `function moderationBadgeOf(messageState: MessageState, authorSanction: AudienceSanction): ModerationBadge;`
 - `money` (function) — `function money(amountMinor: number, currencyCode: string): Money;`
 - `multiplyByCount` (function) — `function multiplyByCount(value: Money, count: number): Money;`
-- `nextPublicationTransitions` (function) — `function nextPublicationTransitions(from: PublicationState, canDecide: boolean): readonly PublicationTransition[];` — The transitions offered TO THIS OPERATOR.
+- `nextPublicationTransitions` (function) — `function nextPublicationTransitions(from: PublicationState, canDecide: boolean): readonly PublicationTransition[];` — The transitions offered to this operator.
 - `normalizePairingCodeInput` (function) — `function normalizePairingCodeInput(raw: string): string;` — Normalises a code typed by a person, or refuses it by name.
-- `normalizeSearchCriteria` (function) — `function normalizeSearchCriteria(criteria: SearchCriteria): SearchCriteria;` — Normalises criteria so that TWO EQUIVALENT ENTRIES produce the same thing.
-- `normalizeSeatCodeInput` (function) — `function normalizeSeatCodeInput(raw: string): string;` — Normalises human input before comparison.
+- `normalizeSearchCriteria` (function) — `function normalizeSearchCriteria(criteria: SearchCriteria): SearchCriteria;` — Normalises criteria so that two equivalent entries produce the same thing.
+- `normalizeSeatCodeInput` (function) — `function normalizeSeatCodeInput(raw: string): string;` — Normalises human input before comparison: case, spaces, a forgotten hyphen, an omitted prefix and the confusables, which are absent from th…
 - `ok` (function) — `function ok<T>(value: T): Ok<T>;`
 - `orderRankOf` (function) — `function orderRankOf(state: PublicationState): number;`
 - `overlaps` (function) — `function overlaps(left: Window, right: Window): boolean;` — Do two windows overlap?
@@ -548,7 +548,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `payoutOf` (function) — `function payoutOf(input: PayoutInput): PayoutBreakdown;` — The computation, in the order that matters.
 - `payoutStateFor` (function) — `function payoutStateFor(outcome: DateOutcome | null, alreadyPaid: boolean, bankChangePending: boolean): PayoutState;` — A payout's state.
 - `pickLanguage` (function) — `function pickLanguage(value: Bilingual, locale: Locale): string;`
-- `pickRendition` (function) — `function pickRendition(renditions: readonly Rendition[], targetWidthPx: number): Rendition | null;` — The rendition closest to the requested width, NEVER going below it when a larger one exists.
+- `pickRendition` (function) — `function pickRendition(renditions: readonly Rendition[], targetWidthPx: number): Rendition | null;` — The rendition closest to the requested width, never below it when a larger one exists: too small is blurry and final, too large only costs …
 - `plusHours` (function) — `function plusHours(instant: Instant, hours: number): Instant;`
 - `plusMinutes` (function) — `function plusMinutes(instant: Instant, minutes: number): Instant;`
 - `previewSecondsLeft` (function) — `function previewSecondsLeft(secondsUsed: number): number;`
@@ -556,9 +556,9 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `progressOf` (function) — `function progressOf(timing: DateTiming, now: Instant): number;` — A live show's progress, clamped to '[0, 1]'.
 - `publicationReadiness` (function) — `function publicationReadiness(satisfied: readonly PublicationChecklistItem[]): PublicationReadiness;`
 - `quoteSeats` (function)
-- `remainderAfterRate` (function) — `function remainderAfterRate(value: Money, rate: BasisPoints): Money;` — The complement: what remains after applying a rate.
+- `remainderAfterRate` (function) — `function remainderAfterRate(value: Money, rate: BasisPoints): Money;` — What remains after applying a rate — exactly 'x - applyRate(x, r)'.
 - `reminderInstantFor` (function) — `function reminderInstantFor(startsAt: Instant): Instant;`
-- `reminderStillValid` (function) — `function reminderStillValid(scheduledFor: Instant, currentStartsAt: Instant | null): boolean;` — A reminder is a DATED PROMISE: it follows a postponement and is cancelled with a cancellation; it never fires into the void.
+- `reminderStillValid` (function) — `function reminderStillValid(scheduledFor: Instant, currentStartsAt: Instant | null): boolean;` — Whether a scheduled reminder still matches the date it was placed for.
 - `rendition` (function) — `function rendition(url: string, widthPx: number, heightPx: number): Rendition;`
 - `replayEndsAt` (function) — `function replayEndsAt(timing: DateTiming): Instant | null;` — The end of the replay window, or 'null' when there is none.
 - `replayHoursLeft` (function) — `function replayHoursLeft(timing: DateTiming, now: Instant): number;` — The replay hours remaining — a DECREASING value.
@@ -567,21 +567,21 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `resolveTerm` (function) — `function resolveTerm(taxonomy: Taxonomy, term: string): TermMatch | null;` — Resolves a free-text term into a taxonomic reference.
 - `restrictedRights` (function) — `function restrictedRights(blackoutCountries: readonly string[], reason: BlackoutReason): TerritoryRights;`
 - `roomOpensAt` (function) — `function roomOpensAt(timing: DateTiming): Instant;`
-- `roundMinor` (function) — `function roundMinor(value: number): number;` — Round half away from zero, to the minor unit.
+- `roundMinor` (function) — `function roundMinor(value: number): number;` — Rounds half away from zero, to the minor unit.
 - `sameCriteria` (function) — `function sameCriteria(left: SearchCriteria, right: SearchCriteria): boolean;`
 - `sanctionExpiryFrom` (function) — `function sanctionExpiryFrom(sanctionedAt: Instant, durationMinutes: number | null): Instant | null;` — A sanction carries an EXPIRY INSTANT, never a label.
 - `seasonBounds` (function) — `function seasonBounds(instant: Instant, utcOffsetMinutes: number): Window;` — The season CONTAINING this instant, expressed in the given offset.
 - `seasonLabel` (function) — `function seasonLabel(instant: Instant, utcOffsetMinutes: number): string;` — A season's label, as a CODE: "2026-2027".
-- `seatCode` (function) — `function seatCode(body: string): string;` — Composes a code from a body already drawn by the service.
+- `seatCode` (function) — `function seatCode(body: string): string;` — Composes a code from a body already drawn by the service, which owns the cryptographic randomness: a source here would make this package de…
 - `seatsAvailable` (function) — `function seatsAvailable(gauge: Gauge): number;` — The seats ACTUALLY available: net of holds in progress.
 - `serviceFeeFor` (function) — `function serviceFeeFor(schedule: ServiceFeeSchedule, unitPrice: Money, quantity: number): Money;`
 - `shouldCollapseToQueue` (function) — `function shouldCollapseToQueue(messagesInWindow: number): boolean;` — Past the threshold, the console stops showing the chat message by message.
-- `shouldDeliverNow` (function) — `function shouldDeliverNow(instant: Instant, viewerUtcOffsetMinutes: number, isHeldSeatLiveStart: boolean): DeliveryDecision;` — Should it be delivered now?
+- `shouldDeliverNow` (function) — `function shouldDeliverNow(instant: Instant, viewerUtcOffsetMinutes: number, isHeldSeatLiveStart: boolean): DeliveryDecision;` — Whether to deliver now — the quiet-hours exception covers a held seat's live start only.
 - `smallestRendition` (function) — `function smallestRendition(renditions: readonly Rendition[]): Rendition | null;` — The smallest rendition — a television's standby mode, a thumbnail.
 - `subtract` (function) — `function subtract(left: Money, right: Money): Money;`
 - `sum` (function) — `function sum(values: readonly Money[], currencyCode: string): Money;`
 - `survivorsOf` (function) — `function survivorsOf(confusableClass: readonly string[]): readonly string[];` — How many members of a class survive in the alphabet.
-- `taxIncludedIn` (function) — `function taxIncludedIn(grossTtc: Money, rate: BasisPoints): Money;` — Extracts the tax portion from a gross (tax-inclusive) amount.
+- `taxIncludedIn` (function) — `function taxIncludedIn(grossTtc: Money, rate: BasisPoints): Money;` — Extracts the tax portion from a tax-inclusive amount.
 - `toEpochMs` (function) — `function toEpochMs(instant: Instant): number;`
 - `tvPairingIntentExpiry` (function) — `function tvPairingIntentExpiry(openedAt: Instant): Instant;` — The intent duration for a TV pairing — five minutes, not fifteen.
 - `vatLineFor` (function) — Extracts a VAT line from a tax-inclusive amount.
@@ -597,7 +597,7 @@ Declarations: `dist/schema/index.d.ts` — 49 exported names.
 
 - `AccountIdSchema` (const) — `AccountIdSchema: z.ZodString`
 - `ArtistIdSchema` (const) — `ArtistIdSchema: z.ZodString`
-- `BasisPointsSchema` (const) — `BasisPointsSchema: z.ZodInt` — A rate in BASIS POINTS: 1200 = 12%, 550 = 5.5%.
+- `BasisPointsSchema` (const) — `BasisPointsSchema: z.ZodInt` — A rate in basis points: 1200 = 12%, 550 = 5.5%.
 - `BuyerTaxLocationSchema` (const) — The location adopted, with the evidence that produced it.
 - `ChannelIdSchema` (const) — `ChannelIdSchema: z.ZodString`
 - `CountryCodeSchema` (const) — `CountryCodeSchema: z.ZodString` — ISO 3166-1 alpha-2, uppercase.
@@ -605,45 +605,45 @@ Declarations: `dist/schema/index.d.ts` — 49 exported names.
 - `DateIdSchema` (const) — `DateIdSchema: z.ZodString`
 - `DeviceIdSchema` (const) — `DeviceIdSchema: z.ZodString`
 - `ErrorSchema` (const) — The 'Error' shape both contracts publish: '{ code, nature, params, traceId }'.
-- `FailureNatureOut` (const) — `FailureNatureOut: VocabularyOut` — The failure nature, tolerant — and the ONLY vocabulary in either contract that declares what an unknown member falls back to.
+- `FailureNatureOut` (const) — `FailureNatureOut: VocabularyOut` — The failure nature, tolerant — the only vocabulary in either contract declaring what an unknown member falls back to.
 - `IanaTimeZoneSchema` (const) — `IanaTimeZoneSchema: z.ZodString` — An IANA time zone identifier: 'Europe/Paris'.
 - `InstantIn` (const) — `InstantIn: z.ZodString` — An instant on the wire, STRICT — for one a client SENDS.
 - `InstantOut` (const) — `InstantOut: z.ZodString` — The same instant as a server SENDS it: the format, and no pattern.
 - `LocaleIn` (const) — `LocaleIn: VocabularyIn<typeof LOCALES>` — BCP 47, short form, STRICT — for a locale that arrives on a request.
-- `LocaleOut` (const) — `LocaleOut: VocabularyOut` — The same vocabulary, TOLERANT — for a locale a server SERVES.
+- `LocaleOut` (const) — `LocaleOut: VocabularyOut` — The same vocabulary, TOLERANT — for a locale a server serves: an unknown member is kept.
 - `MoneyIn` (const) — `MoneyIn: z.ZodObject<{ amountMinor: z.ZodNumber; currencyCode: z.ZodString; }>` — The same shape, STRICT — for a 'Money' a client sends.
-- `MoneyOut` (const) — `MoneyOut: z.ZodObject<{ amountMinor: z.ZodNumber; currencyCode: z.ZodString; }, z.core.$loose>` — ⚠ TWO SCHEMAS, AND 'Money' IS THE ONLY SHAPE IN THIS PACKAGE THAT NEEDS BOTH.
+- `MoneyOut` (const) — `MoneyOut: z.ZodObject<{ amountMinor: z.ZodNumber; currencyCode: z.ZodString; }, z.core.$loose>` — An amount a server serves.
 - `OrderIdSchema` (const) — `OrderIdSchema: z.ZodString`
 - `PageCursorSchema` (const) — `PageCursorSchema: z.ZodString` — An opaque Base64 cursor over '(created_at, id)'.
 - `PersonIdSchema` (const) — `PersonIdSchema: z.ZodString`
 - `ProfileIdSchema` (const) — `ProfileIdSchema: z.ZodString`
-- `PublicHandleSchema` (const) — `PublicHandleSchema: z.ZodString` — The PUBLIC handle — '@marie.j'.
+- `PublicHandleSchema` (const) — `PublicHandleSchema: z.ZodString` — The public handle — '@marie.j'.
 - `SeatIdSchema` (const) — `SeatIdSchema: z.ZodString`
 - `ShowIdSchema` (const) — `ShowIdSchema: z.ZodString`
 - `SlugSchema` (const) — `SlugSchema: z.ZodString` — Lowercase, hyphenated, no leading or trailing hyphen.
 - `TaxEvidenceKindIn` (const) — `TaxEvidenceKindIn: VocabularyIn<typeof TAX_EVIDENCE_KINDS>`
 - `TaxEvidenceKindOut` (const) — `TaxEvidenceKindOut: VocabularyOut`
-- `TaxEvidenceSchema` (const) — One piece of evidence, WITH ITS PROVENANCE.
+- `TaxEvidenceSchema` (const) — One piece of evidence, with its provenance: 'source' is what makes a line auditable later.
 - `TaxJurisdictionLevelIn` (const) — `TaxJurisdictionLevelIn: VocabularyIn<typeof TAX_JURISDICTION_LEVELS>`
 - `TaxJurisdictionLevelOut` (const) — `TaxJurisdictionLevelOut: VocabularyOut`
 - `TaxSupplyKindIn` (const) — `TaxSupplyKindIn: VocabularyIn<typeof TAX_SUPPLY_KINDS>`
 - `TaxSupplyKindOut` (const) — `TaxSupplyKindOut: VocabularyOut`
-- `VOCABULARY_SOURCE_LOCAL` (const) — `VOCABULARY_SOURCE_LOCAL: string` — The same marker, exported — for a call site that attaches its reason through its own '.meta()' rather than through 'vocabularyOutLocal'.
+- `VOCABULARY_SOURCE_LOCAL` (const) — `VOCABULARY_SOURCE_LOCAL: string` — The 'source: none' marker, for a call site attaching its reason through its own '.meta()'.
 - `VatLineSchema` (const) — One VAT line.
 - `VenueClockSchema` (const) — `VenueClockSchema: z.ZodObject<{ venueTimezone: z.ZodString; venueUtcOffsetMin: z.ZodInt; }, z.core.$loose>`
 - `VenueIdSchema` (const) — `VenueIdSchema: z.ZodString`
-- `VocabularyIn` (type) — `type VocabularyIn<T extends Members> = z.ZodEnum<{ [K in T[number]]: K; }>;` — The type annotation for a STRICT vocabulary schema — what 'vocabularyIn' returns.
-- `VocabularyOut` (type) — `type VocabularyOut = z.ZodString;` — The type annotation for a TOLERANT vocabulary schema — what 'vocabularyOut' returns, which is a plain string at runtime.
-- `VocabularyOutNullable` (type) — `type VocabularyOutNullable = z.ZodNullable<z.ZodString>;` — A tolerant vocabulary that may also be absent — see 'vocabularyOutNullable'.
-- `int64` (const) — `int64: () => z.ZodNumber` — A 64-bit integer on the wire: 'type: integer, format: int64', and NO bounds.
-- `issueToCode` (function) — `function issueToCode(issue: z.core.$ZodIssue): { readonly code: string; readonly params: Readonly<Record<string, string>>; };` — The ONLY sanctioned way out of a zod failure.
+- `VocabularyIn` (type) — `type VocabularyIn<T extends Members> = z.ZodEnum<{ [K in T[number]]: K; }>;` — The type annotation for a STRICT vocabulary schema.
+- `VocabularyOut` (type) — `type VocabularyOut = z.ZodString;` — The type annotation for a TOLERANT vocabulary schema — a plain string at runtime.
+- `VocabularyOutNullable` (type) — `type VocabularyOutNullable = z.ZodNullable<z.ZodString>;` — A tolerant vocabulary that may also be absent.
+- `int64` (const) — `int64: () => z.ZodNumber` — A 64-bit integer on the wire: 'type: integer, format: int64', and no bounds.
+- `issueToCode` (function) — `function issueToCode(issue: z.core.$ZodIssue): { readonly code: string; readonly params: Readonly<Record<string, string>>; };` — The only sanctioned way out of a zod failure: a code plus parameters.
 - `sourceNameOf` (function) — `function sourceNameOf(values: readonly string[], name?: string): string;` — The name this vocabulary is published under, or the one the caller declares.
-- `uuidOut` (const) — `uuidOut: () => z.ZodString` — A server-issued identifier ON THE WIRE — 'format: uuid', no pattern.
+- `uuidOut` (const) — `uuidOut: () => z.ZodString` — A server-issued identifier on the wire — 'format: uuid', no pattern.
 - `vocabularyIn` (function) — `function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T>;` — A vocabulary schema, STRICT — for a request: an unknown member is refused.
-- `vocabularyOut` (function) — `function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;` — A vocabulary schema, TOLERANT — for a response.
-- `vocabularyOutLocal` (function) — `function vocabularyOutLocal<const T extends Members>(values: T, reason: string): VocabularyOut;` — A vocabulary the DOCUMENT declares local to itself — 'source: none', with the reason the contract gives for it.
+- `vocabularyOut` (function) — `function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;` — A vocabulary schema, TOLERANT — for a response: an unknown member is kept as a raw string.
+- `vocabularyOutLocal` (function) — `function vocabularyOutLocal<const T extends Members>(values: T, reason: string): VocabularyOut;` — A vocabulary the DOCUMENT declares local to itself — 'source: none', with its reason.
 - `vocabularyOutLocalNullable` (function) — `function vocabularyOutLocalNullable<const T extends Members>(values: T, reason: string): VocabularyOutNullable;` — A contract-local vocabulary on a field that may also be absent.
-- `vocabularyOutNullable` (function) — `function vocabularyOutNullable<const T extends Members>(values: T, name?: string): VocabularyOutNullable;` — TOLERANT AND NULLABLE — the same thing for a field that may be absent.
+- `vocabularyOutNullable` (function) — `function vocabularyOutNullable<const T extends Members>(values: T, name?: string): VocabularyOutNullable;` — A tolerant vocabulary on a field that may be absent.
 
 ## Local tree
 

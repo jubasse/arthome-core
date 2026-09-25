@@ -17,18 +17,8 @@ const profile = (over: Partial<LanguageProfile> = {}): LanguageProfile => ({
 });
 
 /**
- * PROTECTED INVARIANT
- *   The `languageDependency` vocabulary contains `essential`, and that is the
- *   value the rule depends on.
- *
- * WHY THIS TEST EXISTS
- *   D1 — the most verifiable correction in the file. `taxonomy.json` declares
- *   `none | light | helpful`. But `essential` is ABSENT from the vocabulary,
- *   carried by five shows, translated in the i18n, and `helpers.js:437` MAKES
- *   IT ITS TEST. While `light` is used NOWHERE.
- *
- *   A closed vocabulary that does not contain the value the surface's most
- *   visible rule depends on is not a closed vocabulary.
+ * D1: `essential` was ABSENT from the declared vocabulary yet carried by five shows, translated,
+ * and made its test by `helpers.js:437` — while `light` was used nowhere.
  */
 describe('the language barrier', () => {
   it('hangs entirely on `essential`', () => {
@@ -38,18 +28,12 @@ describe('the language barrier', () => {
   });
 
   it('tells "barrier-free for anyone" apart from "followable by me"', () => {
-    // Two different questions: search's "no language barrier" filter depends on
-    // NO viewer at all.
     expect(isLanguageNeutral(profile({ dependency: LanguageDependency.NONE }))).toBe(true);
     expect(isLanguageNeutral(profile({ dependency: LanguageDependency.HELPFUL }))).toBe(false);
   });
 });
 
-/**
- * PROTECTED INVARIANT
- *   "Followable" is decided on the languages I understand, and `helpful` stays
- *   followable without them — that is the whole point of the middle value.
- */
+/** `helpful` stays followable without the languages I understand: the point of the middle value. */
 describe('"can this show be followed?"', () => {
   it('is always yes when language does not matter', () => {
     const dance = profile({ spoken: [], dependency: LanguageDependency.NONE });
@@ -59,7 +43,7 @@ describe('"can this show be followed?"', () => {
 
   it('is yes when I understand the performed language', () => {
     expect(isUnderstandable(profile(), ['fr'])).toBe(true);
-    expect(isUnderstandable(profile(), ['FR'])).toBe(true); // case does not matter
+    expect(isUnderstandable(profile(), ['FR'])).toBe(true);
   });
 
   it('is yes when subtitles cover me', () => {
@@ -68,8 +52,6 @@ describe('"can this show be followed?"', () => {
   });
 
   it('is NO when the language is essential and nothing covers me', () => {
-    // The case that justifies the rule's existence: a theatre text performed in
-    // French, subtitled in English, for a viewer who reads neither.
     expect(isUnderstandable(profile({ subtitles: ['en'] }), ['ja'])).toBe(false);
   });
 

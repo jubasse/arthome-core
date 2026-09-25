@@ -6,15 +6,9 @@ import { applyRate, remainderAfterRate, roundMinor, taxIncludedIn } from './roun
 const eur = (amountMinor: number) => money(amountMinor, 'EUR');
 
 /**
- * PROTECTED INVARIANT
- *   Rounding happens TO THE MINOR UNIT, on EACH COMPONENT TAKEN SEPARATELY.
- *   That is what `shared/` carries and what has authority.
- *
- * WHY THIS TEST EXISTS
- *   The sum of the roundings is not the rounding of the sum. The gap is one
- *   cent, always in the same direction, on every order — exactly the kind of
- *   gap a Stripe reconciliation surfaces six months later with nobody able to
- *   say where it came from.
+ * ⚠ The sum of the roundings is not the rounding of the sum. The gap is one
+ * cent, always in the same direction, on every order — the kind a Stripe
+ * reconciliation surfaces six months later.
  */
 describe('rounding, component by component', () => {
   it('is NOT the rounding of the sum', () => {
@@ -22,21 +16,16 @@ describe('rounding, component by component', () => {
     const commissionRate = 1200; // 12%
 
     const perSeat = applyRate(unitPrice, commissionRate).amountMinor; // round(316.44) = 316
-    const threeSeatsSeparately = perSeat * 3; // 948
+    const threeSeatsSeparately = perSeat * 3;
     const threeSeatsTogether = applyRate(eur(2637 * 3), commissionRate).amountMinor; // round(949.32) = 949
 
     expect(perSeat).toBe(316);
     expect(threeSeatsSeparately).toBe(948);
     expect(threeSeatsTogether).toBe(949);
-    // The test does not say which one is "right": it says they DIFFER, hence
-    // that the order of operations is a decision, not a detail.
     expect(threeSeatsSeparately).not.toBe(threeSeatsTogether);
   });
 
   it('is symmetric on negatives — a refund returns the same cent', () => {
-    // `Math.round` rounds -0.5 towards 0 and 0.5 towards 1: it is ASYMMETRIC.
-    // Negatives exist here — they are refunds and credit notes — and a round
-    // trip must come back to exactly zero.
     expect(roundMinor(2.5)).toBe(3);
     expect(roundMinor(-2.5)).toBe(-3);
     expect(roundMinor(2.5) + roundMinor(-2.5)).toBe(0);
@@ -44,8 +33,6 @@ describe('rounding, component by component', () => {
   });
 
   it('never creates money: rate + complement = total', () => {
-    // The invariant that protects the credit note: `remainderAfterRate` is
-    // defined as a SUBTRACTION, never as `applyRate(x, 10000 - r)`.
     for (const amount of [2637, 1, 99, 100, 12_345, 7]) {
       const value = eur(amount);
       const part = applyRate(value, 1200);
@@ -67,16 +54,6 @@ describe('rounding, component by component', () => {
   });
 });
 
-/**
- * PROTECTED INVARIANT
- *   A price shown to a consumer is tax-inclusive: VAT is EXTRACTED from it, it
- *   is not added to it.
- *
- * WHY
- *   The classic error is `gross x rate / 10000`, which OVERSTATES the tax. On a
- *   5.5% rate the gap is 5% of the VAT amount — invisible to the eye,
- *   systematic at filing time.
- */
 describe('VAT is extracted from a tax-inclusive amount', () => {
   it('is not the rate applied to the gross', () => {
     const grossTtc = eur(2600);
@@ -99,12 +76,6 @@ describe('VAT is extracted from a tax-inclusive amount', () => {
   });
 });
 
-/**
- * PROTECTED INVARIANT
- *   Adding two different currencies is a FAULT, never an implicit conversion.
- *   D4: three markets declared, one exercised — multi-currency is an intention,
- *   not a proven rule.
- */
 describe('currencies do not mix', () => {
   it('refuses an addition between two currencies', () => {
     expect(() => applyRate(money(1000, 'CHF'), 1200)).not.toThrow();

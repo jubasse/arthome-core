@@ -3,20 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { clocksDiffer, dayShift, venueClock, wallClockAt } from './venue-clock.js';
 
 /**
- * PROTECTED INVARIANT
- *   A date scheduled six months out displays at the RIGHT hour — including on
- *   the far side of a daylight-saving change.
- *
- * WHY THIS TEST EXISTS
- *   This is the case that made D3 fail. `shared/catalogue.json` stores
- *   `venue.utcOffsetMin`, a FROZEN offset, and `helpers.js` derives the summer
- *   or winter abbreviation by comparing it against a table. The rule is right,
- *   the shape does not survive: a fixed offset does not cross a
- *   daylight-saving change.
- *
- *   So the offset is SERVED, recomputed by the server for the instant
- *   concerned — which this module enforces by refusing anything that is not an
- *   IANA identifier.
+ * D3: a FROZEN offset does not cross a daylight-saving change, so a date six months out displayed
+ * at the wrong hour. The offset is served, and the shape is enforced here.
  */
 describe('the time zone is an IANA identifier, not an offset', () => {
   it('refuses an abbreviation and an offset — the two shapes D3 replaces', () => {
@@ -38,8 +26,6 @@ describe('the time zone is an IANA identifier, not an offset', () => {
   });
 
   it('carries TWO offsets for the same venue, according to the season', () => {
-    // The same venue, two instants, two offsets served. That is precisely what
-    // a frozen field cannot express.
     const summer = venueClock('Europe/Paris', 120);
     const winter = venueClock('Europe/Paris', 60);
 
@@ -49,21 +35,12 @@ describe('the time zone is an IANA identifier, not an offset', () => {
 });
 
 /**
- * PROTECTED INVARIANT
- *   "The viewer's time first, the venue's time second when it differs" — with
- *   the "the day before" / "the next day" suffix when moving from one clock to
- *   the other changes the date.
- *
- * WHY
- *   E7: the TV mockup reads `fixtures.geography.viewerUtcOffsetMin`, which
- *   EXISTS NOWHERE. It is `undefined`, so "time at the venue" is computed
- *   against UTC, not against the viewer. The viewer's offset is therefore an
- *   ARGUMENT, never a global.
+ * E7: the TV mockup read `fixtures.geography.viewerUtcOffsetMin`, which exists nowhere, so "time at
+ * the venue" was computed against UTC. The viewer's offset is an ARGUMENT, never a global.
  */
 describe('the two clocks', () => {
   it('detects the shift to the next day', () => {
-    // 23:30 in Paris in summer (UTC+2) = 21:30 UTC. A viewer in Los Angeles
-    // (UTC-7) is then at 14:30 on the SAME day: the venue is "the next day".
+    // 21:30 UTC is 23:30 in Paris (UTC+2) and 14:30 in Los Angeles (UTC-7): the same day.
     const instant = '2026-06-15T21:30:00.000Z';
     const paris = venueClock('Europe/Paris', 120);
 
@@ -74,9 +51,7 @@ describe('the two clocks', () => {
   });
 
   it('detects the day before', () => {
-    // 17:30 in Paris in summer (UTC+2) = 15:30 UTC. A viewer in Tokyo (UTC+9)
-    // is then at 00:30 the NEXT day: seen from there, the venue is "the day
-    // before".
+    // 15:30 UTC is 17:30 in Paris (UTC+2) and 00:30 the next day in Tokyo (UTC+9).
     const paris = venueClock('Europe/Paris', 120);
     expect(dayShift('2026-06-15T15:30:00.000Z', paris, 540)).toBe(-1);
   });
@@ -89,8 +64,6 @@ describe('the two clocks', () => {
   });
 
   it('returns wall-clock components as numbers, never a formatted string', () => {
-    // Formatting is presentation: it depends on the locale and lives elsewhere.
-    // This module returns numbers.
     const wall = wallClockAt('2026-06-15T19:04:00.000Z', 120);
     expect(wall).toEqual({ year: 2026, month: 6, day: 15, hour: 21, minute: 4 });
   });

@@ -17,32 +17,20 @@ import {
 } from '../vocabulary/moderation.js';
 
 /**
- * PROTECTED INVARIANT
- *   A verdict is ACCEPTED while a colleague holds the lease, and REFUSED only
- *   if the row is already settled — with the winning verdict.
- *
- * WHY THIS TEST EXISTS
- *   `studio-mobile`'s C3, demonstrated on the contract's own examples: `claim`
- *   then `release` WITHOUT SETTLING ANYTHING moves the version from 1 to 3. A
- *   moderator who reads the queue at `version: 1`, loses the network and
- *   settles sees their verdict REFUSED on reconnection — when the offline queue
- *   is the one concession granted to mobile.
- *
- *   The real rule is a SUPERSESSION: "as long as your colleague has returned no
- *   verdict, your sanction applies". A single counter cannot express "refuse if
- *   settled, accept if merely claimed".
+ * ⚠ C3: `claim` then `release` without settling anything moves the version from
+ * 1 to 3, so a single counter refuses an offline verdict that nothing has
+ * overruled. Hence two counters — refuse if settled, accept if merely claimed.
  */
 describe('the two moderation counters', () => {
   const claimed: ModerationItemSnapshot = {
     state: ModerationItemState.CLAIMED,
     version: 3, // a colleague claimed then released: the version moved
-    decisionVersion: 0, // but NOTHING was settled
+    decisionVersion: 0, // but nothing was settled
     settledBy: null,
     verdict: null,
   };
 
   it('accepts an offline verdict despite a lease taken in the meantime', () => {
-    // The exact case of the defect: the version moved from 1 to 3 with no verdict.
     const outcome = evaluateSettlement(claimed, {
       expectedDecisionVersion: 0,
       verdict: ModerationVerdict.REMOVE,
@@ -53,8 +41,8 @@ describe('the two moderation counters', () => {
   });
 
   it('refuses a second verdict AND carries the winner', () => {
-    // A bare refusal would force a second round trip in the middle of a live
-    // show. The screen must be able to say "X has already deleted this message".
+    // The screen must be able to say "X has already deleted this message" without
+    // a second round trip in the middle of a live show.
     const settled: ModerationItemSnapshot = {
       state: ModerationItemState.SETTLED,
       version: 5,
@@ -89,14 +77,8 @@ describe('the two moderation counters', () => {
 });
 
 /**
- * PROTECTED INVARIANT
- *   A human overturns an automatic decision; NEVER the reverse.
- *
- * WHY
- *   Without this rule, a retroactive filter would erase a judgement already
- *   made — and human judgement is precisely what we keep for 24 months and
- *   journal by name. Nothing is built today: the shape must be able to
- *   accommodate a non-human actor without a contract change.
+ * ⚠ A human overturns an automatic decision, never the reverse: a retroactive
+ * filter must not erase a judgement kept for 24 months and journalled by name.
  */
 describe('the human / automatic precedence', () => {
   it('lets a human overturn an automatic decision', () => {
@@ -124,11 +106,6 @@ describe('the human / automatic precedence', () => {
   });
 });
 
-/**
- * PROTECTED INVARIANT
- *   Only one badge is shown, and the precedence runs from the PERSON towards
- *   the MESSAGE.
- */
 describe('the single badge', () => {
   it("makes the person's sanction outrank the message's state", () => {
     expect(moderationBadgeOf(MessageState.PUBLISHED, AudienceSanction.BANNED)).toBe(
@@ -147,13 +124,8 @@ describe('the single badge', () => {
 });
 
 /**
- * PROTECTED INVARIANT
- *   The chat's rate is measured in a DECLARED unit.
- *
- * WHY
- *   The mockup computes `messages / hours elapsed`, labels it "MSG/MIN", then
- *   compares it against a threshold of 60 msg/min. Those are not the same
- *   quantities, and the gap is a factor of sixty.
+ * ⚠ The mockup computes `messages / hours elapsed`, labels it "MSG/MIN" and
+ * compares it against 60 msg/min: a factor of sixty. The unit is declared.
  */
 describe('the chat rate', () => {
   it('switches to the queue past the threshold, not before', () => {

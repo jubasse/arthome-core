@@ -39,15 +39,7 @@ const taxonomy: Taxonomy = {
   attributeGroups: [],
 };
 
-/**
- * PROTECTED INVARIANT
- *   The editorial rank is authoritative, and NO SURFACE REORDERS.
- *
- * WHY
- *   The rank runs from the most popular to the most specialised, FAMILIES
- *   MIXED. A surface sorting by family, alphabetically or by number of dates
- *   would produce a different order — and there would be five of them.
- */
+/** The editorial rank is authoritative and NO SURFACE REORDERS: five sorts would be five orders. */
 describe('the editorial rank', () => {
   it('orders by rank, families mixed', () => {
     const ordered = disciplinesInEditorialOrder(taxonomy).map((entry) => entry.id);
@@ -55,8 +47,6 @@ describe('the editorial rank', () => {
   });
 
   it('does not mutate the served artefact', () => {
-    // The artefact is shared by the whole process: `sort` mutates in place, and
-    // mutating served data is an action at a distance.
     const before = taxonomy.disciplines.map((entry) => entry.id);
     disciplinesInEditorialOrder(taxonomy);
     expect(taxonomy.disciplines.map((entry) => entry.id)).toEqual(before);
@@ -64,14 +54,9 @@ describe('the editorial rank', () => {
 });
 
 /**
- * PROTECTED INVARIANT
- *   A sub-genre is looked up WITHIN ITS DISCIPLINE.
- *
- * WHY
- *   `studio-web` (inconsistency 10) found `A.genre(id)` called with a single
- *   argument while the function expects two. That is not a detail: two
- *   disciplines carry a sub-genre of the same name — `contemporary` exists in
- *   theatre AND in jazz.
+ * `studio-web` (inconsistency 10): `A.genre(id)` was called with one argument for a function that
+ * takes two. Two disciplines carry a sub-genre of the same name — `contemporary` in theatre AND in
+ * jazz.
  */
 describe('a sub-genre belongs to a discipline', () => {
   it('tells apart two sub-genres of the same name', () => {
@@ -87,15 +72,8 @@ describe('a sub-genre belongs to a discipline', () => {
 });
 
 /**
- * PROTECTED INVARIANT
- *   A discipline is a FORM — never a language, a period or a country — and it
- *   outranks a tag of the same name.
- *
- * WHY
- *   B2: the TV brief called `ballet` a discipline, when it is a SUB-GENRE of
- *   dance, and `concerts` a discipline when it is a FORMAT. Resolution by
- *   decreasing specificity encodes that hierarchy: a search for "jazz" must
- *   return the whole discipline, not a handful of tagged dates.
+ * B2: the TV brief called `ballet` a discipline (it is a sub-genre of dance) and `concerts` one (it
+ * is a format). Resolution by decreasing specificity encodes the hierarchy.
  */
 describe('resolving a free-text term', () => {
   it('prefers the discipline to the sub-genre and to the tag', () => {

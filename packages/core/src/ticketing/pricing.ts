@@ -1,11 +1,4 @@
-/**
- * The price paid is not the tier's price.
- *
- * `storefront-web` (shape 5): the summary carries
- * `tier + service fee − subscription discount − promotion = total`, and **all
- * four lines must come from the contract**. That is exactly the "an order total
- * composed in two places" case the file cites as a typical defect.
- */
+/** The price paid is not the tier's price: all four summary lines come from the contract. */
 
 import type { Instant } from '../kernel/clock.js';
 import { DomainError } from '../kernel/errors.js';
@@ -51,14 +44,9 @@ export function activePromotion(promotions: readonly Promotion[], now: Instant):
 }
 
 /**
- * The "show already started" price, PRO RATA of the time remaining.
- *
- * `storefront-web`: "it is a value that depends on the instant of reading: it
- * must come from the contract with its validity date, or be recomputable by
- * `@arthome/core` from served parameters. It cannot be a frozen string."
- *
- * Hence this function: the server serves the parameters, the surface
- * re-evaluates when `validUntil` passes. One rule, two calls.
+ * The "show already started" price, PRO RATA of the time remaining. It depends
+ * on the instant of reading, so the server serves the parameters and the
+ * surface re-evaluates when `validUntil` passes: one rule, two calls.
  */
 export function lateRatePrice(fullPrice: Money, progress: number): Money {
   const remaining = Math.min(1, Math.max(0, 1 - progress));
@@ -67,12 +55,8 @@ export function lateRatePrice(fullPrice: Money, progress: number): Money {
 
 /**
  * THE DISCOUNT AND THE PROMOTION DO NOT STACK: the one most favourable to the
- * viewer applies (D-017).
- *
- * It is the simplest rule to explain, and the only one that does not produce a
- * negative price on a preview at a discovery rate for a `premium` subscriber.
- * `storefront-web` Q12 asked the question: without it, three screens would
- * write it three times.
+ * viewer applies (D-017). It is the only rule that does not give a negative
+ * price on a preview at a discovery rate for a `premium` subscriber.
  */
 export function applyBestDiscount(
   basePrice: Money,
@@ -90,12 +74,7 @@ export function applyBestDiscount(
   return promotionPrice.amountMinor <= discounted.amountMinor ? promotionPrice : discounted;
 }
 
-/**
- * Service fees: PER SEAT, and the schedule is SERVED.
- *
- * `storefront-web` Q11. Never a screen constant — the storefront shows a
- * "service fee" line in its summary, and it must be computable only once.
- */
+/** Service fees: PER SEAT, and the schedule is SERVED. Never a screen constant. */
 export interface ServiceFeeSchedule {
   readonly perSeat: Money;
   readonly rateBps: BasisPoints;
@@ -132,10 +111,8 @@ export function quoteSeats(
     });
   }
   const unitAfterDiscount = applyBestDiscount(unitPrice, subscriptionDiscountBps, promotionPrice);
-  // The rounding has already happened on the UNIT price: the multiplication
-  // that follows is exact. That is the order imposed by "rounding on each
-  // component taken separately" — the reverse produces a cent of drift per
-  // order.
+  // The rounding has already happened on the UNIT price, so this multiplication
+  // is exact; discounting the total instead drifts a cent per order.
   const tierTotal = money(unitPrice.amountMinor * quantity, unitPrice.currencyCode);
   const discountedTotal = money(unitAfterDiscount.amountMinor * quantity, unitPrice.currencyCode);
   const discount = subtract(tierTotal, discountedTotal);

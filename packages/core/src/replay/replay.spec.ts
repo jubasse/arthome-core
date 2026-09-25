@@ -13,18 +13,6 @@ const timing: DateTiming = {
   replayWindowHours: 48,
 };
 
-/**
- * PROTECTED INVARIANT
- *   The replay window runs from the END of the live show, never from the start.
- *   And the hours remaining are DERIVED: the contract delivers the inputs, not
- *   the result.
- *
- * WHY
- *   `storefront-tv`: "if the server delivered the hour count, it would be wrong
- *   a minute later". It is the canonical example of the "no value computed
- *   twice" rule — and of its resolution: one rule, an explicit `now`, two call
- *   sites.
- */
 describe('the replay window', () => {
   it('runs from the end of the live show, not from the start', () => {
     // Ends at 21:00 + 48 h = 23 September 21:00. From the START it would be 19:00.
@@ -33,7 +21,6 @@ describe('the replay window', () => {
   });
 
   it('rounds UP, so it never promises less than is left', () => {
-    // 30 minutes are left: announcing "0 h" would be wrong and discouraging.
     expect(replayHoursLeft(timing, '2026-09-23T20:30:00.000Z')).toBe(1);
   });
 
@@ -48,10 +35,8 @@ describe('the replay window', () => {
   });
 
   it('crosses a daylight-saving change without drifting', () => {
-    // A 200 h window — the longest in the data set — placed over the last
-    // weekend of October. The computation is in INSTANTS, so it is immune to
-    // the daylight-saving change: precisely what a frozen offset did not
-    // guarantee (D3).
+    // A 200 h window — the longest in the data set — over the last weekend of
+    // October: the computation is in INSTANTS, so the DST change cannot drift it (D3).
     const long: DateTiming = {
       ...timing,
       startsAt: '2026-10-23T19:00:00.000Z',
@@ -63,15 +48,6 @@ describe('the replay window', () => {
   });
 });
 
-/**
- * PROTECTED INVARIANT
- *   "No replay for this date" and "replay expired" are TWO distinct refusals.
- *
- * WHY
- *   `storefront-tv` lists them separately among the error codes it must be able
- *   to tell apart: each produces a different screen, and a generic code would
- *   produce a wrong one.
- */
 describe('the two replay refusals', () => {
   it('tells an absent policy apart from a closed window', () => {
     const none: DateTiming = { ...timing, replayPolicy: ReplayPolicy.NONE, replayWindowHours: 0 };

@@ -1,61 +1,30 @@
 /**
  * The PAIRING CODE's alphabet — the six characters a television displays and a
- * phone retypes.
+ * phone retypes. `adr-auth.md` §5.1 owns the design, this module owns the
+ * value: it lived only as prose there and drifted twice in two days, missed by
+ * four prose reviews and caught by an assertion on the first run.
  *
- * ⚠ THIS CONSTANT EXISTS BECAUSE PROSE HAS NO GATE. Until now the value lived
- * as a string inside `adr-auth.md` §5.1 and nowhere else. It drifted twice in
- * two days, and the second drift was a second copy written three paragraphs
- * below the first — inside the section that argues against restating values.
- * Four prose reviews passed over it; an assertion caught it on the first run.
- * That is the whole reason this file exists, and it is not a fact about prose,
- * it is a fact about where the value lived.
- *
- * `adr-auth.md` owns the DESIGN of this alphabet and keeps its reasoning. This
- * module owns the VALUE. The ADR now cites the identifier and restates nothing,
- * which is the rule it applies to `SEAT_CODE_ALPHABET`.
- *
- * ⚠ IT IS DELIBERATELY NOT `SEAT_CODE_ALPHABET`, and the difference is the
- * point. **The channel decides what counts as a confusable class; the
- * arithmetic then decides whether that class can be normalised.**
- *
- *   pairing   read once off a television at three metres, then discarded.
- *             A rejection costs one retry on the remote.
- *   seat      dictated to support and retyped off a printed confirmation
- *             months later. A rejection costs a phone call.
- *
- * So `U`/`V` is one confusable class here and is NOT one for the seat code:
- * "you" and "vee" are distinct over a telephone. This alphabet maps `U → V`;
- * ticketing excludes `U` for the rude-word reason alone and maps nothing.
- * Two correct implementations, the same pair, different treatment, neither
- * wrong.
+ * ⚠ Deliberately NOT `SEAT_CODE_ALPHABET`: the channel decides the confusable
+ * classes. `U`/`V` is one here, read off a television, and is not one for a seat
+ * code dictated over a telephone — so this alphabet maps `U → V` and ticketing
+ * maps nothing.
  */
 
 import { DomainError } from '../kernel/errors.js';
 import { DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /**
- * 27 symbols. Read from `adr-auth.md` §5.1, which owns the design.
- *
- * Excluded: `0 1 B G I O S U Z`. Every exclusion is a confusable glyph at
- * three metres, except `U`, which also rules out six-letter codes forming an
- * unfortunate word on a living-room television at 120 points.
- *
- * 27^6 ≈ 3.9 × 10^8, i.e. 28.5 bits — above RFC 8628 §5.1's threshold, given
- * that a cap on attempts exists.
+ * 27 symbols. Read from `adr-auth.md` §5.1, which owns the design. Every
+ * exclusion is a glyph confusable at three metres, except `U`, which also rules
+ * out an unfortunate six-letter word. 27^6 ≈ 28.5 bits, above RFC 8628 §5.1's
+ * threshold given a cap on attempts.
  */
 export const PAIRING_CODE_ALPHABET = 'ACDEFHJKLMNPQRTVWXY23456789';
 
 /** Six characters. Never composed with a prefix — unlike a seat code. */
 export const PAIRING_CODE_LENGTH = 6;
 
-/**
- * The CONFUSABLE CLASSES this channel recognises, written as data so the
- * invariant below can be computed rather than asserted by hand.
- *
- * This list is channel-specific and that is deliberate: it is what a viewer
- * confuses reading a screen from a sofa, which is not what a support agent
- * confuses hearing a code over a telephone.
- */
+/** The CONFUSABLE CLASSES this channel recognises, as data so the invariant is computed. */
 export const PAIRING_CONFUSABLE_CLASSES: readonly (readonly string[])[] = [
   ['0', 'O', 'D', 'Q', 'C'],
   ['1', 'I', 'L'],
@@ -68,12 +37,8 @@ export const PAIRING_CONFUSABLE_CLASSES: readonly (readonly string[])[] = [
 
 /**
  * The normalisation table, exhaustive over the mappable excluded glyphs.
- *
- * `0` and `O` are absent ON PURPOSE. Their whole class — `0 O D Q C` — keeps
- * THREE members, so a typed `O` has no single correct target and correcting it
- * would be a guess. The contract answers `PAIRING_CODE_AMBIGUOUS_GLYPH` and
- * points at the position instead, which beats both a silent refusal and an
- * invented correction.
+ * ⚠ `0` and `O` are absent ON PURPOSE: their class keeps THREE members, so a
+ * typed `O` has no single correct target and is refused by name instead.
  */
 export const PAIRING_CODE_NORMALISATION: Readonly<Record<string, string>> = {
   S: '5',
@@ -93,26 +58,18 @@ export function isPairingCodeAlphabetMember(character: string): boolean {
 }
 
 /**
- * How many members of a class survive in the alphabet.
- *
- * This is the arithmetic the invariant rests on, and it is exported because it
- * is the thing a reader should be able to re-run rather than believe:
- *   - exactly one survivor  → the class is normalisable, and safely;
- *   - two survivors         → a misreading produces a code that is VALID BUT
- *                             WRONG, with nothing to signal where. FORBIDDEN;
- *   - three or more         → the class is removed from the code space and a
- *                             typed member is refused by name.
+ * How many members of a class survive in the alphabet. One survivor makes the
+ * class safely normalisable, two would let a misreading produce a code that is
+ * VALID BUT WRONG, and three or more mean the class is refused by name.
  */
 export function survivorsOf(confusableClass: readonly string[]): readonly string[] {
   return confusableClass.filter(isPairingCodeAlphabetMember);
 }
 
 /**
- * Normalises a code typed by a person, or refuses it by name.
- *
- * Refusing is a first-class outcome here, which is the difference from the seat
- * code: the cost of a refusal is one retry on a remote control, so pointing at
- * the offending position beats guessing.
+ * Normalises a code typed by a person, or refuses it by name. Refusing is a
+ * first-class outcome here: a refusal costs one retry on a remote control, so
+ * pointing at the offending position beats guessing.
  */
 export function normalizePairingCodeInput(raw: string): string {
   const typed = raw.toUpperCase().replace(/[\s.-]/g, '');

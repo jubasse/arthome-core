@@ -1,11 +1,6 @@
 /**
- * The locale is an ARGUMENT, never a global.
- *
- * `helpers.js` holds `let locale` at module level, with a `setLocale()`. In a
- * mockup that is convenient. In a package imported by seven services, two
- * concurrent requests would share the same language — a French viewer would get
- * the response formatted for an English speaker because another request changed
- * the global in the meantime.
+ * The locale is an ARGUMENT, never a global: `helpers.js` held `let locale` at module level, and in
+ * a package imported by seven services two concurrent requests would share the same language.
  */
 
 import { DomainError } from '../kernel/errors.js';
@@ -26,13 +21,8 @@ export function parseLocale(raw: string): Locale {
 }
 
 /**
- * Choosing between bilingual content: the READER's language when it exists, the
- * other one otherwise.
- *
- * This is `helpers.js`'s `content()` rule, ported as it stands — it is right.
- * The point it does not make, and the contract adds: a show's PERFORMED
- * language is stated elsewhere (`spokenLanguages`); it has nothing to do with
- * the display language.
+ * Choosing between bilingual content: the READER's language when it exists, the other one
+ * otherwise. This is the DISPLAY language; a show's performed language is `spokenLanguages`.
  */
 export interface Bilingual {
   readonly fr: string;

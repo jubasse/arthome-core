@@ -1,24 +1,10 @@
 /**
- * A DETERMINISTIC pseudo-random generator.
- *
- * `fixtures.js` has a second life after the port: a test and demonstration data
- * set. Being deterministic, it produces the same catalogue on every run — a
- * solid base for integration tests and staging environments.
- *
- * ⚠ `Math.random()` is banned here, and not out of purism: a non-reproducible
- * data set makes a test flaky, and a flaky test ends up disabled. It is also
- * what lets the `FakePaymentAdapter` run WITH NO KEY AND NO NETWORK, which the
- * public demonstration requires.
+ * ⚠ `Math.random()` is banned in the fixtures: a non-reproducible data set makes
+ * a test flaky and a flaky test ends up disabled. Determinism is also what lets
+ * the `FakePaymentAdapter` run with no key and no network.
  */
 
-/**
- * Mulberry32 — thirty-two bits of state, one multiplication, three shifts.
- *
- * Chosen for what it does not have: no dependency, no platform API, and
- * identical behaviour under Node, Metro and a browser. Its statistical quality
- * is more than enough to spread dates across a calendar; we encrypt nothing
- * with it.
- */
+/** Mulberry32 — deterministic, dependency-free, identical under Node, Metro and a browser. */
 export class DeterministicRandom {
   private state: number;
 
@@ -40,7 +26,6 @@ export class DeterministicRandom {
     return min + Math.floor(this.next() * (max - min + 1));
   }
 
-  /** One element, or `null` if the list is empty — never `undefined`. */
   public pick<T>(values: readonly T[]): T | null {
     if (values.length === 0) return null;
     return values[this.intBetween(0, values.length - 1)] ?? null;

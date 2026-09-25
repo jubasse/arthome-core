@@ -1,14 +1,12 @@
 /**
- * A publication's state machine, and its two ONE-WAY passages.
+ * A publication's state machine, and its two one-way passages.
  *
- * E5 — the quietest and most important correction: the fixtures encode
- * `lockedTransitions: ['scheduled', 'replay_online']`, a list of STATES, and
- * test membership of the current state. The mockup encodes `from>to` PAIRS.
- * Those are two different semantics, and the second is the right one —
- * locking a STATE would also prevent entering it.
+ * E5: the fixtures encoded `lockedTransitions` as a list of STATES and tested membership of the
+ * current state; the mockup encoded `from>to` PAIRS. The second is right — locking a state would
+ * also prevent entering it.
  *
- * And a guarantee the interface does not give: **the server refuses the reverse
- * transition**. Not offering it on screen is a courtesy, not a guarantee.
+ * The server refuses the reverse transition. Not offering it on screen is a courtesy, not a
+ * guarantee.
  */
 
 import { DomainError } from '../kernel/errors.js';
@@ -19,23 +17,19 @@ import { DomainErrorCode } from '../vocabulary/error-codes.js';
 export interface PublicationTransition {
   readonly from: PublicationState;
   readonly to: PublicationState;
-  /**
-   * The CODE of the promise made, served with the refusal so the message can be
-   * translated client-side. Null when the transition is reversible.
-   */
+  /** The promise's code, served with the refusal so the message is translated client-side. */
   readonly irreversiblePromiseCode: string | null;
 }
 
 /**
  * The table, written once. Two pairs are one-way:
- *   `draft|reserve -> scheduled`  — publishing commits THE DISPLAYED PRICE;
- *   `ended -> replay-online`      — viewers have PAID for the replay.
+ *   `draft|reserve -> scheduled`  — publishing commits the displayed price;
+ *   `ended -> replay-online`      — viewers have paid for the replay.
  *
- * ⚠ `technical -> live` and `live -> ended` are NOT commands: they are CAUSED
- * by `streaming.run.started.v1` and `streaming.run.ended.v1`. That is what
- * keeps `Publication` the aggregate of a single context, when it looked as if
- * it straddled three. The "go on air" command goes to `streaming`, which alone
- * knows whether the feed is coming in.
+ * ⚠ `technical -> live` and `live -> ended` are not commands: they are caused by
+ * `streaming.run.started.v1` and `streaming.run.ended.v1`, which is what keeps `Publication` the
+ * aggregate of a single context. "Go on air" goes to `streaming`, which alone knows whether the
+ * feed is coming in.
  */
 const TRANSITIONS: readonly PublicationTransition[] = [
   { from: PublicationState.DRAFT, to: PublicationState.RESERVE, irreversiblePromiseCode: null },
@@ -73,13 +67,8 @@ const EVENT_DRIVEN: readonly PublicationTransition[] = [
   { from: PublicationState.LIVE, to: PublicationState.ENDED, irreversiblePromiseCode: null },
 ];
 
-/**
- * The RANK of a state, served with it.
- *
- * The studio's events table sorts BY STATE, and the order is the machine's, not
- * alphabetical. Without a served rank, each surface would reinvent
- * `STATE_ORDER` — `studio-web` Q5.
- */
+// The studio's events table sorts by state, in the machine's order rather than alphabetically.
+// Without a served rank each surface reinvents `STATE_ORDER` (`studio-web` Q5).
 const ORDER: readonly PublicationState[] = [
   PublicationState.DRAFT,
   PublicationState.RESERVE,
@@ -95,13 +84,11 @@ export function orderRankOf(state: PublicationState): number {
 }
 
 /**
- * The transitions offered TO THIS OPERATOR.
+ * The transitions offered to this operator.
  *
- * `canDecide` (artist ∨ production) is an ARGUMENT: only the owner and
- * production move a date; a run desk sees the sheet and does not move it.
- * Serving the list stops every surface recomputing the table — and it is also
- * what lets the realtime correction carry the RECIPIENT's transitions, without
- * which a stale button would stay on screen (`realtime.md` §3.3).
+ * `canDecide` (artist ∨ production) is an argument because a run desk sees the sheet and does not
+ * move it, and because the realtime correction has to carry the RECIPIENT's transitions —
+ * without which a stale button stays on screen (`realtime.md` §3.3).
  */
 export function nextPublicationTransitions(
   from: PublicationState,
@@ -117,11 +104,8 @@ export function isEventDriven(from: PublicationState, to: PublicationState): boo
 }
 
 /**
- * The lock is on the PAIR, never on the state.
- *
- * Returns the code of the promise made when the reverse transition is refused,
- * `null` when it is simply unknown — two different refusals, two different
- * messages.
+ * The promise blocking this transition, or `null` when it is merely unknown — two different
+ * refusals, two different messages. The lock is on the pair, never on the state.
  */
 export function irreversiblePromiseBlocking(
   from: PublicationState,
@@ -155,17 +139,13 @@ export function assertTransitionAllowed(
 }
 
 /**
- * THE AUTHORITATIVE CHECKLIST: SEVEN items, the ones on the sheet.
+ * The authoritative checklist, in the order the sheet shows. `studio-web` Q7: the fixtures
+ * carried four items and the sheet seven, an arbitrary subset against the ones a screen
+ * exercised.
  *
- * `studio-web` Q7: the fixtures carry FOUR, the sheet shows SEVEN, and both
- * answer the same question. The four are an arbitrary subset; the seven are the
- * ones a screen actually exercised.
- *
- * ⚠ THREE of the seven are FACTS PROJECTED from other contexts —
- * `at_least_one_active_price` and `capacity` come from `ticketing`,
- * `technical_check_passed` from `streaming`. `catalog` keeps them up to date by
- * event and asks nobody for them: that is what stops a publication needing a
- * synchronous call to two services.
+ * ⚠ Three are facts projected from other contexts — `at_least_one_active_price` and `capacity`
+ * from `ticketing`, `technical_check_passed` from `streaming`. `catalog` keeps them current by
+ * event and asks nobody, which is what stops a publication needing two synchronous calls.
  */
 export const PUBLICATION_CHECKLIST_ITEMS = [
   'title_and_discipline',
@@ -180,17 +160,7 @@ export const PUBLICATION_CHECKLIST_ITEMS = [
 ] as const;
 export type PublicationChecklistItem = (typeof PUBLICATION_CHECKLIST_ITEMS)[number];
 
-/**
- * The NAMED members, so that nothing writes one of these as a string.
- *
- * ⚠ IT WAS THE ONLY VOCABULARY IN THIS PACKAGE WITHOUT ONE, and the absence
- *   was found the way absences are: something needed a member and had to
- *   write a literal instead. `@arthome/contracts`' error examples carry
- *   `poster`, `capacity` and `technical_check_passed`, and `check-enums`
- *   reported all three — correctly, because a literal is a literal whatever
- *   it is illustrating. An example written as the constant cannot drift when
- *   the constant is renamed, which is a better example than a quoted string.
- */
+/** The named members, so that nothing writes one of these as a string. */
 export const PublicationChecklistItem = {
   TITLE_AND_DISCIPLINE: 'title_and_discipline',
   POSTER: 'poster',
@@ -204,42 +174,16 @@ export const PublicationChecklistItem = {
 } as const;
 
 /**
- * BLOCKING IS A PROPERTY OF THE ITEM, NOT A SEPARATE VOCABULARY.
+ * Blocking is a property of the item, not a separate vocabulary. Promoting a warning to blocking
+ * will happen: under two vocabularies it moves an item between them and breaks anyone matching on
+ * either, and a client rendering the checklist wants all nine with their status rather than two
+ * lists to concatenate. Here it flips a boolean.
  *
- * This was two vocabularies — seven blocking items and two warnings — and the
- * split was wrong on two counts.
- *
- * Promoting a warning to blocking is a product decision that WILL happen. Under
- * the split it moves an item from one vocabulary to another, which breaks
- * anyone matching on either. Here it flips a boolean.
- *
- * And a client rendering the checklist wants all nine with their status. Two
- * lists forced every surface to concatenate them — a composition the server
- * should have served, which is the same fault as making a surface recompose
- * `displayState`.
- */
-/**
- * A TABLE KEYED BY THE TYPE, NOT A LIST OF THE BLOCKING SEVEN.
- *
- * This was an array of seven members written out again twenty-eight lines below
- * the declaration — **the split this comment argues against, surviving one level
- * down**. Merging the two vocabularies changed what is exported without
- * changing what has to be edited, which is the part the argument was about:
- * promoting `chapters_planned` meant editing a literal list, the same edit in
- * the same shape as moving it between two vocabularies.
- *
- * And it drifted in the direction nothing catches. A tenth item added to
- * `PUBLICATION_CHECKLIST_ITEMS` was silently NON-BLOCKING, because `includes`
- * on a list that never heard of it returns `false` — no type error, since
- * `PublicationChecklistItem` admits the member and the array simply lacks it.
- *
- * A `Record` keyed by the union makes a missing member a **compile error**, so
- * the tenth item cannot be added without a decision about whether it blocks.
- * That is the boolean flip the paragraph above promises, checked by `tsc`
- * rather than by a reviewer.
- *
- * It was invisible to `arthome-check-enums` because this file DECLARES a
- * vocabulary, and the gate excludes a declaring file from the sweep entirely
+ * ⚠ A `Record` keyed by the union, not an array of the blocking seven. The array drifted in the
+ * direction nothing catches: a tenth item added to `PUBLICATION_CHECKLIST_ITEMS` was silently
+ * non-blocking, since `includes` returns `false` with no type error. A missing key is a compile
+ * error, so a tenth item cannot be added without a decision about whether it blocks. It was
+ * invisible to `arthome-check-enums`, which excludes a declaring file from the sweep entirely
  * rather than excluding it from its own values.
  */
 const BLOCKING: Readonly<Record<PublicationChecklistItem, boolean>> = {
@@ -267,11 +211,11 @@ export interface PublicationChecklistEntry {
 
 export interface PublicationReadiness {
   readonly ready: boolean;
-  /** All NINE, in declaration order — the surface renders this, it composes nothing. */
+  /** All nine, in declaration order: the surface renders this and composes nothing. */
   readonly entries: readonly PublicationChecklistEntry[];
-  /** The MISSING blocking identifiers — never a percentage, which the client computes. */
+  /** The missing blocking identifiers, never a percentage — the client computes that. */
   readonly missing: readonly PublicationChecklistItem[];
-  /** The unmet NON-blocking items. Derived from `entries`; served because the screen labels them differently. */
+  /** The unmet non-blocking items, served because the screen labels them differently. */
   readonly warnings: readonly PublicationChecklistItem[];
 }
 

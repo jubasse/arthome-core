@@ -1,20 +1,9 @@
 /**
- * The taxonomy: universes, disciplines, sub-genres, tags, attribute groups.
+ * The taxonomy: universes, disciplines, sub-genres, tags, attribute groups — the TYPES and the
+ * RULES. ⚠ The authoritative vocabulary and counts are in `prototypes/shared/taxonomy.json`.
  *
- * ⚠ THE AUTHORITATIVE COUNTS AND THE VOCABULARY ARE IN
- * `prototypes/shared/taxonomy.json`, and nowhere else. This comment deliberately
- * states no figure: `docs/taxonomy.md`'s tag list is ILLUSTRATIVE (196 of 205),
- * and a count written here would be a parallel table on the one thing this
- * module exists to keep single.
- *
- * ⚠ THIS MODULE DOES NOT CARRY THE DATA. The taxonomy is served as an
- * IMMUTABLE VERSIONED ARTEFACT — `/taxonomy/{locale}/v{N}.json` — per language
- * and per surface, with a very long cache and a build-time snapshot as a
- * fallback. 59.5 KB raw, 8.4 KB gzip: that is not an API call, and still less a
- * constant compiled into a package five applications embed.
- *
- * This module carries the TYPES and the RULES. Loading happens where the
- * artefact lives.
+ * The data is served as an immutable versioned artefact, `/taxonomy/{locale}/v{N}.json`: at 59.5 KB
+ * raw and 8.4 KB gzip it is not a constant to compile into a package five applications embed.
  */
 /** A universe: NAVIGATION ONLY, never a taxonomic level. */
 export interface Family {
@@ -29,23 +18,17 @@ export interface Genre {
     readonly suggests: readonly string[];
 }
 /**
- * A discipline: mandatory, single, closed vocabulary.
- *
- * A discipline is a FORM — never a language, a period or a country. That is the
- * distinction `docs/taxonomy.md` works to protect, and which the TV brief
- * had lost by calling "concerts" a discipline and "ballet" something other than
- * a sub-genre of dance (B2).
+ * A discipline: mandatory, single, closed vocabulary — and a FORM, never a language, a period or a
+ * country (B2).
  */
 export interface Discipline {
     readonly id: string;
     readonly familyId: string;
     readonly i18nKey: string;
     /**
-     * The EDITORIAL RANK, from the most popular to the most specialised,
-     * families mixed.
+     * The EDITORIAL RANK, from the most popular to the most specialised, families mixed.
      *
-     * ⚠ NO SURFACE REORDERS. It is an editorial decision, served with the
-     * taxonomy; recomputing it on five surfaces would produce five orders.
+     * ⚠ No surface reorders: recomputing it on five surfaces would produce five orders.
      */
     readonly rank: number;
     /** The badge's hue. Presentation, carried here because it is served. */
@@ -77,19 +60,8 @@ export interface Taxonomy {
     readonly attributeGroups: readonly AttributeGroup[];
 }
 /**
- * A show's taxonomic reference.
- *
- * E9 — THREE corrections against `catalogue.json`:
- *   - the sub-genre is MULTIPLE. `taxonomy.json` declares it "optional,
- *     multiple", `catalogue.json` carries it in the singular, and the web
- *     search filter is a multi-select. The plural wins;
- *   - `attributes` in fact carried TAGS — `revival`, `new-creation`,
- *     `opening-night`, `open-air`, `archive` are tags in `tagPolicy`'s sense,
- *     not values of the seven attribute groups. A name collision between two
- *     notions: they are separated here;
- *   - attributes are a record group by group, not a flat list: "wheelchair
- *     accessible" belongs to `accessibility`, and knowing that is what makes it
- *     a facet.
+ * A show's taxonomic reference. E9, against `catalogue.json`: the sub-genre is MULTIPLE, and
+ * `attributes` in fact carried tags, group by group — "wheelchair accessible" is `accessibility`.
  */
 export interface TaxonomyRef {
     readonly disciplineId: string;

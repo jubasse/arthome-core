@@ -1,25 +1,18 @@
 /**
- * The buyer's tax location and its evidence — **the only genuinely
- * irreversible shape in the whole tax chapter** (`adr-payments.md` §5.0).
+ * The buyer's tax location and its evidence — the only genuinely irreversible shape in the tax
+ * chapter (`adr-payments.md` §5.0). The model is a computation and can be redone; a billing
+ * address, an IP address and a card country at the moment of a sale two years ago exist nowhere
+ * if they were not captured.
  *
- * The MODEL is a computation: who is liable, on what base, at what rate. It can
- * be redone. These FACTS cannot: a billing address, an IP address and a card
- * country at the moment of a sale two years ago exist nowhere if they were not
- * captured. Reconstructing them is not expensive — it is impossible.
+ * ⚠ Keyed on jurisdiction, never on a billing market — a billing market is a pricing notion,
+ * and conflating the two was the original fault. A country is not enough either: roughly 9,000
+ * jurisdictions in the United States, where the postal code is indispensable, and in the United
+ * Kingdom the rate depends on jurisdiction × nature of the supply, since Derby Quad v HMRC held
+ * that the theatre-ticket exemption does not extend to a streamed live show.
  *
- * ⚠ Keyed on JURISDICTION, never on a billing market. A billing market is a
- * PRICING notion — which currency we sell in. It is not a tax notion, and
- * conflating the two was the original fault. A country is not enough either:
- * roughly 9,000 jurisdictions in the United States, where the postal code is
- * indispensable; and in the United Kingdom the rate depends on the pair
- * jurisdiction × nature of the supply, since Derby Quad v HMRC held that the
- * theatre-ticket exemption does not extend to a streamed live show.
- *
- * ⚠ AND D-056 MAKES THIS LOAD-BEARING RATHER THAN ARCHIVAL. Under TTC the
- * displayed price is fixed and the VAT comes out of it, so the NET an artist
- * receives moves with the buyer's jurisdiction. These lines are what disclose
- * that movement. A net that changes for a reason the artist cannot see is a
- * default arriving by omission rather than by decision.
+ * ⚠ D-056 makes this load-bearing rather than archival: under TTC the displayed price is fixed
+ * and the VAT comes out of it, so the net an artist receives moves with the buyer's
+ * jurisdiction, and these lines are what disclose that movement.
  */
 
 import { z } from 'zod';
@@ -48,10 +41,7 @@ export const TaxSupplyKindIn: VocabularyIn<typeof TAX_SUPPLY_KINDS> =
   vocabularyIn(TAX_SUPPLY_KINDS);
 export const TaxSupplyKindOut: VocabularyOut = vocabularyOut(TAX_SUPPLY_KINDS);
 
-/**
- * One piece of evidence, WITH ITS PROVENANCE. Evidence with no source is not
- * evidence — `source` is what makes a disputed line auditable two years later.
- */
+/** One piece of evidence, with its provenance: `source` is what makes a line auditable later. */
 export const TaxEvidenceSchema: z.ZodObject<
   {
     kind: VocabularyOut;
@@ -87,12 +77,9 @@ export const TaxEvidenceSchema: z.ZodObject<
 /**
  * The location adopted, with the evidence that produced it.
  *
- * `evidenceConflicting` exists because the EU requires TWO non-contradictory
- * pieces for a B2C sale, and Stripe Tax favours a single address rather than
- * comparing them — so the rule cannot be delegated to it. When two pieces
- * disagree the sale still completes and the line goes to review: hiding the
- * conflict would produce a false and silent declaration, which is worse than a
- * flagged one.
+ * `evidenceConflicting` exists because the EU requires two non-contradictory items for a B2C
+ * sale and Stripe Tax favours a single address rather than comparing them, so the rule cannot be
+ * delegated to it.
  */
 export const BuyerTaxLocationSchema: z.ZodObject<
   {
@@ -123,10 +110,8 @@ export const BuyerTaxLocationSchema: z.ZodObject<
     "**The buyer's tax location, carried by the order.** Neither a market identifier nor a plain\ncountry: in the United States the rate changes from one street to the next, so the postal\ncode is indispensable; in the Union the evidence is **double** and must be retained.\n\n**Not to be confused with the identity verification of the signed-in account**, which bears\non the **artist** and has nothing to do with the **viewer's** location. The two are often\nconflated.",
   );
 
-/**
- * One VAT line. `rateBps` is THE RATE APPLIED AT THE SALE, kept on the line —
- * never the current rate. An invoice is kept for ten years and rates change.
- */
+/** One VAT line. `rateBps` is the rate applied at the sale, never the current one: invoices
+ * are kept for ten years and rates change. */
 export const VatLineSchema: z.ZodObject<
   {
     jurisdictionCode: z.ZodString;

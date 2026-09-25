@@ -1,27 +1,17 @@
 /**
- * Moderation's THREE AXES, kept apart — this is the D6/E3 correction.
- *
- * Four vocabularies coexisted in `shared/` for one notion. The underlying fault
- * was not that they diverged: it was that `reported` — a TRIAGE state — sat in
- * the SANCTIONS field. That is why the queue was built by filtering
- * `state === 'reported'`, which is not a state filter but a kind filter.
- *
- * ⚠ THIS FILE IS A DECLARING FILE (see catalog.ts).
+ * Moderation's three axes, kept apart (D6/E3). Four vocabularies coexisted in
+ * `shared/` for one notion, and `reported` — a triage state — sat in the
+ * sanctions field, so the queue filtered `state === 'reported'`: a kind filter,
+ * not a state filter.
  */
-/**
- * AXIS 1 — the MESSAGE's state. Two values, and two only.
- *
- * `muted` and `banned` leave this axis: they never made sense here, they are
- * about the person. `ok` becomes `published`, which is the i18n vocabulary and
- * the only one that says what it does.
- */
+/** Axis 1 — the message's state, and there are only two. */
 export declare const MESSAGE_STATES: readonly ["published", "removed"];
 export type MessageState = (typeof MESSAGE_STATES)[number];
 export declare const MessageState: {
     readonly PUBLISHED: "published";
     readonly REMOVED: "removed";
 };
-/** AXIS 2 — the nature of the QUEUE ITEM. */
+/** Axis 2 — the nature of the queue item. */
 export declare const MODERATION_ITEM_STATES: readonly ["reported", "claimed", "settled"];
 export type ModerationItemState = (typeof MODERATION_ITEM_STATES)[number];
 export declare const ModerationItemState: {
@@ -30,10 +20,9 @@ export declare const ModerationItemState: {
     readonly SETTLED: "settled";
 };
 /**
- * AXIS 3 — the sanction on the PERSON, WITHIN ONE CHANNEL.
- *
- * The same person is banned on one artist's channel and welcome on another's:
- * that is why the sanction belongs to `chat` and not to `identity`.
+ * Axis 3 — the sanction on the person, within one channel. The same person is
+ * banned on one artist's channel and welcome on another's, which is why the
+ * sanction belongs to `chat` and not to `identity`.
  */
 export declare const AUDIENCE_SANCTIONS: readonly ["none", "muted", "banned"];
 export type AudienceSanction = (typeof AUDIENCE_SANCTIONS)[number];
@@ -51,17 +40,10 @@ export declare const ModerationVerdict: {
     readonly BAN: "ban";
 };
 /**
- * Vocabulary from `shared/catalogue.json` `moderationReasons`, which has
- * authority — and which, unlike the other enums, had NO competitor here.
+ * Why a message was reported; `shared/catalogue.json` has authority.
  *
- * An earlier version of the contract dropped `insult` and `spoiler` and
- * invented `hate` and `filter`: so it was THE CONTRACT holding a parallel table
- * against `shared/` — exactly the charge laid against the mockups.
- *
- * `spoiler` is THE ONLY reason specific to live performance, and it is
- * translated in `shared/i18n/studio.json`. And `filter` is not a reason, it is
- * an ORIGIN — see STATE_CHANGE_ORIGINS. Putting it here would give one field
- * two axes.
+ * ⚠ `filter` is not a reason but an origin and belongs to
+ * `STATE_CHANGE_ORIGINS`: putting it here would give one field two axes.
  */
 export declare const MODERATION_REASONS: readonly ["spam", "insult", "spoiler", "off_topic", "harassment"];
 export type ModerationReason = (typeof MODERATION_REASONS)[number];
@@ -73,30 +55,13 @@ export declare const ModerationReason: {
     readonly HARASSMENT: "harassment";
 };
 /**
- * Where a state change came from — and the origin SURVIVES the settlement.
+ * Where a state change came from; the origin survives the settlement, so
+ * "removed by the filter, then confirmed by X" does not collapse into "removed
+ * by X".
  *
- * Without it, "removed by the filter, then confirmed by X" collapses into
- * "removed by X", and we lose what it takes to measure the filter's quality
- * later. Free now, unrecoverable afterwards.
- *
- * `automatic-filter` (at ingestion) and `retroactive-filter` (reclassifying
- * what already exists) are TWO MOMENTS, not two names.
- *
- * ⚠ AND THE ORDER IS THOSE TWO MOMENTS, IN ORDER — which this list had backwards.
- *
- *   Ingestion comes before reclassification, so `automatic_filter` precedes
- *   `retroactive_filter`. Both contracts had it that way; this list did not, and
- *   a worker writing the schema had to restate the members in a different
- *   sequence from the constant it named as their source.
- *
- *   ⚠ TWO GATES DISAGREED ABOUT WHETHER ORDER MATTERS AT ALL, which is why
- *     nothing had ever reported it. `check-vocabulary` compares MEMBER SETS, so
- *     it read these as agreeing and always had. The emit gate compares LISTS,
- *     because a JSON Schema `enum` is an array. One artefact, two instruments,
- *     two answers — and the second only started asking when a schema existed.
- *
- *   The sentence above settles it on the merits rather than by precedence of
- *   artefact: the order is chronological because the two members are moments.
+ * ⚠ The order is chronological — ingestion before reclassification — and
+ * load-bearing: the emit gate compares enum lists where `check-vocabulary`
+ * compares only member sets.
  */
 export declare const STATE_CHANGE_ORIGINS: readonly ["human_verdict", "automatic_filter", "retroactive_filter", "author_sanctioned"];
 export type StateChangeOrigin = (typeof STATE_CHANGE_ORIGINS)[number];
@@ -106,11 +71,7 @@ export declare const StateChangeOrigin: {
     readonly RETROACTIVE_FILTER: "retroactive_filter";
     readonly AUTHOR_SANCTIONED: "author_sanctioned";
 };
-/**
- * Vocabulary from `catalogue.json`. Three parallel tables existed in the
- * mockups — `free | emoji | off` on the web and the run desk, `read` instead of
- * `read-only` — and the i18n files resolve only the first set (E2).
- */
+/** The chat mode a channel is in; `catalogue.json` has authority. */
 export declare const CHAT_MODES: readonly ["open", "emoji", "read_only", "off"];
 export type ChatMode = (typeof CHAT_MODES)[number];
 export declare const ChatMode: {
@@ -119,11 +80,7 @@ export declare const ChatMode: {
     readonly READ_ONLY: "read_only";
     readonly OFF: "off";
 };
-/**
- * Two vocabularies existed in the SAME mockup file — `souple / normale /
- * haute` in channel settings, `basse / moyenne / haute` on the moderation page
- * — and neither is in `shared/`.
- */
+/** The automatic filter's severity. */
 export declare const FILTER_SEVERITIES: readonly ["low", "medium", "high"];
 export type FilterSeverity = (typeof FILTER_SEVERITIES)[number];
 export declare const FilterSeverity: {

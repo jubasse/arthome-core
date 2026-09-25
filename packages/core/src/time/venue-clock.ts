@@ -1,21 +1,10 @@
 /**
- * The two clocks — the viewer's and the venue's.
+ * The two clocks — the viewer's and the venue's: viewer's time first, venue time second when it
+ * differs.
  *
- * D3 — `shared/catalogue.json` stores `venue.utcOffsetMin`, a FROZEN offset,
- * and `helpers.js` derives the summer or winter abbreviation by comparing it
- * against a table. The RULE is right and ports as it stands: viewer's time
- * first, venue time second when it differs. The SHAPE does not survive: a fixed
- * offset does not cross a daylight-saving change, and a date scheduled six
- * months out displays at the wrong hour.
- *
- * E7 — and the TV mockup reads `fixtures.geography.viewerUtcOffsetMin`, which
- * EXISTS NOWHERE: it is `undefined`, so "time at the venue" is in fact computed
- * against UTC. The surface had no input at all for the viewer's time zone.
- *
- * ⚠ This module DOES NOT compute an offset from an IANA identifier: the time
- * zone database is not bundled, and bundling it would cost hundreds of
- * kilobytes in five applications. The offset is SERVED by the server,
- * recomputed for the instant concerned. So the computation happens ONCE.
+ * D3: a FROZEN offset does not cross a daylight-saving change, so a date six months out displays at
+ * the wrong hour. The offset is SERVED, recomputed for the instant concerned — the IANA database is
+ * not bundled, and bundling it would cost hundreds of kilobytes in five applications.
  */
 
 import { toEpochMs, type Instant, MINUTE_MS } from './instant.js';
@@ -33,9 +22,8 @@ export interface VenueClock {
 const IANA_SHAPE = /^[A-Za-z]+(?:[_+-][A-Za-z0-9]+)*(?:\/[A-Za-z0-9]+(?:[_+-][A-Za-z0-9]+)*)+$/;
 
 /**
- * Validates SHAPE, never existence: the IANA database is not bundled.
- * "Europe/Paris" passes; "CEST" and "+02:00" are refused — precisely the two
- * forms D3 replaces.
+ * Validates SHAPE, never existence: the IANA database is not bundled. "CEST" and "+02:00" are
+ * refused — the two forms D3 replaces.
  */
 export function venueClock(timeZone: string, utcOffsetMinutes: number): VenueClock {
   if (!IANA_SHAPE.test(timeZone)) {
@@ -50,13 +38,7 @@ export function venueClock(timeZone: string, utcOffsetMinutes: number): VenueClo
   return { timeZone, utcOffsetMinutes };
 }
 
-/**
- * Do the two clocks differ for this instant?
- *
- * The VIEWER's offset is an argument, never a global: that is exactly the
- * global state `helpers.js` carried, and two concurrent requests of one service
- * would share it.
- */
+/** Do the two clocks differ for this instant? The viewer's offset is an argument, not a global. */
 export function clocksDiffer(venue: VenueClock, viewerUtcOffsetMinutes: number): boolean {
   return venue.utcOffsetMinutes !== viewerUtcOffsetMinutes;
 }
@@ -64,10 +46,7 @@ export function clocksDiffer(venue: VenueClock, viewerUtcOffsetMinutes: number):
 /**
  * The DAY shift between the two clocks: -1, 0 or +1.
  *
- * The studio shows "the day before" or "the next day" when moving from one
- * clock to the other changes the date. That is wrong with a frozen offset, and
- * it is the case that made D3 fail: a date at 23:30 venue time can be the next
- * day for the viewer.
+ * A date at 23:30 venue time can be the next day for the viewer — the case that made D3 fail.
  */
 export function dayShift(
   instant: Instant,
@@ -81,12 +60,7 @@ export function dayShift(
   return delta > 0 ? 1 : delta < 0 ? -1 : 0;
 }
 
-/**
- * The wall-clock components of an instant in a given offset.
- *
- * Returned as NUMBERS, never as a string: formatting is presentation and
- * depends on the locale.
- */
+/** The wall-clock components of an instant in a given offset. NUMBERS, never a formatted string. */
 export interface WallClock {
   readonly year: number;
   readonly month: number;

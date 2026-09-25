@@ -16,19 +16,11 @@ const criteria = (over: Partial<SearchCriteria> = {}): SearchCriteria => ({
 });
 
 /**
- * PROTECTED INVARIANT
- *   Two equivalent entries produce THE SAME signature.
- *
- * WHY THIS TEST EXISTS
- *   The "already saved" deduplication appears on TWO screens (`browse` and
- *   `category`) and determines a WRITE. The mockup computes it client-side: so
- *   it is a value of `@arthome/core`, normalised once. If it depends on entry
- *   order, "already saved" lies and we create two alerts for one search.
+ * ⚠ "Already saved" determines a WRITE: a signature that depended on entry order
+ * would lie, and we would create two alerts for one search.
  */
 describe('the criteria signature', () => {
   it('does not depend on the order of the filters', () => {
-    // The exact case: two disciplines and three tags ticked in two different
-    // orders. That is ONE search.
     const left = criteria({
       disciplineIds: ['jazz', 'dance'],
       tagIds: ['open-air', 'revival', 'archive'],
@@ -57,8 +49,7 @@ describe('the criteria signature', () => {
   });
 
   it('TELLS APART two genuinely different searches', () => {
-    // The test that guards against over-zealous normalisation: a signature that
-    // made everything equal would be worse than no signature.
+    // A signature that made everything equal would be worse than no signature.
     expect(
       sameCriteria(criteria({ disciplineIds: ['jazz'] }), criteria({ disciplineIds: ['dance'] })),
     ).toBe(false);
@@ -69,23 +60,13 @@ describe('the criteria signature', () => {
   });
 
   it('is readable in a log, not an opaque hash', () => {
-    // A hash would have required a hashing source — hence a platform API —
-    // which this package forbids itself. And it would be unreadable the day we
-    // look for why two searches were conflated.
     const signature = criteriaSignature(criteria({ text: 'carmen', disciplineIds: ['opera'] }));
     expect(signature).toContain('q:carmen');
     expect(signature).toContain('d:opera');
   });
 });
 
-/**
- * PROTECTED INVARIANT
- *   An inverted range is PUT BACK THE RIGHT WAY ROUND, not refused.
- *
- * WHY
- *   A search is not a payment form: refusing a clumsy entry would cost an error
- *   screen for a perfectly clear intention.
- */
+// A search is not a payment form: refusing a clumsy entry costs an error screen.
 describe('normalising ranges', () => {
   it('puts a price range back the right way round', () => {
     const normalized = normalizeSearchCriteria(
@@ -104,17 +85,6 @@ describe('normalising ranges', () => {
   });
 });
 
-/**
- * PROTECTED INVARIANT
- *   A saved search REPLAYS or DECLARES ITSELF STALE. It never vanishes, and it
- *   never runs in silence on criteria it no longer understands.
- *
- * WHY
- *   `storefront-web` Q24: it survives months and version upgrades. An opaque
- *   serialisation of screen state, like the mockup's, does not allow that — and
- *   a silent run on misunderstood criteria would make the match counter wrong
- *   with nobody knowing.
- */
 describe('surviving a grammar change', () => {
   it('replays a search of the current version', () => {
     const migration = migrateCriteria(criteria({ text: 'carmen' }));
@@ -127,8 +97,7 @@ describe('surviving a grammar change', () => {
   });
 
   it('declares a search of a FUTURE version stale rather than guessing', () => {
-    // The application is behind the server — a real case on mobile, where a
-    // store review is slow. We do not guess, we say so.
+    // The application is behind the server — real on mobile, where review is slow.
     const migration = migrateCriteria(criteria({ version: CRITERIA_VERSION + 1 }));
     expect(migration.status).toBe('stale');
   });

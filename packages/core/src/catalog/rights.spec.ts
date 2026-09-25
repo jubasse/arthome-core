@@ -4,20 +4,8 @@ import { blackoutReasonOf, isAvailableIn, restrictedRights, worldwideRights } fr
 import { BlackoutReason, RightsScope } from '../vocabulary/catalog.js';
 
 /**
- * PROTECTED INVARIANT
- *   A broadcast is WORLDWIDE BY DEFAULT; a territorial restriction is the
- *   exception, and it is justified by a CODED reason.
- *
- * WHY THIS TEST EXISTS
- *   `geography.rightsPolicy.note` states it, and it is the opposite of VOD:
- *   live performance is broadcast everywhere unless a clause says otherwise. A
- *   surface that inverted the default would block the whole catalogue with
- *   nobody understanding why.
- *
- *   And E8: `blackoutReasons[]` carries `label` and `labelEn` — PROSE WRITTEN
- *   INTO THE DATA — while everything else goes through `enums.*`. That is an
- *   i18n leak into the model, exactly the kind "i18n by codes" exists to
- *   forbid.
+ * A broadcast is WORLDWIDE BY DEFAULT, the opposite of VOD: a surface that inverted the default
+ * would block the whole catalogue with nobody understanding why.
  */
 describe('territorial rights', () => {
   it('opens everywhere by default', () => {
@@ -44,13 +32,11 @@ describe('territorial rights', () => {
   it('returns a CODE, never a sentence', () => {
     const rights = restrictedRights(['BE'], BlackoutReason.FESTIVAL);
     expect(blackoutReasonOf(rights, 'BE')).toBe('festival');
-    // And the spelling is `shared/`'s, to the letter: kebab-case (K6).
+    // The spelling is `shared/`'s, to the letter (K6).
     expect(BlackoutReason.CO_PRODUCTION).toBe('co_production');
   });
 
   it('gives no reason to anyone who is not blocked', () => {
-    // The absence of a reason IS availability: no second call to find out why
-    // it works.
     const rights = restrictedRights(['BE'], BlackoutReason.FESTIVAL);
     expect(blackoutReasonOf(rights, 'FR')).toBeNull();
     expect(blackoutReasonOf(worldwideRights(), 'BE')).toBeNull();

@@ -1,31 +1,14 @@
 /**
  * The PAYOUT — commission, VAT by jurisdiction, net, withholding.
  *
- * ⚠ D5 IS THE MOST EXPENSIVE TRAP IN THE FILE, and it has to be said before
- * anything else. `fixtures.js:1297-1324` computes:
+ * ⚠ `fixtures.js:1297-1324` reads like a proven business rule and is not one:
+ * VAT as a SINGLE rate on the GROSS is a plausible mockup number that answers
+ * none of who owes the VAT, on what base, and who is liable.
  *
- *     commission = round(gross x 0.12)
- *     vat        = round(gross x vatRate)     ← a SINGLE rate, on the GROSS
- *     net        = gross − commission − vat
- *
- * It LOOKS like a business rule that has been proven — same place, same tone,
- * same to-the-euro precision. It is not one: it produces a plausible number for
- * a mockup and answers NONE of the three tax questions — who owes the VAT, on
- * what base, who is liable for it.
- *
- * What is authoritative in `shared/` and ports as it stands:
- *   commission 12% · delay 14 days · rounding to the unit on EACH component
- *   taken separately · withholding while an outcome is open.
- *
- * The model adopted (D-015): COMMISSIONNAIRE — Arthome acts in its own name,
- * the VAT base is the whole ticket, the rate is that of the viewer's country,
- * the liable party is Arthome. **And the commission is taken on the net-of-tax
- * amount**, because on the tax-inclusive amount the 12% announced to artists
- * would vary with the buyer's country.
- *
- * ⚠ Legal validation is NOT done: see the warning at the top of
- * `adr-payments.md`. This module computes; it does not settle a question of
- * law.
+ * The model is COMMISSIONNAIRE (D-015): the VAT base is the whole ticket at the
+ * viewer's country's rate, and the commission is taken on the net-of-tax amount
+ * — on the tax-inclusive amount the 12 % announced to artists would vary with
+ * the buyer's country. Legal validation is not done; `adr-payments.md` warns.
  */
 import type { Instant } from '../kernel/clock.js';
 import { type Money } from '../money/money.js';
@@ -38,30 +21,24 @@ export declare const COMMISSION_RATE_BPS: BasisPoints;
 /** `payoutDelayDays: 14`. */
 export declare const PAYOUT_DELAY_DAYS = 14;
 /**
- * One VAT line, PER JURISDICTION — and not per billing market.
- *
- * A billing market is a PRICING notion — which currency we sell in. **It is
- * never a TAX notion**, and confusing the two was the fault.
- * The country is no more sufficient: roughly 9,000 jurisdictions in the United
- * States, and in the United Kingdom a rate that depends on the pair
- * jurisdiction x nature of the supply (the Derby Quad decision held that the
- * theatre-ticket exemption does not extend to a streamed live show).
+ * One VAT line, PER JURISDICTION — and not per billing market. That is a
+ * PRICING notion, and a country is no more sufficient: some 9,000 US
+ * jurisdictions, and a UK rate depending on jurisdiction × supply (Derby Quad:
+ * no theatre-ticket exemption for a streamed live show).
  */
 export interface VatLine {
     readonly jurisdictionCode: string;
     readonly jurisdictionLevel: TaxJurisdictionLevel;
     readonly supplyKind: TaxSupplyKind;
-    /** THE RATE APPLIED AT THE SALE, kept — never the current rate. */
+    /** The rate applied at the sale, kept — never the current rate. */
     readonly rateBps: BasisPoints;
     /** The base: the net-of-tax amount. */
     readonly base: Money;
     readonly amount: Money;
 }
 /**
- * Extracts a VAT line from a tax-inclusive amount.
- *
- * A price shown to a consumer is tax-inclusive (B2C convention): VAT is
- * EXTRACTED from it, it is not added to it.
+ * Extracts a VAT line from a tax-inclusive amount. A consumer price is
+ * tax-inclusive (B2C convention): VAT is extracted from it, not added to it.
  */
 export declare function vatLineFor(grossTtc: Money, jurisdictionCode: string, jurisdictionLevel: TaxJurisdictionLevel, rateBps: BasisPoints, supplyKind: TaxSupplyKind): VatLine;
 export interface PayoutInput {
@@ -79,45 +56,30 @@ export interface PayoutBreakdown {
     readonly net: Money;
 }
 /**
- * The computation, in the order that matters.
- *
- * Each component is rounded SEPARATELY, and the net-of-tax amount is obtained
- * by SUBTRACTION — never by `applyRate(ttc, 10000 − rate)`, which drifts by a
- * cent as soon as the rounding lands on a half.
+ * The computation, in the order that matters. Each component is rounded
+ * SEPARATELY and the net-of-tax amount comes by SUBTRACTION: `applyRate(ttc,
+ * 10000 − rate)` drifts a cent when the rounding lands on a half.
  */
 export declare function payoutOf(input: PayoutInput): PayoutBreakdown;
 /**
  * The due date: end of the live show + 14 days.
  *
- * ⚠ From the END OF THE LIVE SHOW, not from the payment — hence `payouts`
- * consuming `streaming.run.ended.v1`. A viewer buying three months ahead does
- * not trigger a payout three months before the show.
+ * ⚠ From the END OF THE LIVE SHOW, not the payment — a ticket bought three
+ * months ahead must not pay the artist three months early.
  */
 export declare function dueAtFor(runEndedAt: Instant): Instant;
 /**
- * A payout's state.
- *
- * The order of the tests is the precedence, and it is not arbitrary: a banking
+ * A payout's state. The order of the tests is the precedence: a banking
  * suspension outranks everything, because it protects against a transfer to an
- * account we have doubts about. Then comes the outcome, which commits the
- * viewer's money.
+ * account we have doubts about.
  */
 export declare function payoutStateFor(outcome: DateOutcome | null, alreadyPaid: boolean, bankChangePending: boolean): PayoutState;
 /**
- * THE CREDIT NOTE — an internal currency, therefore a liability.
+ * How long a credit note stays valid.
  *
- * `storefront-web` points it out: it appears in the copy — "interrupted,
- * credits issued" — and NOWHERE ELSE in the file.
- *
- * ⚠ The trap, written down before meeting it: when a viewer pays with a credit,
- * Stripe receives LESS, but the artist of the date bought must be paid IN FULL
- * — they had nothing to do with another show's incident. The platform therefore
- * funds that share out of its own money.
- *
- * Hence the scope adopted (D-017): a credit is issued for an `interrupted`
- * outcome and can only be redeployed on THE SAME CHANNEL. The payout
- * withholding already in place on that channel then covers the commitment — we
- * withhold what we will have to pay out again.
+ * ⚠ Paying with a credit leaves Stripe receiving less while the artist of the
+ * date bought must still be paid IN FULL, out of the platform's own money —
+ * hence D-017's same-channel scope, where the withholding already covers it.
  */
 export declare const CREDIT_VALIDITY_MONTHS = 12;
 export declare function creditAmountFor(paidAmount: Money): Money;

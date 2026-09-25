@@ -1,11 +1,4 @@
-/**
- * The price paid is not the tier's price.
- *
- * `storefront-web` (shape 5): the summary carries
- * `tier + service fee − subscription discount − promotion = total`, and **all
- * four lines must come from the contract**. That is exactly the "an order total
- * composed in two places" case the file cites as a typical defect.
- */
+/** The price paid is not the tier's price: all four summary lines come from the contract. */
 import type { Instant } from '../kernel/clock.js';
 import { type Money } from '../money/money.js';
 import { type BasisPoints } from '../money/rounding.js';
@@ -26,32 +19,18 @@ export declare function lowestActivePrice(tiers: readonly TierPrice[]): Money | 
 export declare function priceOfTier(tiers: readonly TierPrice[], tier: PriceTier): Money | null;
 export declare function activePromotion(promotions: readonly Promotion[], now: Instant): Promotion | null;
 /**
- * The "show already started" price, PRO RATA of the time remaining.
- *
- * `storefront-web`: "it is a value that depends on the instant of reading: it
- * must come from the contract with its validity date, or be recomputable by
- * `@arthome/core` from served parameters. It cannot be a frozen string."
- *
- * Hence this function: the server serves the parameters, the surface
- * re-evaluates when `validUntil` passes. One rule, two calls.
+ * The "show already started" price, PRO RATA of the time remaining. It depends
+ * on the instant of reading, so the server serves the parameters and the
+ * surface re-evaluates when `validUntil` passes: one rule, two calls.
  */
 export declare function lateRatePrice(fullPrice: Money, progress: number): Money;
 /**
  * THE DISCOUNT AND THE PROMOTION DO NOT STACK: the one most favourable to the
- * viewer applies (D-017).
- *
- * It is the simplest rule to explain, and the only one that does not produce a
- * negative price on a preview at a discovery rate for a `premium` subscriber.
- * `storefront-web` Q12 asked the question: without it, three screens would
- * write it three times.
+ * viewer applies (D-017). It is the only rule that does not give a negative
+ * price on a preview at a discovery rate for a `premium` subscriber.
  */
 export declare function applyBestDiscount(basePrice: Money, subscriptionDiscountBps: BasisPoints, promotionPrice: Money | null): Money;
-/**
- * Service fees: PER SEAT, and the schedule is SERVED.
- *
- * `storefront-web` Q11. Never a screen constant — the storefront shows a
- * "service fee" line in its summary, and it must be computable only once.
- */
+/** Service fees: PER SEAT, and the schedule is SERVED. Never a screen constant. */
 export interface ServiceFeeSchedule {
     readonly perSeat: Money;
     readonly rateBps: BasisPoints;

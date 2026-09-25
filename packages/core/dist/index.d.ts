@@ -1,18 +1,9 @@
 /**
  * `@arthome/core` — the Arthome domain.
  *
- * ⚠ THIS ENTRY POINT DOES NOT IMPORT ZOD, AT ANY DEPTH.
- *
- * That is the package's structuring decision, and it is verified:
- * `tools/check-core-entry.mjs` refuses any import path leading to zod from
- * here. The boundary schemas live in `@arthome/core/schema`, and that is the
- * only entry point that depends on it.
- *
- * The reason is measured (D-012): zod's cost is FIXED and tied to the import,
- * not marginal and tied to the number of schemas — 93 KB compressed for a
- * single `z.string()` through the classic entry point. If this entry point
- * imported zod, no barrel-free entry point of `@arthome/contracts` could ever
- * claw the bill back on the most constrained surface in the project.
+ * ⚠ No import from here may reach zod, at any depth: 93 KB compressed for a
+ * single `z.string()` (D-012). The boundary schemas live in
+ * `@arthome/core/schema`; `tools/check-core-entry.mjs` refuses any path back.
  */
 export * from './kernel/index.js';
 export * from './vocabulary/index.js';
