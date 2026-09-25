@@ -650,6 +650,7 @@ Declarations: `dist/schema/index.d.ts` — 49 exported names.
 Tracked or not-yet-ignored directories only. Purposes are hand-written in `repo-map.purposes.json`; the generator proves
 each directory is covered and each entry has a directory, not that the sentence is true.
 
+- `.githooks/` — The two git hooks section 8.4 prescribes, with no dependency: pre-commit formats the STAGED files and then refuses a commit whose `pnpm run verify` is red. Installed with `git config core.hooksPath .githooks`, which is not committable and is therefore the one command after cloning.
 - `architecture/` — Design documents: code conventions, context map, ADRs, transport, events, and the handover notes for each worker.
 - `docs/` — The original handover dossier and product documents (streaming, taxonomy, storefront TV).
 - `needs/` — Each surface's written needs and the confrontation with the contract, preserved verbatim.

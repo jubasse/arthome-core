@@ -50,5 +50,6 @@
   "packages/tooling/tsconfig": "The three shared tsconfig bases: base, lib, app.",
   "proto": "Protobuf schemas for the Kafka events, tooled with buf.",
   "prototypes": "The original HTML mockups of the surfaces; the source the contract was confronted with.",
-  "tools": "Repository-local gates and generators that are not shared with the other repositories."
+  "tools": "Repository-local gates and generators that are not shared with the other repositories.",
+  ".githooks": "The two git hooks section 8.4 prescribes, with no dependency: pre-commit formats the STAGED files and then refuses a commit whose `pnpm run verify` is red. Installed with `git config core.hooksPath .githooks`, which is not committable and is therefore the one command after cloning."
 }

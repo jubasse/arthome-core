@@ -2868,15 +2868,45 @@ to maintain in seven copies, for what git does natively:
 git config core.hooksPath .githooks       # once per repository, after cloning
 ```
 
-**`.githooks/pre-commit`** — Prettier on staged files only, not on the whole repository:
+**`.githooks/pre-commit`** — two jobs: Prettier on staged files only, then refuse a red commit.
 
 ```sh
 #!/bin/sh
-files=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx|js|mjs|json|html|css|scss)$')
-[ -z "$files" ] && exit 0
-echo "$files" | xargs pnpm exec prettier --write
-echo "$files" | xargs git add
+set -e
+
+files=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx|js|mjs|json|html|css|scss)$' || true)
+if [ -n "$files" ]; then
+  echo "$files" | xargs pnpm exec prettier --write
+  echo "$files" | xargs git add
+fi
+
+if ! pnpm run verify; then
+  echo ''
+  echo 'pre-commit: `pnpm run verify` failed — nothing was committed.'
+  exit 1
+fi
 ```
+
+**⚠ THE SECOND JOB WAS ADDED AFTER THE SAME FAULT RECURRED THREE TIMES**, and it is the reason this
+section is no longer one command. A compound shell line of the shape
+
+```sh
+pnpm run verify > log 2>&1; echo "EXIT=$?" && git commit …
+```
+
+reads as though the commit were gated and is not: `;` discards verify's status, and `echo` always
+succeeds. Twice that pushed a red tree; the third time it committed one. **Writing "chain with `&&`,
+never `;`" into the agent files did not prevent the third occurrence** — a rule about how to write a
+shell line is enforced by whoever is writing it, which is exactly the party that got it wrong. The
+hook holds whatever the line happens to say.
+
+It is affordable because `verify` runs in about a second and a half and needs no Docker. That is a
+property worth protecting rather than a happy accident: it is why the integration tests are named
+`*.itest.ts` and sit behind their own command (§8.2). A gate that cost half a minute would be
+skipped, and then it would stop being true.
+
+`git commit --no-verify` still skips it, and that is git's design rather than a hole to plug: a hook
+is a reflex, not an authority. What it removes is the accident, not the deliberate exception.
 
 (Note the absence of `md` in that pattern: Markdown is outside Prettier's scope here — §3.7.)
 
