@@ -2303,6 +2303,28 @@ ratio.
 **Apply it opportunistically.** Any file you read or modify is one you may shrink: it costs a moment
 while the context is loaded, and it is the only way a convention reaches code written before it.
 
+⚠ **THE FAILURE MODE THAT PRODUCES ALL OF THIS: PAYING YOURSELF IN COMMENT LINES FOR WHAT THE
+DISCOVERY COST.** Every line you just fought for feels load-bearing, so each one gets a paragraph
+defending it — and the result is a twelve-line configuration object under forty lines of prose. The
+effort of finding something out is **not the reader's problem**. The commit message is where it
+belongs, at whatever length it deserves; the code carries only what will bite the next person at
+that line.
+
+Two shapes give it away, both measured on this repository the day the rule was written:
+
+- **A default, written out, with a paragraph defending it.** `migrationsTransactionMode: 'all'` is
+  TypeORM's default; ten lines argued for it. Delete both — the option and its defence. A default
+  nobody overrides is not a decision, and the named error someone eventually hits
+  (`ForbiddenTransactionModeOverrideError`) explains itself better than the comment did.
+- **A comment on a self-documenting option.** `applicationName: Service.IDENTITY` had four lines
+  explaining what `applicationName` is for. Anyone reading a Postgres data source knows. Cut it
+  whole.
+
+And a third, which is worse because it is invisible: **a comment explaining an absence.** Three lines
+saying `statement_timeout` is deliberately *not* set here belong beside the setting that *is* set,
+not beside the gap where it isn't. Prose about what a file does not do rots first, because nothing
+fails when it stops being true.
+
 ### 5.9 Commit messages
 
 **[floor] `<area>: <subject>`, in English.** The language is D-008's; the format is this document's.
