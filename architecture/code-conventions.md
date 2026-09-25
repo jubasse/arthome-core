@@ -2287,10 +2287,18 @@ ten.
 failure mode this rule replaces is verbosity, and the one it could create is losing the paragraph
 that stopped a defect coming back.
 
-**Two exceptions, narrow.** A gate's header block, which records the defect it was built against and
-the scope it does **not** cover. And one line on an exported name saying what it *is* — including
-when that restates the code, because `REPOSITORY_MAP.md` is generated from it and a reader of 543
-names has no code in front of them. That line names the export and never opens on `⚠`.
+**One exception, narrow.** A gate's header block, which records the defect it was built against and
+the scope it does **not** cover.
+
+⚠ **AND ONE CLARIFICATION THAT LOOKS LIKE A SECOND EXCEPTION AND IS NOT.** `REPOSITORY_MAP.md` is
+generated from JSDoc, so a deleted description blanks an export's row in an index of 594 names — but
+that row also carries the **type signature**, so the reader is not stranded: `plusMinutes` prints
+`function plusMinutes(instant: Instant, minutes: number): Instant;` and needs nothing added. The test
+is the same one as everywhere else: a description earns its place by saying what the name and the
+signature cannot. `SlugSchema: z.ZodString` earns "Lowercase, hyphenated, no leading or trailing
+hyphen", because the regex's shape is not in `z.ZodString`. **373 of 594 rows have no description and
+most of them are correct.** Filling them would mean writing 240 comments the rule forbids. What a
+description must never do is open on `⚠`: the row then names the hazard and never the export.
 
 **Apply it opportunistically**: any file you read is one you may shrink.
 
