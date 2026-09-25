@@ -1,5 +1,9 @@
 openapi: 3.1.1
 
+# Every `CODE` this document names in prose must be the WIRE spelling of a member of
+# ERROR_CODES, not the TypeScript accessor's. check-vocabulary.py compares them.
+x-arthome-codes-source: ERROR_CODES
+
 info:
   title: Arthome Studio BFF
   version: 1.0.0
@@ -22,7 +26,7 @@ info:
 
     - **a forbidden field is absent, never present and null.** Yes, that means different shapes
       for the same screen depending on the role, and it is **intended**;
-    - **a sort key on an absent field is refused** (`SORT_KEY_FORBIDDEN`), never ignored — a sort
+    - **a sort key on an absent field is refused** (`api.sort_key_forbidden`), never ignored — a sort
       silently accepted on revenue betrays the ordering of the very values one is not allowed to
       see;
     - **a notification never carries an amount if the recipient role lacks `canRevenue`**: it is
@@ -156,7 +160,7 @@ paths:
         The response carries **the full bootstrap**, not a raw session shape: the surface paints
         nothing before it, and a second call would be one more blank screen.
 
-        `TWO_FACTOR_REQUIRED` carries a `challengeId`. Two-factor authentication is a **precondition**
+        `identity.two_factor_required` carries a `challengeId`. Two-factor authentication is a **precondition**
         of transferring ownership of a channel.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
@@ -233,7 +237,7 @@ paths:
                       }
                     counters: { moderationPending: 14, inboxUnread: 2, dutiesTonight: 3 }
         "401":
-          description: "`INVALID_CREDENTIALS` — indistinguishable from an unknown email — or `TWO_FACTOR_REQUIRED`."
+          description: "`INVALID_CREDENTIALS` — indistinguishable from an unknown email — or `identity.two_factor_required`."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -1041,7 +1045,7 @@ paths:
         **Sorting by state follows the state machine's canonical order**, not the alphabet:
         `orderRank` travels with the state for exactly that.
 
-        **Sorting by revenue is refused** (`SORT_KEY_FORBIDDEN`) to roles without `canRevenue`, and
+        **Sorting by revenue is refused** (`api.sort_key_forbidden`) to roles without `canRevenue`, and
         the field is **absent** from their rows. A sort silently accepted would betray the ordering of
         the very values one is not allowed to show.
 
@@ -1099,7 +1103,7 @@ paths:
                     grossRevenue: { amountMinor: 417600, currencyCode: EUR }
                 page: { page: 1, pageSize: 20, totalItems: 84, totalPages: 5 }
         "403":
-          description: "`SORT_KEY_FORBIDDEN` when the sort key bears on a field absent from this projection."
+          description: "`api.sort_key_forbidden` when the sort key bears on a field absent from this projection."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -1951,7 +1955,7 @@ paths:
         **Three guarantees, and not one of them is an interface courtesy.**
 
         1. **The server refuses the reverse transition.** Not offering it in the interface is not a
-           guarantee. The refusal carries `TRANSITION_IRREVERSIBLE`, the transition attempted **and
+           guarantee. The refusal carries `publication.transition_irreversible`, the transition attempted **and
            the promise committed** as parameters — `prices_engaged` for `draft|reserve → scheduled`,
            `replay_sold` for `ended → replay_online`. **The lock bears on the `from > to` pair, not
            on the state.**
@@ -2038,7 +2042,7 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "409":
           description: |
-            `STATE_CONFLICT` (with the current state and version), `TRANSITION_IRREVERSIBLE` (with the
+            `STATE_CONFLICT` (with the current state and version), `publication.transition_irreversible` (with the
             promise committed), or `publication.checklist_incomplete` (with the list of what is
             missing).
           content:
@@ -2120,7 +2124,7 @@ paths:
                     version: 13,
                   }
         "409":
-          description: "`PRICES_LOCKED` when publication is committed, `STATE_CONFLICT` on a stale version."
+          description: "`date.prices_locked` when publication is committed, `STATE_CONFLICT` on a stale version."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -2144,7 +2148,7 @@ paths:
         them: the priority window (2 h) is a **domain parameter**, served and not copied out.
 
         **Capacity widens in tiers and never shrinks** once the sale has opened: a reduction is
-        refused with `CAPACITY_SHRINK_FORBIDDEN`.
+        refused with `capacity.tier_must_widen`.
 
         Beyond **10,000 seats**, the technical provision is required, revisable up to **72 h**
         beforehand; threshold, provision, deadline and exposure to the penalty are **contract data**.
@@ -2201,7 +2205,7 @@ paths:
                   waitlistNotified: 12
                   priorityUntil: "2026-09-21T20:06:00Z"
         "409":
-          description: "`CAPACITY_SHRINK_FORBIDDEN`, or `TECHNICAL_PROVISION_REQUIRED` beyond the threshold."
+          description: "`capacity.tier_must_widen`, or `date.technical_provision_required` beyond the threshold."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -2328,7 +2332,7 @@ paths:
                     offeredTransitions: [],
                   }
         "409":
-          description: "`REPLAY_POLICY_FINAL` when the policy was `none`."
+          description: "`date.replay_policy_final` when the policy was `none`."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -2375,7 +2379,7 @@ paths:
                 rightsVersion: 412
                 data: { deleted: true }
         "409":
-          description: "`DATE_HAS_SOLD_SEATS`, with the count."
+          description: "`date.has_sold_seats`, with the count."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -2536,7 +2540,7 @@ paths:
                     affectedSeats: 174,
                   }
         "403":
-          description: "`OUTCOME_DECISION_FORBIDDEN` — this role can only report."
+          description: "`date.outcome_decision_forbidden` — this role can only report."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -2737,7 +2741,7 @@ paths:
                     version: 4,
                   }
         "409":
-          description: "`TECHNICAL_CHECK_REQUIRED`, ou `STATE_CONFLICT`."
+          description: "`date.technical_check_required`, ou `STATE_CONFLICT`."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -3292,7 +3296,7 @@ paths:
       description: |
         **Immediate**, and the contract says so: the old key stops broadcasting at once. Rotating
         **during a live show** cuts the ingest in progress — the refusal carries a distinct code
-        (`STREAM_KEY_ROTATION_DURING_RUN`) rather than silently executing a command whose consequence
+        (`date.stream_key_rotation_during_run`) rather than silently executing a command whose consequence
         is dead air.
       x-arthome-maturity: provisional
       x-arthome-upstream: [streaming]
@@ -3336,7 +3340,7 @@ paths:
                     revealedAt: "2026-09-21T18:41:00Z",
                   }
         "409":
-          description: "`STREAM_KEY_ROTATION_DURING_RUN` — confirm explicitly, or wait until the end."
+          description: "`date.stream_key_rotation_during_run` — confirm explicitly, or wait until the end."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -3478,7 +3482,7 @@ paths:
                   version: 2
                   decisionVersion: 0
         "409":
-          description: "`MODERATION_ALREADY_CLAIMED`, with the name of whoever holds the lease."
+          description: "`moderation.already_claimed`, with the name of whoever holds the lease."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -3578,7 +3582,7 @@ paths:
                   description: |
                     **The settlement axis, not the lease axis.** A verdict is accepted as long as
                     no other verdict has been rendered — including when a colleague holds the row
-                    claimed. Refused only by `MODERATION_ALREADY_SETTLED`, which carries the winning
+                    claimed. Refused only by `moderation.already_settled`, which carries the winning
                     verdict and its author.
                 reason: { type: string, enum: [spam, insult, spoiler, off_topic, harassment], x-arthome-vocabulary-source: MODERATION_REASONS }
                 muteUntil:
@@ -3627,7 +3631,7 @@ paths:
                   version: 3
                   decisionVersion: 1
         "409":
-          description: "`MODERATION_ALREADY_SETTLED`, **with the winning verdict and its author**."
+          description: "`moderation.already_settled`, **with the winning verdict and its author**."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -4060,7 +4064,7 @@ paths:
                     version: 1,
                   }
         "403":
-          description: "`ROLE_NOT_ASSIGNABLE`, with the assignable roles and whom to ask."
+          description: "`channel.role_not_assignable`, with the assignable roles and whom to ask."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -4313,7 +4317,7 @@ paths:
                       surface: studio_web,
                     }
         "403":
-          description: "`CREW_ROLE_RESERVED` — the `director` assignment grants access to the stream key."
+          description: "`channel.crew_role_reserved` — the `director` assignment grants access to the stream key."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -4417,7 +4421,7 @@ paths:
                 rightsVersion: 412
                 data: { state: pending_acceptance, expiresAt: "2026-09-28T18:21:00Z" }
         "409":
-          description: "`TRANSFER_TARGET_INELIGIBLE` — not a member, or without two-factor authentication."
+          description: "`channel.transfer_target_ineligible` — not a member, or without two-factor authentication."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -4476,7 +4480,7 @@ paths:
                 rightsVersion: 413
                 data: { deleted: true }
         "409":
-          description: "`CHANNEL_HAS_OPEN_OBLIGATIONS`, with the detail."
+          description: "`channel.has_open_obligations`, with the detail."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -4641,7 +4645,7 @@ paths:
       summary: Counter-signs a change of bank details.
       description: |
         **Two distinct roles**: the owner **and** the treasury. One and the same person cannot sign
-        both times, even holding both roles — `SAME_ACTOR_FORBIDDEN`. That is the entire point of a
+        both times, even holding both roles — `channel.same_actor_forbidden`. That is the entire point of a
         dual signature.
       x-arthome-maturity: provisional
       x-arthome-upstream: [payouts]
@@ -4692,7 +4696,7 @@ paths:
                       surface: studio_web,
                     }
         "403":
-          description: "`SAME_ACTOR_FORBIDDEN` — a dual signature requires two people."
+          description: "`channel.same_actor_forbidden` — a dual signature requires two people."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -4763,7 +4767,7 @@ paths:
                 rightsVersion: 412
                 data: { periodId: "2026-09", closedAt: "2026-10-01T09:00:00Z" }
         "409":
-          description: "`RECONCILIATION_DISCREPANCY_UNEXPLAINED`, with the gap and the lines."
+          description: "`payout.reconciliation_discrepancy_unexplained`, with the gap and the lines."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -5356,7 +5360,7 @@ paths:
         problem we do not have against the loss of what we wanted.
 
         `from` and `to` are **required**, and too wide a range is refused with
-        `PERIOD_FILTER_REQUIRED`, with the maximum range as a parameter.
+        `api.period_filter_required`, with the maximum range as a parameter.
 
         It **names names and places them**, kept for 24 months. The **attempts** to walk back a
         committed transition appear in it: that is in itself a piece of operational information.
@@ -5813,7 +5817,7 @@ paths:
                 rightsVersion: 412
                 data: { expiresAt: "2026-09-26T21:30:00Z", windowHours: 120 }
         "409":
-          description: "`REPLAY_POLICY_FINAL` when the policy was `none`."
+          description: "`date.replay_policy_final` when the policy was `none`."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -6026,11 +6030,11 @@ components:
         **The rights version the client holds**, symmetric to `X-Arthome-Rights-Version` in the
         response. Without it, the server cannot tell "you never had that right" from "you had it two
         hundred milliseconds ago": **two of the three refusal codes were out of reach**, and only
-        `FORBIDDEN` was left — that is, the very indistinction the three codes existed to remove.
+        `api.forbidden` was left — that is, the very indistinction the three codes existed to remove.
 
-        The difference, on duty, is not theoretical: on `FORBIDDEN` the application sends the
+        The difference, on duty, is not theoretical: on `api.forbidden` the application sends the
         operator back to the home screen as if they had never had the right; on
-        `RIGHTS_VERSION_STALE` it reloads the bootstrap and **finds its place again**.
+        `api.rights_version_stale` it reloads the bootstrap and **finds its place again**.
 
         **Which clock is authoritative**, since there were two: the server makes the client leave the
         real-time rooms **immediately**, but a command still goes through for up to 60 s, the lifetime
@@ -6072,7 +6076,7 @@ components:
       required: false
       description: |
         Sort key. **A key bearing on a field absent from this role's projection is refused** with
-        `SORT_KEY_FORBIDDEN`, never ignored.
+        `api.sort_key_forbidden`, never ignored.
 
         Sorting by **state** follows the **state machine's canonical order**, not alphabetical order:
         it is domain data, served with the state (`orderRank`), and not a table each surface would
@@ -6150,7 +6154,7 @@ components:
     Forbidden:
       description: |
         Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-        `FORBIDDEN`, `RIGHTS_VERSION_STALE`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+        `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
         whether to reload, to phone someone, or to give up.
       content:
         application/json:
@@ -6183,8 +6187,8 @@ components:
     Conflict:
       description: |
         A final business refusal, and the `code` says which. `STATE_CONFLICT` carries **the current
-        state and version**; `TRANSITION_IRREVERSIBLE` carries the transition attempted **and the
-        promise committed**; `MODERATION_ALREADY_SETTLED` carries **the winning verdict and its
+        state and version**; `publication.transition_irreversible` carries the transition attempted **and the
+        promise committed**; `moderation.already_settled` carries **the winning verdict and its
         author**.
       content:
         application/json:

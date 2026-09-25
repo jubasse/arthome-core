@@ -83,12 +83,18 @@ Prettier do not overlap, that the two contracts conform to twenty rules, that ev
 is written in English, that the repository map still matches the installed declarations, and that
 **every schema emits exactly what the contract publishes.**
 
-The prose half of the vocabulary gate is the newest and the narrowest: `transport.md` §5.5's status
-table was a hand-kept copy of `ERROR_CODES` that had drifted to eleven names no package exported, and
-was written in the spelling of the TypeScript *constant* rather than of the wire — so every code it
-documented was one the contracts' own `pattern` forbids. A document opts in by declaring its source;
-it does not get guessed, because 74 of the 105 backticked capitalised tokens in `architecture/` and
-`docs/` are not error codes at all.
+The prose half of the vocabulary gate is the newest: `transport.md` §5.5's status table was a
+hand-kept copy of `ERROR_CODES` that had drifted to nine names no package exported, and was written
+in the spelling of the TypeScript *constant* rather than of the wire — so every code it documented
+was one the contracts' own `pattern` forbids. **The same fault was inside the contracts themselves**,
+in `description` prose on stable endpoints: 53 occurrences of 30 accessor names, so the
+machine-readable half of a file said `date.prices_locked` while its prose said `PRICES_LOCKED`.
+
+A document opts in by declaring its source; it does not get guessed, because 74 of the 105 backticked
+capitalised tokens in `architecture/` and `docs/` are not error codes at all. Two of the table's
+"missing" codes turned out never to have been missing — `UPSTREAM_ERROR` is `api.upstream_unavailable`
+and `CAPACITY_SHRINK_FORBIDDEN` is `capacity.tier_must_widen` — which is the other half of why a human
+counting names cannot do this: a renamed member and an absent one read identically.
 
 That last one compares trees rather than text and prints every equivalence it grants, because an
 equivalence nobody can see is an exemption nobody audits. It found fourteen disagreements on its

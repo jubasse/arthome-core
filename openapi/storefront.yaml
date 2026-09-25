@@ -1,5 +1,9 @@
 openapi: 3.1.1
 
+# Every `CODE` this document names in prose must be the WIRE spelling of a member of
+# ERROR_CODES, not the TypeScript accessor's. check-vocabulary.py compares them.
+x-arthome-codes-source: ERROR_CODES
+
 info:
   title: Arthome Storefront BFF
   version: 1.0.0
@@ -27,7 +31,7 @@ info:
     A closed vocabulary appears in two forms, and **they are not the same**.
 
     - on **input** (what the client sends): strict `enum`. An unknown value is refused with
-      `SCHEMA_INVALID`.
+      `api.schema_invalid`.
     - on **output** (what the server returns): `type: string` together with
       `x-arthome-vocabulary`, which lists the known values **for documentation only**. A surface
       that receives a value missing from that list **keeps it raw and treats it as neutral**; it
@@ -105,7 +109,7 @@ info:
 
     The storefront paginates **by cursor**, opaque, Base64-encoded over the composite key
     `(created_at, id)`. It is **bidirectional**, **independent of page size** — a screen rotation
-    does not invalidate it — and it lives **24 hours**. Beyond that: `410` `CURSOR_TOO_OLD`,
+    does not invalidate it — and it lives **24 hours**. Beyond that: `410` `api.cursor_too_old`,
     which demands a full reload and says so.
 
     ## Maturity
@@ -284,7 +288,7 @@ paths:
                     taxonomyArtifact: { locale: fr, version: 12, url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '409':
-          description: '`EMAIL_TAKEN` — a **code**, not the library''s English sentence.'
+          description: '`identity.email_taken` — a **code**, not the library''s English sentence.'
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -303,7 +307,7 @@ paths:
         unknown email from a wrong password — the distinction would tell an attacker which accounts
         exist.
 
-        `TWO_FACTOR_REQUIRED` is an **intermediate** refusal, not a failure: it carries a
+        `identity.two_factor_required` is an **intermediate** refusal, not a failure: it carries a
         `challengeId` to present to `/v1/auth/two-factor/verify`.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
@@ -360,7 +364,7 @@ paths:
                     labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json' }
                     taxonomyArtifact: { locale: fr, version: 12, url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json' }
         '401':
-          description: '`INVALID_CREDENTIALS`, or `TWO_FACTOR_REQUIRED` with its `challengeId`.'
+          description: '`INVALID_CREDENTIALS`, or `identity.two_factor_required` with its `challengeId`.'
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -777,7 +781,7 @@ paths:
       tags: [account]
       summary: Answers the two-factor challenge, and opens the session.
       description: |
-        Follows `TWO_FACTOR_REQUIRED`. The `challengeId` is **short-lived and single-use**; a
+        Follows `identity.two_factor_required`. The `challengeId` is **short-lived and single-use**; a
         consumed backup code cannot be replayed.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
@@ -2745,10 +2749,10 @@ paths:
                   expiresAt: '2026-09-21T19:16:00Z'
         '409':
           description: |
-            `CHECKOUT_LINE_UNAVAILABLE` (with `unavailableLineIds`), `QUOTE_ADDRESS_MISMATCH`, or
+            `CHECKOUT_LINE_UNAVAILABLE` (with `unavailableLineIds`), `order.quote_address_mismatch`, or
             `order.price_stale`.
 
-            **`QUOTE_ADDRESS_MISMATCH` closes a gap**: the quote computes shipping from a country and a
+            **`order.quote_address_mismatch` closes a gap**: the quote computes shipping from a country and a
             postcode, the payment receives a full address, and nothing required them to match. **A
             binding quote whose address changes in between no longer binds** — it needs a new quote, not
             a silently different charge.
@@ -3046,8 +3050,8 @@ paths:
                   qualityCap: fhd
         '403':
           description: |
-            Renewal refused. `SEAT_EXPIRED` · `watch.concurrent_limit_reached` · `SIGNED_OUT_ELSEWHERE` ·
-            `watch.preview_exhausted` · `DATE_INTERRUPTED`. `SIGNED_OUT_ELSEWHERE` is what the television
+            Renewal refused. `SEAT_EXPIRED` · `watch.concurrent_limit_reached` · `identity.signed_out_elsewhere` ·
+            `watch.preview_exhausted` · `DATE_INTERRUPTED`. `identity.signed_out_elsewhere` is what the television
             signed out from the web sees — **not a network error**. **Real window: up to 120 s** — see
             `revokeDevice`.
           content:
@@ -3228,7 +3232,7 @@ paths:
         client knows where its playback has reached; the absolute instant is set by the server. Both
         travel, never one alone.
 
-        The **rate limit is in the contract**, not merely enforced: `CHAT_RATE_LIMITED` carries
+        The **rate limit is in the contract**, not merely enforced: `chat.rate_limited` carries
         `retryAfterMs`, so the surface can **disable the input cleanly** instead of stacking up
         refusals.
       x-arthome-maturity: provisional
@@ -3561,7 +3565,7 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409':
           description: |
-            **`PAIRING_EXECUTION_ENGAGED` — the pairing can no longer be cancelled.** The phone has
+            **`pairing.execution_engaged` — the pairing can no longer be cancelled.** The phone has
             entered the payment journey; cancelling here would orphan a purchase in flight.
 
             **What the surface does with this refusal**: it **stays on the waiting screen** and keeps
@@ -3642,7 +3646,7 @@ paths:
                 servedAt: '2026-09-21T18:52:04.000Z'
                 data: { pairingId: 019928f9-0000-7000-8000-000000000001, intent: seat, state: engaged, pollIntervalSec: 2 }
         '403':
-          description: '`PAIRING_IDENTITY_MISMATCH`, or `PAIRING_INTENT_NOT_ENGAGEABLE` on `signin`.'
+          description: '`pairing.identity_mismatch`, or `pairing.intent_not_engageable` on `signin`.'
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -3664,7 +3668,7 @@ paths:
         engaged pairing is precisely the one whose decision is awaited; if `intent = signin`, any
         valid session suffices — **that is the nominal case, and it is the very meaning of "add an
         account"**; otherwise, the bearer **is** the profile that opened the pairing, on pain of
-        `PAIRING_IDENTITY_MISMATCH`.
+        `pairing.identity_mismatch`.
 
         **No implicit profile switch.** It would charge the wrong payment method, credit the wrong
         rights and deliver the seat to the wrong account — in a living room, at the precise moment
@@ -3714,7 +3718,7 @@ paths:
                 servedAt: '2026-09-21T18:52:00.000Z'
                 data: { pairingId: 019928f9-0000-7000-8000-000000000001, intent: seat, state: approved, pollIntervalSec: 5 }
         '403':
-          description: '`PAIRING_IDENTITY_MISMATCH` — the bearer is not the profile that opened the pairing. Impossible on `signin`.'
+          description: '`pairing.identity_mismatch` — the bearer is not the profile that opened the pairing. Impossible on `signin`.'
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -4651,7 +4655,7 @@ paths:
         **An observable effect on the targeted device, within 120 seconds at most.** Revoking
         removes the `Device`, **all** its `DeviceSession`s **and its playback leases**: `identity`
         publishes `device_revoked`, `streaming` consumes it and refuses the **next renewal** of the
-        token. The device displays `SIGNED_OUT_ELSEWHERE`, **not a network error**.
+        token. The device displays `identity.signed_out_elsewhere`, **not a network error**.
 
         **Never queued offline**: this is a security command, it must fail loudly rather than be
         replayed blind.

@@ -123,6 +123,32 @@ THE PROSE BLOCK — architecture documents name codes too, and nothing checked t
   REPORTING BY HEADING, NEVER BY LINE, for the reason above: the nearest `#`
   heading above the code, which survives an edit anywhere else in the file.
 
+THE CONTRACT-PROSE BLOCK — and this is where the same fault actually costs
+
+  The accessor-for-value confusion was not only in our architecture documents. It
+  was in `description` prose inside openapi/*.yaml, on endpoints marked
+  `x-arthome-maturity: stable` — 53 occurrences of 30 distinct accessor names.
+  transport.md is ours; those two documents are what the storefront and the studio
+  are BUILT AGAINST. A frontend developer reading "refused with `PRICES_LOCKED`"
+  wrote a branch that never fires, while the `x-arthome-vocabulary` block three
+  hundred lines down carried `date.prices_locked`. The machine-readable half was
+  right and the human-readable half was wrong, in one file.
+
+  IT IS THE INVERSE CHECK, AND THAT IS HOW IT AVOIDS GUESSING. In Markdown a named
+  code must EXIST. Here an accessor spelling that RESOLVES must be rewritten — and
+  a capitalised token that resolves onto nothing is ignored without a word, because
+  `RFC`, `TODO` and every schema name share that token space. Both directions only
+  ever speak about a member they can point at. A token folding onto two codes is
+  reported as ambiguous and never chosen for (`RATE_LIMITED` again).
+
+  A document opts in at its root, `x-arthome-codes-source: ERROR_CODES`, and prose
+  that writes an accessor ON PURPOSE — a paragraph whose subject IS the spelling —
+  is exempted in `tools/prose-literal-codes.json`, with a reason, retracted when
+  the description stops writing it. That is a side file rather than an in-artefact
+  marker for a reason from ANOTHER gate, recorded in its header: check-emit-diff
+  compares `components/schemas` node for node, so a marker beside such a
+  description would turn that gate red.
+
 Usage: python3 tools/check-vocabulary.py openapi/*.yaml [architecture/*.md]
 No dependency beyond PyYAML. Everything runs locally.
 """
@@ -338,6 +364,125 @@ PROSE_PROMISED = re.compile(
 PROSE_CODE = re.compile(r"`([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)`")
 HEADING = re.compile(r"(?m)^(#{1,6})\s+(.*)$")
 
+# The accessor spelling, in a contract's own `description` prose.
+YAML_CODES_SOURCE = "x-arthome-codes-source"
+ACCESSOR = re.compile(r"`([A-Z][A-Z0-9_]{2,})`")
+PROSE_LITERAL = "tools/prose-literal-codes.json"
+
+
+def load_prose_literals(filename):
+    """Accessor spellings a contract writes on purpose, as {(path, token)}, plus the same
+    set for retraction — an entry whose description stops writing the token is a finding.
+
+    A reason is mandatory, for decision 2's reason: an exception that does not say why is
+    a hole. The file's own header records why this one cannot live in the artefact.
+    """
+    if not os.path.exists(PROSE_LITERAL):
+        return set(), set()
+    raw = json.load(open(PROSE_LITERAL, encoding="utf-8"))
+    keys = set()
+    for e in raw.get("allow", []):
+        if e.get("file") != filename:
+            continue
+        if not e.get("reason"):
+            problems.append(
+                f"{PROSE_LITERAL}\n"
+                f"      `{e.get('token')}` at {e.get('path')} is exempted with no reason."
+            )
+            continue
+        keys.add((e["path"], e["token"]))
+    return keys, set(keys)
+
+
+def accessor_index(members):
+    """Folded accessor spelling -> the code(s) it could mean.
+
+    A code reaches prose under two spellings: the tail alone (`SCHEMA_INVALID` for
+    `api.schema_invalid`) and the whole thing (`PAIRING_IDENTITY_MISMATCH`). Both are
+    in use, so both are indexed — and a fold that collides is kept as a LIST, never
+    resolved here, because `RATE_LIMITED` means `api.rate_limited` or
+    `chat.rate_limited` and only the author knows which.
+    """
+    index = {}
+    for code in members:
+        if "." not in code:
+            continue
+        tail = code.split(".", 1)[1]
+        for spelling in (tail, code.replace(".", "_")):
+            index.setdefault(spelling.replace("_", "").lower(), []).append(code)
+    return {k: sorted(set(v)) for k, v in index.items()}
+
+
+def prose_strings(node, path="$"):
+    """Every `description`/`summary` string in a parsed document, with its JSON path."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key in ("description", "summary") and isinstance(value, str):
+                yield f"{path}.{key}", value
+            else:
+                yield from prose_strings(value, f"{path}.{key}")
+    elif isinstance(node, list):
+        for i, value in enumerate(node):
+            yield from prose_strings(value, f"{path}[{i}]")
+
+
+def check_yaml_prose(filename, doc, core, origin):
+    """The accessor-for-value confusion, inside a contract's own prose.
+
+    ⚠ IT FLAGS ONLY WHAT IT CAN PROVE. A capitalised token is reported when it folds
+      onto a code that EXISTS; one that folds onto nothing is ignored without a word,
+      because `RFC`, `TODO` and every schema name live in the same token space. This
+      is the inverse of the Markdown check — there, a named code must exist; here, an
+      accessor spelling that resolves must be rewritten — and both avoid guessing by
+      only ever speaking about a member it can point at.
+    """
+    literal, unseen = load_prose_literals(filename)
+    if not isinstance(doc, dict) or YAML_CODES_SOURCE not in doc:
+        return None, 0
+    source = doc[YAML_CODES_SOURCE]
+    if source not in core:
+        problems.append(
+            f"{filename} $.{YAML_CODES_SOURCE}\n"
+            f"      declares `{source}`, which no published package exports as a vocabulary."
+        )
+        return source, 0
+
+    index = accessor_index(core[source][0])
+    found = 0
+    for path, text in prose_strings(doc):
+        for m in ACCESSOR.finditer(text):
+            token = m.group(1)
+            candidates = index.get(token.replace("_", "").lower())
+            if not candidates:
+                continue
+            if (path, token) in literal:
+                unseen.discard((path, token))
+                continue
+            found += 1
+            if len(candidates) == 1:
+                problems.append(
+                    f"{filename} {path}\n"
+                    f"      prose says `{token}`; the wire carries `{candidates[0]}`. That token is\n"
+                    f"      the TypeScript accessor name, and this document's own `code` pattern\n"
+                    "      forbids it — a surface branching on it would match nothing. Write the\n"
+                    "      wire spelling."
+                )
+            else:
+                problems.append(
+                    f"{filename} {path}\n"
+                    f"      prose says `{token}`, which folds onto {len(candidates)} codes:\n"
+                    f"        {candidates}\n"
+                    "      Write the one this description means; the gate will not choose."
+                )
+
+    for path, token in sorted(unseen):
+        problems.append(
+            f"{PROSE_LITERAL}\n"
+            f"      `{token}` is exempted at {path}, and that description no longer writes it.\n"
+            "      Remove the entry; it exempts nothing."
+        )
+    return source, found
+
 
 def declared_spans(text):
     """(start, end) of every section carrying an `arthome-codes-source` declaration.
@@ -525,6 +670,10 @@ def main(files):
     prose_files = [f for f in files if f.endswith(".md")]
     files = [f for f in files if not f.endswith(".md")]
     prose = {"declared": 0, "codes": 0, "undeclared": []}
+    # Counted apart from the Markdown documents: "codes named" and "accessor spellings
+    # that resolve" are different measurements, and one number covering both would say
+    # neither.
+    yaml_prose = {"declared": 0, "resolved": 0, "undeclared": []}
     for filename in prose_files:
         source, count = check_prose(filename, core, origin)
         if source is None:
@@ -553,6 +702,12 @@ def main(files):
 
     for filename in files:
         doc = yaml.safe_load(open(filename, encoding="utf-8"))
+        yaml_source, yaml_found = check_yaml_prose(filename, doc, core, origin)
+        if yaml_source is None:
+            yaml_prose["undeclared"].append(filename)
+        else:
+            yaml_prose["declared"] += 1
+            yaml_prose["resolved"] += yaml_found
         for path, node, parent in walk(doc):
             for key, kind in ((VOCAB, "output"), (ENUM, "input")):
                 if key in node:
@@ -1191,6 +1346,11 @@ def main(files):
             f"{len(prose_files)} document(s) — {prose['declared']} declared, "
             f"{prose['codes']} code(s) checked, {len(prose['undeclared'])} undeclared"
         )
+    print(
+        f"arthome-check-vocabulary [contract prose/{YAML_CODES_SOURCE}]: "
+        f"{yaml_prose['declared']} of {yaml_prose['declared'] + len(yaml_prose['undeclared'])} "
+        f"document(s) declared, {yaml_prose['resolved']} accessor spelling(s) resolved"
+    )
     print(
         f"  against {len(core)} vocabularies exported by "
         + ", ".join(sorted({origin[n] for n in core}))

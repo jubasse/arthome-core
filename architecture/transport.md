@@ -406,7 +406,7 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 | `401` | `refused` | `api.unauthenticated`, `api.token_expired` |
 | `403` | `refused` | `api.forbidden`, `api.sort_key_forbidden`, `api.rights_version_stale`, `pairing.identity_mismatch` |
 | `404` | `refused` | `api.not_found` |
-| `409` | `refused` | `api.state_conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `api.idempotency_in_flight`, `capacity.shrink_forbidden` |
+| `409` | `refused` | `api.state_conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `api.idempotency_in_flight`, `capacity.tier_must_widen` |
 | `410` | `refused` | `api.cursor_too_old`, `pairing.expired`, `watch.replay_expired` |
 | `429` | `unavailable` | `api.rate_limited`, `chat.rate_limited` (param `retryAfterMs`) |
 | `500` | `unavailable` | `api.internal` — **never** the original error's message |
@@ -429,7 +429,7 @@ forbids an internal message from leaking.
 `code` = `api.gateway_unavailable`. A raw HTML page would make the "your connection" / "our servers"
 distinction impossible, and `storefront-tv` is right: the viewer will go and reboot their router.
 
-**Ten of the codes this section names do not exist yet**, and they are declared below rather than
+**Nine of the codes this section names do not exist yet**, and they are declared below rather than
 left to be discovered. Each belongs to a surface that is not built — the BFF, pairing, idempotency,
 Traefik — so inventing the members now would be publishing contract for flows nobody is writing.
 `check-vocabulary` retracts a declaration the day its member appears, so this list cannot rot into a
@@ -446,9 +446,6 @@ set of promises nobody remembers making.
      §5.4's idempotency store is a BFF concern and the BFF is not built. -->
 <!-- arthome-codes-promised: api.idempotency_in_flight
      Same store, same absence. Carries `retryAfterMs` when it lands. -->
-<!-- arthome-codes-promised: capacity.shrink_forbidden
-     `capacity.tier_must_widen` exists; the refusal for the opposite move does not. Both belong to
-     the ticketing capacity rules, and ticketing does not exist. -->
 <!-- arthome-codes-promised: pairing.expired
      The pairing surface is adr-auth.md §4, Status: proposed. The four PAIRING_ERROR_CODES that do
      exist cover polling and ownership, not lifetime. -->
@@ -464,10 +461,18 @@ set of promises nobody remembers making.
      §5.7's 413. No service enforces a body limit in the contract's vocabulary — the two that exist
      inherit Fastify's 1 MiB default and answer with its own error shape, not ours. -->
 
-⚠ `UPSTREAM_ERROR` was in this table until the gate was written, and it was **not** a missing
-member — it is `api.upstream_unavailable`, which `@arthome/core` has exported all along, under a name
-this document never updated. A stale spelling reads exactly like a gap, which is the second reason
-the comparison is worth automating.
+⚠ **TWO OF THIS TABLE'S "MISSING" CODES WERE NEVER MISSING**, and both were found by reading the
+vocabulary rather than the table. `UPSTREAM_ERROR` is `api.upstream_unavailable`, exported all along.
+`CAPACITY_SHRINK_FORBIDDEN` is `capacity.tier_must_widen`: one invariant, not two — `seats.ts`'s
+`assertTierWidens` throws that code on a reduction, and its test is named *"refuses a shrink"*.
+"The tier must widen" is what you say to someone submitting a tier that is not wider, which a
+reduction is.
+
+A stale spelling reads exactly like a gap, and it reads like one twice as easily when the name
+describes the refusal from the caller's side (`shrink_forbidden`) and the code describes it from the
+rule's (`tier_must_widen`). That is the second reason the comparison is worth automating: a human
+counting names cannot tell a missing member from a renamed one, and both times the guess was that a
+member was missing.
 
 ### 5.6 Reads — and the batched read
 
