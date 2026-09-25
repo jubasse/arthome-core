@@ -2759,7 +2759,7 @@ The account's Actions quota is exhausted. No gate assumes a remote runner.
 | 12 | Tooling out of production | `pnpm why -P @arthome/tooling` | no dependency | §4.7 |
 | 13 | `@arthome/core` dependency-free | the script in §4.7 | empty | §4.7 |
 | 14 | Tests | `pnpm exec vitest run` | green | §5.8 |
-| 15 | Commit message | the `commit-msg` hook | conformant | §5.9, §8.4 |
+| 15 | Commit message | the `commit-msg` hook — ⚠ **NOT INSTALLED**, and not installable as written; see §8.4 | not enforced | §5.9, §8.4 |
 | 16 | OpenAPI conformance | `python3 tools/check-openapi.py openapi/*.yaml` | `✓ conformant` | `definition-of-done.md` |
 | 17 | No French prose committed | `pnpm exec arthome-check-language` | `PASS` | D-024 |
 | 18 | **Contracts and domain share one vocabulary** | `python3 tools/check-vocabulary.py openapi/*.yaml` | `PASS` | §5.3.1 |
@@ -2859,7 +2859,7 @@ The five applications have **no** Turborepo: a single-application repository has
 cache, and adding one would be tooling to maintain for nothing. **No Nx**, in any of the seven
 (README §3).
 
-### 8.4 The git hooks — two files, no dependency
+### 8.4 The git hooks — one file written, one specified and NOT installed
 
 No husky, no lint-staged, no commitlint. Three packages, three configurations and three version bumps
 to maintain in seven copies, for what git does natively:
@@ -2910,7 +2910,29 @@ is a reflex, not an authority. What it removes is the accident, not the delibera
 
 (Note the absence of `md` in that pattern: Markdown is outside Prettier's scope here — §3.7.)
 
-**`.githooks/commit-msg`** — Conventional Commits (§5.9), ten lines, zero dependencies:
+**`.githooks/commit-msg`** — ⚠ **SPECIFIED HERE AND NOT INSTALLED IN ANY REPOSITORY**, and it must
+not be installed as written until §5.9 is settled. Checked on 2026-09-25: `.githooks/` holds
+`pre-commit` alone, in both arthome-core and arthome-platform.
+
+The pattern below rejects **twelve of the last thirteen commits** in arthome-platform. The drift is
+one consistent shape rather than carelessness: this project writes `<area>: <prose subject>`, where
+the areas used — `messaging`, `catalog`, `testing`, `events`, `search-indexer` — are valid §5.9
+*scopes* with no type in front, and the wave labels (`Wave 1:`, `Wave 2 scaffolding:`) carry which
+milestone a change belongs to, which the `feat|fix|refactor|…` vocabulary cannot express. The one
+subject that does pass is a `docs:`; a second `docs:` fails on length at 81 characters.
+
+⚠ **AND §5.9 CITES A DECISION THAT DOES NOT MAKE THE RULE.** §5.9 reads "[floor] Conventional
+Commits, in English, per D-008". D-008 says: "`arthome-core` is committed at the end of phase 0, then
+at the end of each of the three times. Messages in English. No remote, no push, ever." It arbitrates
+cadence, language and pushing — and says nothing about the format. So "in English" is backed by an
+arbitration and "Conventional Commits" is an unsourced `[floor]` rule. That is not a decision to
+reopen; it is a citation that was never made.
+
+Installing this hook today would stop work. Either the practice wins and §5.9 stops calling itself
+Conventional Commits, or the format wins and thirteen commits of deliberate prose are the exception
+that proves it. Owner's call.
+
+Conventional Commits (§5.9), ten lines, zero dependencies:
 
 ```sh
 #!/bin/sh
