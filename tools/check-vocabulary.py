@@ -701,9 +701,11 @@ def main(files):
     yaml_prose = {"declared": 0, "resolved": 0, "undeclared": []}
     promised = load_promised()
     named_anywhere = set()
+    named_by_file = {}
     for filename in prose_files:
         source, count, named = check_prose(filename, core, origin, promised)
         named_anywhere |= named
+        named_by_file[filename] = named
         if source is None:
             prose["undeclared"].append(filename)
         else:
@@ -727,10 +729,24 @@ def main(files):
     #   adr-stream-entitlement.md, which has not opted in. Failing on that would punish
     #   the documents still to be migrated, so it is reported and left visible.
     for code in sorted(set(promised) - named_anywhere):
+        where = ", ".join(promised[code].get("named_in") or ["nowhere recorded"])
         notes.append(
-            f"{CODES_PROMISED}: `{code}` is declared and no CHECKED document names it — "
-            "stale, or named only in a document that has not opted in yet."
+            f"{CODES_PROMISED}: `{code}` is declared and no CHECKED document names it. "
+            f"Named in {where} — opt one in, or delete the entry."
         )
+    # The pointer cannot quietly become a lie: a checked document naming a code the entry
+    # does not list is drift, and it is the half that IS verifiable — a document nobody
+    # checks cannot be confirmed either way.
+    for filename, codes in sorted(named_by_file.items()):
+        for code in sorted(codes & set(promised)):
+            listed = promised[code].get("named_in") or []
+            if filename not in listed:
+                problems.append(
+                    f"{CODES_PROMISED}\n"
+                    f"      `{code}` is named in {filename}, which its `named_in` does not list:\n"
+                    f"        {listed}\n"
+                    "      Add it; the field is what a reader follows to the prose."
+                )
 
     import yaml  # imported here so the two WARN paths above need no dependency
 
