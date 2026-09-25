@@ -429,37 +429,14 @@ forbids an internal message from leaking.
 `code` = `api.gateway_unavailable`. A raw HTML page would make the "your connection" / "our servers"
 distinction impossible, and `storefront-tv` is right: the viewer will go and reboot their router.
 
-**Nine of the codes this section names do not exist yet**, and they are declared below rather than
-left to be discovered. Each belongs to a surface that is not built — the BFF, pairing, idempotency,
-Traefik — so inventing the members now would be publishing contract for flows nobody is writing.
-`check-vocabulary` retracts a declaration the day its member appears, so this list cannot rot into a
-set of promises nobody remembers making.
+**Nine of the codes this section names do not exist yet**, and each is recorded in
+`tools/codes-promised.json` with the reason nobody can emit it — the BFF, pairing, idempotency and
+Traefik are all unbuilt, so inventing the members now would be publishing contract for flows nobody
+is writing. That file is single and keyed by code rather than kept per document: a promise is a fact
+about the vocabulary, and one reason with two homes is a reason that drifts. `check-vocabulary`
+retracts an entry the day a package exports the code, so the list cannot rot into a set of promises
+nobody remembers making.
 
-<!-- arthome-codes-promised: api.token_expired
-     No BFF exists to mint or expire a token; adr-auth.md is Status: proposed. 401 is served today
-     as api.unauthenticated, which D-069's standing exception makes correct rather than vague. -->
-<!-- arthome-codes-promised: api.state_conflict
-     The generic 409 for a conditional command whose `version` did not match. No service implements
-     optimistic concurrency yet — catalog's show.entity.ts records that its `version` column is
-     deliberately absent until `catalog.publication` exists. -->
-<!-- arthome-codes-promised: api.idempotency_key_reused
-     §5.4's idempotency store is a BFF concern and the BFF is not built. -->
-<!-- arthome-codes-promised: api.idempotency_in_flight
-     Same store, same absence. Carries `retryAfterMs` when it lands. -->
-<!-- arthome-codes-promised: pairing.expired
-     The pairing surface is adr-auth.md §4, Status: proposed. The four PAIRING_ERROR_CODES that do
-     exist cover polling and ownership, not lifetime. -->
-<!-- arthome-codes-promised: api.deadline_exceeded
-     §5.3's deadline is enforced by the BFF's client, which is not written. -->
-<!-- arthome-codes-promised: api.upstream_timeout
-     Same client. Distinct from api.upstream_unavailable, which exists: a timeout is not a failure,
-     and the two differ on whether the caller may retry. -->
-<!-- arthome-codes-promised: api.gateway_unavailable
-     Traefik's own 5xx, served by a static error service. No Traefik configuration exists in any
-     repository yet, so nothing can emit it. -->
-<!-- arthome-codes-promised: api.payload_too_large
-     §5.7's 413. No service enforces a body limit in the contract's vocabulary — the two that exist
-     inherit Fastify's 1 MiB default and answer with its own error shape, not ours. -->
 
 ⚠ **TWO OF THIS TABLE'S "MISSING" CODES WERE NEVER MISSING**, and both were found by reading the
 vocabulary rather than the table. `UPSTREAM_ERROR` is `api.upstream_unavailable`, exported all along.

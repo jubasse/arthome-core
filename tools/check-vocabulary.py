@@ -354,11 +354,53 @@ def load_ratchet():
 
 # ── The prose block ──────────────────────────────────────────────────────────
 PROSE_SOURCE = re.compile(r"<!--\s*arthome-codes-source:\s*([A-Z][A-Z0-9_]*)\s*-->")
-PROSE_PROMISED = re.compile(
-    r"<!--\s*arthome-codes-promised:\s*([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)\s*\n"
-    r"(.*?)-->",
-    re.DOTALL,
+# A token shaped exactly like a code that is not one — a state, a field, a flag. In the
+# artefact and not a side file, because the document that creates the ambiguity is the
+# one that can say so, and the reason belongs beside the sentence that needs it.
+PROSE_NOT_CODE = re.compile(
+    r"<!--\s*arthome-codes-not:\s*([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)\s+(.*?)-->", re.DOTALL
 )
+CODES_PROMISED = "tools/codes-promised.json"
+
+
+def load_promised():
+    """Codes a document names that nothing exports, keyed by CODE — one file, not one per
+    document.
+
+    A promise is a fact about the vocabulary, not about the document that mentions it:
+    `api.state_conflict` is named in two documents, and a per-document list would give one
+    reason two homes to drift between — the parallel literal table this gate exists to
+    find, built inside it.
+
+    ⚠ DECISION 2 ABOVE DOES NOT FORBID THIS, and the distinction is worth stating because
+      it reads as though it might. Its objection to side files is that one would have to
+      identify a contract block by LINE NUMBER (§3.7). A code NAME is not a line number:
+      it survives a reformat, a section move and a document being split in two. Where the
+      key is stable, the side file is the better home — which is why
+      domain-only-vocabularies.json is one already.
+    """
+    if not os.path.exists(CODES_PROMISED):
+        return {}
+    raw = json.load(open(CODES_PROMISED, encoding="utf-8"))
+    out = {}
+    for e in raw.get("allow", []):
+        code = e.get("code")
+        if not code:
+            continue
+        if not e.get("reason"):
+            problems.append(
+                f"{CODES_PROMISED}\n      `{code}` is declared with no reason. An exception that"
+                " does not\n      say why is not an exception, it is a hole."
+            )
+            continue
+        if code in out:
+            problems.append(
+                f"{CODES_PROMISED}\n      `{code}` is declared twice. One code, one entry — the"
+                " second\n      hides the first, reason and all."
+            )
+            continue
+        out[code] = e
+    return out
 # A wire code as the contracts pin it, inside backticks. Lowercase and dotted, so
 # NOT_SERVING and TS1272 cannot match; the family filter below removes the rest.
 PROSE_CODE = re.compile(r"`([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)`")
@@ -522,7 +564,7 @@ def nearest_heading(text, offset):
     return last or "(before the first heading)"
 
 
-def check_prose(filename, core, origin):
+def check_prose(filename, core, origin, promised):
     """Compare the codes a Markdown document names against the vocabulary it declares.
 
     Returns (declared_source, codes_checked) — (None, 0) for a document that has not
@@ -532,7 +574,7 @@ def check_prose(filename, core, origin):
 
     decl = PROSE_SOURCE.search(text)
     if not decl:
-        return None, 0
+        return None, 0, set()
     source = decl.group(1)
 
     if source not in core:
@@ -542,7 +584,7 @@ def check_prose(filename, core, origin):
             f"      exports as an `as const` vocabulary. Name one that exists, or remove the\n"
             "      declaration — a source that is not there checks nothing."
         )
-        return source, 0
+        return source, 0, set()
 
     members = set(core[source][0])
     # Derived from the vocabulary, never listed here: a list of the families would be
@@ -554,38 +596,7 @@ def check_prose(filename, core, origin):
             f"      `{source}` has no dotted member, so no `<family>.<member>` code can be\n"
             "      recognised in prose. The prose block only fits a dotted vocabulary."
         )
-        return source, 0
-
-    promised = {}
-    for m in PROSE_PROMISED.finditer(text):
-        code, reason = m.group(1), " ".join(m.group(2).split())
-        if code in promised:
-            # Reported rather than last-wins: a second declaration hides the first, so a
-            # reasonless duplicate beside a reasoned one would read as documented.
-            problems.append(
-                f"{filename}  {nearest_heading(text, m.start())}\n"
-                f"      `{code}` is declared promised twice. One code, one declaration — the second\n"
-                "      hides the first, reason and all."
-            )
-            continue
-        promised[code] = (reason, m.start())
-
-    for code, (reason, at) in sorted(promised.items()):
-        if not reason:
-            problems.append(
-                f"{filename}  {nearest_heading(text, at)}\n"
-                f"      `{code}` is declared promised with no reason. An exception that does not\n"
-                "      say why is not an exception, it is a hole."
-            )
-        elif code in members:
-            # The same retraction domain-only-vocabularies.json performs, for the same
-            # reason: a stale allowance is the rot these gates exist to find.
-            problems.append(
-                f"{filename}  {nearest_heading(text, at)}\n"
-                f"      `{code}` is declared promised-but-unexported, and {origin[source]} now\n"
-                f"      exports it. Remove the declaration; it exempts nothing.\n"
-                f"      Reason it carried: {reason}"
-            )
+        return source, 0, set()
 
     # ⚠ SCOPED TO THE DECLARING SECTION, NOT THE DOCUMENT, AND A FALSE POSITIVE IS
     #   WHY. An error code and a Kafka event type share the `<context>.<thing>` shape
@@ -598,11 +609,34 @@ def check_prose(filename, core, origin):
     #   in the position decision 1 exists to forbid: guessing which token meant to be
     #   a code. So a section that names codes says so, and a section about events
     #   never opts in.
+    # ⚠ SEGMENT COUNT IS DERIVED, NOT ASSUMED. Every member of the declared vocabulary
+    #   has the same number of segments (all 67 of ERROR_CODES have two), so a token with
+    #   a different count cannot be one of its members whatever its family looks like.
+    #   That is what excludes an event type — `identity.device.revoked.v1` is four — and
+    #   it excludes them by a property of the vocabulary rather than by a list of events
+    #   that would need maintaining here.
+    widths = {m.count(".") for m in members}
+    not_codes = {m.group(1): m.group(2).strip() for m in PROSE_NOT_CODE.finditer(text)}
+    for token, reason in sorted(not_codes.items()):
+        if not reason:
+            problems.append(
+                f"{filename}  {nearest_heading(text, text.find(token))}\n"
+                f"      `{token}` is declared not-a-code with no reason."
+            )
+        elif token in members:
+            problems.append(
+                f"{filename}  {nearest_heading(text, text.find(token))}\n"
+                f"      `{token}` is declared not-a-code, and `{source}` contains it.\n"
+                "      Remove the declaration; it excludes a real code."
+            )
+
     seen = {}
     for start, end in declared_spans(text):
         for m in PROSE_CODE.finditer(text, start, end):
             code = m.group(1)
-            if code.split(".", 1)[0] not in families:
+            if code.split(".", 1)[0] not in families or code.count(".") not in widths:
+                continue
+            if code in not_codes:
                 continue
             seen.setdefault(code, m.start())
 
@@ -613,20 +647,11 @@ def check_prose(filename, core, origin):
             f"{filename}  {nearest_heading(text, at)}\n"
             f"      names `{code}`, which `{source}` does not contain, so no service can emit\n"
             "      it and no surface can ever match it. Either publish the member in\n"
-            f"      {origin[source]}, or declare it in place:\n"
-            f"        <!-- arthome-codes-promised: {code}\n"
-            "             why it does not exist yet -->"
+            f"      {origin[source]}, or add it to {CODES_PROMISED} with the reason\n"
+            "      nobody can emit it yet."
         )
 
-    for code in sorted(promised):
-        if code not in seen:
-            problems.append(
-                f"{filename}  {nearest_heading(text, promised[code][1])}\n"
-                f"      `{code}` is declared promised, and the document never names it.\n"
-                "      Remove the declaration; it exempts nothing."
-            )
-
-    return source, len(seen)
+    return source, len(seen), set(seen)
 
 
 def main(files):
@@ -674,13 +699,38 @@ def main(files):
     # that resolve" are different measurements, and one number covering both would say
     # neither.
     yaml_prose = {"declared": 0, "resolved": 0, "undeclared": []}
+    promised = load_promised()
+    named_anywhere = set()
     for filename in prose_files:
-        source, count = check_prose(filename, core, origin)
+        source, count, named = check_prose(filename, core, origin, promised)
+        named_anywhere |= named
         if source is None:
             prose["undeclared"].append(filename)
         else:
             prose["declared"] += 1
             prose["codes"] += count
+
+    # ── Retracting a promise ─────────────────────────────────────────────────
+    # A promise KEPT is an entry to delete, and that is a failure: a stale allowance is
+    # the rot these gates exist to find, exactly as in domain-only-vocabularies.json.
+    for code, entry in sorted(promised.items()):
+        if code in {m for v, _p in core.values() for m in v}:
+            problems.append(
+                f"{CODES_PROMISED}\n"
+                f"      `{code}` is declared unexported, and a package now exports it.\n"
+                "      Remove the entry; it exempts nothing.\n"
+                f"      Reason it carried: {entry['reason'][:120]}…"
+            )
+    # ⚠ AND AN ENTRY NOBODY NAMES IS A NOTE, NOT A FAILURE. With one shared file, the
+    #   gate cannot tell "no document names this any more" from "the document that names
+    #   it is not in the checked set" — `watch.seat_expired` is named only in
+    #   adr-stream-entitlement.md, which has not opted in. Failing on that would punish
+    #   the documents still to be migrated, so it is reported and left visible.
+    for code in sorted(set(promised) - named_anywhere):
+        notes.append(
+            f"{CODES_PROMISED}: `{code}` is declared and no CHECKED document names it — "
+            "stale, or named only in a document that has not opted in yet."
+        )
 
     import yaml  # imported here so the two WARN paths above need no dependency
 

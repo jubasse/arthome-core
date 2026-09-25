@@ -1,0 +1,95 @@
+{
+  "_comment": [
+    "Error codes a document NAMES that no published package exports, EACH WITH ITS REASON.",
+    "",
+    "This file stays short or the documents are wrong. Past twenty entries, that is the sign that",
+    "prose is promising a vocabulary nobody is writing — not that the gate is too severe.",
+    "",
+    "SINGLE, AND KEYED BY CODE, because a promise is a fact about the VOCABULARY and not about the",
+    "document that happens to mention it. `api.state_conflict` is named in transport.md and in",
+    "context-map.md; a per-document list would give one reason two homes, and two homes drift. That",
+    "is the parallel literal table check-vocabulary.py exists to find, so it must not be built inside",
+    "it. Precedent: domain-only-vocabularies.json is a side file keyed by name.",
+    "",
+    "TWO KINDS, AND THE DIFFERENCE IS NOT COSMETIC:",
+    "  `promised` — the project has decided this code will exist; the surface that emits it is not",
+    "               built. The reason names that surface.",
+    "  `open`     — prose names a refusal the vocabulary has NEVER declared, and whether it should is",
+    "               an open product decision. Nobody has promised these. They are questions, and the",
+    "               reason says so rather than inventing a plan for them.",
+    "",
+    "check-vocabulary.py RETRACTS an entry the day a package exports the code: a promise kept is an",
+    "entry to delete, and a stale allowance is the rot these gates exist to find. It cannot retract an",
+    "entry nobody names any more — see the gate's header for why that is a note and not a failure.",
+    "",
+    "⚠ An entry here is not a licence to keep writing a code nobody can emit. It records that a",
+    "  document names one, with the reason, so the gap is measured instead of discovered."
+  ],
+  "allow": [
+    {
+      "code": "api.token_expired",
+      "kind": "promised",
+      "reason": "No BFF exists to mint or expire a token; adr-auth.md is Status: proposed. 401 is served today as api.unauthenticated, which D-069's standing exception makes correct rather than vague."
+    },
+    {
+      "code": "api.state_conflict",
+      "kind": "promised",
+      "reason": "The generic 409 for a conditional command whose `version` did not match. No service implements optimistic concurrency yet — catalog's show.entity.ts records that its `version` column is deliberately absent until `catalog.publication` exists."
+    },
+    {
+      "code": "api.idempotency_key_reused",
+      "kind": "promised",
+      "reason": "transport.md §5.4's idempotency store is a BFF concern and the BFF is not built."
+    },
+    {
+      "code": "api.idempotency_in_flight",
+      "kind": "promised",
+      "reason": "Same store, same absence. Carries `retryAfterMs` when it lands."
+    },
+    {
+      "code": "pairing.expired",
+      "kind": "promised",
+      "reason": "The pairing surface is adr-auth.md §4, Status: proposed. The four PAIRING_ERROR_CODES that do exist cover polling and ownership, not lifetime."
+    },
+    {
+      "code": "api.deadline_exceeded",
+      "kind": "promised",
+      "reason": "transport.md §5.3's deadline is enforced by the BFF's client, which is not written."
+    },
+    {
+      "code": "api.upstream_timeout",
+      "kind": "promised",
+      "reason": "Same client. Distinct from api.upstream_unavailable, which exists: a timeout is not a failure, and the two differ on whether the caller may retry."
+    },
+    {
+      "code": "api.gateway_unavailable",
+      "kind": "promised",
+      "reason": "Traefik's own 5xx, served by a static error service. No Traefik configuration exists in any repository yet, so nothing can emit it."
+    },
+    {
+      "code": "api.payload_too_large",
+      "kind": "promised",
+      "reason": "transport.md §5.7's 413. No service enforces a body limit in the contract's vocabulary — the two that exist inherit Fastify's 1 MiB default and answer with its own error shape, not ours."
+    },
+    {
+      "code": "date.interrupted",
+      "kind": "open",
+      "reason": "OPEN PRODUCT DECISION, not a promise. adr-stream-entitlement.md and context-map.md both name `DATE_INTERRUPTED` as a refusal, and the vocabulary has never declared it. `date.outcome_decision_forbidden` and `watch.date_cancelled` exist; whether an interruption is a third state, a cancellation, or an outcome is undecided, and the entitlement consequence differs in each case. Nobody has promised this code."
+    },
+    {
+      "code": "watch.seat_expired",
+      "kind": "open",
+      "reason": "OPEN PRODUCT DECISION, not a promise. adr-stream-entitlement.md names `SEAT_EXPIRED`. `SeatHold` has `isHoldExpired` and an expiry instant in core, but no refusal code: an expired hold is currently a state a surface reads, not a refusal it is told. Whether it becomes one is undecided, and the family it would join (watch. or order.) is part of that decision — this entry's own spelling is therefore provisional."
+    },
+    {
+      "code": "watch.plan_opening_multi_screen",
+      "kind": "open",
+      "reason": "OPEN PRODUCT DECISION, not a promise. adr-stream-entitlement.md and skeptic.md name `PLAN_OPENING_MULTI_SCREEN`, and `watch.concurrent_limit_reached` already refuses the concurrency case. Whether a plan-upgrade prompt is a distinct refusal or a param on that one is undecided; skeptic.md is where the doubt is recorded, which is the opposite of a settled plan."
+    },
+    {
+      "code": "streaming.compatibility_worker_failed",
+      "kind": "open",
+      "reason": "OPEN PRODUCT DECISION, not a promise. docs/streaming.md names `COMPATIBILITY_WORKER_FAILED`, and there is no `streaming.` family in ERROR_CODES at all — so this entry invents a family as well as a member, and both are provisional. It is not clear the failure of an internal worker should reach a client as a refusal rather than as an unavailability; that is the decision."
+    }
+  ]
+}

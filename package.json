@@ -26,7 +26,7 @@
     "check:map": "arthome-check-map",
     "check:openapi": "python3 tools/check-openapi.py openapi/storefront.yaml openapi/studio.yaml",
     "_comment:vocabulary": "The .md arguments are the prose block: an architecture document that names error codes opts in with `arthome-codes-source` and is compared against the same vocabulary the contracts are. Add a document here the day it declares one — the gate reports an undeclared file rather than failing, so listing one early costs nothing.",
-    "check:vocabulary": "python3 tools/check-vocabulary.py openapi/storefront.yaml openapi/studio.yaml architecture/transport.md",
+    "check:vocabulary": "python3 tools/check-vocabulary.py openapi/storefront.yaml openapi/studio.yaml architecture/transport.md architecture/context-map.md",
     "_comment:emit-diff": "IN `verify` since the commit that turned it green, and not before: a gate wired in red is a gate switched off within a day (D-065). It reads dist/, so it builds first. It emits TWICE — once to learn the export names, once as a registry, because without one z.toJSONSchema inlines every nested object and a $ref never survives.",
     "check:emit-diff": "python3 tools/check-emit-diff.py openapi/storefront.yaml openapi/studio.yaml",
     "verify": "pnpm run verify:offline && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run check:emit-diff && pnpm run check:map",

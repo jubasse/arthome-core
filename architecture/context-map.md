@@ -460,6 +460,9 @@ belonging to four contexts. Here is where the boundary runs, and why.
 
 ### The projections that serve the screens
 
+<!-- arthome-codes-source: ERROR_CODES -->
+
+
 No screen calls four services. Each screen is served by **an already composed read model**, held by
 the context that owns the majority of its invariants, and fed for the rest by the Kafka events of
 the other three.
@@ -481,12 +484,15 @@ the other three.
 what the response contains**. A run desk that received the ticketing gross in its payload and did
 not show it is a leak, not a rule — the payload is in the clear in a WebView, inspectable, and it
 survives in the phone's HTTP cache. A direct answer to `studio-web` Q2 and `studio-mobile` §3.
-**Corollary**: a sort key on an absent field is **refused** (`SORT_KEY_FORBIDDEN`), never ignored —
+**Corollary**: a sort key on an absent field is **refused** (`api.sort_key_forbidden`), never ignored —
 a sort silently accepted on revenue betrays the order of the values we are not allowed to show.
 
 ---
 
 ## 3. `isWatchable`: the most dangerous value in the system (chief's list, point 3)
+
+<!-- arthome-codes-source: ERROR_CODES -->
+
 
 Five sources: holding a seat (`ticketing`), the date's state (`catalog`), territorial rights
 (`catalog`), replay policy (`catalog` + `ticketing` for going on sale), subscription plan
@@ -508,9 +514,9 @@ Five sources: holding a seat (`ticketing`), the date's state (`catalog`), territ
      only evaluation with authority**, because it is the only one that produces a token.
 3. **The same refusal vocabulary on both sides.** A card announcing "subscription required" and a
    player refusing for the same reason say the same code. Closed vocabulary:
-   `NO_SEAT` · `ROOM_NOT_OPEN` · `OUT_OF_TERRITORY` · `SUBSCRIPTION_REQUIRED` · `NO_REPLAY` ·
-   `REPLAY_EXPIRED` · `REPLAY_NOT_ON_SALE` · `PREVIEW_EXHAUSTED` · `CONCURRENT_LIMIT_REACHED` ·
-   `DATE_CANCELLED`. Each produces a different screen on the three storefronts; a generic code would
+   `watch.no_seat` · `watch.room_not_open` · `watch.out_of_territory` · `watch.subscription_required` · `watch.no_replay` ·
+   `watch.replay_expired` · `watch.replay_not_on_sale` · `watch.preview_exhausted` · `watch.concurrent_limit_reached` ·
+   `watch.date_cancelled`. Each produces a different screen on the three storefronts; a generic code would
    produce a wrong one.
 4. **The entitlement is never cached client-side** (`storefront-mobile`, need no. 5). It expires, it
    depends on territory, it depends on the screen limit. An entitlement re-read from disk is a wrong
@@ -529,6 +535,13 @@ entitlement decided by the BFF, which has no authority.
 ---
 
 ## 4. `publicationState` locks values it does not own (chief's list, point 2)
+
+<!-- arthome-codes-source: ERROR_CODES -->
+
+<!-- arthome-codes-not: publication.engaged  a publication STATE, consumed as an event by
+     ticketing, not a refusal code. It is two segments in a real code family, so only this
+     line distinguishes it. -->
+
 
 The observation is correct: publication commits the **price** (ticketing), **putting the replay on
 sale** (ticketing) and the **chat policy** (chat). Three contexts, one aggregate.
@@ -580,8 +593,8 @@ which travels with the refusal:
 
 | Pair | Promise committed | Refusal code |
 |---|---|---|
-| `draft\|reserve → scheduled` | *publishing commits the displayed price* | `TRANSITION_IRREVERSIBLE` |
-| `ended → replay-online` | *viewers have paid for the replay* | `TRANSITION_IRREVERSIBLE` |
+| `draft\|reserve → scheduled` | *publishing commits the displayed price* | `publication.transition_irreversible` |
+| `ended → replay-online` | *viewers have paid for the replay* | `publication.transition_irreversible` |
 
 And the attempt to go back is **itself journalled** (`studio-web` Q8): an attempt to go back on a
 committed price is in itself a piece of run information.
@@ -654,6 +667,13 @@ construction**: a date reaches the storefront only once published.
 
 ## 6. `outcome`: one event, four consequences (chief's list, point 4)
 
+<!-- arthome-codes-source: ERROR_CODES -->
+
+<!-- arthome-codes-not: date.outcome  a nullable FIELD on a date — postponed, cancelled,
+     interrupted — not a refusal code. Two segments in a real code family, so only this line
+     distinguishes it. -->
+
+
 `catalog.date.outcome_declared.v1` is published once, by the channel, from the studio
 (`decideOutcome`, reserved to `artist ∨ production`). Four contexts consume it, and each produces
 **its** consequence, without talking to the others:
@@ -674,7 +694,7 @@ question, and it has a precise answer, in three steps:
    written in. The veil states the outcome and what it means for the seat.
 2. **The playback token is not revoked in the same act.** For `postponed` and `cancelled`, the
    broadcast is over anyway or has not started. For `interrupted`, playback **stops at the next
-   renewal refusal** (≤ 45 s) with the `DATE_INTERRUPTED` code, not by an abrupt cut: a feed cut with
+   renewal refusal** (≤ 45 s) with the `date.interrupted` code, not by an abrupt cut: a feed cut with
    no explanation is exactly what principle no. 6 forbids. The edge, for its part, may keep serving
    until the token in hand expires (120 s) — it is the client that stops, not the CDN.
 3. **The financial consequence comes afterwards, and it is visible elsewhere.** The viewer does not
@@ -688,6 +708,9 @@ mockup and the studio mockup both recomposed it, differently.
 ---
 
 ## 7. Two token systems (chief's list, point 7)
+
+<!-- arthome-codes-source: ERROR_CODES -->
+
 
 Two tokens, two lifetimes, two verifiers, **never interchangeable**.
 
@@ -716,7 +739,7 @@ see §7.0 and `adr-stream-entitlement.md` §3.4.
 - **`signOutDevice` must produce an observable effect on the device concerned**
   (`storefront-web` Q25). It revokes the session **and** publishes `identity.device.revoked.v1`,
   which `streaming` consumes to **invalidate that device's playback leases**. The television shows
-  `SIGNED_OUT_ELSEWHERE`, not a network error. **Exposure window: up to 120 s**, not 60 — revocation
+  `identity.signed_out_elsewhere`, not a network error. **Exposure window: up to 120 s**, not 60 — revocation
   refuses the next renewal, but the token already in hand stays valid until it expires, and the CDN
   edge knows nothing about it. Typical 45 to 75 s. An earlier version of this paragraph said
   "≤ 60 s": that was the renewal interval taken for the guarantee
@@ -796,6 +819,9 @@ other than on the IP address (which a household shares).
 
 ## 8. Device pairing: one primitive, five intents
 
+<!-- arthome-codes-source: ERROR_CODES -->
+
+
 `corrections-handoff.md` poses it as an open question; `storefront-tv` demonstrated its necessity by
 counting five journeys. **Decision: one single primitive, in `identity`, conformant to RFC 8628.**
 
@@ -828,7 +854,7 @@ identity.DevicePairing
   screen while the payment completes into the void.
 - **A television is shared** (`storefront-tv` Q2). For the **four purchase intents**, the pairing is
   bound to the **profile that opened it**: a phone approving under another identity is **refused**
-  with a distinct code (`PAIRING_IDENTITY_MISMATCH`), and the phone offers "switch account" — a
+  with a distinct code (`pairing.identity_mismatch`), and the phone offers "switch account" — a
   person's act, never the system's. Reason: an implicit switch would charge the wrong payment
   method, credit the wrong entitlements and deliver the seat to the wrong account, in a living room,
   at the precise moment two people are watching the same screen. **`signin` is the exception and is
@@ -1159,6 +1185,9 @@ it explicitly — a bare `z.enum()` does not do it.
 
 ## 14. What `backend-contracts` should take from here
 
+<!-- arthome-codes-source: ERROR_CODES -->
+
+
 An operational summary, so the whole document does not have to be re-read.
 
 1. **60 read methods, 132 write methods.** §10 gives the split per service. The transport is its
@@ -1173,7 +1202,7 @@ An operational summary, so the whole document does not have to be re-read.
    `studio-mobile` requires it and is right: it is the decision a person on duty has to take in ten
    seconds.
 5. **Two pagination regimes** (D-010), plus the two named exceptions. Cursor as **opaque Base64**
-   over `(created_at, id)`, **24 h lifetime**, a `CURSOR_TOO_OLD` code that requires a full reload.
+   over `(created_at, id)`, **24 h lifetime**, a `api.cursor_too_old` code that requires a full reload.
    The cursor is **bidirectional** and **independent of page size** (`storefront-mobile`: a rotation
    must not invalidate it).
 6. **A page envelope carries a total** — exact for the studio, **bounded approximate** for

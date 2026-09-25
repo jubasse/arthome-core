@@ -3,29 +3,27 @@
     "Places where a contract's prose writes a code's ACCESSOR spelling on purpose, because the",
     "sentence's subject IS the spelling rather than the code. Everywhere else the accessor form is a",
     "defect: the contracts pin `^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$` on the envelope's `code`, so",
-    "a surface branching on `SCHEMA_INVALID` matches nothing. check-vocabulary.py reads this file and",
-    "RETRACTS an entry the day its token leaves that description — a stale exemption is an error here.",
+    "a surface branching on `SCHEMA_INVALID` matches nothing.",
     "",
-    "KEYED BY JSON PATH, AND THAT IS THE ONE PLACE THIS PROJECT DOES KEY ON A LOCATION. §3.7 says put",
-    "the exemption in the artefact when the only stable key would be a location. Here the key is a",
-    "JSON path, which this gate's header already calls the stable identifier for these documents — it",
-    "survives a reformat, unlike a line number.",
+    "check-vocabulary.py reads this file and RETRACTS an entry the day its description stops writing",
+    "the token — a stale exemption is an error here, not a silent pass.",
     "",
-    "⚠ AND THE IN-ARTEFACT MARKER IS NOT AVAILABLE, WHICH IS A CONSTRAINT FROM ANOTHER GATE.",
-    "  check-emit-diff.py compares `components/schemas` node for node against what the zod sources",
-    "  emit, so an `x-arthome-codes-literal` key added beside such a description would be a key the",
-    "  document has and the schema does not: this gate's exemption would turn that gate red. The one",
-    "  entry below sits under `components/schemas`, so there was nowhere in the artefact to put it.",
+    "A legitimate entry has a recognisable shape: the paragraph ARGUES something about the spelling,",
+    "so rewriting the token changes the claim rather than correcting it. Any other justification is",
+    "suspect — in particular 'nobody has got round to it', which is a finding.",
     "",
-    "⚠ Being a deliberate literal is a claim that the paragraph is ABOUT the spelling. It is not a",
-    "  place to park a description someone has not got round to rewriting — that one is a finding."
+    "EMPTY, AND THAT IS THE POINT. One entry existed for a day: WatchVerdict's `denialReasonCode`",
+    "description, which argued that the denial reasons were a SCREAMING_SNAKE refusal-code FAMILY and",
+    "cited `CURSOR_TOO_OLD` as its example. The entry recorded that the paragraph was nonetheless",
+    "suspect, because WATCH_DENIAL_REASONS ships dotted and lowercase, and that the claim was owed a",
+    "decision rather than an exemption in perpetuity. It got one: the paragraph has been rewritten to",
+    "state the D-067 position — the wire form is dotted lowercase, the accessor is SCREAMING_SNAKE, and",
+    "nothing compares a literal. So the exemption was WITHDRAWN rather than kept, and the gate is what",
+    "noticed it had gone stale.",
+    "",
+    "The lesson for whoever adds the next entry: an exemption that records its own doubt is the right",
+    "shape, and it should expect to be withdrawn. If the doubt cannot be written down, the paragraph is",
+    "probably just wrong."
   ],
-  "allow": [
-    {
-      "file": "openapi/storefront.yaml",
-      "path": "$.components.schemas.WatchVerdict.properties.denialReasonCode.description",
-      "token": "CURSOR_TOO_OLD",
-      "reason": "The paragraph's subject is the spelling itself: it argues that the denial reasons are a refusal-code FAMILY and cites this token as a member of that family, beside `order.price_stale` and `STATE_CONFLICT`. Rewriting the example to `api.cursor_too_old` changes what the sentence claims rather than correcting it. ⚠ The paragraph is nonetheless SUSPECT and is owed a decision, not an exemption in perpetuity: it asserts `SCREAMING_SNAKE` is the family's form while WATCH_DENIAL_REASONS ships as `watch.no_seat`, dotted and lowercase, and its own example list already mixes one dotted code with two accessor names. Whoever settles that rewrites the paragraph and removes this entry."
-    }
-  ]
+  "allow": []
 }
