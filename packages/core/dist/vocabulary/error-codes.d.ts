@@ -34,7 +34,7 @@ import { WATCH_DENIAL_REASONS } from './entitlement.js';
  * put a transport concern where a rule belongs, and the surface will render
  * "not found" for a date that exists and is simply not on sale.
  */
-export declare const API_ERROR_CODES: readonly ["api.unauthenticated", "api.forbidden", "api.not_found", "api.rate_limited", "api.schema_invalid", "api.upstream_unavailable", "api.cursor_too_old", "api.sort_key_forbidden", "api.period_filter_required", "api.rights_version_stale"];
+export declare const API_ERROR_CODES: readonly ["api.unauthenticated", "api.forbidden", "api.not_found", "api.rate_limited", "api.schema_invalid", "api.internal", "api.service_unavailable", "api.upstream_unavailable", "api.cursor_too_old", "api.sort_key_forbidden", "api.period_filter_required", "api.rights_version_stale"];
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 export declare const ApiErrorCode: {
     readonly UNAUTHENTICATED: "api.unauthenticated";
@@ -42,6 +42,8 @@ export declare const ApiErrorCode: {
     readonly NOT_FOUND: "api.not_found";
     readonly RATE_LIMITED: "api.rate_limited";
     readonly SCHEMA_INVALID: "api.schema_invalid";
+    readonly INTERNAL: "api.internal";
+    readonly SERVICE_UNAVAILABLE: "api.service_unavailable";
     readonly UPSTREAM_UNAVAILABLE: "api.upstream_unavailable";
     readonly CURSOR_TOO_OLD: "api.cursor_too_old";
     readonly SORT_KEY_FORBIDDEN: "api.sort_key_forbidden";

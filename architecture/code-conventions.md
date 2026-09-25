@@ -2254,6 +2254,55 @@ tested exhaustively on their **boundaries**, because those are what compose the 
 `corrections-handoff.md` found diverging everywhere. `definition-of-done.md` has the last word on what
 makes a batch finished.
 
+### 5.10 Comments — the why and the failure, never the what
+
+**[floor] The first instrument is the NAME, not the comment.** A function named for exactly what it
+does, and a variable named for exactly what it holds, remove the need for the paragraph above them —
+and a long name is the cheap side of that trade. `waitUntilDue` needs no gloss;
+`handleRetryTiming` needs one. Prefer `refuseCommitWhenVerifyIsRed` to `check` plus three lines of
+explanation. See §5.2 for the naming rules themselves; what matters here is the order: **name first,
+and comment only what a name cannot carry.**
+
+**[floor] JSDoc is not owed to every export.** Write it when the code is non-trivial, or when a
+reader needs context the signature cannot give — where the function sits in a flow, what must be true
+before calling it, what it costs. A one-line function whose name says what it does gets nothing; a
+`@param` that restates the parameter's name is noise. And when a comment is warranted, **it is
+concise**: the shortest form that carries the fact.
+
+**[floor] A comment earns its place by saying something the code cannot.** The test is one question:
+*would a reader with this code in front of them learn something they could not derive from it?*
+
+Keep:
+
+- **a measured failure** — what went wrong, and what it cost. These are the most valuable lines in
+  the repository and several of them have already stopped a defect being reintroduced;
+- **a constraint that is not visible locally** — a column name a router owns, an ordering a library
+  imposes, a version that behaves differently from its documentation;
+- **a decision and its reason**, where the code shows only the outcome;
+- **a trap**, marked `⚠`, where the obvious change is the wrong one.
+
+Cut:
+
+- anything that restates the code. `// increment the counter` above `counter += 1`;
+- an explanation of a well-named function. Naming it well is the comment;
+- narration of a sequence a reader can simply read;
+- a second copy of something already written in `DECISIONS.md` or an ADR — **link, do not restate**.
+
+**A rough ceiling, and it is a smell rather than a limit: past a quarter of a file, ask whether the
+code is unclear instead.** Measured on 2026-09-25, `libs/messaging` in arthome-platform stood at
+**59 %, 55 % and 40 %** comment lines in its three main files. Those files carry real findings —
+the offset-resolution rule among them — buried in paragraphs that explain code which explains
+itself. The findings were worth keeping; their length was not.
+
+⚠ **THIS IS NOT A LICENCE TO DELETE REASONS.** The failure mode this rule replaces is verbosity; the
+failure mode it could create is losing the one paragraph that stopped somebody re-introducing a
+defect. When a comment is long **because** it records something expensive, shorten the prose and keep
+the fact. When in doubt, keep it and make it tighter — never delete a recorded reason to satisfy a
+ratio.
+
+**Apply it opportunistically.** Any file you read or modify is one you may shrink: it costs a moment
+while the context is loaded, and it is the only way a convention reaches code written before it.
+
 ### 5.9 Commit messages
 
 **[floor] `<area>: <subject>`, in English.** The language is D-008's; the format is this document's.

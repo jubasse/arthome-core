@@ -42,6 +42,14 @@ export const API_ERROR_CODES = [
   'api.not_found',
   'api.rate_limited',
   'api.schema_invalid',
+  // ⚠ THREE DISTINCT FAULTS, THREE MEMBERS — 500, 502 and 503 answered
+  //   `upstream_unavailable` alike until this was written, so a caller could not
+  //   tell "we crashed" from "we are restarting", and those differ on the only
+  //   question the caller asks: retry, or do not. `internal` is never retryable,
+  //   `service_unavailable` always is, `upstream_unavailable` is the BFF saying a
+  //   service behind it failed. transport.md's status table names all three.
+  'api.internal',
+  'api.service_unavailable',
   'api.upstream_unavailable',
   'api.cursor_too_old',
   'api.sort_key_forbidden',
@@ -56,6 +64,8 @@ export const ApiErrorCode = {
   NOT_FOUND: 'api.not_found',
   RATE_LIMITED: 'api.rate_limited',
   SCHEMA_INVALID: 'api.schema_invalid',
+  INTERNAL: 'api.internal',
+  SERVICE_UNAVAILABLE: 'api.service_unavailable',
   UPSTREAM_UNAVAILABLE: 'api.upstream_unavailable',
   CURSOR_TOO_OLD: 'api.cursor_too_old',
   SORT_KEY_FORBIDDEN: 'api.sort_key_forbidden',
