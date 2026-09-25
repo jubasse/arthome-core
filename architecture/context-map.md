@@ -158,17 +158,49 @@ health, chapters, incidents (`streaming`). The chat policy (`chat`). The channel
 the taxonomy belongs to `catalog`. A `search` service would own no invariant, no write and no
 vocabulary: only a projection. But a context is a boundary of language, not a kind of
 infrastructure. Two foreign facts enter the indexed document — availability and the headline price,
-which come from `ticketing` — and they enter **through a Kafka event consumed by `catalog`'s
-indexer**, never through a CDC reading another service's database. So the "one database per
-service" rule is not circumvented by the back door.
+which come from `ticketing` — and they enter **through a Kafka event consumed by the indexer**,
+never through a CDC reading another service's database. So the "one database per service" rule is
+not circumvented by the back door.
 
 **A consequence, and it is binding**: Kafka Connect's OpenSearch *sink* connector, which the README
 cites as **the only argument** ruling out Meilisearch, **is not usable here**. It writes one
-document per message; our document is a composition of three sources. The index is written by a
-`catalog-indexer` consumer internal to the service, which reloads from its own write model and
-indexes with `version_type: external` on the row's version — so a late replay can never overwrite a
-newer version. Debezium keeps its place, but for **publishing the outbox**, not for feeding the
-index.
+document per message; our document is a composition of three sources — three in the target document,
+and even the one built today is a *projection* of its single message and not that message, with
+renamed fields, a protobuf enum read as `@arthome/core`'s vocabulary, and an `indexed_at` no message
+carries. Debezium keeps its place, but for **publishing the outbox**, not for feeding the index.
+
+That conclusion is about the *sink* connector and holds wherever the indexer runs. What follows is
+the implementation, and this paragraph used to state it wrong in three ways, each expensive to copy.
+
+- **A separate deployable, `apps/search-indexer`, and not a consumer internal to `catalog`** — an
+  eighth deployable beside the seven `SERVICES`, and deliberately **not** a member of that constant.
+  `SERVICES` answers "which service does a BFF operation call": it is what makes fan-out countable,
+  so a name in it that nothing calls makes every upstream count wrong — exactly the mistake the
+  constant was created to catch, where `realtime` was declared as a service and anyone counting got
+  eight out of seven. Nobody calls the indexer; it consumes a topic and writes an index. None of
+  this moves the index out of `catalog`'s context: the paragraph above already settles that a
+  context is a boundary of language and not a kind of infrastructure, and a deployable is the
+  second kind of thing.
+- **A pure projection — one event in, one document out, nothing else consulted — and that purity is
+  what licenses the ordering.** The indexer writes OpenSearch **first** and commits its
+  `processed_message` row **second**, because the two cannot commit together and the crash window
+  between them must duplicate rather than drop: a repeat is absorbed by an idempotent write, a gap
+  is absorbed by nothing. Re-applying is free only while the document depends on the event and on
+  nothing that has happened since. ⚠ **The design this paragraph used to describe — an indexer
+  that reloads from its own write model — is precisely the design that breaks it**: reload a row
+  and the second write is no longer the same write, the ordering stops being correct, and what it
+  degrades into is a show absent from search for ever, with nothing logged and no alert to run a
+  reindex nobody knows is owed.
+- **`version_type: external_gte`, not `external`, and the difference is forced by what the version
+  is.** The version is the event's `occurred_at` in epoch milliseconds. `external` demands
+  strictly greater, so two events about one show inside the same millisecond — a bulk publication, a
+  fixture load — would see the second **refused and its content lost**. `external_gte` accepts an
+  equal version: a redelivery rewrites the same bytes, a same-millisecond pair applies in arrival
+  order, and anything genuinely older is still refused. That refusal is the out-of-order guard a
+  retry topic makes necessary — a message five minutes late loses to the newer one already indexed,
+  and the 409 is read as success rather than retried into the dead-letter queue. So a late replay
+  still can never overwrite a newer version; the index itself is what refuses, and no ordering
+  assumption is made about what Kafka hands us.
 
 #### The engine comparison reopens, and OpenSearch wins for another reason
 

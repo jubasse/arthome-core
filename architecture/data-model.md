@@ -606,7 +606,7 @@ one query.
 | `date_card_public` | `catalog` | date, publication, outcome, rights, media, taxonomy | `ticketing.date_sales.availability_changed.v1` (capacity, waiting list, headline price, promotion) · `ticketing.date_sales.pricing_changed.v1` · `streaming.run.state_changed.v1` · `streaming.viewer_count.sampled.v1` (per-minute aggregate) · `streaming.replay.asset_ready.v1` (existence + expiry) · `chat.date_chat_policy.changed.v1` |
 | `date_detail_public` | `catalog` | + synopsis, cast, languages, attributes, venue | + `streaming.chapter.posted.v1` · `ticketing.date_sales.pricing_changed.v1` (the three tiers) |
 | `home_rails` · `live_grid` · `category_page` · `artist_page` | `catalog` | composition and order by `@arthome/core` | derived from `date_card_public` + the index |
-| `search_index` (OpenSearch) | `catalog` | via `catalog-indexer` | same, `version_type: external` |
+| `search_index` (OpenSearch) | `catalog` (the context) | via **`search-indexer`, a separate deployable** — the index belongs to `catalog`'s language, not to its process (`context-map.md` §1.2) | same, `version_type: external_gte`. **Not `external`**: it demands strictly greater, and the version is `occurred_at` in epoch ms, so two events for one show inside the same millisecond would see the second refused and its content lost |
 | `saved_search_percolator` | `catalog` | the saved queries | triggers `catalog.saved_search.matched.v1` |
 | `channel_agenda` · `events_table` | `catalog` | date, publication | + `ticketing.date_sales.availability_changed.v1` (capacity, revenue) |
 | `viewer_entitlements` | `ticketing` | seats, subscription, credit | — (its own writes) |
@@ -645,8 +645,15 @@ storefront **and studio**, without exception. The value is produced by `displayS
 its outcome labels **replace** the state. `order_rank` is still served alongside for **sorting** by
 state, which is a different need.
 
-**The lag is bounded and visible.** Every read model carries `last_event_at` and `last_event_seq`;
-the BFF serves `servedAt` and the contract declares the freshness per family:
+**The lag is bounded and visible.** Every read model carries **a monotonic version and the instant
+it was last applied** — the two facts, and deliberately not two fixed column names. What is fixed is
+the **wire** name: `@arthome/contracts` declares `lastEventSeq` on both envelope metas, and declares
+it `.nullable().optional()` — which is what lets a model whose version is per-document rather than a
+per-model stream position serve `null` instead of inventing a number it does not hold.
+**No column called `last_event_seq` or `last_event_at` exists anywhere in the platform**;
+`search-indexer`'s `show_projection` carries `version` and `indexed_at` and satisfies the invariant
+in full (`definition-of-done.md` §5.1, S4). The BFF serves `servedAt` and the contract declares the
+freshness per family:
 
 | Family | Freshness guaranteed |
 |---|---|
@@ -1032,14 +1039,66 @@ CREATE TABLE outbox_event (
 
 **Three points that make the difference between "it works" and "it works in production".**
 
-1. **The payload is already in wire format.** The producer serialises with the registry serialiser
-   from `@arthome/contracts`, so the bytes written contain the magic byte, the schema identifier and
-   the message indexes. Debezium merely transports them (`binary.handling.mode=bytes`,
-   `value.converter=ByteArrayConverter`). Without that, Debezium would produce framed JSON and no
-   Protobuf consumer would know how to read it.
+1. **The payload is in wire format — as a TARGET. Today it is bare Protobuf, and the gap is named
+   here rather than discovered by a consumer.** The intent stands: the producer serialises with the
+   registry serialiser from `@arthome/contracts`, so the bytes written carry the magic byte, the
+   schema identifier and the message indexes; Debezium merely transports them
+   (`binary.handling.mode=bytes`, `value.converter=ByteArrayConverter`), and without that framing
+   Debezium would produce framed JSON no Protobuf consumer could read.
+
+   **What is written today is `toBinary(…)` and nothing in front of it**, in both producers that
+   exist — `identity`'s `register-account.service.ts` and `catalog`'s `publish-show.service.ts` —
+   each carrying a comment saying the framing "belongs in front of these bytes and arrives with the
+   schema registry". There is no registry in the stack yet.
+
+   ⚠ **Why this paragraph is dangerous rather than merely early.** A consumer written from the
+   sentence above strips a prefix that is not there, hands the remainder to `fromBinary`, and fails
+   to decode — and undecodable bytes are classified `PermanentError`, which means the message does
+   **not** retry. It **dead-letters on the first attempt**. That is the right handling of bytes that
+   really are malformed and the worst available outcome for bytes that were fine, and the symptom
+   an operator sees is a dead-letter reason saying the payload is not the schema. The one consumer
+   built, `search-indexer`, decodes bare and therefore works; the next one written from this
+   paragraph will not. Switching framing on is additive for a producer and **breaking for every
+   consumer**: both sides move in one step, or the topic is versioned.
+
 2. **Nothing is ever updated or read by the application.** The application **only inserts**, inside
-   the business transaction. It is CDC that reads the WAL. A happy consequence: `REPLICA IDENTITY
-   DEFAULT` is enough (the primary key), since there is neither an `UPDATE` nor a `DELETE` captured.
+   the business transaction. It is CDC that reads the WAL.
+
+   **`REPLICA IDENTITY DEFAULT` is enough — and the reason is the primary key, not the absence of
+   deletes.** The reason recorded here used to be "since there is neither an `UPDATE` nor a `DELETE`
+   captured". Two independent facts falsify that premise while leaving the conclusion standing, and
+   both are worth knowing on their own:
+
+   - **The publication was created `FOR ALL TABLES`.** `publication.autocreate.mode` is not a
+     property you get by default in the shape you want: its default is `all_tables`, so Debezium
+     runs `CREATE PUBLICATION … FOR ALL TABLES` when the publication does not exist.
+     `table.include.list` then filters **at the connector, after logical decoding** — the other
+     tables' rows are read off the WAL and shipped into the Connect worker before being discarded.
+     Measured on the running stack on 2026-09-25: `puballtables = t`, the publication carrying
+     `account`, `migrations` **and** `outbox_event`, so every `account` `UPDATE` was in fact being
+     captured. The connector now sets `"publication.autocreate.mode": "filtered"`;
+     `arthome-platform/infra/debezium/README.md` holds the query that settles it and the superuser
+     consequence (§7.4).
+   - **Point 3 below mandates `DELETE FROM outbox_event …`** — on the very table this point says
+     has no `DELETE` captured. The two points contradicted each other before any publication was
+     created, and no infrastructure detail is needed to see it.
+
+   **So the condition, not the accident**: `DEFAULT` uses the table's primary key as its replica
+   identity, so it is sufficient for **any captured table that has one**, whatever is done to that
+   table. All three the over-broad publication carried do — `account.id` and `outbox_event.id` are
+   `uuid PRIMARY KEY`, and TypeORM's `migrations.id` is a generated primary key — which is why
+   nothing broke while the premise was false. A captured table **without** a primary key is where
+   `FULL` becomes necessary and expensive (§7.4), and scoping the publication is what stops that
+   from being decided by accident.
+
+   ⚠ **What happens on the first purge is not settled, and saying so is the point.** Point 3's
+   cleanup job deletes from a captured table; the connector configures **no delete handling of any
+   kind**. So the Outbox Event Router's behaviour on a `DELETE` is **undefined by the configuration
+   as written** — which is not the same as known to be harmless. It has never run, because the job
+   does not exist yet. Settle it against Debezium's own documentation, and settle it **before the
+   job is written**. Left unsettled, the answer is discovered on the first purge, in production, on
+   the one connector whose stopping retains the write-ahead log until a disk fills (§7.4).
+
 3. **Cleanup is a separate job** — `DELETE FROM outbox_event WHERE created_at < now() - interval
    '7 days'`, run by a task of the service. It must run **after** the connector has confirmed its
    position, otherwise we delete rows not yet published.
@@ -1056,9 +1115,9 @@ explicitly into `critical-rules.md`.
 | Constraint | Practical consequence |
 |---|---|
 | `wal_level = logical` | a server parameter, a restart required; to be set at milestone 2 |
-| **one replication slot and one publication per connector** | seven Debezium connectors, seven slots, seven publications. One slot per service, named `arthome_<service>_outbox` |
+| **one replication slot and one publication per connector**, and the publication **scoped to that service's `outbox_event` alone** | seven Debezium connectors, seven slots, seven publications, named `arthome_<service>_outbox`. ⚠ **Naming a publication is not scoping it**: `publication.autocreate.mode` defaults to `all_tables`, so Debezium creates it `FOR ALL TABLES` unless you set `filtered`, and `table.include.list` filters afterwards, at the connector. Verify on the running stack — `SELECT * FROM pg_publication_tables WHERE pubname = 'arthome_<service>_outbox'` should return exactly one row, `public.outbox_event`; more than one, or `puballtables = t` in `pg_publication`, means the default won. `FOR ALL TABLES` **also requires superuser**, which is why it passes in development — the image's `POSTGRES_USER` is one — and fails on the first real deployment, where the tempting repair is to grant superuser to a connector user |
 | an unconsumed slot **retains the WAL** | a stopped connector makes the disk grow until it is full. **Measure: `confirmed_flush_lsn` lag > 1 GB → alert**, and never a slot left behind after a test |
-| `REPLICA IDENTITY` | `DEFAULT` on `outbox_event` is enough (inserts only). For any table captured elsewhere — there are none today — `FULL` would be necessary and expensive |
+| `REPLICA IDENTITY` | `DEFAULT` on `outbox_event` is enough — **because it has a primary key**, not because only inserts are captured (§7.3 point 2 corrects that reason). For a captured table **with no primary key**, `FULL` would be necessary and expensive |
 | **renaming a column breaks replication** | the publication references the columns; the connector fails or loses the column in silence |
 
 **The rule that follows, and it is not negotiable on `outbox_event`**:
@@ -1074,6 +1133,8 @@ outside TypeORM's transaction mechanism — a dedicated migration, marked as suc
 
 | Data | Retention | Erasure mechanism |
 |---|---|---|
+| **`outbox_event`** (every publishing service) | **7 days** (§7.3 point 3) | `DELETE FROM outbox_event WHERE created_at < now() - interval '7 days'`, a job of the service. ⚠ **Gated on the connector, not on the clock**: it may only delete what the connector has confirmed, and `confirmed_flush_lsn` (§7.4) is the position to read. Deleting ahead of it destroys a committed business fact that was never published — and the application never reads this table back, so nothing notices. It also deletes from a **captured** table: see §7.3 point 2 for what the connector does not configure |
+| **`processed_message`** (every consuming service) | **owed, and not set** | the deduplication ledger — `id`, `topic`, `processed_at`. There is **no purge today** and it grows with every message ever consumed. Its horizon must **outlive the retry-plus-DLQ budget**: 5 s, 30 s then 5 min between attempts (`libs/messaging`), plus however long a dead-lettered message may sit before somebody replays it. Purged sooner, it stops deduplicating precisely the replays it exists for — the message returns, finds no row, and is applied a second time, silently |
 | chat messages | **24 months** (aligned on the studio journal) | a monthly purge per date partition; the message is deleted, the **moderation journal entry** stays with the message's identifier and not its text |
 | studio journal, access journal — the **`identity.channel_journal` table** (§4) | **24 months** | a purge by period; an export before the purge |
 | health samples | **90 days** in detail, hourly aggregates kept | a table partitioned by month, `DROP PARTITION` |

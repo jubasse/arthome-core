@@ -285,17 +285,31 @@ Four tests. A service that does not have all four is not finished.
 | **S1** | the migrations apply against a **real PostgreSQL 18**, from zero, in order | `synchronize: true` is forbidden everywhere, development included: the only proof that the schema is the one you think it is, is that it builds from its migrations |
 | **S2** | **the business write and the outbox row in the same transaction**: a failure is forced **after** the outbox insert and **before** the commit, and we check that **neither of the two** exists | never `save()` then `emit()` — a crash between the two loses the event, a rollback after the emit invents it |
 | **S3** | a consumer **replays the same event twice** (same `message-id`) and the effect is **identical** | delivery is "at least once", always. Deduplication is a `processed_message` row **inside the business transaction**, with `orIgnore().returning()` — never a Redis `SET NX` nor a check-then-write outside the transaction |
-| **S4** | a read-model **projection**: an event goes in, the denormalised table comes out, and `last_event_seq` advances | this is what the whole event-driven architecture exists for. A projection that does not apply is a blank screen with no error |
+| **S4** | a read-model **projection**: an event goes in, the denormalised row comes out, and the model's **monotonic version advances while its applied-at timestamp moves** | this is what the whole event-driven architecture exists for. A projection that does not apply is a blank screen with no error |
 
 **S2 is the most important test in the system.** It is the model's most expensive fault, and it is
 the only one visible neither by reading the code, nor in a unit test, nor in production before the
 first incident.
 
+**S4 names an invariant, not two column names — and that is a correction, not a softening.** This
+line used to require `last_event_seq` and `last_event_at` on every read model. **Neither column
+exists anywhere in the platform.** The one projection built, `search-indexer`'s `show_projection`,
+carries `version` (the event's `occurred_at` in epoch milliseconds, which is also what it writes to
+OpenSearch as the external version) and `indexed_at` — and it serves every purpose those two names
+served. Since §10 makes the four floor tests a condition of "finished", requiring the names would
+have declared a correct projection unfinished and invited someone to rename working code to satisfy
+a document. What is load-bearing is not in the schema but **on the wire**: `@arthome/contracts`
+declares `lastEventSeq` on both envelope metas, so a read model served through an envelope must be
+able to **answer** it. It is `.nullable().optional()` there, which is the detail that makes the
+generalisation safe: a projection whose version is per-document rather than a per-model stream
+position serves `null` rather than inventing a number it does not have. **Storage names are the
+service's; the envelope field is the contract's.**
+
 ### 5.2 Case by case — only where the service justifies it
 
 | Test | Services concerned | Why here and not everywhere |
 |---|---|---|
-| **search mapping**: a published date is findable by its facet, and a late replay **does not overwrite** a newer version (`version_type: external`) | `catalog` | it is the only service that writes an index, and a late replay is a silent defect |
+| **search mapping**: a published **show** is findable by its facet — and a date, the day `arthome.catalog.date` is projected too — and a late replay **does not overwrite** a newer version (`version_type: external_gte`) | **`search-indexer`** | it is the only deployable that writes an index, and a late replay is a silent defect |
 | **end-to-end money calculation**: order → VAT broken down by market → commission on the pre-tax amount → net, to the minor unit | `ticketing`, `payouts` | these are "the rules that hurt"; the original fixture computed on the tax-inclusive amount at a single rate |
 | **issuing and revoking a playback token**: a token issued, a `device_revoked` consumed, the **next renewal refused**, and the **expiry of the token in hand** measured — see below | `streaming` | it is what makes "sign this device out" actually cut playback |
 
@@ -454,6 +468,35 @@ project's technical signal.
 `app.enableShutdownHooks()`, and the order is: `ready` → 503, wait out the drain window, close the
 HTTP server, **then** stop the Kafka consumer, **then** close the database. The reverse cuts
 in-flight requests on every deployment.
+
+**Three constraints the sentence above does not contain. Each has its own failure, and the third
+silently disables the other two.** (1 and 2 are `nestjs-observability` rules 6 and 5; 3 is
+`nestjs-build` rule 6.)
+
+1. **The drain window is supplied by the READINESS PROBE. `enableShutdownHooks()` alone does not
+   create one.** What holds `ready` at 503 while the endpoint removal propagates is
+   `TerminusModule.forRoot({ gracefulShutdownTimeoutMs })`. Its default is **0**, it applies to
+   **SIGTERM only**, and it does nothing whatever without `app.enableShutdownHooks()`. Size it
+   **above** the readiness probe period plus propagation and **below** Kubernetes'
+   `terminationGracePeriodSeconds` (default 30 s), or the pod is killed before its own window
+   closes. ⚠ **The hook and the timeout are one change, not two**: the hook without the timeout
+   drains for zero seconds and the sequence above runs with nothing waited out; the timeout without
+   the hook never fires at all. Configured separately, each looks present in review and the pair
+   does nothing.
+2. **Liveness must NOT go through `HealthCheckService`.** Any `check()` — even `check([])` — answers
+   **503 `shutting_down`** the moment shutdown starts. On readiness that is precisely the third row
+   of the table above and it is wanted. But a **liveness** probe built on the same service flips
+   with it, the orchestrator reads the process as dead, and it **restarts the pod mid-drain** —
+   turning the clean shutdown this section exists to obtain into the abrupt one it exists to
+   prevent, and doing it on every single deployment. So `/health/live` is a plain handler with no
+   dependency and no `HealthCheckService`; `/health/ready` is the one that uses it. The same split
+   answers a second failure: a liveness probe that pings the database restarts every healthy pod
+   during a database outage, which is the one moment restarting them helps least.
+3. **The container command is `node dist/main.js`.** `nest start`, `npm run …` or `pnpm start` as
+   PID 1 **swallows SIGTERM**: the signal reaches the wrapper, the Node process never receives it,
+   no shutdown hook runs, and **every constraint above becomes inert** while the probes, the
+   timeout and the ordering all still read as correctly configured. Use the `exec` form of `CMD`,
+   and `--init` or `tini` if a supervisor is genuinely needed.
 
 **Migrations are a distinct deployment job**, run **once, as a single instance**, and it must
 succeed **before** the new version starts. `migrationsRun: true` would have N replicas migrating at
@@ -641,8 +684,9 @@ Fourteen lines. A service that does not tick fourteen is not finished.
 - [ ] the service's **case-by-case** integration tests exist, if it warrants any
 - [ ] at most **ten** integration tests, each **naming its invariant**
 - [ ] no integration test simulates Kafka
-- [ ] `GET /health/live` and `/health/ready` exist, and `ready` returns **503 from the start of
-      shutdown**
+- [ ] `GET /health/live` and `/health/ready` exist, `ready` returns **503 from the start of
+      shutdown**, `live` does **not** go through `HealthCheckService`, and the container command is
+      `node dist/main.js` (§7.2)
 - [ ] the migrations run in a **distinct deployment job**, once only
 - [ ] the trace is **visible from the HTTP request through to indexing**, with a single
       `traceparent`

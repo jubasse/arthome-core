@@ -155,6 +155,145 @@ requirement met without turning `identity` into a catch-all service.
 `arthome.fr/compte` carries the type `handoff` and **opens no** `device_pairing` row: nothing is
 waiting, the screen does not switch. The contract separates them by name, not by an option.
 
+### 3.1 — The `express` peer against the `FastifyAdapter`: the contradiction, and what it was
+
+*Raised by the audit; settled on **25 September 2026** against npm and vendor documentation. The
+conclusion changes no decision — D-A1 stands unmodified — but the reasoning below is what makes it
+safe to implement, and without it the next reader re-opens the question.*
+
+**The contradiction, stated plainly.** §1's verification table records, for the NestJS adapter:
+
+> `@thallesp/nestjs-better-auth` — **2.8.0**, MIT, 3 Sept. 2026, peers
+> `@nestjs/core ^11.1.6 || ^12`, `better-auth >=1.5 <2`, **`express ^5.1`**, Node ≥ 22.22.1
+
+That row is accurate and it stays. The `express` peer was therefore **read, and written down, and
+its consequence never drawn** — which is the only interesting part of the defect. Every service in
+the platform that creates an HTTP application creates it with `new FastifyAdapter()`
+(`arthome-platform/apps/identity/src/main.ts:14`, `apps/catalog/src/main.ts:14`), and `express`
+appears in **no** `package.json` in the platform. `nestjs-auth` rule 12 adds a second
+requirement out of the same package — `bodyParser: false` in `NestFactory.create`, plus a global
+guard that obliges `@AllowAnonymous()` on health and webhooks — and that one reads as Express-shaped
+as well. The document recorded neither, and its status is `proposed`: whoever implements it would
+have met the question **after** committing to the package.
+
+**The contradiction is not real.** Both halves of it are false, and they are false for two different
+reasons, which is why reading only one of them would still have left the doubt standing.
+
+#### What was established, and from which source
+
+| # | Established | Source, read on 25 Sept. 2026 |
+|---|---|---|
+| E1 | **The `express` peer is declared `optional`.** `peerDependenciesMeta` marks `express`, `qs`, `graphql`, `@nestjs/graphql` and `@nestjs/websockets` as `{ "optional": true }` | `pnpm view @thallesp/nestjs-better-auth@2.8.0 peerDependenciesMeta --json` |
+| E2 | **`express` is never loaded on Fastify** — it is not imported statically anywhere in the published bundle; it is reached only through `getExpressBodyParser() { return require("express") }`, itself called only from `SkipBodyParsingMiddleware`, which the module applies **only** in its `adapterType !== "fastify"` branch | published `dist/index.mjs` of 2.8.0, lines 620–622, 663–665, 867–874 |
+| E3 | **The module branches on the adapter and has a dedicated Fastify path.** It reads `this.adapter.httpAdapter.getType()`, and on `"fastify"` calls `configureFastifyBodyParser`, which drives the Fastify instance directly (`getInstance()`, `removeContentTypeParser`, `addContentTypeParser`) | same bundle, lines 567–605, 843–878 |
+| E4 | **Its request unwrapping is adapter-agnostic by construction**: `getNodeRequest(req) { return req.raw ?? req }`, likewise for the response — `req.raw` is Fastify's raw Node request, `req` itself is Express's | same bundle, lines 653–658 |
+| E5 | **The maintainer runs the whole test suite twice, once per adapter**: `"test": "bun run test:express && bun run test:fastify"`, with `TEST_HTTP_ADAPTER=fastify vitest run`, and `@nestjs/platform-fastify ^12.0.1` + `fastify ^5.6.1` among the devDependencies | published `package.json` of 2.8.0, lines 28–32, 55, 67 |
+| E6 | **The README documents Fastify-specific behaviour** in four places — the `qs` peer for nested URL-encoded bodies, and a Fastify CORS fallback for Better Auth routes | published `README.md` of 2.8.0, lines 84, 86, 724, 726–735 |
+| E7 | **better-auth itself is framework-agnostic.** `auth.handler` is a Web-standard `(Request) => Promise<Response>`; `toNodeHandler` (exported from `better-auth/node`) wraps it into a Node `(req, res)` handler. It is exactly what the NestJS adapter calls | `packages/better-auth/src/integrations/node.ts`, via the vendor's documentation index |
+| E8 | **better-auth publishes an official Fastify integration page**, which mounts a catch-all `/api/auth/*` route and calls `auth.handler` from it | `better-auth.com/docs/integrations/fastify` (`docs/content/docs/integrations/fastify.mdx`) |
+| E9 | **`bodyParser: false` is not an Express notion.** `@nestjs/core` gates it in `NestApplication`, above the adapter: `const useBodyParser = this.appOptions && this.appOptions.bodyParser !== false;` then `useBodyParser && this.registerParserMiddleware()` | `@nestjs/core` **12.0.3**, `nest-application.js:114–115` — the version this platform pins |
+| E10 | And the call it skips exists on the Fastify adapter as well: `registerParserMiddleware(prefix, rawBody)` registering the urlencoded and JSON content-type parsers | `@nestjs/platform-fastify` **12.0.3**, `adapters/fastify-adapter.js:359` |
+
+**So the Express-shaped half of `nestjs-auth` rule 12 is Express-shaped only in appearance.**
+`bodyParser: false` is a `NestFactory` option evaluated before any adapter is consulted (E9), and on
+Fastify it suppresses the registration of Fastify's own content-type parsers (E10), which is exactly
+what the module then re-establishes on its own terms (E3). The second half of the rule — the global
+guard, and `@AllowAnonymous()` on health and webhooks — has never had anything to do with the
+adapter and applies unchanged.
+
+#### What could **not** be established, and what would settle it
+
+⚠ These are stated as failures, not as reassurances.
+
+- **I could not run the package against this platform's versions.** `node_modules` is not installed
+  here and installing was out of scope for this task, so every statement above comes from reading
+  published artefacts, never from executing them. The adapter's matrix is pinned at
+  `fastify ^5.6.1` and `@nestjs/platform-fastify ^12.0.1`; this platform pins
+  `@nestjs/platform-fastify 12.0.3` and the current `fastify` is 5.12.5. Those ranges are
+  compatible **by semver**, and semver is a claim, not a test. **What settles it: spike S1**, to
+  which one assertion is added below.
+- **I could not establish that the Fastify half of the matrix runs in the maintainer's CI.** I read
+  the scripts in the published `package.json` (E5); I did not read the repository's workflow files.
+  A script that exists is not a job that runs. **What settles it: reading
+  `github.com/ThallesP/nestjs-better-auth`'s workflow configuration**, which is one file.
+- **I could not find any headline compatibility statement.** The README never says "Fastify is
+  supported"; support appears in the code, in the test scripts, and in four caveat paragraphs. The
+  support is real by E2–E6 and it is **undeclared**, which matters for R3: an undeclared capability
+  can be dropped in a minor release without anyone calling it a breaking change.
+
+#### The options, and their real costs
+
+Switching the platform to Express is **not** among them: it is excluded by the project owner, four
+services' worth of decisions and `nestjs-performance`'s routing stand on Fastify, and nothing moves
+for a package that is not yet installed. Recorded here so it is not re-proposed.
+
+| | **A — keep the adapter, on Fastify** | **B — drop the adapter, mount `auth.handler` by hand** |
+|---|---|---|
+| Works today | yes, by E1–E6 | yes, by E7–E8 |
+| Cost to adopt | **one argument.** `NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), { bodyParser: false })` — with an adapter, the options are the **third** argument | R3's estimate: "a day, not a migration" — and that estimate is for the *mounting* only, see below |
+| `@Session()`, `@AllowAnonymous()`, `@OptionalAuth()`, hook decorators | provided | **to be written** |
+| Global `AuthGuard` | provided, as an `APP_GUARD` | **to be written** |
+| Exposure to a one-maintainer dependency | R3, unchanged | removed |
+| Undeclared-capability risk | real (E6 above) | none |
+
+**A is clearly right on the evidence, and B is not a fallback that costs a day.** R3 already records
+"mounting `auth.handler` by hand costs a day, not a migration", and that sentence stays because it
+is true of what it describes — but it prices the *mounting*, and the mounting is the cheap half.
+What the adapter also supplies is the guard and the decorators, and those are what make `identity`'s
+own controllers refuse an unauthenticated caller. B buys back independence from a one-maintainer
+package and pays for it in security-relevant code we then own.
+
+#### Whether any option breaches `critical-rules.md` #5
+
+> **5. Every service authorises for itself, on the loaded instance** — never "only the BFF calls
+> me": a time-boxed grant expires inside a token's lifetime.
+
+**Option A does not breach it.** The guard the module registers is a Nest `APP_GUARD`; it runs
+inside the pipeline, on `identity`'s own controllers, on Fastify exactly as on Express.
+
+**Option B does not breach it either — and this is the trap, because it is where it would happen.**
+Mounting the handler yourself is safe for the *auth routes*; what breaches #5 is what B silently
+removes. A handler registered on the raw instance through `app.getHttpAdapter().getInstance()` is
+**invisible to Nest**: no guard, no interceptor, no filter, no pipe ever sees that route. If the
+global `AuthGuard` is not rewritten along with the mounting, `identity` boots, `/api/auth/*`
+answers correctly, and **every domain controller answers unauthenticated** — the service stops
+authorising for itself while looking entirely healthy. That is the failure mode, and it is silent:
+no exception, no log line, no failing test unless one is written for it.
+
+**One point true of both options, and it is not an adapter consequence.** Better Auth's own routes
+are mounted with `httpAdapter.use()` — as middleware, ahead of Nest's router — on Express and on
+Fastify alike (`dist/index.mjs`, lines 899–902). They do not traverse Nest's guards on either
+adapter. This document already holds the answer, and it is recorded twice: those routes are **never
+exposed** (§8.2.6), and `approve`/`deny` are wrapped by the ownership guard **we** write (§6.3,
+the line that caused CVE-2026-45337). Changing adapter neither creates this property nor repairs
+it.
+
+#### Consequences for what is already written
+
+- **§1's table is completed, not corrected.** Its `express ^5.1` entry is right; what was missing
+  is `peerDependenciesMeta`, where that peer is `optional`. A peer list read without its `Meta` is
+  read half-way, and that is the reusable lesson.
+- **R3 (§10) gains a line**: the adapter is not only thin, it is **adapter-agnostic** (E2–E5), so
+  the platform's Fastify choice costs nothing here. R3's severity is unchanged — the exposure was
+  never the adapter, it is the single maintainer.
+- **S1 (§11) gains one assertion**, and it is the one thing this section could not establish: the
+  throwaway `identity` **must be created with `new FastifyAdapter()`**, not with the default, and
+  the success criterion includes `/api/auth/sign-in/email` answering through it. A spike run on
+  Express would prove nothing we need.
+- **§6.6 is satisfied as written**: the module's Fastify CORS fallback supports **array-based**
+  `trustedOrigins` only and throws on function-based ones (`dist/index.mjs`, lines 845–857) — and
+  §6.6 already requires literal strings. The constraint was met before it was known.
+
+#### Versions, with their dates, since a bump pins what is already mature
+
+| Package | Recorded in this ADR | Latest on 25 Sept. 2026 | Published | Verdict |
+|---|---|---|---|---|
+| `better-auth` | 1.7.5 | **1.7.6** | 1.7.5 → 14 Sept. 2026 · 1.7.6 → **24 Sept. 2026** | **Stay on 1.7.5.** 1.7.6 is one day old |
+| `@thallesp/nestjs-better-auth` | 2.8.0 | 2.8.0 | 3 Sept. 2026 | unchanged, 22 days old |
+| `@nestjs/platform-fastify` | — | 12.1.0 | — | platform pins 12.0.3; **not a decision of this ADR** |
+| `jose` | 6.2.12 | 6.2.12 | — | unchanged |
+| `typeorm` | 1.1.1 | 1.1.1 | — | unchanged |
+
 ---
 
 ## 4. The TV's three questions, decided
