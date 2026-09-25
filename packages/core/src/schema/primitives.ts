@@ -24,13 +24,20 @@ import { LOCALES } from '../format/locale.js';
  * mockup's relative offsets were convenient and untransportable.
  *
  * ⚠ THE PATTERN IS NARROWER THAN `format: date-time` AND WAS PUBLISHED NOWHERE:
- * 126 of the 132 instants in the two contracts carry `format` and no pattern.
+ * of the 132 instants in the two contracts, 125 carry `format` and no pattern.
  * RFC 3339 admits an offset and this does not, so a studio in Paris sending
  * `2026-09-24T20:00:00+02:00` is refused by a rule the contract never stated. It
- * matters on the seven fields a client sends rather than echoes — `startsAt`,
- * `muteUntil`, `expiresAt`, `rescheduledTo`, `measuredAt`; on the other 119 it
- * would constrain the server's own output, which is not a promise a client can
- * break.
+ * matters only where a client SENDS one rather than echoes it — 13 occurrences
+ * over five field names: `startsAt`, `expiresAt` (twice each), `muteUntil`,
+ * `rescheduledTo`, `measuredAt`. On the other 119 it would constrain the
+ * server's own output, which is not a promise a client can break.
+ *
+ *   ⚠ Re-derived 2026-09-25 because the counts contradicted each other three
+ *     ways: "seven fields" named five, 132 − 7 is not 119, and 126 with `format`
+ *     alone leaves six with a pattern, not seven. SEVEN WAS THE PATTERN COUNT,
+ *     transcribed into the sentence about request fields — a number that
+ *     migrated to the wrong claim, which is why every count here now says what
+ *     it counts.
  *
  * ⚠ THE NAME STATES ITS DIRECTION BECAUSE THE UNNAMED ONE WAS USED IN THE WRONG
  * ONE: while this was the only instant export, ten modules wrote their own
