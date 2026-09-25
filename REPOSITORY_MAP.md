@@ -604,12 +604,12 @@ Declarations: `dist/schema/index.d.ts` — 49 exported names.
 - `CurrencyCodeSchema` (const) — `CurrencyCodeSchema: z.ZodString` — ISO 4217, uppercase.
 - `DateIdSchema` (const) — `DateIdSchema: z.ZodString`
 - `DeviceIdSchema` (const) — `DeviceIdSchema: z.ZodString`
-- `ErrorSchema` (const) — ⚠ 'params' carries the MESSAGE'S PARAMETERS, never the message.
+- `ErrorSchema` (const) — ⚠ 'params' CARRIES THE MESSAGE'S PARAMETERS, NEVER THE MESSAGE.
 - `FailureNatureOut` (const) — `FailureNatureOut: VocabularyOut` — The failure nature, tolerant — and the ONLY vocabulary in either contract that declares what an unknown member falls back to.
 - `IanaTimeZoneSchema` (const) — `IanaTimeZoneSchema: z.ZodString` — An IANA time zone identifier: 'Europe/Paris'.
-- `InstantIn` (const) — `InstantIn: z.ZodString` — ⚠ TWO FORMS, AND THE SPLIT IS THE IN/OUT ASYMMETRY APPLIED TO A FORMAT.
+- `InstantIn` (const) — `InstantIn: z.ZodString` — An instant on the wire, STRICT — for one a client SENDS.
 - `InstantOut` (const) — `InstantOut: z.ZodString` — The same instant as a server SENDS it: the format, and no pattern.
-- `LocaleIn` (const) — `LocaleIn: VocabularyIn<typeof LOCALES>` — BCP 47, short form — the product's two languages.
+- `LocaleIn` (const) — `LocaleIn: VocabularyIn<typeof LOCALES>` — BCP 47, short form, STRICT — for a locale that arrives on a request.
 - `LocaleOut` (const) — `LocaleOut: VocabularyOut` — The same vocabulary, TOLERANT — for a locale a server SERVES.
 - `MoneyIn` (const) — `MoneyIn: z.ZodObject<{ amountMinor: z.ZodNumber; currencyCode: z.ZodString; }>` — The same shape, STRICT — for a 'Money' a client sends.
 - `MoneyOut` (const) — `MoneyOut: z.ZodObject<{ amountMinor: z.ZodNumber; currencyCode: z.ZodString; }, z.core.$loose>` — ⚠ TWO SCHEMAS, AND 'Money' IS THE ONLY SHAPE IN THIS PACKAGE THAT NEEDS BOTH.
@@ -632,15 +632,15 @@ Declarations: `dist/schema/index.d.ts` — 49 exported names.
 - `VatLineSchema` (const) — One VAT line.
 - `VenueClockSchema` (const) — `VenueClockSchema: z.ZodObject<{ venueTimezone: z.ZodString; venueUtcOffsetMin: z.ZodInt; }, z.core.$loose>`
 - `VenueIdSchema` (const) — `VenueIdSchema: z.ZodString`
-- `VocabularyIn` (type) — `type VocabularyIn<T extends Members> = z.ZodEnum<{ [K in T[number]]: K; }>;` — The two annotations, exported as types.
-- `VocabularyOut` (type) — `type VocabularyOut = z.ZodString;` — The OUT annotation takes NO type parameter, and the absence is deliberate.
+- `VocabularyIn` (type) — `type VocabularyIn<T extends Members> = z.ZodEnum<{ [K in T[number]]: K; }>;` — ⚠ DERIVES THE ANNOTATION FROM THE VOCABULARY, which is the point.
+- `VocabularyOut` (type) — `type VocabularyOut = z.ZodString;` — ⚠ TAKES NO TYPE PARAMETER, AND THE ABSENCE IS DELIBERATE.
 - `VocabularyOutNullable` (type) — `type VocabularyOutNullable = z.ZodNullable<z.ZodString>;` — A tolerant vocabulary that may also be absent — see 'vocabularyOutNullable'.
 - `int64` (const) — `int64: () => z.ZodNumber` — A 64-bit integer on the wire: 'type: integer, format: int64', and NO bounds.
 - `issueToCode` (function) — `function issueToCode(issue: z.core.$ZodIssue): { readonly code: string; readonly params: Readonly<Record<string, string>>; };` — The ONLY sanctioned way out of a zod failure.
 - `sourceNameOf` (function) — `function sourceNameOf(values: readonly string[], name?: string): string;` — The name this vocabulary is published under, or the one the caller declares.
-- `uuidOut` (const) — `uuidOut: () => z.ZodString` — A server-issued identifier as it appears ON THE WIRE — 'format: uuid', no pattern.
+- `uuidOut` (const) — `uuidOut: () => z.ZodString` — A server-issued identifier ON THE WIRE — 'format: uuid', no pattern.
 - `vocabularyIn` (function) — `function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T>;` — STRICT — for a request.
-- `vocabularyOut` (function) — `function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;`
+- `vocabularyOut` (function) — `function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;` — TOLERANT — for a response.
 - `vocabularyOutLocal` (function) — `function vocabularyOutLocal<const T extends Members>(values: T, reason: string): VocabularyOut;` — A vocabulary the DOCUMENT declares local to itself — 'source: none', with the reason the contract gives for it.
 - `vocabularyOutLocalNullable` (function) — `function vocabularyOutLocalNullable<const T extends Members>(values: T, reason: string): VocabularyOutNullable;` — A contract-local vocabulary on a field that may also be absent.
 - `vocabularyOutNullable` (function) — `function vocabularyOutNullable<const T extends Members>(values: T, name?: string): VocabularyOutNullable;` — TOLERANT AND NULLABLE — the same thing for a field that may be absent.
