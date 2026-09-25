@@ -71,6 +71,25 @@ export const ApiErrorCode = {
  */
 export const IDENTITY_ERROR_CODES = [
   'identity.email_taken',
+  // ⚠ ADDED BECAUSE A SERVICE HAD NOTHING TRUE TO SAY. `account` carries TWO
+  //   `citext unique` columns, and only one of them had a code — so a handle
+  //   collision had to be answered either with `email_taken`, which is false, or
+  //   with a generic code, which the contract's 409 design forbids: eighteen
+  //   `'409'` responses share one `Conflict` whose description is "the `code`
+  //   says which one". A missing member is how a service ends up publishing a
+  //   false statement, and the agent that hit this refused to do it rather than
+  //   pick the least bad option.
+  //
+  //   It is NOT covered by the standing vagueness exception below. That
+  //   exception is about an AUTHENTICATION refusal naming which check failed;
+  //   a registration conflict is not one, and `email_taken`'s own existence
+  //   proves the scope — it would otherwise contradict the rule in this file.
+  //
+  //   ⚠ OPEN, AND ABOVE THIS FILE: whether sign-up should disclose a taken
+  //     EMAIL at all. The standard mitigation is to answer as if it succeeded
+  //     and disambiguate out of band. That is a registration-flow decision, and
+  //     until it is taken, publishing `email_taken` is the project's answer.
+  'identity.handle_taken',
   'identity.two_factor_required',
   'identity.signed_out_elsewhere',
 ] as const;
@@ -78,6 +97,7 @@ export type IdentityErrorCode = (typeof IDENTITY_ERROR_CODES)[number];
 
 export const IdentityErrorCode = {
   EMAIL_TAKEN: 'identity.email_taken',
+  HANDLE_TAKEN: 'identity.handle_taken',
   TWO_FACTOR_REQUIRED: 'identity.two_factor_required',
   SIGNED_OUT_ELSEWHERE: 'identity.signed_out_elsewhere',
 } as const;

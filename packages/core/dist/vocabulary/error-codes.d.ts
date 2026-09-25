@@ -54,10 +54,11 @@ export declare const ApiErrorCode: {
  * this device and has been revoked from another. It is not an authentication
  * failure and must not be retried as one.
  */
-export declare const IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.two_factor_required", "identity.signed_out_elsewhere"];
+export declare const IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.handle_taken", "identity.two_factor_required", "identity.signed_out_elsewhere"];
 export type IdentityErrorCode = (typeof IDENTITY_ERROR_CODES)[number];
 export declare const IdentityErrorCode: {
     readonly EMAIL_TAKEN: "identity.email_taken";
+    readonly HANDLE_TAKEN: "identity.handle_taken";
     readonly TWO_FACTOR_REQUIRED: "identity.two_factor_required";
     readonly SIGNED_OUT_ELSEWHERE: "identity.signed_out_elsewhere";
 };

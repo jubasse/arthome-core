@@ -286,7 +286,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `HOLD_MINUTES_CHECKOUT` (const) — `HOLD_MINUTES_CHECKOUT = 15` — THE CAPACITY HOLD, and its SINGLE-INSTANT invariant.
 - `HOLD_MINUTES_TV_PAIRING` (const) — `HOLD_MINUTES_TV_PAIRING = 5`
 - `HOUR_MS` (const) — `HOUR_MS = 3600000`
-- `IDENTITY_ERROR_CODES` (const) — `IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.two_factor_required", "identity.signed_out_elsewhere"]` — Sign-in, sign-up and session refusals.
+- `IDENTITY_ERROR_CODES` (const) — `IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.handle_taken", "identity.two_factor_required", "identity.signed_out_elsewhere"]` — Sign-in, sign-up and session refusals.
 - `INCIDENT_CAUSES` (const) — `INCIDENT_CAUSES: readonly ["venue_feed_lost", "run_desk_disconnected", "bitrate_collapsed", "compatibility_worker_failed", "provider_error", "manual"]` — The CAUSE — a NEW vocabulary, distinct from the outcome.
 - `INCIDENT_KINDS` (const) — `INCIDENT_KINDS: readonly ["hold_screen", "postponed", "cancelled", "interrupted"]` — The four incident kinds a viewer can see.
 - `IdentityErrorCode` (type+const)
