@@ -305,7 +305,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `MESSAGE_DOMAINS` (const) — `MESSAGE_DOMAINS: readonly ["common", "storefront", "studio", "taxonomy", "system"]` — The five copy domains, split so the embedded snapshot stays small.
 - `MESSAGE_STATES` (const) — `MESSAGE_STATES: readonly ["published", "removed"]` — Axis 1 — the message's state, and there are only two.
 - `MINUTE_MS` (const) — `MINUTE_MS = 60000`
-- `MODERATION_BADGES` (const) — `MODERATION_BADGES: readonly ["banned", "muted", "removed", "published"]` — The single badge, derived from the three axes and never recomposed by a surface.
+- `MODERATION_BADGES` (const) — `MODERATION_BADGES: readonly ["banned", "muted", "removed", "published"]` — The single badge, derived from the three axes and never recomposed by a surface:
 - `MODERATION_ERROR_CODES` (const) — The moderation queue's concurrency refusals.
 - `MODERATION_ITEM_STATES` (const) — `MODERATION_ITEM_STATES: readonly ["reported", "claimed", "settled"]` — Axis 2 — the nature of the queue item.
 - `MODERATION_QUEUE_ALERT_SIZE` (const) — `MODERATION_QUEUE_ALERT_SIZE = 10` — Moderation queue saturated.
@@ -351,7 +351,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `PRICE_TIERS` (const) — `PRICE_TIERS: readonly ["full", "reduced", "support"]` — The price tier on a ticket, settled by 'shared': 'enums.priceTier'.
 - `PROMOTION_REASONS` (const) — `PROMOTION_REASONS: readonly ["pre_sale", "preview_night", "discovery_rate", "final_date", "late_rate"]` — Five reasons observed in the design, each with a distinct rule.
 - `PROVISION_REVISION_HOURS` (const) — `PROVISION_REVISION_HOURS = 72`
-- `PUBLICATION_CHECKLIST_ITEMS` (const) — The authoritative checklist, in the order the sheet shows.
+- `PUBLICATION_CHECKLIST_ITEMS` (const) — The authoritative checklist, in the order the sheet shows — 'studio-web' Q7, where the fixtures carried four items against the sheet's seve…
 - `PUBLICATION_STATES` (const) — `PUBLICATION_STATES: readonly ["draft", "reserve", "scheduled", "technical", "live", "ended", "replay_online"]` — The channel's act; 'catalogue.json' has authority (D2).
 - `PairingErrorCode` (type+const)
 - `PayoutBreakdown` (interface)
@@ -384,7 +384,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `RunState` (type+const)
 - `SCARCITY_THRESHOLD_BPS` (const) — `SCARCITY_THRESHOLD_BPS = 8500` — "Almost full" — and the THRESHOLD is a domain rule, not an interface literal.
 - `SEASON_START_MONTH` (const) — `SEASON_START_MONTH = 9` — The changeover month, in human numbering: 9 = September.
-- `SEAT_CODE_ALPHABET` (const) — `SEAT_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"` — The alphabet: Crockford base 32 — the ten digits and the letters except 'I', 'L', 'O' and 'U'.
+- `SEAT_CODE_ALPHABET` (const) — `SEAT_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"` — The alphabet: Crockford base 32 — the ten digits and the letters except 'I', 'L', 'O' and 'U', the last of those to avoid spelling a rude w…
 - `SEAT_CODE_BODY_LENGTH` (const) — `SEAT_CODE_BODY_LENGTH = 6`
 - `SERVICES` (const) — `SERVICES: readonly ["identity", "catalog", "ticketing", "streaming", "chat", "payouts", "notifications"]` — The seven services.
 - `STATE_CHANGE_ORIGINS` (const) — `STATE_CHANGE_ORIGINS: readonly ["human_verdict", "automatic_filter", "retroactive_filter", "author_sanctioned"]` — Where a state change came from; the origin survives the settlement, so "removed by the filter, then confirmed by X" does not collapse into …
@@ -453,7 +453,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `canAssign` (function) — `function canAssign(heldRoles: readonly MemberRole[], target: MemberRole): boolean;`
 - `canDecide` (function) — `function canDecide(heldRoles: readonly MemberRole[]): boolean;`
 - `canOps` (function) — `function canOps(heldRoles: readonly MemberRole[]): boolean;`
-- `canOverride` (function) — `function canOverride(existingOrigin: StateChangeOrigin, incomingOrigin: StateChangeOrigin): boolean;` — The human / automatic precedence, in one direction only: a human overturns an automatic decision, never the reverse.
+- `canOverride` (function) — `function canOverride(existingOrigin: StateChangeOrigin, incomingOrigin: StateChangeOrigin): boolean;` — A human overturns an automatic decision, never the reverse: otherwise a retroactive filter erases a judgement already made, and human judge…
 - `canRevenue` (function) — `function canRevenue(heldRoles: readonly MemberRole[]): boolean;` — 'canRevenue' does not hide a column: IT DECIDES WHAT THE RESPONSE CONTAINS.
 - `chatRatePerMinute` (function) — `function chatRatePerMinute(messagesInWindow: number): number;`
 - `checkoutIntentExpiry` (function) — `function checkoutIntentExpiry(openedAt: Instant): Instant;` — The intent duration for a direct checkout journey.
@@ -478,7 +478,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `endsAt` (function) — `function endsAt(timing: DateTiming): Instant;`
 - `enumKey` (function) — `function enumKey(vocabulary: string, member: string): MessageKey;` — The key of an enumeration member: 'enums.<type>.<value>'.
 - `err` (function) — `function err(code: string, params?: MessageParams): Err;`
-- `evaluateSettlement` (function) — `function evaluateSettlement(snapshot: ModerationItemSnapshot, attempt: SettlementAttempt): SettlementOutcome;` — Is a verdict admissible?
+- `evaluateSettlement` (function) — `function evaluateSettlement(snapshot: ModerationItemSnapshot, attempt: SettlementAttempt): SettlementOutcome;` — Accepted when the row is merely CLAIMED by a colleague — the supersession.
 - `fillRateBps` (function) — `function fillRateBps(gauge: Gauge): number;` — The fill RATE, in basis points — and not the capacity.
 - `findDiscipline` (function) — `function findDiscipline(taxonomy: Taxonomy, disciplineId: string): Discipline | null;`
 - `findGenre` (function) — `function findGenre(taxonomy: Taxonomy, disciplineId: string, genreId: string): Genre | null;` — A sub-genre is looked up WITHIN ITS DISCIPLINE: two disciplines can carry one of the same name — 'contemporary' exists in theatre and in da…
@@ -605,7 +605,7 @@ Declarations: `dist/schema/index.d.ts` — 49 exported names.
 - `DateIdSchema` (const) — `DateIdSchema: z.ZodString`
 - `DeviceIdSchema` (const) — `DeviceIdSchema: z.ZodString`
 - `ErrorSchema` (const) — The 'Error' shape both contracts publish: '{ code, nature, params, traceId }'.
-- `FailureNatureOut` (const) — `FailureNatureOut: VocabularyOut` — The failure nature, tolerant — the only vocabulary in either contract declaring what an unknown member falls back to.
+- `FailureNatureOut` (const) — `FailureNatureOut: VocabularyOut` — The failure nature, tolerant — the only vocabulary in either contract declaring its unknown-member fallback, because the cost is asymmetric…
 - `IanaTimeZoneSchema` (const) — `IanaTimeZoneSchema: z.ZodString` — An IANA time zone identifier: 'Europe/Paris'.
 - `InstantIn` (const) — `InstantIn: z.ZodString` — An instant on the wire, STRICT — for one a client SENDS.
 - `InstantOut` (const) — `InstantOut: z.ZodString` — The same instant as a server SENDS it: the format, and no pattern.
@@ -632,16 +632,16 @@ Declarations: `dist/schema/index.d.ts` — 49 exported names.
 - `VatLineSchema` (const) — One VAT line.
 - `VenueClockSchema` (const) — `VenueClockSchema: z.ZodObject<{ venueTimezone: z.ZodString; venueUtcOffsetMin: z.ZodInt; }, z.core.$loose>`
 - `VenueIdSchema` (const) — `VenueIdSchema: z.ZodString`
-- `VocabularyIn` (type) — `type VocabularyIn<T extends Members> = z.ZodEnum<{ [K in T[number]]: K; }>;` — The type annotation for a STRICT vocabulary schema.
-- `VocabularyOut` (type) — `type VocabularyOut = z.ZodString;` — The type annotation for a TOLERANT vocabulary schema — a plain string at runtime.
+- `VocabularyIn` (type) — `type VocabularyIn<T extends Members> = z.ZodEnum<{ [K in T[number]]: K; }>;` — The annotation for a strict vocabulary schema, derived from the vocabulary.
+- `VocabularyOut` (type) — `type VocabularyOut = z.ZodString;` — The annotation for a tolerant vocabulary schema — a plain string at runtime.
 - `VocabularyOutNullable` (type) — `type VocabularyOutNullable = z.ZodNullable<z.ZodString>;` — A tolerant vocabulary that may also be absent.
 - `int64` (const) — `int64: () => z.ZodNumber` — A 64-bit integer on the wire: 'type: integer, format: int64', and no bounds.
-- `issueToCode` (function) — `function issueToCode(issue: z.core.$ZodIssue): { readonly code: string; readonly params: Readonly<Record<string, string>>; };` — The only sanctioned way out of a zod failure: a code plus parameters.
+- `issueToCode` (function) — `function issueToCode(issue: z.core.$ZodIssue): { readonly code: string; readonly params: Readonly<Record<string, string>>; };` — The only sanctioned way out of a zod failure.
 - `sourceNameOf` (function) — `function sourceNameOf(values: readonly string[], name?: string): string;` — The name this vocabulary is published under, or the one the caller declares.
 - `uuidOut` (const) — `uuidOut: () => z.ZodString` — A server-issued identifier on the wire — 'format: uuid', no pattern.
 - `vocabularyIn` (function) — `function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T>;` — A vocabulary schema, STRICT — for a request: an unknown member is refused.
 - `vocabularyOut` (function) — `function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;` — A vocabulary schema, TOLERANT — for a response: an unknown member is kept as a raw string.
-- `vocabularyOutLocal` (function) — `function vocabularyOutLocal<const T extends Members>(values: T, reason: string): VocabularyOut;` — A vocabulary the DOCUMENT declares local to itself — 'source: none', with its reason.
+- `vocabularyOutLocal` (function) — `function vocabularyOutLocal<const T extends Members>(values: T, reason: string): VocabularyOut;` — A vocabulary the document declares local to itself — 'source: none', with its reason, which is mandatory: without one it is "I could not fi…
 - `vocabularyOutLocalNullable` (function) — `function vocabularyOutLocalNullable<const T extends Members>(values: T, reason: string): VocabularyOutNullable;` — A contract-local vocabulary on a field that may also be absent.
 - `vocabularyOutNullable` (function) — `function vocabularyOutNullable<const T extends Members>(values: T, name?: string): VocabularyOutNullable;` — A tolerant vocabulary on a field that may be absent.
 

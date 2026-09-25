@@ -1,12 +1,9 @@
 /**
- * A publication's state machine, and its two one-way passages.
+ * A publication's state machine, and its two one-way passages. The server refuses the reverse
+ * transition: not offering it on screen is a courtesy, not a guarantee.
  *
- * E5: the fixtures encoded `lockedTransitions` as a list of STATES and tested membership of the
- * current state; the mockup encoded `from>to` PAIRS. The second is right — locking a state would
- * also prevent entering it.
- *
- * The server refuses the reverse transition. Not offering it on screen is a courtesy, not a
- * guarantee.
+ * E5: the fixtures locked a list of STATES and tested membership; the mockup locked `from>to`
+ * PAIRS, which is right — locking a state would also prevent entering it.
  */
 
 import { DomainError } from '../kernel/errors.js';
@@ -22,14 +19,12 @@ export interface PublicationTransition {
 }
 
 /**
- * The table, written once. Two pairs are one-way:
- *   `draft|reserve -> scheduled`  — publishing commits the displayed price;
- *   `ended -> replay-online`      — viewers have paid for the replay.
+ * Two pairs are one-way: `draft|reserve -> scheduled`, which commits the displayed price, and
+ * `ended -> replay-online`, where viewers have paid for the replay.
  *
- * ⚠ `technical -> live` and `live -> ended` are not commands: they are caused by
- * `streaming.run.started.v1` and `streaming.run.ended.v1`, which is what keeps `Publication` the
- * aggregate of a single context. "Go on air" goes to `streaming`, which alone knows whether the
- * feed is coming in.
+ * ⚠ `technical -> live` and `live -> ended` are caused by `streaming`'s events, not commanded,
+ * which is what keeps `Publication` the aggregate of a single context: "go on air" goes to
+ * `streaming`, which alone knows whether the feed is coming in.
  */
 const TRANSITIONS: readonly PublicationTransition[] = [
   { from: PublicationState.DRAFT, to: PublicationState.RESERVE, irreversiblePromiseCode: null },
@@ -84,11 +79,9 @@ export function orderRankOf(state: PublicationState): number {
 }
 
 /**
- * The transitions offered to this operator.
- *
- * `canDecide` (artist ∨ production) is an argument because a run desk sees the sheet and does not
- * move it, and because the realtime correction has to carry the RECIPIENT's transitions —
- * without which a stale button stays on screen (`realtime.md` §3.3).
+ * The transitions offered to this operator. `canDecide` is artist ∨ production — a run desk sees the
+ * sheet and does not move it — and it is an argument because the realtime correction must carry the
+ * RECIPIENT's transitions, or a stale button stays on screen (`realtime.md` §3.3).
  */
 export function nextPublicationTransitions(
   from: PublicationState,
@@ -139,13 +132,12 @@ export function assertTransitionAllowed(
 }
 
 /**
- * The authoritative checklist, in the order the sheet shows. `studio-web` Q7: the fixtures
- * carried four items and the sheet seven, an arbitrary subset against the ones a screen
- * exercised.
+ * The authoritative checklist, in the order the sheet shows — `studio-web` Q7, where the fixtures
+ * carried four items against the sheet's seven.
  *
- * ⚠ Three are facts projected from other contexts — `at_least_one_active_price` and `capacity`
- * from `ticketing`, `technical_check_passed` from `streaming`. `catalog` keeps them current by
- * event and asks nobody, which is what stops a publication needing two synchronous calls.
+ * ⚠ Three are facts projected from other contexts: `at_least_one_active_price` and `capacity` from
+ * `ticketing`, `technical_check_passed` from `streaming`. `catalog` keeps them current by event,
+ * which is what stops a publication needing two synchronous calls.
  */
 export const PUBLICATION_CHECKLIST_ITEMS = [
   'title_and_discipline',
@@ -174,17 +166,14 @@ export const PublicationChecklistItem = {
 } as const;
 
 /**
- * Blocking is a property of the item, not a separate vocabulary. Promoting a warning to blocking
- * will happen: under two vocabularies it moves an item between them and breaks anyone matching on
- * either, and a client rendering the checklist wants all nine with their status rather than two
- * lists to concatenate. Here it flips a boolean.
+ * Blocking is a property of the item, not a second vocabulary: promoting a warning flips a boolean
+ * here, where under two vocabularies it moves an item between them and breaks anyone matching on
+ * either.
  *
- * ⚠ A `Record` keyed by the union, not an array of the blocking seven. The array drifted in the
- * direction nothing catches: a tenth item added to `PUBLICATION_CHECKLIST_ITEMS` was silently
- * non-blocking, since `includes` returns `false` with no type error. A missing key is a compile
- * error, so a tenth item cannot be added without a decision about whether it blocks. It was
- * invisible to `arthome-check-enums`, which excludes a declaring file from the sweep entirely
- * rather than excluding it from its own values.
+ * ⚠ Keyed by the union rather than an array of the blocking seven, because the array drifted where
+ * nothing catches it: a tenth item was silently non-blocking, `includes` returning `false` with no
+ * type error. A missing key is a compile error instead. `arthome-check-enums` was blind to it,
+ * excluding a declaring file from the sweep entirely rather than from its own values.
  */
 const BLOCKING: Readonly<Record<PublicationChecklistItem, boolean>> = {
   title_and_discipline: true,

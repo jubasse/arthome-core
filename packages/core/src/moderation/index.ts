@@ -1,9 +1,9 @@
 /**
  * Moderation: three separate axes, two counters, a written precedence.
  *
- * D6 / E3 — four vocabularies for one notion, and the fault was not that they diverged: it was
- * that `reported`, a TRIAGE state, sat in the SANCTIONS field, so the queue was built by
- * filtering `state === 'reported'` — a kind filter wearing the shape of a state filter.
+ * D6 / E3 — four vocabularies for one notion, and the fault was not the divergence: `reported`, a
+ * TRIAGE state, sat in the SANCTIONS field, so the queue filtered `state === 'reported'` — a kind
+ * filter wearing a state filter's shape.
  */
 
 import type { Instant } from '../kernel/clock.js';
@@ -19,17 +19,16 @@ import {
 } from '../vocabulary/moderation.js';
 
 /**
- * The single badge, derived from the three axes and never recomposed by a surface. Only one
- * appears on screen, so there is one owner of the truth:
+ * The single badge, derived from the three axes and never recomposed by a surface:
  *
  *   banned  >  muted  >  removed  >  published
  *
- * It runs from the person towards the message: a sanction on the PERSON covers all their
- * messages, a removal bears on one message only.
+ * The precedence runs from the person towards the message — a sanction on the PERSON covers all
+ * their messages, a removal bears on one.
  *
- * ⚠ This order is load-bearing and no gate protects it: `check-vocabulary` compares member
- * SETS, so it read the documents' reversed `published, removed, muted, banned` as agreeing.
- * Reordering to match a document makes a banned person's message show `removed`.
+ * ⚠ The order is load-bearing and no gate protects it: `check-vocabulary` compares member SETS, so
+ * it read the documents' reversed list as agreeing. Reordering to match a document makes a banned
+ * person's message show `removed`.
  */
 export const MODERATION_BADGES = ['banned', 'muted', 'removed', 'published'] as const;
 export type ModerationBadge = (typeof MODERATION_BADGES)[number];
@@ -67,12 +66,10 @@ export function isClaimExpired(claimExpiresAt: Instant, now: Instant): boolean {
  * A moderation row as a verdict command read it.
  *
  * ⚠ Two counters, and `studio-mobile` C3 had one. On the contract's own examples `claim` then
- * `release`, settling nothing, moves the version from 1 to 3 — so a moderator who read the
- * queue at `version: 1`, lost the network and settled saw their verdict refused, with the
- * offline queue the one concession granted to mobile. The rule underneath is a supersession:
- * as long as a colleague has returned no verdict, your sanction applies, which one counter
- * cannot express. So `version` carries the lease, `decisionVersion` carries the settlement,
- * only a verdict increments it, and a verdict command is conditioned on the second.
+ * `release` settles nothing and still moves the version from 1 to 3, so a moderator who read the
+ * queue, lost the network and settled saw their verdict refused — with the offline queue the one
+ * concession granted to mobile. The rule underneath is a supersession, which one counter cannot
+ * express: as long as a colleague has returned no verdict, your sanction applies.
  */
 export interface ModerationItemSnapshot {
   readonly state: ModerationItemState;
@@ -100,11 +97,9 @@ export type SettlementOutcome =
     };
 
 /**
- * Is a verdict admissible?
- *
- * A row merely CLAIMED by a colleague is accepted — that is the supersession. A settled one is
- * refused with the winning verdict and its author, so the screen shows "X has already deleted
- * this message" rather than costing a second round trip mid-show.
+ * Accepted when the row is merely CLAIMED by a colleague — the supersession. A settled row is
+ * refused with the winning verdict and its author, so the screen can show "X has already deleted
+ * this message" rather than cost a second round trip mid-show.
  */
 export function evaluateSettlement(
   snapshot: ModerationItemSnapshot,
@@ -131,9 +126,8 @@ export function evaluateSettlement(
 }
 
 /**
- * The human / automatic precedence, in one direction only: a human overturns an automatic
- * decision, never the reverse. Otherwise a retroactive filter erases a judgement already made —
- * and human judgement is what is kept for 24 months and journalled by name.
+ * A human overturns an automatic decision, never the reverse: otherwise a retroactive filter erases
+ * a judgement already made, and human judgement is what is kept 24 months and journalled by name.
  */
 export function canOverride(
   existingOrigin: StateChangeOrigin,
@@ -158,9 +152,8 @@ export function assertCanOverride(
 }
 
 /**
- * The chat's rate window, in a declared unit. `studio-mobile` inconsistency 6: the mockup
- * computed `messages / hours elapsed`, labelled it "MSG/MIN" and compared it against 60
- * msg/min — not the same quantity, so the contract fixes window, unit and frequency.
+ * The chat's rate window, in a declared unit. `studio-mobile` inconsistency 6: the mockup computed
+ * `messages / hours elapsed`, labelled it "MSG/MIN" and compared it against 60 msg/min.
  */
 export const CHAT_RATE_WINDOW_SECONDS = 60;
 export const CHAT_BURST_THRESHOLD_PER_MINUTE = 60;

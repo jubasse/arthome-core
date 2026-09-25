@@ -1,7 +1,3 @@
-/**
- * The boundary primitives. The rules governing all of them are stated in `index.ts`.
- */
-
 import { z } from 'zod';
 
 import {
@@ -18,12 +14,11 @@ import { LOCALES } from '../format/locale.js';
  * ⚠ Never `z.date()`: inconvertible to JSON Schema, and a `Date` is a parsed value, not a wire one.
  *
  * ⚠ The pattern is narrower than `format: date-time` and published nowhere — 125 of the 132
- * instants in the two contracts carry `format` alone. RFC 3339 admits an offset and this does
- * not, so `2026-09-24T20:00:00+02:00` is refused by a rule the contract never stated. It applies
- * only to the 13 request occurrences over five names (`startsAt`, `expiresAt` twice each,
- * `muteUntil`, `rescheduledTo`, `measuredAt`); elsewhere it would constrain the server's output.
- * While the name did not state its direction, ten modules wrote their own `instant()` to escape
- * a pattern their document did not carry (D-065 §H).
+ * instants in the two contracts carry `format` alone, and RFC 3339 admits the offset this refuses.
+ * It applies only to the 13 request occurrences over five names (`startsAt`, `expiresAt` twice
+ * each, `muteUntil`, `rescheduledTo`, `measuredAt`); elsewhere it would bind the server's own
+ * output. While the name did not state its direction, ten modules wrote their own `instant()` to
+ * escape it (D-065 §H).
  */
 export const InstantIn: z.ZodString = z
   .string()
@@ -36,18 +31,16 @@ export const InstantOut: z.ZodString = z.string().meta({ format: 'date-time' });
 /**
  * A server-issued identifier on the wire — `format: uuid`, no pattern.
  *
- * ⚠ The v7 pattern the branded `*IdSchema` exports demand is deliberately unpublished: all 37
- * identifiers in request bodies echo something a server issued, and a malformed one is an id that
- * does not exist, which the lookup says more clearly than a pattern would.
+ * ⚠ The v7 pattern the branded `*IdSchema` exports demand stays unpublished: all 37 identifiers in
+ * request bodies echo one a server issued, so a malformed one is an id that does not exist.
  */
 export const uuidOut = (): z.ZodString => z.string().meta({ format: 'uuid' });
 
 /**
  * A 64-bit integer on the wire: `type: integer, format: int64`, and no bounds.
  *
- * ⚠ Not `z.int()`, which emits JavaScript's safe range as `minimum`/`maximum` — numbers in
- * no document, telling a generated client in another language that int64 stops at 2^53.
- * The refinement keeps that guarantee at runtime, where it costs the document nothing.
+ * ⚠ Not `z.int()`, which emits JavaScript's safe range as `minimum`/`maximum` and tells a client
+ * generated in another language that int64 stops at 2^53. The refinement keeps it at runtime.
  */
 export const int64 = (): z.ZodNumber =>
   z
@@ -56,9 +49,8 @@ export const int64 = (): z.ZodNumber =>
     .meta({ type: 'integer', format: 'int64' });
 
 /**
- * An IANA time zone identifier: `Europe/Paris`. Validated by shape, never existence — the IANA
- * database would cost hundreds of kilobytes in five applications — and it refuses the two forms
- * D3 replaces, an abbreviation (`CEST`) and an offset (`+02:00`).
+ * An IANA time zone identifier: `Europe/Paris`. Validated by shape, never existence — the database
+ * would cost hundreds of kilobytes in five applications — and it refuses the two forms D3 replaces.
  */
 export const IanaTimeZoneSchema: z.ZodString = z
   .string()
@@ -73,12 +65,10 @@ export const CountryCodeSchema: z.ZodString = z.string().regex(/^[A-Z]{2}$/);
 /**
  * BCP 47, short form, STRICT — for a locale that arrives on a request.
  *
- * ⚠ There is no `LocaleSchema` any more, deliberately. Under that name it was the only
- * locale schema there was, so `LocalizedText.contentLanguage` — a RESPONSE field — used it
- * and emitted `enum: ['fr','en']`; the day a third content language is authored, a
- * television rejects the whole payload the text sits in (critical rule 10). The cause was
- * the absent counterpart, not a careless call site, so an alias would keep the trap open
- * under a familiar name where a removed export is a compile error (D-065 §H).
+ * ⚠ There is no `LocaleSchema` any more: under that name it was the only locale schema, so a
+ * RESPONSE field used it and emitted `enum: ['fr','en']` — a third content language then makes a
+ * television reject the whole payload (critical rule 10). The cause was the absent counterpart, so
+ * an alias would keep the trap open where a removed export is a compile error (D-065 §H).
  */
 export const LocaleIn: VocabularyIn<typeof LOCALES> = vocabularyIn(LOCALES);
 
@@ -90,7 +80,7 @@ export const SlugSchema: z.ZodString = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+
 
 /**
  * An opaque Base64 cursor over `(created_at, id)`. Opaque is the point: a client that can read one
- * will build one, and then the server cannot change its ordering. A stale cursor is refused with
+ * will build one, and then the server cannot change its ordering. A stale one is refused with
  * `CURSOR_TOO_OLD` rather than silently restarting the page (D-010).
  */
 export const PageCursorSchema: z.ZodString = z.string().regex(/^[A-Za-z0-9_-]+=*$/);

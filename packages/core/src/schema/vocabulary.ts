@@ -1,15 +1,10 @@
 /**
- * The IN / OUT asymmetry: a vocabulary is validated STRICTLY on the way in and
- * TOLERANTLY on the way out, as two schemas rather than one read twice.
+ * A vocabulary is validated strictly on the way in and tolerantly on the way out, as two schemas.
  *
- * ⚠ The OUT side is why the TV fleet survives. A store review is slow, so a version
- * published today runs in living rooms a year from now and will receive the 22nd
- * discipline. A strict `z.enum` does not degrade a card — it fails the WHOLE payload
- * the card sits in (`storefront-tv` Q12, and the one requirement here whose failure
- * cannot be fixed remotely). Strictness belongs to the SHAPE, never to a member.
- *
- * ⚠ The IN side is strict for the mirror reason: an accepted unknown member is a
- * value no rule can evaluate, and it will be stored.
+ * ⚠ A strict `z.enum` does not degrade a card, it fails the whole payload the card sits in — and a
+ * television on a year-old build will receive the 22nd discipline (`storefront-tv` Q12). Strictness
+ * belongs to the shape, never to a member. In is strict for the mirror reason: an accepted unknown
+ * member is a value no rule can evaluate, and it will be stored.
  */
 
 import { z } from 'zod';
@@ -19,21 +14,19 @@ import * as PUBLISHED from '../index.js';
 type Members = readonly [string, ...string[]];
 
 /**
- * The type annotation for a STRICT vocabulary schema.
+ * The annotation for a strict vocabulary schema, derived from the vocabulary.
  *
- * ⚠ It derives the annotation from the vocabulary. Spelling
- * `z.ZodEnum<{ NO_SEAT: 'NO_SEAT'; … }>` at each call site — and `isolatedDeclarations`
- * demands an annotation there — restates the members in a type position: E2, in the
- * one place nobody would grep for it.
+ * ⚠ `isolatedDeclarations` demands an annotation at each call site, and spelling it
+ * (`z.ZodEnum<{ NO_SEAT: 'NO_SEAT'; … }>`) restates the members in a type position: E2, where
+ * nobody greps.
  */
 export type VocabularyIn<T extends Members> = z.ZodEnum<{ [K in T[number]]: K }>;
 
 /**
- * The type annotation for a TOLERANT vocabulary schema — a plain string at runtime.
+ * The annotation for a tolerant vocabulary schema — a plain string at runtime.
  *
- * ⚠ It takes no type parameter deliberately. `VocabularyOut<typeof CHAT_MODES>` would
- * claim the type carries the members; it cannot, so nothing would catch
- * `VocabularyOut<typeof TAX_EVIDENCE_KINDS> = vocabularyOut(TAX_SUPPLY_KINDS)`.
+ * ⚠ No type parameter, deliberately: `VocabularyOut<typeof CHAT_MODES>` would claim the type
+ * carries the members, so nothing would catch a mismatched pair on one line.
  */
 export type VocabularyOut = z.ZodString;
 
@@ -52,12 +45,10 @@ const LOCAL_SOURCE = 'none';
 /**
  * The `source: none` marker, for a call site attaching its reason through its own `.meta()`.
  *
- * ⚠ `vocabularyOutLocal` is the preferred form; this is the escape hatch. The function
- * makes the reason mandatory and this constant cannot, so a call site using it can emit
- * `source: none` with nothing saying why — the false declaration D-065 §B is about. It
- * exists because three `@arthome/contracts` call sites chain `.meta()` with an `examples`
- * key beside the reason, and rewriting them mechanically failed three times against a
- * formatter that reflowed the code between attempts.
+ * ⚠ The escape hatch, not an alternative to `vocabularyOutLocal`, which makes the reason
+ * mandatory as this cannot — `source: none` with no reason is the false declaration D-065 §B is
+ * about. It exists for three `@arthome/contracts` call sites whose mechanical rewrite failed three
+ * times against a formatter that reflowed the code between attempts.
  */
 export const VOCABULARY_SOURCE_LOCAL: string = LOCAL_SOURCE;
 
@@ -71,16 +62,14 @@ for (const [name, value] of Object.entries(PUBLISHED)) {
 /**
  * A vocabulary schema, TOLERANT — for a response: an unknown member is kept as a raw string.
  *
- * ⚠ This was `z.union([z.enum(values), z.string()])`, above a comment claiming the union
- * let a surface `switch` exhaustively. Measured false — TypeScript reduces a literal union
- * with a `string` arm to `string`, and `(string & {})` does not rescue it:
+ * ⚠ This was a union with `z.string()`, claimed to keep the literals for an exhaustive `switch`.
+ * Measured false, and `(string & {})` does not rescue it:
  *
  *     type U = 'open' | 'emoji' | string;
  *     type C = string extends U ? 'collapses' : 'keeps literals';  // 'collapses'
  *
- * Nor did it buy anything emitted: `anyOf: [{type: string, enum: […]}, {type: string}]`,
- * whose second branch accepts everything. The known members travel as metadata instead,
- * under the key `check-vocabulary` already reads.
+ * It bought nothing emitted either: the second branch of `anyOf: [{enum: […]}, {type: string}]`
+ * accepts everything. The members travel as metadata, under the key `check-vocabulary` reads.
  */
 export function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut {
   return z.string().meta({
@@ -90,10 +79,8 @@ export function vocabularyOut<const T extends Members>(values: T, name?: string)
 }
 
 /**
- * A vocabulary the DOCUMENT declares local to itself — `source: none`, with its reason.
- *
- * ⚠ The reason is mandatory: `source: none` without one is the false declaration D-065 §B
- * is about, "I could not find the name" wearing the appearance of a decision.
+ * A vocabulary the document declares local to itself — `source: none`, with its reason, which is
+ * mandatory: without one it is "I could not find the name" wearing a decision's appearance.
  */
 export function vocabularyOutLocal<const T extends Members>(
   values: T,
@@ -126,22 +113,17 @@ export function vocabularyOutLocalNullable<const T extends Members>(
 }
 
 /**
- * The name this vocabulary is published under, or the one the caller declares.
+ * The name this vocabulary is published under, or the one the caller declares. Exported because
+ * `@arthome/contracts` declares vocabularies of its own.
  *
- * ⚠ Derived from the export identifier, never transcribed — `vocabularyOut(WATCH_SCOPES,
- * 'WATCH_SCOPES')` is E2 in a single line. The map is keyed by ARRAY IDENTITY, so renaming the
- * export moves the emitted source name with it.
+ * ⚠ Derived from the export identifier by ARRAY IDENTITY, never transcribed:
+ * `vocabularyOut(WATCH_SCOPES, 'WATCH_SCOPES')` is E2 in one line. It matters because
+ * `check-vocabulary` indexes 121 blocks on `x-arthome-vocabulary-source`, and members without
+ * provenance leave it nothing to compare, so it says PASS (D-065 §B). An unknown vocabulary throws
+ * for the same reason rather than emitting `none`, which is a real value.
  *
- * ⚠ It matters because `check-vocabulary` indexes 121 blocks on `x-arthome-vocabulary-source`:
- * members without provenance leave it nothing to compare and it says PASS, and a gate silenced by
- * a generator never changes its verdict (D-065 §B). For the same reason an unknown vocabulary
- * throws rather than emitting `none`, which is a real value here.
- *
- * ⚠ It reads the `.` entry point, not `../vocabulary/`: the set to cover is the published surface
- * by definition, and the first version threw on `LOCALES`, declared in `format/` and published all
- * the same. No cycle — `check-core-entry` proves the `.` entry point never reaches zod.
- *
- * Exported because `@arthome/contracts` declares vocabularies of its own.
+ * ⚠ It reads the `.` entry point, not `../vocabulary/`, because the set to cover is the published
+ * surface: the first version threw on `LOCALES`, declared in `format/` and published all the same.
  */
 export function sourceNameOf(values: readonly string[], name?: string): string {
   const source = name ?? PUBLISHED_NAME_BY_ARRAY_IDENTITY.get(values);
@@ -159,15 +141,12 @@ export function sourceNameOf(values: readonly string[], name?: string): string {
 /**
  * A tolerant vocabulary on a field that may be absent.
  *
- * ⚠ `vocabularyOut(V).nullable()` silently loses the vocabulary: `.nullable()` wraps the
- * already-annotated schema, so the metadata lands inside one branch of an `anyOf`.
+ * ⚠ `vocabularyOut(V).nullable()` silently loses it — `.nullable()` wraps the annotated schema, so
+ * the metadata lands in one branch of an `anyOf`, and the schema still VALIDATES correctly, which
+ * is what makes it dangerous: only the document is wrong. `.optional()` does not wrap.
  *
  *     vocabularyOut(V).nullable()   →  anyOf: [{type: string, x-arthome-…}, {type: null}]
  *     z.string().nullable().meta()  →  {type: [string, null], x-arthome-…}
- *
- * The first still VALIDATES correctly, which is what makes it dangerous: only the document
- * is wrong. `.optional()` does not wrap and has no such problem. Found by
- * `backend-contracts` on `.meta({format}).nullable()`.
  */
 export function vocabularyOutNullable<const T extends Members>(
   values: T,

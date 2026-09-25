@@ -1,14 +1,12 @@
 /**
  * i18n: the keys and the reference catalogue, never the sentences.
  *
- * C6 — compiling the dictionaries into each surface at build time stays true and is no longer
- * enough, because fixing a typo on mobile or on TV would mean waiting for a store review. So
- * `core` keeps the keys and the reference catalogue, an immutable versioned artefact serves
- * updates on top over a CDN (`/{surface}/{locale}/v{N}.json`), and each application embeds a
- * build-time snapshot as a mandatory fallback — never a raw code on screen.
+ * C6 — compiling the dictionaries in at build time is no longer enough, because fixing a typo on
+ * mobile or TV would wait for a store review. An immutable versioned artefact serves updates on top
+ * over a CDN, and each application embeds a build-time snapshot as a mandatory fallback.
  *
- * ⚠ No service owns this catalogue (`context-map.md` §1.8): it has no invariant, no transaction
- * and no event, and a service that serves a static file is a service to operate for nothing.
+ * ⚠ No service owns this catalogue (`context-map.md` §1.8): it has no invariant, no transaction and
+ * no event, and a service that serves a static file is a service to operate for nothing.
  */
 
 import { DomainError } from '../kernel/errors.js';
@@ -63,10 +61,9 @@ export function enumKey(vocabulary: string, member: string): MessageKey {
 export interface LabelCatalogRef {
   /**
    * ⚠ Open, and owned by `backend-contracts`: `MESSAGE_DOMAINS` is expressible nowhere in either
-   * contract. The served `labelCatalog` carries `{ locale, version, url }` and the domain survives
-   * only inside the URL, so a client must parse a path to recover it — a value recoverable only by
-   * taking a string apart is a value the contract did not serve. Not a deliberate domain-only
-   * member: the one real gap the inverse check found.
+   * contract. The served `labelCatalog` carries `{ locale, version, url }`, so the domain survives
+   * only inside the URL and a client must take a string apart to recover it — the one real gap the
+   * inverse check found, not a deliberate domain-only member.
    */
   readonly domain: MessageDomain;
   readonly locale: string;

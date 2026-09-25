@@ -1,37 +1,33 @@
 /**
- * The single error shape, and the rule that keeps zod's English out of it. Every failure arrives
- * in it, the Traefik gateway included: raw HTML there makes "your connection" indistinguishable
- * from "our servers", and the viewer restarts their set-top box.
+ * The single error shape. Every failure arrives in it, the Traefik gateway included: raw HTML there
+ * makes "your connection" indistinguishable from "our servers".
  *
- * ⚠ This is `Error`, not `ErrorEnvelope`: a service importing `ErrorEnvelopeSchema` validated
- * the inner object against the outer name and passed. Found only because the empty-diff gate
- * indexes by the DOCUMENT's names — keyed on the code it would have agreed with itself (D-065 §F).
+ * ⚠ This is `Error`, not `ErrorEnvelope`: a service importing `ErrorEnvelopeSchema` validated the
+ * inner object against the outer name and passed. Found only because the empty-diff gate indexes by
+ * the DOCUMENT's names — keyed on the code it would have agreed with itself (D-065 §F).
  *
- * ⚠ `ErrorEnvelope` lands with zod's registry mode and not before: without a registry
- * `z.toJSONSchema` inlines its `$ref`, and the document gains a second `Error` under another
- * name while staying VALID (`architecture/handover/backend-contracts.md`).
+ * ⚠ `ErrorEnvelope` waits for zod's registry mode: without a registry `z.toJSONSchema` inlines its
+ * `$ref` and the document gains a second `Error` under another name, while staying VALID.
  */
 import { z } from 'zod';
 import { type VocabularyOut } from './vocabulary.js';
 /**
- * The failure nature, tolerant — the only vocabulary in either contract declaring what an unknown
- * member falls back to. Rule 10 leaves "neutral" to the surface; here it cannot, and the cost is
- * asymmetric, since an unknown nature read as `refused` stops a client retrying something that
- * would have worked. `x-arthome-unknown-fallback` appears once in each document, both times here.
+ * The failure nature, tolerant — the only vocabulary in either contract declaring its unknown-member
+ * fallback, because the cost is asymmetric: an unknown nature read as `refused` stops a client
+ * retrying what would have worked. `x-arthome-unknown-fallback` appears once per document, here.
  */
 export declare const FailureNatureOut: VocabularyOut;
 /**
- * The `Error` shape both contracts publish: `{ code, nature, params, traceId }`.
+ * The `Error` shape both contracts publish: `{ code, nature, params, traceId }`. `traceId` is
+ * copyable off the error screen on purpose — on mobile it is the only link between "my application
+ * crashed" and a server log.
  *
- * ⚠ `params` carries the message's parameters, never the message: the sentence is composed on
- * the surface, from `code`, in the reader's language.
+ * ⚠ `params` carries the message's parameters, never the message: the sentence is composed on the
+ * surface, from `code`, in the reader's language.
  *
- * ⚠ The values are `unknown`, not `string`. The studio contract's own published example is
- * `{ missing: ['poster', 'capacity', 'technical_check_passed'] }` — an array, so the stricter
- * schema rejected the example the contract offers (D-065 §D, the code stricter and wrong).
- *
- * `traceId` is copyable from the error screen on purpose: on mobile it is the only link between
- * "my application crashed" and a server log.
+ * ⚠ Its values are `unknown`, not `string`: the studio contract's own example is
+ * `{ missing: ['poster', …] }`, an array, so the stricter schema rejected the example the contract
+ * offers (D-065 §D, the code stricter and wrong).
  */
 export declare const ErrorSchema: z.ZodObject<{
     code: VocabularyOut;
@@ -40,12 +36,9 @@ export declare const ErrorSchema: z.ZodObject<{
     nature: VocabularyOut;
 }, z.core.$loose>;
 /**
- * The only sanctioned way out of a zod failure: a code plus parameters.
- *
- * ⚠ A zod issue's `message` is English prose written by a library. Putting one on a wire
- * makes the contract's language the library's, and no downstream i18n recovers it. The path
- * is joined rather than dropped because "which field" is the one thing a form needs and a
- * code alone cannot carry.
+ * The only sanctioned way out of a zod failure. Its `message` is prose written by a library, and
+ * putting one on a wire makes the contract's language the library's. The path is joined rather than
+ * dropped because "which field" is what a form needs and a code alone cannot carry.
  */
 export declare function issueToCode(issue: z.core.$ZodIssue): {
     readonly code: string;

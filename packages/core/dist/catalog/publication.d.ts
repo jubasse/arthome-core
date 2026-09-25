@@ -1,12 +1,9 @@
 /**
- * A publication's state machine, and its two one-way passages.
+ * A publication's state machine, and its two one-way passages. The server refuses the reverse
+ * transition: not offering it on screen is a courtesy, not a guarantee.
  *
- * E5: the fixtures encoded `lockedTransitions` as a list of STATES and tested membership of the
- * current state; the mockup encoded `from>to` PAIRS. The second is right — locking a state would
- * also prevent entering it.
- *
- * The server refuses the reverse transition. Not offering it on screen is a courtesy, not a
- * guarantee.
+ * E5: the fixtures locked a list of STATES and tested membership; the mockup locked `from>to`
+ * PAIRS, which is right — locking a state would also prevent entering it.
  */
 import { PublicationState } from '../vocabulary/catalog.js';
 /** An offered transition, with what it commits to. */
@@ -18,11 +15,9 @@ export interface PublicationTransition {
 }
 export declare function orderRankOf(state: PublicationState): number;
 /**
- * The transitions offered to this operator.
- *
- * `canDecide` (artist ∨ production) is an argument because a run desk sees the sheet and does not
- * move it, and because the realtime correction has to carry the RECIPIENT's transitions —
- * without which a stale button stays on screen (`realtime.md` §3.3).
+ * The transitions offered to this operator. `canDecide` is artist ∨ production — a run desk sees the
+ * sheet and does not move it — and it is an argument because the realtime correction must carry the
+ * RECIPIENT's transitions, or a stale button stays on screen (`realtime.md` §3.3).
  */
 export declare function nextPublicationTransitions(from: PublicationState, canDecide: boolean): readonly PublicationTransition[];
 /** Is this transition caused by an event rather than commanded? */
@@ -34,13 +29,12 @@ export declare function isEventDriven(from: PublicationState, to: PublicationSta
 export declare function irreversiblePromiseBlocking(from: PublicationState, to: PublicationState): string | null;
 export declare function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): void;
 /**
- * The authoritative checklist, in the order the sheet shows. `studio-web` Q7: the fixtures
- * carried four items and the sheet seven, an arbitrary subset against the ones a screen
- * exercised.
+ * The authoritative checklist, in the order the sheet shows — `studio-web` Q7, where the fixtures
+ * carried four items against the sheet's seven.
  *
- * ⚠ Three are facts projected from other contexts — `at_least_one_active_price` and `capacity`
- * from `ticketing`, `technical_check_passed` from `streaming`. `catalog` keeps them current by
- * event and asks nobody, which is what stops a publication needing two synchronous calls.
+ * ⚠ Three are facts projected from other contexts: `at_least_one_active_price` and `capacity` from
+ * `ticketing`, `technical_check_passed` from `streaming`. `catalog` keeps them current by event,
+ * which is what stops a publication needing two synchronous calls.
  */
 export declare const PUBLICATION_CHECKLIST_ITEMS: readonly ["title_and_discipline", "poster", "description", "at_least_one_active_price", "capacity", "technical_check_passed", "chat_mode_set", "chapters_planned", "moderator_assigned"];
 export type PublicationChecklistItem = (typeof PUBLICATION_CHECKLIST_ITEMS)[number];
