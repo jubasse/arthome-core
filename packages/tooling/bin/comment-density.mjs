@@ -15,9 +15,33 @@
 //   dist and behaves the same in every repository. Per file: comment lines over
 //   NON-BLANK lines. Excess is the count above the quarter mark.
 //
+// BESIDE THE RATIO, TWO STRUCTURAL NUMBERS, because the ratio alone points at the
+// wrong files. A 28-line header over 43 lines of code reads as 39 % and is exactly the
+// prose this project values most; forty lines defending a twelve-line configuration
+// object reads lower and is the defect §5.10 names. So each row also carries the size
+// of the file's HEADER block and its longest NON-header run, with the line it starts
+// on. Both are counted, never interpreted: a run is consecutive comment lines broken
+// by a line of code, which is simply how much prose a reader crosses before the next
+// code. Sort by either (`--by block`).
+//
+// ⚠ WHAT THIS TOOL REFUSES TO DETECT, and the refusal is the design.
+//   An orphaned JSDoc — one left above nothing after its declaration was deleted — is
+//   nearly mechanical, and it is still not here. Two reasons. Deciding what counts as
+//   "a declaration" is a judgement about intent, and a report that shouts wrongly gets
+//   switched off exactly as a gate does (D-024). The stronger reason: an orphaned
+//   JSDoc and a comment claiming a name the file no longer owns are one class —
+//   comments that became FALSE — and the second is undetectable by any lexical tool.
+//   Shipping a detector for the half that is easy would advertise coverage of the
+//   class, which is `workspace.mjs`'s "a green gate that checks nothing" wearing a
+//   different hat. Staleness is found by reading, and by the gates that compare a
+//   claim against its source.
+//
 // WHERE THE MECHANISM STOPS — stated, because a ratio invites more belief than it earns
-//   - it cannot tell a measured failure from narration. A file at 40 % may be
-//     correct and a file at 10 % may be unreadable; this only says where to look;
+//   - it cannot tell a measured failure from narration, and it cannot see the three
+//     shapes §5.10 names: a defended default, a comment on a self-documenting option,
+//     or a comment explaining an ABSENCE. That last one no counter can reach — there
+//     is nothing at the place where it rots. A file at 40 % may be correct and a file
+//     at 10 % unreadable; this says where to look, never what to do;
 //   - it counts lines, not value. A licence header and a recorded defect weigh the same;
 //   - Markdown and JSON are not measured. A .md file is prose by construction, and
 //     JSON has no comment syntax — this project's `_comment` arrays are prose carried
@@ -51,7 +75,12 @@ const args = process.argv.slice(2);
 const LIMIT = Number(arg('top', '0')) || 0;
 const ALL = args.includes('--all');
 const THRESHOLD = Number(arg('threshold', '0.25'));
-const OPTION_VALUES = new Set([arg('top', ''), arg('threshold', '')].filter(Boolean));
+// ⚠ EVERY OPTION'S VALUE, or it is read as a path. `--by block` measured a file named
+//   "block", found none, and printed the empty-repository line as though the
+//   repository held no source.
+const OPTION_VALUES = new Set(
+  [arg('top', ''), arg('threshold', ''), arg('by', '')].filter(Boolean),
+);
 
 function arg(name, fallback) {
   const i = args.indexOf(`--${name}`);
@@ -139,12 +168,29 @@ function measure(text, syntax) {
   let nonBlank = 0;
   let closing = null;
 
+  // Runs of consecutive comment lines, broken by a line of code. A blank line does not
+  // break one: two paragraphs with a gap are still one stretch of prose to cross.
+  const runs = [];
+  let run = 0;
+  let runStart = 0;
+  let lineNumber = 0;
+  const endRun = () => {
+    if (run > 0) runs.push({ lines: run, at: runStart });
+    run = 0;
+  };
+  const countComment = () => {
+    comment += 1;
+    if (run === 0) runStart = lineNumber;
+    run += 1;
+  };
+
   for (const raw of text.split('\n')) {
+    lineNumber += 1;
     if (raw.trim() === '') continue;
     nonBlank += 1;
 
     if (closing !== null) {
-      comment += 1;
+      countComment();
       if (raw.includes(closing)) closing = null;
       continue;
     }
@@ -170,13 +216,27 @@ function measure(text, syntax) {
     }
 
     if (blockAt !== -1 && (lineAt === -1 || blockAt < lineAt)) {
-      if (masked.slice(0, blockAt).trim() === '') comment += 1;
+      if (masked.slice(0, blockAt).trim() === '') countComment();
+      else endRun();
       if (!masked.slice(blockAt + block[0].length).includes(block[1])) closing = block[1];
       continue;
     }
-    if (lineAt !== -1 && masked.slice(0, lineAt).trim() === '') comment += 1;
+    if (lineAt !== -1 && masked.slice(0, lineAt).trim() === '') countComment();
+    else endRun();
   }
-  return { comment, nonBlank };
+  endRun();
+
+  // The header is the run the file opens with, a shebang allowed before it. It is the
+  // file's contract and §5.10 exempts it by name, so it is reported and never ranked.
+  const first = runs[0];
+  const header = first && first.at <= 2 ? first.lines : 0;
+  const body = header ? runs.slice(1) : runs;
+  const longest = body.reduce((worst, r) => (r.lines > worst.lines ? r : worst), {
+    lines: 0,
+    at: 0,
+  });
+
+  return { comment, nonBlank, header, longest };
 }
 
 // Explicit paths measure exactly those files and skip the walk — which is how a
@@ -204,7 +264,7 @@ for (const file of scanned) {
     continue;
   }
 
-  const { comment, nonBlank } = measure(text, syntax);
+  const { comment, nonBlank, header, longest } = measure(text, syntax);
   // A file with no code lines has no ratio to report, and dividing by it is how a
   // repository holding only Markdown becomes a crash instead of a silent zero.
   if (nonBlank === 0) continue;
@@ -212,10 +272,16 @@ for (const file of scanned) {
 
   const ratio = comment / nonBlank;
   const excess = comment - Math.floor(nonBlank * THRESHOLD);
-  if (ALL || ratio > THRESHOLD) rows.push({ file, comment, nonBlank, ratio, excess });
+  if (ALL || ratio > THRESHOLD)
+    rows.push({ file, comment, nonBlank, ratio, excess, header, longest });
 }
 
-rows.sort((a, b) => b.excess - a.excess || b.ratio - a.ratio);
+const BY_BLOCK = arg('by', '') === 'block';
+rows.sort((a, b) =>
+  BY_BLOCK
+    ? b.longest.lines - a.longest.lines || b.excess - a.excess
+    : b.excess - a.excess || b.ratio - a.ratio,
+);
 
 const over = rows.filter((r) => r.ratio > THRESHOLD);
 const totalExcess = over.reduce((sum, r) => sum + r.excess, 0);
@@ -234,16 +300,21 @@ console.log(
 );
 
 const shown = LIMIT > 0 ? rows.slice(0, LIMIT) : rows;
+if (shown.length) console.log('  ratio  excess  comment/code   header   longest run  file');
 for (const r of shown) {
+  const longest = r.longest.lines ? `${r.longest.lines} @L${r.longest.at}` : '-';
   console.log(
-    `  ${String(pct(r.ratio)).padStart(4)}  ${String(r.excess).padStart(5)} excess  ` +
-      `${String(`${r.comment}/${r.nonBlank}`).padStart(9)}  ${r.file}`,
+    `  ${String(pct(r.ratio)).padStart(5)}  ${String(r.excess).padStart(6)}  ` +
+      `${String(`${r.comment}/${r.nonBlank}`).padStart(11)}  ${String(r.header || '-').padStart(6)}  ` +
+      `${longest.padStart(11)}  ${r.file}`,
   );
 }
 if (shown.length < rows.length) console.log(`  … and ${rows.length - shown.length} more`);
 
 console.log(
   '\n  A report, never a gate: §5.10 makes the quarter mark a smell, not a limit.\n' +
-    '  A high ratio asks whether the CODE is unclear. Shorten prose that explains\n' +
-    '  what a name could carry; never delete a measured failure to move this number.',
+    '  `header` is exempt by §5.10 and is shown, not ranked. `longest run` is where to\n' +
+    '  look first: forty lines defending a twelve-line object is the shape the rule\n' +
+    '  names, and it does not need a high ratio to be there.\n' +
+    '  Never delete a measured failure to move any of these numbers.',
 );
