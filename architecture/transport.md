@@ -323,14 +323,16 @@ idempotency_record
   PRIMARY KEY (account_id, key)
 ```
 
+<!-- arthome-codes-source: ERROR_CODES -->
+
 **The four cases, and there is no fifth:**
 
 | Case | Response | Reason |
 |---|---|---|
 | unknown key | normal execution; the `idempotency_record` row is written **inside the business transaction** | without that, a crash between the write and the memorisation replays the effect |
 | known key, `completed`, **same fingerprint** | the original response, **verbatim**, with `idempotency-replayed: true` | the response is the proof the effect took place |
-| known key, `completed`, **different fingerprint** | `409` `IDEMPOTENCY_KEY_REUSED`, nothing is executed | the key promised one effect; serving another would be worse than refusing |
-| known key, `in_flight` | `409` `IDEMPOTENCY_IN_FLIGHT`, parameter `retryAfterMs` | never two concurrent executions of the same intention |
+| known key, `completed`, **different fingerprint** | `409` `api.idempotency_key_reused`, nothing is executed | the key promised one effect; serving another would be worse than refusing |
+| known key, `in_flight` | `409` `api.idempotency_in_flight`, parameter `retryAfterMs` | never two concurrent executions of the same intention |
 
 **Three points that make the difference:**
 
@@ -379,7 +381,7 @@ this:
 }
 ```
 
-- **`code` is a code, never a sentence.** A zod validation failure becomes `SCHEMA_INVALID` with
+- **`code` is a code, never a sentence.** A zod validation failure becomes `api.schema_invalid` with
   the field paths in `params` — **never** zod's English message;
 - **`traceId` is the `trace-id` part of the `traceparent`**, readable and copyable from the error
   screen. On mobile it is the only link between "my app crashed" and a server log;
@@ -390,30 +392,82 @@ this:
 
 **The status ↔ nature mapping table, single, in `@arthome/contracts`:**
 
+⚠ **The codes below are spelled as the wire spells them**, `api.schema_invalid` and not
+`SCHEMA_INVALID`. The contracts pin that shape — `pattern: '^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$'`
+— so a code written in the constant's spelling is one no service can emit and no surface can match.
+`ApiErrorCode.SCHEMA_INVALID` is the **TypeScript accessor**; its value is `api.schema_invalid`.
+This table said the accessor for every row until `check-vocabulary` was taught to read it.
+
+<!-- arthome-codes-source: ERROR_CODES -->
+
 | Status | `nature` | Typical codes |
 |---|---|---|
-| `400` | `refused` | `SCHEMA_INVALID`, `PERIOD_FILTER_REQUIRED` |
-| `401` | `refused` | `UNAUTHENTICATED`, `TOKEN_EXPIRED` |
-| `403` | `refused` | `FORBIDDEN`, `SORT_KEY_FORBIDDEN`, `RIGHTS_VERSION_STALE`, `PAIRING_IDENTITY_MISMATCH` |
-| `404` | `refused` | `NOT_FOUND` |
-| `409` | `refused` | `STATE_CONFLICT`, `TRANSITION_IRREVERSIBLE`, `MODERATION_ALREADY_SETTLED`, `PRICE_STALE`, `SOLD_OUT`, `IDEMPOTENCY_KEY_REUSED`, `IDEMPOTENCY_IN_FLIGHT`, `CAPACITY_SHRINK_FORBIDDEN` |
-| `410` | `refused` | `CURSOR_TOO_OLD`, `PAIRING_EXPIRED`, `REPLAY_EXPIRED` |
-| `429` | `unavailable` | `RATE_LIMITED`, `CHAT_RATE_LIMITED` (param `retryAfterMs`) |
-| `500` | `unavailable` | `INTERNAL` — **never** the original error's message |
-| `502` | `unavailable` | `UPSTREAM_ERROR` (the BFF, for a service that failed) |
-| `503` | `unavailable` | `SERVICE_UNAVAILABLE` (shutting down, dependency absent) |
-| `504` | `unavailable` | `DEADLINE_EXCEEDED`, `UPSTREAM_TIMEOUT` |
+| `400` | `refused` | `api.schema_invalid`, `api.period_filter_required` |
+| `401` | `refused` | `api.unauthenticated`, `api.token_expired` |
+| `403` | `refused` | `api.forbidden`, `api.sort_key_forbidden`, `api.rights_version_stale`, `pairing.identity_mismatch` |
+| `404` | `refused` | `api.not_found` |
+| `409` | `refused` | `api.state_conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `api.idempotency_in_flight`, `capacity.shrink_forbidden` |
+| `410` | `refused` | `api.cursor_too_old`, `pairing.expired`, `watch.replay_expired` |
+| `429` | `unavailable` | `api.rate_limited`, `chat.rate_limited` (param `retryAfterMs`) |
+| `500` | `unavailable` | `api.internal` — **never** the original error's message |
+| `502` | `unavailable` | `api.upstream_unavailable` (the BFF, for a service that failed) |
+| `503` | `unavailable` | `api.service_unavailable` (shutting down, dependency absent) |
+| `504` | `unavailable` | `api.deadline_exceeded`, `api.upstream_timeout` |
+
+**"Typical", and the word is load-bearing**: this table names the codes worth knowing per status, not
+all 67 of `ERROR_CODES`. A code absent from it is not a defect — a code *in* it that the vocabulary
+does not carry is, which is what the gate checks.
 
 **The BFF never relays a service error as-is** (`nestjs-bff-gateway` skill, rule 6). It maps an
 **allowlist** of domain codes, which cross with their `params`, and everything else becomes
-`UPSTREAM_ERROR` / `UPSTREAM_TIMEOUT`, the original being logged with the `traceId`. The allowlist
-lives in `@arthome/contracts`: a code that is not in it cannot reach a surface, which forbids an
-internal message from leaking.
+`api.upstream_unavailable` / `api.upstream_timeout`, the original being logged with the `traceId`. The
+allowlist lives in `@arthome/contracts`: a code that is not in it cannot reach a surface, which
+forbids an internal message from leaking.
 
 **Traefik is inside the perimeter.** It must serve this envelope on the 5xx it produces itself
 (`errors` middleware pointing at a static service), with `nature: "unavailable"` and
-`code: "GATEWAY_UNAVAILABLE"`. A raw HTML page would make the "your connection" / "our servers"
+`code` = `api.gateway_unavailable`. A raw HTML page would make the "your connection" / "our servers"
 distinction impossible, and `storefront-tv` is right: the viewer will go and reboot their router.
+
+**Ten of the codes this section names do not exist yet**, and they are declared below rather than
+left to be discovered. Each belongs to a surface that is not built — the BFF, pairing, idempotency,
+Traefik — so inventing the members now would be publishing contract for flows nobody is writing.
+`check-vocabulary` retracts a declaration the day its member appears, so this list cannot rot into a
+set of promises nobody remembers making.
+
+<!-- arthome-codes-promised: api.token_expired
+     No BFF exists to mint or expire a token; adr-auth.md is Status: proposed. 401 is served today
+     as api.unauthenticated, which D-069's standing exception makes correct rather than vague. -->
+<!-- arthome-codes-promised: api.state_conflict
+     The generic 409 for a conditional command whose `version` did not match. No service implements
+     optimistic concurrency yet — catalog's show.entity.ts records that its `version` column is
+     deliberately absent until `catalog.publication` exists. -->
+<!-- arthome-codes-promised: api.idempotency_key_reused
+     §5.4's idempotency store is a BFF concern and the BFF is not built. -->
+<!-- arthome-codes-promised: api.idempotency_in_flight
+     Same store, same absence. Carries `retryAfterMs` when it lands. -->
+<!-- arthome-codes-promised: capacity.shrink_forbidden
+     `capacity.tier_must_widen` exists; the refusal for the opposite move does not. Both belong to
+     the ticketing capacity rules, and ticketing does not exist. -->
+<!-- arthome-codes-promised: pairing.expired
+     The pairing surface is adr-auth.md §4, Status: proposed. The four PAIRING_ERROR_CODES that do
+     exist cover polling and ownership, not lifetime. -->
+<!-- arthome-codes-promised: api.deadline_exceeded
+     §5.3's deadline is enforced by the BFF's client, which is not written. -->
+<!-- arthome-codes-promised: api.upstream_timeout
+     Same client. Distinct from api.upstream_unavailable, which exists: a timeout is not a failure,
+     and the two differ on whether the caller may retry. -->
+<!-- arthome-codes-promised: api.gateway_unavailable
+     Traefik's own 5xx, served by a static error service. No Traefik configuration exists in any
+     repository yet, so nothing can emit it. -->
+<!-- arthome-codes-promised: api.payload_too_large
+     §5.7's 413. No service enforces a body limit in the contract's vocabulary — the two that exist
+     inherit Fastify's 1 MiB default and answer with its own error shape, not ours. -->
+
+⚠ `UPSTREAM_ERROR` was in this table until the gate was written, and it was **not** a missing
+member — it is `api.upstream_unavailable`, which `@arthome/core` has exported all along, under a name
+this document never updated. A stale spelling reads exactly like a gap, which is the second reason
+the comparison is worth automating.
 
 ### 5.6 Reads — and the batched read
 
@@ -456,8 +510,10 @@ called once per card, and the BFF will grow fat.
 - **`gzip` on every response over 1 KiB.** The composed read models (`home` = 60 to 100 cards
   ≈ 50 to 90 KiB raw) come down under 15 KiB; that is the order of magnitude a television can hold
   on a 5 s cold start;
+<!-- arthome-codes-source: ERROR_CODES -->
+
 - **inbound body ceiling: 1 MiB**, except `/batch` (2 MiB). A service receiving more refuses with
-  `413` `PAYLOAD_TOO_LARGE`;
+  `413` `api.payload_too_large`;
 - **no binary crosses this path.** A poster, a FEC export, an invoice go through a **short-lived
   signed URL** obtained by a JSON command (`data-model.md` §7.5, `studio-mobile` Q9: upload 15 min,
   export 60 min). No `multipart` from a WebView, no PDF in an API response.

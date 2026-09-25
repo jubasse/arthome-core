@@ -5,6 +5,10 @@ WHAT IT PROVES
   Every `x-arthome-vocabulary` in openapi/*.yaml agrees, member for member, with
   the `as const` vocabulary `@arthome/core` exports.
 
+  And every error code an architecture document NAMES is a code some published
+  package exports — or is declared, in that document, as promised-but-unexported
+  with a reason. See THE PROSE BLOCK below.
+
 WHY IT EXISTS — AND IT IS THE E2 GAP
   `check-enums` proves no enumeration value is COPIED into the source.
   `check-openapi.py` R14 proves every reachable enum is DECLARED.
@@ -50,7 +54,76 @@ THREE DESIGN DECISIONS, AND WHY
 REPORTING BY PATH, NEVER BY LINE. A JSON path survives a reformat; a line number
 does not survive anything.
 
-Usage: python3 tools/check-vocabulary.py openapi/*.yaml
+THE PROSE BLOCK — architecture documents name codes too, and nothing checked them
+
+  transport.md §5.5 carries the status -> nature -> code table every surface reads
+  to know which code arrives with which status. It was a hand-maintained copy of
+  ERROR_CODES and it had drifted: eleven names no package exported, and — worse,
+  and not what the search was for — ALL of them written `SCHEMA_INVALID` when the
+  wire carries `api.schema_invalid`. The contracts pin that shape themselves,
+  `pattern: '^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$'`, so every code the table
+  named was one the contract's own regex forbids. A surface branching on the
+  documented spelling could not match a single error.
+
+  `SCHEMA_INVALID` is real, but it is the name of the TS ACCESSOR —
+  `ApiErrorCode.SCHEMA_INVALID === 'api.schema_invalid'`. Prose took the constant
+  for the value.
+
+  WHY THIS LIVES HERE AND NOT IN A check-transport-codes.py. The input format
+  differs (Markdown, not YAML) and that argues for a second gate. Three things
+  outweigh it:
+    · it is the SAME comparison against the SAME source of truth. ERROR_CODES is
+      what both blocks compare against, and two gates reading one vocabulary is
+      two places to fix the day its declaration shape moves.
+    · this gate is already polyglot. It reads TypeScript by regex AND YAML by
+      parser. Decision 3 above says it is Python because the YAML parser was
+      already here; the same reasoning one step on puts Markdown where the
+      VOCABULARY READER already is.
+    · `published_sources` + `core_vocabularies` + the spread resolution is the
+      repo's most load-bearing parsing. A second copy would be E2 inside the gate
+      built to find E2 — a thing this file has already done once and recorded.
+
+  IT DOES NOT GUESS WHICH TOKEN IS A CODE, AND THE NUMBER IS WHY. Measured over
+  architecture/ and docs/: 105 distinct backticked SCREAMING_SNAKE tokens, of
+  which 74 are not codes at all — vocabulary NAMES (`DATE_OUTCOMES`,
+  `WATCH_SCOPES`), TS diagnostics (`TS1272`), shell (`PIPESTATUS`, `FLUSHALL`),
+  a pairing code (`H4T9RD`), an alphabet. `NOT_SERVING` sits in transport.md
+  itself and is a gRPC health status. And `RATE_LIMITED` resolves to TWO codes,
+  `api.rate_limited` and `chat.rate_limited`, so even tail-matching is ambiguous.
+  Shape cannot separate them; that is D-024's failure mode with a count on it.
+
+  So the document opts in, exactly as a contract block does:
+
+    <!-- arthome-codes-source: ERROR_CODES -->
+
+  and a code it names that nothing exports yet is declared in place, with a
+  reason, in the same comment:
+
+    <!-- arthome-codes-promised: api.token_expired
+         The BFF does not exist yet; 401 has no expiry code until it does. -->
+
+  A code is then any backticked `<family>.<member>` whose family is a family of
+  the declared vocabulary — derived from the vocabulary, never a denylist here,
+  so `events.md` and `NOT_SERVING` fall out without being named.
+
+  ⚠ AND THE SCOPE IS THE DECLARING SECTION, NOT THE DOCUMENT. Two false positives
+    bought that, both recorded at the code that fixes them rather than restated
+    here: a Kafka EVENT is shaped exactly like a code (`declared_spans`, and
+    `check_prose`'s scan comment), and scoping by any enclosing section made the
+    H1 — whose span is the whole file — declared, which let the document-wide scan
+    back in through the front door (`declared_spans`). Anyone tempted to simplify
+    this to one scan over the file should read those two before doing it.
+
+  WHAT THE PROSE BLOCK DOES NOT PROVE. Not that the document is COMPLETE: §5.5
+  says "Typical codes" and is deliberately not the whole of ERROR_CODES, so a
+  code missing from the table is not a finding. Not that a code sits in the right
+  status row — that is a claim about HTTP semantics no vocabulary carries. And a
+  misspelling whose family is not a real family is invisible rather than flagged.
+
+  REPORTING BY HEADING, NEVER BY LINE, for the reason above: the nearest `#`
+  heading above the code, which survives an edit anywhere else in the file.
+
+Usage: python3 tools/check-vocabulary.py openapi/*.yaml [architecture/*.md]
 No dependency beyond PyYAML. Everything runs locally.
 """
 
@@ -253,6 +326,164 @@ def load_ratchet():
     return json.load(open(RATCHET, encoding="utf-8"))
 
 
+# ── The prose block ──────────────────────────────────────────────────────────
+PROSE_SOURCE = re.compile(r"<!--\s*arthome-codes-source:\s*([A-Z][A-Z0-9_]*)\s*-->")
+PROSE_PROMISED = re.compile(
+    r"<!--\s*arthome-codes-promised:\s*([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)\s*\n"
+    r"(.*?)-->",
+    re.DOTALL,
+)
+# A wire code as the contracts pin it, inside backticks. Lowercase and dotted, so
+# NOT_SERVING and TS1272 cannot match; the family filter below removes the rest.
+PROSE_CODE = re.compile(r"`([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)`")
+HEADING = re.compile(r"(?m)^(#{1,6})\s+(.*)$")
+
+
+def declared_spans(text):
+    """(start, end) of every section carrying an `arthome-codes-source` declaration.
+
+    A section runs from its heading to the next heading at the same level or above —
+    so a declaration on `### 5.5` covers 5.5 and its subsections, and stops at `### 5.6`.
+    """
+    bounds = [(m.start(), len(m.group(1))) for m in HEADING.finditer(text)]
+    spans = []
+    for decl in PROSE_SOURCE.finditer(text):
+        # ⚠ THE INNERMOST SECTION, NEVER EVERY ANCESTOR. Scoping by "any section whose
+        #   span contains a declaration" made the H1 — whose span is the whole file,
+        #   there being no second H1 — a declared section, so the document-wide scan
+        #   came back through the front door and `chat.date_chat_policy_changed` was
+        #   reported again from §1.
+        owner = max((i for i, (s, _l) in enumerate(bounds) if s < decl.start()), default=None)
+        if owner is None:
+            spans.append((0, len(text)))  # declared before any heading: the file is the section
+            continue
+        start, level = bounds[owner]
+        end = next((s for s, l in bounds[owner + 1:] if l <= level), len(text))
+        spans.append((start, end))
+    return spans
+
+
+def nearest_heading(text, offset):
+    """The last Markdown heading before `offset`, or the file itself.
+
+    §3.7 again: a heading survives an edit anywhere else in the document, and it is
+    what a reader searches for. A line number survives nothing.
+    """
+    last = None
+    for m in HEADING.finditer(text):
+        if m.start() > offset:
+            break
+        last = m.group(2).strip()
+    return last or "(before the first heading)"
+
+
+def check_prose(filename, core, origin):
+    """Compare the codes a Markdown document names against the vocabulary it declares.
+
+    Returns (declared_source, codes_checked) — (None, 0) for a document that has not
+    opted in, which the caller counts as undeclared rather than as passing.
+    """
+    text = open(filename, encoding="utf-8").read()
+
+    decl = PROSE_SOURCE.search(text)
+    if not decl:
+        return None, 0
+    source = decl.group(1)
+
+    if source not in core:
+        problems.append(
+            f"{filename}  {nearest_heading(text, decl.start())}\n"
+            f"      declares `arthome-codes-source: {source}`, which no published package\n"
+            f"      exports as an `as const` vocabulary. Name one that exists, or remove the\n"
+            "      declaration — a source that is not there checks nothing."
+        )
+        return source, 0
+
+    members = set(core[source][0])
+    # Derived from the vocabulary, never listed here: a list of the families would be
+    # the parallel table this gate exists to find.
+    families = {m.split(".", 1)[0] for m in members if "." in m}
+    if not families:
+        problems.append(
+            f"{filename}  {nearest_heading(text, decl.start())}\n"
+            f"      `{source}` has no dotted member, so no `<family>.<member>` code can be\n"
+            "      recognised in prose. The prose block only fits a dotted vocabulary."
+        )
+        return source, 0
+
+    promised = {}
+    for m in PROSE_PROMISED.finditer(text):
+        code, reason = m.group(1), " ".join(m.group(2).split())
+        if code in promised:
+            # Reported rather than last-wins: a second declaration hides the first, so a
+            # reasonless duplicate beside a reasoned one would read as documented.
+            problems.append(
+                f"{filename}  {nearest_heading(text, m.start())}\n"
+                f"      `{code}` is declared promised twice. One code, one declaration — the second\n"
+                "      hides the first, reason and all."
+            )
+            continue
+        promised[code] = (reason, m.start())
+
+    for code, (reason, at) in sorted(promised.items()):
+        if not reason:
+            problems.append(
+                f"{filename}  {nearest_heading(text, at)}\n"
+                f"      `{code}` is declared promised with no reason. An exception that does not\n"
+                "      say why is not an exception, it is a hole."
+            )
+        elif code in members:
+            # The same retraction domain-only-vocabularies.json performs, for the same
+            # reason: a stale allowance is the rot these gates exist to find.
+            problems.append(
+                f"{filename}  {nearest_heading(text, at)}\n"
+                f"      `{code}` is declared promised-but-unexported, and {origin[source]} now\n"
+                f"      exports it. Remove the declaration; it exempts nothing.\n"
+                f"      Reason it carried: {reason}"
+            )
+
+    # ⚠ SCOPED TO THE DECLARING SECTION, NOT THE DOCUMENT, AND A FALSE POSITIVE IS
+    #   WHY. An error code and a Kafka event type share the `<context>.<thing>` shape
+    #   exactly — the first run of this check reported
+    #   `chat.date_chat_policy_changed` from §1, which is an EVENT and not a code.
+    #   Nothing about the token distinguishes them, and event types are not an
+    #   exported vocabulary, so there is nothing to compare them against either.
+    #
+    #   Widening the declaration to cover the whole file would have put the gate back
+    #   in the position decision 1 exists to forbid: guessing which token meant to be
+    #   a code. So a section that names codes says so, and a section about events
+    #   never opts in.
+    seen = {}
+    for start, end in declared_spans(text):
+        for m in PROSE_CODE.finditer(text, start, end):
+            code = m.group(1)
+            if code.split(".", 1)[0] not in families:
+                continue
+            seen.setdefault(code, m.start())
+
+    for code, at in sorted(seen.items()):
+        if code in members or code in promised:
+            continue
+        problems.append(
+            f"{filename}  {nearest_heading(text, at)}\n"
+            f"      names `{code}`, which `{source}` does not contain, so no service can emit\n"
+            "      it and no surface can ever match it. Either publish the member in\n"
+            f"      {origin[source]}, or declare it in place:\n"
+            f"        <!-- arthome-codes-promised: {code}\n"
+            "             why it does not exist yet -->"
+        )
+
+    for code in sorted(promised):
+        if code not in seen:
+            problems.append(
+                f"{filename}  {nearest_heading(text, promised[code][1])}\n"
+                f"      `{code}` is declared promised, and the document never names it.\n"
+                "      Remove the declaration; it exempts nothing."
+            )
+
+    return source, len(seen)
+
+
 def main(files):
     sources = published_sources()
     if not sources:
@@ -287,6 +518,20 @@ def main(files):
         packages = ", ".join(n for n, _ in sources)
         print(f"WARN arthome-check-vocabulary: no `as const` vocabulary in {packages}. GATE INACTIVE.")
         return 0
+
+    # The prose documents run BEFORE the YAML loop and outside the `compared == 0`
+    # verdict below: a repository where no contract block declares a source must not
+    # stop checking the documents that do. One gate, two independent coverages.
+    prose_files = [f for f in files if f.endswith(".md")]
+    files = [f for f in files if not f.endswith(".md")]
+    prose = {"declared": 0, "codes": 0, "undeclared": []}
+    for filename in prose_files:
+        source, count = check_prose(filename, core, origin)
+        if source is None:
+            prose["undeclared"].append(filename)
+        else:
+            prose["declared"] += 1
+            prose["codes"] += count
 
     import yaml  # imported here so the two WARN paths above need no dependency
 
@@ -940,10 +1185,18 @@ def main(files):
             f"{st['narrowed']} narrowed, {st['exempt']} exempt, "
             f"{len(st['undeclared'])} undeclared"
         )
+    if prose_files:
+        print(
+            f"arthome-check-vocabulary [prose/arthome-codes-source]: "
+            f"{len(prose_files)} document(s) — {prose['declared']} declared, "
+            f"{prose['codes']} code(s) checked, {len(prose['undeclared'])} undeclared"
+        )
     print(
         f"  against {len(core)} vocabularies exported by "
         + ", ".join(sorted({origin[n] for n in core}))
     )
+    for where in prose["undeclared"]:
+        print(f"  undeclared [prose]  {where}")
 
     for kind, _a, _r, _k in KINDS:
         shown = stats[kind]["undeclared"][:4]
@@ -1001,10 +1254,11 @@ def main(files):
     in_done = stats["input"]["declared"]
     in_total = in_done + stats["input"]["exempt"] + len(stats["input"]["undeclared"])
 
-    if compared == 0:
+    if compared == 0 and prose["codes"] == 0:
         print(
             f"GATE INACTIVE — {undeclared_n} block(s) undeclared, nothing compared."
-            f"\n  Needs `{SOURCE}` on a block before it can compare anything."
+            f"\n  Needs `{SOURCE}` on a block, or `arthome-codes-source` in a document,"
+            f"\n  before it can compare anything."
             f"\n  Exit 0 because the ratchet is deliberate policy (§5.3.1 c); the gate is not"
             f"\n  claiming the two sides agree."
         )
@@ -1016,6 +1270,13 @@ def main(files):
     if undeclared_n:
         parts.append(f"{undeclared_n} undeclared")
     parts.append(f"inputs {in_done}/{in_total}")
+    # Named separately rather than folded into the block count: a reader who sees one
+    # number cannot tell which of the two coverages earned it, and the prose coverage
+    # is the one that is new and still narrow.
+    if prose_files:
+        parts.append(
+            f"prose {prose['declared']}/{len(prose_files)} doc(s), {prose['codes']} code(s)"
+        )
     print("PASS — " + "; ".join(parts))
     return 0
 

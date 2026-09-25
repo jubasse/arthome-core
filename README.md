@@ -76,11 +76,19 @@ pnpm run fix              # prettier, eslint, prettier — in that order, and th
 ```
 
 **Ten gates, and each says what it looked at — including where it stops looking.** They check that
-no enumeration value is copied, that the domain and the contracts share one vocabulary, that the `.`
+no enumeration value is copied, that the domain and the contracts share one vocabulary — **and that
+an architecture document naming an error code names one that exists** — that the `.`
 entry point reaches neither zod nor a Node API, that every version is pinned, that ESLint and
 Prettier do not overlap, that the two contracts conform to twenty rules, that everything committed
 is written in English, that the repository map still matches the installed declarations, and that
 **every schema emits exactly what the contract publishes.**
+
+The prose half of the vocabulary gate is the newest and the narrowest: `transport.md` §5.5's status
+table was a hand-kept copy of `ERROR_CODES` that had drifted to eleven names no package exported, and
+was written in the spelling of the TypeScript *constant* rather than of the wire — so every code it
+documented was one the contracts' own `pattern` forbids. A document opts in by declaring its source;
+it does not get guessed, because 74 of the 105 backticked capitalised tokens in `architecture/` and
+`docs/` are not error codes at all.
 
 That last one compares trees rather than text and prints every equivalence it grants, because an
 equivalence nobody can see is an exemption nobody audits. It found fourteen disagreements on its
@@ -128,7 +136,8 @@ The checker's reach stops where the declarations do: it proves the map matches t
 has an entry and every entry has a directory. **It cannot tell you a purpose is true.**
 
 A consuming repository runs the same two bins against its own `node_modules`, so its map describes the
-version of `@arthome/*` actually installed there. `check:map` is not in `verify` yet.
+version of `@arthome/*` actually installed there. `check:map` **is** in `verify`, at the end — this
+sentence said it was not, for long enough that the gate it describes had already been wired in.
 
 ---
 

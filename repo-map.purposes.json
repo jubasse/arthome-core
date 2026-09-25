@@ -1,6 +1,6 @@
 {
   "_comment": "The one hand-written part of REPOSITORY_MAP.md. Keys are tracked directories; the generator fails on a directory with no entry and on an entry with no directory. It cannot check that a sentence is true.",
-  "architecture": "Design documents: code conventions, context map, ADRs, transport, events, and the handover notes for each worker.",
+  "architecture": "Design documents: code conventions, context map, ADRs, transport, events, and the handover notes for each worker. A document that names error codes declares `arthome-codes-source` and is checked by tools/check-vocabulary.py; transport.md does.",
   "docs": "The original handover dossier and product documents (streaming, taxonomy, storefront TV).",
   "needs": "Each surface's written needs and the confrontation with the contract, preserved verbatim.",
   "openapi": "The two OpenAPI documents (storefront, studio) the BFFs serve; checked by tools/check-openapi.py and tools/check-vocabulary.py.",
