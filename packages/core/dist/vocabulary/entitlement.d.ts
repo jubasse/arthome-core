@@ -13,17 +13,20 @@
 /**
  * The denial reasons — one CODE per different screen.
  *
- * ⚠ SCREAMING_SNAKE, deliberately against `code-conventions.md` §5.2's
- * lowercase rule for a literal union. This is not a domain vocabulary, it is a
- * REFUSAL CODE FAMILY (D-036): it rides on `denialCode` beside `reasonParams`,
- * which is the error envelope's `code` + `params` shape, and it sits alongside
- * `PRICE_STALE`, `STATE_CONFLICT` and `SIGNED_OUT_ELSEWHERE`, none of which is
- * lowercase anywhere.
+ * ⚠ THE FAILURE THIS RECORDS IS A COMPARISON THAT WAS FALSE IN SILENCE. The
+ * declaration and the wire disagreed on spelling, so
+ * `denialCode === WatchDenialReason.NO_SEAT` compared `'NO_SEAT'` to `'no_seat'`
+ * and was false for every one of the eleven values — on the path this system
+ * calls its most dangerous. A separator-insensitive reader cannot see a case
+ * difference, which is why it outlived two passes looking for exactly this.
  *
- * It was lowercase here and SCREAMING on the wire, which made
- * `denialCode === WatchDenialReason.NO_SEAT` compare `'NO_SEAT'` to `'no_seat'`
- * and be **false in silence** — on the value this system calls its most
- * dangerous.
+ * ⚠ AND THE RESOLUTION WAS THE OPPOSITE OF WHAT THIS COMMENT USED TO CLAIM. It
+ * argued the family was SCREAMING_SNAKE by exception to `code-conventions.md`
+ * §5.2, citing peers that are no longer spelled that way — and one,
+ * `STATE_CONFLICT`, that has never existed. D-067 settled it the other way:
+ * **one dotted-lowercase form on the wire for every code**, with the accessor in
+ * SCREAMING_SNAKE precisely so nothing has to compare a literal. This family is
+ * not an exception to anything.
  */
 export declare const WATCH_DENIAL_REASONS: readonly ["watch.no_seat", "watch.room_not_open", "watch.out_of_territory", "watch.subscription_required", "watch.no_replay", "watch.replay_expired", "watch.replay_not_on_sale", "watch.preview_exhausted", "watch.concurrent_limit_reached", "watch.date_cancelled", "watch.not_published"];
 export type WatchDenialReason = (typeof WATCH_DENIAL_REASONS)[number];
