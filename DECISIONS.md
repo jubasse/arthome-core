@@ -158,6 +158,24 @@ three times. Messages in English. **No remote, no push, ever** — as the prompt
 **Why.** Eight agents write into this repository across three to four sessions. Commits give
 recoverability if two agents collide, and make legible what each time produced.
 
+> **SUPERSEDED IN PART, 2026-09-25: the repositories have remotes and are pushed.**
+>
+> "No remote, no push, ever" was **the phase-0 prompt's constraint**, and the sentence says so — it
+> was about eight agents sharing one local tree, not about publication. The project owner has since
+> created `github.com:jubasse/arthome-core.git` and the three siblings, and every repository is
+> pushed on each stopping point.
+>
+> ⚠ **It was read as current and it cost something**, which is why this note exists rather than a
+> silent edit. An agent finishing the prose-codes gate read this line, found its own push refused,
+> and stopped to ask — correctly, because a recorded decision is not something an agent may reopen
+> alone. The gates themselves had already outgrown the sentence: `verify` prints *"Run `pnpm run
+> verify` before pushing"*.
+>
+> What survives unchanged: one commit at every stopping point, messages in English. What does not:
+> the prohibition on a remote. This is the same class of defect as a prose document naming a code
+> the vocabulary no longer carries — a statement that was true when written, left where a reader
+> would take it for the present.
+
 ### D-009 — This session defines contracts, it does not design screens
 
 **The reminder, set by the project owner.** The object of this session is to define **the interface
