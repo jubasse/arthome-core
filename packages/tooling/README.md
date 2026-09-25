@@ -1,7 +1,7 @@
 # `@arthome/tooling`
 
 The base configuration that the **seven Arthome repositories** extend: ESLint, Prettier, TypeScript,
-Vitest — and the four gates that check they have not drifted apart.
+Vitest — and the gates that check they have not drifted apart.
 
 > **The reasoning lives in [`architecture/code-conventions.md`](../../architecture/code-conventions.md).**
 > This README says how to use the package; that document says why it is the way it is. Where the two
@@ -22,8 +22,11 @@ Vitest — and the four gates that check they have not drifted apart.
 | `@arthome/tooling/tsconfig/lib.json` | Published packages. The one file TS 7 never reads. |
 | `@arthome/tooling/tsconfig/app.json` | Applications and services. |
 
-Plus four executables: `arthome-check-enums`, `arthome-check-versions`, `arthome-check-tsconfig`
-and `arthome-check-prettier-conflict`.
+Plus the executables: the gates `arthome-check-enums`, `arthome-check-versions`,
+`arthome-check-tsconfig`, `arthome-check-prettier-conflict`, `arthome-check-language` and
+`arthome-check-map`; the generators `arthome-generate-map`, `arthome-generate-agent-map`,
+`arthome-collect-agent-docs` and `arthome-sync-agent-docs`; and one **report**,
+`arthome-comment-density`, which is not a gate and must not become one.
 
 **There is no `"."` entry point**, deliberately: `import … from '@arthome/tooling'` fails to resolve.
 That is the first of four barriers keeping it out of production, and the only one with nothing to
@@ -139,7 +142,7 @@ repositories.** Seven copies would be fault E2 applied to tooling.
 
 ---
 
-## The four gates
+## The gates
 
 All in **pure Node, zero dependencies**: they run before `pnpm install` and without a remote runner —
 the account's Actions quota is exhausted.
@@ -149,6 +152,8 @@ pnpm exec arthome-check-prettier-conflict  # the ESLint/Prettier overlap is empt
 pnpm exec arthome-check-enums              # no enumeration value copied (E2)
 pnpm exec arthome-check-versions           # the seven repositories have not drifted
 pnpm exec arthome-check-tsconfig           # the locks have not been loosened
+pnpm exec arthome-check-language           # everything committed is written in English
+pnpm exec arthome-check-map                # REPOSITORY_MAP.md matches the declarations
 ```
 
 ### `arthome-check-enums` — the gate against E2
@@ -206,6 +211,55 @@ gate must probe one file per configuration family — which the upstream CLI can
 Pass the probe files as arguments, or let it use its defaults. If **no** probe file exists it exits 2
 rather than 0: a gate reporting success while checking nothing would be the most dangerous file in
 the repository.
+
+### `arthome-comment-density` — a report, and never a gate
+
+Prints how much of each file is comment, worst first, and **always exits 0**. It is deliberately
+absent from `verify`.
+
+```bash
+pnpm exec arthome-comment-density                 # every tracked source file
+pnpm exec arthome-comment-density --top 20        # the twenty worst
+pnpm exec arthome-comment-density --all           # every file, including those under the mark
+pnpm exec arthome-comment-density src/a.ts src/b.ts   # exactly these — a before/after
+```
+
+```
+arthome-comment-density: 133 file(s) measured, 2 generated file(s) excluded, 95 above 25% (2112 excess line(s))
+   74%    144 excess    216/290  packages/core/src/schema/vocabulary.ts
+   87%    134 excess    187/215  tools/check-core-entry.mjs
+```
+
+**⚠ Wiring it into `verify` would be a defect, not an improvement.** `code-conventions.md` §5.10
+sets the quarter-of-a-file mark as a **smell, not a limit**, and says in as many words: *never delete
+a recorded reason to satisfy a ratio*. A gate on this number instructs the next agent to do exactly
+that — and the lines it reaches for first are the measured failures, which are the most expensive
+prose in the repository. The number opens the question *"is this code unclear?"*; it never answers
+it, and it cannot tell a recorded defect from narration.
+
+**What it measures.** Tracked files only (`git ls-files`), so it never descends into `node_modules`
+or `dist` and behaves identically in every repository — it needs no workspace file and no
+configuration, which is what makes a single-package repository work without a special case. Per
+file: comment lines over **non-blank** lines; blank lines are excluded from the denominator, or a
+sparsely formatted file reads as low-comment. Block comments count from `/*` through `*/`, and a
+file that is entirely Markdown or holds no source at all is a silent, valid, zero-length result.
+
+**What it deliberately does not measure**, each for a reason:
+
+| Not measured | Why |
+|---|---|
+| Markdown | prose by construction; a ratio has no meaning |
+| JSON | no comment syntax — this project's `_comment` arrays are prose carried as *data*, so every configuration file would read as all comment |
+| `.d.ts`, `.proto`, `.yaml` | they declare rather than execute, so §5.10's question — *is the CODE unclear?* — has no answer. Their comments are usually the entire point: this repository's own `pnpm-workspace.yaml` is 85 % comment because it records why each dependency was approved |
+| a tracked `dist/` | arthome-core commits `packages/*/dist/`; without the skip the report is dominated by 76 generated declaration files nobody edits |
+| files carrying a generated marker | `@generated`, `Code generated by`, `DO NOT EDIT` |
+
+**⚠ The generated marker is not near the top of the file.** protobuf-es writes `@generated` on
+**line 16**, after copying the `.proto`'s own leading comment block, so a fixed byte prefix misses
+it: measured, a 400-character window missed five generated files that contributed **1 461 phantom
+excess lines** — more than half of a first measurement. The window is a generous *line* count read
+from text. A cited marker is data, not a marker: backticked spans are stripped first, because this
+tool's own header names `@generated` and the first version therefore excluded itself.
 
 ---
 
