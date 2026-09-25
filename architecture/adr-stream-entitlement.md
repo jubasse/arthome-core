@@ -45,6 +45,9 @@ signed URLs would break the business rule with nobody noticing.
 
 ### 3.1 The playback token — signed, short, renewed during the broadcast
 
+<!-- arthome-codes-source: ERROR_CODES -->
+
+
 Issued by `streaming`, **against a verified entitlement**, never against a session.
 
 ```
@@ -83,10 +86,10 @@ different messages:
 
 | Code | What the surface says |
 |---|---|
-| `SEAT_EXPIRED` | your seat has expired |
-| `CONCURRENT_LIMIT_REACHED` | the concurrent-screen limit has been reached |
-| `SIGNED_OUT_ELSEWHERE` | you were signed out from another device |
-| `SERVICE_UNAVAILABLE` | our servers are not responding |
+| `watch.seat_expired` | your seat has expired |
+| `watch.concurrent_limit_reached` | the concurrent-screen limit has been reached |
+| `identity.signed_out_elsewhere` | you were signed out from another device |
+| `api.service_unavailable` | our servers are not responding |
 
 A generic code would produce a wrong one three times out of four.
 
@@ -134,6 +137,9 @@ mode, and it holds everywhere: a guessable path is one signature less.
 
 ### 3.3 The concurrent-session limit — **this is what deals with sharing**
 
+<!-- arthome-codes-source: ERROR_CODES -->
+
+
 Held by the control plane, **per entitlement** (the account and its plan), not per device and not
 per address.
 
@@ -158,8 +164,8 @@ locked out by ghost sessions.
 **The client can resume its own session**, identified by `deviceId`: reopening the player on the
 same device reuses the lease instead of opening a second one.
 
-**Beyond the ceiling** (`PLAN_OPENING_MULTI_SCREEN`: 2 screens on Premium, 1 otherwise), the renewal
-is refused with `CONCURRENT_LIMIT_REACHED` **and the list of active sessions** — device, city,
+**Beyond the ceiling** (`watch.plan_opening_multi_screen`: 2 screens on Premium, 1 otherwise), the renewal
+is refused with `watch.concurrent_limit_reached` **and the list of active sessions** — device, city,
 opening instant — so the surface can offer to **release one**. A bare refusal would leave the viewer
 with no way out, which the file's principle no. 8 forbids.
 
@@ -203,6 +209,9 @@ sentence promises. **A false guarantee with a green test is worse than no guaran
 
 #### The arbitration returned: the token stays at 120 s
 
+<!-- arthome-codes-source: ERROR_CODES -->
+
+
 **Decision: we do not shorten the token.** Three reasons, and the first is the right one.
 
 1. **The defect was never the window, it was the promise** — and that is repaired. Doubling the
@@ -239,7 +248,7 @@ error we have just corrected, in the other direction.
 **Immediate revocation, two paths:**
 - `identity.device.revoked.v1` consumed by `streaming` → that device's leases move to `revoked`.
   **Real exposure window: up to 120 s** — see the box above;
-- an `interrupted` outcome declared → the date's leases are revoked with `DATE_INTERRUPTED`, **at
+- an `interrupted` outcome declared → the date's leases are revoked with `date.interrupted`, **at
   the end of the renewal in progress**, not by an abrupt cut: a feed cut with no explanation is
   exactly what principle no. 6 forbids.
 
@@ -300,6 +309,9 @@ one that crosses a cache we do not control.
 
 ## 4. The free preview — enforced by the token, not by the client
 
+<!-- arthome-codes-source: ERROR_CODES -->
+
+
 A non-holder sees the first few minutes and then the lock. **A preview you extend by reloading the
 page is not a preview** (`storefront-web` Q20), and a reinstalled application would reset a
 client-side counter to zero (`storefront-mobile` Q6).
@@ -310,7 +322,7 @@ PreviewBudget  (accountId, dateId) → secondsUsed        counted down SERVER-SI
 
 A non-holder's token is issued with `scope: preview` and
 `exp = min(now + 120 s, now + secondsLeft)`. When the budget is exhausted, renewal is refused with
-`PREVIEW_EXHAUSTED`, and the surface puts up its lock — with the action that gets out of the dead
+`watch.preview_exhausted`, and the surface puts up its lock — with the action that gets out of the dead
 end, never a dead screen.
 
 **The scope is the account, not the device**: otherwise a household with four devices gets four

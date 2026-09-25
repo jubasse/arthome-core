@@ -342,6 +342,9 @@ that claims to articulate them.
 
 ### K6 — `plan.opens[]` is written in `snake_case` in the contract and in `kebab-case` in the authoritative source
 
+<!-- arthome-codes-source: ERROR_CODES -->
+
+
 **The severity: this is the vocabulary that gates the right to watch, and `adr-auth.md` §7.1
 itself calls its corruption "an authorization defect, not a display defect".**
 
@@ -363,7 +366,7 @@ opens: [browse, trailers, free_dates, replays, one_live_month]
 x-arthome-vocabulary: [all_lives, archive, browse, free_dates, multi_screen, no_ads, one_live_month, replays, trailers]
 ```
 
-`adr-stream-entitlement.md:234` writes `PLAN_OPENING_MULTI_SCREEN` on its side.
+`adr-stream-entitlement.md:234` writes `watch.plan_opening_multi_screen` on its side.
 
 Three spellings for one value that `decideWatch` depends on. An
 `opens.includes('multi-screen')` against a payload carrying `multi_screen` returns `false`
