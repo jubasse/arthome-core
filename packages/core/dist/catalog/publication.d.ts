@@ -5,13 +5,13 @@
  * E5: the fixtures locked a list of STATES and tested membership; the mockup locked `from>to`
  * PAIRS, which is right — locking a state would also prevent entering it.
  */
-import { PublicationState } from '../vocabulary/catalog.js';
+import { PublicationPromise, PublicationState } from '../vocabulary/catalog.js';
 /** An offered transition, with what it commits to. */
 export interface PublicationTransition {
     readonly from: PublicationState;
     readonly to: PublicationState;
     /** The promise's code, served with the refusal so the message is translated client-side. */
-    readonly irreversiblePromiseCode: string | null;
+    readonly irreversiblePromiseCode: PublicationPromise | null;
 }
 export declare function orderRankOf(state: PublicationState): number;
 /**
@@ -26,8 +26,23 @@ export declare function isEventDriven(from: PublicationState, to: PublicationSta
  * The promise blocking this transition, or `null` when it is merely unknown — two different
  * refusals, two different messages. The lock is on the pair, never on the state.
  */
-export declare function irreversiblePromiseBlocking(from: PublicationState, to: PublicationState): string | null;
-export declare function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): void;
+export declare function irreversiblePromiseBlocking(from: PublicationState, to: PublicationState): PublicationPromise | null;
+export declare function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): PublicationTransition;
+export interface PublicationTransitionCommand {
+    readonly to: PublicationState;
+    /** The version the operator's screen showed: every transition is conditioned on it. */
+    readonly expectedVersion: number;
+    readonly acknowledgedPromise: PublicationPromise | null;
+}
+/**
+ * The server's decision on a commanded transition, returning the transition it allows. A stale
+ * version is refused first, with the current state and version, because a screen that is behind
+ * is wrong about everything else too. A one-way transition must carry its promise back.
+ */
+export declare function assertCommandedTransition(current: {
+    readonly state: PublicationState;
+    readonly version: number;
+}, command: PublicationTransitionCommand, canDecide: boolean): PublicationTransition;
 /**
  * The authoritative checklist, in the order the sheet shows — `studio-web` Q7, where the fixtures
  * carried four items against the sheet's seven.

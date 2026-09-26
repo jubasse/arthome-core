@@ -130,7 +130,7 @@ export declare const OrderErrorCode: {
 /**
  * The domain's refusals that reach a surface: a rule said no and somebody has to be told why.
  */
-export declare const DOMAIN_ERROR_CODES: readonly ["capacity.tier_must_widen", "content.empty_in_both_languages", "hold.quantity_invalid", "media.size_invalid", "media.url_empty", "order.quantity_invalid", "pairing_code.ambiguous_glyph", "publication.checklist_incomplete", "publication.transition_forbidden", "publication.transition_irreversible", "search.unknown_flag", "seat_code.malformed"];
+export declare const DOMAIN_ERROR_CODES: readonly ["capacity.tier_must_widen", "content.empty_in_both_languages", "hold.quantity_invalid", "media.size_invalid", "media.url_empty", "order.quantity_invalid", "pairing_code.ambiguous_glyph", "publication.checklist_incomplete", "publication.promise_unacknowledged", "publication.transition_forbidden", "publication.transition_irreversible", "search.unknown_flag", "seat_code.malformed", "state.conflict"];
 export type DomainErrorCode = (typeof DOMAIN_ERROR_CODES)[number];
 export declare const DomainErrorCode: {
     readonly CAPACITY_TIER_MUST_WIDEN: "capacity.tier_must_widen";
@@ -141,10 +141,12 @@ export declare const DomainErrorCode: {
     readonly ORDER_QUANTITY_INVALID: "order.quantity_invalid";
     readonly PAIRING_CODE_AMBIGUOUS_GLYPH: "pairing_code.ambiguous_glyph";
     readonly PUBLICATION_CHECKLIST_INCOMPLETE: "publication.checklist_incomplete";
+    readonly PUBLICATION_PROMISE_UNACKNOWLEDGED: "publication.promise_unacknowledged";
     readonly PUBLICATION_TRANSITION_FORBIDDEN: "publication.transition_forbidden";
     readonly PUBLICATION_TRANSITION_IRREVERSIBLE: "publication.transition_irreversible";
     readonly SEARCH_UNKNOWN_FLAG: "search.unknown_flag";
     readonly SEAT_CODE_MALFORMED: "seat_code.malformed";
+    readonly STATE_CONFLICT: "state.conflict";
 };
 /**
  * The domain's internal guards, which no contract publishes and none should.

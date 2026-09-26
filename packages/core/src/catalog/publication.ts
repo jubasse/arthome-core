@@ -7,7 +7,7 @@
  */
 
 import { DomainError } from '../kernel/errors.js';
-import { PublicationState } from '../vocabulary/catalog.js';
+import { PublicationPromise, PublicationState } from '../vocabulary/catalog.js';
 import { DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /** An offered transition, with what it commits to. */
@@ -15,7 +15,7 @@ export interface PublicationTransition {
   readonly from: PublicationState;
   readonly to: PublicationState;
   /** The promise's code, served with the refusal so the message is translated client-side. */
-  readonly irreversiblePromiseCode: string | null;
+  readonly irreversiblePromiseCode: PublicationPromise | null;
 }
 
 /**
@@ -32,12 +32,12 @@ const TRANSITIONS: readonly PublicationTransition[] = [
   {
     from: PublicationState.DRAFT,
     to: PublicationState.SCHEDULED,
-    irreversiblePromiseCode: 'publication.promise.prices_engaged',
+    irreversiblePromiseCode: PublicationPromise.PRICES_ENGAGED,
   },
   {
     from: PublicationState.RESERVE,
     to: PublicationState.SCHEDULED,
-    irreversiblePromiseCode: 'publication.promise.prices_engaged',
+    irreversiblePromiseCode: PublicationPromise.PRICES_ENGAGED,
   },
   {
     from: PublicationState.SCHEDULED,
@@ -52,7 +52,7 @@ const TRANSITIONS: readonly PublicationTransition[] = [
   {
     from: PublicationState.ENDED,
     to: PublicationState.REPLAY_ONLINE,
-    irreversiblePromiseCode: 'publication.promise.replay_on_sale',
+    irreversiblePromiseCode: PublicationPromise.REPLAY_SOLD,
   },
 ];
 
@@ -103,7 +103,7 @@ export function isEventDriven(from: PublicationState, to: PublicationState): boo
 export function irreversiblePromiseBlocking(
   from: PublicationState,
   to: PublicationState,
-): string | null {
+): PublicationPromise | null {
   const reverse = TRANSITIONS.find(
     (transition) => transition.from === to && transition.to === from,
   );
@@ -114,7 +114,7 @@ export function assertTransitionAllowed(
   from: PublicationState,
   to: PublicationState,
   canDecide: boolean,
-): void {
+): PublicationTransition {
   const promise = irreversiblePromiseBlocking(from, to);
   if (promise !== null) {
     throw new DomainError({
@@ -122,13 +122,50 @@ export function assertTransitionAllowed(
       params: { from, to, promise },
     });
   }
-  const allowed = nextPublicationTransitions(from, canDecide);
-  if (!allowed.some((transition) => transition.to === to)) {
+  const allowed = nextPublicationTransitions(from, canDecide).find(
+    (transition) => transition.to === to,
+  );
+  if (allowed === undefined) {
     throw new DomainError({
       code: DomainErrorCode.PUBLICATION_TRANSITION_FORBIDDEN,
       params: { from, to },
     });
   }
+  return allowed;
+}
+
+export interface PublicationTransitionCommand {
+  readonly to: PublicationState;
+  /** The version the operator's screen showed: every transition is conditioned on it. */
+  readonly expectedVersion: number;
+  readonly acknowledgedPromise: PublicationPromise | null;
+}
+
+/**
+ * The server's decision on a commanded transition, returning the transition it allows. A stale
+ * version is refused first, with the current state and version, because a screen that is behind
+ * is wrong about everything else too. A one-way transition must carry its promise back.
+ */
+export function assertCommandedTransition(
+  current: { readonly state: PublicationState; readonly version: number },
+  command: PublicationTransitionCommand,
+  canDecide: boolean,
+): PublicationTransition {
+  if (current.version !== command.expectedVersion) {
+    throw new DomainError({
+      code: DomainErrorCode.STATE_CONFLICT,
+      params: { state: current.state, version: current.version },
+    });
+  }
+  const transition = assertTransitionAllowed(current.state, command.to, canDecide);
+  const promise = transition.irreversiblePromiseCode;
+  if (promise !== null && command.acknowledgedPromise !== promise) {
+    throw new DomainError({
+      code: DomainErrorCode.PUBLICATION_PROMISE_UNACKNOWLEDGED,
+      params: { from: current.state, to: command.to, promise },
+    });
+  }
+  return transition;
 }
 
 /**

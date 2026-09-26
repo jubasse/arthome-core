@@ -224,10 +224,14 @@ export const DOMAIN_ERROR_CODES = [
   'order.quantity_invalid',
   'pairing_code.ambiguous_glyph',
   'publication.checklist_incomplete',
+  'publication.promise_unacknowledged',
   'publication.transition_forbidden',
   'publication.transition_irreversible',
   'search.unknown_flag',
   'seat_code.malformed',
+  // A conditional command sent against a version that has moved: publication, prices and run
+  //   state all carry `expectedVersion`, and the refusal names the current state and version.
+  'state.conflict',
 ] as const;
 export type DomainErrorCode = (typeof DOMAIN_ERROR_CODES)[number];
 
@@ -240,10 +244,12 @@ export const DomainErrorCode = {
   ORDER_QUANTITY_INVALID: 'order.quantity_invalid',
   PAIRING_CODE_AMBIGUOUS_GLYPH: 'pairing_code.ambiguous_glyph',
   PUBLICATION_CHECKLIST_INCOMPLETE: 'publication.checklist_incomplete',
+  PUBLICATION_PROMISE_UNACKNOWLEDGED: 'publication.promise_unacknowledged',
   PUBLICATION_TRANSITION_FORBIDDEN: 'publication.transition_forbidden',
   PUBLICATION_TRANSITION_IRREVERSIBLE: 'publication.transition_irreversible',
   SEARCH_UNKNOWN_FLAG: 'search.unknown_flag',
   SEAT_CODE_MALFORMED: 'seat_code.malformed',
+  STATE_CONFLICT: 'state.conflict',
 } as const;
 
 /**

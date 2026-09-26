@@ -1960,8 +1960,8 @@ paths:
            `replay_sold` for `ended → replay_online`. **The lock bears on the `from > to` pair, not
            on the state.**
         2. **It is conditional and versioned.** Two people can be on the record: a command sent from
-           `technical` while the current state is `live` is refused with `STATE_CONFLICT`, **with the
-           current state and version**. The studio is multi-operator without a lock; the arbitration
+           `technical` while the current state is `live` is refused with `state.conflict`,
+           **with the current state and version**. The studio is multi-operator without a lock; the arbitration
            is on the server.
         3. **`Idempotency-Key` is mandatory, not recommended**: the transition commits a public price
            or a sale.
@@ -2010,9 +2010,10 @@ paths:
                   description: |
                     **Mandatory for a transition with no way back.** The confirmation carries the promise's
                     code, and its wording comes from the contract: the interface does not invent it.
+                    Missing or different, the transition is refused with `publication.promise_unacknowledged`
+                    and the promise to confirm.
                   enum: [prices_engaged, replay_sold, null]
-                  x-arthome-vocabulary-source: none
-                  x-arthome-vocabulary-reason: "The two promises a transition can commit, plus `null` for one that commits none — which its own type admits. Local to this command."
+                  x-arthome-vocabulary-source: PUBLICATION_PROMISES
             example: { to: scheduled, expectedVersion: 7, acknowledgedPromiseCode: prices_engaged }
       responses:
         "200":
@@ -2042,9 +2043,10 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "409":
           description: |
-            `STATE_CONFLICT` (with the current state and version), `publication.transition_irreversible` (with the
-            promise committed), or `publication.checklist_incomplete` (with the list of what is
-            missing).
+            `state.conflict` (with the current state and version),
+            `publication.transition_irreversible` (with the promise committed),
+            `publication.promise_unacknowledged` (a one-way transition sent without its promise), or
+            `publication.checklist_incomplete` (with the list of what is missing).
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -2124,7 +2126,7 @@ paths:
                     version: 13,
                   }
         "409":
-          description: "`date.prices_locked` when publication is committed, `STATE_CONFLICT` on a stale version."
+          description: "`date.prices_locked` when publication is committed, `state.conflict` on a stale version."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -2741,7 +2743,7 @@ paths:
                     version: 4,
                   }
         "409":
-          description: "`date.technical_check_required`, ou `STATE_CONFLICT`."
+          description: "`date.technical_check_required`, or `state.conflict`."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorEnvelope" }
@@ -6186,7 +6188,7 @@ components:
 
     Conflict:
       description: |
-        A final business refusal, and the `code` says which. `STATE_CONFLICT` carries **the current
+        A final business refusal, and the `code` says which. `state.conflict` carries **the current
         state and version**; `publication.transition_irreversible` carries the transition attempted **and the
         promise committed**; `moderation.already_settled` carries **the winning verdict and its
         author**.
@@ -6311,7 +6313,7 @@ components:
             `moderation.verdict.conflict`.
           examples: [publication.checklist_incomplete]
           pattern: '^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$'
-          x-arthome-vocabulary: [api.unauthenticated, api.forbidden, api.not_found, api.rate_limited, api.schema_invalid, api.internal, api.service_unavailable, api.upstream_unavailable, api.cursor_too_old, api.sort_key_forbidden, api.period_filter_required, api.rights_version_stale, identity.email_taken, identity.handle_taken, identity.two_factor_required, identity.signed_out_elsewhere, pairing.slow_down, pairing.identity_mismatch, pairing.intent_not_engageable, pairing.execution_engaged, chat.holders_only, chat.rate_limited, moderation.already_claimed, moderation.already_settled, moderation.automatic_cannot_override_human, moderation.decision_version_stale, date.has_sold_seats, date.outcome_decision_forbidden, date.prices_locked, date.replay_policy_final, date.technical_check_required, date.technical_provision_required, date.stream_key_rotation_during_run, channel.has_open_obligations, channel.crew_role_reserved, channel.role_not_assignable, channel.transfer_target_ineligible, channel.same_actor_forbidden, payout.reconciliation_discrepancy_unexplained, order.quote_address_mismatch, order.sold_out, order.payment_declined, order.price_stale, order.plan_unavailable, capacity.tier_must_widen, content.empty_in_both_languages, hold.quantity_invalid, media.size_invalid, media.url_empty, order.quantity_invalid, pairing_code.ambiguous_glyph, publication.checklist_incomplete, publication.transition_forbidden, publication.transition_irreversible, search.unknown_flag, seat_code.malformed, watch.no_seat, watch.room_not_open, watch.out_of_territory, watch.subscription_required, watch.no_replay, watch.replay_expired, watch.replay_not_on_sale, watch.preview_exhausted, watch.concurrent_limit_reached, watch.date_cancelled, watch.not_published]
+          x-arthome-vocabulary: [api.unauthenticated, api.forbidden, api.not_found, api.rate_limited, api.schema_invalid, api.internal, api.service_unavailable, api.upstream_unavailable, api.cursor_too_old, api.sort_key_forbidden, api.period_filter_required, api.rights_version_stale, identity.email_taken, identity.handle_taken, identity.two_factor_required, identity.signed_out_elsewhere, pairing.slow_down, pairing.identity_mismatch, pairing.intent_not_engageable, pairing.execution_engaged, chat.holders_only, chat.rate_limited, moderation.already_claimed, moderation.already_settled, moderation.automatic_cannot_override_human, moderation.decision_version_stale, date.has_sold_seats, date.outcome_decision_forbidden, date.prices_locked, date.replay_policy_final, date.technical_check_required, date.technical_provision_required, date.stream_key_rotation_during_run, channel.has_open_obligations, channel.crew_role_reserved, channel.role_not_assignable, channel.transfer_target_ineligible, channel.same_actor_forbidden, payout.reconciliation_discrepancy_unexplained, order.quote_address_mismatch, order.sold_out, order.payment_declined, order.price_stale, order.plan_unavailable, capacity.tier_must_widen, content.empty_in_both_languages, hold.quantity_invalid, media.size_invalid, media.url_empty, order.quantity_invalid, pairing_code.ambiguous_glyph, publication.checklist_incomplete, publication.promise_unacknowledged, publication.transition_forbidden, publication.transition_irreversible, search.unknown_flag, seat_code.malformed, state.conflict, watch.no_seat, watch.room_not_open, watch.out_of_territory, watch.subscription_required, watch.no_replay, watch.replay_expired, watch.replay_not_on_sale, watch.preview_exhausted, watch.concurrent_limit_reached, watch.date_cancelled, watch.not_published]
           x-arthome-vocabulary-source: ERROR_CODES
         nature:
           type: string
@@ -7158,8 +7160,7 @@ components:
             `prices_engaged` for `draft|reserve → scheduled`, `replay_sold` for
             `ended → replay_online`. A code, never the sentence.
           x-arthome-vocabulary: [prices_engaged, replay_sold]
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change."
+          x-arthome-vocabulary-source: PUBLICATION_PROMISES
 
     Publication:
       type: object
@@ -7185,7 +7186,7 @@ components:
           description: |
             The studio is **multi-operator without a lock**: the arbitration is on the server. Every
             transition carries `expectedVersion`, and a command sent from `technical` while the current
-            state is `live` is refused with `STATE_CONFLICT` **with the current state and version**.
+            state is `live` is refused with `state.conflict` **with the current state and version**.
         publishedAt: { type: [string, "null"], format: date-time }
         pricesLockedAt: { type: [string, "null"], format: date-time }
         replayOnlineAt: { type: [string, "null"], format: date-time }

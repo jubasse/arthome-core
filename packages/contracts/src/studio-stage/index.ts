@@ -23,6 +23,7 @@ import {
   IncidentCause,
   MEMBER_ROLES,
   PUBLICATION_CHECKLIST_ITEMS,
+  PUBLICATION_PROMISES,
   PUBLICATION_STATES,
   RUN_STATES,
   Service,
@@ -34,7 +35,6 @@ import {
   uuidOut,
   vocabularyOut,
   vocabularyOutLocal,
-  vocabularyOutLocalNullable,
   vocabularyOutNullable,
 } from '@arthome/core/schema';
 
@@ -111,11 +111,7 @@ export const PublicationTransitionSchema: z.ZodObject<
     promiseCode: z
       .string()
       .nullable()
-      .meta(
-        z.globalRegistry.get(
-          vocabularyOutLocalNullable(['prices_engaged', 'replay_sold'], LOCAL_REASON),
-        ) ?? {},
-      )
+      .meta(z.globalRegistry.get(vocabularyOutNullable(PUBLICATION_PROMISES)) ?? {})
       .optional()
       .describe(
         'The **promise committed**, which travels with the refusal and with the confirmation:\n`prices_engaged` for `draft|reserve → scheduled`, `replay_sold` for\n`ended → replay_online`. A code, never the sentence.\n',
@@ -149,7 +145,7 @@ export const PublicationSchema: z.ZodObject<
     "**The rank travels with the state.** The event board sorts by state, and the order is the\nmachine's, not the alphabet's. Without a served rank, every surface reinvents its own ordering\ntable.\n",
   ),
   version: int().describe(
-    'The studio is **multi-operator without a lock**: the arbitration is on the server. Every\ntransition carries `expectedVersion`, and a command sent from `technical` while the current\nstate is `live` is refused with `STATE_CONFLICT` **with the current state and version**.\n',
+    'The studio is **multi-operator without a lock**: the arbitration is on the server. Every\ntransition carries `expectedVersion`, and a command sent from `technical` while the current\nstate is `live` is refused with `state.conflict` **with the current state and version**.\n',
   ),
   publishedAt: instantNullable().optional(),
   pricesLockedAt: instantNullable().optional(),

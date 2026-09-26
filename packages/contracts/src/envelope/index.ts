@@ -52,6 +52,7 @@ import {
   DomainErrorCode,
   FailureNature,
   PublicationChecklistItem,
+  PublicationPromise,
   PublicationState,
 } from '@arthome/core';
 import { ErrorSchema, InstantOut, int64 } from '@arthome/core/schema';
@@ -153,7 +154,7 @@ export const StorefrontErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core
           {
             from: PublicationState.SCHEDULED,
             to: PublicationState.RESERVE,
-            promise: 'prices_engaged',
+            promise: PublicationPromise.PRICES_ENGAGED,
           },
         ],
       })

@@ -207,7 +207,7 @@ Declarations: `dist/ticketing/index.d.ts` — 11 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 381 exported names.
+Declarations: `dist/index.d.ts` — 383 exported names.
 
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
@@ -352,6 +352,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `PROMOTION_REASONS` (const) — `PROMOTION_REASONS: readonly ["pre_sale", "preview_night", "discovery_rate", "final_date", "late_rate"]` — Five reasons observed in the design, each with a distinct rule.
 - `PROVISION_REVISION_HOURS` (const) — `PROVISION_REVISION_HOURS = 72`
 - `PUBLICATION_CHECKLIST_ITEMS` (const) — The authoritative checklist, in the order the sheet shows — 'studio-web' Q7, where the fixtures carried four items against the sheet's seve…
+- `PUBLICATION_PROMISES` (const) — `PUBLICATION_PROMISES: readonly ["prices_engaged", "replay_sold"]` — What a one-way transition commits, served with its refusal and asked back as its confirmation.
 - `PUBLICATION_STATES` (const) — `PUBLICATION_STATES: readonly ["draft", "reserve", "scheduled", "technical", "live", "ended", "replay_online"]` — The channel's act; 'catalogue.json' has authority (D2).
 - `PairingErrorCode` (type+const)
 - `PayoutBreakdown` (interface)
@@ -367,6 +368,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `PromotionReason` (type+const)
 - `PublicationChecklistEntry` (interface) — One checklist item, with everything a surface needs to render its row.
 - `PublicationChecklistItem` (type+const) — The named members, so that nothing writes one of these as a string.
+- `PublicationPromise` (type+const)
 - `PublicationReadiness` (interface)
 - `PublicationState` (type+const)
 - `PublicationTransition` (interface) — An offered transition, with what it commits to.
@@ -443,7 +445,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `assertCanOverride` (function) — `function assertCanOverride(existingOrigin: StateChangeOrigin, incomingOrigin: StateChangeOrigin): void;`
 - `assertKnownFlag` (function) — `function assertKnownFlag(flag: string, knownFlags: readonly string[]): void;`
 - `assertTierWidens` (function) — `function assertTierWidens(currentCapacity: number, nextCapacity: number): void;` — Capacity tiers: they WIDEN, never shrink after going on sale.
-- `assertTransitionAllowed` (function) — `function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): void;`
+- `assertTransitionAllowed` (function) — `function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): PublicationTransition;`
 - `assignableRolesOf` (function) — `function assignableRolesOf(heldRoles: readonly MemberRole[]): readonly MemberRole[];` — The roles a person may assign, given those they hold — the union, never a rank.
 - `availabilityOf` (function) — `function availabilityOf(gauge: Gauge): SeatAvailability;`
 - `basisPoints` (function) — `function basisPoints(value: number): BasisPoints;`
@@ -497,7 +499,7 @@ Declarations: `dist/index.d.ts` — 381 exported names.
 - `hasLanguageBarrier` (function) — `function hasLanguageBarrier(profile: LanguageProfile): boolean;` — Is there a language barrier?
 - `hasReplayPolicy` (function) — `function hasReplayPolicy(timing: DateTiming): boolean;` — Does the date promise a replay at all, whatever the window?
 - `holdFor` (function) — `function holdFor(quantity: number, intentExpiresAt: Instant): SeatHold;` — Places a hold whose expiry IS the intent's.
-- `irreversiblePromiseBlocking` (function) — `function irreversiblePromiseBlocking(from: PublicationState, to: PublicationState): string | null;` — The promise blocking this transition, or 'null' when it is merely unknown — two different refusals, two different messages.
+- `irreversiblePromiseBlocking` (function) — `function irreversiblePromiseBlocking(from: PublicationState, to: PublicationState): PublicationPromise | null;` — The promise blocking this transition, or 'null' when it is merely unknown — two different refusals, two different messages.
 - `isAfter` (function) — `function isAfter(left: Instant, right: Instant): boolean;`
 - `isAvailableIn` (function) — `function isAvailableIn(rights: TerritoryRights, viewerCountry: string): boolean;` — Can the viewer watch from this country?
 - `isBefore` (function) — `function isBefore(left: Instant, right: Instant): boolean;`

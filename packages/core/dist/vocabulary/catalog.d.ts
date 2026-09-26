@@ -17,6 +17,13 @@ export declare const PublicationState: {
     readonly ENDED: "ended";
     readonly REPLAY_ONLINE: "replay_online";
 };
+/** What a one-way transition commits, served with its refusal and asked back as its confirmation. */
+export declare const PUBLICATION_PROMISES: readonly ["prices_engaged", "replay_sold"];
+export type PublicationPromise = (typeof PUBLICATION_PROMISES)[number];
+export declare const PublicationPromise: {
+    readonly PRICES_ENGAGED: "prices_engaged";
+    readonly REPLAY_SOLD: "replay_sold";
+};
 /**
  * The technical axis, and nothing else. A run desk has no "cancelled" state: it
  * has a stage that is sending nothing, and the outcome is `DATE_OUTCOMES` (E4).

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PUBLICATION_CHECKLIST_ITEMS,
   isBlockingChecklistItem,
+  assertCommandedTransition,
   assertTransitionAllowed,
   irreversiblePromiseBlocking,
   isEventDriven,
@@ -10,7 +11,9 @@ import {
   orderRankOf,
   publicationReadiness,
 } from './publication.js';
-import { PublicationState } from '../vocabulary/catalog.js';
+import { DomainError } from '../kernel/errors.js';
+import { PublicationPromise, PublicationState } from '../vocabulary/catalog.js';
+import { DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /**
  * E5: the fixtures locked STATES, the mockup locked PAIRS. Locking a state would also prevent
@@ -25,11 +28,11 @@ describe('the lock is on the transition', () => {
 
   it('refuses to LEAVE it, with the promise made', () => {
     expect(irreversiblePromiseBlocking(PublicationState.SCHEDULED, PublicationState.DRAFT)).toBe(
-      'publication.promise.prices_engaged',
+      PublicationPromise.PRICES_ENGAGED,
     );
     expect(
       irreversiblePromiseBlocking(PublicationState.REPLAY_ONLINE, PublicationState.ENDED),
-    ).toBe('publication.promise.replay_on_sale');
+    ).toBe(PublicationPromise.REPLAY_SOLD);
   });
 
   it('tells "one-way" apart from "unknown" — two refusals, two messages', () => {
@@ -135,5 +138,66 @@ describe('the publication gate', () => {
     const readiness = publicationReadiness(blocking);
     expect(readiness.ready).toBe(true);
     expect(readiness.warnings).toEqual(['chapters_planned', 'moderator_assigned']);
+  });
+});
+
+describe('a commanded transition', () => {
+  const draftAtSeven = { state: PublicationState.DRAFT, version: 7 };
+
+  function refusalOf(run: () => unknown): DomainError {
+    try {
+      run();
+    } catch (error) {
+      if (error instanceof DomainError) return error;
+    }
+    throw new Error('expected a DomainError');
+  }
+
+  it('is refused on a stale version, with the current state and version', () => {
+    const refusal = refusalOf(() =>
+      assertCommandedTransition(
+        draftAtSeven,
+        { to: PublicationState.RESERVE, expectedVersion: 6, acknowledgedPromise: null },
+        true,
+      ),
+    );
+    expect(refusal.code).toBe(DomainErrorCode.STATE_CONFLICT);
+    expect(refusal.params).toEqual({ state: PublicationState.DRAFT, version: 7 });
+  });
+
+  it('refuses a one-way transition whose promise was not acknowledged, naming it', () => {
+    const refusal = refusalOf(() =>
+      assertCommandedTransition(
+        draftAtSeven,
+        { to: PublicationState.SCHEDULED, expectedVersion: 7, acknowledgedPromise: null },
+        true,
+      ),
+    );
+    expect(refusal.code).toBe(DomainErrorCode.PUBLICATION_PROMISE_UNACKNOWLEDGED);
+    expect(refusal.params.promise).toBe(PublicationPromise.PRICES_ENGAGED);
+  });
+
+  it('allows it once acknowledged, and returns what it commits', () => {
+    const transition = assertCommandedTransition(
+      draftAtSeven,
+      {
+        to: PublicationState.SCHEDULED,
+        expectedVersion: 7,
+        acknowledgedPromise: PublicationPromise.PRICES_ENGAGED,
+      },
+      true,
+    );
+    expect(transition.irreversiblePromiseCode).toBe(PublicationPromise.PRICES_ENGAGED);
+  });
+
+  it('checks the version before the transition, since a stale screen is wrong about both', () => {
+    const refusal = refusalOf(() =>
+      assertCommandedTransition(
+        draftAtSeven,
+        { to: PublicationState.LIVE, expectedVersion: 3, acknowledgedPromise: null },
+        true,
+      ),
+    );
+    expect(refusal.code).toBe(DomainErrorCode.STATE_CONFLICT);
   });
 });
