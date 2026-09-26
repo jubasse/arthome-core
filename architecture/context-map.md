@@ -629,7 +629,8 @@ contract writes the hierarchy **once**, and serves the result.
 > `outcome` outranks `run.state`, which outranks `publication.state`.
 
 And the contract serves **a fourth value, derived and unique**: `displayState`, produced by
-`displayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`, accompanied by
+`displayStateOf(publication, run, outcome, instants, now)` in `@arthome/core` for the studio and by
+`publicDisplayStateOf`, the same hierarchy read for the public, for the storefront, accompanied by
 `displayStateValidUntil`. It is the only value the cards display, and nobody recomposes it.
 
 **The vocabulary has ELEVEN members, and the split between the two products is the point.**
@@ -638,12 +639,14 @@ And the contract serves **a fourth value, derived and unique**: `displayState`, 
 |---|---|---|
 | public, both products | `scheduled · room_open · live · replay · ended` | the time axis |
 | both products | `postponed · cancelled · interrupted` | the three outcomes, which **replace** the rest |
-| **studio only** | `draft · reserve · technical` | a date that is not public yet still has to be shown to the channel that owns it |
+| **studio only** | `draft · reserve · technical` | a date that is not public yet, or a published one under technical check, still has to be shown to the channel that owns it |
 
 The last three are why the count is eleven and not eight. They deliberately **share the strings of
 `publication.state`**, because for a non-public date the displayed state IS the publication state —
 there is no third axis to reconcile yet. A storefront never receives them, not by filtering but **by
-construction**: a date reaches the storefront only once published.
+construction**: a date reaches the storefront only once published, and `technical` comes after
+publication (`scheduled → technical → live`), so `publicDisplayStateOf` shows such a date on the time
+axis and only the studio sees the check (D-072).
 
 > **Consequence for `backend-contracts`, and it is a cardinality question rather than a spelling
 > one.** The `displayState` vocabulary is **one** vocabulary with eleven members. The studio contract

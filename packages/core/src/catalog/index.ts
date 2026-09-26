@@ -7,6 +7,7 @@ export {
   isFullyOver,
   isRoomOpen,
   progressOf,
+  publicDisplayStateOf,
   replayEndsAt,
   roomOpensAt,
 } from './date-state.js';

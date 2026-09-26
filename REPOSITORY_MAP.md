@@ -207,7 +207,7 @@ Declarations: `dist/ticketing/index.d.ts` — 11 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 387 exported names.
+Declarations: `dist/index.d.ts` — 388 exported names.
 
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
@@ -560,6 +560,7 @@ Declarations: `dist/index.d.ts` — 387 exported names.
 - `previewSecondsLeft` (function) — `function previewSecondsLeft(secondsUsed: number): number;`
 - `priceOfTier` (function) — `function priceOfTier(tiers: readonly TierPrice[], tier: PriceTier): Money | null;`
 - `progressOf` (function) — `function progressOf(timing: DateTiming, now: Instant): number;` — A live show's progress, clamped to '[0, 1]'.
+- `publicDisplayStateOf` (function) — `function publicDisplayStateOf(input: DisplayStateInput): DisplayStateResult;` — What a public surface shows.
 - `publicationReadiness` (function) — `function publicationReadiness(satisfied: readonly PublicationChecklistItem[]): PublicationReadiness;`
 - `quoteSeats` (function)
 - `remainderAfterRate` (function) — `function remainderAfterRate(value: Money, rate: BasisPoints): Money;` — What remains after applying a rate — exactly 'x - applyRate(x, r)'.

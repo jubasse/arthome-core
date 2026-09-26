@@ -83,7 +83,10 @@ function outcomeDisplay(outcome: DateOutcome): DisplayState {
   }
 }
 
-/** The publication states that are not yet public: the displayed state IS the publication state. */
+/**
+ * The states whose display IS the publication state: `draft` and `reserve` are not public yet,
+ * `technical` is the studio's view of a published date's check (`publicDisplayStateOf`).
+ */
 function preSaleDisplay(state: PublicationState): DisplayState | null {
   switch (state) {
     case PublicationState.DRAFT:
@@ -134,6 +137,16 @@ export function displayStateOf(input: DisplayStateInput): DisplayStateResult {
   }
 
   return { state: DisplayState.ENDED, validUntil: null };
+}
+
+/**
+ * What a public surface shows. `technical` comes after publication (`scheduled -> technical`,
+ * then `technical -> live`): the date is on sale, so the public sees it on the time axis and only
+ * the studio sees the check.
+ */
+export function publicDisplayStateOf(input: DisplayStateInput): DisplayStateResult {
+  if (input.publicationState !== PublicationState.TECHNICAL) return displayStateOf(input);
+  return displayStateOf({ ...input, publicationState: PublicationState.SCHEDULED });
 }
 
 /** Is the date behind us, replay included? */

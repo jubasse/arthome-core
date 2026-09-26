@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { displayStateOf, isRoomOpen, progressOf, type DateTiming } from './date-state.js';
+import {
+  displayStateOf,
+  isRoomOpen,
+  progressOf,
+  publicDisplayStateOf,
+  type DateTiming,
+} from './date-state.js';
 import {
   DateOutcome,
   DisplayState,
@@ -210,6 +216,42 @@ describe('displayStateOf — the validity of what is served', () => {
     });
 
     expect(result.state).toBe(DisplayState.ENDED);
+  });
+});
+
+describe('publicDisplayStateOf — a published date under technical check', () => {
+  const checking = {
+    publicationState: PublicationState.TECHNICAL,
+    runState: null,
+    outcome: null,
+    timing,
+  } as const;
+
+  it('shows the public the time axis, and the studio the check', () => {
+    const now = '2026-09-21T17:00:00.000Z';
+
+    expect(publicDisplayStateOf({ ...checking, now })).toEqual({
+      state: DisplayState.SCHEDULED,
+      validUntil: '2026-09-21T18:30:00.000Z',
+    });
+    expect(displayStateOf({ ...checking, now }).state).toBe(DisplayState.TECHNICAL);
+  });
+
+  it('opens the room on time while the check runs', () => {
+    const result = publicDisplayStateOf({ ...checking, now: '2026-09-21T18:45:00.000Z' });
+
+    expect(result).toEqual({ state: DisplayState.ROOM_OPEN, validUntil: timing.startsAt });
+  });
+
+  it('keeps the hierarchy: the outcome and the run still outrank it', () => {
+    const now = '2026-09-21T18:45:00.000Z';
+
+    expect(publicDisplayStateOf({ ...checking, outcome: DateOutcome.CANCELLED, now }).state).toBe(
+      DisplayState.CANCELLED,
+    );
+    expect(publicDisplayStateOf({ ...checking, runState: RunState.ON_AIR, now }).state).toBe(
+      DisplayState.LIVE,
+    );
   });
 });
 

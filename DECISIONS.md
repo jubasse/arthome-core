@@ -3102,3 +3102,18 @@ and `arthome-sync-agent-docs` reported success over it — a consuming repositor
 cleanly with **no rules, no conventions and no surface map**, with nothing anywhere failing. `prepack`
 in core, contracts and tooling makes building part of packing; the hook exits 1 if the case arises
 anyway, which now means a malformed package rather than an unbuilt tree.
+
+### D-072 — A published date under technical check stays public
+
+**Found while writing the storefront search, arbitrated by the product owner on 2026-09-26.**
+`displayStateOf` grouped `technical` with `draft` and `reserve` as "not public yet", and
+context-map.md said a storefront never receives it "by construction". The publication machine says
+otherwise: `scheduled → technical` is a studio command **after** the prices are engaged, and
+`technical → live` follows. A date on sale would have left every public list for its check, which
+is the hour before curtain-up, and `displayStateValidUntil`, required on a `DateCard`, would have
+been `null`.
+
+**The rule stays written once, in core, with two readings.** `displayStateOf` keeps `technical` for
+the studio, which runs the check. `publicDisplayStateOf` reads a date under check on the time axis
+(`scheduled`, then `room_open`); the outcome and the run still outrank it. The storefront's
+`DateCard.displayState` names the second, and the eleven-member vocabulary is unchanged.

@@ -43,6 +43,12 @@ export declare function isRoomOpen(timing: DateTiming, now: Instant): boolean;
 /** A live show's progress, clamped to `[0, 1]`. */
 export declare function progressOf(timing: DateTiming, now: Instant): number;
 export declare function displayStateOf(input: DisplayStateInput): DisplayStateResult;
+/**
+ * What a public surface shows. `technical` comes after publication (`scheduled -> technical`,
+ * then `technical -> live`): the date is on sale, so the public sees it on the time axis and only
+ * the studio sees the check.
+ */
+export declare function publicDisplayStateOf(input: DisplayStateInput): DisplayStateResult;
 /** Is the date behind us, replay included? */
 export declare function isFullyOver(timing: DateTiming, now: Instant): boolean;
 //# sourceMappingURL=date-state.d.ts.map

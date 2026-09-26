@@ -5958,13 +5958,13 @@ components:
           type: string
           description: |
             The **only** state value the cards display, and nobody recomposes it. Produced by
-            `displayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`. The hierarchy,
-            written once: `outcome` outranks `run.state`, which outranks `publication.state`.
+            `publicDisplayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`. The
+            hierarchy, written once: `outcome` outranks `run.state`, which outranks `publication.state`.
 
             **One vocabulary, eleven members, and the narrowing is said here rather than written as a
             second list.** A storefront never receives `draft`, `reserve` or `technical` — not by
             filtering, but **by construction**: a date reaches a public surface only once it is
-            published. Declaring only the eight would be a second authored list for a field the
+            published, and a published date under technical check is shown on the time axis. Declaring only the eight would be a second authored list for a field the
             domain already defines, and two independently authored lists for one field is how E4
             started. A surface that wants to know what it can actually receive reads this sentence;
             the vocabulary stays the domain's.
