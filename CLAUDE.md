@@ -61,3 +61,14 @@ saying what the name and the signature cannot.
 discovery cost. That belongs in the commit message, not at the line.
 
 Full rule, with four measured shapes: `code-conventions.md` §5.10.
+
+## Pull requests and PR comments
+
+**No `⚠`, no emoji, no pictographic symbol** — title, description, review comment, reply, and the
+generated footer: write "Generated with Claude Code", without its emoji.
+
+**Size it to the change.** Trivial: one or two sentences of context, then a bulleted list of what was
+done. No dissertation. Otherwise add only what the diff cannot show: the risk, what was verified,
+what was not.
+
+Full rule: `code-conventions.md` §5.9.

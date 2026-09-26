@@ -2410,6 +2410,16 @@ may flag it in the subject; the footer is what is mandatory.
 maintain in seven copies. `.githooks/commit-msg` does the same job in eighteen lines of logic, and it
 is written, installed and exercised against real history: §8.4.
 
+#### Pull requests and PR comments
+
+**[floor] No `⚠`, no emoji, no pictographic symbol** — in the title, the description, a review comment
+or a reply, generated footer included: write "Generated with Claude Code", without its emoji.
+
+**[floor] Size the description to the change.** A trivial change gets one or two sentences of
+context, then a bulleted list of what was done — nothing more. Otherwise add only what the diff
+cannot show: the risk, what was verified and how, what was not. No dissertation: the reason for a
+line belongs at that line (§5.10) or in the commit body, not restated in the PR.
+
 ---
 
 ## 6. What legitimately stays specific to each stack
