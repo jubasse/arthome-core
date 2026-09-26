@@ -1540,29 +1540,29 @@ Screen-by-screen verification, against the paths actually published:
 
 | Screen | Budget announced | Path served | Verdict |
 |---|---|---|---|
-| `boot` | 1 | `GET /v1/viewer-context` | ✅ |
-| `gate` | 0 | profiles in `ViewerContext` | ✅ |
-| `signin` | 1 + wait | `POST /v1/pairings` + polling | ✅ |
-| `home` | 1 | `GET /v1/home` | ✅ (4 parallel internal calls, 1 to 2 in steady state) |
-| `search` | 1 per state | `GET /v1/search`, cancellable, ≤ 200 ms | ✅ |
-| `live` | 1 | `GET /v1/live`, **server-side** hour grouping | ✅ |
-| `categories` | 1 | `GET /v1/categories` | ✅ |
-| `category` | 1 | `GET /v1/categories/{id}` | ✅ |
-| `artists` | 1 + cursor | `GET /v1/artists` | ✅ |
-| `artist` | 1 | `GET /v1/artists/{id}` | ✅ |
-| `title` | 1 | `GET /v1/dates/{id}`, with `ETag` | ✅ |
-| `book` | 0 or 1 | `GET /v1/dates/{id}/availability` | ✅ |
-| `pay` | 1 + wait | `POST /v1/pairings` | ✅ |
-| `confirm` | **0** | complete `PairingOutcome` | ✅ **confirmed, 0 internal calls** |
-| `player` | **1** | `POST /v1/playback/{id}/open` | ✅ **1 internal call, budget ≤ 1 s** |
-| `dateinfo` | 0 | derived from the `PlaybackTicket` | ✅ |
-| `tickets` | 1 | `GET /v1/me/tickets` | ✅ |
-| `list` | 1 | `GET /v1/me/watchlist` | ✅ |
-| `replays` | 1 | **no public path** | ❌ **C1** |
-| `plans` | 1 | `GET /v1/plans` | ✅ |
-| `account` | 1 | `GET /v1/me/account` | ✅ |
-| `help` | 0 | embedded | ✅ |
-| `ambient` | **0** | posters in hand, no pushed transition | ✅ **confirmed by `realtime.md` §2.4** |
+| `boot` | 1 | `GET /v1/viewer-context` | served |
+| `gate` | 0 | profiles in `ViewerContext` | served |
+| `signin` | 1 + wait | `POST /v1/pairings` + polling | served |
+| `home` | 1 | `GET /v1/home` | served (4 parallel internal calls, 1 to 2 in steady state) |
+| `search` | 1 per state | `GET /v1/search`, cancellable, ≤ 200 ms | served |
+| `live` | 1 | `GET /v1/live`, **server-side** hour grouping | served |
+| `categories` | 1 | `GET /v1/categories` | served |
+| `category` | 1 | `GET /v1/categories/{id}` | served |
+| `artists` | 1 + cursor | `GET /v1/artists` | served |
+| `artist` | 1 | `GET /v1/artists/{id}` | served |
+| `title` | 1 | `GET /v1/dates/{id}`, with `ETag` | served |
+| `book` | 0 or 1 | `GET /v1/dates/{id}/availability` | served |
+| `pay` | 1 + wait | `POST /v1/pairings` | served |
+| `confirm` | **0** | complete `PairingOutcome` | served, **confirmed, 0 internal calls** |
+| `player` | **1** | `POST /v1/playback/{id}/open` | served, **1 internal call, budget ≤ 1 s** |
+| `dateinfo` | 0 | derived from the `PlaybackTicket` | served |
+| `tickets` | 1 | `GET /v1/me/tickets` | served |
+| `list` | 1 | `GET /v1/me/watchlist` | served |
+| `replays` | 1 | **no public path** | **not served (C1)** |
+| `plans` | 1 | `GET /v1/plans` | served |
+| `account` | 1 | `GET /v1/me/account` | served |
+| `help` | 0 | embedded | served |
+| `ambient` | **0** | posters in hand, no pushed transition | served, **confirmed by `realtime.md` §2.4** |
 
 **Twenty-one screens out of twenty-two at the announced budget. Only one is not served.**
 

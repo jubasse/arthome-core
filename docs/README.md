@@ -44,7 +44,7 @@ content, the domain rules and all the bilingual copy.
 replay window, payout computation, per-role permissions — have been proven
 screen by screen.
 
-⚠ **`shared/` is authoritative on the rules and the vocabulary, not on the
+**`shared/` is authoritative on the rules and the vocabulary, not on the
 shapes.** A fixture generator is optimised to display mockups, not to hold a
 model spread across seven contexts. Audit fields, versions, intermediate
 states, the real cardinality of relations, nullability, media, seating plans:
@@ -76,7 +76,7 @@ conventions of its own stack.
 Fidelity: **high**. Colours, typography, spacing and transitions are final. The
 expected rendering is pixel-faithful.
 
-⚠ **In the current layout of this dossier, the mockups do NOT open.** Each one
+**In the current layout of this dossier, the mockups do NOT open.** Each one
 resolves `helpers.js`, `fixtures.js`, `catalogue.json`, `taxonomy.json` and
 `i18n/` **next to its own HTML file** (`new URL(p, document.baseURI)`), whereas
 those files are in `shared/`. The import fails and the `try/catch` swallows it:
@@ -214,7 +214,7 @@ payouts         commission, VAT, payouts, treasury
 notifications   alerts, reminders, emails
 ```
 
-⚠ **Three families of data have, to this day, no owning context** — they exist
+**Three families of data have, to this day, no owning context** — they exist
 in `shared/`, are displayed on several surfaces, and fit into none of the seven
 contexts above:
 

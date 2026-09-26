@@ -49,7 +49,7 @@ vocabulary and TypeScript fails the build with TS2741, which is the whole point 
 - `NAVIGATION`, `PANES` — `MemberRole` → entries / panes (`permissions/rights.ts`)
 - `BLOCKING` — `PublicationChecklistItem` → `boolean` (`catalog/publication.ts`)
 
-⚠ **`WATCH_FALLBACK_FOR` is the function's RANGE, not a menu of what a screen may offer.** Today all
+**`WATCH_FALLBACK_FOR` is the function's RANGE, not a menu of what a screen may offer.** Today all
 seven actions happen to appear in it, which makes it *look* like a menu — that is a coincidence of
 the current eleven rows, not a property. The value side is not checked for exhaustiveness and must
 not be: if you need an action the table never returns, the question is which denial reason yields it,

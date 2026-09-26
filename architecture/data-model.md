@@ -60,7 +60,7 @@
 > `multi_screen` authorisation defect a second time, inside the package written to prevent it.
 > `hold-screen` and `co-production` were the same class: a defect found once is rarely alone.
 
-> **⚠ A premise of mine that was empirically false, and a ruling was built on it (D-035).**
+> **A premise of mine that was empirically false, and a ruling was built on it (D-035).**
 > I argued that two closed vocabularies **cannot** share a value here, "since `arthome-check-enums`
 > discovers values rather than vocabularies". Measured against the code: **twenty values of 182 are
 > already shared across two or more of the 44 vocabularies, and the gate is green on every one.**
@@ -1051,7 +1051,7 @@ CREATE TABLE outbox_event (
    each carrying a comment saying the framing "belongs in front of these bytes and arrives with the
    schema registry". There is no registry in the stack yet.
 
-   ⚠ **Why this paragraph is dangerous rather than merely early.** A consumer written from the
+   **Why this paragraph is dangerous rather than merely early.** A consumer written from the
    sentence above strips a prefix that is not there, hands the remainder to `fromBinary`, and fails
    to decode — and undecodable bytes are classified `PermanentError`, which means the message does
    **not** retry. It **dead-letters on the first attempt**. That is the right handling of bytes that
@@ -1091,7 +1091,7 @@ CREATE TABLE outbox_event (
    `FULL` becomes necessary and expensive (§7.4), and scoping the publication is what stops that
    from being decided by accident.
 
-   ⚠ **What happens on the first purge is not settled, and saying so is the point.** Point 3's
+   **What happens on the first purge is not settled, and saying so is the point.** Point 3's
    cleanup job deletes from a captured table; the connector configures **no delete handling of any
    kind**. So the Outbox Event Router's behaviour on a `DELETE` is **undefined by the configuration
    as written** — which is not the same as known to be harmless. It has never run, because the job
@@ -1115,7 +1115,7 @@ explicitly into `critical-rules.md`.
 | Constraint | Practical consequence |
 |---|---|
 | `wal_level = logical` | a server parameter, a restart required; to be set at milestone 2 |
-| **one replication slot and one publication per connector**, and the publication **scoped to that service's `outbox_event` alone** | seven Debezium connectors, seven slots, seven publications, named `arthome_<service>_outbox`. ⚠ **Naming a publication is not scoping it**: `publication.autocreate.mode` defaults to `all_tables`, so Debezium creates it `FOR ALL TABLES` unless you set `filtered`, and `table.include.list` filters afterwards, at the connector. Verify on the running stack — `SELECT * FROM pg_publication_tables WHERE pubname = 'arthome_<service>_outbox'` should return exactly one row, `public.outbox_event`; more than one, or `puballtables = t` in `pg_publication`, means the default won. `FOR ALL TABLES` **also requires superuser**, which is why it passes in development — the image's `POSTGRES_USER` is one — and fails on the first real deployment, where the tempting repair is to grant superuser to a connector user |
+| **one replication slot and one publication per connector**, and the publication **scoped to that service's `outbox_event` alone** | seven Debezium connectors, seven slots, seven publications, named `arthome_<service>_outbox`. **Naming a publication is not scoping it**: `publication.autocreate.mode` defaults to `all_tables`, so Debezium creates it `FOR ALL TABLES` unless you set `filtered`, and `table.include.list` filters afterwards, at the connector. Verify on the running stack — `SELECT * FROM pg_publication_tables WHERE pubname = 'arthome_<service>_outbox'` should return exactly one row, `public.outbox_event`; more than one, or `puballtables = t` in `pg_publication`, means the default won. `FOR ALL TABLES` **also requires superuser**, which is why it passes in development — the image's `POSTGRES_USER` is one — and fails on the first real deployment, where the tempting repair is to grant superuser to a connector user |
 | an unconsumed slot **retains the WAL** | a stopped connector makes the disk grow until it is full. **Measure: `confirmed_flush_lsn` lag > 1 GB → alert**, and never a slot left behind after a test |
 | `REPLICA IDENTITY` | `DEFAULT` on `outbox_event` is enough — **because it has a primary key**, not because only inserts are captured (§7.3 point 2 corrects that reason). For a captured table **with no primary key**, `FULL` would be necessary and expensive |
 | **renaming a column breaks replication** | the publication references the columns; the connector fails or loses the column in silence |
@@ -1133,7 +1133,7 @@ outside TypeORM's transaction mechanism — a dedicated migration, marked as suc
 
 | Data | Retention | Erasure mechanism |
 |---|---|---|
-| **`outbox_event`** (every publishing service) | **7 days** (§7.3 point 3) | `DELETE FROM outbox_event WHERE created_at < now() - interval '7 days'`, a job of the service. ⚠ **Gated on the connector, not on the clock**: it may only delete what the connector has confirmed, and `confirmed_flush_lsn` (§7.4) is the position to read. Deleting ahead of it destroys a committed business fact that was never published — and the application never reads this table back, so nothing notices. It also deletes from a **captured** table: see §7.3 point 2 for what the connector does not configure |
+| **`outbox_event`** (every publishing service) | **7 days** (§7.3 point 3) | `DELETE FROM outbox_event WHERE created_at < now() - interval '7 days'`, a job of the service. **Gated on the connector, not on the clock**: it may only delete what the connector has confirmed, and `confirmed_flush_lsn` (§7.4) is the position to read. Deleting ahead of it destroys a committed business fact that was never published — and the application never reads this table back, so nothing notices. It also deletes from a **captured** table: see §7.3 point 2 for what the connector does not configure |
 | **`processed_message`** (every consuming service) | **owed, and not set** | the deduplication ledger — `id`, `topic`, `processed_at`. There is **no purge today** and it grows with every message ever consumed. Its horizon must **outlive the retry-plus-DLQ budget**: 5 s, 30 s then 5 min between attempts (`libs/messaging`), plus however long a dead-lettered message may sit before somebody replays it. Purged sooner, it stops deduplicating precisely the replays it exists for — the message returns, finds no row, and is applied a second time, silently |
 | chat messages | **24 months** (aligned on the studio journal) | a monthly purge per date partition; the message is deleted, the **moderation journal entry** stays with the message's identifier and not its text |
 | studio journal, access journal — the **`identity.channel_journal` table** (§4) | **24 months** | a purge by period; an export before the purge |

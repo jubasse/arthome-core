@@ -375,8 +375,8 @@ service where nothing changed does not restart its containers.
 in its title the invariant it protects**.
 
 ```
-✓ "the seat write and the outbox row are in the same transaction"
-✗ "testOrderService"
+right: "the seat write and the outbox row are in the same transaction"
+wrong: "testOrderService"
 ```
 
 > **A test that cannot name its invariant is a unit test in disguise**, and it costs a hundred
@@ -479,7 +479,7 @@ silently disables the other two.** (1 and 2 are `nestjs-observability` rules 6 a
    **SIGTERM only**, and it does nothing whatever without `app.enableShutdownHooks()`. Size it
    **above** the readiness probe period plus propagation and **below** Kubernetes'
    `terminationGracePeriodSeconds` (default 30 s), or the pod is killed before its own window
-   closes. ⚠ **The hook and the timeout are one change, not two**: the hook without the timeout
+   closes. **The hook and the timeout are one change, not two**: the hook without the timeout
    drains for zero seconds and the sequence above runs with nothing waited out; the timeout without
    the hook never fires at all. Configured separately, each looks present in review and the pair
    does nothing.

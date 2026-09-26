@@ -165,7 +165,7 @@ recoverability if two agents collide, and make legible what each time produced.
 > created `github.com:jubasse/arthome-core.git` and the three siblings, and every repository is
 > pushed on each stopping point.
 >
-> ⚠ **It was read as current and it cost something**, which is why this note exists rather than a
+> **It was read as current and it cost something**, which is why this note exists rather than a
 > silent edit. An agent finishing the prose-codes gate read this line, found its own push refused,
 > and stopped to ask — correctly, because a recorded decision is not something an agent may reopen
 > alone. The gates themselves had already outgrown the sentence: `verify` prints *"Run `pnpm run
@@ -359,7 +359,7 @@ repository **extends**: ESLint, Prettier, **TypeScript** and Vitest.
 repositories and one person, autonomous configurations will diverge — that is exactly fault E2 (the
 parallel literal table) applied to tooling.
 
-**⚠ The TypeScript constraint — version corrected on 21 September 2026, after verification against
+**The TypeScript constraint — version corrected on 21 September 2026, after verification against
 the npm registry by the `conventions` teammate.**
 
 The first draft of this decision asserted a **fracture** between repositories: Angular on TS 6.0.x,
@@ -428,7 +428,7 @@ with the artist.
 12 % announced to artists would vary with the buyer's country — a commission that changes with the
 buyer is not a commission.
 
-**⚠ This is not tax advice.** `adr-payments.md` must carry it at the top: the model is **to be
+**This is not tax advice.** `adr-payments.md` must carry it at the top: the model is **to be
 validated by an adviser before any real collection**. The risk is nil today — Stripe in test mode,
 no real money.
 
@@ -1957,7 +1957,7 @@ omission rather than by decision.***
 **4. AND `check-core-entry` NOW NAMES ITS OWN BLIND SPOT, IN ITS VERDICT LINE.**
 
 ```
-✓ no import path from the "." entry point reaches zod or a Node API
+PASS no import path from the "." entry point reaches zod or a Node API
   (scope: the import graph only — ambient types and tsconfig `types` are not walked)
 ```
 
@@ -3048,7 +3048,7 @@ its own gate, or would have been a third thing to remember. Build output cannot 
 **The preamble names subpaths, never individual symbols.** A hand-written list of helpers is
 precisely the artefact that goes quietly wrong when one is renamed.
 
-**⚠ THE FAULT THIS NEARLY SHIPPED WITH, because it is the one this document cannot survive.** The
+**THE FAULT THIS NEARLY SHIPPED WITH, because it is the one this document cannot survive.** The
 first parser read the entry kind as `\w+`. The kind `type+const` does not match `\w+` — and
 `type+const` is not an exotic case, it *is* the vocabulary pattern: `ChatMode`, `CrewRole`,
 `ApiErrorCode`. Fifty-five names were dropped, **every one of them an enumeration**, from the

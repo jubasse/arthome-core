@@ -68,7 +68,7 @@ doubles it.
 (`errors.deadletterqueue.topic.name`) for **connector** failures, and `arthome.<context>.retry` +
 `arthome.<context>.dlq` for consumers' **business** failures. Alert on the depth of both.
 
-> ⚠ **CORRECTED AGAINST A RUNNING STACK (2026-09-25). The first mechanism does not exist on the
+> **CORRECTED AGAINST A RUNNING STACK (2026-09-25). The first mechanism does not exist on the
 > outbox path.** Kafka Connect implements `errors.deadletterqueue.*` for **sink** connectors only,
 > and the outbox router is a **source** connector. What makes this worth writing down rather than
 > quietly dropping: Connect *accepts* the properties, and Debezium *echoes them back* in the task

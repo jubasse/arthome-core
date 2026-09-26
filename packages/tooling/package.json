@@ -50,6 +50,7 @@
     "arthome-check-tsconfig": "./bin/check-tsconfig.mjs",
     "arthome-check-prettier-conflict": "./bin/check-prettier-conflict.mjs",
     "arthome-check-language": "./bin/check-language.mjs",
+    "arthome-check-symbols": "./bin/check-symbols.mjs",
     "arthome-check-map": "./bin/check-map.mjs",
     "arthome-comment-density": "./bin/comment-density.mjs",
     "arthome-generate-map": "./bin/generate-map.mjs",

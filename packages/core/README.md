@@ -52,8 +52,8 @@ members**:
 ```ts
 import { DateOutcome } from '@arthome/core';
 
-if (outcome === DateOutcome.CANCELLED) { … }   // ✓
-if (outcome === 'cancelled') { … }              // ✗ arthome-check-enums fails
+if (outcome === DateOutcome.CANCELLED) { … }   // right
+if (outcome === 'cancelled') { … }              // wrong: arthome-check-enums fails
 ```
 
 E2 — the parallel literal table — is the project's dominant fault: committed on eight fields by

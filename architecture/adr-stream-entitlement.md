@@ -230,7 +230,7 @@ device from their account and watches the screen stop, 120 s is a long time. So 
 realtime channel pushes, on `viewer:{profileId}` and `device:{deviceId}`, a signal asking the client
 to **stop playback immediately**.
 
-> **⚠ That signal is NOT a security boundary.** A modified client ignores it; the edge keeps serving
+> **That signal is NOT a security boundary.** A modified client ignores it; the edge keeps serving
 > for up to 120 s; **the guarantee remains 120 s**. It is a **courtesy that makes the common case
 > instant**, never a control.
 

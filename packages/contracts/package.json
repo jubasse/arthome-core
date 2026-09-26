@@ -25,7 +25,7 @@
     "defeats tree-shaking on any bundler without cross-module analysis, which",
     "includes Metro by default.",
     "",
-    "⚠ AND QUOTE THE THIRD NUMBER OR NONE OF THEM. With tree shaking OFF, zod/mini",
+    "AND QUOTE THE THIRD NUMBER OR NONE OF THEM. With tree shaking OFF, zod/mini",
     "measures 85 KB — the classic entry's level. So the saving is not reduced when",
     "Metro declines to tree-shake, it is ZERO, and 93-against-7.5 on its own sells",
     "a gain nobody has yet been shown to collect. The rule below survives that",

@@ -1,6 +1,6 @@
 # Starting prompts — Claude Code sessions
 
-> ## ⚠ Document largely superseded — do not paste as is
+> ## Document largely superseded — do not paste as is
 >
 > **Corrected on 21 September 2026.** These three prompts were written before
 > several structuring decisions and before the "interface contracts, backend

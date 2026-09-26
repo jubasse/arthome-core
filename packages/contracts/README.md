@@ -15,10 +15,10 @@ redeclared**.
 `.extend()`, `.pick()`, `.omit()` — never written out again.
 
 ```ts
-// ✓ the boundary shape is the domain shape, plus what the boundary adds
+// right: the boundary shape is the domain shape, plus what the boundary adds
 export const SeatDto = SeatSchema.pick({ id: true, row: true }).extend({ href: z.string() });
 
-// ✗ a second declaration of a shape the domain already owns
+// wrong: a second declaration of a shape the domain already owns
 export const SeatDto = z.object({ id: z.string(), row: z.number() });
 ```
 
@@ -64,7 +64,7 @@ So: **one subpath per bounded context**, added as each lands and never before.
 contracts exactly.** `pnpm run check:emit-diff` compares every one against the document it publishes
 and is part of `pnpm run verify`.
 
-⚠ **THE IMPORT GRAPH IS A DAG, AND IT IS NOT AN ACCIDENT.** A zod schema is built at MODULE LOAD, so
+**THE IMPORT GRAPH IS A DAG, AND IT IS NOT AN ACCIDENT.** A zod schema is built at MODULE LOAD, so
 a cycle between two modules is a load-order hazard: it holds until a declaration moves, then fails
 with an error naming a symbol unrelated to whatever was just edited. Two of them formed while these
 modules were being written, and both were broken by moving a shape rather than by `z.lazy` — which

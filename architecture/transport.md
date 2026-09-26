@@ -392,7 +392,7 @@ this:
 
 **The status ↔ nature mapping table, single, in `@arthome/contracts`:**
 
-⚠ **The codes below are spelled as the wire spells them**, `api.schema_invalid` and not
+**The codes below are spelled as the wire spells them**, `api.schema_invalid` and not
 `SCHEMA_INVALID`. The contracts pin that shape — `pattern: '^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$'`
 — so a code written in the constant's spelling is one no service can emit and no surface can match.
 `ApiErrorCode.SCHEMA_INVALID` is the **TypeScript accessor**; its value is `api.schema_invalid`.
@@ -438,7 +438,7 @@ retracts an entry the day a package exports the code, so the list cannot rot int
 nobody remembers making.
 
 
-⚠ **TWO OF THIS TABLE'S "MISSING" CODES WERE NEVER MISSING**, and both were found by reading the
+**TWO OF THIS TABLE'S "MISSING" CODES WERE NEVER MISSING**, and both were found by reading the
 vocabulary rather than the table. `UPSTREAM_ERROR` is `api.upstream_unavailable`, exported all along.
 `CAPACITY_SHRINK_FORBIDDEN` is `capacity.tier_must_widen`: one invariant, not two — `seats.ts`'s
 `assertTierWidens` throws that code on a reduction, and its test is named *"refuses a shrink"*.

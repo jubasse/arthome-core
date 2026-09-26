@@ -8,7 +8,7 @@ four secondary arbitrations by **D-017**.
 
 ---
 
-> ## ⚠ Warning — read before anything else
+> ## Warning — read before anything else
 >
 > **The tax model described in §5 is an architecture recommendation. It is not tax advice, and it
 > must be validated by counsel before any real money is taken.**
@@ -111,7 +111,7 @@ theoretical today and real at the first non-European artist.
 |---|---|
 | **Direct charges** | the artist becomes merchant of record: we lose control of refunds, of credit notes and of the cancellation policy — yet all three are written in our copy, shown on our three storefronts, and executed by our commands. And a chargeback would go to the artist, who has neither the evidence nor the screen to answer it. |
 | **Separate charges & transfers** | more flexible for a multi-seller basket, but it forces us to keep a transfer ledger ourselves — exactly what the "Stripe remains the source of truth for the movement of money" rule forbids. |
-| **Destination charges** ✓ | one payment, one transfer, one commission, and Stripe keeps the book. |
+| **Destination charges** (chosen) | one payment, one transfer, one commission, and Stripe keeps the book. |
 
 **The structuring consequence, and it reaches all the way into the data model**: a
 `destination charge` allows **only one destination**. So **a merchandise order is single-seller**,

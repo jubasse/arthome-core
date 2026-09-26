@@ -203,7 +203,7 @@ adapter and applies unchanged.
 
 #### What could **not** be established, and what would settle it
 
-⚠ These are stated as failures, not as reassurances.
+These are stated as failures, not as reassurances.
 
 - **I could not run the package against this platform's versions.** `node_modules` is not installed
   here and installing was out of scope for this task, so every statement above comes from reading
@@ -361,7 +361,7 @@ PAIRING_CODE_ALPHABET = "ACDEFHJKLMNPQRTVWXY23456789"   // 27 symbols
 PAIRING_CODE_LENGTH   = 6
 ```
 
-> ⚠ **This block is provisional and this document is the wrong home for it.** These values exist
+> **This block is provisional and this document is the wrong home for it.** These values exist
 > **nowhere else in the repository** — unlike `SEAT_CODE_ALPHABET`, which is an exported constant
 > with a spec. They belong in `@arthome/core` beside it, exported, with the invariant below
 > asserted in a spec; `backend-domain` owns that file. Until that constant exists this ADR is the

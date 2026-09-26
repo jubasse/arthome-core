@@ -28,7 +28,9 @@ here, and a skill for one of them would be the wrong instrument.
 The gates, and what each proves: `check-versions` (one version per dependency across manifests) ·
 `check-tsconfig` (the compiler locks are intact) · `check-enums` (no enumeration value copied as a
 literal — the project's dominant fault, E2) · `check-language` (no French *sentence* in a committed
-file; an isolated French term is out of scope and the gate says so) · `check-core-entry` (nothing
+file; an isolated French term is out of scope and the gate says so) · `check-symbols` (no warning
+sign, check mark, cross or emoji outside Markdown inline code; `tools/symbols.allow.json` names the
+read-only design content) · `check-core-entry` (nothing
 reachable from the `.` entry point imports zod or a Node API) · `check-openapi` (both documents
 conform) · `check-vocabulary` (the documents, the architecture prose and `@arthome/core` agree
 member for member) · `check-emit-diff` (every emitted schema matches the document it must emit —

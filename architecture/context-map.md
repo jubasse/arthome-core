@@ -186,7 +186,7 @@ the implementation, and this paragraph used to state it wrong in three ways, eac
   `processed_message` row **second**, because the two cannot commit together and the crash window
   between them must duplicate rather than drop: a repeat is absorbed by an idempotent write, a gap
   is absorbed by nothing. Re-applying is free only while the document depends on the event and on
-  nothing that has happened since. ⚠ **The design this paragraph used to describe — an indexer
+  nothing that has happened since. **The design this paragraph used to describe — an indexer
   that reloads from its own write model — is precisely the design that breaks it**: reload a row
   and the second write is no longer the same write, the ordering stops being correct, and what it
   degrades into is a show absent from search for ever, with nothing logged and no alert to run a

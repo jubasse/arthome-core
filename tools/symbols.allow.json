@@ -1,0 +1,21 @@
+{
+  "_comment": [
+    "The exceptions to arthome-check-symbols, each with its reason.",
+    "A path belongs here only when the symbols are content we do not author. Adding one to make",
+    "the gate pass is the one use this file does not have."
+  ],
+  "allow": [
+    {
+      "path": "prototypes/*.dc.html",
+      "reason": "The five design mockups, byte for byte from the read-only design handoff. Their symbols are the product's interface (a confirmation tick, a close cross), not our prose."
+    },
+    {
+      "path": "prototypes/shared/**",
+      "reason": "Copied byte for byte from the handoff's shared/, which the mission declares read only. The i18n dictionaries carry interface symbols as copy."
+    },
+    {
+      "path": "prototypes/screens/**",
+      "reason": "Screens extracted verbatim from the mockups, interface symbols included. A symbol in one of our comments here is missed; the price of not forking the copy."
+    }
+  ]
+}

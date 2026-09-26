@@ -341,7 +341,7 @@ console opened at 21:40 then has **nothing** to paint, and stays that way until 
 | **crew presence** | §8 ("pushed ~10 s"), the `channel:{id}` room, and `identity.GetChannelPresence` counted among `run desk`'s three internal calls (`context-map.md` §10.1) | no BFF operation exposed it, `RunConsole` did not carry it |
 | **health series** | §5.1, the "throw away" column: *"a bitrate curve **is re-requested**"* | the series was requestable nowhere — the endpoint is write-only, and only the last sample was served |
 
-**✔ SERVED SINCE 22 SEPTEMBER 2026.** `backend-contracts` has built both, and I verified them in
+**SERVED SINCE 22 SEPTEMBER 2026.** `backend-contracts` has built both, and I verified them in
 `openapi/studio.yaml` rather than taking the report: `RunConsole.presence` carries
 `CrewPresence[]`, scoped to the **channel** and not to the date; and
 `GET /v1/dates/{dateId}/run/health-samples` serves `HealthSeries` with a capped window
