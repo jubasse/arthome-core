@@ -217,7 +217,7 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 | Event | Payload | Consumed by |
 |---|---|---|
 | `catalog.date.drafted.v1` | `date_id`, `channel_id`, `show_id`, `venue_id` | `ticketing` (open `DateSales`), `streaming` (prepare the run) |
-| `catalog.date.scheduled.v1` | + `starts_at`, `venue_timezone`, `venue_city`, `venue_country`, `runtime_min`, `replay_policy`, `replay_window_hours`, `rights`, `canonical_url` | `ticketing`, `streaming`, `chat`, `notifications`, `identity` (guards) |
+| `catalog.date.scheduled.v1` | + `starts_at`, `venue_timezone`, `venue_city`, `venue_country`, `runtime_min`, `replay_policy`, `replay_window_hours`, `rights`, `canonical_url`, `slug_fr`, `slug_en` | `ticketing`, `streaming`, `chat`, `notifications`, `identity` (guards) |
 | **`catalog.publication.state_changed.v1`** | `date_id`, `from_state`, `to_state`, `version`, `irreversible`, `changed_by` | **studio realtime** (room `channel:{id}`), journal. **It was missing**: without it, `draft→reserve`, `scheduled↔technical` and `ended→replay-online` produced nothing, and a second operator's screen lied indefinitely |
 | `catalog.publication.engaged.v1` | `date_id`, `engaged[]` (`prices`, `replay`, `chat_mode`) | **`ticketing`** locks the prices · **`chat`** locks the policy |
 | `catalog.date.rescheduled.v1` | `date_id`, `new_starts_at`, `previous_starts_at` | `ticketing` (seats follow), `notifications` (**reminders follow**), `streaming` |

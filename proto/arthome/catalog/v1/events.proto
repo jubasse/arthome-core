@@ -145,6 +145,11 @@ message DateScheduled {
   // and ISO 3166-1 alpha-2.
   string venue_city = 14;
   string venue_country = 15;
+
+  // Stable, one per language (data-model.md §2.7): a card links in the reader's language, and
+  // `canonical_url` carries only the title's own.
+  string slug_fr = 16;
+  string slug_en = 17;
 }
 
 message PublicationEngaged {
