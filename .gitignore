@@ -5,7 +5,7 @@ coverage/
 .DS_Store
 *.tsbuildinfo
 
-# ⚠ `dist/` is NOT ignored for the two published packages (@arthome/core and
+# `dist/` is NOT ignored for the two published packages (@arthome/core and
 #   @arthome/contracts): their .d.ts files are tracked deliberately, against the
 #   usual practice, because that is what makes a contract change visible in a
 #   review rather than in an incident at a consumer.
@@ -13,7 +13,7 @@ coverage/
 #   (git cannot re-include a file under an excluded directory, so we exclude
 #   `dist/` only where it really is an artefact.)
 #
-#   ⚠ BUT ONLY THE `.d.ts`. The reason above is "a contract change visible in a
+#   BUT ONLY THE `.d.ts`. The reason above is "a contract change visible in a
 #   REVIEW", and that reason covers the declarations and nothing else:
 #     - a `.d.ts.map` is Base64 VLQ. It is unreadable, it regenerates on every
 #       build, and it DEFEATS the stated purpose — a one-line contract change

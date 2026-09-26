@@ -2,11 +2,11 @@
  * `@arthome/contracts/studio-money` — the dashboard: the period it is read over, the tiles
  * aggregated over it, the reminders routed to a person, and the badge counters.
  *
- * ⚠ Nothing here computes anything. A tile carries no variation (`trendOf` derives it from the
+ * Nothing here computes anything. A tile carries no variation (`trendOf` derives it from the
  * series in `@arthome/core`), no literal unit, and its value is bounded by the requested period:
  * see the document's prose, copied verbatim below.
  *
- * ⚠ EVERY VOCABULARY IN THIS FILE IS LOCAL TO THE CONTRACT — the domain has no opinion on which
+ * EVERY VOCABULARY IN THIS FILE IS LOCAL TO THE CONTRACT — the domain has no opinion on which
  * rails a screen shows — so each goes through `localVocabulary`, which emits `none` and the
  * document's own reason, rather than a source name that does not exist.
  */
@@ -618,7 +618,7 @@ const PayoutVatLineSchema: z.ZodObject<
 /**
  * One payout, with the whole derivation served.
  *
- * ⚠ `grossTtc` is TAX-INCLUSIVE and the emitted annotation says so; `vat` is one line per
+ * `grossTtc` is TAX-INCLUSIVE and the emitted annotation says so; `vat` is one line per
  * jurisdiction (D-059), so a payout is never a bare number that moved for no stated reason.
  */
 export const PayoutLineSchema: z.ZodObject<
@@ -688,7 +688,7 @@ export const PayoutLineSchema: z.ZodObject<
     "**The breakdown by market is the shape, and it is safe under both tax models**: a\nsingle-rate model produces a one-line breakdown. A single scalar `vatAmount` would have been\nthe only genuinely irreversible choice.\n\nThe model adopted (D-015) is the **commissionaire**: base = the whole ticket, rate = that of\nthe viewer's country, liable party = Arthome. **⚠ This is not tax advice** — to be validated\nby an adviser before any real money is taken.\n\n**Under tax-inclusive pricing (D-056) this breakdown stops being detail and becomes the\nexplanation.** The artist's price is what the viewer pays, so `grossTtc` is fixed while the\nVAT inside it varies with the buyer's country — which means **`net` moves for two sales at the\nsame advertised price.** A payout response without the per-jurisdiction lines is therefore\n**incomplete rather than merely terse**: the artist sees a number that changed and no reason\nfor it, which is `planOf()` falling everyone back to `free` with money attached.\n\n`grossTtc → vat[] → grossHt → commission → net` is the whole derivation, and every step of it\nis served rather than recomputed.\n",
   );
 
-// ⚠ `studio-access` imports `StudioCountersSchema` from here, so reading `ActorSchema`
+// `studio-access` imports `StudioCountersSchema` from here, so reading `ActorSchema`
 //   back at module scope is a cycle. Deferring the read to first use breaks it.
 /** A change of bank details, countersigned by a second role. */
 export const BankChangeRequestSchema: z.ZodObject<

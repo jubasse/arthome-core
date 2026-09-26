@@ -4,7 +4,7 @@
  * value: it lived only as prose there and drifted twice in two days, missed by
  * four prose reviews and caught by an assertion on the first run.
  *
- * ⚠ Deliberately NOT `SEAT_CODE_ALPHABET`: the channel decides the confusable
+ * Deliberately NOT `SEAT_CODE_ALPHABET`: the channel decides the confusable
  * classes. `U`/`V` is one here, read off a television, and is not one for a seat
  * code dictated over a telephone — so this alphabet maps `U → V` and ticketing
  * maps nothing.
@@ -37,7 +37,7 @@ export const PAIRING_CONFUSABLE_CLASSES: readonly (readonly string[])[] = [
 
 /**
  * The normalisation table, exhaustive over the mappable excluded glyphs.
- * ⚠ `0` and `O` are absent ON PURPOSE: their class keeps THREE members, so a
+ * `0` and `O` are absent ON PURPOSE: their class keeps THREE members, so a
  * typed `O` has no single correct target and is refused by name instead.
  */
 export const PAIRING_CODE_NORMALISATION: Readonly<Record<string, string>> = {

@@ -1,6 +1,6 @@
 // Types for `@arthome/tooling/vitest`.
 //
-// ⚠ THIS FILE IMPORTS NOTHING FROM `vitest`, FOR THE SAME REASON `vitest.js` DOES NOT.
+// THIS FILE IMPORTS NOTHING FROM `vitest`, FOR THE SAME REASON `vitest.js` DOES NOT.
 //
 //   Angular 22 pins `vitest ^4.0.8`; the five other repositories are on `5.0.1`.
 //   Writing `import type { ViteUserConfig } from 'vitest/config'` here would put a
@@ -21,7 +21,7 @@
 //
 // See architecture/code-conventions.md sections 4.2 and 4.3.
 
-// ⚠ MUTABLE ARRAYS, deliberately. `readonly string[]` was the first attempt and it
+// MUTABLE ARRAYS, deliberately. `readonly string[]` was the first attempt and it
 //   broke the only thing this file exists to enable: vitest's own `InlineConfig`
 //   declares `include: string[]`, and a ReadonlyArray is not assignable to it, so
 //   spreading `base.test` into `defineConfig` failed with TS2769. A declaration

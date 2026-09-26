@@ -19,7 +19,7 @@ export declare function restrictedRights(blackoutCountries: readonly string[], r
 /**
  * Can the viewer watch from this country?
  *
- * ⚠ The country is an ARGUMENT resolved at every opening, never a global nor a projection: it
+ * The country is an ARGUMENT resolved at every opening, never a global nor a projection: it
  * changes between two reads — travel, roaming, corporate network.
  */
 export declare function isAvailableIn(rights: TerritoryRights, viewerCountry: string): boolean;

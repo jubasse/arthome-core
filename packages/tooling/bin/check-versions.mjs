@@ -213,7 +213,7 @@ function checkPackageManager() {
   }
 }
 
-// ⚠ MEASURED, on the day of the first install: `@arthome/tooling` declared `eslint`
+// MEASURED, on the day of the first install: `@arthome/tooling` declared `eslint`
 //   as a peer without pinning it, so pnpm picked the LOWEST member of the range —
 //   9.39.5 beside the root's 10.11.0. Two copies, both working, differently, nothing
 //   red. The duplicate check reads the pnpm store, because package.json is where
@@ -221,7 +221,7 @@ function checkPackageManager() {
 /**
  * The second copies this repository has declared harmless, with their reason.
  *
- * ⚠ SCOPED TO ONE REPOSITORY: the same duplicate may be benign where a generator runs
+ * SCOPED TO ONE REPOSITORY: the same duplicate may be benign where a generator runs
  *   and a fault where it does not. `versions.json` holds the reasons.
  */
 function allowedDuplicates(name) {
@@ -291,7 +291,7 @@ function checkReleaseAgeExceptions() {
   if (!block) return;
 
   const today = new Date().toISOString().slice(0, 10);
-  // ⚠ Both quote styles. Prettier normalises YAML strings to double quotes here
+  // Both quote styles. Prettier normalises YAML strings to double quotes here
   //   (our own `singleQuote: false` override for *.yml), so a regex that only
   //   knew single quotes captured `"@arthome/*"` WITH its quote and stopped
   //   recognising it as ours. Found by the count going from 4 to 5 after a

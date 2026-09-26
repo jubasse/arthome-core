@@ -106,7 +106,7 @@ THE PROSE BLOCK — architecture documents name codes too, and nothing checked t
   the declared vocabulary — derived from the vocabulary, never a denylist here,
   so `events.md` and `NOT_SERVING` fall out without being named.
 
-  ⚠ AND THE SCOPE IS THE DECLARING SECTION, NOT THE DOCUMENT. Two false positives
+  AND THE SCOPE IS THE DECLARING SECTION, NOT THE DOCUMENT. Two false positives
     bought that, both recorded at the code that fixes them rather than restated
     here: a Kafka EVENT is shaped exactly like a code (`declared_spans`, and
     `check_prose`'s scan comment), and scoping by any enclosing section made the
@@ -159,7 +159,7 @@ import re
 import sys
 from datetime import date
 
-# ⚠ THE UNIVERSE IS EVERY PUBLISHED PACKAGE, DISCOVERED — NOT `packages/core/src`.
+# THE UNIVERSE IS EVERY PUBLISHED PACKAGE, DISCOVERED — NOT `packages/core/src`.
 #
 #   This was `CORE_SRC = "packages/core/src"`, and the day `@arthome/contracts`
 #   landed that single root became the scope fault this file keeps naming (D-045):
@@ -372,7 +372,7 @@ def load_promised():
     reason two homes to drift between — the parallel literal table this gate exists to
     find, built inside it.
 
-    ⚠ DECISION 2 ABOVE DOES NOT FORBID THIS, and the distinction is worth stating because
+    DECISION 2 ABOVE DOES NOT FORBID THIS, and the distinction is worth stating because
       it reads as though it might. Its objection to side files is that one would have to
       identify a contract block by LINE NUMBER (§3.7). A code NAME is not a line number:
       it survives a reformat, a section move and a document being split in two. Where the
@@ -471,7 +471,7 @@ def prose_strings(node, path="$"):
 def check_yaml_prose(filename, doc, core, origin):
     """The accessor-for-value confusion, inside a contract's own prose.
 
-    ⚠ IT FLAGS ONLY WHAT IT CAN PROVE. A capitalised token is reported when it folds
+    IT FLAGS ONLY WHAT IT CAN PROVE. A capitalised token is reported when it folds
       onto a code that EXISTS; one that folds onto nothing is ignored without a word,
       because `RFC`, `TODO` and every schema name live in the same token space. This
       is the inverse of the Markdown check — there, a named code must exist; here, an
@@ -535,7 +535,7 @@ def declared_spans(text):
     bounds = [(m.start(), len(m.group(1))) for m in HEADING.finditer(text)]
     spans = []
     for decl in PROSE_SOURCE.finditer(text):
-        # ⚠ THE INNERMOST SECTION, NEVER EVERY ANCESTOR. Scoping by "any section whose
+        # THE INNERMOST SECTION, NEVER EVERY ANCESTOR. Scoping by "any section whose
         #   span contains a declaration" made the H1 — whose span is the whole file,
         #   there being no second H1 — a declared section, so the document-wide scan
         #   came back through the front door and `chat.date_chat_policy_changed` was
@@ -598,7 +598,7 @@ def check_prose(filename, core, origin, promised):
         )
         return source, 0, set()
 
-    # ⚠ SCOPED TO THE DECLARING SECTION, NOT THE DOCUMENT, AND A FALSE POSITIVE IS
+    # SCOPED TO THE DECLARING SECTION, NOT THE DOCUMENT, AND A FALSE POSITIVE IS
     #   WHY. An error code and a Kafka event type share the `<context>.<thing>` shape
     #   exactly — the first run of this check reported
     #   `chat.date_chat_policy_changed` from §1, which is an EVENT and not a code.
@@ -609,7 +609,7 @@ def check_prose(filename, core, origin, promised):
     #   in the position decision 1 exists to forbid: guessing which token meant to be
     #   a code. So a section that names codes says so, and a section about events
     #   never opts in.
-    # ⚠ SEGMENT COUNT IS DERIVED, NOT ASSUMED. Every member of the declared vocabulary
+    # SEGMENT COUNT IS DERIVED, NOT ASSUMED. Every member of the declared vocabulary
     #   has the same number of segments (all 67 of ERROR_CODES have two), so a token with
     #   a different count cannot be one of its members whatever its family looks like.
     #   That is what excludes an event type — `identity.device.revoked.v1` is four — and
@@ -723,7 +723,7 @@ def main(files):
                 "      Remove the entry; it exempts nothing.\n"
                 f"      Reason it carried: {entry['reason'][:120]}…"
             )
-    # ⚠ AND AN ENTRY NOBODY NAMES IS A NOTE, NOT A FAILURE. With one shared file, the
+    # AND AN ENTRY NOBODY NAMES IS A NOTE, NOT A FAILURE. With one shared file, the
     #   gate cannot tell "no document names this any more" from "the document that names
     #   it is not in the checked set" — `watch.seat_expired` is named only in
     #   adr-stream-entitlement.md, which has not opted in. Failing on that would punish
@@ -829,7 +829,7 @@ def main(files):
                 continue
 
             for m in members:
-                # ⚠ Separator-insensitive but CASE-SENSITIVE. Case is MEANINGFUL
+                # Separator-insensitive but CASE-SENSITIVE. Case is MEANINGFUL
                 #   since D-036 named three families: `snake_case` for domain
                 #   vocabulary, `SCREAMING_SNAKE` for error and failure codes.
                 #   Lowercasing here merged two genuinely different vocabularies —
@@ -932,7 +932,7 @@ def main(files):
                     documented_narrowings.add((where, source))
                 continue
 
-            # ⚠ THE COMPARISON IS ASYMMETRIC, because the contract is. Only in the
+            # THE COMPARISON IS ASYMMETRIC, because the contract is. Only in the
             #   CONTRACT fails both kinds: on an input it means we ACCEPT a value the
             #   domain cannot represent, and `SURFACES` diverging as core
             #   `storefront_web` against wire `storefront-web` on the required
@@ -1226,7 +1226,7 @@ def main(files):
 
     domain_only = load_domain_only()
     for name, (vals, src_file) in sorted(core.items()):
-        # ⚠ ONE CAUSE, ONE MESSAGE. A vocabulary that some block already points at is
+        # ONE CAUSE, ONE MESSAGE. A vocabulary that some block already points at is
         #   covered by the agreement check above, which reports the missing member
         #   against the block that should carry it — a more useful place than "absent
         #   from both documents". Reporting it here as well produced two findings for

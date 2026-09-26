@@ -6,11 +6,11 @@
  * aggregate to know its id before insertion, and the temporal prefix is what fills a B-tree
  * index well. A v4 passing here would work everywhere and degrade quietly.
  *
- * ⚠ `AccountId` and `ProfileId` are both UUIDs, and on a shared television the difference
+ * `AccountId` and `ProfileId` are both UUIDs, and on a shared television the difference
  * between them is the difference between disconnecting one profile and revoking the whole
  * device. The brand makes a swapped argument a type error.
  *
- * ⚠ What is exposed is not what is stored (`data-model.md` §7.1): a UUIDv7 reveals its
+ * What is exposed is not what is stored (`data-model.md` §7.1): a UUIDv7 reveals its
  * creation time, so an account, a profile and a person are addressed publicly by an opaque
  * handle, and a pairing by a separate random identifier — otherwise the instant a pairing
  * opened leaks and helps guess the code. These are the internal identifiers.

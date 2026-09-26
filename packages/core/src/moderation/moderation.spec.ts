@@ -17,7 +17,7 @@ import {
 } from '../vocabulary/moderation.js';
 
 /**
- * ⚠ C3: `claim` then `release` without settling anything moves the version from
+ * C3: `claim` then `release` without settling anything moves the version from
  * 1 to 3, so a single counter refuses an offline verdict that nothing has
  * overruled. Hence two counters — refuse if settled, accept if merely claimed.
  */
@@ -77,7 +77,7 @@ describe('the two moderation counters', () => {
 });
 
 /**
- * ⚠ A human overturns an automatic decision, never the reverse: a retroactive
+ * A human overturns an automatic decision, never the reverse: a retroactive
  * filter must not erase a judgement kept for 24 months and journalled by name.
  */
 describe('the human / automatic precedence', () => {
@@ -124,7 +124,7 @@ describe('the single badge', () => {
 });
 
 /**
- * ⚠ The mockup computes `messages / hours elapsed`, labels it "MSG/MIN" and
+ * The mockup computes `messages / hours elapsed`, labels it "MSG/MIN" and
  * compares it against 60 msg/min: a factor of sixty. The unit is declared.
  */
 describe('the chat rate', () => {

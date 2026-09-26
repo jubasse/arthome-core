@@ -1,17 +1,17 @@
 /**
  * The error codes, declared — and until D-067 most of them were declared nowhere.
  *
- * ⚠ A served code is its own translation key. The server never sends a sentence, because a
+ * A served code is its own translation key. The server never sends a sentence, because a
  * sentence chooses the reader's language for them, so it sends a code the surface looks up: one
  * format, `context.what_happened`, and the value IS the key. The name keeps the capitals and the
  * value carries the key — code writes `ModerationErrorCode.ALREADY_SETTLED`, the wire carries
  * `moderation.already_settled`, and nothing at a call site says the value.
  *
- * ⚠ The prefix is not decoration, measured rather than asserted: flattening the domain's 24 codes
+ * The prefix is not decoration, measured rather than asserted: flattening the domain's 24 codes
  * to capitals merges four errors into two — `instant.invalid` and `rate.invalid` both becoming
  * `INVALID`, `hold.quantity_invalid` and `order.quantity_invalid` both `QUANTITY_INVALID`.
  *
- * ⚠ Why the file exists at all: 35 error codes were published in the two contracts and exactly
+ * Why the file exists at all: 35 error codes were published in the two contracts and exactly
  * one existed in this package. The other 34 lived only inside response EXAMPLES, a position
  * `check-vocabulary` does not read and `check-enums` does not sweep, so no instrument here had
  * ever seen them. A code with no owning constant is one every surface hardcodes and nobody can
@@ -149,7 +149,7 @@ export declare const DomainErrorCode: {
 /**
  * The domain's internal guards, which no contract publishes and none should.
  *
- * ⚠ The split is a judgement. `check-vocabulary`'s inverse check reported 23 domain codes
+ * The split is a judgement. `check-vocabulary`'s inverse check reported 23 domain codes
  * reaching neither contract, a true finding with two causes mixed: some are refusals the
  * contracts have not published yet, and some can only fire on a value that never came from a
  * client — `money.currency_mismatch` is summing two currencies, and `instant.invalid` is a
@@ -162,12 +162,12 @@ export declare const DomainErrorCode: {
  * artist submitted an empty form — `pickLanguage` throws it ON READ, when the server composes a
  * response and finds stored content empty in both languages.
  *
- * ⚠ The boundary question is settled, and the answer is "as you go" (D-069): it depends on the
+ * The boundary question is settled, and the answer is "as you go" (D-069): it depends on the
  * case and moves with the code, so this split is a starting position the first service may move.
  * Nothing here has to remember it — the inverse check fails the day a member declared domain-only
  * reaches a contract.
  *
- * ⚠ One standing exception: `identity.*` stays vague on purpose. An authentication refusal that
+ * One standing exception: `identity.*` stays vague on purpose. An authentication refusal that
  * says which check failed is an oracle, and answers a question the caller was not entitled to
  * ask. It is the one family where "be more specific" is the wrong instinct.
  */
@@ -188,7 +188,7 @@ export declare const DomainGuardCode: {
 /**
  * Every error code, composed — the vocabulary the two contracts declare against.
  *
- * ⚠ Spread, never retyped, in the value and in the annotation alike: a hand-written union is a
+ * Spread, never retyped, in the value and in the annotation alike: a hand-written union is a
  * parallel literal table of nine other tables, and `isolatedDeclarations` refuses a spread array
  * without an annotation (`TS9018`).
  *

@@ -2,7 +2,7 @@
  * Formatting time, without `Intl` — day and month names hard-coded in both
  * languages, as `helpers.js` carried them.
  *
- * ⚠ Every one of these functions takes an OFFSET as an argument. None reads the
+ * Every one of these functions takes an OFFSET as an argument. None reads the
  * machine's clock or guesses a time zone: the server serves the offset,
  * recomputed for the instant concerned (D3).
  */
@@ -100,7 +100,7 @@ export function formatDuration(minutes: number, locale: Locale): string {
 /**
  * "42 min", "2 h 10", "3 days" — a countdown.
  *
- * ⚠ It takes a NUMBER OF MINUTES, never two instants: computing the gap belongs
+ * It takes a NUMBER OF MINUTES, never two instants: computing the gap belongs
  * to the caller, who must do it against the SERVER INSTANT (`servedAt`) and not
  * against the phone's clock. A mobile clock drifts in sleep, jumps on a time
  * zone change, and the user can set it — a countdown computed against it makes

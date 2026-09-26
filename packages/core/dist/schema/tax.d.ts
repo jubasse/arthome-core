@@ -4,13 +4,13 @@
  * address, an IP address and a card country at the moment of a sale two years ago exist nowhere
  * if they were not captured.
  *
- * ⚠ Keyed on jurisdiction, never on a billing market — a billing market is a pricing notion,
+ * Keyed on jurisdiction, never on a billing market — a billing market is a pricing notion,
  * and conflating the two was the original fault. A country is not enough either: roughly 9,000
  * jurisdictions in the United States, where the postal code is indispensable, and in the United
  * Kingdom the rate depends on jurisdiction × nature of the supply, since Derby Quad v HMRC held
  * that the theatre-ticket exemption does not extend to a streamed live show.
  *
- * ⚠ D-056 makes this load-bearing rather than archival: under TTC the displayed price is fixed
+ * D-056 makes this load-bearing rather than archival: under TTC the displayed price is fixed
  * and the VAT comes out of it, so the net an artist receives moves with the buyer's
  * jurisdiction, and these lines are what disclose that movement.
  */

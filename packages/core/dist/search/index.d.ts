@@ -1,5 +1,5 @@
 /**
- * ⚠ Filter values are stable identifiers, never array indices: the mockup's
+ * Filter values are stable identifiers, never array indices: the mockup's
  * `fCats: [1]` is a position, which survives neither a shareable URL, nor a
  * saved search, nor the insertion of a discipline.
  */

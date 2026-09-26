@@ -4,7 +4,7 @@
 // `npx eslint-config-prettier <file>`. A repository consumes it with
 // `{ "prettier": "@arthome/tooling/prettier" }`.
 //
-// ⚠ NO PLUGINS, in particular not prettier-plugin-organize-imports nor
+// NO PLUGINS, in particular not prettier-plugin-organize-imports nor
 //   @trivago/prettier-plugin-sort-imports. Prettier not sorting imports is what
 //   makes import order NOT a shared domain; a sorting plugin competes with
 //   import-x/order and starts a --fix war. Section 3.3.

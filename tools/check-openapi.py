@@ -212,13 +212,13 @@ def check(fn):
         params = o.get("parameters",[]) or []
         has_idem = any(pa.get("$ref","").endswith("/IdempotencyKey") or pa.get("name")=="Idempotency-Key"
                        for pa in params)
-        # ⚠ The exemption is read FROM THE DOCUMENT: a hardcoded `SAFE_WRITE` list was
+        # The exemption is read FROM THE DOCUMENT: a hardcoded `SAFE_WRITE` list was
         #   E2 inside the gate against E2, and it failed the way such a table always
         #   does — the contract gained `signIn` and `signInStudio` and the list did not
         #   know. An exempted operation carries `x-arthome-idempotency-exemption` with
         #   its reason, which is the part that gets reread.
         #
-        # ⚠ A SESSION OPENING IS EXEMPT FOR A SECURITY REASON: the idempotency regime
+        # A SESSION OPENING IS EXEMPT FOR A SECURITY REASON: the idempotency regime
         #   replays the original response VERBATIM, so a replayed key on `signIn` would
         #   return a token without the credentials ever being verified.
         exempt = o.get("x-arthome-idempotency-exemption")
@@ -427,6 +427,6 @@ for fn in sys.argv[1:]:
 
 if ERRS:
     print(f"\n{len(ERRS)} finding(s):")
-    for e in ERRS: print("  ✗", e)
+    for e in ERRS: print("  -", e)
     sys.exit(1)
-print("\n✓ conformant")
+print("\nPASS conformant")

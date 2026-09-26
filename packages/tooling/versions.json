@@ -19,7 +19,7 @@
     "Verified on 2026-09-21 against registry.npmjs.org. THIS TABLE GOES STALE:",
     "section 7.5 gives the commands that rebuild it.",
     "",
-    "⚠ A version bump pins a version that is ALREADY MATURE, never the day's — see",
+    "A version bump pins a version that is ALREADY MATURE, never the day's — see",
     "  section 7.6. Pinning the day's latest guarantees minimumReleaseAge refuses it,",
     "  which is exactly what happened at the first install of this repository."
   ],

@@ -3,7 +3,7 @@
  * its state machine as served, the checklist, the transitions offered to this operator, the
  * health of the feed, who is online, and the incident.
  *
- * ⚠ THE STATE MACHINE IS NOT RESTATED HERE. `Publication.state` is `PUBLICATION_STATES`, the
+ * THE STATE MACHINE IS NOT RESTATED HERE. `Publication.state` is `PUBLICATION_STATES`, the
  *   checklist ids are `PUBLICATION_CHECKLIST_ITEMS` and the incident vocabularies are
  *   `INCIDENT_KINDS` / `INCIDENT_CAUSES` — all from `@arthome/core`. What is declared here is
  *   only the shape a server sends and the vocabularies the document calls local.

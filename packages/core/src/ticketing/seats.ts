@@ -57,7 +57,7 @@ export function isScarce(gauge: Gauge): boolean {
 /**
  * THE CAPACITY HOLD, and its SINGLE-INSTANT invariant.
  *
- * ⚠ A hold expires at the SAME INSTANT as the intent that created it — never
+ * A hold expires at the SAME INSTANT as the intent that created it — never
  * two durations that drift — and is placed when the intent OPENS, not at its
  * approval: the TV shows the code, so capacity must be true from then.
  */
@@ -122,7 +122,7 @@ export function requiresTechnicalProvision(capacityTotal: number): boolean {
 /**
  * The priority window granted to the waiting list when a tier opens.
  *
- * ⚠ Opening a tier notifies the list in the SAME transactional command; two
+ * Opening a tier notifies the list in the SAME transactional command; two
  * calls let the public take the seats before the list hears of it.
  */
 export const WAITLIST_PRIORITY_HOURS = 2;

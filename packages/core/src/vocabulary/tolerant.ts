@@ -2,7 +2,7 @@
  * Tolerant reading of a closed vocabulary: keep the raw value, treat it as
  * neutral, never reject.
  *
- * ⚠ A TV build shipped today still runs a year later, and strict enum validation
+ * A TV build shipped today still runs a year later, and strict enum validation
  * fails the whole page, not one card. Severity applies to shape, never to a
  * vocabulary member (storefront-tv, Q12).
  */
@@ -34,7 +34,7 @@ export function parseTolerant<T extends string>(
 
 /**
  * Type guard for the paths where an unknown value is ignored rather than kept —
- * a filter, a sort, an aggregate. ⚠ On a display, `parseTolerant` applies.
+ * a filter, a sort, an aggregate. On a display, `parseTolerant` applies.
  */
 export function isMember<T extends string>(vocabulary: Vocabulary<T>, raw: string): raw is T {
   return (vocabulary as readonly string[]).includes(raw);

@@ -117,7 +117,7 @@ export declare const DeviceSchema: z.ZodObject<{
  * purpose: both documents annotate it `source: none`, because the domain neither
  * produces nor consumes a cookie.
  *
- * ⚠ EXPORTED, because `studio-access` narrows it to two and was writing them as
+ * EXPORTED, because `studio-access` narrows it to two and was writing them as
  *   literals — which `check-enums` did NOT report, its declaring-file exemption
  *   being scoped to the file. The gate is blind to a copy made across two modules
  *   of one package, which is where one is most likely.
@@ -127,7 +127,7 @@ export declare const SESSION_MODES: readonly ["cookie", "bearer", "device"];
  * The NAMED members, so nothing writes one of these as a string — and so nothing
  * reaches for `SESSION_MODES[0]` either.
  *
- * ⚠ POSITION IS WORSE THAN A LITERAL, which is why this object exists rather
+ * POSITION IS WORSE THAN A LITERAL, which is why this object exists rather
  *   than an index. The first attempt at sharing these wrote
  *   `z.literal(SESSION_MODES[0])` in the studio's cookie branch: reordering the
  *   list would then have silently changed which mode that branch discriminates

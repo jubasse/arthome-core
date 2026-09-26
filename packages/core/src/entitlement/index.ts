@@ -5,7 +5,7 @@
  * subscription plan), shown on every card of every surface: candidate number one for "computed
  * twice".
  *
- * ⚠ One implementation, two evaluation sites, one authority. At the BFF the verdict paints a
+ * One implementation, two evaluation sites, one authority. At the BFF the verdict paints a
  * card without a second round trip and is INDICATIVE, which the contract says; in `streaming`,
  * when the player opens, it is the only authoritative evaluation, because it is the only one
  * that produces a token. Both sides speak the same refusal vocabulary, so a card announcing
@@ -22,7 +22,7 @@ import type { PublicationState, RunState } from '../vocabulary/catalog.js';
 import { PlanOpening } from '../vocabulary/commerce.js';
 import { WatchDenialReason, WatchFallbackAction, WatchScope } from '../vocabulary/entitlement.js';
 
-// ⚠ Each name is both a union type and a named-member object, so one statement re-exports
+// Each name is both a union type and a named-member object, so one statement re-exports
 // both: splitting an `export type` off shadows the value half (TS1362).
 export {
   WATCH_DENIAL_REASONS,
@@ -38,13 +38,13 @@ export {
  * action that answers it and every action answers at least one reason; the spec asserts both
  * directions, and anything surviving without a partner is what to argue about.
  *
- * ⚠ This table is the function's RANGE, not a menu of what a screen might offer: an action
+ * This table is the function's RANGE, not a menu of what a screen might offer: an action
  * belongs on a row if `decideWatch` can return it for that reason. Hence `PREVIEW_EXHAUSTED`
  * carries `join_waitlist` and not `subscribe` — subscribing is a real way out of a spent
  * preview, but the function never returns it there, and a table listing what the function
  * cannot produce stops being checkable against the function.
  *
- * ⚠ The keys are computed, and were bare literals until the values became translation keys: the
+ * The keys are computed, and were bare literals until the values became translation keys: the
  * day `NO_SEAT` became `watch.no_seat`, all eleven were wrong at once and `tsc` caught all
  * eleven. That is what the `Record` keyed by the union is for.
  */
@@ -102,7 +102,7 @@ export interface WatchVerdict {
   readonly fallback: WatchFallbackAction;
   readonly previewSecondsLeft: number;
   /**
-   * ⚠ Never exceeds 60 seconds, and the entitlement is never cached to disk: it expires and it
+   * Never exceeds 60 seconds, and the entitlement is never cached to disk: it expires and it
    * depends on territory and on the screen limit. One re-read from disk is a wrong entitlement.
    */
   readonly validUntil: Instant;

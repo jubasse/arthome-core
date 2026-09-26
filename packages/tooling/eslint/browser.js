@@ -2,7 +2,7 @@
 //
 // The floor plus browser globals, for the five applications.
 //
-// ⚠ Contains NO stack preset. Each repository adds its own in the order floor ->
+// Contains NO stack preset. Each repository adds its own in the order floor ->
 //   stack -> local overrides -> `eslint-config-prettier/flat` LAST, which is the
 //   part that is not negotiable and which `npx eslint-config-prettier <file>`
 //   verifies. Sections 3.2, 4.2 and 4.3.

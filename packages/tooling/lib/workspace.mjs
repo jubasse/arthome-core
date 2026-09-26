@@ -1,7 +1,7 @@
 // Where a repository keeps its packages, read from `pnpm-workspace.yaml` — the
 // EXISTING source of truth, the file pnpm itself obeys.
 //
-// ⚠ A GATE THAT SCANS NOTHING IS INDISTINGUISHABLE FROM A GATE THAT PASSES. Four
+// A GATE THAT SCANS NOTHING IS INDISTINGUISHABLE FROM A GATE THAT PASSES. Four
 //   gates globbed `packages/*` by hand; arthome-platform keeps services in `apps/*`
 //   and libraries in `libs/*`, so all four were one repository away from globbing an
 //   empty set and exiting 0.
@@ -21,7 +21,7 @@ import path from 'node:path';
 export function workspacePackageGlobs(root) {
   const file = path.join(root, 'pnpm-workspace.yaml');
 
-  // ⚠ ABSENT IS LEGITIMATE, EMPTY IS NOT. The two single-package repositories have
+  // ABSENT IS LEGITIMATE, EMPTY IS NOT. The two single-package repositories have
   //   no workspace file because they have no workspace; a file that exists and
   //   declares nothing means somebody meant to have packages.
   if (!fs.existsSync(file)) return [];

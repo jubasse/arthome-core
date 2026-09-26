@@ -18,7 +18,7 @@ describe('LocalizedText', () => {
   });
 
   it('keeps contentLanguage OPEN, because a television must render a language it has never heard of', () => {
-    // ⚠ THIS TEST USED TO ASSERT THE OPPOSITE, arguing the viewer-locale case for a
+    // THIS TEST USED TO ASSERT THE OPPOSITE, arguing the viewer-locale case for a
     //   field that carries the language AN AUTHOR TYPED. It did not miss the defect,
     //   it stated the case for it: a test pins a bug as firmly as a guarantee.
     //   D-065 §H.

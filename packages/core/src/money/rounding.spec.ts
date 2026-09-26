@@ -6,7 +6,7 @@ import { applyRate, remainderAfterRate, roundMinor, taxIncludedIn } from './roun
 const eur = (amountMinor: number) => money(amountMinor, 'EUR');
 
 /**
- * ⚠ The sum of the roundings is not the rounding of the sum. The gap is one
+ * The sum of the roundings is not the rounding of the sum. The gap is one
  * cent, always in the same direction, on every order — the kind a Stripe
  * reconciliation surfaces six months later.
  */

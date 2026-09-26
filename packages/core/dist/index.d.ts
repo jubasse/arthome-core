@@ -1,7 +1,7 @@
 /**
  * `@arthome/core` — the Arthome domain.
  *
- * ⚠ No import from here may reach zod, at any depth: 93 KB compressed for a
+ * No import from here may reach zod, at any depth: 93 KB compressed for a
  * single `z.string()` (D-012). The boundary schemas live in
  * `@arthome/core/schema`; `tools/check-core-entry.mjs` refuses any path back.
  */

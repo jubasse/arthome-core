@@ -182,7 +182,7 @@ const isAllowed = (file) => ALLOWED.some((p) => matchesGlob(file, p));
 // cannot name a sentence that was never there; GONE is an error, so the exemption
 // expires with the sentence; and at most MAX_QUOTED_LINES lines.
 //
-// ⚠ Verbatim guarantees the quote EXISTS, not that it is NARROW: a quotation of `"e"`
+// Verbatim guarantees the quote EXISTS, not that it is NARROW: a quotation of `"e"`
 //   matched almost every line and passed the whole file. The bound is structural
 //   rather than linguistic — requiring a FRENCH word instead rejected `les quatorze
 //   entrées de navigation`, because the detection list is narrow BY DESIGN and judging
@@ -234,7 +234,7 @@ function sourceLineSet(files) {
  * A cited token is data, not prose: a document about a French-detection gate must be
  * able to name the words it detects.
  *
- * ⚠ THE CAP IS STRUCTURAL — NO WHITESPACE IN THE SPAN. Stripping every inline span
+ * THE CAP IS STRUCTURAL — NO WHITESPACE IN THE SPAN. Stripping every inline span
  *   would hide a paragraph behind backticks; stripping none makes a document unable
  *   to cite its own subject. Whitespace separates the two without a word list, so it
  *   cannot drift (§5.3.1), and a quoted sentence still goes through
@@ -287,7 +287,7 @@ const MARKERS = {
       ['/*', '*/'],
     ],
   },
-  // ⚠ JSON IS NOT COMMENT-FREE IN THIS PROJECT, BUT IT IS NOT HANDLED HERE EITHER.
+  // JSON IS NOT COMMENT-FREE IN THIS PROJECT, BUT IT IS NOT HANDLED HERE EITHER.
   //   Both of its prose forms — `//` comments and `_comment` arrays — are handled in
   //   the JSON branch of commentsOfSource, against a STRING-MASKED projection of the
   //   line. Putting them in this table was the first attempt and it was wrong: a
@@ -380,13 +380,13 @@ function commentsOfSource(text, ext) {
     // its comments. Both halves below were defects, found by a French comment that sat
     // in `packages/core/tsconfig.build.json` for three days:
     //
-    //   ⚠ THE VALUE IS USUALLY A MULTI-LINE ARRAY, AND A SINGLE-LINE REGEX SEES `[`.
+    //   THE VALUE IS USUALLY A MULTI-LINE ARRAY, AND A SINGLE-LINE REGEX SEES `[`.
     //     The previous pattern captured the rest of the key's line — `[` — so the
     //     element lines holding the prose were never looked at. The word list was
     //     never the problem: the missed text scored four French words against a
     //     threshold of three. A gate's guarantee is only as wide as its mechanism.
     //
-    //   ⚠ `_comment_exports` AND `_comment_peer` ARE ALSO PROSE. `@arthome/contracts`
+    //   `_comment_exports` AND `_comment_peer` ARE ALSO PROSE. `@arthome/contracts`
     //     names its blocks that way because one file carries several, and an
     //     exact-match key list silently exempted them.
     if (ext === '.json') {
@@ -404,7 +404,7 @@ function commentsOfSource(text, ext) {
     const j = line.match(JSON_PROSE_KEY);
     if (j) {
       out.push([n, j[2]]);
-      // ⚠ Depth counts brackets outside strings: a `_comment` line may contain one as
+      // Depth counts brackets outside strings: a `_comment` line may contain one as
       //   prose — the root tsconfig.json writes `types: ["node"]` inside one — and
       //   counting those ends the array early, or never.
       jsonProse += netBracketDepthOutsideStrings(j[2]);
@@ -518,7 +518,7 @@ if (reported.length) {
 }
 
 if (!QUIET) {
-  // ⚠ THE VERDICT STATES ITS OWN SCOPE because the NAME promises more than the
+  // THE VERDICT STATES ITS OWN SCOPE because the NAME promises more than the
   //   mechanism delivers. No stop-word list can detect an isolated French TERM: a
   //   content word is exactly what a legitimate product vocabulary is made of, and a
   //   gate that shouts on `billetterie` gets switched off (D-024). Still owed: the

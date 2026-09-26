@@ -12,13 +12,13 @@
 //   3. reports every string literal belonging to one of those enumerations,
 //      outside the module that declares it.
 //
-// ⚠ IT CARRIES NO LIST OF ENUMERATIONS, AND MUST NEVER CARRY ONE.
+// IT CARRIES NO LIST OF ENUMERATIONS, AND MUST NEVER CARRY ONE.
 //   An early draft of the specification hardcoded the list (CHAT_MODES,
 //   PUBLICATION_STATES, ...): that was one more parallel table — the list of
 //   enumerations, copied next to the enumerations. A new enumeration is covered
 //   the day it is declared, with nobody having to register it anywhere.
 //
-// ⚠ IT READS SOURCES, NOT THE BUILT PACKAGE. Importing @arthome/core would
+// IT READS SOURCES, NOT THE BUILT PACKAGE. Importing @arthome/core would
 //   require it to be compiled and installed; reading `src/**/*.ts` works from
 //   day one — no build, no runtime, no module resolution. (The specification
 //   said "imports from @arthome/core"; this is the one implementation
@@ -53,7 +53,7 @@ function findEnumSources() {
         '../core/src',
         'node_modules/@arthome/core/src',
         'node_modules/@arthome/core/dist',
-        // ⚠ A WORKSPACE PUTS IT SOMEWHERE ELSE, and this gate matters most in exactly
+        // A WORKSPACE PUTS IT SOMEWHERE ELSE, and this gate matters most in exactly
         //   those repositories. pnpm installs a dependency under the node_modules of
         //   the PACKAGE that declares it, so in arthome-platform @arthome/core sits in
         //   `libs/config/node_modules/…`. Without these candidates the gate printed
@@ -104,7 +104,7 @@ function stripComments(src) {
 // ------------------------------------------------------ 1. discover the enums
 // `export const NAME = [ ... ] as const`  —  NAME in SCREAMING_SNAKE_CASE.
 const DECL = /export\s+const\s+([A-Z][A-Z0-9_]*)\s*(?::[^=]+?)?=\s*\[([\s\S]*?)\]\s*as\s+const/g;
-// ⚠ ESCAPES BELONG INSIDE A LITERAL, and excluding them inverted this gate. The old
+// ESCAPES BELONG INSIDE A LITERAL, and excluding them inverted this gate. The old
 //   pattern refused any string containing a backslash, so a description carrying `\n`
 //   matched nothing as a whole and the scan fell through to the words INSIDE it —
 //   reporting a `"cancelled"` that was plain English. An author silenced it by
@@ -114,7 +114,7 @@ const DECL = /export\s+const\s+([A-Z][A-Z0-9_]*)\s*(?::[^=]+?)?=\s*\[([\s\S]*?)\
 //   what it is, and `byValue` never holds a sentence.
 const STRING_LITERAL = /'((?:[^'\\\r\n]|\\.)*)'|"((?:[^"\\\r\n]|\\.)*)"/g;
 
-// ⚠ EVERY PUBLISHED PACKAGE DECLARES, not only @arthome/core. Looking in one
+// EVERY PUBLISHED PACKAGE DECLARES, not only @arthome/core. Looking in one
 //   directory cost the moment @arthome/contracts declared vocabularies of its own:
 //   the payment provider spells `paid` and `refunded` and so does core's
 //   PAYOUT_STATES, but they are NOT the same vocabulary — the contract says so,
@@ -151,7 +151,7 @@ function discoverEnums(sourceRoot) {
   const files = roots
     .flatMap((r) => listFiles(r, ['**/*.ts', '**/*.mts']))
     .filter((f) => !f.endsWith('.d.ts') && !/\.spec\.|\.test\./.test(f));
-  // ⚠ ALL declarers, not the first. 25 of 179 values are declared by more than one
+  // ALL declarers, not the first. 25 of 179 values are declared by more than one
   //   vocabulary and `'none'` by FIVE, so naming whichever parsed first stated a guess
   //   as fact: it told an author that `'full'` in `scope: 'full' | 'preview' | 'none'`
   //   belonged to PRICE_TIERS, and obeying that would have imported a price tier into a
@@ -251,7 +251,7 @@ function main() {
 
   const { entries: allow, file: allowFile } = loadAllow();
 
-  // ⚠ SCAN EVERY FILE. IGNORE ONLY THE VALUES A FILE DECLARES. The previous version
+  // SCAN EVERY FILE. IGNORE ONLY THE VALUES A FILE DECLARES. The previous version
   //   excluded a declaring file from the sweep ENTIRELY, so `entitlement/index.ts` had
   //   never been scanned since it was written; moving its vocabularies out for an
   //   unrelated reason exposed three inline literals that had been there all along.
@@ -267,7 +267,7 @@ function main() {
   const findings = [];
   for (const file of files) {
     const rel = path.relative(CWD, file);
-    // ⚠ EXPORTED OR NOT: `export` is VISIBILITY, not authorship. @arthome/contracts
+    // EXPORTED OR NOT: `export` is VISIBILITY, not authorship. @arthome/contracts
     //   declares local vocabularies unexported, and reading them as copies cost an
     //   afternoon of false findings. The authority list above stays EXPORTS ONLY —
     //   a published vocabulary is what another package can be wrong about.
@@ -280,7 +280,7 @@ function main() {
     }
     const src = stripComments(fs.readFileSync(file, 'utf8'));
     src.split('\n').forEach((line, i) => {
-      // ⚠ SKIP THE TYPE ANNOTATION, KEEP THE INITIALISER. `isolatedDeclarations`
+      // SKIP THE TYPE ANNOTATION, KEEP THE INITIALISER. `isolatedDeclarations`
       //   (§2.3 c) forces an annotation that necessarily restates a zod enum's members,
       //   so one rule manufactures the literal another reports and the author cannot
       //   remove it. The compiler checks an annotation against its own initialiser, so
@@ -292,7 +292,7 @@ function main() {
       for (const m of scanned.matchAll(STRING_LITERAL)) {
         const value = m[1] ?? m[2];
         if (!value || !byValue.has(value)) continue;
-        // ⚠ A JSON SCHEMA KEYWORD'S VALUE IS NOT A DOMAIN VOCABULARY MEMBER:
+        // A JSON SCHEMA KEYWORD'S VALUE IS NOT A DOMAIN VOCABULARY MEMBER:
         //   `format: 'email'` names a string format, not a notification channel. Found
         //   the expensive way — refused `'journal'`, so an author wrote
         //   `NavigationEntry.JOURNAL` for an EXPORT FORMAT and obeyed the gate into

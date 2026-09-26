@@ -18,7 +18,7 @@ export type OrderId = Brand<'OrderId'>;
 export type MessageId = Brand<'MessageId'>;
 /**
  * Brands a string already validated at the boundary.
- * ⚠ Deliberately unchecked: the shape is validated once by zod in
+ * Deliberately unchecked: the shape is validated once by zod in
  * `@arthome/core/schema`, which this entry point may not import.
  */
 export declare function brandId<T extends Brand<string>>(value: string): T;

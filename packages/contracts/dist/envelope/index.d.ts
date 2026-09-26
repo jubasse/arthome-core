@@ -7,7 +7,7 @@
  * schema that appears in all 174 operations. If the emitted form of anything is
  * going to be wrong, it is cheapest to find out here.
  *
- * ⚠ `looseObject`, NOT `object`, AND THE ASYMMETRY IS THE POINT.
+ * `looseObject`, NOT `object`, AND THE ASYMMETRY IS THE POINT.
  *
  *   `z.object()` emits `additionalProperties: false`. On a RESPONSE that is the
  *   TV-fleet failure one level up from a vocabulary: a client generated from a
@@ -22,7 +22,7 @@
  *   corrupts a record (`schema/vocabulary.ts` states the same asymmetry for
  *   members).
  *
- * ⚠ `format` IS DECLARED AT THE SOURCE, NOT PATCHED BY THE EMITTER.
+ * `format` IS DECLARED AT THE SOURCE, NOT PATCHED BY THE EMITTER.
  *
  *   `InstantOut` is a regex, so `z.toJSONSchema()` emits `pattern`. Both
  *   contracts carry `format: date-time`, which is what every OpenAPI generator
@@ -33,7 +33,7 @@
  *   Same for `int64` on `lastEventSeq`: `z.int()` emits `minimum`/`maximum` at
  *   ±2^53−1, which is JavaScript's safe range and not the contract's.
  *
- * ⚠ THE ORDER OF `.nullable()` AND `.meta()` IS LOAD-BEARING, AND IT IS NOT
+ * THE ORDER OF `.nullable()` AND `.meta()` IS LOAD-BEARING, AND IT IS NOT
  *   OBVIOUS.
  *
  *     .meta({format}).nullable()  ->  anyOf: [{…, format}, {type: null}]
@@ -66,11 +66,11 @@ export declare const StudioEnvelopeMetaSchema: z.ZodObject<{
  * `Error` — ONE SHAPE, TWO SETS OF PROSE, and the split is the smallest version
  * of D-065 §G there is.
  *
- * ⚠ ONLY THE PROSE IS HERE. Shape, regex and vocabulary come from `ErrorSchema`
+ * ONLY THE PROSE IS HERE. Shape, regex and vocabulary come from `ErrorSchema`
  *   via `.shape`; `.extend()` replaces a field with itself plus metadata. Delete
  *   every `.describe()` below and both products still emit a correct `Error`.
  *
- * ⚠ BOTH CONTRACTS PUBLISH THE WHOLE VOCABULARY. The per-document subsets that
+ * BOTH CONTRACTS PUBLISH THE WHOLE VOCABULARY. The per-document subsets that
  *   were here were the residue of which codes each document happened to mention,
  *   and both carried counts that were wrong within the hour. A client told a code
  *   cannot arrive, wrongly, has no screen for it on the day it does. A narrowing

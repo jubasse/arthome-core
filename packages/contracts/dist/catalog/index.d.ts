@@ -262,7 +262,7 @@ export declare const SavedSearchSchema: z.ZodObject<{
 /**
  * An item of merchandise sold alongside an artist or a date.
  *
- * ⚠ IT LIVES IN THE CATALOGUE, NOT IN `ticketing`, and so does `PriceTier`: the
+ * IT LIVES IN THE CATALOGUE, NOT IN `ticketing`, and so does `PriceTier`: the
  *   catalogue describes what exists, ticketing describes transactions over it. A cart
  *   line references a merch item; a merch item knows nothing about carts. That keeps
  *   `ticketing -> catalog` one-way.
@@ -294,7 +294,7 @@ export declare const PriceTierSchema: z.ZodObject<{
 /**
  * `ArtistDetail` and `DateDetail` — the two pages.
  *
- * ⚠ THEY ARE `z.intersection`, WHICH IS `allOf` WITH TWO REAL MEMBERS, not the
+ * THEY ARE `z.intersection`, WHICH IS `allOf` WITH TWO REAL MEMBERS, not the
  *   `allOf: [{$ref}]` wrapper removed from these documents — an OpenAPI 3.0 habit
  *   for generators that ignored `$ref` siblings, and these declare 3.1.1.
  */

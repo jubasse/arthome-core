@@ -13,7 +13,7 @@ import { DomainErrorCode } from '../vocabulary/error-codes.js';
  * The alphabet: Crockford base 32 — the ten digits and the letters except `I`, `L`, `O` and `U`,
  * the last of those to avoid spelling a rude word.
  *
- * ⚠ Excluding both members of a confusable pair makes correction impossible: a viewer who dictates
+ * Excluding both members of a confusable pair makes correction impossible: a viewer who dictates
  * "O" has no valid value to return to. Crockford keeps one of each pair, so `I` and `L` can only be
  * `1`, and `O` only `0`.
  */
@@ -46,16 +46,16 @@ export function seatCode(body: string): string {
  * Normalises human input before comparison: case, spaces, a forgotten hyphen, an omitted prefix and
  * the confusables, which are absent from the alphabet and so cannot be guessed wrong.
  *
- * ⚠ Nothing else is corrected — a character still outside the alphabet fails `isSeatCode`, and
+ * Nothing else is corrected — a character still outside the alphabet fails `isSeatCode`, and
  * better "this code does not exist" than a neighbour found by accident.
  *
- * ⚠ `U` is not mapped, unlike `I`, `L` and `O`: it is confusable with `V` off a television, not
+ * `U` is not mapped, unlike `I`, `L` and `O`: it is confusable with `V` off a television, not
  * over a telephone, and a wrong seat correction finds somebody else's seat.
  */
 export function normalizeSeatCodeInput(raw: string): string {
   const typed = raw.toUpperCase().replace(/[\s-]/g, '').replace(/[IL]/g, '1').replace(/O/g, '0');
 
-  // ⚠ The prefix is optional on input, but the body alphabet contains A, T and H, so a body may
+  // The prefix is optional on input, but the body alphabet contains A, T and H, so a body may
   // legitimately begin with `ATH` and stripping unconditionally refused a valid seat —
   // `ATH123` became a three-character body, roughly one code in 32,768. Both readings are tried
   // instead, which is decidable rather than a guess: a valid body is exactly

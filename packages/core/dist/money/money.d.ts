@@ -6,7 +6,7 @@
  * transported, except inside a document." Formatting is presentation and lives
  * in `format/`, with an explicit locale.
  *
- * ⚠ `fixtures.js` carries prices in WHOLE EUROS (`price: 26`). That is a mockup
+ * `fixtures.js` carries prices in WHOLE EUROS (`price: 26`). That is a mockup
  * convenience: it cannot express €26.50. The port multiplies by a hundred.
  */
 export interface Money {

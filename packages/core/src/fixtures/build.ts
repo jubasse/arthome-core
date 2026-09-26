@@ -1,7 +1,7 @@
 /**
  * The deterministic data set.
  *
- * ⚠ WHAT CHANGES AGAINST `fixtures.js`: it produces INSTANTS, not offsets.
+ * WHAT CHANGES AGAINST `fixtures.js`: it produces INSTANTS, not offsets.
  * `catalogue.json` says it itself — "startOffsetMin, atMin and
  * rescheduledToOffsetMin are offsets from the moment the app is opened […]
  * NOTHING HERE EXPIRES". That is excellent for a mockup, where every state
@@ -11,7 +11,7 @@
  * Converting back to relative offsets, if a demonstration still needs it,
  * becomes a PRESENTATION CONVENIENCE and not a transported shape.
  *
- * ⚠ AND WHAT IT COVERS. This module does not reproduce the original
+ * AND WHAT IT COVERS. This module does not reproduce the original
  * generator's 1,814 dates: it produces the CASES THAT HURT, the ones the
  * integration tests and the demonstration must exercise. A volume of plausible
  * data proves nothing; one outcome of each kind, a replay window about to

@@ -28,7 +28,7 @@ const CWD = process.cwd();
 const LONG = path.join(CWD, 'REPOSITORY_MAP.md');
 const OUT = path.join(CWD, 'packages', 'tooling', 'docs', 'available-surface.md');
 
-// ⚠ HAND-WRITTEN, AND IT NAMES A SUBPATH RATHER THAN A SYMBOL ON PURPOSE.
+// HAND-WRITTEN, AND IT NAMES A SUBPATH RATHER THAN A SYMBOL ON PURPOSE.
 //   A preamble listing individual helpers would be a parallel table: rename one
 //   and this goes quietly wrong. Pointing at the subpath keeps the names in the
 //   generated list below, where they are true by construction.
@@ -47,7 +47,7 @@ const PREAMBLE = [
   '- **`@arthome/contracts/*`** — one subpath per bounded context. A shape that crosses a boundary',
   '  exists here already or belongs here.',
   '',
-  '⚠ **A name ending in `In` or `Out` says which direction it is for**, and the two are not',
+  '**A name ending in `In` or `Out` says which direction it is for**, and the two are not',
   'interchangeable: `In` is strict because a request can be wrong, `Out` is tolerant because a',
   'client a year old must not reject a payload over a value it has never seen.',
   '',
@@ -71,7 +71,7 @@ function main() {
       continue;
     }
     if (/^### /.test(line) || /^## /.test(line)) current = null;
-    // ⚠ `[\w+]`, NOT `\w`. The kind can be `type+const`, and that is not an edge
+    // `[\w+]`, NOT `\w`. The kind can be `type+const`, and that is not an edge
     //   case: `type+const` IS the vocabulary pattern -- ChatMode, CrewRole,
     //   ApiErrorCode. A `\w+` here dropped 55 names, every one of them an
     //   enumeration, from the document whose whole purpose is stopping people

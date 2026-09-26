@@ -16,7 +16,7 @@ const criteria = (over: Partial<SearchCriteria> = {}): SearchCriteria => ({
 });
 
 /**
- * ⚠ "Already saved" determines a WRITE: a signature that depended on entry order
+ * "Already saved" determines a WRITE: a signature that depended on entry order
  * would lie, and we would create two alerts for one search.
  */
 describe('the criteria signature', () => {

@@ -3,7 +3,7 @@
  * its state machine as served, the checklist, the transitions offered to this operator, the
  * health of the feed, who is online, and the incident.
  *
- * ⚠ THE STATE MACHINE IS NOT RESTATED HERE. `Publication.state` is `PUBLICATION_STATES`, the
+ * THE STATE MACHINE IS NOT RESTATED HERE. `Publication.state` is `PUBLICATION_STATES`, the
  *   checklist ids are `PUBLICATION_CHECKLIST_ITEMS` and the incident vocabularies are
  *   `INCIDENT_KINDS` / `INCIDENT_CAUSES` — all from `@arthome/core`. What is declared here is
  *   only the shape a server sends and the vocabularies the document calls local.
@@ -341,7 +341,7 @@ export const RunConsoleSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
   .looseObject({
     dateId: uuidOut(),
     state: vocabularyOut(RUN_STATES).describe(
-      // ⚠ Plain prose: these words are ENGLISH, not vocabulary members. Interpolating
+      // Plain prose: these words are ENGLISH, not vocabulary members. Interpolating
       //   them from `DateOutcome` to satisfy check-enums made a description depend on a
       //   constant it is not describing, for a byte-identical emitted string.
       'The **technical** axis, and nothing else. `postponed` and `cancelled` are **withdrawn** from\nit: they were echoes of the outcome lodged in the technical state. A control room has no\n"cancelled" state — it has a stage sending nothing.\n',

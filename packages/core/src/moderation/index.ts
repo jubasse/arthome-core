@@ -26,7 +26,7 @@ import {
  * The precedence runs from the person towards the message — a sanction on the PERSON covers all
  * their messages, a removal bears on one.
  *
- * ⚠ The order is load-bearing and no gate protects it: `check-vocabulary` compares member SETS, so
+ * The order is load-bearing and no gate protects it: `check-vocabulary` compares member SETS, so
  * it read the documents' reversed list as agreeing. Reordering to match a document makes a banned
  * person's message show `removed`.
  */
@@ -65,7 +65,7 @@ export function isClaimExpired(claimExpiresAt: Instant, now: Instant): boolean {
 /**
  * A moderation row as a verdict command read it.
  *
- * ⚠ Two counters, and `studio-mobile` C3 had one. On the contract's own examples `claim` then
+ * Two counters, and `studio-mobile` C3 had one. On the contract's own examples `claim` then
  * `release` settles nothing and still moves the version from 1 to 3, so a moderator who read the
  * queue, lost the network and settled saw their verdict refused — with the offline queue the one
  * concession granted to mobile. The rule underneath is a supersession, which one counter cannot

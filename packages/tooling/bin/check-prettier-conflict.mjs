@@ -63,7 +63,7 @@ if (!probes.length) {
   process.exit(2);
 }
 
-// ⚠ Resolve through `package.json`, not through `eslint-config-prettier/bin/cli.js`.
+// Resolve through `package.json`, not through `eslint-config-prettier/bin/cli.js`.
 //   That package has an `exports` map listing ".", "./flat", "./prettier" and
 //   "./package.json" — and nothing else. A deep path into `bin/` is therefore
 //   BLOCKED by the exports map, exactly as our own section 4.4.4 says it should

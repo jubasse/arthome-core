@@ -9,7 +9,7 @@ here, and a skill for one of them would be the wrong instrument.
 
 1. **`architecture/code-conventions.md`** — the conventions every repository inherits. §5.10 is the
    comment rule; `CLAUDE.md` carries its short form.
-2. **`DECISIONS.md`** — every ruling with its reason. ⚠ **A decision is not yours to reopen alone.**
+2. **`DECISIONS.md`** — every ruling with its reason. **A decision is not yours to reopen alone.**
    If one reads as current and the repository contradicts it, say so and stop — D-008's no-push clause
    was read as live months after the remotes existed, and the note recording that is why it is now
    marked superseded rather than silently edited.
@@ -40,7 +40,7 @@ deliberately outside `verify`, because §5.10 makes the ratio a smell rather tha
 
 ## Before you write anything
 
-⚠ **`check-map` reads the INSTALLED declarations, so build before regenerating.**
+**`check-map` reads the INSTALLED declarations, so build before regenerating.**
 
 ```bash
 pnpm -r run build && pnpm exec arthome-generate-map
@@ -49,26 +49,26 @@ pnpm -r run build && pnpm exec arthome-generate-map
 Without the build the generator compares the old array against your new source and reports
 differences that are not real.
 
-⚠ **The map projects the first line of each export's doc comment**, so touching a comment on an
+**The map projects the first line of each export's doc comment**, so touching a comment on an
 exported name moves `REPOSITORY_MAP.md` and `check-map` goes red until you regenerate. This blocked
 two agents in one afternoon.
 
-⚠ **`packages/*/dist/*.d.ts` are tracked and carry the JSDoc** (`removeComments: false`), so a comment
+**`packages/*/dist/*.d.ts` are tracked and carry the JSDoc** (`removeComments: false`), so a comment
 change shows up in `dist` too. That is expected; commit it.
 
-⚠ **`openapi/` is the source, `@arthome/contracts` is generated from it.** Change the document, run
+**`openapi/` is the source, `@arthome/contracts` is generated from it.** Change the document, run
 `node tools/emit-contracts.mjs`, rebuild. Changing only the zod schema makes `check-emit-diff` red,
 correctly.
 
-⚠ **Proving a comment-only change is comment-only: run each touched file through the TypeScript
+**Proving a comment-only change is comment-only: run each touched file through the TypeScript
 parser with `removeComments` and compare to `HEAD`.** A hand-rolled token scanner is not enough — five
 files here use `/` as division, a standalone scanner defaults to reading it as a regex, and a desynced
 scanner silently stops filtering comments. It reported five unchanged files as changed, and the same
-bug in the other direction would have passed a real code change. ⚠ The check proves the **token
+bug in the other direction would have passed a real code change. The check proves the **token
 stream** is identical, not semantic equivalence: an edit inside a string literal would pass it. The
 tests cover that, so run both.
 
-⚠ **A shared tree.** Several agents work here at once. Commit by explicit path — `git commit --only
+**A shared tree.** Several agents work here at once. Commit by explicit path — `git commit --only
 <paths>` — never `git add -A`, or you publish someone's in-flight work under your message. And run
 `prettier --write` before stepping away: an unformatted file in flight makes `prettier --check` red
 for everyone.

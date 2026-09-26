@@ -2,11 +2,11 @@
  * The single error shape. Every failure arrives in it, the Traefik gateway included: raw HTML there
  * makes "your connection" indistinguishable from "our servers".
  *
- * ⚠ This is `Error`, not `ErrorEnvelope`: a service importing `ErrorEnvelopeSchema` validated the
+ * This is `Error`, not `ErrorEnvelope`: a service importing `ErrorEnvelopeSchema` validated the
  * inner object against the outer name and passed. Found only because the empty-diff gate indexes by
  * the DOCUMENT's names — keyed on the code it would have agreed with itself (D-065 §F).
  *
- * ⚠ `ErrorEnvelope` waits for zod's registry mode: without a registry `z.toJSONSchema` inlines its
+ * `ErrorEnvelope` waits for zod's registry mode: without a registry `z.toJSONSchema` inlines its
  * `$ref` and the document gains a second `Error` under another name, while staying VALID.
  */
 import { z } from 'zod';
@@ -22,10 +22,10 @@ export declare const FailureNatureOut: VocabularyOut;
  * copyable off the error screen on purpose — on mobile it is the only link between "my application
  * crashed" and a server log.
  *
- * ⚠ `params` carries the message's parameters, never the message: the sentence is composed on the
+ * `params` carries the message's parameters, never the message: the sentence is composed on the
  * surface, from `code`, in the reader's language.
  *
- * ⚠ Its values are `unknown`, not `string`: the studio contract's own example is
+ * Its values are `unknown`, not `string`: the studio contract's own example is
  * `{ missing: ['poster', …] }`, an array, so the stricter schema rejected the example the contract
  * offers (D-065 §D, the code stricter and wrong).
  */

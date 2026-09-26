@@ -1,7 +1,7 @@
 /**
  * The PAYOUT — commission, VAT by jurisdiction, net, withholding.
  *
- * ⚠ `fixtures.js:1297-1324` reads like a proven business rule and is not one:
+ * `fixtures.js:1297-1324` reads like a proven business rule and is not one:
  * VAT as a SINGLE rate on the GROSS is a plausible mockup number that answers
  * none of who owes the VAT, on what base, and who is liable.
  *
@@ -64,7 +64,7 @@ export declare function payoutOf(input: PayoutInput): PayoutBreakdown;
 /**
  * The due date: end of the live show + 14 days.
  *
- * ⚠ From the END OF THE LIVE SHOW, not the payment — a ticket bought three
+ * From the END OF THE LIVE SHOW, not the payment — a ticket bought three
  * months ahead must not pay the artist three months early.
  */
 export declare function dueAtFor(runEndedAt: Instant): Instant;
@@ -77,7 +77,7 @@ export declare function payoutStateFor(outcome: DateOutcome | null, alreadyPaid:
 /**
  * How long a credit note stays valid.
  *
- * ⚠ Paying with a credit leaves Stripe receiving less while the artist of the
+ * Paying with a credit leaves Stripe receiving less while the artist of the
  * date bought must still be paid IN FULL, out of the platform's own money —
  * hence D-017's same-channel scope, where the withholding already covers it.
  */

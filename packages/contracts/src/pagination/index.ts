@@ -6,7 +6,7 @@
  * MECHANICALLY, not exceptionally — which is why the studio's two feeds, the
  * moderation queue and the live chat, are cursors too.
  *
- * ⚠ `vocabularyOutNullable`, NOT `vocabularyOut(…).nullable()`, and the difference
+ * `vocabularyOutNullable`, NOT `vocabularyOut(…).nullable()`, and the difference
  *   cost a round to find: `.nullable()` wraps, so the vocabulary lands inside
  *   `anyOf[0]`, where the contracts do not carry it and `check-vocabulary` does not
  *   read it. The schema still validates — the code works and only the document is
@@ -113,7 +113,7 @@ export const StudioCursorPageInfoSchema: z.ZodObject<
  * `OffsetPageInfo` — the studio's pagination primitive, and the deliberate
  * opposite of the one above.
  *
- * ⚠ Page + total everywhere in the studio, with two named exceptions and not one
+ * Page + total everywhere in the studio, with two named exceptions and not one
  *   more (D-010). The audit log stays on page + total behind a mandatory period
  *   filter: a cursor there would cost the page numbers the screen was built around.
  *

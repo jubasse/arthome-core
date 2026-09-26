@@ -2,14 +2,14 @@
  * The vocabularies of the watch verdict — why someone may not watch, and what
  * they can do about it.
  *
- * ⚠ They live here rather than in `entitlement/` because `replay/` (wave 3) needs
+ * They live here rather than in `entitlement/` because `replay/` (wave 3) needs
  * the denial reasons too, and importing from `entitlement/` (wave 5) would
  * invert the porting order.
  */
 /**
  * The denial reasons — one code per different screen.
  *
- * ⚠ The wire form is dotted-lowercase and the accessor SCREAMING_SNAKE (D-067)
+ * The wire form is dotted-lowercase and the accessor SCREAMING_SNAKE (D-067)
  * precisely so that nothing compares a literal: when the two diverged here,
  * `denialCode === WatchDenialReason.NO_SEAT` compared `'NO_SEAT'` to `'no_seat'`
  * and was false for all eleven values, through two passes looking for it.
@@ -41,7 +41,7 @@ export declare const WatchScope: {
  * The action that gets out of the dead end — an empty state with no way out is
  * banned (principle no. 8).
  *
- * ⚠ Coupled to `WATCH_DENIAL_REASONS`: every reason has an action that answers
+ * Coupled to `WATCH_DENIAL_REASONS`: every reason has an action that answers
  * it, every action answers at least one reason. `WATCH_FALLBACK_FOR` states the
  * pairing as data and the spec asserts both directions.
  */

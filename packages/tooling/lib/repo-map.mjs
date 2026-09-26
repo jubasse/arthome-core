@@ -174,7 +174,7 @@ function readPackage(ts, cwd, name) {
         summary: summaryOf(ts, real),
       });
     }
-    // ⚠ AN EMPTY SUBPATH IS NOT AN EMPTY MAP. An uninstalled dependency yields an
+    // AN EMPTY SUBPATH IS NOT AN EMPTY MAP. An uninstalled dependency yields an
     //   empty map that compares equal and passes, which is worth refusing; a `.d.ts`
     //   that parses cleanly and exports nothing is a FACT about the package, and this
     //   repository grew eight of those in one commit. So the test is whether the

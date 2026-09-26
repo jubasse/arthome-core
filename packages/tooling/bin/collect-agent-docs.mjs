@@ -22,12 +22,12 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(HERE, '..');
 const REPO_ROOT = path.resolve(PACKAGE_ROOT, '..', '..');
 
-// ⚠ WHAT A CONSUMING REPOSITORY MUST READ, and nothing else. The rest of
+// WHAT A CONSUMING REPOSITORY MUST READ, and nothing else. The rest of
 //   `architecture/` is reference and large, and a copy of it in five repositories is
 //   the parallel table this project spent a week removing.
 const WANTED = ['critical-rules.md', 'code-conventions.md'];
 
-// ⚠ `available-surface.md` IS GENERATED HERE RATHER THAN COLLECTED: derived from
+// `available-surface.md` IS GENERATED HERE RATHER THAN COLLECTED: derived from
 //   `REPOSITORY_MAP.md` on every build, it cannot be staler than the map `check:map`
 //   already guards, where a committed copy would need a gate of its own.
 function generateSurface() {

@@ -3,7 +3,7 @@
 /**
  * The eight canonical roles from `catalogue.json`.
  *
- * ⚠ The six studio personas are a label, never a right: they crush `director`,
+ * The six studio personas are a label, never a right: they crush `director`,
  * `video` and `sound` into one "run desk", and authorising on that short role
  * would grant `director`'s invitation right to `video` and `sound` (E6).
  */

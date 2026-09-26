@@ -4,7 +4,7 @@
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext"
-    // ⚠ NO `types: ["node"]` here, and it was wrong to have had it. This project
+    // NO `types: ["node"]` here, and it was wrong to have had it. This project
     //   includes `packages/*/src`, and `@arthome/core` forbids itself any platform
     //   dependency (README section 3): pulling Node's globals into the program that
     //   checks it would let a Node API in without anything noticing — the exact

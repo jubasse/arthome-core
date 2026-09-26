@@ -36,7 +36,7 @@
 //   zod's cost is FIXED and tied to the import, not marginal and tied to the
 //   number of schemas: two agents measured it independently and converge to
 //   within 1 KB — 93 KB gzipped for a single `z.string()` on the classic entry
-//   point, 7.5 KB on tree-shaken `zod/mini` (D-012). ⚠ The third number belongs
+//   point, 7.5 KB on tree-shaken `zod/mini` (D-012). The third number belongs
 //   beside those two: with tree shaking OFF, which is Metro's default, zod/mini
 //   measures 85 KB — the classic entry's level, so the saving is ZERO rather
 //   than reduced. This gate does not rest on the saving. It rests on the cost
@@ -131,7 +131,7 @@ function rel(p) {
 function main() {
   const entry = walk(ENTRY);
   if (entry.missing) {
-    console.error(`⚠ arthome-check-core-entry: ${rel(ENTRY)} not found.`);
+    console.error(`FAIL arthome-check-core-entry: ${rel(ENTRY)} not found.`);
     console.error('  GATE INACTIVE until @arthome/core has its main entry point.');
     process.exit(0);
   }
@@ -144,7 +144,7 @@ function main() {
 
   if (entry.findings.length) {
     console.error(
-      `\n✗ @arthome/core's "." entry point reaches ${entry.findings.length} forbidden import(s):\n`,
+      `\nFAIL @arthome/core's "." entry point reaches ${entry.findings.length} forbidden import(s):\n`,
     );
     for (const f of entry.findings) {
       console.error(`  ${rel(f.file)}  →  '${f.spec}'`);
@@ -167,13 +167,13 @@ function main() {
         )
       : false;
     if (!usesZod) {
-      console.error('\n✗ the "./schema" entry point does not import zod.');
+      console.error('\nFAIL the "./schema" entry point does not import zod.');
       console.error('  A schema entry point with no schemas has no purpose: either it carries zod');
       console.error('  schemas, or it must not exist.');
       process.exit(1);
     }
 
-    // ⚠ `.transform()` and `z.date()` are inconvertible to JSON Schema, and a schema
+    // `.transform()` and `z.date()` are inconvertible to JSON Schema, and a schema
     //   carrying either still compiles, validates and EMITS — a document describing a
     //   shape the API does not accept, in the one direction nothing fails.
     //
@@ -199,7 +199,9 @@ function main() {
       }
     }
     if (breaches.length) {
-      console.error(`\n✗ the "./schema" entry point breaks ${breaches.length} boundary rule(s):\n`);
+      console.error(
+        `\nFAIL the "./schema" entry point breaks ${breaches.length} boundary rule(s):\n`,
+      );
       for (const b of breaches) console.error(`  ${rel(b.file)}:${b.line}\n    ${b.why}`);
       console.error('\n  Parse, do not transform: the boundary decides what a value IS, and the');
       console.error('  domain decides what it becomes.');
@@ -218,7 +220,7 @@ function main() {
     // The verdict says what was WALKED, not what is true of the package. A
     // global injected by a tsconfig never appears in an import graph, so this
     // line would read the same with one in scope — see the header.
-    console.log('✓ no import path from the "." entry point reaches zod or a Node API');
+    console.log('PASS no import path from the "." entry point reaches zod or a Node API');
     console.log(
       '  (scope: the import graph only — ambient types and tsconfig `types` are not walked)',
     );

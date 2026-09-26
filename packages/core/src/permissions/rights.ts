@@ -6,7 +6,7 @@
  * effective rights. Without that, the studio web, the studio mobile and each
  * service's guards would read the same table three times.
  *
- * ⚠ ACCESS IS THE UNION OF THE ROLES, NEVER A RANK. Someone holding `video` and
+ * ACCESS IS THE UNION OF THE ROLES, NEVER A RANK. Someone holding `video` and
  * `moderation` on the same channel opens the union of the two. That is the rule
  * the studio mobile tab bar applies, and it is arithmetic: there is no
  * "superior" role.
@@ -163,7 +163,7 @@ export interface EffectiveRights {
 /**
  * A person's effective rights ON ONE CHANNEL.
  *
- * ⚠ ON ONE CHANNEL, and that is an invariant, not a convenience. Run-desk staff
+ * ON ONE CHANNEL, and that is an invariant, not a convenience. Run-desk staff
  * and moderators are not employees: they are artists' collaborators or
  * freelancers working across several channels. A right checked against
  * "membership of some channel" would let a freelancer read the moderation

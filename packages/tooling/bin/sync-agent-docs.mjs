@@ -43,7 +43,7 @@ const HEADER = (name) =>
 
 function main() {
   if (!fs.existsSync(SOURCE)) {
-    // ⚠ EXIT 1, AND THE REASONING CHANGED — the comment here used to argue the
+    // EXIT 1, AND THE REASONING CHANGED — the comment here used to argue the
     //   opposite, that an unbuilt tree is not worth blocking an install over.
     //   That held until `prepack` existed. Now building is part of packing, so
     //   a tarball CANNOT arrive without docs/ unless the package is malformed

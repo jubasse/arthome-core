@@ -2,7 +2,7 @@
  * Catalogue vocabularies: what is published, what is broadcast, and what decides
  * their state.
  *
- * ⚠ A declaring file: `arthome-check-enums` reports any copy of these values
+ * A declaring file: `arthome-check-enums` reports any copy of these values
  * elsewhere, so rules import the named members below, never a string literal.
  */
 /** The channel's act; `catalogue.json` has authority (D2). */
@@ -44,7 +44,7 @@ export declare const DateOutcome: {
 /**
  * The fourth value, derived: what the badge says.
  *
- * ⚠ Eleven values, because the studio also shows dates that are not public yet.
+ * Eleven values, because the studio also shows dates that are not public yet.
  * `draft`, `reserve` and `technical` deliberately carry the same string as the
  * matching publication state: when no later axis takes over, the displayed state
  * is the publication state.

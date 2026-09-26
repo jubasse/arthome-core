@@ -2,11 +2,11 @@
  * `@arthome/contracts/studio-money` — the dashboard: the period it is read over, the tiles
  * aggregated over it, the reminders routed to a person, and the badge counters.
  *
- * ⚠ Nothing here computes anything. A tile carries no variation (`trendOf` derives it from the
+ * Nothing here computes anything. A tile carries no variation (`trendOf` derives it from the
  * series in `@arthome/core`), no literal unit, and its value is bounded by the requested period:
  * see the document's prose, copied verbatim below.
  *
- * ⚠ EVERY VOCABULARY IN THIS FILE IS LOCAL TO THE CONTRACT — the domain has no opinion on which
+ * EVERY VOCABULARY IN THIS FILE IS LOCAL TO THE CONTRACT — the domain has no opinion on which
  * rails a screen shows — so each goes through `localVocabulary`, which emits `none` and the
  * document's own reason, rather than a source name that does not exist.
  */
@@ -183,7 +183,7 @@ declare const PayoutVatLineSchema: z.ZodObject<{
 /**
  * One payout, with the whole derivation served.
  *
- * ⚠ `grossTtc` is TAX-INCLUSIVE and the emitted annotation says so; `vat` is one line per
+ * `grossTtc` is TAX-INCLUSIVE and the emitted annotation says so; `vat` is one line per
  * jurisdiction (D-059), so a payout is never a bare number that moved for no stated reason.
  */
 export declare const PayoutLineSchema: z.ZodObject<{

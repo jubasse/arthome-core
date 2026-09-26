@@ -7,7 +7,7 @@ import type { Discipline, Genre, Tag, Taxonomy } from './types.js';
  * The disciplines in the declared EDITORIAL RANK, from the most popular to the most specialised,
  * families mixed.
  *
- * ⚠ The copy is deliberate: `sort` mutates in place and the served artefact is process-wide.
+ * The copy is deliberate: `sort` mutates in place and the served artefact is process-wide.
  */
 export declare function disciplinesInEditorialOrder(taxonomy: Taxonomy): readonly Discipline[];
 /** A universe's disciplines, in editorial rank. */

@@ -1,6 +1,6 @@
 /**
  * The taxonomy: universes, disciplines, sub-genres, tags, attribute groups — the TYPES and the
- * RULES. ⚠ The authoritative vocabulary and counts are in `prototypes/shared/taxonomy.json`.
+ * RULES. The authoritative vocabulary and counts are in `prototypes/shared/taxonomy.json`.
  *
  * The data is served as an immutable versioned artefact, `/taxonomy/{locale}/v{N}.json`: at 59.5 KB
  * raw and 8.4 KB gzip it is not a constant to compile into a package five applications embed.
@@ -31,7 +31,7 @@ export interface Discipline {
   /**
    * The EDITORIAL RANK, from the most popular to the most specialised, families mixed.
    *
-   * ⚠ No surface reorders: recomputing it on five surfaces would produce five orders.
+   * No surface reorders: recomputing it on five surfaces would produce five orders.
    */
   readonly rank: number;
   /** The badge's hue. Presentation, carried here because it is served. */

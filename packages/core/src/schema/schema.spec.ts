@@ -9,7 +9,7 @@ import { vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary
 import { DATE_OUTCOMES } from '../vocabulary/catalog.js';
 
 /**
- * ⚠ A vocabulary is strict IN and tolerant OUT, and a bare `z.enum()` does the
+ * A vocabulary is strict IN and tolerant OUT, and a bare `z.enum()` does the
  * wrong thing by default. A version published today runs in living rooms a year
  * from now: a strict enum on a RESPONSE does not degrade one card, it fails the
  * whole payload the card sits in — and that cannot be fixed remotely.
@@ -55,7 +55,7 @@ describe('the in / out asymmetry', () => {
 });
 
 /**
- * ⚠ The no-`z.transform()` and no-`z.date()` rules live in
+ * The no-`z.transform()` and no-`z.date()` rules live in
  * `tools/check-core-entry.mjs`, not here: a source scan needs `node:fs`, which
  * `types: []` puts out of this spec's reach. Verified by planting a
  * `z.string().transform(...)` in `money.ts` — the gate exits 1 with file and line.

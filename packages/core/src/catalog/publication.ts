@@ -22,7 +22,7 @@ export interface PublicationTransition {
  * Two pairs are one-way: `draft|reserve -> scheduled`, which commits the displayed price, and
  * `ended -> replay-online`, where viewers have paid for the replay.
  *
- * ⚠ `technical -> live` and `live -> ended` are caused by `streaming`'s events, not commanded,
+ * `technical -> live` and `live -> ended` are caused by `streaming`'s events, not commanded,
  * which is what keeps `Publication` the aggregate of a single context: "go on air" goes to
  * `streaming`, which alone knows whether the feed is coming in.
  */
@@ -135,7 +135,7 @@ export function assertTransitionAllowed(
  * The authoritative checklist, in the order the sheet shows — `studio-web` Q7, where the fixtures
  * carried four items against the sheet's seven.
  *
- * ⚠ Three are facts projected from other contexts: `at_least_one_active_price` and `capacity` from
+ * Three are facts projected from other contexts: `at_least_one_active_price` and `capacity` from
  * `ticketing`, `technical_check_passed` from `streaming`. `catalog` keeps them current by event,
  * which is what stops a publication needing two synchronous calls.
  */
@@ -170,7 +170,7 @@ export const PublicationChecklistItem = {
  * here, where under two vocabularies it moves an item between them and breaks anyone matching on
  * either. A client rendering the checklist wants all nine with their status, not two lists to join.
  *
- * ⚠ Keyed by the union rather than an array of the blocking seven, because the array drifted where
+ * Keyed by the union rather than an array of the blocking seven, because the array drifted where
  * nothing catches it: a tenth item was silently non-blocking, `includes` returning `false` with no
  * type error. A missing key is a compile error instead. `arthome-check-enums` was blind to it,
  * excluding a declaring file from the sweep entirely rather than from its own values.

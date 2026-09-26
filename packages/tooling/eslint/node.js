@@ -7,7 +7,7 @@
 // globals into the services and back — and a false positive is what makes someone
 // switch a rule off and forget to switch it on.
 //
-// ⚠ Contains NO stack preset: a preset's version tracks the framework major
+// Contains NO stack preset: a preset's version tracks the framework major
 //   installed in the repository, so lodging one here would force all seven to
 //   upgrade together. Section 4.2.
 
@@ -27,7 +27,7 @@ export const node = tseslint.config(...base, {
     // The `node:` prefix separates a built-in from a same-named registry package,
     // which is a real supply-chain attack surface.
     //
-    // ⚠ `paths`, NOT `patterns`: `patterns` reads its entries with GITIGNORE
+    // `paths`, NOT `patterns`: `patterns` reads its entries with GITIGNORE
     //   semantics, so an unanchored `events` matched `@arthome-platform/events` and
     //   refused it. `paths` matches the specifier exactly.
     'no-restricted-imports': [

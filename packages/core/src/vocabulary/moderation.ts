@@ -51,7 +51,7 @@ export const ModerationVerdict = {
 /**
  * Why a message was reported; `shared/catalogue.json` has authority.
  *
- * ⚠ `filter` is not a reason but an origin and belongs to
+ * `filter` is not a reason but an origin and belongs to
  * `STATE_CHANGE_ORIGINS`: putting it here would give one field two axes.
  */
 export const MODERATION_REASONS = ['spam', 'insult', 'spoiler', 'off_topic', 'harassment'] as const;
@@ -70,7 +70,7 @@ export const ModerationReason = {
  * "removed by the filter, then confirmed by X" does not collapse into "removed
  * by X".
  *
- * ⚠ The order is chronological — ingestion before reclassification — and
+ * The order is chronological — ingestion before reclassification — and
  * load-bearing: the emit gate compares enum lists where `check-vocabulary`
  * compares only member sets.
  */

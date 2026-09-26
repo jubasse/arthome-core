@@ -6,7 +6,7 @@ export type MessageParams = Readonly<Record<string, string | number | boolean>>;
 /**
  * The nature of a failure: retry, understand, or escalate.
  *
- * ⚠ `offline_forbidden` is never emitted by a server — it is a local refusal,
+ * `offline_forbidden` is never emitted by a server — it is a local refusal,
  * in the vocabulary so the surface has a single error shape to render.
  */
 export const FAILURE_NATURES = ['refused', 'unavailable', 'offline_forbidden'] as const;

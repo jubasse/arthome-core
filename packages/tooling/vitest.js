@@ -1,6 +1,6 @@
 // @arthome/tooling/vitest
 //
-// ⚠ THIS MODULE IMPORTS NOTHING FROM `vitest`, AND MUST NEVER DO SO. It exports a
+// THIS MODULE IMPORTS NOTHING FROM `vitest`, AND MUST NEVER DO SO. It exports a
 //   BARE OBJECT the repository passes to its own `defineConfig`, because Angular 22
 //   pins `vitest ^4.0.8` and the other five repositories are on `5.0.1`. Importing
 //   `defineConfig` here would impose one version on all seven. Sections 4.2 and 4.3.

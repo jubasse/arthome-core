@@ -2,7 +2,7 @@
  * `@arthome/core/schema` — the boundary schemas, and the only entry point in this package that
  * depends on zod.
  *
- * ⚠ `tools/check-core-entry.mjs` enforces that in both directions: it fails if any import path
+ * `tools/check-core-entry.mjs` enforces that in both directions: it fails if any import path
  * from `.` reaches zod, and if this entry does NOT import zod. The second half is what stops
  * this module quietly becoming a second copy of the rules. The cost it contains is 93 KB
  * gzipped for a single `z.string()`, so one stray `import { z }` in a rules module hands the
@@ -19,7 +19,7 @@
  * 2. A failure becomes a code, never a zod message: zod's messages are English prose, and the
  *    first place that leaks is a payment form. `issueToCode` is the only way out.
  *
- * ⚠ Every exported schema carries an explicit type annotation. `isolatedDeclarations` refuses
+ * Every exported schema carries an explicit type annotation. `isolatedDeclarations` refuses
  * an export whose type it cannot write without inferring through zod's builder chain, so
  * without them the published `.d.ts` cannot be emitted at all.
  */

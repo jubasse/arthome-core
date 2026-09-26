@@ -4,12 +4,12 @@
  * `identity` because the two products' session shapes genuinely differ — a viewer receives a
  * `ViewerContext`, a control room receives a `StudioBootstrap`.
  *
- * ⚠ `StudioSessionEstablished{Bearer,Cookie}Schema` CARRY THE PRODUCT PREFIX. The storefront
+ * `StudioSessionEstablished{Bearer,Cookie}Schema` CARRY THE PRODUCT PREFIX. The storefront
  *   exports two schemas of the same names with a different payload, and the emit gate tries
  *   `<Product><Name>Schema` before `<Name>Schema`: the prefix is what selects these two for
  *   `studio.yaml`.
  *
- * ⚠ `looseObject` because a server sends these shapes; `int64` and never `z.int()`;
+ * `looseObject` because a server sends these shapes; `int64` and never `z.int()`;
  *   `vocabularyOut` for every enumerated value a server sends. A vocabulary the document
  *   declares as local (`x-arthome-vocabulary-source: none`) goes through `localVocabulary`,
  *   which emits the reason the document gives instead of inventing a source name.
@@ -66,7 +66,7 @@ const instantNullable = (): z.ZodNullable<z.ZodString> =>
 const uuidNullable = (): z.ZodNullable<z.ZodString> =>
   z.string().nullable().meta({ format: 'uuid' });
 
-// ⚠ `StudioCounters` LIVES HERE AND NOT IN `studio-money`, where it reads as
+// `StudioCounters` LIVES HERE AND NOT IN `studio-money`, where it reads as
 //   belonging: `StudioBootstrap` and `DashboardScreen` both carry it, so the two
 //   modules would import each other. It references nothing, so it sits at the base.
 /** The badges, served at bootstrap and kept up to date by the real-time channel. */

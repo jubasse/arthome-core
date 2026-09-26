@@ -1,5 +1,5 @@
 /**
- * ⚠ `Math.random()` is banned in the fixtures: a non-reproducible data set makes
+ * `Math.random()` is banned in the fixtures: a non-reproducible data set makes
  * a test flaky and a flaky test ends up disabled. Determinism is also what lets
  * the `FakePaymentAdapter` run with no key and no network.
  */

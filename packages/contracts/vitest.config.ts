@@ -6,7 +6,7 @@ import base from '@arthome/tooling/vitest';
 // `defineConfig` to it. That is what lets Angular (vitest 4) and the five other
 // repositories (vitest 5) share one configuration without any version being imposed.
 //
-// ⚠ THIS FILE IS A NECESSARY COPY OF `packages/core/vitest.config.ts`, AND THE COPY
+// THIS FILE IS A NECESSARY COPY OF `packages/core/vitest.config.ts`, AND THE COPY
 //   IS WHY THE ANNOTATION BELOW EXISTS.
 //
 //   The three lines cannot move into @arthome/tooling: `defineConfig` has to be

@@ -7,7 +7,7 @@
 // tools/check-emit-diff.py, which indexes BY THE DOCUMENT because D-058 makes the
 // document authoritative.
 //
-// ⚠ IT EMITS EVERYTHING AND CLAIMS NOTHING. Most schemas are building blocks that
+// IT EMITS EVERYTHING AND CLAIMS NOTHING. Most schemas are building blocks that
 //   appear INLINED in a document — `SlugSchema`, `DeviceIdSchema` — and no tool can
 //   tell a building block from a typo. Treating an unmatched export as an error was
 //   the first version, and it failed on its first run.
@@ -33,7 +33,7 @@ const IDS = idsArg !== -1 ? JSON.parse(process.argv[idsArg + 1]) : null;
 
 const PACKAGES = ['packages/core', 'packages/contracts'].map((p) => path.resolve(CWD, p));
 
-// ⚠ ZOD IS RESOLVED FROM THE PACKAGE, NEVER FROM THIS REPOSITORY'S ROOT, and it is
+// ZOD IS RESOLVED FROM THE PACKAGE, NEVER FROM THIS REPOSITORY'S ROOT, and it is
 //   load-bearing rather than tidy: the `instanceof` test below compares CLASS
 //   IDENTITY, so a second copy reports every export as "not a zod schema".
 const requireFromContracts = createRequire(path.join(CWD, 'packages/contracts/package.json'));
@@ -62,7 +62,7 @@ for (const pkgDir of PACKAGES) {
     }
     const mod = await import(pathToFileURL(abs).href);
     for (const [name, value] of Object.entries(mod)) {
-      // ⚠ THE SELECTOR IS THE TYPE, NOT THE NAME. Filtering on a `Schema|In|Out`
+      // THE SELECTOR IS THE TYPE, NOT THE NAME. Filtering on a `Schema|In|Out`
       //   suffix caught `isAvailableIn` and `taxIncludedIn` — ordinary predicates
       //   whose names end in `In`. An export named `…Schema` that is not one stays
       //   an error, because that name makes a promise.
@@ -90,7 +90,7 @@ for (const pkgDir of PACKAGES) {
 }
 
 if (IDS) {
-  // ⚠ THE ID LIVES ON THE SCHEMA, so a schema nobody registers is SILENTLY INLINED
+  // THE ID LIVES ON THE SCHEMA, so a schema nobody registers is SILENTLY INLINED
   //   and the output stays VALID — no throw, no warning, just a second copy of a
   //   shape under no name. Anything unregistered is emitted standalone below and
   //   flagged, rather than hidden.

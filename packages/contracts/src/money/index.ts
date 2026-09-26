@@ -5,7 +5,7 @@
 // things by where they sit — a reader who takes a price for a bare amount is wrong by
 // a VAT rate.
 //
-// ⚠ THE BRAND IS NECESSARY AND NOT SUFFICIENT. It is erased at runtime and absent from
+// THE BRAND IS NECESSARY AND NOT SUFFICIENT. It is erased at runtime and absent from
 //   the payload, so it reaches TypeScript consumers only — never a generated client in
 //   another language, a webhook recipient or a partner reading the OpenAPI document
 //   (5.3.1: a guarantee is only as wide as its mechanism). The wire form must carry the

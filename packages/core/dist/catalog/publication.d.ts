@@ -32,7 +32,7 @@ export declare function assertTransitionAllowed(from: PublicationState, to: Publ
  * The authoritative checklist, in the order the sheet shows — `studio-web` Q7, where the fixtures
  * carried four items against the sheet's seven.
  *
- * ⚠ Three are facts projected from other contexts: `at_least_one_active_price` and `capacity` from
+ * Three are facts projected from other contexts: `at_least_one_active_price` and `capacity` from
  * `ticketing`, `technical_check_passed` from `streaming`. `catalog` keeps them current by event,
  * which is what stops a publication needing two synchronous calls.
  */

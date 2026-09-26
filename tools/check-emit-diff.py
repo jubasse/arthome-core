@@ -257,7 +257,7 @@ def main(argv):
         return 1
     emitted = payload["emitted"]
 
-    # ⚠ ONE REGISTRY PER DOCUMENT, and the first version had ONE FOR BOTH.
+    # ONE REGISTRY PER DOCUMENT, and the first version had ONE FOR BOTH.
     #
     #   A registry id is the DOCUMENT's schema name, and the two contracts share
     #   names for shapes that differ — CursorPageInfo, EnvelopeMeta, Error,
@@ -320,7 +320,7 @@ def main(argv):
             print("  not yet written: " + " ".join(unsourced))
 
     if failures:
-        print(f"\n✗ {len(failures)} schema(s) do not match the document they must emit:\n")
+        print(f"\nFAIL {len(failures)} schema(s) do not match the document they must emit:\n")
         for document, name, export, entry, found in failures:
             print(f"  {document} · {name}  (from {entry['from']}, {export})")
             for where, want, got in found[: 40 if show_all else 8]:
@@ -335,7 +335,7 @@ def main(argv):
         print("  first and recorded -- never absorbed by an exception here.")
         return 1
 
-    print(f"\n✓ {agreed} of {sourced} sourced schema(s) agree, out of {total} in the contracts")
+    print(f"\nPASS {agreed} of {sourced} sourced schema(s) agree, out of {total} in the contracts")
     print(f"  (scope: components/schemas only — `paths` is hand-written, D-058)")
     print(f"  {len(EQUIVALENCES)} equivalence(s) granted by the normaliser:")
     for e in EQUIVALENCES:

@@ -3,18 +3,18 @@
 // The ESLint floor for all seven repositories. Flat config (ESLint 9 and 10; the
 // old eslintrc format no longer exists in 10).
 //
-// ⚠ THIS FILE CONTAINS NO FORMATTING RULE, AND MUST NEVER CONTAIN ONE.
+// THIS FILE CONTAINS NO FORMATTING RULE, AND MUST NEVER CONTAIN ONE.
 //   Prettier owns formatting; ESLint owns code quality only. Zero overlap,
 //   verified by `npx eslint-config-prettier <file>` rather than by discipline.
 //   See architecture/code-conventions.md section 3.
 //
-// ⚠ `prettier` (eslint-config-prettier/flat) IS NOT included here: it must be the
+// `prettier` (eslint-config-prettier/flat) IS NOT included here: it must be the
 //   LAST element of the repository's final array, after the stack presets and
 //   after the local overrides. Placed earlier, it switches off nothing that comes
 //   after it — and it fails SILENTLY. Each repository imports it and puts it at
 //   the end. See section 3.2.
 //
-// ⚠ eslint-plugin-prettier is FORBIDDEN: running Prettier as an ESLint rule is
+// eslint-plugin-prettier is FORBIDDEN: running Prettier as an ESLint rule is
 //   the very setup that CREATES the conflicts we are avoiding. Section 3.3.
 
 import js from '@eslint/js';
@@ -44,7 +44,7 @@ export const base = tseslint.config(
   },
 
   // ------------------------------------------------------ TypeScript, with types
-  // ⚠ The type-aware rules are why Biome was ruled out (D-013), so `projectService`
+  // The type-aware rules are why Biome was ruled out (D-013), so `projectService`
   //   is mandatory: a repository that switches it off has cancelled the decision.
   {
     files: ['**/*.{ts,tsx,mts,cts}'],
@@ -93,7 +93,7 @@ export const base = tseslint.config(
             '`enum` is forbidden: declare an `as const` literal union in @arthome/core (code-conventions.md section 5.3).',
         },
         {
-          // ⚠ Measured: with @arthome/tooling's vitest types replaced by
+          // Measured: with @arthome/tooling's vitest types replaced by
           //   `{ deliberatelyWrong: number }`, a consumer carrying such a declaration
           //   still type-checked clean. It SHADOWS rather than fills, so it never expires.
           selector:
@@ -136,14 +136,14 @@ export const base = tseslint.config(
   },
 
   // ------------------------------------------------------- imports and their order
-  // ⚠ Import order belongs entirely to ESLint only while no sorting plugin sits on
+  // Import order belongs entirely to ESLint only while no sorting plugin sits on
   //   the Prettier side — hence section 3.3's ban on prettier-plugin-organize-imports
   //   and @trivago/prettier-plugin-sort-imports.
   {
     files: SOURCE_FILES,
     plugins: { 'import-x': importX },
     settings: {
-      // ⚠ Without the resolver, import-x/no-cycle and no-restricted-imports see
+      // Without the resolver, import-x/no-cycle and no-restricted-imports see
       //   through neither `paths` nor `exports`: the rule runs and finds nothing.
       'import-x/resolver-next': [createTypeScriptImportResolver({ alwaysTryTypes: true })],
     },
@@ -212,7 +212,7 @@ export const base = tseslint.config(
   {
     files: ['src/**', 'app/**'],
     rules: {
-      // ⚠ `rules` fully REPLACES the same rule, so the "imports" block's patterns are
+      // `rules` fully REPLACES the same rule, so the "imports" block's patterns are
       //   repeated here or they are lost for src/, which is what they protect.
       'no-restricted-imports': [
         'error',

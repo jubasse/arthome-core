@@ -1,7 +1,7 @@
 /**
  * Who may invite whom, over the eight roles — not the six studio personas.
  *
- * ⚠ Those personas crush `director`, `video` and `sound` into one "run desk":
+ * Those personas crush `director`, `video` and `sound` into one "run desk":
  * authorising on that label grants a sound engineer an invitation right they do
  * not have (E6).
  */

@@ -13,7 +13,7 @@
     "It is a side file for a second reason: the claim is about the PAIR, not about",
     "the domain. @arthome/core should not carry assertions about what the wire does.",
     "",
-    "⚠ Being domain-only is a claim that nothing serves these values. It is not a",
+    "Being domain-only is a claim that nothing serves these values. It is not a",
     "  place to park a vocabulary that has not been published yet — that one is a",
     "  finding, and it should stay red until it is published or genuinely internal.",
     "",

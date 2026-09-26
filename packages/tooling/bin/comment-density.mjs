@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // arthome-comment-density — how much of each file is comment, sorted by the worst.
 //
-// ⚠ IT IS A REPORT AND IT MUST NEVER BECOME A GATE. It always exits 0, it is not in
+// IT IS A REPORT AND IT MUST NEVER BECOME A GATE. It always exits 0, it is not in
 //   `verify`, and wiring it into one would be a defect rather than an improvement.
 //   code-conventions.md §5.10 sets the quarter-of-a-file mark as a SMELL, not a
 //   limit, and says in as many words: "never delete a recorded reason to satisfy a
@@ -24,7 +24,7 @@
 // by a line of code, which is simply how much prose a reader crosses before the next
 // code. Sort by either (`--by block`).
 //
-// ⚠ WHAT THIS TOOL REFUSES TO DETECT, and the refusal is the design.
+// WHAT THIS TOOL REFUSES TO DETECT, and the refusal is the design.
 //   An orphaned JSDoc — one left above nothing after its declaration was deleted — is
 //   nearly mechanical, and it is still not here. Two reasons. Deciding what counts as
 //   "a declaration" is a judgement about intent, and a report that shouts wrongly gets
@@ -52,13 +52,13 @@
 //     own `pnpm-workspace.yaml` is 85 % comment because it records why each dependency
 //     was approved. Naming such a file would invite deleting exactly that.
 //     `check-enums` and `check-language` already skip `.d.ts`;
-//     ⚠ arthome-core COMMITS `packages/*/dist/`, so without the path skip the report
+//     arthome-core COMMITS `packages/*/dist/`, so without the path skip the report
 //       is dominated by 76 generated declaration files nobody edits;
 //   - a blank line inside a block comment counts as neither comment nor code;
 //   - generated files are excluded by MARKER, so a generator that writes no marker is
 //     measured like hand-written code.
 //
-// ⚠ THE GENERATED MARKER IS NOT NEAR THE TOP, AND A BYTE PREFIX MISSES IT.
+// THE GENERATED MARKER IS NOT NEAR THE TOP, AND A BYTE PREFIX MISSES IT.
 //   protobuf-es writes `@generated` on LINE 16, after copying the .proto's own leading
 //   comment block. Measured: a 400-character window missed five generated files, which
 //   contributed 1 461 phantom excess lines to the first measurement this tool replaces
@@ -75,7 +75,7 @@ const args = process.argv.slice(2);
 const LIMIT = Number(arg('top', '0')) || 0;
 const ALL = args.includes('--all');
 const THRESHOLD = Number(arg('threshold', '0.25'));
-// ⚠ EVERY OPTION'S VALUE, or it is read as a path: `--by block` measured a file named
+// EVERY OPTION'S VALUE, or it is read as a path: `--by block` measured a file named
 //   "block" and reported the repository as holding no source.
 const OPTION_VALUES = new Set(
   [arg('top', ''), arg('threshold', ''), arg('by', '')].filter(Boolean),
@@ -116,7 +116,7 @@ function trackedFiles() {
 }
 
 /**
- * ⚠ A CITED MARKER IS DATA, and this file is the proof: its header names `@generated`
+ * A CITED MARKER IS DATA, and this file is the proof: its header names `@generated`
  *   as the thing it hunts, so the first version excluded ITSELF. Backticked spans go
  *   first, by `check-language`'s structural rule — no whitespace in the span.
  *   Generators write the tag bare, so nothing real is lost.
@@ -130,7 +130,7 @@ function isGenerated(text) {
 }
 
 /**
- * ⚠ WITHOUT THIS, A GLOB IS A COMMENT MARKER: `check-language` learned the expensive
+ * WITHOUT THIS, A GLOB IS A COMMENT MARKER: `check-language` learned the expensive
  *   way that the string `"prototypes/*.dc.html"` opens a `/*` that never closes.
  *   Length-preserving, because the marker's INDEX is what separates a comment from
  *   part of a URL.
@@ -143,7 +143,7 @@ function maskStrings(line) {
 }
 
 /**
- * ⚠ WHICHEVER MARKER COMES FIRST ON THE LINE DECIDES, both ways round, and both were
+ * WHICHEVER MARKER COMES FIRST ON THE LINE DECIDES, both ways round, and both were
  *   measured: testing the block opener first made `//   - packages/*\/src/*` open a
  *   `/*` that never closed (99 % against a true 39 %), while requiring a line to START
  *   with `/*` makes a block opened after code invisible.
@@ -253,7 +253,7 @@ for (const file of scanned) {
   }
 
   const { comment, nonBlank, header, longest } = measure(text, syntax);
-  // ⚠ A repository holding only Markdown — both frontends today — crashes here on a
+  // A repository holding only Markdown — both frontends today — crashes here on a
   //   division instead of printing a silent zero.
   if (nonBlank === 0) continue;
   considered += 1;

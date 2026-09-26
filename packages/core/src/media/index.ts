@@ -1,6 +1,6 @@
 /**
  * Renditions are declared, never composed from a URL template.
- * ⚠ Fleet televisions have 1 to 1.5 GB in total, the application gets 300 to
+ * Fleet televisions have 1 to 1.5 GB in total, the application gets 300 to
  * 500 MB of it, and one 4K decode eats 100 to 200: a client that picks its own
  * width picks badly, so the contract serves the sizes actually displayed.
  */

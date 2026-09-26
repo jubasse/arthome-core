@@ -104,7 +104,7 @@ export function displayStateOf(input: DisplayStateInput): DisplayStateResult {
     return { state: outcomeDisplay(outcome), validUntil: null };
   }
 
-  // ⚠ `interrupted` stays LIVE: the standby screen is a VEIL over an intact video, never a switch
+  // `interrupted` stays LIVE: the standby screen is a VEIL over an intact video, never a switch
   // (`streaming.md`), so the show can resume until an outcome is declared.
   if (runState === RunState.ON_AIR || runState === RunState.INTERRUPTED) {
     return { state: DisplayState.LIVE, validUntil: endsAt(timing) };

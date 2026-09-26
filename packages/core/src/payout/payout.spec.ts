@@ -30,7 +30,7 @@ const chf = (amountMinor: number) => money(amountMinor, 'CHF');
  *   Written BEFORE the rule — and the rule it was written against has since
  *   been reversed, which is the more interesting half.
  *
- * ⚠ WHAT D-056 CHANGED, AND WHAT SURVIVED IT
+ * WHAT D-056 CHANGED, AND WHAT SURVIVED IT
  *   This file used to assert that the commission is "IDENTICAL whatever the
  *   buyer's jurisdiction", on the premise that an artist sets a NET price. TTC
  *   reverses the premise: **the price an artist sets is what the viewer pays**,

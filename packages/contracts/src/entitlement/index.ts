@@ -1,7 +1,7 @@
 /**
  * `@arthome/contracts/entitlement` — the right to watch, and nothing else.
  *
- * ⚠ IT EXISTS TO BREAK A CYCLE, AND THE CYCLE WAS SEMANTIC RATHER THAN
+ * IT EXISTS TO BREAK A CYCLE, AND THE CYCLE WAS SEMANTIC RATHER THAN
  *   ACCIDENTAL. `catalog` needs a watch verdict, because a date's card shows
  *   whether you may watch it. `streaming` needs a date and its chapters, because
  *   a playback ticket is issued for one. Neither reference is wrong, so neither

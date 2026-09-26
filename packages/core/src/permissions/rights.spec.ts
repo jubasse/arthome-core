@@ -5,7 +5,7 @@ import { canDecide, canRevenue, effectiveRightsOf } from './rights.js';
 import { MemberRole, NavigationEntry } from '../vocabulary/people.js';
 
 /**
- * ⚠ E6: authorising on the six-persona label grants a sound engineer an
+ * E6: authorising on the six-persona label grants a sound engineer an
  * invitation right they do not have. The case that hurts is two roles held,
  * where the temptation of a "rank" comes back.
  */
@@ -48,7 +48,7 @@ describe('the effective rights', () => {
 });
 
 /**
- * ⚠ `canRevenue` decides what the response CONTAINS: a payload sent and not
+ * `canRevenue` decides what the response CONTAINS: a payload sent and not
  * displayed is a leak — in the clear in a WebView, and in the phone's HTTP cache.
  */
 describe('the three cross-cutting capabilities', () => {
