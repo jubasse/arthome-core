@@ -222,4 +222,5 @@ export const StudioErrorEnvelopeSchema: z.ZodObject<
 export const STOREFRONT_RELAYED_CODES: readonly ErrorCode[] = [
   ApiErrorCode.SCHEMA_INVALID,
   ApiErrorCode.CURSOR_TOO_OLD,
+  ApiErrorCode.NOT_FOUND,
 ];
