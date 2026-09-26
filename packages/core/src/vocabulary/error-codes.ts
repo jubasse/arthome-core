@@ -42,6 +42,10 @@ export const API_ERROR_CODES = [
   'api.sort_key_forbidden',
   'api.period_filter_required',
   'api.rights_version_stale',
+  // transport.md §5.4's two refusals of an Idempotency-Key: another body under the same key, and
+  //   a first attempt still running.
+  'api.idempotency_key_reused',
+  'api.idempotency_in_flight',
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
@@ -58,6 +62,8 @@ export const ApiErrorCode = {
   SORT_KEY_FORBIDDEN: 'api.sort_key_forbidden',
   PERIOD_FILTER_REQUIRED: 'api.period_filter_required',
   RIGHTS_VERSION_STALE: 'api.rights_version_stale',
+  IDEMPOTENCY_KEY_REUSED: 'api.idempotency_key_reused',
+  IDEMPOTENCY_IN_FLIGHT: 'api.idempotency_in_flight',
 } as const;
 
 /**

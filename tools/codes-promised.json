@@ -44,18 +44,6 @@
       "reason": "The generic 409 for a conditional command whose `version` did not match. No service implements optimistic concurrency yet — catalog's show.entity.ts records that its `version` column is deliberately absent until `catalog.publication` exists."
     },
     {
-      "code": "api.idempotency_key_reused",
-      "kind": "promised",
-      "named_in": ["architecture/transport.md"],
-      "reason": "transport.md §5.4's idempotency store is a BFF concern and the BFF is not built."
-    },
-    {
-      "code": "api.idempotency_in_flight",
-      "kind": "promised",
-      "named_in": ["architecture/transport.md"],
-      "reason": "Same store, same absence. Carries `retryAfterMs` when it lands."
-    },
-    {
       "code": "pairing.expired",
       "kind": "promised",
       "named_in": ["architecture/transport.md"],
