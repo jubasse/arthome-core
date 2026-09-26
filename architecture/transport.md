@@ -423,7 +423,7 @@ does not carry is, which is what the gate checks.
 **The BFF never relays a service error as-is** (`nestjs-bff-gateway` skill, rule 6). It maps an
 **allowlist** of domain codes, which cross with their `params`, and everything else becomes
 `api.upstream_unavailable` / `api.upstream_timeout`, the original being logged with the `traceId`. The
-allowlist lives in `@arthome/contracts`: a code that is not in it cannot reach a surface, which
+allowlist lives in `@arthome/contracts` (`STOREFRONT_RELAYED_CODES`): a code that is not in it cannot reach a surface, which
 forbids an internal message from leaking.
 
 **Traefik is inside the perimeter.** It must serve this envelope on the 5xx it produces itself

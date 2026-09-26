@@ -49,11 +49,13 @@
 import { z } from 'zod';
 
 import {
+  ApiErrorCode,
   DomainErrorCode,
   FailureNature,
   PublicationChecklistItem,
   PublicationPromise,
   PublicationState,
+  type ErrorCode,
 } from '@arthome/core';
 import { ErrorSchema, InstantOut, int64 } from '@arthome/core/schema';
 
@@ -210,3 +212,14 @@ export const StudioErrorEnvelopeSchema: z.ZodObject<
   error: StudioErrorSchema,
   servedAt: InstantOut.meta({ format: 'date-time', pattern: undefined }),
 });
+
+/**
+ * The service refusals a storefront BFF relays to a surface, `params` included (transport.md
+ * §5.5). Any other service answer becomes `api.upstream_unavailable`, or `api.upstream_timeout`
+ * when the BFF stopped waiting, so a code outside this list cannot reach a surface. A code joins
+ * when a route can receive it and a surface has a screen for it.
+ */
+export const STOREFRONT_RELAYED_CODES: readonly ErrorCode[] = [
+  ApiErrorCode.SCHEMA_INVALID,
+  ApiErrorCode.CURSOR_TOO_OLD,
+];

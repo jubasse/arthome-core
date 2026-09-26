@@ -65,8 +65,9 @@ Declarations: `dist/entitlement/index.d.ts` — 1 exported names.
 
 #### @arthome/contracts/envelope
 
-Declarations: `dist/envelope/index.d.ts` — 6 exported names.
+Declarations: `dist/envelope/index.d.ts` — 7 exported names.
 
+- `STOREFRONT_RELAYED_CODES` (const) — `STOREFRONT_RELAYED_CODES: readonly ErrorCode[]` — The service refusals a storefront BFF relays to a surface, 'params' included (transport.md §5.5).
 - `StorefrontEnvelopeMetaSchema` (const) — The meta every STOREFRONT response composes.
 - `StorefrontErrorEnvelopeSchema` (const) — `StorefrontErrorEnvelopeSchema: z.ZodObject<{ error: typeof StorefrontErrorSchema; servedAt: z.ZodString; }, z.core.$loose>` — 'ErrorEnvelope' — the shape every failure arrives in.
 - `StorefrontErrorSchema` (const) — `StorefrontErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>` — 'Error' — ONE SHAPE, TWO SETS OF PROSE, and the split is the smallest version of D-065 §G there is.

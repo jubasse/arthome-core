@@ -46,6 +46,7 @@
  *   week on.
  */
 import { z } from 'zod';
+import { type ErrorCode } from '@arthome/core';
 import { ErrorSchema } from '@arthome/core/schema';
 /** The meta every STOREFRONT response composes. */
 export declare const StorefrontEnvelopeMetaSchema: z.ZodObject<{
@@ -87,4 +88,11 @@ export declare const StudioErrorEnvelopeSchema: z.ZodObject<{
     error: typeof StudioErrorSchema;
     servedAt: z.ZodString;
 }, z.core.$loose>;
+/**
+ * The service refusals a storefront BFF relays to a surface, `params` included (transport.md
+ * §5.5). Any other service answer becomes `api.upstream_unavailable`, or `api.upstream_timeout`
+ * when the BFF stopped waiting, so a code outside this list cannot reach a surface. A code joins
+ * when a route can receive it and a surface has a screen for it.
+ */
+export declare const STOREFRONT_RELAYED_CODES: readonly ErrorCode[];
 //# sourceMappingURL=index.d.ts.map
