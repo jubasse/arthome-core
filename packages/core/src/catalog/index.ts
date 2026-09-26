@@ -21,12 +21,15 @@ export type {
   PublicationChecklistEntry,
   PublicationReadiness,
   PublicationTransition,
+  PublicationTransitionCommand,
 } from './publication.js';
 export {
   PUBLICATION_CHECKLIST_ITEMS,
   PublicationChecklistItem,
   isBlockingChecklistItem,
+  assertCommandedTransition,
   assertTransitionAllowed,
+  checklistSourceOf,
   irreversiblePromiseBlocking,
   isEventDriven,
   nextPublicationTransitions,

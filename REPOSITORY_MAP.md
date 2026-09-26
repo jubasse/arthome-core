@@ -207,7 +207,7 @@ Declarations: `dist/ticketing/index.d.ts` — 11 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 383 exported names.
+Declarations: `dist/index.d.ts` — 386 exported names.
 
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
@@ -372,6 +372,7 @@ Declarations: `dist/index.d.ts` — 383 exported names.
 - `PublicationReadiness` (interface)
 - `PublicationState` (type+const)
 - `PublicationTransition` (interface) — An offered transition, with what it commits to.
+- `PublicationTransitionCommand` (interface)
 - `QUIET_HOURS_END` (const) — `QUIET_HOURS_END = 9`
 - `QUIET_HOURS_START` (const) — `QUIET_HOURS_START = 23` — Quiet hours, 23:00 -> 09:00, in the sleeper's own offset and never the server's.
 - `REMINDER_LEAD_MINUTES` (const) — `REMINDER_LEAD_MINUTES = 30` — Reminder before a live show for which I hold a seat.
@@ -443,6 +444,7 @@ Declarations: `dist/index.d.ts` — 383 exported names.
 - `applyBestDiscount` (function) — `function applyBestDiscount(basePrice: Money, subscriptionDiscountBps: BasisPoints, promotionPrice: Money | null): Money;` — THE DISCOUNT AND THE PROMOTION DO NOT STACK: the one most favourable to the viewer applies (D-017).
 - `applyRate` (function) — `function applyRate(value: Money, rate: BasisPoints): Money;` — Applies a rate to an amount and rounds — the one place a rate meets a rounding.
 - `assertCanOverride` (function) — `function assertCanOverride(existingOrigin: StateChangeOrigin, incomingOrigin: StateChangeOrigin): void;`
+- `assertCommandedTransition` (function) — The server's decision on a commanded transition, returning the transition it allows.
 - `assertKnownFlag` (function) — `function assertKnownFlag(flag: string, knownFlags: readonly string[]): void;`
 - `assertTierWidens` (function) — `function assertTierWidens(currentCapacity: number, nextCapacity: number): void;` — Capacity tiers: they WIDEN, never shrink after going on sale.
 - `assertTransitionAllowed` (function) — `function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): PublicationTransition;`
@@ -458,6 +460,7 @@ Declarations: `dist/index.d.ts` — 383 exported names.
 - `canOverride` (function) — `function canOverride(existingOrigin: StateChangeOrigin, incomingOrigin: StateChangeOrigin): boolean;` — A human overturns an automatic decision, never the reverse: otherwise a retroactive filter erases a judgement already made, and human judge…
 - `canRevenue` (function) — `function canRevenue(heldRoles: readonly MemberRole[]): boolean;` — 'canRevenue' does not hide a column: IT DECIDES WHAT THE RESPONSE CONTAINS.
 - `chatRatePerMinute` (function) — `function chatRatePerMinute(messagesInWindow: number): number;`
+- `checklistSourceOf` (function) — `function checklistSourceOf(item: PublicationChecklistItem): Service;`
 - `checkoutIntentExpiry` (function) — `function checkoutIntentExpiry(openedAt: Instant): Instant;` — The intent duration for a direct checkout journey.
 - `claimExpiryFrom` (function) — `function claimExpiryFrom(claimedAt: Instant): Instant;`
 - `clocksDiffer` (function) — `function clocksDiffer(venue: VenueClock, viewerUtcOffsetMinutes: number): boolean;` — Do the two clocks differ for this instant?
