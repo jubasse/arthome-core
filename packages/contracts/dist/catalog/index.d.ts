@@ -96,7 +96,7 @@ export declare const DateCardSchema: z.ZodObject<{
     }, z.core.$loose>>;
     roomOpensAt: z.ZodOptional<z.ZodString>;
     displayState: VocabularyOut;
-    displayStateValidUntil: z.ZodString;
+    displayStateValidUntil: z.ZodNullable<z.ZodString>;
     outcome: z.ZodOptional<VocabularyOutNullable>;
     rescheduledTo: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     viewers: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;

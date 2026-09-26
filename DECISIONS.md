@@ -3117,3 +3117,17 @@ been `null`.
 the studio, which runs the check. `publicDisplayStateOf` reads a date under check on the time axis
 (`scheduled`, then `room_open`); the outcome and the run still outrank it. The storefront's
 `DateCard.displayState` names the second, and the eleven-member vocabulary is unchanged.
+
+### D-073 — A storefront card's state can hold until an event, and the contract says so
+
+**Found while writing the public date page, arbitrated by the product owner on 2026-09-27.** The
+storefront `DateCard` required `displayStateValidUntil`, never null. `displayStateOf` returns `null`
+when only an event can change the state: an outcome (`cancelled`, `postponed`, `interrupted`) or a
+date fully over. So a cancelled card, and the page of any date once it is over, could not be served
+at all: a link shared the day after, a bookmark, a notification about a cancellation, each led
+nowhere. The studio contract already declared the field optional.
+
+**The wire moves, core stays**: `displayStateValidUntil` is nullable on the storefront `DateCard`,
+with core's own sentence. A surface keeps a state that has no instant until its next read, and
+never invents one.
+
