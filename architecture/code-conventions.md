@@ -2263,13 +2263,17 @@ gloss, `handleRetryTiming` needs one. Name it, then comment only what a name can
 with this code in front of them learn something they could not derive from it?*
 
 **Keep** — a measured failure, with what it cost · a constraint invisible at that line · a decision
-and its reason, where the code shows only the outcome · a `⚠` where the obvious change is wrong.
+and its reason, where the code shows only the outcome · a warning where the obvious change is wrong.
 
 **Delete** — a comment on trivial code (a delegate, a getter, a `findAll` calling `Model.findAll`) ·
 any block above a name that already carries it · JSDoc restating the signature · narration of a
 readable sequence · history ("before this there was no…") · a default or a library behaviour
 explained · **prose about what the file does *not* do**, which rots first because nothing fails when
 it stops being true · a second copy of `DECISIONS.md` — link instead.
+
+**[floor] No `⚠`, no emoji, no pictographic symbol in a comment** (`✓`, `✗`, `✅`, `❌`, `★`…). A
+warning is a sentence that says what breaks; the symbol adds nothing the words do not. Typographic
+punctuation (`→`, `—`, `§`, `≤`) is not concerned.
 
 **[floor] TypeScript already documents the types, so JSDoc must not.** The signature gives the
 parameter names, their types and the return type; repeating any of it is noise — `@param source - the
@@ -2280,17 +2284,17 @@ return** — which branch comes back and when. `Promise<'indexed' | 'superseded'
 their causes.
 
 **Where one line does, use one line, and give the scope rather than the whole story.** No account of
-the why and the how from A to Z: enough to situate it. A surviving `⚠` is two to four lines, never
-ten.
+the why and the how from A to Z: enough to situate it. A surviving warning is two to four lines,
+never ten.
 
-⚠ **NEVER DELETE A RECORDED MEASUREMENT.** Shorten its prose to one sentence; keep the fact. The
+**[floor] Never delete a recorded measurement.** Shorten its prose to one sentence; keep the fact. The
 failure mode this rule replaces is verbosity, and the one it could create is losing the paragraph
 that stopped a defect coming back.
 
 **One exception, narrow.** A gate's header block, which records the defect it was built against and
 the scope it does **not** cover.
 
-⚠ **AND ONE CLARIFICATION THAT LOOKS LIKE A SECOND EXCEPTION AND IS NOT.** `REPOSITORY_MAP.md` is
+**And one clarification that looks like a second exception and is not.** `REPOSITORY_MAP.md` is
 generated from JSDoc, so a deleted description blanks an export's row in an index of 594 names — but
 that row also carries the **type signature**, so the reader is not stranded: `plusMinutes` prints
 `function plusMinutes(instant: Instant, minutes: number): Instant;` and needs nothing added. The test
@@ -2298,7 +2302,7 @@ is the same one as everywhere else: a description earns its place by saying what
 signature cannot. `SlugSchema: z.ZodString` earns "Lowercase, hyphenated, no leading or trailing
 hyphen", because the regex's shape is not in `z.ZodString`. **373 of 594 rows have no description and
 most of them are correct.** Filling them would mean writing 240 comments the rule forbids. What a
-description must never do is open on `⚠`: the row then names the hazard and never the export.
+description must never do is open on the hazard: the row then names the hazard and never the export.
 
 **Apply it opportunistically**: any file you read is one you may shrink.
 
@@ -2316,7 +2320,7 @@ description must never do is open on `⚠`: the row then names the hazard and ne
    real findings above a private constant while the function they described seventy-five lines below
    had none. An export with a blank `REPOSITORY_MAP.md` description is how you find them.
 
-⚠ **This rule was itself 989 words and produced dissertations in the code it governed.** A long rule
+**This rule was itself 989 words and produced dissertations in the code it governed.** A long rule
 about concision teaches the register it forbids.
 
 ### 5.9 Commit messages

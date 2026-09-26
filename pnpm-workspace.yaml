@@ -16,32 +16,6 @@ minimumReleaseAgeExclude:
   # "that version does not exist", which sends you looking in the wrong place.
   - "@arthome/*"
 
-  # ─────────────────────────────────────────────────────────────────────────────
-  # A CONTRADICTION BETWEEN TWO DECISIONS, found at the first `pnpm install`.
-  #
-  #   versions.json pins the versions verified ON THE DAY (2026-09-21), and this
-  #   policy refuses anything less than seven days old. Both cannot hold: pinning
-  #   the latest verified version guarantees it will be too fresh. The policy is
-  #   not wrong — the CONJUNCTION is, and it only showed itself at install time.
-  #
-  #   Named, dated exceptions rather than a lowered threshold. Lowering
-  #   minimumReleaseAge globally would have removed the settling period from EVERY
-  #   third-party package to fix five.
-  #
-  #   The durable remedy is NOT to add exceptions here: a version bump pins a
-  #   version that is ALREADY MATURE, never the day's. See code-conventions.md
-  #   section 7.6. These entries are a bootstrap, not a policy.
-  #
-  #   `arthome-check-versions` reads the `remove-after:` markers below and turns
-  #   red once they are past. An exception nobody removes is a lowered threshold
-  #   that does not say its name.
-  # ─────────────────────────────────────────────────────────────────────────────
-  - "prettier" # 3.9.8  published 2026-09-17 — mature 2026-09-24
-  - "eslint" # 10.11.0 published 2026-09-18 — mature 2026-09-25
-  - "vitest" # 5.0.1  published 2026-09-15 — mature 2026-09-22
-  - "@vitest/*" # same, vitest sub-packages
-  # remove-after: 2026-09-25
-
 # ---------------------------------------------------------------------- catalog
 # The catalog is only valid INSIDE this workspace. There is none across the seven
 # repositories: that is the limit of the multi-repository layout, and the
