@@ -30,7 +30,7 @@ Declarations: `dist/catalog/index.d.ts` — 22 exported names.
 - `CategoryTileSchema` (const)
 - `ChapterSchema` (const) — `ChapterSchema: z.ZodObject<{ id: z.ZodString; vocabId: z.ZodString; atMediaSec: z.ZodNumber; }, z.core.$loose>`
 - `DateCardSchema` (const)
-- `DateDetailSchema` (const) — `DateDetailSchema: z.ZodIntersection<typeof DateCardSchema, z.ZodObject<z.ZodRawShape, z.core.$loose>>`
+- `DateDetailSchema` (const)
 - `DomainConstantsSchema` (const)
 - `FacetSchema` (const) — `FacetSchema: z.ZodObject<{ facetId: z.ZodString; values: z.ZodArray<z.ZodObject<{ id: z.ZodString; count: z.ZodNumber; }, z.core.$loose>>; }, z.core.$loose>`
 - `HomeScreenSchema` (const)

@@ -1102,7 +1102,45 @@ export const ArtistDetailSchema: z.ZodIntersection<
 
 export const DateDetailSchema: z.ZodIntersection<
   typeof DateCardSchema,
-  z.ZodObject<z.ZodRawShape, z.core.$loose>
+  z.ZodObject<
+    {
+      synopsis: z.ZodOptional<typeof StorefrontLocalizedTextSchema>;
+      castAndCrew: z.ZodOptional<
+        z.ZodArray<
+          z.ZodObject<
+            {
+              personId: z.ZodOptional<z.ZodString>;
+              name: z.ZodOptional<z.ZodString>;
+              roleCode: z.ZodOptional<z.ZodString>;
+            },
+            z.core.$loose
+          >
+        >
+      >;
+      spokenLanguages: z.ZodOptional<z.ZodArray<z.ZodString>>;
+      subtitleLanguages: z.ZodOptional<z.ZodArray<z.ZodString>>;
+      surtitleLanguages: z.ZodOptional<z.ZodArray<z.ZodString>>;
+      attributes: z.ZodOptional<z.ZodObject<Record<string, never>, z.core.$loose>>;
+      priceTiers: z.ZodOptional<z.ZodArray<typeof PriceTierSchema>>;
+      serviceFee: z.ZodOptional<
+        z.ZodNullable<
+          z.ZodObject<
+            {
+              perSeat: z.ZodOptional<typeof MoneyOut>;
+              capped: z.ZodOptional<typeof MoneyOut>;
+            },
+            z.core.$loose
+          >
+        >
+      >;
+      chapters: z.ZodOptional<z.ZodArray<typeof ChapterSchema>>;
+      seriesDates: z.ZodOptional<z.ZodArray<typeof DateCardSchema>>;
+      totalSeriesDates: z.ZodOptional<z.ZodNumber>;
+      suggestions: z.ZodOptional<z.ZodArray<typeof DateCardSchema>>;
+      merchItems: z.ZodOptional<z.ZodArray<typeof MerchItemSchema>>;
+    },
+    z.core.$loose
+  >
 > = z.intersection(
   DateCardSchema,
   z
