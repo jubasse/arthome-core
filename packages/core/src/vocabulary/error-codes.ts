@@ -48,6 +48,9 @@ export const API_ERROR_CODES = [
   'api.idempotency_in_flight',
   // transport.md §5.3: a service handed a deadline already past answers this and does nothing.
   'api.deadline_exceeded',
+  // The BFF stopped waiting for a service. Not `upstream_unavailable`: the service may still
+  //   finish, so a caller retrying a command must reuse its Idempotency-Key.
+  'api.upstream_timeout',
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
@@ -67,6 +70,7 @@ export const ApiErrorCode = {
   IDEMPOTENCY_KEY_REUSED: 'api.idempotency_key_reused',
   IDEMPOTENCY_IN_FLIGHT: 'api.idempotency_in_flight',
   DEADLINE_EXCEEDED: 'api.deadline_exceeded',
+  UPSTREAM_TIMEOUT: 'api.upstream_timeout',
 } as const;
 
 /**

@@ -368,8 +368,8 @@ def load_promised():
     document.
 
     A promise is a fact about the vocabulary, not about the document that mentions it:
-    `api.state_conflict` is named in two documents, and a per-document list would give one
-    reason two homes to drift between — the parallel literal table this gate exists to
+    a code named in two documents would, in a per-document list, give one reason two homes
+    to drift between — the parallel literal table this gate exists to
     find, built inside it.
 
     DECISION 2 ABOVE DOES NOT FORBID THIS, and the distinction is worth stating because

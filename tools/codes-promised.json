@@ -6,8 +6,8 @@
     "prose is promising a vocabulary nobody is writing — not that the gate is too severe.",
     "",
     "SINGLE, AND KEYED BY CODE, because a promise is a fact about the VOCABULARY and not about the",
-    "document that happens to mention it. `api.state_conflict` is named in transport.md and in",
-    "context-map.md; a per-document list would give one reason two homes, and two homes drift. That",
+    "document that happens to mention it. A code named in two documents would, in a per-document",
+    "list, give one reason two homes, and two homes drift. That",
     "is the parallel literal table check-vocabulary.py exists to find, so it must not be built inside",
     "it. Precedent: domain-only-vocabularies.json is a side file keyed by name.",
     "",
@@ -38,22 +38,10 @@
       "reason": "No BFF exists to mint or expire a token; adr-auth.md is Status: proposed. 401 is served today as api.unauthenticated, which D-069's standing exception makes correct rather than vague."
     },
     {
-      "code": "api.state_conflict",
-      "kind": "promised",
-      "named_in": ["architecture/transport.md", "architecture/context-map.md"],
-      "reason": "The generic 409 for a conditional command whose `version` did not match. No service implements optimistic concurrency yet — catalog's show.entity.ts records that its `version` column is deliberately absent until `catalog.publication` exists."
-    },
-    {
       "code": "pairing.expired",
       "kind": "promised",
       "named_in": ["architecture/transport.md"],
       "reason": "The pairing surface is adr-auth.md §4, Status: proposed. The four PAIRING_ERROR_CODES that do exist cover polling and ownership, not lifetime."
-    },
-    {
-      "code": "api.upstream_timeout",
-      "kind": "promised",
-      "named_in": ["architecture/transport.md"],
-      "reason": "Same client. Distinct from api.upstream_unavailable, which exists: a timeout is not a failure, and the two differ on whether the caller may retry."
     },
     {
       "code": "api.gateway_unavailable",

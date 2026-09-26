@@ -406,7 +406,7 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 | `401` | `refused` | `api.unauthenticated`, `api.token_expired` |
 | `403` | `refused` | `api.forbidden`, `api.sort_key_forbidden`, `api.rights_version_stale`, `pairing.identity_mismatch` |
 | `404` | `refused` | `api.not_found` |
-| `409` | `refused` | `api.state_conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `api.idempotency_in_flight`, `capacity.tier_must_widen` |
+| `409` | `refused` | `state.conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `api.idempotency_in_flight`, `capacity.tier_must_widen` |
 | `410` | `refused` | `api.cursor_too_old`, `pairing.expired`, `watch.replay_expired` |
 | `429` | `unavailable` | `api.rate_limited`, `chat.rate_limited` (param `retryAfterMs`) |
 | `500` | `unavailable` | `api.internal` — **never** the original error's message |
@@ -429,10 +429,10 @@ forbids an internal message from leaking.
 `code` = `api.gateway_unavailable`. A raw HTML page would make the "your connection" / "our servers"
 distinction impossible, and `storefront-tv` is right: the viewer will go and reboot their router.
 
-**Nine of the codes this section names do not exist yet**, and each is recorded in
-`tools/codes-promised.json` with the reason nobody can emit it — the BFF, pairing, idempotency and
-Traefik are all unbuilt, so inventing the members now would be publishing contract for flows nobody
-is writing. That file is single and keyed by code rather than kept per document: a promise is a fact
+**Four of the codes this section names do not exist yet**, and each is recorded in
+`tools/codes-promised.json` with the reason nobody can emit it — token expiry, pairing, Traefik and a
+body limit in the contract's vocabulary are all unbuilt, so inventing the members now would be
+publishing contract for flows nobody is writing. That file is single and keyed by code rather than kept per document: a promise is a fact
 about the vocabulary, and one reason with two homes is a reason that drifts. `check-vocabulary`
 retracts an entry the day a package exports the code, so the list cannot rot into a set of promises
 nobody remembers making.
