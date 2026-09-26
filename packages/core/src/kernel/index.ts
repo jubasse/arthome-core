@@ -27,3 +27,5 @@ export { err, isOk, ok } from './result.js';
 
 export type { Clock, Instant } from './clock.js';
 export { FixedClock, SystemClock } from './clock.js';
+
+export { DomainConstant } from './domain-constants.js';

@@ -23,7 +23,7 @@ import { WATCH_DENIAL_REASONS } from './entitlement.js';
  * route that does not resolve, not a missing aggregate: a service expressing a domain rule with
  * one of these makes the surface render "not found" for a date that exists and is not on sale.
  */
-export declare const API_ERROR_CODES: readonly ["api.unauthenticated", "api.forbidden", "api.not_found", "api.rate_limited", "api.schema_invalid", "api.internal", "api.service_unavailable", "api.upstream_unavailable", "api.cursor_too_old", "api.sort_key_forbidden", "api.period_filter_required", "api.rights_version_stale", "api.idempotency_key_reused", "api.idempotency_in_flight"];
+export declare const API_ERROR_CODES: readonly ["api.unauthenticated", "api.forbidden", "api.not_found", "api.rate_limited", "api.schema_invalid", "api.internal", "api.service_unavailable", "api.upstream_unavailable", "api.cursor_too_old", "api.sort_key_forbidden", "api.period_filter_required", "api.rights_version_stale", "api.idempotency_key_reused", "api.idempotency_in_flight", "api.deadline_exceeded"];
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 export declare const ApiErrorCode: {
     readonly UNAUTHENTICATED: "api.unauthenticated";
@@ -40,6 +40,7 @@ export declare const ApiErrorCode: {
     readonly RIGHTS_VERSION_STALE: "api.rights_version_stale";
     readonly IDEMPOTENCY_KEY_REUSED: "api.idempotency_key_reused";
     readonly IDEMPOTENCY_IN_FLIGHT: "api.idempotency_in_flight";
+    readonly DEADLINE_EXCEEDED: "api.deadline_exceeded";
 };
 /**
  * Sign-in, sign-up and session refusals. `identity.signed_out_elsewhere` is served to a session

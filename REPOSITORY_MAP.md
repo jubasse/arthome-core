@@ -207,7 +207,7 @@ Declarations: `dist/ticketing/index.d.ts` — 11 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 386 exported names.
+Declarations: `dist/index.d.ts` — 387 exported names.
 
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
@@ -264,6 +264,7 @@ Declarations: `dist/index.d.ts` — 386 exported names.
 - `DisplayState` (type+const)
 - `DisplayStateInput` (interface)
 - `DisplayStateResult` (interface)
+- `DomainConstant` (const) — The operational constants served to every surface as 'DomainConstants' (openapi/storefront.yaml) and copied nowhere: a copy is how "the web…
 - `DomainError` (class) — An invariant violation.
 - `DomainErrorCode` (type+const)
 - `DomainErrorInit` (interface)

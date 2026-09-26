@@ -7,4 +7,5 @@ export type { Err, Ok, Result } from './result.js';
 export { err, isOk, ok } from './result.js';
 export type { Clock, Instant } from './clock.js';
 export { FixedClock, SystemClock } from './clock.js';
+export { DomainConstant } from './domain-constants.js';
 //# sourceMappingURL=index.d.ts.map

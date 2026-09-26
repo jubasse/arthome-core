@@ -50,12 +50,6 @@
       "reason": "The pairing surface is adr-auth.md §4, Status: proposed. The four PAIRING_ERROR_CODES that do exist cover polling and ownership, not lifetime."
     },
     {
-      "code": "api.deadline_exceeded",
-      "kind": "promised",
-      "named_in": ["architecture/transport.md"],
-      "reason": "transport.md §5.3's deadline is enforced by the BFF's client, which is not written."
-    },
-    {
       "code": "api.upstream_timeout",
       "kind": "promised",
       "named_in": ["architecture/transport.md"],

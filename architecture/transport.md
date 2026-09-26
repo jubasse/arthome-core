@@ -284,7 +284,7 @@ x-arthome-deadline: 2026-09-21T20:45:13.400Z
    and giving up remotely are the same instant.
 2. **The service reads it** and applies it at two points: **before** opening a transaction or
    launching an expensive query, and **between** the units of an iterative job. If it has passed,
-   the service answers `504` with the code `DEADLINE_EXCEEDED` and **writes nothing**.
+   the service answers `504` with the code `api.deadline_exceeded` and **writes nothing**.
 3. **The service listens for the socket closing** (`req.on('close')` before the response ends) and
    stops what it can stop. That is exactly the work `call.cancelled` demands under gRPC
    (`nestjs-grpc` skill, rule 7); the HTTP path makes it neither more nor less necessary.

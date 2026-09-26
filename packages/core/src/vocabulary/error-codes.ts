@@ -46,6 +46,8 @@ export const API_ERROR_CODES = [
   //   a first attempt still running.
   'api.idempotency_key_reused',
   'api.idempotency_in_flight',
+  // transport.md §5.3: a service handed a deadline already past answers this and does nothing.
+  'api.deadline_exceeded',
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
@@ -64,6 +66,7 @@ export const ApiErrorCode = {
   RIGHTS_VERSION_STALE: 'api.rights_version_stale',
   IDEMPOTENCY_KEY_REUSED: 'api.idempotency_key_reused',
   IDEMPOTENCY_IN_FLIGHT: 'api.idempotency_in_flight',
+  DEADLINE_EXCEEDED: 'api.deadline_exceeded',
 } as const;
 
 /**
