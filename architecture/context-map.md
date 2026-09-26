@@ -181,26 +181,28 @@ the implementation, and this paragraph used to state it wrong in three ways, eac
   this moves the index out of `catalog`'s context: the paragraph above already settles that a
   context is a boundary of language and not a kind of infrastructure, and a deployable is the
   second kind of thing.
-- **A pure projection — one event in, one document out, nothing else consulted — and that purity is
-  what licenses the ordering.** The indexer writes OpenSearch **first** and commits its
-  `processed_message` row **second**, because the two cannot commit together and the crash window
-  between them must duplicate rather than drop: a repeat is absorbed by an idempotent write, a gap
-  is absorbed by nothing. Re-applying is free only while the document depends on the event and on
-  nothing that has happened since. **The design this paragraph used to describe — an indexer
-  that reloads from its own write model — is precisely the design that breaks it**: reload a row
-  and the second write is no longer the same write, the ordering stops being correct, and what it
-  degrades into is a show absent from search for ever, with nothing logged and no alert to run a
-  reindex nobody knows is owed.
-- **`version_type: external_gte`, not `external`, and the difference is forced by what the version
-  is.** The version is the event's `occurred_at` in epoch milliseconds. `external` demands
-  strictly greater, so two events about one show inside the same millisecond — a bulk publication, a
-  fixture load — would see the second **refused and its content lost**. `external_gte` accepts an
-  equal version: a redelivery rewrites the same bytes, a same-millisecond pair applies in arrival
-  order, and anything genuinely older is still refused. That refusal is the out-of-order guard a
-  retry topic makes necessary — a message five minutes late loses to the newer one already indexed,
-  and the 409 is read as success rather than retried into the dead-letter queue. So a late replay
-  still can never overwrite a newer version; the index itself is what refuses, and no ordering
-  assumption is made about what Kafka hands us.
+- **A read model of its own, and the order that keeps a replay a rebuild.** The documents are
+  compositions — a date carries its show's fields, and will carry `ticketing`'s availability and
+  headline price — and a composition cannot be a pure projection of one event. So the indexer keeps
+  its own copy of what it has consumed (`show_projection`, `date_projection`, each group of fields
+  versioned by the fact that set it) and composes every document from it. The read model commits
+  first; the documents are written from it afterwards, never with the transaction open.
+  **The failure this paragraph used to warn against does not follow**, because it needed a third
+  ingredient: a redelivery found as a duplicate and *skipped*. Here a duplicate is not skipped — it
+  rewrites the documents from the read model at their current versions — and a crash between the
+  commit and the write leaves the offset uncommitted, so the message returns as exactly that
+  duplicate. No gap, and a replay is still a rebuild. The earlier design (one event in, one document
+  out, the index written first) held only while no document depended on more than one event; it was
+  replaced on 2026-09-26, when the date index needed its show (arthome-platform
+  `apps/search-indexer/HANDOVER.md` §0).
+- **`version_type: external_gte`, not `external`, and the version says what moved.** A show document
+  is versioned by the newest `occurred_at` applied to it, in epoch milliseconds; a date document,
+  which two streams move, by a counter advanced under the date row's lock each time it is recomposed.
+  `external` demands strictly greater, so an equal version — a rebuild of the same state, or two facts
+  inside the same millisecond — would be refused; `external_gte` accepts it, and anything genuinely
+  older is still refused. That refusal is the out-of-order guard a retry topic makes necessary, and
+  the 409 is read as success rather than retried into the dead-letter queue. The read model applies
+  the same condition per group of fields, so an update that overtakes a publication keeps its fields.
 
 #### The engine comparison reopens, and OpenSearch wins for another reason
 
