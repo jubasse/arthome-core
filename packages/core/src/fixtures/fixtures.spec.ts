@@ -39,6 +39,21 @@ describe("the set's coverage", () => {
     }
   });
 
+  it('shows the postponed date as postponed until its room opens at the new time', () => {
+    const date = fixtureDate(fixtures, 'date:postponed');
+    expect(date).not.toBeNull();
+    if (date === null) return;
+
+    const display = displayStateOf({
+      publicationState: date.publicationState,
+      runState: date.runState,
+      outcome: date.outcome,
+      timing: date.timing,
+      now: fixtures.generatedAt,
+    });
+    expect(display.state).toBe(DisplayState.POSTPONED);
+  });
+
   it('carries the case of the three axes in contradiction', () => {
     // The Kafka consumption race made concrete: `live`, `on-air`, AND an outcome.
     const date = fixtureDate(fixtures, 'date:absurd-race');

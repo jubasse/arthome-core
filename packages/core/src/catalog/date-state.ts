@@ -3,7 +3,8 @@
  *
  * E4: three state axes coexisted on a date with no written hierarchy — `publication.state`,
  * `run.state`, `outcome` — and none carried the displayed state, so each surface recomposed it.
- * The hierarchy, once: outcome OUTRANKS run.state OUTRANKS publication.state OUTRANKS time.
+ * The hierarchy, once: outcome OUTRANKS run.state OUTRANKS publication.state OUTRANKS time, with
+ * one bound: a postponement outranks them only until the room opens at the date's new time.
  */
 
 import type { Instant } from '../kernel/clock.js';
@@ -103,7 +104,12 @@ function preSaleDisplay(state: PublicationState): DisplayState | null {
 export function displayStateOf(input: DisplayStateInput): DisplayStateResult {
   const { publicationState, runState, outcome, timing, now } = input;
 
-  if (outcome !== null) {
+  if (outcome === DateOutcome.POSTPONED) {
+    // A postponement moves the date to its new time (D-074): it shows as postponed until its room
+    // opens there, then the run and the time axis take over again.
+    const opensAt = roomOpensAt(timing);
+    if (isBefore(now, opensAt)) return { state: DisplayState.POSTPONED, validUntil: opensAt };
+  } else if (outcome !== null) {
     return { state: outcomeDisplay(outcome), validUntil: null };
   }
 

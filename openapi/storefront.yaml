@@ -5984,7 +5984,8 @@ components:
           type: [string, 'null']
           description: |
             The outcome **replaces the state on every card**, not only on the detail page. It is a fact
-            about the performance: never rewritten, never erased.
+            about the performance: never rewritten, never erased. A postponement moves the date to
+            `rescheduledTo` and replaces the state only until the room opens there.
           x-arthome-vocabulary: [postponed, cancelled, interrupted]
           x-arthome-vocabulary-source: DATE_OUTCOMES
         rescheduledTo: { type: [string, 'null'], format: date-time }

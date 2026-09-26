@@ -281,7 +281,10 @@ Date
 - `replay_policy = 'none'` is **final** for this date: you cannot later enable a replay you promised
   not to make — the public price depended on it. The other values lock when the box office opens.
 - `outcome` is never rewritten nor erased: a declared outcome is a fact.
-- `rescheduled_to` exists only if `outcome = 'postponed'`.
+- `rescheduled_to` exists only if `outcome = 'postponed'`, and postponing **moves the date**:
+  `starts_at` becomes `rescheduled_to` in the same act, and `date.rescheduled` follows
+  `date.outcome_declared` on the date's key, so seats and reminders follow with no command of
+  their own (D-074).
 - `reason_code` is a **code** (`co_production | broadcaster | festival`), never a sentence. The
   current data carries `label`/`labelEn` written into it: that is an i18n leak (E8).
 

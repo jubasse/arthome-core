@@ -12,6 +12,9 @@ export {
   roomOpensAt,
 } from './date-state.js';
 
+export type { DateBeforeOutcome, OutcomeDeclaration } from './outcome.js';
+export { assertOutcomeDeclarable } from './outcome.js';
+
 export type { TerritoryRights } from './rights.js';
 export { blackoutReasonOf, isAvailableIn, restrictedRights, worldwideRights } from './rights.js';
 

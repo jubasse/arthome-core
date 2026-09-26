@@ -446,7 +446,7 @@ export const DateCardSchema: z.ZodObject<
     outcome: vocabularyOutNullable(DATE_OUTCOMES)
       .optional()
       .describe(
-        'The outcome **replaces the state on every card**, not only on the detail page. It is a fact\nabout the performance: never rewritten, never erased.\n',
+        'The outcome **replaces the state on every card**, not only on the detail page. It is a fact\nabout the performance: never rewritten, never erased. A postponement moves the date to\n`rescheduledTo` and replaces the state only until the room opens there.\n',
       ),
     rescheduledTo: InstantOut.nullable().optional(),
     viewers: int64()

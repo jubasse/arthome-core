@@ -54,10 +54,9 @@ describe('displayStateOf — the precedence of the three axes', () => {
     expect(result.state).toBe(DisplayState.CANCELLED);
   });
 
-  it('lets the outcome win on all three values, with no exception', () => {
+  it('lets a final outcome win, whatever the other axes say', () => {
     for (const [outcome, expected] of [
       [DateOutcome.CANCELLED, DisplayState.CANCELLED],
-      [DateOutcome.POSTPONED, DisplayState.POSTPONED],
       [DateOutcome.INTERRUPTED, DisplayState.INTERRUPTED],
     ] as const) {
       const result = displayStateOf({
@@ -69,6 +68,27 @@ describe('displayStateOf — the precedence of the three axes', () => {
       });
       expect(result.state).toBe(expected);
     }
+  });
+
+  it('shows a postponed date as postponed until its room opens at the new time, then lets it run', () => {
+    const postponed = {
+      publicationState: PublicationState.SCHEDULED,
+      runState: null,
+      outcome: DateOutcome.POSTPONED,
+      timing,
+    } as const;
+
+    expect(displayStateOf({ ...postponed, now: '2026-09-20T12:00:00.000Z' })).toEqual({
+      state: DisplayState.POSTPONED,
+      validUntil: '2026-09-21T18:30:00.000Z',
+    });
+    expect(displayStateOf({ ...postponed, now: '2026-09-21T18:45:00.000Z' }).state).toBe(
+      DisplayState.ROOM_OPEN,
+    );
+    expect(
+      displayStateOf({ ...postponed, runState: RunState.ON_AIR, now: '2026-09-21T19:30:00.000Z' })
+        .state,
+    ).toBe(DisplayState.LIVE);
   });
 
   it('NEVER expires an outcome: it is a fact, not a temporal state', () => {

@@ -3131,3 +3131,19 @@ nowhere. The studio contract already declared the field optional.
 with core's own sentence. A surface keeps a state that has no instant until its next read, and
 never invents one.
 
+### D-074 — A postponed date moves, and shows as postponed until its new room opens
+
+**Found while writing the outcome command, arbitrated by the product owner on 2026-09-27.** The
+contract promises "your seats stay valid" on a postponement and `date.rescheduled` tells ticketing
+the seats follow and notifications the reminders do, which is a date that moves. But the display
+rule made every outcome outrank the run and the time axis for ever, so a moved date would have
+shown `postponed` through its own live show.
+
+**Postponing moves the date**: `starts_at` becomes `rescheduled_to` in the command that declares
+the outcome, and `date.rescheduled` follows `date.outcome_declared` on the date's key. **The
+display is bounded**: `displayStateOf` shows `postponed` until the room opens at the new time, with
+that instant as `validUntil`, then the run and the time axis take over. `cancelled` and
+`interrupted` stay final. The outcome is still a fact on the date, never rewritten: a date once
+postponed cannot be postponed again or cancelled, which is the invariant as data-model.md §2.2
+writes it and may need its own arbitration the day a second postponement is asked for.
+

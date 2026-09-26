@@ -628,6 +628,9 @@ contract writes the hierarchy **once**, and serves the result.
 
 > `outcome` outranks `run.state`, which outranks `publication.state`.
 
+With one bound (D-074): a **postponement** moves the date to its new time, and outranks the other
+two axes only until the room opens there. `cancelled` and `interrupted` are final.
+
 And the contract serves **a fourth value, derived and unique**: `displayState`, produced by
 `displayStateOf(publication, run, outcome, instants, now)` in `@arthome/core` for the studio and by
 `publicDisplayStateOf`, the same hierarchy read for the public, for the storefront, accompanied by

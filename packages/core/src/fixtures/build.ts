@@ -244,7 +244,8 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       id: 'date:postponed',
       showId: 'show:quatre-mains',
       venueId: 'venue:criee',
-      timing: timingAt(plusHours(now, -6), ReplayPolicy.INCLUDED, 48),
+      // Its new time: a postponement moves the date (D-074).
+      timing: timingAt(plusHours(now, 72), ReplayPolicy.INCLUDED, 48),
       publicationState: PublicationState.SCHEDULED,
       runState: RunState.IDLE,
       outcome: DateOutcome.POSTPONED,
@@ -252,7 +253,7 @@ export function buildFixtures(seed: number, clock: Clock): Fixtures {
       language: NO_BARRIER,
       gauge: { capacityTotal: 780, seatsSold: 410, seatsHeld: 0, waitlistCount: 0 },
       prices: tiers(2600),
-      covers: 'a postponement — no movement of money, the seat follows',
+      covers: 'a postponement — the date moved, no movement of money, the seat follows',
     },
     {
       id: 'date:interrupted',

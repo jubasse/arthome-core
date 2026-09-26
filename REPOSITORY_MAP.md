@@ -208,7 +208,7 @@ Declarations: `dist/ticketing/index.d.ts` — 11 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 388 exported names.
+Declarations: `dist/index.d.ts` — 391 exported names.
 
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
@@ -253,6 +253,7 @@ Declarations: `dist/index.d.ts` — 388 exported names.
 - `DISPLAY_STATES` (const) — `DISPLAY_STATES: readonly ["draft", "reserve", "scheduled", "technical", "room_open", "live", "replay", "ended", "postponed", "cancelled", "interrupted"]` — The fourth value, derived: what the badge says.
 - `DOMAIN_ERROR_CODES` (const) — The domain's refusals that reach a surface: a rule said no and somebody has to be told why.
 - `DOMAIN_GUARD_CODES` (const) — The domain's internal guards, which no contract publishes and none should.
+- `DateBeforeOutcome` (interface)
 - `DateId` (type) — `type DateId = Brand<'DateId'>;`
 - `DateOutcome` (type+const)
 - `DatePane` (type+const)
@@ -338,6 +339,7 @@ Declarations: `dist/index.d.ts` — 388 exported names.
 - `OrderId` (type) — `type OrderId = Brand<'OrderId'>;`
 - `OrderKind` (type+const) — `type OrderKind = (typeof ORDER_KINDS)[number]; OrderKind: { readonly SEAT: "seat"; readonly MERCH: "merch"; readonly SUBSCRIPTION: "subscription"; }`
 - `OrderQuote` (interface) — The four lines of the summary, composed ONCE.
+- `OutcomeDeclaration` (type) — 'rescheduledTo' is where a postponement moves the date (D-074); the other two carry none.
 - `PAIRING_CODE_ALPHABET` (const) — `PAIRING_CODE_ALPHABET = "ACDEFHJKLMNPQRTVWXY23456789"` — 27 symbols.
 - `PAIRING_CODE_AMBIGUOUS_GLYPHS` (const) — `PAIRING_CODE_AMBIGUOUS_GLYPHS: readonly string[]` — The glyphs that are excluded AND unmappable — the refusing class's edges.
 - `PAIRING_CODE_LENGTH` (const) — `PAIRING_CODE_LENGTH = 6` — Six characters.
@@ -448,6 +450,7 @@ Declarations: `dist/index.d.ts` — 388 exported names.
 - `assertCanOverride` (function) — `function assertCanOverride(existingOrigin: StateChangeOrigin, incomingOrigin: StateChangeOrigin): void;`
 - `assertCommandedTransition` (function) — The server's decision on a commanded transition, returning the transition it allows.
 - `assertKnownFlag` (function) — `function assertKnownFlag(flag: string, knownFlags: readonly string[]): void;`
+- `assertOutcomeDeclarable` (function) — `function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;` — Throws 'state.conflict' when the declaration does not fit the date: an outcome already declared; a date not public yet, which is deleted ra…
 - `assertTierWidens` (function) — `function assertTierWidens(currentCapacity: number, nextCapacity: number): void;` — Capacity tiers: they WIDEN, never shrink after going on sale.
 - `assertTransitionAllowed` (function) — `function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): PublicationTransition;`
 - `assignableRolesOf` (function) — `function assignableRolesOf(heldRoles: readonly MemberRole[]): readonly MemberRole[];` — The roles a person may assign, given those they hold — the union, never a rank.

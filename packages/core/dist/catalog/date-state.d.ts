@@ -3,7 +3,8 @@
  *
  * E4: three state axes coexisted on a date with no written hierarchy — `publication.state`,
  * `run.state`, `outcome` — and none carried the displayed state, so each surface recomposed it.
- * The hierarchy, once: outcome OUTRANKS run.state OUTRANKS publication.state OUTRANKS time.
+ * The hierarchy, once: outcome OUTRANKS run.state OUTRANKS publication.state OUTRANKS time, with
+ * one bound: a postponement outranks them only until the room opens at the date's new time.
  */
 import type { Instant } from '../kernel/clock.js';
 import { DateOutcome, DisplayState, PublicationState, ReplayPolicy, RunState } from '../vocabulary/catalog.js';

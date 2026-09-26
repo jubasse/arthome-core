@@ -1,6 +1,8 @@
 /** The catalogue: what is published, its displayed state, its rights, its language. */
 export type { DateTiming, DisplayStateInput, DisplayStateResult } from './date-state.js';
 export { displayStateOf, endsAt, isFullyOver, isRoomOpen, progressOf, publicDisplayStateOf, replayEndsAt, roomOpensAt, } from './date-state.js';
+export type { DateBeforeOutcome, OutcomeDeclaration } from './outcome.js';
+export { assertOutcomeDeclarable } from './outcome.js';
 export type { TerritoryRights } from './rights.js';
 export { blackoutReasonOf, isAvailableIn, restrictedRights, worldwideRights } from './rights.js';
 export type { LanguageProfile } from './language.js';
