@@ -158,6 +158,9 @@ export const ModerationErrorCode = {
  * `publication.ts`'s irreversible transitions.
  */
 export const CATALOG_ERROR_CODES = [
+  // The public face's slug, unique across artists: `updateChannelIdentity` names it, and a 409
+  //   without the code would say "conflict" about a URL someone else already owns.
+  'artist.slug_taken',
   'date.has_sold_seats',
   'date.outcome_decision_forbidden',
   'date.prices_locked',
@@ -169,6 +172,7 @@ export const CATALOG_ERROR_CODES = [
 export type CatalogErrorCode = (typeof CATALOG_ERROR_CODES)[number];
 
 export const CatalogErrorCode = {
+  ARTIST_SLUG_TAKEN: 'artist.slug_taken',
   DATE_HAS_SOLD_SEATS: 'date.has_sold_seats',
   OUTCOME_DECISION_FORBIDDEN: 'date.outcome_decision_forbidden',
   PRICES_LOCKED: 'date.prices_locked',

@@ -410,6 +410,10 @@ reminders and search indexing all point at a target that changes.
 in a QR for the Share action (`storefront-tv` Q10, E15), and it is what the web uses for its
 cross-language alternate links.
 
+**A date's URL is `{origin}/{language}/d/{slug}`, an artist's `{origin}/{language}/a/{slug}`.** An
+artist has one slug (`updateChannelIdentity`), unique across artists (`artist.slug_taken`), and its
+URL is in the language of its biography, French when it has French or none.
+
 ---
 
 ## 3. `ticketing`

@@ -225,7 +225,7 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 | `catalog.date.replay_policy_set.v1` | `date_id`, `policy`, `window_hours` | `streaming` (asset expiry), `ticketing` (putting it on sale) |
 | `catalog.date.rights_changed.v1` | `date_id`, `scope`, `territories[]`, `reason_code` | `streaming` (the right to watch) |
 | `catalog.show.published.v1` / `.updated.v1` | `show_id`, taxonomy, languages, `title` and `synopsis` per language | `ticketing` (shop), index |
-| `catalog.artist.updated.v1` | `artist_id`, `channel_id`, public face | `notifications` |
+| `catalog.artist.updated.v1` | `artist_id`, `channel_id`, public face: `public_name`, `slug`, `biography`, `category_id`, `country`, `media`, `verified` | `notifications`, `search-indexer` |
 | `catalog.saved_search.matched.v1` | `account_id`, `saved_search_id`, `date_id` | **`notifications`** — raised by the *percolator* |
 
 ### 4.3 `ticketing`

@@ -294,6 +294,12 @@ message ArtistUpdated {
   arthome.common.v1.MediaSet media = 5;
   bool verified = 6;
   google.protobuf.Timestamp occurred_at = 7;
+
+  // The public face every field at its new value, as `updateChannelIdentity` writes it: a card
+  // names its artist, and the biography travels in the language it was written in.
+  string public_name = 8;
+  string slug = 9;
+  repeated arthome.common.v1.LocalizedText biography = 10;
 }
 
 // ---------------------------------------------------- saved search

@@ -91,9 +91,10 @@ export declare const ModerationErrorCode: {
  * Refusals about a date and what may still be changed on it — the wire's half of
  * `publication.ts`'s irreversible transitions.
  */
-export declare const CATALOG_ERROR_CODES: readonly ["date.has_sold_seats", "date.outcome_decision_forbidden", "date.prices_locked", "date.replay_policy_final", "date.technical_check_required", "date.technical_provision_required", "date.stream_key_rotation_during_run"];
+export declare const CATALOG_ERROR_CODES: readonly ["artist.slug_taken", "date.has_sold_seats", "date.outcome_decision_forbidden", "date.prices_locked", "date.replay_policy_final", "date.technical_check_required", "date.technical_provision_required", "date.stream_key_rotation_during_run"];
 export type CatalogErrorCode = (typeof CATALOG_ERROR_CODES)[number];
 export declare const CatalogErrorCode: {
+    readonly ARTIST_SLUG_TAKEN: "artist.slug_taken";
     readonly DATE_HAS_SOLD_SEATS: "date.has_sold_seats";
     readonly OUTCOME_DECISION_FORBIDDEN: "date.outcome_decision_forbidden";
     readonly PRICES_LOCKED: "date.prices_locked";
