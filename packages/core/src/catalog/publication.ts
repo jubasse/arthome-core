@@ -9,6 +9,7 @@
 import { DomainError } from '../kernel/errors.js';
 import { PublicationPromise, PublicationState } from '../vocabulary/catalog.js';
 import { DomainErrorCode } from '../vocabulary/error-codes.js';
+import { Service } from '../vocabulary/people.js';
 
 /** An offered transition, with what it commits to. */
 export interface PublicationTransition {
@@ -172,9 +173,9 @@ export function assertCommandedTransition(
  * The authoritative checklist, in the order the sheet shows — `studio-web` Q7, where the fixtures
  * carried four items against the sheet's seven.
  *
- * Three are facts projected from other contexts: `at_least_one_active_price` and `capacity` from
- * `ticketing`, `technical_check_passed` from `streaming`. `catalog` keeps them current by event,
- * which is what stops a publication needing two synchronous calls.
+ * Only `catalog`'s own items are held; the others are facts projected from the context
+ * `checklistSourceOf` names. `catalog` keeps them current by event, which is what stops a
+ * publication needing synchronous calls.
  */
 export const PUBLICATION_CHECKLIST_ITEMS = [
   'title_and_discipline',
@@ -228,11 +229,33 @@ export function isBlockingChecklistItem(item: PublicationChecklistItem): boolean
   return BLOCKING[item];
 }
 
+/**
+ * Served with each item so no surface keeps its own table. data-model.md §2.3 names the source of
+ * the seven blocking items; the two warnings follow their facts: chapters are `streaming`'s,
+ * moderation is `chat`'s.
+ */
+const SOURCE: Readonly<Record<PublicationChecklistItem, Service>> = {
+  title_and_discipline: Service.CATALOG,
+  poster: Service.CATALOG,
+  description: Service.CATALOG,
+  at_least_one_active_price: Service.TICKETING,
+  capacity: Service.TICKETING,
+  technical_check_passed: Service.STREAMING,
+  chat_mode_set: Service.CHAT,
+  chapters_planned: Service.STREAMING,
+  moderator_assigned: Service.CHAT,
+};
+
+export function checklistSourceOf(item: PublicationChecklistItem): Service {
+  return SOURCE[item];
+}
+
 /** One checklist item, with everything a surface needs to render its row. */
 export interface PublicationChecklistEntry {
   readonly item: PublicationChecklistItem;
   readonly satisfied: boolean;
   readonly blocking: boolean;
+  readonly source: Service;
 }
 
 export interface PublicationReadiness {
@@ -252,6 +275,7 @@ export function publicationReadiness(
     item,
     satisfied: satisfied.includes(item),
     blocking: isBlockingChecklistItem(item),
+    source: checklistSourceOf(item),
   }));
   const missing = entries.filter((e) => e.blocking && !e.satisfied).map((e) => e.item);
   const warnings = entries.filter((e) => !e.blocking && !e.satisfied).map((e) => e.item);

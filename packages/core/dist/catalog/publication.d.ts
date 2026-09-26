@@ -6,6 +6,7 @@
  * PAIRS, which is right — locking a state would also prevent entering it.
  */
 import { PublicationPromise, PublicationState } from '../vocabulary/catalog.js';
+import { Service } from '../vocabulary/people.js';
 /** An offered transition, with what it commits to. */
 export interface PublicationTransition {
     readonly from: PublicationState;
@@ -47,9 +48,9 @@ export declare function assertCommandedTransition(current: {
  * The authoritative checklist, in the order the sheet shows — `studio-web` Q7, where the fixtures
  * carried four items against the sheet's seven.
  *
- * Three are facts projected from other contexts: `at_least_one_active_price` and `capacity` from
- * `ticketing`, `technical_check_passed` from `streaming`. `catalog` keeps them current by event,
- * which is what stops a publication needing two synchronous calls.
+ * Only `catalog`'s own items are held; the others are facts projected from the context
+ * `checklistSourceOf` names. `catalog` keeps them current by event, which is what stops a
+ * publication needing synchronous calls.
  */
 export declare const PUBLICATION_CHECKLIST_ITEMS: readonly ["title_and_discipline", "poster", "description", "at_least_one_active_price", "capacity", "technical_check_passed", "chat_mode_set", "chapters_planned", "moderator_assigned"];
 export type PublicationChecklistItem = (typeof PUBLICATION_CHECKLIST_ITEMS)[number];
@@ -66,11 +67,13 @@ export declare const PublicationChecklistItem: {
     readonly MODERATOR_ASSIGNED: "moderator_assigned";
 };
 export declare function isBlockingChecklistItem(item: PublicationChecklistItem): boolean;
+export declare function checklistSourceOf(item: PublicationChecklistItem): Service;
 /** One checklist item, with everything a surface needs to render its row. */
 export interface PublicationChecklistEntry {
     readonly item: PublicationChecklistItem;
     readonly satisfied: boolean;
     readonly blocking: boolean;
+    readonly source: Service;
 }
 export interface PublicationReadiness {
     readonly ready: boolean;

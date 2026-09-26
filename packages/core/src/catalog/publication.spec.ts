@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   PUBLICATION_CHECKLIST_ITEMS,
+  PublicationChecklistItem,
+  checklistSourceOf,
   isBlockingChecklistItem,
   assertCommandedTransition,
   assertTransitionAllowed,
@@ -14,6 +16,7 @@ import {
 import { DomainError } from '../kernel/errors.js';
 import { PublicationPromise, PublicationState } from '../vocabulary/catalog.js';
 import { DomainErrorCode } from '../vocabulary/error-codes.js';
+import { Service } from '../vocabulary/people.js';
 
 /**
  * E5: the fixtures locked STATES, the mockup locked PAIRS. Locking a state would also prevent
@@ -199,5 +202,25 @@ describe('a commanded transition', () => {
       ),
     );
     expect(refusal.code).toBe(DomainErrorCode.STATE_CONFLICT);
+  });
+});
+
+describe('the source of a checklist item', () => {
+  it('holds only catalog’s own items, and names the context projecting each other one', () => {
+    const own = PUBLICATION_CHECKLIST_ITEMS.filter(
+      (item) => checklistSourceOf(item) === Service.CATALOG,
+    );
+    expect(own).toEqual([
+      PublicationChecklistItem.TITLE_AND_DISCIPLINE,
+      PublicationChecklistItem.POSTER,
+      PublicationChecklistItem.DESCRIPTION,
+    ]);
+    expect(checklistSourceOf(PublicationChecklistItem.AT_LEAST_ONE_ACTIVE_PRICE)).toBe(
+      Service.TICKETING,
+    );
+    expect(checklistSourceOf(PublicationChecklistItem.TECHNICAL_CHECK_PASSED)).toBe(
+      Service.STREAMING,
+    );
+    expect(checklistSourceOf(PublicationChecklistItem.CHAT_MODE_SET)).toBe(Service.CHAT);
   });
 });
