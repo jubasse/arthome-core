@@ -217,14 +217,14 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 | Event | Payload | Consumed by |
 |---|---|---|
 | `catalog.date.drafted.v1` | `date_id`, `channel_id`, `show_id`, `venue_id` | `ticketing` (open `DateSales`), `streaming` (prepare the run) |
-| `catalog.date.scheduled.v1` | + `starts_at`, `venue_timezone`, `runtime_min`, `replay_policy`, `replay_window_hours`, `rights` | `ticketing`, `streaming`, `chat`, `notifications`, `identity` (guards) |
+| `catalog.date.scheduled.v1` | + `starts_at`, `venue_timezone`, `venue_city`, `venue_country`, `runtime_min`, `replay_policy`, `replay_window_hours`, `rights`, `canonical_url` | `ticketing`, `streaming`, `chat`, `notifications`, `identity` (guards) |
 | **`catalog.publication.state_changed.v1`** | `date_id`, `from_state`, `to_state`, `version`, `irreversible`, `changed_by` | **studio realtime** (room `channel:{id}`), journal. **It was missing**: without it, `draft→reserve`, `scheduled↔technical` and `ended→replay-online` produced nothing, and a second operator's screen lied indefinitely |
 | `catalog.publication.engaged.v1` | `date_id`, `engaged[]` (`prices`, `replay`, `chat_mode`) | **`ticketing`** locks the prices · **`chat`** locks the policy |
 | `catalog.date.rescheduled.v1` | `date_id`, `new_starts_at`, `previous_starts_at` | `ticketing` (seats follow), `notifications` (**reminders follow**), `streaming` |
 | `catalog.date.outcome_declared.v1` | `date_id`, `outcome`, `declared_by`, `declared_at`, `message` + `content_language` | **four consequences**: `ticketing` (refunds or credits), `payouts` (withholds), `catalog` (public copy), `notifications` (warns) |
 | `catalog.date.replay_policy_set.v1` | `date_id`, `policy`, `window_hours` | `streaming` (asset expiry), `ticketing` (putting it on sale) |
 | `catalog.date.rights_changed.v1` | `date_id`, `scope`, `territories[]`, `reason_code` | `streaming` (the right to watch) |
-| `catalog.show.published.v1` / `.updated.v1` | `show_id`, taxonomy, languages | `ticketing` (shop), index |
+| `catalog.show.published.v1` / `.updated.v1` | `show_id`, taxonomy, languages, `title` and `synopsis` per language | `ticketing` (shop), index |
 | `catalog.artist.updated.v1` | `artist_id`, `channel_id`, public face | `notifications` |
 | `catalog.saved_search.matched.v1` | `account_id`, `saved_search_id`, `date_id` | **`notifications`** — raised by the *percolator* |
 

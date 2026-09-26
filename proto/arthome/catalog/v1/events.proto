@@ -140,6 +140,11 @@ message DateScheduled {
 
   google.protobuf.Timestamp occurred_at = 12;
   arthome.common.v1.Actor scheduled_by = 13;
+
+  // Where the venue is, for the search filters by city and country: the name the venue holds,
+  // and ISO 3166-1 alpha-2.
+  string venue_city = 14;
+  string venue_country = 15;
 }
 
 message PublicationEngaged {
@@ -256,8 +261,13 @@ message ShowPublished {
   repeated string surtitle_languages = 11;
   arthome.common.v1.MediaSet media = 12;
   google.protobuf.Timestamp occurred_at = 13;
+  // One entry per language that has copy (data-model.md §2.1). Carried so the index can
+  // search and render a show without calling catalog (critical-rules #1).
+  repeated arthome.common.v1.LocalizedText title = 14;
+  repeated arthome.common.v1.LocalizedText synopsis = 15;
 }
 
+// Every field at its new value, not only the changed ones: a consumer replaces, never merges.
 message ShowUpdated {
   string show_id = 1;
   repeated string genre_ids = 2;
@@ -265,6 +275,8 @@ message ShowUpdated {
   LanguageDependency language_dependency = 4;
   arthome.common.v1.MediaSet media = 5;
   google.protobuf.Timestamp occurred_at = 6;
+  repeated arthome.common.v1.LocalizedText title = 7;
+  repeated arthome.common.v1.LocalizedText synopsis = 8;
 }
 
 // ---------------------------------------------------------------- artist
