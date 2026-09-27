@@ -213,8 +213,8 @@ operator chooses on the studio's `refundSeat`. `TicketCard.state` without `held`
 **The hot decrement is the one deliberate exception to load, modify, save.** A load-modify-save
 under the row lock would hold the lock across application code, at exactly the moment it matters
 most. So the aggregate decides the command's parameters, and its repository executes the
-conditional decrement as one atomic statement. Every other `DateSales` command (prices, tiers)
-loads the aggregate and saves it with a version-conditional update.
+conditional decrement as one atomic statement. Every other `DateSales` command (prices, tiers, the
+technical provision) loads the aggregate and saves it with a version-conditional update.
 
 **Commands and queries** go through `@nestjs/cqrs`, with the conventions of the catalog refactor
 (`apps/catalog/HANDOVER.md` §0f in the platform). Its generic pieces (the transaction runner that

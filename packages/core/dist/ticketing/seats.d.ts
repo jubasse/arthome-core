@@ -93,6 +93,11 @@ export declare function provisionRevisableUntil(startsAt: Instant): Instant;
  */
 export declare function assertTechnicalProvisionCovers(capacityTotal: number, provisionedCapacity: number | null, startsAt: Instant | null): void;
 /**
+ * Refuses to record a provision from `provisionRevisableUntil` on, or one below the capacity already
+ * open (D-088). A date with no start has no deadline yet.
+ */
+export declare function assertTechnicalProvisionRecordable(capacityTotal: number, provisionedCapacity: number, startsAt: Instant | null, now: Instant): void;
+/**
  * The priority window granted to the waiting list when a tier opens.
  *
  * Opening a tier notifies the list in the SAME transactional command; two

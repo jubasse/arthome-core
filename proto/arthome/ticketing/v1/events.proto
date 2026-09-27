@@ -285,6 +285,8 @@ message DateSalesPricingChanged {
 // Capacity widens BY TIERS and never shrinks after going on sale.
 // Opening a tier notifies the waiting list IN THE SAME ACT, with a priority
 // window: two calls would let the scarcity dissipate between them.
+// Written by `openCapacityTier` and by `setTechnicalProvision` (D-088), so
+// streaming provisions from one fact carrying the capacity and its provision.
 message DateSalesCapacitySet {
   string date_id = 1;
   string channel_id = 2;
@@ -298,6 +300,8 @@ message DateSalesCapacitySet {
   google.protobuf.Timestamp provision_revisable_until = 5;
   google.protobuf.Timestamp occurred_at = 6;
   arthome.common.v1.Actor set_by = 7;
+  // The capacity the recorded provision covers; unset while none is recorded.
+  optional uint32 provisioned_capacity = 8;
 }
 
 // ---------------------------------------------------------------- seat

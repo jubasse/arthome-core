@@ -3252,3 +3252,14 @@ through a GitHub pull request, merged once `verify` is green and the change revi
 `develop`. One version is shared by the four repositories and released in all of them at once, even
 one that did not change. Nothing is committed on `main` or `develop` directly. The history before
 this date stays as it was.
+
+### D-088 — The studio records a date's technical provision
+
+**Arbitrated by the product owner on 2026-09-27**, closing a gap the core rule left open: beyond
+`TECHNICAL_PROVISION_THRESHOLD`, a capacity needs a provision covering it
+(`assertTechnicalProvisionCovers`), and no command could record one, so every capacity past the
+threshold was refused. The studio records it with `setTechnicalProvision`, revisable until
+`provisionRevisableUntil` (`PROVISION_REVISION_HOURS` before the start) and refused from then on with
+`date.provision_deadline_passed`. A provision below the capacity already open covers nothing and is
+refused with `date.provision_below_capacity`. The penalty for a forecast far above the real figure
+(`data-model.md` §3.1) is left to define later.

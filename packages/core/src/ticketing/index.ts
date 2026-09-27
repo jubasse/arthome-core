@@ -13,6 +13,7 @@ export {
   WAITLIST_NOTIFIED_ACCOUNTS_MAX,
   WAITLIST_PRIORITY_HOURS,
   assertTechnicalProvisionCovers,
+  assertTechnicalProvisionRecordable,
   assertTierWidens,
   availabilityOf,
   availabilityValidUntil,

@@ -172,6 +172,10 @@ export const CATALOG_ERROR_CODES = [
   'date.replay_policy_final',
   'date.technical_check_required',
   'date.technical_provision_required',
+  // D-088's two refusals of `setTechnicalProvision`. Not `technical_provision_required`: below the
+  //   threshold no provision is required, yet one below the open capacity still covers nothing.
+  'date.provision_deadline_passed',
+  'date.provision_below_capacity',
   'date.stream_key_rotation_during_run',
   'date.postponement_limit_reached',
 ] as const;
@@ -186,6 +190,8 @@ export const CatalogErrorCode = {
   REPLAY_POLICY_FINAL: 'date.replay_policy_final',
   TECHNICAL_CHECK_REQUIRED: 'date.technical_check_required',
   TECHNICAL_PROVISION_REQUIRED: 'date.technical_provision_required',
+  PROVISION_DEADLINE_PASSED: 'date.provision_deadline_passed',
+  PROVISION_BELOW_CAPACITY: 'date.provision_below_capacity',
   STREAM_KEY_ROTATION_DURING_RUN: 'date.stream_key_rotation_during_run',
   POSTPONEMENT_LIMIT_REACHED: 'date.postponement_limit_reached',
 } as const;
