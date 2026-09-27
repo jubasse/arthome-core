@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   TECHNICAL_PROVISION_THRESHOLD,
   assertTechnicalProvisionCovers,
+  assertTechnicalProvisionRecordable,
   assertTierWidens,
   availabilityOf,
   availabilityValidUntil,
@@ -25,6 +26,16 @@ const gauge = (over: Partial<Gauge> = {}): Gauge => ({
   waitlistCount: 0,
   ...over,
 });
+
+function refusalOf(act: () => void): unknown {
+  try {
+    act();
+  } catch (error) {
+    if (isDomainError(error)) return { code: error.code, params: error.params };
+    throw error;
+  }
+  return null;
+}
 
 describe('the capacity hold', () => {
   it("takes the intent's expiry instant, not a duration of its own", () => {
@@ -70,16 +81,6 @@ describe('the technical provision', () => {
   const beyond = TECHNICAL_PROVISION_THRESHOLD + 1;
   const startsAt = '2026-09-21T19:00:00.000Z';
 
-  function refusalOf(act: () => void): unknown {
-    try {
-      act();
-    } catch (error) {
-      if (isDomainError(error)) return { code: error.code, params: error.params };
-      throw error;
-    }
-    return null;
-  }
-
   it('stops being revisable three days before the date starts', () => {
     expect(provisionRevisableUntil(startsAt)).toBe('2026-09-18T19:00:00.000Z');
   });
@@ -124,6 +125,45 @@ describe('the technical provision', () => {
       code: CatalogErrorCode.TECHNICAL_PROVISION_REQUIRED,
       params: { threshold: TECHNICAL_PROVISION_THRESHOLD, capacityTotal: beyond },
     });
+  });
+});
+
+describe('recording a technical provision', () => {
+  const startsAt = '2026-09-21T19:00:00.000Z';
+  const beforeDeadline = '2026-09-18T18:59:59.000Z';
+  const atDeadline = '2026-09-18T19:00:00.000Z';
+
+  it('accepts a provision covering the open capacity before the deadline, beyond it or not', () => {
+    expect(
+      refusalOf(() => assertTechnicalProvisionRecordable(8_000, 8_000, startsAt, beforeDeadline)),
+    ).toBeNull();
+    expect(
+      refusalOf(() => assertTechnicalProvisionRecordable(8_000, 15_000, startsAt, beforeDeadline)),
+    ).toBeNull();
+  });
+
+  it('refuses any provision from the deadline on, naming it', () => {
+    expect(
+      refusalOf(() => assertTechnicalProvisionRecordable(8_000, 15_000, startsAt, atDeadline)),
+    ).toEqual({
+      code: CatalogErrorCode.PROVISION_DEADLINE_PASSED,
+      params: { revisableUntil: atDeadline },
+    });
+  });
+
+  it('refuses a provision below the capacity already open, even under the threshold', () => {
+    expect(
+      refusalOf(() => assertTechnicalProvisionRecordable(500, 499, startsAt, beforeDeadline)),
+    ).toEqual({
+      code: CatalogErrorCode.PROVISION_BELOW_CAPACITY,
+      params: { capacityTotal: 500, provisionedCapacity: 499 },
+    });
+  });
+
+  it('sets no deadline while the date has no start', () => {
+    expect(
+      refusalOf(() => assertTechnicalProvisionRecordable(8_000, 15_000, null, atDeadline)),
+    ).toBeNull();
   });
 });
 

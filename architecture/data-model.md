@@ -449,7 +449,7 @@ DateSales
   replay_unit_price nullable, when replay_policy = 'unit'
   prices_locked_at  nullable
   complimentaries[] issued / allocated, by category
-  technical_provision  threshold, provisioning, revision deadline, penalty exposure
+  technical_provision  threshold, provisioned capacity (nullable), revision deadline, penalty exposure
   version
 ```
 
@@ -463,10 +463,13 @@ DateSales
   dissipate between them.
 - Beyond `TECHNICAL_PROVISION_THRESHOLD` seats, the infrastructure is provisioned in advance: a
   capacity beyond it that no recorded provision covers is refused with
-  `date.technical_provision_required` (`assertTechnicalProvisionCovers`). A forecast far above the
-  real figure incurs a penalty; the provision is revisable until `PROVISION_REVISION_HOURS` before
-  the start (`provisionRevisableUntil`). **Threshold, provisioning, deadline and exposure are
-  contract data**, not constants copied onto five surfaces (`studio-web` Q25, `studio-mobile` #13).
+  `date.technical_provision_required` (`assertTechnicalProvisionCovers`). The studio records the
+  provision with `setTechnicalProvision` (D-088), revisable until `PROVISION_REVISION_HOURS` before
+  the start (`provisionRevisableUntil`), then refused with `date.provision_deadline_passed`; one below
+  the capacity already open is refused with `date.provision_below_capacity`
+  (`assertTechnicalProvisionRecordable`). A forecast far above the real figure incurs a penalty, not
+  defined yet (D-088). **Threshold, provisioning, deadline and exposure are contract data**, not
+  constants copied onto five surfaces (`studio-web` Q25, `studio-mobile` #13).
 - Prices lock when the box office opens (`publication.engaged` consumed); the schedule locks when
   the show goes on air.
 - A date sells in **one currency**, its billing market's (D-016): every price tier carries it, active

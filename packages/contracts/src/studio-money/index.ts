@@ -524,6 +524,7 @@ const TechnicalProvisionSchema: z.ZodOptional<
     {
       required: z.ZodOptional<z.ZodBoolean>;
       threshold: z.ZodOptional<z.ZodNumber>;
+      provisionedCapacity: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
       revisableUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
       malusExposure: z.ZodOptional<Money>;
     },
@@ -533,6 +534,9 @@ const TechnicalProvisionSchema: z.ZodOptional<
   .looseObject({
     required: z.boolean().optional(),
     threshold: int().optional(),
+    provisionedCapacity: intNullable()
+      .optional()
+      .describe('The capacity the recorded provision covers; null while none is recorded.'),
     revisableUntil: instantNullable().optional(),
     malusExposure: MoneyOut.meta(INHERITED).optional(),
   })

@@ -2,7 +2,7 @@
 
 import type { Instant } from '../kernel/clock.js';
 import { DomainError } from '../kernel/errors.js';
-import { isAfter, plusHours, plusMinutes, plusSeconds } from '../time/instant.js';
+import { isAfter, isBefore, plusHours, plusMinutes, plusSeconds } from '../time/instant.js';
 import { CatalogErrorCode, DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /**
@@ -167,6 +167,33 @@ export function assertTechnicalProvisionCovers(
       ...(startsAt === null ? {} : { revisableUntil: provisionRevisableUntil(startsAt) }),
     },
   });
+}
+
+/**
+ * Refuses to record a provision from `provisionRevisableUntil` on, or one below the capacity already
+ * open (D-088). A date with no start has no deadline yet.
+ */
+export function assertTechnicalProvisionRecordable(
+  capacityTotal: number,
+  provisionedCapacity: number,
+  startsAt: Instant | null,
+  now: Instant,
+): void {
+  if (startsAt !== null) {
+    const revisableUntil = provisionRevisableUntil(startsAt);
+    if (!isBefore(now, revisableUntil)) {
+      throw new DomainError({
+        code: CatalogErrorCode.PROVISION_DEADLINE_PASSED,
+        params: { revisableUntil },
+      });
+    }
+  }
+  if (provisionedCapacity < capacityTotal) {
+    throw new DomainError({
+      code: CatalogErrorCode.PROVISION_BELOW_CAPACITY,
+      params: { capacityTotal, provisionedCapacity },
+    });
+  }
 }
 
 /**

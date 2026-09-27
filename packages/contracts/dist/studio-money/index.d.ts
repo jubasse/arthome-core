@@ -150,6 +150,7 @@ declare const ComplimentarySchema: z.ZodObject<{
 declare const TechnicalProvisionSchema: z.ZodOptional<z.ZodObject<{
     required: z.ZodOptional<z.ZodBoolean>;
     threshold: z.ZodOptional<z.ZodNumber>;
+    provisionedCapacity: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     revisableUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     malusExposure: z.ZodOptional<Money>;
 }, Looseness>>;
