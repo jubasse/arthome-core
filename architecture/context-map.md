@@ -1094,12 +1094,13 @@ parallelise.
 | Measure | Threshold | Act |
 |---|---|---|
 | `kafka_consumergroup_lag` on a **single partition** of `arthome.chat.date` | **> 10,000 messages or > 30 s** | change the `chat` topic's key from `date_id` to `date_id#shard`, the shard count being **served in the contract** |
-| `kafka_consumergroup_lag` on `arthome.ticketing.order` | **> 30 s** | raise the partition count; the key stays `date_id` (order there is a capacity invariant) |
+| `kafka_consumergroup_lag` on `arthome.ticketing.order` | **> 30 s** | raise the partition count; the key stays `order_id` (D-078) |
 | `partition_bytes_in` max/median imbalance | **> 10×** | same diagnosis |
 
-**Why sharding is permitted on the chat and forbidden on ticketing.** A chat's order is restored on
-read by `(at_media_sec, seq)`: it is not carried by the partition. The order of purchases on a date
-**is** the capacity invariant: it must stay inside one partition.
+**Why sharding is permitted on the chat.** A chat's order is restored on read by
+`(at_media_sec, seq)`: it is not carried by the partition. Ticketing's capacity invariant is not
+carried by a partition either: it is one conditional decrement in Postgres
+(`adr-ticketing.md` §3, D-078), and its hot spot is that row, with its own thresholds there.
 
 **And the viewer counter does not go through Kafka at the sample's frequency.** One sample per
 second per live show in a durable log is waste. The counter travels over **Redis** (broadcast), and

@@ -316,19 +316,25 @@ The vertical use case the file wants to show a reader, with `traceparent` end to
 ```
 POST /orders/seats                      bff-storefront   traceparent created
   └─ POST /v1/orders/seats → ticketing  HTTP/JSON        traceparent in a header
-       └─ TRANSACTION
-            ├─ UPDATE date_sales SET seats_available = seats_available - 1   (invariant)
+       └─ TRANSACTION A                 (adr-ticketing.md §2)
+            ├─ UPDATE date_sales SET seats_available = seats_available - 1
+            │    WHERE seats_available >= 1                               (invariant)
+            ├─ INSERT seat_hold (expires with the purchase intent)
+            ├─ INSERT seat_order (pending)
+            └─ INSERT processed_idempotency_key (key + fingerprint, bound to the order)
+       └─ PaymentPort.createIntent       outside any transaction
+       └─ TRANSACTION B, once paid       (D-077: the seat is created at payment)
+            ├─ UPDATE seat_order → paid, seat_hold → consumed
             ├─ INSERT seat (seat_code issued by the server)
-            ├─ INSERT order
-            ├─ INSERT processed_idempotency_key (key + fingerprint + memorised response)
             └─ INSERT outbox_event ×2   tracecontext = traceparent
        └─ COMMIT                        ← nothing is published before this
-  ◄─ 201 { seat, date up to date }      the command returns the projected state, not a receipt
+  ◄─ 201 { seat, date up to date }      when paid at once; 202 with the handoff otherwise
 
 Debezium reads the WAL ──► arthome.ticketing.date_sales   key date_id
                       └──► arthome.ticketing.order        key order_id
 
-catalog-projector      consumes availability_changed → date_card_public  (the capacity moves)
+catalog-projector      consumes availability_changed → date_card_public  (at a bounded rate,
+                                                                            adr-ticketing.md §5)
 catalog-indexer        consumes availability_changed → OpenSearch        (the facet moves)
 streaming-entitlement  consumes seat.activated       → entitlement_projection (the right exists)
 payouts-ledger         consumes order.paid           → payout_ledger     (the right to a payout)

@@ -449,8 +449,9 @@ DateSales
 
 **Invariants.**
 - Capacity **widens by tiers, never shrinks** after going on sale.
-- `seats_available` never goes below zero: the decrement and the creation of the seat are **in the
-  same transaction**. It is the system's hardest concurrency invariant.
+- `seats_available` never goes below zero: the decrement and the creation of the **hold** are **in
+  the same transaction**, one conditional statement (`adr-ticketing.md` §3). It is the system's
+  hardest concurrency invariant. The seat itself is created at payment, from the hold (D-077).
 - **Opening a tier notifies the waiting list in the same act**: one single transactional command,
   with the **priority window (2 h) as a domain parameter**. Two calls would let the scarcity
   dissipate between them.
@@ -526,10 +527,13 @@ seat being sold.
 Seat
   id · date_id · account_id · profile_id (nullable) · tier
   seat_code       issued by the SERVER                   ← never derived client-side
-  state           held | active | cancelled | refunded | transferred | credited
+  state           active | cancelled | refunded | transferred | credited
   cancel_deadline timestamptz, served                    ← never the sentence "up to 1 h before"
   order_id
 ```
+
+**A seat is an access right, not a place** (D-077): everyone watches the same broadcast, so a seat
+has no location, and it exists from payment on. Before that, a `SeatHold` carries the capacity.
 
 **The seat code is issued by the server** (`storefront-web` Q18). It appears identically on the web,
 on mobile and on TV. The mockup computes it by hashing: ported as it stands, it would give **three

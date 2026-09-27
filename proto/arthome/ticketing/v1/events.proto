@@ -9,8 +9,8 @@
 //
 // Kafka topics:
 //   arthome.ticketing.date_sales    key date_id     12 partitions
-//   arthome.ticketing.order         key order_id
-//   arthome.ticketing.subscription  key account_id
+//   arthome.ticketing.order         key order_id    (D-078)
+//   arthome.ticketing.account       key account_id
 //
 // Maturity: STABLE (milestone 3).
 syntax = "proto3";

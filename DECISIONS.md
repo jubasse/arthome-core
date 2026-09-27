@@ -3164,3 +3164,35 @@ postponed again or cancelled". A postponement may be followed by another one, up
 `POSTPONEMENTS_MAX` (3, then `date.postponement_limit_reached`), by a cancellation until the date
 ends, or by an interruption once it started. A cancellation and an interruption stay final.
 
+### D-077 — A seat is an access right, created at payment
+
+**Arbitrated by the product owner on 2026-09-27**, settling the contradiction between
+`adr-payments.md` §8 (a seat at `paid`) and the golden path of `events.md` §6 (a seat in the
+purchase's transaction). Everyone who buys a date watches the same broadcast from the same point of
+view: unlike a concert, the place is not what is sold. A seat is the right to watch, created when
+the order is paid, from the `SeatHold` that carried its capacity until then. `Seat.state` loses
+`held`. Several cameras sold as several price ranges for one date are an idea for later, noted in
+`adr-ticketing.md` §14; nothing is built for it.
+
+### D-078 — `arthome.ticketing.order` is keyed by `order_id`
+
+**Arbitrated by the product owner on 2026-09-27**, settling `events.md` §3 (`order_id`) against
+`context-map.md` §11(b) (`date_id`). The capacity invariant is one conditional decrement in
+Postgres (`adr-ticketing.md` §3), not an order carried by a partition, and the consumers of order
+events need only the order within one order. Seat events stay on `arthome.ticketing.date_sales`,
+keyed by `date_id`.
+
+### D-079 — An opening is sized for 10,000 buyers a minute on one date, behind a waiting room
+
+**Arbitrated by the product owner on 2026-09-27.** No load target existed. The design target is
+about 10,000 buyers in the first minute of one date's opening, within the money-write budget of
+`transport.md` §5.9. The capacity path stays a single conditional decrement; a waiting room per
+date, armed in advance or past an admission rate, turns the burst into a fair queue
+(`adr-ticketing.md` §3 and §4). Proven by a load test before the first slice is done.
+
+### D-080 — The first slice of `ticketing` is a date's seats and its waiting list
+
+**Arbitrated by the product owner on 2026-09-27.** It covers capacity and prices, holds, seat
+orders and their payment through the ports of `adr-payments.md` §4, the seat, cancellation and
+refund, the effects of a date's outcome, and the waiting list with its priority window. The shop,
+the cart, subscriptions and external orders follow on the same foundations.
