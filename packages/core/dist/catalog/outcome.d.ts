@@ -1,6 +1,6 @@
 /**
- * When a date's outcome can be declared. A declared outcome is a fact, never rewritten nor erased
- * (data-model.md §2.2), and each of the three belongs to one moment of the date.
+ * When a date's outcome can be declared. Each of the three belongs to one moment of the date, and
+ * only a postponement can be followed by another outcome (data-model.md §2.2, D-076).
  */
 import { type DateTiming } from './date-state.js';
 import type { Instant } from '../kernel/clock.js';
@@ -15,14 +15,17 @@ export type OutcomeDeclaration = {
 };
 export interface DateBeforeOutcome {
     readonly outcome: DateOutcome | null;
+    /** How many times the date was postponed already. */
+    readonly postponements: number;
     readonly publicationState: PublicationState;
     readonly timing: DateTiming;
 }
 /**
- * Throws `state.conflict` when the declaration does not fit the date: an outcome already
+ * Throws `state.conflict` when the declaration does not fit the date: a final outcome already
  * declared; a date not public yet, which is deleted rather than cancelled; a postponement once
  * the live show has started or to an instant already past; an interruption before it started;
- * a cancellation once it has ended.
+ * a cancellation once it has ended. Throws `date.postponement_limit_reached` past
+ * `POSTPONEMENTS_MAX`.
  */
 export declare function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;
 //# sourceMappingURL=outcome.d.ts.map

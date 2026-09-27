@@ -3147,3 +3147,20 @@ that instant as `validUntil`, then the run and the time axis take over. `cancell
 postponed cannot be postponed again or cancelled, which is the invariant as data-model.md §2.2
 writes it and may need its own arbitration the day a second postponement is asked for.
 
+### D-075 — Public URLs carry no language and two levels at most
+
+**Arbitrated by the product owner on 2026-09-27.** The language is a setting of the interface, as
+on Twitch, YouTube or Facebook, not a segment of the link. The shapes, in data-model.md §2.7:
+`/show/{show-slug}`, `/show/{show-slug}/date/{date-slug}`, `/artist/{artist-slug}`, and the short
+links `/s/…` and `/a/…`. The full chain under the artist was weighed and refused: a renamed artist
+would have moved every show and date URL, the links grow long for a QR code, and a show made by
+several artists has one address. A replaced slug resolves for 30 days
+(`SLUG_REDIRECT_DAYS`). The per-language slugs §2.7 used to require are gone.
+
+### D-076 — A date can be postponed up to three times, and cancelled after a postponement
+
+**Arbitrated by the product owner on 2026-09-27**, replacing D-074's "a postponed date cannot be
+postponed again or cancelled". A postponement may be followed by another one, up to
+`POSTPONEMENTS_MAX` (3, then `date.postponement_limit_reached`), by a cancellation until the date
+ends, or by an interruption once it started. A cancellation and an interruption stay final.
+

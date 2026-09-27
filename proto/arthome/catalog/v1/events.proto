@@ -146,10 +146,14 @@ message DateScheduled {
   string venue_city = 14;
   string venue_country = 15;
 
-  // Stable, one per language (data-model.md §2.7): a card links in the reader's language, and
-  // `canonical_url` carries only the title's own.
-  string slug_fr = 16;
-  string slug_en = 17;
+  // A slug per language and a language in the URL, until D-075 removed both.
+  reserved 16, 17;
+  reserved "slug_fr", "slug_en";
+
+  // The URL is /show/{show_slug}/date/{slug}: the date's slug is its day at the venue, unique
+  // within its show (D-075).
+  string show_slug = 18;
+  string slug = 19;
 }
 
 message PublicationEngaged {
@@ -202,6 +206,11 @@ message DateRescheduled {
   arthome.common.v1.VenueClock new_venue_clock = 4;
   google.protobuf.Timestamp occurred_at = 5;
   arthome.common.v1.Actor rescheduled_by = 6;
+
+  // A date moved to another day takes that day's slug; the former one keeps resolving for
+  // SLUG_REDIRECT_DAYS (D-075).
+  string new_slug = 7;
+  string new_canonical_url = 8;
 }
 
 // ONE event, FOUR consequences, and none of the four consumers talks to the
@@ -270,6 +279,8 @@ message ShowPublished {
   // search and render a show without calling catalog (critical-rules #1).
   repeated arthome.common.v1.LocalizedText title = 14;
   repeated arthome.common.v1.LocalizedText synopsis = 15;
+  // Unique across shows and stable: the show's URL is /show/{slug} (D-075).
+  string slug = 16;
 }
 
 // Every field at its new value, not only the changed ones: a consumer replaces, never merges.

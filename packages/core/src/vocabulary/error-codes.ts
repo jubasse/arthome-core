@@ -168,6 +168,7 @@ export const CATALOG_ERROR_CODES = [
   'date.technical_check_required',
   'date.technical_provision_required',
   'date.stream_key_rotation_during_run',
+  'date.postponement_limit_reached',
 ] as const;
 export type CatalogErrorCode = (typeof CATALOG_ERROR_CODES)[number];
 
@@ -180,6 +181,7 @@ export const CatalogErrorCode = {
   TECHNICAL_CHECK_REQUIRED: 'date.technical_check_required',
   TECHNICAL_PROVISION_REQUIRED: 'date.technical_provision_required',
   STREAM_KEY_ROTATION_DURING_RUN: 'date.stream_key_rotation_during_run',
+  POSTPONEMENT_LIMIT_REACHED: 'date.postponement_limit_reached',
 } as const;
 
 /**

@@ -450,7 +450,7 @@ Declarations: `dist/index.d.ts` — 391 exported names.
 - `assertCanOverride` (function) — `function assertCanOverride(existingOrigin: StateChangeOrigin, incomingOrigin: StateChangeOrigin): void;`
 - `assertCommandedTransition` (function) — The server's decision on a commanded transition, returning the transition it allows.
 - `assertKnownFlag` (function) — `function assertKnownFlag(flag: string, knownFlags: readonly string[]): void;`
-- `assertOutcomeDeclarable` (function) — `function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;` — Throws 'state.conflict' when the declaration does not fit the date: an outcome already declared; a date not public yet, which is deleted ra…
+- `assertOutcomeDeclarable` (function) — `function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;` — Throws 'state.conflict' when the declaration does not fit the date: a final outcome already declared; a date not public yet, which is delet…
 - `assertTierWidens` (function) — `function assertTierWidens(currentCapacity: number, nextCapacity: number): void;` — Capacity tiers: they WIDEN, never shrink after going on sale.
 - `assertTransitionAllowed` (function) — `function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): PublicationTransition;`
 - `assignableRolesOf` (function) — `function assignableRolesOf(heldRoles: readonly MemberRole[]): readonly MemberRole[];` — The roles a person may assign, given those they hold — the union, never a rank.

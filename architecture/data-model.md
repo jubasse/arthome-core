@@ -265,7 +265,7 @@ Title and synopsis **in both languages where they exist**, cast, discipline, **l
 ```
 Date
   id · show_id · venue_id · channel_id
-  slug                  stable, per language (§2.7)
+  slug                  its day at the venue, unique within its show (§2.7)
   starts_at             timestamptz UTC
   runtime_min           denormalised from the show (it freezes at publication)
   rights                scope (worldwide | restricted) · territories[] · reason_code
@@ -280,7 +280,9 @@ Date
 **Invariants.**
 - `replay_policy = 'none'` is **final** for this date: you cannot later enable a replay you promised
   not to make — the public price depended on it. The other values lock when the box office opens.
-- `outcome` is never rewritten nor erased: a declared outcome is a fact.
+- An outcome is a fact, kept in the date's events. Only a **postponement** can be followed by
+  another outcome: up to `DomainConstant.POSTPONEMENTS_MAX` (3) postponements, then a
+  cancellation or an interruption, which are final (D-076).
 - `rescheduled_to` exists only if `outcome = 'postponed'`, and postponing **moves the date**:
   `starts_at` becomes `rescheduled_to` in the same act, and `date.rescheduled` follows
   `date.outcome_declared` on the date's key, so seats and reminders follow with no command of
@@ -405,14 +407,23 @@ what gets bookmarked, what a reminder and a notification point at, what gets ind
 mockup addresses the page by artist and resolves "the current date" on arrival — so sharing,
 reminders and search indexing all point at a target that changes.
 
-**The contract carries**: `Date.slug` and `Show.slug`, stable, **per language** (`slug_fr`,
-`slug_en`), and a **served `canonical_url`**, never built by the surface. It is what the TV encodes
-in a QR for the Share action (`storefront-tv` Q10, E15), and it is what the web uses for its
-cross-language alternate links.
+**The contract serves a `canonical_url`**, never built by a surface: what the TV encodes in a QR for
+the Share action (`storefront-tv` Q10, E15), and what the web shares and indexes. Its shape (D-075):
 
-**A date's URL is `{origin}/{language}/d/{slug}`, an artist's `{origin}/{language}/a/{slug}`.** An
-artist has one slug (`updateChannelIdentity`), unique across artists (`artist.slug_taken`), and its
-URL is in the language of its biography, French when it has French or none.
+```
+/show/{show-slug}                      a show and its dates      short: /s/{show-slug}
+/show/{show-slug}/date/{date-slug}     one date
+/artist/{artist-slug}                  an artist                 short: /a/{artist-slug}
+```
+
+- **No language in a URL**: the language is a setting of the interface, not of the link.
+- **One slug each.** A show's comes from its title and is unique across shows; a date's is its day
+  at the venue (`2026-12-15`, then `2026-12-15-2000` for a second performance that day), unique
+  within its show; an artist's comes from its public name (`artist.slug_taken`).
+- **Two levels at most**: a show's URL does not carry its artist, so renaming an artist moves no
+  show or date URL, and a show made by several artists has one address.
+- **A replaced slug keeps resolving** for `DomainConstant.SLUG_REDIRECT_DAYS` (30) to the current
+  URL: an artist renamed, a date postponed to another day.
 
 ---
 

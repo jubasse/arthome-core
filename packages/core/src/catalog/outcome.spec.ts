@@ -4,7 +4,7 @@ import type { DateTiming } from './date-state.js';
 import { assertOutcomeDeclarable, type DateBeforeOutcome } from './outcome.js';
 import { isDomainError } from '../kernel/errors.js';
 import { DateOutcome, PublicationState, ReplayPolicy } from '../vocabulary/catalog.js';
-import { DomainErrorCode } from '../vocabulary/error-codes.js';
+import { CatalogErrorCode, DomainErrorCode } from '../vocabulary/error-codes.js';
 
 const timing: DateTiming = {
   startsAt: '2026-11-04T19:30:00.000Z',
@@ -16,6 +16,7 @@ const timing: DateTiming = {
 
 const scheduled: DateBeforeOutcome = {
   outcome: null,
+  postponements: 0,
   publicationState: PublicationState.SCHEDULED,
   timing,
 };
@@ -62,12 +63,24 @@ describe('assertOutcomeDeclarable — each outcome at its moment', () => {
     }
   });
 
-  it('never rewrites a declared outcome, and never declares one on a date not public', () => {
+  it('lets a postponed date move again or be cancelled, up to three postponements', () => {
+    const postponed = { ...scheduled, outcome: DateOutcome.POSTPONED, postponements: 2 };
+
+    expect(refusalOf(() => assertOutcomeDeclarable(postponed, postpone, BEFORE))).toBeNull();
+    expect(refusalOf(() => assertOutcomeDeclarable(postponed, cancel, BEFORE))).toBeNull();
     expect(
       refusalOf(() =>
-        assertOutcomeDeclarable({ ...scheduled, outcome: DateOutcome.POSTPONED }, cancel, BEFORE),
+        assertOutcomeDeclarable({ ...postponed, postponements: 3 }, postpone, BEFORE),
       ),
-    ).toEqual({ code: DomainErrorCode.STATE_CONFLICT, params: { outcome: DateOutcome.POSTPONED } });
+    ).toEqual({ code: CatalogErrorCode.POSTPONEMENT_LIMIT_REACHED, params: { max: 3 } });
+  });
+
+  it('never rewrites a final outcome, and never declares one on a date not public', () => {
+    expect(
+      refusalOf(() =>
+        assertOutcomeDeclarable({ ...scheduled, outcome: DateOutcome.CANCELLED }, postpone, BEFORE),
+      ),
+    ).toEqual({ code: DomainErrorCode.STATE_CONFLICT, params: { outcome: DateOutcome.CANCELLED } });
     expect(
       refusalOf(() =>
         assertOutcomeDeclarable(

@@ -8,4 +8,8 @@ export const DomainConstant = {
   ROOM_OPENS_MINUTES_BEFORE: 30,
   /** `needs/storefront-web.md` and `needs/storefront-tv.md`: exact up to it, a lower bound beyond. */
   SEARCH_EXACT_TOTAL_LIMIT: 10_000,
+  /** D-075: a replaced slug keeps resolving to the current URL while people move to it. */
+  SLUG_REDIRECT_DAYS: 30,
+  /** D-076: how many times one date may be postponed; a cancellation stays possible after. */
+  POSTPONEMENTS_MAX: 3,
 } as const;

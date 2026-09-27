@@ -8,5 +8,9 @@ export declare const DomainConstant: {
     readonly ROOM_OPENS_MINUTES_BEFORE: 30;
     /** `needs/storefront-web.md` and `needs/storefront-tv.md`: exact up to it, a lower bound beyond. */
     readonly SEARCH_EXACT_TOTAL_LIMIT: 10000;
+    /** D-075: a replaced slug keeps resolving to the current URL while people move to it. */
+    readonly SLUG_REDIRECT_DAYS: 30;
+    /** D-076: how many times one date may be postponed; a cancellation stays possible after. */
+    readonly POSTPONEMENTS_MAX: 3;
 };
 //# sourceMappingURL=domain-constants.d.ts.map

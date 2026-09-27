@@ -402,7 +402,7 @@ export const DateCardSchema: z.ZodObject<
         avatar: ImageRenditionSchema.optional(),
       })
       .optional(),
-    slug: z.string().meta({ examples: ['nuit-blanche-2026-09-21'] }),
+    slug: z.string().meta({ examples: ['2026-09-21'] }),
     canonicalUrl: z
       .string()
       .meta({ format: 'uri' })
@@ -446,7 +446,7 @@ export const DateCardSchema: z.ZodObject<
     outcome: vocabularyOutNullable(DATE_OUTCOMES)
       .optional()
       .describe(
-        'The outcome **replaces the state on every card**, not only on the detail page. It is a fact\nabout the performance: never rewritten, never erased. A postponement moves the date to\n`rescheduledTo` and replaces the state only until the room opens there.\n',
+        'The outcome **replaces the state on every card**, not only on the detail page. It is a fact\nabout the performance, never erased; only a postponement can be followed by another outcome\n(D-076). A postponement moves the date to `rescheduledTo` and replaces the state only until the\nroom opens there.\n',
       ),
     rescheduledTo: InstantOut.nullable().optional(),
     viewers: int64()
