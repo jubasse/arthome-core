@@ -70,6 +70,12 @@ bug in the other direction would have passed a real code change. The check prove
 stream** is identical, not semantic equivalence: an edit inside a string literal would pass it. The
 tests cover that, so run both.
 
+**Branches (D-087).** Nothing is committed on `main` or `develop`. Work goes on `feature/{name}` from
+`develop`, one per repository it touches, and reaches `develop` through a pull request once `verify`
+is green; its description follows `code-conventions.md` §5.9. A release is `release/{version}` from
+`develop`, merged into `main`, tagged `v{version}`, then merged back into `develop`, in the four
+repositories at once with one shared version. A worktree branches from `develop`.
+
 **A shared tree.** Several agents work here at once. Commit by explicit path — `git commit --only
 <paths>` — never `git add -A`, or you publish someone's in-flight work under your message. And run
 `prettier --write` before stepping away: an unformatted file in flight makes `prettier --check` red

@@ -3242,3 +3242,13 @@ shows the queue like every surface, and the purchase pairing (`intent = seat`) o
 five-minute hold (`HOLD_MINUTES_TV_PAIRING`), only once the account is admitted. First come, first served for
 everyone, with no way around it through the TV: `createPairing` carries `X-Arthome-Admission-Token`,
 or is refused with `403` `order.sales_queue_admission_required`.
+
+### D-087 — Branches: feature, develop, release, main, and one version for the four repositories
+
+**Arbitrated by the product owner on 2026-09-27**, after every change had gone straight to `main`.
+In each of the four repositories, work goes on `feature/{name}` from `develop` and reaches `develop`
+through a GitHub pull request, merged once `verify` is green and the change reviewed. A release is
+`release/{version}` cut from `develop`, merged into `main`, tagged `v{version}`, and merged back into
+`develop`. One version is shared by the four repositories and released in all of them at once, even
+one that did not change. Nothing is committed on `main` or `develop` directly. The history before
+this date stays as it was.
