@@ -538,7 +538,7 @@ const TechnicalProvisionSchema: z.ZodOptional<
   })
   .optional()
   .describe(
-    'Beyond **10,000 seats**, the infrastructure is provisioned in advance; a forecast far above\nthe real figure exposes you to a **penalty**; revisable up to **72 h** beforehand.\n**Threshold, provision, deadline and exposure are contract data**, not constants copied out\nacross five surfaces.\n',
+    'Beyond `TECHNICAL_PROVISION_THRESHOLD` seats (`@arthome/core`), the infrastructure is\nprovisioned in advance; a forecast far above the real figure exposes you to a **penalty**;\nrevisable until `PROVISION_REVISION_HOURS` before the start.\n**Threshold, provision, deadline and exposure are contract data**, not constants copied out\nacross five surfaces.\n',
   );
 
 /** The `tickets` pane of a date. */

@@ -1895,8 +1895,9 @@ paths:
       summary: Refreshes capacity and prices before showing a total.
       description: |
         The only legitimate call from a television's booking screen: the date is already in hand,
-        only the capacity moves. `validUntil` is short (60 s) because the "show already started"
-        price is **pro rata to the time remaining**.
+        only the capacity moves. `validUntil` is short, `AVAILABILITY_VALID_SECONDS` after `servedAt`
+        (`@arthome/core`), because the "show already started" price is **pro rata to the time
+        remaining**.
 
         **Public read.** Called **with no authentication at all**, this operation returns the
         **public body** — identical for every anonymous caller, hence shareable in a common
@@ -6318,7 +6319,8 @@ components:
           format: date-time
           description: |
             Present when the current price depends on the instant — the "show already started" price is
-            **pro rata to the time remaining** and cannot be a frozen string. 60 s.
+            **pro rata to the time remaining** and cannot be a frozen string. `AVAILABILITY_VALID_SECONDS`
+            after `servedAt` (`@arthome/core`).
 
     Chapter:
       type: object

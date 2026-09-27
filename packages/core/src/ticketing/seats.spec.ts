@@ -1,16 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  TECHNICAL_PROVISION_THRESHOLD,
+  assertTechnicalProvisionCovers,
   assertTierWidens,
   availabilityOf,
+  availabilityValidUntil,
   checkoutIntentExpiry,
   holdFor,
   isHoldExpired,
   isScarce,
+  provisionRevisableUntil,
   seatsAvailable,
   tvPairingIntentExpiry,
   type Gauge,
 } from './seats.js';
+import { isDomainError } from '../kernel/errors.js';
+import { CatalogErrorCode } from '../vocabulary/error-codes.js';
 
 const gauge = (over: Partial<Gauge> = {}): Gauge => ({
   capacityTotal: 100,
@@ -57,6 +63,73 @@ describe('the capacity tiers', () => {
     expect(() => assertTierWidens(500, 800)).not.toThrow();
     expect(() => assertTierWidens(500, 500)).toThrow();
     expect(() => assertTierWidens(500, 300)).toThrow();
+  });
+});
+
+describe('the technical provision', () => {
+  const beyond = TECHNICAL_PROVISION_THRESHOLD + 1;
+  const startsAt = '2026-09-21T19:00:00.000Z';
+
+  function refusalOf(act: () => void): unknown {
+    try {
+      act();
+    } catch (error) {
+      if (isDomainError(error)) return { code: error.code, params: error.params };
+      throw error;
+    }
+    return null;
+  }
+
+  it('stops being revisable three days before the date starts', () => {
+    expect(provisionRevisableUntil(startsAt)).toBe('2026-09-18T19:00:00.000Z');
+  });
+
+  it('asks for nothing up to the threshold, provision or not', () => {
+    expect(
+      refusalOf(() =>
+        assertTechnicalProvisionCovers(TECHNICAL_PROVISION_THRESHOLD, null, startsAt),
+      ),
+    ).toBeNull();
+  });
+
+  it('refuses a capacity beyond the threshold while no provision is recorded, naming the deadline', () => {
+    expect(refusalOf(() => assertTechnicalProvisionCovers(beyond, null, startsAt))).toEqual({
+      code: CatalogErrorCode.TECHNICAL_PROVISION_REQUIRED,
+      params: {
+        threshold: TECHNICAL_PROVISION_THRESHOLD,
+        capacityTotal: beyond,
+        revisableUntil: '2026-09-18T19:00:00.000Z',
+      },
+    });
+  });
+
+  it('refuses a provision smaller than the capacity, and names it', () => {
+    expect(refusalOf(() => assertTechnicalProvisionCovers(beyond, beyond - 1, startsAt))).toEqual({
+      code: CatalogErrorCode.TECHNICAL_PROVISION_REQUIRED,
+      params: {
+        threshold: TECHNICAL_PROVISION_THRESHOLD,
+        capacityTotal: beyond,
+        provisionedCapacity: beyond - 1,
+        revisableUntil: '2026-09-18T19:00:00.000Z',
+      },
+    });
+  });
+
+  it('accepts a provision covering the capacity', () => {
+    expect(refusalOf(() => assertTechnicalProvisionCovers(beyond, beyond, startsAt))).toBeNull();
+  });
+
+  it('names no deadline while the date has no start', () => {
+    expect(refusalOf(() => assertTechnicalProvisionCovers(beyond, null, null))).toEqual({
+      code: CatalogErrorCode.TECHNICAL_PROVISION_REQUIRED,
+      params: { threshold: TECHNICAL_PROVISION_THRESHOLD, capacityTotal: beyond },
+    });
+  });
+});
+
+describe('the availability read', () => {
+  it('holds a minute from the instant it is served', () => {
+    expect(availabilityValidUntil('2026-09-21T18:40:00.000Z')).toBe('2026-09-21T18:41:00.000Z');
   });
 });
 
