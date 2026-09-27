@@ -1763,6 +1763,7 @@ paths:
           schema: { type: string, enum: [date, show, artist, category], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A screen composition the server decides so that five surfaces do not each decide it differently." }
         - name: slug
           in: query
+          description: A date's slug is unique only within its show, so a date is named `{show-slug}/{date-slug}`.
           schema: { type: string }
       responses:
         '200':
@@ -1788,9 +1789,10 @@ paths:
                             type: string
                             format: uri
                             description: |
-                              **The target's canonical URL**, which may differ from the one requested: a slug in another
-                              language, or a replaced slug, resolves to the current form. That is what lets the surface
-                              correct its URL rather than keep a stale one bookmarked.
+                              **The target's canonical URL**, which may differ from the one requested: a short form
+                              (`/s/`, `/a/`), or a slug replaced less than `SLUG_REDIRECT_DAYS` ago (D-075), resolves to
+                              the current form. That is what lets the surface correct its URL rather than keep a stale
+                              one bookmarked.
                           date: { $ref: '#/components/schemas/DateCard' }
                           artist: { $ref: '#/components/schemas/ArtistSummary' }
               example:
