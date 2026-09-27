@@ -289,11 +289,11 @@ message DateSalesCapacitySet {
   string date_id = 1;
   string channel_id = 2;
   uint32 capacity_total = 3;
-  // True beyond the technical provisioning threshold (10,000 concurrent
-  // viewers): the infrastructure is provisioned in advance and a forecast far
+  // True beyond the technical provisioning threshold (`TECHNICAL_PROVISION_THRESHOLD`
+  // in @arthome/core): the infrastructure is provisioned in advance and a forecast far
   // above the real figure exposes you to a penalty. Threshold, provisioning,
-  // revision deadline (72 h) and exposure are CONTRACT DATA, not constants copied
-  // onto five surfaces.
+  // revision deadline (`PROVISION_REVISION_HOURS`) and exposure are CONTRACT DATA,
+  // not constants copied onto five surfaces.
   bool technical_provision_required = 4;
   google.protobuf.Timestamp provision_revisable_until = 5;
   google.protobuf.Timestamp occurred_at = 6;

@@ -209,12 +209,13 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 396 exported names.
+Declarations: `dist/index.d.ts` — 402 exported names.
 
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
 - `AUDIENCE_SANCTIONS` (const) — `AUDIENCE_SANCTIONS: readonly ["none", "muted", "banned"]` — Axis 3 — the sanction on the person, within one channel.
 - `AVAILABILITY_PUBLISH_MIN_INTERVAL_SECONDS` (const) — `AVAILABILITY_PUBLISH_MIN_INTERVAL_SECONDS = 5` — At most one 'availability_changed' per date in this interval while the date keeps moving.
+- `AVAILABILITY_VALID_SECONDS` (const) — `AVAILABILITY_VALID_SECONDS = 60` — How long a date's availability read holds from its 'servedAt': short, because the "show already started" price it carries is pro rata of th…
 - `AccountId` (type) — `type AccountId = Brand<'AccountId'>;`
 - `ApiErrorCode` (type+const)
 - `ArtistId` (type) — `type ArtistId = Brand<'ArtistId'>;`
@@ -457,10 +458,13 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `assertCommandedTransition` (function) — The server's decision on a commanded transition, returning the transition it allows.
 - `assertKnownFlag` (function) — `function assertKnownFlag(flag: string, knownFlags: readonly string[]): void;`
 - `assertOutcomeDeclarable` (function) — `function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;` — Throws 'state.conflict' when the declaration does not fit the date: a final outcome already declared; a date not public yet, which is delet…
+- `assertPricesShareCurrency` (function) — `function assertPricesShareCurrency(tiers: readonly TierPrice[]): void;` — A date sells in one currency, its billing market's (D-016).
+- `assertTechnicalProvisionCovers` (function) — `function assertTechnicalProvisionCovers(capacityTotal: number, provisionedCapacity: number | null, startsAt: Instant | null): void;` — Refuses a capacity beyond the threshold that no recorded provision covers.
 - `assertTierWidens` (function) — `function assertTierWidens(currentCapacity: number, nextCapacity: number): void;` — Capacity tiers: they WIDEN, never shrink after going on sale.
 - `assertTransitionAllowed` (function) — `function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): PublicationTransition;`
 - `assignableRolesOf` (function) — `function assignableRolesOf(heldRoles: readonly MemberRole[]): readonly MemberRole[];` — The roles a person may assign, given those they hold — the union, never a rank.
 - `availabilityOf` (function) — `function availabilityOf(gauge: Gauge): SeatAvailability;`
+- `availabilityValidUntil` (function) — `function availabilityValidUntil(servedAt: Instant): Instant;`
 - `basisPoints` (function) — `function basisPoints(value: number): BasisPoints;`
 - `blackoutReasonOf` (function) — `function blackoutReasonOf(rights: TerritoryRights, viewerCountry: string): BlackoutReason | null;` — The reason for the refusal, as a CODE — served with the error, so no second request.
 - `brandId` (function) — `function brandId<T extends Brand<string>>(value: string): T;` — Brands a string already validated at the boundary.
@@ -567,9 +571,11 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `pickRendition` (function) — `function pickRendition(renditions: readonly Rendition[], targetWidthPx: number): Rendition | null;` — The rendition closest to the requested width, never below it when a larger one exists: too small is blurry and final, too large only costs …
 - `plusHours` (function) — `function plusHours(instant: Instant, hours: number): Instant;`
 - `plusMinutes` (function) — `function plusMinutes(instant: Instant, minutes: number): Instant;`
+- `plusSeconds` (function) — `function plusSeconds(instant: Instant, seconds: number): Instant;`
 - `previewSecondsLeft` (function) — `function previewSecondsLeft(secondsUsed: number): number;`
 - `priceOfTier` (function) — `function priceOfTier(tiers: readonly TierPrice[], tier: PriceTier): Money | null;`
 - `progressOf` (function) — `function progressOf(timing: DateTiming, now: Instant): number;` — A live show's progress, clamped to '[0, 1]'.
+- `provisionRevisableUntil` (function) — `function provisionRevisableUntil(startsAt: Instant): Instant;`
 - `publicDisplayStateOf` (function) — `function publicDisplayStateOf(input: DisplayStateInput): DisplayStateResult;` — What a public surface shows.
 - `publicationReadiness` (function) — `function publicationReadiness(satisfied: readonly PublicationChecklistItem[]): PublicationReadiness;`
 - `quoteSeats` (function)

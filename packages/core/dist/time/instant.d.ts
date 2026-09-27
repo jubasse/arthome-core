@@ -18,6 +18,7 @@ export declare const HOUR_MS = 3600000;
 export declare const DAY_MS = 86400000;
 export declare function toEpochMs(instant: Instant): number;
 export declare function fromEpochMs(ms: number): Instant;
+export declare function plusSeconds(instant: Instant, seconds: number): Instant;
 export declare function plusMinutes(instant: Instant, minutes: number): Instant;
 export declare function plusHours(instant: Instant, hours: number): Instant;
 export declare function minutesBetween(from: Instant, to: Instant): number;

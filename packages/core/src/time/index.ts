@@ -15,6 +15,7 @@ export {
   overlaps,
   plusHours,
   plusMinutes,
+  plusSeconds,
   toEpochMs,
   windowOf,
 } from './instant.js';

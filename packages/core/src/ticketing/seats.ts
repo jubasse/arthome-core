@@ -2,8 +2,8 @@
 
 import type { Instant } from '../kernel/clock.js';
 import { DomainError } from '../kernel/errors.js';
-import { isAfter, plusMinutes } from '../time/instant.js';
-import { DomainErrorCode } from '../vocabulary/error-codes.js';
+import { isAfter, plusHours, plusMinutes, plusSeconds } from '../time/instant.js';
+import { CatalogErrorCode, DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /**
  * The capacity state, as a DISCRIMINATED UNION. A label — "86 seats", "Sold
@@ -76,6 +76,16 @@ export const SALES_QUEUE_ADMISSION_SECONDS = 60;
  */
 export const AVAILABILITY_PUBLISH_MIN_INTERVAL_SECONDS = 5;
 
+/**
+ * How long a date's availability read holds from its `servedAt`: short, because the "show already
+ * started" price it carries is pro rata of the time remaining.
+ */
+export const AVAILABILITY_VALID_SECONDS = 60;
+
+export function availabilityValidUntil(servedAt: Instant): Instant {
+  return plusSeconds(servedAt, AVAILABILITY_VALID_SECONDS);
+}
+
 export interface SeatHold {
   readonly quantity: number;
   readonly expiresAt: Instant;
@@ -122,13 +132,41 @@ export function assertTierWidens(currentCapacity: number, nextCapacity: number):
 /**
  * The TECHNICAL PROVISIONING threshold and its parameters — CONTRACT DATA, not
  * constants copied onto five surfaces. A forecast far above the real figure
- * exposes you to a penalty, and is revisable up to 72 h before.
+ * exposes you to a penalty, and is revisable until `PROVISION_REVISION_HOURS`
+ * before the date.
  */
 export const TECHNICAL_PROVISION_THRESHOLD = 10_000;
 export const PROVISION_REVISION_HOURS = 72;
 
 export function requiresTechnicalProvision(capacityTotal: number): boolean {
   return capacityTotal > TECHNICAL_PROVISION_THRESHOLD;
+}
+
+export function provisionRevisableUntil(startsAt: Instant): Instant {
+  return plusHours(startsAt, -PROVISION_REVISION_HOURS);
+}
+
+/**
+ * Refuses a capacity beyond the threshold that no recorded provision covers. `provisionedCapacity`
+ * is null while none is recorded; `startsAt` is null while the date has no start, and the refusal
+ * then names no deadline.
+ */
+export function assertTechnicalProvisionCovers(
+  capacityTotal: number,
+  provisionedCapacity: number | null,
+  startsAt: Instant | null,
+): void {
+  if (!requiresTechnicalProvision(capacityTotal)) return;
+  if (provisionedCapacity !== null && provisionedCapacity >= capacityTotal) return;
+  throw new DomainError({
+    code: CatalogErrorCode.TECHNICAL_PROVISION_REQUIRED,
+    params: {
+      threshold: TECHNICAL_PROVISION_THRESHOLD,
+      capacityTotal,
+      ...(provisionedCapacity === null ? {} : { provisionedCapacity }),
+      ...(startsAt === null ? {} : { revisableUntil: provisionRevisableUntil(startsAt) }),
+    },
+  });
 }
 
 /**

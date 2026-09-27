@@ -164,6 +164,11 @@ export const CATALOG_ERROR_CODES = [
   'date.has_sold_seats',
   'date.outcome_decision_forbidden',
   'date.prices_locked',
+  // A date sells in its billing market's currency (D-016), so `setDatePrices` refuses tiers in two.
+  //   Not `money.currency_mismatch`: that guard fires on arithmetic inside the system, and published
+  //   it would tell an artist their prices mix currencies when the fault is ours. Not
+  //   `api.schema_invalid` either: the body is well formed, a rule refuses it.
+  'date.prices_currency_mismatch',
   'date.replay_policy_final',
   'date.technical_check_required',
   'date.technical_provision_required',
@@ -177,6 +182,7 @@ export const CatalogErrorCode = {
   DATE_HAS_SOLD_SEATS: 'date.has_sold_seats',
   OUTCOME_DECISION_FORBIDDEN: 'date.outcome_decision_forbidden',
   PRICES_LOCKED: 'date.prices_locked',
+  PRICES_CURRENCY_MISMATCH: 'date.prices_currency_mismatch',
   REPLAY_POLICY_FINAL: 'date.replay_policy_final',
   TECHNICAL_CHECK_REQUIRED: 'date.technical_check_required',
   TECHNICAL_PROVISION_REQUIRED: 'date.technical_provision_required',

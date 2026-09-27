@@ -1063,7 +1063,7 @@ export const PriceTierSchema: z.ZodObject<
     validUntil: InstantOut.nullable()
       .optional()
       .describe(
-        'Present when the current price depends on the instant — the "show already started" price is\n**pro rata to the time remaining** and cannot be a frozen string. 60 s.\n',
+        'Present when the current price depends on the instant — the "show already started" price is\n**pro rata to the time remaining** and cannot be a frozen string. `AVAILABILITY_VALID_SECONDS`\nafter `servedAt` (`@arthome/core`).\n',
       ),
   })
   .meta({ 'x-arthome-price-basis': 'tax_inclusive' });

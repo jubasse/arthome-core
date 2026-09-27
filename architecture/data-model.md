@@ -461,12 +461,17 @@ DateSales
 - **Opening a tier notifies the waiting list in the same act**: one single transactional command,
   with the **priority window (2 h) as a domain parameter**. Two calls would let the scarcity
   dissipate between them.
-- Beyond **10,000 seats**, the infrastructure is provisioned in advance; a forecast far above the
-  real figure incurs a penalty; revisable up to **72 h** before. **Threshold, provisioning, deadline
-  and exposure are contract data**, not constants copied onto five surfaces (`studio-web` Q25,
-  `studio-mobile` #13).
+- Beyond `TECHNICAL_PROVISION_THRESHOLD` seats, the infrastructure is provisioned in advance: a
+  capacity beyond it that no recorded provision covers is refused with
+  `date.technical_provision_required` (`assertTechnicalProvisionCovers`). A forecast far above the
+  real figure incurs a penalty; the provision is revisable until `PROVISION_REVISION_HOURS` before
+  the start (`provisionRevisableUntil`). **Threshold, provisioning, deadline and exposure are
+  contract data**, not constants copied onto five surfaces (`studio-web` Q25, `studio-mobile` #13).
 - Prices lock when the box office opens (`publication.engaged` consumed); the schedule locks when
   the show goes on air.
+- A date sells in **one currency**, its billing market's (D-016): every price tier carries it, active
+  or not, and `setDatePrices` refuses a mix with `date.prices_currency_mismatch`
+  (`assertPricesShareCurrency`).
 - "Apply to the series" **excludes prices and capacity**: each date commits its own buyers.
 
 **The price paid is not the tier's price.** The summary is composed **server-side**:
@@ -487,7 +492,7 @@ defect.
   price displayed and the valid price is **structural, not accidental**.
 - The "show already started" price (`late_rate`) is **pro rata of the time remaining**: it cannot be
   a frozen string. The contract carries **the rule and its parameters**, and serves the current
-  price with its `validUntil` (60 s).
+  price with its `validUntil`, `AVAILABILITY_VALID_SECONDS` after `servedAt` (`@arthome/core`).
 
 ### 3.2 `SeatHold` — the capacity hold, and its duration
 

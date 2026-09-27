@@ -14,6 +14,11 @@ export interface Promotion {
     readonly validFrom: Instant;
     readonly validUntil: Instant;
 }
+/**
+ * A date sells in one currency, its billing market's (D-016). `lowestActivePrice` compares tier
+ * amounts and relies on it.
+ */
+export declare function assertPricesShareCurrency(tiers: readonly TierPrice[]): void;
 /** The headline price: the lowest of the ACTIVE tiers. */
 export declare function lowestActivePrice(tiers: readonly TierPrice[]): Money | null;
 export declare function priceOfTier(tiers: readonly TierPrice[], tier: PriceTier): Money | null;
