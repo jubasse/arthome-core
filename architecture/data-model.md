@@ -469,6 +469,9 @@ DateSales
   contract data**, not constants copied onto five surfaces (`studio-web` Q25, `studio-mobile` #13).
 - Prices lock when the box office opens (`publication.engaged` consumed); the schedule locks when
   the show goes on air.
+- A date sells in **one currency**, its billing market's (D-016): every price tier carries it, active
+  or not, and `setDatePrices` refuses a mix with `date.prices_currency_mismatch`
+  (`assertPricesShareCurrency`).
 - "Apply to the series" **excludes prices and capacity**: each date commits its own buyers.
 
 **The price paid is not the tier's price.** The summary is composed **server-side**:

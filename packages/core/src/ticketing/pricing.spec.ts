@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyBestDiscount,
+  assertPricesShareCurrency,
   lateRatePrice,
   lowestActivePrice,
   quoteSeats,
   type TierPrice,
 } from './pricing.js';
+import { isDomainError } from '../kernel/errors.js';
 import { money } from '../money/money.js';
 import { PriceTier, PromotionReason } from '../vocabulary/commerce.js';
+import { CatalogErrorCode } from '../vocabulary/error-codes.js';
 
 const eur = (amountMinor: number) => money(amountMinor, 'EUR');
 const fee = { perSeat: eur(150), rateBps: 0 };
@@ -81,6 +84,35 @@ describe('the headline price', () => {
   it('returns null when no tier is active — never zero', () => {
     // A headline price of zero would read as "free", which is not "no price".
     expect(lowestActivePrice([])).toBeNull();
+  });
+});
+
+describe("a date's currency", () => {
+  function refusalOf(act: () => void): unknown {
+    try {
+      act();
+    } catch (error) {
+      if (isDomainError(error)) return { code: error.code, params: error.params };
+      throw error;
+    }
+    return null;
+  }
+
+  const full: TierPrice = { tier: PriceTier.FULL, amount: eur(2600), active: true };
+  const reduced: TierPrice = { tier: PriceTier.REDUCED, amount: eur(1800), active: false };
+
+  it('accepts tiers that share one currency, and no tier at all', () => {
+    expect(refusalOf(() => assertPricesShareCurrency([full, reduced]))).toBeNull();
+    expect(refusalOf(() => assertPricesShareCurrency([]))).toBeNull();
+  });
+
+  it('refuses a tier in another currency, inactive or not, naming it', () => {
+    // An inactive tier counts: activating it later must not bring a second currency into the sale.
+    const inFrancs: TierPrice = { ...reduced, amount: money(1800, 'CHF') };
+    expect(refusalOf(() => assertPricesShareCurrency([full, inFrancs]))).toEqual({
+      code: CatalogErrorCode.PRICES_CURRENCY_MISMATCH,
+      params: { tier: PriceTier.REDUCED, currency: 'CHF', expected: 'EUR' },
+    });
   });
 });
 

@@ -31,6 +31,7 @@ export type { OrderQuote, Promotion, ServiceFeeSchedule, TierPrice } from './pri
 export {
   activePromotion,
   applyBestDiscount,
+  assertPricesShareCurrency,
   lateRatePrice,
   lowestActivePrice,
   priceOfTier,

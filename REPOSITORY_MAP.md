@@ -209,7 +209,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 401 exported names.
+Declarations: `dist/index.d.ts` — 402 exported names.
 
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
@@ -458,6 +458,7 @@ Declarations: `dist/index.d.ts` — 401 exported names.
 - `assertCommandedTransition` (function) — The server's decision on a commanded transition, returning the transition it allows.
 - `assertKnownFlag` (function) — `function assertKnownFlag(flag: string, knownFlags: readonly string[]): void;`
 - `assertOutcomeDeclarable` (function) — `function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;` — Throws 'state.conflict' when the declaration does not fit the date: a final outcome already declared; a date not public yet, which is delet…
+- `assertPricesShareCurrency` (function) — `function assertPricesShareCurrency(tiers: readonly TierPrice[]): void;` — A date sells in one currency, its billing market's (D-016).
 - `assertTechnicalProvisionCovers` (function) — `function assertTechnicalProvisionCovers(capacityTotal: number, provisionedCapacity: number | null, startsAt: Instant | null): void;` — Refuses a capacity beyond the threshold that no recorded provision covers.
 - `assertTierWidens` (function) — `function assertTierWidens(currentCapacity: number, nextCapacity: number): void;` — Capacity tiers: they WIDEN, never shrink after going on sale.
 - `assertTransitionAllowed` (function) — `function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): PublicationTransition;`
