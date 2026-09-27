@@ -190,7 +190,7 @@ Declarations: `dist/text/index.d.ts` — 2 exported names.
 
 #### @arthome/contracts/ticketing
 
-Declarations: `dist/ticketing/index.d.ts` — 11 exported names.
+Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 - `CartLineSchema` (const)
 - `CartQuoteSchema` (const)
@@ -200,6 +200,7 @@ Declarations: `dist/ticketing/index.d.ts` — 11 exported names.
 - `OrderSchema` (const)
 - `PaymentHandoffSchema` (const)
 - `PlanSchema` (const)
+- `SalesQueuePositionSchema` (const)
 - `SeatQuoteSchema` (const)
 - `SubscriptionSchema` (const)
 - `TicketCardSchema` (const)
@@ -208,11 +209,12 @@ Declarations: `dist/ticketing/index.d.ts` — 11 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 391 exported names.
+Declarations: `dist/index.d.ts` — 394 exported names.
 
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
 - `AUDIENCE_SANCTIONS` (const) — `AUDIENCE_SANCTIONS: readonly ["none", "muted", "banned"]` — Axis 3 — the sanction on the person, within one channel.
+- `AVAILABILITY_PUBLISH_MIN_INTERVAL_SECONDS` (const) — `AVAILABILITY_PUBLISH_MIN_INTERVAL_SECONDS = 5` — At most one 'availability_changed' per date in this interval while the date keeps moving.
 - `AccountId` (type) — `type AccountId = Brand<'AccountId'>;`
 - `ApiErrorCode` (type+const)
 - `ArtistId` (type) — `type ArtistId = Brand<'ArtistId'>;`
@@ -332,7 +334,7 @@ Declarations: `dist/index.d.ts` — 391 exported names.
 - `NOTIFICATION_CHANNELS` (const) — `NOTIFICATION_CHANNELS: readonly ["push", "email", "in_app"]` — The channels a notification takes; the third is 'in_app', not 'sms' (D-017).
 - `NavigationEntry` (type+const)
 - `NotificationChannel` (type+const)
-- `ORDER_ERROR_CODES` (const) — `ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.sold_out", "order.payment_declined", "order.price_stale", "order.plan_unavailable"]` — Purchase refusals beyond the four already carried by 'failureCode'.
+- `ORDER_ERROR_CODES` (const) — The viewer's commerce refusals: a purchase, a seat, a means of payment.
 - `ORDER_KINDS` (const) — `ORDER_KINDS: readonly ["seat", "merch", "subscription"]` — Distinct orders, never a mixed one (D-011).
 - `Ok` (interface)
 - `OrderErrorCode` (type+const)
@@ -389,6 +391,7 @@ Declarations: `dist/index.d.ts` — 391 exported names.
 - `Result` (type) — `type Result<T> = Ok<T> | Err;`
 - `RightsScope` (type+const) — `type RightsScope = (typeof RIGHTS_SCOPES)[number]; RightsScope: { readonly WORLDWIDE: "worldwide"; readonly RESTRICTED: "restricted"; }`
 - `RunState` (type+const)
+- `SALES_QUEUE_ADMISSION_SECONDS` (const) — `SALES_QUEUE_ADMISSION_SECONDS = 60` — How long an admission out of a date's sales queue lets its account buy that date (adr-ticketing.md §4).
 - `SCARCITY_THRESHOLD_BPS` (const) — `SCARCITY_THRESHOLD_BPS = 8500` — "Almost full" — and the THRESHOLD is a domain rule, not an interface literal.
 - `SEASON_START_MONTH` (const) — `SEASON_START_MONTH = 9` — The changeover month, in human numbering: 9 = September.
 - `SEAT_CODE_ALPHABET` (const) — `SEAT_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"` — The alphabet: Crockford base 32 — the ten digits and the letters except 'I', 'L', 'O' and 'U', the last of those to avoid spelling a rude w…
@@ -431,6 +434,7 @@ Declarations: `dist/index.d.ts` — 391 exported names.
 - `VenueClock` (interface) — A venue's time zone, served alongside the UTC instant it qualifies.
 - `VenueId` (type) — `type VenueId = Brand<'VenueId'>;`
 - `Vocabulary` (type) — `type Vocabulary<T extends string> = readonly T[];` — A closed vocabulary: the list that has authority.
+- `WAITLIST_NOTIFIED_ACCOUNTS_MAX` (const) — `WAITLIST_NOTIFIED_ACCOUNTS_MAX = 500` — One 'waitlist.notified' names at most this many accounts; a tier opening writes as many as it needs.
 - `WAITLIST_PRIORITY_HOURS` (const) — `WAITLIST_PRIORITY_HOURS = 2` — The priority window granted to the waiting list when a tier opens.
 - `WATCH_DENIAL_REASONS` (const) — The denial reasons — one code per different screen.
 - `WATCH_FALLBACK_ACTIONS` (const) — `WATCH_FALLBACK_ACTIONS: readonly ["buy_seat", "join_waitlist", "subscribe", "see_replay_policy", "see_other_dates", "release_a_screen", "none"]` — The action that gets out of the dead end — an empty state with no way out is banned (principle no.

@@ -136,4 +136,16 @@ export declare const SeatQuoteSchema: z.ZodObject<{
     total: typeof MoneyOut;
     validUntil: z.ZodOptional<z.ZodString>;
 }, z.core.$loose>;
+export declare const SalesQueuePositionSchema: z.ZodObject<{
+    dateId: z.ZodString;
+    armed: z.ZodBoolean;
+    state: VocabularyOut;
+    position: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    estimatedWaitSec: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    pollIntervalSec: z.ZodNumber;
+    admission: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        token: z.ZodString;
+        expiresAt: z.ZodString;
+    }, z.core.$loose>>>;
+}, z.core.$loose>;
 //# sourceMappingURL=index.d.ts.map

@@ -213,13 +213,24 @@ export const PayoutErrorCode = {
   RECONCILIATION_DISCREPANCY_UNEXPLAINED: 'payout.reconciliation_discrepancy_unexplained',
 } as const;
 
-/** Purchase refusals beyond the four already carried by `failureCode`. */
+/**
+ * The viewer's commerce refusals: a purchase, a seat, a means of payment. `failureCode` narrows
+ * it to the four a purchase command can refuse with.
+ */
 export const ORDER_ERROR_CODES = [
   'order.quote_address_mismatch',
   'order.sold_out',
   'order.payment_declined',
   'order.price_stale',
   'order.plan_unavailable',
+  'order.contribution_out_of_range',
+  'order.checkout_line_unavailable',
+  // The date's sales queue is armed and the purchase carries no valid admission (D-081). A
+  //   refusal of a right, not an unavailability: retried without an admission, it can only be
+  //   refused again, and at the date's busiest moment.
+  'order.sales_queue_admission_required',
+  'seat.cancel_deadline_passed',
+  'payment_method.in_use',
 ] as const;
 export type OrderErrorCode = (typeof ORDER_ERROR_CODES)[number];
 
@@ -229,6 +240,11 @@ export const OrderErrorCode = {
   PAYMENT_DECLINED: 'order.payment_declined',
   PRICE_STALE: 'order.price_stale',
   PLAN_UNAVAILABLE: 'order.plan_unavailable',
+  CONTRIBUTION_OUT_OF_RANGE: 'order.contribution_out_of_range',
+  CHECKOUT_LINE_UNAVAILABLE: 'order.checkout_line_unavailable',
+  SALES_QUEUE_ADMISSION_REQUIRED: 'order.sales_queue_admission_required',
+  SEAT_CANCEL_DEADLINE_PASSED: 'seat.cancel_deadline_passed',
+  PAYMENT_METHOD_IN_USE: 'payment_method.in_use',
 } as const;
 
 /**

@@ -237,11 +237,11 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 | `ticketing.date_sales.capacity_set.v1` | `date_id`, `capacity_total`, `tiers[]` | `catalog` (checklist), `streaming` (technical provisioning) |
 | `ticketing.seat.activated.v1` | `seat_id`, `date_id`, `account_id`, `tier`, `seat_code` | **`streaming`** (`entitlement_projection`), `notifications` (reminder at T−30) |
 | `ticketing.seat.cancelled.v1` | `seat_id`, `date_id`, `account_id`, `reason` | `streaming`, `payouts` |
-| `ticketing.order.paid.v1` | `order_id`, `kind` (`seat`\|`merch`), `channel_id`, `date_id?`, `gross`, `vat_breakdown[]`, `fees` | **`payouts`** (this is the raw material of the right to a payout) |
-| `ticketing.order.refunded.v1` | `order_id`, `amount`, `reason` | `payouts` |
+| `ticketing.order.paid.v1` | `order_id`, `kind` (`seat`\|`merch`\|`subscription`), `channel_id`, `date_id?`, `gross`, `vat_breakdown[]`, `fees` | **`payouts`** (this is the raw material of the right to a payout) |
+| `ticketing.order.refunded.v1` | `order_id`, `amount`, `reason` (the seat's cancellation, if any), `refund_reason` (why the money went back, `hold_expired_capacity_lost` included, D-082) | `payouts`, `notifications` |
 | `ticketing.credit.issued.v1` | `credit_id`, `account_id`, `channel_id`, `amount`, `origin_ref` | `payouts` (a credit note is a liability), `notifications` |
-| `ticketing.subscription.changed.v1` | `account_id`, `plan_id`, `state`, `opens[]`, `seat_discount`, `period_end` | **`streaming`** (the right to watch), `catalog` (displayed price) |
-| `ticketing.waitlist.notified.v1` | `date_id`, `account_ids[]`, `priority_until` | `notifications` |
+| `ticketing.subscription.changed.v1` | `account_id`, `plan`, `state`, `opens[]`, `seat_discount`, `period_end` | **`streaming`** (the right to watch), `catalog` (displayed price) |
+| `ticketing.waitlist.notified.v1` | `date_id`, `account_ids[]`, `priority_until`. **Chunked**: one tier opening notifies the whole list (D-083) in as many messages as it needs, each naming at most `WAITLIST_NOTIFIED_ACCOUNTS_MAX` (500) accounts | `notifications` |
 
 ### 4.4 `streaming`
 

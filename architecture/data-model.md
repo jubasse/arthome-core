@@ -621,6 +621,27 @@ share out of its own money. The restriction is reversible; ignoring it is not.
 
 ### 3.8 `viewer_entitlements` — a read model (§4)
 
+### 3.9 `WaitlistEntry` — root aggregate
+
+```
+WaitlistEntry
+  id · date_id · account_id      one per date and account
+  state        waiting | notified | converted | left | lapsed
+```
+
+**Joined only once the date is sold out**, which is when `decideWatch` offers `join_waitlist`.
+Joining and leaving are state assignments (`joinWaitlist`, `leaveWaitlist`).
+
+**Everyone registered gets the same chance** (D-083). There is no rank among the registered, so
+none is disclosed: `joinWaitlist` answers `rankDisclosed: false`. Opening a tier marks **every**
+`waiting` entry `notified` in the same transaction (§3.1), and `waitlist.notified` carries them in
+chunks (`events.md` §4.3). Within the priority window a notified account buys first come, first
+served (`converted`); an account registering while a window is open is notified into it at once.
+
+**One registration, one chance.** At `priority_until`, a notified entry that did not buy becomes
+`lapsed`: it has left the list, and registers again to be told next time. `left` is an entry its
+account withdrew.
+
 ---
 
 ## 4. The duplicated read models, and the flow that feeds them

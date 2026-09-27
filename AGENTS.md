@@ -13,7 +13,7 @@ here, and a skill for one of them would be the wrong instrument.
    If one reads as current and the repository contradicts it, say so and stop — D-008's no-push clause
    was read as live months after the remotes existed, and the note recording that is why it is now
    marked superseded rather than silently edited.
-3. **`REPOSITORY_MAP.md`** — the index of all 543 exported names. It is a **projection**, never edited
+3. **`REPOSITORY_MAP.md`** — the index of every exported name. It is a **projection**, never edited
    by hand.
 
 ## The commands

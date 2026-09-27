@@ -2000,8 +2000,7 @@ paths:
                   description: |
                     Free contribution to the company, for a free seat. The amount is **open**; minimum and
                     maximum are **domain rules**, not attributes of an input field, and the refusal carries
-                    **`CONTRIBUTION_OUT_OF_RANGE`**, with both bounds as parameters. The code was announced and
-                    never named — therefore destined to be invented three times.
+                    **`order.contribution_out_of_range`**, with both bounds as parameters.
                 applyCreditId: { type: [string, 'null'], format: uuid }
             example: { tier: full, quantity: 2 }
       responses:
@@ -2029,6 +2028,106 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 
+  /v1/dates/{dateId}/sales-queue:
+    put:
+      operationId: enterSalesQueue
+      tags: [commerce]
+      summary: Enters a date's sales queue.
+      description: |
+        **A state assignment, not a toggle**: one entry per account and date, and entering again keeps
+        the place already taken. The queue serves in arrival order (D-081); an admission that lapses
+        unused sends the account to the end of it.
+
+        **The queue protects latency, not capacity.** `ticketing` holds the capacity whatever the queue
+        says (`adr-ticketing.md` §3), so a date whose queue is not armed answers `armed: false` and
+        admits nobody: the surface goes back to `purchaseSeat`, which needs no admission then.
+
+        **The session names the account, never the path**, and the response speaks of the caller's
+        entry alone: nobody else's position, account or admission.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [ticketing]
+      x-arthome-idempotency-exemption: |
+        **Idempotent by construction**: one entry per account and date, so a second call finds the
+        first entry and answers its current state. A key would put a durable write per entrant in
+        front of the queue built to shed that load, and would replay a position that is stale seconds
+        after it was served.
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: The caller's entry, as `getSalesQueuePosition` serves it.
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/SalesQueuePosition' }
+              example:
+                servedAt: '2026-09-21T18:00:02.000Z'
+                validUntil: '2026-09-21T18:00:04.000Z'
+                data:
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  armed: true
+                  state: waiting
+                  position: 2841
+                  estimatedWaitSec: 95
+                  pollIntervalSec: 2
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    get:
+      operationId: getSalesQueuePosition
+      tags: [commerce]
+      summary: Reads one's place in a date's sales queue, and the admission once it comes.
+      description: |
+        **Polled at the cadence it serves**: `pollIntervalSec` is the pairing's served decay
+        (`adr-auth.md` §5.3), not a second one, and the surface never polls faster.
+
+        **`validUntil` is the next poll while `waiting`, and the admission's `expiresAt` once
+        `admitted`.** Either countdown is computed against `servedAt`.
+
+        **`no-store`**: a position and an admission are one account's, and perishable.
+      x-arthome-maturity: provisional
+      x-arthome-upstream: [ticketing]
+      parameters:
+        - $ref: '#/components/parameters/DateId'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: The caller's entry.
+          headers:
+            Cache-Control: { schema: { type: string, const: no-store } }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { $ref: '#/components/schemas/SalesQueuePosition' }
+              example:
+                servedAt: '2026-09-21T18:01:40.000Z'
+                validUntil: '2026-09-21T18:02:40.000Z'
+                data:
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  armed: true
+                  state: admitted
+                  pollIntervalSec: 5
+                  admission:
+                    token: adm_v1.eyJkIjoiMDE5OTI4YTAiLCJhIjoiMDE5OTI4ZjQifQ.3kQx
+                    expiresAt: '2026-09-21T18:02:40.000Z'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
   # =============================================================== money commands
 
   /v1/orders/seats:
@@ -2049,11 +2148,26 @@ paths:
 
         **The command returns the projected state, not an acknowledgement**: the seat **and** the
         updated date, so the surface repaints in a single round trip.
+
+        **While the date's sales queue is armed, the purchase carries its admission** (D-081,
+        provisional), and without a valid one it is refused with `403`
+        `order.sales_queue_admission_required`. A `403` because the admission is a time-boxed right
+        that `ticketing` checks itself, like the others of that status; not a `409`, since nothing in
+        the date conflicts with the request, and not a `429`, whose `unavailable` invites a retry that
+        cannot succeed without an admission and would land on the date at its busiest.
+
+        **The admission travels in a header, `X-Arthome-Admission-Token`, never in the body.** The
+        idempotency fingerprint covers the body (`transport.md` §5.4), so a token there would turn the
+        replay of a completed purchase, sent after the admission lapsed, into
+        `api.idempotency_key_reused` instead of the original response. And it is a credential bound to
+        an account and a date, which travels beside `X-Arthome-Device-Token`, not inside the order. A
+        replayed key answers its original response without asking for an admission again.
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
       x-arthome-invalidates: ['account:tickets', 'date:{dateId}:availability']
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/AdmissionToken'
         - $ref: '#/components/parameters/Surface'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
@@ -2146,9 +2260,20 @@ paths:
                   clientSecret: pi_3Ab2Cd_secret_9f2
                   nextAction: { kind: redirect_to_url, redirectUrl: 'https://hooks.stripe.com/3ds/authenticate' }
                   returnUrl: 'https://arthome.fr/paiement/retour?order=019928f5-0000-7000-8000-0000000000aa'
-                  expiresAt: '2026-09-21T19:11:30Z'
+                  expiresAt: '2026-09-21T18:56:30Z'
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403':
+          description: |
+            `order.sales_queue_admission_required`: the date's sales queue is armed and the admission is
+            absent, lapsed, or issued to another account or date. The surface enters the queue
+            (`enterSalesQueue`) and comes back with the admission it is served.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error: { code: order.sales_queue_admission_required, nature: refused, params: { dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001 }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                servedAt: '2026-09-21T18:00:01.000Z'
         '409': { $ref: '#/components/responses/Conflict' }
         '503': { $ref: '#/components/responses/Unavailable' }
 
@@ -2269,7 +2394,7 @@ paths:
       tags: [account]
       summary: Removes a payment method.
       description: |
-        **Refused if it is the last method of an active subscription** (`PAYMENT_METHOD_IN_USE`):
+        **Refused if it is the last method of an active subscription** (`payment_method.in_use`):
         silently removing a subscription's only card would produce a failed charge and a cancelled
         plan that nobody intended.
       x-arthome-maturity: stable
@@ -2305,8 +2430,8 @@ paths:
       summary: Cancels a seat before its deadline.
       description: |
         The deadline is **served as an instant** on the seat (`cancelDeadline`), never as the
-        sentence "up to 1 h before". The refusal after the deadline carries its own code and the
-        instant as a parameter.
+        sentence "up to 1 h before". The refusal after the deadline carries
+        `seat.cancel_deadline_passed`, with the instant as a parameter.
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
       x-arthome-invalidates: ['account:tickets', 'date:{dateId}:availability']
@@ -2346,9 +2471,6 @@ paths:
       responses:
         '200':
           description: Seat cancelled, with the refund and its delay code.
-          # The refusal after the deadline carries `CANCEL_DEADLINE_PASSED`, with the instant as a parameter.
-          # It was announced — "the refusal after the deadline has its own code" — and named nowhere:
-          # an unnamed code is a code invented three times.
           content:
             application/json:
               schema:
@@ -2418,7 +2540,7 @@ paths:
                           date: { $ref: '#/components/schemas/DateCard' }
               example:
                 servedAt: '2026-09-21T18:42:00.000Z'
-                data: { joined: true, rankDisclosed: true, rank: 14, priorityWindowHours: 2 }
+                data: { joined: true, rankDisclosed: false, rank: null, priorityWindowHours: 2 }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
     delete:
@@ -2748,10 +2870,10 @@ paths:
                   clientSecret: pi_3Ef4Gh_secret_1a2
                   nextAction: { kind: redirect_to_url, redirectUrl: 'https://hooks.stripe.com/3ds/authenticate' }
                   returnUrl: 'https://arthome.fr/paiement/retour?order=019928f6-2222-7000-8000-000000000001'
-                  expiresAt: '2026-09-21T19:16:00Z'
+                  expiresAt: '2026-09-21T19:01:00Z'
         '409':
           description: |
-            `CHECKOUT_LINE_UNAVAILABLE` (with `unavailableLineIds`), `order.quote_address_mismatch`, or
+            `order.checkout_line_unavailable` (with `unavailableLineIds`), `order.quote_address_mismatch`, or
             `order.price_stale`.
 
             **`order.quote_address_mismatch` closes a gap**: the quote computes shipping from a country and a
@@ -2827,7 +2949,7 @@ paths:
                   clientSecret: pi_3Ij5Kl_secret_3c4
                   nextAction: { kind: redirect_to_url, redirectUrl: 'https://hooks.stripe.com/3ds/authenticate' }
                   returnUrl: 'https://arthome.fr/paiement/retour?order=019928f7-3333-7000-8000-000000000001'
-                  expiresAt: '2026-09-21T19:17:00Z'
+                  expiresAt: '2026-09-21T19:02:00Z'
         '402':
           description: Payment declined by the provider. **Distinct** from a business refusal.
           content:
@@ -5066,6 +5188,19 @@ components:
         format: uuid
         examples: ['019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77']
 
+    AdmissionToken:
+      name: X-Arthome-Admission-Token
+      in: header
+      required: false
+      description: |
+        The admission out of a date's sales queue, as `getSalesQueuePosition` serves it: opaque to the
+        surface, bound to one account and one date, and valid until its `expiresAt`. Required on
+        `purchaseSeat` while that date's queue is armed, ignored otherwise. Provisional with the queue
+        (D-081).
+      schema:
+        type: string
+        minLength: 1
+
     Cursor:
       name: cursor
       in: query
@@ -5341,7 +5476,7 @@ components:
             condition on mobile, where store review is slow.
           examples: [publication.transition_irreversible]
           pattern: '^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$'
-          x-arthome-vocabulary: [api.unauthenticated, api.forbidden, api.not_found, api.rate_limited, api.schema_invalid, api.internal, api.service_unavailable, api.upstream_unavailable, api.cursor_too_old, api.sort_key_forbidden, api.period_filter_required, api.rights_version_stale, api.idempotency_key_reused, api.idempotency_in_flight, api.deadline_exceeded, api.upstream_timeout, identity.email_taken, identity.handle_taken, identity.two_factor_required, identity.signed_out_elsewhere, pairing.slow_down, pairing.identity_mismatch, pairing.intent_not_engageable, pairing.execution_engaged, chat.holders_only, chat.rate_limited, moderation.already_claimed, moderation.already_settled, moderation.automatic_cannot_override_human, moderation.decision_version_stale, artist.slug_taken, date.has_sold_seats, date.outcome_decision_forbidden, date.prices_locked, date.replay_policy_final, date.technical_check_required, date.technical_provision_required, date.stream_key_rotation_during_run, date.postponement_limit_reached, channel.has_open_obligations, channel.crew_role_reserved, channel.role_not_assignable, channel.transfer_target_ineligible, channel.same_actor_forbidden, payout.reconciliation_discrepancy_unexplained, order.quote_address_mismatch, order.sold_out, order.payment_declined, order.price_stale, order.plan_unavailable, capacity.tier_must_widen, content.empty_in_both_languages, hold.quantity_invalid, media.size_invalid, media.url_empty, order.quantity_invalid, pairing_code.ambiguous_glyph, publication.checklist_incomplete, publication.promise_unacknowledged, publication.transition_forbidden, publication.transition_irreversible, search.unknown_flag, seat_code.malformed, state.conflict, watch.no_seat, watch.room_not_open, watch.out_of_territory, watch.subscription_required, watch.no_replay, watch.replay_expired, watch.replay_not_on_sale, watch.preview_exhausted, watch.concurrent_limit_reached, watch.date_cancelled, watch.not_published]
+          x-arthome-vocabulary: [api.unauthenticated, api.forbidden, api.not_found, api.rate_limited, api.schema_invalid, api.internal, api.service_unavailable, api.upstream_unavailable, api.cursor_too_old, api.sort_key_forbidden, api.period_filter_required, api.rights_version_stale, api.idempotency_key_reused, api.idempotency_in_flight, api.deadline_exceeded, api.upstream_timeout, identity.email_taken, identity.handle_taken, identity.two_factor_required, identity.signed_out_elsewhere, pairing.slow_down, pairing.identity_mismatch, pairing.intent_not_engageable, pairing.execution_engaged, chat.holders_only, chat.rate_limited, moderation.already_claimed, moderation.already_settled, moderation.automatic_cannot_override_human, moderation.decision_version_stale, artist.slug_taken, date.has_sold_seats, date.outcome_decision_forbidden, date.prices_locked, date.replay_policy_final, date.technical_check_required, date.technical_provision_required, date.stream_key_rotation_during_run, date.postponement_limit_reached, channel.has_open_obligations, channel.crew_role_reserved, channel.role_not_assignable, channel.transfer_target_ineligible, channel.same_actor_forbidden, payout.reconciliation_discrepancy_unexplained, order.quote_address_mismatch, order.sold_out, order.payment_declined, order.price_stale, order.plan_unavailable, order.contribution_out_of_range, order.checkout_line_unavailable, order.sales_queue_admission_required, seat.cancel_deadline_passed, payment_method.in_use, capacity.tier_must_widen, content.empty_in_both_languages, hold.quantity_invalid, media.size_invalid, media.url_empty, order.quantity_invalid, pairing_code.ambiguous_glyph, publication.checklist_incomplete, publication.promise_unacknowledged, publication.transition_forbidden, publication.transition_irreversible, search.unknown_flag, seat_code.malformed, state.conflict, watch.no_seat, watch.room_not_open, watch.out_of_territory, watch.subscription_required, watch.no_replay, watch.replay_expired, watch.replay_not_on_sale, watch.preview_exhausted, watch.concurrent_limit_reached, watch.date_cancelled, watch.not_published]
           x-arthome-vocabulary-source: ERROR_CODES
         nature:
           type: string
@@ -6457,6 +6592,55 @@ components:
 
     # ---------------------------------------------------------------- commerce
 
+    SalesQueuePosition:
+      type: object
+      required: [dateId, armed, state, pollIntervalSec]
+      description: |
+        **One account's place in a date's sales queue**, and nothing about anyone else's. The queue
+        serves in arrival order and protects latency; the capacity is held by `ticketing` whatever it
+        says (`adr-ticketing.md` §4).
+      properties:
+        dateId: { type: string, format: uuid }
+        armed:
+          type: boolean
+          description: |
+            Whether the date's queue is armed. `false`: `purchaseSeat` needs no admission, and the surface
+            goes back to it.
+        state:
+          type: string
+          description: |
+            `waiting`: `position` and `estimatedWaitSec` are served. `admitted`: `admission` is served.
+            `lapsed`: the admission went unused past its `expiresAt`, and entering again joins the end of
+            the queue. `not_queued`: the account has no entry.
+          x-arthome-vocabulary: [not_queued, waiting, admitted, lapsed]
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got."
+        position:
+          type: [integer, 'null']
+          minimum: 1
+          description: Present while `waiting`. `1` is admitted next.
+        estimatedWaitSec:
+          type: [integer, 'null']
+          minimum: 0
+          description: |
+            Present while `waiting`. **Served, from the rate the queue admits at**, so that no surface
+            estimates it from `position` with a rate of its own.
+        pollIntervalSec:
+          type: integer
+          description: |
+            The pairing's served decay (`DevicePairing.pollIntervalSec`), not a second cadence. The
+            surface never polls faster than it is served.
+          examples: [2]
+        admission:
+          type: [object, 'null']
+          required: [token, expiresAt]
+          description: |
+            Present once `admitted`. The surface sends `token` as `X-Arthome-Admission-Token` on
+            `purchaseSeat` before `expiresAt`, counted against `servedAt`.
+          properties:
+            token: { type: string, minLength: 1 }
+            expiresAt: { type: string, format: date-time }
+
     TicketCard:
       type: object
       required: [seatId, dateId, seatCode, tier, state, date]
@@ -6472,7 +6656,7 @@ components:
             soon as one surface changed its hash function.
           examples: ['ATH-7QK2-4M']
         tier: { type: string, x-arthome-vocabulary: [full, reduced, support], x-arthome-vocabulary-source: PRICE_TIERS }
-        state: { type: string, x-arthome-vocabulary: [held, active, cancelled, refunded, transferred, credited], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
+        state: { type: string, x-arthome-vocabulary: [active, cancelled, refunded, transferred, credited], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got." }
         cancelDeadline:
           type: [string, 'null']
           format: date-time
@@ -6758,7 +6942,12 @@ components:
             **And the return confirms nothing**: *a payment confirmed by a URL parameter is a payment
             confirmed by the client*. The return says **where to go**; it is `getOrder` — fed by the
             verified webhook — that says **what changed**.
-        expiresAt: { type: string, format: date-time }
+        expiresAt:
+          type: string
+          format: date-time
+          description: |
+            When the purchase intent expires. For a seat it is **the hold's instant**, one value carried
+            by both, never a second duration (`data-model.md` §3.2).
 
     Order:
       type: object

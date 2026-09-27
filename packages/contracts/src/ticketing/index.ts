@@ -46,14 +46,7 @@ import {
 
 import { DateCardSchema } from '../catalog/index.js';
 
-const TICKET_STATES = [
-  'held',
-  'active',
-  'cancelled',
-  'refunded',
-  'transferred',
-  'credited',
-] as const;
+const TICKET_STATES = ['active', 'cancelled', 'refunded', 'transferred', 'credited'] as const;
 const REFUND_METHODS = ['original_payment_method', 'account_credit'] as const;
 const ORDER_STATES = [
   'pending',
@@ -211,6 +204,7 @@ const EXPORT_KINDS = ['personal_data', 'invoices'] as const;
 const EXPORT_STATES = ['queued', 'running', 'ready', 'failed', 'expired'] as const;
 const HANDOFF_STATES = ['pending', 'awaiting_action', 'processing'] as const;
 const NEXT_ACTION_KINDS = ['redirect_to_url', 'use_stripe_sdk', 'none'] as const;
+const SALES_QUEUE_STATES = ['not_queued', 'waiting', 'admitted', 'lapsed'] as const;
 const QUOTE_LINE_KINDS = [
   'tier',
   'service_fee',
@@ -406,7 +400,9 @@ export const PaymentHandoffSchema: z.ZodObject<
       .describe(
         '**Where the provider returns after authentication.** Allowlist of **literal strings**, never\na pattern.\n\n**And the return confirms nothing**: *a payment confirmed by a URL parameter is a payment\nconfirmed by the client*. The return says **where to go**; it is `getOrder` — fed by the\nverified webhook — that says **what changed**.\n',
       ),
-    expiresAt: InstantOut.optional(),
+    expiresAt: InstantOut.optional().describe(
+      "When the purchase intent expires. For a seat it is **the hold's instant**, one value carried\nby both, never a second duration (`data-model.md` §3.2).\n",
+    ),
   })
   .describe(
     '**The step the contract did not have, and without which no payment subject to European strong\nauthentication completes.** The state vocabulary carried `awaiting_action` ← "3-D Secure in\nprogress", and **no operation could either reach that state or leave it**: the three money\ncommands only answered `201 · paid`, with no `clientSecret`, no `nextAction`, no return\naddress.\n\nThis was not a refinement: a significant share of card payments in Europe requires strong\nauthentication. A flow that does not provide for `requires_action` **fails in production on\nperfectly valid payments**, and it fails silently — the order stays `awaiting_action` and\nnothing picks it up.\n\n**The `clientSecret` is produced server-side** and serves only the surface\'s payment element;\nit authorises nothing else and replaces no session.\n',
@@ -500,4 +496,63 @@ export const SeatQuoteSchema: z.ZodObject<
   })
   .describe(
     'The purchase summary for a seat, **composed server-side**. The four lines come from the\ncontract: `tier + service fee − subscription discount − promotion = total`. This is exactly\nthe "a total composed in two places" case the brief cites as a typical defect, and it is\nclosed here.\n\n**Prices are tax-inclusive (D-056), so the VAT does not move the total — and it is served\nanyway**, in `vatIncluded`. EU invoicing requires the line, and the artist needs it. **A total\nthat does not change is exactly why someone will be tempted to omit it.**\n\n**It is a separate field rather than a fifth line, and that is the point.** `lines` are\naddends; a VAT line inside them would be summed by somebody, on some surface, eventually —\nand the total would be wrong by a VAT rate in the direction nobody checks, because it would\nlook larger rather than smaller. What is already inside a total cannot sit in the list of\nthings added to it.\n',
+  );
+
+export const SalesQueuePositionSchema: z.ZodObject<
+  {
+    dateId: z.ZodString;
+    armed: z.ZodBoolean;
+    state: VocabularyOut;
+    position: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    estimatedWaitSec: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+    pollIntervalSec: z.ZodNumber;
+    admission: z.ZodOptional<
+      z.ZodNullable<z.ZodObject<{ token: z.ZodString; expiresAt: z.ZodString }, z.core.$loose>>
+    >;
+  },
+  z.core.$loose
+> = z
+  .looseObject({
+    dateId: uuidOut(),
+    armed: z
+      .boolean()
+      .describe(
+        "Whether the date's queue is armed. `false`: `purchaseSeat` needs no admission, and the surface\ngoes back to it.\n",
+      ),
+    state: vocabularyOutLocal(SALES_QUEUE_STATES, LOCAL_STATE_REASON).describe(
+      '`waiting`: `position` and `estimatedWaitSec` are served. `admitted`: `admission` is served.\n`lapsed`: the admission went unused past its `expiresAt`, and entering again joins the end of\nthe queue. `not_queued`: the account has no entry.\n',
+    ),
+    position: int64()
+      .meta({ format: undefined })
+      .min(1)
+      .nullable()
+      .optional()
+      .describe('Present while `waiting`. `1` is admitted next.'),
+    estimatedWaitSec: int64()
+      .meta({ format: undefined })
+      .min(0)
+      .nullable()
+      .optional()
+      .describe(
+        'Present while `waiting`. **Served, from the rate the queue admits at**, so that no surface\nestimates it from `position` with a rate of its own.\n',
+      ),
+    pollIntervalSec: int64()
+      .meta({ format: undefined })
+      .meta({ examples: [2] })
+      .describe(
+        "The pairing's served decay (`DevicePairing.pollIntervalSec`), not a second cadence. The\nsurface never polls faster than it is served.\n",
+      ),
+    admission: z
+      .looseObject({
+        token: z.string().min(1),
+        expiresAt: InstantOut,
+      })
+      .nullable()
+      .optional()
+      .describe(
+        'Present once `admitted`. The surface sends `token` as `X-Arthome-Admission-Token` on\n`purchaseSeat` before `expiresAt`, counted against `servedAt`.\n',
+      ),
+  })
+  .describe(
+    "**One account's place in a date's sales queue**, and nothing about anyone else's. The queue\nserves in arrival order and protects latency; the capacity is held by `ticketing` whatever it\nsays (`adr-ticketing.md` §4).\n",
   );

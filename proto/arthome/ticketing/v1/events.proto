@@ -94,7 +94,26 @@ enum SeatCancelReason {
   SEAT_CANCEL_REASON_VIEWER_REQUEST = 1;
   SEAT_CANCEL_REASON_DATE_CANCELLED = 2;
   SEAT_CANCEL_REASON_ACCOUNT_DELETION = 3;
+  // No longer produced: a seat exists only once its order is paid (D-077).
+  // Kept, because a proto number is never reused.
   SEAT_CANCEL_REASON_PAYMENT_FAILED = 4;
+}
+
+// Why money went back to the viewer. `SeatCancelReason` cannot say it: goodwill,
+// a duplicate and a dispute cancel no seat by themselves, and a merchandise or
+// subscription order has no seat at all. Domain facts, not refusals: the studio's
+// `refundReasonCode` spells the same members in snake_case (D-037, D-039).
+enum RefundReason {
+  REFUND_REASON_UNSPECIFIED = 0;
+  REFUND_REASON_VIEWER_REQUEST = 1;
+  REFUND_REASON_DATE_CANCELLED = 2;
+  REFUND_REASON_ACCOUNT_DELETION = 3;
+  REFUND_REASON_GOODWILL = 4;
+  REFUND_REASON_DUPLICATE = 5;
+  REFUND_REASON_DISPUTE = 6;
+  // A payment confirmed after its hold expired, with no capacity left to take
+  // again: refunded at once rather than oversell the date (D-082).
+  REFUND_REASON_HOLD_EXPIRED_CAPACITY_LOST = 7;
 }
 
 // The credit note is an INTERNAL CURRENCY, therefore a liability, therefore an
@@ -354,9 +373,12 @@ message OrderRefunded {
   string order_id = 1;
   string channel_id = 2;
   arthome.common.v1.Money amount = 3;
+  // The seat's cancellation, when the refund cancels one; `refund_reason`
+  // says why the money went back.
   SeatCancelReason reason = 4;
   string refund_ref = 5;
   google.protobuf.Timestamp occurred_at = 6;
+  RefundReason refund_reason = 7;
 }
 
 message CreditIssued {
@@ -394,8 +416,11 @@ message SubscriptionChanged {
   google.protobuf.Timestamp occurred_at = 8;
 }
 
-// Opening a tier notifies the waiting list in the same act, with a priority
-// window (2 h) before the public opening.
+// Opening a tier notifies the whole waiting list in the same act, with a
+// priority window of `WAITLIST_PRIORITY_HOURS` before the public opening (D-083).
+// One tier opening writes as many messages as it needs, each naming at most
+// `WAITLIST_NOTIFIED_ACCOUNTS_MAX` accounts: one message listing ten thousand
+// ids is a message size problem.
 message WaitlistNotified {
   string date_id = 1;
   repeated string account_ids = 2;

@@ -44,6 +44,16 @@ export declare function isScarce(gauge: Gauge): boolean;
  */
 export declare const HOLD_MINUTES_CHECKOUT = 15;
 export declare const HOLD_MINUTES_TV_PAIRING = 5;
+/**
+ * How long an admission out of a date's sales queue lets its account buy that date
+ * (adr-ticketing.md §4). Unused by then, it lapses and the account queues again.
+ */
+export declare const SALES_QUEUE_ADMISSION_SECONDS = 60;
+/**
+ * At most one `availability_changed` per date in this interval while the date keeps moving.
+ * Selling out and coming back from sold out publish at once: they change what surfaces offer.
+ */
+export declare const AVAILABILITY_PUBLISH_MIN_INTERVAL_SECONDS = 5;
 export interface SeatHold {
     readonly quantity: number;
     readonly expiresAt: Instant;
@@ -75,4 +85,6 @@ export declare function requiresTechnicalProvision(capacityTotal: number): boole
  * calls let the public take the seats before the list hears of it.
  */
 export declare const WAITLIST_PRIORITY_HOURS = 2;
+/** One `waitlist.notified` names at most this many accounts; a tier opening writes as many as it needs. */
+export declare const WAITLIST_NOTIFIED_ACCOUNTS_MAX = 500;
 //# sourceMappingURL=seats.d.ts.map

@@ -259,6 +259,7 @@ explicitly** (`operationIdFactory` pinned), never derived from a method name.
 | `traceparent` | **yes** | W3C, created at the BFF, propagated unmodified | `events.md` §1.3; it is the one injected into `outbox_event.tracecontext` |
 | `x-arthome-deadline` | **yes** | RFC 3339 UTC instant, `2026-09-21T20:45:13.400Z` | §5.3 |
 | `idempotency-key` | **on every money or commitment write** | UUIDv7 generated **by the surface**, relayed as-is | §5.4 |
+| `x-arthome-admission-token` | on `purchaseSeat` while the date's sales queue is armed | the admission the queue served, relayed as-is | `adr-ticketing.md` §4. Outside the body, so the idempotency fingerprint (§5.4) never covers it |
 | `x-arthome-actor-surface` | on every human write | `storefront-web · storefront-mobile · storefront-tv · studio-web · studio-mobile · system` | the studio log names names **and places them** (`common.proto` `Surface`) |
 | `accept-encoding` | recommended | `gzip` | §5.7 |
 
@@ -406,7 +407,7 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 |---|---|---|
 | `400` | `refused` | `api.schema_invalid`, `api.period_filter_required` |
 | `401` | `refused` | `api.unauthenticated`, `api.token_expired` |
-| `403` | `refused` | `api.forbidden`, `api.sort_key_forbidden`, `api.rights_version_stale`, `pairing.identity_mismatch` |
+| `403` | `refused` | `api.forbidden`, `api.sort_key_forbidden`, `api.rights_version_stale`, `pairing.identity_mismatch`, `order.sales_queue_admission_required` |
 | `404` | `refused` | `api.not_found` |
 | `409` | `refused` | `state.conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `api.idempotency_in_flight`, `capacity.tier_must_widen` |
 | `410` | `refused` | `api.cursor_too_old`, `pairing.expired`, `watch.replay_expired` |
@@ -417,7 +418,7 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 | `504` | `unavailable` | `api.deadline_exceeded`, `api.upstream_timeout` |
 
 **"Typical", and the word is load-bearing**: this table names the codes worth knowing per status, not
-all 67 of `ERROR_CODES`. A code absent from it is not a defect — a code *in* it that the vocabulary
+every member of `ERROR_CODES`. A code absent from it is not a defect — a code *in* it that the vocabulary
 does not carry is, which is what the gate checks.
 
 **The BFF never relays a service error as-is** (`nestjs-bff-gateway` skill, rule 6). It maps an

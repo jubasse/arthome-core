@@ -88,7 +88,7 @@ latency of everyone else and makes the order of arrival the order of service.
   on the date exceed the admission rate over a short window. It disarms when the queue has drained.
 - **First come, first served** (D-081). A Redis sorted set per date keeps the arrival order, one
   entry per account (joining is idempotent), and an admitter releases K entries a second. An admitted entry gets a signed
-  admission token, valid 60 s and bound to the account and the date. `ticketing` checks it on
+  admission token, valid `SALES_QUEUE_ADMISSION_SECONDS` (60 s) and bound to the account and the date. `ticketing` checks it on
   `purchaseSeat` itself: a service authorises for itself (critical rule 5), never "the BFF
   checked".
 - **Served, never hardcoded**: the position, an estimated wait, and the polling cadence, as for the
@@ -97,7 +97,9 @@ latency of everyone else and makes the order of arrival the order of service.
   only the latency degrades.
 - **The contract gains** (provisional maturity, D-081): entering the queue, reading one's position,
   and a refusal of `purchaseSeat` naming the queue when the room is armed and no token is sent. The
-  surfaces render a queue screen.
+  surfaces render a queue screen. In `openapi/storefront.yaml`: `enterSalesQueue`,
+  `getSalesQueuePosition`, the `X-Arthome-Admission-Token` header and `403`
+  `order.sales_queue_admission_required`.
 
 ## 5. Availability is published at a bounded rate
 
@@ -107,7 +109,8 @@ promised: 15 s (`transport.md` §5.9), pushed in batches of 15 to 60 s (`realtim
 
 - A move marks the date dirty (`availability_dirty_since`) inside its own transaction.
 - A per-date publisher (a sweeper with `FOR UPDATE SKIP LOCKED`) writes one outbox row with the
-  latest figures at most every 5 s while the date keeps moving. **Selling out and coming back from
+  latest figures at most every `AVAILABILITY_PUBLISH_MIN_INTERVAL_SECONDS` (5 s) while the date
+  keeps moving. **Selling out and coming back from
   sold out publish at once**: those two moves change what the surfaces offer.
 - `refreshDateAvailability` stays the truth at command time; the event is the hint.
 
@@ -168,8 +171,8 @@ purchase decides, as in the waiting room.
   - the new seats become a priority pool until `priority_until` (now plus
     `WAITLIST_PRIORITY_HOURS`);
   - every waiting entry is marked `notified`;
-  - `waitlist.notified` is written in chunks of at most 500 accounts, because one message listing
-    ten thousand ids is a message size problem.
+  - `waitlist.notified` is written in chunks of at most `WAITLIST_NOTIFIED_ACCOUNTS_MAX` (500)
+    accounts, because one message listing ten thousand ids is a message size problem.
 - **During the window**, any notified account buys from the pool, first come first served; the
   public sees the availability without the pool. An account that registers while a window is open
   is notified into it at once.
@@ -185,11 +188,12 @@ purchase decides, as in the waiting room.
 | `arthome.ticketing.order` | `order_id` | `order.paid`, `order.refunded` |
 | `arthome.ticketing.account` | `account_id` | `credit.issued` (and later `subscription.changed`) |
 
+**In the contracts**: `OrderRefunded.refund_reason` (`RefundReason`, additive), since
+`SeatCancelReason` cannot say `goodwill`, `duplicate`, `dispute`, or the capacity lost of §7
+(`hold_expired_capacity_lost`); `TicketCard.state` without `held` (§1); the `PaymentHandoff`
+examples at the hold's instant (§2).
+
 **Owed with the slice**:
-- `OrderRefunded` gains a refund reason code (additive): `SeatCancelReason` cannot say
-  `goodwill`, `duplicate`, `dispute`, or the capacity lost of §7.
-- `TicketCard.state` stops listing `held` (§1), and the `PaymentHandoff` examples show the hold's
-  instant (§2).
 - The platform's `infra/kafka/topics.json` gains the `order`, `account`, `retry` and `dlq` topics.
 
 ## 11. The CQRS shape (`context-map.md` §12)
