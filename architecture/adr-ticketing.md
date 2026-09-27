@@ -1,7 +1,6 @@
 # ADR — Ticketing: selling a date's seats under load
 
-**Status**: **proposed**. Four arbitrations taken on 2026-09-27 (D-077 to D-080); the points still
-open are listed in §13 with a recommendation each.
+**Status**: **accepted** — arbitrated by the product owner on 2026-09-27, D-077 to D-083.
 **Date**: 27 September 2026. **Scope**: the first slice of `ticketing`, a date's seats and its
 waiting list (D-080). The shop, the cart, subscriptions and external orders come later, on the same
 foundations.
@@ -87,8 +86,8 @@ latency of everyone else and makes the order of arrival the order of service.
 
 - **Armed per date**: in advance for an announced opening, or automatically when purchase attempts
   on the date exceed the admission rate over a short window. It disarms when the queue has drained.
-- **Mechanism**: a Redis sorted set per date in arrival order, one entry per account (joining is
-  idempotent), and an admitter that releases K entries a second. An admitted entry gets a signed
+- **First come, first served** (D-081). A Redis sorted set per date keeps the arrival order, one
+  entry per account (joining is idempotent), and an admitter releases K entries a second. An admitted entry gets a signed
   admission token, valid 60 s and bound to the account and the date. `ticketing` checks it on
   `purchaseSeat` itself: a service authorises for itself (critical rule 5), never "the BFF
   checked".
@@ -96,8 +95,9 @@ latency of everyone else and makes the order of arrival the order of service.
   pairing (2 s, then 5 s).
 - **Redis down**: the room fails open and an alert fires. The invariant still holds in Postgres;
   only the latency degrades.
-- **The contract gains** (provisional maturity): entering the queue, reading one's position, and a
-  refusal of `purchaseSeat` naming the queue when the room is armed and no token is sent (§13).
+- **The contract gains** (provisional maturity, D-081): entering the queue, reading one's position,
+  and a refusal of `purchaseSeat` naming the queue when the room is armed and no token is sent. The
+  surfaces render a queue screen.
 
 ## 5. Availability is published at a bounded rate
 
@@ -121,7 +121,7 @@ then cancelled at the provider, best effort, outside the transaction.
 until someone noticed, while the sweeper is idempotent and survives a restart. Delayed jobs are for
 work that leaves the database (§8).
 
-## 7. A payment that succeeds after its hold expired
+## 7. A payment that succeeds after its hold expired (D-082)
 
 3-D Secure finished at minute 16, or a webhook arrived late. The hold has expired, and its capacity
 may already be sold again.
@@ -153,25 +153,29 @@ may already be sold again.
   `cancel_deadline` is recomputed from the new start and served as an instant. Sales go on until
   the date sells out.
 
-## 9. The waiting list
+## 9. The waiting list (D-083)
 
-`WaitlistEntry`, one per date and account: a rank from a per-date sequence, and a state
-(`waiting | notified | converted | left | lapsed`).
+**Everyone registered gets the same chance.** There is no rank among the registered; the order of
+purchase decides, as in the waiting room.
 
+- **`WaitlistEntry`**, one per date and account, with a state:
+  `waiting | notified | converted | left | lapsed`. The rank is no longer disclosed:
+  `joinWaitlist` answers `rankDisclosed: false`, which the contract already allows.
 - **Joined only when the date is sold out**, which is when `decideWatch` offers `join_waitlist`.
   Joining and leaving are state assignments (`joinWaitlist`, `leaveWaitlist`).
 - **`openCapacityTier` is one transaction**:
   - the capacity widens;
   - the new seats become a priority pool until `priority_until` (now plus
     `WAITLIST_PRIORITY_HOURS`);
-  - the first waiting entries by rank are marked `notified`;
+  - every waiting entry is marked `notified`;
   - `waitlist.notified` is written in chunks of at most 500 accounts, because one message listing
     ten thousand ids is a message size problem.
-- **During the window**, a notified account's purchase draws from the pool, and everyone else sees
-  the public availability without it. **At `priority_until`**, a sweeper returns what is left of
-  the pool to public sale.
-- How many entries one opened seat notifies, and what a notified entry that did not buy becomes,
-  are open (§13).
+- **During the window**, any notified account buys from the pool, first come first served; the
+  public sees the availability without the pool. An account that registers while a window is open
+  is notified into it at once.
+- **At `priority_until`**, a sweeper returns what is left of the pool to public sale, and every
+  notified entry that did not buy becomes `lapsed`: it has left the list and registers again to be
+  told next time.
 
 ## 10. Events, keys and topics (D-078)
 
@@ -219,19 +223,7 @@ events** are committed after it (`context-map.md` §12).
 - Failure drills: the payment provider down (the purchase answers 503 and releases its hold),
   Kafka down (the outbox holds the events), Redis down (the room fails open, §4).
 
-## 13. Open, with a recommendation each
-
-1. **The waiting room's contract.** Three new storefront operations, provisional: enter the queue,
-   read one's position, and the refusal of `purchaseSeat` naming the queue. The surfaces must
-   render a queue screen. **Recommended**: yes, since the load target of D-079 needs it.
-2. **A payment that succeeds after its hold expired** (§7). **Recommended**: take the capacity
-   again, and refund at once when none is left.
-3. **How many notifications an opened seat triggers** (§9). **Recommended**: one waiting entry per
-   opened seat. Notifying everyone for fifty seats disappoints most of the list.
-4. **A notified entry that did not buy in its window.** **Recommended**: back to `waiting` with its
-   rank. `lapsed` is kept for a date that ends.
-
-## 14. Ideas noted, not built
+## 13. Ideas noted, not built
 
 - **Several cameras, several price ranges** (the product owner, 2026-09-27). A live concert filmed
   from several vantage points, each sold at its own price. It would be a dimension of the offer, not

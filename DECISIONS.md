@@ -3172,7 +3172,7 @@ purchase's transaction). Everyone who buys a date watches the same broadcast fro
 view: unlike a concert, the place is not what is sold. A seat is the right to watch, created when
 the order is paid, from the `SeatHold` that carried its capacity until then. `Seat.state` loses
 `held`. Several cameras sold as several price ranges for one date are an idea for later, noted in
-`adr-ticketing.md` §14; nothing is built for it.
+`adr-ticketing.md` §13; nothing is built for it.
 
 ### D-078 — `arthome.ticketing.order` is keyed by `order_id`
 
@@ -3196,3 +3196,23 @@ date, armed in advance or past an admission rate, turns the burst into a fair qu
 orders and their payment through the ports of `adr-payments.md` §4, the seat, cancellation and
 refund, the effects of a date's outcome, and the waiting list with its priority window. The shop,
 the cart, subscriptions and external orders follow on the same foundations.
+
+### D-081 — The waiting room serves in arrival order, through three provisional operations
+
+**Arbitrated by the product owner on 2026-09-27.** A date's waiting room (D-079) serves first come,
+first served. The storefront contract gains, at provisional maturity, entering the queue, reading
+one's position, and a refusal of `purchaseSeat` that names the queue while the room is armed; the
+surfaces render a queue screen (`adr-ticketing.md` §4).
+
+### D-082 — A payment that succeeds after its hold expired takes a seat again, or is refunded
+
+**Arbitrated by the product owner on 2026-09-27.** The capacity is taken again with the same
+conditional decrement; when none is left, the order is refunded at once with a reason the surface
+can explain. Never an oversold date, never money kept without a seat (`adr-ticketing.md` §7).
+
+### D-083 — A tier opening notifies the whole waiting list, and a registration lasts one chance
+
+**Arbitrated by the product owner on 2026-09-27.** Everyone registered gets the same chance: no rank
+among them, the whole list notified, and the priority window of `WAITLIST_PRIORITY_HOURS` kept,
+first come first served within it. An entry notified that does not buy in the window leaves the list
+and registers again. The rank is no longer disclosed (`adr-ticketing.md` §9).
