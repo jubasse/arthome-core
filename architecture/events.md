@@ -234,7 +234,7 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 |---|---|---|
 | `ticketing.date_sales.availability_changed.v1` | `date_id`, `seats_available`, `waitlist_count`, `lowest_price`, `fill_rate`, `sold_out` | **`catalog`** (public card, index, studio agenda), `notifications` ("almost full" at 85%) |
 | `ticketing.date_sales.pricing_changed.v1` | `date_id`, `tiers[]`, `promotions[]` | `catalog` (card, checklist) |
-| `ticketing.date_sales.capacity_set.v1` | `date_id`, `capacity_total`, `tiers[]` | `catalog` (checklist), `streaming` (technical provisioning) |
+| `ticketing.date_sales.capacity_set.v1` | `date_id`, `capacity_total`, `tiers[]`, `technical_provision_required`, `provision_revisable_until`, `provisioned_capacity?` (unset while no provision is recorded). Written by `openCapacityTier` and by `setTechnicalProvision` (D-088), so provisioning reads the capacity and its provision in one fact | `catalog` (checklist), `streaming` (technical provisioning) |
 | `ticketing.seat.activated.v1` | `seat_id`, `date_id`, `account_id`, `tier`, `seat_code` | **`streaming`** (`entitlement_projection`), `notifications` (reminder at T−30) |
 | `ticketing.seat.cancelled.v1` | `seat_id`, `date_id`, `account_id`, `reason` | `streaming`, `payouts` |
 | `ticketing.order.paid.v1` | `order_id`, `kind` (`seat`\|`merch`\|`subscription`), `channel_id`, `date_id?`, `gross`, `vat_breakdown[]`, `fees` | **`payouts`** (this is the raw material of the right to a payout) |
