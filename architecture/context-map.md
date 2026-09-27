@@ -1142,6 +1142,7 @@ diverge, and nowhere else.** Elsewhere, service + repository + DTO.
 | Context / module | Regime | Justification |
 |---|---|---|
 | `catalog` — publication, date, outcome | **full CQRS** (command bus, aggregates, projections) | Seven states, two one-way transitions, a checklist fed by three contexts, optimistic concurrency across operators, **and** six read models radically different from the write model (rows, index, tiles, sheet by pane). The divorce is total. |
+| `catalog` — shows, venues, the artist | **command bus, no aggregate** (D-084) | Their writes carry no invariant across entities, so no aggregate; they go through the same buses and the same transaction runner as the date, so the service has one way to run a write. |
 | `ticketing` — seat, capacity, order | **full CQRS** | Capacity is a pure concurrency invariant; the reads are projections by viewer and by channel. And the write model (one order, one payment, one outcome) has nothing of the shape that is read (a seat card with its replay window). |
 | `chat` — moderation | **full CQRS** | Conditional verdicts, leases, precedence, retroactive reclassification, and a queue read by several people at once. |
 | `streaming` — the run | **commands only**, no query bus | The writes are run-desk commands with invariants (you do not go on air without a technical check). The reads are short time series: a repository is enough, a query bus would be ceremony. |

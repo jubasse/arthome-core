@@ -260,7 +260,12 @@ Professional identity: name, city, freelance or not, roles held, `channels[]`, `
 Title and synopsis **in both languages where they exist**, cast, discipline, **list of sub-genres**
 (§2.6), tags, running time, `languageDependency`, artwork.
 
-### 2.2 `Date` — root aggregate
+### 2.2 `Date` — root aggregate, owning its `Publication`
+
+One aggregate, two tables (D-085): a date and its publication are one to one, share one version
+(the publication's, the one the studio's sheet serves and every command names), carry invariants
+across each other (an outcome depends on the publication's state; publishing sets the date's slug
+and freezes its running time), and are always written together.
 
 ```
 Date
@@ -274,7 +279,8 @@ Date
   outcome               nullable: postponed | cancelled | interrupted
   rescheduled_to        nullable timestamptz
   outcome_declared_at · outcome_declared_by
-  created_at · updated_at · version
+  created_at · updated_at
+  publication           the entity of §2.3, whose version is the aggregate's
 ```
 
 **Invariants.**
@@ -294,7 +300,7 @@ Date
 `sold`, `viewers`, `chatMode`, `publication`, `publishedBy`. Copying the fixture's shape would carve
 a read model into the write contract.
 
-### 2.3 `Publication` — root aggregate
+### 2.3 `Publication` — an entity of the `Date` aggregate (D-085)
 
 ```
 Publication
@@ -322,7 +328,7 @@ Publication
 **This point is the answer to "an aggregate straddling three contexts".** `Publication` does not
 command going on air: it **learns** it. The "go on air" command goes to `streaming`, which alone
 knows whether the feed is coming in. So two of the eight transitions are caused by an event, and
-`Publication` stays a single context's aggregate.
+`Publication` stays inside a single context's aggregate.
 
 **Invariants.**
 - The lock is on the **pair** `from > to`, not on the state (E5). Refusal:

@@ -3216,3 +3216,19 @@ can explain. Never an oversold date, never money kept without a seat (`adr-ticke
 among them, the whole list notified, and the priority window of `WAITLIST_PRIORITY_HOURS` kept,
 first come first served within it. An entry notified that does not buy in the window leaves the list
 and registers again. The rank is no longer disclosed (`adr-ticketing.md` §9).
+
+### D-084 — Every write of `catalog` goes through the command bus
+
+**Arbitrated by the product owner on 2026-09-27.** The shows, the venues and the artist carry no
+invariant across entities and get no aggregate, as `context-map.md` §12 keeps aggregates for the
+publication, the date and the outcome. Their commands still go through `@nestjs/cqrs` and the same
+transaction runner, so catalog has one way to run a write. §12 carries the row.
+
+### D-085 — A date and its publication are one aggregate
+
+**Arbitrated by the product owner on 2026-09-27**, on the architecture review of the catalog
+refactor. They are one to one, share one version (the publication's), carry invariants across each
+other, and are always written together; as two roots, a date write was guarded by its publication's
+version only because every handler saved the publication first. The `Date` aggregate owns its
+`Publication`: two tables, one repository, one version-conditional save (`data-model.md` §2.2,
+§2.3). No contract changes: `expectedVersion` stays the publication's version.

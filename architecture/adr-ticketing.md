@@ -206,8 +206,10 @@ most. So the aggregate decides the command's parameters, and its repository exec
 conditional decrement as one atomic statement. Every other `DateSales` command (prices, tiers)
 loads the aggregate and saves it with a version-conditional update.
 
-**Commands and queries** go through `@nestjs/cqrs`, with the conventions and shared library of the
-catalog refactor. **Integration events** are outbox rows written inside the transaction. **Domain
+**Commands and queries** go through `@nestjs/cqrs`, with the conventions of the catalog refactor
+(`apps/catalog/HANDOVER.md` §0f in the platform). Its generic pieces (the transaction runner that
+commits domain events after the transaction, idempotency, the processed-message claim) move into
+`libs/` as ticketing's first change, ticketing being their second consumer. **Integration events** are outbox rows written inside the transaction. **Domain
 events** are committed after it (`context-map.md` §12).
 
 ## 12. Quality gates for the slice
