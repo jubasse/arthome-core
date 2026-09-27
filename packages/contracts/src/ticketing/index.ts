@@ -31,6 +31,7 @@ import {
   PLAN_TIERS,
   PlanOpening,
   PRICE_TIERS,
+  REFUND_REASONS,
   SUBSCRIPTION_STATES,
 } from '@arthome/core';
 import {
@@ -39,9 +40,11 @@ import {
   MoneyOut,
   int64,
   type VocabularyOut,
+  type VocabularyOutNullable,
   uuidOut,
   vocabularyOut,
   vocabularyOutLocal,
+  vocabularyOutNullable,
 } from '@arthome/core/schema';
 
 import { DateCardSchema } from '../catalog/index.js';
@@ -76,6 +79,7 @@ export const TicketCardSchema: z.ZodObject<
             amount: z.ZodOptional<typeof MoneyOut>;
             delayCode: z.ZodOptional<z.ZodString>;
             method: z.ZodOptional<VocabularyOut>;
+            refundReasonCode: z.ZodOptional<VocabularyOutNullable>;
           },
           z.core.$loose
         >
@@ -115,6 +119,9 @@ export const TicketCardSchema: z.ZodObject<
         REFUND_METHODS,
         "Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends.",
       ).optional(),
+      refundReasonCode: vocabularyOutNullable(REFUND_REASONS)
+        .optional()
+        .describe('Why the seat was refunded: `date_cancelled` when its date was cancelled.'),
     })
     .nullable()
     .optional()
@@ -159,6 +166,7 @@ export const OrderSchema: z.ZodObject<
     placedAt: z.ZodString;
     invoiceAvailable: z.ZodOptional<z.ZodBoolean>;
     buyerTaxLocation: z.ZodOptional<typeof BuyerTaxLocationSchema>;
+    refundReasonCode: z.ZodOptional<VocabularyOutNullable>;
   },
   z.core.$loose
 > = z.looseObject({
@@ -179,6 +187,11 @@ export const OrderSchema: z.ZodObject<
   buyerTaxLocation: BuyerTaxLocationSchema.optional().describe(
     "**Resolved and frozen at the instant of the sale.** It is not reread later: a viewer's\ncountry changes between two reads, and an invoice is kept for ten years.\n",
   ),
+  refundReasonCode: vocabularyOutNullable(REFUND_REASONS)
+    .optional()
+    .describe(
+      'Why the money went back, once the order is `refunded` or `partially_refunded`: a code the\nsurface explains. `hold_expired_capacity_lost` is a payment confirmed after its hold expired,\nwith no seat left to take, refunded at once (D-082).\n',
+    ),
 });
 
 export const SubscriptionSchema: z.ZodObject<
@@ -550,7 +563,7 @@ export const SalesQueuePositionSchema: z.ZodObject<
       .nullable()
       .optional()
       .describe(
-        'Present once `admitted`. The surface sends `token` as `X-Arthome-Admission-Token` on\n`purchaseSeat` before `expiresAt`, counted against `servedAt`.\n',
+        'Present once `admitted`. The surface sends `token` as `X-Arthome-Admission-Token` on\n`purchaseSeat`, or on a `seat` `createPairing` (D-086), before `expiresAt`, counted against\n`servedAt`.\n',
       ),
   })
   .describe(

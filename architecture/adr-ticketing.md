@@ -53,7 +53,9 @@ purchaseSeat
 - **Budget**: p95 ≤ 2 s for the whole command (`transport.md` §5.9). Tx A and tx B are
   milliseconds; the payment provider's call is most of it.
 - A TV purchase places its hold when the pairing opens: the BFF calls `identity` for the pairing and
-  `ticketing` for the hold (critical rule 1), and the hold's `expires_at` is the pairing's.
+  `ticketing` for the hold (critical rule 1), and the hold's `expires_at` is the pairing's. While the
+  date's room is armed, the pairing opens only once the account is admitted (D-086): the hold is
+  what the room guards, so `ticketing` checks the admission there as it does on `purchaseSeat`.
 
 ## 3. The capacity invariant at 10,000 buyers a minute (D-079)
 
@@ -100,6 +102,8 @@ latency of everyone else and makes the order of arrival the order of service.
   surfaces render a queue screen. In `openapi/storefront.yaml`: `enterSalesQueue`,
   `getSalesQueuePosition`, the `X-Arthome-Admission-Token` header and `403`
   `order.sales_queue_admission_required`.
+- **The television queues like every surface** (D-086): a `seat` pairing carries the admission, or
+  is refused the same way. There is no way around the room through the TV.
 
 ## 5. Availability is published at a bounded rate
 
@@ -132,8 +136,8 @@ may already be sold again.
 - At `paid`, the seat is created from the active hold. If the hold expired, `ticketing` takes the
   capacity again with the same conditional decrement.
 - **If none is left, the order is refunded at once**: never an oversold date, never money kept
-  without a seat. The order ends `refunded` with a reason code the surface can explain, and the
-  viewer is told.
+  without a seat. The order ends `refunded` with a reason code the surface can explain
+  (`Order.refundReasonCode`: `hold_expired_capacity_lost`), and the viewer is told.
 - Cancelling the intent at expiry (§6) narrows the window; it cannot close it, because a
   confirmation may already be in flight at the provider.
 
@@ -190,8 +194,10 @@ purchase decides, as in the waiting room.
 
 **In the contracts**: `OrderRefunded.refund_reason` (`RefundReason`, additive), since
 `SeatCancelReason` cannot say `goodwill`, `duplicate`, `dispute`, or the capacity lost of §7
-(`hold_expired_capacity_lost`); `TicketCard.state` without `held` (§1); the `PaymentHandoff`
-examples at the hold's instant (§2).
+(`hold_expired_capacity_lost`). The vocabulary is `REFUND_REASONS` in `@arthome/core`, served as
+`refundReasonCode` on the storefront's `Order` and `TicketCard.refund`, and narrowed to the four an
+operator chooses on the studio's `refundSeat`. `TicketCard.state` without `held` (§1); the
+`PaymentHandoff` examples at the hold's instant (§2).
 
 **Owed with the slice**:
 - The platform's `infra/kafka/topics.json` gains the `order`, `account`, `retry` and `dlq` topics.

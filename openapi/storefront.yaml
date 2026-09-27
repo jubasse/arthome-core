@@ -2035,12 +2035,16 @@ paths:
       summary: Enters a date's sales queue.
       description: |
         **A state assignment, not a toggle**: one entry per account and date, and entering again keeps
-        the place already taken. The queue serves in arrival order (D-081); an admission that lapses
-        unused sends the account to the end of it.
+        the place already taken. The queue serves in arrival order (D-081). No `Idempotency-Key`: the
+        entry makes a second call harmless by itself (see the exemption).
 
-        **The queue protects latency, not capacity.** `ticketing` holds the capacity whatever the queue
-        says (`adr-ticketing.md` §3), so a date whose queue is not armed answers `armed: false` and
-        admits nobody: the surface goes back to `purchaseSeat`, which needs no admission then.
+        **An admission that lapses unused sends the account to the end of the queue**, in the spirit
+        of the waiting list's one chance per registration (D-083): a turn kept after it passed is
+        taken from everyone behind.
+
+        **A queue that is not armed admits nobody**: it answers `armed: false`, and the surface goes
+        back to `purchaseSeat`, which needs no admission then. Admitting there would let an account
+        collect admissions ahead of the arming and walk past the queue once it arms.
 
         **The session names the account, never the path**, and the response speaks of the caller's
         entry alone: nobody else's position, account or admission.
@@ -2498,6 +2502,7 @@ paths:
                       amount: { amountMinor: 2400, currencyCode: EUR }
                       delayCode: refund_delay_business_days_3_5
                       method: original_payment_method
+                      refundReasonCode: viewer_request
                   date: { id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001 }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
@@ -3527,6 +3532,12 @@ paths:
 
         `signin` opens with the **device token alone**, without a session. The other four require a
         session on the television.
+
+        **A seat pairing goes through the date's sales queue like every other purchase** (D-086).
+        While the queue is armed, the television shows it, and `seat` opens only with the admission
+        in `X-Arthome-Admission-Token`, since opening is what places the hold; without one it is
+        refused with `403` `order.sales_queue_admission_required`. First come, first served, with no
+        way around it through the television.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity, ticketing]
       security:
@@ -3535,6 +3546,7 @@ paths:
         - sessionCookie: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/AdmissionToken'
         - $ref: '#/components/parameters/Surface'
         - $ref: '#/components/parameters/Traceparent'
       requestBody:
@@ -3582,6 +3594,17 @@ paths:
                   state: pending
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403':
+          description: |
+            `order.sales_queue_admission_required`: a `seat` pairing on a date whose sales queue is armed,
+            without a valid admission (D-086). The television enters the queue and opens the pairing once
+            admitted.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error: { code: order.sales_queue_admission_required, nature: refused, params: { dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001 }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                servedAt: '2026-09-21T18:50:00.000Z'
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
   /v1/pairings/{pairingId}:
@@ -5195,8 +5218,8 @@ components:
       description: |
         The admission out of a date's sales queue, as `getSalesQueuePosition` serves it: opaque to the
         surface, bound to one account and one date, and valid until its `expiresAt`. Required on
-        `purchaseSeat` while that date's queue is armed, ignored otherwise. Provisional with the queue
-        (D-081).
+        `purchaseSeat`, and on `createPairing` for a `seat` (D-086), while that date's queue is armed;
+        ignored otherwise. Provisional with the queue (D-081).
       schema:
         type: string
         minLength: 1
@@ -6636,7 +6659,8 @@ components:
           required: [token, expiresAt]
           description: |
             Present once `admitted`. The surface sends `token` as `X-Arthome-Admission-Token` on
-            `purchaseSeat` before `expiresAt`, counted against `servedAt`.
+            `purchaseSeat`, or on a `seat` `createPairing` (D-086), before `expiresAt`, counted against
+            `servedAt`.
           properties:
             token: { type: string, minLength: 1 }
             expiresAt: { type: string, format: date-time }
@@ -6675,6 +6699,11 @@ components:
               x-arthome-tax-basis: inherited
             delayCode: { type: string, examples: [refund_delay_business_days_3_5] }
             method: { type: string, x-arthome-vocabulary: [original_payment_method, account_credit], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends." }
+            refundReasonCode:
+              type: [string, 'null']
+              description: 'Why the seat was refunded: `date_cancelled` when its date was cancelled.'
+              x-arthome-vocabulary: [viewer_request, date_cancelled, account_deletion, goodwill, duplicate, dispute, hold_expired_capacity_lost]
+              x-arthome-vocabulary-source: REFUND_REASONS
 
     MerchItem:
       type: object
@@ -6971,6 +7000,14 @@ components:
           description: |
             **Resolved and frozen at the instant of the sale.** It is not reread later: a viewer's
             country changes between two reads, and an invoice is kept for ten years.
+        refundReasonCode:
+          type: [string, 'null']
+          description: |
+            Why the money went back, once the order is `refunded` or `partially_refunded`: a code the
+            surface explains. `hold_expired_capacity_lost` is a payment confirmed after its hold expired,
+            with no seat left to take, refunded at once (D-082).
+          x-arthome-vocabulary: [viewer_request, date_cancelled, account_deletion, goodwill, duplicate, dispute, hold_expired_capacity_lost]
+          x-arthome-vocabulary-source: REFUND_REASONS
 
     ExternalOrderRef:
       type: object

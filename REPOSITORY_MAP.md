@@ -209,7 +209,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 394 exported names.
+Declarations: `dist/index.d.ts` — 396 exported names.
 
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
@@ -381,11 +381,13 @@ Declarations: `dist/index.d.ts` — 394 exported names.
 - `PublicationTransitionCommand` (interface)
 - `QUIET_HOURS_END` (const) — `QUIET_HOURS_END = 9`
 - `QUIET_HOURS_START` (const) — `QUIET_HOURS_START = 23` — Quiet hours, 23:00 -> 09:00, in the sleeper's own offset and never the server's.
+- `REFUND_REASONS` (const) — `REFUND_REASONS: readonly ["viewer_request", "date_cancelled", "account_deletion", "goodwill", "duplicate", "dispute", "hold_expired_capacity_lost"]` — Why money went back to a viewer: domain facts, not refusals (D-037, D-039), in the order of the proto's 'RefundReason'.
 - `REMINDER_LEAD_MINUTES` (const) — `REMINDER_LEAD_MINUTES = 30` — Reminder before a live show for which I hold a seat.
 - `REPLAY_EXPIRY_WARNING_HOURS` (const) — `REPLAY_EXPIRY_WARNING_HOURS = 6` — End of a replay's availability.
 - `REPLAY_POLICIES` (const) — `REPLAY_POLICIES: readonly ["included", "subscription", "unit", "none"]` — The promise made before purchase — what justifies the price difference.
 - `RIGHTS_SCOPES` (const) — `RIGHTS_SCOPES: readonly ["worldwide", "restricted"]`
 - `RUN_STATES` (const) — `RUN_STATES: readonly ["idle", "rehearsal", "on_air", "interrupted", "ended"]` — The technical axis, and nothing else.
+- `RefundReason` (type+const)
 - `Rendition` (interface) — One image at a size that is actually displayed.
 - `ReplayPolicy` (type+const)
 - `Result` (type) — `type Result<T> = Ok<T> | Err;`

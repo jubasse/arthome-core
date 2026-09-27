@@ -3232,3 +3232,13 @@ other, and are always written together; as two roots, a date write was guarded b
 version only because every handler saved the publication first. The `Date` aggregate owns its
 `Publication`: two tables, one repository, one version-conditional save (`data-model.md` §2.2,
 §2.3). No contract changes: `expectedVersion` stays the publication's version.
+
+### D-086 — A TV purchase goes through the sales queue
+
+**Arbitrated by the product owner on 2026-09-27**, closing the way around D-081's queue that the
+contracts left open: a seat pairing places its hold when it opens (`adr-ticketing.md` §2), so a
+television could take capacity past an armed queue. While a date's queue is armed, the television
+shows the queue like every surface, and the purchase pairing (`intent = seat`) opens, placing its
+five-minute hold (`HOLD_MINUTES_TV_PAIRING`), only once the account is admitted. First come, first served for
+everyone, with no way around it through the TV: `createPairing` carries `X-Arthome-Admission-Token`,
+or is refused with `403` `order.sales_queue_admission_required`.

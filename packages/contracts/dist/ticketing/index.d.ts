@@ -23,7 +23,7 @@
  *     `uuidOut()` and `InstantOut` become those core schemas, one edit per file.
  */
 import { z } from 'zod';
-import { BuyerTaxLocationSchema, MoneyOut, type VocabularyOut } from '@arthome/core/schema';
+import { BuyerTaxLocationSchema, MoneyOut, type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
 import { DateCardSchema } from '../catalog/index.js';
 export declare const TicketCardSchema: z.ZodObject<{
     seatId: z.ZodString;
@@ -38,6 +38,7 @@ export declare const TicketCardSchema: z.ZodObject<{
         amount: z.ZodOptional<typeof MoneyOut>;
         delayCode: z.ZodOptional<z.ZodString>;
         method: z.ZodOptional<VocabularyOut>;
+        refundReasonCode: z.ZodOptional<VocabularyOutNullable>;
     }, z.core.$loose>>>;
 }, z.core.$loose>;
 export declare const CartLineSchema: z.ZodObject<{
@@ -59,6 +60,7 @@ export declare const OrderSchema: z.ZodObject<{
     placedAt: z.ZodString;
     invoiceAvailable: z.ZodOptional<z.ZodBoolean>;
     buyerTaxLocation: z.ZodOptional<typeof BuyerTaxLocationSchema>;
+    refundReasonCode: z.ZodOptional<VocabularyOutNullable>;
 }, z.core.$loose>;
 export declare const SubscriptionSchema: z.ZodObject<{
     planTier: VocabularyOut;

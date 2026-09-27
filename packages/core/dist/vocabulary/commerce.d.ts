@@ -70,6 +70,21 @@ export declare const OrderKind: {
     readonly SUBSCRIPTION: "subscription";
 };
 /**
+ * Why money went back to a viewer: domain facts, not refusals (D-037, D-039), in the order of the
+ * proto's `RefundReason`. A studio operator chooses among four; the others the system raises.
+ */
+export declare const REFUND_REASONS: readonly ["viewer_request", "date_cancelled", "account_deletion", "goodwill", "duplicate", "dispute", "hold_expired_capacity_lost"];
+export type RefundReason = (typeof REFUND_REASONS)[number];
+export declare const RefundReason: {
+    readonly VIEWER_REQUEST: "viewer_request";
+    readonly DATE_CANCELLED: "date_cancelled";
+    readonly ACCOUNT_DELETION: "account_deletion";
+    readonly GOODWILL: "goodwill";
+    readonly DUPLICATE: "duplicate";
+    readonly DISPUTE: "dispute";
+    readonly HOLD_EXPIRED_CAPACITY_LOST: "hold_expired_capacity_lost";
+};
+/**
  * Where a payout stands: `held` while an outcome is open, `refunded` if the date
  * is cancelled, `suspended` while a bank-details change waits for its
  * counter-signature. `shared/` has authority: 12% commission, 14-day delay,

@@ -101,8 +101,9 @@ enum SeatCancelReason {
 
 // Why money went back to the viewer. `SeatCancelReason` cannot say it: goodwill,
 // a duplicate and a dispute cancel no seat by themselves, and a merchandise or
-// subscription order has no seat at all. Domain facts, not refusals: the studio's
-// `refundReasonCode` spells the same members in snake_case (D-037, D-039).
+// subscription order has no seat at all. Domain facts, not refusals (D-037,
+// D-039): `REFUND_REASONS` in @arthome/core carries the same members, in this
+// order, and the contracts serve them as `refundReasonCode`.
 enum RefundReason {
   REFUND_REASON_UNSPECIFIED = 0;
   REFUND_REASON_VIEWER_REQUEST = 1;

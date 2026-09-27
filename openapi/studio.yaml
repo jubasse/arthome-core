@@ -4816,7 +4816,7 @@ paths:
               type: object
               required: [refundReasonCode]
               properties:
-                refundReasonCode: { type: string, enum: [goodwill, date_cancelled, duplicate, dispute], x-arthome-vocabulary-source: none, x-arthome-vocabulary-reason: "A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change." }
+                refundReasonCode: { type: string, enum: [date_cancelled, goodwill, duplicate, dispute], x-arthome-vocabulary-source: REFUND_REASONS, x-arthome-vocabulary-narrowing: "The four an operator may choose. The others are raised by the system: a viewer's own cancellation, an account's deletion, and a payment confirmed after its hold expired with no seat left (D-082)." }
                 partialAmountMinor: { type: [integer, "null"], minimum: 1 }
             example: { refundReasonCode: goodwill }
       responses:
