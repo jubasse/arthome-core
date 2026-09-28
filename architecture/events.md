@@ -232,15 +232,15 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 
 | Event | Payload | Consumed by |
 |---|---|---|
-| `ticketing.date_sales.availability_changed.v1` | `date_id`, `seats_available`, `waitlist_count`, `lowest_price`, `fill_rate`, `sold_out` | **`catalog`** (public card, index, studio agenda), `notifications` ("almost full" at 85%) |
-| `ticketing.date_sales.pricing_changed.v1` | `date_id`, `tiers[]`, `promotions[]`, `prices_locked` | `catalog` (card, checklist) |
-| `ticketing.date_sales.capacity_set.v1` | `date_id`, `capacity_total`, `technical_provision_required`, `provision_revisable_until`, `provisioned_capacity?` (unset while no provision is recorded). Written by `openCapacityTier` and by `setTechnicalProvision` (D-088), so provisioning reads the capacity and its provision in one fact | `catalog` (checklist), `streaming` (technical provisioning) |
-| `ticketing.seat.activated.v1` | `seat_id`, `date_id`, `account_id`, `tier`, `seat_code` | **`streaming`** (`entitlement_projection`), `notifications` (reminder at T−30) |
+| `ticketing.date_sales.availability_changed.v1` | `date_id`, `channel_id`, `seats_available`, `waitlist_count`, `lowest_price?` (unset while no tier is active), `fill_rate_bps`, `sold_out` | **`catalog`** (public card, index, studio agenda), `notifications` ("almost full" at 85%) |
+| `ticketing.date_sales.pricing_changed.v1` | `date_id`, `channel_id`, `tiers[]`, `promotions[]`, `prices_locked`, `changed_by` | `catalog` (card, checklist) |
+| `ticketing.date_sales.capacity_set.v1` | `date_id`, `channel_id`, `capacity_total`, `technical_provision_required`, `provision_revisable_until`, `set_by`, `provisioned_capacity?` (unset while no provision is recorded). Written by `openCapacityTier` and by `setTechnicalProvision` (D-088), so provisioning reads the capacity and its provision in one fact | `catalog` (checklist), `streaming` (technical provisioning) |
+| `ticketing.seat.activated.v1` | `seat_id`, `order_id`, `date_id`, `account_id`, `profile_id?` (a purchase from a shared television), `tier`, `seat_code`, `cancel_deadline` | **`streaming`** (`entitlement_projection`), `notifications` (reminder at T−30) |
 | `ticketing.seat.cancelled.v1` | `seat_id`, `date_id`, `account_id`, `reason` | `streaming`, `payouts` |
-| `ticketing.order.paid.v1` | `order_id`, `kind` (`seat`\|`merch`\|`subscription`), `channel_id`, `date_id?`, `gross`, `vat_breakdown[]`, `fees` | **`payouts`** (this is the raw material of the right to a payout) |
-| `ticketing.order.refunded.v1` | `order_id`, `amount`, `reason` (the seat's cancellation, if any), `refund_reason` (why the money went back: `REFUND_REASONS`, `hold_expired_capacity_lost` included, D-082) | `payouts`, `notifications` |
-| `ticketing.credit.issued.v1` | `credit_id`, `account_id`, `channel_id`, `amount`, `origin_ref` | `payouts` (a credit note is a liability), `notifications` |
-| `ticketing.subscription.changed.v1` | `account_id`, `plan`, `state`, `opens[]`, `seat_discount`, `period_end` | **`streaming`** (the right to watch), `catalog` (displayed price) |
+| `ticketing.order.paid.v1` | `order_id`, `kind` (`seat`\|`merch`\|`subscription`), `channel_id`, `date_id?`, `account_id`, `gross_ttc`, `vat[]`, `service_fee`, `discount`, `credit_applied`, `payment_intent_ref`, `paid_at`, `buyer_tax_location` (with its evidence) | **`payouts`** (this is the raw material of the right to a payout) |
+| `ticketing.order.refunded.v1` | `order_id`, `channel_id`, `amount`, `refund_ref`, `reason` (the seat's cancellation, if any), `refund_reason` (why the money went back: `REFUND_REASONS`, `hold_expired_capacity_lost` included, D-082) | `payouts`, `notifications` |
+| `ticketing.credit.issued.v1` | `credit_id`, `account_id`, `channel_id`, `amount`, `origin`, `origin_date_id`, `expires_at` | `payouts` (a credit note is a liability), `notifications` |
+| `ticketing.subscription.changed.v1` | `account_id`, `plan`, `state`, `opens[]`, `seat_discount_bps`, `concurrent_streams_allowed` (`streaming` enforces it), `current_period_end` | **`streaming`** (the right to watch), `catalog` (displayed price) |
 | `ticketing.waitlist.notified.v1` | `date_id`, `account_ids[]`, `priority_until`. **Chunked**: one tier opening notifies the whole list (D-083) in as many messages as it needs, each naming at most `WAITLIST_NOTIFIED_ACCOUNTS_MAX` (500) accounts | `notifications` |
 
 ### 4.4 `streaming`
