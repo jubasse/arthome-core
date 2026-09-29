@@ -34,6 +34,7 @@
   "packages/core/src/money": "Money in whole minor units, rates in basis points and one rounding rule.",
   "packages/core/src/notification": "The notification thresholds as domain rules, not screen copy.",
   "packages/core/src/pairing": "Device pairing: the short code a television shows and a phone retypes.",
+  "packages/core/src/payment": "The payment ports: what the domain asks of a provider, and nothing of how.",
   "packages/core/src/payout": "Artist payout: commission, VAT by jurisdiction, net and withholding.",
   "packages/core/src/permissions": "Rights: the eight canonical roles, the union rather than a rank, and grants.",
   "packages/core/src/replay": "The replay promise, its window and what remains of it.",
