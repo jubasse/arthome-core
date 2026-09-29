@@ -260,6 +260,7 @@ explicitly** (`operationIdFactory` pinned), never derived from a method name.
 | `x-arthome-deadline` | **yes** | RFC 3339 UTC instant, `2026-09-21T20:45:13.400Z` | §5.3 |
 | `idempotency-key` | **on every money or commitment write** | UUIDv7 generated **by the surface**, relayed as-is | §5.4 |
 | `x-arthome-admission-token` | on `purchaseSeat`, and on a `seat` pairing's hold (D-086), while the date's sales queue is armed | the admission the queue served, relayed as-is | `adr-ticketing.md` §4. Outside the body, so the idempotency fingerprint (§5.4) never covers it |
+| `x-arthome-late-entry-acknowledged` | on `purchaseSeat` once the date's live has started | `true`, the buyer having been told what they missed | `adr-ticketing.md` §2, D-089. Outside the body, so the idempotency fingerprint (§5.4) never covers it: a purchase retried after the start adds it under the same key |
 | `x-arthome-actor-surface` | on every human write | `storefront-web · storefront-mobile · storefront-tv · studio-web · studio-mobile · system` | the studio log names names **and places them** (`common.proto` `Surface`) |
 | `accept-encoding` | recommended | `gzip` | §5.7 |
 

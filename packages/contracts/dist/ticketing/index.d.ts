@@ -137,6 +137,11 @@ export declare const SeatQuoteSchema: z.ZodObject<{
     }, z.core.$loose>>;
     total: typeof MoneyOut;
     validUntil: z.ZodOptional<z.ZodString>;
+    lateEntry: z.ZodOptional<z.ZodNullable<z.ZodObject<{
+        startedAt: z.ZodString;
+        minutesElapsed: z.ZodNumber;
+        salesEndAt: z.ZodString;
+    }, z.core.$loose>>>;
 }, z.core.$loose>;
 export declare const SalesQueuePositionSchema: z.ZodObject<{
     dateId: z.ZodString;

@@ -27,11 +27,13 @@ import { z } from 'zod';
 
 import {
   ORDER_KINDS,
+  ORDER_STATES,
   PLAN_OPENINGS,
   PLAN_TIERS,
   PlanOpening,
   PRICE_TIERS,
   REFUND_REASONS,
+  SEAT_STATES,
   SUBSCRIPTION_STATES,
 } from '@arthome/core';
 import {
@@ -49,18 +51,7 @@ import {
 
 import { DateCardSchema } from '../catalog/index.js';
 
-const TICKET_STATES = ['active', 'cancelled', 'refunded', 'transferred', 'credited'] as const;
 const REFUND_METHODS = ['original_payment_method', 'account_credit'] as const;
-const ORDER_STATES = [
-  'pending',
-  'awaiting_action',
-  'processing',
-  'paid',
-  'failed',
-  'refunded',
-  'partially_refunded',
-  'disputed',
-] as const;
 
 export const TicketCardSchema: z.ZodObject<
   {
@@ -98,10 +89,7 @@ export const TicketCardSchema: z.ZodObject<
       '**Issued by the server**, always. It displays identically on web, mobile and television; the\ndesign computes it by hashing, which would give **three different codes for the same seat** as\nsoon as one surface changed its hash function.\n',
     ),
   tier: vocabularyOut(PRICE_TIERS),
-  state: vocabularyOutLocal(
-    TICKET_STATES,
-    "A state machine local to this resource. It is the contract's own, not the domain's: the domain owns the facts, this owns how far a request has got.",
-  ),
+  state: vocabularyOut(SEAT_STATES),
   cancelDeadline: InstantOut.nullable()
     .optional()
     .describe(
@@ -177,10 +165,7 @@ export const OrderSchema: z.ZodObject<
     .describe('**Readable** reference, the one support reads out over the phone.'),
   kind: vocabularyOut(ORDER_KINDS),
   channelId: uuidOut().optional(),
-  state: vocabularyOutLocal(
-    ORDER_STATES,
-    "Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends.",
-  ),
+  state: vocabularyOut(ORDER_STATES),
   total: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
   placedAt: InstantOut,
   invoiceAvailable: z.boolean().optional(),
@@ -392,7 +377,10 @@ export const PaymentHandoffSchema: z.ZodObject<
 > = z
   .looseObject({
     orderId: uuidOut(),
-    state: vocabularyOutLocal(HANDOFF_STATES, PROVIDER_STATE_REASON),
+    state: vocabularyOut(HANDOFF_STATES, 'ORDER_STATES').meta({
+      'x-arthome-vocabulary-narrowing':
+        'The three in which an order still waits for its payment. A paid, failed or refunded order has no handoff: getOrder serves the order itself.',
+    }),
     paymentIntentRef: z
       .string()
       .describe('**Opaque** reference to the domain. Only the adapter knows how to read it.'),
@@ -479,6 +467,14 @@ export const SeatQuoteSchema: z.ZodObject<
     >;
     total: typeof MoneyOut;
     validUntil: z.ZodOptional<z.ZodString>;
+    lateEntry: z.ZodOptional<
+      z.ZodNullable<
+        z.ZodObject<
+          { startedAt: z.ZodString; minutesElapsed: z.ZodNumber; salesEndAt: z.ZodString },
+          z.core.$loose
+        >
+      >
+    >;
   },
   z.core.$loose
 > = z
@@ -506,6 +502,19 @@ export const SeatQuoteSchema: z.ZodObject<
     ),
     total: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }),
     validUntil: InstantOut.optional(),
+    lateEntry: z
+      .looseObject({
+        startedAt: InstantOut,
+        minutesElapsed: int64()
+          .meta({ format: undefined })
+          .describe('Whole minutes of the live already missed.'),
+        salesEndAt: InstantOut,
+      })
+      .nullable()
+      .optional()
+      .describe(
+        '**Present once the live has started** (D-089): what the buyer has already missed, to be\nsaid loudly before they buy. A seat is sold until `salesEndAt`, thirty minutes after the\nstart; `purchaseSeat` refuses a late entry the buyer did not acknowledge.\n',
+      ),
   })
   .describe(
     'The purchase summary for a seat, **composed server-side**. The four lines come from the\ncontract: `tier + service fee − subscription discount − promotion = total`. This is exactly\nthe "a total composed in two places" case the brief cites as a typical defect, and it is\nclosed here.\n\n**Prices are tax-inclusive (D-056), so the VAT does not move the total — and it is served\nanyway**, in `vatIncluded`. EU invoicing requires the line, and the artist needs it. **A total\nthat does not change is exactly why someone will be tempted to omit it.**\n\n**It is a separate field rather than a fifth line, and that is the point.** `lines` are\naddends; a VAT line inside them would be summed by somebody, on some surface, eventually —\nand the total would be wrong by a VAT rate in the direction nobody checks, because it would\nlook larger rather than smaller. What is already inside a total cannot sit in the list of\nthings added to it.\n',
