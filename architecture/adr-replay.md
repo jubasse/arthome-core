@@ -118,7 +118,7 @@ Outcomes are declared by the control room, never inferred from the feed (`stream
 
 | Outcome | Effect on the replay |
 |---|---|
-| **Cancelled** | no `Replay`. Core allows a cancellation until the scheduled end, so one declared after a short live had ended withdraws the `pending` `Replay` and revokes its `included` accesses, which cost nothing |
+| **Cancelled** | no `Replay`. Core allows a cancellation until the scheduled end, so one declared after a short live had ended withdraws the `pending` `Replay` and revokes its `included` accesses, which cost nothing. Declared once the replay is online: §11 |
 | **Postponed** | nothing exists yet; the `Replay` will follow the date, which keeps its id (D-074) |
 | **Interrupted** | **no replay, partial or not** (D-092). Declared after the live ended and before the replay is online, it withdraws the `pending` `Replay` and revokes its `included` accesses, which cost nothing. Declared once the replay is online: §11 |
 

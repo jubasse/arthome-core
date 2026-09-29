@@ -395,9 +395,12 @@ reformatted body invalidates the signature. Clock tolerance of 5 minutes; beyond
 
 ### 7.2 Idempotence
 
-`event.id` inserted into `processed_stripe_event` **inside the business write's transaction**, with
-`orIgnore().returning('id')`: no row returned, we skip. Stripe replays for up to three days. It is
-exactly the idempotent consumer's rule, and it does not change because the producer is external.
+`event.id` inserted into `stripe_event_inbox` (unique on the provider's event id) with the exact
+bytes, **before anything reads them**, and answered 2xx at once; a duplicate inserts nothing and is
+answered 2xx too (`adr-ticketing.md` §8). A worker applies each row in the business write's
+transaction and marks it applied there, so a row is applied once. Stripe replays for up to three
+days. It is exactly the idempotent consumer's rule, and it does not change because the producer is
+external.
 
 ### 7.3 Out-of-order delivery
 
