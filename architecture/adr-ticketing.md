@@ -1,6 +1,7 @@
 # ADR — Ticketing: selling a date's seats under load
 
-**Status**: **accepted** — arbitrated by the product owner on 2026-09-27, D-077 to D-083.
+**Status**: **accepted** — arbitrated by the product owner on 2026-09-27, D-077 to D-083, and on
+2026-09-29, D-089.
 **Date**: 27 September 2026. **Scope**: the first slice of `ticketing`, a date's seats and its
 waiting list (D-080). The shop, the cart, subscriptions and external orders come later, on the same
 foundations.
@@ -31,12 +32,14 @@ and no seat.
 ```
 purchaseSeat
   [admission]  a valid admission token when the date's waiting room is armed (§4)
-  [late entry] past the start, the buyer's acknowledgement of the delay (D-089), checked
-               before the key is claimed: 409 without it
+  [late entry] past the start, the buyer's acknowledgement of the delay in a header (D-089),
+               checked before the key is claimed: 409 without it; a replayed key answers its
+               original response
   tx A         idempotency record (in flight) · price verified (order.price_stale)
                UPDATE date_sales SET seats_available = seats_available - q
                 WHERE date_id = $1 AND on_sale AND seats_available >= q
-                  AND sales_end_at > now                                     0 rows: order.sold_out
+                  AND (sales_end_at IS NULL OR sales_end_at > now)
+                                        0 rows: order.sold_out; past the cutoff, order.sales_closed
                INSERT seat_hold (active, expires_at = the purchase intent's expiry)
                INSERT seat_order (pending, the quote frozen, the tax evidence of D-021)
   outside      PaymentPort.createIntent, idempotency key = the order id

@@ -103,20 +103,24 @@ Access validity  a property of the ReplayAccess
 | `pending` | the live ended, the date not interrupted | `catalog` consuming `streaming.run.ended.v1` |
 | `online` | the file is ready, the date not interrupted | the guarded studio command that moved `ended → replay_online` (`data-model.md` §2.3), allowed once `streaming.replay.asset_ready.v1` arrived |
 | `closed` | `closesAt` passed | `catalog`'s sweeper |
-| `withdrawn` | an interruption is declared after the live ended | `catalog` consuming its own outcome |
+| `withdrawn` | an outcome declared after the live ended: an interruption, or a cancellation after a short live | `catalog`, with the outcome |
 
 **When accesses are created (D-092).** `ticketing` creates the `included` accesses when it reads
 `catalog.replay.state_changed.v1` → `pending`: the end of the show, as the product owner set it. They
 are valid from the window's opening, so nobody watches before the replay is online. Unit accesses are
-bought only while it is `online`.
+bought only while it is `online`. A `Replay` the studio never puts online closes, still `pending`, at
+`closesAt`; its `included` accesses expire unused.
+
+**Only an outcome withdraws a replay.** Pulling an online replay for another reason (rights,
+quality) has no command in this ADR; it would raise §11's money question too.
 
 Outcomes are declared by the control room, never inferred from the feed (`streaming.md`):
 
 | Outcome | Effect on the replay |
 |---|---|
-| **Cancelled** | no `Replay`: the event never takes place, and no access exists |
+| **Cancelled** | no `Replay`. Core allows a cancellation until the scheduled end, so one declared after a short live had ended withdraws the `pending` `Replay` and revokes its `included` accesses, which cost nothing |
 | **Postponed** | nothing exists yet; the `Replay` will follow the date, which keeps its id (D-074) |
-| **Interrupted** | **no replay, partial or not** (D-092). Declared after the live ended, it withdraws the `pending` or `online` `Replay`, and every access is revoked with `replay_withdrawn` |
+| **Interrupted** | **no replay, partial or not** (D-092). Declared after the live ended and before the replay is online, it withdraws the `pending` `Replay` and revokes its `included` accesses, which cost nothing. Declared once the replay is online: §11 |
 
 **Invariant: a `ReplayAccess` exists only for a `Replay` that is `pending`, `online` or `closed`.** A
 withdrawal and the revocation of its accesses are one decision, carried by events on the date's key.
@@ -155,7 +159,7 @@ type ReplayAccessMode = (typeof REPLAY_ACCESS_MODES)[number];
 type ReplayModes = readonly ReplayAccessMode[];                 // empty = none
 
 const REPLAY_STATES = ['pending', 'online', 'closed', 'withdrawn'] as const;
-const REPLAY_ACCESS_REVOCATION_REASONS = ['replay_withdrawn', 'seat_refunded'] as const;
+const REPLAY_ACCESS_REVOCATION_REASONS = ['replay_withdrawn', 'seat_refunded', 'access_refunded'] as const;
 
 /** The closing, from the live's actual end and the date's window. */
 function replayClosesAt(liveEndedAt: Instant, windowHours: number): Instant;
@@ -197,14 +201,17 @@ accesses are created in batches, as the credits of an interrupted date are (`adr
 In `@arthome/core`:
 - `decideWatch` keeps the live; its replay branch moves to `decideReplayAccess`. That includes the
   `unit` case of `entitlement/index.ts`, which today lets any seat holder watch (against D-091).
-  Once the live has ended, `decideWatch` answers that the live is over and points to the replay.
+  Once the live has ended, `decideWatch` denies with a new reason, `live_ended`, whose way out is
+  the replay's own verdict. Past D-089's cutoff it no longer offers `buy_seat` during the live.
 - `WatchFallbackAction` gains `buy_replay`, which replaces `buy_seat` on a replay.
   `REPLAY_EXPIRED`, `NO_REPLAY` and `REPLAY_NOT_ON_SALE` move to the replay's verdict.
 - `replay/`: `replayHoursLeft` and `isReplayWindowOpen` read the `Replay`'s window;
   `hasReplayPolicy`, `isReplaySoldSeparately` and `replayUnavailabilityReason` read the modes.
 - `catalog/date-state.ts`: `replayEndsAt` gives way to `replayClosesAt`, and `DisplayState.REPLAY`
   leaves the date's display state; the card shows the replay as a facet of its own.
-- New vocabularies: `REPLAY_ACCESS_MODES`, `REPLAY_STATES`, `REPLAY_ACCESS_REVOCATION_REASONS`.
+- New vocabularies: `REPLAY_ACCESS_MODES`, `REPLAY_STATES`, `REPLAY_ACCESS_REVOCATION_REASONS`, and
+  `WatchDenialReason.LIVE_ENDED`.
+- The `Replay` root in `catalog` (`data-model.md` §2.2), with `live_ended_at` and `closes_at`.
 
 In the contracts:
 - `REPLAY_POLICIES` becomes the set of modes: the date's field, `DateCard`/`DateDetail`.`replay`, and

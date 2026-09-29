@@ -301,6 +301,20 @@ Date
 `sold`, `viewers`, `chatMode`, `publication`, `publishedBy`. Copying the fixture's shape would carve
 a read model into the write contract.
 
+**The replay is not on it either (D-090).** From D-090 the replay has a root of its own in
+`catalog`, created when the live ends (`adr-replay.md` §5):
+
+```
+Replay
+  date_id (root, one per date) · channel_id
+  state            pending | online | closed | withdrawn
+  modes            the date's access modes, copied when created (locked since publication)
+  live_ended_at    the run's actual end, from streaming.run.ended.v1
+  closes_at        replayClosesAt(live_ended_at, replay_window_hours), computed once
+  online_at        nullable
+  version
+```
+
 ### 2.3 `Publication` — an entity of the `Date` aggregate (D-085)
 
 ```

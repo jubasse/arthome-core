@@ -3295,6 +3295,6 @@ The modes lock at publication, like the prices (`adr-replay.md` §3).
 **Arbitrated by the product owner on 2026-09-29.** No access exists before the end of the show: the
 seat holders' accesses (`included`) are created when the live ends, and a unit access is bought
 only once the replay is online, never pre-ordered. An access lasts the replay's online window, with
-no viewing period of its own. An interrupted date has no replay, partial or not. So a cancellation
-or a postponement never has a replay access to carry over or refund, and an interruption declared
-after the live ended revokes the accesses already created (`adr-replay.md` §5).
+no viewing period of its own. An interrupted date has no replay, partial or not. So a cancellation,
+an interruption or a postponement never has a replay access to carry over or refund
+(`adr-replay.md` §5).
