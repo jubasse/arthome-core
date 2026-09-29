@@ -3263,3 +3263,38 @@ threshold was refused. The studio records it with `setTechnicalProvision`, revis
 `date.provision_deadline_passed`. A provision below the capacity already open covers nothing and is
 refused with `date.provision_below_capacity`. The penalty for a forecast far above the real figure
 (`data-model.md` §3.1) is left to define later.
+
+### D-089 — Seats sell until 30 minutes after the start, and a late buyer confirms the delay
+
+**Arbitrated by the product owner on 2026-09-29.** A seat covers the live only. Unlike a theatre, a
+late viewer disturbs nobody online, so the live stays joinable once started, but a seat bought near
+the end is worth little: sales close `SEAT_SALES_CUTOFF_MINUTES_AFTER_START` (30) minutes after the
+start, one platform value for every channel. Once the live has started, the quote states how long
+ago, and the purchase is refused unless the buyer explicitly acknowledges having missed part of the
+show, so no surface can skip the warning. A postponement moves the cutoff with the start.
+
+### D-090 — A replay is on-demand content, with a life of its own, never before its event ended
+
+**Arbitrated by the product owner on 2026-09-29.** A replay is not an event: it is watched at any
+hour while it is online, like a film in a catalogue. Its life (`pending`, `online`, `closed`, or
+`withdrawn`) is held by a `Replay` of its own in `catalog`, no longer by the date's `Publication`
+(`replay_online`) nor its display state. It stays tied to its event: a replay never goes online
+before the event has ended. A seat is not a replay right; access is a `ReplayAccess` of its own
+(`adr-replay.md` §1).
+
+### D-091 — A date's replay access modes are a set the channel chooses
+
+**Arbitrated by the product owner on 2026-09-29.** `included` (seat holders), `subscription`
+(subscribers whose plan opens replays) and `unit` (a purchase of its own, at its own price) combine
+on one date; `none` stands alone. What a seat holder gets depends only on the channel's choice:
+under `unit` alone, a seat does not give the replay, and a channel that wants it to adds `included`.
+The modes lock at publication, like the prices (`adr-replay.md` §3).
+
+### D-092 — Replay accesses are created when the show ends, and last the online window
+
+**Arbitrated by the product owner on 2026-09-29.** No access exists before the end of the show: the
+seat holders' accesses (`included`) are created when the live ends, and a unit access is bought
+only once the replay is online, never pre-ordered. An access lasts the replay's online window, with
+no viewing period of its own. An interrupted date has no replay, partial or not. So a cancellation,
+an interruption or a postponement never has a replay access to carry over or refund
+(`adr-replay.md` §5).

@@ -274,7 +274,7 @@ Date
   starts_at             timestamptz UTC
   runtime_min           denormalised from the show (it freezes at publication)
   rights                scope (worldwide | restricted) · territories[] · reason_code
-  replay_policy         included | subscription | unit | none
+  replay_policy         included | subscription | unit | none   ← a set of modes from D-091 (adr-replay.md §3)
   replay_window_hours   int
   outcome               nullable: postponed | cancelled | interrupted
   rescheduled_to        nullable timestamptz
@@ -286,6 +286,7 @@ Date
 **Invariants.**
 - `replay_policy = 'none'` is **final** for this date: you cannot later enable a replay you promised
   not to make — the public price depended on it. The other values lock when the box office opens.
+  From D-091 the policy becomes a set of access modes the channel chooses (`adr-replay.md` §3).
 - An outcome is a fact, kept in the date's events. Only a **postponement** can be followed by
   another outcome: up to `DomainConstant.POSTPONEMENTS_MAX` (3) postponements, then a
   cancellation or an interruption, which are final (D-076).
@@ -299,6 +300,20 @@ Date
 **What is not on this table, and what the fixture puts there**: `prices`, `seats`, `revenue`,
 `sold`, `viewers`, `chatMode`, `publication`, `publishedBy`. Copying the fixture's shape would carve
 a read model into the write contract.
+
+**The replay is not on it either (D-090).** From D-090 the replay has a root of its own in
+`catalog`, created when the live ends (`adr-replay.md` §5):
+
+```
+Replay
+  date_id (root, one per date) · channel_id
+  state            pending | online | closed | withdrawn
+  modes            the date's access modes, copied when created (locked since publication)
+  live_ended_at    the run's actual end, from streaming.run.ended.v1
+  closes_at        replayClosesAt(live_ended_at, replay_window_hours), computed once
+  online_at        nullable
+  version
+```
 
 ### 2.3 `Publication` — an entity of the `Date` aggregate (D-085)
 
@@ -323,7 +338,7 @@ Publication
 | `technical → scheduled` | studio command | — |
 | `technical → live` | **`streaming.run.started.v1` consumed** | — |
 | `live → ended` | **`streaming.run.ended.v1` consumed** | — |
-| `ended → replay-online` | studio command, guarded | **yes** — *viewers have paid for the replay* |
+| `ended → replay-online` | studio command, guarded | **yes** — *viewers have paid for the replay*; moves to a `Replay` of its own in `catalog` (D-090, `adr-replay.md` §1) |
 
 **This point is the answer to "an aggregate straddling three contexts".** `Publication` does not
 command going on air: it **learns** it. The "go on air" command goes to `streaming`, which alone
@@ -435,6 +450,9 @@ the Share action (`storefront-tv` Q10, E15), and what the web shares and indexes
 
 ## 3. `ticketing`
 
+From D-090, `ticketing` also holds `ReplayAccess`, the right to watch a replay, apart from the seat
+(`adr-replay.md` §1 and §2).
+
 ### 3.1 `DateSales` — root aggregate (a date's commercial face)
 
 ```
@@ -448,6 +466,7 @@ DateSales
   promotions[]      reason · struck price · current price · validity window
   replay_unit_price nullable, when replay_policy = 'unit'
   prices_locked_at  nullable
+  sales_end_at      the start + SEAT_SALES_CUTOFF_MINUTES_AFTER_START (D-089); moves with a postponement
   complimentaries[] issued / allocated, by category
   technical_provision  threshold, provisioned capacity (nullable), revision deadline, penalty exposure
   version
@@ -815,7 +834,9 @@ can **resume its own session**, identified by the device.
 ### 5.5 `ReplayAsset`, `PreviewBudget`, `ResumePoint`
 
 `ReplayAsset`: existence, duration, `available_from`, **`expires_at` computed** from the end of the
-run and `replay_window_hours` served by `catalog`. The **policy** belongs to `catalog`; the **file**
+run and `replay_window_hours` served by `catalog`. From D-090 that instant is computed once in core
+and carried by catalog's `Replay`; the asset takes it from `catalog.replay.state_changed.v1`
+(`adr-replay.md` §4). The **policy** belongs to `catalog`; the **file**
 and its expiry belong to `streaming`. `RecordingProvider` stores and deletes; it is `@arthome/core`
 that decides the duration, otherwise the replay policy would end up encoded in a storage lifecycle,
 out of reach of the tests.
