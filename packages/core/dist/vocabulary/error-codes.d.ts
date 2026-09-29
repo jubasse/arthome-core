@@ -130,7 +130,7 @@ export declare const PayoutErrorCode: {
  * The viewer's commerce refusals: a purchase, a seat, a means of payment. `failureCode` narrows
  * it to the four a purchase command can refuse with.
  */
-export declare const ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.sold_out", "order.payment_declined", "order.price_stale", "order.plan_unavailable", "order.contribution_out_of_range", "order.checkout_line_unavailable", "order.sales_queue_admission_required", "seat.cancel_deadline_passed", "payment_method.in_use"];
+export declare const ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.sold_out", "order.payment_declined", "order.price_stale", "order.plan_unavailable", "order.contribution_out_of_range", "order.checkout_line_unavailable", "order.sales_queue_admission_required", "order.late_entry_unacknowledged", "order.sales_closed", "seat.cancel_deadline_passed", "payment_method.in_use"];
 export type OrderErrorCode = (typeof ORDER_ERROR_CODES)[number];
 export declare const OrderErrorCode: {
     readonly QUOTE_ADDRESS_MISMATCH: "order.quote_address_mismatch";
@@ -141,6 +141,8 @@ export declare const OrderErrorCode: {
     readonly CONTRIBUTION_OUT_OF_RANGE: "order.contribution_out_of_range";
     readonly CHECKOUT_LINE_UNAVAILABLE: "order.checkout_line_unavailable";
     readonly SALES_QUEUE_ADMISSION_REQUIRED: "order.sales_queue_admission_required";
+    readonly LATE_ENTRY_UNACKNOWLEDGED: "order.late_entry_unacknowledged";
+    readonly SALES_CLOSED: "order.sales_closed";
     readonly SEAT_CANCEL_DEADLINE_PASSED: "seat.cancel_deadline_passed";
     readonly PAYMENT_METHOD_IN_USE: "payment_method.in_use";
 };

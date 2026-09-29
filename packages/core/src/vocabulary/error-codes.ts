@@ -241,6 +241,12 @@ export const ORDER_ERROR_CODES = [
   //   refusal of a right, not an unavailability: retried without an admission, it can only be
   //   refused again, and at the date's busiest moment.
   'order.sales_queue_admission_required',
+  // A purchase after the live's start that did not acknowledge the part already missed (D-089).
+  //   Params: `startedAt`, `minutesElapsed`, `salesEndAt`, the facts the surface warns with.
+  'order.late_entry_unacknowledged',
+  // A seat quoted or bought past the end of seat sales, thirty minutes after the start (D-089):
+  //   ended, not sold out, which is the waiting list's cue. Params: `salesEndAt`.
+  'order.sales_closed',
   'seat.cancel_deadline_passed',
   'payment_method.in_use',
 ] as const;
@@ -255,6 +261,8 @@ export const OrderErrorCode = {
   CONTRIBUTION_OUT_OF_RANGE: 'order.contribution_out_of_range',
   CHECKOUT_LINE_UNAVAILABLE: 'order.checkout_line_unavailable',
   SALES_QUEUE_ADMISSION_REQUIRED: 'order.sales_queue_admission_required',
+  LATE_ENTRY_UNACKNOWLEDGED: 'order.late_entry_unacknowledged',
+  SALES_CLOSED: 'order.sales_closed',
   SEAT_CANCEL_DEADLINE_PASSED: 'seat.cancel_deadline_passed',
   PAYMENT_METHOD_IN_USE: 'payment_method.in_use',
 } as const;
