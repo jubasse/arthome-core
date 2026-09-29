@@ -8,7 +8,7 @@ API contracts every surface reads, and records why each irreversible decision wa
 was.
 
 > **Status: the foundation is built, the applications are not.** The domain, the contracts, the
-> tooling and eleven gates exist and are verified. **Every schema in both contracts is generated from a
+> tooling and twelve gates exist and are verified. **Every schema in both contracts is generated from a
 > zod source and checked against the document it publishes.** No application code has been written
 > yet. What is
 > here is the part that is expensive to change later.
@@ -41,6 +41,9 @@ text. Everything else in this repository is written in English, and a gate enfor
 **[`DECISIONS.md`](DECISIONS.md) — 65 arbitrations, each with its reason.** This is the document to
 open if you want to know *why* rather than *what*. It is also the honest one: several entries are
 corrections of earlier entries, and a few record a decision that turned out to be wrong and says so.
+**[`DECISIONS-INDEX.md`](DECISIONS-INDEX.md)** is its **generated projection**: one line per decision
+with the documents its entry cites, so an agent opens the index first and `DECISIONS.md` only at the
+id it needs.
 
 > *Almost every rule in it is a mistake with its evidence attached rather than a principle.*
 
@@ -75,13 +78,14 @@ pnpm run verify:offline   # the subset that needs no install — it prints what 
 pnpm run fix              # prettier, eslint, prettier — in that order, and the order matters
 ```
 
-**Eleven gates, and each says what it looked at — including where it stops looking.** They check that
+**Twelve gates, and each says what it looked at — including where it stops looking.** They check that
 no enumeration value is copied, that the domain and the contracts share one vocabulary — **and that
 an architecture document naming an error code names one that exists** — that the `.`
 entry point reaches neither zod nor a Node API, that every version is pinned, that ESLint and
 Prettier do not overlap, that the two contracts conform to twenty rules, that everything committed
-is written in English and carries no warning sign, check mark or emoji, that the repository map still matches the installed declarations, and that
-**every schema emits exactly what the contract publishes.**
+is written in English and carries no warning sign, check mark or emoji, that the repository map still matches the installed declarations, that
+**every schema emits exactly what the contract publishes**, and that `DECISIONS-INDEX.md` still
+matches `DECISIONS.md`.
 
 The prose half of the vocabulary gate is the newest: `transport.md` §5.5's status table was a
 hand-kept copy of `ERROR_CODES` that had drifted to nine names no package exported, and was written

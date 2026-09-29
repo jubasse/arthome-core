@@ -15,7 +15,7 @@ cancels a decision.
 **So the absence of a router here is not permission to work from memory.** What governs this
 repository is stricter and is written down: `architecture/critical-rules.md` (re-read it every
 session), `architecture/code-conventions.md`, and `DECISIONS.md`, whose arbitrations are never
-reopened. Eleven gates enforce what those documents say; `pnpm run verify` runs them.
+reopened. Twelve gates enforce what those documents say; `pnpm run verify` runs them.
 
 If a task in this repository turns out to need a framework, that is the signal that the task belongs
 in another repository.
