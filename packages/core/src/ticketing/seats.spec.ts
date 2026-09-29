@@ -11,7 +11,11 @@ import {
   holdFor,
   isHoldExpired,
   isScarce,
+  lateEntryOf,
   provisionRevisableUntil,
+  salesEndedBy,
+  seatCancelDeadline,
+  seatSalesEndAt,
   seatsAvailable,
   tvPairingIntentExpiry,
   type Gauge,
@@ -170,6 +174,42 @@ describe('recording a technical provision', () => {
 describe('the availability read', () => {
   it('holds a minute from the instant it is served', () => {
     expect(availabilityValidUntil('2026-09-21T18:40:00.000Z')).toBe('2026-09-21T18:41:00.000Z');
+  });
+});
+
+describe('the cancel deadline', () => {
+  it('is an hour before the start', () => {
+    expect(seatCancelDeadline('2026-09-21T19:00:00.000Z')).toBe('2026-09-21T18:00:00.000Z');
+  });
+});
+
+describe('seat sales end (D-089)', () => {
+  const startsAt = '2026-09-21T19:00:00.000Z';
+
+  it('closes thirty minutes after the start', () => {
+    expect(seatSalesEndAt(startsAt)).toBe('2026-09-21T19:30:00.000Z');
+  });
+
+  it('is not ended before its instant, and is at it', () => {
+    expect(salesEndedBy(seatSalesEndAt(startsAt), '2026-09-21T19:29:59.000Z')).toBe(false);
+    expect(salesEndedBy(seatSalesEndAt(startsAt), '2026-09-21T19:30:00.000Z')).toBe(true);
+  });
+
+  it('never ends for a date with no end', () => {
+    expect(salesEndedBy(null, '2026-09-21T19:30:00.000Z')).toBe(false);
+  });
+
+  it('is null before the start, and for a date with none', () => {
+    expect(lateEntryOf(startsAt, '2026-09-21T18:59:59.000Z')).toBeNull();
+    expect(lateEntryOf(null, '2026-09-21T19:00:00.000Z')).toBeNull();
+  });
+
+  it('names what a late buyer missed, and their cutoff', () => {
+    expect(lateEntryOf(startsAt, '2026-09-21T19:11:30.000Z')).toEqual({
+      startedAt: startsAt,
+      minutesElapsed: 11,
+      salesEndAt: '2026-09-21T19:30:00.000Z',
+    });
   });
 });
 
