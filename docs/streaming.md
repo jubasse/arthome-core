@@ -109,9 +109,9 @@ that serves the segments**. The check "this person holds a seat" can therefore
 no longer be done at playback time.
 
 ```
-@arthome/core       says whether the seat is valid
+@arthome/core       says whether the seat, or the replay access, is valid
 streaming service   asks the PlaybackProvider for a short token
-client              renews the token for as long as the seat holds
+client              renews the token for as long as that right holds
 CDN                 refuses anything that is not signed
 ```
 

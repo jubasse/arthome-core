@@ -154,6 +154,9 @@ table, channel agenda).
 health, chapters, incidents (`streaming`). The chat policy (`chat`). The channel's members
 (`identity`).
 
+**From D-090** it owns the `Replay`, the on-demand product: its life and its online window
+(`adr-replay.md` §2). Its chapters stay `streaming`'s, projected.
+
 **Why the index belongs to it** (chief's list, point 9). The facets derive from the taxonomy, and
 the taxonomy belongs to `catalog`. A `search` service would own no invariant, no write and no
 vocabulary: only a projection. But a context is a boundary of language, not a kind of
@@ -287,6 +290,9 @@ if `merch` and `subscription` together exceed 30% of the service's writes, or if
 BullMQ queue durably mixes shipping jobs with ticketing ones, we extract `shop` — the boundary is
 already clean, the aggregates do not touch.
 
+**From D-090** it also owns `ReplayAccess`, the right to watch a replay, created and revoked here
+(`adr-replay.md` §2).
+
 ### 1.4 `streaming` — the run, and the right to watch now
 
 **Owns.** The run (`Run`: on-air state, crew on duty, cameras, broadcast profile, quality ladder),
@@ -299,7 +305,9 @@ concurrent-screen limit, the **free-preview budget**, and the **resume point** (
 
 **Does not own.** The replay *policy* (`catalog`: the promise) nor its *going on sale* (`ticketing`:
 the price). `streaming` owns its **file** and its **expiry instant**, which is derived from the end
-of the live show and from `windowHours` served by `catalog`.
+of the live show and from `windowHours` served by `catalog`. From D-090 that instant is computed
+once in core and carried by catalog's `Replay`; the asset takes it from
+`catalog.replay.state_changed.v1` (`adr-replay.md` §4).
 
 **Why the resume point is here.** It is the system's most frequent write (`storefront-mobile`: "the
 most frequent of all"). Putting it in `identity` would make the coldest and most sensitive service
@@ -458,6 +466,7 @@ belonging to four contexts. Here is where the boundary runs, and why.
 | `seats`, `prices`, promotions, fees, complimentary tickets, `replay` **on sale** | `ticketing` | it is what **is bought** |
 | `revenue`, `sold` | `ticketing` (gross) → `payouts` (entitlement) | run-desk data, **never** on the public model (E8) |
 | `run.state`, `viewers`, health, chapters, incidents, the replay **asset** and its expiry | `streaming` | it is what **is broadcast** |
+| the `Replay` and its online window (D-090); `ReplayAccess` | `catalog`; `ticketing` | it is what is **offered on demand**, and the right to watch it (`adr-replay.md` §2) |
 | `chatMode`, slow mode, reservation to holders | `chat` | it is what **is said** |
 
 ### The projections that serve the screens
@@ -506,6 +515,8 @@ Five sources: holding a seat (`ticketing`), the date's state (`catalog`), territ
    Inputs: holding a seat, subscription state and `opens[]`, the date's state and its bounds, replay
    policy and window, whether the replay is on sale, rights scope and the viewer's territory,
    preview budget remaining, number of playback sessions open and the ceiling.
+   From D-090 the replay leaves it for `decideReplayAccess` (`adr-replay.md` §8): holding a seat no
+   longer implies a replay.
    Output: `{ allowed, reasonCode, fallbackAction, previewSecondsLeft, validUntil }`.
 2. **Two evaluation sites, one single authority.**
    - **At display time**: the storefront BFF assembles the inputs from its three batched reads and

@@ -3278,7 +3278,7 @@ show, so no surface can skip the warning. A postponement moves the cutoff with t
 **Arbitrated by the product owner on 2026-09-29.** A replay is not an event: it is watched at any
 hour while it is online, like a film in a catalogue. Its life (`pending`, `online`, `closed`, or
 `withdrawn`) is held by a `Replay` of its own in `catalog`, no longer by the date's `Publication`
-(`replay-online`) nor its display state. It stays tied to its event: a replay never goes online
+(`replay_online`) nor its display state. It stays tied to its event: a replay never goes online
 before the event has ended. A seat is not a replay right; access is a `ReplayAccess` of its own
 (`adr-replay.md` §1).
 
@@ -3295,6 +3295,6 @@ The modes lock at publication, like the prices (`adr-replay.md` §3).
 **Arbitrated by the product owner on 2026-09-29.** No access exists before the end of the show: the
 seat holders' accesses (`included`) are created when the live ends, and a unit access is bought
 only once the replay is online, never pre-ordered. An access lasts the replay's online window, with
-no viewing period of its own. An interrupted date has no replay, partial or not. So a cancellation,
-an interruption or a postponement never has a replay access to carry over or refund
-(`adr-replay.md` §5).
+no viewing period of its own. An interrupted date has no replay, partial or not. So a cancellation
+or a postponement never has a replay access to carry over or refund, and an interruption declared
+after the live ended revokes the accesses already created (`adr-replay.md` §5).

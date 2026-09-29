@@ -436,6 +436,9 @@ the Share action (`storefront-tv` Q10, E15), and what the web shares and indexes
 
 ## 3. `ticketing`
 
+From D-090, `ticketing` also holds `ReplayAccess`, the right to watch a replay, apart from the seat
+(`adr-replay.md` §1 and §2).
+
 ### 3.1 `DateSales` — root aggregate (a date's commercial face)
 
 ```
@@ -449,6 +452,7 @@ DateSales
   promotions[]      reason · struck price · current price · validity window
   replay_unit_price nullable, when replay_policy = 'unit'
   prices_locked_at  nullable
+  sales_end_at      the start + SEAT_SALES_CUTOFF_MINUTES_AFTER_START (D-089); moves with a postponement
   complimentaries[] issued / allocated, by category
   technical_provision  threshold, provisioned capacity (nullable), revision deadline, penalty exposure
   version
@@ -816,7 +820,9 @@ can **resume its own session**, identified by the device.
 ### 5.5 `ReplayAsset`, `PreviewBudget`, `ResumePoint`
 
 `ReplayAsset`: existence, duration, `available_from`, **`expires_at` computed** from the end of the
-run and `replay_window_hours` served by `catalog`. The **policy** belongs to `catalog`; the **file**
+run and `replay_window_hours` served by `catalog`. From D-090 that instant is computed once in core
+and carried by catalog's `Replay`; the asset takes it from `catalog.replay.state_changed.v1`
+(`adr-replay.md` §4). The **policy** belongs to `catalog`; the **file**
 and its expiry belong to `streaming`. `RecordingProvider` stores and deletes; it is `@arthome/core`
 that decides the duration, otherwise the replay policy would end up encoded in a storage lifecycle,
 out of reach of the tests.
