@@ -25,6 +25,31 @@
       "file": "packages/core/src/schema/vocabulary.ts",
       "value": "none",
       "reason": "THE ANNOTATION MARKER, not a vocabulary member. `x-arthome-vocabulary-source: none` is how a contract says the domain owns nothing here — a payment provider's state machine, a transport capability. `none` is also a member of five domain vocabularies, and no gate can tell an annotation value from one of them by looking at the string. This is the ONE line that spells it: `vocabularyOutLocal` emits it, and four contract files that had each invented `const LOCAL_VOCABULARY = 'none'` now call that instead. One entry, and it does not grow — a fifth file reaching for the marker imports the function."
+    },
+    {
+      "file": "packages/contracts/src/studio-money/index.ts",
+      "value": "expired",
+      "reason": "A bank-details change request's own state machine (pending_countersignature, countersigned, rejected, expired) and an export job's (queued, running, ready, failed, expired) — the contract's own, not the domain's (D-060 §B). They share the word with SEAT_HOLD_STATES without being the same vocabulary: a hold's expiry and a signing request's are unrelated facts."
+    },
+    {
+      "file": "packages/contracts/src/studio-money/index.ts",
+      "value": "failed",
+      "reason": "The export job's own state machine, local to this endpoint. Shares the word with ORDER_STATES without being an order's state."
+    },
+    {
+      "file": "packages/contracts/src/studio-access/index.ts",
+      "value": "pending",
+      "reason": "A channel invitation's own state machine (pending, accepted, declined, expired), local to this endpoint. Shares the word with ORDER_STATES without being an order's state."
+    },
+    {
+      "file": "packages/contracts/src/studio-access/index.ts",
+      "value": "declined",
+      "reason": "The same invitation state machine. Shares the word with INTENT_STATUSES without being a payment intent's."
+    },
+    {
+      "file": "packages/contracts/src/studio-access/index.ts",
+      "value": "expired",
+      "reason": "The same invitation state machine. Shares the word with SEAT_HOLD_STATES without being a hold's."
     }
   ]
 }
