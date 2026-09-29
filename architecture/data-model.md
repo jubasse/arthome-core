@@ -274,7 +274,7 @@ Date
   starts_at             timestamptz UTC
   runtime_min           denormalised from the show (it freezes at publication)
   rights                scope (worldwide | restricted) · territories[] · reason_code
-  replay_policy         included | subscription | unit | none
+  replay_policy         included | subscription | unit | none   ← a set of modes from D-091 (adr-replay.md §3)
   replay_window_hours   int
   outcome               nullable: postponed | cancelled | interrupted
   rescheduled_to        nullable timestamptz
@@ -286,6 +286,7 @@ Date
 **Invariants.**
 - `replay_policy = 'none'` is **final** for this date: you cannot later enable a replay you promised
   not to make — the public price depended on it. The other values lock when the box office opens.
+  From D-091 the policy becomes a set of access modes the channel chooses (`adr-replay.md` §3).
 - An outcome is a fact, kept in the date's events. Only a **postponement** can be followed by
   another outcome: up to `DomainConstant.POSTPONEMENTS_MAX` (3) postponements, then a
   cancellation or an interruption, which are final (D-076).
@@ -323,7 +324,7 @@ Publication
 | `technical → scheduled` | studio command | — |
 | `technical → live` | **`streaming.run.started.v1` consumed** | — |
 | `live → ended` | **`streaming.run.ended.v1` consumed** | — |
-| `ended → replay-online` | studio command, guarded | **yes** — *viewers have paid for the replay* |
+| `ended → replay-online` | studio command, guarded | **yes** — *viewers have paid for the replay*; moves to a `Replay` of its own in `catalog` (D-090, `adr-replay.md` §1) |
 
 **This point is the answer to "an aggregate straddling three contexts".** `Publication` does not
 command going on air: it **learns** it. The "go on air" command goes to `streaming`, which alone
