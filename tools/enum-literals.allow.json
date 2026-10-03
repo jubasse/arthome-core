@@ -50,6 +50,11 @@
       "file": "packages/contracts/src/studio-access/index.ts",
       "value": "expired",
       "reason": "The same invitation state machine. Shares the word with SEAT_HOLD_STATES without being a hold's."
+    },
+    {
+      "file": "packages/contracts/src/http/index.ts",
+      "value": "cookie",
+      "reason": "OpenAPI's parameter location, the `in` of a parameter or an API key carried in a cookie. It shares the word with SESSION_MODES without being a session mode: a route's location and a session's transport are unrelated facts, and SessionMode.COOKIE there would read as one."
     }
   ]
 }

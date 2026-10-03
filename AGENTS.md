@@ -42,6 +42,10 @@ declarations) · `check-prettier-conflict` (no ESLint rule fights Prettier).
 `arthome-comment-density` reports comment density. It is a **report, not a gate**: it exits 0 and is
 deliberately outside `verify`, because §5.10 makes the ratio a smell rather than a limit.
 
+`pnpm run report:route-roundtrip` measures how many operations of the two documents survive YAML →
+`@arthome/contracts/http` routes → OpenAPI with an empty semantic diff, and how many of those also clear
+lint and `check-enums`. A report too: it exits 0, sits outside `verify`, and writes only ignored paths.
+
 ## Before you write anything
 
 **`check-map` reads the INSTALLED declarations, so build before regenerating.**

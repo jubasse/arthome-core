@@ -75,6 +75,45 @@ Declarations: `dist/envelope/index.d.ts` — 7 exported names.
 - `StudioErrorEnvelopeSchema` (const) — `StudioErrorEnvelopeSchema: z.ZodObject<{ error: typeof StudioErrorSchema; servedAt: z.ZodString; }, z.core.$loose>`
 - `StudioErrorSchema` (const) — `StudioErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>`
 
+#### @arthome/contracts/http
+
+Declarations: `dist/http/index.d.ts` — 34 exported names.
+
+- `Api` (type) — `type Api<Routes extends Readonly<Record<string, Route>> = Readonly<Record<string, Route>>> = ApiDefinition<Routes>;`
+- `ApiComponents` (interface)
+- `ApiDefinition` (interface) — A whole document: its top-level keys as the document writes them, 'routes' in place of 'paths'.
+- `Extensions` (type) — `type Extensions = Readonly<Record<'x-${string}', unknown>>;` — OpenAPI's specification extensions, carried into the document verbatim.
+- `Header` (interface)
+- `HeaderParameter` (interface)
+- `HttpMethod` (type) — `type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'patch';`
+- `JsonRequestBody` (interface) — The annotation of a request carrying a JSON body.
+- `JsonResponse` (interface) — The annotation of a response with a JSON body.
+- `MediaType` (interface)
+- `Parameter` (interface)
+- `ParameterLocation` (type) — `type ParameterLocation = 'path' | 'query' | 'header' | 'cookie';`
+- `PathParameter` (interface) — The annotation of a path parameter: OpenAPI makes every one required.
+- `QueryParameter` (interface)
+- `RequestBody` (interface)
+- `Response` (interface)
+- `Route` (type) — `type Route<T extends RouteShape = RouteShape> = T & Omit<RouteDefinition, keyof T>;`
+- `RouteBody` (type) — `type RouteBody<R extends RouteShape> = R extends { readonly requestBody: { readonly content: infer C; }; } ? z.output<JsonSchemaOf<C>> : undefined;`
+- `RouteDefinition` (interface)
+- `RouteHeaders` (type) — `type RouteHeaders<R extends RouteShape> = ValuesIn<R, 'header', 'output'>;` — The declared headers a handler receives, under the lowercase names Node gives them.
+- `RouteInput` (interface) — What a client sends: inputs (defaults may be left out), header names as the contract writes them.
+- `RouteParams` (type) — `type RouteParams<R extends RouteShape> = ValuesIn<R, 'path', 'output'>;` — The path parameters a handler receives.
+- `RouteQuery` (type) — `type RouteQuery<R extends RouteShape> = ValuesIn<R, 'query', 'output'>;` — The query a handler receives: validated and coerced, an exploded object's fields at the top.
+- `RouteResponseBody` (type)
+- `RouteShape` (interface) — What a route's types are read from — the part of its annotation a handler or client needs.
+- `RouteStatus` (type) — `type RouteStatus<R extends RouteShape> = keyof R['responses'] & (number | '${number}');`
+- `RouteSuccessStatus` (type) — `type RouteSuccessStatus<R extends RouteShape> = Extract<RouteStatus<R>, 200 | 201 | 202 | 203 | 204 | 206 | '200' | '201' | '202' | '203' | '204' | '206'>;` — The 2xx statuses a route declares.
+- `bodySchemaOf` (function) — `function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;` — The JSON body's schema, or 'undefined' for a route that takes none.
+- `defineApi` (function) — `function defineApi<const Routes extends Readonly<Record<string, Route>>>(definition: ApiDefinition<Routes>): Api<Routes>;`
+- `defineRoute` (function) — `function defineRoute<const T extends RouteDefinition>(definition: T): Route<T>;`
+- `headersSchemaOf` (function) — `function headersSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteHeaders<R>, unknown>;` — The declared headers, under Node's lowercase names; every other header passes through.
+- `paramsSchemaOf` (function) — `function paramsSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteParams<R>, unknown>;`
+- `querySchemaOf` (function) — `function querySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteQuery<R>, unknown>;` — The query a server validates: undeclared parameters refused, defaults not materialised.
+- `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
+
 #### @arthome/contracts/identity
 
 Declarations: `dist/identity/index.d.ts` — 15 exported names.
@@ -103,6 +142,13 @@ Declarations: `dist/money/index.d.ts` — 4 exported names.
 - `TaxExclusive` (type) — `type TaxExclusive<T> = Taxed<T, 'exclusive'>;` — An amount before tax — a payout base, a commission base.
 - `TaxInclusive` (type) — `type TaxInclusive<T> = Taxed<T, 'inclusive'>;` — A price as served: tax included (D-056).
 - `Taxed` (type) — `type Taxed<T, B extends TaxBasis> = T & { readonly [taxBasisBrand]: B; };` — An amount tagged with its tax basis, for TypeScript consumers.
+
+#### @arthome/contracts/openapi
+
+Declarations: `dist/openapi/index.d.ts` — 2 exported names.
+
+- `OpenApiDocument` (type) — `type OpenApiDocument = Readonly<Record<string, unknown>>;`
+- `openApiDocumentOf` (function) — `function openApiDocumentOf(api: Api): OpenApiDocument;`
 
 #### @arthome/contracts/pagination
 
@@ -743,8 +789,10 @@ each directory is covered and each entry has a directory, not that the sentence 
 - `packages/contracts/src/engagement/` — Chat, reactions, notifications and the change feed a surface polls.
 - `packages/contracts/src/entitlement/` — The right to watch, served per date. It sits below `catalog` and `streaming` because both need it and each needed the other.
 - `packages/contracts/src/envelope/` — The shared response envelope and its meta instants (subpath @arthome/contracts/envelope).
+- `packages/contracts/src/http/` — Routes as TypeScript: an operation mirrors OpenAPI with zod in place of JSON Schema, typed for a server handler and a client, with the request decoders a server validates against.
 - `packages/contracts/src/identity/` — Who is asking: sessions, devices, pairing, consents, and the context a surface is handed.
 - `packages/contracts/src/money/` — The tax basis of an amount on the wire (subpath @arthome/contracts/money).
+- `packages/contracts/src/openapi/` — The OpenAPI document an api emits from its routes and components, through one zod registry per direction.
 - `packages/contracts/src/pagination/` — Cursor pagination primitives (subpath @arthome/contracts/pagination).
 - `packages/contracts/src/streaming/` — Watching: the entitlement verdict, the playback ticket and its renewal, and what interrupts a run.
 - `packages/contracts/src/studio-access/` — Who may operate, and with what: the actor, their effective rights, and the bootstrap a studio surface is handed on sign-in. Separate from `identity` because the two products' session shapes genuinely differ — a viewer receives a ViewerContext, a control room receives a StudioBootstrap.

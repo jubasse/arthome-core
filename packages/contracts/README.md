@@ -59,8 +59,10 @@ So: **one subpath per bounded context**, added as each lands and never before.
 | `./studio-stage` | operating a date: its sheet, its run console, its health, its uploads — 13 |
 | `./studio-desk` | moderation, the audience, the inbox, the journal — 5 |
 | `./studio-money` | payouts, bank changes, statistics, the dashboard — 10 |
+| `./http` | `defineRoute` and `defineApi`: an operation as TypeScript, typed for a handler and a client — no schema |
+| `./openapi` | the OpenAPI document an api emits, `components/schemas` included — no schema |
 
-**Fourteen subpaths, 106 schemas, and together with `@arthome/core` they emit all 111 schemas of both
+**Fourteen subpaths of schemas, 106 schemas, and together with `@arthome/core` they emit all 111 schemas of both
 contracts exactly.** `pnpm run check:emit-diff` compares every one against the document it publishes
 and is part of `pnpm run verify`.
 

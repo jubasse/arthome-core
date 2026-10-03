@@ -40,3 +40,8 @@ packages/*/dist/**/*.js
 __pycache__/
 *.pyc
 packages/tooling/docs/
+
+# What tools/report-route-roundtrip.py converts, compiles and emits on every run, and the
+# declarations it writes into src/ for ESLint and check-enums, then deletes.
+packages/contracts/.route-roundtrip/
+packages/contracts/src/roundtrip-*/
