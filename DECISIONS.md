@@ -3298,3 +3298,128 @@ only once the replay is online, never pre-ordered. An access lasts the replay's 
 no viewing period of its own. An interrupted date has no replay, partial or not. So a cancellation,
 an interruption or a postponement never has a replay access to carry over or refund
 (`adr-replay.md` §5).
+
+### D-093 — A seat freed on a sold-out date returns to public sale
+
+**Arbitrated by the product owner on 2026-10-03.** A seat freed on a sold-out date, by a viewer's
+cancellation or by a refund that cancels it, returns to public sale at once, first come first served.
+The waiting list is not notified and gets no priority (`adr-ticketing.md` §5, §9).
+
+### D-094 — `openCapacityTier` honours `notifyWaitlist: false`
+
+**Arbitrated by the product owner on 2026-10-03.** With `notifyWaitlist: false`, nobody is notified and
+no priority pool is made, and the new seats go on public sale at once. The default (`true`) is D-083's
+behaviour (studio.yaml `openCapacityTier`).
+
+### D-095 — Only `date_cancelled` cancels a seat
+
+**Arbitrated by the product owner on 2026-10-03.** A studio refund for `goodwill`, `duplicate` or
+`dispute` refunds money and leaves the seat active, whatever the amount (studio.yaml `refundSeat`).
+
+### D-096 — A cancellation or an interruption ends the waiting list
+
+**Arbitrated by the product owner on 2026-10-03.** At a cancellation or an interruption, every
+`waiting` or `notified` waiting-list entry ends and the priority pool closes. Nobody is told beyond the
+date's own card. A postponement leaves the entries waiting (`data-model.md` §3.9).
+
+### D-097 — A refund decided on a cancelled date carries `date_cancelled`
+
+**Arbitrated by the product owner on 2026-10-03.** A refund decided while the date is cancelled
+carries `date_cancelled`, including a late payment on a date since cancelled (D-082).
+
+### D-098 — Ticketing T4 leaves out the Stripe adapter and credit redemption
+
+**Arbitrated by the product owner on 2026-10-03**, confirming the scope: the Stripe adapter and credit
+redemption stay out of T4.
+
+### D-099 — Sign-up keeps `409 identity.email_taken`
+
+**Arbitrated by the product owner on 2026-10-03.** Sign-up keeps `409` `identity.email_taken`, with
+enumeration slowed by the BFF's per-device rate limit (`storefront.yaml` `signUp`, `adr-auth.md` §6.2).
+
+### D-100 — An email is verified by a link at sign-up, and blocks nothing
+
+**Arbitrated by the product owner on 2026-10-03.** An email is verified by a link at sign-up, with a
+resend operation. An unverified email blocks nothing; `emailVerified` informs.
+
+### D-101 — A new viewer's public handle is generated at sign-up
+
+**Arbitrated by the product owner on 2026-10-03.** A new viewer's public handle is generated, neutral,
+at sign-up, and changeable through `updateProfile`.
+
+### D-102 — One account per person for both products
+
+**Arbitrated by the product owner on 2026-10-03.** There is one account per person for both products.
+An invited person with no account creates it from the invitation link, and their studio login is their
+viewer login.
+
+### D-103 — On a shared television, the session grain is the profile
+
+**Arbitrated by the product owner on 2026-10-03.** On a shared television, each (device, profile) is a
+session, and a device holds up to five profiles.
+
+### D-104 — A television merchandise pairing stays open 5 minutes
+
+**Arbitrated by the product owner on 2026-10-03.** A television merchandise pairing stays open 5
+minutes, as the contract says.
+
+### D-105 — No passkeys at launch
+
+**Arbitrated by the product owner on 2026-10-03.** `addPasskey` and `removePasskey` stay unimplemented
+and are marked so.
+
+### D-106 — A social sign-in links to an existing account only on a verified address
+
+**Arbitrated by the product owner on 2026-10-03.** Google or Facebook sign-in on an address that
+already has an account links automatically only when the provider asserts the address is verified;
+otherwise it is refused.
+
+### D-107 — Authentication is delivered in four slices
+
+**Arbitrated by the product owner on 2026-10-03**, confirming the scope: A storefront session, B
+studio, C devices and TV, D the other sign-in methods.
+
+### D-108 — An account watches on as many screens as the active seats it holds on the date
+
+**Arbitrated by the product owner on 2026-10-03.** On a date, an account may watch on as many screens
+as the active seats it holds on that date, or the plan's ceiling if higher.
+
+### D-109 — Before the run is on air the player shows a waiting screen, and the card turns `live` on air
+
+**Arbitrated by the product owner on 2026-10-03.** From the room opening, the player shows a waiting
+screen with no media until the run is on air. The card turns `live` on the real on-air switch, not at
+`startsAt` by the clock, which is a core change to `displayStateOf` for a late start.
+
+### D-110 — The preview budget is spent only while the run is on air with no incident veil
+
+**Arbitrated by the product owner on 2026-10-03.** The preview budget is spent only while the run is
+on air with no incident veil up. There is no preview before on air: a non-holder in the room sees the
+room screen and the buy action.
+
+### D-111 — A live gives no control of playback, a replay gives full control
+
+**Arbitrated by the product owner on 2026-10-03, with a rule of their own.** A live broadcast gives the
+viewer no control of playback: no seeking backward or forward, and no start-over. The viewer sees only
+the live. So no resume point comes from a live, and positions are not recorded during a live. A replay
+gives full control of playback: seek, pause, resume point.
+
+### D-112 — Only a date with a replay mode is recorded
+
+**Arbitrated by the product owner on 2026-10-03.** Only a date with at least one replay mode is
+recorded. The file is deleted when its `Replay` is withdrawn.
+
+### D-113 — The recording is deleted at the online window's closing
+
+**Arbitrated by the product owner on 2026-10-03.** The file is deleted at the online window's closing.
+Reopening a replay window can only extend a window that is still open.
+
+### D-114 — A technical check proves a feed on the date's key, in a carried codec, above a bitrate floor
+
+**Arbitrated by the product owner on 2026-10-03.** A technical check proves a feed received on the
+date's key, in a codec the chain carries, above a bitrate floor. Its `failures` are a closed
+vocabulary in core.
+
+### D-115 — A run left on air ends by itself, and `ended` is final
+
+**Arbitrated by the product owner on 2026-10-03.** A run left on air ends by itself once no publisher
+has been connected for a set number of minutes after the scheduled end. `ended` is final.

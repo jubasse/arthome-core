@@ -4,7 +4,7 @@
 > EDIT. `pnpm run check:decisions-index` fails when this file differs from what regenerating
 > would produce. Open `DECISIONS.md` at the id for the reason behind a row.
 
-94 decisions.
+117 decisions.
 
 | Decision | Title | Documents cited |
 |---|---|---|
@@ -102,3 +102,26 @@
 | D-090 | A replay is on-demand content, with a life of its own, never before its event ended | `adr-replay.md` |
 | D-091 | A date's replay access modes are a set the channel chooses | `adr-replay.md` |
 | D-092 | Replay accesses are created when the show ends, and last the online window | `adr-replay.md` |
+| D-093 | A seat freed on a sold-out date returns to public sale | `adr-ticketing.md` |
+| D-094 | `openCapacityTier` honours `notifyWaitlist: false` | none |
+| D-095 | Only `date_cancelled` cancels a seat | none |
+| D-096 | A cancellation or an interruption ends the waiting list | `data-model.md` |
+| D-097 | A refund decided on a cancelled date carries `date_cancelled` | none |
+| D-098 | Ticketing T4 leaves out the Stripe adapter and credit redemption | none |
+| D-099 | Sign-up keeps `409 identity.email_taken` | `adr-auth.md` |
+| D-100 | An email is verified by a link at sign-up, and blocks nothing | none |
+| D-101 | A new viewer's public handle is generated at sign-up | none |
+| D-102 | One account per person for both products | none |
+| D-103 | On a shared television, the session grain is the profile | none |
+| D-104 | A television merchandise pairing stays open 5 minutes | none |
+| D-105 | No passkeys at launch | none |
+| D-106 | A social sign-in links to an existing account only on a verified address | none |
+| D-107 | Authentication is delivered in four slices | none |
+| D-108 | An account watches on as many screens as the active seats it holds on the date | none |
+| D-109 | Before the run is on air the player shows a waiting screen, and the card turns `live` on air | none |
+| D-110 | The preview budget is spent only while the run is on air with no incident veil | none |
+| D-111 | A live gives no control of playback, a replay gives full control | none |
+| D-112 | Only a date with a replay mode is recorded | none |
+| D-113 | The recording is deleted at the online window's closing | none |
+| D-114 | A technical check proves a feed on the date's key, in a carried codec, above a bitrate floor | none |
+| D-115 | A run left on air ends by itself, and `ended` is final | none |
