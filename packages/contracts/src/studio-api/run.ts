@@ -20,6 +20,7 @@ import {
   vocabularyIn,
   vocabularyOut,
   vocabularyOutLocal,
+  uuidIn,
 } from '@arthome/core/schema';
 
 import {
@@ -925,7 +926,7 @@ export const removeChapter: Route<{
       name: 'chapterId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     IdempotencyKeyParameter,
   ],
@@ -1109,7 +1110,7 @@ export const resolveIncident: Route<{
       name: 'incidentId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     IdempotencyKeyParameter,
   ],
@@ -1184,7 +1185,7 @@ export const escalateIncidentToProduction: Route<{
       name: 'incidentId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     IdempotencyKeyParameter,
   ],

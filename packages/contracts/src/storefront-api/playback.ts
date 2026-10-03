@@ -11,7 +11,7 @@ import {
   WatchDenialReason,
 } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { uuidOut, VOCABULARY_SOURCE_LOCAL, vocabularyIn } from '@arthome/core/schema';
+import { uuidOut, VOCABULARY_SOURCE_LOCAL, vocabularyIn, uuidIn } from '@arthome/core/schema';
 
 import {
   CsrfRefusedResponse,
@@ -273,7 +273,7 @@ export const renewPlaybackTicket: Route<{
       name: 'sessionId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {
@@ -367,7 +367,7 @@ export const releasePlayback: Route<{
       name: 'sessionId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {

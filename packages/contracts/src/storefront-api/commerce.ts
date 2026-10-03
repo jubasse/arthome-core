@@ -17,7 +17,13 @@ import {
   Service,
 } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { MoneyOut, uuidOut, VOCABULARY_SOURCE_LOCAL, vocabularyIn } from '@arthome/core/schema';
+import {
+  MoneyOut,
+  uuidOut,
+  VOCABULARY_SOURCE_LOCAL,
+  vocabularyIn,
+  uuidIn,
+} from '@arthome/core/schema';
 
 import {
   AdmissionTokenParameter,
@@ -781,7 +787,7 @@ export const getOrder: Route<{
       name: 'orderId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {
@@ -882,7 +888,7 @@ export const cancelSeat: Route<{
       name: 'seatId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     IdempotencyKeyParameter,
   ],
@@ -1291,7 +1297,7 @@ export const updateCartLine: Route<{
       name: 'lineId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     IdempotencyKeyParameter,
   ],
@@ -1371,7 +1377,7 @@ export const removeCartLine: Route<{
       name: 'lineId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     IdempotencyKeyParameter,
   ],

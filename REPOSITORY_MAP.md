@@ -755,7 +755,7 @@ Declarations: `dist/index.d.ts` — 458 exported names.
 
 #### @arthome/core/schema
 
-Declarations: `dist/schema/index.d.ts` — 51 exported names.
+Declarations: `dist/schema/index.d.ts` — 55 exported names.
 
 - `AccountIdSchema` (const) — `AccountIdSchema: z.ZodString`
 - `ArtistIdSchema` (const) — `ArtistIdSchema: z.ZodString`
@@ -799,9 +799,13 @@ Declarations: `dist/schema/index.d.ts` — 51 exported names.
 - `VocabularyIn` (type) — `type VocabularyIn<T extends Members> = z.ZodEnum<{ [K in T[number]]: K; }>;` — The annotation for a strict vocabulary schema, derived from the vocabulary.
 - `VocabularyOut` (type) — `type VocabularyOut = z.ZodString;` — The annotation for a tolerant vocabulary schema — a plain string at runtime.
 - `VocabularyOutNullable` (type) — `type VocabularyOutNullable = z.ZodNullable<z.ZodString>;` — A tolerant vocabulary that may also be absent.
+- `dateIn` (const) — `dateIn: () => z.ZodString` — A calendar day, '2026-10-03', as a request carries it: 'format: date', an impossible day refused.
+- `dateTimeIn` (const) — `dateTimeIn: () => z.ZodString` — An RFC 3339 instant, offset allowed, as a request carries it in a path, a query or a header.
 - `int64` (const) — `int64: () => z.ZodNumber` — A 64-bit integer on the wire: 'type: integer, format: int64', and no bounds.
 - `issueToCode` (function) — `function issueToCode(issue: z.core.$ZodIssue): { readonly code: string; readonly params: Readonly<Record<string, string>>; };` — The only sanctioned way out of a zod failure.
 - `sourceNameOf` (function) — `function sourceNameOf(values: readonly string[], name?: string): string;` — The name this vocabulary is published under, or the one the caller declares.
+- `uriIn` (const) — `uriIn: () => z.ZodString` — An absolute URI as a request carries it: 'format: uri', and what 'z.url()' refuses is refused.
+- `uuidIn` (const) — `uuidIn: () => z.ZodString` — The same identifier where a request CARRIES it, in a path, a query or a header: 'format: uuid' and nothing more is published, but the shape…
 - `uuidOut` (const) — `uuidOut: () => z.ZodString` — A server-issued identifier on the wire — 'format: uuid', no pattern.
 - `vocabularyIn` (function) — `function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T>;` — A vocabulary schema, STRICT — for a request: an unknown member is refused.
 - `vocabularyOut` (function) — `function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;` — A vocabulary schema, TOLERANT — for a response: an unknown member is kept as a raw string.

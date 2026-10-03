@@ -10,7 +10,7 @@ import {
   ModerationReason,
 } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { int64, uuidOut, VOCABULARY_SOURCE_LOCAL, vocabularyIn } from '@arthome/core/schema';
+import { int64, VOCABULARY_SOURCE_LOCAL, vocabularyIn, uuidIn } from '@arthome/core/schema';
 
 import {
   CsrfRefusedResponse,
@@ -370,7 +370,7 @@ export const reportChatMessage: Route<{
       name: 'messageId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     IdempotencyKeyParameter,
   ],

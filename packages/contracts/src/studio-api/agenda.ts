@@ -10,7 +10,13 @@ import {
   Service,
 } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { InstantOut, uuidOut, VOCABULARY_SOURCE_LOCAL, vocabularyIn } from '@arthome/core/schema';
+import {
+  VOCABULARY_SOURCE_LOCAL,
+  vocabularyIn,
+  uuidIn,
+  dateIn,
+  dateTimeIn,
+} from '@arthome/core/schema';
 
 import {
   BadRequestResponse,
@@ -88,13 +94,13 @@ export const listDuties: Route<{
       name: 'from',
       in: 'query',
       required: true,
-      schema: InstantOut,
+      schema: dateTimeIn(),
     },
     {
       name: 'to',
       in: 'query',
       required: true,
-      schema: InstantOut,
+      schema: dateTimeIn(),
     },
   ],
   responses: {
@@ -324,16 +330,12 @@ export const getChannelDashboard: Route<{
       name: 'from',
       in: 'query',
       description: 'Requis quand `period` vaut `custom`.',
-      schema: z.string().meta({
-        format: 'date',
-      }),
+      schema: dateIn(),
     },
     {
       name: 'to',
       in: 'query',
-      schema: z.string().meta({
-        format: 'date',
-      }),
+      schema: dateIn(),
     },
   ],
   responses: {
@@ -521,22 +523,18 @@ export const getChannelStats: Route<{
     {
       name: 'from',
       in: 'query',
-      schema: z.string().meta({
-        format: 'date',
-      }),
+      schema: dateIn(),
     },
     {
       name: 'to',
       in: 'query',
-      schema: z.string().meta({
-        format: 'date',
-      }),
+      schema: dateIn(),
     },
     {
       name: 'showId',
       in: 'query',
       description: 'Restricts the `series` tab to one series. Absent, every series is served.',
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {
@@ -640,17 +638,13 @@ export const getChannelAgenda: Route<{
       name: 'from',
       in: 'query',
       required: true,
-      schema: z.string().meta({
-        format: 'date',
-      }),
+      schema: dateIn(),
     },
     {
       name: 'to',
       in: 'query',
       required: true,
-      schema: z.string().meta({
-        format: 'date',
-      }),
+      schema: dateIn(),
     },
   ],
   responses: {

@@ -2,7 +2,12 @@ import { z } from 'zod';
 
 import { DisplayState, ReplayPolicy, RightsScope, Service } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
-import { VOCABULARY_SOURCE_LOCAL, vocabularyIn, vocabularyOutLocal } from '@arthome/core/schema';
+import {
+  VOCABULARY_SOURCE_LOCAL,
+  vocabularyIn,
+  vocabularyOutLocal,
+  uriIn,
+} from '@arthome/core/schema';
 
 import {
   ArtistIdParameter,
@@ -924,9 +929,7 @@ export const resolvePublicLink: Route<{
       name: 'url',
       in: 'query',
       description: 'Full canonical URL. Mutually exclusive with `kind` + `slug`.',
-      schema: z.string().meta({
-        format: 'uri',
-      }),
+      schema: uriIn(),
     },
     {
       name: 'kind',

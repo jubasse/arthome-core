@@ -19,6 +19,8 @@ import {
   VOCABULARY_SOURCE_LOCAL,
   vocabularyIn,
   vocabularyOutLocal,
+  uuidIn,
+  dateTimeIn,
 } from '@arthome/core/schema';
 
 import {
@@ -1063,7 +1065,7 @@ export const revokeStudioDevice: Route<{
       name: 'deviceId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     IdempotencyKeyParameter,
     IfRightsVersionParameter,
@@ -1316,14 +1318,14 @@ export const listStudioChanges: Route<{
       name: 'since',
       in: 'query',
       required: true,
-      schema: InstantOut,
+      schema: dateTimeIn(),
     },
     {
       name: 'channelId',
       in: 'query',
       description:
         'Restricted to one channel. Absent, the response covers **all** accessible channels.',
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {

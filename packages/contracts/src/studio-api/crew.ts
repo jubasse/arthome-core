@@ -21,6 +21,7 @@ import {
   vocabularyIn,
   vocabularyOut,
   vocabularyOutLocal,
+  uuidIn,
 } from '@arthome/core/schema';
 
 import {
@@ -448,7 +449,7 @@ export const respondToInvitation: Route<{
       name: 'invitationId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   requestBody: {
@@ -555,7 +556,7 @@ export const changeMemberRoles: Route<{
       name: 'personId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   requestBody: {
@@ -653,7 +654,7 @@ export const removeMember: Route<{
       name: 'personId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {
@@ -843,7 +844,7 @@ export const revokeDateAccess: Route<{
       name: 'grantId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {

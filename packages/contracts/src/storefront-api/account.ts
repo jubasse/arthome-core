@@ -13,7 +13,13 @@ import {
   Service,
 } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { InstantOut, uuidOut, VOCABULARY_SOURCE_LOCAL, vocabularyIn } from '@arthome/core/schema';
+import {
+  InstantOut,
+  uuidOut,
+  VOCABULARY_SOURCE_LOCAL,
+  vocabularyIn,
+  uuidIn,
+} from '@arthome/core/schema';
 
 import {
   ArtistIdParameter,
@@ -2851,7 +2857,7 @@ export const updateSavedSearch: Route<{
       name: 'savedSearchId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     IdempotencyKeyParameter,
   ],
@@ -2962,7 +2968,7 @@ export const deleteSavedSearch: Route<{
       name: 'savedSearchId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     IdempotencyKeyParameter,
   ],
@@ -3760,7 +3766,7 @@ export const revokeDevice: Route<{
       name: 'deviceId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     IdempotencyKeyParameter,
   ],
@@ -3847,7 +3853,7 @@ export const signOutProfile: Route<{
       name: 'sessionId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     IdempotencyKeyParameter,
   ],
@@ -4039,7 +4045,7 @@ export const getExport: Route<{
       name: 'exportId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {

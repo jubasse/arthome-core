@@ -20,6 +20,7 @@ import {
   uuidOut,
   VOCABULARY_SOURCE_LOCAL,
   vocabularyIn,
+  uuidIn,
 } from '@arthome/core/schema';
 
 import {
@@ -342,7 +343,7 @@ export const countersignBankChange: Route<{
       name: 'requestId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   requestBody: {
@@ -677,7 +678,7 @@ export const getChannelExport: Route<{
       name: 'exportId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {

@@ -12,7 +12,7 @@ import {
   Service,
 } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { uuidOut, VOCABULARY_SOURCE_LOCAL, vocabularyIn } from '@arthome/core/schema';
+import { uuidOut, VOCABULARY_SOURCE_LOCAL, vocabularyIn, uuidIn } from '@arthome/core/schema';
 
 import {
   AdmissionTokenParameter,
@@ -229,7 +229,7 @@ export const pollPairing: Route<{
       name: 'pairingId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {
@@ -339,7 +339,7 @@ export const cancelPairing: Route<{
       name: 'pairingId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {
@@ -439,7 +439,7 @@ export const engagePairing: Route<{
       name: 'pairingId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   requestBody: {
@@ -558,7 +558,7 @@ export const decidePairing: Route<{
       name: 'pairingId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   requestBody: {

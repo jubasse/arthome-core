@@ -31,6 +31,7 @@ import {
   VOCABULARY_SOURCE_LOCAL,
   vocabularyIn,
   vocabularyOut,
+  uuidIn,
 } from '@arthome/core/schema';
 
 import {
@@ -332,7 +333,7 @@ export const listModerationQueue: Route<{
     {
       name: 'dateId',
       in: 'query',
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     {
       name: 'filter',
@@ -436,7 +437,7 @@ export const claimModerationItem: Route<{
       name: 'itemId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {
@@ -529,7 +530,7 @@ export const releaseModerationItem: Route<{
       name: 'itemId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {
@@ -609,7 +610,7 @@ export const settleModerationItem: Route<{
       name: 'itemId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   requestBody: {
@@ -757,7 +758,7 @@ export const searchAudience: Route<{
     {
       name: 'presentOnDateId',
       in: 'query',
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
     {
       name: 'sanction',
@@ -855,7 +856,7 @@ export const sanctionAudienceMember: Route<{
       name: 'memberId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   requestBody: {

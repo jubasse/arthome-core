@@ -25,6 +25,8 @@ import {
   vocabularyIn,
   vocabularyOut,
   vocabularyOutLocal,
+  uuidIn,
+  dateTimeIn,
 } from '@arthome/core/schema';
 
 import {
@@ -662,13 +664,13 @@ export const listChannelJournal: Route<{
       name: 'from',
       in: 'query',
       required: true,
-      schema: InstantOut,
+      schema: dateTimeIn(),
     },
     {
       name: 'to',
       in: 'query',
       required: true,
-      schema: InstantOut,
+      schema: dateTimeIn(),
     },
     {
       name: 'nature',
@@ -682,7 +684,7 @@ export const listChannelJournal: Route<{
     {
       name: 'dateId',
       in: 'query',
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   responses: {

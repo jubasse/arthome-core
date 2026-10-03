@@ -16,6 +16,8 @@ import {
   vocabularyIn,
   vocabularyOut,
   vocabularyOutLocal,
+  uuidIn,
+  dateIn,
 } from '@arthome/core/schema';
 
 import {
@@ -569,7 +571,7 @@ export const refundSeat: Route<{
       name: 'seatId',
       in: 'path',
       required: true,
-      schema: uuidOut(),
+      schema: uuidIn(),
     },
   ],
   requestBody: {
@@ -839,17 +841,13 @@ export const getChannelTicketing: Route<{
       name: 'from',
       in: 'query',
       required: true,
-      schema: z.string().meta({
-        format: 'date',
-      }),
+      schema: dateIn(),
     },
     {
       name: 'to',
       in: 'query',
       required: true,
-      schema: z.string().meta({
-        format: 'date',
-      }),
+      schema: dateIn(),
     },
   ],
   responses: {

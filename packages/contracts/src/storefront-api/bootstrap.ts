@@ -10,7 +10,13 @@ import {
   Upstream,
 } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { InstantOut, uuidOut, VOCABULARY_SOURCE_LOCAL, vocabularyIn } from '@arthome/core/schema';
+import {
+  InstantOut,
+  uuidOut,
+  VOCABULARY_SOURCE_LOCAL,
+  vocabularyIn,
+  dateTimeIn,
+} from '@arthome/core/schema';
 
 import {
   BadRequestResponse,
@@ -290,7 +296,7 @@ export const listChanges: Route<{
       in: 'query',
       required: true,
       description: "The `servedAt` of the client's last known response.",
-      schema: InstantOut,
+      schema: dateTimeIn(),
     },
     {
       name: 'scope',

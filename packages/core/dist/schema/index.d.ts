@@ -23,7 +23,7 @@
  * an export whose type it cannot write without inferring through zod's builder chain, so
  * without them the published `.d.ts` cannot be emitted at all.
  */
-export { CountryCodeSchema, CurrencyCodeSchema, IanaTimeZoneSchema, InstantIn, InstantOut, int64, uuidOut, LocaleIn, LocaleOut, PageCursorSchema, SlugSchema, } from './primitives.js';
+export { CountryCodeSchema, CurrencyCodeSchema, IanaTimeZoneSchema, InstantIn, InstantOut, int64, uuidIn, uuidOut, dateIn, dateTimeIn, uriIn, LocaleIn, LocaleOut, PageCursorSchema, SlugSchema, } from './primitives.js';
 export { BasisPointsSchema, MoneyIn, MoneyOut } from './money.js';
 export { VenueClockSchema } from './time.js';
 export type { VocabularyIn, VocabularyOut, VocabularyOutNullable } from './vocabulary.js';
