@@ -122,7 +122,10 @@ disagrees with it is a compile error. A route that shares nothing with its group
 through the group's builder, and says what is its own. The plain `defineRoute` from `./http` stays
 the primitive the builder calls, and takes `version` itself.
 
-The order of an operation's `parameters` has no meaning in OpenAPI, so the builder's headers come
+The order of an operation's `parameters` has no meaning: OpenAPI identifies a parameter by name and
+location, the typed client takes named parameters, no positional-SDK generator consumes these
+documents, and no client has shipped (`transport.md` §5.11). The product owner accepted on that
+ground that the semantic comparison treats the list as a set, so the builder's headers come
 last in the document; the same goes for the keys of an operation, which the emitter writes in
 a fixed order (identity, prose, `x-*`, `security`, `parameters`, `requestBody`, `responses`).
 
