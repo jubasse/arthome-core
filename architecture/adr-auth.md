@@ -163,8 +163,9 @@ waiting, the screen does not switch. The contract separates them by name, not by
 ### 3.1 — The `express` peer against the `FastifyAdapter`: the contradiction, and what it was
 
 *Raised by the audit; settled on **25 September 2026** against npm and vendor documentation. The
-conclusion changes no decision — D-A1 stands unmodified — but the reasoning below is what makes it
-safe to implement, and without it the next reader re-opens the question.*
+conclusion changed no decision then; D-A1 was amended later, on 2026-10-03, by the amendment that
+closes this section. The reasoning below is what makes it safe to implement, and without it the
+next reader re-opens the question.*
 
 **The contradiction, stated plainly.** §1's verification table records, for the NestJS adapter:
 

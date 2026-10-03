@@ -2437,6 +2437,8 @@ paths:
             `order.sales_queue_admission_required`: the date's sales queue is armed and the admission is
             absent, lapsed, or issued to another account or date. The surface enters the queue
             (`enterSalesQueue`) and comes back with the admission it is served.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -3342,6 +3344,8 @@ paths:
             different screen. On `watch.concurrent_limit_reached`, `params.activeSessions` carries the **list
             of active sessions** so the surface can offer to release one: a bare refusal would leave the
             viewer with no way out.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -3416,6 +3420,8 @@ paths:
             `watch.preview_exhausted` · `DATE_INTERRUPTED`. `identity.signed_out_elsewhere` is what the television
             signed out from the web sees — **not a network error**. **Real window: up to 120 s** — see
             `revokeDevice`.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -3652,7 +3658,10 @@ paths:
                   badge: published
                   body: { contentLanguage: fr, text: 'Quelle lumière.' }
         '403':
-          description: Chat mode closed, holders only, or the person is sanctioned in this channel.
+          description: |
+            Chat mode closed, holders only, or the person is sanctioned in this channel.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -3857,6 +3866,8 @@ paths:
             `order.sales_queue_admission_required`: a `seat` pairing on a date whose sales queue is armed,
             without a valid admission (D-086). The television enters the queue and opens the pairing once
             admitted.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -4054,7 +4065,10 @@ paths:
                 servedAt: '2026-09-21T18:52:04.000Z'
                 data: { pairingId: 019928f9-0000-7000-8000-000000000001, intent: seat, state: engaged, pollIntervalSec: 2 }
         '403':
-          description: '`pairing.identity_mismatch`, or `pairing.intent_not_engageable` on `signin`.'
+          description: |
+            `pairing.identity_mismatch`, or `pairing.intent_not_engageable` on `signin`.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -4127,7 +4141,10 @@ paths:
                 servedAt: '2026-09-21T18:52:00.000Z'
                 data: { pairingId: 019928f9-0000-7000-8000-000000000001, intent: seat, state: approved, pollIntervalSec: 5 }
         '403':
-          description: '`pairing.identity_mismatch` — the bearer is not the profile that opened the pairing. Impossible on `signin`.'
+          description: |
+            `pairing.identity_mismatch` — the bearer is not the profile that opened the pairing. Impossible on `signin`.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -6120,8 +6137,8 @@ components:
         reactionQuotaPerDate:
           type: integer
           description: |
-            **Optional, and absent today.** No document owns a number for it, and the product owner is
-            replacing the per-date quota with a graduated rate; `sendReaction` serves what remains
+            **Optional, and absent today.** The product owner has decided a graduated rate in place of a
+            per-date quota; no document owns its numbers yet, and `sendReaction` serves what remains
             (`realtime.md` §2.3). Never null: a null quota would read as no quota at all.
         reminderLeadMinutes: { type: integer, examples: [30] }
         replayExpiryWarningHours: { type: integer, examples: [6] }

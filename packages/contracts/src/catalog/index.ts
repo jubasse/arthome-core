@@ -167,7 +167,7 @@ export const DomainConstantsSchema: z.ZodObject<
       .meta({ format: undefined })
       .optional()
       .describe(
-        '**Optional, and absent today.** No document owns a number for it, and the product owner is\nreplacing the per-date quota with a graduated rate; `sendReaction` serves what remains\n(`realtime.md` §2.3). Never null: a null quota would read as no quota at all.\n',
+        '**Optional, and absent today.** The product owner has decided a graduated rate in place of a\nper-date quota; no document owns its numbers yet, and `sendReaction` serves what remains\n(`realtime.md` §2.3). Never null: a null quota would read as no quota at all.\n',
       ),
     reminderLeadMinutes: int64()
       .meta({ format: undefined })
