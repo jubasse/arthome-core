@@ -12,7 +12,7 @@ import {
   GENERATED_HANDLE_RANDOM_LENGTH,
   generatedPublicHandle,
 } from './public-handle.js';
-import { SignInSlowdown, signInDelayMs } from './rate-limits.js';
+import { AuthRateLimit, SignInSlowdown, limitForAddress, signInDelayMs } from './rate-limits.js';
 import { PublicHandleSchema } from '../schema/identifiers.js';
 import { InternalTokenClaimsSchema } from '../schema/internal-token.js';
 import { Service } from '../vocabulary/people.js';
@@ -105,6 +105,21 @@ describe('the internal token', () => {
       chn: ['a-channel'],
     });
     expect(parsed).toHaveProperty('chn');
+  });
+});
+
+describe('the per-address caps, by address family', () => {
+  it('set a high ceiling on an IPv4 address and keep the /64 tight', () => {
+    expect(limitForAddress(AuthRateLimit.SIGN_IN_PER_ADDRESS, true)).toBe(300);
+    expect(limitForAddress(AuthRateLimit.SIGN_UP_PER_ADDRESS, true)).toBe(60);
+    expect(limitForAddress(AuthRateLimit.SIGN_IN_PER_ADDRESS, false)).toBe(20);
+    expect(limitForAddress(AuthRateLimit.SIGN_UP_PER_ADDRESS, false)).toBe(10);
+  });
+
+  it('use the one limit for both families where no IPv4 ceiling is set', () => {
+    const cap = AuthRateLimit.EMAIL_VERIFICATION_CONFIRM_PER_ADDRESS;
+    expect(limitForAddress(cap, true)).toBe(cap.limit);
+    expect(limitForAddress(cap, false)).toBe(cap.limit);
   });
 });
 

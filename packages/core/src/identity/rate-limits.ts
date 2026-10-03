@@ -1,19 +1,29 @@
 /**
  * The BFFs' caps on the authentication doors (`adr-auth.md` §6.2), owned here so the storefront
- * and the studio cap alike. Counted per network address, an IPv6 address counting as its /64,
- * until a device carries a verified identity (the `device_token`): a `deviceId` the caller merely
- * asserts caps nothing, since it can send a new one with each attempt.
+ * and the studio cap alike. The product owner's direction is to limit by device, which slice C's
+ * verified `device_token` brings: a `deviceId` the caller merely asserts caps nothing, since it can
+ * send a new one with each attempt. Until then the caps count per network address, an IPv6 address
+ * as its /64, tight; and an IPv4 address under a high anti-abuse ceiling (`ipv4Limit`), because
+ * mobile carriers share one IPv4 address across hundreds of subscribers (CGNAT), and D-079's
+ * openings would otherwise refuse real viewers.
  */
 
 export interface RateLimit {
+  /** For one IPv6 /64, and for one IPv4 address when `ipv4Limit` is absent. */
   readonly limit: number;
   readonly windowSeconds: number;
+  readonly ipv4Limit?: number;
+}
+
+/** The limit a cap sets on one caller's network: its IPv4 ceiling, or its /64 limit. */
+export function limitForAddress(rateLimit: RateLimit, ipv4: boolean): number {
+  return ipv4 ? (rateLimit.ipv4Limit ?? rateLimit.limit) : rateLimit.limit;
 }
 
 export const AuthRateLimit = {
   /** What slows enumeration through `identity.email_taken` (D-099). */
-  SIGN_UP_PER_ADDRESS: { limit: 10, windowSeconds: 3_600 },
-  SIGN_IN_PER_ADDRESS: { limit: 20, windowSeconds: 900 },
+  SIGN_UP_PER_ADDRESS: { limit: 10, ipv4Limit: 60, windowSeconds: 3_600 },
+  SIGN_IN_PER_ADDRESS: { limit: 20, ipv4Limit: 300, windowSeconds: 900 },
   /**
    * Password guessing against one account FROM ONE ADDRESS: the only hard cap an email carries, so
    * a third party exhausts it for itself alone and nobody can lock an account's owner out. The real

@@ -209,7 +209,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 457 exported names.
+Declarations: `dist/index.d.ts` — 458 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -592,6 +592,7 @@ Declarations: `dist/index.d.ts` — 457 exported names.
 - `lateEntryOf` (function) — `function lateEntryOf(startsAt: Instant | null, now: Instant): LateEntry | null;` — Null before the start, and for a date with none.
 - `lateRatePrice` (function) — `function lateRatePrice(fullPrice: Money, progress: number): Money;` — The "show already started" price, PRO RATA of the time remaining.
 - `latest` (function) — `function latest(left: Instant, right: Instant): Instant;`
+- `limitForAddress` (function) — `function limitForAddress(rateLimit: RateLimit, ipv4: boolean): number;` — The limit a cap sets on one caller's network: its IPv4 ceiling, or its /64 limit.
 - `lowestActivePrice` (function) — `function lowestActivePrice(tiers: readonly TierPrice[]): Money | null;` — The headline price: the lowest of the ACTIVE tiers.
 - `matchesTag` (function) — `function matchesTag(tag: Tag, term: string): boolean;` — Does a tag match a free-text term?
 - `max` (function) — `function max(left: Money, right: Money): Money;`

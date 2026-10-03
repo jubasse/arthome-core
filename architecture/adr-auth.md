@@ -595,7 +595,11 @@ presuppose.
 and per email from one address) and the email verification's doors are capped there. Until a device
 carries a verified identity (§4/Q3's `device_token`) the count is per network address, an IPv6
 address counting as its /64, because a `deviceId` the caller merely asserts caps nothing: it sends a
-new one with each attempt.
+new one with each attempt. **The product owner's direction (2026-10-03) is to limit by device**, which
+slice C brings. Until then an IPv6 /64 keeps tight caps, and an IPv4 address gets a high anti-abuse
+ceiling (`ipv4Limit`: 300 sign-ins per 15 minutes, 60 sign-ups per hour): mobile carriers share one
+IPv4 address across hundreds of subscribers (CGNAT), and D-079's openings would otherwise refuse real
+viewers.
 
 **No hard lockout per email** (the lead's ruling, 2026-10-03, on the security review's M4). A cap
 counted per email alone lets anyone keep any known address signed out with ten wrong passwords.
