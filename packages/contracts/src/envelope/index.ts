@@ -224,6 +224,9 @@ export const STOREFRONT_RELAYED_CODES: readonly ErrorCode[] = [
   ApiErrorCode.SCHEMA_INVALID,
   ApiErrorCode.CURSOR_TOO_OLD,
   ApiErrorCode.NOT_FOUND,
+  // transport.md §5.4's two refusals of a key: the surface reuses a key or waits, the BFF cannot.
+  ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
+  ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
   IdentityErrorCode.EMAIL_TAKEN,
   IdentityErrorCode.INVALID_CREDENTIALS,
   IdentityErrorCode.VERIFICATION_LINK_INVALID,

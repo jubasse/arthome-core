@@ -537,6 +537,8 @@ client from `openapi/storefront.yaml` or `openapi/studio.yaml`.
 | composed public read (`home`, `live`, `category`, `artist`) | **≤ 400 ms** | `context-map.md` §11(a)'s alert threshold |
 | batched read (overlay) | ≤ 150 ms | four in parallel, under the screen's budget |
 | money write | ≤ 2 s | one transaction, one capacity check, one idempotency store |
+| authentication write (sign-up, sign-in, sign-out, the verification link) | ≤ 2 s | one transaction, one password hash at argon2id's cost, one idempotency store |
+| session validation | ≤ 150 ms | on every call that needs a viewer, ahead of the call itself |
 | search | **≤ 200 ms** | otherwise the TV's typing feedback falls behind (`storefront-tv`) |
 
 **Guaranteed freshness per family** — `data-model.md` §4, repeated here because it is the BFF that

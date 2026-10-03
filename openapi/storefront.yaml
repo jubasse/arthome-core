@@ -264,7 +264,7 @@ paths:
               required: [email, password, mode, acceptedTermsVersion, locale]
               properties:
                 email: { type: string, format: email }
-                password: { type: string, minLength: 12 }
+                password: { type: string, minLength: 12, maxLength: 128 }
                 displayName: { type: string, maxLength: 80 }
                 mode: { $ref: '#/components/schemas/SessionMode' }
                 deviceId: { type: [string, 'null'], format: uuid }
@@ -352,7 +352,7 @@ paths:
               required: [email, password, mode]
               properties:
                 email: { type: string, format: email }
-                password: { type: string }
+                password: { type: string, maxLength: 128 }
                 mode: { $ref: '#/components/schemas/SessionMode' }
                 deviceId: { type: [string, 'null'], format: uuid }
             example: { email: marie@example.org, password: 'a-long-password', mode: bearer, deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77 }
@@ -601,7 +601,7 @@ paths:
               required: [token, password]
               properties:
                 token: { type: string }
-                password: { type: string, minLength: 12 }
+                password: { type: string, minLength: 12, maxLength: 128 }
             example: { token: rst_9f2ac1, password: 'a-new-password' }
       responses:
         '200':
