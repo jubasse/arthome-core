@@ -37,6 +37,7 @@ import {
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
+  studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type {
@@ -46,7 +47,6 @@ import type {
   QueryParameter,
   Route,
 } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import {
   ChannelMemberSchema,
@@ -54,12 +54,19 @@ import {
   EffectiveRightsSchema,
 } from '../studio-access/index.js';
 
+const crewRoutes = studioV1
+  .tags(StudioTag.CREW)
+  .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
+const crewReads = crewRoutes.errors({ 403: ForbiddenResponse });
+const crewWrites = crewRoutes.headers(IdempotencyKeyParameter);
+
 const GET_DATE_CREW_PANE_MEMBERSHIP_KIND = ['member', 'grant'] as const;
 const RESPOND_TO_INVITATION_DECISION = ['accept', 'decline'] as const;
 
 export const getDateCrewPane: Route<{
   method: 'get';
-  path: '/v1/dates/{dateId}/panes/crew';
+  version: 1;
+  path: '/dates/{dateId}/panes/crew';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -99,17 +106,16 @@ export const getDateCrewPane: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = crewReads.defineRoute({
   method: 'get',
-  path: '/v1/dates/{dateId}/panes/crew',
+  path: '/dates/{dateId}/panes/crew',
   operationId: 'getDateCrewPane',
-  tags: [StudioTag.CREW],
   summary: "A date's crew pane — assignments and one-off accesses, with their identifiers.",
   description:
     'Three gaps compounded on the same page, the one belonging to the `coordination` persona,\nwhose entire navigation is `crew · log · help`:\n\n- `/v1/dates/{dateId}/crew` was **POST only**: the dates × posts matrix and the "tonight"\n  list had no read path at all. `listDuties` gives **my** duties,\n  `EffectiveRights.dateGrants` gives **my** accesses — neither gives the coverage;\n- **`revokeDateAccess` revokes by `grantId`, an identifier no read handed out**;\n- `moderator_assigned` is one of the checklist items and `datesToCover` a served counter:\n  **both were computed against a coverage the studio could not read.**\n\nOpen to `artist`, `production` and `coordination`.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [DateIdParameter, SurfaceParameter, IfRightsVersionParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'Posts covered, posts missing, one-off accesses with their `grantId`.',
@@ -182,23 +188,23 @@ export const getDateCrewPane: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
     404: NotFoundResponse,
   },
 });
 
 export const listChannelMembers: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/members';
+  version: 1;
+  path: '/channels/{channelId}/members';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof PageParameter,
     typeof PageSizeParameter,
     QueryParameter<'q', z.ZodString>,
     QueryParameter<'role', VocabularyIn<typeof MEMBER_ROLES>>,
+    typeof SurfaceParameter,
+    typeof IfRightsVersionParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -216,11 +222,10 @@ export const listChannelMembers: Route<{
     >;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = crewReads.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/members',
+  path: '/channels/{channelId}/members',
   operationId: 'listChannelMembers',
-  tags: [StudioTag.CREW],
   summary: 'The team — page + total, with a served counter per role.',
   description:
     'The **per-role counter** is a **served aggregation**, not a count over the current page: the\nrole filter displays "production (4)", and that number bears on the whole team.\n\nThe search covers the name, the email, the note and the role, **server-side**: the directory\nof contributors runs into the thousands, freelancers included.\n',
@@ -228,9 +233,6 @@ export const listChannelMembers: Route<{
   'x-arthome-upstream': [Service.IDENTITY],
   parameters: [
     ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     PageParameter,
     PageSizeParameter,
     {
@@ -290,19 +292,19 @@ export const listChannelMembers: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
   },
 });
 
 export const inviteMember: Route<{
   method: 'post';
-  path: '/v1/channels/{channelId}/invitations';
+  version: 1;
+  path: '/channels/{channelId}/invitations';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -323,23 +325,16 @@ export const inviteMember: Route<{
     >;
     403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = crewWrites.defineRoute({
   method: 'post',
-  path: '/v1/channels/{channelId}/invitations',
+  path: '/channels/{channelId}/invitations',
   operationId: 'inviteMember',
-  tags: [StudioTag.CREW],
   summary: 'Invites a person, into a role the inviter has the right to assign.',
   description:
     '**`role ∈ assignableRoles` of the inviter**, a projection of `grants` onto the roles they\nhold. The refusal carries **the list of roles assignable from this level and whom to ask** — a\nbare refusal would force the person to guess.\n\n`director` can invite `video` and `sound`; `video`, `sound`, `moderation` and `treasury`\ninvite nobody. **The fallback to six personas erases that right**, and that is why it appears\nin no response.\n\n**A two-stage command**: the invitation stays pending until the invitee answers, and it is\n**visible as such** in the member list.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [
-    ChannelIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [ChannelIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -417,13 +412,14 @@ export const inviteMember: Route<{
 
 export const respondToInvitation: Route<{
   method: 'post';
-  path: '/v1/invitations/{invitationId}/response';
+  version: 1;
+  path: '/invitations/{invitationId}/response';
   parameters: readonly [
     PathParameter<'invitationId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<{ decision: VocabularyIn<typeof RESPOND_TO_INVITATION_DECISION> }, z.core.$strip>
@@ -438,11 +434,10 @@ export const respondToInvitation: Route<{
     404: typeof NotFoundResponse;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = crewWrites.defineRoute({
   method: 'post',
-  path: '/v1/invitations/{invitationId}/response',
+  path: '/invitations/{invitationId}/response',
   operationId: 'respondToInvitation',
-  tags: [StudioTag.CREW],
   summary: 'Accepts or declines an invitation.',
   description:
     "Acceptance publishes the membership **then** an increment of `rightsVersion` — that is what\nbrings the channel into the switcher **without a reload**, and what makes a lost channel's\nreal-time rooms be left without waiting for a reconnection.\n",
@@ -455,10 +450,6 @@ export const respondToInvitation: Route<{
       required: true,
       schema: uuidOut(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: true,
@@ -523,14 +514,15 @@ export const respondToInvitation: Route<{
 
 export const changeMemberRoles: Route<{
   method: 'patch';
-  path: '/v1/channels/{channelId}/members/{personId}';
+  version: 1;
+  path: '/channels/{channelId}/members/{personId}';
   parameters: readonly [
     typeof ChannelIdParameter,
     PathParameter<'personId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -548,11 +540,10 @@ export const changeMemberRoles: Route<{
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = crewWrites.defineRoute({
   method: 'patch',
-  path: '/v1/channels/{channelId}/members/{personId}',
+  path: '/channels/{channelId}/members/{personId}',
   operationId: 'changeMemberRoles',
-  tags: [StudioTag.CREW],
   summary: "Changes a member's set of roles.",
   description:
     '**A set, never a single role.** The owner can be **neither removed nor have their roles\nchanged**: `transferOwnership` moves the flag, and it requires the recipient to be **already a\nmember** and to have two-factor authentication.\n',
@@ -566,10 +557,6 @@ export const changeMemberRoles: Route<{
       required: true,
       schema: uuidOut(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: true,
@@ -625,14 +612,15 @@ export const changeMemberRoles: Route<{
 
 export const removeMember: Route<{
   method: 'delete';
-  path: '/v1/channels/{channelId}/members/{personId}';
+  version: 1;
+  path: '/channels/{channelId}/members/{personId}';
   parameters: readonly [
     typeof ChannelIdParameter,
     PathParameter<'personId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -651,11 +639,10 @@ export const removeMember: Route<{
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = crewWrites.defineRoute({
   method: 'delete',
-  path: '/v1/channels/{channelId}/members/{personId}',
+  path: '/channels/{channelId}/members/{personId}',
   operationId: 'removeMember',
-  tags: [StudioTag.CREW],
   summary: 'Removes a member from the channel.',
   description: '**The owner is never removable**: the refusal carries `OWNER_NOT_REMOVABLE`.',
   'x-arthome-maturity': 'stable',
@@ -668,10 +655,6 @@ export const removeMember: Route<{
       required: true,
       schema: uuidOut(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -705,13 +688,14 @@ export const removeMember: Route<{
 
 export const grantDateAccess: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/crew';
+  version: 1;
+  path: '/dates/{dateId}/crew';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -728,23 +712,16 @@ export const grantDateAccess: Route<{
     >;
     403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = crewWrites.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/crew',
+  path: '/dates/{dateId}/crew',
   operationId: 'grantDateAccess',
-  tags: [StudioTag.CREW],
   summary: 'Assigns a stand-in to a date, with an instant of expiry.',
   description:
     '**Scoped to one date, expiry served as an instant.** "Expires at curtain call + 1 h" is a\nscreen sentence; the contract carries the instant. Revocable **without touching channel\nmembership** — conflating the two would turn revoking a stand-in into expulsion.\n\n**Assignment to the `director` slot grants access to the stream key.** It is therefore\nreserved to `artist ∨ production`, and the contract makes **that reason** explicit rather than\nleaving it to be guessed.\n\n**Sixty seconds is not good enough for an access that expires**: the internal token carries the\nroles, but the service checks the time-boxed access **on the loaded resource**.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -827,13 +804,14 @@ export const grantDateAccess: Route<{
 
 export const revokeDateAccess: Route<{
   method: 'delete';
-  path: '/v1/date-access-grants/{grantId}';
+  version: 1;
+  path: '/date-access-grants/{grantId}';
   parameters: readonly [
     PathParameter<'grantId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -851,11 +829,10 @@ export const revokeDateAccess: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = crewWrites.defineRoute({
   method: 'delete',
-  path: '/v1/date-access-grants/{grantId}',
+  path: '/date-access-grants/{grantId}',
   operationId: 'revokeDateAccess',
-  tags: [StudioTag.CREW],
   summary: 'Revokes a one-off access, without touching membership.',
   description:
     "The server makes the client **leave this date's real-time rooms** without waiting for a\nreconnection: that is what stops someone whose access expired at curtain-down from carrying on\nwatching a queue.\n",
@@ -868,10 +845,6 @@ export const revokeDateAccess: Route<{
       required: true,
       schema: uuidOut(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -904,13 +877,14 @@ export const revokeDateAccess: Route<{
 
 export const transferChannelOwnership: Route<{
   method: 'post';
-  path: '/v1/channels/{channelId}/ownership-transfer';
+  version: 1;
+  path: '/channels/{channelId}/ownership-transfer';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<{ toPersonId: z.ZodString; reauthToken: z.ZodString }, z.core.$strip>
@@ -934,23 +908,16 @@ export const transferChannelOwnership: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = crewWrites.defineRoute({
   method: 'post',
-  path: '/v1/channels/{channelId}/ownership-transfer',
+  path: '/channels/{channelId}/ownership-transfer',
   operationId: 'transferChannelOwnership',
-  tags: [StudioTag.CREW],
   summary: 'Transfers ownership of the channel — two-stage.',
   description:
     '**The recipient must already be a member and have two-factor authentication.** These are\ndomain rules, not interface guards, and the refusal is **served with its reason**. The bank\naccount (`payouts`) and the public page (`catalog`) **follow** the transfer, by event.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [
-    ChannelIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [ChannelIdParameter],
   requestBody: {
     required: true,
     content: {

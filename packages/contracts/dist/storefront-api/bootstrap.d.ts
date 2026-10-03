@@ -9,7 +9,8 @@ import { ViewerContextSchema } from '../identity/index.js';
 declare const LIST_CHANGES_SCOPE: readonly ["profile", "device"];
 export declare const registerDevice: Route<{
     method: 'post';
-    path: '/v1/devices';
+    version: 1;
+    path: '/devices';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -35,11 +36,12 @@ export declare const registerDevice: Route<{
 }>;
 export declare const getViewerContext: Route<{
     method: 'get';
-    path: '/v1/viewer-context';
+    version: 1;
+    path: '/viewer-context';
     parameters: readonly [
+        typeof ViewerTimezoneParameter,
         typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof ViewerTimezoneParameter
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -51,12 +53,13 @@ export declare const getViewerContext: Route<{
 }>;
 export declare const listChanges: Route<{
     method: 'get';
-    path: '/v1/changes';
+    version: 1;
+    path: '/changes';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         QueryParameter<'since', z.ZodString, true>,
-        QueryParameter<'scope', z.ZodDefault<VocabularyIn<typeof LIST_CHANGES_SCOPE>>>
+        QueryParameter<'scope', z.ZodDefault<VocabularyIn<typeof LIST_CHANGES_SCOPE>>>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{

@@ -49,6 +49,7 @@ import {
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
+  studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type {
@@ -58,7 +59,6 @@ import type {
   QueryParameter,
   Route,
 } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import { OffsetPageInfoSchema, StudioCursorPageInfoSchema } from '../pagination/index.js';
 import {
   AudienceMemberSchema,
@@ -67,11 +67,18 @@ import {
 } from '../studio-desk/index.js';
 import { StudioLocalizedTextSchema } from '../text/index.js';
 
+const moderationRoutes = studioV1
+  .tags(StudioTag.MODERATION)
+  .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
+const moderationReads = moderationRoutes.errors({ 403: ForbiddenResponse });
+const moderationWrites = moderationRoutes.headers(IdempotencyKeyParameter);
+
 const LIST_MODERATION_QUEUE_FILTER = ['all', 'pending', 'settled'] as const;
 
 export const getDateChatPane: Route<{
   method: 'get';
-  path: '/v1/dates/{dateId}/panes/chat';
+  version: 1;
+  path: '/dates/{dateId}/panes/chat';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -111,17 +118,16 @@ export const getDateChatPane: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = moderationReads.defineRoute({
   method: 'get',
-  path: '/v1/dates/{dateId}/panes/chat',
+  path: '/dates/{dateId}/panes/chat',
   operationId: 'getDateChatPane',
-  tags: [StudioTag.MODERATION],
   summary: "A date's chat pane — the moderator's pane.",
   description:
     '**This is the pane that justified the whole mechanism**: *"a moderator must be able to load\nthe `chat` pane without loading the whole record, otherwise ticketing travels for nothing"*.\nThe argument was quoted in the contract and undone by its own implementation.\n\nOpen to `artist`, `production` and `moderation`.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [DatePane.CHAT],
-  parameters: [DateIdParameter, SurfaceParameter, IfRightsVersionParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'Chat regime, measured rate, queue waiting.',
@@ -173,20 +179,20 @@ export const getDateChatPane: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
     404: NotFoundResponse,
   },
 });
 
 export const setDateChatPolicy: Route<{
   method: 'put';
-  path: '/v1/dates/{dateId}/chat-policy';
+  version: 1;
+  path: '/dates/{dateId}/chat-policy';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -210,23 +216,16 @@ export const setDateChatPolicy: Route<{
     >;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = moderationWrites.defineRoute({
   method: 'put',
-  path: '/v1/dates/{dateId}/chat-policy',
+  path: '/dates/{dateId}/chat-policy',
   operationId: 'setDateChatPolicy',
-  tags: [StudioTag.MODERATION],
   summary: "Sets the date's chat regime.",
   description:
     '**`chat` applies its own lock.** Once publication is committed, a live chat can still be\n**closed**; it can no longer be **opened wider**. `chat` knows this because it consumed the\nevent, not because it asked `catalog`.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [DatePane.CHAT],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -288,17 +287,18 @@ export const setDateChatPolicy: Route<{
 
 export const listModerationQueue: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/moderation/queue';
+  version: 1;
+  path: '/channels/{channelId}/moderation/queue';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof LimitParameter,
     QueryParameter<'dateId', z.ZodString>,
     QueryParameter<'filter', z.ZodDefault<VocabularyIn<typeof LIST_MODERATION_QUEUE_FILTER>>>,
     QueryParameter<'q', z.ZodString>,
+    typeof SurfaceParameter,
+    typeof IfRightsVersionParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -316,11 +316,10 @@ export const listModerationQueue: Route<{
     403: typeof ForbiddenResponse;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = moderationReads.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/moderation/queue',
+  path: '/channels/{channelId}/moderation/queue',
   operationId: 'listModerationQueue',
-  tags: [StudioTag.MODERATION],
   summary: 'The moderation queue — **by cursor**, the first exception to page + total.',
   description:
     "**A moderation queue grows while it is being read.** Offset pagination duplicates rows there\nand skips others — **mechanically, not exceptionally**. It is a stream, even hosted in the\nstudio, hence a cursor (D-010).\n\nThe **separate total** (`pendingCount`) feeds the badge: it is not counted over the current\npage, otherwise the bottom bar would display the number of rows loaded.\n\n**Other people's claims are visible**: `claimedBy` and `claimExpiresAt` arrive on the same\nchannel, with the name of whoever is acting. Without that, two moderators work blind to each\nother and collide on every row.\n",
@@ -328,9 +327,6 @@ export const listModerationQueue: Route<{
   'x-arthome-upstream': [DatePane.CHAT],
   parameters: [
     ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     CursorParameter,
     LimitParameter,
     {
@@ -402,20 +398,20 @@ export const listModerationQueue: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
     410: GoneResponse,
   },
 });
 
 export const claimModerationItem: Route<{
   method: 'post';
-  path: '/v1/moderation/items/{itemId}/claim';
+  version: 1;
+  path: '/moderation/items/{itemId}/claim';
   parameters: readonly [
     PathParameter<'itemId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -426,11 +422,10 @@ export const claimModerationItem: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = moderationWrites.defineRoute({
   method: 'post',
-  path: '/v1/moderation/items/{itemId}/claim',
+  path: '/moderation/items/{itemId}/claim',
   operationId: 'claimModerationItem',
-  tags: [StudioTag.MODERATION],
   summary: 'Claims a row — a lease, not a write.',
   description:
     '**"Taking charge is not deciding."** It is a **short lease**, renewed while the person is\npresent and **released by the server** on expiry: a moderator whose phone dies does not freeze\na row for the whole live show.\n\n**Never queued offline**: replayed on reconnection, it would claim a row someone else has\nalready handled.\n',
@@ -443,10 +438,6 @@ export const claimModerationItem: Route<{
       required: true,
       schema: uuidOut(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -507,13 +498,14 @@ export const claimModerationItem: Route<{
 
 export const releaseModerationItem: Route<{
   method: 'delete';
-  path: '/v1/moderation/items/{itemId}/claim';
+  version: 1;
+  path: '/moderation/items/{itemId}/claim';
   parameters: readonly [
     PathParameter<'itemId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -524,11 +516,10 @@ export const releaseModerationItem: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = moderationWrites.defineRoute({
   method: 'delete',
-  path: '/v1/moderation/items/{itemId}/claim',
+  path: '/moderation/items/{itemId}/claim',
   operationId: 'releaseModerationItem',
-  tags: [StudioTag.MODERATION],
   summary: 'Releases the claim.',
   description: 'Speeds up the release; **nothing depends on it**, the lease expires by itself.',
   'x-arthome-maturity': 'provisional',
@@ -540,10 +531,6 @@ export const releaseModerationItem: Route<{
       required: true,
       schema: uuidOut(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -578,13 +565,14 @@ export const releaseModerationItem: Route<{
 
 export const settleModerationItem: Route<{
   method: 'post';
-  path: '/v1/moderation/items/{itemId}/verdict';
+  version: 1;
+  path: '/moderation/items/{itemId}/verdict';
   parameters: readonly [
     PathParameter<'itemId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -607,11 +595,10 @@ export const settleModerationItem: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = moderationWrites.defineRoute({
   method: 'post',
-  path: '/v1/moderation/items/{itemId}/verdict',
+  path: '/moderation/items/{itemId}/verdict',
   operationId: 'settleModerationItem',
-  tags: [StudioTag.MODERATION],
   summary: 'Renders a verdict — conditional, never a blind idempotent write.',
   description:
     '**The second verdict is refused, and the refusal carries the winning decision** — author\n**and** verdict — so the screen can display "X has already deleted this message" instead of a\nbare failure. A bare refusal would force a second round trip in the middle of a live show.\n\n**This is why the command is conditional** (`expectedVersion`) and **not** a blind idempotent\nwrite: an idempotent replay would overwrite the first verdict, which is exactly the opposite\nof the rule.\n\n**Two of the four verdicts bear on the person, not on the message**: `mute` and `ban` compose\nwith the channel sanction. The three axes — message state, nature of the queue row, sanction\non the person — never stack.\n\n**Queued offline**, together with sanctions on a named person, and **nothing else**: it is the\none gesture on duty that a basement 4G must be able to defer.\n',
@@ -624,10 +611,6 @@ export const settleModerationItem: Route<{
       required: true,
       schema: uuidOut(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: true,
@@ -728,17 +711,18 @@ export const settleModerationItem: Route<{
 
 export const searchAudience: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/audience';
+  version: 1;
+  path: '/channels/{channelId}/audience';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof PageParameter,
     typeof PageSizeParameter,
     QueryParameter<'q', z.ZodString>,
     QueryParameter<'presentOnDateId', z.ZodString>,
     QueryParameter<'sanction', VocabularyIn<typeof AUDIENCE_SANCTIONS>>,
+    typeof SurfaceParameter,
+    typeof IfRightsVersionParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -752,11 +736,10 @@ export const searchAudience: Route<{
     >;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = moderationReads.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/audience',
+  path: '/channels/{channelId}/audience',
   operationId: 'searchAudience',
-  tags: [StudioTag.MODERATION],
   summary: "A channel's audience — searchable, including those who have not written.",
   description:
     '**A collection queryable in its own right, not a projection of the chat**: the console looks\nfor "a viewer **present, who has not written**". Thousands of nicknames, hence **server-side\nsearch is mandatory**.\n',
@@ -764,9 +747,6 @@ export const searchAudience: Route<{
   'x-arthome-upstream': [DatePane.CHAT],
   parameters: [
     ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     PageParameter,
     PageSizeParameter,
     {
@@ -825,20 +805,20 @@ export const searchAudience: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
   },
 });
 
 export const sanctionAudienceMember: Route<{
   method: 'put';
-  path: '/v1/channels/{channelId}/audience/{memberId}/sanction';
+  version: 1;
+  path: '/channels/{channelId}/audience/{memberId}/sanction';
   parameters: readonly [
     typeof ChannelIdParameter,
     PathParameter<'memberId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -860,11 +840,10 @@ export const sanctionAudienceMember: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = moderationWrites.defineRoute({
   method: 'put',
-  path: '/v1/channels/{channelId}/audience/{memberId}/sanction',
+  path: '/channels/{channelId}/audience/{memberId}/sanction',
   operationId: 'sanctionAudienceMember',
-  tags: [StudioTag.MODERATION],
   summary: 'Sanctions a person — per channel, with an instant of expiry.',
   description:
     '**The sanction bears on the person, within a channel**: the same person is banned at one\nartist\'s and welcome at another\'s. That is why it belongs to `chat` and not to `identity` —\nhousing the sanction there would force every verdict, the most frequent gesture of a saturated\nlive show, into a cross-service write to the most sensitive service in the system.\n\n**A sanction carries an instant of expiry, never a label.** "No limit", 1 min, 10 min, 1 h and\na free-form duration are **a single field**, computed once.\n',
@@ -878,10 +857,6 @@ export const sanctionAudienceMember: Route<{
       required: true,
       schema: uuidOut(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: true,
@@ -946,13 +921,14 @@ export const sanctionAudienceMember: Route<{
 
 export const addBannedWord: Route<{
   method: 'post';
-  path: '/v1/channels/{channelId}/moderation/banned-words';
+  version: 1;
+  path: '/channels/{channelId}/moderation/banned-words';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -983,23 +959,16 @@ export const addBannedWord: Route<{
     >;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = moderationWrites.defineRoute({
   method: 'post',
-  path: '/v1/channels/{channelId}/moderation/banned-words',
+  path: '/channels/{channelId}/moderation/banned-words',
   operationId: 'addBannedWord',
-  tags: [StudioTag.MODERATION],
   summary: 'Adds a word to the dictionary — the reclassification is asynchronous.',
   description:
     '**The ambiguity is settled: retroactive processing is asynchronous.** The command answers\n**immediately** with `reprocessing: true` and the **estimated** number of messages affected;\nthe new queue items arrive over the real-time channel, marked `origin: retroactive_filter` so\nthe log can tell them apart from a human decision.\n\nReason: a synchronous reclassification over thousands of messages **would block the command in\nthe middle of a live show**.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [DatePane.CHAT],
-  parameters: [
-    ChannelIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [ChannelIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -1053,14 +1022,15 @@ export const addBannedWord: Route<{
 
 export const removeBannedWord: Route<{
   method: 'delete';
-  path: '/v1/channels/{channelId}/moderation/banned-words/{word}';
+  version: 1;
+  path: '/channels/{channelId}/moderation/banned-words/{word}';
   parameters: readonly [
     typeof ChannelIdParameter,
     PathParameter<'word', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -1078,11 +1048,10 @@ export const removeBannedWord: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = moderationWrites.defineRoute({
   method: 'delete',
-  path: '/v1/channels/{channelId}/moderation/banned-words/{word}',
+  path: '/channels/{channelId}/moderation/banned-words/{word}',
   operationId: 'removeBannedWord',
-  tags: [StudioTag.MODERATION],
   summary: 'Removes a word from the dictionary.',
   description:
     'Removal **does not republish** messages already removed: a moderation decision stays a fact.',
@@ -1096,10 +1065,6 @@ export const removeBannedWord: Route<{
       required: true,
       schema: z.string(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -1132,15 +1097,16 @@ export const removeBannedWord: Route<{
 
 export const listStudioChatMessages: Route<{
   method: 'get';
-  path: '/v1/dates/{dateId}/chat/messages';
+  version: 1;
+  path: '/dates/{dateId}/chat/messages';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof LimitParameter,
     QueryParameter<'sinceSeq', z.ZodNumber>,
+    typeof SurfaceParameter,
+    typeof IfRightsVersionParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -1172,11 +1138,10 @@ export const listStudioChatMessages: Route<{
     403: typeof ForbiddenResponse;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = moderationReads.defineRoute({
   method: 'get',
-  path: '/v1/dates/{dateId}/chat/messages',
+  path: '/dates/{dateId}/chat/messages',
   operationId: 'listStudioChatMessages',
-  tags: [StudioTag.MODERATION],
   summary:
     'The live chat as the studio sees it — **by cursor**, the second exception to page + total.',
   description:
@@ -1185,9 +1150,6 @@ export const listStudioChatMessages: Route<{
   'x-arthome-upstream': [DatePane.CHAT],
   parameters: [
     DateIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     CursorParameter,
     LimitParameter,
     {
@@ -1251,7 +1213,6 @@ export const listStudioChatMessages: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
     410: GoneResponse,
   },
 });

@@ -12,13 +12,14 @@ declare const GET_CHANNEL_DASHBOARD_PERIOD: readonly ["last_7_days", "last_30_da
 declare const GET_CHANNEL_STATS_TAB: readonly ["audience", "series"];
 export declare const listDuties: Route<{
     method: 'get';
-    path: '/v1/me/duties';
+    version: 1;
+    path: '/me/duties';
     parameters: readonly [
+        QueryParameter<'from', z.ZodString, true>,
+        QueryParameter<'to', z.ZodString, true>,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
-        QueryParameter<'from', z.ZodString, true>,
-        QueryParameter<'to', z.ZodString, true>
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -29,19 +30,20 @@ export declare const listDuties: Route<{
 }>;
 export declare const listChannelEvents: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/events';
+    version: 1;
+    path: '/channels/{channelId}/events';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
         typeof PageParameter,
         typeof PageSizeParameter,
         typeof SortByParameter,
         typeof SortDirParameter,
         QueryParameter<'window', z.ZodDefault<VocabularyIn<typeof LIST_CHANNEL_EVENTS_WINDOW>>>,
         QueryParameter<'states', z.ZodString>,
-        QueryParameter<'q', z.ZodString>
+        QueryParameter<'q', z.ZodString>,
+        typeof SurfaceParameter,
+        typeof IfRightsVersionParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -54,15 +56,16 @@ export declare const listChannelEvents: Route<{
 }>;
 export declare const getChannelDashboard: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/dashboard';
+    version: 1;
+    path: '/channels/{channelId}/dashboard';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
         QueryParameter<'period', z.ZodDefault<VocabularyIn<typeof GET_CHANNEL_DASHBOARD_PERIOD>>>,
         QueryParameter<'from', z.ZodString>,
-        QueryParameter<'to', z.ZodString>
+        QueryParameter<'to', z.ZodString>,
+        typeof SurfaceParameter,
+        typeof IfRightsVersionParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -74,17 +77,18 @@ export declare const getChannelDashboard: Route<{
 }>;
 export declare const getChannelStats: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/stats';
+    version: 1;
+    path: '/channels/{channelId}/stats';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
         QueryParameter<'tab', z.ZodDefault<VocabularyIn<typeof GET_CHANNEL_STATS_TAB>>>,
         QueryParameter<'period', z.ZodDefault<VocabularyIn<typeof GET_CHANNEL_DASHBOARD_PERIOD>>>,
         QueryParameter<'from', z.ZodString>,
         QueryParameter<'to', z.ZodString>,
-        QueryParameter<'showId', z.ZodString>
+        QueryParameter<'showId', z.ZodString>,
+        typeof SurfaceParameter,
+        typeof IfRightsVersionParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -97,14 +101,15 @@ export declare const getChannelStats: Route<{
 }>;
 export declare const getChannelAgenda: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/agenda';
+    version: 1;
+    path: '/channels/{channelId}/agenda';
     parameters: readonly [
         typeof ChannelIdParameter,
+        QueryParameter<'from', z.ZodString, true>,
+        QueryParameter<'to', z.ZodString, true>,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
-        QueryParameter<'from', z.ZodString, true>,
-        QueryParameter<'to', z.ZodString, true>
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{

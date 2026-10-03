@@ -77,15 +77,17 @@ Declarations: `dist/envelope/index.d.ts` — 7 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 37 exported names.
+Declarations: `dist/http/index.d.ts` — 43 exported names.
 
 - `AccessorOf` (type) — `type AccessorOf<T extends readonly string[]> = { readonly [Member in T[number] as Uppercase<Member>]: Member; };` — Named members for a list of words, 'CHAT' for ''chat'', so no module spells a member again.
 - `Api` (type) — `type Api<Routes extends Readonly<Record<string, Route>> = Readonly<Record<string, Route>>> = ApiDefinition<Routes>;`
 - `ApiComponents` (interface)
 - `ApiDefinition` (interface) — A whole document: its top-level keys as the document writes them, 'routes' in place of 'paths'.
+- `BuiltRoute` (type) — The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors.
+- `BuiltRouteDefinition` (type) — `type BuiltRouteDefinition = Omit<RouteDefinition, 'version'>;` — What a builder's 'defineRoute' takes: a route without its version, which the builder holds.
 - `Extensions` (type) — `type Extensions = Readonly<Record<'x-${string}', unknown>>;` — OpenAPI's specification extensions, carried into the document verbatim.
 - `Header` (interface)
-- `HeaderParameter` (interface)
+- `HeaderParameter` (type)
 - `HttpMethod` (type) — `type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'patch';`
 - `JsonRequestBody` (interface) — The annotation of a request carrying a JSON body.
 - `JsonResponse` (interface) — The annotation of a response with a JSON body.
@@ -93,11 +95,12 @@ Declarations: `dist/http/index.d.ts` — 37 exported names.
 - `Parameter` (interface)
 - `ParameterLocation` (type) — `type ParameterLocation = 'path' | 'query' | 'header' | 'cookie';`
 - `PathParameter` (interface) — The annotation of a path parameter: OpenAPI makes every one required.
-- `QueryParameter` (interface)
+- `QueryParameter` (type)
 - `RequestBody` (interface)
 - `Response` (interface)
 - `Route` (type) — `type Route<T extends RouteShape = RouteShape> = T & Omit<RouteDefinition, keyof T>;`
 - `RouteBody` (type) — `type RouteBody<R extends RouteShape> = R extends { readonly requestBody: { readonly content: infer C; }; } ? z.output<JsonSchemaOf<C>> : undefined;`
+- `RouteBuilder` (interface) — Settings shared by the routes of a group, accumulated one call at a time.
 - `RouteDefinition` (interface)
 - `RouteHeaders` (type) — `type RouteHeaders<R extends RouteShape> = ValuesIn<R, 'header', 'output'>;` — The declared headers a handler receives, under the lowercase names Node gives them.
 - `RouteInput` (interface) — What a client sends: inputs (defaults may be left out), header names as the contract writes them.
@@ -108,6 +111,7 @@ Declarations: `dist/http/index.d.ts` — 37 exported names.
 - `RouteStatus` (type) — `type RouteStatus<R extends RouteShape> = keyof R['responses'] & (number | '${number}');`
 - `RouteSuccessStatus` (type) — `type RouteSuccessStatus<R extends RouteShape> = Extract<RouteStatus<R>, 200 | 201 | 202 | 203 | 204 | 206 | '200' | '201' | '202' | '203' | '204' | '206'>;` — The 2xx statuses a route declares.
 - `SecurityRequirement` (type) — `type SecurityRequirement = Readonly<Record<string, readonly string[]>>;` — The schemes that satisfy a route, by name: '{}' is a call with no credential at all.
+- `VersionedPath` (type) — `type VersionedPath<R extends Pick<RouteShape, 'version' | 'path'>> = '/v${R['version']}${R['path']}';`
 - `accessorOf` (function) — `function accessorOf<const T extends readonly string[]>(members: T): AccessorOf<T>;` — The accessor built from the list rather than written beside it: the list stays the one declaration, which is what 'check-enums' reads.
 - `bodySchemaOf` (function) — `function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;` — The JSON body's schema, or 'undefined' for a route that takes none.
 - `defineApi` (function) — `function defineApi<const Routes extends Readonly<Record<string, Route>>>(definition: ApiDefinition<Routes>): Api<Routes>;`
@@ -115,7 +119,9 @@ Declarations: `dist/http/index.d.ts` — 37 exported names.
 - `headersSchemaOf` (function) — `function headersSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteHeaders<R>, unknown>;` — The declared headers, under Node's lowercase names; every other header passes through.
 - `paramsSchemaOf` (function) — `function paramsSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteParams<R>, unknown>;`
 - `querySchemaOf` (function) — `function querySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteQuery<R>, unknown>;` — The query a server validates: undeclared parameters refused, defaults not materialised.
+- `routeBuilder` (function) — `function routeBuilder(): RouteBuilder<undefined, readonly [], Record<never, never>>;` — The empty builder: 'routeBuilder().version(1).tags(...).headers(...).errors(...)'.
 - `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
+- `versionedPath` (function) — `function versionedPath(route: Pick<RouteShape, 'version' | 'path'>): string;` — The only versioning strategy: the version is a path prefix, '/v1/dates/{dateId}'.
 
 #### @arthome/contracts/http-client
 

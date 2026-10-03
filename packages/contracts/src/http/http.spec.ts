@@ -8,6 +8,8 @@ import {
   headersSchemaOf,
   paramsSchemaOf,
   querySchemaOf,
+  routeBuilder,
+  versionedPath,
   successStatusOf,
   type RouteQuery,
 } from './index.js';
@@ -20,7 +22,8 @@ const criteria = z.object({
 
 const listDates = defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/dates',
+  version: 1,
+  path: '/channels/{channelId}/dates',
   operationId: 'listDates',
   parameters: [
     { name: 'channelId', in: 'path', required: true, schema: z.string() },
@@ -120,5 +123,147 @@ describe('accessorOf', () => {
       CHAT: 'chat',
       PAYMENT_METHOD: 'payment_method',
     });
+  });
+});
+
+describe('routeBuilder', () => {
+  const surface = {
+    name: 'X-Arthome-Surface',
+    in: 'header',
+    required: true,
+    schema: z.string(),
+  } as const;
+  const refused = { description: 'Refused.' } as const;
+  const base = routeBuilder().version(1).tags('dates').headers(surface).errors({ 400: refused });
+
+  it('never changes the builder it is called on', () => {
+    const derived = base.tags('other').errors({ 404: { description: 'Missing.' } });
+
+    const kept = base.defineRoute({
+      method: 'get',
+      path: '/dates',
+      operationId: 'listDates',
+      responses: { 200: { description: 'Dates.' } },
+    });
+    const changed = derived.defineRoute({
+      method: 'get',
+      path: '/dates',
+      operationId: 'listDatesAgain',
+      responses: { 200: { description: 'Dates.' } },
+    });
+
+    expect(Object.keys(kept.responses)).toEqual(['200', '400']);
+    expect(kept.tags).toEqual(['dates']);
+    expect(Object.keys(changed.responses)).toEqual(['200', '400', '404']);
+    expect(changed.tags).toEqual(['other']);
+  });
+
+  it('puts the builder headers after the route own parameters, and the route over its errors', () => {
+    const route = base.defineRoute({
+      method: 'get',
+      path: '/dates/{dateId}',
+      operationId: 'getDate',
+      tags: ['own'],
+      parameters: [{ name: 'dateId', in: 'path', required: true, schema: z.string() }],
+      responses: { 200: { description: 'Date.' }, 400: { description: 'Bad date.' } },
+    });
+
+    expect(route.parameters.map((parameter) => parameter.name)).toEqual([
+      'dateId',
+      'X-Arthome-Surface',
+    ]);
+    expect(route.tags).toEqual(['own']);
+    expect(route.responses[400].description).toBe('Bad date.');
+    expect(route.version).toBe(1);
+    expect(versionedPath(route)).toBe('/v1/dates/{dateId}');
+  });
+
+  it('refuses a route before a version is set', () => {
+    const unversioned = routeBuilder() as unknown as typeof base;
+
+    expect(() =>
+      unversioned.defineRoute({
+        method: 'get',
+        path: '/dates',
+        operationId: 'listDates',
+        responses: { 200: { description: 'Dates.' } },
+      }),
+    ).toThrow(/no version/);
+  });
+});
+
+describe('versions', () => {
+  const answer = { 200: { description: 'Ok.' } };
+
+  it('names version 1 bare and a later version with its suffix', () => {
+    const v2 = defineRoute({
+      method: 'get',
+      version: 2,
+      path: '/dates',
+      operationId: 'listDatesV2',
+      responses: answer,
+    });
+
+    expect(versionedPath(v2)).toBe('/v2/dates');
+    expect(() =>
+      defineRoute({
+        method: 'get',
+        version: 2,
+        path: '/dates',
+        operationId: 'listDates',
+        responses: answer,
+      }),
+    ).toThrow(/suffix "V\{n\}"/);
+    expect(() =>
+      defineRoute({
+        method: 'get',
+        version: 1,
+        path: '/dates',
+        operationId: 'listDatesV2',
+        responses: answer,
+      }),
+    ).toThrow(/bare operation id/);
+  });
+
+  it('serves a version beside the previous one, and refuses the same address twice', () => {
+    const v1 = defineRoute({
+      method: 'get',
+      version: 1,
+      path: '/dates',
+      operationId: 'listDates',
+      responses: answer,
+    });
+    const v2 = defineRoute({
+      method: 'get',
+      version: 2,
+      path: '/dates',
+      operationId: 'listDatesV2',
+      responses: answer,
+    });
+    const again = defineRoute({
+      method: 'get',
+      version: 1,
+      path: '/dates',
+      operationId: 'listDatesAgain',
+      responses: answer,
+    });
+    const info = { title: 'test', version: '1' };
+
+    expect(() =>
+      defineApi({
+        openapi: '3.1.1',
+        info,
+        routes: { listDates: v1, listDatesV2: v2 },
+        components: {},
+      }),
+    ).not.toThrow();
+    expect(() =>
+      defineApi({
+        openapi: '3.1.1',
+        info,
+        routes: { listDates: v1, listDatesAgain: again },
+        components: {},
+      }),
+    ).toThrow(/declared twice/);
   });
 });

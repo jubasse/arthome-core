@@ -14,7 +14,8 @@ declare const REFUND_SEAT_REFUND_REASON_CODE: readonly [
 ];
 export declare const getDateTicketsPane: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/panes/tickets';
+    version: 1;
+    path: '/dates/{dateId}/panes/tickets';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -31,13 +32,14 @@ export declare const getDateTicketsPane: Route<{
 }>;
 export declare const setDatePrices: Route<{
     method: 'put';
-    path: '/v1/dates/{dateId}/prices';
+    version: 1;
+    path: '/dates/{dateId}/prices';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         expectedVersion: z.ZodInt;
@@ -57,13 +59,14 @@ export declare const setDatePrices: Route<{
 }>;
 export declare const openCapacityTier: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/capacity-tiers';
+    version: 1;
+    path: '/dates/{dateId}/capacity-tiers';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         additionalCapacity: z.ZodInt;
@@ -83,13 +86,14 @@ export declare const openCapacityTier: Route<{
 }>;
 export declare const setTechnicalProvision: Route<{
     method: 'put';
-    path: '/v1/dates/{dateId}/technical-provision';
+    version: 1;
+    path: '/dates/{dateId}/technical-provision';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         provisionedCapacity: z.ZodInt;
@@ -104,13 +108,14 @@ export declare const setTechnicalProvision: Route<{
 }>;
 export declare const refundSeat: Route<{
     method: 'post';
-    path: '/v1/seats/{seatId}/refund';
+    version: 1;
+    path: '/seats/{seatId}/refund';
     parameters: readonly [
         PathParameter<'seatId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         refundReasonCode: VocabularyIn<typeof REFUND_SEAT_REFUND_REASON_CODE>;
@@ -130,13 +135,14 @@ export declare const refundSeat: Route<{
 }>;
 export declare const issueComplimentary: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/complimentaries';
+    version: 1;
+    path: '/dates/{dateId}/complimentaries';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         categoryId: z.ZodString;
@@ -155,14 +161,15 @@ export declare const issueComplimentary: Route<{
 }>;
 export declare const getChannelTicketing: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/ticketing';
+    version: 1;
+    path: '/channels/{channelId}/ticketing';
     parameters: readonly [
         typeof ChannelIdParameter,
+        QueryParameter<'from', z.ZodString, true>,
+        QueryParameter<'to', z.ZodString, true>,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
-        QueryParameter<'from', z.ZodString, true>,
-        QueryParameter<'to', z.ZodString, true>
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{

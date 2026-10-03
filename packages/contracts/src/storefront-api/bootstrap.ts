@@ -22,18 +22,24 @@ import {
   UnauthorizedResponse,
   UnavailableResponse,
   ViewerTimezoneParameter,
+  storefrontV1,
 } from './components.js';
 import { ChangeFeedSchema } from '../engagement/index.js';
 import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, QueryParameter, Route } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import { ViewerContextSchema } from '../identity/index.js';
+
+const bootstrapRoutes = storefrontV1
+  .tags(StorefrontTag.BOOTSTRAP)
+  .headers(SurfaceParameter, TraceparentParameter);
+const bootstrapReads = bootstrapRoutes.errors({ 401: UnauthorizedResponse });
 
 const LIST_CHANGES_SCOPE = ['profile', 'device'] as const;
 
 export const registerDevice: Route<{
   method: 'post';
-  path: '/v1/devices';
+  version: 1;
+  path: '/devices';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -68,18 +74,17 @@ export const registerDevice: Route<{
     400: typeof BadRequestResponse;
     503: typeof UnavailableResponse;
   };
-}> = defineRoute({
+}> = bootstrapRoutes.defineRoute({
   method: 'post',
-  path: '/v1/devices',
+  path: '/devices',
   operationId: 'registerDevice',
-  tags: [StorefrontTag.BOOTSTRAP],
   summary: 'Registers the device and returns its device token.',
   description:
     '**Called on first launch, before any session.** Device identity is a contract notion, and\nit is required for four things the surfaces ask for: opening and polling a pairing, naming\nitself under "connected devices", being revoked, and carrying a rate limit somewhere other\nthan the IP address — which a household behind a NAT shares.\n\nIt **is not a session** and opens no personal data; in particular it does not open the\nreal-time channel.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
   security: [],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -137,11 +142,12 @@ export const registerDevice: Route<{
 
 export const getViewerContext: Route<{
   method: 'get';
-  path: '/v1/viewer-context';
+  version: 1;
+  path: '/viewer-context';
   parameters: readonly [
+    typeof ViewerTimezoneParameter,
     typeof SurfaceParameter,
     typeof TraceparentParameter,
-    typeof ViewerTimezoneParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -153,11 +159,10 @@ export const getViewerContext: Route<{
     401: typeof UnauthorizedResponse;
     503: typeof UnavailableResponse;
   };
-}> = defineRoute({
+}> = bootstrapReads.defineRoute({
   method: 'get',
-  path: '/v1/viewer-context',
+  path: '/viewer-context',
   operationId: 'getViewerContext',
-  tags: [StorefrontTag.BOOTSTRAP],
   summary: 'The bootstrap — the entire budget of the start-up screen.',
   description:
     '**A single call.** Device profiles, rights, preferences, domain constants, version of the\nlabel catalogue and of the taxonomy. The labels themselves come from the snapshot embedded\nat build time: the version check **never blocks** the first render.\n\nIf this call fails, the surface must still display a **readable** message — not a raw code,\nnot a blank screen. That is what makes the embedded snapshot mandatory rather than merely\ndesirable.\n',
@@ -175,7 +180,7 @@ export const getViewerContext: Route<{
       deviceToken: [],
     },
   ],
-  parameters: [SurfaceParameter, TraceparentParameter, ViewerTimezoneParameter],
+  parameters: [ViewerTimezoneParameter],
   responses: {
     200: {
       description: 'Viewer context.',
@@ -242,19 +247,19 @@ export const getViewerContext: Route<{
         },
       },
     },
-    401: UnauthorizedResponse,
     503: UnavailableResponse,
   },
 });
 
 export const listChanges: Route<{
   method: 'get';
-  path: '/v1/changes';
+  version: 1;
+  path: '/changes';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     QueryParameter<'since', z.ZodString, true>,
     QueryParameter<'scope', z.ZodDefault<VocabularyIn<typeof LIST_CHANGES_SCOPE>>>,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -266,11 +271,10 @@ export const listChanges: Route<{
     400: typeof BadRequestResponse;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = bootstrapReads.defineRoute({
   method: 'get',
-  path: '/v1/changes',
+  path: '/changes',
   operationId: 'listChanges',
-  tags: [StorefrontTag.BOOTSTRAP],
   summary: 'The invalidations since a given instant — not the data.',
   description:
     "**One request instead of twelve.** On returning to the foreground, every observed read\nrevalidates at the same time; an account screen shows half a dozen, a category page as many.\nRefusing that burst means refusing to open the application.\n\nIt is also the path by which the storefront learns what it **did not cause** — Kafka being\nforbidden outside inter-service traffic, it is the only one possible. For Next's server\nrendering, the same tags feed `revalidateTag`: they are **named by the contract**, never\ninvented by a surface.\n\n## This feed requires a credential, and the public side has no feed at all\n\n**The `401` is a ruling, not an oversight** (D-022's rule applied). This path answers \"what\nchanged **for you** since your cursor\". A public invalidation stream would answer \"what\nchanged in the catalogue since T\". They are **two resources**, and their cacheability\nrequirements are opposite: this one must `Vary` on the credential and can never be\nedge-cached; a public one is worthless unless it is. Served from one path, the public half\ninherits the private half's `Vary`, so Next's server rendering would reach origin on every\nrevalidation check — which is most of what this path exists to save.\n\nThe direction was chosen on reversibility. Making this path anonymous **cannot be undone**:\nonce clients call it without a credential, the credential cannot come back. Adding a\nseparate public path later is **purely additive**.\n\n**The cost, named rather than shrugged at.** Signed-out pages have no invalidation path and\nfall back to **time-based revalidation** on their family's freshness — 60 s for `home` and\nthe lists, 300 s for `category` and `artist` (§ the freshness table). A catalogue change is\ntherefore visible to a signed-out reader in **up to one freshness window**, where a feed\nwould cut it to the push latency. That is a performance property, not a contract property,\nand it is the number to beat: a measurement showing a public page stale past its window, or\nan origin-hit cost that the time-based fallback makes unacceptable, reopens this.\n\n**What it would take to fill the gap, and why the shape is not written here.** Nobody has\ndesigned a public catalogue-change stream: whether it is keyed on time or on entity, what\nwindow it covers, what a client that has been away for a week receives, and whether it is a\nfeed at all rather than an `ETag` on each catalogue read. What has no source does not enter\nthe contract, so the gap is named and the shape is left alone.\n",
@@ -281,8 +285,6 @@ export const listChanges: Route<{
   // does not happen, and would have counted it as a four-call screen.
   'x-arthome-upstream': [Upstream.REALTIME],
   parameters: [
-    SurfaceParameter,
-    TraceparentParameter,
     {
       name: 'since',
       in: 'query',
@@ -327,6 +329,5 @@ export const listChanges: Route<{
       },
     },
     400: BadRequestResponse,
-    401: UnauthorizedResponse,
   },
 });

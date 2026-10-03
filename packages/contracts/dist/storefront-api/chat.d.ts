@@ -9,14 +9,15 @@ import { StorefrontCursorPageInfoSchema } from '../pagination/index.js';
 declare const SEND_REACTION_REACTION_ID: readonly ["applause", "heart", "bravo", "laugh", "wow", "sad"];
 export declare const listChatMessages: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/chat/messages';
+    version: 1;
+    path: '/dates/{dateId}/chat/messages';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
         typeof LimitParameter,
-        QueryParameter<'sinceSeq', z.ZodNumber>
+        QueryParameter<'sinceSeq', z.ZodNumber>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -29,7 +30,8 @@ export declare const listChatMessages: Route<{
 }>;
 export declare const sendChatMessage: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/chat/messages';
+    version: 1;
+    path: '/dates/{dateId}/chat/messages';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -50,7 +52,8 @@ export declare const sendChatMessage: Route<{
 }>;
 export declare const sendReaction: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/chat/reactions';
+    version: 1;
+    path: '/dates/{dateId}/chat/reactions';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -70,7 +73,8 @@ export declare const sendReaction: Route<{
 }>;
 export declare const reportChatMessage: Route<{
     method: 'post';
-    path: '/v1/chat/messages/{messageId}/report';
+    version: 1;
+    path: '/chat/messages/{messageId}/report';
     parameters: readonly [
         PathParameter<'messageId', z.ZodString>,
         typeof IdempotencyKeyParameter,

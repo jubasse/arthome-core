@@ -12,7 +12,8 @@ declare const CREATE_REAUTH_TOKEN_FACTOR: readonly ["platform_biometric", "passw
 declare const REGISTER_STUDIO_PUSH_TOKEN_PLATFORM: readonly ["fcm", "apns"];
 export declare const signInStudio: Route<{
     method: 'post';
-    path: '/v1/auth/sign-in';
+    version: 1;
+    path: '/auth/sign-in';
     parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
     requestBody: JsonRequestBody<z.ZodObject<{
         email: z.ZodString;
@@ -31,7 +32,8 @@ export declare const signInStudio: Route<{
 }>;
 export declare const verifyTwoFactorStudio: Route<{
     method: 'post';
-    path: '/v1/auth/two-factor/verify';
+    version: 1;
+    path: '/auth/two-factor/verify';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -53,7 +55,8 @@ export declare const verifyTwoFactorStudio: Route<{
 }>;
 export declare const requestPasswordResetStudio: Route<{
     method: 'post';
-    path: '/v1/auth/forget-password';
+    version: 1;
+    path: '/auth/forget-password';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -74,11 +77,12 @@ export declare const requestPasswordResetStudio: Route<{
 }>;
 export declare const getStudioBootstrap: Route<{
     method: 'get';
-    path: '/v1/bootstrap';
+    version: 1;
+    path: '/bootstrap';
     parameters: readonly [
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -90,13 +94,14 @@ export declare const getStudioBootstrap: Route<{
 }>;
 export declare const listInbox: Route<{
     method: 'get';
-    path: '/v1/inbox';
+    version: 1;
+    path: '/inbox';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
         typeof PageParameter,
-        typeof PageSizeParameter
+        typeof PageSizeParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -108,11 +113,12 @@ export declare const listInbox: Route<{
 }>;
 export declare const markInboxRead: Route<{
     method: 'post';
-    path: '/v1/inbox';
+    version: 1;
+    path: '/inbox';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
+        typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
@@ -128,11 +134,12 @@ export declare const markInboxRead: Route<{
 }>;
 export declare const createReauthToken: Route<{
     method: 'post';
-    path: '/v1/me/reauth';
+    version: 1;
+    path: '/me/reauth';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
+        typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
@@ -155,11 +162,12 @@ export declare const createReauthToken: Route<{
 }>;
 export declare const listReauthFactors: Route<{
     method: 'get';
-    path: '/v1/me/reauth';
+    version: 1;
+    path: '/me/reauth';
     parameters: readonly [
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -173,11 +181,12 @@ export declare const listReauthFactors: Route<{
 }>;
 export declare const listStudioDevices: Route<{
     method: 'get';
-    path: '/v1/me/devices';
+    version: 1;
+    path: '/me/devices';
     parameters: readonly [
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -195,12 +204,13 @@ export declare const listStudioDevices: Route<{
 }>;
 export declare const revokeStudioDevice: Route<{
     method: 'delete';
-    path: '/v1/me/devices/{deviceId}';
+    version: 1;
+    path: '/me/devices/{deviceId}';
     parameters: readonly [
         PathParameter<'deviceId', z.ZodString>,
         typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
+        typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
     responses: {
@@ -215,11 +225,12 @@ export declare const revokeStudioDevice: Route<{
 }>;
 export declare const signOutStudio: Route<{
     method: 'delete';
-    path: '/v1/me/session';
+    version: 1;
+    path: '/me/session';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
+        typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
     responses: {
@@ -233,11 +244,12 @@ export declare const signOutStudio: Route<{
 }>;
 export declare const registerStudioPushToken: Route<{
     method: 'put';
-    path: '/v1/me/push-registrations';
+    version: 1;
+    path: '/me/push-registrations';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
+        typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
@@ -257,13 +269,14 @@ export declare const registerStudioPushToken: Route<{
 }>;
 export declare const listStudioChanges: Route<{
     method: 'get';
-    path: '/v1/changes';
+    version: 1;
+    path: '/changes';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
         QueryParameter<'since', z.ZodString, true>,
-        QueryParameter<'channelId', z.ZodString>
+        QueryParameter<'channelId', z.ZodString>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -276,11 +289,12 @@ export declare const listStudioChanges: Route<{
 }>;
 export declare const updateStudioPreferences: Route<{
     method: 'patch';
-    path: '/v1/me/preferences';
+    version: 1;
+    path: '/me/preferences';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
+        typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{

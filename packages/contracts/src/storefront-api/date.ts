@@ -19,15 +19,18 @@ import {
   TraceparentParameter,
   VaryAuthHeader,
   PublicReadSecurity,
+  storefrontV1,
 } from './components.js';
 import { DateDetailSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
 import type { HeaderParameter, JsonResponse, Response, Route } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
+
+const dateRoutes = storefrontV1.tags(StorefrontTag.DATE);
 
 export const getDateDetail: Route<{
   method: 'get';
-  path: '/v1/dates/{dateId}';
+  version: 1;
+  path: '/dates/{dateId}';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -44,11 +47,10 @@ export const getDateDetail: Route<{
     304: Response;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = dateRoutes.defineRoute({
   method: 'get',
-  path: '/v1/dates/{dateId}',
+  path: '/dates/{dateId}',
   operationId: 'getDateDetail',
-  tags: [StorefrontTag.DATE],
   summary: "A date's page — series, suggestions, shop, prices, in the same response.",
   description:
     '**One call**, and it must be **cheap**: the television surface prefetches it for the focused\nitem once the focus has settled, and a prefetch paid for twice is worse than no prefetch at\nall. Hence a cache validator (`ETag`) and a declared freshness.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',

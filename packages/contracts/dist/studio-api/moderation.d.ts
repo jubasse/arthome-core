@@ -10,7 +10,8 @@ import { StudioLocalizedTextSchema } from '../text/index.js';
 declare const LIST_MODERATION_QUEUE_FILTER: readonly ["all", "pending", "settled"];
 export declare const getDateChatPane: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/panes/chat';
+    version: 1;
+    path: '/dates/{dateId}/panes/chat';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -35,13 +36,14 @@ export declare const getDateChatPane: Route<{
 }>;
 export declare const setDateChatPolicy: Route<{
     method: 'put';
-    path: '/v1/dates/{dateId}/chat-policy';
+    version: 1;
+    path: '/dates/{dateId}/chat-policy';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         expectedVersion: z.ZodInt;
@@ -60,17 +62,18 @@ export declare const setDateChatPolicy: Route<{
 }>;
 export declare const listModerationQueue: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/moderation/queue';
+    version: 1;
+    path: '/channels/{channelId}/moderation/queue';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
         typeof LimitParameter,
         QueryParameter<'dateId', z.ZodString>,
         QueryParameter<'filter', z.ZodDefault<VocabularyIn<typeof LIST_MODERATION_QUEUE_FILTER>>>,
-        QueryParameter<'q', z.ZodString>
+        QueryParameter<'q', z.ZodString>,
+        typeof SurfaceParameter,
+        typeof IfRightsVersionParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -83,13 +86,14 @@ export declare const listModerationQueue: Route<{
 }>;
 export declare const claimModerationItem: Route<{
     method: 'post';
-    path: '/v1/moderation/items/{itemId}/claim';
+    version: 1;
+    path: '/moderation/items/{itemId}/claim';
     parameters: readonly [
         PathParameter<'itemId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -100,13 +104,14 @@ export declare const claimModerationItem: Route<{
 }>;
 export declare const releaseModerationItem: Route<{
     method: 'delete';
-    path: '/v1/moderation/items/{itemId}/claim';
+    version: 1;
+    path: '/moderation/items/{itemId}/claim';
     parameters: readonly [
         PathParameter<'itemId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -117,13 +122,14 @@ export declare const releaseModerationItem: Route<{
 }>;
 export declare const settleModerationItem: Route<{
     method: 'post';
-    path: '/v1/moderation/items/{itemId}/verdict';
+    version: 1;
+    path: '/moderation/items/{itemId}/verdict';
     parameters: readonly [
         PathParameter<'itemId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         verdict: VocabularyIn<typeof MODERATION_VERDICTS>;
@@ -141,17 +147,18 @@ export declare const settleModerationItem: Route<{
 }>;
 export declare const searchAudience: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/audience';
+    version: 1;
+    path: '/channels/{channelId}/audience';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
         typeof PageParameter,
         typeof PageSizeParameter,
         QueryParameter<'q', z.ZodString>,
         QueryParameter<'presentOnDateId', z.ZodString>,
-        QueryParameter<'sanction', VocabularyIn<typeof AUDIENCE_SANCTIONS>>
+        QueryParameter<'sanction', VocabularyIn<typeof AUDIENCE_SANCTIONS>>,
+        typeof SurfaceParameter,
+        typeof IfRightsVersionParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -163,14 +170,15 @@ export declare const searchAudience: Route<{
 }>;
 export declare const sanctionAudienceMember: Route<{
     method: 'put';
-    path: '/v1/channels/{channelId}/audience/{memberId}/sanction';
+    version: 1;
+    path: '/channels/{channelId}/audience/{memberId}/sanction';
     parameters: readonly [
         typeof ChannelIdParameter,
         PathParameter<'memberId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         kind: VocabularyIn<typeof AUDIENCE_SANCTIONS>;
@@ -187,13 +195,14 @@ export declare const sanctionAudienceMember: Route<{
 }>;
 export declare const addBannedWord: Route<{
     method: 'post';
-    path: '/v1/channels/{channelId}/moderation/banned-words';
+    version: 1;
+    path: '/channels/{channelId}/moderation/banned-words';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         word: z.ZodString;
@@ -212,14 +221,15 @@ export declare const addBannedWord: Route<{
 }>;
 export declare const removeBannedWord: Route<{
     method: 'delete';
-    path: '/v1/channels/{channelId}/moderation/banned-words/{word}';
+    version: 1;
+    path: '/channels/{channelId}/moderation/banned-words/{word}';
     parameters: readonly [
         typeof ChannelIdParameter,
         PathParameter<'word', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -232,15 +242,16 @@ export declare const removeBannedWord: Route<{
 }>;
 export declare const listStudioChatMessages: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/chat/messages';
+    version: 1;
+    path: '/dates/{dateId}/chat/messages';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
         typeof LimitParameter,
-        QueryParameter<'sinceSeq', z.ZodNumber>
+        QueryParameter<'sinceSeq', z.ZodNumber>,
+        typeof SurfaceParameter,
+        typeof IfRightsVersionParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{

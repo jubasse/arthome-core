@@ -43,13 +43,19 @@ import {
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
+  studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, QueryParameter, Route } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import { JournalEntrySchema } from '../studio-desk/index.js';
 import { MerchItemAdminSchema, UploadTicketSchema } from '../studio-stage/index.js';
+
+const channelRoutes = studioV1
+  .tags(StudioTag.CHANNEL)
+  .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
+const channelReads = channelRoutes.errors({ 403: ForbiddenResponse });
+const channelWrites = channelRoutes.headers(IdempotencyKeyParameter);
 
 const LIST_CHANNEL_REPLAYS_STATE = ['online', 'expired', 'archived'] as const;
 const GET_CHANNEL_SETTINGS_SOURCE = [
@@ -66,13 +72,14 @@ const CREATE_UPLOAD_TICKET_CONTENT_TYPE = ['image/jpeg', 'image/png', 'image/web
 
 export const deleteChannel: Route<{
   method: 'delete';
-  path: '/v1/channels/{channelId}';
+  version: 1;
+  path: '/channels/{channelId}';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<{ reauthToken: z.ZodString; confirmName: z.ZodString }, z.core.$strip>
@@ -93,23 +100,16 @@ export const deleteChannel: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = channelWrites.defineRoute({
   method: 'delete',
-  path: '/v1/channels/{channelId}',
+  path: '/channels/{channelId}',
   operationId: 'deleteChannel',
-  tags: [StudioTag.CHANNEL],
   summary: 'Deletes a channel.',
   description:
     '**Refused while a date remains on sale or a payout is owed.** These facts are **projected\nand held locally** by `identity` (`channel_dues`), never asked of `ticketing` or `payouts`\nsynchronously: that is precisely the kind of call "no synchronous call between services"\nforbids.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [
-    ChannelIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [ChannelIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -175,17 +175,18 @@ export const deleteChannel: Route<{
 
 export const listChannelReplays: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/replays';
+  version: 1;
+  path: '/channels/{channelId}/replays';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof PageParameter,
     typeof PageSizeParameter,
     typeof SortByParameter,
     typeof SortDirParameter,
     QueryParameter<'state', VocabularyIn<typeof LIST_CHANNEL_REPLAYS_STATE>>,
+    typeof SurfaceParameter,
+    typeof IfRightsVersionParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -215,11 +216,10 @@ export const listChannelReplays: Route<{
     >;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = channelReads.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/replays',
+  path: '/channels/{channelId}/replays',
   operationId: 'listChannelReplays',
-  tags: [StudioTag.CHANNEL],
   summary: "A channel's replay catalogue — online and archived.",
   description:
     '`reopenReplayWindow` allowed you to **reopen a window you could not see**. It is also the\nscreen where you notice that a window closes in twenty-four hours — which the inbox already\nannounces with an alert.\n\nPage + total, like every stable collection in the studio.\n',
@@ -227,9 +227,6 @@ export const listChannelReplays: Route<{
   'x-arthome-upstream': [Service.STREAMING, Service.CATALOG, Service.TICKETING],
   parameters: [
     ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     PageParameter,
     PageSizeParameter,
     SortByParameter,
@@ -304,13 +301,13 @@ export const listChannelReplays: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
   },
 });
 
 export const getChannelSettings: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/settings';
+  version: 1;
+  path: '/channels/{channelId}/settings';
   parameters: readonly [
     typeof ChannelIdParameter,
     typeof SurfaceParameter,
@@ -373,22 +370,16 @@ export const getChannelSettings: Route<{
     >;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = channelReads.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/settings',
+  path: '/channels/{channelId}/settings',
   operationId: 'getChannelSettings',
-  tags: [StudioTag.CHANNEL],
   summary: "A channel's settings — the screen had nothing to read before writing.",
   description:
     '`PATCH /channels/{id}/identity` existed **without a GET**. Two further blocks that had no\ncarrier join it: the **moderation defaults**, and the **merchant integration** — one at a time\nper channel.\n\nThe moderation block settles a defect the surface named: `filterSeverity`, `slowModeSec`,\n`holdersOnly` and `retroactiveFilter` lived **only** on `PUT /dates/{id}/chat-policy`, hence\n**per date, with a date\'s `expectedVersion`**. Yet off air there is no date to point at, and\nthe design says the opposite in so many words: *"the dictionary, the severity and the\nsanctions stay editable off air — they will apply to the next live show"*. The dictionary was\nalready at channel level; the other three were not.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, DatePane.CHAT, Service.STREAMING, Service.TICKETING],
-  parameters: [
-    ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [ChannelIdParameter],
   responses: {
     200: {
       description:
@@ -473,19 +464,19 @@ export const getChannelSettings: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
   },
 });
 
 export const updateChannelSettings: Route<{
   method: 'patch';
-  path: '/v1/channels/{channelId}/settings';
+  version: 1;
+  path: '/channels/{channelId}/settings';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -531,23 +522,16 @@ export const updateChannelSettings: Route<{
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = channelWrites.defineRoute({
   method: 'patch',
-  path: '/v1/channels/{channelId}/settings',
+  path: '/channels/{channelId}/settings',
   operationId: 'updateChannelSettings',
-  tags: [StudioTag.CHANNEL],
   summary: "Writes a channel's moderation and broadcast defaults.",
   description:
     "**The write counterpart of `getChannelSettings`** — without it I had just created a\nread-only screen, that is, exactly the defect this batch corrects elsewhere.\n\nIt settles the **off-air** gesture: filter severity, slow mode and holders-only are set here,\nat channel level, with no date to point at. The public identity stays on its own path,\nbecause it is a pure `catalog` write and because a channel's two faces never mix.\n\n**The defaults are inherited when a date is created, never applied retroactively**: a channel\nsetting does not change the regime of a live show in progress.\n",
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [DatePane.CHAT, Service.STREAMING],
-  parameters: [
-    ChannelIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [ChannelIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -629,18 +613,19 @@ export const updateChannelSettings: Route<{
 
 export const listChannelJournal: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/journal';
+  version: 1;
+  path: '/channels/{channelId}/journal';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof PageParameter,
     typeof PageSizeParameter,
     QueryParameter<'from', z.ZodString, true>,
     QueryParameter<'to', z.ZodString, true>,
     QueryParameter<'nature', VocabularyIn<typeof LIST_CHANNEL_JOURNAL_NATURE>>,
     QueryParameter<'dateId', z.ZodString>,
+    typeof SurfaceParameter,
+    typeof IfRightsVersionParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -655,11 +640,10 @@ export const listChannelJournal: Route<{
     400: typeof BadRequestResponse;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = channelReads.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/journal',
+  path: '/channels/{channelId}/journal',
   operationId: 'listChannelJournal',
-  tags: [StudioTag.CHANNEL],
   summary: 'The audit log — page + total, **mandatory period filter**.',
   description:
     '**The audit log stays on page + total** (D-010), with a **mandatory period filter**. Nobody\npages to the 50,000th entry of a 24-month log: you filter by period first, which keeps the\npage numbers — the affordance wanted — and stays fast. Moving to a cursor would trade a\nproblem we do not have against the loss of what we wanted.\n\n`from` and `to` are **required**, and too wide a range is refused with\n`api.period_filter_required`, with the maximum range as a parameter.\n\nIt **names names and places them**, kept for 24 months. The **attempts** to walk back a\ncommitted transition appear in it: that is in itself a piece of operational information.\n',
@@ -672,9 +656,6 @@ export const listChannelJournal: Route<{
   'x-arthome-upstream': [Service.IDENTITY],
   parameters: [
     ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     PageParameter,
     PageSizeParameter,
     {
@@ -749,18 +730,18 @@ export const listChannelJournal: Route<{
       },
     },
     400: BadRequestResponse,
-    403: ForbiddenResponse,
   },
 });
 
 export const createUploadTicket: Route<{
   method: 'post';
-  path: '/v1/uploads';
+  version: 1;
+  path: '/uploads';
   parameters: readonly [
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -781,22 +762,15 @@ export const createUploadTicket: Route<{
     >;
     400: typeof BadRequestResponse;
   };
-}> = defineRoute({
+}> = channelWrites.defineRoute({
   method: 'post',
-  path: '/v1/uploads',
+  path: '/uploads',
   operationId: 'createUploadTicket',
-  tags: [StudioTag.CHANNEL],
   summary: 'Obtains a signed upload URL for a binary.',
   description:
     "**Never `multipart` from a WebView.** A JSON command returns a signed upload URL, valid for\n**15 minutes** — long enough for a room's 4G, short enough not to be an access token in\ndisguise.\n",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
-  parameters: [
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
   requestBody: {
     required: true,
     content: {
@@ -855,7 +829,8 @@ export const createUploadTicket: Route<{
 
 export const listChannelMerchItems: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/merch-items';
+  version: 1;
+  path: '/channels/{channelId}/merch-items';
   parameters: readonly [
     typeof ChannelIdParameter,
     typeof SurfaceParameter,
@@ -871,21 +846,15 @@ export const listChannelMerchItems: Route<{
     >;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = channelReads.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/merch-items',
+  path: '/channels/{channelId}/merch-items',
   operationId: 'listChannelMerchItems',
-  tags: [StudioTag.CHANNEL],
   summary: "The channel's shop catalogue.",
   description: '**Unpaginated** — dozens of items. One external integration at a time per channel.',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [
-    ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [ChannelIdParameter],
   responses: {
     200: {
       description: 'The items.',
@@ -927,19 +896,19 @@ export const listChannelMerchItems: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
   },
 });
 
 export const upsertMerchItem: Route<{
   method: 'put';
-  path: '/v1/channels/{channelId}/merch-items';
+  version: 1;
+  path: '/channels/{channelId}/merch-items';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -975,23 +944,16 @@ export const upsertMerchItem: Route<{
     >;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = channelWrites.defineRoute({
   method: 'put',
-  path: '/v1/channels/{channelId}/merch-items',
+  path: '/channels/{channelId}/merch-items',
   operationId: 'upsertMerchItem',
-  tags: [StudioTag.CHANNEL],
   summary: 'Creates or updates a shop item.',
   description:
     '**An item without a variant is not sellable.** The label is **bilingual**; the absence of an\nEnglish label in the sources is a **data gap** to be filled during the port, not a translation\ngap.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [
-    ChannelIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [ChannelIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -1095,13 +1057,14 @@ export const upsertMerchItem: Route<{
 
 export const pinMerchDuringLive: Route<{
   method: 'put';
-  path: '/v1/dates/{dateId}/merch-pin';
+  version: 1;
+  path: '/dates/{dateId}/merch-pin';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<{ itemId: z.ZodOptional<z.ZodNullable<z.ZodString>> }, z.core.$strip>
@@ -1125,22 +1088,15 @@ export const pinMerchDuringLive: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = channelWrites.defineRoute({
   method: 'put',
-  path: '/v1/dates/{dateId}/merch-pin',
+  path: '/dates/{dateId}/merch-pin',
   operationId: 'pinMerchDuringLive',
-  tags: [StudioTag.CHANNEL],
   summary: 'Pins an item during the live show.',
   description: '**A put**: pinning the same item twice does not pin it twice.',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -1190,13 +1146,14 @@ export const pinMerchDuringLive: Route<{
 
 export const reopenReplayWindow: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/replay-window';
+  version: 1;
+  path: '/dates/{dateId}/replay-window';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<z.ZodObject<{ additionalHours: z.ZodInt }, z.core.$strip>>;
   responses: {
@@ -1218,23 +1175,16 @@ export const reopenReplayWindow: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = channelWrites.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/replay-window',
+  path: '/dates/{dateId}/replay-window',
   operationId: 'reopenReplayWindow',
-  tags: [StudioTag.CHANNEL],
   summary: 'Reopens the replay window.',
   description:
     'Possible **only** if the policy was not `none`: the promise made before the purchase does not\nreopen. The new expiry is **derived** from the end of the live show and the served window,\nnever set by hand — otherwise the replay policy would end up encoded in a storage lifecycle,\nout of reach of the tests.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -1299,13 +1249,14 @@ export const reopenReplayWindow: Route<{
 
 export const updateChannelIdentity: Route<{
   method: 'patch';
-  path: '/v1/channels/{channelId}/identity';
+  version: 1;
+  path: '/channels/{channelId}/identity';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -1340,23 +1291,16 @@ export const updateChannelIdentity: Route<{
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = channelWrites.defineRoute({
   method: 'patch',
-  path: '/v1/channels/{channelId}/identity',
+  path: '/channels/{channelId}/identity',
   operationId: 'updateChannelIdentity',
-  tags: [StudioTag.CHANNEL],
   summary: "Edits the channel's public face.",
   description:
     '**A pure `catalog` write.** A channel has two faces, and the contract separates them: the\nchannel **as an organisation** — members, roles, invitations, stream key — is authorisation,\nhence `identity`; the channel **as a public page** — name, biography, avatar, discipline — is\ncatalogue, hence `catalog.Artist`, in a 1:1 relation by `channelId`.\n\n**No studio command crosses the two**, and that is the proof the cut is right: the Settings\nscreen shows two blocks that never mix.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
-  parameters: [
-    ChannelIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [ChannelIdParameter],
   requestBody: {
     required: true,
     content: {

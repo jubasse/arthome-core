@@ -27,10 +27,10 @@ import {
   SurfaceParameter,
   TraceparentParameter,
   UnauthorizedResponse,
+  studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonResponse, QueryParameter, Route } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import { DutySchema } from '../studio-access/index.js';
 import {
@@ -39,6 +39,10 @@ import {
   StatsSeriesSchema,
 } from '../studio-money/index.js';
 import { EventsRowSchema } from '../studio-stage/index.js';
+
+const agendaRoutes = studioV1
+  .tags(StudioTag.AGENDA)
+  .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 
 const LIST_CHANNEL_EVENTS_WINDOW = ['upcoming', 'past'] as const;
 const GET_CHANNEL_DASHBOARD_PERIOD = [
@@ -52,13 +56,14 @@ const GET_CHANNEL_STATS_TAB = ['audience', 'series'] as const;
 
 export const listDuties: Route<{
   method: 'get';
-  path: '/v1/me/duties';
+  version: 1;
+  path: '/me/duties';
   parameters: readonly [
+    QueryParameter<'from', z.ZodString, true>,
+    QueryParameter<'to', z.ZodString, true>,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
-    QueryParameter<'from', z.ZodString, true>,
-    QueryParameter<'to', z.ZodString, true>,
   ];
   responses: {
     200: JsonResponse<
@@ -69,20 +74,16 @@ export const listDuties: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = agendaRoutes.defineRoute({
   method: 'get',
-  path: '/v1/me/duties',
+  path: '/me/duties',
   operationId: 'listDuties',
-  tags: [StudioTag.AGENDA],
   summary: 'My duties — across all channels, with the overlaps.',
   description:
     '`person_duties` is held by `identity` and carries **all** accessible channels. The overlap is\n**served** (`overlapsWith`), computed once in `@arthome/core`: a surface recomputing it would\nproduce a second implementation of the rule.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY, Service.CATALOG, Service.STREAMING],
   parameters: [
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     {
       name: 'from',
       in: 'query',
@@ -133,12 +134,10 @@ export const listDuties: Route<{
 
 export const listChannelEvents: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/events';
+  version: 1;
+  path: '/channels/{channelId}/events';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof PageParameter,
     typeof PageSizeParameter,
     typeof SortByParameter,
@@ -146,6 +145,9 @@ export const listChannelEvents: Route<{
     QueryParameter<'window', z.ZodDefault<VocabularyIn<typeof LIST_CHANNEL_EVENTS_WINDOW>>>,
     QueryParameter<'states', z.ZodString>,
     QueryParameter<'q', z.ZodString>,
+    typeof SurfaceParameter,
+    typeof IfRightsVersionParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -160,11 +162,10 @@ export const listChannelEvents: Route<{
     403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = agendaRoutes.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/events',
+  path: '/channels/{channelId}/events',
   operationId: 'listChannelEvents',
-  tags: [StudioTag.AGENDA],
   summary: 'The event board — page + total, six sort keys, multi-state filter.',
   description:
     '**Page + total**: the design displays "1–8 OF N" and lists the page numbers. You pin a page\nand send it to a colleague — that is an interface affordance, and it is the reason for the\ndecision.\n\n**Sorting by state follows the state machine\'s canonical order**, not the alphabet:\n`orderRank` travels with the state for exactly that.\n\n**Sorting by revenue is refused** (`api.sort_key_forbidden`) to roles without `canRevenue`, and\nthe field is **absent** from their rows. A sort silently accepted would betray the ordering of\nthe very values one is not allowed to show.\n\nThe temporal split (upcoming / past) and the multi-state filter are **contract parameters**,\nnever a filter applied after fetching: "past" bears on the channel\'s whole history.\n',
@@ -172,9 +173,6 @@ export const listChannelEvents: Route<{
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING],
   parameters: [
     ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     PageParameter,
     PageSizeParameter,
     SortByParameter,
@@ -278,15 +276,16 @@ export const listChannelEvents: Route<{
 
 export const getChannelDashboard: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/dashboard';
+  version: 1;
+  path: '/channels/{channelId}/dashboard';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     QueryParameter<'period', z.ZodDefault<VocabularyIn<typeof GET_CHANNEL_DASHBOARD_PERIOD>>>,
     QueryParameter<'from', z.ZodString>,
     QueryParameter<'to', z.ZodString>,
+    typeof SurfaceParameter,
+    typeof IfRightsVersionParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -298,11 +297,10 @@ export const getChannelDashboard: Route<{
     400: typeof BadRequestResponse;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = agendaRoutes.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/dashboard',
+  path: '/channels/{channelId}/dashboard',
   operationId: 'getChannelDashboard',
-  tags: [StudioTag.AGENDA],
   summary: 'The dashboard — tiles aggregated over a period, and the "to handle" list.',
   description:
     "**It is the default tab of three personas out of six**, and it had no operation at all.\n\nIt carries **only what had no carrier**: the aggregated tiles and the routed list. Everything\nelse on that screen is a recomposition of collections already served — the next dates and the\ncountdown card come from `listChannelEvents`, revenue per date from `listPayouts`, dates held\nin reserve from `listChannelEvents?state=reserve`, and the countdown **is computed locally**\nagainst `startsAt` and the channel's `serverTime`, as the contract prescribes everywhere else.\nAsking for them again here would have been the value composed in two places.\n",
@@ -311,9 +309,6 @@ export const getChannelDashboard: Route<{
   'x-arthome-freshness': 300,
   parameters: [
     ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     {
       name: 'period',
       in: 'query',
@@ -460,17 +455,18 @@ export const getChannelDashboard: Route<{
 
 export const getChannelStats: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/stats';
+  version: 1;
+  path: '/channels/{channelId}/stats';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     QueryParameter<'tab', z.ZodDefault<VocabularyIn<typeof GET_CHANNEL_STATS_TAB>>>,
     QueryParameter<'period', z.ZodDefault<VocabularyIn<typeof GET_CHANNEL_DASHBOARD_PERIOD>>>,
     QueryParameter<'from', z.ZodString>,
     QueryParameter<'to', z.ZodString>,
     QueryParameter<'showId', z.ZodString>,
+    typeof SurfaceParameter,
+    typeof IfRightsVersionParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -488,11 +484,10 @@ export const getChannelStats: Route<{
     400: typeof BadRequestResponse;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = agendaRoutes.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/stats',
+  path: '/channels/{channelId}/stats',
   operationId: 'getChannelStats',
-  tags: [StudioTag.AGENDA],
   summary: 'Audience and revenue, or a comparison of the dates in a series.',
   description:
     'Two tabs, one path. The `stats_csv` export already existed: **one could export a statistic\none could not read.**\n\nThe screen\'s title varies with the role — "Audience and revenue" under `canRevenue`,\n"Audience" otherwise — and it is the **projection** that decides it: without `canRevenue`, the\nrevenue fields are **absent**, not masked.\n\n**Where viewers came from is not served**: see `StatsAudience`. It is the only point on these\ntwo screens that required a datum the system produces nowhere.\n',
@@ -501,9 +496,6 @@ export const getChannelStats: Route<{
   'x-arthome-freshness': 300,
   parameters: [
     ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     {
       name: 'tab',
       in: 'query',
@@ -614,14 +606,15 @@ export const getChannelStats: Route<{
 
 export const getChannelAgenda: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/agenda';
+  version: 1;
+  path: '/channels/{channelId}/agenda';
   parameters: readonly [
     typeof ChannelIdParameter,
+    QueryParameter<'from', z.ZodString, true>,
+    QueryParameter<'to', z.ZodString, true>,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
-    QueryParameter<'from', z.ZodString, true>,
-    QueryParameter<'to', z.ZodString, true>,
   ];
   responses: {
     200: JsonResponse<
@@ -632,11 +625,10 @@ export const getChannelAgenda: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = agendaRoutes.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/agenda',
+  path: '/channels/{channelId}/agenda',
   operationId: 'getChannelAgenda',
-  tags: [StudioTag.AGENDA],
   summary: "A channel's schedule, over a period.",
   description:
     'Composed by `catalog` and fed by `ticketing` for the capacity and the revenue. The revenue is\n**absent** without `canRevenue` — and that is why the schedule served to a control room has no\n`grossRevenue` field, while the one served to the treasury has no stream key.\n',
@@ -644,9 +636,6 @@ export const getChannelAgenda: Route<{
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING],
   parameters: [
     ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     {
       name: 'from',
       in: 'query',

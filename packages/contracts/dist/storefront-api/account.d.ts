@@ -17,7 +17,8 @@ declare const REQUEST_EXPORT_KIND: readonly ["personal_data", "invoices"];
 declare const CONTACT_SUPPORT_TOPIC: readonly ["ticketing_refund", "playback_quality", "replay", "store_shipping", "account_signin", "personal_data"];
 export declare const signUp: Route<{
     method: 'post';
-    path: '/v1/auth/sign-up';
+    version: 1;
+    path: '/auth/sign-up';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -43,7 +44,8 @@ export declare const signUp: Route<{
 }>;
 export declare const signIn: Route<{
     method: 'post';
-    path: '/v1/auth/sign-in';
+    version: 1;
+    path: '/auth/sign-in';
     parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
     requestBody: JsonRequestBody<z.ZodObject<{
         email: z.ZodString;
@@ -61,7 +63,8 @@ export declare const signIn: Route<{
 }>;
 export declare const signOut: Route<{
     method: 'post';
-    path: '/v1/auth/sign-out';
+    version: 1;
+    path: '/auth/sign-out';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -78,7 +81,8 @@ export declare const signOut: Route<{
 }>;
 export declare const confirmEmailVerification: Route<{
     method: 'post';
-    path: '/v1/auth/verify-email';
+    version: 1;
+    path: '/auth/verify-email';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -100,7 +104,8 @@ export declare const confirmEmailVerification: Route<{
 }>;
 export declare const resendEmailVerification: Route<{
     method: 'post';
-    path: '/v1/auth/verify-email/resend';
+    version: 1;
+    path: '/auth/verify-email/resend';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -119,7 +124,8 @@ export declare const resendEmailVerification: Route<{
 }>;
 export declare const requestPasswordReset: Route<{
     method: 'post';
-    path: '/v1/auth/forget-password';
+    version: 1;
+    path: '/auth/forget-password';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -140,7 +146,8 @@ export declare const requestPasswordReset: Route<{
 }>;
 export declare const resetPassword: Route<{
     method: 'post';
-    path: '/v1/auth/reset-password';
+    version: 1;
+    path: '/auth/reset-password';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -163,7 +170,8 @@ export declare const resetPassword: Route<{
 }>;
 export declare const startSocialSignIn: Route<{
     method: 'post';
-    path: '/v1/auth/social/{provider}/start';
+    version: 1;
+    path: '/auth/social/{provider}/start';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         PathParameter<'provider', VocabularyIn<typeof START_SOCIAL_SIGN_IN_PROVIDER>>,
@@ -188,7 +196,8 @@ export declare const startSocialSignIn: Route<{
 }>;
 export declare const exchangeOneTimeToken: Route<{
     method: 'post';
-    path: '/v1/auth/exchange';
+    version: 1;
+    path: '/auth/exchange';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -208,7 +217,8 @@ export declare const exchangeOneTimeToken: Route<{
 }>;
 export declare const changePassword: Route<{
     method: 'patch';
-    path: '/v1/auth/password';
+    version: 1;
+    path: '/auth/password';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -233,7 +243,8 @@ export declare const changePassword: Route<{
 }>;
 export declare const enableTwoFactor: Route<{
     method: 'post';
-    path: '/v1/auth/two-factor';
+    version: 1;
+    path: '/auth/two-factor';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -255,7 +266,8 @@ export declare const enableTwoFactor: Route<{
 }>;
 export declare const disableTwoFactor: Route<{
     method: 'delete';
-    path: '/v1/auth/two-factor';
+    version: 1;
+    path: '/auth/two-factor';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -276,7 +288,8 @@ export declare const disableTwoFactor: Route<{
 }>;
 export declare const verifyTwoFactor: Route<{
     method: 'post';
-    path: '/v1/auth/two-factor/verify';
+    version: 1;
+    path: '/auth/two-factor/verify';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -298,7 +311,8 @@ export declare const verifyTwoFactor: Route<{
 }>;
 export declare const addPasskey: Route<{
     method: 'post';
-    path: '/v1/me/passkeys';
+    version: 1;
+    path: '/me/passkeys';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -320,7 +334,8 @@ export declare const addPasskey: Route<{
 }>;
 export declare const removePasskey: Route<{
     method: 'delete';
-    path: '/v1/me/passkeys/{passkeyId}';
+    version: 1;
+    path: '/me/passkeys/{passkeyId}';
     parameters: readonly [
         PathParameter<'passkeyId', z.ZodString>,
         typeof IdempotencyKeyParameter,
@@ -339,7 +354,8 @@ export declare const removePasskey: Route<{
 }>;
 export declare const addPaymentMethod: Route<{
     method: 'post';
-    path: '/v1/me/payment-methods';
+    version: 1;
+    path: '/me/payment-methods';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -364,7 +380,8 @@ export declare const addPaymentMethod: Route<{
 }>;
 export declare const removePaymentMethod: Route<{
     method: 'delete';
-    path: '/v1/me/payment-methods/{paymentMethodId}';
+    version: 1;
+    path: '/me/payment-methods/{paymentMethodId}';
     parameters: readonly [
         PathParameter<'paymentMethodId', z.ZodString>,
         typeof IdempotencyKeyParameter,
@@ -383,7 +400,8 @@ export declare const removePaymentMethod: Route<{
 }>;
 export declare const getAccountScreen: Route<{
     method: 'get';
-    path: '/v1/me/account';
+    version: 1;
+    path: '/me/account';
     parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -394,14 +412,15 @@ export declare const getAccountScreen: Route<{
 }>;
 export declare const listMyTickets: Route<{
     method: 'get';
-    path: '/v1/me/tickets';
+    version: 1;
+    path: '/me/tickets';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
         typeof CursorDirectionParameter,
         typeof LimitParameter,
-        QueryParameter<'window', z.ZodDefault<VocabularyIn<typeof LIST_MY_TICKETS_WINDOW>>>
+        QueryParameter<'window', z.ZodDefault<VocabularyIn<typeof LIST_MY_TICKETS_WINDOW>>>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -414,12 +433,13 @@ export declare const listMyTickets: Route<{
 }>;
 export declare const listMyReplays: Route<{
     method: 'get';
-    path: '/v1/me/replays';
+    version: 1;
+    path: '/me/replays';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
-        typeof LimitParameter
+        typeof LimitParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -431,12 +451,13 @@ export declare const listMyReplays: Route<{
 }>;
 export declare const listWatchlist: Route<{
     method: 'get';
-    path: '/v1/me/watchlist';
+    version: 1;
+    path: '/me/watchlist';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
-        typeof LimitParameter
+        typeof LimitParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -448,7 +469,8 @@ export declare const listWatchlist: Route<{
 }>;
 export declare const addToWatchlist: Route<{
     method: 'put';
-    path: '/v1/me/watchlist/{dateId}';
+    version: 1;
+    path: '/me/watchlist/{dateId}';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -465,7 +487,8 @@ export declare const addToWatchlist: Route<{
 }>;
 export declare const removeFromWatchlist: Route<{
     method: 'delete';
-    path: '/v1/me/watchlist/{dateId}';
+    version: 1;
+    path: '/me/watchlist/{dateId}';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -482,14 +505,15 @@ export declare const removeFromWatchlist: Route<{
 }>;
 export declare const listFollowedArtists: Route<{
     method: 'get';
-    path: '/v1/me/follows';
+    version: 1;
+    path: '/me/follows';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
         typeof LimitParameter,
         QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof LIST_FOLLOWED_ARTISTS_SORT>>>,
-        QueryParameter<'liveOnly', z.ZodDefault<z.ZodBoolean>>
+        QueryParameter<'liveOnly', z.ZodDefault<z.ZodBoolean>>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -502,7 +526,8 @@ export declare const listFollowedArtists: Route<{
 }>;
 export declare const followArtist: Route<{
     method: 'put';
-    path: '/v1/me/follows/{artistId}';
+    version: 1;
+    path: '/me/follows/{artistId}';
     parameters: readonly [
         typeof ArtistIdParameter,
         typeof IdempotencyKeyParameter,
@@ -522,7 +547,8 @@ export declare const followArtist: Route<{
 }>;
 export declare const unfollowArtist: Route<{
     method: 'delete';
-    path: '/v1/me/follows/{artistId}';
+    version: 1;
+    path: '/me/follows/{artistId}';
     parameters: readonly [
         typeof ArtistIdParameter,
         typeof IdempotencyKeyParameter,
@@ -539,7 +565,8 @@ export declare const unfollowArtist: Route<{
 }>;
 export declare const setReminder: Route<{
     method: 'put';
-    path: '/v1/me/reminders/{dateId}';
+    version: 1;
+    path: '/me/reminders/{dateId}';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -559,7 +586,8 @@ export declare const setReminder: Route<{
 }>;
 export declare const clearReminder: Route<{
     method: 'delete';
-    path: '/v1/me/reminders/{dateId}';
+    version: 1;
+    path: '/me/reminders/{dateId}';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -578,7 +606,8 @@ export declare const clearReminder: Route<{
 }>;
 export declare const listSavedSearches: Route<{
     method: 'get';
-    path: '/v1/me/saved-searches';
+    version: 1;
+    path: '/me/saved-searches';
     parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -589,7 +618,8 @@ export declare const listSavedSearches: Route<{
 }>;
 export declare const createSavedSearch: Route<{
     method: 'post';
-    path: '/v1/me/saved-searches';
+    version: 1;
+    path: '/me/saved-searches';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -613,7 +643,8 @@ export declare const createSavedSearch: Route<{
 }>;
 export declare const updateSavedSearch: Route<{
     method: 'patch';
-    path: '/v1/me/saved-searches/{savedSearchId}';
+    version: 1;
+    path: '/me/saved-searches/{savedSearchId}';
     parameters: readonly [
         PathParameter<'savedSearchId', z.ZodString>,
         typeof IdempotencyKeyParameter,
@@ -635,7 +666,8 @@ export declare const updateSavedSearch: Route<{
 }>;
 export declare const deleteSavedSearch: Route<{
     method: 'delete';
-    path: '/v1/me/saved-searches/{savedSearchId}';
+    version: 1;
+    path: '/me/saved-searches/{savedSearchId}';
     parameters: readonly [
         PathParameter<'savedSearchId', z.ZodString>,
         typeof IdempotencyKeyParameter,
@@ -654,12 +686,13 @@ export declare const deleteSavedSearch: Route<{
 }>;
 export declare const listMyOrders: Route<{
     method: 'get';
-    path: '/v1/me/orders';
+    version: 1;
+    path: '/me/orders';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
-        typeof LimitParameter
+        typeof LimitParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -674,12 +707,13 @@ export declare const listMyOrders: Route<{
 }>;
 export declare const listNotifications: Route<{
     method: 'get';
-    path: '/v1/me/notifications';
+    version: 1;
+    path: '/me/notifications';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
-        typeof LimitParameter
+        typeof LimitParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -692,7 +726,8 @@ export declare const listNotifications: Route<{
 }>;
 export declare const markNotificationsRead: Route<{
     method: 'post';
-    path: '/v1/me/notifications';
+    version: 1;
+    path: '/me/notifications';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -714,7 +749,8 @@ export declare const markNotificationsRead: Route<{
 }>;
 export declare const updateProfile: Route<{
     method: 'patch';
-    path: '/v1/me/profile';
+    version: 1;
+    path: '/me/profile';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -737,7 +773,8 @@ export declare const updateProfile: Route<{
 }>;
 export declare const updatePreferences: Route<{
     method: 'patch';
-    path: '/v1/me/preferences';
+    version: 1;
+    path: '/me/preferences';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -758,7 +795,8 @@ export declare const updatePreferences: Route<{
 }>;
 export declare const updateNotificationPreferences: Route<{
     method: 'patch';
-    path: '/v1/me/notification-preferences';
+    version: 1;
+    path: '/me/notification-preferences';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -783,7 +821,8 @@ export declare const updateNotificationPreferences: Route<{
 }>;
 export declare const updateConsents: Route<{
     method: 'put';
-    path: '/v1/me/consents';
+    version: 1;
+    path: '/me/consents';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -809,7 +848,8 @@ export declare const updateConsents: Route<{
 }>;
 export declare const revokeDevice: Route<{
     method: 'delete';
-    path: '/v1/me/devices/{deviceId}';
+    version: 1;
+    path: '/me/devices/{deviceId}';
     parameters: readonly [
         PathParameter<'deviceId', z.ZodString>,
         typeof IdempotencyKeyParameter,
@@ -829,7 +869,8 @@ export declare const revokeDevice: Route<{
 }>;
 export declare const signOutProfile: Route<{
     method: 'delete';
-    path: '/v1/me/device-sessions/{sessionId}';
+    version: 1;
+    path: '/me/device-sessions/{sessionId}';
     parameters: readonly [
         PathParameter<'sessionId', z.ZodString>,
         typeof IdempotencyKeyParameter,
@@ -846,7 +887,8 @@ export declare const signOutProfile: Route<{
 }>;
 export declare const requestExport: Route<{
     method: 'post';
-    path: '/v1/me/exports';
+    version: 1;
+    path: '/me/exports';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -867,7 +909,8 @@ export declare const requestExport: Route<{
 }>;
 export declare const getExport: Route<{
     method: 'get';
-    path: '/v1/me/exports/{exportId}';
+    version: 1;
+    path: '/me/exports/{exportId}';
     parameters: readonly [
         PathParameter<'exportId', z.ZodString>,
         typeof SurfaceParameter,
@@ -882,7 +925,8 @@ export declare const getExport: Route<{
 }>;
 export declare const requestAccountDeletion: Route<{
     method: 'post';
-    path: '/v1/me/deletion';
+    version: 1;
+    path: '/me/deletion';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -905,7 +949,8 @@ export declare const requestAccountDeletion: Route<{
 }>;
 export declare const cancelAccountDeletion: Route<{
     method: 'delete';
-    path: '/v1/me/deletion';
+    version: 1;
+    path: '/me/deletion';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -923,7 +968,8 @@ export declare const cancelAccountDeletion: Route<{
 }>;
 export declare const contactSupport: Route<{
     method: 'post';
-    path: '/v1/support/requests';
+    version: 1;
+    path: '/support/requests';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,

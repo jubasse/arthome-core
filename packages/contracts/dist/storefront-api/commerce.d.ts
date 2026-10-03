@@ -10,7 +10,8 @@ import { CartQuoteSchema, CartSchema, OrderSchema, PaymentHandoffSchema, PlanSch
 declare const CANCEL_SEAT_CANCEL_REASON_CODE: readonly ["viewer_request"];
 export declare const listPlans: Route<{
     method: 'get';
-    path: '/v1/plans';
+    version: 1;
+    path: '/plans';
     parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -21,7 +22,8 @@ export declare const listPlans: Route<{
 }>;
 export declare const refreshDateAvailability: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/availability';
+    version: 1;
+    path: '/dates/{dateId}/availability';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -43,7 +45,8 @@ export declare const refreshDateAvailability: Route<{
 }>;
 export declare const quoteSeat: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/seat-quote';
+    version: 1;
+    path: '/dates/{dateId}/seat-quote';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -66,7 +69,8 @@ export declare const quoteSeat: Route<{
 }>;
 export declare const enterSalesQueue: Route<{
     method: 'put';
-    path: '/v1/dates/{dateId}/sales-queue';
+    version: 1;
+    path: '/dates/{dateId}/sales-queue';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -83,7 +87,8 @@ export declare const enterSalesQueue: Route<{
 }>;
 export declare const getSalesQueuePosition: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/sales-queue';
+    version: 1;
+    path: '/dates/{dateId}/sales-queue';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -100,7 +105,8 @@ export declare const getSalesQueuePosition: Route<{
 }>;
 export declare const purchaseSeat: Route<{
     method: 'post';
-    path: '/v1/orders/seats';
+    version: 1;
+    path: '/orders/seats';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof AdmissionTokenParameter,
@@ -142,7 +148,8 @@ export declare const purchaseSeat: Route<{
 }>;
 export declare const getOrder: Route<{
     method: 'get';
-    path: '/v1/orders/{orderId}';
+    version: 1;
+    path: '/orders/{orderId}';
     parameters: readonly [
         PathParameter<'orderId', z.ZodString>,
         typeof SurfaceParameter,
@@ -161,7 +168,8 @@ export declare const getOrder: Route<{
 }>;
 export declare const cancelSeat: Route<{
     method: 'post';
-    path: '/v1/seats/{seatId}/cancel';
+    version: 1;
+    path: '/seats/{seatId}/cancel';
     parameters: readonly [
         PathParameter<'seatId', z.ZodString>,
         typeof IdempotencyKeyParameter,
@@ -185,7 +193,8 @@ export declare const cancelSeat: Route<{
 }>;
 export declare const joinWaitlist: Route<{
     method: 'put';
-    path: '/v1/dates/{dateId}/waitlist';
+    version: 1;
+    path: '/dates/{dateId}/waitlist';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -209,7 +218,8 @@ export declare const joinWaitlist: Route<{
 }>;
 export declare const leaveWaitlist: Route<{
     method: 'delete';
-    path: '/v1/dates/{dateId}/waitlist';
+    version: 1;
+    path: '/dates/{dateId}/waitlist';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -228,7 +238,8 @@ export declare const leaveWaitlist: Route<{
 }>;
 export declare const getCart: Route<{
     method: 'get';
-    path: '/v1/cart';
+    version: 1;
+    path: '/cart';
     parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -239,7 +250,8 @@ export declare const getCart: Route<{
 }>;
 export declare const addCartLine: Route<{
     method: 'post';
-    path: '/v1/cart/lines';
+    version: 1;
+    path: '/cart/lines';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -260,7 +272,8 @@ export declare const addCartLine: Route<{
 }>;
 export declare const updateCartLine: Route<{
     method: 'patch';
-    path: '/v1/cart/lines/{lineId}';
+    version: 1;
+    path: '/cart/lines/{lineId}';
     parameters: readonly [
         PathParameter<'lineId', z.ZodString>,
         typeof IdempotencyKeyParameter,
@@ -282,7 +295,8 @@ export declare const updateCartLine: Route<{
 }>;
 export declare const removeCartLine: Route<{
     method: 'delete';
-    path: '/v1/cart/lines/{lineId}';
+    version: 1;
+    path: '/cart/lines/{lineId}';
     parameters: readonly [
         PathParameter<'lineId', z.ZodString>,
         typeof IdempotencyKeyParameter,
@@ -299,7 +313,8 @@ export declare const removeCartLine: Route<{
 }>;
 export declare const quoteCart: Route<{
     method: 'post';
-    path: '/v1/cart/quote';
+    version: 1;
+    path: '/cart/quote';
     parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
     requestBody: JsonRequestBody<z.ZodObject<{
         shippingCountryCode: z.ZodString;
@@ -315,7 +330,8 @@ export declare const quoteCart: Route<{
 }>;
 export declare const checkoutCart: Route<{
     method: 'post';
-    path: '/v1/orders/merch';
+    version: 1;
+    path: '/orders/merch';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -348,7 +364,8 @@ export declare const checkoutCart: Route<{
 }>;
 export declare const setSubscriptionPlan: Route<{
     method: 'put';
-    path: '/v1/subscription';
+    version: 1;
+    path: '/subscription';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
@@ -372,7 +389,8 @@ export declare const setSubscriptionPlan: Route<{
 }>;
 export declare const cancelSubscription: Route<{
     method: 'delete';
-    path: '/v1/subscription';
+    version: 1;
+    path: '/subscription';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,

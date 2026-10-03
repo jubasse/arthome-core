@@ -37,6 +37,7 @@ import {
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
+  studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type {
@@ -46,13 +47,17 @@ import type {
   QueryParameter,
   Route,
 } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import {
   BankChangeRequestSchema,
   ExportJobSchema,
   PayoutLineSchema,
 } from '../studio-money/index.js';
+
+const payoutsRoutes = studioV1
+  .tags(StudioTag.PAYOUTS)
+  .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
+const payoutsWrites = payoutsRoutes.headers(IdempotencyKeyParameter);
 
 const COUNTERSIGN_BANK_CHANGE_DECISION = ['countersign', 'reject'] as const;
 const REQUEST_CHANNEL_EXPORT_KIND = [
@@ -68,17 +73,18 @@ const REQUEST_CHANNEL_EXPORT_KIND = [
 
 export const listPayouts: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/payouts';
+  version: 1;
+  path: '/channels/{channelId}/payouts';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof PageParameter,
     typeof PageSizeParameter,
     typeof SortByParameter,
     typeof SortDirParameter,
     QueryParameter<'state', VocabularyIn<typeof PAYOUT_STATES>>,
+    typeof SurfaceParameter,
+    typeof IfRightsVersionParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -97,11 +103,10 @@ export const listPayouts: Route<{
     >;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = payoutsRoutes.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/payouts',
+  path: '/channels/{channelId}/payouts',
   operationId: 'listPayouts',
-  tags: [StudioTag.PAYOUTS],
   summary: 'The payouts owed, one line per date sold.',
   description:
     '**One balance per currency, never a converted balance.** A channel selling in two currencies\nhas **two balances**: converting would introduce a rate, hence an exchange date, hence a\nreconciliation gap nobody could explain. Stripe keeps one balance per currency; we mirror it,\nwe do not aggregate it.\n\n**Reserved to roles with `canRevenue`** — the whole page, not only its columns.\n',
@@ -109,9 +114,6 @@ export const listPayouts: Route<{
   'x-arthome-upstream': [NavigationEntry.PAYOUTS],
   parameters: [
     ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     PageParameter,
     PageSizeParameter,
     SortByParameter,
@@ -213,13 +215,14 @@ export const listPayouts: Route<{
 
 export const requestBankChange: Route<{
   method: 'post';
-  path: '/v1/channels/{channelId}/bank-change-requests';
+  version: 1;
+  path: '/channels/{channelId}/bank-change-requests';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<{ stripeSetupRef: z.ZodString; reauthToken: z.ZodString }, z.core.$strip>
@@ -234,23 +237,16 @@ export const requestBankChange: Route<{
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = payoutsWrites.defineRoute({
   method: 'post',
-  path: '/v1/channels/{channelId}/bank-change-requests',
+  path: '/channels/{channelId}/bank-change-requests',
   operationId: 'requestBankChange',
-  tags: [StudioTag.PAYOUTS],
   summary: 'Requests a change of bank details — dual signature.',
   description:
     '**An aggregate in its own right, not a write.** Two actors, two distinct roles (owner **and**\ntreasury), a delay, a trace — **and it suspends the payout in flight** for the duration of the\nsigning. A write cannot carry that.\n\nOnly the **last four characters** of the account travel: a full IBAN has no business in an\nevent log that gets replayed.\n\n**The return from an external browser confirms nothing**: the pending state lives\n**server-side**, and on the way back, "the deep link says where to go, the backend says what\nchanged".\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [NavigationEntry.PAYOUTS],
-  parameters: [
-    ChannelIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [ChannelIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -307,13 +303,14 @@ export const requestBankChange: Route<{
 
 export const countersignBankChange: Route<{
   method: 'post';
-  path: '/v1/bank-change-requests/{requestId}/countersign';
+  version: 1;
+  path: '/bank-change-requests/{requestId}/countersign';
   parameters: readonly [
     PathParameter<'requestId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -331,11 +328,10 @@ export const countersignBankChange: Route<{
     403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = payoutsWrites.defineRoute({
   method: 'post',
-  path: '/v1/bank-change-requests/{requestId}/countersign',
+  path: '/bank-change-requests/{requestId}/countersign',
   operationId: 'countersignBankChange',
-  tags: [StudioTag.PAYOUTS],
   summary: 'Counter-signs a change of bank details.',
   description:
     '**Two distinct roles**: the owner **and** the treasury. One and the same person cannot sign\nboth times, even holding both roles — `channel.same_actor_forbidden`. That is the entire point of a\ndual signature.\n',
@@ -348,10 +344,6 @@ export const countersignBankChange: Route<{
       required: true,
       schema: uuidOut(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: true,
@@ -425,14 +417,15 @@ export const countersignBankChange: Route<{
 
 export const closeReconciliationPeriod: Route<{
   method: 'post';
-  path: '/v1/channels/{channelId}/reconciliation-periods/{periodId}/close';
+  version: 1;
+  path: '/channels/{channelId}/reconciliation-periods/{periodId}/close';
   parameters: readonly [
     typeof ChannelIdParameter,
     PathParameter<'periodId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -469,11 +462,10 @@ export const closeReconciliationPeriod: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = payoutsWrites.defineRoute({
   method: 'post',
-  path: '/v1/channels/{channelId}/reconciliation-periods/{periodId}/close',
+  path: '/channels/{channelId}/reconciliation-periods/{periodId}/close',
   operationId: 'closeReconciliationPeriod',
-  tags: [StudioTag.PAYOUTS],
   summary: 'Closes a reconciliation period.',
   description:
     "**A period does not close with an unexplained discrepancy.** The refusal carries the gap and\nthe lines concerned. We never rebuild the provider's ledger: we **reconcile** ours against it,\nand any discrepancy routes an alert to `treasury`.\n",
@@ -487,10 +479,6 @@ export const closeReconciliationPeriod: Route<{
       required: true,
       schema: z.string(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: false,
@@ -565,13 +553,14 @@ export const closeReconciliationPeriod: Route<{
 
 export const requestChannelExport: Route<{
   method: 'post';
-  path: '/v1/channels/{channelId}/exports';
+  version: 1;
+  path: '/channels/{channelId}/exports';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -592,23 +581,16 @@ export const requestChannelExport: Route<{
     >;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = payoutsWrites.defineRoute({
   method: 'post',
-  path: '/v1/channels/{channelId}/exports',
+  path: '/channels/{channelId}/exports',
   operationId: 'requestChannelExport',
-  tags: [StudioTag.PAYOUTS],
   summary: 'Requests an export — sales journal, FEC, Sage, Cegid, grouped invoices.',
   description:
     '**An asynchronous job** (BullMQ **internal to its service**), never a synchronous download:\nover 24 months that is not tenable. The URL returned is **signed, short-lived, and usable\nwithout a session cookie** — an export protected by a cookie is undownloadable from the native\nshell.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [NavigationEntry.PAYOUTS, Service.CATALOG, DatePane.CHAT],
-  parameters: [
-    ChannelIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [ChannelIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -664,7 +646,8 @@ export const requestChannelExport: Route<{
 
 export const getChannelExport: Route<{
   method: 'get';
-  path: '/v1/exports/{exportId}';
+  version: 1;
+  path: '/exports/{exportId}';
   parameters: readonly [
     PathParameter<'exportId', z.ZodString>,
     typeof SurfaceParameter,
@@ -680,11 +663,10 @@ export const getChannelExport: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = payoutsRoutes.defineRoute({
   method: 'get',
-  path: '/v1/exports/{exportId}',
+  path: '/exports/{exportId}',
   operationId: 'getChannelExport',
-  tags: [StudioTag.PAYOUTS],
   summary: "An export's state, and its signed URL once it is ready.",
   description:
     'Until it is `ready`, `downloadUrl` is null: the contract never serves an address that would not answer.',
@@ -697,9 +679,6 @@ export const getChannelExport: Route<{
       required: true,
       schema: uuidOut(),
     },
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {

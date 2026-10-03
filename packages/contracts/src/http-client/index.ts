@@ -8,6 +8,7 @@
  */
 
 import type { Api, RouteInput, RouteResponseBody, RouteShape } from '../http/index.js';
+import { versionedPath } from '../http/index.js';
 
 export interface FetchInit {
   readonly method: string;
@@ -136,7 +137,7 @@ export function createClient<A extends Api, Init extends object = Record<never, 
       const headers: Record<string, string> = { ...shared, ...input.headers };
       const hasBody = input.body !== undefined;
       if (hasBody) headers['content-type'] = 'application/json';
-      const url = `${baseUrl}${pathOf(route.path, input.params ?? {})}${queryStringOf(input.query ?? {})}`;
+      const url = `${baseUrl}${pathOf(versionedPath(route), input.params ?? {})}${queryStringOf(input.query ?? {})}`;
       const request: FetchInit = {
         method: route.method.toUpperCase(),
         headers,

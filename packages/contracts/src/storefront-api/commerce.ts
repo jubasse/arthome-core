@@ -40,11 +40,11 @@ import {
   UnavailableResponse,
   VaryAuthHeader,
   PublicReadSecurity,
+  storefrontV1,
 } from './components.js';
 import { DateCardSchema, PriceTierSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import {
   CartQuoteSchema,
   CartSchema,
@@ -57,11 +57,25 @@ import {
   TicketCardSchema,
 } from '../ticketing/index.js';
 
+const commerceRoutes = storefrontV1
+  .tags(StorefrontTag.COMMERCE)
+  .headers(SurfaceParameter, TraceparentParameter);
+const commerceWrites = commerceRoutes.security(
+  {
+    sessionCookie: [],
+    csrfToken: [],
+  },
+  {
+    bearerToken: [],
+  },
+);
+
 const CANCEL_SEAT_CANCEL_REASON_CODE = ['viewer_request'] as const;
 
 export const listPlans: Route<{
   method: 'get';
-  path: '/v1/plans';
+  version: 1;
+  path: '/plans';
   parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
   responses: {
     200: JsonResponse<
@@ -72,11 +86,10 @@ export const listPlans: Route<{
     >;
     503: typeof UnavailableResponse;
   };
-}> = defineRoute({
+}> = commerceRoutes.defineRoute({
   method: 'get',
-  path: '/v1/plans',
+  path: '/plans',
   operationId: 'listPlans',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'The three plans, what they open, and the discount on seats.',
   description:
     'Three plans, their nine possible openings, the discount on seats and the concurrent-screen\nceiling. **The ceiling is published here and enforced by `streaming`**: it is an execution\nconstraint, not a marketing line.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
@@ -84,7 +97,6 @@ export const listPlans: Route<{
   'x-arthome-upstream': [Service.TICKETING],
   security: PublicReadSecurity,
   'x-arthome-freshness': 300,
-  parameters: [SurfaceParameter, TraceparentParameter],
   responses: {
     200: {
       description: 'The plans.',
@@ -130,7 +142,8 @@ export const listPlans: Route<{
 
 export const refreshDateAvailability: Route<{
   method: 'get';
-  path: '/v1/dates/{dateId}/availability';
+  version: 1;
+  path: '/dates/{dateId}/availability';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -160,11 +173,10 @@ export const refreshDateAvailability: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = commerceRoutes.defineRoute({
   method: 'get',
-  path: '/v1/dates/{dateId}/availability',
+  path: '/dates/{dateId}/availability',
   operationId: 'refreshDateAvailability',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'Refreshes capacity and prices before showing a total.',
   description:
     'The only legitimate call from a television\'s booking screen: the date is already in hand,\nonly the capacity moves. `validUntil` is short, `AVAILABILITY_VALID_SECONDS` after `servedAt`\n(`@arthome/core`), because the "show already started" price is **pro rata to the time\nremaining**.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
@@ -172,7 +184,7 @@ export const refreshDateAvailability: Route<{
   'x-arthome-upstream': [Service.TICKETING],
   security: PublicReadSecurity,
   'x-arthome-freshness': 15,
-  parameters: [DateIdParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'Capacity and prices at the instant of serving.',
@@ -230,7 +242,8 @@ export const refreshDateAvailability: Route<{
 
 export const quoteSeat: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/seat-quote';
+  version: 1;
+  path: '/dates/{dateId}/seat-quote';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -258,11 +271,10 @@ export const quoteSeat: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/seat-quote',
+  path: '/dates/{dateId}/seat-quote',
   operationId: 'quoteSeat',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'The purchase summary, composed server-side.',
   description:
     '**The four lines come from the contract**: tier, service fee, subscription discount,\npromotion. Discount and promotion **do not stack** — the one most favourable to the viewer\nwins, and the rule lives in `@arthome/core` (D-017). Otherwise it would be written three\ntimes.\n\n**Past the end of seat sales**, thirty minutes after the start (D-089), the quote is refused\nwith `409` `order.sales_closed` and `salesEndAt`, as the purchase is.\n',
@@ -270,16 +282,7 @@ export const quoteSeat: Route<{
   'x-arthome-upstream': [Service.TICKETING],
   'x-arthome-idempotency-exemption':
     '**A read disguised as a `POST`: it is a `POST` because its criteria do not fit in a URL, not\nbecause it writes.** A quote computes, it creates nothing — so there is no effect to\ndeduplicate.\n\n**And a key would protect nothing here**, because freshness is already guaranteed elsewhere:\nthe price carries its `validUntil`, and `expectedTotal` is **mandatory** at purchase — a\nstale price is refused by `order.price_stale` at the moment that matters, not at quoting time.\n\n**Worse: it would do harm.** The regime replays the original response **verbatim**, so a\nreplayed quote would be a quote **already part-spent, or expired** — or a price that the\npro-rata promotion has since made wrong. Same reason as a token renewal: what is being asked\nfor is a fresh value.\n',
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [DateIdParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -364,7 +367,8 @@ export const quoteSeat: Route<{
 
 export const enterSalesQueue: Route<{
   method: 'put';
-  path: '/v1/dates/{dateId}/sales-queue';
+  version: 1;
+  path: '/dates/{dateId}/sales-queue';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -381,11 +385,10 @@ export const enterSalesQueue: Route<{
     403: typeof CsrfRefusedResponse;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'put',
-  path: '/v1/dates/{dateId}/sales-queue',
+  path: '/dates/{dateId}/sales-queue',
   operationId: 'enterSalesQueue',
-  tags: [StorefrontTag.COMMERCE],
   summary: "Enters a date's sales queue.",
   description:
     "**A state assignment, not a toggle**: one entry per account and date, and entering again keeps\nthe place already taken. The queue serves in arrival order (D-081). No `Idempotency-Key`: the\nentry makes a second call harmless by itself (see the exemption).\n\n**An admission that lapses unused sends the account to the end of the queue**, in the spirit\nof the waiting list's one chance per registration (D-083): a turn kept after it passed is\ntaken from everyone behind.\n\n**A queue that is not armed admits nobody**: it answers `armed: false`, and the surface goes\nback to `purchaseSeat`, which needs no admission then. Admitting there would let an account\ncollect admissions ahead of the arming and walk past the queue once it arms.\n\n**The session names the account, never the path**, and the response speaks of the caller's\nentry alone: nobody else's position, account or admission.\n",
@@ -393,16 +396,7 @@ export const enterSalesQueue: Route<{
   'x-arthome-upstream': [Service.TICKETING],
   'x-arthome-idempotency-exemption':
     '**Idempotent by construction**: one entry per account and date, so a second call finds the\nfirst entry and answers its current state. A key would put a durable write per entrant in\nfront of the queue built to shed that load, and would replay a position that is stale seconds\nafter it was served.\n',
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [DateIdParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   responses: {
     200: {
       description: "The caller's entry, as `getSalesQueuePosition` serves it.",
@@ -442,7 +436,8 @@ export const enterSalesQueue: Route<{
 
 export const getSalesQueuePosition: Route<{
   method: 'get';
-  path: '/v1/dates/{dateId}/sales-queue';
+  version: 1;
+  path: '/dates/{dateId}/sales-queue';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -459,17 +454,16 @@ export const getSalesQueuePosition: Route<{
     404: typeof NotFoundResponse;
     429: typeof TooManyRequestsResponse;
   };
-}> = defineRoute({
+}> = commerceRoutes.defineRoute({
   method: 'get',
-  path: '/v1/dates/{dateId}/sales-queue',
+  path: '/dates/{dateId}/sales-queue',
   operationId: 'getSalesQueuePosition',
-  tags: [StorefrontTag.COMMERCE],
   summary: "Reads one's place in a date's sales queue, and the admission once it comes.",
   description:
     "**Polled at the cadence it serves**: `pollIntervalSec` is the pairing's served decay\n(`adr-auth.md` §5.3), not a second one, and the surface never polls faster.\n\n**`validUntil` is the next poll while `waiting`, and the admission's `expiresAt` once\n`admitted`.** Either countdown is computed against `servedAt`.\n\n**`no-store`**: a position and an admission are one account's, and perishable.\n",
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [DateIdParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   responses: {
     200: {
       description: "The caller's entry.",
@@ -511,7 +505,8 @@ export const getSalesQueuePosition: Route<{
 
 export const purchaseSeat: Route<{
   method: 'post';
-  path: '/v1/orders/seats';
+  version: 1;
+  path: '/orders/seats';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof AdmissionTokenParameter,
@@ -576,33 +571,17 @@ export const purchaseSeat: Route<{
     409: typeof ConflictResponse;
     503: typeof UnavailableResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'post',
-  path: '/v1/orders/seats',
+  path: '/orders/seats',
   operationId: 'purchaseSeat',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'Buys one or more seats.',
   description:
     "**A double click never creates two seats**: `Idempotency-Key` is mandatory, generated by the\nsurface **before sending and persisted before sending**. A replayed key returns the first\nattempt's response, never an error — that is the difference between safe resumption and a\nlost seat.\n\n**The expected price is sent and verified.** The refusal carries `order.price_stale`, **distinct**\nfrom a payment failure, with the current price as a parameter: with five promotion reasons,\none of them computed pro rata to elapsed time, the gap between the displayed price and the\nvalid price is **structural**, not accidental.\n\n**The command returns the projected state, not an acknowledgement**: the seat **and** the\nupdated date, so the surface repaints in a single round trip.\n\n**While the date's sales queue is armed, the purchase carries its admission** (D-081,\nprovisional), and without a valid one it is refused with `403`\n`order.sales_queue_admission_required`. A `403` because the admission is a time-boxed right\nthat `ticketing` checks itself, like the others of that status; not a `409`, since nothing in\nthe date conflicts with the request, and not a `429`, whose `unavailable` invites a retry that\ncannot succeed without an admission and would land on the date at its busiest.\n\n**The admission travels in a header, `X-Arthome-Admission-Token`, never in the body.** The\nidempotency fingerprint covers the body (`transport.md` §5.4), so a token there would turn the\nreplay of a completed purchase, sent after the admission lapsed, into\n`api.idempotency_key_reused` instead of the original response. And it is a credential bound to\nan account and a date, which travels beside `X-Arthome-Device-Token`, not inside the order. A\nreplayed key answers its original response without asking for an admission again.\n\n**Once the live has started, the purchase carries the buyer's acknowledgement** (D-089), in\n`X-Arthome-Late-Entry-Acknowledged: true`, once the surface has said what\n`SeatQuote.lateEntry` says. Without it the purchase is refused with `409`\n`order.late_entry_unacknowledged`, `startedAt`, `minutesElapsed` and `salesEndAt` in its\nparams, before any seat is held. Seats sell until thirty minutes after the start; past it,\n`409` `order.sales_closed` with `salesEndAt`, never `order.sold_out`, which is the waiting\nlist's cue.\n",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
   'x-arthome-invalidates': ['account:tickets', 'date:{dateId}:availability'],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [
-    IdempotencyKeyParameter,
-    AdmissionTokenParameter,
-    LateEntryAcknowledgedParameter,
-    SurfaceParameter,
-    TraceparentParameter,
-  ],
+  parameters: [IdempotencyKeyParameter, AdmissionTokenParameter, LateEntryAcknowledgedParameter],
   requestBody: {
     required: true,
     content: {
@@ -760,7 +739,8 @@ export const purchaseSeat: Route<{
 
 export const getOrder: Route<{
   method: 'get';
-  path: '/v1/orders/{orderId}';
+  version: 1;
+  path: '/orders/{orderId}';
   parameters: readonly [
     PathParameter<'orderId', z.ZodString>,
     typeof SurfaceParameter,
@@ -787,11 +767,10 @@ export const getOrder: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = commerceRoutes.defineRoute({
   method: 'get',
-  path: '/v1/orders/{orderId}',
+  path: '/orders/{orderId}',
   operationId: 'getOrder',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'The state of an order — **the only source of truth after a payment**.',
   description:
     '**This is the operation that resumes an order left in `awaiting_action`**, and it is the one\nthe surface polls on return from strong authentication. The return URL says **where to go**;\nit never says **what changed**: our state only advances on a verified webhook, never on a\nbrowser parameter.\n\n**`no-store`**: the state of a payment is not cached.\n',
@@ -804,8 +783,6 @@ export const getOrder: Route<{
       required: true,
       schema: uuidOut(),
     },
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -853,7 +830,8 @@ export const getOrder: Route<{
 
 export const cancelSeat: Route<{
   method: 'post';
-  path: '/v1/seats/{seatId}/cancel';
+  version: 1;
+  path: '/seats/{seatId}/cancel';
   parameters: readonly [
     PathParameter<'seatId', z.ZodString>,
     typeof IdempotencyKeyParameter,
@@ -889,26 +867,16 @@ export const cancelSeat: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'post',
-  path: '/v1/seats/{seatId}/cancel',
+  path: '/seats/{seatId}/cancel',
   operationId: 'cancelSeat',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'Cancels a seat before its deadline.',
   description:
     'The deadline is **served as an instant** on the seat (`cancelDeadline`), never as the\nsentence "up to 1 h before". The refusal after the deadline carries\n`seat.cancel_deadline_passed`, with the instant as a parameter.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
   'x-arthome-invalidates': ['account:tickets', 'date:{dateId}:availability'],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
   parameters: [
     {
       name: 'seatId',
@@ -917,8 +885,6 @@ export const cancelSeat: Route<{
       schema: uuidOut(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: false,
@@ -993,7 +959,8 @@ export const cancelSeat: Route<{
 
 export const joinWaitlist: Route<{
   method: 'put';
-  path: '/v1/dates/{dateId}/waitlist';
+  version: 1;
+  path: '/dates/{dateId}/waitlist';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -1025,26 +992,16 @@ export const joinWaitlist: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'put',
-  path: '/v1/dates/{dateId}/waitlist',
+  path: '/dates/{dateId}/waitlist',
   operationId: 'joinWaitlist',
-  tags: [StorefrontTag.COMMERCE],
   summary: "S'inscrit en liste d'attente.",
   description:
     '**A state assignment, not a toggle**: two submissions leave one registration. The response\n**states the rank, or states that it will not state it** — it is never silent. The priority\nwindow (2 h) is served, never hardcoded in the surface.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [DateIdParameter, IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'Inscrit.',
@@ -1089,7 +1046,8 @@ export const joinWaitlist: Route<{
 
 export const leaveWaitlist: Route<{
   method: 'delete';
-  path: '/v1/dates/{dateId}/waitlist';
+  version: 1;
+  path: '/dates/{dateId}/waitlist';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -1113,26 +1071,16 @@ export const leaveWaitlist: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'delete',
-  path: '/v1/dates/{dateId}/waitlist',
+  path: '/dates/{dateId}/waitlist',
   operationId: 'leaveWaitlist',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'Leaves the waiting list.',
   description:
     '**A state assignment**, like joining. Replayed on an already-removed registration, it\nsucceeds — an offline queue replays, and a failure there would be a false negative.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [DateIdParameter, IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description:
@@ -1165,7 +1113,8 @@ export const leaveWaitlist: Route<{
 
 export const getCart: Route<{
   method: 'get';
-  path: '/v1/cart';
+  version: 1;
+  path: '/cart';
   parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
   responses: {
     200: JsonResponse<
@@ -1176,17 +1125,15 @@ export const getCart: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = commerceRoutes.defineRoute({
   method: 'get',
-  path: '/v1/cart',
+  path: '/cart',
   operationId: 'getCart',
-  tags: [StorefrontTag.COMMERCE],
   summary: "The account's cart, split by vendor.",
   description:
     "The cart lives **on the account**, not in the browser: it is persistent in the header, it is\nbuilt up across several sessions from a live show's shop, and all three storefronts display\nit. It is served **already split by vendor**, because that is how it will be paid.\n",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [SurfaceParameter, TraceparentParameter],
   responses: {
     200: {
       description: 'The cart.',
@@ -1214,7 +1161,8 @@ export const getCart: Route<{
 
 export const addCartLine: Route<{
   method: 'post';
-  path: '/v1/cart/lines';
+  version: 1;
+  path: '/cart/lines';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1233,27 +1181,17 @@ export const addCartLine: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'post',
-  path: '/v1/cart/lines',
+  path: '/cart/lines',
   operationId: 'addCartLine',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'Adds a line to the cart.',
   description:
     'A line references a **variant**, never a bare item: a T-shirt without a size is not\nsellable. Shipping is **not** computed here — it is computed at quoting time.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
   'x-arthome-invalidates': ['account:cart'],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -1317,7 +1255,8 @@ export const addCartLine: Route<{
 
 export const updateCartLine: Route<{
   method: 'patch';
-  path: '/v1/cart/lines/{lineId}';
+  version: 1;
+  path: '/cart/lines/{lineId}';
   parameters: readonly [
     PathParameter<'lineId', z.ZodString>,
     typeof IdempotencyKeyParameter,
@@ -1338,25 +1277,15 @@ export const updateCartLine: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'patch',
-  path: '/v1/cart/lines/{lineId}',
+  path: '/cart/lines/{lineId}',
   operationId: 'updateCartLine',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'Changes the quantity of a line.',
   description:
     '**Conflict between two devices: per line, last writer wins, and the ordering comes from the\nserver** — `version`, never a date from the phone, whose clock drifts and jumps.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
   parameters: [
     {
       name: 'lineId',
@@ -1365,8 +1294,6 @@ export const updateCartLine: Route<{
       schema: uuidOut(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: true,
@@ -1412,7 +1339,8 @@ export const updateCartLine: Route<{
 
 export const removeCartLine: Route<{
   method: 'delete';
-  path: '/v1/cart/lines/{lineId}';
+  version: 1;
+  path: '/cart/lines/{lineId}';
   parameters: readonly [
     PathParameter<'lineId', z.ZodString>,
     typeof IdempotencyKeyParameter,
@@ -1429,25 +1357,15 @@ export const removeCartLine: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'delete',
-  path: '/v1/cart/lines/{lineId}',
+  path: '/cart/lines/{lineId}',
   operationId: 'removeCartLine',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'Removes a line from the cart.',
   description:
     'Replayed on an already-removed line, it **succeeds**. Returns the whole cart, split by\nvendor, so the surface repaints without a second round trip.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
   parameters: [
     {
       name: 'lineId',
@@ -1456,8 +1374,6 @@ export const removeCartLine: Route<{
       schema: uuidOut(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -1487,7 +1403,8 @@ export const removeCartLine: Route<{
 
 export const quoteCart: Route<{
   method: 'post';
-  path: '/v1/cart/quote';
+  version: 1;
+  path: '/cart/quote';
   parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -1508,11 +1425,10 @@ export const quoteCart: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'post',
-  path: '/v1/cart/quote',
+  path: '/cart/quote',
   operationId: 'quoteCart',
-  tags: [StorefrontTag.COMMERCE],
   summary: "The cart's binding quote, per vendor.",
   description:
     '**The total presented is the one that will be charged**, for 15 minutes. Shipping is computed\n**here**, not on adding. A cart spanning two channels returns **two groups**: it will split\ninto two orders at payment.\n',
@@ -1520,16 +1436,6 @@ export const quoteCart: Route<{
   'x-arthome-upstream': [Service.TICKETING],
   'x-arthome-idempotency-exemption':
     '**A read disguised as a `POST`**, for the same reason as `quoteSeat`: the cart and the\nshipping address do not fit in a URL. A quote computes shipping and discounts; it creates\nneither an order nor a reservation.\n\n**A key would protect nothing here** — `checkoutCart` carries the `quoteId` and refuses a\nstale quote — **and it would do harm**: the total presented is the one that will be charged,\nand that promise holds for **fifteen minutes**. Serving a memorised quote would return a\ntotal whose window is part-spent or closed, that is, **a binding quote that no longer\nbinds**. A replay therefore produces a fresh quote, with its own window.\n',
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [SurfaceParameter, TraceparentParameter],
   requestBody: {
     required: true,
     content: {
@@ -1597,7 +1503,8 @@ export const quoteCart: Route<{
 
 export const checkoutCart: Route<{
   method: 'post';
-  path: '/v1/orders/merch';
+  version: 1;
+  path: '/orders/merch';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1646,27 +1553,17 @@ export const checkoutCart: Route<{
     410: typeof GoneResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'post',
-  path: '/v1/orders/merch',
+  path: '/orders/merch',
   operationId: 'checkoutCart',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'Pays for the cart — one order per vendor.',
   description:
     "**The cart is emptied by the response**, never by a local timeout.\n\n**The contract settles partial failure**: an out-of-stock line **refuses its group's order\noutright**, with `params.unavailableLineIds`, and does not truncate it. Reason: a truncated\norder charges an amount the viewer never saw, and the quote is binding — truncating it would\nmake it false.\n",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
   'x-arthome-invalidates': ['account:orders', 'account:cart'],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -1789,7 +1686,8 @@ export const checkoutCart: Route<{
 
 export const setSubscriptionPlan: Route<{
   method: 'put';
-  path: '/v1/subscription';
+  version: 1;
+  path: '/subscription';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1821,27 +1719,17 @@ export const setSubscriptionPlan: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'put',
-  path: '/v1/subscription',
+  path: '/subscription',
   operationId: 'setSubscriptionPlan',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'Subscribes or changes plan.',
   description:
     '**A state assignment**, not a toggle. The effect is **immediately visible** on displayed\nprices: `x-arthome-invalidates` names the reads that become false, so the surface\ninvalidates exactly what it must. The **right to watch**, on the other hand, is never\ndecided here: it is returned by `streaming` when the player opens, on fresh data.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
   'x-arthome-invalidates': ['account:subscription', 'home:rails', 'account:tickets'],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -1939,7 +1827,8 @@ export const setSubscriptionPlan: Route<{
 
 export const cancelSubscription: Route<{
   method: 'delete';
-  path: '/v1/subscription';
+  version: 1;
+  path: '/subscription';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1955,27 +1844,17 @@ export const cancelSubscription: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = commerceWrites.defineRoute({
   method: 'delete',
-  path: '/v1/subscription',
+  path: '/subscription',
   operationId: 'cancelSubscription',
-  tags: [StorefrontTag.COMMERCE],
   summary: 'Cancels the subscription at the end of the period.',
   description:
     'Cancellation takes effect **at the end of the period**: the rights run until\n`currentPeriodEnd`, and the contract serves it as an **instant** rather than letting five\nsurfaces compute "12 days left".\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
   'x-arthome-invalidates': ['account:subscription'],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'Cancellation recorded. Rights run until `currentPeriodEnd`.',

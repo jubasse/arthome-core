@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Surface } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { AccessorOf, Header, HeaderParameter, JsonResponse, PathParameter, QueryParameter } from '../http/index.js';
+import type { AccessorOf, Header, HeaderParameter, JsonResponse, PathParameter, QueryParameter, RouteBuilder } from '../http/index.js';
 declare const SURFACE: readonly [typeof Surface.STUDIO_WEB, typeof Surface.STUDIO_MOBILE];
 declare const SORT_DIR: readonly ["asc", "desc"];
 declare const STUDIO_TAGS: readonly ["bootstrap", "agenda", "publication", "ticketing", "run", "moderation", "crew", "payouts", "channel"];
@@ -31,5 +31,6 @@ export declare const ConflictResponse: JsonResponse<typeof StudioErrorEnvelopeSc
 export declare const GoneResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
 export declare const TooManyRequestsResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
 export declare const UnavailableResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const studioV1: RouteBuilder<1, readonly [], Record<never, never>>;
 export {};
 //# sourceMappingURL=components.d.ts.map

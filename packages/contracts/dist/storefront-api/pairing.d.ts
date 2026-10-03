@@ -8,12 +8,13 @@ declare const CREATE_PAIRING_INTENT: readonly ["signin", "seat", "plan", "paymen
 declare const DECIDE_PAIRING_DECISION: readonly ["approve", "deny"];
 export declare const createPairing: Route<{
     method: 'post';
-    path: '/v1/pairings';
+    version: 1;
+    path: '/pairings';
     parameters: readonly [
-        typeof IdempotencyKeyParameter,
         typeof AdmissionTokenParameter,
         typeof SurfaceParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         intent: VocabularyIn<typeof CREATE_PAIRING_INTENT>;
@@ -32,7 +33,8 @@ export declare const createPairing: Route<{
 }>;
 export declare const pollPairing: Route<{
     method: 'get';
-    path: '/v1/pairings/{pairingId}';
+    version: 1;
+    path: '/pairings/{pairingId}';
     parameters: readonly [
         PathParameter<'pairingId', z.ZodString>,
         typeof SurfaceParameter,
@@ -49,12 +51,13 @@ export declare const pollPairing: Route<{
 }>;
 export declare const cancelPairing: Route<{
     method: 'delete';
-    path: '/v1/pairings/{pairingId}';
+    version: 1;
+    path: '/pairings/{pairingId}';
     parameters: readonly [
-        typeof IdempotencyKeyParameter,
         PathParameter<'pairingId', z.ZodString>,
         typeof SurfaceParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -67,12 +70,13 @@ export declare const cancelPairing: Route<{
 }>;
 export declare const engagePairing: Route<{
     method: 'post';
-    path: '/v1/pairings/{pairingId}/engagement';
+    version: 1;
+    path: '/pairings/{pairingId}/engagement';
     parameters: readonly [
         PathParameter<'pairingId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         note: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -87,12 +91,13 @@ export declare const engagePairing: Route<{
 }>;
 export declare const decidePairing: Route<{
     method: 'post';
-    path: '/v1/pairings/{pairingId}/decision';
+    version: 1;
+    path: '/pairings/{pairingId}/decision';
     parameters: readonly [
         PathParameter<'pairingId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         decision: VocabularyIn<typeof DECIDE_PAIRING_DECISION>;
@@ -108,7 +113,8 @@ export declare const decidePairing: Route<{
 }>;
 export declare const getAccountDeepLink: Route<{
     method: 'get';
-    path: '/v1/account-deep-link';
+    version: 1;
+    path: '/account-deep-link';
     parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{

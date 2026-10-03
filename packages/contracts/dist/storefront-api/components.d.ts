@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Surface } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
-import type { AccessorOf, Header, HeaderParameter, JsonResponse, PathParameter, QueryParameter, SecurityRequirement } from '../http/index.js';
+import type { AccessorOf, Header, HeaderParameter, JsonResponse, PathParameter, QueryParameter, RouteBuilder, SecurityRequirement } from '../http/index.js';
 declare const SURFACE: readonly [
     typeof Surface.STOREFRONT_WEB,
     typeof Surface.STOREFRONT_MOBILE,
@@ -45,5 +45,6 @@ export declare const ConflictResponse: JsonResponse<typeof StorefrontErrorEnvelo
 export declare const GoneResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
 export declare const TooManyRequestsResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
 export declare const UnavailableResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
+export declare const storefrontV1: RouteBuilder<1, readonly [], Record<never, never>>;
 export {};
 //# sourceMappingURL=components.d.ts.map

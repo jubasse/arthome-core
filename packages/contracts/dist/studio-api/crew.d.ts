@@ -9,7 +9,8 @@ import { ChannelMemberSchema, DateAccessGrantSchema, EffectiveRightsSchema } fro
 declare const RESPOND_TO_INVITATION_DECISION: readonly ["accept", "decline"];
 export declare const getDateCrewPane: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/panes/crew';
+    version: 1;
+    path: '/dates/{dateId}/panes/crew';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -36,16 +37,17 @@ export declare const getDateCrewPane: Route<{
 }>;
 export declare const listChannelMembers: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/members';
+    version: 1;
+    path: '/channels/{channelId}/members';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
         typeof PageParameter,
         typeof PageSizeParameter,
         QueryParameter<'q', z.ZodString>,
-        QueryParameter<'role', VocabularyIn<typeof MEMBER_ROLES>>
+        QueryParameter<'role', VocabularyIn<typeof MEMBER_ROLES>>,
+        typeof SurfaceParameter,
+        typeof IfRightsVersionParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -58,13 +60,14 @@ export declare const listChannelMembers: Route<{
 }>;
 export declare const inviteMember: Route<{
     method: 'post';
-    path: '/v1/channels/{channelId}/invitations';
+    version: 1;
+    path: '/channels/{channelId}/invitations';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         email: z.ZodString;
@@ -80,13 +83,14 @@ export declare const inviteMember: Route<{
 }>;
 export declare const respondToInvitation: Route<{
     method: 'post';
-    path: '/v1/invitations/{invitationId}/response';
+    version: 1;
+    path: '/invitations/{invitationId}/response';
     parameters: readonly [
         PathParameter<'invitationId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         decision: VocabularyIn<typeof RESPOND_TO_INVITATION_DECISION>;
@@ -101,14 +105,15 @@ export declare const respondToInvitation: Route<{
 }>;
 export declare const changeMemberRoles: Route<{
     method: 'patch';
-    path: '/v1/channels/{channelId}/members/{personId}';
+    version: 1;
+    path: '/channels/{channelId}/members/{personId}';
     parameters: readonly [
         typeof ChannelIdParameter,
         PathParameter<'personId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         roles: z.ZodArray<VocabularyIn<typeof MEMBER_ROLES>>;
@@ -124,14 +129,15 @@ export declare const changeMemberRoles: Route<{
 }>;
 export declare const removeMember: Route<{
     method: 'delete';
-    path: '/v1/channels/{channelId}/members/{personId}';
+    version: 1;
+    path: '/channels/{channelId}/members/{personId}';
     parameters: readonly [
         typeof ChannelIdParameter,
         PathParameter<'personId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -145,13 +151,14 @@ export declare const removeMember: Route<{
 }>;
 export declare const grantDateAccess: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/crew';
+    version: 1;
+    path: '/dates/{dateId}/crew';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         personId: z.ZodString;
@@ -167,13 +174,14 @@ export declare const grantDateAccess: Route<{
 }>;
 export declare const revokeDateAccess: Route<{
     method: 'delete';
-    path: '/v1/date-access-grants/{grantId}';
+    version: 1;
+    path: '/date-access-grants/{grantId}';
     parameters: readonly [
         PathParameter<'grantId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -186,13 +194,14 @@ export declare const revokeDateAccess: Route<{
 }>;
 export declare const transferChannelOwnership: Route<{
     method: 'post';
-    path: '/v1/channels/{channelId}/ownership-transfer';
+    version: 1;
+    path: '/channels/{channelId}/ownership-transfer';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         toPersonId: z.ZodString;

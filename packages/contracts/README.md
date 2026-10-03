@@ -77,9 +77,9 @@ one module per tag (`discovery.ts`, `payouts.ts`), the shared parameters, header
 `openapi/storefront.yaml` and `openapi/studio.yaml` are **generated** from those declarations (D-120),
 and committed for readers and tools.
 
-1. Edit the route in its module (`defineRoute`: method, path, parameters, body, responses, prose and
-   `x-arthome-*` metadata), built from the schemas of the subpaths above. A new operation is also
-   listed under `routes` in the api's `index.ts`.
+1. Edit the route in its module, through the group's builder (`pairingWrites.defineRoute({ ... })`:
+   method, path, parameters, body, responses, prose and `x-arthome-*` metadata), built from the schemas
+   of the subpaths above. A new operation is also listed under `routes` in the api's `index.ts`.
 2. Regenerate: `pnpm run generate:openapi`. It builds the packages, then writes both documents.
 3. Commit the declaration **and** both documents. `pnpm run check:openapi-generated`, which `verify`
    runs, fails when a committed document is not byte for byte what the declarations generate, paths,
@@ -88,6 +88,57 @@ and committed for readers and tools.
 Never edit a document by hand: the next generation overwrites it, and the gate refuses it before.
 Prose that belongs to the operation stays in the declaration, as `description` where the document
 should say it and as a TypeScript comment where only the maintainers need it.
+
+### The route builder
+
+A group of routes shares its version, tag, common headers and often its errors and security. A
+builder holds them once, and is **immutable**: every call returns a new builder, so a base derives
+without touching the others, and the generic types accumulate what was set, so a route's parameters,
+query, headers, body and responses stay fully inferred for the server binding and the typed client.
+
+```ts
+export const storefrontV1 = routeBuilder().version(1);
+
+const pairingRoutes = storefrontV1
+  .tags(StorefrontTag.PAIRING)
+  .headers(SurfaceParameter, TraceparentParameter);
+const pairingWrites = pairingRoutes.headers(IdempotencyKeyParameter);
+
+export const createPairing: Route<{ method: 'post'; version: 1; path: '/pairings'; /* ... */ }> =
+  pairingWrites.defineRoute({ method: 'post', path: '/pairings', operationId: 'createPairing', /* ... */ });
+```
+
+| Call | Sets | A route can override it |
+|---|---|---|
+| `.version(n)` | the API version, required before `defineRoute` | no |
+| `.tags(...)` | the operation's tags | yes, with its own `tags` |
+| `.headers(...)` | header parameters, appended **after** the route's own `parameters` | no |
+| `.errors({ 400: ... })` | responses every route of the group answers | yes, a status the route writes wins |
+| `.security(...)` | the security requirements | yes, with its own `security` |
+
+The explicit annotation on each exported route (`isolatedDeclarations` demands one) spells the
+merged type in full: the route's own parameters, then the builder's headers. A builder that
+disagrees with it is a compile error. A route that shares nothing with its group still goes
+through the group's builder, and says what is its own. The plain `defineRoute` from `./http` stays
+the primitive the builder calls, and takes `version` itself.
+
+The order of an operation's `parameters` has no meaning in OpenAPI, so the builder's headers come
+last in the document; the same goes for the keys of an operation, which the emitter writes in
+a fixed order (identity, prose, `x-*`, `security`, `parameters`, `requestBody`, `responses`).
+
+### Versions
+
+The API version is a property of the route, never of its path: `version: 1` and `path:
+'/dates/{dateId}'`. The emitter composes the published path from one strategy, the URI one:
+`/v{version}{path}`, and `versionedPath(route)` gives the same string to a server binding and the
+client. A breaking change is a **second declaration** with `version: 2`, served beside v1
+(`transport.md` §5.11):
+
+- its `operationId` is the v1 name suffixed `V2` (`getDateDetailV2`), because the document's operation
+  ids and the client's method names are unique across versions; version 1 keeps the bare name;
+- `defineRoute` refuses an id that does not follow the rule, and `defineApi` refuses two routes with
+  the same method and published path;
+- the v2 route lives beside the v1 one, in the same module, and both are listed under `routes`.
 
 A BFF controller binds to its route (`@Endpoint(storefrontApi.routes.search)` in `arthome-platform`),
 and a surface calls it through `createClient(storefrontApi, ...)` from `./http-client`. Both read the

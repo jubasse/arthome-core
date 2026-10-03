@@ -13,11 +13,12 @@ declare const LIST_REPLAYS_SORT: readonly ["expiring_first", "recent", "populari
 declare const RESOLVE_PUBLIC_LINK_KIND: readonly ["date", "show", "artist", "category"];
 export declare const getHomeScreen: Route<{
     method: 'get';
-    path: '/v1/home';
+    version: 1;
+    path: '/home';
     parameters: readonly [
+        typeof ViewerTimezoneParameter,
         typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof ViewerTimezoneParameter
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -29,11 +30,12 @@ export declare const getHomeScreen: Route<{
 }>;
 export declare const getLiveScreen: Route<{
     method: 'get';
-    path: '/v1/live';
+    version: 1;
+    path: '/live';
     parameters: readonly [
+        typeof ViewerTimezoneParameter,
         typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof ViewerTimezoneParameter
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -44,7 +46,8 @@ export declare const getLiveScreen: Route<{
 }>;
 export declare const listCategories: Route<{
     method: 'get';
-    path: '/v1/categories';
+    version: 1;
+    path: '/categories';
     parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -55,17 +58,18 @@ export declare const listCategories: Route<{
 }>;
 export declare const getCategoryScreen: Route<{
     method: 'get';
-    path: '/v1/categories/{categoryId}';
+    version: 1;
+    path: '/categories/{categoryId}';
     parameters: readonly [
         typeof CategoryIdParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         QueryParameter<'section', VocabularyIn<typeof GET_CATEGORY_SCREEN_SECTION>>,
         typeof CursorParameter,
         typeof LimitParameter,
         QueryParameter<'subGenreId', z.ZodString>,
         QueryParameter<'filters', typeof SearchCriteriaSchema>,
-        QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof GET_CATEGORY_SCREEN_SORT>>>
+        QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof GET_CATEGORY_SCREEN_SORT>>>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -76,16 +80,17 @@ export declare const getCategoryScreen: Route<{
 }>;
 export declare const listArtists: Route<{
     method: 'get';
-    path: '/v1/artists';
+    version: 1;
+    path: '/artists';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
         typeof CursorDirectionParameter,
         typeof LimitParameter,
         QueryParameter<'categoryId', z.ZodString>,
         QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof LIST_ARTISTS_SORT>>>,
-        QueryParameter<'liveOnly', z.ZodDefault<z.ZodBoolean>>
+        QueryParameter<'liveOnly', z.ZodDefault<z.ZodBoolean>>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -97,7 +102,8 @@ export declare const listArtists: Route<{
 }>;
 export declare const getArtistDetail: Route<{
     method: 'get';
-    path: '/v1/artists/{artistId}';
+    version: 1;
+    path: '/artists/{artistId}';
     parameters: readonly [
         typeof ArtistIdParameter,
         typeof SurfaceParameter,
@@ -112,16 +118,17 @@ export declare const getArtistDetail: Route<{
 }>;
 export declare const search: Route<{
     method: 'get';
-    path: '/v1/search';
+    version: 1;
+    path: '/search';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
         typeof LimitParameter,
         QueryParameter<'q', z.ZodString>,
         QueryParameter<'tab', z.ZodDefault<VocabularyIn<typeof SEARCH_TAB>>>,
         QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof GET_CATEGORY_SCREEN_SORT>>>,
-        QueryParameter<'filters', typeof SearchCriteriaSchema>
+        QueryParameter<'filters', typeof SearchCriteriaSchema>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -137,14 +144,15 @@ export declare const search: Route<{
 }>;
 export declare const listReplays: Route<{
     method: 'get';
-    path: '/v1/replays';
+    version: 1;
+    path: '/replays';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
         typeof LimitParameter,
         QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof LIST_REPLAYS_SORT>>>,
-        QueryParameter<'categoryId', z.ZodString>
+        QueryParameter<'categoryId', z.ZodString>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -157,13 +165,14 @@ export declare const listReplays: Route<{
 }>;
 export declare const extendRail: Route<{
     method: 'get';
-    path: '/v1/rails/{railId}';
+    version: 1;
+    path: '/rails/{railId}';
     parameters: readonly [
         PathParameter<'railId', z.ZodString>,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         typeof CursorParameter,
-        typeof LimitParameter
+        typeof LimitParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
@@ -175,13 +184,14 @@ export declare const extendRail: Route<{
 }>;
 export declare const resolvePublicLink: Route<{
     method: 'get';
-    path: '/v1/resolve';
+    version: 1;
+    path: '/resolve';
     parameters: readonly [
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
         QueryParameter<'url', z.ZodString>,
         QueryParameter<'kind', VocabularyIn<typeof RESOLVE_PUBLIC_LINK_KIND>>,
-        QueryParameter<'slug', z.ZodString>
+        QueryParameter<'slug', z.ZodString>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{

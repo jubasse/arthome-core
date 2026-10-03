@@ -34,6 +34,7 @@ import {
   SurfaceParameter,
   TraceparentParameter,
   UnauthorizedResponse,
+  studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type {
@@ -43,7 +44,6 @@ import type {
   QueryParameter,
   Route,
 } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import {
   HealthSampleSchema,
   HealthSeriesSchema,
@@ -51,6 +51,11 @@ import {
   StreamKeyRevealSchema,
   StudioIncidentSchema,
 } from '../studio-stage/index.js';
+
+const runRoutes = studioV1
+  .tags(StudioTag.RUN)
+  .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
+const runReads = runRoutes.errors({ 403: ForbiddenResponse });
 
 const GET_DATE_TECH_PANE_INGEST_PROTOCOL = ['rtmps', 'srt', 'whip'] as const;
 const GET_DATE_TECH_PANE_MONITOR_PATH = ['whep', 'll_hls'] as const;
@@ -63,7 +68,8 @@ const SET_RUN_STATE_STATE: readonly [
 
 export const getDateTechPane: Route<{
   method: 'get';
-  path: '/v1/dates/{dateId}/panes/tech';
+  version: 1;
+  path: '/dates/{dateId}/panes/tech';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -119,17 +125,16 @@ export const getDateTechPane: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = runReads.defineRoute({
   method: 'get',
-  path: '/v1/dates/{dateId}/panes/tech',
+  path: '/dates/{dateId}/panes/tech',
   operationId: 'getDateTechPane',
-  tags: [StudioTag.RUN],
   summary: "A date's technical pane — pre-flight and broadcast profile.",
   description:
     "Open to `artist`, `production`, `director`, `video`, `sound` and `coordination`. It is a\n`director`'s only pane; it did not exist.\n\n**The stream key does not appear in it**: it appears in no list payload, and revealing it is a\nseparate command, audited and by name.\n",
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [DateIdParameter, SurfaceParameter, IfRightsVersionParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'Protocol, return path, quality ladder, pre-flight checklist.',
@@ -210,14 +215,14 @@ export const getDateTechPane: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
     404: NotFoundResponse,
   },
 });
 
 export const getRunConsole: Route<{
   method: 'get';
-  path: '/v1/dates/{dateId}/run';
+  version: 1;
+  path: '/dates/{dateId}/run';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -234,17 +239,16 @@ export const getRunConsole: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = runReads.defineRoute({
   method: 'get',
-  path: '/v1/dates/{dateId}/run',
+  path: '/dates/{dateId}/run',
   operationId: 'getRunConsole',
-  tags: [StudioTag.RUN],
   summary: 'The state of the run — one call, the whole control-room screen.',
   description:
     '**The return path actually open is served** (`monitorPath`): the studio must **know** it so\nas not to promise the operator a latency it does not have. The contract carries the truth, not\nuniformity — creating a media branch to make a schema uniform would cost more than it returns.\n\n**Two fields, not one**: `state` and `afterGracePeriod`. The studio distinguishes "hiccup\nabsorbed" from "publisher gone", and a two-second network break in a room must produce neither\nan incident nor a manifest restarted from zero.\n\n**The stream key is never here**: it appears in no list payload.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [DateIdParameter, SurfaceParameter, IfRightsVersionParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'The console.',
@@ -301,14 +305,14 @@ export const getRunConsole: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
     404: NotFoundResponse,
   },
 });
 
 export const runTechnicalCheck: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/run/technical-check';
+  version: 1;
+  path: '/dates/{dateId}/run/technical-check';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -339,23 +343,16 @@ export const runTechnicalCheck: Route<{
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = runRoutes.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/run/technical-check',
+  path: '/dates/{dateId}/run/technical-check',
   operationId: 'runTechnicalCheck',
-  tags: [StudioTag.RUN],
   summary: 'Starts the technical check.',
   description:
     'Its success **unlocks publication**: `technical_check_passed` is one of the seven checklist\nitems, and it comes from here. `catalog` **projects** it, it does not ask for it.\n`idle → on_air` is refused as long as the check has never passed.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: "The check's result, and the pre-flight checklist.",
@@ -396,7 +393,8 @@ export const runTechnicalCheck: Route<{
 
 export const setRunState: Route<{
   method: 'put';
-  path: '/v1/dates/{dateId}/run/state';
+  version: 1;
+  path: '/dates/{dateId}/run/state';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -419,23 +417,16 @@ export const setRunState: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = runRoutes.defineRoute({
   method: 'put',
-  path: '/v1/dates/{dateId}/run/state',
+  path: '/dates/{dateId}/run/state',
   operationId: 'setRunState',
-  tags: [StudioTag.RUN],
   summary: 'Goes on air, rehearses, or cuts the broadcast.',
   description:
     '**The "go on air" command goes to `streaming`, not to `catalog`**: only `streaming` knows\nwhether the feed is arriving. Publication **learns** of it afterwards, by event — two\ntransitions out of eight are caused that way, which leaves `Publication` the aggregate of a\nsingle context.\n\n`idle → on_air` is **refused** if the technical check has never passed.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -505,7 +496,8 @@ export const setRunState: Route<{
 
 export const setQualityProfile: Route<{
   method: 'put';
-  path: '/v1/dates/{dateId}/run/quality-profile';
+  version: 1;
+  path: '/dates/{dateId}/run/quality-profile';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -533,23 +525,16 @@ export const setQualityProfile: Route<{
     >;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = runRoutes.defineRoute({
   method: 'put',
-  path: '/v1/dates/{dateId}/run/quality-profile',
+  path: '/dates/{dateId}/run/quality-profile',
   operationId: 'setQualityProfile',
-  tags: [StudioTag.RUN],
   summary: 'Changes the broadcast profile and the quality ladder.',
   description:
     'Named encoding profiles are an **account** preference, not a value local to the workstation.',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -611,13 +596,14 @@ export const setQualityProfile: Route<{
 
 export const getHealthSeries: Route<{
   method: 'get';
-  path: '/v1/dates/{dateId}/run/health-samples';
+  version: 1;
+  path: '/dates/{dateId}/run/health-samples';
   parameters: readonly [
     typeof DateIdParameter,
+    QueryParameter<'windowSec', z.ZodDefault<z.ZodInt>>,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
-    QueryParameter<'windowSec', z.ZodDefault<z.ZodInt>>,
   ];
   responses: {
     200: JsonResponse<
@@ -629,11 +615,10 @@ export const getHealthSeries: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = runReads.defineRoute({
   method: 'get',
-  path: '/v1/dates/{dateId}/run/health-samples',
+  path: '/dates/{dateId}/run/health-samples',
   operationId: 'getHealthSeries',
-  tags: [StudioTag.RUN],
   summary: 'The health series over a bounded window — the curve a reconnection re-requests.',
   description:
     '**The write promised a read that did not exist.** `submitHealthSample`\'s own exemption motive\nsays the series "is **re-requested**, it is not replayed", and `realtime.md` §5.1 files a\nbitrate curve under "to throw away" for that same reason — yet nothing could request it, and\n`RunConsole` served `lastSample` alone. One point is not a curve.\n\nThree paths cross this read every evening and none of them is exceptional: after a\n`resume:too_old`, after a reconnection, and simply opening the console in the middle of a\nlive show.\n\n**Bounded by construction.** The window is a parameter, capped, and defaults to the last\nthree minutes — `studio-mobile` asked for it short, and a control room reads the last three\nminutes, not the last three hours.\n',
@@ -641,9 +626,6 @@ export const getHealthSeries: Route<{
   'x-arthome-upstream': [Service.STREAMING],
   parameters: [
     DateIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     {
       name: 'windowSec',
       in: 'query',
@@ -692,14 +674,14 @@ export const getHealthSeries: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
     404: NotFoundResponse,
   },
 });
 
 export const submitHealthSample: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/run/health-samples';
+  version: 1;
+  path: '/dates/{dateId}/run/health-samples';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -733,11 +715,10 @@ export const submitHealthSample: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = runRoutes.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/run/health-samples',
+  path: '/dates/{dateId}/run/health-samples',
   operationId: 'submitHealthSample',
-  tags: [StudioTag.RUN],
   summary: 'Submits a measurement taken in the control room — the end-to-end latency.',
   description:
     "**End-to-end latency is a dedicated measurement**, never a native figure presented as one.\nIt is measured by `RTCPeerConnection.getStats()` on the WHEP return path and **submitted**,\nhence `source: client_submitted`. **If it is not measured, it is absent** — never replaced by\na zero.\n\n`deviceUpKbps` measures the workstation's uplink, **not the encoder**: two different bitrates\nnever carry the same name, and only `ingestUpKbps` feeds the pre-flight checklist.\n",
@@ -745,7 +726,7 @@ export const submitHealthSample: Route<{
   'x-arthome-upstream': [Service.STREAMING],
   'x-arthome-idempotency-exemption':
     "**One measurement per second per live show, loss-tolerant.** A replayed sample is one more\nsample in a series; a lost sample is missed by nobody. The series is **re-requested**, it is\nnot replayed — that is already the channel's resume rule.\n",
-  parameters: [DateIdParameter, SurfaceParameter, IfRightsVersionParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -804,7 +785,8 @@ export const submitHealthSample: Route<{
 
 export const postChapter: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/run/chapters';
+  version: 1;
+  path: '/dates/{dateId}/run/chapters';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -841,23 +823,16 @@ export const postChapter: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = runRoutes.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/run/chapters',
+  path: '/dates/{dateId}/run/chapters',
   operationId: 'postChapter',
-  tags: [StudioTag.RUN],
   summary: 'Sets a chapter, at its position in the media.',
   description:
     "A chapter carries `atMediaSec` — its **position in the media** — never the time it was set.\nIt is free now and unrecoverable later: without it, a replay's chapters are offset by however\nlong the control room took to set them.\n\n`vocabId` is a vocabulary identifier, **never an authored label**.\n",
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -910,7 +885,8 @@ export const postChapter: Route<{
 
 export const removeChapter: Route<{
   method: 'delete';
-  path: '/v1/dates/{dateId}/run/chapters/{chapterId}';
+  version: 1;
+  path: '/dates/{dateId}/run/chapters/{chapterId}';
   parameters: readonly [
     typeof DateIdParameter,
     PathParameter<'chapterId', z.ZodString>,
@@ -935,11 +911,10 @@ export const removeChapter: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = runRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/dates/{dateId}/run/chapters/{chapterId}',
+  path: '/dates/{dateId}/run/chapters/{chapterId}',
   operationId: 'removeChapter',
-  tags: [StudioTag.RUN],
   summary: 'Removes a chapter.',
   description: 'Replayed on an already-removed chapter, it succeeds.',
   'x-arthome-maturity': 'provisional',
@@ -953,9 +928,6 @@ export const removeChapter: Route<{
       schema: uuidOut(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -988,7 +960,8 @@ export const removeChapter: Route<{
 
 export const raiseIncident: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/incidents';
+  version: 1;
+  path: '/dates/{dateId}/incidents';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -1017,23 +990,16 @@ export const raiseIncident: Route<{
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = runRoutes.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/incidents',
+  path: '/dates/{dateId}/incidents',
   operationId: 'raiseIncident',
-  tags: [StudioTag.RUN],
   summary: 'Declares an incident and broadcasts the holding screen.',
   description:
     '**A client-side veil, never a stream switch**: the control plane publishes the state, the\nplayer displays it **over an untouched video**. Instant, identical on all three storefronts,\nand the media stays intact for the resume.\n\n**Cause and outcome are two vocabularies**, and separating them was necessary: the four\nentries in the sources are **outcomes**, while the mobile control room distinguished three\nmore **causes** that existed nowhere.\n\nThe message travels **with its authoring language**. The catalogue supplies **templates** per\nkind of incident, which the control room reuses or replaces.\n\n**Broadcast latency: ≤ 2 s, non-negotiable** — the client-side veil depends on it.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -1104,7 +1070,8 @@ export const raiseIncident: Route<{
 
 export const resolveIncident: Route<{
   method: 'post';
-  path: '/v1/incidents/{incidentId}/resolve';
+  version: 1;
+  path: '/incidents/{incidentId}/resolve';
   parameters: readonly [
     PathParameter<'incidentId', z.ZodString>,
     typeof IdempotencyKeyParameter,
@@ -1128,11 +1095,10 @@ export const resolveIncident: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = runRoutes.defineRoute({
   method: 'post',
-  path: '/v1/incidents/{incidentId}/resolve',
+  path: '/incidents/{incidentId}/resolve',
   operationId: 'resolveIncident',
-  tags: [StudioTag.RUN],
   summary: 'Resolves the incident and lifts the veil.',
   description:
     'The player **lifts the veil** without asking for a new playback token: otherwise the resume\nwould be paid for with a stream reload, on media that was never cut.\n',
@@ -1146,9 +1112,6 @@ export const resolveIncident: Route<{
       schema: uuidOut(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -1181,7 +1144,8 @@ export const resolveIncident: Route<{
 
 export const escalateIncidentToProduction: Route<{
   method: 'post';
-  path: '/v1/incidents/{incidentId}/escalate';
+  version: 1;
+  path: '/incidents/{incidentId}/escalate';
   parameters: readonly [
     PathParameter<'incidentId', z.ZodString>,
     typeof IdempotencyKeyParameter,
@@ -1206,11 +1170,10 @@ export const escalateIncidentToProduction: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = runRoutes.defineRoute({
   method: 'post',
-  path: '/v1/incidents/{incidentId}/escalate',
+  path: '/incidents/{incidentId}/escalate',
   operationId: 'escalateIncidentToProduction',
-  tags: [StudioTag.RUN],
   summary: 'Escalation to production — the gesture of the roles that do not decide.',
   description:
     '**What a role without `canDecideOutcome` can do.** It declares no outcome; it reports, and\nthe alert is **routed by role and by channel, server-side**. Without this gesture, the only\nrecourse of a stage manager alone in a room would be to phone someone.\n',
@@ -1224,9 +1187,6 @@ export const escalateIncidentToProduction: Route<{
       schema: uuidOut(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: true,
@@ -1272,7 +1232,8 @@ export const escalateIncidentToProduction: Route<{
 
 export const revealStreamKey: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/stream-key/reveal';
+  version: 1;
+  path: '/dates/{dateId}/stream-key/reveal';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -1291,23 +1252,16 @@ export const revealStreamKey: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = runRoutes.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/stream-key/reveal',
+  path: '/dates/{dateId}/stream-key/reveal',
   operationId: 'revealStreamKey',
-  tags: [StudioTag.RUN],
   summary: 'Reveals the stream key — a separate command, audited, by name.',
   description:
     "**It is a secret displayed on a phone, in a room, often in front of a contractor.** Four\nguarantees, and they are in the contract because none of them is verifiable client-side:\n\n- the key is **never** in a list payload;\n- revealing it is **this command**, separate, audited and by name;\n- the response carries **`Cache-Control: no-store`** — it must end up neither in the phone's\n  HTTP cache, nor in the application snapshot the OS takes when it goes to the background;\n- **assignment to the `director` slot**, which grants access to the key, is reserved to\n  `artist ∨ production`.\n\n**Re-authentication required**: this is a sensitive operation, and it is asked for **at the\nmoment of the operation**, never on returning to a screen.\n",
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -1360,7 +1314,8 @@ export const revealStreamKey: Route<{
 
 export const rotateStreamKey: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/stream-key/rotate';
+  version: 1;
+  path: '/dates/{dateId}/stream-key/rotate';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -1383,23 +1338,16 @@ export const rotateStreamKey: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = runRoutes.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/stream-key/rotate',
+  path: '/dates/{dateId}/stream-key/rotate',
   operationId: 'rotateStreamKey',
-  tags: [StudioTag.RUN],
   summary: 'Rotates the stream key — the old one stops broadcasting at once.',
   description:
     '**Immediate**, and the contract says so: the old key stops broadcasting at once. Rotating\n**during a live show** cuts the ingest in progress — the refusal carries a distinct code\n(`date.stream_key_rotation_during_run`) rather than silently executing a command whose consequence\nis dead air.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -1468,7 +1416,8 @@ export const rotateStreamKey: Route<{
 
 export const getChannelStreamSettings: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/stream';
+  version: 1;
+  path: '/channels/{channelId}/stream';
   parameters: readonly [
     typeof ChannelIdParameter,
     typeof SurfaceParameter,
@@ -1520,22 +1469,16 @@ export const getChannelStreamSettings: Route<{
     >;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = runReads.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/stream',
+  path: '/channels/{channelId}/stream',
   operationId: 'getChannelStreamSettings',
-  tags: [StudioTag.RUN],
   summary: "A channel's Broadcast page — ingest server, recommended profile, test history.",
   description:
     '**One of only five entries a control room has**, and it had no operation at all. Taking\n`stream` and `replays` away from a `director` left them an event board.\n\nIt also carries the **broadcast defaults** applied to new dates, which the Settings screen\nannounces and which had no carrier.\n\n**The stream key does not appear in it**: it appears in no list payload.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [
-    ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [ChannelIdParameter],
   responses: {
     200: {
       description: 'Ingest, recommended profile, measured bitrate, check history.',
@@ -1619,6 +1562,5 @@ export const getChannelStreamSettings: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
   },
 });

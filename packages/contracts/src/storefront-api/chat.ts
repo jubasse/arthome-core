@@ -24,6 +24,7 @@ import {
   SurfaceParameter,
   TooManyRequestsResponse,
   TraceparentParameter,
+  storefrontV1,
 } from './components.js';
 import { ChatMessageSchema, ReactionQuotaSchema } from '../engagement/index.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
@@ -34,21 +35,34 @@ import type {
   QueryParameter,
   Route,
 } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import { StorefrontCursorPageInfoSchema } from '../pagination/index.js';
+
+const chatRoutes = storefrontV1
+  .tags(StorefrontTag.CHAT)
+  .headers(SurfaceParameter, TraceparentParameter);
+const chatWrites = chatRoutes.security(
+  {
+    sessionCookie: [],
+    csrfToken: [],
+  },
+  {
+    bearerToken: [],
+  },
+);
 
 const SEND_REACTION_REACTION_ID = ['applause', 'heart', 'bravo', 'laugh', 'wow', 'sad'] as const;
 
 export const listChatMessages: Route<{
   method: 'get';
-  path: '/v1/dates/{dateId}/chat/messages';
+  version: 1;
+  path: '/dates/{dateId}/chat/messages';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof LimitParameter,
     QueryParameter<'sinceSeq', z.ZodNumber>,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -66,11 +80,10 @@ export const listChatMessages: Route<{
     404: typeof NotFoundResponse;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = chatRoutes.defineRoute({
   method: 'get',
-  path: '/v1/dates/{dateId}/chat/messages',
+  path: '/dates/{dateId}/chat/messages',
   operationId: 'listChatMessages',
-  tags: [StorefrontTag.CHAT],
   summary: "The chat's sliding window, by cursor.",
   description:
     '**No backward pagination on a live chat**: nobody scrolls back through a chat with a remote\ncontrol, and on all three surfaces it is a sliding window. The full history is read on the\n**replay**, replayed by `atMediaSec`.\n\nCatch-up on entry is **served per surface**: 20 messages on television, 50 elsewhere. **No\nremoved message ever reaches a public surface** — moderation is a state on the `chat` side,\nand the stream served is already filtered.\n',
@@ -78,8 +91,6 @@ export const listChatMessages: Route<{
   'x-arthome-upstream': [DatePane.CHAT],
   parameters: [
     DateIdParameter,
-    SurfaceParameter,
-    TraceparentParameter,
     CursorParameter,
     LimitParameter,
     {
@@ -135,7 +146,8 @@ export const listChatMessages: Route<{
 
 export const sendChatMessage: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/chat/messages';
+  version: 1;
+  path: '/dates/{dateId}/chat/messages';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -155,26 +167,16 @@ export const sendChatMessage: Route<{
     403: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
     429: typeof TooManyRequestsResponse;
   };
-}> = defineRoute({
+}> = chatWrites.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/chat/messages',
+  path: '/dates/{dateId}/chat/messages',
   operationId: 'sendChatMessage',
-  tags: [StorefrontTag.CHAT],
   summary: 'Posts a chat message.',
   description:
     '**Never queued offline**: a message replayed ten minutes later no longer means anything. It\nis **dropped**, not queued.\n\nThe position in the media (`atMediaSec`) is **provided by the client**, because only the\nclient knows where its playback has reached; the absolute instant is set by the server. Both\ntravel, never one alone.\n\nThe **rate limit is in the contract**, not merely enforced: `chat.rate_limited` carries\n`retryAfterMs`, so the surface can **disable the input cleanly** instead of stacking up\nrefusals.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [DatePane.CHAT],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [DateIdParameter, IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -244,7 +246,8 @@ export const sendChatMessage: Route<{
 
 export const sendReaction: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/chat/reactions';
+  version: 1;
+  path: '/dates/{dateId}/chat/reactions';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -266,11 +269,10 @@ export const sendReaction: Route<{
     429: typeof TooManyRequestsResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = chatWrites.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/chat/reactions',
+  path: '/dates/{dateId}/chat/reactions',
   operationId: 'sendReaction',
-  tags: [StorefrontTag.CHAT],
   summary: 'Sends a reaction, and returns the remaining quota.',
   description:
     '**The quota travels with the response** — how many are left, when it recharges — so that the\nsurface can **disable** the control rather than let it fail. An inert action is forbidden by\nthe brief; an action that fails silently is worse. **One reaction in flight at a time.**\n',
@@ -278,16 +280,7 @@ export const sendReaction: Route<{
   'x-arthome-upstream': [DatePane.CHAT],
   'x-arthome-idempotency-exemption':
     '**The quota already bounds the effect**, and it is served with the response. A replayed key\nwould return a **stale** quota — "17 left" when 12 are left — which is worse than no response\nat all: the surface disables its control on that number.\n',
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [DateIdParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -335,7 +328,8 @@ export const sendReaction: Route<{
 
 export const reportChatMessage: Route<{
   method: 'post';
-  path: '/v1/chat/messages/{messageId}/report';
+  version: 1;
+  path: '/chat/messages/{messageId}/report';
   parameters: readonly [
     PathParameter<'messageId', z.ZodString>,
     typeof IdempotencyKeyParameter,
@@ -362,25 +356,15 @@ export const reportChatMessage: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = chatWrites.defineRoute({
   method: 'post',
-  path: '/v1/chat/messages/{messageId}/report',
+  path: '/chat/messages/{messageId}/report',
   operationId: 'reportChatMessage',
-  tags: [StorefrontTag.CHAT],
   summary: 'Reports a message to moderation.',
   description:
     'A report creates a **queue row** (`reported`), not a sanction. The three axes never stack.',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [DatePane.CHAT],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
   parameters: [
     {
       name: 'messageId',
@@ -389,8 +373,6 @@ export const reportChatMessage: Route<{
       schema: uuidOut(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: true,

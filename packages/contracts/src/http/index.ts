@@ -56,7 +56,9 @@ export interface RequestBody extends Extensions {
 /** What a route's types are read from — the part of its annotation a handler or client needs. */
 export interface RouteShape {
   readonly method: HttpMethod;
-  /** The OpenAPI template, `/v1/dates/{dateId}`. */
+  /** The API version the route belongs to. It is not part of `path`: see `versionedPath`. */
+  readonly version: number;
+  /** The OpenAPI template without its version, `/dates/{dateId}`. */
   readonly path: string;
   readonly parameters?: readonly Parameter[];
   readonly requestBody?: RequestBody;
@@ -92,7 +94,143 @@ export function accessorOf<const T extends readonly string[]>(members: T): Acces
 
 export type Route<T extends RouteShape = RouteShape> = T & Omit<RouteDefinition, keyof T>;
 
+/** The only versioning strategy: the version is a path prefix, `/v1/dates/{dateId}`. */
+export function versionedPath(route: Pick<RouteShape, 'version' | 'path'>): string {
+  return `/v${String(route.version)}${route.path}`;
+}
+
+export type VersionedPath<R extends Pick<RouteShape, 'version' | 'path'>> =
+  `/v${R['version']}${R['path']}`;
+
+const VERSION_SUFFIX = /V(\d+)$/;
+
+type HeaderParameters = readonly (Parameter & { readonly in: 'header' })[];
+
+type Responses = Readonly<Record<string, Response>>;
+
+/** What a builder's `defineRoute` takes: a route without its version, which the builder holds. */
+export type BuiltRouteDefinition = Omit<RouteDefinition, 'version'>;
+
+type OwnParameters<D> = D extends { readonly parameters: infer X extends readonly Parameter[] }
+  ? X
+  : readonly [];
+
+type OwnBody<D> = D extends { readonly requestBody: infer B extends RequestBody }
+  ? { readonly requestBody: B }
+  : unknown;
+
+/** The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors. */
+export type BuiltRoute<
+  V extends number,
+  P extends readonly Parameter[],
+  E extends Responses,
+  D extends BuiltRouteDefinition,
+> = Route<
+  {
+    readonly method: D['method'];
+    readonly version: V;
+    readonly path: D['path'];
+    readonly parameters: readonly [...OwnParameters<D>, ...P];
+    readonly responses: Omit<E, keyof D['responses']> & D['responses'];
+  } & OwnBody<D>
+>;
+
+/**
+ * Settings shared by the routes of a group, accumulated one call at a time. Every call returns a
+ * NEW builder and the types carry what was set, so `defineRoute` is inferred in full: the
+ * builder's headers follow a route's own parameters and its errors sit under the route's
+ * responses, and the route's own `tags` and `security` replace the builder's.
+ */
+export interface RouteBuilder<
+  V extends number | undefined,
+  P extends readonly Parameter[],
+  E extends Responses,
+> {
+  version<const N extends number>(version: N): RouteBuilder<N, P, E>;
+  tags(...tags: readonly string[]): RouteBuilder<V, P, E>;
+  headers<const H extends HeaderParameters>(
+    ...headers: H
+  ): RouteBuilder<V, readonly [...P, ...H], E>;
+  errors<const R extends Responses>(responses: R): RouteBuilder<V, P, Omit<E, keyof R> & R>;
+  security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E>;
+  defineRoute<const D extends BuiltRouteDefinition>(
+    this: RouteBuilder<number, P, E>,
+    definition: D,
+  ): BuiltRoute<NonNullable<V>, P, E, D>;
+}
+
+interface BuilderSettings {
+  readonly version: number | undefined;
+  readonly tags: readonly string[] | undefined;
+  readonly headers: readonly Parameter[];
+  readonly errors: Responses;
+  readonly security: readonly SecurityRequirement[] | undefined;
+}
+
+function builderOf(
+  settings: BuilderSettings,
+): RouteBuilder<number, readonly Parameter[], Responses> {
+  const next = (changes: Partial<BuilderSettings>): ReturnType<typeof builderOf> =>
+    builderOf({ ...settings, ...changes });
+  return Object.freeze({
+    version: (version: number) => next({ version }),
+    tags: (...tags: readonly string[]) => next({ tags: Object.freeze([...tags]) }),
+    headers: (...headers: readonly Parameter[]) =>
+      next({ headers: Object.freeze([...settings.headers, ...headers]) }),
+    errors: (responses: Responses) =>
+      next({ errors: Object.freeze({ ...settings.errors, ...responses }) }),
+    security: (...requirements: readonly SecurityRequirement[]) =>
+      next({ security: Object.freeze([...requirements]) }),
+    defineRoute: (definition: BuiltRouteDefinition) => {
+      if (settings.version === undefined) {
+        throw new Error(
+          `defineRoute: "${definition.operationId}" has no version; call .version(n).`,
+        );
+      }
+      const tags = definition.tags ?? settings.tags;
+      const security = definition.security ?? settings.security;
+      const parameters = [...(definition.parameters ?? []), ...settings.headers];
+      return defineRoute({
+        ...definition,
+        version: settings.version,
+        ...(tags !== undefined && { tags }),
+        ...(security !== undefined && { security }),
+        ...(parameters.length > 0 && { parameters }),
+        responses: { ...settings.errors, ...definition.responses },
+      });
+    },
+  }) as unknown as RouteBuilder<number, readonly Parameter[], Responses>;
+}
+
+/** The empty builder: `routeBuilder().version(1).tags(...).headers(...).errors(...)`. */
+export function routeBuilder(): RouteBuilder<undefined, readonly [], Record<never, never>> {
+  return builderOf({
+    version: undefined,
+    tags: undefined,
+    headers: [],
+    errors: {},
+    security: undefined,
+  }) as unknown as RouteBuilder<undefined, readonly [], Record<never, never>>;
+}
+
+/** Version 1 keeps the bare name; a later version of an operation is named `{name}V{version}`. */
+function checkOperationId(definition: RouteDefinition): void {
+  const suffix = VERSION_SUFFIX.exec(definition.operationId);
+  const named = suffix === null ? 1 : Number(suffix[1]);
+  if (
+    !Number.isInteger(definition.version) ||
+    definition.version < 1 ||
+    named !== definition.version
+  ) {
+    throw new Error(
+      `defineRoute: "${definition.operationId}" is version ${String(definition.version)}; ` +
+        'version 1 has the bare operation id and version n the suffix "V{n}".',
+    );
+  }
+}
+
 export function defineRoute<const T extends RouteDefinition>(definition: T): Route<T> {
+  checkOperationId(definition);
   return definition;
 }
 
@@ -104,27 +242,28 @@ export interface PathParameter<Name extends string, S extends z.ZodType> extends
   readonly schema: S;
 }
 
-export interface QueryParameter<
-  Name extends string,
-  S extends z.ZodType,
-  Required = false,
-> extends Parameter {
-  readonly name: Name;
-  readonly in: 'query';
-  readonly required?: Required extends true ? true : false;
-  readonly schema: S;
-}
+/** A required parameter says `required: true`; an optional one may say `required: false` or nothing. */
+type RequiredFlag<Required> = Required extends true
+  ? { readonly required: true }
+  : { readonly required?: false };
 
-export interface HeaderParameter<
+export type QueryParameter<Name extends string, S extends z.ZodType, Required = false> = Parameter &
+  RequiredFlag<Required> & {
+    readonly name: Name;
+    readonly in: 'query';
+    readonly schema: S;
+  };
+
+export type HeaderParameter<
   Name extends string,
   S extends z.ZodType,
   Required = false,
-> extends Parameter {
-  readonly name: Name;
-  readonly in: 'header';
-  readonly required?: Required extends true ? true : false;
-  readonly schema: S;
-}
+> = Parameter &
+  RequiredFlag<Required> & {
+    readonly name: Name;
+    readonly in: 'header';
+    readonly schema: S;
+  };
 
 /** The annotation of a response with a JSON body. */
 export interface JsonResponse<S extends z.ZodType> extends Response {
@@ -166,10 +305,14 @@ export type Api<Routes extends Readonly<Record<string, Route>> = Readonly<Record
 export function defineApi<const Routes extends Readonly<Record<string, Route>>>(
   definition: ApiDefinition<Routes>,
 ): Api<Routes> {
+  const served = new Set<string>();
   for (const [key, route] of Object.entries(definition.routes)) {
     if (key !== route.operationId) {
       throw new Error(`defineApi: the route under "${key}" is operation "${route.operationId}".`);
     }
+    const address = `${route.method.toUpperCase()} ${versionedPath(route)}`;
+    if (served.has(address)) throw new Error(`defineApi: ${address} is declared twice.`);
+    served.add(address);
   }
   return definition;
 }
@@ -410,7 +553,9 @@ export function successStatusOf(route: RouteShape): number {
     .sort((a, b) => a - b);
   const first = statuses[0];
   if (first === undefined) {
-    throw new Error(`${route.method.toUpperCase()} ${route.path} declares no 2xx response.`);
+    throw new Error(
+      `${route.method.toUpperCase()} ${versionedPath(route)} declares no 2xx response.`,
+    );
   }
   return first;
 }

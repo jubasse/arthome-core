@@ -5,7 +5,8 @@ import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
 import type { HeaderParameter, JsonResponse, Response, Route } from '../http/index.js';
 export declare const getDateDetail: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}';
+    version: 1;
+    path: '/dates/{dateId}';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,

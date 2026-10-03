@@ -9,7 +9,8 @@ declare const OPEN_PLAYBACK_KIND: readonly [typeof DisplayState.LIVE, typeof Dis
 declare const OPEN_PLAYBACK_DRM_SYSTEMS: readonly ["fairplay", "widevine", "playready"];
 export declare const openPlayback: Route<{
     method: 'post';
-    path: '/v1/playback/{dateId}/open';
+    version: 1;
+    path: '/playback/{dateId}/open';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -36,7 +37,8 @@ export declare const openPlayback: Route<{
 }>;
 export declare const renewPlaybackTicket: Route<{
     method: 'post';
-    path: '/v1/playback/sessions/{sessionId}/renew';
+    version: 1;
+    path: '/playback/sessions/{sessionId}/renew';
     parameters: readonly [
         PathParameter<'sessionId', z.ZodString>,
         typeof SurfaceParameter,
@@ -53,7 +55,8 @@ export declare const renewPlaybackTicket: Route<{
 }>;
 export declare const releasePlayback: Route<{
     method: 'post';
-    path: '/v1/playback/sessions/{sessionId}/release';
+    version: 1;
+    path: '/playback/sessions/{sessionId}/release';
     parameters: readonly [
         PathParameter<'sessionId', z.ZodString>,
         typeof SurfaceParameter,
@@ -71,7 +74,8 @@ export declare const releasePlayback: Route<{
 }>;
 export declare const recordPlaybackPosition: Route<{
     method: 'put';
-    path: '/v1/me/progress/{dateId}';
+    version: 1;
+    path: '/me/progress/{dateId}';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,

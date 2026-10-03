@@ -21,11 +21,25 @@ import {
   SurfaceParameter,
   TraceparentParameter,
   UnavailableResponse,
+  storefrontV1,
 } from './components.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import { PlaybackRenewalSchema, PlaybackTicketSchema } from '../streaming/index.js';
+
+const playbackRoutes = storefrontV1
+  .tags(StorefrontTag.PLAYBACK)
+  .headers(SurfaceParameter, TraceparentParameter)
+  .errors({ 404: NotFoundResponse })
+  .security(
+    {
+      sessionCookie: [],
+      csrfToken: [],
+    },
+    {
+      bearerToken: [],
+    },
+  );
 
 const OPEN_PLAYBACK_KIND: readonly [typeof DisplayState.LIVE, typeof DisplayState.REPLAY] = [
   DisplayState.LIVE,
@@ -35,7 +49,8 @@ const OPEN_PLAYBACK_DRM_SYSTEMS = ['fairplay', 'widevine', 'playready'] as const
 
 export const openPlayback: Route<{
   method: 'post';
-  path: '/v1/playback/{dateId}/open';
+  version: 1;
+  path: '/playback/{dateId}/open';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -72,11 +87,10 @@ export const openPlayback: Route<{
     404: typeof NotFoundResponse;
     503: typeof UnavailableResponse;
   };
-}> = defineRoute({
+}> = playbackRoutes.defineRoute({
   method: 'post',
-  path: '/v1/playback/{dateId}/open',
+  path: '/playback/{dateId}/open',
   operationId: 'openPlayback',
-  tags: [StorefrontTag.PLAYBACK],
   summary: 'The binding verdict, the token, the lease, and the whole player screen.',
   description:
     "**This is the only evaluation of the right that is authoritative**, because it is the only\none that produces a token. The verdict served on a card is advisory (`advisory: true`); this\none is not.\n\n**The right is rechecked when playback starts, never inherited from the catalogue**: the\nviewer's country changes between the two — travel, roaming, a corporate network — and on\nmobile that gap is measured in hours.\n\n**Budget ≤ 1 s.** All the screen's material arrives here: chapters, tracks, chat mode,\nongoing incident, resume point, live edge, DRM, quality cap. No panel of the player should\ntrigger another call.\n\n**`Cache-Control: no-store`.** A right read back from disk is a false right.\n",
@@ -84,16 +98,7 @@ export const openPlayback: Route<{
   'x-arthome-upstream': [Service.STREAMING],
   'x-arthome-idempotency-exemption':
     '**Idempotency would be redundant here, because resumption already provides it.** An opening\non a `deviceId` that holds a live lease **resumes that lease** and returns the same\n`sessionId`: the effect of a second call is the effect of the first, by construction and not\nby memorisation. Adding a key would additionally memorise a `PlaybackTicket` — hence a signed\ntoken and its expiry instant — in a 24-hour store, for a response the contract says is\n**never** cached.\n',
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [DateIdParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -228,14 +233,14 @@ export const openPlayback: Route<{
         },
       },
     },
-    404: NotFoundResponse,
     503: UnavailableResponse,
   },
 });
 
 export const renewPlaybackTicket: Route<{
   method: 'post';
-  path: '/v1/playback/sessions/{sessionId}/renew';
+  version: 1;
+  path: '/playback/sessions/{sessionId}/renew';
   parameters: readonly [
     PathParameter<'sessionId', z.ZodString>,
     typeof SurfaceParameter,
@@ -252,11 +257,10 @@ export const renewPlaybackTicket: Route<{
     404: typeof NotFoundResponse;
     503: typeof UnavailableResponse;
   };
-}> = defineRoute({
+}> = playbackRoutes.defineRoute({
   method: 'post',
-  path: '/v1/playback/sessions/{sessionId}/renew',
+  path: '/playback/sessions/{sessionId}/renew',
   operationId: 'renewPlaybackTicket',
-  tags: [StorefrontTag.PLAYBACK],
   summary: 'Renews the token and extends the lease, without restarting playback.',
   description:
     '**Every 45 s**, for a 120 s token and a 90 s lease. It is the renewal that carries the\nconcurrent-screen limit: **the window during which someone watches a stream they are no\nlonger entitled to is exactly the renewal interval.**\n\nThe response contains **nothing that would force a manifest reload**: the path is stable,\nonly the signature changes.\n\n**Four distinct refusal codes**, because the surface displays four different messages. A\ngeneric code would produce a false one three times out of four.\n',
@@ -264,15 +268,6 @@ export const renewPlaybackTicket: Route<{
   'x-arthome-upstream': [Service.STREAMING],
   'x-arthome-idempotency-exemption':
     '**A renewal must produce a fresh window, never a memorised one.** Returning the original\nresponse would return a token already part-spent — and, at the worst moment, an already\nexpired one — when the call exists precisely to obtain a new one. It is also this renewal\nthat carries the concurrent-screen limit: replaying it from a store would bypass the count.\n',
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
   parameters: [
     {
       name: 'sessionId',
@@ -280,8 +275,6 @@ export const renewPlaybackTicket: Route<{
       required: true,
       schema: uuidOut(),
     },
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -328,14 +321,14 @@ export const renewPlaybackTicket: Route<{
         },
       },
     },
-    404: NotFoundResponse,
     503: UnavailableResponse,
   },
 });
 
 export const releasePlayback: Route<{
   method: 'post';
-  path: '/v1/playback/sessions/{sessionId}/release';
+  version: 1;
+  path: '/playback/sessions/{sessionId}/release';
   parameters: readonly [
     PathParameter<'sessionId', z.ZodString>,
     typeof SurfaceParameter,
@@ -358,11 +351,10 @@ export const releasePlayback: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = playbackRoutes.defineRoute({
   method: 'post',
-  path: '/v1/playback/sessions/{sessionId}/release',
+  path: '/playback/sessions/{sessionId}/release',
   operationId: 'releasePlayback',
-  tags: [StorefrontTag.PLAYBACK],
   summary: 'Releases a playback session — speeds things up, guarantees nothing.',
   description:
     '**Nothing depends on it.** A television is unplugged, a set-top box cuts out, the operating\nsystem kills a mobile application without warning: it is the **lease** that expires (90 s),\nnever this call that closes. A session that only closed on a client event would leave a ghost\nscreen, and the viewer would be refused their own second playback.\n\nThe client can **resume its own session**, identified by `deviceId`: reopening the player on\nthe same device reuses the lease instead of opening a second one.\n',
@@ -370,15 +362,6 @@ export const releasePlayback: Route<{
   'x-arthome-upstream': [Service.STREAMING],
   'x-arthome-idempotency-exemption':
     '**Idempotent by nature, and nothing depends on it.** Releasing twice leaves the same state,\nand it is the **expiring lease** that is authoritative — this call merely speeds things up. A\nkey would protect an effect that has neither accumulation nor consequence.\n',
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
   parameters: [
     {
       name: 'sessionId',
@@ -386,8 +369,6 @@ export const releasePlayback: Route<{
       required: true,
       schema: uuidOut(),
     },
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -413,14 +394,14 @@ export const releasePlayback: Route<{
         },
       },
     },
-    404: NotFoundResponse,
     403: CsrfRefusedResponse,
   },
 });
 
 export const recordPlaybackPosition: Route<{
   method: 'put';
-  path: '/v1/me/progress/{dateId}';
+  version: 1;
+  path: '/me/progress/{dateId}';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -456,11 +437,10 @@ export const recordPlaybackPosition: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = playbackRoutes.defineRoute({
   method: 'put',
-  path: '/v1/me/progress/{dateId}',
+  path: '/me/progress/{dateId}',
   operationId: 'recordPlaybackPosition',
-  tags: [StorefrontTag.PLAYBACK],
   summary: 'Records the playback position.',
   description:
     '**The most frequent write in the system.** It carries **no** idempotency key: one key per\n30 s slice, per viewer and per live show would make the idempotency store the hottest table\nin `streaming`, to protect a write whose loss has no consequence.\n\nExpected cadence: **on pause, on exit, on end, and a 30-to-60 s heartbeat**, plus a **forced\nwrite when going to the background**.\n\n**A late write is accepted**: the last position must be taken even if it arrives **after** a\n`releasePlayback` — a television can be cut off at any moment.\n\n**Last writer wins, and the ordering comes from the server.**\n',
@@ -468,16 +448,7 @@ export const recordPlaybackPosition: Route<{
   'x-arthome-upstream': [Service.STREAMING],
   'x-arthome-idempotency-exemption':
     '**The most frequent write in the system.** One key per 30-second slice, per viewer and per\nlive show would make the idempotency store the hottest table in `streaming` — to protect a\nwrite whose loss has no consequence and whose rule is already "last writer wins, server\nordering". The cost would be per minute of playback and per viewer.\n',
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [DateIdParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -521,7 +492,6 @@ export const recordPlaybackPosition: Route<{
         },
       },
     },
-    404: NotFoundResponse,
     403: CsrfRefusedResponse,
   },
 });

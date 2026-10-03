@@ -20,10 +20,17 @@ import type {
   Response,
   Route,
 } from '../http/index.js';
+import { versionedPath } from '../http/index.js';
 
 type Io = 'input' | 'output';
 
 export type OpenApiDocument = Readonly<Record<string, unknown>>;
+
+/** What the path and the method say, not the operation. */
+const STRUCTURE = new Set(['method', 'version', 'path']);
+
+/** Written last, in this order, whatever order the declaration spells them: the keys a reader scans for. */
+const LAST = new Set(['security', 'parameters', 'requestBody', 'responses']);
 
 const SLOT_PREFIX = '__route_schema_';
 const SCHEMA_REF_PREFIX = '#/components/schemas/';
@@ -127,23 +134,20 @@ class DocumentBuilder {
   public operation(route: Route): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(route)) {
-      if (key === 'method' || key === 'path') continue;
-      if (key === 'parameters' && route.parameters !== undefined) {
-        out[key] = route.parameters.map((parameter) =>
-          this.refOr(parameter, () => this.parameter(parameter)),
-        );
-      } else if (key === 'requestBody' && route.requestBody !== undefined) {
-        out[key] = this.requestBody(route.requestBody);
-      } else if (key === 'responses') {
-        const responses: Record<string, unknown> = {};
-        for (const [status, response] of Object.entries(route.responses)) {
-          responses[status] = this.refOr(response, () => this.response(response));
-        }
-        out[key] = responses;
-      } else {
-        out[key] = value;
-      }
+      if (!STRUCTURE.has(key) && !LAST.has(key)) out[key] = value;
     }
+    if (route.security !== undefined) out.security = route.security;
+    if (route.parameters !== undefined) {
+      out.parameters = route.parameters.map((parameter) =>
+        this.refOr(parameter, () => this.parameter(parameter)),
+      );
+    }
+    if (route.requestBody !== undefined) out.requestBody = this.requestBody(route.requestBody);
+    const responses: Record<string, unknown> = {};
+    for (const [status, response] of Object.entries(route.responses)) {
+      responses[status] = this.refOr(response, () => this.response(response));
+    }
+    out.responses = responses;
     return out;
   }
 
@@ -247,8 +251,8 @@ export function openApiDocumentOf(api: Api): OpenApiDocument {
     if (key === 'routes') {
       const paths: Record<string, Record<string, unknown>> = {};
       for (const route of Object.values(api.routes)) {
-        paths[route.path] ??= {};
-        paths[route.path] = { ...paths[route.path], [route.method]: builder.operation(route) };
+        const path = versionedPath(route);
+        paths[path] = { ...paths[path], [route.method]: builder.operation(route) };
       }
       document.paths = paths;
     } else if (key === 'components') {

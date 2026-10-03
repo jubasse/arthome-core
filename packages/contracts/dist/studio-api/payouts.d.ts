@@ -11,17 +11,18 @@ declare const COUNTERSIGN_BANK_CHANGE_DECISION: readonly ["countersign", "reject
 declare const REQUEST_CHANNEL_EXPORT_KIND: readonly ["sales_csv", "fec", "sage", "cegid", "grouped_invoices", "journal", "schedule_ics", "stats_csv"];
 export declare const listPayouts: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/payouts';
+    version: 1;
+    path: '/channels/{channelId}/payouts';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
         typeof PageParameter,
         typeof PageSizeParameter,
         typeof SortByParameter,
         typeof SortDirParameter,
-        QueryParameter<'state', VocabularyIn<typeof PAYOUT_STATES>>
+        QueryParameter<'state', VocabularyIn<typeof PAYOUT_STATES>>,
+        typeof SurfaceParameter,
+        typeof IfRightsVersionParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -35,13 +36,14 @@ export declare const listPayouts: Route<{
 }>;
 export declare const requestBankChange: Route<{
     method: 'post';
-    path: '/v1/channels/{channelId}/bank-change-requests';
+    version: 1;
+    path: '/channels/{channelId}/bank-change-requests';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         stripeSetupRef: z.ZodString;
@@ -57,13 +59,14 @@ export declare const requestBankChange: Route<{
 }>;
 export declare const countersignBankChange: Route<{
     method: 'post';
-    path: '/v1/bank-change-requests/{requestId}/countersign';
+    version: 1;
+    path: '/bank-change-requests/{requestId}/countersign';
     parameters: readonly [
         PathParameter<'requestId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         decision: VocabularyIn<typeof COUNTERSIGN_BANK_CHANGE_DECISION>;
@@ -79,14 +82,15 @@ export declare const countersignBankChange: Route<{
 }>;
 export declare const closeReconciliationPeriod: Route<{
     method: 'post';
-    path: '/v1/channels/{channelId}/reconciliation-periods/{periodId}/close';
+    version: 1;
+    path: '/channels/{channelId}/reconciliation-periods/{periodId}/close';
     parameters: readonly [
         typeof ChannelIdParameter,
         PathParameter<'periodId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         explanations: z.ZodOptional<z.ZodArray<z.ZodObject<{
@@ -106,13 +110,14 @@ export declare const closeReconciliationPeriod: Route<{
 }>;
 export declare const requestChannelExport: Route<{
     method: 'post';
-    path: '/v1/channels/{channelId}/exports';
+    version: 1;
+    path: '/channels/{channelId}/exports';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         kind: VocabularyIn<typeof REQUEST_CHANNEL_EXPORT_KIND>;
@@ -128,7 +133,8 @@ export declare const requestChannelExport: Route<{
 }>;
 export declare const getChannelExport: Route<{
     method: 'get';
-    path: '/v1/exports/{exportId}';
+    version: 1;
+    path: '/exports/{exportId}';
     parameters: readonly [
         PathParameter<'exportId', z.ZodString>,
         typeof SurfaceParameter,

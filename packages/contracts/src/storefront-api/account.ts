@@ -32,6 +32,7 @@ import {
   TooManyRequestsResponse,
   TraceparentParameter,
   UnauthorizedResponse,
+  storefrontV1,
 } from './components.js';
 import { ArtistSummarySchema, DateCardSchema, SavedSearchSchema } from '../catalog/index.js';
 import { NotificationEntrySchema, NotificationPreferencesSchema } from '../engagement/index.js';
@@ -43,7 +44,6 @@ import type {
   QueryParameter,
   Route,
 } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import {
   AccountScreenSchema,
   ConsentsSchema,
@@ -62,6 +62,10 @@ import {
   TicketCardSchema,
 } from '../ticketing/index.js';
 
+const accountRoutes = storefrontV1
+  .tags(StorefrontTag.ACCOUNT)
+  .headers(SurfaceParameter, TraceparentParameter);
+
 const START_SOCIAL_SIGN_IN_PROVIDER = ['google', 'facebook'] as const;
 const LIST_MY_TICKETS_WINDOW = ['upcoming', 'past'] as const;
 const LIST_FOLLOWED_ARTISTS_SORT = ['alpha', 'followers', 'next_date'] as const;
@@ -78,7 +82,8 @@ const CONTACT_SUPPORT_TOPIC = [
 
 export const signUp: Route<{
   method: 'post';
-  path: '/v1/auth/sign-up';
+  version: 1;
+  path: '/auth/sign-up';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -109,18 +114,17 @@ export const signUp: Route<{
     409: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
     429: typeof TooManyRequestsResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/sign-up',
+  path: '/auth/sign-up',
   operationId: 'signUp',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Creates an account with email and password.',
   description:
     '**A documented relay to `identity`, and the relay is mandatory, not preferable.** Three\nreasons, the first of which comes from our own tooling:\n\n1. **zod is the source and the OpenAPI is generated from it.** A transparent relay has no\n   schema, so it **would not appear in this document** — the six missing contracts would\n   stay missing. That is the decisive argument;\n2. **i18n by codes.** The authentication library answers in English sentences\n   (`"Invalid email or password"`), which the error envelope forbids. The BFF translates\n   into **codes**, envelope included;\n3. **rate limiting per `device_id`**, which the library cannot do: its ceilings are per\n   address or per session, and a living room behind a NAT shares its address.\n\nThe cookie, when there is one, is set on the **BFF\'s domain** — that is what lets the\nserver renderer read it, and what keeps critical rule 1 free of an exception through the\nauthentication door.\n\n**The public handle is generated, neutral, and changeable later** through `updateProfile`\n(D-101): a sign-up never fails on a handle, and nothing personal becomes public by\ndefault. A verification link is emailed at once; an unverified address blocks nothing\n(D-100), and `ViewerContext.account.emailVerified` says where it stands.\n\n**A taken email answers `409` `identity.email_taken`** (D-099). The status alone says the\naddress is registered, so what bounds enumeration is the rate limit, answered `429`.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
   security: [],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -224,7 +228,8 @@ export const signUp: Route<{
 
 export const signIn: Route<{
   method: 'post';
-  path: '/v1/auth/sign-in';
+  version: 1;
+  path: '/auth/sign-in';
   parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -247,11 +252,10 @@ export const signIn: Route<{
     401: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
     429: typeof TooManyRequestsResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/sign-in',
+  path: '/auth/sign-in',
   operationId: 'signIn',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Opens a session with email and password.',
   description:
     'Same relay, same translation into codes: `identity.invalid_credentials` **never** distinguishes an\nunknown email from a wrong password — the distinction would tell an attacker which accounts\nexist.\n\n`identity.two_factor_required` is an **intermediate** refusal, not a failure: it carries a\n`challengeId` to present to `/v1/auth/two-factor/verify`.\n',
@@ -260,7 +264,6 @@ export const signIn: Route<{
   'x-arthome-idempotency-exemption':
     '**The one exemption that is not "nothing to deduplicate": this one is a prohibition.** The\nidempotency regime replays the original response **verbatim**; on a session opening, that\nwould amount to **returning a token without having verified the credentials**. A replayed\nkey would become a session bearer — and a stolen key, a stolen session.\n\nThe five other authentication routes do carry the key, because a replay there returns the\noriginal response rather than a `410` or a second effect: that is safe resumption. A\nsign-in, no — it must **always** re-authenticate. The protection against double submission\nhere is rate limiting per `device_id`, not the idempotency store.\n',
   security: [],
-  parameters: [SurfaceParameter, TraceparentParameter],
   requestBody: {
     required: true,
     content: {
@@ -356,7 +359,8 @@ export const signIn: Route<{
 
 export const signOut: Route<{
   method: 'post';
-  path: '/v1/auth/sign-out';
+  version: 1;
+  path: '/auth/sign-out';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -378,17 +382,16 @@ export const signOut: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/sign-out',
+  path: '/auth/sign-out',
   operationId: 'signOut',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Closes the current session — and nothing else.',
   description:
     "**The trap this operation exists to avoid.** The authentication library's `signOut` revokes\n**all** of the user's sessions. On a television shared by five profiles, that is never what\nanyone wants: it would sign out the whole living room.\n\n**Two gestures, two routes, never one for the other**:\n- **this one** closes the current session;\n- **`DELETE /v1/me/device-sessions/{sessionId}`** signs out **one profile** from a device\n  (`multi-session.revoke`), the other accounts staying signed in;\n- **`DELETE /v1/me/devices/{deviceId}`** removes the device, all its sessions **and its\n  playback leases**.\n\n**Order matters in `bearer` mode**: the session is destroyed server-side **then** the client\nclears its native store. Clearing the store is not revoking. In `cookie` mode, the cookie is\ncleared **with exactly the attributes that set it** — otherwise it is not cleared.\n",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'Session closed. Replayed, it succeeds.',
@@ -419,7 +422,8 @@ export const signOut: Route<{
 
 export const confirmEmailVerification: Route<{
   method: 'post';
-  path: '/v1/auth/verify-email';
+  version: 1;
+  path: '/auth/verify-email';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -437,11 +441,10 @@ export const confirmEmailVerification: Route<{
     410: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
     429: typeof TooManyRequestsResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/verify-email',
+  path: '/auth/verify-email',
   operationId: 'confirmEmailVerification',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Confirms an email address from the link sent to it.',
   description:
     '**The link points at the surface, never at the API**, which sends its token here. No\nsession is needed: the link is opened on whatever device read the email.\n\n**The token is spent by its first use and expires** (`adr-auth.md` §6.7). An unknown, an\nexpired and an already used token all answer the same `410`\n`identity.verification_link_invalid`: telling them apart would say which tokens were ever\nissued. A replay under the same `Idempotency-Key` answers the first `200` again.\n',
@@ -449,7 +452,7 @@ export const confirmEmailVerification: Route<{
   'x-arthome-upstream': [Service.IDENTITY],
   'x-arthome-invalidates': ['account:profile'],
   security: [],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -510,7 +513,8 @@ export const confirmEmailVerification: Route<{
 
 export const resendEmailVerification: Route<{
   method: 'post';
-  path: '/v1/auth/verify-email/resend';
+  version: 1;
+  path: '/auth/verify-email/resend';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -527,11 +531,10 @@ export const resendEmailVerification: Route<{
     403: typeof CsrfRefusedResponse;
     429: typeof TooManyRequestsResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/verify-email/resend',
+  path: '/auth/verify-email/resend',
   operationId: 'resendEmailVerification',
-  tags: [StorefrontTag.ACCOUNT],
   summary: "Queues a fresh verification link for the signed-in account's address.",
   description:
     'The fresh link replaces the earlier ones, which stop working. **`queued: true`** says the\nlink is recorded for `notifications` to send, which owns the sending; it does not say an\nemail left. **`queued: false` when the address is already verified**: nothing is queued,\nand that is not a refusal.\n',
@@ -546,7 +549,7 @@ export const resendEmailVerification: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'A link was queued for sending, or the address is already verified.',
@@ -577,7 +580,8 @@ export const resendEmailVerification: Route<{
 
 export const requestPasswordReset: Route<{
   method: 'post';
-  path: '/v1/auth/forget-password';
+  version: 1;
+  path: '/auth/forget-password';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -605,18 +609,17 @@ export const requestPasswordReset: Route<{
     >;
     429: typeof TooManyRequestsResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/forget-password',
+  path: '/auth/forget-password',
   operationId: 'requestPasswordReset',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Requests a password reset link.',
   description:
     "**Always answers `202`, whether the account exists or not.** Distinguishing the two would\ntell an attacker which emails are registered.\n\n**The email's link points at the surface, never at the API** — `arthome.fr/reset?token=…` —\nand therefore **per product and per language**. The library's default builds it from its own\nbase address and would land the person on an API.\n",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
   security: [],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -671,7 +674,8 @@ export const requestPasswordReset: Route<{
 
 export const resetPassword: Route<{
   method: 'post';
-  path: '/v1/auth/reset-password';
+  version: 1;
+  path: '/auth/reset-password';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -703,18 +707,17 @@ export const resetPassword: Route<{
     400: typeof BadRequestResponse;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/reset-password',
+  path: '/auth/reset-password',
   operationId: 'resetPassword',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Sets a new password from a reset token.',
   description:
     '**Does not open a session.** The person signs in again, which proves the new password works\nand avoids an email link becoming a session bearer. The token is single-use and\nshort-lived.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
   security: [],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -767,7 +770,8 @@ export const resetPassword: Route<{
 
 export const startSocialSignIn: Route<{
   method: 'post';
-  path: '/v1/auth/social/{provider}/start';
+  version: 1;
+  path: '/auth/social/{provider}/start';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     PathParameter<'provider', VocabularyIn<typeof START_SOCIAL_SIGN_IN_PROVIDER>>,
@@ -801,11 +805,10 @@ export const startSocialSignIn: Route<{
     >;
     400: typeof BadRequestResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/social/{provider}/start',
+  path: '/auth/social/{provider}/start',
   operationId: 'startSocialSignIn',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Starts a social sign-in — the surfaces never talk to the provider.',
   description:
     "**The OAuth client is confidential and server-side.** No application embeds a secret: that\nis the only defensible form on a distributed binary, and the redirect is registered **once\nper provider**, on the BFF's domain.\n\n**The deep link on return never carries the token.** It carries only a **single-use opaque\nstate**, which the application then exchanges for its token over direct TLS with the BFF\n(`/v1/auth/exchange`). The return URL travels through the operating system, can be logged,\nand can be opened by another application.\n\n**Per surface**: browsers follow an ordinary redirect; native shells open the **system\nbrowser**, never their WebView, and come back through a universal link. **The television\ndoes no OAuth**: it goes through pairing, intent `signin`.\n",
@@ -824,8 +827,6 @@ export const startSocialSignIn: Route<{
           'An external provider or platform identifier. It is their vocabulary, not ours, and it changes when they change.',
       }),
     },
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: true,
@@ -889,7 +890,8 @@ export const startSocialSignIn: Route<{
 
 export const exchangeOneTimeToken: Route<{
   method: 'post';
-  path: '/v1/auth/exchange';
+  version: 1;
+  path: '/auth/exchange';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -914,18 +916,17 @@ export const exchangeOneTimeToken: Route<{
     >;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/exchange',
+  path: '/auth/exchange',
   operationId: 'exchangeOneTimeToken',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Exchanges the opaque state from the return for a session.',
   description:
     '**This is what makes the journey replayable if the operating system kills the application\nduring the detour**: the pending state lives server-side, not in application memory. On\nreturn, the deep link says **where to go**, and this exchange says **what changed**.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
   security: [],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -996,7 +997,8 @@ export const exchangeOneTimeToken: Route<{
 
 export const changePassword: Route<{
   method: 'patch';
-  path: '/v1/auth/password';
+  version: 1;
+  path: '/auth/password';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1036,11 +1038,10 @@ export const changePassword: Route<{
     403: typeof CsrfRefusedResponse;
     429: typeof TooManyRequestsResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'patch',
-  path: '/v1/auth/password',
+  path: '/auth/password',
   operationId: 'changePassword',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Changes the password from the account.',
   description:
     '**The current password is required**, and that is not a formality: without it, a stolen\nsession would be enough to lock the owner out of their own account.\n\n**Other sessions are revoked** — this is the gesture one makes on suspecting a theft, and\nleaving the other bearers untouched would empty it of meaning. The current session survives:\nyou do not sign yourself out by changing your password.\n',
@@ -1055,7 +1056,7 @@ export const changePassword: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -1109,7 +1110,8 @@ export const changePassword: Route<{
 
 export const enableTwoFactor: Route<{
   method: 'post';
-  path: '/v1/auth/two-factor';
+  version: 1;
+  path: '/auth/two-factor';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1134,11 +1136,10 @@ export const enableTwoFactor: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/two-factor',
+  path: '/auth/two-factor',
   operationId: 'enableTwoFactor',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Enables two-factor authentication and returns the backup codes.',
   description:
     '**The backup codes are returned here, once only.** They are never read back: the server\nkeeps only hashes of them. An operation able to repeat them would be able to read them, and\nit would no longer be a second factor.\n\nTwo-factor authentication is a **precondition** for transferring ownership of a channel on\nthe studio side: the contract refuses it without one.\n',
@@ -1153,7 +1154,7 @@ export const enableTwoFactor: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -1206,7 +1207,8 @@ export const enableTwoFactor: Route<{
 
 export const disableTwoFactor: Route<{
   method: 'delete';
-  path: '/v1/auth/two-factor';
+  version: 1;
+  path: '/auth/two-factor';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1230,11 +1232,10 @@ export const disableTwoFactor: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/auth/two-factor',
+  path: '/auth/two-factor',
   operationId: 'disableTwoFactor',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Disables two-factor authentication.',
   description:
     '**Re-authentication required**: disabling a second factor is exactly what a session thief would try first.',
@@ -1249,7 +1250,7 @@ export const disableTwoFactor: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -1294,7 +1295,8 @@ export const disableTwoFactor: Route<{
 
 export const verifyTwoFactor: Route<{
   method: 'post';
-  path: '/v1/auth/two-factor/verify';
+  version: 1;
+  path: '/auth/two-factor/verify';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1321,18 +1323,17 @@ export const verifyTwoFactor: Route<{
     401: typeof UnauthorizedResponse;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/two-factor/verify',
+  path: '/auth/two-factor/verify',
   operationId: 'verifyTwoFactor',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Answers the two-factor challenge, and opens the session.',
   description:
     'Follows `identity.two_factor_required`. The `challengeId` is **short-lived and single-use**; a\nconsumed backup code cannot be replayed.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
   security: [],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -1403,7 +1404,8 @@ export const verifyTwoFactor: Route<{
 
 export const addPasskey: Route<{
   method: 'post';
-  path: '/v1/me/passkeys';
+  version: 1;
+  path: '/me/passkeys';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1436,11 +1438,10 @@ export const addPasskey: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/me/passkeys',
+  path: '/me/passkeys',
   operationId: 'addPasskey',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Enrols a passkey.',
   description:
     'Returns the enrolment options produced by the server; the surface passes them to the browser\nor platform API, then returns the attestation to `PUT`. **The secret never leaves the\nhardware.**\n',
@@ -1455,7 +1456,7 @@ export const addPasskey: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: false,
     content: {
@@ -1511,7 +1512,8 @@ export const addPasskey: Route<{
 
 export const removePasskey: Route<{
   method: 'delete';
-  path: '/v1/me/passkeys/{passkeyId}';
+  version: 1;
+  path: '/me/passkeys/{passkeyId}';
   parameters: readonly [
     PathParameter<'passkeyId', z.ZodString>,
     typeof IdempotencyKeyParameter,
@@ -1535,11 +1537,10 @@ export const removePasskey: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/me/passkeys/{passkeyId}',
+  path: '/me/passkeys/{passkeyId}',
   operationId: 'removePasskey',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Removes a passkey.',
   description:
     "**Refused if it is the account's last credential** (`LAST_CREDENTIAL`): an account with no way to sign in is a lost account.",
@@ -1562,8 +1563,6 @@ export const removePasskey: Route<{
       schema: z.string(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -1596,7 +1595,8 @@ export const removePasskey: Route<{
 
 export const addPaymentMethod: Route<{
   method: 'post';
-  path: '/v1/me/payment-methods';
+  version: 1;
+  path: '/me/payment-methods';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1631,11 +1631,10 @@ export const addPaymentMethod: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/me/payment-methods',
+  path: '/me/payment-methods',
   operationId: 'addPaymentMethod',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Registers a payment method from the web.',
   description:
     '**The only surface able to register a card was the one with no keyboard.** The\n`payment_method` intent existed for television pairing, and the account\'s Security section\ndisplayed "Payment methods · Manage" without any command reaching it.\n\n**No card number touches our domain**: the command returns a setup `clientSecret`, and the\nsurface\'s payment element takes it from there — that is what keeps the compliance scope as\nnarrow as possible.\n',
@@ -1651,7 +1650,7 @@ export const addPaymentMethod: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -1711,7 +1710,8 @@ export const addPaymentMethod: Route<{
 
 export const removePaymentMethod: Route<{
   method: 'delete';
-  path: '/v1/me/payment-methods/{paymentMethodId}';
+  version: 1;
+  path: '/me/payment-methods/{paymentMethodId}';
   parameters: readonly [
     PathParameter<'paymentMethodId', z.ZodString>,
     typeof IdempotencyKeyParameter,
@@ -1735,11 +1735,10 @@ export const removePaymentMethod: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/me/payment-methods/{paymentMethodId}',
+  path: '/me/payment-methods/{paymentMethodId}',
   operationId: 'removePaymentMethod',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Removes a payment method.',
   description:
     "**Refused if it is the last method of an active subscription** (`payment_method.in_use`):\nsilently removing a subscription's only card would produce a failed charge and a cancelled\nplan that nobody intended.\n",
@@ -1762,8 +1761,6 @@ export const removePaymentMethod: Route<{
       schema: z.string(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -1796,7 +1793,8 @@ export const removePaymentMethod: Route<{
 
 export const getAccountScreen: Route<{
   method: 'get';
-  path: '/v1/me/account';
+  version: 1;
+  path: '/me/account';
   parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
   responses: {
     200: JsonResponse<
@@ -1807,18 +1805,16 @@ export const getAccountScreen: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'get',
-  path: '/v1/me/account',
+  path: '/me/account',
   operationId: 'getAccountScreen',
-  tags: [StorefrontTag.ACCOUNT],
   summary: "The aggregate of the account's eleven sections, in one call.",
   description:
     'The eleven sections share **one** account shape. They justify neither eleven calls nor eleven\nschemas: eight are projections of this one. Only saved searches, orders and notifications are\npaginated separately.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY, Service.TICKETING, Service.NOTIFICATIONS],
   'x-arthome-freshness': 300,
-  parameters: [SurfaceParameter, TraceparentParameter],
   responses: {
     200: {
       description: 'The account.',
@@ -1871,14 +1867,15 @@ export const getAccountScreen: Route<{
 
 export const listMyTickets: Route<{
   method: 'get';
-  path: '/v1/me/tickets';
+  version: 1;
+  path: '/me/tickets';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof CursorDirectionParameter,
     typeof LimitParameter,
     QueryParameter<'window', z.ZodDefault<VocabularyIn<typeof LIST_MY_TICKETS_WINDOW>>>,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -1896,11 +1893,10 @@ export const listMyTickets: Route<{
     401: typeof UnauthorizedResponse;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'get',
-  path: '/v1/me/tickets',
+  path: '/me/tickets',
   operationId: 'listMyTickets',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'My seats, upcoming or past, already ordered by the server.',
   description:
     'The order is **server-side**: a date carrying an outcome rises to the top, because it calls\nfor action. No surface reorders.\n',
@@ -1908,8 +1904,6 @@ export const listMyTickets: Route<{
   'x-arthome-upstream': [Service.TICKETING, Service.CATALOG, Service.STREAMING],
   'x-arthome-freshness': 60,
   parameters: [
-    SurfaceParameter,
-    TraceparentParameter,
     CursorParameter,
     CursorDirectionParameter,
     LimitParameter,
@@ -1956,12 +1950,13 @@ export const listMyTickets: Route<{
 
 export const listMyReplays: Route<{
   method: 'get';
-  path: '/v1/me/replays';
+  version: 1;
+  path: '/me/replays';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof LimitParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -1975,18 +1970,17 @@ export const listMyReplays: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'get',
-  path: '/v1/me/replays',
+  path: '/me/replays',
   operationId: 'listMyReplays',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'My replays, the ones expiring first.',
   description:
     'Each entry carries `replay.expiresAt` as an **instant**; the surface derives "expires in 41 h" against `servedAt`, with no call.',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING, Service.CATALOG, Service.STREAMING],
   'x-arthome-freshness': 60,
-  parameters: [SurfaceParameter, TraceparentParameter, CursorParameter, LimitParameter],
+  parameters: [CursorParameter, LimitParameter],
   responses: {
     200: {
       description: 'Page of replays.',
@@ -2017,12 +2011,13 @@ export const listMyReplays: Route<{
 
 export const listWatchlist: Route<{
   method: 'get';
-  path: '/v1/me/watchlist';
+  version: 1;
+  path: '/me/watchlist';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof LimitParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -2036,18 +2031,17 @@ export const listWatchlist: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'get',
-  path: '/v1/me/watchlist',
+  path: '/me/watchlist',
   operationId: 'listWatchlist',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Ma liste.',
   description:
     '"My list" — complete cards, not identifiers: the surface must be able to paint without a\nsecond call per entry.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY, Service.CATALOG],
   'x-arthome-freshness': 60,
-  parameters: [SurfaceParameter, TraceparentParameter, CursorParameter, LimitParameter],
+  parameters: [CursorParameter, LimitParameter],
   responses: {
     200: {
       description: 'Page of dates set aside.',
@@ -2076,7 +2070,8 @@ export const listWatchlist: Route<{
 
 export const addToWatchlist: Route<{
   method: 'put';
-  path: '/v1/me/watchlist/{dateId}';
+  version: 1;
+  path: '/me/watchlist/{dateId}';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -2093,11 +2088,10 @@ export const addToWatchlist: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'put',
-  path: '/v1/me/watchlist/{dateId}',
+  path: '/me/watchlist/{dateId}',
   operationId: 'addToWatchlist',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Sets a date aside.',
   description:
     '**A state assignment, not a toggle.** Two submissions of the same gesture leave a single\nentry; a toggle on an unreliable network would invert the result. Returns the updated card,\nso the surface repaints without a second round trip.\n',
@@ -2113,7 +2107,7 @@ export const addToWatchlist: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [DateIdParameter, IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'The updated card.',
@@ -2147,7 +2141,8 @@ export const addToWatchlist: Route<{
 
 export const removeFromWatchlist: Route<{
   method: 'delete';
-  path: '/v1/me/watchlist/{dateId}';
+  version: 1;
+  path: '/me/watchlist/{dateId}';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -2164,11 +2159,10 @@ export const removeFromWatchlist: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/me/watchlist/{dateId}',
+  path: '/me/watchlist/{dateId}',
   operationId: 'removeFromWatchlist',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Removes a date from my list.',
   description:
     'Replayed on an already-removed entry, it **succeeds** — an idempotent deletion must not fail.',
@@ -2183,7 +2177,7 @@ export const removeFromWatchlist: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [DateIdParameter, IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'The updated card.',
@@ -2217,14 +2211,15 @@ export const removeFromWatchlist: Route<{
 
 export const listFollowedArtists: Route<{
   method: 'get';
-  path: '/v1/me/follows';
+  version: 1;
+  path: '/me/follows';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof LimitParameter,
     QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof LIST_FOLLOWED_ARTISTS_SORT>>>,
     QueryParameter<'liveOnly', z.ZodDefault<z.ZodBoolean>>,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -2242,11 +2237,10 @@ export const listFollowedArtists: Route<{
     401: typeof UnauthorizedResponse;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'get',
-  path: '/v1/me/follows',
+  path: '/me/follows',
   operationId: 'listFollowedArtists',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Followed artists — the "Following" page, which had no entry point.',
   description:
     "**The whole page was unserved.** `/v1/me/follows/{artistId}` exposed only `PUT` and\n`DELETE`, `/v1/artists` accepted no filter on following, and `AccountScreen` carried no list.\nThe only way to paint the screen was to walk `/v1/artists` in full and filter client-side —\nthat is, exactly what the contract forbids elsewhere, and rightly so.\n\n**The home page's `followed` rail was no substitute**: it carries `DateCard`s, hence\nannounced dates, whereas half of this page is made of followed artists **with no date** — and\nit has no sort, no remove-in-place, and no empty states of its own.\n\nThe contract in fact contradicted itself: `emptyReason` carried `no_followed_artist_live`,\n**an empty state for a list no operation produced**.\n\nIt also serves `account/faves`, of whose two collections this is the first — the second being\n`/v1/me/watchlist`.\n",
@@ -2254,8 +2248,6 @@ export const listFollowedArtists: Route<{
   'x-arthome-upstream': [Service.IDENTITY, Service.CATALOG, Service.NOTIFICATIONS],
   'x-arthome-freshness': 60,
   parameters: [
-    SurfaceParameter,
-    TraceparentParameter,
     CursorParameter,
     LimitParameter,
     {
@@ -2319,7 +2311,8 @@ export const listFollowedArtists: Route<{
 
 export const followArtist: Route<{
   method: 'put';
-  path: '/v1/me/follows/{artistId}';
+  version: 1;
+  path: '/me/follows/{artistId}';
   parameters: readonly [
     typeof ArtistIdParameter,
     typeof IdempotencyKeyParameter,
@@ -2340,11 +2333,10 @@ export const followArtist: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'put',
-  path: '/v1/me/follows/{artistId}',
+  path: '/me/follows/{artistId}',
   operationId: 'followArtist',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Follows an artist.',
   description:
     '**Following and being alerted are two settings.** `followArtist` is a catalogue relation; the\nalert is a flag **per followed artist** carried by `notifications` (`alertEnabled` below).\nConflating them would make it impossible to follow an artist without being notified — and the\nmobile design shows the two separately.\n',
@@ -2360,7 +2352,7 @@ export const followArtist: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [ArtistIdParameter, IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [ArtistIdParameter, IdempotencyKeyParameter],
   requestBody: {
     required: false,
     content: {
@@ -2405,7 +2397,8 @@ export const followArtist: Route<{
 
 export const unfollowArtist: Route<{
   method: 'delete';
-  path: '/v1/me/follows/{artistId}';
+  version: 1;
+  path: '/me/follows/{artistId}';
   parameters: readonly [
     typeof ArtistIdParameter,
     typeof IdempotencyKeyParameter,
@@ -2422,11 +2415,10 @@ export const unfollowArtist: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/me/follows/{artistId}',
+  path: '/me/follows/{artistId}',
   operationId: 'unfollowArtist',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Unfollows an artist.',
   description:
     '**A state assignment, not a toggle.** Returns the updated artist, so the surface repaints\nwithout a second round trip. It does not touch the alert flag, which is a distinct setting\ncarried by `notifications`.\n',
@@ -2441,7 +2433,7 @@ export const unfollowArtist: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [ArtistIdParameter, IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [ArtistIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'The updated artist.',
@@ -2473,7 +2465,8 @@ export const unfollowArtist: Route<{
 
 export const setReminder: Route<{
   method: 'put';
-  path: '/v1/me/reminders/{dateId}';
+  version: 1;
+  path: '/me/reminders/{dateId}';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -2500,11 +2493,10 @@ export const setReminder: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'put',
-  path: '/v1/me/reminders/{dateId}',
+  path: '/me/reminders/{dateId}',
   operationId: 'setReminder',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Sets a dated reminder on a date.',
   description:
     '**A reminder is a dated promise.** If the date is postponed, the reminder **follows** the\npostponement; if it is cancelled, the reminder is **cancelled** and not sent into the void.\nThe lead time (30 min) is a **served** domain constant, not a surface choice.\n',
@@ -2519,7 +2511,7 @@ export const setReminder: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [DateIdParameter, IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'Reminder set.',
@@ -2553,7 +2545,8 @@ export const setReminder: Route<{
 
 export const clearReminder: Route<{
   method: 'delete';
-  path: '/v1/me/reminders/{dateId}';
+  version: 1;
+  path: '/me/reminders/{dateId}';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -2577,11 +2570,10 @@ export const clearReminder: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/me/reminders/{dateId}',
+  path: '/me/reminders/{dateId}',
   operationId: 'clearReminder',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Clears the reminder.',
   description:
     'Clears the reminder. Replayed on an already-cleared reminder, it succeeds — it is queued\noffline, so it must be safe on replay.\n',
@@ -2596,7 +2588,7 @@ export const clearReminder: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [DateIdParameter, IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [DateIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'Reminder cleared.',
@@ -2628,7 +2620,8 @@ export const clearReminder: Route<{
 
 export const listSavedSearches: Route<{
   method: 'get';
-  path: '/v1/me/saved-searches';
+  version: 1;
+  path: '/me/saved-searches';
   parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
   responses: {
     200: JsonResponse<
@@ -2639,18 +2632,16 @@ export const listSavedSearches: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'get',
-  path: '/v1/me/saved-searches',
+  path: '/me/saved-searches',
   operationId: 'listSavedSearches',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'My saved searches, with their new-match counter.',
   description:
     '**Zero counting queries on opening.** The "new since your last visit" counter is incremented\nby the index\'s percolator when a new date matches, and reset to zero on read. The two other\noptions would cost ten aggregations per display, for a figure whose accuracy nobody will ever\nmeasure.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
   'x-arthome-freshness': 300,
-  parameters: [SurfaceParameter, TraceparentParameter],
   responses: {
     200: {
       description: 'The saved searches.',
@@ -2691,7 +2682,8 @@ export const listSavedSearches: Route<{
 
 export const createSavedSearch: Route<{
   method: 'post';
-  path: '/v1/me/saved-searches';
+  version: 1;
+  path: '/me/saved-searches';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -2720,11 +2712,10 @@ export const createSavedSearch: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/me/saved-searches',
+  path: '/me/saved-searches',
   operationId: 'createSavedSearch',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Saves a search.',
   description:
     'The **signature** is produced by `normalizeSearchCriteria()` in `@arthome/core`,\nserver-side, once. It is what deduplicates: a replay **never** creates two identical\nalerts.\n',
@@ -2739,7 +2730,7 @@ export const createSavedSearch: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -2809,7 +2800,8 @@ export const createSavedSearch: Route<{
 
 export const updateSavedSearch: Route<{
   method: 'patch';
-  path: '/v1/me/saved-searches/{savedSearchId}';
+  version: 1;
+  path: '/me/saved-searches/{savedSearchId}';
   parameters: readonly [
     PathParameter<'savedSearchId', z.ZodString>,
     typeof IdempotencyKeyParameter,
@@ -2836,11 +2828,10 @@ export const updateSavedSearch: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'patch',
-  path: '/v1/me/saved-searches/{savedSearchId}',
+  path: '/me/saved-searches/{savedSearchId}',
   operationId: 'updateSavedSearch',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Renames, activates, or changes the channels of a saved search.',
   description:
     '**Field-by-field** write, never a whole document. A saved search is queued offline: a replay\nmust converge to the same state, not invert it.\n',
@@ -2863,8 +2854,6 @@ export const updateSavedSearch: Route<{
       schema: uuidOut(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: true,
@@ -2925,7 +2914,8 @@ export const updateSavedSearch: Route<{
 
 export const deleteSavedSearch: Route<{
   method: 'delete';
-  path: '/v1/me/saved-searches/{savedSearchId}';
+  version: 1;
+  path: '/me/saved-searches/{savedSearchId}';
   parameters: readonly [
     PathParameter<'savedSearchId', z.ZodString>,
     typeof IdempotencyKeyParameter,
@@ -2949,11 +2939,10 @@ export const deleteSavedSearch: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/me/saved-searches/{savedSearchId}',
+  path: '/me/saved-searches/{savedSearchId}',
   operationId: 'deleteSavedSearch',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Deletes a saved search.',
   description:
     '**Replayed on an already-deleted entry, it succeeds** — that is what an offline queue requires.',
@@ -2976,8 +2965,6 @@ export const deleteSavedSearch: Route<{
       schema: uuidOut(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -3010,12 +2997,13 @@ export const deleteSavedSearch: Route<{
 
 export const listMyOrders: Route<{
   method: 'get';
-  path: '/v1/me/orders';
+  version: 1;
+  path: '/me/orders';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof LimitParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -3040,18 +3028,17 @@ export const listMyOrders: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'get',
-  path: '/v1/me/orders',
+  path: '/me/orders',
   operationId: 'listMyOrders',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'My orders, including the reflection of orders placed with a third party.',
   description:
     'An order may **not be ours**. `externalRef` is served **with its age**: what we guarantee is\nfreshness as of `syncedAt`, nothing more. When the external host does not answer, the age\ngrows — **nothing fails**.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
   'x-arthome-freshness': 300,
-  parameters: [SurfaceParameter, TraceparentParameter, CursorParameter, LimitParameter],
+  parameters: [CursorParameter, LimitParameter],
   responses: {
     200: {
       description: 'Page of orders.',
@@ -3097,12 +3084,13 @@ export const listMyOrders: Route<{
 
 export const listNotifications: Route<{
   method: 'get';
-  path: '/v1/me/notifications';
+  version: 1;
+  path: '/me/notifications';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof LimitParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -3120,18 +3108,17 @@ export const listNotifications: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'get',
-  path: '/v1/me/notifications',
+  path: '/me/notifications',
   operationId: 'listNotifications',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'The notification centre, and the global badge.',
   description:
     'The `unreadCount` badge is **global**, not the page\'s: otherwise the surface would display\n"3" having loaded only the last twenty.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.NOTIFICATIONS],
   'x-arthome-freshness': 60,
-  parameters: [SurfaceParameter, TraceparentParameter, CursorParameter, LimitParameter],
+  parameters: [CursorParameter, LimitParameter],
   responses: {
     200: {
       description: "Page of notifications, plus the **global** unread count — not the page's.",
@@ -3172,7 +3159,8 @@ export const listNotifications: Route<{
 
 export const markNotificationsRead: Route<{
   method: 'post';
-  path: '/v1/me/notifications';
+  version: 1;
+  path: '/me/notifications';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -3204,11 +3192,10 @@ export const markNotificationsRead: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/me/notifications',
+  path: '/me/notifications',
   operationId: 'markNotificationsRead',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Marks notifications as read.',
   description:
     '**Monotonic: one does not un-read.** Replayed, it changes nothing — which is what makes it safe in an offline queue.',
@@ -3223,7 +3210,7 @@ export const markNotificationsRead: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -3269,7 +3256,8 @@ export const markNotificationsRead: Route<{
 
 export const updateProfile: Route<{
   method: 'patch';
-  path: '/v1/me/profile';
+  version: 1;
+  path: '/me/profile';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -3302,11 +3290,10 @@ export const updateProfile: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'patch',
-  path: '/v1/me/profile',
+  path: '/me/profile',
   operationId: 'updateProfile',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Changes the displayed identity.',
   description:
     '**Field by field**, never a whole document, and conditioned on `expectedVersion`: two devices do not silently overwrite each other.',
@@ -3322,7 +3309,7 @@ export const updateProfile: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -3370,7 +3357,8 @@ export const updateProfile: Route<{
 
 export const updatePreferences: Route<{
   method: 'patch';
-  path: '/v1/me/preferences';
+  version: 1;
+  path: '/me/preferences';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -3396,11 +3384,10 @@ export const updatePreferences: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'patch',
-  path: '/v1/me/preferences',
+  path: '/me/preferences',
   operationId: 'updatePreferences',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Writes a preference, at its scope.',
   description:
     '**Two scopes, and the contract separates them field by field**: `account` follows the\nperson, `device` follows the device and the room. A single scope would be wrong half the\ntime.\n\n**Additive and tolerant**: a key unknown to one version of the application is neither\nrejected nor erased on the next write — otherwise the mobile version stuck in store review\nwould overwrite settings made from the web.\n',
@@ -3415,7 +3402,7 @@ export const updatePreferences: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -3469,7 +3456,8 @@ export const updatePreferences: Route<{
 
 export const updateNotificationPreferences: Route<{
   method: 'patch';
-  path: '/v1/me/notification-preferences';
+  version: 1;
+  path: '/me/notification-preferences';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -3509,11 +3497,10 @@ export const updateNotificationPreferences: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'patch',
-  path: '/v1/me/notification-preferences',
+  path: '/me/notification-preferences',
   operationId: 'updateNotificationPreferences',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Five triggers, three channels, and quiet hours.',
   description:
     '**The quiet-hours exception is conditioned on holding a seat**: that is a business rule, not\nan interface setting — one does not miss a show one paid for because it starts at 11:15 pm.\nThe **thresholds** that fire an alert live in `@arthome/core` and are served in\n`ViewerContext`; `notifications` reads them, it does not invent them.\n',
@@ -3528,7 +3515,7 @@ export const updateNotificationPreferences: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -3602,7 +3589,8 @@ export const updateNotificationPreferences: Route<{
 
 export const updateConsents: Route<{
   method: 'put';
-  path: '/v1/me/consents';
+  version: 1;
+  path: '/me/consents';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -3638,11 +3626,10 @@ export const updateConsents: Route<{
     400: typeof BadRequestResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'put',
-  path: '/v1/me/consents',
+  path: '/me/consents',
   operationId: 'updateConsents',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Records consents, timestamped and versioned by the server.',
   description:
     '**Never queued offline**: a consent has evidential value, it must be timestamped **by the\nserver** and carry the **version of the text accepted**. A consent without a version or a\ndate is worth nothing. `ads` defaults to `false`, and that default is **a contract\ndecision**, not a setting.\n',
@@ -3657,7 +3644,7 @@ export const updateConsents: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -3718,7 +3705,8 @@ export const updateConsents: Route<{
 
 export const revokeDevice: Route<{
   method: 'delete';
-  path: '/v1/me/devices/{deviceId}';
+  version: 1;
+  path: '/me/devices/{deviceId}';
   parameters: readonly [
     PathParameter<'deviceId', z.ZodString>,
     typeof IdempotencyKeyParameter,
@@ -3748,11 +3736,10 @@ export const revokeDevice: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/me/devices/{deviceId}',
+  path: '/me/devices/{deviceId}',
   operationId: 'revokeDevice',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Revokes a device — and cuts its playback.',
   description:
     '**An observable effect on the targeted device, within 120 seconds at most.** Revoking\nremoves the `Device`, **all** its `DeviceSession`s **and its playback leases**: `identity`\npublishes `device_revoked`, `streaming` consumes it and refuses the **next renewal** of the\ntoken. The device displays `identity.signed_out_elsewhere`, **not a network error**.\n\n**Never queued offline**: this is a security command, it must fail loudly rather than be\nreplayed blind.\n',
@@ -3776,8 +3763,6 @@ export const revokeDevice: Route<{
       schema: uuidOut(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -3821,7 +3806,8 @@ export const revokeDevice: Route<{
 
 export const signOutProfile: Route<{
   method: 'delete';
-  path: '/v1/me/device-sessions/{sessionId}';
+  version: 1;
+  path: '/me/device-sessions/{sessionId}';
   parameters: readonly [
     PathParameter<'sessionId', z.ZodString>,
     typeof IdempotencyKeyParameter,
@@ -3838,11 +3824,10 @@ export const signOutProfile: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/me/device-sessions/{sessionId}',
+  path: '/me/device-sessions/{sessionId}',
   operationId: 'signOutProfile',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Signs one profile out of this device — the others stay signed in.',
   description:
     '**Two gestures, and they do not do the same thing.** This one closes a `DeviceSession`: the\nliving-room television keeps its four other profiles. `revokeDevice` removes the device and\neverything attached to it.\n',
@@ -3865,8 +3850,6 @@ export const signOutProfile: Route<{
       schema: uuidOut(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -3917,7 +3900,8 @@ export const signOutProfile: Route<{
 
 export const requestExport: Route<{
   method: 'post';
-  path: '/v1/me/exports';
+  version: 1;
+  path: '/me/exports';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -3943,11 +3927,10 @@ export const requestExport: Route<{
     429: typeof TooManyRequestsResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/me/exports',
+  path: '/me/exports',
   operationId: 'requestExport',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Requests an export — personal data or invoices.',
   description:
     '**Asynchronous.** A tax ledger or a GDPR export is not an HTTP response: the command returns\nan acknowledgement and an identifier, the state is pollable, and the document arrives through\na short-lived signed address — **usable without a session cookie**, because an export\nprotected by a cookie is undownloadable from a native shell.\n',
@@ -3962,7 +3945,7 @@ export const requestExport: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -4026,7 +4009,8 @@ export const requestExport: Route<{
 
 export const getExport: Route<{
   method: 'get';
-  path: '/v1/me/exports/{exportId}';
+  version: 1;
+  path: '/me/exports/{exportId}';
   parameters: readonly [
     PathParameter<'exportId', z.ZodString>,
     typeof SurfaceParameter,
@@ -4041,11 +4025,10 @@ export const getExport: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'get',
-  path: '/v1/me/exports/{exportId}',
+  path: '/me/exports/{exportId}',
   operationId: 'getExport',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'The state of an export, and its signed address once ready.',
   description:
     'An export is an **asynchronous job**. Until it is `ready`, `downloadUrl` is null: the\ncontract never serves an address that would not answer. The address is valid for 60 minutes\nand works **without a session cookie**.\n',
@@ -4058,8 +4041,6 @@ export const getExport: Route<{
       required: true,
       schema: uuidOut(),
     },
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -4092,7 +4073,8 @@ export const getExport: Route<{
 
 export const requestAccountDeletion: Route<{
   method: 'post';
-  path: '/v1/me/deletion';
+  version: 1;
+  path: '/me/deletion';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -4123,11 +4105,10 @@ export const requestAccountDeletion: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/me/deletion',
+  path: '/me/deletion',
   operationId: 'requestAccountDeletion',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Requests deletion of the account.',
   description:
     '**A financial command as much as a personal one.** "Deletion cancels unused seats": it\ntherefore triggers refunds, touches payouts that may already be computed, and runs into the\nten-year accounting retention. It **can be neither synchronous nor total**.\n\nThe sequence is a **persistent saga**: the account moves to `deletion_requested`, sign-ins\nare blocked, `ticketing` cancels and refunds, `payouts` recomputes; a **30-day grace period**\nruns, during which the account is **reactivated by simply signing in** — which is what makes\nthe irreversible acceptable; at the end, `identity` **anonymises** instead of deleting.\nInvoices keep their frozen contents.\n',
@@ -4142,7 +4123,7 @@ export const requestAccountDeletion: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -4194,7 +4175,8 @@ export const requestAccountDeletion: Route<{
 
 export const cancelAccountDeletion: Route<{
   method: 'delete';
-  path: '/v1/me/deletion';
+  version: 1;
+  path: '/me/deletion';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -4215,11 +4197,10 @@ export const cancelAccountDeletion: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/me/deletion',
+  path: '/me/deletion',
   operationId: 'cancelAccountDeletion',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Cancels the deletion request during the grace period.',
   description:
     'The account is **reactivated by simply signing in** during the 30 days of grace, and that is\nexactly what makes the irreversible acceptable. What this command **does not undo**: seats\nalready cancelled and refunded. The contract says so rather than letting anyone assume\notherwise.\n',
@@ -4234,7 +4215,7 @@ export const cancelAccountDeletion: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   responses: {
     200: {
       description:
@@ -4267,7 +4248,8 @@ export const cancelAccountDeletion: Route<{
 
 export const contactSupport: Route<{
   method: 'post';
-  path: '/v1/support/requests';
+  version: 1;
+  path: '/support/requests';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -4317,11 +4299,10 @@ export const contactSupport: Route<{
     429: typeof TooManyRequestsResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = accountRoutes.defineRoute({
   method: 'post',
-  path: '/v1/support/requests',
+  path: '/support/requests',
   operationId: 'contactSupport',
-  tags: [StorefrontTag.ACCOUNT],
   summary: 'Opens a support request, with its context.',
   description:
     '**The topic routes, the context prioritises.** "Requests related to a live show in progress\nare handled first": without attached context — date, seat, order — that prioritisation is\nimpossible to honour, and the copy promises something the system cannot do.\n',
@@ -4336,7 +4317,7 @@ export const contactSupport: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {

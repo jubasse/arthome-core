@@ -46,7 +46,9 @@ export interface RequestBody extends Extensions {
 /** What a route's types are read from — the part of its annotation a handler or client needs. */
 export interface RouteShape {
     readonly method: HttpMethod;
-    /** The OpenAPI template, `/v1/dates/{dateId}`. */
+    /** The API version the route belongs to. It is not part of `path`: see `versionedPath`. */
+    readonly version: number;
+    /** The OpenAPI template without its version, `/dates/{dateId}`. */
     readonly path: string;
     readonly parameters?: readonly Parameter[];
     readonly requestBody?: RequestBody;
@@ -72,6 +74,47 @@ export type AccessorOf<T extends readonly string[]> = {
  */
 export declare function accessorOf<const T extends readonly string[]>(members: T): AccessorOf<T>;
 export type Route<T extends RouteShape = RouteShape> = T & Omit<RouteDefinition, keyof T>;
+/** The only versioning strategy: the version is a path prefix, `/v1/dates/{dateId}`. */
+export declare function versionedPath(route: Pick<RouteShape, 'version' | 'path'>): string;
+export type VersionedPath<R extends Pick<RouteShape, 'version' | 'path'>> = `/v${R['version']}${R['path']}`;
+type HeaderParameters = readonly (Parameter & {
+    readonly in: 'header';
+})[];
+type Responses = Readonly<Record<string, Response>>;
+/** What a builder's `defineRoute` takes: a route without its version, which the builder holds. */
+export type BuiltRouteDefinition = Omit<RouteDefinition, 'version'>;
+type OwnParameters<D> = D extends {
+    readonly parameters: infer X extends readonly Parameter[];
+} ? X : readonly [];
+type OwnBody<D> = D extends {
+    readonly requestBody: infer B extends RequestBody;
+} ? {
+    readonly requestBody: B;
+} : unknown;
+/** The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors. */
+export type BuiltRoute<V extends number, P extends readonly Parameter[], E extends Responses, D extends BuiltRouteDefinition> = Route<{
+    readonly method: D['method'];
+    readonly version: V;
+    readonly path: D['path'];
+    readonly parameters: readonly [...OwnParameters<D>, ...P];
+    readonly responses: Omit<E, keyof D['responses']> & D['responses'];
+} & OwnBody<D>>;
+/**
+ * Settings shared by the routes of a group, accumulated one call at a time. Every call returns a
+ * NEW builder and the types carry what was set, so `defineRoute` is inferred in full: the
+ * builder's headers follow a route's own parameters and its errors sit under the route's
+ * responses, and the route's own `tags` and `security` replace the builder's.
+ */
+export interface RouteBuilder<V extends number | undefined, P extends readonly Parameter[], E extends Responses> {
+    version<const N extends number>(version: N): RouteBuilder<N, P, E>;
+    tags(...tags: readonly string[]): RouteBuilder<V, P, E>;
+    headers<const H extends HeaderParameters>(...headers: H): RouteBuilder<V, readonly [...P, ...H], E>;
+    errors<const R extends Responses>(responses: R): RouteBuilder<V, P, Omit<E, keyof R> & R>;
+    security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E>;
+    defineRoute<const D extends BuiltRouteDefinition>(this: RouteBuilder<number, P, E>, definition: D): BuiltRoute<NonNullable<V>, P, E, D>;
+}
+/** The empty builder: `routeBuilder().version(1).tags(...).headers(...).errors(...)`. */
+export declare function routeBuilder(): RouteBuilder<undefined, readonly [], Record<never, never>>;
 export declare function defineRoute<const T extends RouteDefinition>(definition: T): Route<T>;
 /** The annotation of a path parameter: OpenAPI makes every one required. */
 export interface PathParameter<Name extends string, S extends z.ZodType> extends Parameter {
@@ -80,18 +123,22 @@ export interface PathParameter<Name extends string, S extends z.ZodType> extends
     readonly required: true;
     readonly schema: S;
 }
-export interface QueryParameter<Name extends string, S extends z.ZodType, Required = false> extends Parameter {
+/** A required parameter says `required: true`; an optional one may say `required: false` or nothing. */
+type RequiredFlag<Required> = Required extends true ? {
+    readonly required: true;
+} : {
+    readonly required?: false;
+};
+export type QueryParameter<Name extends string, S extends z.ZodType, Required = false> = Parameter & RequiredFlag<Required> & {
     readonly name: Name;
     readonly in: 'query';
-    readonly required?: Required extends true ? true : false;
     readonly schema: S;
-}
-export interface HeaderParameter<Name extends string, S extends z.ZodType, Required = false> extends Parameter {
+};
+export type HeaderParameter<Name extends string, S extends z.ZodType, Required = false> = Parameter & RequiredFlag<Required> & {
     readonly name: Name;
     readonly in: 'header';
-    readonly required?: Required extends true ? true : false;
     readonly schema: S;
-}
+};
 /** The annotation of a response with a JSON body. */
 export interface JsonResponse<S extends z.ZodType> extends Response {
     readonly content: {

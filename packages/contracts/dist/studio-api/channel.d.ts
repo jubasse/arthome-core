@@ -15,13 +15,14 @@ declare const CREATE_UPLOAD_TICKET_PURPOSE: readonly ["poster", "wide", "avatar"
 declare const CREATE_UPLOAD_TICKET_CONTENT_TYPE: readonly ["image/jpeg", "image/png", "image/webp"];
 export declare const deleteChannel: Route<{
     method: 'delete';
-    path: '/v1/channels/{channelId}';
+    version: 1;
+    path: '/channels/{channelId}';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         reauthToken: z.ZodString;
@@ -38,17 +39,18 @@ export declare const deleteChannel: Route<{
 }>;
 export declare const listChannelReplays: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/replays';
+    version: 1;
+    path: '/channels/{channelId}/replays';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
         typeof PageParameter,
         typeof PageSizeParameter,
         typeof SortByParameter,
         typeof SortDirParameter,
-        QueryParameter<'state', VocabularyIn<typeof LIST_CHANNEL_REPLAYS_STATE>>
+        QueryParameter<'state', VocabularyIn<typeof LIST_CHANNEL_REPLAYS_STATE>>,
+        typeof SurfaceParameter,
+        typeof IfRightsVersionParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -68,7 +70,8 @@ export declare const listChannelReplays: Route<{
 }>;
 export declare const getChannelSettings: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/settings';
+    version: 1;
+    path: '/channels/{channelId}/settings';
     parameters: readonly [
         typeof ChannelIdParameter,
         typeof SurfaceParameter,
@@ -106,13 +109,14 @@ export declare const getChannelSettings: Route<{
 }>;
 export declare const updateChannelSettings: Route<{
     method: 'patch';
-    path: '/v1/channels/{channelId}/settings';
+    version: 1;
+    path: '/channels/{channelId}/settings';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         expectedVersion: z.ZodInt;
@@ -138,18 +142,19 @@ export declare const updateChannelSettings: Route<{
 }>;
 export declare const listChannelJournal: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/journal';
+    version: 1;
+    path: '/channels/{channelId}/journal';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
         typeof PageParameter,
         typeof PageSizeParameter,
         QueryParameter<'from', z.ZodString, true>,
         QueryParameter<'to', z.ZodString, true>,
         QueryParameter<'nature', VocabularyIn<typeof LIST_CHANNEL_JOURNAL_NATURE>>,
-        QueryParameter<'dateId', z.ZodString>
+        QueryParameter<'dateId', z.ZodString>,
+        typeof SurfaceParameter,
+        typeof IfRightsVersionParameter,
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -162,12 +167,13 @@ export declare const listChannelJournal: Route<{
 }>;
 export declare const createUploadTicket: Route<{
     method: 'post';
-    path: '/v1/uploads';
+    version: 1;
+    path: '/uploads';
     parameters: readonly [
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         purpose: VocabularyIn<typeof CREATE_UPLOAD_TICKET_PURPOSE>;
@@ -183,7 +189,8 @@ export declare const createUploadTicket: Route<{
 }>;
 export declare const listChannelMerchItems: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/merch-items';
+    version: 1;
+    path: '/channels/{channelId}/merch-items';
     parameters: readonly [
         typeof ChannelIdParameter,
         typeof SurfaceParameter,
@@ -199,13 +206,14 @@ export declare const listChannelMerchItems: Route<{
 }>;
 export declare const upsertMerchItem: Route<{
     method: 'put';
-    path: '/v1/channels/{channelId}/merch-items';
+    version: 1;
+    path: '/channels/{channelId}/merch-items';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         itemId: z.ZodString;
@@ -232,13 +240,14 @@ export declare const upsertMerchItem: Route<{
 }>;
 export declare const pinMerchDuringLive: Route<{
     method: 'put';
-    path: '/v1/dates/{dateId}/merch-pin';
+    version: 1;
+    path: '/dates/{dateId}/merch-pin';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         itemId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -254,13 +263,14 @@ export declare const pinMerchDuringLive: Route<{
 }>;
 export declare const reopenReplayWindow: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/replay-window';
+    version: 1;
+    path: '/dates/{dateId}/replay-window';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         additionalHours: z.ZodInt;
@@ -277,13 +287,14 @@ export declare const reopenReplayWindow: Route<{
 }>;
 export declare const updateChannelIdentity: Route<{
     method: 'patch';
-    path: '/v1/channels/{channelId}/identity';
+    version: 1;
+    path: '/channels/{channelId}/identity';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         expectedVersion: z.ZodInt;

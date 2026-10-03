@@ -25,8 +25,9 @@ import type {
   JsonResponse,
   PathParameter,
   QueryParameter,
+  RouteBuilder,
 } from '../http/index.js';
-import { accessorOf } from '../http/index.js';
+import { accessorOf, routeBuilder } from '../http/index.js';
 
 const SURFACE: readonly [typeof Surface.STUDIO_WEB, typeof Surface.STUDIO_MOBILE] = [
   Surface.STUDIO_WEB,
@@ -358,3 +359,7 @@ export const UnavailableResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>
     },
   },
 };
+
+export const studioV1: RouteBuilder<1, readonly [], Record<never, never>> = routeBuilder().version(
+  1,
+);

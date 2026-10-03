@@ -16,13 +16,14 @@ declare const MOVE_DATE_PUBLICATION_STATE_TO: readonly [
 ];
 export declare const createDateDraft: Route<{
     method: 'post';
-    path: '/v1/channels/{channelId}/dates';
+    version: 1;
+    path: '/channels/{channelId}/dates';
     parameters: readonly [
         typeof ChannelIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         dateId: z.ZodString;
@@ -42,7 +43,8 @@ export declare const createDateDraft: Route<{
 }>;
 export declare const getDateSheet: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/sheet';
+    version: 1;
+    path: '/dates/{dateId}/sheet';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -59,7 +61,8 @@ export declare const getDateSheet: Route<{
 }>;
 export declare const getDatePublicPane: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/panes/public';
+    version: 1;
+    path: '/dates/{dateId}/panes/public';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -90,7 +93,8 @@ export declare const getDatePublicPane: Route<{
 }>;
 export declare const getDateReplayPane: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/panes/replay';
+    version: 1;
+    path: '/dates/{dateId}/panes/replay';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -118,13 +122,14 @@ export declare const getDateReplayPane: Route<{
 }>;
 export declare const moveDatePublicationState: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/publication/transitions';
+    version: 1;
+    path: '/dates/{dateId}/publication/transitions';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         to: VocabularyIn<typeof MOVE_DATE_PUBLICATION_STATE_TO>;
@@ -141,13 +146,14 @@ export declare const moveDatePublicationState: Route<{
 }>;
 export declare const setDateReplayPolicy: Route<{
     method: 'put';
-    path: '/v1/dates/{dateId}/replay-policy';
+    version: 1;
+    path: '/dates/{dateId}/replay-policy';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         policy: VocabularyIn<typeof REPLAY_POLICIES>;
@@ -163,13 +169,14 @@ export declare const setDateReplayPolicy: Route<{
 }>;
 export declare const deleteDate: Route<{
     method: 'delete';
-    path: '/v1/dates/{dateId}';
+    version: 1;
+    path: '/dates/{dateId}';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -183,13 +190,14 @@ export declare const deleteDate: Route<{
 }>;
 export declare const duplicateDate: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/duplicate';
+    version: 1;
+    path: '/dates/{dateId}/duplicate';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         newDateId: z.ZodString;
@@ -205,13 +213,14 @@ export declare const duplicateDate: Route<{
 }>;
 export declare const decideDateOutcome: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/outcome';
+    version: 1;
+    path: '/dates/{dateId}/outcome';
     parameters: readonly [
         typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
         outcome: VocabularyIn<typeof DATE_OUTCOMES>;

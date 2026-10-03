@@ -22,6 +22,7 @@ import {
   VaryAuthHeader,
   ViewerTimezoneParameter,
   PublicReadSecurity,
+  storefrontV1,
 } from './components.js';
 import {
   ArtistDetailSchema,
@@ -39,8 +40,12 @@ import {
 } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
 import type { JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import { EmptyReason, StorefrontCursorPageInfoSchema } from '../pagination/index.js';
+
+const discoveryRoutes = storefrontV1
+  .tags(StorefrontTag.DISCOVERY)
+  .headers(SurfaceParameter, TraceparentParameter)
+  .security(...PublicReadSecurity);
 
 const GET_CATEGORY_SCREEN_SECTION = ['overview', 'live', 'upcoming', 'replays', 'artists'] as const;
 const GET_CATEGORY_SCREEN_SORT = [
@@ -57,11 +62,12 @@ const RESOLVE_PUBLIC_LINK_KIND = ['date', 'show', 'artist', 'category'] as const
 
 export const getHomeScreen: Route<{
   method: 'get';
-  path: '/v1/home';
+  version: 1;
+  path: '/home';
   parameters: readonly [
+    typeof ViewerTimezoneParameter,
     typeof SurfaceParameter,
     typeof TraceparentParameter,
-    typeof ViewerTimezoneParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -73,19 +79,17 @@ export const getHomeScreen: Route<{
     401: typeof UnauthorizedResponse;
     503: typeof UnavailableResponse;
   };
-}> = defineRoute({
+}> = discoveryRoutes.defineRoute({
   method: 'get',
-  path: '/v1/home',
+  path: '/home',
   operationId: 'getHomeScreen',
-  tags: [StorefrontTag.DISCOVERY],
   summary: 'Billboard and rails, composed and ordered by the server.',
   description:
     '**One call.** Ten to thirteen rails, six to eight visible cards each, a cursor per rail:\n60 to 100 cards, on the order of 50 to 90 KB raw, under 15 KB once compressed.\n\nThe BFF composes this model with **three per-viewer overlays, batched by id lists** — never\none call per card. In steady state, the per-profile Redis cache (30 s TTL) brings the screen\ndown to one or two internal calls.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common cache.\nThe three per-viewer overlays (`watchVerdict`, `viewerRelations`, `viewerProgress`) are then\n**absent**, never null. Called with a session or a bearer token, it returns the public body\n**plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  security: PublicReadSecurity,
   'x-arthome-freshness': 60,
-  parameters: [SurfaceParameter, TraceparentParameter, ViewerTimezoneParameter],
+  parameters: [ViewerTimezoneParameter],
   responses: {
     200: {
       description: 'Home.',
@@ -161,11 +165,12 @@ export const getHomeScreen: Route<{
 
 export const getLiveScreen: Route<{
   method: 'get';
-  path: '/v1/live';
+  version: 1;
+  path: '/live';
   parameters: readonly [
+    typeof ViewerTimezoneParameter,
     typeof SurfaceParameter,
     typeof TraceparentParameter,
-    typeof ViewerTimezoneParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -176,19 +181,17 @@ export const getLiveScreen: Route<{
     >;
     503: typeof UnavailableResponse;
   };
-}> = defineRoute({
+}> = discoveryRoutes.defineRoute({
   method: 'get',
-  path: '/v1/live',
+  path: '/live',
   operationId: 'getLiveScreen',
-  tags: [StorefrontTag.DISCOVERY],
   summary: "What is live now and tonight's grid, grouped in the viewer's local time.",
   description:
     "**One call**, and the hourly grouping is **server-side**: it depends on the viewer's\ntimezone, which the surface sends in a header. Grouped client-side it would be grouped five\ndifferent ways, and Next's server rendering does not know the visitor's timezone.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.STREAMING, Service.IDENTITY],
-  security: PublicReadSecurity,
   'x-arthome-freshness': 15,
-  parameters: [SurfaceParameter, TraceparentParameter, ViewerTimezoneParameter],
+  parameters: [ViewerTimezoneParameter],
   responses: {
     200: {
       description: "Tonight's grid.",
@@ -226,7 +229,8 @@ export const getLiveScreen: Route<{
 
 export const listCategories: Route<{
   method: 'get';
-  path: '/v1/categories';
+  version: 1;
+  path: '/categories';
   parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
   responses: {
     200: JsonResponse<
@@ -237,19 +241,16 @@ export const listCategories: Route<{
     >;
     503: typeof UnavailableResponse;
   };
-}> = defineRoute({
+}> = discoveryRoutes.defineRoute({
   method: 'get',
-  path: '/v1/categories',
+  path: '/categories',
   operationId: 'listCategories',
-  tags: [StorefrontTag.DISCOVERY],
   summary: 'The 21 disciplines, with family, rank and counts.',
   description:
     '**One call, not one per tile.** The editorial rank is authoritative and **no surface\nreorders**. The full taxonomy is not here: it is an **immutable versioned artefact** served\nby the CDN, referenced in `ViewerContext`.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
-  security: PublicReadSecurity,
   'x-arthome-freshness': 300,
-  parameters: [SurfaceParameter, TraceparentParameter],
   responses: {
     200: {
       description: 'The disciplines.',
@@ -287,17 +288,18 @@ export const listCategories: Route<{
 
 export const getCategoryScreen: Route<{
   method: 'get';
-  path: '/v1/categories/{categoryId}';
+  version: 1;
+  path: '/categories/{categoryId}';
   parameters: readonly [
     typeof CategoryIdParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     QueryParameter<'section', VocabularyIn<typeof GET_CATEGORY_SCREEN_SECTION>>,
     typeof CursorParameter,
     typeof LimitParameter,
     QueryParameter<'subGenreId', z.ZodString>,
     QueryParameter<'filters', typeof SearchCriteriaSchema>,
     QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof GET_CATEGORY_SCREEN_SORT>>>,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -308,22 +310,18 @@ export const getCategoryScreen: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = discoveryRoutes.defineRoute({
   method: 'get',
-  path: '/v1/categories/{categoryId}',
+  path: '/categories/{categoryId}',
   operationId: 'getCategoryScreen',
-  tags: [StorefrontTag.DISCOVERY],
   summary: 'A discipline — hero, sub-genres, five bounded sections, facets.',
   description:
     '**One call.** The overview **does not paginate**: it is bounded (8 per section). The four\nother sections each carry their own cursor.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  security: PublicReadSecurity,
   'x-arthome-freshness': 300,
   parameters: [
     CategoryIdParameter,
-    SurfaceParameter,
-    TraceparentParameter,
     {
       name: 'section',
       in: 'query',
@@ -407,16 +405,17 @@ export const getCategoryScreen: Route<{
 
 export const listArtists: Route<{
   method: 'get';
-  path: '/v1/artists';
+  version: 1;
+  path: '/artists';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof CursorDirectionParameter,
     typeof LimitParameter,
     QueryParameter<'categoryId', z.ZodString>,
     QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof LIST_ARTISTS_SORT>>>,
     QueryParameter<'liveOnly', z.ZodDefault<z.ZodBoolean>>,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -433,21 +432,17 @@ export const listArtists: Route<{
     >;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = discoveryRoutes.defineRoute({
   method: 'get',
-  path: '/v1/artists',
+  path: '/artists',
   operationId: 'listArtists',
-  tags: [StorefrontTag.DISCOVERY],
   summary: 'The artist directory, by cursor.',
   description:
     'Two sorts only, and they are **served**: alphabetical and by follower count. The follower\ncount comes from **a single projection**, so that it never differs between the artist page\nand the list.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.IDENTITY],
-  security: PublicReadSecurity,
   'x-arthome-freshness': 300,
   parameters: [
-    SurfaceParameter,
-    TraceparentParameter,
     CursorParameter,
     CursorDirectionParameter,
     LimitParameter,
@@ -511,7 +506,8 @@ export const listArtists: Route<{
 
 export const getArtistDetail: Route<{
   method: 'get';
-  path: '/v1/artists/{artistId}';
+  version: 1;
+  path: '/artists/{artistId}';
   parameters: readonly [
     typeof ArtistIdParameter,
     typeof SurfaceParameter,
@@ -526,19 +522,17 @@ export const getArtistDetail: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = discoveryRoutes.defineRoute({
   method: 'get',
-  path: '/v1/artists/{artistId}',
+  path: '/artists/{artistId}',
   operationId: 'getArtistDetail',
-  tags: [StorefrontTag.DISCOVERY],
   summary: "An artist's page, their dates and their replays in the same response.",
   description:
     '**One call**: the page, upcoming dates, past dates, replays and the shop in the same\nresponse. A page served in four calls would paint in four stages, which a screen three\nmetres away makes unreadable.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  security: PublicReadSecurity,
   'x-arthome-freshness': 300,
-  parameters: [ArtistIdParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [ArtistIdParameter],
   responses: {
     200: {
       description: 'The page.',
@@ -574,16 +568,17 @@ export const getArtistDetail: Route<{
 
 export const search: Route<{
   method: 'get';
-  path: '/v1/search';
+  version: 1;
+  path: '/search';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof LimitParameter,
     QueryParameter<'q', z.ZodString>,
     QueryParameter<'tab', z.ZodDefault<VocabularyIn<typeof SEARCH_TAB>>>,
     QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof GET_CATEGORY_SCREEN_SORT>>>,
     QueryParameter<'filters', typeof SearchCriteriaSchema>,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -604,21 +599,17 @@ export const search: Route<{
     400: typeof BadRequestResponse;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = discoveryRoutes.defineRoute({
   method: 'get',
-  path: '/v1/search',
+  path: '/search',
   operationId: 'search',
-  tags: [StorefrontTag.DISCOVERY],
   summary: 'Full-text search, facets counted on the current query, grouping by show.',
   description:
     '**The paginated unit is the show** for `best`, `lives` and `replays`; the `artists` tab\npaginates artists. The "soon" sort is that of the **representative date**, and the "this\nweekend" filter applies **before** grouping.\n\nFacet counts are computed on the current query and returned **in the same response**: no\nsecond call. The total count is **approximate and bounded** — exact up to the threshold served\nas `DomainConstants.searchExactTotalLimit`, a lower bound beyond it, and `totalIsLowerBound`\nsays which of the two it is.\n\n**Budget ≤ 200 ms**: a television\'s on-screen keyboard produces one character per press and\nthe results live as you type; beyond that, the visual feedback of typing comes adrift. The\nrequest is **cancellable** — the client closes the socket, the server gives up.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  security: PublicReadSecurity,
   'x-arthome-freshness': 60,
   parameters: [
-    SurfaceParameter,
-    TraceparentParameter,
     CursorParameter,
     LimitParameter,
     {
@@ -716,14 +707,15 @@ export const search: Route<{
 
 export const listReplays: Route<{
   method: 'get';
-  path: '/v1/replays';
+  version: 1;
+  path: '/replays';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof LimitParameter,
     QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof LIST_REPLAYS_SORT>>>,
     QueryParameter<'categoryId', z.ZodString>,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -738,21 +730,17 @@ export const listReplays: Route<{
     410: typeof GoneResponse;
     503: typeof UnavailableResponse;
   };
-}> = defineRoute({
+}> = discoveryRoutes.defineRoute({
   method: 'get',
-  path: '/v1/replays',
+  path: '/replays',
   operationId: 'listReplays',
-  tags: [StorefrontTag.DISCOVERY],
   summary: 'Replays online, the ones expiring first — a discovery page, public.',
   description:
     '**This is a discovery page, not "My replays".** The distinction is not cosmetic: "Replays"\nis a permanent entry in a television\'s sidebar, exactly like "Live" or "Categories", and it\nis not prefixed "My" — unlike "My seats" and "My list", which are. Its content is the\ncatalogue of replays **on sale or included**, including ones never watched: that is the\nwhole point of it.\n\nThree reasons the existing paths were no substitute: `/v1/me/replays` returns what one\n**holds** and answers `401` to a visitor — yet on a television the sidebar is always there,\nand hiding an entry based on the session makes the menu change size under the focus, which\nbreaks focus memory; `/v1/search?tab=replays` requires `q` of at least two characters, so\nit has no empty search; and its paginated unit is the **show**, whereas a replay window\nexpires **per date** — grouping by show makes the "expiring first" sort inexpressible.\n\n**Public read**, like the nine other catalogue operations.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.STREAMING],
   'x-arthome-freshness': 60,
-  security: PublicReadSecurity,
   parameters: [
-    SurfaceParameter,
-    TraceparentParameter,
     CursorParameter,
     LimitParameter,
     {
@@ -809,13 +797,14 @@ export const listReplays: Route<{
 
 export const extendRail: Route<{
   method: 'get';
-  path: '/v1/rails/{railId}';
+  version: 1;
+  path: '/rails/{railId}';
   parameters: readonly [
     PathParameter<'railId', z.ZodString>,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     typeof CursorParameter,
     typeof LimitParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -827,18 +816,16 @@ export const extendRail: Route<{
     404: typeof NotFoundResponse;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = discoveryRoutes.defineRoute({
   method: 'get',
-  path: '/v1/rails/{railId}',
+  path: '/rails/{railId}',
   operationId: 'extendRail',
-  tags: [StorefrontTag.DISCOVERY],
   summary: 'Extends a home rail — the consumer of `Rail.nextCursor`.',
   description:
     '`Rail.nextCursor` was served and **no operation consumed it**. A rail extends, it does not\npaginate on screen: the cursor serves to append items on the right when the focus reaches\nthe edge, not to change page.\n\nComposition and order stay **server-side** — the surface never filters the catalogue.\n\n**Public read**, like the rail whose content it continues.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
   'x-arthome-freshness': 60,
-  security: PublicReadSecurity,
   parameters: [
     {
       name: 'railId',
@@ -847,8 +834,6 @@ export const extendRail: Route<{
       description: 'The `id` carried by the rail, never a string built by the surface.',
       schema: z.string(),
     },
-    SurfaceParameter,
-    TraceparentParameter,
     CursorParameter,
     LimitParameter,
   ],
@@ -891,13 +876,14 @@ export const extendRail: Route<{
 
 export const resolvePublicLink: Route<{
   method: 'get';
-  path: '/v1/resolve';
+  version: 1;
+  path: '/resolve';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
     QueryParameter<'url', z.ZodString>,
     QueryParameter<'kind', VocabularyIn<typeof RESOLVE_PUBLIC_LINK_KIND>>,
     QueryParameter<'slug', z.ZodString>,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -923,21 +909,17 @@ export const resolvePublicLink: Route<{
     400: typeof BadRequestResponse;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = discoveryRoutes.defineRoute({
   method: 'get',
-  path: '/v1/resolve',
+  path: '/resolve',
   operationId: 'resolvePublicLink',
-  tags: [StorefrontTag.DISCOVERY],
   summary: 'Resolves a canonical URL or a slug to the resource it designates.',
   description:
     '**`slug` and `canonicalUrl` were served everywhere and accepted nowhere.** Path identifiers\nare UUIDs; all five occurrences of `slug` were on output. A notification pushed to a dead\napplication, a shared link, a bookmark, a search engine result: all of them deliver a\n**URL**, and nothing in the contract knew how to read one.\n\nThe gap went beyond mobile: `canonicalUrl` is what the television encodes in the QR code of\nthe **Share** action — on a television, sharing cannot mean copying a link, there is neither\na useful clipboard nor a messaging app.\n\n**Resolves, does not redirect.** The response names the type and the identifier, and the\nsurface decides where to go: a mobile deep link, a Next route and a television page do not\nhave the same destination for the same resource.\n\n**Public read**: a shared link opens before any sign-in.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
   'x-arthome-freshness': 300,
-  security: PublicReadSecurity,
   parameters: [
-    SurfaceParameter,
-    TraceparentParameter,
     {
       name: 'url',
       in: 'query',

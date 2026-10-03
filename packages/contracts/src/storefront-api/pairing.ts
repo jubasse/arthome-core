@@ -27,27 +27,33 @@ import {
   TooManyRequestsResponse,
   TraceparentParameter,
   UnauthorizedResponse,
+  storefrontV1,
 } from './components.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import {
   AccountDeepLinkSchema,
   DevicePairingSchema,
   PairingOutcomeSchema,
 } from '../identity/index.js';
 
+const pairingRoutes = storefrontV1
+  .tags(StorefrontTag.PAIRING)
+  .headers(SurfaceParameter, TraceparentParameter);
+const pairingWrites = pairingRoutes.headers(IdempotencyKeyParameter);
+
 const CREATE_PAIRING_INTENT = ['signin', 'seat', 'plan', 'payment_method', 'merch'] as const;
 const DECIDE_PAIRING_DECISION = ['approve', 'deny'] as const;
 
 export const createPairing: Route<{
   method: 'post';
-  path: '/v1/pairings';
+  version: 1;
+  path: '/pairings';
   parameters: readonly [
-    typeof IdempotencyKeyParameter,
     typeof AdmissionTokenParameter,
     typeof SurfaceParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -71,11 +77,10 @@ export const createPairing: Route<{
     403: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
     429: typeof TooManyRequestsResponse;
   };
-}> = defineRoute({
+}> = pairingWrites.defineRoute({
   method: 'post',
-  path: '/v1/pairings',
+  path: '/pairings',
   operationId: 'createPairing',
-  tags: [StorefrontTag.PAIRING],
   summary: 'Opens a device pairing, for one of the five intents.',
   description:
     "**One command, one shape, one state machine, five intents.** The television accepts no input\nbeyond six characters: every payment goes through here, therefore through the phone.\n\n**`signin` is the only true RFC 8628**; the other four are **transaction appointments** —\nbuying from an already signed-in television is not a token request. What is shared is the\nstate machine; what differs is the effect of approval.\n\n**For `seat`, the pairing's lifetime is the lifetime of a seat hold placed by `ticketing` at\ncreation**: without that hold, the capacity shown on the television is false for five\nminutes — exactly the defect the television reported.\n\n`signin` opens with the **device token alone**, without a session. The other four require a\nsession on the television.\n\n**A seat pairing goes through the date's sales queue like every other purchase** (D-086).\nWhile the queue is armed, the television shows it, and `seat` opens only with the admission\nin `X-Arthome-Admission-Token`, since opening is what places the hold; without one it is\nrefused with `403` `order.sales_queue_admission_required`. First come, first served, with no\nway around it through the television.\n",
@@ -93,12 +98,7 @@ export const createPairing: Route<{
       csrfToken: [],
     },
   ],
-  parameters: [
-    IdempotencyKeyParameter,
-    AdmissionTokenParameter,
-    SurfaceParameter,
-    TraceparentParameter,
-  ],
+  parameters: [AdmissionTokenParameter],
   requestBody: {
     required: true,
     content: {
@@ -186,7 +186,8 @@ export const createPairing: Route<{
 
 export const pollPairing: Route<{
   method: 'get';
-  path: '/v1/pairings/{pairingId}';
+  version: 1;
+  path: '/pairings/{pairingId}';
   parameters: readonly [
     PathParameter<'pairingId', z.ZodString>,
     typeof SurfaceParameter,
@@ -203,11 +204,10 @@ export const pollPairing: Route<{
     410: typeof GoneResponse;
     429: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = pairingRoutes.defineRoute({
   method: 'get',
-  path: '/v1/pairings/{pairingId}',
+  path: '/pairings/{pairingId}',
   operationId: 'pollPairing',
-  tags: [StorefrontTag.PAIRING],
   summary: 'Polls the outcome of a pairing — and composes the confirmation screen.',
   description:
     '**RFC 8628-compliant polling, not the real-time channel.** Bringing a device identity into\nthe WebSocket namespace at `signin` time would widen its attack surface to save a few hundred\nmilliseconds.\n\nThe requirement "switch within two seconds at most" is met by a **served decay**:\n`pollIntervalSec` is 2 for the first 60 seconds, then 5 — so it stays under the server\'s\ncontrol, and it costs thirty requests per pairing at most. **The surface never polls faster\nthan the interval it is served.**\n\n**Works with the device token alone**, without a session: that is what allows reattachment\nafter the television restarts.\n\nThe response is **complete**: the confirmation screen costs **zero further calls**.\n',
@@ -231,8 +231,6 @@ export const pollPairing: Route<{
       required: true,
       schema: uuidOut(),
     },
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -296,12 +294,13 @@ export const pollPairing: Route<{
 
 export const cancelPairing: Route<{
   method: 'delete';
-  path: '/v1/pairings/{pairingId}';
+  version: 1;
+  path: '/pairings/{pairingId}';
   parameters: readonly [
-    typeof IdempotencyKeyParameter,
     PathParameter<'pairingId', z.ZodString>,
     typeof SurfaceParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -314,11 +313,10 @@ export const cancelPairing: Route<{
     409: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
     403: typeof CsrfRefusedResponse;
   };
-}> = defineRoute({
+}> = pairingWrites.defineRoute({
   method: 'delete',
-  path: '/v1/pairings/{pairingId}',
+  path: '/pairings/{pairingId}',
   operationId: 'cancelPairing',
-  tags: [StorefrontTag.PAIRING],
   summary: 'Closes a pending pairing.',
   description:
     'Triggered by the Back button. The television often leaves without waiting for the response.',
@@ -337,15 +335,12 @@ export const cancelPairing: Route<{
     },
   ],
   parameters: [
-    IdempotencyKeyParameter,
     {
       name: 'pairingId',
       in: 'path',
       required: true,
       schema: uuidOut(),
     },
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -399,12 +394,13 @@ export const cancelPairing: Route<{
 
 export const engagePairing: Route<{
   method: 'post';
-  path: '/v1/pairings/{pairingId}/engagement';
+  version: 1;
+  path: '/pairings/{pairingId}/engagement';
   parameters: readonly [
     PathParameter<'pairingId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<{ note: z.ZodOptional<z.ZodNullable<z.ZodString>> }, z.core.$strip>,
@@ -420,11 +416,10 @@ export const engagePairing: Route<{
     403: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = pairingWrites.defineRoute({
   method: 'post',
-  path: '/v1/pairings/{pairingId}/engagement',
+  path: '/pairings/{pairingId}/engagement',
   operationId: 'engagePairing',
-  tags: [StorefrontTag.PAIRING],
   summary: 'Marks the pairing as engaged — on entering the payment journey.',
   description:
     "**This operation exists to close a race that costs real money.**\n\nThe sequence without it: the viewer scans the QR, pays on their phone, and presses **Back**\nwhile the payment is executing. The television sends its `DELETE`; `ticketing` has already\ncharged; the decision arrives afterwards and receives `410`. **The seat is paid for, the\nphone shows a failure, the television has gone back, and the money is gone.** The contract\nhandled the reverse order — approval then cancellation — and not this one, which is the more\nlikely of the two: executing a payment takes seconds, pressing Back is instant.\n\n**Called by the BFF on the phone's behalf**, at the moment the phone enters the payment\njourney — hence **before** `ticketing` executes, not after. It moves the pairing from\n`pending` to `engaged`, and from then on `cancelPairing` answers `409`.\n\n**It applies only to the four purchase intents.** `signin` commits no money: a sign-in\npairing stays cancellable until its decision, and calling this on one is refused.\n\n**Idempotent**: a second call on an already `engaged` pairing returns the same state, not an\nerror — the phone may replay its entry into the journey on a network that switches over.\n",
@@ -446,9 +441,6 @@ export const engagePairing: Route<{
       required: true,
       schema: uuidOut(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: false,
@@ -516,12 +508,13 @@ export const engagePairing: Route<{
 
 export const decidePairing: Route<{
   method: 'post';
-  path: '/v1/pairings/{pairingId}/decision';
+  version: 1;
+  path: '/pairings/{pairingId}/decision';
   parameters: readonly [
     PathParameter<'pairingId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -542,11 +535,10 @@ export const decidePairing: Route<{
     403: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = pairingWrites.defineRoute({
   method: 'post',
-  path: '/v1/pairings/{pairingId}/decision',
+  path: '/pairings/{pairingId}/decision',
   operationId: 'decidePairing',
-  tags: [StorefrontTag.PAIRING],
   summary: 'Approves or denies a pairing, from the phone.',
   description:
     '**The ownership guard is written by us, not delegated.** CVE-2026-45337 showed what relaxing\nit costs: the plugin treated any authenticated session as the owner of any pending code.\n\nThree checks, in this order: the pairing is `pending` **or `engaged`** and not expired — an\nengaged pairing is precisely the one whose decision is awaited; if `intent = signin`, any\nvalid session suffices — **that is the nominal case, and it is the very meaning of "add an\naccount"**; otherwise, the bearer **is** the profile that opened the pairing, on pain of\n`pairing.identity_mismatch`.\n\n**No implicit profile switch.** It would charge the wrong payment method, credit the wrong\nrights and deliver the seat to the wrong account — in a living room, at the precise moment\ntwo people are watching the same screen. The phone offers "switch account": a gesture by the\nperson, never by the system.\n',
@@ -568,9 +560,6 @@ export const decidePairing: Route<{
       required: true,
       schema: uuidOut(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: true,
@@ -645,7 +634,8 @@ export const decidePairing: Route<{
 
 export const getAccountDeepLink: Route<{
   method: 'get';
-  path: '/v1/account-deep-link';
+  version: 1;
+  path: '/account-deep-link';
   parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
   responses: {
     200: JsonResponse<
@@ -656,17 +646,15 @@ export const getAccountDeepLink: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = pairingRoutes.defineRoute({
   method: 'get',
-  path: '/v1/account-deep-link',
+  path: '/account-deep-link',
   operationId: 'getAccountDeepLink',
-  tags: [StorefrontTag.PAIRING],
   summary: 'The QR that hands off to account management — what is NOT a pairing.',
   description:
     '**Nothing is waiting, the screen does not switch, no pairing row is opened.** Two distinct\nshapes in the contract, separated by **name** and not by an option — otherwise someone will\nimplement a wait where there is none.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [SurfaceParameter, TraceparentParameter],
   responses: {
     200: {
       description: 'The link.',

@@ -19,9 +19,10 @@ import type {
   JsonResponse,
   PathParameter,
   QueryParameter,
+  RouteBuilder,
   SecurityRequirement,
 } from '../http/index.js';
-import { accessorOf } from '../http/index.js';
+import { accessorOf, routeBuilder } from '../http/index.js';
 
 const SURFACE: readonly [
   typeof Surface.STOREFRONT_WEB,
@@ -406,3 +407,9 @@ export const UnavailableResponse: JsonResponse<typeof StorefrontErrorEnvelopeSch
     },
   },
 };
+
+export const storefrontV1: RouteBuilder<
+  1,
+  readonly [],
+  Record<never, never>
+> = routeBuilder().version(1);

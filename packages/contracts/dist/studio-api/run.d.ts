@@ -13,7 +13,8 @@ declare const SET_RUN_STATE_STATE: readonly [
 ];
 export declare const getDateTechPane: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/panes/tech';
+    version: 1;
+    path: '/dates/{dateId}/panes/tech';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -47,7 +48,8 @@ export declare const getDateTechPane: Route<{
 }>;
 export declare const getRunConsole: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/run';
+    version: 1;
+    path: '/dates/{dateId}/run';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -64,7 +66,8 @@ export declare const getRunConsole: Route<{
 }>;
 export declare const runTechnicalCheck: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/run/technical-check';
+    version: 1;
+    path: '/dates/{dateId}/run/technical-check';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -87,7 +90,8 @@ export declare const runTechnicalCheck: Route<{
 }>;
 export declare const setRunState: Route<{
     method: 'put';
-    path: '/v1/dates/{dateId}/run/state';
+    version: 1;
+    path: '/dates/{dateId}/run/state';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -108,7 +112,8 @@ export declare const setRunState: Route<{
 }>;
 export declare const setQualityProfile: Route<{
     method: 'put';
-    path: '/v1/dates/{dateId}/run/quality-profile';
+    version: 1;
+    path: '/dates/{dateId}/run/quality-profile';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -132,13 +137,14 @@ export declare const setQualityProfile: Route<{
 }>;
 export declare const getHealthSeries: Route<{
     method: 'get';
-    path: '/v1/dates/{dateId}/run/health-samples';
+    version: 1;
+    path: '/dates/{dateId}/run/health-samples';
     parameters: readonly [
         typeof DateIdParameter,
+        QueryParameter<'windowSec', z.ZodDefault<z.ZodInt>>,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
-        QueryParameter<'windowSec', z.ZodDefault<z.ZodInt>>
+        typeof TraceparentParameter
     ];
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
@@ -150,7 +156,8 @@ export declare const getHealthSeries: Route<{
 }>;
 export declare const submitHealthSample: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/run/health-samples';
+    version: 1;
+    path: '/dates/{dateId}/run/health-samples';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -174,7 +181,8 @@ export declare const submitHealthSample: Route<{
 }>;
 export declare const postChapter: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/run/chapters';
+    version: 1;
+    path: '/dates/{dateId}/run/chapters';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -200,7 +208,8 @@ export declare const postChapter: Route<{
 }>;
 export declare const removeChapter: Route<{
     method: 'delete';
-    path: '/v1/dates/{dateId}/run/chapters/{chapterId}';
+    version: 1;
+    path: '/dates/{dateId}/run/chapters/{chapterId}';
     parameters: readonly [
         typeof DateIdParameter,
         PathParameter<'chapterId', z.ZodString>,
@@ -220,7 +229,8 @@ export declare const removeChapter: Route<{
 }>;
 export declare const raiseIncident: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/incidents';
+    version: 1;
+    path: '/dates/{dateId}/incidents';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -247,7 +257,8 @@ export declare const raiseIncident: Route<{
 }>;
 export declare const resolveIncident: Route<{
     method: 'post';
-    path: '/v1/incidents/{incidentId}/resolve';
+    version: 1;
+    path: '/incidents/{incidentId}/resolve';
     parameters: readonly [
         PathParameter<'incidentId', z.ZodString>,
         typeof IdempotencyKeyParameter,
@@ -266,7 +277,8 @@ export declare const resolveIncident: Route<{
 }>;
 export declare const escalateIncidentToProduction: Route<{
     method: 'post';
-    path: '/v1/incidents/{incidentId}/escalate';
+    version: 1;
+    path: '/incidents/{incidentId}/escalate';
     parameters: readonly [
         PathParameter<'incidentId', z.ZodString>,
         typeof IdempotencyKeyParameter,
@@ -288,7 +300,8 @@ export declare const escalateIncidentToProduction: Route<{
 }>;
 export declare const revealStreamKey: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/stream-key/reveal';
+    version: 1;
+    path: '/dates/{dateId}/stream-key/reveal';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -309,7 +322,8 @@ export declare const revealStreamKey: Route<{
 }>;
 export declare const rotateStreamKey: Route<{
     method: 'post';
-    path: '/v1/dates/{dateId}/stream-key/rotate';
+    version: 1;
+    path: '/dates/{dateId}/stream-key/rotate';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -330,7 +344,8 @@ export declare const rotateStreamKey: Route<{
 }>;
 export declare const getChannelStreamSettings: Route<{
     method: 'get';
-    path: '/v1/channels/{channelId}/stream';
+    version: 1;
+    path: '/channels/{channelId}/stream';
     parameters: readonly [
         typeof ChannelIdParameter,
         typeof SurfaceParameter,

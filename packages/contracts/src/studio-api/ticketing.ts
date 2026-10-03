@@ -29,6 +29,7 @@ import {
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
+  studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type {
@@ -38,8 +39,13 @@ import type {
   QueryParameter,
   Route,
 } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import { DateSalesPaneSchema } from '../studio-money/index.js';
+
+const ticketingRoutes = studioV1
+  .tags(StudioTag.TICKETING)
+  .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
+const ticketingReads = ticketingRoutes.errors({ 403: ForbiddenResponse });
+const ticketingWrites = ticketingRoutes.headers(IdempotencyKeyParameter);
 
 const REFUND_SEAT_REFUND_REASON_CODE: readonly [
   typeof RefundReason.DATE_CANCELLED,
@@ -56,7 +62,8 @@ const GET_CHANNEL_TICKETING_KIND = ['refund', 'seat_transfer', 'chargeback'] as 
 
 export const getDateTicketsPane: Route<{
   method: 'get';
-  path: '/v1/dates/{dateId}/panes/tickets';
+  version: 1;
+  path: '/dates/{dateId}/panes/tickets';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -73,17 +80,16 @@ export const getDateTicketsPane: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = ticketingReads.defineRoute({
   method: 'get',
-  path: '/v1/dates/{dateId}/panes/tickets',
+  path: '/dates/{dateId}/panes/tickets',
   operationId: 'getDateTicketsPane',
-  tags: [StudioTag.TICKETING],
   summary: "A date's ticketing pane.",
   description:
     'Served by `ticketing`, **projected according to the role**: `grossRevenue` is absent without\n`canRevenue`. The pane is open to `artist`, `production` and `treasury`.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [DateIdParameter, SurfaceParameter, IfRightsVersionParameter, TraceparentParameter],
+  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'Jauge, paliers, tarifs, promotions, provision technique.',
@@ -132,20 +138,20 @@ export const getDateTicketsPane: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
     404: NotFoundResponse,
   },
 });
 
 export const setDatePrices: Route<{
   method: 'put';
-  path: '/v1/dates/{dateId}/prices';
+  version: 1;
+  path: '/dates/{dateId}/prices';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -175,23 +181,16 @@ export const setDatePrices: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = ticketingWrites.defineRoute({
   method: 'put',
-  path: '/v1/dates/{dateId}/prices',
+  path: '/dates/{dateId}/prices',
   operationId: 'setDatePrices',
-  tags: [StudioTag.TICKETING],
   summary: "Sets a date's prices.",
   description:
     '**`ticketing` applies its own lock**, it asks `catalog` for nothing: it refuses as soon as it\nhas consumed `publication.engaged`, with its own code and its own trace. This is the answer to\nthe reproach "an aggregate straddling three contexts" — publication publishes a fact, each\nowner locks what it owns.\n\n**"Apply to the series" excludes prices**: each date commits its own buyers.\n\n**One currency per date**, its billing market\'s (D-016): tiers in two currencies are refused\nwith `date.prices_currency_mismatch`, whose `params` name the stray `tier`, its `currency`,\nand the `expected` one.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -280,13 +279,14 @@ export const setDatePrices: Route<{
 
 export const openCapacityTier: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/capacity-tiers';
+  version: 1;
+  path: '/dates/{dateId}/capacity-tiers';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -319,23 +319,16 @@ export const openCapacityTier: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = ticketingWrites.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/capacity-tiers',
+  path: '/dates/{dateId}/capacity-tiers',
   operationId: 'openCapacityTier',
-  tags: [StudioTag.TICKETING],
   summary: 'Opens a capacity tier, and warns the waiting list in the same gesture.',
   description:
     '**One transactional command, not two.** Two calls would let the scarcity dissipate between\nthem: the priority window (2 h) is a **domain parameter**, served and not copied out.\n\n**Capacity widens in tiers and never shrinks** once the sale has opened: a reduction is\nrefused with `capacity.tier_must_widen`.\n\nBeyond `TECHNICAL_PROVISION_THRESHOLD` seats (`@arthome/core`), the technical provision is\nrequired: a capacity no recorded provision covers is refused with\n`date.technical_provision_required`, whose `params` name the `threshold`, the `capacityTotal`\nasked for, the `provisionedCapacity` when one is recorded, and `revisableUntil`,\n`PROVISION_REVISION_HOURS` before the start, once the date has one. The studio records the\nprovision first, with `setTechnicalProvision`. Threshold, provision, deadline and exposure to\nthe penalty are **contract data**.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -417,13 +410,14 @@ export const openCapacityTier: Route<{
 
 export const setTechnicalProvision: Route<{
   method: 'put';
-  path: '/v1/dates/{dateId}/technical-provision';
+  version: 1;
+  path: '/dates/{dateId}/technical-provision';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<{ provisionedCapacity: z.ZodInt; expectedVersion: z.ZodInt }, z.core.$strip>
@@ -437,23 +431,16 @@ export const setTechnicalProvision: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = defineRoute({
+}> = ticketingWrites.defineRoute({
   method: 'put',
-  path: '/v1/dates/{dateId}/technical-provision',
+  path: '/dates/{dateId}/technical-provision',
   operationId: 'setTechnicalProvision',
-  tags: [StudioTag.TICKETING],
   summary: "Records or revises a date's technical provision.",
   description:
     'Beyond `TECHNICAL_PROVISION_THRESHOLD` seats (`@arthome/core`), `openCapacityTier` refuses a\ncapacity no recorded provision covers (D-088). This records the capacity the infrastructure\nis provisioned for, and replaces the one recorded before.\n\n**Revisable until `revisableUntil`**, `PROVISION_REVISION_HOURS` before the start: from then\non it is refused with `date.provision_deadline_passed`. A date with no start yet has no\ndeadline. A provision below the capacity already open covers nothing and is refused with\n`date.provision_below_capacity`, whose `params` name both figures.\n\nThe penalty for a forecast far above the real figure is not defined yet (D-088).\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -526,13 +513,14 @@ export const setTechnicalProvision: Route<{
 
 export const refundSeat: Route<{
   method: 'post';
-  path: '/v1/seats/{seatId}/refund';
+  version: 1;
+  path: '/seats/{seatId}/refund';
   parameters: readonly [
     PathParameter<'seatId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -567,11 +555,10 @@ export const refundSeat: Route<{
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = ticketingWrites.defineRoute({
   method: 'post',
-  path: '/v1/seats/{seatId}/refund',
+  path: '/seats/{seatId}/refund',
   operationId: 'refundSeat',
-  tags: [StudioTag.TICKETING],
   summary: 'Refunds a seat from the studio.',
   description:
     '**The refund refunds the commission too**: we do not keep 12% of a show that did not happen.\nIt is not merely decent, it is what the copy promises.\n\n**Never queued offline**: it is a money command, it is refused locally with\n`offline_forbidden`.\n',
@@ -584,10 +571,6 @@ export const refundSeat: Route<{
       required: true,
       schema: uuidOut(),
     },
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   requestBody: {
     required: true,
@@ -653,13 +636,14 @@ export const refundSeat: Route<{
 
 export const issueComplimentary: Route<{
   method: 'post';
-  path: '/v1/dates/{dateId}/complimentaries';
+  version: 1;
+  path: '/dates/{dateId}/complimentaries';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IdempotencyKeyParameter,
   ];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -693,23 +677,16 @@ export const issueComplimentary: Route<{
     >;
     409: typeof ConflictResponse;
   };
-}> = defineRoute({
+}> = ticketingWrites.defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/complimentaries',
+  path: '/dates/{dateId}/complimentaries',
   operationId: 'issueComplimentary',
-  tags: [StudioTag.TICKETING],
   summary: 'Issues complimentary tickets, by category.',
   description:
     'Complimentary tickets **by category** are one of the six shapes the sources did not carry.\nThey enter the `ticketing` contract at tier 3, **marked provisional**.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [
-    DateIdParameter,
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [DateIdParameter],
   requestBody: {
     required: true,
     content: {
@@ -767,14 +744,15 @@ export const issueComplimentary: Route<{
 
 export const getChannelTicketing: Route<{
   method: 'get';
-  path: '/v1/channels/{channelId}/ticketing';
+  version: 1;
+  path: '/channels/{channelId}/ticketing';
   parameters: readonly [
     typeof ChannelIdParameter,
+    QueryParameter<'from', z.ZodString, true>,
+    QueryParameter<'to', z.ZodString, true>,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
-    QueryParameter<'from', z.ZodString, true>,
-    QueryParameter<'to', z.ZodString, true>,
   ];
   responses: {
     200: JsonResponse<
@@ -846,11 +824,10 @@ export const getChannelTicketing: Route<{
     >;
     403: typeof ForbiddenResponse;
   };
-}> = defineRoute({
+}> = ticketingReads.defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/ticketing',
+  path: '/channels/{channelId}/ticketing',
   operationId: 'getChannelTicketing',
-  tags: [StudioTag.TICKETING],
   summary: 'Ticketing at channel level — breakdown, waiting list, and the requests in flight.',
   description:
     'The commands existed (`refundSeat`, `issueComplimentary`); **the collection they act on did\nnot**. The "requests in flight" are the three the screen lists — refund, seat transfer, bank\ndispute — and two of them had no read surface at all.\n\n**Reserved to roles with `canRevenue`**: the whole page, not only its columns.\n',
@@ -858,9 +835,6 @@ export const getChannelTicketing: Route<{
   'x-arthome-upstream': [Service.TICKETING],
   parameters: [
     ChannelIdParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     {
       name: 'from',
       in: 'query',
@@ -991,6 +965,5 @@ export const getChannelTicketing: Route<{
         },
       },
     },
-    403: ForbiddenResponse,
   },
 });

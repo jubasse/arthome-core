@@ -8,7 +8,8 @@ const Dates = z.looseObject({ items: z.array(z.string()) });
 
 const listDates = defineRoute({
   method: 'get',
-  path: '/v1/channels/{channelId}/dates',
+  version: 1,
+  path: '/channels/{channelId}/dates',
   operationId: 'listDates',
   parameters: [
     { name: 'channelId', in: 'path', required: true, schema: z.string() },
@@ -24,7 +25,8 @@ const listDates = defineRoute({
 
 const renameDate = defineRoute({
   method: 'post',
-  path: '/v1/dates/{dateId}/title',
+  version: 1,
+  path: '/dates/{dateId}/title',
   operationId: 'renameDate',
   parameters: [{ name: 'dateId', in: 'path', required: true, schema: z.string() }],
   requestBody: {

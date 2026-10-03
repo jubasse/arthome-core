@@ -152,8 +152,6 @@ paths:
   /v1/devices:
     post:
       operationId: registerDevice
-      tags:
-      - bootstrap
       summary: Registers the device and returns its device token.
       description: |
         **Called on first launch, before any session.** Device identity is a contract notion, and
@@ -166,6 +164,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - bootstrap
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -249,8 +249,6 @@ paths:
   /v1/viewer-context:
     get:
       operationId: getViewerContext
-      tags:
-      - bootstrap
       summary: The bootstrap — the entire budget of the start-up screen.
       description: |
         **A single call.** Device profiles, rights, preferences, domain constants, version of the
@@ -264,14 +262,16 @@ paths:
       x-arthome-upstream:
       - identity
       x-arthome-freshness: 300
+      tags:
+      - bootstrap
       security:
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
       parameters:
+      - $ref: '#/components/parameters/ViewerTimezone'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/ViewerTimezone'
       responses:
         '200':
           description: Viewer context.
@@ -336,8 +336,6 @@ paths:
   /v1/changes:
     get:
       operationId: listChanges
-      tags:
-      - bootstrap
       summary: The invalidations since a given instant — not the data.
       description: |
         **One request instead of twelve.** On returning to the foreground, every observed read
@@ -379,9 +377,9 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - realtime
+      tags:
+      - bootstrap
       parameters:
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - name: since
         in: query
         required: true
@@ -409,6 +407,8 @@ paths:
           - device
           x-arthome-vocabulary-source: none
           x-arthome-vocabulary-reason: 'An account-management shape, local to this endpoint: what the person asked for, not a fact the domain reasons about.'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: A list of invalidations.
@@ -438,8 +438,6 @@ paths:
   /v1/auth/sign-up:
     post:
       operationId: signUp
-      tags:
-      - account
       summary: Creates an account with email and password.
       description: |
         **A documented relay to `identity`, and the relay is mandatory, not preferable.** Three
@@ -468,6 +466,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -586,8 +586,6 @@ paths:
   /v1/auth/sign-in:
     post:
       operationId: signIn
-      tags:
-      - account
       summary: Opens a session with email and password.
       description: |
         Same relay, same translation into codes: `identity.invalid_credentials` **never** distinguishes an
@@ -609,6 +607,8 @@ paths:
         original response rather than a `410` or a second effect: that is safe resumption. A
         sign-in, no — it must **always** re-authenticate. The protection against double submission
         here is rate limiting per `device_id`, not the idempotency store.
+      tags:
+      - account
       security: []
       parameters:
       - $ref: '#/components/parameters/Surface'
@@ -704,8 +704,6 @@ paths:
   /v1/auth/sign-out:
     post:
       operationId: signOut
-      tags:
-      - account
       summary: Closes the current session — and nothing else.
       description: |
         **The trap this operation exists to avoid.** The authentication library's `signOut` revokes
@@ -725,6 +723,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
@@ -755,8 +755,6 @@ paths:
   /v1/auth/verify-email:
     post:
       operationId: confirmEmailVerification
-      tags:
-      - account
       summary: Confirms an email address from the link sent to it.
       description: |
         **The link points at the surface, never at the API**, which sends its token here. No
@@ -771,6 +769,8 @@ paths:
       - identity
       x-arthome-invalidates:
       - account:profile
+      tags:
+      - account
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -836,8 +836,6 @@ paths:
   /v1/auth/verify-email/resend:
     post:
       operationId: resendEmailVerification
-      tags:
-      - account
       summary: Queues a fresh verification link for the signed-in account's address.
       description: |
         The fresh link replaces the earlier ones, which stop working. **`queued: true`** says the
@@ -847,6 +845,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -889,8 +889,6 @@ paths:
   /v1/auth/forget-password:
     post:
       operationId: requestPasswordReset
-      tags:
-      - account
       summary: Requests a password reset link.
       description: |
         **Always answers `202`, whether the account exists or not.** Distinguishing the two would
@@ -902,6 +900,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -960,8 +960,6 @@ paths:
   /v1/auth/reset-password:
     post:
       operationId: resetPassword
-      tags:
-      - account
       summary: Sets a new password from a reset token.
       description: |
         **Does not open a session.** The person signs in again, which proves the new password works
@@ -970,6 +968,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -1025,8 +1025,6 @@ paths:
   /v1/auth/social/{provider}/start:
     post:
       operationId: startSocialSignIn
-      tags:
-      - account
       summary: Starts a social sign-in — the surfaces never talk to the provider.
       description: |
         **The OAuth client is confidential and server-side.** No application embeds a secret: that
@@ -1044,6 +1042,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -1127,8 +1127,6 @@ paths:
   /v1/auth/exchange:
     post:
       operationId: exchangeOneTimeToken
-      tags:
-      - account
       summary: Exchanges the opaque state from the return for a session.
       description: |
         **This is what makes the journey replayable if the operating system kills the application
@@ -1137,6 +1135,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -1212,8 +1212,6 @@ paths:
   /v1/auth/password:
     patch:
       operationId: changePassword
-      tags:
-      - account
       summary: Changes the password from the account.
       description: |
         **The current password is required**, and that is not a formality: without it, a stolen
@@ -1225,6 +1223,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -1287,8 +1287,6 @@ paths:
   /v1/auth/two-factor:
     post:
       operationId: enableTwoFactor
-      tags:
-      - account
       summary: Enables two-factor authentication and returns the backup codes.
       description: |
         **The backup codes are returned here, once only.** They are never read back: the server
@@ -1300,6 +1298,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -1366,13 +1366,13 @@ paths:
           $ref: '#/components/responses/CsrfRefused'
     delete:
       operationId: disableTwoFactor
-      tags:
-      - account
       summary: Disables two-factor authentication.
       description: '**Re-authentication required**: disabling a second factor is exactly what a session thief would try first.'
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -1422,8 +1422,6 @@ paths:
   /v1/auth/two-factor/verify:
     post:
       operationId: verifyTwoFactor
-      tags:
-      - account
       summary: Answers the two-factor challenge, and opens the session.
       description: |
         Follows `identity.two_factor_required`. The `challengeId` is **short-lived and single-use**; a
@@ -1431,6 +1429,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -1509,8 +1509,6 @@ paths:
   /v1/me/passkeys:
     post:
       operationId: addPasskey
-      tags:
-      - account
       summary: Enrols a passkey.
       description: |
         Returns the enrolment options produced by the server; the surface passes them to the browser
@@ -1519,6 +1517,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -1584,13 +1584,13 @@ paths:
   /v1/me/passkeys/{passkeyId}:
     delete:
       operationId: removePasskey
-      tags:
-      - account
       summary: Removes a passkey.
       description: '**Refused if it is the account''s last credential** (`LAST_CREDENTIAL`): an account with no way to sign in is a lost account.'
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -1632,8 +1632,6 @@ paths:
   /v1/me/payment-methods:
     post:
       operationId: addPaymentMethod
-      tags:
-      - account
       summary: Registers a payment method from the web.
       description: |
         **The only surface able to register a card was the one with no keyboard.** The
@@ -1648,6 +1646,8 @@ paths:
       - ticketing
       x-arthome-invalidates:
       - account:payment-methods
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -1724,8 +1724,6 @@ paths:
   /v1/me/payment-methods/{paymentMethodId}:
     delete:
       operationId: removePaymentMethod
-      tags:
-      - account
       summary: Removes a payment method.
       description: |
         **Refused if it is the last method of an active subscription** (`payment_method.in_use`):
@@ -1734,6 +1732,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -1775,8 +1775,6 @@ paths:
   /v1/me/account:
     get:
       operationId: getAccountScreen
-      tags:
-      - account
       summary: The aggregate of the account's eleven sections, in one call.
       description: |
         The eleven sections share **one** account shape. They justify neither eleven calls nor eleven
@@ -1788,6 +1786,8 @@ paths:
       - ticketing
       - notifications
       x-arthome-freshness: 300
+      tags:
+      - account
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
@@ -1837,8 +1837,6 @@ paths:
   /v1/me/tickets:
     get:
       operationId: listMyTickets
-      tags:
-      - account
       summary: My seats, upcoming or past, already ordered by the server.
       description: |
         The order is **server-side**: a date carrying an outcome rises to the top, because it calls
@@ -1849,9 +1847,9 @@ paths:
       - catalog
       - streaming
       x-arthome-freshness: 60
+      tags:
+      - account
       parameters:
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/CursorDirection'
       - $ref: '#/components/parameters/Limit'
@@ -1865,6 +1863,8 @@ paths:
           - past
           x-arthome-vocabulary-source: none
           x-arthome-vocabulary-reason: A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: Page of seats.
@@ -1899,8 +1899,6 @@ paths:
   /v1/me/replays:
     get:
       operationId: listMyReplays
-      tags:
-      - account
       summary: My replays, the ones expiring first.
       description: Each entry carries `replay.expiresAt` as an **instant**; the surface derives "expires in 41 h" against `servedAt`, with no call.
       x-arthome-maturity: stable
@@ -1909,11 +1907,13 @@ paths:
       - catalog
       - streaming
       x-arthome-freshness: 60
+      tags:
+      - account
       parameters:
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: Page of replays.
@@ -1946,8 +1946,6 @@ paths:
   /v1/me/watchlist:
     get:
       operationId: listWatchlist
-      tags:
-      - account
       summary: Ma liste.
       description: |
         "My list" — complete cards, not identifiers: the surface must be able to paint without a
@@ -1957,11 +1955,13 @@ paths:
       - identity
       - catalog
       x-arthome-freshness: 60
+      tags:
+      - account
       parameters:
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: Page of dates set aside.
@@ -1992,8 +1992,6 @@ paths:
   /v1/me/watchlist/{dateId}:
     put:
       operationId: addToWatchlist
-      tags:
-      - account
       summary: Sets a date aside.
       description: |
         **A state assignment, not a toggle.** Two submissions of the same gesture leave a single
@@ -2004,6 +2002,8 @@ paths:
       - identity
       x-arthome-invalidates:
       - home:rails
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -2043,13 +2043,13 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       operationId: removeFromWatchlist
-      tags:
-      - account
       summary: Removes a date from my list.
       description: Replayed on an already-removed entry, it **succeeds** — an idempotent deletion must not fail.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -2090,8 +2090,6 @@ paths:
   /v1/me/follows:
     get:
       operationId: listFollowedArtists
-      tags:
-      - account
       summary: Followed artists — the "Following" page, which had no entry point.
       description: |
         **The whole page was unserved.** `/v1/me/follows/{artistId}` exposed only `PUT` and
@@ -2114,9 +2112,9 @@ paths:
       - catalog
       - notifications
       x-arthome-freshness: 60
+      tags:
+      - account
       parameters:
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
       - name: sort
@@ -2136,6 +2134,8 @@ paths:
         schema:
           default: false
           type: boolean
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: |
@@ -2181,8 +2181,6 @@ paths:
   /v1/me/follows/{artistId}:
     put:
       operationId: followArtist
-      tags:
-      - account
       summary: Follows an artist.
       description: |
         **Following and being alerted are two settings.** `followArtist` is a catalogue relation; the
@@ -2195,6 +2193,8 @@ paths:
       - notifications
       x-arthome-invalidates:
       - home:rails
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -2245,8 +2245,6 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       operationId: unfollowArtist
-      tags:
-      - account
       summary: Unfollows an artist.
       description: |
         **A state assignment, not a toggle.** Returns the updated artist, so the surface repaints
@@ -2255,6 +2253,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -2294,8 +2294,6 @@ paths:
   /v1/me/reminders/{dateId}:
     put:
       operationId: setReminder
-      tags:
-      - account
       summary: Sets a dated reminder on a date.
       description: |
         **A reminder is a dated promise.** If the date is postponed, the reminder **follows** the
@@ -2304,6 +2302,8 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - notifications
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -2344,8 +2344,6 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       operationId: clearReminder
-      tags:
-      - account
       summary: Clears the reminder.
       description: |
         Clears the reminder. Replayed on an already-cleared reminder, it succeeds — it is queued
@@ -2353,6 +2351,8 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - notifications
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -2390,8 +2390,6 @@ paths:
   /v1/me/saved-searches:
     get:
       operationId: listSavedSearches
-      tags:
-      - account
       summary: My saved searches, with their new-match counter.
       description: |
         **Zero counting queries on opening.** The "new since your last visit" counter is incremented
@@ -2402,6 +2400,8 @@ paths:
       x-arthome-upstream:
       - catalog
       x-arthome-freshness: 300
+      tags:
+      - account
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
@@ -2444,8 +2444,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     post:
       operationId: createSavedSearch
-      tags:
-      - account
       summary: Saves a search.
       description: |
         The **signature** is produced by `normalizeSearchCriteria()` in `@arthome/core`,
@@ -2454,6 +2452,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - catalog
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -2550,8 +2550,6 @@ paths:
   /v1/me/saved-searches/{savedSearchId}:
     patch:
       operationId: updateSavedSearch
-      tags:
-      - account
       summary: Renames, activates, or changes the channels of a saved search.
       description: |
         **Field-by-field** write, never a whole document. A saved search is queued offline: a replay
@@ -2559,6 +2557,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - catalog
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -2631,13 +2631,13 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       operationId: deleteSavedSearch
-      tags:
-      - account
       summary: Deletes a saved search.
       description: '**Replayed on an already-deleted entry, it succeeds** — that is what an offline queue requires.'
       x-arthome-maturity: stable
       x-arthome-upstream:
       - catalog
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -2680,8 +2680,6 @@ paths:
   /v1/me/orders:
     get:
       operationId: listMyOrders
-      tags:
-      - account
       summary: My orders, including the reflection of orders placed with a third party.
       description: |
         An order may **not be ours**. `externalRef` is served **with its age**: what we guarantee is
@@ -2691,11 +2689,13 @@ paths:
       x-arthome-upstream:
       - ticketing
       x-arthome-freshness: 300
+      tags:
+      - account
       parameters:
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: Page of orders.
@@ -2740,8 +2740,6 @@ paths:
   /v1/me/notifications:
     get:
       operationId: listNotifications
-      tags:
-      - account
       summary: The notification centre, and the global badge.
       description: |
         The `unreadCount` badge is **global**, not the page's: otherwise the surface would display
@@ -2750,11 +2748,13 @@ paths:
       x-arthome-upstream:
       - notifications
       x-arthome-freshness: 60
+      tags:
+      - account
       parameters:
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: Page of notifications, plus the **global** unread count — not the page's.
@@ -2794,13 +2794,13 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     post:
       operationId: markNotificationsRead
-      tags:
-      - account
       summary: Marks notifications as read.
       description: '**Monotonic: one does not un-read.** Replayed, it changes nothing — which is what makes it safe in an offline queue.'
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - notifications
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -2854,8 +2854,6 @@ paths:
   /v1/me/profile:
     patch:
       operationId: updateProfile
-      tags:
-      - account
       summary: Changes the displayed identity.
       description: '**Field by field**, never a whole document, and conditioned on `expectedVersion`: two devices do not silently overwrite each other.'
       x-arthome-maturity: stable
@@ -2863,6 +2861,8 @@ paths:
       - identity
       x-arthome-invalidates:
       - account:profile
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -2925,8 +2925,6 @@ paths:
   /v1/me/preferences:
     patch:
       operationId: updatePreferences
-      tags:
-      - account
       summary: Writes a preference, at its scope.
       description: |
         **Two scopes, and the contract separates them field by field**: `account` follows the
@@ -2939,6 +2937,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -3003,8 +3003,6 @@ paths:
   /v1/me/notification-preferences:
     patch:
       operationId: updateNotificationPreferences
-      tags:
-      - account
       summary: Five triggers, three channels, and quiet hours.
       description: |
         **The quiet-hours exception is conditioned on holding a seat**: that is a business rule, not
@@ -3014,6 +3012,8 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - notifications
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -3098,8 +3098,6 @@ paths:
   /v1/me/consents:
     put:
       operationId: updateConsents
-      tags:
-      - account
       summary: Records consents, timestamped and versioned by the server.
       description: |
         **Never queued offline**: a consent has evidential value, it must be timestamped **by the
@@ -3109,6 +3107,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -3189,8 +3189,6 @@ paths:
   /v1/me/devices/{deviceId}:
     delete:
       operationId: revokeDevice
-      tags:
-      - account
       summary: Revokes a device — and cuts its playback.
       description: |
         **An observable effect on the targeted device, within 120 seconds at most.** Revoking
@@ -3205,6 +3203,8 @@ paths:
       - identity
       x-arthome-invalidates:
       - account:devices
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -3265,8 +3265,6 @@ paths:
   /v1/me/device-sessions/{sessionId}:
     delete:
       operationId: signOutProfile
-      tags:
-      - account
       summary: Signs one profile out of this device — the others stay signed in.
       description: |
         **Two gestures, and they do not do the same thing.** This one closes a `DeviceSession`: the
@@ -3275,6 +3273,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -3334,8 +3334,6 @@ paths:
   /v1/me/exports:
     post:
       operationId: requestExport
-      tags:
-      - account
       summary: Requests an export — personal data or invoices.
       description: |
         **Asynchronous.** A tax ledger or a GDPR export is not an HTTP response: the command returns
@@ -3346,6 +3344,8 @@ paths:
       x-arthome-upstream:
       - identity
       - ticketing
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -3413,8 +3413,6 @@ paths:
   /v1/me/exports/{exportId}:
     get:
       operationId: getExport
-      tags:
-      - account
       summary: The state of an export, and its signed address once ready.
       description: |
         An export is an **asynchronous job**. Until it is `ready`, `downloadUrl` is null: the
@@ -3424,6 +3422,8 @@ paths:
       x-arthome-upstream:
       - identity
       - ticketing
+      tags:
+      - account
       parameters:
       - name: exportId
         in: path
@@ -3462,8 +3462,6 @@ paths:
   /v1/me/deletion:
     post:
       operationId: requestAccountDeletion
-      tags:
-      - account
       summary: Requests deletion of the account.
       description: |
         **A financial command as much as a personal one.** "Deletion cancels unused seats": it
@@ -3478,6 +3476,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -3533,8 +3533,6 @@ paths:
           $ref: '#/components/responses/Conflict'
     delete:
       operationId: cancelAccountDeletion
-      tags:
-      - account
       summary: Cancels the deletion request during the grace period.
       description: |
         The account is **reactivated by simply signing in** during the 30 days of grace, and that is
@@ -3544,6 +3542,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -3580,8 +3580,6 @@ paths:
   /v1/support/requests:
     post:
       operationId: contactSupport
-      tags:
-      - account
       summary: Opens a support request, with its context.
       description: |
         **The topic routes, the context prioritises.** "Requests related to a live show in progress
@@ -3590,6 +3588,8 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - notifications
+      tags:
+      - account
       security:
       - sessionCookie: []
         csrfToken: []
@@ -3686,8 +3686,6 @@ paths:
   /v1/home:
     get:
       operationId: getHomeScreen
-      tags:
-      - discovery
       summary: Billboard and rails, composed and ordered by the server.
       description: |
         **One call.** Ten to thirteen rails, six to eight visible cards each, a cursor per rail:
@@ -3708,16 +3706,18 @@ paths:
       - ticketing
       - identity
       - streaming
+      x-arthome-freshness: 60
+      tags:
+      - discovery
       security:
       - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
-      x-arthome-freshness: 60
       parameters:
+      - $ref: '#/components/parameters/ViewerTimezone'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/ViewerTimezone'
       responses:
         '200':
           description: Home.
@@ -3784,8 +3784,6 @@ paths:
   /v1/live:
     get:
       operationId: getLiveScreen
-      tags:
-      - discovery
       summary: What is live now and tonight's grid, grouped in the viewer's local time.
       description: |
         **One call**, and the hourly grouping is **server-side**: it depends on the viewer's
@@ -3803,16 +3801,18 @@ paths:
       - ticketing
       - streaming
       - identity
+      x-arthome-freshness: 15
+      tags:
+      - discovery
       security:
       - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
-      x-arthome-freshness: 15
       parameters:
+      - $ref: '#/components/parameters/ViewerTimezone'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/ViewerTimezone'
       responses:
         '200':
           description: Tonight's grid.
@@ -3846,8 +3846,6 @@ paths:
   /v1/categories:
     get:
       operationId: listCategories
-      tags:
-      - discovery
       summary: The 21 disciplines, with family, rank and counts.
       description: |
         **One call, not one per tile.** The editorial rank is authoritative and **no surface
@@ -3862,12 +3860,14 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - catalog
+      x-arthome-freshness: 300
+      tags:
+      - discovery
       security:
       - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
-      x-arthome-freshness: 300
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
@@ -3907,8 +3907,6 @@ paths:
   /v1/categories/{categoryId}:
     get:
       operationId: getCategoryScreen
-      tags:
-      - discovery
       summary: A discipline — hero, sub-genres, five bounded sections, facets.
       description: |
         **One call.** The overview **does not paginate**: it is bounded (8 per section). The four
@@ -3925,16 +3923,16 @@ paths:
       - ticketing
       - identity
       - streaming
+      x-arthome-freshness: 300
+      tags:
+      - discovery
       security:
       - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
-      x-arthome-freshness: 300
       parameters:
       - $ref: '#/components/parameters/CategoryId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - name: section
         in: query
         description: |
@@ -3980,6 +3978,8 @@ paths:
           - price_desc
           x-arthome-vocabulary-source: none
           x-arthome-vocabulary-reason: A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: The discipline.
@@ -4018,8 +4018,6 @@ paths:
   /v1/artists:
     get:
       operationId: listArtists
-      tags:
-      - discovery
       summary: The artist directory, by cursor.
       description: |
         Two sorts only, and they are **served**: alphabetical and by follower count. The follower
@@ -4035,15 +4033,15 @@ paths:
       x-arthome-upstream:
       - catalog
       - identity
+      x-arthome-freshness: 300
+      tags:
+      - discovery
       security:
       - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
-      x-arthome-freshness: 300
       parameters:
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/CursorDirection'
       - $ref: '#/components/parameters/Limit'
@@ -4066,6 +4064,8 @@ paths:
         schema:
           default: false
           type: boolean
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: A page of artists.
@@ -4107,8 +4107,6 @@ paths:
   /v1/artists/{artistId}:
     get:
       operationId: getArtistDetail
-      tags:
-      - discovery
       summary: An artist's page, their dates and their replays in the same response.
       description: |
         **One call**: the page, upcoming dates, past dates, replays and the shop in the same
@@ -4126,12 +4124,14 @@ paths:
       - ticketing
       - identity
       - streaming
+      x-arthome-freshness: 300
+      tags:
+      - discovery
       security:
       - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
-      x-arthome-freshness: 300
       parameters:
       - $ref: '#/components/parameters/ArtistId'
       - $ref: '#/components/parameters/Surface'
@@ -4170,8 +4170,6 @@ paths:
   /v1/search:
     get:
       operationId: search
-      tags:
-      - discovery
       summary: Full-text search, facets counted on the current query, grouping by show.
       description: |
         **The paginated unit is the show** for `best`, `lives` and `replays`; the `artists` tab
@@ -4198,15 +4196,15 @@ paths:
       - ticketing
       - identity
       - streaming
+      x-arthome-freshness: 60
+      tags:
+      - discovery
       security:
       - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
-      x-arthome-freshness: 60
       parameters:
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
       - name: q
@@ -4250,6 +4248,8 @@ paths:
           shape published here, and it is the same one as `SavedSearch.criteria`.
         schema:
           $ref: '#/components/schemas/SearchCriteria'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: Results, facets and structured filters.
@@ -4312,8 +4312,6 @@ paths:
   /v1/replays:
     get:
       operationId: listReplays
-      tags:
-      - discovery
       summary: Replays online, the ones expiring first — a discovery page, public.
       description: |
         **This is a discovery page, not "My replays".** The distinction is not cosmetic: "Replays"
@@ -4336,14 +4334,14 @@ paths:
       - ticketing
       - streaming
       x-arthome-freshness: 60
+      tags:
+      - discovery
       security:
       - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
       parameters:
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
       - name: sort
@@ -4362,6 +4360,8 @@ paths:
         in: query
         schema:
           type: string
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: Page of online replays, sorted by shortest remaining window first.
@@ -4402,8 +4402,6 @@ paths:
   /v1/rails/{railId}:
     get:
       operationId: extendRail
-      tags:
-      - discovery
       summary: Extends a home rail — the consumer of `Rail.nextCursor`.
       description: |
         `Rail.nextCursor` was served and **no operation consumed it**. A rail extends, it does not
@@ -4420,6 +4418,8 @@ paths:
       - identity
       - streaming
       x-arthome-freshness: 60
+      tags:
+      - discovery
       security:
       - {}
       - sessionCookie: []
@@ -4432,10 +4432,10 @@ paths:
         description: The `id` carried by the rail, never a string built by the surface.
         schema:
           type: string
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: The rest of the rail.
@@ -4475,8 +4475,6 @@ paths:
   /v1/resolve:
     get:
       operationId: resolvePublicLink
-      tags:
-      - discovery
       summary: Resolves a canonical URL or a slug to the resource it designates.
       description: |
         **`slug` and `canonicalUrl` were served everywhere and accepted nowhere.** Path identifiers
@@ -4497,14 +4495,14 @@ paths:
       x-arthome-upstream:
       - catalog
       x-arthome-freshness: 300
+      tags:
+      - discovery
       security:
       - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
       parameters:
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - name: url
         in: query
         description: Full canonical URL. Mutually exclusive with `kind` + `slug`.
@@ -4527,6 +4525,8 @@ paths:
         description: A date's slug is unique only within its show, so a date is named `{show-slug}/{date-slug}`.
         schema:
           type: string
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: The designated resource, and enough to paint immediately.
@@ -4589,8 +4589,6 @@ paths:
   /v1/plans:
     get:
       operationId: listPlans
-      tags:
-      - commerce
       summary: The three plans, what they open, and the discount on seats.
       description: |
         Three plans, their nine possible openings, the discount on seats and the concurrent-screen
@@ -4605,12 +4603,14 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      x-arthome-freshness: 300
+      tags:
+      - commerce
       security:
       - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
-      x-arthome-freshness: 300
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
@@ -4656,8 +4656,6 @@ paths:
   /v1/dates/{dateId}/availability:
     get:
       operationId: refreshDateAvailability
-      tags:
-      - commerce
       summary: Refreshes capacity and prices before showing a total.
       description: |
         The only legitimate call from a television's booking screen: the date is already in hand,
@@ -4673,12 +4671,14 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      x-arthome-freshness: 15
+      tags:
+      - commerce
       security:
       - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
-      x-arthome-freshness: 15
       parameters:
       - $ref: '#/components/parameters/DateId'
       - $ref: '#/components/parameters/Surface'
@@ -4742,8 +4742,6 @@ paths:
   /v1/dates/{dateId}/seat-quote:
     post:
       operationId: quoteSeat
-      tags:
-      - commerce
       summary: The purchase summary, composed server-side.
       description: |
         **The four lines come from the contract**: tier, service fee, subscription discount,
@@ -4769,6 +4767,8 @@ paths:
         replayed quote would be a quote **already part-spent, or expired** — or a price that the
         pro-rata promotion has since made wrong. Same reason as a token renewal: what is being asked
         for is a fresh value.
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -4860,8 +4860,6 @@ paths:
   /v1/dates/{dateId}/sales-queue:
     put:
       operationId: enterSalesQueue
-      tags:
-      - commerce
       summary: Enters a date's sales queue.
       description: |
         **A state assignment, not a toggle**: one entry per account and date, and entering again keeps
@@ -4886,6 +4884,8 @@ paths:
         first entry and answers its current state. A key would put a durable write per entrant in
         front of the queue built to shed that load, and would replay a position that is stale seconds
         after it was served.
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -4932,8 +4932,6 @@ paths:
           $ref: '#/components/responses/NotFound'
     get:
       operationId: getSalesQueuePosition
-      tags:
-      - commerce
       summary: Reads one's place in a date's sales queue, and the admission once it comes.
       description: |
         **Polled at the cadence it serves**: `pollIntervalSec` is the pairing's served decay
@@ -4946,6 +4944,8 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       parameters:
       - $ref: '#/components/parameters/DateId'
       - $ref: '#/components/parameters/Surface'
@@ -4990,8 +4990,6 @@ paths:
   /v1/orders/seats:
     post:
       operationId: purchaseSeat
-      tags:
-      - commerce
       summary: Buys one or more seats.
       description: |
         **A double click never creates two seats**: `Idempotency-Key` is mandatory, generated by the
@@ -5034,6 +5032,8 @@ paths:
       x-arthome-invalidates:
       - account:tickets
       - date:{dateId}:availability
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -5231,8 +5231,6 @@ paths:
   /v1/orders/{orderId}:
     get:
       operationId: getOrder
-      tags:
-      - commerce
       summary: The state of an order — **the only source of truth after a payment**.
       description: |
         **This is the operation that resumes an order left in `awaiting_action`**, and it is the one
@@ -5244,6 +5242,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       parameters:
       - name: orderId
         in: path
@@ -5302,8 +5302,6 @@ paths:
   /v1/seats/{seatId}/cancel:
     post:
       operationId: cancelSeat
-      tags:
-      - commerce
       summary: Cancels a seat before its deadline.
       description: |
         The deadline is **served as an instant** on the seat (`cancelDeadline`), never as the
@@ -5315,6 +5313,8 @@ paths:
       x-arthome-invalidates:
       - account:tickets
       - date:{dateId}:availability
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -5405,8 +5405,6 @@ paths:
   /v1/dates/{dateId}/waitlist:
     put:
       operationId: joinWaitlist
-      tags:
-      - commerce
       summary: S'inscrit en liste d'attente.
       description: |
         **A state assignment, not a toggle**: two submissions leave one registration. The response
@@ -5415,6 +5413,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -5471,8 +5471,6 @@ paths:
           $ref: '#/components/responses/Conflict'
     delete:
       operationId: leaveWaitlist
-      tags:
-      - commerce
       summary: Leaves the waiting list.
       description: |
         **A state assignment**, like joining. Replayed on an already-removed registration, it
@@ -5480,6 +5478,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -5517,8 +5517,6 @@ paths:
   /v1/cart:
     get:
       operationId: getCart
-      tags:
-      - commerce
       summary: The account's cart, split by vendor.
       description: |
         The cart lives **on the account**, not in the browser: it is persistent in the header, it is
@@ -5527,6 +5525,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
@@ -5555,8 +5555,6 @@ paths:
   /v1/cart/lines:
     post:
       operationId: addCartLine
-      tags:
-      - commerce
       summary: Adds a line to the cart.
       description: |
         A line references a **variant**, never a bare item: a T-shirt without a size is not
@@ -5566,6 +5564,8 @@ paths:
       - ticketing
       x-arthome-invalidates:
       - account:cart
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -5637,8 +5637,6 @@ paths:
   /v1/cart/lines/{lineId}:
     patch:
       operationId: updateCartLine
-      tags:
-      - commerce
       summary: Changes the quantity of a line.
       description: |
         **Conflict between two devices: per line, last writer wins, and the ordering comes from the
@@ -5646,6 +5644,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -5707,8 +5707,6 @@ paths:
           $ref: '#/components/responses/Conflict'
     delete:
       operationId: removeCartLine
-      tags:
-      - commerce
       summary: Removes a line from the cart.
       description: |
         Replayed on an already-removed line, it **succeeds**. Returns the whole cart, split by
@@ -5716,6 +5714,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -5757,8 +5757,6 @@ paths:
   /v1/cart/quote:
     post:
       operationId: quoteCart
-      tags:
-      - commerce
       summary: The cart's binding quote, per vendor.
       description: |
         **The total presented is the one that will be charged**, for 15 minutes. Shipping is computed
@@ -5777,6 +5775,8 @@ paths:
         and that promise holds for **fifteen minutes**. Serving a memorised quote would return a
         total whose window is part-spent or closed, that is, **a binding quote that no longer
         binds**. A replay therefore produces a fresh quote, with its own window.
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -5846,8 +5846,6 @@ paths:
   /v1/orders/merch:
     post:
       operationId: checkoutCart
-      tags:
-      - commerce
       summary: Pays for the cart — one order per vendor.
       description: |
         **The cart is emptied by the response**, never by a local timeout.
@@ -5862,6 +5860,8 @@ paths:
       x-arthome-invalidates:
       - account:orders
       - account:cart
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -6007,8 +6007,6 @@ paths:
   /v1/subscription:
     put:
       operationId: setSubscriptionPlan
-      tags:
-      - commerce
       summary: Subscribes or changes plan.
       description: |
         **A state assignment**, not a toggle. The effect is **immediately visible** on displayed
@@ -6022,6 +6020,8 @@ paths:
       - account:subscription
       - home:rails
       - account:tickets
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -6122,8 +6122,6 @@ paths:
           $ref: '#/components/responses/Conflict'
     delete:
       operationId: cancelSubscription
-      tags:
-      - commerce
       summary: Cancels the subscription at the end of the period.
       description: |
         Cancellation takes effect **at the end of the period**: the rights run until
@@ -6134,6 +6132,8 @@ paths:
       - ticketing
       x-arthome-invalidates:
       - account:subscription
+      tags:
+      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -6171,8 +6171,6 @@ paths:
   /v1/dates/{dateId}:
     get:
       operationId: getDateDetail
-      tags:
-      - date
       summary: A date's page — series, suggestions, shop, prices, in the same response.
       description: |
         **One call**, and it must be **cheap**: the television surface prefetches it for the focused
@@ -6190,12 +6188,14 @@ paths:
       - ticketing
       - identity
       - streaming
+      x-arthome-freshness: 60
+      tags:
+      - date
       security:
       - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
-      x-arthome-freshness: 60
       parameters:
       - $ref: '#/components/parameters/DateId'
       - $ref: '#/components/parameters/Surface'
@@ -6271,8 +6271,6 @@ paths:
   /v1/playback/{dateId}/open:
     post:
       operationId: openPlayback
-      tags:
-      - playback
       summary: The binding verdict, the token, the lease, and the whole player screen.
       description: |
         **This is the only evaluation of the right that is authoritative**, because it is the only
@@ -6298,6 +6296,8 @@ paths:
         by memorisation. Adding a key would additionally memorise a `PlaybackTicket` — hence a signed
         token and its expiry instant — in a 24-hour store, for a response the contract says is
         **never** cached.
+      tags:
+      - playback
       security:
       - sessionCookie: []
         csrfToken: []
@@ -6452,8 +6452,6 @@ paths:
   /v1/playback/sessions/{sessionId}/renew:
     post:
       operationId: renewPlaybackTicket
-      tags:
-      - playback
       summary: Renews the token and extends the lease, without restarting playback.
       description: |
         **Every 45 s**, for a 120 s token and a 90 s lease. It is the renewal that carries the
@@ -6473,6 +6471,8 @@ paths:
         response would return a token already part-spent — and, at the worst moment, an already
         expired one — when the call exists precisely to obtain a new one. It is also this renewal
         that carries the concurrent-screen limit: replaying it from a store would bypass the count.
+      tags:
+      - playback
       security:
       - sessionCookie: []
         csrfToken: []
@@ -6537,8 +6537,6 @@ paths:
   /v1/playback/sessions/{sessionId}/release:
     post:
       operationId: releasePlayback
-      tags:
-      - playback
       summary: Releases a playback session — speeds things up, guarantees nothing.
       description: |
         **Nothing depends on it.** A television is unplugged, a set-top box cuts out, the operating
@@ -6555,6 +6553,8 @@ paths:
         **Idempotent by nature, and nothing depends on it.** Releasing twice leaves the same state,
         and it is the **expiring lease** that is authoritative — this call merely speeds things up. A
         key would protect an effect that has neither accumulation nor consequence.
+      tags:
+      - playback
       security:
       - sessionCookie: []
         csrfToken: []
@@ -6596,8 +6596,6 @@ paths:
   /v1/me/progress/{dateId}:
     put:
       operationId: recordPlaybackPosition
-      tags:
-      - playback
       summary: Records the playback position.
       description: |
         **The most frequent write in the system.** It carries **no** idempotency key: one key per
@@ -6619,6 +6617,8 @@ paths:
         live show would make the idempotency store the hottest table in `streaming` — to protect a
         write whose loss has no consequence and whose rule is already "last writer wins, server
         ordering". The cost would be per minute of playback and per viewer.
+      tags:
+      - playback
       security:
       - sessionCookie: []
         csrfToken: []
@@ -6681,8 +6681,6 @@ paths:
   /v1/dates/{dateId}/chat/messages:
     get:
       operationId: listChatMessages
-      tags:
-      - chat
       summary: The chat's sliding window, by cursor.
       description: |
         **No backward pagination on a live chat**: nobody scrolls back through a chat with a remote
@@ -6695,10 +6693,10 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - chat
+      tags:
+      - chat
       parameters:
       - $ref: '#/components/parameters/DateId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
       - name: sinceSeq
@@ -6707,6 +6705,8 @@ paths:
         schema:
           type: integer
           format: int64
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: Messages.
@@ -6751,8 +6751,6 @@ paths:
           $ref: '#/components/responses/Gone'
     post:
       operationId: sendChatMessage
-      tags:
-      - chat
       summary: Posts a chat message.
       description: |
         **Never queued offline**: a message replayed ten minutes later no longer means anything. It
@@ -6767,6 +6765,8 @@ paths:
         refusals.
       x-arthome-maturity: provisional
       x-arthome-upstream:
+      - chat
+      tags:
       - chat
       security:
       - sessionCookie: []
@@ -6846,8 +6846,6 @@ paths:
   /v1/dates/{dateId}/chat/reactions:
     post:
       operationId: sendReaction
-      tags:
-      - chat
       summary: Sends a reaction, and returns the remaining quota.
       description: |
         **The quota travels with the response** — how many are left, when it recharges — so that the
@@ -6860,6 +6858,8 @@ paths:
         **The quota already bounds the effect**, and it is served with the response. A replayed key
         would return a **stale** quota — "17 left" when 12 are left — which is worse than no response
         at all: the surface disables its control on that number.
+      tags:
+      - chat
       security:
       - sessionCookie: []
         csrfToken: []
@@ -6922,12 +6922,12 @@ paths:
   /v1/chat/messages/{messageId}/report:
     post:
       operationId: reportChatMessage
-      tags:
-      - chat
       summary: Reports a message to moderation.
       description: A report creates a **queue row** (`reported`), not a sanction. The three axes never stack.
       x-arthome-maturity: provisional
       x-arthome-upstream:
+      - chat
+      tags:
       - chat
       security:
       - sessionCookie: []
@@ -6997,8 +6997,6 @@ paths:
   /v1/pairings:
     post:
       operationId: createPairing
-      tags:
-      - pairing
       summary: Opens a device pairing, for one of the five intents.
       description: |
         **One command, one shape, one state machine, five intents.** The television accepts no input
@@ -7024,16 +7022,18 @@ paths:
       x-arthome-upstream:
       - identity
       - ticketing
+      tags:
+      - pairing
       security:
       - deviceToken: []
       - bearerToken: []
       - sessionCookie: []
         csrfToken: []
       parameters:
-      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/AdmissionToken'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7126,8 +7126,6 @@ paths:
   /v1/pairings/{pairingId}:
     get:
       operationId: pollPairing
-      tags:
-      - pairing
       summary: Polls the outcome of a pairing — and composes the confirmation screen.
       description: |
         **RFC 8628-compliant polling, not the real-time channel.** Bringing a device identity into
@@ -7148,6 +7146,8 @@ paths:
       - identity
       - ticketing
       - catalog
+      tags:
+      - pairing
       security:
       - deviceToken: []
       - bearerToken: []
@@ -7214,20 +7214,19 @@ paths:
                 servedAt: '2026-09-21T18:52:10.000Z'
     delete:
       operationId: cancelPairing
-      tags:
-      - pairing
       summary: Closes a pending pairing.
       description: Triggered by the Back button. The television often leaves without waiting for the response.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - pairing
       security:
       - deviceToken: []
       - bearerToken: []
       - sessionCookie: []
         csrfToken: []
       parameters:
-      - $ref: '#/components/parameters/IdempotencyKey'
       - name: pairingId
         in: path
         required: true
@@ -7236,6 +7235,7 @@ paths:
           format: uuid
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: Cancelled, or already settled — **a second call returns the original outcome, never an error**.
@@ -7287,8 +7287,6 @@ paths:
   /v1/pairings/{pairingId}/engagement:
     post:
       operationId: engagePairing
-      tags:
-      - pairing
       summary: Marks the pairing as engaged — on entering the payment journey.
       description: |
         **This operation exists to close a race that costs real money.**
@@ -7312,6 +7310,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - pairing
       security:
       - sessionCookie: []
         csrfToken: []
@@ -7323,9 +7323,9 @@ paths:
         schema:
           type: string
           format: uuid
-      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -7383,8 +7383,6 @@ paths:
   /v1/pairings/{pairingId}/decision:
     post:
       operationId: decidePairing
-      tags:
-      - pairing
       summary: Approves or denies a pairing, from the phone.
       description: |
         **The ownership guard is written by us, not delegated.** CVE-2026-45337 showed what relaxing
@@ -7403,6 +7401,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - pairing
       security:
       - sessionCookie: []
         csrfToken: []
@@ -7414,9 +7414,9 @@ paths:
         schema:
           type: string
           format: uuid
-      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -7487,8 +7487,6 @@ paths:
   /v1/account-deep-link:
     get:
       operationId: getAccountDeepLink
-      tags:
-      - pairing
       summary: The QR that hands off to account management — what is NOT a pairing.
       description: |
         **Nothing is waiting, the screen does not switch, no pairing row is opened.** Two distinct
@@ -7497,6 +7495,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - pairing
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'

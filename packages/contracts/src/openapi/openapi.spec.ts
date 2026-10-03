@@ -18,7 +18,8 @@ const Refused: Response = { description: 'Refused.' };
 
 const quote = defineRoute({
   method: 'post',
-  path: '/v1/quotes',
+  version: 1,
+  path: '/quotes',
   operationId: 'createQuote',
   'x-arthome-maturity': 'stable',
   parameters: [Surface, { name: 'dry', in: 'query', schema: z.boolean().default(false) }],
@@ -42,7 +43,8 @@ const quote = defineRoute({
 
 const getQuote = defineRoute({
   method: 'get',
-  path: '/v1/quotes',
+  version: 1,
+  path: '/quotes',
   operationId: 'getQuote',
   responses: { 200: { description: 'The last quote.' } },
 });

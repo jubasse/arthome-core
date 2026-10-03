@@ -38,6 +38,7 @@ import {
   TraceparentParameter,
   UnauthorizedResponse,
   UnavailableResponse,
+  studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type {
@@ -47,7 +48,6 @@ import type {
   QueryParameter,
   Route,
 } from '../http/index.js';
-import { defineRoute } from '../http/index.js';
 import { SessionMode } from '../identity/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import {
@@ -57,6 +57,13 @@ import {
   StudioSessionModeSchema,
 } from '../studio-access/index.js';
 import { InboxEntrySchema } from '../studio-desk/index.js';
+
+const bootstrapRoutes = studioV1
+  .tags(StudioTag.BOOTSTRAP)
+  .headers(SurfaceParameter, TraceparentParameter);
+const bootstrapReads = bootstrapRoutes
+  .headers(IfRightsVersionParameter)
+  .errors({ 401: UnauthorizedResponse });
 
 const CREATE_REAUTH_TOKEN_INTENT = [
   'reveal_stream_key',
@@ -90,7 +97,8 @@ const LIST_STUDIO_CHANGES_INVALIDATED = [
 
 export const signInStudio: Route<{
   method: 'post';
-  path: '/v1/auth/sign-in';
+  version: 1;
+  path: '/auth/sign-in';
   parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
   requestBody: JsonRequestBody<
     z.ZodObject<
@@ -114,11 +122,10 @@ export const signInStudio: Route<{
     401: JsonResponse<typeof StudioErrorEnvelopeSchema>;
     429: typeof TooManyRequestsResponse;
   };
-}> = defineRoute({
+}> = bootstrapRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/sign-in',
+  path: '/auth/sign-in',
   operationId: 'signInStudio',
-  tags: [StudioTag.BOOTSTRAP],
   summary: 'Opens a professional session.',
   description:
     "**Documented relay to `identity`**, and mandatory for the same three reasons as on the\nstorefront side: zod is the source and the OpenAPI is generated from it — a transparent relay\nwould not appear here; i18n by codes forbids the library's English sentences; and per-device\nrate limiting does not exist in it.\n\nThe response carries **the full bootstrap**, not a raw session shape: the surface paints\nnothing before it, and a second call would be one more blank screen.\n\n`identity.two_factor_required` carries a `challengeId`. Two-factor authentication is a **precondition**\nof transferring ownership of a channel.\n",
@@ -127,7 +134,6 @@ export const signInStudio: Route<{
   security: [],
   'x-arthome-idempotency-exemption':
     'A session opening must **always** re-authenticate: returning a memorised response would\namount to issuing a token without checking the credentials. The protection against a double\nsubmit is rate limiting, not the idempotency store.\n',
-  parameters: [SurfaceParameter, TraceparentParameter],
   requestBody: {
     required: true,
     content: {
@@ -233,7 +239,8 @@ export const signInStudio: Route<{
 
 export const verifyTwoFactorStudio: Route<{
   method: 'post';
-  path: '/v1/auth/two-factor/verify';
+  version: 1;
+  path: '/auth/two-factor/verify';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -260,17 +267,16 @@ export const verifyTwoFactorStudio: Route<{
     401: typeof UnauthorizedResponse;
     410: typeof GoneResponse;
   };
-}> = defineRoute({
+}> = bootstrapRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/two-factor/verify',
+  path: '/auth/two-factor/verify',
   operationId: 'verifyTwoFactorStudio',
-  tags: [StudioTag.BOOTSTRAP],
   summary: 'Answers the two-factor challenge.',
   description: 'Short-lived, single-use `challengeId`; a spent backup code cannot be replayed.',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
   security: [],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -349,7 +355,8 @@ export const verifyTwoFactorStudio: Route<{
 
 export const requestPasswordResetStudio: Route<{
   method: 'post';
-  path: '/v1/auth/forget-password';
+  version: 1;
+  path: '/auth/forget-password';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -377,18 +384,17 @@ export const requestPasswordResetStudio: Route<{
     >;
     429: typeof TooManyRequestsResponse;
   };
-}> = defineRoute({
+}> = bootstrapRoutes.defineRoute({
   method: 'post',
-  path: '/v1/auth/forget-password',
+  path: '/auth/forget-password',
   operationId: 'requestPasswordResetStudio',
-  tags: [StudioTag.BOOTSTRAP],
   summary: 'Requests a password reset link.',
   description:
     "**Always answers `202`**, whether the account exists or not. The email's link points at\n**`studio.arthome.fr/reset`** — the surface, per product and per language — never at the API:\nthe library's default would build it from its base address and would land the person on an\nAPI entry point.\n",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
   security: [],
-  parameters: [IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter],
+  parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
     content: {
@@ -444,11 +450,12 @@ export const requestPasswordResetStudio: Route<{
 
 export const getStudioBootstrap: Route<{
   method: 'get';
-  path: '/v1/bootstrap';
+  version: 1;
+  path: '/bootstrap';
   parameters: readonly [
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -460,17 +467,15 @@ export const getStudioBootstrap: Route<{
     401: typeof UnauthorizedResponse;
     503: typeof UnavailableResponse;
   };
-}> = defineRoute({
+}> = bootstrapReads.defineRoute({
   method: 'get',
-  path: '/v1/bootstrap',
+  path: '/bootstrap',
   operationId: 'getStudioBootstrap',
-  tags: [StudioTag.BOOTSTRAP],
   summary: 'The bootstrap — the only thing the first paint waits for.',
   description:
     '**One call**, and nothing is painted until it is there: the person, **all** their channels\nwith their effective roles, `grants` **projected onto those roles**, the preferences, the\nrights version, the badge counters and the domain constants.\n\n**The root is a person, not a channel.** A freelance stage manager can be on duty for two\nlive shows the same evening, at two different channels.\n\nThe failure of this call is **a failure screen in its own right, with the trace identifier**:\nit is the only moment left where the person can still read out a number and dictate it to\nsupport.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [SurfaceParameter, IfRightsVersionParameter, TraceparentParameter],
   responses: {
     200: {
       description: 'The bootstrap.',
@@ -577,20 +582,20 @@ export const getStudioBootstrap: Route<{
         },
       },
     },
-    401: UnauthorizedResponse,
     503: UnavailableResponse,
   },
 });
 
 export const listInbox: Route<{
   method: 'get';
-  path: '/v1/inbox';
+  version: 1;
+  path: '/inbox';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof PageParameter,
     typeof PageSizeParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -604,23 +609,16 @@ export const listInbox: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = bootstrapReads.defineRoute({
   method: 'get',
-  path: '/v1/inbox',
+  path: '/inbox',
   operationId: 'listInbox',
-  tags: [StudioTag.BOOTSTRAP],
   summary: 'The inbox — invitations and alerts routed by role and by channel.',
   description:
     '**Open to everyone**, whatever the role. The routing is decided **server-side**: the\napplication does not filter a common queue, otherwise it would receive alerts it has no right\nto read and would merely refrain from displaying them — which is a leak, not a rule.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.NOTIFICATIONS],
-  parameters: [
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-    PageParameter,
-    PageSizeParameter,
-  ],
+  parameters: [PageParameter, PageSizeParameter],
   responses: {
     200: {
       description: 'A page of inbox entries.',
@@ -663,17 +661,17 @@ export const listInbox: Route<{
         },
       },
     },
-    401: UnauthorizedResponse,
   },
 });
 
 export const markInboxRead: Route<{
   method: 'post';
-  path: '/v1/inbox';
+  version: 1;
+  path: '/inbox';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
+    typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
   requestBody: JsonRequestBody<
@@ -694,21 +692,15 @@ export const markInboxRead: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = bootstrapRoutes.defineRoute({
   method: 'post',
-  path: '/v1/inbox',
+  path: '/inbox',
   operationId: 'markInboxRead',
-  tags: [StudioTag.BOOTSTRAP],
   summary: 'Marks inbox entries as read.',
   description: '**Monotonic: nothing gets un-read.** Replayed, it changes nothing.',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.NOTIFICATIONS],
-  parameters: [
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [IdempotencyKeyParameter, IfRightsVersionParameter],
   requestBody: {
     required: true,
     content: {
@@ -752,11 +744,12 @@ export const markInboxRead: Route<{
 
 export const createReauthToken: Route<{
   method: 'post';
-  path: '/v1/me/reauth';
+  version: 1;
+  path: '/me/reauth';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
+    typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
   requestBody: JsonRequestBody<
@@ -788,22 +781,16 @@ export const createReauthToken: Route<{
     403: typeof ForbiddenResponse;
     429: typeof TooManyRequestsResponse;
   };
-}> = defineRoute({
+}> = bootstrapRoutes.defineRoute({
   method: 'post',
-  path: '/v1/me/reauth',
+  path: '/me/reauth',
   operationId: 'createReauthToken',
-  tags: [StudioTag.BOOTSTRAP],
   summary: 'Mints the re-authentication token the four sensitive commands require.',
   description:
     "**Four commands declared it `required` and no entry point issued it**: revealing a stream\nkey, rotating it, transferring ownership of a channel, deleting a channel. The contract\ndemanded a token it did not offer.\n\n**The factor is served, not guessed.** `GET` returns `acceptedFactors` for this device and\nthis person; the surface offers what the server accepts, instead of assuming. This is the\nquestion being on duty asks: rotating a stream key is the stage manager's emergency gesture — the\none you make when you suspect a leak **during** a live show. If re-authentication is a\npassword to be typed in a dark room, one-handed, the guarantee is paid for in dead air.\n\n**What the contract guarantees**: `platform_biometric` is offered as soon as the device\ndeclares it, and **its failure closes nothing** — it falls back to the other accepted factors,\nlisted in the same response. A single factor that fails in the room is a blocked operator.\n\nThe token is **single-use**, short-lived, and **bound to the command it targets**: a token\nminted to reveal a key does not transfer a channel.\n",
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [IdempotencyKeyParameter, IfRightsVersionParameter],
   requestBody: {
     required: true,
     content: {
@@ -871,11 +858,12 @@ export const createReauthToken: Route<{
 
 export const listReauthFactors: Route<{
   method: 'get';
-  path: '/v1/me/reauth';
+  version: 1;
+  path: '/me/reauth';
   parameters: readonly [
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -897,17 +885,15 @@ export const listReauthFactors: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = bootstrapReads.defineRoute({
   method: 'get',
-  path: '/v1/me/reauth',
+  path: '/me/reauth',
   operationId: 'listReauthFactors',
-  tags: [StudioTag.BOOTSTRAP],
   summary: 'The re-authentication factors accepted for this device.',
   description:
     '**Served, so that the surface assumes nothing.** It offers what the server accepts, and it\nknows in advance whether a fallback exists when biometrics fail — which decides what interface\nto show in a room, one-handed.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [SurfaceParameter, IfRightsVersionParameter, TraceparentParameter],
   responses: {
     200: {
       description: "The accepted factors, in the server's order of preference.",
@@ -940,17 +926,17 @@ export const listReauthFactors: Route<{
         },
       },
     },
-    401: UnauthorizedResponse,
   },
 });
 
 export const listStudioDevices: Route<{
   method: 'get';
-  path: '/v1/me/devices';
+  version: 1;
+  path: '/me/devices';
   parameters: readonly [
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -978,17 +964,15 @@ export const listStudioDevices: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = bootstrapReads.defineRoute({
   method: 'get',
-  path: '/v1/me/devices',
+  path: '/me/devices',
   operationId: 'listStudioDevices',
-  tags: [StudioTag.BOOTSTRAP],
   summary: 'The devices this person is signed in to the studio on.',
   description:
     "**The studio offered neither a list, nor revocation, nor sign-out**, while the answer to the\nsurface's question promised \"revocation per device\". What that is worth concretely: **a phone\nleft behind in a room opens a moderation console and the revelation of a stream key** — and,\na freelancer working across several channels, on channels that do not belong to its bearer.\nNeither the person nor the channel's owner had any gesture available.\n\nThe notion of a device here is the studio's **token-bearing session**, distinct from the\ntelevision's pairing device: here a device is the bearer of a refresh token bound to the\nnative store.\n",
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [SurfaceParameter, IfRightsVersionParameter, TraceparentParameter],
   responses: {
     200: {
       description: 'The devices, with the calling one marked.',
@@ -1029,18 +1013,18 @@ export const listStudioDevices: Route<{
         },
       },
     },
-    401: UnauthorizedResponse,
   },
 });
 
 export const revokeStudioDevice: Route<{
   method: 'delete';
-  path: '/v1/me/devices/{deviceId}';
+  version: 1;
+  path: '/me/devices/{deviceId}';
   parameters: readonly [
     PathParameter<'deviceId', z.ZodString>,
     typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
+    typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
   responses: {
@@ -1065,11 +1049,10 @@ export const revokeStudioDevice: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = defineRoute({
+}> = bootstrapRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/me/devices/{deviceId}',
+  path: '/me/devices/{deviceId}',
   operationId: 'revokeStudioDevice',
-  tags: [StudioTag.BOOTSTRAP],
   summary: 'Revokes a studio device — the phone left behind in a room.',
   description:
     'Revokes the refresh token bound to this device. The effect is immediate on the console — the\nserver makes it leave the real-time rooms without waiting for a reconnection — and **at most\n60 s on commands**, the lifetime of the internal token already minted.\n\n**A security command: never queued offline.** It must fail loudly rather than be replayed\nblind.\n',
@@ -1083,9 +1066,7 @@ export const revokeStudioDevice: Route<{
       schema: uuidOut(),
     },
     IdempotencyKeyParameter,
-    SurfaceParameter,
     IfRightsVersionParameter,
-    TraceparentParameter,
   ],
   responses: {
     200: {
@@ -1126,11 +1107,12 @@ export const revokeStudioDevice: Route<{
 
 export const signOutStudio: Route<{
   method: 'delete';
-  path: '/v1/me/session';
+  version: 1;
+  path: '/me/session';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
+    typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
   responses: {
@@ -1149,22 +1131,16 @@ export const signOutStudio: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = bootstrapRoutes.defineRoute({
   method: 'delete',
-  path: '/v1/me/session',
+  path: '/me/session',
   operationId: 'signOutStudio',
-  tags: [StudioTag.BOOTSTRAP],
   summary: "Signing out — an operator's only way out, and it did not exist.",
   description:
     'The "My account" sheet carries "SIGN OUT" and the contract had no gesture for it. Closes\n**this** device\'s session and revokes its refresh token; the person\'s other devices stay\nsigned in.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [IdempotencyKeyParameter, IfRightsVersionParameter],
   responses: {
     200: {
       description: 'Session closed. Replayed on an already-closed session, it succeeds.',
@@ -1196,11 +1172,12 @@ export const signOutStudio: Route<{
 
 export const registerStudioPushToken: Route<{
   method: 'put';
-  path: '/v1/me/push-registrations';
+  version: 1;
+  path: '/me/push-registrations';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
+    typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
   requestBody: JsonRequestBody<
@@ -1230,22 +1207,16 @@ export const registerStudioPushToken: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = bootstrapRoutes.defineRoute({
   method: 'put',
-  path: '/v1/me/push-registrations',
+  path: '/me/push-registrations',
   operationId: 'registerStudioPushToken',
-  tags: [StudioTag.BOOTSTRAP],
   summary: 'Registers the push token — without it, a duty does not wake up.',
   description:
     '**The routing was settled, the recipient did not exist.** Duty alerts — moderation queue\nsaturated, no moderator assigned at D-1, unstable bitrate — arrive precisely when the\napplication is **not** in the foreground. Payload redaction was promised; the payload had\nnobody to go to.\n\n**A put, not an append**: re-registering the same token creates no duplicate, and a dead token\nis detached by the service when the provider reports it.\n\n**Redaction applies**: a notification never carries an amount if the recipient role lacks\n`canRevenue` — it is displayed on a locked screen.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.NOTIFICATIONS],
-  parameters: [
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [IdempotencyKeyParameter, IfRightsVersionParameter],
   requestBody: {
     required: true,
     content: {
@@ -1307,13 +1278,14 @@ export const registerStudioPushToken: Route<{
 
 export const listStudioChanges: Route<{
   method: 'get';
-  path: '/v1/changes';
+  version: 1;
+  path: '/changes';
   parameters: readonly [
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     QueryParameter<'since', z.ZodString, true>,
     QueryParameter<'channelId', z.ZodString>,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
   responses: {
     200: JsonResponse<
@@ -1328,11 +1300,10 @@ export const listStudioChanges: Route<{
     400: typeof BadRequestResponse;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = bootstrapReads.defineRoute({
   method: 'get',
-  path: '/v1/changes',
+  path: '/changes',
   operationId: 'listStudioChanges',
-  tags: [StudioTag.BOOTSTRAP],
   summary: 'The invalidations since a given instant — not the data.',
   description:
     'The mechanism was **written, argued, specified** — and wired to the storefront BFF only. The\nstudio has the same need, on the surface one leaves open for two hours while a colleague edits\nthe same objects.\n\nAnd it has a reason that exists nowhere else: under Ionic\'s router, **a page stays in the DOM\nafter you leave it** and redisplays as-is on the way back. Without a cheap freshness read,\nevery return to a page is either a stale display or a full reload over a room\'s 4G.\n\n`complete: false` means "too many changes, reload everything" — the same honesty as\n`resume:too_old` on the channel.\n',
@@ -1341,9 +1312,6 @@ export const listStudioChanges: Route<{
   // not a query against the six services.
   'x-arthome-upstream': [Upstream.REALTIME],
   parameters: [
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
     {
       name: 'since',
       in: 'query',
@@ -1389,17 +1357,17 @@ export const listStudioChanges: Route<{
       },
     },
     400: BadRequestResponse,
-    401: UnauthorizedResponse,
   },
 });
 
 export const updateStudioPreferences: Route<{
   method: 'patch';
-  path: '/v1/me/preferences';
+  version: 1;
+  path: '/me/preferences';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
+    typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
   requestBody: JsonRequestBody<
@@ -1424,22 +1392,16 @@ export const updateStudioPreferences: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = defineRoute({
+}> = bootstrapRoutes.defineRoute({
   method: 'patch',
-  path: '/v1/me/preferences',
+  path: '/me/preferences',
   operationId: 'updateStudioPreferences',
-  tags: [StudioTag.BOOTSTRAP],
   summary: "Writes one of the person's preferences — reading timezone, control-room layout.",
   description:
     "**Two settings follow the person, not the channel**: the reading timezone and the\ncontrol-room layout. The timezone is **the same field** as the storefront's — same account,\none carrier only.\n\n**Never in `localStorage`**: it is bound to the origin, can be cleared by the OS, and travels\nin no way at all — yet the person moves from studio web to studio mobile within the same\nevening.\n\n**Additive and tolerant**: a key unknown to one version is neither rejected nor erased on the\nnext write, otherwise the mobile version under store review would overwrite settings made from\nthe web.\n",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [
-    IdempotencyKeyParameter,
-    SurfaceParameter,
-    IfRightsVersionParameter,
-    TraceparentParameter,
-  ],
+  parameters: [IdempotencyKeyParameter, IfRightsVersionParameter],
   requestBody: {
     required: true,
     content: {
