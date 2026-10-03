@@ -573,6 +573,25 @@ on mobile and on TV. The mockup computes it by hashing: ported as it stands, it 
 different codes for the same seat** as soon as one surface changed hash function. A served format,
 never recomposed.
 
+```
+SeatOrder
+  id · reference (ATH-{year}-{five digits}) · date_id · channel_id · account_id · profile_id (nullable)
+  idempotency_key  unique per account: the purchase's key, bound to the order (adr-ticketing §2)
+  tier · quantity · the quote frozen: unit price, tier total, service fee, discount, total, currency
+  declared_tax_location  nullable, one piece of evidence among the others (D-021)
+  hold_id          the SeatHold it pays for; expires_at = the hold's
+  state            pending | awaiting_action | processing | paid | failed | refunded
+                   | partially_refunded | disputed        forward only (adr-payments §8, §7.3)
+  payment_intent_ref · client_secret · next_action   the provider's, opaque
+  failure_code · decline_code
+  refund_reason · refund_owed_at · refund_ref · refunded_at · intent_cancel_owed_at
+                   a provider call owed is a fact on the order before it is a call
+  placed_at · paid_at · version
+```
+
+Its seats are created in its `paid` transition, one per unit (D-077); an order never holds capacity
+itself, its hold does.
+
 ### 3.4 `MerchOrder` — root aggregate, and `MerchItem`
 
 `MerchItem`: identifier, show, channel, **bilingual** label (E10: `merchPool` has no `labelEn`, a

@@ -221,11 +221,15 @@ operator chooses on the studio's `refundSeat`. `TicketCard.state` without `held`
   order's `paid` transition.
 - `SeatHold`, and `WaitlistEntry`.
 
-**The hot decrement is the one deliberate exception to load, modify, save.** A load-modify-save
-under the row lock would hold the lock across application code, at exactly the moment it matters
-most. So the aggregate decides the command's parameters, and its repository executes the
-conditional decrement as one atomic statement. Every other `DateSales` command (prices, tiers, the
-technical provision) loads the aggregate and saves it with a version-conditional update.
+**The counter moves of a hold, a payment and an expiry are the deliberate exception to load,
+modify, save.** A load-modify-save under the row lock would hold the lock across application code,
+at exactly the moment it matters most. So the aggregate decides the hold (the quantity, the sale
+open, its end not passed), and the repository executes each counter move as one conditional
+statement: the hold's decrement, the sale of held seats at payment, the seats given back at expiry
+or failure, and D-082's retake of a payment whose hold expired. Each runs last in its transaction,
+so the date's row is locked for the commit alone, except the retake, whose result decides between
+seating and refunding. Every other `DateSales` command (prices, tiers, the technical provision)
+loads the aggregate and saves it with a version-conditional update.
 
 **Commands and queries** go through `@nestjs/cqrs`, with the conventions of the catalog refactor
 (`apps/catalog/HANDOVER.md` §0f in the platform). Its generic pieces (the transaction runner that

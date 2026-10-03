@@ -71,6 +71,8 @@ export declare function checkoutIntentExpiry(openedAt: Instant): Instant;
 /** The intent duration for a TV pairing — five minutes, not fifteen. */
 export declare function tvPairingIntentExpiry(openedAt: Instant): Instant;
 export declare function isHoldExpired(hold: SeatHold, now: Instant): boolean;
+/** A seat's cancellation deadline, served as an instant (data-model.md §3.3), never a sentence. */
+export declare function seatCancelDeadline(startsAt: Instant): Instant;
 /**
  * Capacity tiers: they WIDEN, never shrink after going on sale. Shrinking then
  * would cancel seats already sold.
@@ -106,4 +108,20 @@ export declare function assertTechnicalProvisionRecordable(capacityTotal: number
 export declare const WAITLIST_PRIORITY_HOURS = 2;
 /** One `waitlist.notified` names at most this many accounts; a tier opening writes as many as it needs. */
 export declare const WAITLIST_NOTIFIED_ACCOUNTS_MAX = 500;
+/** adr-ticketing.md §6: how many expired holds one pass of the sweeper's one-second loop takes. */
+export declare const HOLD_EXPIRY_BATCH = 500;
+/** D-089: a seat covers the live alone, sold until this long after its start, every channel alike. */
+export declare const SEAT_SALES_CUTOFF_MINUTES_AFTER_START = 30;
+export declare function seatSalesEndAt(startsAt: Instant): Instant;
+/** Past the sale's end by time; a date with no start has no end. */
+export declare function salesEndedBy(salesEndAt: Instant | null, now: Instant): boolean;
+/** What a buyer arriving after the start is told, and must acknowledge, before buying (D-089). */
+export interface LateEntry {
+    readonly startedAt: Instant;
+    /** Whole minutes of the live already missed. */
+    readonly minutesElapsed: number;
+    readonly salesEndAt: Instant;
+}
+/** Null before the start, and for a date with none. */
+export declare function lateEntryOf(startsAt: Instant | null, now: Instant): LateEntry | null;
 //# sourceMappingURL=seats.d.ts.map

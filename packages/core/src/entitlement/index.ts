@@ -16,6 +16,7 @@ import type { DateTiming } from '../catalog/date-state.js';
 import { displayStateOf } from '../catalog/date-state.js';
 import { isAvailableIn, type TerritoryRights } from '../catalog/rights.js';
 import type { Instant } from '../kernel/clock.js';
+import { salesEndedBy, seatSalesEndAt } from '../ticketing/seats.js';
 import { earliest } from '../time/instant.js';
 import { DateOutcome, DisplayState, ReplayPolicy } from '../vocabulary/catalog.js';
 import type { PublicationState, RunState } from '../vocabulary/catalog.js';
@@ -55,6 +56,7 @@ export const WATCH_FALLBACK_FOR: Readonly<
   [WatchDenialReason.PREVIEW_EXHAUSTED]: [
     WatchFallbackAction.BUY_SEAT,
     WatchFallbackAction.JOIN_WAITLIST,
+    WatchFallbackAction.SEE_OTHER_DATES,
   ],
   [WatchDenialReason.ROOM_NOT_OPEN]: [
     WatchFallbackAction.BUY_SEAT,
@@ -210,12 +212,17 @@ export function decideWatch(input: WatchInput): WatchVerdict {
         allowed: true,
         scope: WatchScope.PREVIEW,
         reason: null,
-        fallback: WatchFallbackAction.BUY_SEAT,
+        fallback: liveSeatAction(input, WatchFallbackAction.BUY_SEAT),
         previewSecondsLeft: preview,
         validUntil,
       };
     }
-    return denied(WatchDenialReason.PREVIEW_EXHAUSTED, seatAction(input), preview, validUntil);
+    return denied(
+      WatchDenialReason.PREVIEW_EXHAUSTED,
+      liveSeatAction(input, seatAction(input)),
+      preview,
+      validUntil,
+    );
   }
 
   if (display.state === DisplayState.SCHEDULED) {
@@ -287,6 +294,14 @@ function decideReplay(input: WatchInput, preview: number, validUntil: Instant): 
 // principle no. 8 forbids.
 function seatAction(input: WatchInput): WatchFallbackAction {
   return input.waitlistOpen ? WatchFallbackAction.JOIN_WAITLIST : WatchFallbackAction.BUY_SEAT;
+}
+
+// D-089: past the end of seat sales neither a seat nor a place on the waiting list can be had for
+// this live; the way out is another date.
+function liveSeatAction(input: WatchInput, whileSelling: WatchFallbackAction): WatchFallbackAction {
+  return salesEndedBy(seatSalesEndAt(input.timing.startsAt), input.now)
+    ? WatchFallbackAction.SEE_OTHER_DATES
+    : whileSelling;
 }
 
 function shortHorizon(now: Instant): Instant {

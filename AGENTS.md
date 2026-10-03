@@ -12,7 +12,8 @@ here, and a skill for one of them would be the wrong instrument.
 2. **`DECISIONS.md`** — every ruling with its reason. **A decision is not yours to reopen alone.**
    If one reads as current and the repository contradicts it, say so and stop — D-008's no-push clause
    was read as live months after the remotes existed, and the note recording that is why it is now
-   marked superseded rather than silently edited.
+   marked superseded rather than silently edited. **`DECISIONS-INDEX.md`** is its **projection**, one
+   line per decision with the documents it cites: open it first, then `DECISIONS.md` at the id.
 3. **`REPOSITORY_MAP.md`** — the index of every exported name. It is a **projection**, never edited
    by hand.
 
@@ -31,7 +32,8 @@ literal — the project's dominant fault, E2) · `check-language` (no French *se
 file; an isolated French term is out of scope and the gate says so) · `check-symbols` (no warning
 sign, check mark, cross or emoji outside Markdown inline code; `tools/symbols.allow.json` names the
 read-only design content) · `check-core-entry` (nothing
-reachable from the `.` entry point imports zod or a Node API) · `check-openapi` (both documents
+reachable from the `.` entry point imports zod or a Node API) · `check-decisions-index`
+(`DECISIONS-INDEX.md` matches what regenerating from `DECISIONS.md` produces) · `check-openapi` (both documents
 conform) · `check-vocabulary` (the documents, the architecture prose and `@arthome/core` agree
 member for member) · `check-emit-diff` (every emitted schema matches the document it must emit —
 **the document is authoritative**, D-058) · `check-map` (`REPOSITORY_MAP.md` matches the installed

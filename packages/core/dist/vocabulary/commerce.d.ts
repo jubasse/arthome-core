@@ -69,6 +69,45 @@ export declare const OrderKind: {
     readonly MERCH: "merch";
     readonly SUBSCRIPTION: "subscription";
 };
+/** adr-payments.md §8's order states; a transition applies only forward (§7.3). */
+export declare const ORDER_STATES: readonly ["pending", "awaiting_action", "processing", "paid", "failed", "refunded", "partially_refunded", "disputed"];
+export type OrderState = (typeof ORDER_STATES)[number];
+export declare const OrderState: {
+    readonly PENDING: "pending";
+    readonly AWAITING_ACTION: "awaiting_action";
+    readonly PROCESSING: "processing";
+    readonly PAID: "paid";
+    readonly FAILED: "failed";
+    readonly REFUNDED: "refunded";
+    readonly PARTIALLY_REFUNDED: "partially_refunded";
+    readonly DISPUTED: "disputed";
+};
+/** data-model.md §3.3; `held` is gone, a hold is a SeatHold (D-077). */
+export declare const SEAT_STATES: readonly ["active", "cancelled", "refunded", "transferred", "credited"];
+export type SeatState = (typeof SEAT_STATES)[number];
+export declare const SeatState: {
+    readonly ACTIVE: "active";
+    readonly CANCELLED: "cancelled";
+    readonly REFUNDED: "refunded";
+    readonly TRANSFERRED: "transferred";
+    readonly CREDITED: "credited";
+};
+/** data-model.md §3.2. */
+export declare const SEAT_HOLD_STATES: readonly ["active", "consumed", "expired", "released"];
+export type SeatHoldState = (typeof SEAT_HOLD_STATES)[number];
+export declare const SeatHoldState: {
+    readonly ACTIVE: "active";
+    readonly CONSUMED: "consumed";
+    readonly EXPIRED: "expired";
+    readonly RELEASED: "released";
+};
+/** data-model.md §3.2: the intent whose expiry the hold's is. */
+export declare const SEAT_HOLD_ORIGINS: readonly ["checkout", "pairing"];
+export type SeatHoldOrigin = (typeof SEAT_HOLD_ORIGINS)[number];
+export declare const SeatHoldOrigin: {
+    readonly CHECKOUT: "checkout";
+    readonly PAIRING: "pairing";
+};
 /**
  * Why money went back to a viewer: domain facts, not refusals (D-037, D-039), in the order of the
  * proto's `RefundReason`. A studio operator chooses among four; the others the system raises.

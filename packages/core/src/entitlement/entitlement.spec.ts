@@ -85,7 +85,7 @@ describe('decideWatch — the truth table', () => {
   });
 
   it('opens a bounded PREVIEW to someone with no seat', () => {
-    const verdict = decideWatch(base({ previewSecondsLeft: 252 }));
+    const verdict = decideWatch(base({ previewSecondsLeft: 252, now: '2026-09-21T19:15:00.000Z' }));
     expect(verdict.allowed).toBe(true);
     expect(verdict.scope).toBe('preview');
     expect(verdict.previewSecondsLeft).toBe(252);
@@ -93,7 +93,7 @@ describe('decideWatch — the truth table', () => {
   });
 
   it('refuses when the preview is exhausted, with the way out', () => {
-    const verdict = decideWatch(base({ previewSecondsLeft: 0 }));
+    const verdict = decideWatch(base({ previewSecondsLeft: 0, now: '2026-09-21T19:15:00.000Z' }));
     expect(verdict.reason).toBe(WatchDenialReason.PREVIEW_EXHAUSTED);
     expect(verdict.fallback).toBe(WatchFallbackAction.BUY_SEAT);
   });
@@ -235,6 +235,47 @@ describe("a verdict's validity", () => {
   });
 });
 
+/**
+ * PROTECTED INVARIANT
+ *   Past D-089's cutoff, thirty minutes after the start, `buy_seat` is a dead
+ *   end (principle no. 8): the seat sale is over, not the availability.
+ */
+describe('decideWatch past the seat-sales cutoff (D-089)', () => {
+  const stillSelling = '2026-09-21T19:15:00.000Z';
+  const pastCutoff = '2026-09-21T19:30:00.000Z';
+
+  it('still offers to buy a seat before the cutoff', () => {
+    const verdict = decideWatch(base({ previewSecondsLeft: 0, now: stillSelling }));
+    expect(verdict.fallback).toBe(WatchFallbackAction.BUY_SEAT);
+  });
+
+  it('sends to other dates once the cutoff has passed', () => {
+    const verdict = decideWatch(base({ previewSecondsLeft: 0, now: pastCutoff }));
+    expect(verdict.reason).toBe(WatchDenialReason.PREVIEW_EXHAUSTED);
+    expect(verdict.fallback).toBe(WatchFallbackAction.SEE_OTHER_DATES);
+  });
+
+  it('sends to other dates past the cutoff even with a waiting list open', () => {
+    const verdict = decideWatch(
+      base({ previewSecondsLeft: 0, waitlistOpen: true, now: pastCutoff }),
+    );
+    expect(verdict.fallback).toBe(WatchFallbackAction.SEE_OTHER_DATES);
+  });
+
+  it('closes the preview itself past the cutoff, not only the exhausted case', () => {
+    const verdict = decideWatch(base({ previewSecondsLeft: 252, now: pastCutoff }));
+    expect(verdict.allowed).toBe(true);
+    expect(verdict.scope).toBe('preview');
+    expect(verdict.fallback).toBe(WatchFallbackAction.SEE_OTHER_DATES);
+  });
+
+  it('does not touch a seat holder, who was never offered buy_seat', () => {
+    const verdict = decideWatch(base({ holdsSeat: true, now: pastCutoff }));
+    expect(verdict.allowed).toBe(true);
+    expect(verdict.fallback).toBe(WatchFallbackAction.NONE);
+  });
+});
+
 describe('the two constants derived from the plan', () => {
   it('gives two screens to `multi-screen`, one otherwise', () => {
     expect(concurrentStreamsAllowedFor([PlanOpening.MULTI_SCREEN])).toBe(2);
@@ -304,12 +345,13 @@ describe('every refusal has a way out, and every way out answers a refusal', () 
   it('offers the waiting list instead of a seat when the date is sold out', () => {
     // Offering `buy_seat` on a sold-out date is a button that leads nowhere —
     // which is the dead end principle no. 8 forbids, dressed as an action.
-    expect(decideWatch(base({ previewSecondsLeft: 0 })).fallback).toBe(
+    const stillSelling = { now: '2026-09-21T19:15:00.000Z' };
+    expect(decideWatch(base({ previewSecondsLeft: 0, ...stillSelling })).fallback).toBe(
       WatchFallbackAction.BUY_SEAT,
     );
-    expect(decideWatch(base({ previewSecondsLeft: 0, waitlistOpen: true })).fallback).toBe(
-      WatchFallbackAction.JOIN_WAITLIST,
-    );
+    expect(
+      decideWatch(base({ previewSecondsLeft: 0, waitlistOpen: true, ...stillSelling })).fallback,
+    ).toBe(WatchFallbackAction.JOIN_WAITLIST);
   });
 
   it('explains the promise rather than deflecting when there is no replay', () => {

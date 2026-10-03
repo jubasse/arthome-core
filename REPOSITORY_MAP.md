@@ -209,7 +209,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 403 exported names.
+Declarations: `dist/index.d.ts` — 434 exported names.
 
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
@@ -289,16 +289,19 @@ Declarations: `dist/index.d.ts` — 403 exported names.
 - `Fixtures` (interface)
 - `Gauge` (interface)
 - `Genre` (interface) — A sub-genre: optional, MULTIPLE, closed vocabulary.
+- `HOLD_EXPIRY_BATCH` (const) — `HOLD_EXPIRY_BATCH = 500` — adr-ticketing.md §6: how many expired holds one pass of the sweeper's one-second loop takes.
 - `HOLD_MINUTES_CHECKOUT` (const) — `HOLD_MINUTES_CHECKOUT = 15` — THE CAPACITY HOLD, and its SINGLE-INSTANT invariant.
 - `HOLD_MINUTES_TV_PAIRING` (const) — `HOLD_MINUTES_TV_PAIRING = 5`
 - `HOUR_MS` (const) — `HOUR_MS = 3600000`
 - `IDENTITY_ERROR_CODES` (const) — `IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.handle_taken", "identity.two_factor_required", "identity.signed_out_elsewhere"]` — Sign-in, sign-up and session refusals.
 - `INCIDENT_CAUSES` (const) — `INCIDENT_CAUSES: readonly ["venue_feed_lost", "run_desk_disconnected", "bitrate_collapsed", "compatibility_worker_failed", "provider_error", "manual"]` — The cause, a vocabulary distinct from the outcome.
 - `INCIDENT_KINDS` (const) — `INCIDENT_KINDS: readonly ["hold_screen", "postponed", "cancelled", "interrupted"]` — The four incident kinds a viewer can see.
+- `INTENT_STATUSES` (const) — `INTENT_STATUSES: readonly ["succeeded", "requires_action", "processing", "declined"]`
 - `IdentityErrorCode` (type+const)
 - `IncidentCause` (type+const)
 - `IncidentKind` (type+const)
 - `Instant` (type) — `type Instant = string;` — An instant, in ISO 8601 UTC.
+- `IntentStatus` (type+const)
 - `KnownMember` (interface)
 - `LANGUAGE_DEPENDENCIES` (const) — `LANGUAGE_DEPENDENCIES: readonly ["none", "helpful", "essential"]` — The real vocabulary, corrected (D1).
 - `LIVE_START_LEAD_MINUTES` (const) — `LIVE_START_LEAD_MINUTES = 0` — A followed artist goes on air: as soon as the feed opens.
@@ -306,6 +309,7 @@ Declarations: `dist/index.d.ts` — 403 exported names.
 - `LabelCatalogRef` (interface) — The catalogue version served to a surface, carried by the bootstrap.
 - `LanguageDependency` (type+const)
 - `LanguageProfile` (interface) — The INGREDIENTS.
+- `LateEntry` (interface) — What a buyer arriving after the start is told, and must acknowledge, before buying (D-089).
 - `Locale` (type+const) — `type Locale = (typeof LOCALES)[number]; Locale: { readonly FR: "fr"; readonly EN: "en"; }`
 - `MEMBER_ROLES` (const) — `MEMBER_ROLES: readonly ["artist", "production", "coordination", "director", "video", "sound", "moderation", "treasury"]` — The eight canonical roles from 'catalogue.json'.
 - `MESSAGE_DOMAINS` (const) — `MESSAGE_DOMAINS: readonly ["common", "storefront", "studio", "taxonomy", "system"]` — The five copy domains, split so the embedded snapshot stays small.
@@ -337,11 +341,13 @@ Declarations: `dist/index.d.ts` — 403 exported names.
 - `NotificationChannel` (type+const)
 - `ORDER_ERROR_CODES` (const) — The viewer's commerce refusals: a purchase, a seat, a means of payment.
 - `ORDER_KINDS` (const) — `ORDER_KINDS: readonly ["seat", "merch", "subscription"]` — Distinct orders, never a mixed one (D-011).
+- `ORDER_STATES` (const) — `ORDER_STATES: readonly ["pending", "awaiting_action", "processing", "paid", "failed", "refunded", "partially_refunded", "disputed"]` — adr-payments.md §8's order states; a transition applies only forward (§7.3).
 - `Ok` (interface)
 - `OrderErrorCode` (type+const)
 - `OrderId` (type) — `type OrderId = Brand<'OrderId'>;`
 - `OrderKind` (type+const) — `type OrderKind = (typeof ORDER_KINDS)[number]; OrderKind: { readonly SEAT: "seat"; readonly MERCH: "merch"; readonly SUBSCRIPTION: "subscription"; }`
 - `OrderQuote` (interface) — The four lines of the summary, composed ONCE.
+- `OrderState` (type+const)
 - `OutcomeDeclaration` (type) — 'rescheduledTo' is where a postponement moves the date (D-074); the other two carry none.
 - `PAIRING_CODE_ALPHABET` (const) — `PAIRING_CODE_ALPHABET = "ACDEFHJKLMNPQRTVWXY23456789"` — 27 symbols.
 - `PAIRING_CODE_AMBIGUOUS_GLYPHS` (const) — `PAIRING_CODE_AMBIGUOUS_GLYPHS: readonly string[]` — The glyphs that are excluded AND unmappable — the refusing class's edges.
@@ -349,6 +355,8 @@ Declarations: `dist/index.d.ts` — 403 exported names.
 - `PAIRING_CODE_NORMALISATION` (const) — `PAIRING_CODE_NORMALISATION: Readonly<Record<string, string>>` — The normalisation table, exhaustive over the mappable excluded glyphs.
 - `PAIRING_CONFUSABLE_CLASSES` (const) — `PAIRING_CONFUSABLE_CLASSES: readonly (readonly string[])[]` — The CONFUSABLE CLASSES this channel recognises, as data so the invariant is computed.
 - `PAIRING_ERROR_CODES` (const) — `PAIRING_ERROR_CODES: readonly ["pairing.slow_down", "pairing.identity_mismatch", "pairing.intent_not_engageable", "pairing.execution_engaged"]` — Device pairing, where the same code is polled repeatedly.
+- `PAYMENT_EVENT_KINDS` (const) — `PAYMENT_EVENT_KINDS: readonly ["intent_succeeded", "intent_requires_action", "intent_processing", "intent_failed", "intent_cancelled", "unhandled"]` — What a provider's webhook says happened to an intent, recorded before anything reads it.
+- `PAYMENT_WEBHOOK_TOLERANCE_SECONDS` (const) — `PAYMENT_WEBHOOK_TOLERANCE_SECONDS = 300` — adr-payments.md §7.1: a webhook signed further in the past than this is rejected.
 - `PAYOUT_DELAY_DAYS` (const) — `PAYOUT_DELAY_DAYS = 14` — 'payoutDelayDays: 14'.
 - `PAYOUT_ERROR_CODES` (const) — `PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained"]` — Payout refusals: a period does not close over an unexplained discrepancy.
 - `PAYOUT_STATES` (const) — `PAYOUT_STATES: readonly ["scheduled", "held", "paid", "refunded", "suspended"]` — Where a payout stands: 'held' while an outcome is open, 'refunded' if the date is cancelled, 'suspended' while a bank-details change waits …
@@ -362,6 +370,13 @@ Declarations: `dist/index.d.ts` — 403 exported names.
 - `PUBLICATION_PROMISES` (const) — `PUBLICATION_PROMISES: readonly ["prices_engaged", "replay_sold"]` — What a one-way transition commits, served with its refusal and asked back as its confirmation.
 - `PUBLICATION_STATES` (const) — `PUBLICATION_STATES: readonly ["draft", "reserve", "scheduled", "technical", "live", "ended", "replay_online"]` — The channel's act; 'catalogue.json' has authority (D2).
 - `PairingErrorCode` (type+const)
+- `PaymentEvent` (interface)
+- `PaymentEventKind` (type+const)
+- `PaymentIntent` (interface)
+- `PaymentIntentRequest` (interface)
+- `PaymentPort` (interface)
+- `PaymentProviderUnavailable` (class) — The provider could not be reached or did not answer: nothing is known of what it did, so the caller retries under the same idempotency key,…
+- `PaymentWebhookPort` (interface)
 - `PayoutBreakdown` (interface)
 - `PayoutErrorCode` (type+const)
 - `PayoutInput` (interface)
@@ -389,6 +404,7 @@ Declarations: `dist/index.d.ts` — 403 exported names.
 - `RIGHTS_SCOPES` (const) — `RIGHTS_SCOPES: readonly ["worldwide", "restricted"]`
 - `RUN_STATES` (const) — `RUN_STATES: readonly ["idle", "rehearsal", "on_air", "interrupted", "ended"]` — The technical axis, and nothing else.
 - `RefundReason` (type+const)
+- `RefundRequest` (interface)
 - `Rendition` (interface) — One image at a size that is actually displayed.
 - `ReplayPolicy` (type+const)
 - `Result` (type) — `type Result<T> = Ok<T> | Err;`
@@ -399,6 +415,10 @@ Declarations: `dist/index.d.ts` — 403 exported names.
 - `SEASON_START_MONTH` (const) — `SEASON_START_MONTH = 9` — The changeover month, in human numbering: 9 = September.
 - `SEAT_CODE_ALPHABET` (const) — `SEAT_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"` — The alphabet: Crockford base 32 — the ten digits and the letters except 'I', 'L', 'O' and 'U', the last of those to avoid spelling a rude w…
 - `SEAT_CODE_BODY_LENGTH` (const) — `SEAT_CODE_BODY_LENGTH = 6`
+- `SEAT_HOLD_ORIGINS` (const) — `SEAT_HOLD_ORIGINS: readonly ["checkout", "pairing"]` — data-model.md §3.2: the intent whose expiry the hold's is.
+- `SEAT_HOLD_STATES` (const) — `SEAT_HOLD_STATES: readonly ["active", "consumed", "expired", "released"]` — data-model.md §3.2.
+- `SEAT_SALES_CUTOFF_MINUTES_AFTER_START` (const) — `SEAT_SALES_CUTOFF_MINUTES_AFTER_START = 30` — D-089: a seat covers the live alone, sold until this long after its start, every channel alike.
+- `SEAT_STATES` (const) — `SEAT_STATES: readonly ["active", "cancelled", "refunded", "transferred", "credited"]` — data-model.md §3.3; 'held' is gone, a hold is a SeatHold (D-077).
 - `SERVICES` (const) — `SERVICES: readonly ["identity", "catalog", "ticketing", "streaming", "chat", "payouts", "notifications"]` — The seven services.
 - `STATE_CHANGE_ORIGINS` (const) — `STATE_CHANGE_ORIGINS: readonly ["human_verdict", "automatic_filter", "retroactive_filter", "author_sanctioned"]` — Where a state change came from; the origin survives the settlement, so "removed by the filter, then confirmed by X" does not collapse into …
 - `SUBSCRIPTION_STATES` (const) — `SUBSCRIPTION_STATES: readonly ["active", "past_due", "cancelled", "trialing"]`
@@ -406,7 +426,10 @@ Declarations: `dist/index.d.ts` — 403 exported names.
 - `SearchCriteria` (interface)
 - `SeatAvailability` (type) — The capacity state, as a DISCRIMINATED UNION.
 - `SeatHold` (interface)
+- `SeatHoldOrigin` (type+const) — `type SeatHoldOrigin = (typeof SEAT_HOLD_ORIGINS)[number]; SeatHoldOrigin: { readonly CHECKOUT: "checkout"; readonly PAIRING: "pairing"; }`
+- `SeatHoldState` (type+const)
 - `SeatId` (type) — `type SeatId = Brand<'SeatId'>;`
+- `SeatState` (type+const)
 - `Service` (type+const)
 - `ServiceFeeSchedule` (interface) — Service fees: PER SEAT, and the schedule is SERVED.
 - `SettlementAttempt` (interface)
@@ -532,6 +555,7 @@ Declarations: `dist/index.d.ts` — 403 exported names.
 - `isMember` (function) — `function isMember<T extends string>(vocabulary: Vocabulary<T>, raw: string): raw is T;` — Type guard for the paths where an unknown value is ignored rather than kept — a filter, a sort, an aggregate.
 - `isNegative` (function) — `function isNegative(value: Money): boolean;`
 - `isOk` (function) — `function isOk<T>(result: Result<T>): result is Ok<T>;`
+- `isOrderReference` (function) — `function isOrderReference(value: string): boolean;`
 - `isPairingCode` (function) — `function isPairingCode(value: string): boolean;`
 - `isPairingCodeAlphabetMember` (function) — `function isPairingCodeAlphabetMember(character: string): boolean;`
 - `isReplaySoldSeparately` (function) — `function isReplaySoldSeparately(timing: DateTiming): boolean;` — Is the replay paid for separately?
@@ -543,6 +567,7 @@ Declarations: `dist/index.d.ts` — 403 exported names.
 - `isUnderstandable` (function) — `function isUnderstandable(profile: LanguageProfile, understoodLanguages: readonly string[]): boolean;` — Can this show be followed with the languages I understand?
 - `isWithinQuietHours` (function) — `function isWithinQuietHours(instant: Instant, viewerUtcOffsetMinutes: number): boolean;`
 - `isZero` (function) — `function isZero(value: Money): boolean;`
+- `lateEntryOf` (function) — `function lateEntryOf(startsAt: Instant | null, now: Instant): LateEntry | null;` — Null before the start, and for a date with none.
 - `lateRatePrice` (function) — `function lateRatePrice(fullPrice: Money, progress: number): Money;` — The "show already started" price, PRO RATA of the time remaining.
 - `latest` (function) — `function latest(left: Instant, right: Instant): Instant;`
 - `lowestActivePrice` (function) — `function lowestActivePrice(tiers: readonly TierPrice[]): Money | null;` — The headline price: the lowest of the ACTIVE tiers.
@@ -563,9 +588,12 @@ Declarations: `dist/index.d.ts` — 403 exported names.
 - `normalizeSeatCodeInput` (function) — `function normalizeSeatCodeInput(raw: string): string;` — Normalises human input before comparison: case, spaces, a forgotten hyphen, an omitted prefix and the confusables, which are absent from th…
 - `ok` (function) — `function ok<T>(value: T): Ok<T>;`
 - `orderRankOf` (function) — `function orderRankOf(state: PublicationState): number;`
+- `orderReference` (function) — `function orderReference(year: number, sequence: number): string;` — 'Order.reference', the one support reads out over the phone: 'ATH-2026-00042'.
+- `orderStateMovesForward` (function) — `function orderStateMovesForward(from: OrderState, to: OrderState): boolean;`
 - `overlaps` (function) — `function overlaps(left: Window, right: Window): boolean;` — Do two windows overlap?
 - `parseLocale` (function) — `function parseLocale(raw: string): Locale;`
 - `parseTolerant` (function) — `function parseTolerant<T extends string>(vocabulary: Vocabulary<T>, raw: string): Tolerant<T>;` — Reads a value against its vocabulary without ever failing.
+- `paymentReturnPath` (function) — `function paymentReturnPath(orderId: string): string;` — Where the provider sends the buyer back after strong authentication; it concludes nothing.
 - `payoutOf` (function) — `function payoutOf(input: PayoutInput): PayoutBreakdown;` — The computation, in the order that matters.
 - `payoutStateFor` (function) — `function payoutStateFor(outcome: DateOutcome | null, alreadyPaid: boolean, bankChangePending: boolean): PayoutState;` — A payout's state.
 - `pickLanguage` (function) — `function pickLanguage(value: Bilingual, locale: Locale): string;`
@@ -592,11 +620,14 @@ Declarations: `dist/index.d.ts` — 403 exported names.
 - `restrictedRights` (function) — `function restrictedRights(blackoutCountries: readonly string[], reason: BlackoutReason): TerritoryRights;`
 - `roomOpensAt` (function) — `function roomOpensAt(timing: DateTiming): Instant;`
 - `roundMinor` (function) — `function roundMinor(value: number): number;` — Rounds half away from zero, to the minor unit.
+- `salesEndedBy` (function) — `function salesEndedBy(salesEndAt: Instant | null, now: Instant): boolean;` — Past the sale's end by time; a date with no start has no end.
 - `sameCriteria` (function) — `function sameCriteria(left: SearchCriteria, right: SearchCriteria): boolean;`
 - `sanctionExpiryFrom` (function) — `function sanctionExpiryFrom(sanctionedAt: Instant, durationMinutes: number | null): Instant | null;` — A sanction carries an EXPIRY INSTANT, never a label.
 - `seasonBounds` (function) — `function seasonBounds(instant: Instant, utcOffsetMinutes: number): Window;` — The season CONTAINING this instant, expressed in the given offset.
 - `seasonLabel` (function) — `function seasonLabel(instant: Instant, utcOffsetMinutes: number): string;` — A season's label, as a CODE: "2026-2027".
+- `seatCancelDeadline` (function) — `function seatCancelDeadline(startsAt: Instant): Instant;` — A seat's cancellation deadline, served as an instant (data-model.md §3.3), never a sentence.
 - `seatCode` (function) — `function seatCode(body: string): string;` — Composes a code from a body already drawn by the service, which owns the cryptographic randomness: a source here would make this package de…
+- `seatSalesEndAt` (function) — `function seatSalesEndAt(startsAt: Instant): Instant;`
 - `seatsAvailable` (function) — `function seatsAvailable(gauge: Gauge): number;` — The seats ACTUALLY available: net of holds in progress.
 - `serviceFeeFor` (function) — `function serviceFeeFor(schedule: ServiceFeeSchedule, unitPrice: Money, quantity: number): Money;`
 - `shouldCollapseToQueue` (function) — `function shouldCollapseToQueue(messagesInWindow: number): boolean;` — Past the threshold, the console stops showing the chat message by message.
@@ -709,6 +740,7 @@ each directory is covered and each entry has a directory, not that the sentence 
 - `packages/core/src/money/` — Money in whole minor units, rates in basis points and one rounding rule.
 - `packages/core/src/notification/` — The notification thresholds as domain rules, not screen copy.
 - `packages/core/src/pairing/` — Device pairing: the short code a television shows and a phone retypes.
+- `packages/core/src/payment/` — The payment ports: what the domain asks of a provider, and nothing of how.
 - `packages/core/src/payout/` — Artist payout: commission, VAT by jurisdiction, net and withholding.
 - `packages/core/src/permissions/` — Rights: the eight canonical roles, the union rather than a rank, and grants.
 - `packages/core/src/replay/` — The replay promise, its window and what remains of it.

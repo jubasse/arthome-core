@@ -98,6 +98,55 @@ export const OrderKind = {
   SUBSCRIPTION: 'subscription',
 } as const;
 
+/** adr-payments.md §8's order states; a transition applies only forward (§7.3). */
+export const ORDER_STATES = [
+  'pending',
+  'awaiting_action',
+  'processing',
+  'paid',
+  'failed',
+  'refunded',
+  'partially_refunded',
+  'disputed',
+] as const;
+export type OrderState = (typeof ORDER_STATES)[number];
+export const OrderState = {
+  PENDING: 'pending',
+  AWAITING_ACTION: 'awaiting_action',
+  PROCESSING: 'processing',
+  PAID: 'paid',
+  FAILED: 'failed',
+  REFUNDED: 'refunded',
+  PARTIALLY_REFUNDED: 'partially_refunded',
+  DISPUTED: 'disputed',
+} as const;
+
+/** data-model.md §3.3; `held` is gone, a hold is a SeatHold (D-077). */
+export const SEAT_STATES = ['active', 'cancelled', 'refunded', 'transferred', 'credited'] as const;
+export type SeatState = (typeof SEAT_STATES)[number];
+export const SeatState = {
+  ACTIVE: 'active',
+  CANCELLED: 'cancelled',
+  REFUNDED: 'refunded',
+  TRANSFERRED: 'transferred',
+  CREDITED: 'credited',
+} as const;
+
+/** data-model.md §3.2. */
+export const SEAT_HOLD_STATES = ['active', 'consumed', 'expired', 'released'] as const;
+export type SeatHoldState = (typeof SEAT_HOLD_STATES)[number];
+export const SeatHoldState = {
+  ACTIVE: 'active',
+  CONSUMED: 'consumed',
+  EXPIRED: 'expired',
+  RELEASED: 'released',
+} as const;
+
+/** data-model.md §3.2: the intent whose expiry the hold's is. */
+export const SEAT_HOLD_ORIGINS = ['checkout', 'pairing'] as const;
+export type SeatHoldOrigin = (typeof SEAT_HOLD_ORIGINS)[number];
+export const SeatHoldOrigin = { CHECKOUT: 'checkout', PAIRING: 'pairing' } as const;
+
 /**
  * Why money went back to a viewer: domain facts, not refusals (D-037, D-039), in the order of the
  * proto's `RefundReason`. A studio operator chooses among four; the others the system raises.

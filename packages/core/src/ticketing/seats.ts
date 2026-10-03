@@ -1,8 +1,16 @@
 /** Capacity, tiers, and the HOLD that stops capacity lying. */
 
 import type { Instant } from '../kernel/clock.js';
+import { DomainConstant } from '../kernel/domain-constants.js';
 import { DomainError } from '../kernel/errors.js';
-import { isAfter, isBefore, plusHours, plusMinutes, plusSeconds } from '../time/instant.js';
+import {
+  isAfter,
+  isBefore,
+  minutesBetween,
+  plusHours,
+  plusMinutes,
+  plusSeconds,
+} from '../time/instant.js';
 import { CatalogErrorCode, DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /**
@@ -116,6 +124,11 @@ export function isHoldExpired(hold: SeatHold, now: Instant): boolean {
   return !isAfter(hold.expiresAt, now);
 }
 
+/** A seat's cancellation deadline, served as an instant (data-model.md §3.3), never a sentence. */
+export function seatCancelDeadline(startsAt: Instant): Instant {
+  return plusMinutes(startsAt, -DomainConstant.CANCEL_DEADLINE_MINUTES_BEFORE);
+}
+
 /**
  * Capacity tiers: they WIDEN, never shrink after going on sale. Shrinking then
  * would cancel seats already sold.
@@ -206,3 +219,36 @@ export const WAITLIST_PRIORITY_HOURS = 2;
 
 /** One `waitlist.notified` names at most this many accounts; a tier opening writes as many as it needs. */
 export const WAITLIST_NOTIFIED_ACCOUNTS_MAX = 500;
+
+/** adr-ticketing.md §6: how many expired holds one pass of the sweeper's one-second loop takes. */
+export const HOLD_EXPIRY_BATCH = 500;
+
+/** D-089: a seat covers the live alone, sold until this long after its start, every channel alike. */
+export const SEAT_SALES_CUTOFF_MINUTES_AFTER_START = 30;
+
+export function seatSalesEndAt(startsAt: Instant): Instant {
+  return plusMinutes(startsAt, SEAT_SALES_CUTOFF_MINUTES_AFTER_START);
+}
+
+/** Past the sale's end by time; a date with no start has no end. */
+export function salesEndedBy(salesEndAt: Instant | null, now: Instant): boolean {
+  return salesEndAt !== null && !isBefore(now, salesEndAt);
+}
+
+/** What a buyer arriving after the start is told, and must acknowledge, before buying (D-089). */
+export interface LateEntry {
+  readonly startedAt: Instant;
+  /** Whole minutes of the live already missed. */
+  readonly minutesElapsed: number;
+  readonly salesEndAt: Instant;
+}
+
+/** Null before the start, and for a date with none. */
+export function lateEntryOf(startsAt: Instant | null, now: Instant): LateEntry | null {
+  if (startsAt === null || isBefore(now, startsAt)) return null;
+  return {
+    startedAt: startsAt,
+    minutesElapsed: Math.floor(minutesBetween(startsAt, now)),
+    salesEndAt: seatSalesEndAt(startsAt),
+  };
+}
