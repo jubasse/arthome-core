@@ -207,6 +207,10 @@ export const AccountStatus = {
   ANONYMISED: 'anonymised',
 } as const;
 
+/** The three surfaces that call the storefront BFF; the studio's two call the other. */
+export type StorefrontSurface =
+  typeof Surface.STOREFRONT_WEB | typeof Surface.STOREFRONT_MOBILE | typeof Surface.STOREFRONT_TV;
+
 /** The channels a notification takes; the third is `in_app`, not `sms` (D-017). */
 export const NOTIFICATION_CHANNELS = ['push', 'email', 'in_app'] as const;
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];

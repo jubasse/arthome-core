@@ -8,6 +8,7 @@
 import type { Instant } from '../kernel/clock.js';
 import type { ModerationVerdict } from '../vocabulary/moderation.js';
 import { AudienceSanction, MessageState, ModerationItemState, StateChangeOrigin } from '../vocabulary/moderation.js';
+import { type StorefrontSurface } from '../vocabulary/people.js';
 /**
  * The single badge, derived from the three axes and never recomposed by a surface:
  *
@@ -87,6 +88,16 @@ export declare function assertCanOverride(existingOrigin: StateChangeOrigin, inc
 export declare const CHAT_RATE_WINDOW_SECONDS = 60;
 export declare const CHAT_BURST_THRESHOLD_PER_MINUTE = 60;
 export declare function chatRatePerMinute(messagesInWindow: number): number;
+/** What a storefront surface's chat is served: its ceiling and its catch-up on entering a room. */
+export interface ChatAllowance {
+    readonly messagesPerSecond: number;
+    readonly catchUpMessages: number;
+}
+/**
+ * `realtime.md` §2.2, enforced at the source: a television cannot absorb a fast stream to throw
+ * most of it away.
+ */
+export declare const CHAT_ALLOWANCE_BY_SURFACE: Readonly<Record<StorefrontSurface, ChatAllowance>>;
 /** Past the threshold, the console stops showing the chat message by message. */
 export declare function shouldCollapseToQueue(messagesInWindow: number): boolean;
 /** A sanction carries an EXPIRY INSTANT, never a label. */

@@ -17,6 +17,7 @@ import {
   ModerationItemState,
   StateChangeOrigin,
 } from '../vocabulary/moderation.js';
+import { Surface, type StorefrontSurface } from '../vocabulary/people.js';
 
 /**
  * The single badge, derived from the three axes and never recomposed by a surface:
@@ -161,6 +162,22 @@ export const CHAT_BURST_THRESHOLD_PER_MINUTE = 60;
 export function chatRatePerMinute(messagesInWindow: number): number {
   return Math.round((messagesInWindow / CHAT_RATE_WINDOW_SECONDS) * 60);
 }
+
+/** What a storefront surface's chat is served: its ceiling and its catch-up on entering a room. */
+export interface ChatAllowance {
+  readonly messagesPerSecond: number;
+  readonly catchUpMessages: number;
+}
+
+/**
+ * `realtime.md` §2.2, enforced at the source: a television cannot absorb a fast stream to throw
+ * most of it away.
+ */
+export const CHAT_ALLOWANCE_BY_SURFACE: Readonly<Record<StorefrontSurface, ChatAllowance>> = {
+  [Surface.STOREFRONT_TV]: { messagesPerSecond: 2, catchUpMessages: 20 },
+  [Surface.STOREFRONT_MOBILE]: { messagesPerSecond: 6, catchUpMessages: 50 },
+  [Surface.STOREFRONT_WEB]: { messagesPerSecond: 10, catchUpMessages: 50 },
+};
 
 /** Past the threshold, the console stops showing the chat message by message. */
 export function shouldCollapseToQueue(messagesInWindow: number): boolean {

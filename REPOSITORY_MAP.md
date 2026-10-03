@@ -209,7 +209,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 452 exported names.
+Declarations: `dist/index.d.ts` — 455 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -233,6 +233,7 @@ Declarations: `dist/index.d.ts` — 452 exported names.
 - `Brand` (type) — `type Brand<TBrand extends string> = string & { readonly [brand]: TBrand; };` — A nominal type: structurally a string, distinct at compile time.
 - `CATALOG_ERROR_CODES` (const) — Refusals about a date and what may still be changed on it — the wire's half of 'publication.ts''s irreversible transitions.
 - `CHANNEL_ERROR_CODES` (const) — Channel membership, crew and ownership refusals.
+- `CHAT_ALLOWANCE_BY_SURFACE` (const) — `CHAT_ALLOWANCE_BY_SURFACE: Readonly<Record<StorefrontSurface, ChatAllowance>>` — 'realtime.md' §2.2, enforced at the source: a television cannot absorb a fast stream to throw most of it away.
 - `CHAT_BURST_THRESHOLD_PER_MINUTE` (const) — `CHAT_BURST_THRESHOLD_PER_MINUTE = 60`
 - `CHAT_ERROR_CODES` (const) — `CHAT_ERROR_CODES: readonly ["chat.holders_only", "chat.rate_limited"]` — Chat refusals, both about who may write: a removed message is moderation's vocabulary.
 - `CHAT_MODES` (const) — `CHAT_MODES: readonly ["open", "emoji", "read_only", "off"]` — The chat mode a channel is in; 'catalogue.json' has authority.
@@ -246,6 +247,7 @@ Declarations: `dist/index.d.ts` — 452 exported names.
 - `CatalogErrorCode` (type+const)
 - `ChannelErrorCode` (type+const)
 - `ChannelId` (type) — `type ChannelId = Brand<'ChannelId'>;`
+- `ChatAllowance` (interface) — What a storefront surface's chat is served: its ceiling and its catch-up on entering a room.
 - `ChatErrorCode` (type+const)
 - `ChatMode` (type+const) — `type ChatMode = (typeof CHAT_MODES)[number]; ChatMode: { readonly OPEN: "open"; readonly EMOJI: "emoji"; readonly READ_ONLY: "read_only"; readonly OFF: "off"; }`
 - `Clock` (interface)
@@ -450,6 +452,7 @@ Declarations: `dist/index.d.ts` — 452 exported names.
 - `SettlementOutcome` (type)
 - `ShowId` (type) — `type ShowId = Brand<'ShowId'>;`
 - `StateChangeOrigin` (type+const)
+- `StorefrontSurface` (type) — `type StorefrontSurface = typeof Surface.STOREFRONT_WEB | typeof Surface.STOREFRONT_MOBILE | typeof Surface.STOREFRONT_TV;` — The three surfaces that call the storefront BFF; the studio's two call the other.
 - `SubscriptionState` (type+const)
 - `Surface` (type+const)
 - `SystemClock` (class) — The production clock.
