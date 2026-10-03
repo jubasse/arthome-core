@@ -92,8 +92,7 @@ export const IDENTITY_ERROR_CODES = [
   //
   //   Not covered by the standing vagueness exception below: that is about an AUTHENTICATION
   //   refusal naming which check failed, and `email_taken`'s own existence proves the scope.
-  //   Sign-up keeps disclosing a taken email, slowed by the BFF's rate limit (auth Q1,
-  //   2026-10-03).
+  //   Sign-up keeps disclosing a taken email, slowed by the BFF's rate limit (D-099).
   'identity.handle_taken',
   // Sign-in's one refusal: an unknown email and a wrong password are the same answer.
   'identity.invalid_credentials',

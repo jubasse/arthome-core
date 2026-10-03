@@ -233,7 +233,7 @@ Declarations: `dist/index.d.ts` — 455 exported names.
 - `Brand` (type) — `type Brand<TBrand extends string> = string & { readonly [brand]: TBrand; };` — A nominal type: structurally a string, distinct at compile time.
 - `CATALOG_ERROR_CODES` (const) — Refusals about a date and what may still be changed on it — the wire's half of 'publication.ts''s irreversible transitions.
 - `CHANNEL_ERROR_CODES` (const) — Channel membership, crew and ownership refusals.
-- `CHAT_ALLOWANCE_BY_SURFACE` (const) — `CHAT_ALLOWANCE_BY_SURFACE: Readonly<Record<StorefrontSurface, ChatAllowance>>` — 'realtime.md' §2.2, enforced at the source: a television cannot absorb a fast stream to throw most of it away.
+- `CHAT_ALLOWANCE_BY_SURFACE` (const) — `CHAT_ALLOWANCE_BY_SURFACE: Readonly<Record<StorefrontSurface, ChatAllowance>>` — Enforced at the source: a television cannot absorb a fast stream to throw most of it away.
 - `CHAT_BURST_THRESHOLD_PER_MINUTE` (const) — `CHAT_BURST_THRESHOLD_PER_MINUTE = 60`
 - `CHAT_ERROR_CODES` (const) — `CHAT_ERROR_CODES: readonly ["chat.holders_only", "chat.rate_limited"]` — Chat refusals, both about who may write: a removed message is moderation's vocabulary.
 - `CHAT_MODES` (const) — `CHAT_MODES: readonly ["open", "emoji", "read_only", "off"]` — The chat mode a channel is in; 'catalogue.json' has authority.
@@ -279,7 +279,7 @@ Declarations: `dist/index.d.ts` — 455 exported names.
 - `DomainErrorCode` (type+const)
 - `DomainErrorInit` (interface)
 - `DomainGuardCode` (type+const)
-- `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS` (const) — `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS = 24` — 'adr-auth.md' §6.7 (auth Q2, 2026-10-03): an email verification link expires after a day, and is spent by its first use.
+- `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS` (const) — `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS = 24` — 'adr-auth.md' §6.7 (D-100): an email verification link expires after a day, and is spent by its first use.
 - `ERROR_CODES` (const) — Every error code, composed — the vocabulary the two contracts declare against.
 - `EffectiveRights` (interface)
 - `Err` (interface)

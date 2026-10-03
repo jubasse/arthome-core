@@ -170,8 +170,9 @@ export interface ChatAllowance {
 }
 
 /**
- * `realtime.md` §2.2, enforced at the source: a television cannot absorb a fast stream to throw
- * most of it away.
+ * Enforced at the source: a television cannot absorb a fast stream to throw most of it away.
+ * The ceilings are answers-to-surfaces.md Q11's (television 2 msg/s, mobile 6, web 10) and the
+ * television's catch-up of 20 too; mobile's and web's catch-up of 50 are `realtime.md` §2.2's.
  */
 export const CHAT_ALLOWANCE_BY_SURFACE: Readonly<Record<StorefrontSurface, ChatAllowance>> = {
   [Surface.STOREFRONT_TV]: { messagesPerSecond: 2, catchUpMessages: 20 },

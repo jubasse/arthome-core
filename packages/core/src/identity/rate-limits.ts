@@ -11,7 +11,7 @@ export interface RateLimit {
 }
 
 export const AuthRateLimit = {
-  /** What slows enumeration through `identity.email_taken` (auth Q1, 2026-10-03). */
+  /** What slows enumeration through `identity.email_taken` (D-099). */
   SIGN_UP_PER_ADDRESS: { limit: 10, windowSeconds: 3_600 },
   SIGN_IN_PER_ADDRESS: { limit: 20, windowSeconds: 900 },
   /** Password guessing against one account from many addresses. */

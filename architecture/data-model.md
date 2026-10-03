@@ -112,7 +112,7 @@ Account
 **Invariants.** An account with no `password_hash` must have at least one social provider or one
 passkey. `deletion_requested` freezes purchases but deletes nothing (§7.5).
 
-**At sign-up** (auth Q2 and Q3, 2026-10-03): `public_handle` is generated and neutral
+**At sign-up** (D-100, D-101): `public_handle` is generated and neutral
 (`generatedPublicHandle` in `@arthome/core`), then changeable through `updateProfile`;
 `email_verified_at` stays null until the link of `adr-auth.md` §6.7 is used, and blocks nothing.
 `status` is `ACCOUNT_STATUSES`. The credential columns live in better-auth's `auth` schema, keyed by

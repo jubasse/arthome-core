@@ -9,7 +9,7 @@ export interface RateLimit {
     readonly windowSeconds: number;
 }
 export declare const AuthRateLimit: {
-    /** What slows enumeration through `identity.email_taken` (auth Q1, 2026-10-03). */
+    /** What slows enumeration through `identity.email_taken` (D-099). */
     readonly SIGN_UP_PER_ADDRESS: {
         readonly limit: 10;
         readonly windowSeconds: 3600;

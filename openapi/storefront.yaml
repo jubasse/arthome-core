@@ -242,11 +242,11 @@ paths:
         authentication door.
 
         **The public handle is generated, neutral, and changeable later** through `updateProfile`
-        (auth Q3): a sign-up never fails on a handle, and nothing personal becomes public by
+        (D-101): a sign-up never fails on a handle, and nothing personal becomes public by
         default. A verification link is emailed at once; an unverified address blocks nothing
-        (auth Q2), and `ViewerContext.account.emailVerified` says where it stands.
+        (D-100), and `ViewerContext.account.emailVerified` says where it stands.
 
-        **A taken email answers `409` `identity.email_taken`** (auth Q1). The status alone says the
+        **A taken email answers `409` `identity.email_taken`** (D-099). The status alone says the
         address is registered, so what bounds enumeration is the rate limit, answered `429`.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]

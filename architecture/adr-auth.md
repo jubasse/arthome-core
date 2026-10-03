@@ -284,14 +284,14 @@ it.
   `trustedOrigins` only and throws on function-based ones (`dist/index.mjs`, lines 845–857) — and
   §6.6 already requires literal strings. The constraint was met before it was known.
 
-#### What the platform implemented, 2026-10-03: the library without the adapter
+#### Amendment, 2026-10-03: the library without the adapter
 
 `arthome-platform` calls better-auth's server API (`auth.api.*`) from `identity`'s own controllers
 and does **not** install `@thallesp/nestjs-better-auth`. The reason is the property stated above:
 the adapter mounts better-auth's routes ahead of Nest's router, where no guard sees them. In the
 topology of §8 every `identity` route sits behind the internal token's guard, so a raw
 `/api/auth/sign-in/email` would be the one door a caller could reach without passing the BFF, and
-so without the BFF's rate limit, which is what bounds enumeration (auth Q1). It would also mount
+so without the BFF's rate limit, which is what bounds enumeration (D-099). It would also mount
 `/token` and `/jwks`, which §8.2.1 never exposes. Without the adapter there is no handler to feed,
 so `bodyParser: false` (§8.2.7) does not apply either. Option B's cost is unchanged and accepted:
 the guard and the decorators are ours, and they are the internal token's, not a session's.
@@ -348,7 +348,7 @@ screen. No `MISMATCH` is therefore possible on `signin`.
 |---|---|---|
 | `signin` | **15 min** | finding your phone, signing in, possibly doing 2FA |
 | `payment-method` · `plan` | **10 min** | no gauge to honour, but a payment does not linger |
-| **`seat`** · `merch` | **5 min** | the gauge shown at booking time must stay true; for `merch`, the contract's duration, kept (auth Q6, 2026-10-03) |
+| **`seat`** · `merch` | **5 min** | the gauge shown at booking time must stay true; for `merch`, the contract's duration, kept (D-104) |
 
 **And for `seat`, one further requirement, addressed to `backend-domain`:** the pairing duration
 must be **the duration of a seat hold** placed by `ticketing` when the pairing is created.
@@ -634,11 +634,12 @@ raw string. Details and settings → `nestjs-web-security`.
 
 ### 6.7 Email verification
 
-*Auth Q2, 2026-10-03: verified by a link, with a resend; an unverified address blocks nothing.*
+*D-100: verified by a link, with a resend; an unverified address blocks nothing.*
 
 - `identity` issues the token at sign-up and on `resendEmailVerification`, keeps only its hash, and
-  publishes `identity.account.email_verification_requested.v1` with the token for `notifications`
-  to build the link (the proto's comment says why this one token may travel in clear).
+  publishes `identity.email_verification.requested.v1` with the token on a topic `notifications`
+  alone reads (`events.md` §3; the proto's comment says why this one token may travel in clear). The token is never logged. A password reset's token must
+  not take this path.
 - The link points at the surface, which sends the token to `confirmEmailVerification`. The token is
   **spent by its first use** and expires after `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS`
   (`@arthome/core`); a resend spends the earlier ones. A token verifies only the address it was

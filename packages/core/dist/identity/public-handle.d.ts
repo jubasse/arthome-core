@@ -1,5 +1,5 @@
 /**
- * The handle a new viewer is given at sign-up (auth Q3, 2026-10-03): generated and neutral, so
+ * The handle a new viewer is given at sign-up (D-101): generated and neutral, so
  * nothing personal becomes public by default, and changeable later through `updateProfile`. Never
  * derived from the email, which would publish its local part, nor from the display name, which
  * would publish a name nobody chose to make public.
