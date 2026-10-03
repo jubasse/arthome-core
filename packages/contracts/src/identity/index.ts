@@ -204,8 +204,8 @@ export const ViewerContextSchema: z.ZodObject<
     >;
     preferences: z.ZodOptional<typeof ViewerPreferencesSchema>;
     constants: typeof DomainConstantsSchema;
-    labelCatalog: typeof LabelArtifactRefSchema;
-    taxonomyArtifact: typeof LabelArtifactRefSchema;
+    labelCatalog: z.ZodNullable<typeof LabelArtifactRefSchema>;
+    taxonomyArtifact: z.ZodNullable<typeof LabelArtifactRefSchema>;
     realtime: z.ZodOptional<
       z.ZodObject<
         {
@@ -254,9 +254,11 @@ export const ViewerContextSchema: z.ZodObject<
       ),
     preferences: ViewerPreferencesSchema.optional(),
     constants: DomainConstantsSchema,
-    labelCatalog: LabelArtifactRefSchema,
-    taxonomyArtifact: LabelArtifactRefSchema.describe(
-      'Same regime as the i18n catalogue, **served per slice and per surface**: mobile loads\nneither the studio vocabulary nor the television key table. 59.5 KB raw / 8.4 KB gzipped for\nthe full slice — this is not an API call.\n',
+    labelCatalog: LabelArtifactRefSchema.nullable().describe(
+      '**Null: nothing newer than the snapshot embedded at build time**, which the surface then\nuses. A real state, not a gap: before the first publication, or for a surface or a locale\nnothing was published for (`context-map.md` §1.8).\n',
+    ),
+    taxonomyArtifact: LabelArtifactRefSchema.nullable().describe(
+      'Same regime as the i18n catalogue, **served per slice and per surface**: mobile loads\nneither the studio vocabulary nor the television key table. 59.5 KB raw / 8.4 KB gzipped for\nthe full slice — this is not an API call. Null as for `labelCatalog`: the embedded snapshot.\n',
     ),
     realtime: z
       .looseObject({

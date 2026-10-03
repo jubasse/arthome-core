@@ -44,7 +44,7 @@ export declare const DomainConstantsSchema: z.ZodObject<{
     waitlistPriorityWindowHours: z.ZodNumber;
     chatRateLimitPerSecond: z.ZodNumber;
     chatCatchUpMessages: z.ZodOptional<z.ZodNumber>;
-    reactionQuotaPerDate: z.ZodNumber;
+    reactionQuotaPerDate: z.ZodOptional<z.ZodNumber>;
     reminderLeadMinutes: z.ZodNumber;
     replayExpiryWarningHours: z.ZodNumber;
     previewSecondsTotal: z.ZodOptional<z.ZodNumber>;

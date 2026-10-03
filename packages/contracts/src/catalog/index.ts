@@ -124,7 +124,7 @@ export const DomainConstantsSchema: z.ZodObject<
     waitlistPriorityWindowHours: z.ZodNumber;
     chatRateLimitPerSecond: z.ZodNumber;
     chatCatchUpMessages: z.ZodOptional<z.ZodNumber>;
-    reactionQuotaPerDate: z.ZodNumber;
+    reactionQuotaPerDate: z.ZodOptional<z.ZodNumber>;
     reminderLeadMinutes: z.ZodNumber;
     replayExpiryWarningHours: z.ZodNumber;
     previewSecondsTotal: z.ZodOptional<z.ZodNumber>;
@@ -165,7 +165,10 @@ export const DomainConstantsSchema: z.ZodObject<
       ),
     reactionQuotaPerDate: int64()
       .meta({ format: undefined })
-      .meta({ examples: [20] }),
+      .optional()
+      .describe(
+        '**Optional, and absent today.** No document owns a number for it, and the product owner is\nreplacing the per-date quota with a graduated rate; `sendReaction` serves what remains\n(`realtime.md` §2.3). Never null: a null quota would read as no quota at all.\n',
+      ),
     reminderLeadMinutes: int64()
       .meta({ format: undefined })
       .meta({ examples: [30] }),
