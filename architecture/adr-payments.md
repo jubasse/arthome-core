@@ -132,10 +132,12 @@ record.
 **A structuring decision, and it is mine**: the domain does not know Stripe.
 
 ```
-@arthome/core  →  PaymentPort      authorize · capture · refund · quote
-                  ConnectPort      createAccount · onboardingLink · accountStatus · transfer
-                  WebhookPort      verifySignature · parse
-                  LedgerPort       listBalanceTransactions   (reconciliation)
+@arthome/core  →  PaymentPort         createIntent · cancelIntent · refund
+                  PaymentWebhookPort  verifySignature · parse
+                                      (packages/core/src/payment/ports.ts)
+                  ConnectPort         createAccount · onboardingLink · accountStatus · transfer
+                                      (still to come)
+                  LedgerPort          listBalanceTransactions   (reconciliation, still to come)
 
 ticketing / payouts
    ├── FakePaymentAdapter     BY DEFAULT — deterministic, no network, no key

@@ -1,9 +1,8 @@
 /**
- * The payment ports, settling ONE set of method names: adr-ticketing.md §2 uses `createIntent`,
- * `cancelIntent`, `refund`; adr-payments.md §4 sketches `authorize`, `capture`, `refund`, `quote`.
- * This is the interim, using the first. No provider identifier crosses (adr-payments.md §4): a
- * next action's `kind` is the provider's string, opaque here, relayed to the surface as the
- * contract's `nextAction.kind`.
+ * The payment ports (adr-payments.md §4): `createIntent`, `cancelIntent`, `refund`, settling
+ * adr-ticketing.md §2's names over an earlier sketch (`authorize`, `capture`, `quote`), neither of
+ * which the domain calls yet. No provider identifier crosses: a next action's `kind` is the
+ * provider's string, opaque here, relayed to the surface as the contract's `nextAction.kind`.
  */
 
 import type { Instant } from '../kernel/clock.js';
