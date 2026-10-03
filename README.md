@@ -38,7 +38,7 @@ text. Everything else in this repository is written in English, and a gate enfor
 
 ## What to read first
 
-**[`DECISIONS.md`](DECISIONS.md) — 65 arbitrations, each with its reason.** This is the document to
+**[`DECISIONS.md`](DECISIONS.md) — the arbitrations, each with its reason (the count is in the index below).** This is the document to
 open if you want to know *why* rather than *what*. It is also the honest one: several entries are
 corrections of earlier entries, and a few record a decision that turned out to be wrong and says so.
 **[`DECISIONS-INDEX.md`](DECISIONS-INDEX.md)** is its **generated projection**: one line per decision
