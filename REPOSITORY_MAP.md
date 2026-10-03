@@ -502,7 +502,7 @@ Declarations: `dist/index.d.ts` — 452 exported names.
 - `assertTierWidens` (function) — `function assertTierWidens(currentCapacity: number, nextCapacity: number): void;` — Capacity tiers: they WIDEN, never shrink after going on sale.
 - `assertTransitionAllowed` (function) — `function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): PublicationTransition;`
 - `assignableRolesOf` (function) — `function assignableRolesOf(heldRoles: readonly MemberRole[]): readonly MemberRole[];` — The roles a person may assign, given those they hold — the union, never a rank.
-- `audienceOf` (function) — `function audienceOf(service: Service): string;` — 'transport.md' §5.2: a token minted for one service is refused by every other.
+- `audienceOf` (function) — `function audienceOf(service: string): string;` — 'transport.md' §5.2: a token minted for one service is refused by every other.
 - `availabilityOf` (function) — `function availabilityOf(gauge: Gauge): SeatAvailability;`
 - `availabilityValidUntil` (function) — `function availabilityValidUntil(servedAt: Instant): Instant;`
 - `basisPoints` (function) — `function basisPoints(value: number): BasisPoints;`
