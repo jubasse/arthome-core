@@ -5257,7 +5257,9 @@ components:
         `__Host-arthome_csrf` cookie the BFF sets beside the session cookie, readable by the page and bound
         to that session. Without it, or with another session's, the BFF answers `403`
         `api.forbidden`. `GET`, `HEAD` and `OPTIONS` carry none, and neither does a request without
-        the session cookie: sign-up and sign-in are what set it.
+        the session cookie: sign-up and sign-in are what set it. `signOut` needs none either: a
+        forged one ends a session and grants nothing, and a browser that lost its CSRF cookie must
+        still be able to sign out.
     bearerToken:
       type: http
       scheme: bearer
