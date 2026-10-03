@@ -48,7 +48,7 @@
     "  ./studio-access ./studio-stage                — what a control room is served",
     "  ./studio-desk ./studio-money",
     "  ./http ./http-client ./openapi                — routes as TypeScript, their client, the document they emit",
-    "  ./storefront-api                              — the storefront's routes, while they move out of the YAML",
+    "  ./storefront-api ./studio-api                 — every route of each document, from which the document is generated",
     "",
     "Fourteen, not the seven planned here. `./chat`, `./payouts` and `./notifications`",
     "were named as plans and never existed: chat and notifications are served to a",
@@ -114,6 +114,11 @@
       "@arthome/source": "./src/storefront-api/index.ts",
       "types": "./dist/storefront-api/index.d.ts",
       "import": "./dist/storefront-api/index.js"
+    },
+    "./studio-api": {
+      "@arthome/source": "./src/studio-api/index.ts",
+      "types": "./dist/studio-api/index.d.ts",
+      "import": "./dist/studio-api/index.js"
     },
     "./streaming": {
       "@arthome/source": "./src/streaming/index.ts",

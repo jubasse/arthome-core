@@ -19,6 +19,9 @@ import { z } from 'zod';
 import type { VocabularyOutNullable } from '@arthome/core/schema';
 import { PageCursorSchema, int64, vocabularyOutNullable } from '@arthome/core/schema';
 
+import type { AccessorOf } from '../http/index.js';
+import { accessorOf } from '../http/index.js';
+
 /**
  * Why a list came back empty. Local to the contract: the domain neither produces nor
  * consumes these — a fifteenth reason is an endpoint change, not a domain one.
@@ -39,6 +42,8 @@ export const EMPTY_REASONS = [
   'no_saved_search',
   'no_watchlist_entry',
 ] as const;
+
+export const EmptyReason: AccessorOf<typeof EMPTY_REASONS> = accessorOf(EMPTY_REASONS);
 
 /** The storefront's cursor page. Its studio counterpart carries `pendingCount` instead — D-065 family G. */
 export const StorefrontCursorPageInfoSchema: z.ZodObject<

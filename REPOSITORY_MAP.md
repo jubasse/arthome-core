@@ -169,9 +169,10 @@ Declarations: `dist/openapi/index.d.ts` — 2 exported names.
 
 #### @arthome/contracts/pagination
 
-Declarations: `dist/pagination/index.d.ts` — 4 exported names.
+Declarations: `dist/pagination/index.d.ts` — 5 exported names.
 
 - `EMPTY_REASONS` (const) — Why a list came back empty.
+- `EmptyReason` (const) — `EmptyReason: AccessorOf<typeof EMPTY_REASONS>`
 - `OffsetPageInfoSchema` (const) — 'OffsetPageInfo' — the studio's pagination primitive, and the deliberate opposite of the one above.
 - `StorefrontCursorPageInfoSchema` (const) — The storefront's cursor page.
 - `StudioCursorPageInfoSchema` (const) — The studio's cursor page: the moderation queue and the live chat, with a separate badge total.
@@ -180,7 +181,7 @@ Declarations: `dist/pagination/index.d.ts` — 4 exported names.
 
 Declarations: `dist/storefront-api/index.d.ts` — 1 exported names.
 
-- `storefrontApi` (const) — `storefrontApi: Api<{ search: typeof search; }>`
+- `storefrontApi` (const)
 
 #### @arthome/contracts/streaming
 
@@ -206,6 +207,12 @@ Declarations: `dist/studio-access/index.d.ts` — 11 exported names.
 - `StudioSessionEstablishedCookieSchema` (const) — `StudioSessionEstablishedCookieSchema: z.ZodObject<{ mode: z.ZodLiteral<typeof SessionMode.COOKIE>; bootstrap: typeof StudioBootstrapSchema; }, z.core.$loose>` — A cookie session: nothing in the body but the bootstrap.
 - `StudioSessionEstablishedSchema` (const) — `StudioSessionEstablishedSchema: z.ZodDiscriminatedUnion<[ typeof StudioSessionEstablishedCookieSchema, typeof StudioSessionEstablishedBearerSchema ]>` — Exactly one of a cookie or a bearer session, discriminated by the mode.
 - `StudioSessionModeSchema` (const) — `StudioSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bearer'; }>` — The session mode, chosen by the caller and never inferred.
+
+#### @arthome/contracts/studio-api
+
+Declarations: `dist/studio-api/index.d.ts` — 1 exported names.
+
+- `studioApi` (const)
 
 #### @arthome/contracts/studio-desk
 
@@ -543,7 +550,7 @@ Declarations: `dist/index.d.ts` — 458 exported names.
 - `Tolerant` (type) — `type Tolerant<T extends string> = KnownMember<T> | UnknownMember;`
 - `UPSTREAMS` (const) — `UPSTREAMS: readonly [...typeof SERVICES, 'realtime']` — Everything a BFF operation may declare as its upstream: the seven services, plus what is depended on without being one.
 - `UnknownMember` (interface)
-- `Upstream` (type) — `type Upstream = (typeof UPSTREAMS)[number];`
+- `Upstream` (type+const)
 - `VatLine` (interface) — One VAT line, PER JURISDICTION — and not per billing market.
 - `VenueClock` (interface) — A venue's time zone, served alongside the UTC instant it qualifies.
 - `VenueId` (type) — `type VenueId = Brand<'VenueId'>;`
@@ -818,9 +825,10 @@ each directory is covered and each entry has a directory, not that the sentence 
 - `packages/contracts/src/money/` — The tax basis of an amount on the wire (subpath @arthome/contracts/money).
 - `packages/contracts/src/openapi/` — The OpenAPI document an api emits from its routes and components, through one zod registry per direction.
 - `packages/contracts/src/pagination/` — Cursor pagination primitives (subpath @arthome/contracts/pagination).
-- `packages/contracts/src/storefront-api/` — The storefront's routes as TypeScript, written by tools/convert-openapi-routes.py from openapi/storefront.yaml and checked against it by the round-trip report.
+- `packages/contracts/src/storefront-api/` — Every operation of the storefront contract, declared as TypeScript: the source of openapi/storefront.yaml.
 - `packages/contracts/src/streaming/` — Watching: the entitlement verdict, the playback ticket and its renewal, and what interrupts a run.
 - `packages/contracts/src/studio-access/` — Who may operate, and with what: the actor, their effective rights, and the bootstrap a studio surface is handed on sign-in. Separate from `identity` because the two products' session shapes genuinely differ — a viewer receives a ViewerContext, a control room receives a StudioBootstrap.
+- `packages/contracts/src/studio-api/` — Every operation of the studio contract, declared as TypeScript: the source of openapi/studio.yaml.
 - `packages/contracts/src/studio-desk/` — Moderation, the audience, the inbox and the journal — the duty desk.
 - `packages/contracts/src/studio-money/` — Payouts, bank changes, reconciliation periods, statistics, and the dashboard they feed.
 - `packages/contracts/src/studio-stage/` — Operating a date: its sheet, its run console, its health, its uploads and its stream key.

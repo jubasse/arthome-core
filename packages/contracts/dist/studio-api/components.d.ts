@@ -1,0 +1,35 @@
+import { z } from 'zod';
+import { Surface } from '@arthome/core';
+import type { VocabularyIn } from '@arthome/core/schema';
+import { StudioErrorEnvelopeSchema } from '../envelope/index.js';
+import type { AccessorOf, Header, HeaderParameter, JsonResponse, PathParameter, QueryParameter } from '../http/index.js';
+declare const SURFACE: readonly [typeof Surface.STUDIO_WEB, typeof Surface.STUDIO_MOBILE];
+declare const SORT_DIR: readonly ["asc", "desc"];
+declare const STUDIO_TAGS: readonly ["bootstrap", "agenda", "publication", "ticketing", "run", "moderation", "crew", "payouts", "channel"];
+/** The tags this document groups its operations by. */
+export declare const StudioTag: AccessorOf<typeof STUDIO_TAGS>;
+export declare const TraceparentParameter: HeaderParameter<'traceparent', z.ZodString>;
+export declare const SurfaceParameter: HeaderParameter<'X-Arthome-Surface', VocabularyIn<typeof SURFACE>, true>;
+export declare const IdempotencyKeyParameter: HeaderParameter<'Idempotency-Key', z.ZodString, true>;
+export declare const IfRightsVersionParameter: HeaderParameter<'If-Rights-Version', z.ZodNumber>;
+export declare const ChannelIdParameter: PathParameter<'channelId', z.ZodString>;
+export declare const DateIdParameter: PathParameter<'dateId', z.ZodString>;
+export declare const PageParameter: QueryParameter<'page', z.ZodDefault<z.ZodInt>>;
+export declare const PageSizeParameter: QueryParameter<'pageSize', z.ZodDefault<z.ZodInt>>;
+export declare const SortByParameter: QueryParameter<'sortBy', z.ZodString>;
+export declare const SortDirParameter: QueryParameter<'sortDir', z.ZodDefault<VocabularyIn<typeof SORT_DIR>>>;
+export declare const CursorParameter: QueryParameter<'cursor', z.ZodString>;
+export declare const LimitParameter: QueryParameter<'limit', z.ZodDefault<z.ZodInt>>;
+export declare const ServedAtHeader: Header;
+export declare const RightsVersionHeader: Header;
+export declare const IdempotencyReplayedHeader: Header;
+export declare const BadRequestResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const UnauthorizedResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const ForbiddenResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const NotFoundResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const ConflictResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const GoneResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const TooManyRequestsResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const UnavailableResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export {};
+//# sourceMappingURL=components.d.ts.map

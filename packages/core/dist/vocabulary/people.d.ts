@@ -107,6 +107,16 @@ export declare const Service: {
  */
 export declare const UPSTREAMS: readonly [...typeof SERVICES, 'realtime'];
 export type Upstream = (typeof UPSTREAMS)[number];
+export declare const Upstream: {
+    readonly IDENTITY: "identity";
+    readonly CATALOG: "catalog";
+    readonly TICKETING: "ticketing";
+    readonly STREAMING: "streaming";
+    readonly CHAT: "chat";
+    readonly PAYOUTS: "payouts";
+    readonly NOTIFICATIONS: "notifications";
+    readonly REALTIME: "realtime";
+};
 /**
  * Where a decision was taken — the studio journal is by-name and situated, and
  * `system` is an actor like any other (standby screen, lease expiry).

@@ -7,17 +7,131 @@ import {
 } from '@arthome/core/schema';
 
 import {
+  addPasskey,
+  addPaymentMethod,
+  addToWatchlist,
+  cancelAccountDeletion,
+  changePassword,
+  clearReminder,
+  confirmEmailVerification,
+  contactSupport,
+  createSavedSearch,
+  deleteSavedSearch,
+  disableTwoFactor,
+  enableTwoFactor,
+  exchangeOneTimeToken,
+  followArtist,
+  getAccountScreen,
+  getExport,
+  listFollowedArtists,
+  listMyOrders,
+  listMyReplays,
+  listMyTickets,
+  listNotifications,
+  listSavedSearches,
+  listWatchlist,
+  markNotificationsRead,
+  removeFromWatchlist,
+  removePasskey,
+  removePaymentMethod,
+  requestAccountDeletion,
+  requestExport,
+  requestPasswordReset,
+  resendEmailVerification,
+  resetPassword,
+  revokeDevice,
+  setReminder,
+  signIn,
+  signOut,
+  signOutProfile,
+  signUp,
+  startSocialSignIn,
+  unfollowArtist,
+  updateConsents,
+  updateNotificationPreferences,
+  updatePreferences,
+  updateProfile,
+  updateSavedSearch,
+  verifyTwoFactor,
+} from './account.js';
+import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
+import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
+import {
+  addCartLine,
+  cancelSeat,
+  cancelSubscription,
+  checkoutCart,
+  enterSalesQueue,
+  getCart,
+  getOrder,
+  getSalesQueuePosition,
+  joinWaitlist,
+  leaveWaitlist,
+  listPlans,
+  purchaseSeat,
+  quoteCart,
+  quoteSeat,
+  refreshDateAvailability,
+  removeCartLine,
+  setSubscriptionPlan,
+  updateCartLine,
+} from './commerce.js';
+import {
+  AdmissionTokenParameter,
+  ArtistIdParameter,
   BadRequestResponse,
   CacheControlPublicHeader,
+  CategoryIdParameter,
+  ConflictResponse,
+  CsrfRefusedResponse,
+  CursorDirectionParameter,
   CursorParameter,
+  DateIdParameter,
+  ForbiddenResponse,
   GoneResponse,
+  IdempotencyKeyParameter,
+  IdempotencyReplayedHeader,
+  LateEntryAcknowledgedParameter,
   LimitParameter,
+  NotFoundResponse,
+  RetryAfterMsHeader,
+  ServedAtHeader,
   StorefrontTag,
   SurfaceParameter,
+  TooManyRequestsResponse,
   TraceparentParameter,
+  UnauthorizedResponse,
+  UnavailableResponse,
   VaryAuthHeader,
+  ViewerTimezoneParameter,
 } from './components.js';
-import { search } from './discovery.js';
+import { getDateDetail } from './date.js';
+import {
+  extendRail,
+  getArtistDetail,
+  getCategoryScreen,
+  getHomeScreen,
+  getLiveScreen,
+  listArtists,
+  listCategories,
+  listReplays,
+  resolvePublicLink,
+  search,
+} from './discovery.js';
+import {
+  cancelPairing,
+  createPairing,
+  decidePairing,
+  engagePairing,
+  getAccountDeepLink,
+  pollPairing,
+} from './pairing.js';
+import {
+  openPlayback,
+  recordPlaybackPosition,
+  releasePlayback,
+  renewPlaybackTicket,
+} from './playback.js';
 import {
   ArtistDetailSchema,
   ArtistSummarySchema,
@@ -95,7 +209,100 @@ import {
   TicketCardSchema,
 } from '../ticketing/index.js';
 
-export const storefrontApi: Api<{ search: typeof search }> = defineApi({
+export const storefrontApi: Api<{
+  registerDevice: typeof registerDevice;
+  getViewerContext: typeof getViewerContext;
+  listChanges: typeof listChanges;
+  signUp: typeof signUp;
+  signIn: typeof signIn;
+  signOut: typeof signOut;
+  confirmEmailVerification: typeof confirmEmailVerification;
+  resendEmailVerification: typeof resendEmailVerification;
+  requestPasswordReset: typeof requestPasswordReset;
+  resetPassword: typeof resetPassword;
+  startSocialSignIn: typeof startSocialSignIn;
+  exchangeOneTimeToken: typeof exchangeOneTimeToken;
+  changePassword: typeof changePassword;
+  enableTwoFactor: typeof enableTwoFactor;
+  disableTwoFactor: typeof disableTwoFactor;
+  verifyTwoFactor: typeof verifyTwoFactor;
+  addPasskey: typeof addPasskey;
+  removePasskey: typeof removePasskey;
+  addPaymentMethod: typeof addPaymentMethod;
+  removePaymentMethod: typeof removePaymentMethod;
+  getAccountScreen: typeof getAccountScreen;
+  listMyTickets: typeof listMyTickets;
+  listMyReplays: typeof listMyReplays;
+  listWatchlist: typeof listWatchlist;
+  addToWatchlist: typeof addToWatchlist;
+  removeFromWatchlist: typeof removeFromWatchlist;
+  listFollowedArtists: typeof listFollowedArtists;
+  followArtist: typeof followArtist;
+  unfollowArtist: typeof unfollowArtist;
+  setReminder: typeof setReminder;
+  clearReminder: typeof clearReminder;
+  listSavedSearches: typeof listSavedSearches;
+  createSavedSearch: typeof createSavedSearch;
+  updateSavedSearch: typeof updateSavedSearch;
+  deleteSavedSearch: typeof deleteSavedSearch;
+  listMyOrders: typeof listMyOrders;
+  listNotifications: typeof listNotifications;
+  markNotificationsRead: typeof markNotificationsRead;
+  updateProfile: typeof updateProfile;
+  updatePreferences: typeof updatePreferences;
+  updateNotificationPreferences: typeof updateNotificationPreferences;
+  updateConsents: typeof updateConsents;
+  revokeDevice: typeof revokeDevice;
+  signOutProfile: typeof signOutProfile;
+  requestExport: typeof requestExport;
+  getExport: typeof getExport;
+  requestAccountDeletion: typeof requestAccountDeletion;
+  cancelAccountDeletion: typeof cancelAccountDeletion;
+  contactSupport: typeof contactSupport;
+  getHomeScreen: typeof getHomeScreen;
+  getLiveScreen: typeof getLiveScreen;
+  listCategories: typeof listCategories;
+  getCategoryScreen: typeof getCategoryScreen;
+  listArtists: typeof listArtists;
+  getArtistDetail: typeof getArtistDetail;
+  search: typeof search;
+  listReplays: typeof listReplays;
+  extendRail: typeof extendRail;
+  resolvePublicLink: typeof resolvePublicLink;
+  listPlans: typeof listPlans;
+  refreshDateAvailability: typeof refreshDateAvailability;
+  quoteSeat: typeof quoteSeat;
+  enterSalesQueue: typeof enterSalesQueue;
+  getSalesQueuePosition: typeof getSalesQueuePosition;
+  purchaseSeat: typeof purchaseSeat;
+  getOrder: typeof getOrder;
+  cancelSeat: typeof cancelSeat;
+  joinWaitlist: typeof joinWaitlist;
+  leaveWaitlist: typeof leaveWaitlist;
+  getCart: typeof getCart;
+  addCartLine: typeof addCartLine;
+  updateCartLine: typeof updateCartLine;
+  removeCartLine: typeof removeCartLine;
+  quoteCart: typeof quoteCart;
+  checkoutCart: typeof checkoutCart;
+  setSubscriptionPlan: typeof setSubscriptionPlan;
+  cancelSubscription: typeof cancelSubscription;
+  getDateDetail: typeof getDateDetail;
+  openPlayback: typeof openPlayback;
+  renewPlaybackTicket: typeof renewPlaybackTicket;
+  releasePlayback: typeof releasePlayback;
+  recordPlaybackPosition: typeof recordPlaybackPosition;
+  listChatMessages: typeof listChatMessages;
+  sendChatMessage: typeof sendChatMessage;
+  sendReaction: typeof sendReaction;
+  reportChatMessage: typeof reportChatMessage;
+  createPairing: typeof createPairing;
+  pollPairing: typeof pollPairing;
+  cancelPairing: typeof cancelPairing;
+  engagePairing: typeof engagePairing;
+  decidePairing: typeof decidePairing;
+  getAccountDeepLink: typeof getAccountDeepLink;
+}> = defineApi({
   openapi: '3.1.1',
   'x-arthome-codes-source': 'ERROR_CODES',
   info: {
@@ -168,16 +375,114 @@ export const storefrontApi: Api<{ search: typeof search }> = defineApi({
     },
   ],
   routes: {
+    registerDevice,
+    getViewerContext,
+    listChanges,
+    signUp,
+    signIn,
+    signOut,
+    confirmEmailVerification,
+    resendEmailVerification,
+    requestPasswordReset,
+    resetPassword,
+    startSocialSignIn,
+    exchangeOneTimeToken,
+    changePassword,
+    enableTwoFactor,
+    disableTwoFactor,
+    verifyTwoFactor,
+    addPasskey,
+    removePasskey,
+    addPaymentMethod,
+    removePaymentMethod,
+    getAccountScreen,
+    listMyTickets,
+    listMyReplays,
+    listWatchlist,
+    addToWatchlist,
+    removeFromWatchlist,
+    listFollowedArtists,
+    followArtist,
+    unfollowArtist,
+    setReminder,
+    clearReminder,
+    listSavedSearches,
+    createSavedSearch,
+    updateSavedSearch,
+    deleteSavedSearch,
+    listMyOrders,
+    listNotifications,
+    markNotificationsRead,
+    updateProfile,
+    updatePreferences,
+    updateNotificationPreferences,
+    updateConsents,
+    revokeDevice,
+    signOutProfile,
+    requestExport,
+    getExport,
+    requestAccountDeletion,
+    cancelAccountDeletion,
+    contactSupport,
+    getHomeScreen,
+    getLiveScreen,
+    listCategories,
+    getCategoryScreen,
+    listArtists,
+    getArtistDetail,
     search,
+    listReplays,
+    extendRail,
+    resolvePublicLink,
+    listPlans,
+    refreshDateAvailability,
+    quoteSeat,
+    enterSalesQueue,
+    getSalesQueuePosition,
+    purchaseSeat,
+    getOrder,
+    cancelSeat,
+    joinWaitlist,
+    leaveWaitlist,
+    getCart,
+    addCartLine,
+    updateCartLine,
+    removeCartLine,
+    quoteCart,
+    checkoutCart,
+    setSubscriptionPlan,
+    cancelSubscription,
+    getDateDetail,
+    openPlayback,
+    renewPlaybackTicket,
+    releasePlayback,
+    recordPlaybackPosition,
+    listChatMessages,
+    sendChatMessage,
+    sendReaction,
+    reportChatMessage,
+    createPairing,
+    pollPairing,
+    cancelPairing,
+    engagePairing,
+    decidePairing,
+    getAccountDeepLink,
   },
   components: {
     securitySchemes: {
       sessionCookie: {
         type: 'apiKey',
         in: 'cookie',
-        name: 'arthome_session',
+        name: '__Host-arthome_session',
         description:
-          'Opaque `better-auth` session, carried by an `HttpOnly`/`Secure`/`SameSite=Lax` cookie. This\nis the form chosen for `storefront-web`, which renders on the server and whose cached\nfunctions can read neither cookie nor header on the static render path.\n',
+          "Opaque `better-auth` session, carried by an `HttpOnly`/`Secure`/`SameSite=Lax` cookie. This\nis the form chosen for `storefront-web`, which renders on the server and whose cached\nfunctions can read neither cookie nor header on the static render path.\n\n**`__Host-`, on every cookie of this mode**: the browser then accepts it only `Secure`, on\npath `/` and with no `Domain`, so a sibling subdomain cannot plant a session (its own, with\nits CSRF pair) for the BFF to act on.\n\n**In this mode, a request that writes carries `X-Arthome-Csrf`**: the value of the\n`__Host-arthome_csrf` cookie the BFF sets beside the session cookie, readable by the page and bound\nto that session. Without it, or with another session's, the BFF answers `403`\n`api.forbidden`. Each such write declares it: the `csrfToken` scheme beside this one, and\nthe `CsrfRefused` response. `GET`, `HEAD` and `OPTIONS` carry none, and neither does a request without\nthe session cookie: sign-up and sign-in are what set it. `signOut` needs none either: a\nforged one ends a session and grants nothing, and a browser that lost its CSRF cookie must\nstill be able to sign out.\n",
+      },
+      csrfToken: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-Arthome-Csrf',
+        description:
+          "The `__Host-arthome_csrf` cookie's value, echoed by a write made with the session cookie\n(see `sessionCookie`). Required together with it, never with a bearer token.\n",
       },
       bearerToken: {
         type: 'http',
@@ -197,16 +502,34 @@ export const storefrontApi: Api<{ search: typeof search }> = defineApi({
     parameters: {
       Traceparent: TraceparentParameter,
       Surface: SurfaceParameter,
+      ViewerTimezone: ViewerTimezoneParameter,
+      IdempotencyKey: IdempotencyKeyParameter,
+      AdmissionToken: AdmissionTokenParameter,
+      LateEntryAcknowledged: LateEntryAcknowledgedParameter,
       Cursor: CursorParameter,
+      CursorDirection: CursorDirectionParameter,
       Limit: LimitParameter,
+      DateId: DateIdParameter,
+      ArtistId: ArtistIdParameter,
+      CategoryId: CategoryIdParameter,
     },
     headers: {
+      ServedAt: ServedAtHeader,
+      IdempotencyReplayed: IdempotencyReplayedHeader,
+      RetryAfterMs: RetryAfterMsHeader,
       CacheControlPublic: CacheControlPublicHeader,
       VaryAuth: VaryAuthHeader,
     },
     responses: {
       BadRequest: BadRequestResponse,
+      Unauthorized: UnauthorizedResponse,
+      CsrfRefused: CsrfRefusedResponse,
+      Forbidden: ForbiddenResponse,
+      NotFound: NotFoundResponse,
+      Conflict: ConflictResponse,
       Gone: GoneResponse,
+      TooManyRequests: TooManyRequestsResponse,
+      Unavailable: UnavailableResponse,
     },
     schemas: {
       EnvelopeMeta: StorefrontEnvelopeMetaSchema,
