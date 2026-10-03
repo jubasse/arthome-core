@@ -70,8 +70,8 @@ export declare const ViewerContextSchema: z.ZodObject<{
     }, z.core.$loose>>>;
     preferences: z.ZodOptional<typeof ViewerPreferencesSchema>;
     constants: typeof DomainConstantsSchema;
-    labelCatalog: typeof LabelArtifactRefSchema;
-    taxonomyArtifact: typeof LabelArtifactRefSchema;
+    labelCatalog: z.ZodNullable<typeof LabelArtifactRefSchema>;
+    taxonomyArtifact: z.ZodNullable<typeof LabelArtifactRefSchema>;
     realtime: z.ZodOptional<z.ZodObject<{
         namespace: z.ZodOptional<z.ZodString>;
         pulseIntervalSec: z.ZodOptional<z.ZodNumber>;

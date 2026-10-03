@@ -4,7 +4,7 @@
  *
  * WHY THIS IS THE FIRST SHAPE IN THE PACKAGE. `check-openapi.py` R15 requires
  * every 2xx response in both contracts to compose this object, so it is the one
- * schema that appears in all 174 operations. If the emitted form of anything is
+ * schema that appears in every operation. If the emitted form of anything is
  * going to be wrong, it is cheapest to find out here.
  *
  * `looseObject`, NOT `object`, AND THE ASYMMETRY IS THE POINT.

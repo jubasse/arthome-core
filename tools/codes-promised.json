@@ -32,12 +32,6 @@
   ],
   "allow": [
     {
-      "code": "api.token_expired",
-      "kind": "promised",
-      "named_in": ["architecture/transport.md"],
-      "reason": "No BFF exists to mint or expire a token; adr-auth.md is Status: proposed. 401 is served today as api.unauthenticated, which D-069's standing exception makes correct rather than vague."
-    },
-    {
       "code": "pairing.expired",
       "kind": "promised",
       "named_in": ["architecture/transport.md"],

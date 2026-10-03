@@ -33,6 +33,7 @@
   "packages/core/src/moderation": "Moderation: three separate axes, two counters and a written precedence.",
   "packages/core/src/money": "Money in whole minor units, rates in basis points and one rounding rule.",
   "packages/core/src/notification": "The notification thresholds as domain rules, not screen copy.",
+  "packages/core/src/identity": "Identity's rules: the generated handle, how long each credential lives, the internal token, the sign-in doors' caps.",
   "packages/core/src/pairing": "Device pairing: the short code a television shows and a phone retypes.",
   "packages/core/src/payment": "The payment ports: what the domain asks of a provider, and nothing of how.",
   "packages/core/src/payout": "Artist payout: commission, VAT by jurisdiction, net and withholding.",

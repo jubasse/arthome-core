@@ -240,6 +240,14 @@ paths:
         The cookie, when there is one, is set on the **BFF's domain** — that is what lets the
         server renderer read it, and what keeps critical rule 1 free of an exception through the
         authentication door.
+
+        **The public handle is generated, neutral, and changeable later** through `updateProfile`
+        (D-101): a sign-up never fails on a handle, and nothing personal becomes public by
+        default. A verification link is emailed at once; an unverified address blocks nothing
+        (D-100), and `ViewerContext.account.emailVerified` says where it stands.
+
+        **A taken email answers `409` `identity.email_taken`** (D-099). The status alone says the
+        address is registered, so what bounds enumeration is the rate limit, answered `429`.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
       security: []
@@ -253,17 +261,27 @@ paths:
           application/json:
             schema:
               type: object
-              required: [email, password, mode, acceptedTermsVersion]
+              required: [email, password, mode, acceptedTermsVersion, locale]
               properties:
                 email: { type: string, format: email }
-                password: { type: string, minLength: 12 }
+                password: { type: string, minLength: 12, maxLength: 128 }
                 displayName: { type: string, maxLength: 80 }
                 mode: { $ref: '#/components/schemas/SessionMode' }
                 deviceId: { type: [string, 'null'], format: uuid }
                 acceptedTermsVersion:
                   type: integer
                   description: '**Timestamped by the server, versioned**: a consent without a version or a date is worth nothing.'
-            example: { email: marie@example.org, password: 'a-long-password', displayName: 'Marie J.', mode: cookie, acceptedTermsVersion: 3 }
+                locale:
+                  type: string
+                  description: |
+                    The language the account's emails are written in, starting with the welcome and the
+                    verification link. **Strict, as an input**: a locale we cannot render is refused
+                    rather than answered in another language. The country is not asked: the server
+                    resolves it.
+                  enum: [fr, en]
+                  x-arthome-vocabulary-source: LOCALES
+                  examples: [fr]
+            example: { email: marie@example.org, password: 'a-long-password', displayName: 'Marie J.', mode: cookie, acceptedTermsVersion: 3, locale: fr }
       responses:
         '201':
           description: Account created and session opened, in the requested mode.
@@ -283,7 +301,7 @@ paths:
                     deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
                     signedIn: true
                     profiles: []
-                    constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 10, reactionQuotaPerDate: 20, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
+                    constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 10, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
                     labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json' }
                     taxonomyArtifact: { locale: fr, version: 12, url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json' }
         '400': { $ref: '#/components/responses/BadRequest' }
@@ -303,7 +321,7 @@ paths:
       tags: [account]
       summary: Opens a session with email and password.
       description: |
-        Same relay, same translation into codes: `INVALID_CREDENTIALS` **never** distinguishes an
+        Same relay, same translation into codes: `identity.invalid_credentials` **never** distinguishes an
         unknown email from a wrong password — the distinction would tell an attacker which accounts
         exist.
 
@@ -334,7 +352,7 @@ paths:
               required: [email, password, mode]
               properties:
                 email: { type: string, format: email }
-                password: { type: string }
+                password: { type: string, maxLength: 128 }
                 mode: { $ref: '#/components/schemas/SessionMode' }
                 deviceId: { type: [string, 'null'], format: uuid }
             example: { email: marie@example.org, password: 'a-long-password', mode: bearer, deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77 }
@@ -360,11 +378,11 @@ paths:
                     deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
                     signedIn: true
                     profiles: []
-                    constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 6, reactionQuotaPerDate: 20, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
+                    constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 6, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
                     labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json' }
                     taxonomyArtifact: { locale: fr, version: 12, url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json' }
         '401':
-          description: '`INVALID_CREDENTIALS`, or `identity.two_factor_required` with its `challengeId`.'
+          description: '`identity.invalid_credentials`, or `identity.two_factor_required` with its `challengeId`.'
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -414,6 +432,102 @@ paths:
                 servedAt: '2026-09-21T23:00:00.000Z'
                 data: { signedOut: true }
         '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/auth/verify-email:
+    post:
+      operationId: confirmEmailVerification
+      tags: [account]
+      summary: Confirms an email address from the link sent to it.
+      description: |
+        **The link points at the surface, never at the API**, which sends its token here. No
+        session is needed: the link is opened on whatever device read the email.
+
+        **The token is spent by its first use and expires** (`adr-auth.md` §6.7). An unknown, an
+        expired and an already used token all answer the same `410`
+        `identity.verification_link_invalid`: telling them apart would say which tokens were ever
+        issued. A replay under the same `Idempotency-Key` answers the first `200` again.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      x-arthome-invalidates: ['account:profile']
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, minLength: 1, maxLength: 256 }
+            example: { token: 'vrf_4b2c9e1f7a0d' }
+      responses:
+        '200':
+          description: The address is verified.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { type: object, required: [verified], properties: { verified: { type: boolean } } }
+              example:
+                servedAt: '2026-09-21T18:05:00.000Z'
+                data: { verified: true }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '410':
+          description: '`identity.verification_link_invalid`: unknown, expired or already used, one answer for the three.'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example:
+                error: { code: identity.verification_link_invalid, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+                servedAt: '2026-09-21T18:05:00.000Z'
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /v1/auth/verify-email/resend:
+    post:
+      operationId: resendEmailVerification
+      tags: [account]
+      summary: Queues a fresh verification link for the signed-in account's address.
+      description: |
+        The fresh link replaces the earlier ones, which stop working. **`queued: true`** says the
+        link is recorded for `notifications` to send, which owns the sending; it does not say an
+        email left. **`queued: false` when the address is already verified**: nothing is queued,
+        and that is not a refusal.
+      x-arthome-maturity: stable
+      x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/Surface'
+        - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: A link was queued for sending, or the address is already verified.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EnvelopeMeta'
+                  - type: object
+                    required: [data]
+                    properties:
+                      data: { type: object, required: [queued], properties: { queued: { type: boolean } } }
+              example:
+                servedAt: '2026-09-21T18:06:00.000Z'
+                data: { queued: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
 
   /v1/auth/forget-password:
     post:
@@ -494,7 +608,7 @@ paths:
               required: [token, password]
               properties:
                 token: { type: string }
-                password: { type: string, minLength: 12 }
+                password: { type: string, minLength: 12, maxLength: 128 }
             example: { token: rst_9f2ac1, password: 'a-new-password' }
       responses:
         '200':
@@ -633,7 +747,7 @@ paths:
                     deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
                     signedIn: true
                     profiles: []
-                    constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 6, reactionQuotaPerDate: 20, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
+                    constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 6, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
                     labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json' }
                     taxonomyArtifact: { locale: fr, version: 12, url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json' }
         '410': { $ref: '#/components/responses/Gone' }
@@ -652,6 +766,10 @@ paths:
         you do not sign yourself out by changing your password.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -683,6 +801,7 @@ paths:
                 servedAt: '2026-09-21T18:57:00.000Z'
                 data: { changed: true, otherSessionsRevoked: 2 }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
   /v1/auth/two-factor:
@@ -699,6 +818,10 @@ paths:
         the studio side: the contract refuses it without one.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -738,6 +861,7 @@ paths:
                   otpauthUri: 'otpauth://totp/Arthome:marie%40example.org?secret=JBSWY3DP&issuer=Arthome'
                   backupCodes: ['7K2M-9QP4', 'X3N8-2VTR']
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
     delete:
       operationId: disableTwoFactor
       tags: [account]
@@ -745,6 +869,10 @@ paths:
       description: '**Re-authentication required**: disabling a second factor is exactly what a session thief would try first.'
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -774,6 +902,7 @@ paths:
                 servedAt: '2026-09-21T18:58:30.000Z'
                 data: { twoFactorEnabled: false }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/auth/two-factor/verify:
     post:
@@ -822,7 +951,7 @@ paths:
                     deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
                     signedIn: true
                     profiles: []
-                    constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 10, reactionQuotaPerDate: 20, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
+                    constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 10, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
                     labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json' }
                     taxonomyArtifact: { locale: fr, version: 12, url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json' }
         '401': { $ref: '#/components/responses/Unauthorized' }
@@ -839,6 +968,10 @@ paths:
         hardware.**
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -876,6 +1009,7 @@ paths:
                   registrationOptions: { challenge: 'k7M2pQ', rp: { id: arthome.fr, name: Arthome } }
                   expiresAt: '2026-09-21T19:04:00Z'
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/passkeys/{passkeyId}:
     delete:
@@ -885,6 +1019,10 @@ paths:
       description: '**Refused if it is the account''s last credential** (`LAST_CREDENTIAL`): an account with no way to sign in is a lost account.'
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - name: passkeyId
           in: path
@@ -908,6 +1046,7 @@ paths:
                 servedAt: '2026-09-21T18:59:30.000Z'
                 data: { removed: true }
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/viewer-context:
     get:
@@ -964,7 +1103,6 @@ paths:
                     waitlistPriorityWindowHours: 2
                     chatRateLimitPerSecond: 2
                     chatCatchUpMessages: 20
-                    reactionQuotaPerDate: 20
                     reminderLeadMinutes: 30
                     replayExpiryWarningHours: 6
                     previewSecondsTotal: 300
@@ -1985,6 +2123,10 @@ paths:
         replayed quote would be a quote **already part-spent, or expired** — or a price that the
         pro-rata promotion has since made wrong. Same reason as a token renewal: what is being asked
         for is a fresh value.
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
@@ -2031,6 +2173,7 @@ paths:
                   validUntil: '2026-09-21T18:42:10.000Z'
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/dates/{dateId}/sales-queue:
     put:
@@ -2059,6 +2202,10 @@ paths:
         first entry and answers its current state. A key would put a durable write per entrant in
         front of the queue built to shed that load, and would replay a position that is stale seconds
         after it was served.
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
@@ -2088,6 +2235,7 @@ paths:
                   estimatedWaitSec: 95
                   pollIntervalSec: 2
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
         '404': { $ref: '#/components/responses/NotFound' }
     get:
       operationId: getSalesQueuePosition
@@ -2181,6 +2329,10 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
       x-arthome-invalidates: ['account:tickets', 'date:{dateId}:availability']
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/AdmissionToken'
@@ -2285,6 +2437,8 @@ paths:
             `order.sales_queue_admission_required`: the date's sales queue is armed and the admission is
             absent, lapsed, or issued to another account or date. The surface enters the queue
             (`enterSalesQueue`) and comes back with the admission it is served.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -2360,6 +2514,10 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
       x-arthome-invalidates: ['account:payment-methods']
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -2404,6 +2562,7 @@ paths:
                   returnUrl: 'https://arthome.fr/compte/securite?setup=seti_1Ab2Cd'
                   expiresAt: '2026-09-21T19:25:20Z'
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/payment-methods/{paymentMethodId}:
     delete:
@@ -2416,6 +2575,10 @@ paths:
         plan that nobody intended.
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - name: paymentMethodId
           in: path
@@ -2439,6 +2602,7 @@ paths:
                 servedAt: '2026-09-21T18:56:00.000Z'
                 data: { removed: true }
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/seats/{seatId}/cancel:
     post:
@@ -2452,6 +2616,10 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
       x-arthome-invalidates: ['account:tickets', 'date:{dateId}:availability']
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - name: seatId
           in: path
@@ -2519,6 +2687,7 @@ paths:
                   date: { id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001 }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/dates/{dateId}/waitlist:
     put:
@@ -2531,6 +2700,10 @@ paths:
         window (2 h) is served, never hardcoded in the surface.
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -2561,6 +2734,7 @@ paths:
                 data: { joined: true, rankDisclosed: false, rank: null, priorityWindowHours: 2 }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
     delete:
       operationId: leaveWaitlist
       tags: [commerce]
@@ -2570,6 +2744,10 @@ paths:
         succeeds — an offline queue replays, and a failure there would be a false negative.
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -2590,6 +2768,7 @@ paths:
                 servedAt: '2026-09-21T18:43:00.000Z'
                 data: { joined: false }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   # =============================================================== cart and shop
 
@@ -2634,6 +2813,10 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
       x-arthome-invalidates: ['account:cart']
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -2667,6 +2850,7 @@ paths:
                   lines: [{ id: 019928f6-0000-7000-8000-000000000001, itemId: 019928a0-7d31-7a10-b8c4-2f9e11a4d001, variantId: M, channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222, quantity: 1, unitPrice: { amountMinor: 2500, currencyCode: EUR }, version: 1 }]
                   vendorGroups: [{ channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222, lineIds: [019928f6-0000-7000-8000-000000000001] }]
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/cart/lines/{lineId}:
     patch:
@@ -2678,6 +2862,10 @@ paths:
         server** — `version`, never a date from the phone, whose clock drifts and jumps.
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - name: lineId
           in: path
@@ -2713,6 +2901,7 @@ paths:
                 data: { lines: [], vendorGroups: [] }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
     delete:
       operationId: removeCartLine
       tags: [commerce]
@@ -2722,6 +2911,10 @@ paths:
         vendor, so the surface repaints without a second round trip.
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - name: lineId
           in: path
@@ -2745,6 +2938,7 @@ paths:
                 servedAt: '2026-09-21T18:45:00.000Z'
                 data: { lines: [], vendorGroups: [] }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/cart/quote:
     post:
@@ -2767,6 +2961,10 @@ paths:
         and that promise holds for **fifteen minutes**. Serving a memorised quote would return a
         total whose window is part-spent or closed, that is, **a binding quote that no longer
         binds**. A replay therefore produces a fresh quote, with its own window.
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/Surface'
         - $ref: '#/components/parameters/Traceparent'
@@ -2804,6 +3002,7 @@ paths:
                       discount: { discountReasonCode: plan_shop_discount, amount: { amountMinor: -750, currencyCode: EUR } }
                       total: { amountMinor: 4840, currencyCode: EUR }
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/orders/merch:
     post:
@@ -2820,6 +3019,10 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
       x-arthome-invalidates: ['account:orders', 'account:cart']
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -2905,6 +3108,7 @@ paths:
                 error: { code: order.quote_address_mismatch, nature: refused, params: { quotedCountryCode: FR, quotedPostalCode: '75011' }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
                 servedAt: '2026-09-21T18:46:00.000Z'
         '410': { $ref: '#/components/responses/Gone' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/subscription:
     put:
@@ -2919,6 +3123,10 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
       x-arthome-invalidates: ['account:subscription', 'home:rails', 'account:tickets']
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -2977,6 +3185,7 @@ paths:
                 error: { code: order.payment_declined, nature: refused, params: { declineCode: insufficient_funds }, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
                 servedAt: '2026-09-21T18:47:00.000Z'
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
     delete:
       operationId: cancelSubscription
       tags: [commerce]
@@ -2988,6 +3197,10 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [ticketing]
       x-arthome-invalidates: ['account:subscription']
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -3007,6 +3220,7 @@ paths:
                 servedAt: '2026-09-21T18:48:00.000Z'
                 data: { planTier: premium, state: active, currentPeriodEnd: '2026-10-21T18:47:00Z', cancelAtPeriodEnd: true }
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   # =============================================================== playback
 
@@ -3038,6 +3252,10 @@ paths:
         by memorisation. Adding a key would additionally memorise a `PlaybackTicket` — hence a signed
         token and its expiry instant — in a 24-hour store, for a response the contract says is
         **never** cached.
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
@@ -3126,6 +3344,8 @@ paths:
             different screen. On `watch.concurrent_limit_reached`, `params.activeSessions` carries the **list
             of active sessions** so the surface can offer to release one: a bare refusal would leave the
             viewer with no way out.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -3164,6 +3384,10 @@ paths:
         response would return a token already part-spent — and, at the worst moment, an already
         expired one — when the call exists precisely to obtain a new one. It is also this renewal
         that carries the concurrent-screen limit: replaying it from a store would bypass the count.
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - name: sessionId
           in: path
@@ -3196,6 +3420,8 @@ paths:
             `watch.preview_exhausted` · `DATE_INTERRUPTED`. `identity.signed_out_elsewhere` is what the television
             signed out from the web sees — **not a network error**. **Real window: up to 120 s** — see
             `revokeDevice`.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -3224,6 +3450,10 @@ paths:
         **Idempotent by nature, and nothing depends on it.** Releasing twice leaves the same state,
         and it is the **expiring lease** that is authoritative — this call merely speeds things up. A
         key would protect an effect that has neither accumulation nor consequence.
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - name: sessionId
           in: path
@@ -3246,6 +3476,7 @@ paths:
                 servedAt: '2026-09-21T20:40:00.000Z'
                 data: { released: true }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/progress/{dateId}:
     put:
@@ -3271,6 +3502,10 @@ paths:
         live show would make the idempotency store the hottest table in `streaming` — to protect a
         write whose loss has no consequence and whose rule is already "last writer wins, server
         ordering". The cost would be per minute of playback and per viewer.
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
@@ -3306,6 +3541,7 @@ paths:
                 servedAt: '2026-09-21T19:35:00.000Z'
                 data: { positionSec: 1840, version: 212 }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   # =============================================================== chat
 
@@ -3379,6 +3615,10 @@ paths:
         refusals.
       x-arthome-maturity: provisional
       x-arthome-upstream: [chat]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -3418,7 +3658,10 @@ paths:
                   badge: published
                   body: { contentLanguage: fr, text: 'Quelle lumière.' }
         '403':
-          description: Chat mode closed, holders only, or the person is sanctioned in this channel.
+          description: |
+            Chat mode closed, holders only, or the person is sanctioned in this channel.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -3442,6 +3685,10 @@ paths:
         **The quota already bounds the effect**, and it is served with the response. A replayed key
         would return a **stale** quota — "17 left" when 12 are left — which is worse than no response
         at all: the surface disables its control on that number.
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/Surface'
@@ -3472,6 +3719,7 @@ paths:
                 servedAt: '2026-09-21T19:36:05.000Z'
                 data: { remaining: 17, rechargesAt: '2026-09-21T19:41:05Z' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/chat/messages/{messageId}/report:
     post:
@@ -3481,6 +3729,10 @@ paths:
       description: A report creates a **queue row** (`reported`), not a sanction. The three axes never stack.
       x-arthome-maturity: provisional
       x-arthome-upstream: [chat]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - name: messageId
           in: path
@@ -3523,6 +3775,7 @@ paths:
                 servedAt: '2026-09-21T19:37:00.000Z'
                 data: { reported: true }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   # =============================================================== pairing
 
@@ -3557,6 +3810,7 @@ paths:
         - deviceToken: []
         - bearerToken: []
         - sessionCookie: []
+          csrfToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/AdmissionToken'
@@ -3612,6 +3866,8 @@ paths:
             `order.sales_queue_admission_required`: a `seat` pairing on a date whose sales queue is armed,
             without a valid admission (D-086). The television enters the queue and opens the pairing once
             admitted.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -3700,6 +3956,7 @@ paths:
         - deviceToken: []
         - bearerToken: []
         - sessionCookie: []
+          csrfToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - name: pairingId
@@ -3742,6 +3999,7 @@ paths:
                   params: { state: engaged, engagedAt: '2026-09-21T18:52:04Z' }
                   traceId: 4bf92f3577b34da6a3ce929d0e0e4736
                 servedAt: '2026-09-21T18:52:06.000Z'
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/pairings/{pairingId}/engagement:
     post:
@@ -3771,6 +4029,7 @@ paths:
       x-arthome-upstream: [identity]
       security:
         - sessionCookie: []
+          csrfToken: []
         - bearerToken: []
       parameters:
         - name: pairingId
@@ -3806,7 +4065,10 @@ paths:
                 servedAt: '2026-09-21T18:52:04.000Z'
                 data: { pairingId: 019928f9-0000-7000-8000-000000000001, intent: seat, state: engaged, pollIntervalSec: 2 }
         '403':
-          description: '`pairing.identity_mismatch`, or `pairing.intent_not_engageable` on `signin`.'
+          description: |
+            `pairing.identity_mismatch`, or `pairing.intent_not_engageable` on `signin`.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -3838,6 +4100,7 @@ paths:
       x-arthome-upstream: [identity]
       security:
         - sessionCookie: []
+          csrfToken: []
         - bearerToken: []
       parameters:
         - name: pairingId
@@ -3878,7 +4141,10 @@ paths:
                 servedAt: '2026-09-21T18:52:00.000Z'
                 data: { pairingId: 019928f9-0000-7000-8000-000000000001, intent: seat, state: approved, pollIntervalSec: 5 }
         '403':
-          description: '`pairing.identity_mismatch` — the bearer is not the profile that opened the pairing. Impossible on `signin`.'
+          description: |
+            `pairing.identity_mismatch` — the bearer is not the profile that opened the pairing. Impossible on `signin`.
+
+            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorEnvelope' }
@@ -4076,6 +4342,10 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
       x-arthome-invalidates: ['home:rails']
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -4096,6 +4366,7 @@ paths:
                 servedAt: '2026-09-21T18:57:20.000Z'
                 data: { id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001, displayState: live, viewerRelations: { inWatchlist: true, reminderSet: false, followsArtist: false } }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
     delete:
       operationId: removeFromWatchlist
       tags: [account]
@@ -4103,6 +4374,10 @@ paths:
       description: Replayed on an already-removed entry, it **succeeds** — an idempotent deletion must not fail.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -4123,6 +4398,7 @@ paths:
                 servedAt: '2026-09-21T18:57:40.000Z'
                 data: { id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001, displayState: live, viewerRelations: { inWatchlist: false, reminderSet: false, followsArtist: false } }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/follows:
     get:
@@ -4203,6 +4479,10 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [identity, notifications]
       x-arthome-invalidates: ['home:rails']
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/ArtistId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -4232,6 +4512,7 @@ paths:
                 servedAt: '2026-09-21T18:58:00.000Z'
                 data: { id: 019928a0-7d31-7a10-b8c4-2f9e11a4c333, channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222, name: Compagnie Verticale, categoryId: dance-contemporary, followedByViewer: true }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
     delete:
       operationId: unfollowArtist
       tags: [account]
@@ -4242,6 +4523,10 @@ paths:
         carried by `notifications`.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/ArtistId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -4262,6 +4547,7 @@ paths:
                 servedAt: '2026-09-21T18:58:20.000Z'
                 data: { id: 019928a0-7d31-7a10-b8c4-2f9e11a4c333, channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222, name: Compagnie Verticale, categoryId: dance-contemporary, followedByViewer: false }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/reminders/{dateId}:
     put:
@@ -4274,6 +4560,10 @@ paths:
         The lead time (30 min) is a **served** domain constant, not a surface choice.
       x-arthome-maturity: provisional
       x-arthome-upstream: [notifications]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -4298,6 +4588,7 @@ paths:
                 servedAt: '2026-09-21T18:59:00.000Z'
                 data: { reminderSet: true, remindAt: '2026-09-21T18:30:00Z' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
     delete:
       operationId: clearReminder
       tags: [account]
@@ -4307,6 +4598,10 @@ paths:
         offline, so it must be safe on replay.
       x-arthome-maturity: provisional
       x-arthome-upstream: [notifications]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/DateId'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -4327,6 +4622,7 @@ paths:
                 servedAt: '2026-09-21T18:59:20.000Z'
                 data: { reminderSet: false }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/saved-searches:
     get:
@@ -4380,6 +4676,10 @@ paths:
         alerts.
       x-arthome-maturity: stable
       x-arthome-upstream: [catalog]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -4418,6 +4718,7 @@ paths:
                 servedAt: '2026-09-21T19:00:20.000Z'
                 data: { id: 019928fa-0000-7000-8000-000000000001, scope: search, name: Danse à Paris, criteria: {}, criteriaVersion: 2, criteriaSignature: 7f3a1c, channels: [push], active: true, newMatchesSinceLastVisit: 0 }
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/saved-searches/{savedSearchId}:
     patch:
@@ -4429,6 +4730,10 @@ paths:
         must converge to the same state, not invert it.
       x-arthome-maturity: stable
       x-arthome-upstream: [catalog]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - name: savedSearchId
           in: path
@@ -4464,6 +4769,7 @@ paths:
                 servedAt: '2026-09-21T19:01:00.000Z'
                 data: { id: 019928fa-0000-7000-8000-000000000001, scope: search, criteria: {}, criteriaVersion: 2, criteriaSignature: 7f3a1c, channels: [push], active: false, newMatchesSinceLastVisit: 0 }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
     delete:
       operationId: deleteSavedSearch
       tags: [account]
@@ -4471,6 +4777,10 @@ paths:
       description: '**Replayed on an already-deleted entry, it succeeds** — that is what an offline queue requires.'
       x-arthome-maturity: stable
       x-arthome-upstream: [catalog]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - name: savedSearchId
           in: path
@@ -4494,6 +4804,7 @@ paths:
                 servedAt: '2026-09-21T19:01:20.000Z'
                 data: { deleted: true }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/orders:
     get:
@@ -4581,6 +4892,10 @@ paths:
       description: '**Monotonic: one does not un-read.** Replayed, it changes nothing — which is what makes it safe in an offline queue.'
       x-arthome-maturity: provisional
       x-arthome-upstream: [notifications]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -4610,6 +4925,7 @@ paths:
                 servedAt: '2026-09-21T19:03:20.000Z'
                 data: { unreadCount: 0 }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/profile:
     patch:
@@ -4620,6 +4936,10 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
       x-arthome-invalidates: ['account:profile']
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -4654,6 +4974,7 @@ paths:
                 version: 8
                 data: { displayName: 'Marie J.', publicHandle: '@marie.j' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/preferences:
     patch:
@@ -4670,6 +4991,10 @@ paths:
         would overwrite settings made from the web.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -4702,6 +5027,7 @@ paths:
                   account: { interfaceLocale: fr, readingTimezone: Europe/Paris }
                   device: { subtitleSizeStep: 2, reduceMotion: true }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/notification-preferences:
     patch:
@@ -4715,6 +5041,10 @@ paths:
         `ViewerContext`; `notifications` reads them, it does not invent them.
       x-arthome-maturity: provisional
       x-arthome-upstream: [notifications]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -4754,6 +5084,7 @@ paths:
                 servedAt: '2026-09-21T19:05:00.000Z'
                 data: { triggers: { date_starts_soon: [push] }, quietHours: { enabled: true, fromHour: 23, toHour: 9, bypassWhenTicketHeld: true } }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/consents:
     put:
@@ -4767,6 +5098,10 @@ paths:
         decision**, not a setting.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -4805,6 +5140,7 @@ paths:
                 servedAt: '2026-09-21T19:05:30.000Z'
                 data: { purposes: { audience: true, perso: true, partners: false, ads: false }, textVersion: 3, recordedAt: '2026-09-21T19:05:30Z' }
         '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/devices/{deviceId}:
     delete:
@@ -4822,6 +5158,10 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
       x-arthome-invalidates: ['account:devices']
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - name: deviceId
           in: path
@@ -4862,6 +5202,7 @@ paths:
                 servedAt: '2026-09-21T19:06:00.000Z'
                 data: { devices: [], playbackCutWithinSec: 120 }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/device-sessions/{sessionId}:
     delete:
@@ -4874,6 +5215,10 @@ paths:
         everything attached to it.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - name: sessionId
           in: path
@@ -4899,10 +5244,11 @@ paths:
                   deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
                   signedIn: true
                   profiles: []
-                  constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 2, reactionQuotaPerDate: 20, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
+                  constants: { roomOpensMinutesBefore: 30, cancelDeadlineMinutesBefore: 60, scarcityThresholdBps: 8500, billboardPreviewDelaySec: 4, waitlistPriorityWindowHours: 2, chatRateLimitPerSecond: 2, reminderLeadMinutes: 30, replayExpiryWarningHours: 6 }
                   labelCatalog: { locale: fr, version: 41, url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json' }
                   taxonomyArtifact: { locale: fr, version: 12, url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/exports:
     post:
@@ -4916,6 +5262,10 @@ paths:
         protected by a cookie is undownloadable from a native shell.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity, ticketing]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -4947,6 +5297,7 @@ paths:
                 servedAt: '2026-09-21T19:07:00.000Z'
                 data: { exportId: 019928fc-0000-7000-8000-000000000001, kind: invoices, state: queued, requestedAt: '2026-09-21T19:07:00Z' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/me/exports/{exportId}:
     get:
@@ -5005,6 +5356,10 @@ paths:
         Invoices keep their frozen contents.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -5039,6 +5394,7 @@ paths:
                 servedAt: '2026-09-21T19:13:00.000Z'
                 data: { state: requested, graceUntil: '2026-10-21T19:13:00Z', cancelledSeatsCount: 2 }
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
     delete:
       operationId: cancelAccountDeletion
       tags: [account]
@@ -5050,6 +5406,10 @@ paths:
         otherwise.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -5069,6 +5429,7 @@ paths:
                 servedAt: '2026-09-25T10:00:00.000Z'
                 data: { state: active }
         '409': { $ref: '#/components/responses/Conflict' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
   /v1/support/requests:
     post:
@@ -5081,6 +5442,10 @@ paths:
         impossible to honour, and the copy promises something the system cannot do.
       x-arthome-maturity: provisional
       x-arthome-upstream: [notifications]
+      security:
+        - sessionCookie: []
+          csrfToken: []
+        - bearerToken: []
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/Surface'
@@ -5130,6 +5495,7 @@ paths:
                 servedAt: '2026-09-21T19:14:00.000Z'
                 data: { requestId: 019928fd-0000-7000-8000-000000000001, reference: SUP-2026-0912, priorityCode: live_in_progress }
         '429': { $ref: '#/components/responses/TooManyRequests' }
+        '403': { $ref: '#/components/responses/CsrfRefused' }
 
 components:
 
@@ -5137,11 +5503,31 @@ components:
     sessionCookie:
       type: apiKey
       in: cookie
-      name: arthome_session
+      name: __Host-arthome_session
       description: |
         Opaque `better-auth` session, carried by an `HttpOnly`/`Secure`/`SameSite=Lax` cookie. This
         is the form chosen for `storefront-web`, which renders on the server and whose cached
         functions can read neither cookie nor header on the static render path.
+
+        **`__Host-`, on every cookie of this mode**: the browser then accepts it only `Secure`, on
+        path `/` and with no `Domain`, so a sibling subdomain cannot plant a session (its own, with
+        its CSRF pair) for the BFF to act on.
+
+        **In this mode, a request that writes carries `X-Arthome-Csrf`**: the value of the
+        `__Host-arthome_csrf` cookie the BFF sets beside the session cookie, readable by the page and bound
+        to that session. Without it, or with another session's, the BFF answers `403`
+        `api.forbidden`. Each such write declares it: the `csrfToken` scheme beside this one, and
+        the `CsrfRefused` response. `GET`, `HEAD` and `OPTIONS` carry none, and neither does a request without
+        the session cookie: sign-up and sign-in are what set it. `signOut` needs none either: a
+        forged one ends a session and grants nothing, and a browser that lost its CSRF cookie must
+        still be able to sign out.
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-Arthome-Csrf
+      description: |
+        The `__Host-arthome_csrf` cookie's value, echoed by a write made with the session cookie
+        (see `sessionCookie`). Required together with it, never with a bearer token.
     bearerToken:
       type: http
       scheme: bearer
@@ -5369,6 +5755,17 @@ components:
             error: { code: api.unauthenticated, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
             servedAt: '2026-09-21T20:31:04.118Z'
 
+    CsrfRefused:
+      description: |
+        A write with the session cookie came without its `X-Arthome-Csrf` token, or with another
+        session's (`api.forbidden`). A write with a bearer token never meets it.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            error: { code: api.forbidden, nature: refused, params: {}, traceId: 4bf92f3577b34da6a3ce929d0e0e4736 }
+            servedAt: '2026-09-21T20:31:04.118Z'
+
     Forbidden:
       description: Session valide, droit absent.
       content:
@@ -5525,7 +5922,7 @@ components:
             condition on mobile, where store review is slow.
           examples: [publication.transition_irreversible]
           pattern: '^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$'
-          x-arthome-vocabulary: [api.unauthenticated, api.forbidden, api.not_found, api.rate_limited, api.schema_invalid, api.internal, api.service_unavailable, api.upstream_unavailable, api.cursor_too_old, api.sort_key_forbidden, api.period_filter_required, api.rights_version_stale, api.idempotency_key_reused, api.idempotency_in_flight, api.deadline_exceeded, api.upstream_timeout, identity.email_taken, identity.handle_taken, identity.two_factor_required, identity.signed_out_elsewhere, pairing.slow_down, pairing.identity_mismatch, pairing.intent_not_engageable, pairing.execution_engaged, chat.holders_only, chat.rate_limited, moderation.already_claimed, moderation.already_settled, moderation.automatic_cannot_override_human, moderation.decision_version_stale, artist.slug_taken, date.has_sold_seats, date.outcome_decision_forbidden, date.prices_locked, date.prices_currency_mismatch, date.replay_policy_final, date.technical_check_required, date.technical_provision_required, date.provision_deadline_passed, date.provision_below_capacity, date.stream_key_rotation_during_run, date.postponement_limit_reached, channel.has_open_obligations, channel.crew_role_reserved, channel.role_not_assignable, channel.transfer_target_ineligible, channel.same_actor_forbidden, payout.reconciliation_discrepancy_unexplained, order.quote_address_mismatch, order.sold_out, order.payment_declined, order.price_stale, order.plan_unavailable, order.contribution_out_of_range, order.checkout_line_unavailable, order.sales_queue_admission_required, order.late_entry_unacknowledged, order.sales_closed, seat.cancel_deadline_passed, payment_method.in_use, capacity.tier_must_widen, content.empty_in_both_languages, hold.quantity_invalid, media.size_invalid, media.url_empty, order.quantity_invalid, pairing_code.ambiguous_glyph, publication.checklist_incomplete, publication.promise_unacknowledged, publication.transition_forbidden, publication.transition_irreversible, search.unknown_flag, seat_code.malformed, state.conflict, watch.no_seat, watch.room_not_open, watch.out_of_territory, watch.subscription_required, watch.no_replay, watch.replay_expired, watch.replay_not_on_sale, watch.preview_exhausted, watch.concurrent_limit_reached, watch.date_cancelled, watch.not_published]
+          x-arthome-vocabulary: [api.unauthenticated, api.token_expired, api.forbidden, api.not_found, api.rate_limited, api.schema_invalid, api.internal, api.service_unavailable, api.upstream_unavailable, api.cursor_too_old, api.sort_key_forbidden, api.period_filter_required, api.rights_version_stale, api.idempotency_key_reused, api.idempotency_in_flight, api.deadline_exceeded, api.upstream_timeout, identity.email_taken, identity.handle_taken, identity.invalid_credentials, identity.two_factor_required, identity.signed_out_elsewhere, identity.verification_link_invalid, pairing.slow_down, pairing.identity_mismatch, pairing.intent_not_engageable, pairing.execution_engaged, chat.holders_only, chat.rate_limited, moderation.already_claimed, moderation.already_settled, moderation.automatic_cannot_override_human, moderation.decision_version_stale, artist.slug_taken, date.has_sold_seats, date.outcome_decision_forbidden, date.prices_locked, date.prices_currency_mismatch, date.replay_policy_final, date.technical_check_required, date.technical_provision_required, date.provision_deadline_passed, date.provision_below_capacity, date.stream_key_rotation_during_run, date.postponement_limit_reached, channel.has_open_obligations, channel.crew_role_reserved, channel.role_not_assignable, channel.transfer_target_ineligible, channel.same_actor_forbidden, payout.reconciliation_discrepancy_unexplained, order.quote_address_mismatch, order.sold_out, order.payment_declined, order.price_stale, order.plan_unavailable, order.contribution_out_of_range, order.checkout_line_unavailable, order.sales_queue_admission_required, order.late_entry_unacknowledged, order.sales_closed, seat.cancel_deadline_passed, payment_method.in_use, capacity.tier_must_widen, content.empty_in_both_languages, hold.quantity_invalid, media.size_invalid, media.url_empty, order.quantity_invalid, pairing_code.ambiguous_glyph, publication.checklist_incomplete, publication.promise_unacknowledged, publication.transition_forbidden, publication.transition_irreversible, search.unknown_flag, seat_code.malformed, state.conflict, watch.no_seat, watch.room_not_open, watch.out_of_territory, watch.subscription_required, watch.no_replay, watch.replay_expired, watch.replay_not_on_sale, watch.preview_exhausted, watch.concurrent_limit_reached, watch.date_cancelled, watch.not_published]
           x-arthome-vocabulary-source: ERROR_CODES
         nature:
           type: string
@@ -5699,7 +6096,12 @@ components:
           x-arthome-vocabulary-source: none
           x-arthome-vocabulary-reason: "A narrowing of a vocabulary named elsewhere in this document, with the reason in the description above: the members left out are the rule, not an omission."
         accessToken: { type: string }
-        refreshToken: { type: [string, 'null'] }
+        refreshToken:
+          type: [string, 'null']
+          description: |
+            **Always `null` on the storefront.** The session slides instead: seven days, renewed by
+            use at most once a day (`adr-auth.md` §6.1), so the access token is the session and no
+            operation takes a refresh token.
         expiresAt: { type: string, format: date-time }
         viewerContext: { $ref: '#/components/schemas/ViewerContext' }
 
@@ -5714,7 +6116,7 @@ components:
       required:
         [roomOpensMinutesBefore, cancelDeadlineMinutesBefore, scarcityThresholdBps,
          billboardPreviewDelaySec, waitlistPriorityWindowHours, chatRateLimitPerSecond,
-         reactionQuotaPerDate, reminderLeadMinutes, replayExpiryWarningHours]
+         reminderLeadMinutes, replayExpiryWarningHours]
       properties:
         roomOpensMinutesBefore: { type: integer, examples: [30] }
         cancelDeadlineMinutesBefore: { type: integer, examples: [60] }
@@ -5732,7 +6134,12 @@ components:
           type: integer
           description: Number of catch-up messages served on entering a room — television 20, elsewhere 50.
           examples: [20]
-        reactionQuotaPerDate: { type: integer, examples: [20] }
+        reactionQuotaPerDate:
+          type: integer
+          description: |
+            **Optional, and absent today.** The product owner has decided a graduated rate in place of a
+            per-date quota; no document owns its numbers yet, and `sendReaction` serves what remains
+            (`realtime.md` §2.3). Never null: a null quota would read as no quota at all.
         reminderLeadMinutes: { type: integer, examples: [30] }
         replayExpiryWarningHours: { type: integer, examples: [6] }
         previewSecondsTotal:
@@ -5889,13 +6296,22 @@ components:
             concurrentStreamsAllowed: { type: integer, examples: [2] }
         preferences: { $ref: '#/components/schemas/ViewerPreferences' }
         constants: { $ref: '#/components/schemas/DomainConstants' }
-        labelCatalog: { $ref: '#/components/schemas/LabelArtifactRef' }
+        labelCatalog:
+          description: |
+            **Null: nothing newer than the snapshot embedded at build time**, which the surface then
+            uses. A real state, not a gap: before the first publication, or for a surface or a locale
+            nothing was published for (`context-map.md` §1.8).
+          anyOf:
+            - $ref: '#/components/schemas/LabelArtifactRef'
+            - type: 'null'
         taxonomyArtifact:
-          $ref: '#/components/schemas/LabelArtifactRef'
           description: |
             Same regime as the i18n catalogue, **served per slice and per surface**: mobile loads
             neither the studio vocabulary nor the television key table. 59.5 KB raw / 8.4 KB gzipped for
-            the full slice — this is not an API call.
+            the full slice — this is not an API call. Null as for `labelCatalog`: the embedded snapshot.
+          anyOf:
+            - $ref: '#/components/schemas/LabelArtifactRef'
+            - type: 'null'
         realtime:
           type: object
           description: Where to open **the single** real-time connection. Multiplexing is per room, never per connection.

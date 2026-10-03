@@ -80,3 +80,6 @@ export {
 } from './tax.js';
 
 export { ErrorSchema, FailureNatureOut, issueToCode } from './error.js';
+
+export { InternalTokenClaimsSchema } from './internal-token.js';
+export type { InternalTokenClaims } from './internal-token.js';

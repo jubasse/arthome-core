@@ -31,4 +31,6 @@ export { VOCABULARY_SOURCE_LOCAL, sourceNameOf, vocabularyIn, vocabularyOut, voc
 export { AccountIdSchema, ArtistIdSchema, ChannelIdSchema, DateIdSchema, DeviceIdSchema, OrderIdSchema, PersonIdSchema, ProfileIdSchema, PublicHandleSchema, SeatIdSchema, ShowIdSchema, VenueIdSchema, } from './identifiers.js';
 export { BuyerTaxLocationSchema, TaxEvidenceKindIn, TaxEvidenceKindOut, TaxEvidenceSchema, TaxJurisdictionLevelIn, TaxJurisdictionLevelOut, TaxSupplyKindIn, TaxSupplyKindOut, VatLineSchema, } from './tax.js';
 export { ErrorSchema, FailureNatureOut, issueToCode } from './error.js';
+export { InternalTokenClaimsSchema } from './internal-token.js';
+export type { InternalTokenClaims } from './internal-token.js';
 //# sourceMappingURL=index.d.ts.map

@@ -27,6 +27,9 @@ import { WATCH_DENIAL_REASONS } from './entitlement.js';
  */
 export const API_ERROR_CODES = [
   'api.unauthenticated',
+  // A service's 401 for an internal token past its `exp` (transport.md §5.5). The fault is the
+  //   BFF's, whose call outlived the token, so a surface never sees it.
+  'api.token_expired',
   'api.forbidden',
   'api.not_found',
   'api.rate_limited',
@@ -56,6 +59,7 @@ export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
 export const ApiErrorCode = {
   UNAUTHENTICATED: 'api.unauthenticated',
+  TOKEN_EXPIRED: 'api.token_expired',
   FORBIDDEN: 'api.forbidden',
   NOT_FOUND: 'api.not_found',
   RATE_LIMITED: 'api.rate_limited',
@@ -88,22 +92,25 @@ export const IDENTITY_ERROR_CODES = [
   //
   //   Not covered by the standing vagueness exception below: that is about an AUTHENTICATION
   //   refusal naming which check failed, and `email_taken`'s own existence proves the scope.
-  //
-  //   Open, and above this file: whether sign-up should disclose a taken EMAIL at all. The
-  //     standard mitigation is to answer as if it succeeded and disambiguate out of band — a
-  //     registration-flow decision, and until it is taken, publishing `email_taken` is the
-  //     project's answer.
+  //   Sign-up keeps disclosing a taken email, slowed by the BFF's rate limit (D-099).
   'identity.handle_taken',
+  // Sign-in's one refusal: an unknown email and a wrong password are the same answer.
+  'identity.invalid_credentials',
   'identity.two_factor_required',
   'identity.signed_out_elsewhere',
+  // An email verification link that is unknown, expired or already used: one answer for the
+  //   three, since telling them apart says which tokens were ever issued.
+  'identity.verification_link_invalid',
 ] as const;
 export type IdentityErrorCode = (typeof IDENTITY_ERROR_CODES)[number];
 
 export const IdentityErrorCode = {
   EMAIL_TAKEN: 'identity.email_taken',
   HANDLE_TAKEN: 'identity.handle_taken',
+  INVALID_CREDENTIALS: 'identity.invalid_credentials',
   TWO_FACTOR_REQUIRED: 'identity.two_factor_required',
   SIGNED_OUT_ELSEWHERE: 'identity.signed_out_elsewhere',
+  VERIFICATION_LINK_INVALID: 'identity.verification_link_invalid',
 } as const;
 
 /**

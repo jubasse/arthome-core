@@ -537,6 +537,8 @@ client from `openapi/storefront.yaml` or `openapi/studio.yaml`.
 | composed public read (`home`, `live`, `category`, `artist`) | **≤ 400 ms** | `context-map.md` §11(a)'s alert threshold |
 | batched read (overlay) | ≤ 150 ms | four in parallel, under the screen's budget |
 | money write | ≤ 2 s | one transaction, one capacity check, one idempotency store |
+| authentication write (sign-up, sign-in, sign-out, the verification link) | ≤ 2 s | bounded by argon2id's cost: sign-up hashes once and claims an idempotency key, sign-in verifies once (and hashes an outdated digest again), sign-out and the link hash nothing |
+| session validation | ≤ 150 ms | on every call that needs a viewer, ahead of the call itself; it returns the viewer's account too, so the viewer context makes no second call |
 | search | **≤ 200 ms** | otherwise the TV's typing feedback falls behind (`storefront-tv`) |
 
 **Guaranteed freshness per family** — `data-model.md` §4, repeated here because it is the BFF that
@@ -582,6 +584,11 @@ removed **the day the context's tier ships**, never before.
 **What "stable" allows, and nothing else**: adding an entry point, adding an **optional** property
 to a response, adding a value to an enumeration, adding an **optional** parameter. Everything else
 is a `v2` of the service, served **beside** the `v1` until both BFFs have migrated.
+
+**The stable regime binds from the first shipped client.** A stable operation's backward
+compatibility binds from the day the first client of its surfaces ships; until then the contract may
+still narrow or reshape it (the lead's ruling of 2026-10-03, on auth slice A's `signUp.locale`, its
+password ceilings and the viewer context's nullable artifacts).
 
 **And the rule that makes an enumeration extensible without breaking a television**
 (`storefront-tv` Q12, `context-map.md` §13): an unknown enumeration value is **kept raw and treated

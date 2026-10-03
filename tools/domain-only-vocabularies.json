@@ -35,7 +35,7 @@
     },
     {
       "vocabulary": "SERVICES",
-      "reason": "Reaches the documents through `x-arthome-upstream`, not through `x-arthome-vocabulary`, so this gate cannot see it — it reads member lists on fields, and an upstream is an annotation on an OPERATION. R22 in check-openapi.py compares all 174 of them against UPSTREAMS, which spreads this list. Declared here so the inverse check states what it cannot reach rather than reporting a gap that another gate covers."
+      "reason": "Reaches the documents through `x-arthome-upstream`, not through `x-arthome-vocabulary`, so this gate cannot see it — it reads member lists on fields, and an upstream is an annotation on an OPERATION. R22 in check-openapi.py compares every one of them against UPSTREAMS, which spreads this list. Declared here so the inverse check states what it cannot reach rather than reporting a gap that another gate covers."
     },
     {
       "vocabulary": "UPSTREAMS",
@@ -52,6 +52,14 @@
     {
       "vocabulary": "SEAT_HOLD_STATES",
       "reason": "A `SeatHold`'s own bookkeeping (data-model.md §3.2): whether the capacity behind a purchase is still claimed, spent, timed out or given back. A surface never asks for a hold; it reads `Order.state` and `TicketCard.state`, which the hold's transitions cause but do not mirror one for one — `consumed` and `released` both resolve to an order that has already moved on."
+    },
+    {
+      "vocabulary": "ACCOUNT_STATUSES",
+      "reason": "The account's lifecycle as identity records it (data-model.md §1.1), read by identity to decide whether a credential may open a session. A surface reads the consequences, never the status: a refused sign-in, and the account deletion screen's own `DeletionState`, which describes the request rather than the account."
+    },
+    {
+      "vocabulary": "INTERNAL_TOKEN_ISSUERS",
+      "reason": "The `iss` of the token a BFF mints for each call to a service (adr-auth.md §8). It travels from a BFF to a service and nowhere else: no client ever obtains a service-audience token (§8.2.1 does not relay `/token`), so neither contract can carry one."
     },
     {
       "vocabulary": "SEAT_HOLD_ORIGINS",

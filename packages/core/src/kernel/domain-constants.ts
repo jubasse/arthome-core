@@ -14,4 +14,6 @@ export const DomainConstant = {
   POSTPONEMENTS_MAX: 3,
   /** needs/storefront-web.md, `cancelSeat`: "cancel up to 1 h before the start". */
   CANCEL_DEADLINE_MINUTES_BEFORE: 60,
+  /** answers-to-surfaces.md Q14: how long the billboard waits before its preview plays. */
+  BILLBOARD_PREVIEW_DELAY_SECONDS: 4,
 } as const;

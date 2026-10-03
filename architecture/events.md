@@ -134,7 +134,7 @@ is a reversible decision because the schemas and the topics do not change.
 
 ## 3. The topics
 
-**Sixteen topics, and the thirty aggregate types they carry.** An earlier version of this table
+**Every topic, and the aggregate types it carries.** An earlier version of this table
 declared fourteen and left **sixteen aggregate types with no topic** — hence no key, no partition
 count, no `groupId` and no AsyncAPI channel, while the definition of done generates the channels
 **from this table**. The table below is exhaustive: **every message in §4 finds its topic here.**
@@ -144,6 +144,7 @@ count, no `groupId` and no AsyncAPI channel, while the definition of done genera
 | `arthome.identity.account` | `identity` | `account_id` | 3 | `account`, `artist` (follows), `rights_version` | **stable** |
 | `arthome.identity.device` | `identity` | `device_id` | 3 | `device`, `device_session` | **stable** |
 | `arthome.identity.channel` | `identity` | `channel_id` | 3 | `channel`, `date_access` | **stable** |
+| `arthome.identity.email_verification` | `identity` | `account_id` | 3 | `email_verification` | **stable** |
 | `arthome.catalog.date` | `catalog` | `date_id` | **12** | `date`, **`publication`** | **stable** |
 | `arthome.catalog.show` | `catalog` | `show_id` | 3 | `show` | **stable** |
 | `arthome.catalog.artist` | `catalog` | `artist_id` | 3 | `artist` | **stable** |
@@ -159,6 +160,14 @@ count, no `groupId` and no AsyncAPI channel, while the definition of done genera
 | `arthome.notifications.delivery` | `notifications` | `account_id` | 3 | `delivery` | provisional |
 
 Plus, per context: `arthome.<context>.retry` and `arthome.<context>.dlq`.
+
+**`arthome.identity.email_verification` is a topic of its own because it carries a secret**: the
+token of D-100's verification link, which `notifications` turns into the link. `notifications` is
+its one consumer, so no other context ever reads a token. The token is short-lived by itself: spent
+by its first use, dead after `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS` (`@arthome/core`). The topic
+keeps the week every topic keeps, because a retention shorter than the platform's republish
+horizon would make every row past it look unpublished, and republish an expired link. **A token
+that opens an account, a password reset's, never takes this path**: slice D decides its own.
 
 ### 3.1 Why these groupings, and not one topic per aggregate
 
@@ -201,6 +210,7 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 | Event | Payload | Consumed by | Why |
 |---|---|---|---|
 | `identity.account.registered.v1` | `account_id`, `locale`, `country`, `occurred_at` | `notifications` | welcome email |
+| `identity.email_verification.requested.v1` | `account_id`, `email`, `locale`, `token`, `expires_at` | **`notifications` alone** | D-100's verification link, on `arthome.identity.email_verification` (§3): the token travels in clear, and the proto's comment says why that is acceptable for this token only |
 | `identity.account.deletion_requested.v1` | `account_id`, `grace_until` | `ticketing`, `payouts`, `notifications`, `chat`, `streaming` | **erasure saga** (`data-model.md` §7.5) |
 | `identity.account.anonymised.v1` | `account_id` | all | dissociate nicknames, freeze invoices |
 | `identity.device.revoked.v1` | `device_id`, `account_id` | **`streaming`** | invalidate this device's playback leases: that is what makes "disconnect this device" stop playback |

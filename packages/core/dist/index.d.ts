@@ -17,6 +17,7 @@ export * from './catalog/index.js';
 export * from './replay/index.js';
 export * from './permissions/index.js';
 export * from './ticketing/index.js';
+export * from './identity/index.js';
 export * from './pairing/index.js';
 export * from './moderation/index.js';
 export * from './notification/index.js';

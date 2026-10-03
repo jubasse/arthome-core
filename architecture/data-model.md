@@ -112,6 +112,20 @@ Account
 **Invariants.** An account with no `password_hash` must have at least one social provider or one
 passkey. `deletion_requested` freezes purchases but deletes nothing (§7.5).
 
+**At sign-up** (D-100, D-101): `public_handle` is generated and neutral
+(`generatedPublicHandle` in `@arthome/core`), then changeable through `updateProfile`;
+`email_verified_at` stays null until the link of `adr-auth.md` §6.7 is used, and blocks nothing.
+`status` is `ACCOUNT_STATUSES`. The credential columns live in better-auth's `auth` schema, keyed by
+the same UUIDv7 as `id` (`adr-auth.md` R2).
+
+### 1.1b `EmailVerification` — entity of the `Account` aggregate
+
+One verification link (`adr-auth.md` §6.7, D-100): the SHA-256 of its token (the token itself is
+never stored), the account, the address it was sent to, `expires_at` and `used_at`. Spent by its
+first use; a resend spends the account's outstanding links; it verifies nothing once the account's
+address differs from the one it was sent to. Its event travels on a topic of its own
+(`events.md` §3).
+
 ### 1.2 `Profile` — entity of the `Account` aggregate
 
 Up to five per account (a television constraint, but carried by the account). Name, sized avatar,

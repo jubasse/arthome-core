@@ -204,8 +204,8 @@ export const ViewerContextSchema: z.ZodObject<
     >;
     preferences: z.ZodOptional<typeof ViewerPreferencesSchema>;
     constants: typeof DomainConstantsSchema;
-    labelCatalog: typeof LabelArtifactRefSchema;
-    taxonomyArtifact: typeof LabelArtifactRefSchema;
+    labelCatalog: z.ZodNullable<typeof LabelArtifactRefSchema>;
+    taxonomyArtifact: z.ZodNullable<typeof LabelArtifactRefSchema>;
     realtime: z.ZodOptional<
       z.ZodObject<
         {
@@ -254,9 +254,11 @@ export const ViewerContextSchema: z.ZodObject<
       ),
     preferences: ViewerPreferencesSchema.optional(),
     constants: DomainConstantsSchema,
-    labelCatalog: LabelArtifactRefSchema,
-    taxonomyArtifact: LabelArtifactRefSchema.describe(
-      'Same regime as the i18n catalogue, **served per slice and per surface**: mobile loads\nneither the studio vocabulary nor the television key table. 59.5 KB raw / 8.4 KB gzipped for\nthe full slice — this is not an API call.\n',
+    labelCatalog: LabelArtifactRefSchema.nullable().describe(
+      '**Null: nothing newer than the snapshot embedded at build time**, which the surface then\nuses. A real state, not a gap: before the first publication, or for a surface or a locale\nnothing was published for (`context-map.md` §1.8).\n',
+    ),
+    taxonomyArtifact: LabelArtifactRefSchema.nullable().describe(
+      'Same regime as the i18n catalogue, **served per slice and per surface**: mobile loads\nneither the studio vocabulary nor the television key table. 59.5 KB raw / 8.4 KB gzipped for\nthe full slice — this is not an API call. Null as for `labelCatalog`: the embedded snapshot.\n',
     ),
     realtime: z
       .looseObject({
@@ -313,7 +315,13 @@ export const SessionEstablishedBearerSchema: z.ZodObject<
       '**A narrowing of `SessionMode` to the two token-bearing modes.** `cookie` is absent\nbecause a cookie response carries **nothing in the body** — that is the whole point of the\nsplit — so this branch cannot describe it. `device` shares this schema rather than having\nits own: a device session is token-shaped, and the discriminator maps both values here.\n\nThe studio has no such branch because it has no device sessions; only a television carries\na device token.\n',
     ),
     accessToken: z.string(),
-    refreshToken: z.string().nullable().optional(),
+    refreshToken: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        '**Always `null` on the storefront.** The session slides instead: seven days, renewed by\nuse at most once a day (`adr-auth.md` §6.1), so the access token is the session and no\noperation takes a refresh token.\n',
+      ),
     expiresAt: InstantOut,
     viewerContext: ViewerContextSchema,
   })
