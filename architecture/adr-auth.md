@@ -601,7 +601,10 @@ new one with each attempt.
 counted per email alone lets anyone keep any known address signed out with ten wrong passwords.
 Per email, failures only slow the next attempt down (`SignInSlowdown`: a doubling pause past five
 failures, bounded at four seconds); the hard cap is per email *and* address, which a third party
-exhausts for itself alone. A resend is capped per hour and per day: one account has one address,
+exhausts for itself alone. **The bound this leaves on guessing** (the lead's ruling on the
+re-review's F5b, accepted for slice A): ten attempts per (email, address or /64) per fifteen
+minutes, times the attacker's networks. The pause does not slow a spray, whose attempts wait in
+parallel. Slice C tightens it with OWASP's device cookies, which recognise the owner's device. A resend is capped per hour and per day: one account has one address,
 and D-100 lets a stranger register it. The pairing lockout's
 N joins `AuthRateLimit` with the pairing itself. better-auth's own limiter guards its HTTP handler,
 which `identity` does not mount (§3.1), so it caps nothing here.

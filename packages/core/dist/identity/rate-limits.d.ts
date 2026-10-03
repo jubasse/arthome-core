@@ -20,8 +20,10 @@ export declare const AuthRateLimit: {
     };
     /**
      * Password guessing against one account FROM ONE ADDRESS: the only hard cap an email carries, so
-     * a third party exhausts it for itself alone. Across addresses an email is slowed down, never
-     * refused (`SignInSlowdown`): nobody can lock an account's owner out.
+     * a third party exhausts it for itself alone and nobody can lock an account's owner out. The real
+     * bound on guessing is therefore this limit per (email, address) per window, TIMES the attacker's
+     * networks: an attacker holding many addresses or /64s guesses that much faster. Slice C's device
+     * cookies (OWASP's), which recognise the owner's device, are what tightens it.
      */
     readonly SIGN_IN_PER_EMAIL: {
         readonly limit: 10;
@@ -46,8 +48,10 @@ export declare const AuthRateLimit: {
     };
 };
 /**
- * Failed sign-ins to one email, from anywhere, delay the next attempt rather than refuse it: a
- * growing pause, bounded, which slows a spray across addresses and never locks the owner out.
+ * Failed sign-ins to one email, from anywhere, delay its next attempt rather than refuse it: a
+ * growing pause, bounded, which never locks the owner out. It does NOT slow a spray across
+ * addresses: attempts sent in parallel each wait their pause at once, so it costs a sequential
+ * guesser latency and nothing more. The bound is `SIGN_IN_PER_EMAIL`'s.
  */
 export declare const SignInSlowdown: {
     readonly FREE_FAILURES: 5;

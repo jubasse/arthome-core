@@ -451,7 +451,7 @@ Declarations: `dist/index.d.ts` — 457 exported names.
 - `SettlementAttempt` (interface)
 - `SettlementOutcome` (type)
 - `ShowId` (type) — `type ShowId = Brand<'ShowId'>;`
-- `SignInSlowdown` (const) — `SignInSlowdown: { readonly FREE_FAILURES: 5; readonly FIRST_DELAY_MS: 250; readonly MAX_DELAY_MS: 4000; readonly WINDOW_SECONDS: 900; }` — Failed sign-ins to one email, from anywhere, delay the next attempt rather than refuse it: a growing pause, bounded, which slows a spray ac…
+- `SignInSlowdown` (const) — `SignInSlowdown: { readonly FREE_FAILURES: 5; readonly FIRST_DELAY_MS: 250; readonly MAX_DELAY_MS: 4000; readonly WINDOW_SECONDS: 900; }` — Failed sign-ins to one email, from anywhere, delay its next attempt rather than refuse it: a growing pause, bounded, which never locks the …
 - `StateChangeOrigin` (type+const)
 - `StorefrontSurface` (type) — `type StorefrontSurface = typeof Surface.STOREFRONT_WEB | typeof Surface.STOREFRONT_MOBILE | typeof Surface.STOREFRONT_TV;` — The three surfaces that call the storefront BFF; the studio's two call the other.
 - `SubscriptionState` (type+const)
