@@ -6030,7 +6030,7 @@ components:
             meaning — "not denied" — would attach itself to whichever the writer had in mind.
 
             **And an ALLOWED verdict carries a real action.** A viewer watching on `scope: preview`
-            gets `buy_seat` beside it. A surface reading `null` as "no action" would be right for
+            gets `buy_seat` beside it, before D-089's cutoff; past it, `see_other_dates`. A surface reading `null` as "no action" would be right for
             `denialReasonCode`, where null genuinely means *not denied*, and would silently drop the
             preview-to-purchase step — the one path that turns a free viewer into a paying one. The
             two fields look alike and must not be read alike.
@@ -6059,7 +6059,7 @@ components:
             other's last message instead of the code. The test that ends that, and the one this
             contract now defers to: **does a function return it?** `decideWatch` does not — the free
             preview is expressed by an **allowed** verdict carrying `scope: preview` on both the live
-            and the replay path, with `buy_seat` beside it. A preview a viewer can still watch is not
+            and the replay path, with `buy_seat` beside it before D-089's cutoff, `see_other_dates` past it. A preview a viewer can still watch is not
             a way out of a refusal, because there is no refusal.
 
             What the member was compensating for is the finding worth keeping: `WatchVerdict` had no
