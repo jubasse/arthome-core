@@ -3423,3 +3423,51 @@ vocabulary in core.
 
 **Arbitrated by the product owner on 2026-10-03.** A run left on air ends by itself once no publisher
 has been connected for a set number of minutes after the scheduled end. `ended` is final.
+
+### D-116 — Reactions and chat messages are rate-limited in grades, with no quota per date
+
+**Arbitrated by the product owner on 2026-10-03.**
+
+- **Client:** reactions are aggregated (several taps sent as one count), and chat messages keep a
+  minimal spacing.
+- **Server**, per account and date:
+  - level 1: the excess is dropped silently for reactions, and a chat message over the rate is
+    refused with a retry delay;
+  - level 2: a sustained excess flags the account to the channel's moderation queue, and its
+    messages are visible to their author only until a moderator decides, with an automatic lift
+    after a delay;
+  - level 3: an abuse rate, or many accounts from one address or device, is refused at the edge
+    (429) with a temporary block and an alert.
+- **Shared state:** the rate state is shared across instances, carried by events.
+- **Starting values,** adjustable: 5 reactions per second with a burst of 10; level 2 after 30
+  seconds above the limit.
+- **Contract:** `reactionQuotaPerDate` gives way to a reaction rate and burst, served like
+  `chatRateLimitPerSecond`.
+
+### D-117 — A seat is watched on one device at a time
+
+**Arbitrated by the product owner on 2026-10-03.** On the storefront, a seat plays on one device at
+a time. Starting it on another device stops it on the previous one. With D-108, an account watches
+on at most as many devices as the active seats it holds on the date, or its plan's ceiling if
+higher.
+
+### D-118 — A studio team member may work on several devices at once
+
+**Arbitrated by the product owner on 2026-10-03.**
+
+- A member of a channel's team may be signed in to the studio on several devices at once, up to 5
+  active studio sessions, adjustable. The sessions are visible to the member and revocable, and
+  starting one does not stop another.
+- The control room's monitor feed is not a viewer screen.
+- Studio request limits are counted per authenticated member and set high, sized for work on
+  several dates at once.
+
+### D-119 — Authentication rate limits target the device, not the address
+
+**Arbitrated by the product owner on 2026-10-03.** The sign-up and sign-in limits are meant to count
+per device.
+
+- Until slice C brings a trusted device identifier, the limits per IPv4 address are a high
+  anti-abuse ceiling, since mobile carriers share one IPv4 address across many subscribers.
+- The limits per IPv6 /64 stay tight.
+- Slice C moves the limits to the device.
