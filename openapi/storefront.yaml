@@ -5243,14 +5243,18 @@ components:
     sessionCookie:
       type: apiKey
       in: cookie
-      name: arthome_session
+      name: __Host-arthome_session
       description: |
         Opaque `better-auth` session, carried by an `HttpOnly`/`Secure`/`SameSite=Lax` cookie. This
         is the form chosen for `storefront-web`, which renders on the server and whose cached
         functions can read neither cookie nor header on the static render path.
 
+        **`__Host-`, on every cookie of this mode**: the browser then accepts it only `Secure`, on
+        path `/` and with no `Domain`, so a sibling subdomain cannot plant a session (its own, with
+        its CSRF pair) for the BFF to act on.
+
         **In this mode, a request that writes carries `X-Arthome-Csrf`**: the value of the
-        `arthome_csrf` cookie the BFF sets beside the session cookie, readable by the page and bound
+        `__Host-arthome_csrf` cookie the BFF sets beside the session cookie, readable by the page and bound
         to that session. Without it, or with another session's, the BFF answers `403`
         `api.forbidden`. `GET`, `HEAD` and `OPTIONS` carry none, and neither does a request without
         the session cookie: sign-up and sign-in are what set it.
