@@ -3471,3 +3471,14 @@ per device.
   anti-abuse ceiling, since mobile carriers share one IPv4 address across many subscribers.
 - The limits per IPv6 /64 stay tight.
 - Slice C moves the limits to the device.
+
+### D-120 — Contract routes are declared in TypeScript, and the OpenAPI documents are generated
+
+**Arbitrated by the product owner on 2026-10-03**, superseding the scope D-058 gave the empty diff.
+Every operation of the storefront and studio contracts is declared once, in TypeScript, in
+`@arthome/contracts`: method, path, parameters, body, responses, prose and `x-arthome-*` metadata,
+built from the zod schemas of D-057. `openapi/storefront.yaml` and `openapi/studio.yaml` are
+generated from those declarations, and the empty-diff gate covers the whole document, paths
+included. The BFF controllers bind to their route, and the surfaces use a typed client generated
+from the same declarations. The ts-rest library is not used: its model is, written in house.
+Messages between services stay in `.proto`.

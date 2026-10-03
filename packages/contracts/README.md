@@ -62,11 +62,36 @@ So: **one subpath per bounded context**, added as each lands and never before.
 | `./http` | `defineRoute` and `defineApi`: an operation as TypeScript, typed for a handler and a client — no schema |
 | `./http-client` | `createClient(api, { baseUrl, fetch, headers })`: one typed method per operation id — no schema |
 | `./openapi` | the OpenAPI document an api emits, `components/schemas` included — no schema |
-| `./storefront-api` | `storefrontApi`, the storefront's routes as they move out of `openapi/storefront.yaml`: `search` so far |
+| `./storefront-api` | `storefrontApi`: every operation of the storefront contract, declared once, and the source of `openapi/storefront.yaml` |
+| `./studio-api` | `studioApi`: the same for the studio, and the source of `openapi/studio.yaml` |
 
-**Fourteen subpaths of schemas, 106 schemas, and together with `@arthome/core` they emit all 111 schemas of both
-contracts exactly.** `pnpm run check:emit-diff` compares every one against the document it publishes
-and is part of `pnpm run verify`.
+**Fourteen subpaths of schemas, 106 schemas, and together with `@arthome/core` they are all 111 schemas of both
+contracts.** The documents are generated from them (next section), and `pnpm run check:openapi-generated`
+is part of `pnpm run verify`.
+
+## Adding or changing an operation
+
+Every operation of both contracts is declared once, in `src/storefront-api/` or `src/studio-api/`:
+one module per tag (`discovery.ts`, `payouts.ts`), the shared parameters, headers and responses in
+`components.ts`, and the api itself, with the document's prose and its component names, in `index.ts`.
+`openapi/storefront.yaml` and `openapi/studio.yaml` are **generated** from those declarations (D-120),
+and committed for readers and tools.
+
+1. Edit the route in its module (`defineRoute`: method, path, parameters, body, responses, prose and
+   `x-arthome-*` metadata), built from the schemas of the subpaths above. A new operation is also
+   listed under `routes` in the api's `index.ts`.
+2. Regenerate: `pnpm run generate:openapi`. It builds the packages, then writes both documents.
+3. Commit the declaration **and** both documents. `pnpm run check:openapi-generated`, which `verify`
+   runs, fails when a committed document is not byte for byte what the declarations generate, paths,
+   components and top-level keys included.
+
+Never edit a document by hand: the next generation overwrites it, and the gate refuses it before.
+Prose that belongs to the operation stays in the declaration, as `description` where the document
+should say it and as a TypeScript comment where only the maintainers need it.
+
+A BFF controller binds to its route (`@Endpoint(storefrontApi.routes.search)` in `arthome-platform`),
+and a surface calls it through `createClient(storefrontApi, ...)` from `./http-client`. Both read the
+same declaration, so a change of path, parameter or answer is a compile error on every side.
 
 **THE IMPORT GRAPH IS A DAG, AND IT IS NOT AN ACCIDENT.** A zod schema is built at MODULE LOAD, so
 a cycle between two modules is a load-order hazard: it holds until a declaration moves, then fails
@@ -130,10 +155,10 @@ This package **inherits** the seven-repository gates rather than carrying its ow
 `@arthome/tooling` like any other, and `check-versions`, `check-tsconfig`, `check-prettier-conflict`,
 `check-language` and `check-enums` all apply to it unchanged.
 
-The **emit diff** — `contracts:emit` reproducing `openapi/*.yaml` with an empty diff — is a
-**one-repository** rule and therefore lives in `tools/`, not in the shared package: only `arthome-core`
-holds both the schemas and the documents they must reproduce. Same test that kept
-`check-vocabulary.py` in `tools/` and moved `check-language` into the package.
+The **generated-document gate** — `tools/generate-openapi.py --check`, run as
+`pnpm run check:openapi-generated` — is a **one-repository** rule and therefore lives in `tools/`, not
+in the shared package: only `arthome-core` holds both the declarations and the documents they generate.
+Same test that kept `check-vocabulary.py` in `tools/` and moved `check-language` into the package.
 
 ```bash
 pnpm --filter "@arthome/contracts" run build       # tsc -p tsconfig.build.json

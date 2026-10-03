@@ -22,7 +22,7 @@ was.
 | `packages/core/` | `@arthome/core` — the domain. **Zero framework dependencies.** Two entry points: `.` has no dependency at all, `./schema` is the only one that may import zod | the domain |
 | `packages/contracts/` | `@arthome/contracts` — the boundary schemas, which **extend** core's base schemas rather than redeclaring them. **Fourteen subpaths, one per bounded context**, and no `.` entry point: a barrel would hand zod's fixed cost to every surface, so the constraint is the mechanism rather than a written rule | the contracts |
 | `packages/tooling/` | `@arthome/tooling` — ESLint, Prettier, TypeScript and Vitest configuration shared by all seven repositories, plus five of the gates |
-| `openapi/` | The two API contracts — one per product. **Hand-written and reviewed as prose**, and every one of their 111 schemas now has a zod source that a gate compares against it | the contracts |
+| `openapi/` | The two API contracts — one per product. **Generated** from the route declarations and zod schemas of `@arthome/contracts` (D-120), committed so readers and tools have them, and held to that source by a gate | the contracts |
 | `proto/` | Kafka event schemas. 109 types, **zero `service` declarations** — Protobuf serves the event log, never a synchronous call | the domain |
 | `architecture/` | 15 documents, ~11,600 lines: the context map, the data model, the ADRs, the conventions, and the sceptic's adversarial review | the whole team |
 | `needs/` | What each of the five surfaces asked the contract for, and what it contested when it got the answer. One file per surface, each its sole author | the surfaces |
@@ -61,8 +61,8 @@ Then, depending on what you are doing:
 
 | | paths | schemas |
 |---|---|---|
-| `openapi/storefront.yaml` | 75 | 65 — **all sourced** |
-| `openapi/studio.yaml` | 79 | 46 — **all sourced** |
+| `openapi/storefront.yaml` | 75 | 65 — generated |
+| `openapi/studio.yaml` | 79 | 46 — generated |
 
 Two products, two contracts, one domain. The storefront is what a viewer sees; the studio is what an
 artist and their crew operate. They share `@arthome/core`'s vocabulary and nothing else.
