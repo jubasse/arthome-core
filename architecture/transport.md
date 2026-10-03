@@ -585,6 +585,11 @@ removed **the day the context's tier ships**, never before.
 to a response, adding a value to an enumeration, adding an **optional** parameter. Everything else
 is a `v2` of the service, served **beside** the `v1` until both BFFs have migrated.
 
+**The stable regime binds from the first shipped client.** A stable operation's backward
+compatibility binds from the day the first client of its surfaces ships; until then the contract may
+still narrow or reshape it (the lead's ruling of 2026-10-03, on auth slice A's `signUp.locale`, its
+password ceilings and the viewer context's nullable artifacts).
+
 **And the rule that makes an enumeration extensible without breaking a television**
 (`storefront-tv` Q12, `context-map.md` §13): an unknown enumeration value is **kept raw and treated
 as neutral**, never rejected. On the zod side, a bare `z.enum()` **does not do that** — it takes
