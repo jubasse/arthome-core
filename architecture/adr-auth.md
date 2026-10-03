@@ -91,13 +91,15 @@ write the "bearer token" path yourself carries a hidden cost.
 
 ## 3. Decision
 
-### D-A1 — **better-auth 1.7.5**, as a library inside the `identity` service, with four plugins
+### D-A1 — **better-auth 1.7.5**, as a library inside the `identity` service
 
-`better-auth` + `@thallesp/nestjs-better-auth` 2.8.0, and the plugins **`jwt`**, **`bearer`**,
-**`two-factor`**, **`multi-session`**, **`device-authorization`**.
+`better-auth` called from `identity`'s own controllers through `auth.api`, no handler mounted: a
+third option, neither A nor B of §3.1 (amended 2026-10-03). No NestJS adapter and no `jwt` plugin.
+Plugins per slice: **`bearer`** (A), then **`two-factor`**, **`multi-session`** and
+**`device-authorization`** with the slices that need them.
 
-*Amended 2026-10-03 (§3.1): the platform installs neither the NestJS adapter nor the `jwt` plugin;
-slice A installs `bearer` alone, and each later slice its own.*
+*Amended 2026-10-03 (§3.1). Before it, this decision named `@thallesp/nestjs-better-auth` 2.8.0
+and the `jwt` plugin.*
 
 **Why this one, in one sentence**: it is the only candidate that ticks *at the same time* the
 native device flow, the bearer-token session for the three cookie-less surfaces, five profiles on

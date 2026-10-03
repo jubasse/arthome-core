@@ -537,7 +537,7 @@ client from `openapi/storefront.yaml` or `openapi/studio.yaml`.
 | composed public read (`home`, `live`, `category`, `artist`) | **≤ 400 ms** | `context-map.md` §11(a)'s alert threshold |
 | batched read (overlay) | ≤ 150 ms | four in parallel, under the screen's budget |
 | money write | ≤ 2 s | one transaction, one capacity check, one idempotency store |
-| authentication write (sign-up, sign-in, sign-out, the verification link) | ≤ 2 s | one transaction and one password hash at argon2id's cost; sign-up also claims an idempotency key, sign-in never does |
+| authentication write (sign-up, sign-in, sign-out, the verification link) | ≤ 2 s | bounded by argon2id's cost: sign-up hashes once and claims an idempotency key, sign-in verifies once (and hashes an outdated digest again), sign-out and the link hash nothing |
 | session validation | ≤ 150 ms | on every call that needs a viewer, ahead of the call itself; it returns the viewer's account too, so the viewer context makes no second call |
 | search | **≤ 200 ms** | otherwise the TV's typing feedback falls behind (`storefront-tv`) |
 
