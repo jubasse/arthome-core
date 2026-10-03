@@ -4,7 +4,7 @@
 > EDIT. `pnpm run check:decisions-index` fails when this file differs from what regenerating
 > would produce. Open `DECISIONS.md` at the id for the reason behind a row.
 
-117 decisions.
+121 decisions.
 
 | Decision | Title | Documents cited |
 |---|---|---|
@@ -125,3 +125,7 @@
 | D-113 | The recording is deleted at the online window's closing | none |
 | D-114 | A technical check proves a feed on the date's key, in a carried codec, above a bitrate floor | none |
 | D-115 | A run left on air ends by itself, and `ended` is final | none |
+| D-116 | Reactions and chat messages are rate-limited in grades, with no quota per date | none |
+| D-117 | A seat is watched on one device at a time | none |
+| D-118 | A studio team member may work on several devices at once | none |
+| D-119 | Authentication rate limits target the device, not the address | none |
