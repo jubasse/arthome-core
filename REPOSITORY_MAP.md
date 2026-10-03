@@ -209,7 +209,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 455 exported names.
+Declarations: `dist/index.d.ts` — 457 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -451,6 +451,7 @@ Declarations: `dist/index.d.ts` — 455 exported names.
 - `SettlementAttempt` (interface)
 - `SettlementOutcome` (type)
 - `ShowId` (type) — `type ShowId = Brand<'ShowId'>;`
+- `SignInSlowdown` (const) — `SignInSlowdown: { readonly FREE_FAILURES: 5; readonly FIRST_DELAY_MS: 250; readonly MAX_DELAY_MS: 4000; readonly WINDOW_SECONDS: 900; }` — Failed sign-ins to one email, from anywhere, delay the next attempt rather than refuse it: a growing pause, bounded, which slows a spray ac…
 - `StateChangeOrigin` (type+const)
 - `StorefrontSurface` (type) — `type StorefrontSurface = typeof Surface.STOREFRONT_WEB | typeof Surface.STOREFRONT_MOBILE | typeof Surface.STOREFRONT_TV;` — The three surfaces that call the storefront BFF; the studio's two call the other.
 - `SubscriptionState` (type+const)
@@ -653,6 +654,7 @@ Declarations: `dist/index.d.ts` — 455 exported names.
 - `serviceFeeFor` (function) — `function serviceFeeFor(schedule: ServiceFeeSchedule, unitPrice: Money, quantity: number): Money;`
 - `shouldCollapseToQueue` (function) — `function shouldCollapseToQueue(messagesInWindow: number): boolean;` — Past the threshold, the console stops showing the chat message by message.
 - `shouldDeliverNow` (function) — `function shouldDeliverNow(instant: Instant, viewerUtcOffsetMinutes: number, isHeldSeatLiveStart: boolean): DeliveryDecision;` — Whether to deliver now — the quiet-hours exception covers a held seat's live start only.
+- `signInDelayMs` (function) — `function signInDelayMs(failures: number): number;` — The pause before an attempt on an email that has failed 'failures' times in the window.
 - `smallestRendition` (function) — `function smallestRendition(renditions: readonly Rendition[]): Rendition | null;` — The smallest rendition — a television's standby mode, a thumbnail.
 - `subtract` (function) — `function subtract(left: Money, right: Money): Money;`
 - `sum` (function) — `function sum(values: readonly Money[], currencyCode: string): Money;`

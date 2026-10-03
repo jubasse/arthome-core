@@ -20,5 +20,5 @@ export {
   audienceOf,
   isKeyIdOfIssuer,
 } from './internal-token.js';
-export { AuthRateLimit } from './rate-limits.js';
+export { AuthRateLimit, SignInSlowdown, signInDelayMs } from './rate-limits.js';
 export type { RateLimit } from './rate-limits.js';

@@ -12,6 +12,7 @@ import {
   GENERATED_HANDLE_RANDOM_LENGTH,
   generatedPublicHandle,
 } from './public-handle.js';
+import { SignInSlowdown, signInDelayMs } from './rate-limits.js';
 import { PublicHandleSchema } from '../schema/identifiers.js';
 import { InternalTokenClaimsSchema } from '../schema/internal-token.js';
 import { Service } from '../vocabulary/people.js';
@@ -104,5 +105,15 @@ describe('the internal token', () => {
       chn: ['a-channel'],
     });
     expect(parsed).toHaveProperty('chn');
+  });
+});
+
+describe('the slow-down on an email’s failed sign-ins', () => {
+  it('costs nothing for the first failures, then doubles, and never passes its ceiling', () => {
+    expect(signInDelayMs(0)).toBe(0);
+    expect(signInDelayMs(SignInSlowdown.FREE_FAILURES)).toBe(0);
+    expect(signInDelayMs(SignInSlowdown.FREE_FAILURES + 1)).toBe(SignInSlowdown.FIRST_DELAY_MS);
+    expect(signInDelayMs(SignInSlowdown.FREE_FAILURES + 2)).toBe(2 * SignInSlowdown.FIRST_DELAY_MS);
+    expect(signInDelayMs(10_000)).toBe(SignInSlowdown.MAX_DELAY_MS);
   });
 });

@@ -579,10 +579,18 @@ address, and a living room behind a NAT shares its address. At the BFF we add a 
 wrong-code attempts**, per code and per device. That is the defence the 28.5 bits of entropy
 presuppose.
 
-**The numbers have one owner: `AuthRateLimit` in `@arthome/core`.** Sign-up, sign-in (per address
-and per email) and the email verification's two doors are capped there. Until a device carries a
-verified identity (§4/Q3's `device_token`) the count is per network address, because a `deviceId`
-the caller merely asserts caps nothing: it sends a new one with each attempt. The pairing lockout's
+**The numbers have one owner: `AuthRateLimit` in `@arthome/core`.** Sign-up, sign-in (per address,
+and per email from one address) and the email verification's doors are capped there. Until a device
+carries a verified identity (§4/Q3's `device_token`) the count is per network address, an IPv6
+address counting as its /64, because a `deviceId` the caller merely asserts caps nothing: it sends a
+new one with each attempt.
+
+**No hard lockout per email** (the lead's ruling, 2026-10-03, on the security review's M4). A cap
+counted per email alone lets anyone keep any known address signed out with ten wrong passwords.
+Per email, failures only slow the next attempt down (`SignInSlowdown`: a doubling pause past five
+failures, bounded at four seconds); the hard cap is per email *and* address, which a third party
+exhausts for itself alone. A resend is capped per hour and per day: one account has one address,
+and D-100 lets a stranger register it. The pairing lockout's
 N joins `AuthRateLimit` with the pairing itself. better-auth's own limiter guards its HTTP handler,
 which `identity` does not mount (§3.1), so it caps nothing here.
 
