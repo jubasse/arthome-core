@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Surface } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
-import type { AccessorOf, Header, HeaderParameter, JsonResponse, PathParameter, QueryParameter } from '../http/index.js';
+import type { AccessorOf, Header, HeaderParameter, JsonResponse, PathParameter, QueryParameter, SecurityRequirement } from '../http/index.js';
 declare const SURFACE: readonly [
     typeof Surface.STOREFRONT_WEB,
     typeof Surface.STOREFRONT_MOBILE,
@@ -10,6 +10,13 @@ declare const SURFACE: readonly [
 ];
 declare const CURSOR_DIRECTION: readonly ["forward", "backward"];
 declare const STOREFRONT_TAGS: readonly ["bootstrap", "discovery", "date", "commerce", "playback", "chat", "pairing", "account"];
+/**
+ * **Public read.** A complete absence of authentication is a NOMINAL case, not an error: this
+ * read is the indexable face of the product, and a search engine's crawler has neither cookie,
+ * nor bearer token, nor any way of minting one. Guest mode takes the same path. See "Public read
+ * and identified read" at the top of the document.
+ */
+export declare const PublicReadSecurity: readonly SecurityRequirement[];
 /** The tags this document groups its operations by. */
 export declare const StorefrontTag: AccessorOf<typeof STOREFRONT_TAGS>;
 export declare const TraceparentParameter: HeaderParameter<'traceparent', z.ZodString>;

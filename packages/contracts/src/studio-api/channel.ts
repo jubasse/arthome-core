@@ -664,6 +664,11 @@ export const listChannelJournal: Route<{
   description:
     '**The audit log stays on page + total** (D-010), with a **mandatory period filter**. Nobody\npages to the 50,000th entry of a 24-month log: you filter by period first, which keeps the\npage numbers — the affordance wanted — and stays fast. Moving to a cursor would trade a\nproblem we do not have against the loss of what we wanted.\n\n`from` and `to` are **required**, and too wide a range is refused with\n`api.period_filter_required`, with the maximum range as a parameter.\n\nIt **names names and places them**, kept for 24 months. The **attempts** to walk back a\ncommitted transition appear in it: that is in itself a piece of operational information.\n',
   'x-arthome-maturity': 'stable',
+  // One call, not five. The audit log is attached to `identity` as a read model fed
+  // ONLY by Kafka consumption: a single owner holds the exact total, the projection
+  // by role and the sort, with no join at query time and without the BFF acquiring a
+  // table of its own. The fan-out exception that used to stand here has no object any
+  // more — and the system now has none at all, which is better than declaring one.
   'x-arthome-upstream': [Service.IDENTITY],
   parameters: [
     ChannelIdParameter,

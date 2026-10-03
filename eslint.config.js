@@ -21,7 +21,6 @@ export default defineConfig([
     'packages/*/dist/**',
     'prototypes/**', // the five mockups: taken as they are, not rewritten
     'docs/**',
-    'packages/contracts/.route-roundtrip/**', // tools/report-route-roundtrip.py's scratch output
   ]),
 
   // 1. the floor. arthome-core runs under Node (build, tooling, fixtures), so

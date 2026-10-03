@@ -279,6 +279,8 @@ export const studioApi: Api<{
   getChannelExport: typeof getChannelExport;
 }> = defineApi({
   openapi: '3.1.1',
+  // Every `CODE` this document names in prose must be the WIRE spelling of a member of
+  // ERROR_CODES, not the TypeScript accessor's. check-vocabulary.py compares them.
   'x-arthome-codes-source': 'ERROR_CODES',
   info: {
     title: 'Arthome Studio BFF',
@@ -502,33 +504,41 @@ export const studioApi: Api<{
       SessionEstablished: StudioSessionEstablishedSchema,
       SessionEstablishedCookie: StudioSessionEstablishedCookieSchema,
       SessionEstablishedBearer: StudioSessionEstablishedBearerSchema,
+      // rights and bootstrap
       EffectiveRights: EffectiveRightsSchema,
       StudioCounters: StudioCountersSchema,
       StudioBootstrap: StudioBootstrapSchema,
+      // measurement: period, tiles, series
       PeriodBounds: PeriodBoundsSchema,
       MetricTile: MetricTileSchema,
       DashboardReminder: DashboardReminderSchema,
       DashboardScreen: DashboardScreenSchema,
       StatsAudience: StatsAudienceSchema,
       StatsSeries: StatsSeriesSchema,
+      // publication
       PublicationChecklistItem: PublicationChecklistItemSchema,
       PublicationTransition: PublicationTransitionSchema,
       Publication: PublicationSchema,
       DateSheet: DateSheetSchema,
       EventsRow: EventsRowSchema,
       Duty: DutySchema,
+      // ticketing
       DateSalesPane: DateSalesPaneSchema,
+      // the run
       HealthSample: HealthSampleSchema,
       RunConsole: RunConsoleSchema,
       CrewPresence: CrewPresenceSchema,
       HealthSeries: HealthSeriesSchema,
       StudioIncident: StudioIncidentSchema,
       StreamKeyReveal: StreamKeyRevealSchema,
+      // moderation
       ModerationItem: ModerationItemSchema,
       AudienceMember: AudienceMemberSchema,
       ChatPolicy: ChatPolicySchema,
+      // team
       ChannelMember: ChannelMemberSchema,
       DateAccessGrant: DateAccessGrantSchema,
+      // money
       PayoutLine: PayoutLineSchema,
       BankChangeRequest: BankChangeRequestSchema,
       ExportJob: ExportJobSchema,

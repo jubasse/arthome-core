@@ -19,6 +19,7 @@ import type {
   JsonResponse,
   PathParameter,
   QueryParameter,
+  SecurityRequirement,
 } from '../http/index.js';
 import { accessorOf } from '../http/index.js';
 
@@ -39,6 +40,19 @@ const STOREFRONT_TAGS = [
   'pairing',
   'account',
 ] as const;
+
+/**
+ * **Public read.** A complete absence of authentication is a NOMINAL case, not an error: this
+ * read is the indexable face of the product, and a search engine's crawler has neither cookie,
+ * nor bearer token, nor any way of minting one. Guest mode takes the same path. See "Public read
+ * and identified read" at the top of the document.
+ */
+export const PublicReadSecurity: readonly SecurityRequirement[] = [
+  {},
+  { sessionCookie: [] },
+  { bearerToken: [] },
+  { deviceToken: [] },
+];
 
 /** The tags this document groups its operations by. */
 export const StorefrontTag: AccessorOf<typeof STOREFRONT_TAGS> = accessorOf(STOREFRONT_TAGS);

@@ -39,6 +39,7 @@ import {
   UnauthorizedResponse,
   UnavailableResponse,
   VaryAuthHeader,
+  PublicReadSecurity,
 } from './components.js';
 import { DateCardSchema, PriceTierSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
@@ -81,18 +82,7 @@ export const listPlans: Route<{
     'Three plans, their nine possible openings, the discount on seats and the concurrent-screen\nceiling. **The ceiling is published here and enforced by `streaming`**: it is an execution\nconstraint, not a marketing line.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   'x-arthome-freshness': 300,
   parameters: [SurfaceParameter, TraceparentParameter],
   responses: {
@@ -180,18 +170,7 @@ export const refreshDateAvailability: Route<{
     'The only legitimate call from a television\'s booking screen: the date is already in hand,\nonly the capacity moves. `validUntil` is short, `AVAILABILITY_VALID_SECONDS` after `servedAt`\n(`@arthome/core`), because the "show already started" price is **pro rata to the time\nremaining**.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   'x-arthome-freshness': 15,
   parameters: [DateIdParameter, SurfaceParameter, TraceparentParameter],
   responses: {

@@ -304,6 +304,8 @@ export const storefrontApi: Api<{
   getAccountDeepLink: typeof getAccountDeepLink;
 }> = defineApi({
   openapi: '3.1.1',
+  // Every `CODE` this document names in prose must be the WIRE spelling of a member of
+  // ERROR_CODES, not the TypeScript accessor's. check-vocabulary.py compares them.
   'x-arthome-codes-source': 'ERROR_CODES',
   info: {
     title: 'Arthome Storefront BFF',
@@ -532,30 +534,36 @@ export const storefrontApi: Api<{
       Unavailable: UnavailableResponse,
     },
     schemas: {
+      // envelopes
       EnvelopeMeta: StorefrontEnvelopeMetaSchema,
       CursorPageInfo: StorefrontCursorPageInfoSchema,
       Error: StorefrontErrorSchema,
       ErrorEnvelope: StorefrontErrorEnvelopeSchema,
+      // primitives
       Money: MoneyOut,
       LocalizedText: StorefrontLocalizedTextSchema,
       ImageRendition: ImageRenditionSchema,
       MediaSet: MediaSetSchema,
       VenueClock: VenueClockSchema,
+      // authentication
       SessionMode: StorefrontSessionModeSchema,
       SessionEstablished: StorefrontSessionEstablishedSchema,
       SessionEstablishedCookie: SessionEstablishedCookieSchema,
       SessionEstablishedBearer: SessionEstablishedBearerSchema,
+      // viewer bootstrap
       DomainConstants: DomainConstantsSchema,
       LabelArtifactRef: LabelArtifactRefSchema,
       ProfileSummary: ProfileSummarySchema,
       ViewerPreferences: ViewerPreferencesSchema,
       ViewerContext: ViewerContextSchema,
       ChangeFeed: ChangeFeedSchema,
+      // the public date
       WatchVerdict: WatchVerdictSchema,
       DateCard: DateCardSchema,
       DateDetail: DateDetailSchema,
       PriceTier: PriceTierSchema,
       Chapter: ChapterSchema,
+      // composed screens
       Rail: RailSchema,
       HomeScreen: HomeScreenSchema,
       ScheduleSlot: ScheduleSlotSchema,
@@ -568,6 +576,7 @@ export const storefrontApi: Api<{
       StructuredFilter: StructuredFilterSchema,
       SearchCriteria: SearchCriteriaSchema,
       ShowGroup: ShowGroupSchema,
+      // commerce
       SalesQueuePosition: SalesQueuePositionSchema,
       TicketCard: TicketCardSchema,
       MerchItem: MerchItemSchema,
@@ -582,15 +591,18 @@ export const storefrontApi: Api<{
       ExternalOrderRef: ExternalOrderRefSchema,
       Plan: PlanSchema,
       Subscription: SubscriptionSchema,
+      // playback
       PlaybackTicket: PlaybackTicketSchema,
       PlaybackRenewal: PlaybackRenewalSchema,
       ActivePlaybackSession: ActivePlaybackSessionSchema,
       Incident: IncidentSchema,
       ChatMessage: ChatMessageSchema,
       ReactionQuota: ReactionQuotaSchema,
+      // pairing
       DevicePairing: DevicePairingSchema,
       PairingOutcome: PairingOutcomeSchema,
       AccountDeepLink: AccountDeepLinkSchema,
+      // account
       SavedSearch: SavedSearchSchema,
       NotificationEntry: NotificationEntrySchema,
       NotificationPreferences: NotificationPreferencesSchema,

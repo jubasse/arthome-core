@@ -52,13 +52,15 @@ export interface RouteShape {
     readonly requestBody?: RequestBody;
     readonly responses: Readonly<Record<string, Response>>;
 }
+/** The schemes that satisfy a route, by name: `{}` is a call with no credential at all. */
+export type SecurityRequirement = Readonly<Record<string, readonly string[]>>;
 export interface RouteDefinition extends RouteShape, Extensions {
     readonly operationId: string;
     readonly tags?: readonly string[];
     readonly summary?: string;
     readonly description?: string;
     readonly deprecated?: boolean;
-    readonly security?: readonly Readonly<Record<string, readonly string[]>>[];
+    readonly security?: readonly SecurityRequirement[];
 }
 /** Named members for a list of words, `CHAT` for `'chat'`, so no module spells a member again. */
 export type AccessorOf<T extends readonly string[]> = {
@@ -124,7 +126,7 @@ export interface ApiDefinition<Routes extends Readonly<Record<string, Route>>> e
     readonly info: Readonly<Record<string, unknown>>;
     readonly servers?: readonly Readonly<Record<string, unknown>>[];
     readonly tags?: readonly Readonly<Record<string, unknown>>[];
-    readonly security?: readonly Readonly<Record<string, readonly string[]>>[];
+    readonly security?: readonly SecurityRequirement[];
     readonly routes: Routes;
     readonly components: ApiComponents;
 }

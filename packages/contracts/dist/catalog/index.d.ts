@@ -1,9 +1,9 @@
 /**
  * `@arthome/contracts/catalog` — The catalogue a viewer browses: dates, artists, rails, media, and the constants and label artefacts a surface boots with.
  *
- * EVERY SCHEMA HERE EMITS A NAMED SCHEMA OF `openapi/storefront.yaml` EXACTLY, and
- * `pnpm run check:emit-diff` is what proves it: the document is authoritative
- * (D-058), so where the two differ the schema changes.
+ * EVERY SCHEMA HERE IS A COMPONENT OF `openapi/storefront.yaml`, which is generated from it
+ * (D-120): `pnpm run check:openapi-generated` fails when the committed document is not
+ * what the schemas emit.
  *
  * The rules this file follows, each of which was a defect the gate found (D-060, D-065):
  *

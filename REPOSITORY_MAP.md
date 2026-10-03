@@ -77,7 +77,7 @@ Declarations: `dist/envelope/index.d.ts` — 7 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 36 exported names.
+Declarations: `dist/http/index.d.ts` — 37 exported names.
 
 - `AccessorOf` (type) — `type AccessorOf<T extends readonly string[]> = { readonly [Member in T[number] as Uppercase<Member>]: Member; };` — Named members for a list of words, 'CHAT' for ''chat'', so no module spells a member again.
 - `Api` (type) — `type Api<Routes extends Readonly<Record<string, Route>> = Readonly<Record<string, Route>>> = ApiDefinition<Routes>;`
@@ -107,6 +107,7 @@ Declarations: `dist/http/index.d.ts` — 36 exported names.
 - `RouteShape` (interface) — What a route's types are read from — the part of its annotation a handler or client needs.
 - `RouteStatus` (type) — `type RouteStatus<R extends RouteShape> = keyof R['responses'] & (number | '${number}');`
 - `RouteSuccessStatus` (type) — `type RouteSuccessStatus<R extends RouteShape> = Extract<RouteStatus<R>, 200 | 201 | 202 | 203 | 204 | 206 | '200' | '201' | '202' | '203' | '204' | '206'>;` — The 2xx statuses a route declares.
+- `SecurityRequirement` (type) — `type SecurityRequirement = Readonly<Record<string, readonly string[]>>;` — The schemes that satisfy a route, by name: '{}' is a call with no credential at all.
 - `accessorOf` (function) — `function accessorOf<const T extends readonly string[]>(members: T): AccessorOf<T>;` — The accessor built from the list rather than written beside it: the list stays the one declaration, which is what 'check-enums' reads.
 - `bodySchemaOf` (function) — `function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;` — The JSON body's schema, or 'undefined' for a route that takes none.
 - `defineApi` (function) — `function defineApi<const Routes extends Readonly<Record<string, Route>>>(definition: ApiDefinition<Routes>): Api<Routes>;`

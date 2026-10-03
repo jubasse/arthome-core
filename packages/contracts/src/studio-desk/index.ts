@@ -1,8 +1,8 @@
 /**
  * `@arthome/contracts/studio-desk` — Moderation, the audience, the inbox and the journal — the duty desk.
  *
- * Every schema here is verified against the contract it must emit by
- * `pnpm run check:emit-diff`, so one that does not reproduce its document cannot be committed.
+ * Every schema here is a component of the studio document, which is generated from it (D-120):
+ * `pnpm run check:openapi-generated` fails when the committed document is not what they emit.
  */
 
 import { z } from 'zod';

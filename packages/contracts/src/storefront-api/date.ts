@@ -18,6 +18,7 @@ import {
   SurfaceParameter,
   TraceparentParameter,
   VaryAuthHeader,
+  PublicReadSecurity,
 } from './components.js';
 import { DateDetailSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
@@ -52,19 +53,11 @@ export const getDateDetail: Route<{
   description:
     '**One call**, and it must be **cheap**: the television surface prefetches it for the focused\nitem once the focus has settled, and a prefetch paid for twice is worse than no prefetch at\nall. Hence a cache validator (`ETag`) and a declared freshness.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
+  // `chat` is NOT called: the chat mode is already PROJECTED into `date_detail_public`
+  // by `chat.date_chat_policy_changed`. It was both projected and called — one call for
+  // data we already hold, and the storefront's only screen to cross the threshold of 4.
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   'x-arthome-freshness': 60,
   parameters: [
     DateIdParameter,

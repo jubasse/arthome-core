@@ -21,6 +21,7 @@ import {
   UnavailableResponse,
   VaryAuthHeader,
   ViewerTimezoneParameter,
+  PublicReadSecurity,
 } from './components.js';
 import {
   ArtistDetailSchema,
@@ -82,18 +83,7 @@ export const getHomeScreen: Route<{
     '**One call.** Ten to thirteen rails, six to eight visible cards each, a cursor per rail:\n60 to 100 cards, on the order of 50 to 90 KB raw, under 15 KB once compressed.\n\nThe BFF composes this model with **three per-viewer overlays, batched by id lists** — never\none call per card. In steady state, the per-profile Redis cache (30 s TTL) brings the screen\ndown to one or two internal calls.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common cache.\nThe three per-viewer overlays (`watchVerdict`, `viewerRelations`, `viewerProgress`) are then\n**absent**, never null. Called with a session or a bearer token, it returns the public body\n**plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   'x-arthome-freshness': 60,
   parameters: [SurfaceParameter, TraceparentParameter, ViewerTimezoneParameter],
   responses: {
@@ -196,18 +186,7 @@ export const getLiveScreen: Route<{
     "**One call**, and the hourly grouping is **server-side**: it depends on the viewer's\ntimezone, which the surface sends in a header. Grouped client-side it would be grouped five\ndifferent ways, and Next's server rendering does not know the visitor's timezone.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.STREAMING, Service.IDENTITY],
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   'x-arthome-freshness': 15,
   parameters: [SurfaceParameter, TraceparentParameter, ViewerTimezoneParameter],
   responses: {
@@ -268,18 +247,7 @@ export const listCategories: Route<{
     '**One call, not one per tile.** The editorial rank is authoritative and **no surface\nreorders**. The full taxonomy is not here: it is an **immutable versioned artefact** served\nby the CDN, referenced in `ViewerContext`.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   'x-arthome-freshness': 300,
   parameters: [SurfaceParameter, TraceparentParameter],
   responses: {
@@ -350,18 +318,7 @@ export const getCategoryScreen: Route<{
     '**One call.** The overview **does not paginate**: it is bounded (8 per section). The four\nother sections each carry their own cursor.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   'x-arthome-freshness': 300,
   parameters: [
     CategoryIdParameter,
@@ -486,18 +443,7 @@ export const listArtists: Route<{
     'Two sorts only, and they are **served**: alphabetical and by follower count. The follower\ncount comes from **a single projection**, so that it never differs between the artist page\nand the list.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.IDENTITY],
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   'x-arthome-freshness': 300,
   parameters: [
     SurfaceParameter,
@@ -590,18 +536,7 @@ export const getArtistDetail: Route<{
     '**One call**: the page, upcoming dates, past dates, replays and the shop in the same\nresponse. A page served in four calls would paint in four stages, which a screen three\nmetres away makes unreadable.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   'x-arthome-freshness': 300,
   parameters: [ArtistIdParameter, SurfaceParameter, TraceparentParameter],
   responses: {
@@ -679,18 +614,7 @@ export const search: Route<{
     '**The paginated unit is the show** for `best`, `lives` and `replays`; the `artists` tab\npaginates artists. The "soon" sort is that of the **representative date**, and the "this\nweekend" filter applies **before** grouping.\n\nFacet counts are computed on the current query and returned **in the same response**: no\nsecond call. The total count is **approximate and bounded** — exact up to the threshold served\nas `DomainConstants.searchExactTotalLimit`, a lower bound beyond it, and `totalIsLowerBound`\nsays which of the two it is.\n\n**Budget ≤ 200 ms**: a television\'s on-screen keyboard produces one character per press and\nthe results live as you type; beyond that, the visual feedback of typing comes adrift. The\nrequest is **cancellable** — the client closes the socket, the server gives up.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   'x-arthome-freshness': 60,
   parameters: [
     SurfaceParameter,
@@ -825,18 +749,7 @@ export const listReplays: Route<{
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.STREAMING],
   'x-arthome-freshness': 60,
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   parameters: [
     SurfaceParameter,
     TraceparentParameter,
@@ -925,18 +838,7 @@ export const extendRail: Route<{
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
   'x-arthome-freshness': 60,
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   parameters: [
     {
       name: 'railId',
@@ -1032,18 +934,7 @@ export const resolvePublicLink: Route<{
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
   'x-arthome-freshness': 300,
-  security: [
-    {},
-    {
-      sessionCookie: [],
-    },
-    {
-      bearerToken: [],
-    },
-    {
-      deviceToken: [],
-    },
-  ],
+  security: PublicReadSecurity,
   parameters: [
     SurfaceParameter,
     TraceparentParameter,
