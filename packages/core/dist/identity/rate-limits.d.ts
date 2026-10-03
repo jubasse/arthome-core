@@ -1,7 +1,7 @@
 /**
  * The BFFs' caps on the authentication doors (`adr-auth.md` §6.2), owned here so the storefront
- * and the studio cap alike. The product owner's direction is to limit by device, which slice C's
- * verified `device_token` brings: a `deviceId` the caller merely asserts caps nothing, since it can
+ * and the studio cap alike. D-119: the limits target the device, which slice C's verified
+ * `device_token` brings: a `deviceId` the caller merely asserts caps nothing, since it can
  * send a new one with each attempt. Until then the caps count per network address, an IPv6 address
  * as its /64, tight; and an IPv4 address under a high anti-abuse ceiling (`ipv4Limit`), because
  * mobile carriers share one IPv4 address across hundreds of subscribers (CGNAT), and D-079's
