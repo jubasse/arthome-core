@@ -99,7 +99,7 @@ def check(fn):
 
     # R22 — every `x-arthome-upstream` names a KNOWN upstream.
     #
-    #   174 operations declare one. It is what makes fan-out countable — how many
+    #   Every operation declares one. It is what makes fan-out countable — how many
     #   services a request touches, and therefore what one slow service costs —
     #   and nothing had ever compared those names to anything. backend-contracts
     #   found three operations declaring services they never call, two of them

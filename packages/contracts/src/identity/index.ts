@@ -313,7 +313,13 @@ export const SessionEstablishedBearerSchema: z.ZodObject<
       '**A narrowing of `SessionMode` to the two token-bearing modes.** `cookie` is absent\nbecause a cookie response carries **nothing in the body** — that is the whole point of the\nsplit — so this branch cannot describe it. `device` shares this schema rather than having\nits own: a device session is token-shaped, and the discriminator maps both values here.\n\nThe studio has no such branch because it has no device sessions; only a television carries\na device token.\n',
     ),
     accessToken: z.string(),
-    refreshToken: z.string().nullable().optional(),
+    refreshToken: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        '**Always `null` on the storefront.** The session slides instead: seven days, renewed by\nuse at most once a day (`adr-auth.md` §6.1), so the access token is the session and no\noperation takes a refresh token.\n',
+      ),
     expiresAt: InstantOut,
     viewerContext: ViewerContextSchema,
   })

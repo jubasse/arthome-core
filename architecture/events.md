@@ -201,6 +201,7 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 | Event | Payload | Consumed by | Why |
 |---|---|---|---|
 | `identity.account.registered.v1` | `account_id`, `locale`, `country`, `occurred_at` | `notifications` | welcome email |
+| `identity.account.email_verification_requested.v1` | `account_id`, `email`, `locale`, `token`, `expires_at` | `notifications` | the verification link (auth Q2); the token travels in clear, and why that is acceptable for this one token is the proto's comment |
 | `identity.account.deletion_requested.v1` | `account_id`, `grace_until` | `ticketing`, `payouts`, `notifications`, `chat`, `streaming` | **erasure saga** (`data-model.md` §7.5) |
 | `identity.account.anonymised.v1` | `account_id` | all | dissociate nicknames, freeze invoices |
 | `identity.device.revoked.v1` | `device_id`, `account_id` | **`streaming`** | invalidate this device's playback leases: that is what makes "disconnect this device" stop playback |

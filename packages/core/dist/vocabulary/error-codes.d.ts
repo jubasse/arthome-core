@@ -23,10 +23,11 @@ import { WATCH_DENIAL_REASONS } from './entitlement.js';
  * route that does not resolve, not a missing aggregate: a service expressing a domain rule with
  * one of these makes the surface render "not found" for a date that exists and is not on sale.
  */
-export declare const API_ERROR_CODES: readonly ["api.unauthenticated", "api.forbidden", "api.not_found", "api.rate_limited", "api.schema_invalid", "api.internal", "api.service_unavailable", "api.upstream_unavailable", "api.cursor_too_old", "api.sort_key_forbidden", "api.period_filter_required", "api.rights_version_stale", "api.idempotency_key_reused", "api.idempotency_in_flight", "api.deadline_exceeded", "api.upstream_timeout"];
+export declare const API_ERROR_CODES: readonly ["api.unauthenticated", "api.token_expired", "api.forbidden", "api.not_found", "api.rate_limited", "api.schema_invalid", "api.internal", "api.service_unavailable", "api.upstream_unavailable", "api.cursor_too_old", "api.sort_key_forbidden", "api.period_filter_required", "api.rights_version_stale", "api.idempotency_key_reused", "api.idempotency_in_flight", "api.deadline_exceeded", "api.upstream_timeout"];
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 export declare const ApiErrorCode: {
     readonly UNAUTHENTICATED: "api.unauthenticated";
+    readonly TOKEN_EXPIRED: "api.token_expired";
     readonly FORBIDDEN: "api.forbidden";
     readonly NOT_FOUND: "api.not_found";
     readonly RATE_LIMITED: "api.rate_limited";
@@ -48,13 +49,15 @@ export declare const ApiErrorCode: {
  * still open on this device and revoked from another: not an authentication failure, and not to
  * be retried as one.
  */
-export declare const IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.handle_taken", "identity.two_factor_required", "identity.signed_out_elsewhere"];
+export declare const IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.handle_taken", "identity.invalid_credentials", "identity.two_factor_required", "identity.signed_out_elsewhere", "identity.verification_link_invalid"];
 export type IdentityErrorCode = (typeof IDENTITY_ERROR_CODES)[number];
 export declare const IdentityErrorCode: {
     readonly EMAIL_TAKEN: "identity.email_taken";
     readonly HANDLE_TAKEN: "identity.handle_taken";
+    readonly INVALID_CREDENTIALS: "identity.invalid_credentials";
     readonly TWO_FACTOR_REQUIRED: "identity.two_factor_required";
     readonly SIGNED_OUT_ELSEWHERE: "identity.signed_out_elsewhere";
+    readonly VERIFICATION_LINK_INVALID: "identity.verification_link_invalid";
 };
 /**
  * Device pairing, where the same code is polled repeatedly. `pairing.slow_down` is a rate signal

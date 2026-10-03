@@ -209,19 +209,22 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 434 exported names.
+Declarations: `dist/index.d.ts` — 452 exported names.
 
+- `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
 - `AUDIENCE_SANCTIONS` (const) — `AUDIENCE_SANCTIONS: readonly ["none", "muted", "banned"]` — Axis 3 — the sanction on the person, within one channel.
 - `AVAILABILITY_PUBLISH_MIN_INTERVAL_SECONDS` (const) — `AVAILABILITY_PUBLISH_MIN_INTERVAL_SECONDS = 5` — At most one 'availability_changed' per date in this interval while the date keeps moving.
 - `AVAILABILITY_VALID_SECONDS` (const) — `AVAILABILITY_VALID_SECONDS = 60` — How long a date's availability read holds from its 'servedAt': short, because the "show already started" price it carries is pro rata of th…
 - `AccountId` (type) — `type AccountId = Brand<'AccountId'>;`
+- `AccountStatus` (type+const)
 - `ApiErrorCode` (type+const)
 - `ArtistId` (type) — `type ArtistId = Brand<'ArtistId'>;`
 - `AttributeGroup` (interface) — A facetable attribute group: 'audience', 'accessibility', …
 - `AttributeValue` (interface)
 - `AudienceSanction` (type+const) — `type AudienceSanction = (typeof AUDIENCE_SANCTIONS)[number]; AudienceSanction: { readonly NONE: "none"; readonly MUTED: "muted"; readonly BANNED: "banned"; }`
+- `AuthRateLimit` (const)
 - `BASIS_POINTS_SCALE` (const) — `BASIS_POINTS_SCALE = 10000`
 - `BLACKOUT_REASONS` (const) — `BLACKOUT_REASONS: readonly ["co_production", "broadcaster", "festival"]` — A code, never a sentence: 'geography.rightsPolicy.blackoutReasons[]' carries 'label' and 'labelEn', prose written inside the data where eve…
 - `BasisPoints` (type) — `type BasisPoints = number;` — A rate in basis points, as an integer: 1200 = 12%, 550 = 5.5%.
@@ -274,6 +277,7 @@ Declarations: `dist/index.d.ts` — 434 exported names.
 - `DomainErrorCode` (type+const)
 - `DomainErrorInit` (interface)
 - `DomainGuardCode` (type+const)
+- `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS` (const) — `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS = 24` — 'adr-auth.md' §6.7 (auth Q2, 2026-10-03): an email verification link expires after a day, and is spent by its first use.
 - `ERROR_CODES` (const) — Every error code, composed — the vocabulary the two contracts declare against.
 - `EffectiveRights` (interface)
 - `Err` (interface)
@@ -287,21 +291,28 @@ Declarations: `dist/index.d.ts` — 434 exported names.
 - `FixtureDate` (interface)
 - `FixtureVenue` (interface)
 - `Fixtures` (interface)
+- `GENERATED_HANDLE_ALPHABET` (const) — `GENERATED_HANDLE_ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789"` — 32 symbols, so a byte masked to five bits picks one without bias.
+- `GENERATED_HANDLE_RANDOM_LENGTH` (const) — `GENERATED_HANDLE_RANDOM_LENGTH = 8` — 32^8 = 2^40 handles: a collision is rare, and the caller retries it with fresh bytes.
 - `Gauge` (interface)
 - `Genre` (interface) — A sub-genre: optional, MULTIPLE, closed vocabulary.
 - `HOLD_EXPIRY_BATCH` (const) — `HOLD_EXPIRY_BATCH = 500` — adr-ticketing.md §6: how many expired holds one pass of the sweeper's one-second loop takes.
 - `HOLD_MINUTES_CHECKOUT` (const) — `HOLD_MINUTES_CHECKOUT = 15` — THE CAPACITY HOLD, and its SINGLE-INSTANT invariant.
 - `HOLD_MINUTES_TV_PAIRING` (const) — `HOLD_MINUTES_TV_PAIRING = 5`
 - `HOUR_MS` (const) — `HOUR_MS = 3600000`
-- `IDENTITY_ERROR_CODES` (const) — `IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.handle_taken", "identity.two_factor_required", "identity.signed_out_elsewhere"]` — Sign-in, sign-up and session refusals.
+- `IDENTITY_ERROR_CODES` (const) — Sign-in, sign-up and session refusals.
 - `INCIDENT_CAUSES` (const) — `INCIDENT_CAUSES: readonly ["venue_feed_lost", "run_desk_disconnected", "bitrate_collapsed", "compatibility_worker_failed", "provider_error", "manual"]` — The cause, a vocabulary distinct from the outcome.
 - `INCIDENT_KINDS` (const) — `INCIDENT_KINDS: readonly ["hold_screen", "postponed", "cancelled", "interrupted"]` — The four incident kinds a viewer can see.
 - `INTENT_STATUSES` (const) — `INTENT_STATUSES: readonly ["succeeded", "requires_action", "processing", "declined"]`
+- `INTERNAL_TOKEN_ALGORITHM` (const) — `INTERNAL_TOKEN_ALGORITHM = "ES256"` — 'adr-auth.md' §8.1: ES256 for every issuer, never EdDSA.
+- `INTERNAL_TOKEN_ISSUERS` (const) — `INTERNAL_TOKEN_ISSUERS: readonly ["arthome.bff-storefront", "arthome.bff-studio"]` — The two BFFs, the only callers of a service.
+- `INTERNAL_TOKEN_LIFETIME_SECONDS` (const) — `INTERNAL_TOKEN_LIFETIME_SECONDS = 60` — 'adr-auth.md' §8: one internal token covers one BFF → service call.
 - `IdentityErrorCode` (type+const)
 - `IncidentCause` (type+const)
 - `IncidentKind` (type+const)
 - `Instant` (type) — `type Instant = string;` — An instant, in ISO 8601 UTC.
 - `IntentStatus` (type+const)
+- `InternalTokenIssuer` (type+const)
+- `KEY_ID_PREFIX_BY_ISSUER` (const) — `KEY_ID_PREFIX_BY_ISSUER: Readonly<Record<InternalTokenIssuer, string>>` — 'adr-auth.md' §8.1: one JWKS document carries four issuers' keys, told apart by this prefix of their 'kid'.
 - `KnownMember` (interface)
 - `LANGUAGE_DEPENDENCIES` (const) — `LANGUAGE_DEPENDENCIES: readonly ["none", "helpful", "essential"]` — The real vocabulary, corrected (D1).
 - `LIVE_START_LEAD_MINUTES` (const) — `LIVE_START_LEAD_MINUTES = 0` — A followed artist goes on air: as soon as the feed opens.
@@ -403,6 +414,7 @@ Declarations: `dist/index.d.ts` — 434 exported names.
 - `REPLAY_POLICIES` (const) — `REPLAY_POLICIES: readonly ["included", "subscription", "unit", "none"]` — The promise made before purchase — what justifies the price difference.
 - `RIGHTS_SCOPES` (const) — `RIGHTS_SCOPES: readonly ["worldwide", "restricted"]`
 - `RUN_STATES` (const) — `RUN_STATES: readonly ["idle", "rehearsal", "on_air", "interrupted", "ended"]` — The technical axis, and nothing else.
+- `RateLimit` (interface) — The BFFs' caps on the authentication doors ('adr-auth.md' §6.2), owned here so the storefront and the studio cap alike.
 - `RefundReason` (type+const)
 - `RefundRequest` (interface)
 - `Rendition` (interface) — One image at a size that is actually displayed.
@@ -420,6 +432,8 @@ Declarations: `dist/index.d.ts` — 434 exported names.
 - `SEAT_SALES_CUTOFF_MINUTES_AFTER_START` (const) — `SEAT_SALES_CUTOFF_MINUTES_AFTER_START = 30` — D-089: a seat covers the live alone, sold until this long after its start, every channel alike.
 - `SEAT_STATES` (const) — `SEAT_STATES: readonly ["active", "cancelled", "refunded", "transferred", "credited"]` — data-model.md §3.3; 'held' is gone, a hold is a SeatHold (D-077).
 - `SERVICES` (const) — `SERVICES: readonly ["identity", "catalog", "ticketing", "streaming", "chat", "payouts", "notifications"]` — The seven services.
+- `SESSION_LIFETIME_SECONDS` (const) — `SESSION_LIFETIME_SECONDS: number` — 'adr-auth.md' §6.1: a session lives seven days.
+- `SESSION_RENEWAL_AGE_SECONDS` (const) — `SESSION_RENEWAL_AGE_SECONDS: number` — 'adr-auth.md' §6.1: a session in use slides forward at most once a day.
 - `STATE_CHANGE_ORIGINS` (const) — `STATE_CHANGE_ORIGINS: readonly ["human_verdict", "automatic_filter", "retroactive_filter", "author_sanctioned"]` — Where a state change came from; the origin survives the settlement, so "removed by the filter, then confirmed by X" does not collapse into …
 - `SUBSCRIPTION_STATES` (const) — `SUBSCRIPTION_STATES: readonly ["active", "past_due", "cancelled", "trialing"]`
 - `SURFACES` (const) — `SURFACES: readonly ["storefront_web", "storefront_mobile", "storefront_tv", "studio_web", "studio_mobile", "system"]` — Where a decision was taken — the studio journal is by-name and situated, and 'system' is an actor like any other (standby screen, lease exp…
@@ -443,6 +457,7 @@ Declarations: `dist/index.d.ts` — 434 exported names.
 - `TAX_JURISDICTION_LEVELS` (const) — `TAX_JURISDICTION_LEVELS: readonly ["country", "state", "county", "city"]` — Roughly 9,000 US jurisdictions: a country allows no calculation at all.
 - `TAX_SUPPLY_KINDS` (const) — `TAX_SUPPLY_KINDS: readonly ["live_stream_access", "replay_access", "subscription", "merchandise"]` — What is being supplied, for tax.
 - `TECHNICAL_PROVISION_THRESHOLD` (const) — `TECHNICAL_PROVISION_THRESHOLD = 10000` — The TECHNICAL PROVISIONING threshold and its parameters — CONTRACT DATA, not constants copied onto five surfaces.
+- `TOKEN_CLOCK_TOLERANCE_SECONDS` (const) — `TOKEN_CLOCK_TOLERANCE_SECONDS = 30` — 'adr-auth.md' §5.2 and §9.5: every verifier tolerates this much clock skew, both ways.
 - `Tag` (interface)
 - `TaxEvidenceKind` (type+const)
 - `TaxJurisdictionLevel` (type+const)
@@ -487,6 +502,7 @@ Declarations: `dist/index.d.ts` — 434 exported names.
 - `assertTierWidens` (function) — `function assertTierWidens(currentCapacity: number, nextCapacity: number): void;` — Capacity tiers: they WIDEN, never shrink after going on sale.
 - `assertTransitionAllowed` (function) — `function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): PublicationTransition;`
 - `assignableRolesOf` (function) — `function assignableRolesOf(heldRoles: readonly MemberRole[]): readonly MemberRole[];` — The roles a person may assign, given those they hold — the union, never a rank.
+- `audienceOf` (function) — `function audienceOf(service: Service): string;` — 'transport.md' §5.2: a token minted for one service is refused by every other.
 - `availabilityOf` (function) — `function availabilityOf(gauge: Gauge): SeatAvailability;`
 - `availabilityValidUntil` (function) — `function availabilityValidUntil(servedAt: Instant): Instant;`
 - `basisPoints` (function) — `function basisPoints(value: number): BasisPoints;`
@@ -537,6 +553,7 @@ Declarations: `dist/index.d.ts` — 434 exported names.
 - `formatMoney` (function) — `function formatMoney(value: Money, locale: Locale): string;`
 - `formatTimecode` (function) — `function formatTimecode(totalSeconds: number): string;` — "1:04:09" — the position in a media item.
 - `fromEpochMs` (function) — `function fromEpochMs(ms: number): Instant;`
+- `generatedPublicHandle` (function) — `function generatedPublicHandle(randomBytes: Uint8Array): string;` — A handle 'PublicHandleSchema' accepts, from the first 'GENERATED_HANDLE_RANDOM_LENGTH' bytes.
 - `genreIdsOf` (function) — `function genreIdsOf(taxonomy: Taxonomy, disciplineId: string): readonly string[];`
 - `hasLanguageBarrier` (function) — `function hasLanguageBarrier(profile: LanguageProfile): boolean;` — Is there a language barrier?
 - `hasReplayPolicy` (function) — `function hasReplayPolicy(timing: DateTiming): boolean;` — Does the date promise a replay at all, whatever the window?
@@ -551,6 +568,7 @@ Declarations: `dist/index.d.ts` — 434 exported names.
 - `isEventDriven` (function) — `function isEventDriven(from: PublicationState, to: PublicationState): boolean;` — Is this transition caused by an event rather than commanded?
 - `isFullyOver` (function) — `function isFullyOver(timing: DateTiming, now: Instant): boolean;` — Is the date behind us, replay included?
 - `isHoldExpired` (function) — `function isHoldExpired(hold: SeatHold, now: Instant): boolean;`
+- `isKeyIdOfIssuer` (function) — `function isKeyIdOfIssuer(keyId: string | undefined, issuer: InternalTokenIssuer): boolean;`
 - `isLanguageNeutral` (function) — `function isLanguageNeutral(profile: LanguageProfile): boolean;` — Is the show barrier-free for ANYONE AT ALL?
 - `isMember` (function) — `function isMember<T extends string>(vocabulary: Vocabulary<T>, raw: string): raw is T;` — Type guard for the paths where an unknown value is ignored rather than kept — a filter, a sort, an aggregate.
 - `isNegative` (function) — `function isNegative(value: Money): boolean;`
@@ -648,7 +666,7 @@ Declarations: `dist/index.d.ts` — 434 exported names.
 
 #### @arthome/core/schema
 
-Declarations: `dist/schema/index.d.ts` — 49 exported names.
+Declarations: `dist/schema/index.d.ts` — 51 exported names.
 
 - `AccountIdSchema` (const) — `AccountIdSchema: z.ZodString`
 - `ArtistIdSchema` (const) — `ArtistIdSchema: z.ZodString`
@@ -664,6 +682,8 @@ Declarations: `dist/schema/index.d.ts` — 49 exported names.
 - `IanaTimeZoneSchema` (const) — `IanaTimeZoneSchema: z.ZodString` — An IANA time zone identifier: 'Europe/Paris'.
 - `InstantIn` (const) — `InstantIn: z.ZodString` — An instant on the wire, STRICT — for one a client SENDS.
 - `InstantOut` (const) — `InstantOut: z.ZodString` — The same instant as a server SENDS it: the format, and no pattern.
+- `InternalTokenClaims` (type) — `type InternalTokenClaims = z.output<typeof InternalTokenClaimsSchema>;`
+- `InternalTokenClaimsSchema` (const)
 - `LocaleIn` (const) — `LocaleIn: VocabularyIn<typeof LOCALES>` — BCP 47, short form, STRICT — for a locale that arrives on a request.
 - `LocaleOut` (const) — `LocaleOut: VocabularyOut` — The same vocabulary, TOLERANT — for a locale a server serves: an unknown member is kept.
 - `MoneyIn` (const) — `MoneyIn: z.ZodObject<{ amountMinor: z.ZodNumber; currencyCode: z.ZodString; }>` — The same shape, STRICT — for a 'Money' a client sends.
@@ -734,6 +754,7 @@ each directory is covered and each entry has a directory, not that the sentence 
 - `packages/core/src/fixtures/` — The deterministic data set for tests, staging and demonstration.
 - `packages/core/src/format/` — Number and locale formatting without Intl, with an explicit locale.
 - `packages/core/src/i18n/` — Translation keys and the reference catalogue, never the sentences.
+- `packages/core/src/identity/` — Identity's rules: the generated handle, how long each credential lives, the internal token, the sign-in doors' caps.
 - `packages/core/src/kernel/` — The floor: clock, errors, results and branded identifiers, with no rules.
 - `packages/core/src/media/` — Declared media renditions, never a URL recipe.
 - `packages/core/src/moderation/` — Moderation: three separate axes, two counters and a written precedence.

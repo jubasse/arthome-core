@@ -83,7 +83,7 @@ export declare const DeviceKind: {
 /**
  * The seven services.
  *
- * 174 operations across the two contracts declare `x-arthome-upstream`, which is
+ * Every operation of the two contracts declares `x-arthome-upstream`, which is
  * what makes fan-out countable, and nothing compared those names to anything:
  * three declared services they never call, and `realtime` — the real-time
  * gateway's Redis resume buffer, not a service — made upstream counts read eight
@@ -120,6 +120,18 @@ export declare const Surface: {
     readonly STUDIO_WEB: "studio_web";
     readonly STUDIO_MOBILE: "studio_mobile";
     readonly SYSTEM: "system";
+};
+/**
+ * An account's lifecycle (`data-model.md` §1.1). `deletion_requested` stays reactivable by signing
+ * in until the grace period ends; `anonymised` is final.
+ */
+export declare const ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"];
+export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
+export declare const AccountStatus: {
+    readonly ACTIVE: "active";
+    readonly SUSPENDED: "suspended";
+    readonly DELETION_REQUESTED: "deletion_requested";
+    readonly ANONYMISED: "anonymised";
 };
 /** The channels a notification takes; the third is `in_app`, not `sms` (D-017). */
 export declare const NOTIFICATION_CHANNELS: readonly ["push", "email", "in_app"];

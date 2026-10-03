@@ -735,10 +735,10 @@ Two tokens, two lifetimes, two verifiers, **never interchangeable**.
 
 | | **Session** | **Service token** | **Playback token** |
 |---|---|---|---|
-| issued by | the BFF | the BFF | `streaming` |
+| issued by | `identity` (better-auth), relayed by the BFF | the BFF | `streaming` |
 | carried by | cookie (web) / bearer (native) | an internal header | a signed request to the CDN |
 | lifetime | **fixed by `adr-auth.md`** (session 7 d, daily sliding) | **60 s** | **120 s** |
-| verified by | the BFF, against Redis | each service, **by JWKS, locally** | the **CDN edge** |
+| verified by | the BFF, through `identity`, Redis at the BFF (`adr-auth.md` §8) | each service, **by JWKS, locally** | the **CDN edge** |
 | revocation | the session store | expiry alone | the playback session lease |
 
 **No service calls `identity` or reads the session store.** The BFF validates the session, then

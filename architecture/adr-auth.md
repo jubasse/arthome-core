@@ -284,6 +284,18 @@ it.
   `trustedOrigins` only and throws on function-based ones (`dist/index.mjs`, lines 845–857) — and
   §6.6 already requires literal strings. The constraint was met before it was known.
 
+#### What the platform implemented, 2026-10-03: the library without the adapter
+
+`arthome-platform` calls better-auth's server API (`auth.api.*`) from `identity`'s own controllers
+and does **not** install `@thallesp/nestjs-better-auth`. The reason is the property stated above:
+the adapter mounts better-auth's routes ahead of Nest's router, where no guard sees them. In the
+topology of §8 every `identity` route sits behind the internal token's guard, so a raw
+`/api/auth/sign-in/email` would be the one door a caller could reach without passing the BFF, and
+so without the BFF's rate limit, which is what bounds enumeration (auth Q1). It would also mount
+`/token` and `/jwks`, which §8.2.1 never exposes. Without the adapter there is no handler to feed,
+so `bodyParser: false` (§8.2.7) does not apply either. Option B's cost is unchanged and accepted:
+the guard and the decorators are ours, and they are the internal token's, not a session's.
+
 #### Versions, with their dates, since a bump pins what is already mature
 
 | Package | Recorded in this ADR | Latest on 25 Sept. 2026 | Published | Verdict |
@@ -335,8 +347,8 @@ screen. No `MISMATCH` is therefore possible on `signin`.
 | `intent` | `expiresAt` | Why |
 |---|---|---|
 | `signin` | **15 min** | finding your phone, signing in, possibly doing 2FA |
-| `payment-method` · `plan` · `merch` | **10 min** | no gauge to honour, but a payment does not linger |
-| **`seat`** | **5 min** | the gauge shown at booking time must stay true |
+| `payment-method` · `plan` | **10 min** | no gauge to honour, but a payment does not linger |
+| **`seat`** · `merch` | **5 min** | the gauge shown at booking time must stay true; for `merch`, the contract's duration, kept (auth Q6, 2026-10-03) |
 
 **And for `seat`, one further requirement, addressed to `backend-domain`:** the pairing duration
 must be **the duration of a seat hold** placed by `ticketing` when the pairing is created.
@@ -567,6 +579,13 @@ address, and a living room behind a NAT shares its address. At the BFF we add a 
 wrong-code attempts**, per code and per device. That is the defence the 28.5 bits of entropy
 presuppose.
 
+**The numbers have one owner: `AuthRateLimit` in `@arthome/core`.** Sign-up, sign-in (per address
+and per email) and the email verification's two doors are capped there. Until a device carries a
+verified identity (§4/Q3's `device_token`) the count is per network address, because a `deviceId`
+the caller merely asserts caps nothing: it sends a new one with each attempt. The pairing lockout's
+N joins `AuthRateLimit` with the pairing itself. better-auth's own limiter guards its HTTP handler,
+which `identity` does not mount (§3.1), so it caps nothing here.
+
 ### 6.3 The ownership guard, written by us
 
 In light of CVE-2026-45337, `approvePairing` and `denyPairing` **are not exposed as they stand**.
@@ -610,6 +629,23 @@ The studio BFF's allow-list contains the **literal strings** `capacitor://localh
 `Access-Control-Allow-Origin: *` is illegal with credentialed requests, and a framework that
 normalises `Origin` through a URL parser will reject `capacitor://` — so the comparison is on the
 raw string. Details and settings → `nestjs-web-security`.
+
+---
+
+### 6.7 Email verification
+
+*Auth Q2, 2026-10-03: verified by a link, with a resend; an unverified address blocks nothing.*
+
+- `identity` issues the token at sign-up and on `resendEmailVerification`, keeps only its hash, and
+  publishes `identity.account.email_verification_requested.v1` with the token for `notifications`
+  to build the link (the proto's comment says why this one token may travel in clear).
+- The link points at the surface, which sends the token to `confirmEmailVerification`. The token is
+  **spent by its first use** and expires after `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS`
+  (`@arthome/core`); a resend spends the earlier ones. A token verifies only the address it was
+  sent to: once the address changes, it verifies nothing.
+- Unknown, expired and used answer the same `410` `identity.verification_link_invalid`.
+- better-auth's own verification is not used: its token is a signed JWT that a second use does
+  not spend.
 
 ---
 
@@ -918,7 +954,8 @@ Three configuration traps, to be written down before they cost half a day each:
   `studio.arthome.fr/reset?token=…`, therefore **per product and per language**. We override
   `sendResetPassword`; the default built from `baseURL` would land the user on an API.
 - **`bodyParser: false` concerns the `identity` application**, not the BFF. It is a requirement of
-  better-auth's NestJS adapter; applying it to the BFF would break everything else there.
+  better-auth's NestJS adapter; applying it to the BFF would break everything else there. The
+  platform does not install the adapter (§3.1), so it applies nowhere today.
 
 ---
 
