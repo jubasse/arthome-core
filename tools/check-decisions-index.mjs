@@ -10,8 +10,17 @@
 //   for the reason.
 //
 // HOW A DECISION'S BODY IS DELIMITED
-//   From its own `### D-NNN — …` heading to the next heading of that or a higher level (`### ` or
-//   `## `), or the end of the file.
+//   From its own `### ID — title` heading to the next markdown heading of ANY shape at level 1 to
+//   3 (`# `, `## ` or `### `), or the end of the file — not only a heading shaped `ID — title`,
+//   because DECISIONS.md's own phase headings ("## Phase 0 — 21 September 2026") do not have that
+//   shape, and a decision's body must still stop there.
+//
+// WHY THE COUNT IS CHECKED, NOT JUST THE SHAPE
+//   Delimiting on the ID-TITLE shape alone made the gate blind to its own miscount: a decision
+//   heading spelled any other way (a hyphen instead of an em dash, or `D-093:`) is silently
+//   dropped from the index, and the gate still passes, because it compares its own output against
+//   itself. So `main` counts the raw `^### D-` lines independently of what parsed as a decision,
+//   and fails when the two disagree — the one case the shape check cannot see.
 //
 // USAGE
 //   node tools/check-decisions-index.mjs          — the gate: fails if DECISIONS-INDEX.md is stale
@@ -25,27 +34,34 @@ const CWD = process.cwd();
 const DECISIONS_FILE = path.join(CWD, 'DECISIONS.md');
 const INDEX_FILE = path.join(CWD, 'DECISIONS-INDEX.md');
 
-const HEADING_RE = /^(#{2,3}) (\S+(?: \([^)]*\))?) — (.+)$/;
+const HEADING_RE = /^(#{1,3})\s/;
+const DECISION_HEADING_RE = /^### (\S+(?: \([^)]*\))?) — (.+)$/;
+const RAW_DECISION_HEADING_RE = /^### D-/;
 const CITATION_RE = /`([\w./-]+\.md)`/g;
 
 function parseDecisions(text) {
   const lines = text.split('\n');
   const headings = [];
+  const decisionHeadings = [];
   for (let i = 0; i < lines.length; i += 1) {
-    const m = HEADING_RE.exec(lines[i]);
-    if (m) headings.push({ line: i, level: m[1].length, id: m[2], title: m[3] });
+    const line = lines[i];
+    if (HEADING_RE.test(line)) headings.push(i);
+    const m = DECISION_HEADING_RE.exec(line);
+    if (m) decisionHeadings.push({ line: i, id: m[1], title: m[2] });
   }
+
   const decisions = [];
-  for (let i = 0; i < headings.length; i += 1) {
-    const h = headings[i];
-    if (h.level !== 3 || !h.id.startsWith('D-')) continue;
-    const next = headings.slice(i + 1).find((other) => other.level <= h.level);
-    const end = next ? next.line : lines.length;
+  for (const h of decisionHeadings) {
+    if (!h.id.startsWith('D-')) continue;
+    const next = headings.find((line) => line > h.line);
+    const end = next ?? lines.length;
     const body = lines.slice(h.line, end).join('\n');
     const docs = [...new Set([...body.matchAll(CITATION_RE)].map((m) => m[1]))].sort();
     decisions.push({ id: h.id, title: h.title, docs });
   }
-  return decisions;
+
+  const rawCount = lines.filter((line) => RAW_DECISION_HEADING_RE.test(line)).length;
+  return { decisions, rawCount };
 }
 
 function buildIndex(decisions) {
@@ -79,7 +95,17 @@ function main() {
     process.exit(3);
   }
 
-  const decisions = parseDecisions(fs.readFileSync(DECISIONS_FILE, 'utf8'));
+  const { decisions, rawCount } = parseDecisions(fs.readFileSync(DECISIONS_FILE, 'utf8'));
+
+  if (decisions.length !== rawCount) {
+    console.error(
+      `FAIL arthome-check-decisions-index: parsed ${decisions.length} decision(s) but ` +
+        `DECISIONS.md has ${rawCount} line(s) matching '### D-'.`,
+    );
+    console.error('  A decision heading not shaped "### ID — title" was dropped silently.');
+    process.exit(1);
+  }
+
   const generated = buildIndex(decisions);
 
   if (WRITE) {
