@@ -60,6 +60,15 @@ export interface RouteDefinition extends RouteShape, Extensions {
     readonly deprecated?: boolean;
     readonly security?: readonly Readonly<Record<string, readonly string[]>>[];
 }
+/** Named members for a list of words, `CHAT` for `'chat'`, so no module spells a member again. */
+export type AccessorOf<T extends readonly string[]> = {
+    readonly [Member in T[number] as Uppercase<Member>]: Member;
+};
+/**
+ * The accessor built from the list rather than written beside it: the list stays the one
+ *   declaration, which is what `check-enums` reads.
+ */
+export declare function accessorOf<const T extends readonly string[]>(members: T): AccessorOf<T>;
 export type Route<T extends RouteShape = RouteShape> = T & Omit<RouteDefinition, keyof T>;
 export declare function defineRoute<const T extends RouteDefinition>(definition: T): Route<T>;
 /** The annotation of a path parameter: OpenAPI makes every one required. */

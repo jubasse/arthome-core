@@ -207,6 +207,35 @@ class Converter:
             for member, key in keys.items():
                 self.member_accessor.setdefault(member, (accessor, key))
 
+    # ------------------------------------------------------------------ the document's tags
+
+    def tag_names(self):
+        declared = [tag["name"] for tag in self.document.get("tags") or []]
+        used = [t for item in self.document["paths"].values() for op in item.values() if isinstance(op, dict) for t in op.get("tags") or []]
+        return list(OrderedDict.fromkeys(declared + used))
+
+    def tag_accessor(self):
+        return camel(self.product, "tag")[:1].upper() + camel(self.product, "tag")[1:]
+
+    def tag(self, name, module):
+        """A tag through the document's own vocabulary: tags share words with the domain's."""
+        accessor = self.tag_accessor()
+        if module.path.name != "components.ts":
+            module.use("./components.js", accessor)
+        return f"{accessor}.{constant(name)}"
+
+    def tag_declarations(self):
+        names = self.tag_names()
+        array = constant(self.product, "tags")
+        members = ", ".join(ts_string(n) for n in names)
+        # Not exported: a tag is the document's structure, not a value on the wire, so it has no
+        # place among the vocabularies check-vocabulary holds the contracts to.
+        return (
+            f"const {array} = [{members}] as const;\n\n"
+            f"/** The tags this document groups its operations by. */\n"
+            f"export const {self.tag_accessor()}: AccessorOf<typeof {array}> = accessorOf({array});\n"
+        )
+
     # ------------------------------------------------------------------ specifiers
 
     def spec(self, published):
@@ -252,7 +281,7 @@ class Converter:
         """OpenAPI's own data, verbatim. Only an extension's or an example's values hold members."""
         if isinstance(value, str) and not str(key).startswith("x-"):
             return ts_string(value)
-        holds_members = str(key).startswith("x-") or key in ("examples", "example", "default")
+        holds_members = str(key).startswith("x-") or key in ("examples", "example", "default", "servers")
         return self.literal(value, module, indent, members=holds_members)
 
     def meta_value(self, key, value, module, indent):
@@ -668,6 +697,8 @@ class Converter:
                         types.append(typ)
                 entries.append((key, "[\n" + "\n".join(f"      {l}," for l in literals) + "\n    ]"))
                 annotation.append("parameters: readonly [" + ", ".join(types) + "]")
+            elif key == "tags":
+                entries.append((key, "[" + ", ".join(self.tag(t, module) for t in value) + "]"))
             elif key == "requestBody":
                 literal, typ = self.request_body(value, module, f"{where}:req", 2)
                 entries.append((key, literal))
@@ -723,6 +754,9 @@ class Converter:
                     results[operation_id] = str(reason)
 
         components = Module(out_dir / "components.ts")
+        components.use(self.spec("@arthome/contracts/http"), "accessorOf")
+        components.use(self.spec("@arthome/contracts/http"), "AccessorOf", type_only=True)
+        components.body.append(self.tag_declarations())
         component_names = []
         source = self.document["components"]
         for kind, name in list(self.used_components):
@@ -774,6 +808,13 @@ class Converter:
                 routes.append(route)
         entries = []
         for key, value in self.document.items():
+            if key == "tags":
+                tags = []
+                for tag in value:
+                    rest = [(k, self.prose(v, index, 3, k)) for k, v in tag.items() if k != "name"]
+                    tags.append(self.object_literal([("name", self.tag(tag["name"], index)), *rest], 2))
+                entries.append((key, "[\n" + "\n".join(f"    {t}," for t in tags) + "\n  ]"))
+                continue
             if key == "paths":
                 entries.append(("routes", self.object_literal([(r, r) for r in routes], 1)))
             elif key == "components":

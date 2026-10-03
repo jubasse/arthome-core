@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import {
+  accessorOf,
   defineApi,
   defineRoute,
   headersSchemaOf,
@@ -110,5 +111,14 @@ describe('defineApi', () => {
         components: {},
       }),
     ).toThrow(/listDates/);
+  });
+});
+
+describe('accessorOf', () => {
+  it('names each member in capitals, from the one list that declares them', () => {
+    expect(accessorOf(['chat', 'payment_method'] as const)).toEqual({
+      CHAT: 'chat',
+      PAYMENT_METHOD: 'payment_method',
+    });
   });
 });

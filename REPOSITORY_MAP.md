@@ -77,8 +77,9 @@ Declarations: `dist/envelope/index.d.ts` — 7 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 34 exported names.
+Declarations: `dist/http/index.d.ts` — 36 exported names.
 
+- `AccessorOf` (type) — `type AccessorOf<T extends readonly string[]> = { readonly [Member in T[number] as Uppercase<Member>]: Member; };` — Named members for a list of words, 'CHAT' for ''chat'', so no module spells a member again.
 - `Api` (type) — `type Api<Routes extends Readonly<Record<string, Route>> = Readonly<Record<string, Route>>> = ApiDefinition<Routes>;`
 - `ApiComponents` (interface)
 - `ApiDefinition` (interface) — A whole document: its top-level keys as the document writes them, 'routes' in place of 'paths'.
@@ -106,6 +107,7 @@ Declarations: `dist/http/index.d.ts` — 34 exported names.
 - `RouteShape` (interface) — What a route's types are read from — the part of its annotation a handler or client needs.
 - `RouteStatus` (type) — `type RouteStatus<R extends RouteShape> = keyof R['responses'] & (number | '${number}');`
 - `RouteSuccessStatus` (type) — `type RouteSuccessStatus<R extends RouteShape> = Extract<RouteStatus<R>, 200 | 201 | 202 | 203 | 204 | 206 | '200' | '201' | '202' | '203' | '204' | '206'>;` — The 2xx statuses a route declares.
+- `accessorOf` (function) — `function accessorOf<const T extends readonly string[]>(members: T): AccessorOf<T>;` — The accessor built from the list rather than written beside it: the list stays the one declaration, which is what 'check-enums' reads.
 - `bodySchemaOf` (function) — `function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;` — The JSON body's schema, or 'undefined' for a route that takes none.
 - `defineApi` (function) — `function defineApi<const Routes extends Readonly<Record<string, Route>>>(definition: ApiDefinition<Routes>): Api<Routes>;`
 - `defineRoute` (function) — `function defineRoute<const T extends RouteDefinition>(definition: T): Route<T>;`
@@ -113,6 +115,21 @@ Declarations: `dist/http/index.d.ts` — 34 exported names.
 - `paramsSchemaOf` (function) — `function paramsSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteParams<R>, unknown>;`
 - `querySchemaOf` (function) — `function querySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteQuery<R>, unknown>;` — The query a server validates: undeclared parameters refused, defaults not materialised.
 - `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
+
+#### @arthome/contracts/http-client
+
+Declarations: `dist/http-client/index.d.ts` — 10 exported names.
+
+- `Client` (type) — `type Client<A extends Api, Init extends object> = { readonly [K in keyof A['routes']]: ClientMethod<A['routes'][K], Init>; };`
+- `ClientInput` (type)
+- `ClientMethod` (type)
+- `ClientOptions` (interface)
+- `ClientResponse` (type)
+- `FetchInit` (interface)
+- `FetchLike` (type) — `type FetchLike<Init extends object> = (url: string, init: FetchInit & Init) => Promise<FetchResponseLike>;` — 'Init' is what a caller adds per call and the 'fetch' understands — an 'AbortSignal', say.
+- `FetchResponseLike` (interface)
+- `UndeclaredStatusError` (class) — A status the route does not declare: the body is not the route's to type, so it is not typed.
+- `createClient` (function) — `function createClient<A extends Api, Init extends object = Record<never, never>>(api: A, options: ClientOptions<Init>): Client<A, Init>;`
 
 #### @arthome/contracts/identity
 
@@ -158,6 +175,12 @@ Declarations: `dist/pagination/index.d.ts` — 4 exported names.
 - `OffsetPageInfoSchema` (const) — 'OffsetPageInfo' — the studio's pagination primitive, and the deliberate opposite of the one above.
 - `StorefrontCursorPageInfoSchema` (const) — The storefront's cursor page.
 - `StudioCursorPageInfoSchema` (const) — The studio's cursor page: the moderation queue and the live chat, with a separate badge total.
+
+#### @arthome/contracts/storefront-api
+
+Declarations: `dist/storefront-api/index.d.ts` — 1 exported names.
+
+- `storefrontApi` (const) — `storefrontApi: Api<{ search: typeof search; }>`
 
 #### @arthome/contracts/streaming
 
@@ -790,10 +813,12 @@ each directory is covered and each entry has a directory, not that the sentence 
 - `packages/contracts/src/entitlement/` — The right to watch, served per date. It sits below `catalog` and `streaming` because both need it and each needed the other.
 - `packages/contracts/src/envelope/` — The shared response envelope and its meta instants (subpath @arthome/contracts/envelope).
 - `packages/contracts/src/http/` — Routes as TypeScript: an operation mirrors OpenAPI with zod in place of JSON Schema, typed for a server handler and a client, with the request decoders a server validates against.
+- `packages/contracts/src/http-client/` — The typed client: one method per operation id, over any `fetch` (browser, React Native, Node).
 - `packages/contracts/src/identity/` — Who is asking: sessions, devices, pairing, consents, and the context a surface is handed.
 - `packages/contracts/src/money/` — The tax basis of an amount on the wire (subpath @arthome/contracts/money).
 - `packages/contracts/src/openapi/` — The OpenAPI document an api emits from its routes and components, through one zod registry per direction.
 - `packages/contracts/src/pagination/` — Cursor pagination primitives (subpath @arthome/contracts/pagination).
+- `packages/contracts/src/storefront-api/` — The storefront's routes as TypeScript, written by tools/convert-openapi-routes.py from openapi/storefront.yaml and checked against it by the round-trip report.
 - `packages/contracts/src/streaming/` — Watching: the entitlement verdict, the playback ticket and its renewal, and what interrupts a run.
 - `packages/contracts/src/studio-access/` — Who may operate, and with what: the actor, their effective rights, and the bootstrap a studio surface is handed on sign-in. Separate from `identity` because the two products' session shapes genuinely differ — a viewer receives a ViewerContext, a control room receives a StudioBootstrap.
 - `packages/contracts/src/studio-desk/` — Moderation, the audience, the inbox and the journal — the duty desk.

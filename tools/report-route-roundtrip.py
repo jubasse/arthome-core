@@ -260,6 +260,18 @@ def main(argv):
         print("\nConverter notes:")
         for note, count in sorted(notes.items()):
             print(f"  {count:4d}  {note}")
+    for document in documents:
+        committed = PACKAGE / f"dist/{Path(document).stem}-api/index.js"
+        if not committed.exists():
+            continue
+        emitted = json.loads(run(["node", "tools/emit-openapi.mjs", str(committed)]).stdout)
+        held = [
+            r for r in COMPARE.compare(COMPARE.load_document(document), emitted)
+            if r[0] in {u[0] for u in COMPARE.units(emitted)} and not r[0].startswith("components/")
+        ]
+        differing = [r for r in held if r[2]]
+        print(f"\nCommitted {committed.relative_to(ROOT)}: {len(held) - len(differing)} of {len(held)} unit(s) it holds agree with {document}")
+        COMPARE.report(differing)
     print(f"\nROUND-TRIP {passed} of {total} operation(s), unaided; {ready} of them also clear lint and check-enums.")
     return 0
 

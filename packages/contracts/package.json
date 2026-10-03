@@ -47,7 +47,8 @@
     "  ./engagement                                  — what a viewer is served",
     "  ./studio-access ./studio-stage                — what a control room is served",
     "  ./studio-desk ./studio-money",
-    "  ./http ./openapi                              — routes as TypeScript, and the document they emit",
+    "  ./http ./http-client ./openapi                — routes as TypeScript, their client, the document they emit",
+    "  ./storefront-api                              — the storefront's routes, while they move out of the YAML",
     "",
     "Fourteen, not the seven planned here. `./chat`, `./payouts` and `./notifications`",
     "were named as plans and never existed: chat and notifications are served to a",
@@ -84,6 +85,11 @@
       "types": "./dist/http/index.d.ts",
       "import": "./dist/http/index.js"
     },
+    "./http-client": {
+      "@arthome/source": "./src/http-client/index.ts",
+      "types": "./dist/http-client/index.d.ts",
+      "import": "./dist/http-client/index.js"
+    },
     "./identity": {
       "@arthome/source": "./src/identity/index.ts",
       "types": "./dist/identity/index.d.ts",
@@ -103,6 +109,11 @@
       "@arthome/source": "./src/pagination/index.ts",
       "types": "./dist/pagination/index.d.ts",
       "import": "./dist/pagination/index.js"
+    },
+    "./storefront-api": {
+      "@arthome/source": "./src/storefront-api/index.ts",
+      "types": "./dist/storefront-api/index.d.ts",
+      "import": "./dist/storefront-api/index.js"
     },
     "./streaming": {
       "@arthome/source": "./src/streaming/index.ts",

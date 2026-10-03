@@ -60,7 +60,9 @@ So: **one subpath per bounded context**, added as each lands and never before.
 | `./studio-desk` | moderation, the audience, the inbox, the journal — 5 |
 | `./studio-money` | payouts, bank changes, statistics, the dashboard — 10 |
 | `./http` | `defineRoute` and `defineApi`: an operation as TypeScript, typed for a handler and a client — no schema |
+| `./http-client` | `createClient(api, { baseUrl, fetch, headers })`: one typed method per operation id — no schema |
 | `./openapi` | the OpenAPI document an api emits, `components/schemas` included — no schema |
+| `./storefront-api` | `storefrontApi`, the storefront's routes as they move out of `openapi/storefront.yaml`: `search` so far |
 
 **Fourteen subpaths of schemas, 106 schemas, and together with `@arthome/core` they emit all 111 schemas of both
 contracts exactly.** `pnpm run check:emit-diff` compares every one against the document it publishes
