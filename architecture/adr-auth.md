@@ -96,6 +96,9 @@ write the "bearer token" path yourself carries a hidden cost.
 `better-auth` + `@thallesp/nestjs-better-auth` 2.8.0, and the plugins **`jwt`**, **`bearer`**,
 **`two-factor`**, **`multi-session`**, **`device-authorization`**.
 
+*Amended 2026-10-03 (§3.1): the platform installs neither the NestJS adapter nor the `jwt` plugin;
+slice A installs `bearer` alone, and each later slice its own.*
+
 **Why this one, in one sentence**: it is the only candidate that ticks *at the same time* the
 native device flow, the bearer-token session for the three cookie-less surfaces, five profiles on
 a shared device, and **zero extra deployment** — the criterion that, for a solo project, weighs
@@ -293,8 +296,15 @@ topology of §8 every `identity` route sits behind the internal token's guard, s
 `/api/auth/sign-in/email` would be the one door a caller could reach without passing the BFF, and
 so without the BFF's rate limit, which is what bounds enumeration (D-099). It would also mount
 `/token` and `/jwks`, which §8.2.1 never exposes. Without the adapter there is no handler to feed,
-so `bodyParser: false` (§8.2.7) does not apply either. Option B's cost is unchanged and accepted:
-the guard and the decorators are ours, and they are the internal token's, not a session's.
+so `bodyParser: false` (§8.2.7) does not apply either.
+
+This is neither option A nor option B. B mounts `auth.handler` by hand and must rewrite the guard;
+here no handler is mounted at all, so B's trap (a route invisible to Nest) cannot arise. What B
+would have cost, a guard of our own, is the internal token's guard every service needed anyway. The
+`jwt` plugin is not installed either: the BFF mints the internal token with `jose` (§8), and
+whether the device token (§8.1's `dev-` issuer) uses it is slice C's to decide. §11's S1 criterion
+"`/api/auth/sign-in/email` answering through the adapter" is therefore moot; the rest of S1 is kept
+as a regression suite in the platform.
 
 #### Versions, with their dates, since a bump pins what is already mature
 
@@ -745,7 +755,9 @@ surface ──(cookie | Bearer)──► BFF ──(JWT ES256, ~60 s, aud=<servi
   session store. Redis stays **at the BFF only**.
 - **The BFF mints the internal token**: `jose`, **ES256**, `iss` = the BFF, `aud` = the target
   service, `sub` = `user_id`, minimal claims (roles per channel, `device_id`), `exp` 60 s. A token
-  minted for `ticketing` is **refused** by `billing`.
+  minted for `ticketing` is **refused** by `billing`. A call made for an anonymous visitor (a public
+  read, a sign-up) carries a token **without `sub`**, and a route that serves an account refuses it
+  with a 401.
 - **Each service verifies locally** with `createRemoteJWKSet` built **once** (not per request),
   with `algorithms`, `issuer` and `audience` **pinned** — without pinning, any token signed by
   that key passes. Never `x-user-id` in a header: any caller can set it.

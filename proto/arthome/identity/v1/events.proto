@@ -121,7 +121,8 @@ message AccountAnonymised {
 // Consumed by `streaming`, which invalidates this device's PLAYBACK LEASES.
 // That is what makes "disconnect this device" actually stop playback on the
 // television concerned, and not merely remove a row from a list.
-// Visible at the next playback renewal, so within 120 s at most (adr-auth.md §9.2).
+// The next renewal is refused; playback stops when the token already in hand
+// expires, the bound adr-stream-entitlement.md §3.3 owns.
 message DeviceRevoked {
   string device_id = 1;
   string account_id = 2;
