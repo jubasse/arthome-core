@@ -494,10 +494,12 @@ paths:
     post:
       operationId: resendEmailVerification
       tags: [account]
-      summary: Sends a fresh verification link to the signed-in account's address.
+      summary: Queues a fresh verification link for the signed-in account's address.
       description: |
-        The fresh link replaces the earlier ones, which stop working. **`sent: false` when the
-        address is already verified**: nothing is sent, and that is not a refusal.
+        The fresh link replaces the earlier ones, which stop working. **`queued: true`** says the
+        link is recorded for `notifications` to send, which owns the sending; it does not say an
+        email left. **`queued: false` when the address is already verified**: nothing is queued,
+        and that is not a refusal.
       x-arthome-maturity: stable
       x-arthome-upstream: [identity]
       parameters:
@@ -506,7 +508,7 @@ paths:
         - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
-          description: A link was sent, or the address is already verified.
+          description: A link was queued for sending, or the address is already verified.
           content:
             application/json:
               schema:
@@ -515,10 +517,10 @@ paths:
                   - type: object
                     required: [data]
                     properties:
-                      data: { type: object, required: [sent], properties: { sent: { type: boolean } } }
+                      data: { type: object, required: [queued], properties: { queued: { type: boolean } } }
               example:
                 servedAt: '2026-09-21T18:06:00.000Z'
-                data: { sent: true }
+                data: { queued: true }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
