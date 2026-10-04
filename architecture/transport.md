@@ -610,6 +610,8 @@ rules or consequences?** If it does, it is an action.
 | `POST /{res}/{id}/{action}` | `action(name, ...)` | **every business state change**: a status, a publication, a cancellation, a boolean that triggers rules or events. Never a `PATCH` on a status field. On the collection: `collectionAction`, `/{res}/{action}`; on a single resource, `/{name}/{action}` |
 | `DELETE` | `delete` | the record **disappears** (a later read answers `404`), even when guarded: a guard is a `409` with a domain code (`deleteChannel` is refused while a payout is owed). If the record **stays readable with a new state**, it is an action (`cancelSubscription` is `POST /subscription/cancel`) |
 
+**A state machine with few commanded transitions is one action per transition** (the run: `rehearse`, `go-on-air`, `end`, `reset`); a sanction (`none`, `muted`, `banned`) is one `POST` action, lifting it being the kind `none`.
+
 `find` (`GET` one), `findAll` (the paginated list), `create` (`POST`, with `Idempotency-Key`) complete
 the set; `crud` composes `find`, `findAll`, `create`, `update` and `delete` (on a single resource,
 `find` and `update`), and `replace` and `upsert` only when asked for. A read carries an `ETag`, with

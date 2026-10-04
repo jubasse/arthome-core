@@ -253,6 +253,7 @@ export * from './marks.js';
 export * from './paging.js';
 export * from './policy.js';
 export * from './service.js';
+export * from './strict.js';
 export * from './responses.js';
 export * from './tagged.js';
 export * from './resource.js';

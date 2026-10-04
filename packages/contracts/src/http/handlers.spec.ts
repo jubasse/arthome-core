@@ -5,6 +5,7 @@ import { identity } from './access.js';
 import { routeBuilder } from './builder.js';
 import { defineErrorModel } from './errors.js';
 import type { Endpoints, HandlerInput, HandlerOutput, RoutePrincipal } from './handlers.js';
+import { strippingBodiesOf } from './strict.js';
 
 const model = defineErrorModel<string>({
   standard: {},
@@ -110,5 +111,49 @@ describe('Endpoints', () => {
     }
 
     expect(new Wrong().ping).toBeTypeOf('function');
+  });
+});
+
+describe('strict on emit', () => {
+  const Meta = z.looseObject({ servedAt: z.string(), rightsVersion: z.number() });
+  const Item = z.looseObject({
+    title: z.string(),
+    tags: z.array(z.looseObject({ id: z.string() })),
+  });
+  const read = base.public().defineRoute({
+    method: 'get',
+    path: '/loose',
+    operationId: 'loose',
+    responses: {
+      200: {
+        description: 'Ok.',
+        content: {
+          'application/json': { schema: z.intersection(Meta, z.looseObject({ data: Item })) },
+        },
+      },
+    },
+  });
+
+  it('returns the declared data, with no index signature and without the stamped meta', () => {
+    type Out = HandlerOutput<typeof read>;
+
+    expectTypeOf<Out>().toEqualTypeOf<{ data: { title: string; tags: { id: string }[] } }>();
+    const ok: Out = { data: { title: 't', tags: [{ id: 'a' }] } };
+    // @ts-expect-error an undeclared field would reach the wire
+    const extra: Out = { data: { title: 't', tags: [], surprise: 1 } };
+    expect([ok, extra]).toHaveLength(2);
+  });
+
+  it('gives the server a schema that strips what it did not declare, deeply', () => {
+    const schema = strippingBodiesOf(read)[200];
+
+    expect(
+      schema?.parse({
+        servedAt: 's',
+        rightsVersion: 1,
+        extra: 1,
+        data: { title: 't', tags: [{ id: 'a', more: 2 }], surprise: 3 },
+      }),
+    ).toEqual({ servedAt: 's', rightsVersion: 1, data: { title: 't', tags: [{ id: 'a' }] } });
   });
 });

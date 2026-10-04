@@ -245,11 +245,32 @@ per code, each with the `params` schema of `ERROR_PARAMS` in `@arthome/core/sche
 ### What a handler implements
 
 `HandlerInput<R>` (a type alias, so a hover shows `{ params, query, headers, body, principal }`
-resolved), `HandlerOutput<R>` (the body of a single success, `{ status, body }` for several),
-`RoutePrincipal<R>` and `Endpoints<Block>` (one method per operation id) are derived from the
-declaration: a route declared and not implemented, and a wrong return, are compile errors that name
-the operation. Measured on the 32 routes under a date, `Endpoints<>` costs 0.2% of the type
-instantiations.
+resolved), `HandlerOutput<R>`, `RoutePrincipal<R>` and `Endpoints<Block>` (one method per operation
+id) are derived from the declaration: a route declared and not implemented, and a wrong return, are
+compile errors that name the operation. Measured on the 32 routes under a date, `Endpoints<>` costs
+0.2% of the type instantiations, and the published `.d.ts` compiles clean under TypeScript 7.
+
+- **A handler returns the data**, not the envelope: `HandlerOutput` is the declared body without the
+  meta the server stamps (`servedAt`, `rightsVersion`); `validUntil` stays the handler's on a
+  perishable route. One success status gives the body, several give `{ status, body }`.
+- **Strict on emit.** The response schemas are loose objects so a client reads tolerantly, but
+  `HandlerOutput` has no index signature, so an undeclared field is a compile error, and
+  `strippingBodiesOf(route)` gives the schema of each success response with every loose object turned
+  into one that strips what it does not declare, for the platform's serializer. A schema annotated
+  only as `z.ZodObject<z.ZodRawShape, ...>` has no known fields: the handler's type is then `{}`.
+- **The `service` identity** (`./http`, the internal token: the calling service and the end user) marks
+  its routes internal, takes `x-arthome-deadline` on every call and answers `504 api.deadline_exceeded`.
+- **How a consumer reads the error codes at run time.** `route.errorCodes[status]` (or
+  `errorCodesOf(route, status)`) lists the codes a status stands for, including the shared standard
+  responses; a status the route wrote whole has none listed. `DERIVED_ERROR_CODES` lists the derived
+  statuses and their codes.
+- **The typed client types the derived errors**: `ClientResponse<R>` is the route's declared statuses
+  plus 400, 401, 403, 413, 415, 429, 500, 502 and 504 (those not declared by the route), each an
+  `ErrorBody` of the api's codes. The full derived set is added rather than the subset a route
+  implies, so a surface switches on a `401` or a `429` with types on any route, and the cost is one
+  union per call. A status that is neither declared nor derived throws `UndeclaredStatusError`.
+- **Deny by default is a ratchet**: `deny-by-default.spec.ts` lists the routes not yet declared through
+  an identity or `.public()`; the list only shrinks, and the fan-out ends with it empty.
 
 ### Converting a route
 

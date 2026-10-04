@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 140 exported names.
+Declarations: `dist/http/index.d.ts` — 144 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
@@ -156,6 +156,7 @@ Declarations: `dist/http/index.d.ts` — 140 exported names.
 - `ResourceOptions` (interface)
 - `Response` (interface)
 - `RestrictedField` (interface)
+- `Returned` (type) — `type Returned<B> = [B] extends [undefined] ? undefined : Omit<Strict<B>, Stamped>;` — The data a handler returns: the declared body, strict, without the envelope meta the server stamps.
 - `RolesRequirement` (interface) — A role rule: the caller holds one of 'allowed' on the channel or the date 'on' names.
 - `RootScope` (interface)
 - `Route` (type) — `type Route<T extends RouteShape = RouteShape> = T & Omit<RouteDefinition, keyof T>;`
@@ -179,6 +180,7 @@ Declarations: `dist/http/index.d.ts` — 140 exported names.
 - `SingleOptions` (interface)
 - `SortDirection` (type) — `type SortDirection = (typeof SORT_DIRECTIONS)[number];`
 - `SortKey` (type) — `type SortKey = string | { readonly key: string; readonly right: string; };` — A sort key, and the right a caller needs to order by it when the field is restricted.
+- `Strict` (type) — A declared shape without the index signatures its loose objects carry, so a handler returning an undeclared field is a compile error.
 - `SubresourceReplaceRoute` (type)
 - `TolerantParse` (type)
 - `UpdateRoute` (type)
@@ -216,6 +218,8 @@ Declarations: `dist/http/index.d.ts` — 140 exported names.
 - `service` (const) — `service: Identity<'service', typeof ServicePrincipalSchema, never, readonly [typeof DeadlineParameter], readonly []>`
 - `sortDirectionSchema` (function) — `function sortDirectionSchema(): z.ZodDefault<z.ZodEnum<{ readonly [K in SortDirection]: K; }>>;` — The 'sortDir' schema: ascending unless asked otherwise.
 - `sortKeyName` (function) — `function sortKeyName(key: SortKey): string;`
+- `stripping` (function) — `function stripping(schema: z.ZodType): z.ZodType;` — The schema with each loose object turned into a stripping one.
+- `strippingBodiesOf` (function) — `function strippingBodiesOf(route: RouteShape): Readonly<Record<string, z.ZodType>>;` — The stripping schema of each success response of a route that has a JSON body, by status.
 - `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
 - `tagged` (function) — `function tagged<const Tag extends string, const V extends Variants>(tag: Tag, variants: V): z.ZodType<Union<Tag, V>>;` — 'tagged('outcome', { succeeded: Succeeded, declined: Declined })': each variant is an object schema without the tag, and the helper adds it.
 - `throttle` (function) — `function throttle<const Bucket extends string>(bucket: Bucket): Requirement<'throttle', { readonly bucket: Bucket; }, typeof ApiErrorCode.RATE_LIMITED>;` — A rate-limit bucket by name: the server binds the cap, and the '429' is derived.

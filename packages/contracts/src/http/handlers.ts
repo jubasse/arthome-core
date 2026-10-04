@@ -27,10 +27,36 @@ export interface HandlerInput<R extends RouteShape> {
   readonly principal: RoutePrincipal<R>;
 }
 
+/** What the server stamps on every answer: the handler never writes them. */
+type Stamped = 'servedAt' | 'rightsVersion';
+
+/**
+ * A declared shape without the index signatures its loose objects carry, so a handler returning an
+ * undeclared field is a compile error. The client keeps the loose shape.
+ */
+export type Strict<T> = T extends readonly (infer Item)[]
+  ? Strict<Item>[]
+  : T extends object
+    ? {
+        [
+          K in keyof T as string extends K
+            ? never
+            : number extends K
+              ? never
+              : symbol extends K
+                ? never
+                : K
+        ]: Strict<T[K]>;
+      }
+    : T;
+
+/** The data a handler returns: the declared body, strict, without the envelope meta the server stamps. */
+export type Returned<B> = [B] extends [undefined] ? undefined : Omit<Strict<B>, Stamped>;
+
 type StatusNumber<S> = S extends `${infer N extends number}` ? N : S;
 
 type OutputOf<R extends RouteShape, S extends keyof R['responses']> = S extends unknown
-  ? { readonly status: StatusNumber<S>; readonly body: RouteResponseBody<R, S> }
+  ? { readonly status: StatusNumber<S>; readonly body: Returned<RouteResponseBody<R, S>> }
   : never;
 
 /**
@@ -40,7 +66,7 @@ type OutputOf<R extends RouteShape, S extends keyof R['responses']> = S extends 
 export type HandlerOutput<R extends RouteShape> = [RouteSuccessStatus<R>] extends [never]
   ? never
   : IsSingle<RouteSuccessStatus<R>> extends true
-    ? RouteResponseBody<R, RouteSuccessStatus<R>>
+    ? Returned<RouteResponseBody<R, RouteSuccessStatus<R>>>
     : OutputOf<R, RouteSuccessStatus<R>>;
 
 type IsSingle<T> = IsUnion<T> extends true ? false : true;
