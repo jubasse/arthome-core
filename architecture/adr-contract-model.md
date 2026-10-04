@@ -607,6 +607,50 @@ The rule "never one identifier at a time" stays in `definition-of-done.md`.
 - Pass 2, with the front lanes: mock servers generated from the declarations and their examples,
   for the surfaces' tests.
 
+### 9.7 The last coverage pass
+
+Checked against the usual API design guides (request, access, reads, writes, responses, errors,
+evolution, security, tooling).
+
+**Missing, and added to pass 1:**
+- **Re-authentication.** Ten routes require a recent re-authentication, in prose only: no header and
+  no code declare it.
+  - storefront: `enableTwoFactor`, `disableTwoFactor`;
+  - studio: `listReauthFactors`, `createReauthToken`, `revealStreamKey`, `rotateStreamKey`,
+    `transferChannelOwnership`, `deleteChannel`, `requestBankChange`, `countersignBankChange`.
+
+  `requires(recentAuth())` declares the proof it takes and its `403` (a code to add), so a client
+  knows before calling.
+- **Sensitive fields.** `sensitive(schema)` marks a password, a token or a stream key:
+  - `writeOnly` in the document, or `format: password`;
+  - redacted from the server's logs and traces;
+  - `no-store` on a response that carries one.
+- **Another caller's record.** On an `owner: 'caller'` resource, someone else's id answers
+  `404 api.not_found`, never `403`: the answer must not reveal that the record exists.
+- **The degraded parts of a composed read.** The envelope's `degraded` is a bare list of strings
+  today. A route declares `degradable: ['viewerProgress', ...]`, and `degraded` is typed from it
+  (§5.8).
+
+**Built with their lane:**
+- **The offline policy of a write.** `offline: 'queue' | 'forbidden'`, for studio-mobile. Today it is
+  prose ("taking charge is never queued offline").
+- **A bulk write.** It answers a table keyed by id with each item's outcome, like the batched read,
+  never a `207`. Built when a route needs it.
+- **Form-encoded callbacks** (OAuth `form_post`), with the redirects of auth slice B.
+
+**Already settled, nothing to build:**
+- **Language.** There is no negotiation: the surface translates codes (§5.5), authored text carries
+  its language (`./text`), and a write that needs a locale takes it as a field (`signUp.locale`).
+
+**Ruled out:**
+- field selection (`fields=`): the BFFs are shaped per screen;
+- hypermedia links: the client is typed;
+- `multipart`: uploads go through signed tickets;
+- `207 Multi-Status`.
+
+`HEAD`, `OPTIONS` and the CORS preflight are the server's concern. Health stays outside the
+contracts (§5.10).
+
 ## 10. Plan
 
 **Pass 1: two agents, core first, then QA by the lead.**
