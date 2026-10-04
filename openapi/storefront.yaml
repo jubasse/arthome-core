@@ -7991,10 +7991,9 @@ components:
             $ref: '#/components/schemas/ErrorEnvelope'
           example:
             error:
-              code: api.upstream_unavailable
+              code: api.service_unavailable
               nature: unavailable
-              params:
-                service: catalog
+              params: {}
               traceId: 4bf92f3577b34da6a3ce929d0e0e4736
             servedAt: '2026-09-21T20:31:04.118Z'
     PayloadTooLarge:

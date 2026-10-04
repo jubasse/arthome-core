@@ -6,7 +6,6 @@ import {
   FailureNature,
   OrderErrorCode,
   SchemaIssueRule,
-  Service,
   Surface,
 } from '@arthome/core';
 import type { ErrorCode } from '@arthome/core';
@@ -428,11 +427,9 @@ export const UnavailableResponse: JsonResponse<typeof StorefrontErrorEnvelopeSch
       schema: StorefrontErrorEnvelopeSchema,
       example: {
         error: {
-          code: ApiErrorCode.UPSTREAM_UNAVAILABLE,
+          code: ApiErrorCode.SERVICE_UNAVAILABLE,
           nature: FailureNature.UNAVAILABLE,
-          params: {
-            service: Service.CATALOG,
-          },
+          params: {},
           traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
         },
         servedAt: '2026-09-21T20:31:04.118Z',
@@ -593,7 +590,7 @@ export const storefrontErrors: ErrorModel<StorefrontRelayedCode> = defineErrorMo
     },
     500: { response: InternalErrorResponse, codes: [ApiErrorCode.INTERNAL] },
     502: { response: BadGatewayResponse, codes: [ApiErrorCode.UPSTREAM_UNAVAILABLE] },
-    503: { response: UnavailableResponse, codes: [ApiErrorCode.UPSTREAM_UNAVAILABLE] },
+    503: { response: UnavailableResponse, codes: [ApiErrorCode.SERVICE_UNAVAILABLE] },
     504: {
       response: GatewayTimeoutResponse,
       codes: [ApiErrorCode.UPSTREAM_TIMEOUT, ApiErrorCode.DEADLINE_EXCEEDED],
