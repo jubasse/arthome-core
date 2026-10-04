@@ -154,6 +154,8 @@ export const getHomeScreen: Route<{
                   id: 'resume',
                   titleCode: 'home.rail.resume',
                   kind: 'resume',
+                  itemKind: 'date',
+                  cardForm: 'wide',
                   items: [],
                   nextCursor: null,
                 },

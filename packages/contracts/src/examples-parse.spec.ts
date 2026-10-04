@@ -13,27 +13,6 @@ const APIS: readonly (readonly [string, Api, ApiDocs])[] = [
   ['studio', studioApi, studioDocs],
 ];
 
-/**
- * Examples written in the routes or on a schema's `.meta` that do not parse with their schema, found
- * when ADR §9.6's test was written. The list only shrinks: a module's conversion moves its examples
- * into its `examples.ts`, where every one must parse.
- */
-const KNOWN_TO_FAIL = new Set([
-  'storefront getViewerContext 200',
-  'storefront signUp 201',
-  'storefront signIn 200',
-  'storefront exchangeOneTimeToken 200',
-  'storefront verifyTwoFactor 200',
-  'storefront addToWatchlist 200',
-  'storefront removeFromWatchlist 200',
-  'storefront signOutProfile 200',
-  'storefront getHomeScreen 200',
-  'storefront purchaseSeat 201',
-  'storefront cancelSeat 200',
-  'storefront pollPairing 200',
-  'studio example "studio-mobile"',
-]);
-
 function failureOf(schema: z.ZodType, example: unknown): string | undefined {
   const parsed = schema.safeParse(example);
   if (parsed.success) return undefined;
@@ -97,34 +76,28 @@ describe('ADR §9.6: every example parses with its schema', () => {
     expect(failures).toEqual([]);
   });
 
-  it.each(APIS)('%s: every example a route or a schema still writes itself', (name, api) => {
+  it.each(APIS)('%s: every example a route or a schema still writes itself', (_name, api) => {
     const failures: string[] = [];
     const seen = new Set<z.ZodType>();
     for (const route of Object.values(api.routes)) {
       for (const [where, media] of mediaOf(route)) {
         if (media.example === undefined) continue;
         const failure = failureOf(media.schema, media.example);
-        if (failure !== undefined) failures.push(`${name} ${route.operationId} ${where}`);
+        if (failure !== undefined) failures.push(`${route.operationId} ${where}: ${failure}`);
       }
       for (const root of rootsOf(route)) {
         for (const schema of schemasUnder(root, seen)) {
           const meta = z.globalRegistry.get(schema) as { examples?: unknown } | undefined;
           const examples: readonly unknown[] = Array.isArray(meta?.examples) ? meta.examples : [];
           for (const example of examples) {
-            if (failureOf(schema, example) !== undefined) {
-              failures.push(`${name} example ${JSON.stringify(example)}`);
-            }
+            const failure = failureOf(schema, example);
+            if (failure !== undefined) failures.push(`${JSON.stringify(example)}: ${failure}`);
           }
         }
       }
     }
-    const unexpected = failures.filter((failure) => !KNOWN_TO_FAIL.has(failure));
-    const repaired = [...KNOWN_TO_FAIL].filter(
-      (known) => known.startsWith(`${name} `) && !failures.includes(known),
-    );
 
-    expect(unexpected, 'an example that does not parse with its schema').toEqual([]);
-    expect(repaired, 'parses now: remove it from KNOWN_TO_FAIL').toEqual([]);
+    expect(failures).toEqual([]);
   });
 });
 

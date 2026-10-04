@@ -117,9 +117,8 @@ What only the document reads is registered per module, beside the routes:
   record it wraps: a resource member's answer shows its item's registered example in the api's
   envelope (`itemExample`, `pageExample`). An example a route still writes is kept when nothing is
   registered.
-- **Every registered example parses with its schema** (ADR §9.6, `examples-parse.spec.ts`). The
-  examples routes and schemas still write themselves are held to the same rule, with a list of the
-  known failures that only shrinks.
+- **Every registered example parses with its schema** (ADR §9.6, `examples-parse.spec.ts`), and so
+  does every example a route or a schema still writes itself.
 
 `pnpm run measure:surface-bundle` prints what a surface ships for `createClient(api)`, minified and
 gzipped, part by part. Measured on 2026-10-05, before any module moved its docs: storefront 126.9 KB

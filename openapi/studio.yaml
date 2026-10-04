@@ -10769,7 +10769,7 @@ components:
         x-arthome-vocabulary-source: SURFACES
         x-arthome-vocabulary-narrowing: The two that may call the studio BFF. An input refuses where an output keeps an unknown value raw.
         examples:
-        - studio-mobile
+        - studio_mobile
     IdempotencyKey:
       name: Idempotency-Key
       in: header
