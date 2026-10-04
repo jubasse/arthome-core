@@ -54,6 +54,12 @@ export const API_ERROR_CODES = [
   // The BFF stopped waiting for a service. Not `upstream_unavailable`: the service may still
   //   finish, so a caller retrying a command must reuse its Idempotency-Key.
   'api.upstream_timeout',
+  // transport.md §5.7's three refusals made before a handler runs: a body over the route's
+  //   ceiling (413), a media type the route does not take (415), and a route that requires a recent
+  //   re-authentication the caller has not just given (403).
+  'api.payload_too_large',
+  'api.unsupported_media_type',
+  'api.reauthentication_required',
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
@@ -75,6 +81,9 @@ export const ApiErrorCode = {
   IDEMPOTENCY_IN_FLIGHT: 'api.idempotency_in_flight',
   DEADLINE_EXCEEDED: 'api.deadline_exceeded',
   UPSTREAM_TIMEOUT: 'api.upstream_timeout',
+  PAYLOAD_TOO_LARGE: 'api.payload_too_large',
+  UNSUPPORTED_MEDIA_TYPE: 'api.unsupported_media_type',
+  REAUTHENTICATION_REQUIRED: 'api.reauthentication_required',
 } as const;
 
 /**

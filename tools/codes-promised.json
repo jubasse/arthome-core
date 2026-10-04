@@ -44,12 +44,6 @@
       "reason": "Traefik's own 5xx, served by a static error service. No Traefik configuration exists in any repository yet, so nothing can emit it."
     },
     {
-      "code": "api.payload_too_large",
-      "kind": "promised",
-      "named_in": ["architecture/transport.md"],
-      "reason": "transport.md §5.7's 413. No service enforces a body limit in the contract's vocabulary — the two that exist inherit Fastify's 1 MiB default and answer with its own error shape, not ours."
-    },
-    {
       "code": "date.interrupted",
       "kind": "open",
       "named_in": ["architecture/context-map.md", "architecture/adr-stream-entitlement.md"],

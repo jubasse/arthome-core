@@ -8161,6 +8161,9 @@ components:
           - api.idempotency_in_flight
           - api.deadline_exceeded
           - api.upstream_timeout
+          - api.payload_too_large
+          - api.unsupported_media_type
+          - api.reauthentication_required
           - identity.email_taken
           - identity.handle_taken
           - identity.invalid_credentials

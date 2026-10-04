@@ -23,7 +23,7 @@ import { WATCH_DENIAL_REASONS } from './entitlement.js';
  * route that does not resolve, not a missing aggregate: a service expressing a domain rule with
  * one of these makes the surface render "not found" for a date that exists and is not on sale.
  */
-export declare const API_ERROR_CODES: readonly ["api.unauthenticated", "api.token_expired", "api.forbidden", "api.not_found", "api.rate_limited", "api.schema_invalid", "api.internal", "api.service_unavailable", "api.upstream_unavailable", "api.cursor_too_old", "api.sort_key_forbidden", "api.period_filter_required", "api.rights_version_stale", "api.idempotency_key_reused", "api.idempotency_in_flight", "api.deadline_exceeded", "api.upstream_timeout"];
+export declare const API_ERROR_CODES: readonly ["api.unauthenticated", "api.token_expired", "api.forbidden", "api.not_found", "api.rate_limited", "api.schema_invalid", "api.internal", "api.service_unavailable", "api.upstream_unavailable", "api.cursor_too_old", "api.sort_key_forbidden", "api.period_filter_required", "api.rights_version_stale", "api.idempotency_key_reused", "api.idempotency_in_flight", "api.deadline_exceeded", "api.upstream_timeout", "api.payload_too_large", "api.unsupported_media_type", "api.reauthentication_required"];
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 export declare const ApiErrorCode: {
     readonly UNAUTHENTICATED: "api.unauthenticated";
@@ -43,6 +43,9 @@ export declare const ApiErrorCode: {
     readonly IDEMPOTENCY_IN_FLIGHT: "api.idempotency_in_flight";
     readonly DEADLINE_EXCEEDED: "api.deadline_exceeded";
     readonly UPSTREAM_TIMEOUT: "api.upstream_timeout";
+    readonly PAYLOAD_TOO_LARGE: "api.payload_too_large";
+    readonly UNSUPPORTED_MEDIA_TYPE: "api.unsupported_media_type";
+    readonly REAUTHENTICATION_REQUIRED: "api.reauthentication_required";
 };
 /**
  * Sign-in, sign-up and session refusals. `identity.signed_out_elsewhere` is served to a session
