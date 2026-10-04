@@ -290,6 +290,14 @@ const savedSearches = storefrontV1
   }));
 ```
 
+When `crud` is all a resource declares, the closure returns it as is, or the call chains without a
+closure. Both give the same record:
+
+```ts
+const searches = me.resource('saved-searches', options, (searches) => searches.crud({ /* ... */ }));
+const searchesToo = me.resource('saved-searches', options).crud({ /* ... */ });
+```
+
 **What it is worth here, measured.** In the two public contracts, four collections come close to a
 CRUD, and none is complete:
 - the saved searches: no `find`;
