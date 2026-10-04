@@ -547,6 +547,25 @@ test. That includes the responses produced by the framework.
 | Real-time | chat | outside OpenAPI: AsyncAPI or the protobuf events, decided there |
 | Formats | none | §5.7 rules one format and no binary; an exception is an amendment (Q1) |
 
+**Later, and not a lane: scaffolding from the declarations.** The declarations are values a script
+can walk, so they can drive three kinds of output, each with its own rule:
+- **Typed calls need no generation.** The server and the clients import the declaration, as they do
+  today, so a contract change is a compile error everywhere and no generated file can drift.
+- **A one-shot scaffold.** Once generated, the code belongs to whoever edits it, and nothing
+  regenerates it. Examples:
+  - a NestJS controller with each method bound by `@Endpoint(route)`, its typed parameters,
+    principal and body, and an empty body;
+  - its test skeleton, one case per declared status.
+
+  This is a schematic in `arthome-platform/tools/schematics`. Since the binding is typed, a later
+  contract change still shows in the edited code.
+- **Glue nobody edits.** Data-fetching hooks for React, services for Angular, mock servers. A
+  generic helper typed from the api (`createQueries(storefrontApi)`) is preferred to generated
+  files wherever the types suffice.
+
+A gate can also list the routes a service declares and does not bind yet, so the contract doubles as
+the list of what remains to implement.
+
 **A redirect serves browser navigations only:** the OAuth callback, a link in an email, an old slug
 for search engines. A call made by the application's code follows a redirect silently and cannot
 read its target. An API call therefore answers the URL in JSON, as `startSocialSignIn` and
