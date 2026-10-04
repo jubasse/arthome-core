@@ -256,6 +256,51 @@ Three variants are stated by the declaration, not tolerated as deviations:
 - the DELETE with a body (§3.3);
 - the optional `ETag` (§5.5).
 
+### 3.6 `crud`, in this model
+
+**What it is.** One call declaring several members of a resource, which share their `item`:
+- by default `find`, `findAll`, `create`, `update` and `delete`;
+- `replace` and `upsert` when their options are given;
+- narrowed by `pick` or `omit`, never both.
+
+**Four changes:**
+- **It returns its routes keyed by operation id**, no longer by member name (`find`, `create`). The
+  record spreads into a closure, and `collect()` takes it like any other. Each member keeps the id
+  derived from the resource (`createSavedSearch`), or the one its options give, which is how a
+  published name is kept (`listSavedSearches`).
+- **It exists on `single` too.** Its default there is `find` and `update`; `create`, `replace`,
+  `upsert` and `delete` come with `pick`.
+- **It inherits from its scope** `owner`, `requires`, `tags` and the identity. With
+  `owner: 'caller'`, its `update` and `delete` carry no version.
+- **Each member takes the options of §5 and §6.** `findAll` takes `paging`, `sortable` and
+  `filters`; `find` takes `expand` and `cache`; `delete` takes `response`.
+
+```ts
+const savedSearches = storefrontV1
+  .path('me')
+  .resource('saved-searches', { id: SavedSearchIdParameter, owner: 'caller' }, (searches) => ({
+    ...searches.crud({
+      item: SavedSearchSchema,
+      pick: ['findAll', 'create', 'update', 'delete'],
+      findAll: { operationId: 'listSavedSearches', paging: cursor({ maxLimit: 50 }) },
+      create: { body: CreateSavedSearchBodySchema },
+      update: { fields: SavedSearchSchema.pick({ name: true, active: true, channels: true }) },
+      delete: { response: SavedSearchSchema },
+    }),
+  }));
+```
+
+**What it is worth here, measured.** In the two public contracts, four collections come close to a
+CRUD, and none is complete:
+- the saved searches: no `find`;
+- the cart lines: `create`, `update`, `delete`;
+- the pairings: `create`, `find`, `delete`;
+- a channel's members: `findAll`, `update`, `delete`.
+
+The surfaces' routes are mostly reads composed per screen, and actions. So `crud` serves with `pick`
+on the BFFs, and whole mainly on the internal APIs of D-121 and on the back-office screens to come.
+The individual members remain the primary tool, and `crud` is the shorthand.
+
 ## 4. Identity and requirements
 
 ### 4.1 The identified state, declared once per surface
