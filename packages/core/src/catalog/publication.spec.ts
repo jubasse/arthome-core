@@ -156,7 +156,7 @@ describe('a commanded transition', () => {
     throw new Error('expected a DomainError');
   }
 
-  it('is refused on a stale version, with the current version', () => {
+  it('is refused on a stale version, with the current state and version', () => {
     const refusal = refusalOf(() =>
       assertCommandedTransition(
         draftAtSeven,
@@ -165,7 +165,7 @@ describe('a commanded transition', () => {
       ),
     );
     expect(refusal.code).toBe(DomainErrorCode.STATE_CONFLICT);
-    expect(refusal.params).toEqual({ currentVersion: 7 });
+    expect(refusal.params).toEqual({ currentVersion: 7, state: PublicationState.DRAFT });
   });
 
   it('refuses a one-way transition whose promise was not acknowledged, naming it', () => {

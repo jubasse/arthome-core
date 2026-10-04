@@ -172,7 +172,8 @@ export interface ErrorParamsMap {
   };
   [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: { flag: string };
   [DomainErrorCode.SEAT_CODE_MALFORMED]: { body: string };
-  [DomainErrorCode.STATE_CONFLICT]: { currentVersion: number };
+  // `state` when the record has a lifecycle state: the operator learns it moved, without a reload.
+  [DomainErrorCode.STATE_CONFLICT]: { currentVersion: number; state?: string };
 
   [WatchDenialReason.NO_SEAT]: NoErrorParams;
   [WatchDenialReason.ROOM_NOT_OPEN]: NoErrorParams;

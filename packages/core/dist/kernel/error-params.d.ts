@@ -252,6 +252,7 @@ export interface ErrorParamsMap {
     };
     [DomainErrorCode.STATE_CONFLICT]: {
         currentVersion: number;
+        state?: string;
     };
     [WatchDenialReason.NO_SEAT]: NoErrorParams;
     [WatchDenialReason.ROOM_NOT_OPEN]: NoErrorParams;

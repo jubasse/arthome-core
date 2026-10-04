@@ -37,7 +37,7 @@ export interface PublicationTransitionCommand {
 }
 /**
  * The server's decision on a commanded transition, returning the transition it allows. A stale
- * version is refused first, with the current version, because a screen that is behind
+ * version is refused first, with the current state and version, because a screen that is behind
  * is wrong about everything else too. A one-way transition must carry its promise back.
  */
 export declare function assertCommandedTransition(current: {

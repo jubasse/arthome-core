@@ -235,7 +235,8 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
   [OrderErrorCode.PAYMENT_METHOD_IN_USE]: { status: 409, example: {} },
 
   [DomainErrorCode.CAPACITY_TIER_MUST_WIDEN]: { status: 409, example: { current: 500, next: 400 } },
-  [DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES]: { status: 409, example: {} },
+  // Thrown on read only (`pickLanguage`): stored content breaking an invariant no client can fix.
+  [DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES]: { status: 500, example: {} },
   // A value its schema accepts and a rule refuses: 400, as `api.schema_invalid`.
   [DomainErrorCode.HOLD_QUANTITY_INVALID]: { status: 400, example: { quantity: '0' } },
   [DomainErrorCode.MEDIA_SIZE_INVALID]: { status: 400, example: { width: '0', height: '720' } },
@@ -277,7 +278,10 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
   },
   [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: { status: 400, example: { flag: 'subtitled' } },
   [DomainErrorCode.SEAT_CODE_MALFORMED]: { status: 400, example: { body: 'A12' } },
-  [DomainErrorCode.STATE_CONFLICT]: { status: 409, example: { currentVersion: 8 } },
+  [DomainErrorCode.STATE_CONFLICT]: {
+    status: 409,
+    example: { currentVersion: 8, state: PublicationState.LIVE },
+  },
 
   [WatchDenialReason.NO_SEAT]: { status: 403, example: {} },
   [WatchDenialReason.ROOM_NOT_OPEN]: { status: 403, example: {} },

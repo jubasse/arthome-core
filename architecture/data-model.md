@@ -363,7 +363,7 @@ knows whether the feed is coming in. So two of the eight transitions are caused 
 - The lock is on the **pair** `from > to`, not on the state (E5). Refusal:
   `TRANSITION_IRREVERSIBLE` + the target transition + the promise committed, as parameters.
 - Every transition is **conditioned on the version**: sent from `technical` while the current state
-  is `live`, it is refused with `STATE_CONFLICT` **and the current version**. The studio
+  is `live`, it is refused with `STATE_CONFLICT` **and the current state and version**. The studio
   is multi-operator with no lock: the arbitration is on the server.
 - Every transition carries an `Idempotency-Key` — **mandatory, not recommended**: it commits a
   public price or a sale.

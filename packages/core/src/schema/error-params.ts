@@ -202,7 +202,12 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
   }),
   [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: z.looseObject({ flag: text() }),
   [DomainErrorCode.SEAT_CODE_MALFORMED]: z.looseObject({ body: text() }),
-  [DomainErrorCode.STATE_CONFLICT]: z.looseObject({ currentVersion: count() }),
+  [DomainErrorCode.STATE_CONFLICT]: z.looseObject({
+    currentVersion: count(),
+    state: text()
+      .meta({ description: 'Present when the record has a lifecycle state.' })
+      .exactOptional(),
+  }),
 
   [WatchDenialReason.NO_SEAT]: none(),
   [WatchDenialReason.ROOM_NOT_OPEN]: none(),

@@ -2164,7 +2164,7 @@ paths:
            on the state.**
         2. **It is conditional and versioned.** Two people can be on the record: a command sent from
            `technical` while the current state is `live` is refused with `state.conflict`,
-           **with the current version**. The studio is multi-operator without a lock; the arbitration
+           **with the current state and version**. The studio is multi-operator without a lock; the arbitration
            is on the server.
         3. **`Idempotency-Key` is mandatory, not recommended**: the transition commits a public price
            or a sale.
@@ -2274,7 +2274,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '409':
           description: |
-            `state.conflict` (with the current version),
+            `state.conflict` (with the current state and version),
             `publication.transition_irreversible` (with the promise committed),
             `publication.promise_unacknowledged` (a one-way transition sent without its promise), or
             `publication.checklist_incomplete` (with the list of what is missing).
@@ -7988,7 +7988,7 @@ components:
     Conflict:
       description: |
         A final business refusal, and the `code` says which. `state.conflict` carries **the current
-        version**; `publication.transition_irreversible` carries the transition attempted **and the
+        version, and the state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
         promise committed**; `moderation.already_settled` carries **the winning verdict and its
         author**.
       content:
@@ -9591,7 +9591,7 @@ components:
           description: |
             The studio is **multi-operator without a lock**: the arbitration is on the server. Every
             transition carries `expectedVersion`, and a command sent from `technical` while the current
-            state is `live` is refused with `state.conflict` **and the current version**.
+            state is `live` is refused with `state.conflict` **with the current state and version**.
         publishedAt:
           format: date-time
           type:
