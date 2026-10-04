@@ -14,6 +14,7 @@
 import { z } from 'zod';
 
 import type { Access, Requirement } from './access.js';
+import type { Paging, SortKey } from './paging.js';
 import type { CachePolicy } from './policy.js';
 
 export type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'patch';
@@ -93,6 +94,12 @@ export interface RouteDefinition extends RouteShape, Extensions {
   readonly degradable?: readonly string[];
   /** Only the caller reads and writes this data: another caller's id answers 404, never 403. */
   readonly owner?: 'caller';
+  /** How a list is paged. */
+  readonly paging?: Paging;
+  /** The keys a list can be ordered by. */
+  readonly sortable?: readonly SortKey[];
+  /** The relations a read can return on demand, by name. */
+  readonly expand?: Readonly<Record<string, z.ZodType>>;
 }
 
 /** Named members for a list of words, `CHAT` for `'chat'`, so no module spells a member again. */
@@ -474,5 +481,8 @@ export * from './builder.js';
 export * from './collect.js';
 export * from './errors.js';
 export * from './marks.js';
+export * from './paging.js';
 export * from './policy.js';
+export * from './responses.js';
+export * from './tagged.js';
 export * from './resource.js';

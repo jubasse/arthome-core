@@ -30,6 +30,7 @@ import type {
   ErrorModel,
   Header,
   Identity,
+  Paging,
   HeaderParameter,
   JsonResponse,
   PathParameter,
@@ -39,7 +40,7 @@ import type {
   RouteBuilder,
   SecurityRequirement,
 } from '../http/index.js';
-import { accessorOf, defineErrorModel, identity, routeBuilder } from '../http/index.js';
+import { accessorOf, cursor, defineErrorModel, identity, routeBuilder } from '../http/index.js';
 import { StorefrontCursorPageInfoSchema } from '../pagination/index.js';
 
 const SURFACE: readonly [
@@ -509,6 +510,15 @@ export const storefrontConventions: {
   readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
   readonly replayedHeader: Header;
   readonly expectedVersion: z.ZodNumber;
+  readonly paging: Paging;
+  readonly paginations: {
+    readonly cursor: {
+      readonly parameters: (paging: {
+        readonly maxLimit: number;
+      }) => readonly [typeof CursorParameter, QueryParameter<'limit', z.ZodDefault<z.ZodInt>>];
+      readonly page: ResourceConventions['page'];
+    };
+  };
 } = {
   item: (data) => z.intersection(StorefrontEnvelopeMetaSchema, z.looseObject({ data })),
   page: (data) =>
@@ -523,6 +533,27 @@ export const storefrontConventions: {
   writeParameters: [IdempotencyKeyParameter],
   replayedHeader: IdempotencyReplayedHeader,
   expectedVersion: int64(),
+  paging: cursor({ maxLimit: 50 }),
+  paginations: {
+    cursor: {
+      parameters: (paging) => [
+        CursorParameter,
+        paging.maxLimit === 50
+          ? LimitParameter
+          : {
+              name: 'limit',
+              in: 'query',
+              required: false,
+              schema: z.int().min(1).max(paging.maxLimit).default(20),
+            },
+      ],
+      page: (data) =>
+        z.intersection(
+          StorefrontEnvelopeMetaSchema,
+          z.looseObject({ data: z.array(data), page: StorefrontCursorPageInfoSchema }),
+        ),
+    },
+  },
 };
 
 /**

@@ -13,6 +13,15 @@ import type {
   QueryParameter,
   Response,
 } from './index.js';
+import {
+  sortDirectionSchema,
+  sortKeyName,
+  type Paging,
+  type PagingConvention,
+  type PagingConventions,
+  type SortDirection,
+  type SortKey,
+} from './paging.js';
 import { BATCH_BODY_LIMIT } from './policy.js';
 
 type PathParameterOf = Parameter & { readonly in: 'path' };
@@ -36,6 +45,10 @@ export interface ResourceConventions {
   readonly notModified?: Response;
   /** The api's `Idempotency-Replayed` header, kept as one component. */
   readonly replayedHeader?: Header;
+  /** The paging a list has unless it says otherwise. */
+  readonly paging?: Paging;
+  /** The other kinds of paging this api serves, beside its default. */
+  readonly paginations?: PagingConventions;
   /** `Idempotency-Key`, on a write. */
   readonly writeParameters: readonly Parameter[];
   /** The version a write expects the record to be at: a body field on an update, a query parameter on a removal. */
@@ -219,23 +232,97 @@ type ResponseOf<
   ? Readonly<Record<Status, JsonResponse<Schema<Item<C, S>>>>>
   : { readonly 204: Response };
 
+type RelationsOf<D> = D extends {
+  readonly expand: infer E extends Readonly<Record<string, z.ZodType>>;
+}
+  ? { readonly [K in keyof E]?: z.output<E[K]> }
+  : unknown;
+
+type ExpandParameters<D> = D extends {
+  readonly expand: infer E extends Readonly<Record<string, z.ZodType>>;
+}
+  ? readonly [
+      QueryParameter<'include', z.ZodArray<z.ZodEnum<{ readonly [K in keyof E & string]: K }>>>,
+    ]
+  : readonly [];
+
 export type FindRoute<C extends ResourceContext, D> = Member<
   C,
   D,
   'get',
   ItemPath<C>,
-  readonly [...ItemParameters<C>, ...Added<C, 'readParameters'>],
-  { readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>> },
+  readonly [...ItemParameters<C>, ...ExpandParameters<D>],
+  {
+    readonly 200: JsonResponse<
+      Schema<Envelope<C> & { readonly data: z.output<ItemOf<D>> & RelationsOf<D> }>
+    >;
+  },
   NotFoundFor<C>
 >;
+
+type KeyName<T> = T extends string
+  ? T
+  : T extends { readonly key: infer N extends string }
+    ? N
+    : never;
+
+type DropNamed<T extends readonly Parameter[], Names extends string> = T extends readonly [
+  infer First extends Parameter,
+  ...infer Rest extends readonly Parameter[],
+]
+  ? First['name'] extends Names
+    ? DropNamed<Rest, Names>
+    : readonly [First, ...DropNamed<Rest, Names>]
+  : readonly [];
+
+type SortParameters<D> = D extends { readonly sortable: infer S extends readonly SortKey[] }
+  ? readonly [
+      QueryParameter<'sortBy', z.ZodEnum<{ readonly [K in KeyName<S[number]>]: K }>>,
+      QueryParameter<'sortDir', z.ZodDefault<z.ZodEnum<{ readonly [K in SortDirection]: K }>>>,
+    ]
+  : readonly [];
+
+type FilterParameters<D> = D extends { readonly filters: infer F extends z.ZodType }
+  ? readonly [QueryParameter<'filters', F>]
+  : readonly [];
+
+type ListBase<C extends ResourceContext, D> = D extends { readonly paging: infer P extends Paging }
+  ? P extends { readonly kind: 'changesSince' }
+    ? readonly [QueryParameter<'since', z.ZodString, true>]
+    : Conv<C> extends { readonly paginations: infer Pg }
+      ? P['kind'] extends keyof Pg
+        ? Pg[P['kind']] extends {
+            readonly parameters: (...paging: never[]) => infer R extends readonly Parameter[];
+          }
+          ? R
+          : readonly Parameter[]
+        : readonly Parameter[]
+      : readonly Parameter[]
+  : Added<C, 'listParameters'>;
+
+type ListParameters<C extends ResourceContext, D> = readonly [
+  ...(D extends { readonly sortable: unknown }
+    ? DropNamed<ListBase<C, D>, 'sortBy' | 'sortDir'>
+    : ListBase<C, D>),
+  ...SortParameters<D>,
+  ...FilterParameters<D>,
+];
 
 export type FindAllRoute<C extends ResourceContext, D> = Member<
   C,
   D,
   'get',
   CollectionPath<C>,
-  readonly [...C['parents'], ...Added<C, 'listParameters'>],
-  { readonly 200: JsonResponse<Schema<Page<C, ItemOf<D>>>> },
+  readonly [...C['parents'], ...ListParameters<C, D>],
+  {
+    readonly 200: JsonResponse<
+      Schema<
+        D extends { readonly paging: { readonly kind: 'changesSince' } }
+          ? Item<C, ItemOf<D>>
+          : Page<C, ItemOf<D>>
+      >
+    >;
+  },
   { readonly 400: InvalidCursor }
 >;
 
@@ -415,8 +502,15 @@ type SelectedMember<C extends ResourceContext, O> = O extends {
 
 export interface CrudOptions<C extends ResourceContext> {
   readonly item: z.ZodType;
-  readonly findAll?: Docs<C>;
-  readonly find?: Docs<C>;
+  readonly findAll?: Docs<
+    C,
+    {
+      readonly paging?: Paging;
+      readonly sortable?: readonly SortKey[];
+      readonly filters?: z.ZodObject;
+    }
+  >;
+  readonly find?: Docs<C, { readonly expand?: Readonly<Record<string, z.ZodType>> }>;
   readonly create?: Docs<C, { readonly body: z.ZodType; readonly response?: z.ZodType }>;
   readonly update?: Docs<C, { readonly fields: z.ZodObject } | { readonly body: z.ZodObject }>;
   readonly replace?: Docs<C, { readonly body: z.ZodObject }>;
@@ -509,8 +603,27 @@ export type ChildContext<
 };
 
 export interface Resource<C extends ResourceContext> {
-  find<const D extends Docs<C, { readonly item: z.ZodType }>>(docs: D): FindRoute<C, D>;
-  findAll<const D extends Docs<C, { readonly item: z.ZodType }>>(docs: D): FindAllRoute<C, D>;
+  find<
+    const D extends Docs<
+      C,
+      { readonly item: z.ZodType; readonly expand?: Readonly<Record<string, z.ZodType>> }
+    >,
+  >(
+    docs: D,
+  ): FindRoute<C, D>;
+  findAll<
+    const D extends Docs<
+      C,
+      {
+        readonly item: z.ZodType;
+        readonly paging?: Paging;
+        readonly sortable?: readonly SortKey[];
+        readonly filters?: z.ZodObject;
+      }
+    >,
+  >(
+    docs: D,
+  ): FindAllRoute<C, D>;
   /** POST on the collection, carrying an `Idempotency-Key`. */
   create<
     const D extends Docs<
@@ -656,6 +769,20 @@ function singularOf(word: string): string {
   return word;
 }
 
+const SINCE_PARAMETER: Parameter = {
+  name: 'since',
+  in: 'query',
+  required: true,
+  description: 'The token the last answer gave.',
+  schema: z.string(),
+};
+
+function filterParameter(schema: z.ZodObject): Parameter {
+  return { name: 'filters', in: 'query', required: false, schema };
+}
+
+const SORT_PARAMETERS: readonly string[] = ['sortBy', 'sortDir'];
+
 const NOT_FOUND: ErrorsInput<string> = { 404: [ApiErrorCode.NOT_FOUND] };
 const IDEMPOTENCY: readonly string[] = [
   ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
@@ -686,6 +813,8 @@ const OPTION_KEYS = [
   'idempotent',
   'example',
   'optionalBody',
+  'filters',
+  'max',
 ] as const;
 
 function mergeErrors(
@@ -812,8 +941,42 @@ export function makeResource(
     return builder.defineRoute(definition as never);
   };
 
-  const itemOf = (docs: AnyDocs | undefined): z.ZodType =>
-    conventions.item(docs?.item as z.ZodType);
+  const expansionsOf = (docs: AnyDocs | undefined): Readonly<Record<string, z.ZodType>> =>
+    docs?.expand ?? {};
+
+  /** The item with each relation on demand optional, and marked with the name that asks for it. */
+  const itemOf = (
+    docs: AnyDocs | undefined,
+    expand: Readonly<Record<string, z.ZodType>> = {},
+  ): z.ZodType => {
+    const item = docs?.item as z.ZodType;
+    const entries = Object.entries(expand);
+    if (entries.length === 0) return conventions.item(item);
+    const relations = z.object(
+      Object.fromEntries(
+        entries.map(([relation, schema]) => [
+          relation,
+          schema.meta({ 'x-arthome-expanded-by': relation }).optional(),
+        ]),
+      ),
+    );
+    return conventions.item(z.intersection(item, relations));
+  };
+
+  const expansionParameters = (docs: AnyDocs | undefined): readonly Parameter[] => {
+    const names = Object.keys(expansionsOf(docs));
+    return names.length === 0
+      ? []
+      : [
+          {
+            name: 'include',
+            in: 'query',
+            required: false,
+            description: 'The relations to return with the record, by name.',
+            schema: z.array(z.enum(names as [string, ...string[]])),
+          },
+        ];
+  };
 
   const find = (docs: AnyDocs) =>
     route({
@@ -821,23 +984,79 @@ export function makeResource(
       path: itemPath,
       derivedId: `find${singular}`,
       docs,
-      parameters: [...itemParameters, ...conventions.readParameters],
-      responses: {
-        200: jsonResponse('The record.', itemOf(docs), conventions.readHeaders),
-        ...(conventions.notModified !== undefined && { 304: conventions.notModified }),
-      },
+      parameters: [...itemParameters, ...expansionParameters(docs)],
+      responses: { 200: jsonResponse('The record.', itemOf(docs, expansionsOf(docs))) },
       errors: itemNotFound,
     });
+
+  /** The parameters, the page envelope and the errors of a list: its paging, its sort keys, its filters. */
+  const listing = (docs: AnyDocs) => {
+    const paging = docs.paging;
+    const sortable = docs.sortable;
+    const filters = docs.filters as z.ZodObject | undefined;
+    const item = docs.item as z.ZodType;
+    let listParameters: readonly Parameter[] = conventions.listParameters;
+    let page: z.ZodType = conventions.page(item);
+    const errors: Record<string, readonly string[]> = { 400: [ApiErrorCode.SCHEMA_INVALID] };
+    if (paging?.kind === 'changesSince') {
+      listParameters = [SINCE_PARAMETER];
+      page = conventions.item(item);
+      errors[410] = [ApiErrorCode.CURSOR_TOO_OLD];
+    } else if (paging !== undefined) {
+      const convention = conventions.paginations?.[paging.kind] as
+        PagingConvention<Paging> | undefined;
+      if (convention === undefined) {
+        throw new Error(`resource "${name}": this api has no "${paging.kind}" paging.`);
+      }
+      listParameters = convention.parameters(paging);
+      page = convention.page(item);
+      if (paging.kind === 'cursor') errors[410] = [ApiErrorCode.CURSOR_TOO_OLD];
+    }
+    if (sortable !== undefined) {
+      const keys = sortable.map(sortKeyName) as [string, ...string[]];
+      listParameters = [
+        ...listParameters.filter((parameter) => !SORT_PARAMETERS.includes(parameter.name)),
+        {
+          name: 'sortBy',
+          in: 'query',
+          required: false,
+          description: 'The key to order by.',
+          schema: z.enum(keys),
+        },
+        {
+          name: 'sortDir',
+          in: 'query',
+          required: false,
+          schema: sortDirectionSchema(),
+        },
+      ];
+      if (sortable.some((key) => typeof key !== 'string')) {
+        errors[403] = [ApiErrorCode.SORT_KEY_FORBIDDEN];
+      }
+    }
+    return {
+      parameters: [
+        ...parents,
+        ...listParameters,
+        ...(filters === undefined ? [] : [filterParameter(filters)]),
+      ],
+      responses: { 200: jsonResponse('The page.', page) },
+      errors: errors as ErrorsInput<string>,
+    };
+  };
 
   const findAll = (docs: AnyDocs) =>
     route({
       method: 'get',
       path: collectionPath,
       derivedId: `findAll${plural}`,
-      docs,
-      parameters: [...parents, ...conventions.listParameters],
-      responses: { 200: jsonResponse('The page.', conventions.page(docs.item as z.ZodType)) },
-      errors: { 400: [ApiErrorCode.SCHEMA_INVALID] },
+      docs: {
+        ...docs,
+        ...((docs.paging ?? conventions.paging) !== undefined && {
+          paging: docs.paging ?? conventions.paging,
+        }),
+      },
+      ...listing(docs),
     });
 
   const create = (docs: AnyDocs) =>

@@ -78,8 +78,9 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 113 exported names.
+Declarations: `dist/http/index.d.ts` — 129 exported names.
 
+- `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
 - `AccessorOf` (type) — `type AccessorOf<T extends readonly string[]> = { readonly [Member in T[number] as Uppercase<Member>]: Member; };` — Named members for a list of words, 'CHAT' for ''chat'', so no module spells a member again.
 - `ActionOptions` (type)
@@ -127,6 +128,10 @@ Declarations: `dist/http/index.d.ts` — 113 exported names.
 - `MediaType` (interface)
 - `MemberDocs` (type) — What a member says beyond the convention: prose, metadata, extra parameters, responses and codes.
 - `MergedErrors` (type) — The error responses a set of 'errors' declarations makes, over those already held.
+- `Paging` (type)
+- `PagingConvention` (interface) — What an api says about a kind of paging: its parameters, and the envelope of one page of 'data'.
+- `PagingConventions` (interface)
+- `PagingKind` (type) — `type PagingKind = Paging['kind'];`
 - `Parameter` (interface)
 - `ParameterLocation` (type) — `type ParameterLocation = 'path' | 'query' | 'header' | 'cookie';`
 - `PathParameter` (interface) — The annotation of a path parameter: OpenAPI makes every one required.
@@ -163,16 +168,22 @@ Declarations: `dist/http/index.d.ts` — 113 exported names.
 - `Scope` (interface) — A path prefix and the path parameters it declares: what 'path()' accumulates.
 - `SecurityRequirement` (type) — `type SecurityRequirement = Readonly<Record<string, readonly string[]>>;` — The schemes that satisfy a route, by name: '{}' is a call with no credential at all.
 - `SingleOptions` (interface)
+- `SortDirection` (type) — `type SortDirection = (typeof SORT_DIRECTIONS)[number];`
+- `SortKey` (type) — `type SortKey = string | { readonly key: string; readonly right: string; };` — A sort key, and the right a caller needs to order by it when the field is restricted.
 - `SubresourceReplaceRoute` (type)
+- `TolerantParse` (type)
 - `UpdateRoute` (type)
 - `UpsertRoute` (type)
 - `VARY_HEADER` (const) — `VARY_HEADER: Header`
 - `VersionedPath` (type) — `type VersionedPath<R extends Pick<RouteShape, 'version' | 'path'>> = '/v${R['version']}${R['path']}';`
+- `accepted` (function) — `function accepted(options?: AcceptedOptions): Response;` — '202': the work is accepted, not done.
 - `accessorOf` (function) — `function accessorOf<const T extends readonly string[]>(members: T): AccessorOf<T>;` — The accessor built from the list rather than written beside it: the list stays the one declaration, which is what 'check-enums' reads.
 - `bodySchemaOf` (function) — `function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;` — The JSON body's schema, or 'undefined' for a route that takes none.
 - `cache` (function) — `function cache(freshness: Freshness, options?: CacheOptions): CachePolicy;` — 'cache(Freshness.FIVE_MINUTES)': the family of 'transport.md' §5.9, with its directive.
 - `cacheControlOf` (function) — `function cacheControlOf(policy: CachePolicy): string;` — The 'Cache-Control' value of a policy, as the BFF writes it.
+- `changesSince` (function) — `function changesSince(): { readonly kind: 'changesSince'; };` — The token a change feed takes: '410' when it is too old.
 - `collect` (function) — `function collect<const Trees extends readonly RouteTree[]>(...trees: Trees): Collected<Trees>;`
+- `cursor` (function) — `function cursor(options: { readonly maxLimit: number; }): { readonly kind: 'cursor'; readonly maxLimit: number; };` — 'cursor' and 'limit': '400 api.schema_invalid' on a malformed cursor, '410 api.cursor_too_old' on an old one.
 - `defineApi` (function) — `function defineApi<const Routes extends Readonly<Record<string, Route>>>(definition: ApiDefinition<Routes>): Api<Routes>;`
 - `defineErrorModel` (function) — `function defineErrorModel<Allowed extends string>(model: ErrorModel<Allowed>): ErrorModel<Allowed>;`
 - `defineRoute` (function) — `function defineRoute<const T extends RouteDefinition>(definition: T): Route<T>;`
@@ -180,7 +191,9 @@ Declarations: `dist/http/index.d.ts` — 113 exported names.
 - `headersSchemaOf` (function) — `function headersSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteHeaders<R>, unknown>;` — The declared headers, under Node's lowercase names; every other header passes through.
 - `identity` (function)
 - `makeResource` (function)
+- `pages` (function) — `function pages(options: { readonly maxPageSize: number; }): { readonly kind: 'pages'; readonly maxPageSize: number; };` — 'page' and 'pageSize': the studio's page with its total.
 - `paramsSchemaOf` (function) — `function paramsSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteParams<R>, unknown>;`
+- `parseTolerant` (function) — `function parseTolerant(schema: z.ZodType, value: unknown): TolerantParse;` — Parses with the schema, and accepts a value whose only faults are variants of a tagged union it does not know: the value comes back raw, wi…
 - `querySchemaOf` (function) — `function querySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteQuery<R>, unknown>;` — The query a server validates: undeclared parameters refused, defaults not materialised.
 - `recentAuth` (function) — The caller holds a recent re-authentication: the proof is the body field 'proof' names (a token 'createReauthToken' minted), and the refusa…
 - `requirement` (function)
@@ -190,13 +203,16 @@ Declarations: `dist/http/index.d.ts` — 113 exported names.
 - `routeBuilder` (function) — `function routeBuilder<A extends string = string>(model?: ErrorModel<A>): RouteBuilder<undefined, readonly [], Record<never, never>, A>;` — The empty builder: 'routeBuilder(model).version(1).tags(...).headers(...).errors(...)'.
 - `sensitive` (function) — `function sensitive<S extends z.ZodType>(schema: S): S;` — A password, a token, a stream key: 'format: password' in the document, redacted from logs, never cached.
 - `sensitivePathsOf` (function) — `function sensitivePathsOf(schema: z.ZodType): readonly string[];` — The dotted paths of the sensitive fields: 'reauthToken', 'data.streamKey', 'items[].secret'.
+- `sortDirectionSchema` (function) — `function sortDirectionSchema(): z.ZodDefault<z.ZodEnum<{ readonly [K in SortDirection]: K; }>>;` — The 'sortDir' schema: ascending unless asked otherwise.
+- `sortKeyName` (function) — `function sortKeyName(key: SortKey): string;`
 - `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
+- `tagged` (function) — `function tagged<const Tag extends string, const V extends Variants>(tag: Tag, variants: V): z.ZodType<Union<Tag, V>>;` — 'tagged('outcome', { succeeded: Succeeded, declined: Declined })': each variant is an object schema without the tag, and the helper adds it.
 - `throttle` (function) — `function throttle<const Bucket extends string>(bucket: Bucket): Requirement<'throttle', { readonly bucket: Bucket; }, typeof ApiErrorCode.RATE_LIMITED>;` — A rate-limit bucket by name: the server binds the cap, and the '429' is derived.
 - `versionedPath` (function) — `function versionedPath(route: Pick<RouteShape, 'version' | 'path'>): string;` — The only versioning strategy: the version is a path prefix, '/v1/dates/{dateId}'.
 
 #### @arthome/contracts/http-client
 
-Declarations: `dist/http-client/index.d.ts` — 10 exported names.
+Declarations: `dist/http-client/index.d.ts` — 12 exported names.
 
 - `Client` (type) — `type Client<A extends Api, Init extends object> = { readonly [K in keyof A['routes']]: ClientMethod<A['routes'][K], Init>; };`
 - `ClientInput` (type)
@@ -206,6 +222,8 @@ Declarations: `dist/http-client/index.d.ts` — 10 exported names.
 - `FetchInit` (interface)
 - `FetchLike` (type) — `type FetchLike<Init extends object> = (url: string, init: FetchInit & Init) => Promise<FetchResponseLike>;` — 'Init' is what a caller adds per call and the 'fetch' understands — an 'AbortSignal', say.
 - `FetchResponseLike` (interface)
+- `IncludeNames` (type) — The relations a read can return on demand: the names its 'include' parameter takes.
+- `NarrowIncluded` (type) — A response whose 'data' has the relations that were asked for, and only those, present.
 - `UndeclaredStatusError` (class) — A status the route does not declare: the body is not the route's to type, so it is not typed.
 - `createClient` (function) — `function createClient<A extends Api, Init extends object = Record<never, never>>(api: A, options: ClientOptions<Init>): Client<A, Init>;`
 

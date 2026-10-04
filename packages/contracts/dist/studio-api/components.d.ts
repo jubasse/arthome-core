@@ -3,7 +3,7 @@ import { ApiErrorCode, Surface } from '@arthome/core';
 import type { ErrorCode } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { AccessorOf, ErrorModel, Header, Identity, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder } from '../http/index.js';
+import type { AccessorOf, ErrorModel, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder } from '../http/index.js';
 declare const SURFACE: readonly [typeof Surface.STUDIO_WEB, typeof Surface.STUDIO_MOBILE];
 declare const SORT_DIR: readonly ["asc", "desc"];
 declare const STUDIO_TAGS: readonly ["bootstrap", "agenda", "publication", "ticketing", "run", "moderation", "crew", "payouts", "channel"];
@@ -58,6 +58,21 @@ export declare const studioConventions: {
     readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
     readonly replayedHeader: Header;
     readonly expectedVersion: z.ZodNumber;
+    readonly paging: Paging;
+    readonly paginations: {
+        readonly pages: {
+            readonly parameters: (paging: {
+                readonly maxPageSize: number;
+            }) => readonly [typeof PageParameter, QueryParameter<'pageSize', z.ZodDefault<z.ZodInt>>];
+            readonly page: ResourceConventions['page'];
+        };
+        readonly cursor: {
+            readonly parameters: (paging: {
+                readonly maxLimit: number;
+            }) => readonly [typeof CursorParameter, QueryParameter<'limit', z.ZodDefault<z.ZodInt>>];
+            readonly page: ResourceConventions['page'];
+        };
+    };
 };
 /**
  * The codes a studio response stands for. A 409 is the business refusal whose `code` says which, so

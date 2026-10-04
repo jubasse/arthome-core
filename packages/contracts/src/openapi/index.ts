@@ -42,6 +42,9 @@ const RUNTIME = new Set([
   'internal',
   'degradable',
   'owner',
+  'paging',
+  'sortable',
+  'expand',
 ]);
 
 const SLOT_PREFIX = '__route_schema_';
@@ -113,7 +116,8 @@ class DocumentBuilder {
     io: Io,
   ): Record<string, Record<string, unknown>> {
     const out: Record<string, Record<string, unknown>> = {};
-    for (const [mediaType, media] of Object.entries(content)) out[mediaType] = this.media(media, io);
+    for (const [mediaType, media] of Object.entries(content))
+      out[mediaType] = this.media(media, io);
     return out;
   }
 
@@ -265,6 +269,35 @@ function componentsOf(
   return out;
 }
 
+/** `oneOf` with a `discriminator` and no `mapping`: map each tag value to the component that fixes it. */
+function mapped(json: unknown, schemas: Readonly<Record<string, unknown>>): unknown {
+  if (Array.isArray(json)) return json.map((item: unknown) => mapped(item, schemas));
+  if (typeof json !== 'object' || json === null) return json;
+  const node = json as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(node)) out[key] = mapped(value, schemas);
+  const discriminator = node.discriminator as
+    { propertyName?: string; mapping?: unknown } | undefined;
+  if (
+    Array.isArray(node.oneOf) &&
+    discriminator?.propertyName !== undefined &&
+    discriminator.mapping === undefined
+  ) {
+    const mapping: Record<string, string> = {};
+    for (const option of node.oneOf as readonly { $ref?: string }[]) {
+      const ref = option.$ref;
+      if (!ref?.startsWith(SCHEMA_REF_PREFIX)) return out;
+      const target = schemas[ref.slice(SCHEMA_REF_PREFIX.length)] as
+        { properties?: Record<string, { const?: unknown; enum?: readonly unknown[] }> } | undefined;
+      const property = target?.properties?.[discriminator.propertyName];
+      const values = property?.const !== undefined ? [property.const] : (property?.enum ?? []);
+      for (const value of values) mapping[String(value)] = ref;
+    }
+    out.discriminator = { ...discriminator, mapping };
+  }
+  return out;
+}
+
 export function openApiDocumentOf(api: Api): OpenApiDocument {
   const builder = new DocumentBuilder(api.components);
   const document: Record<string, unknown> = {};
@@ -287,5 +320,5 @@ export function openApiDocumentOf(api: Api): OpenApiDocument {
   if (api.components.schemas !== undefined) {
     out.components = { ...(out.components as Record<string, unknown>), schemas };
   }
-  return out;
+  return mapped(out, schemas) as Record<string, unknown>;
 }

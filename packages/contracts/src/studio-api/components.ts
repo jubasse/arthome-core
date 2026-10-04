@@ -30,6 +30,7 @@ import type {
   ErrorModel,
   Header,
   Identity,
+  Paging,
   HeaderParameter,
   JsonResponse,
   PathParameter,
@@ -38,8 +39,8 @@ import type {
   ResourceConventions,
   RouteBuilder,
 } from '../http/index.js';
-import { accessorOf, defineErrorModel, identity, routeBuilder } from '../http/index.js';
-import { OffsetPageInfoSchema } from '../pagination/index.js';
+import { accessorOf, defineErrorModel, identity, pages, routeBuilder } from '../http/index.js';
+import { OffsetPageInfoSchema, StudioCursorPageInfoSchema } from '../pagination/index.js';
 
 const SURFACE: readonly [typeof Surface.STUDIO_WEB, typeof Surface.STUDIO_MOBILE] = [
   Surface.STUDIO_WEB,
@@ -454,6 +455,21 @@ export const studioConventions: {
   readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
   readonly replayedHeader: Header;
   readonly expectedVersion: z.ZodNumber;
+  readonly paging: Paging;
+  readonly paginations: {
+    readonly pages: {
+      readonly parameters: (paging: {
+        readonly maxPageSize: number;
+      }) => readonly [typeof PageParameter, QueryParameter<'pageSize', z.ZodDefault<z.ZodInt>>];
+      readonly page: ResourceConventions['page'];
+    };
+    readonly cursor: {
+      readonly parameters: (paging: {
+        readonly maxLimit: number;
+      }) => readonly [typeof CursorParameter, QueryParameter<'limit', z.ZodDefault<z.ZodInt>>];
+      readonly page: ResourceConventions['page'];
+    };
+  };
 } = {
   item: (data) => z.intersection(StudioEnvelopeMetaSchema, z.looseObject({ data })),
   page: (data) =>
@@ -468,6 +484,43 @@ export const studioConventions: {
   writeParameters: [IdempotencyKeyParameter],
   replayedHeader: IdempotencyReplayedHeader,
   expectedVersion: int64(),
+  paging: pages({ maxPageSize: 100 }),
+  paginations: {
+    pages: {
+      parameters: (paging) => [
+        PageParameter,
+        paging.maxPageSize === 100
+          ? PageSizeParameter
+          : {
+              name: 'pageSize',
+              in: 'query',
+              required: false,
+              schema: z.int().min(1).max(paging.maxPageSize).default(20),
+            },
+      ],
+      page: (data) =>
+        z.intersection(
+          StudioEnvelopeMetaSchema,
+          z.looseObject({ data: z.array(data), page: OffsetPageInfoSchema }),
+        ),
+    },
+    cursor: {
+      parameters: (paging) => [
+        CursorParameter,
+        {
+          name: 'limit',
+          in: 'query',
+          required: false,
+          schema: z.int().min(1).max(paging.maxLimit).default(20),
+        },
+      ],
+      page: (data) =>
+        z.intersection(
+          StudioEnvelopeMetaSchema,
+          z.looseObject({ data: z.array(data), page: StudioCursorPageInfoSchema }),
+        ),
+    },
+  },
 };
 
 /**

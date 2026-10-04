@@ -7,8 +7,10 @@
  * Node's all fit, and so does a test double.
  */
 
+import type { z } from 'zod';
+
 import type { Api, RouteInput, RouteResponseBody, RouteShape } from '../http/index.js';
-import { versionedPath } from '../http/index.js';
+import { parseTolerant, versionedPath } from '../http/index.js';
 
 export interface FetchInit {
   readonly method: string;
@@ -63,10 +65,41 @@ export type ClientInput<R extends RouteShape, Init extends object> = Optional<
     readonly init?: Init;
   };
 
-export type ClientMethod<R extends RouteShape, Init extends object> =
-  Record<never, never> extends ClientInput<R, Init>
+/** The relations a read can return on demand: the names its `include` parameter takes. */
+export type IncludeNames<R extends RouteShape> = R extends {
+  readonly parameters: readonly (infer P)[];
+}
+  ? P extends { readonly name: 'include'; readonly schema: infer S extends z.ZodType }
+    ? z.output<S> extends readonly (infer N)[]
+      ? N
+      : never
+    : never
+  : never;
+
+/** A response whose `data` has the relations that were asked for, and only those, present. */
+export type NarrowIncluded<T, Names> = T extends { readonly body: infer B }
+  ? B extends { readonly data: infer D }
+    ? Omit<T, 'body'> & {
+        readonly body: Omit<B, 'data'> & {
+          readonly data: D & Required<Pick<D, Names & keyof D>>;
+        };
+      }
+    : T
+  : T;
+
+export type ClientMethod<R extends RouteShape, Init extends object> = [IncludeNames<R>] extends [
+  never,
+]
+  ? Record<never, never> extends ClientInput<R, Init>
     ? (input?: ClientInput<R, Init>) => Promise<ClientResponse<R>>
-    : (input: ClientInput<R, Init>) => Promise<ClientResponse<R>>;
+    : (input: ClientInput<R, Init>) => Promise<ClientResponse<R>>
+  : <const I extends readonly IncludeNames<R>[] = readonly []>(
+      input?: Omit<ClientInput<R, Init>, 'query'> & {
+        readonly query?: Omit<NonNullable<ClientInput<R, Init>['query']>, 'include'> & {
+          readonly include?: I;
+        };
+      },
+    ) => Promise<NarrowIncluded<ClientResponse<R>, I[number]>>;
 
 export type Client<A extends Api, Init extends object> = {
   readonly [K in keyof A['routes']]: ClientMethod<A['routes'][K], Init>;
@@ -125,6 +158,13 @@ async function bodyOf(response: FetchResponseLike): Promise<unknown> {
     : text;
 }
 
+/** A body parsed with its schema, keeping a variant of a tagged union it does not know. */
+function readTolerant(schema: Parameters<typeof parseTolerant>[0], body: unknown): unknown {
+  const result = parseTolerant(schema, body);
+  if (!result.ok) throw result.error;
+  return result.value;
+}
+
 export function createClient<A extends Api, Init extends object = Record<never, never>>(
   api: A,
   options: ClientOptions<Init>,
@@ -153,7 +193,9 @@ export function createClient<A extends Api, Init extends object = Record<never, 
       return {
         status: response.status,
         body:
-          options.validateResponses === true && schema !== undefined ? schema.parse(body) : body,
+          options.validateResponses === true && schema !== undefined
+            ? readTolerant(schema, body)
+            : body,
         headers: response.headers,
       };
     };

@@ -6,6 +6,7 @@
  * no DOM and no Node types (`code-conventions.md` §2.3 d): the browser's, React Native's and
  * Node's all fit, and so does a test double.
  */
+import type { z } from 'zod';
 import type { Api, RouteInput, RouteResponseBody, RouteShape } from '../http/index.js';
 export interface FetchInit {
     readonly method: string;
@@ -47,7 +48,30 @@ export type ClientInput<R extends RouteShape, Init extends object> = Optional<'p
     readonly headers?: RouteInput<R>['headers'] & Readonly<Record<string, string>>;
     readonly init?: Init;
 };
-export type ClientMethod<R extends RouteShape, Init extends object> = Record<never, never> extends ClientInput<R, Init> ? (input?: ClientInput<R, Init>) => Promise<ClientResponse<R>> : (input: ClientInput<R, Init>) => Promise<ClientResponse<R>>;
+/** The relations a read can return on demand: the names its `include` parameter takes. */
+export type IncludeNames<R extends RouteShape> = R extends {
+    readonly parameters: readonly (infer P)[];
+} ? P extends {
+    readonly name: 'include';
+    readonly schema: infer S extends z.ZodType;
+} ? z.output<S> extends readonly (infer N)[] ? N : never : never : never;
+/** A response whose `data` has the relations that were asked for, and only those, present. */
+export type NarrowIncluded<T, Names> = T extends {
+    readonly body: infer B;
+} ? B extends {
+    readonly data: infer D;
+} ? Omit<T, 'body'> & {
+    readonly body: Omit<B, 'data'> & {
+        readonly data: D & Required<Pick<D, Names & keyof D>>;
+    };
+} : T : T;
+export type ClientMethod<R extends RouteShape, Init extends object> = [IncludeNames<R>] extends [
+    never
+] ? Record<never, never> extends ClientInput<R, Init> ? (input?: ClientInput<R, Init>) => Promise<ClientResponse<R>> : (input: ClientInput<R, Init>) => Promise<ClientResponse<R>> : <const I extends readonly IncludeNames<R>[] = readonly []>(input?: Omit<ClientInput<R, Init>, 'query'> & {
+    readonly query?: Omit<NonNullable<ClientInput<R, Init>['query']>, 'include'> & {
+        readonly include?: I;
+    };
+}) => Promise<NarrowIncluded<ClientResponse<R>, I[number]>>;
 export type Client<A extends Api, Init extends object> = {
     readonly [K in keyof A['routes']]: ClientMethod<A['routes'][K], Init>;
 };

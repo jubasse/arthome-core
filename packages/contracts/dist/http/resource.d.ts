@@ -3,6 +3,7 @@ import { ApiErrorCode, DomainErrorCode } from '@arthome/core';
 import type { Access } from './access.js';
 import type { BuiltRoute, BuiltRouteDefinition, RouteBuilder, Scope } from './builder.js';
 import type { Header, JsonRequestBody, JsonResponse, Parameter, QueryParameter, Response } from './index.js';
+import { type Paging, type PagingConventions, type SortDirection, type SortKey } from './paging.js';
 type PathParameterOf = Parameter & {
     readonly in: 'path';
 };
@@ -24,6 +25,10 @@ export interface ResourceConventions {
     readonly notModified?: Response;
     /** The api's `Idempotency-Replayed` header, kept as one component. */
     readonly replayedHeader?: Header;
+    /** The paging a list has unless it says otherwise. */
+    readonly paging?: Paging;
+    /** The other kinds of paging this api serves, beside its default. */
+    readonly paginations?: PagingConventions;
     /** `Idempotency-Key`, on a write. */
     readonly writeParameters: readonly Parameter[];
     /** The version a write expects the record to be at: a body field on an update, a query parameter on a removal. */
@@ -137,11 +142,65 @@ interface Sent<S extends z.ZodType, Required = true> {
 type ResponseOf<C extends ResourceContext, S extends z.ZodType | undefined, Status extends 200 | 201> = S extends z.ZodType ? Readonly<Record<Status, JsonResponse<Schema<Item<C, S>>>>> : {
     readonly 204: Response;
 };
-export type FindRoute<C extends ResourceContext, D> = Member<C, D, 'get', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'readParameters'>], {
-    readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>>;
+type RelationsOf<D> = D extends {
+    readonly expand: infer E extends Readonly<Record<string, z.ZodType>>;
+} ? {
+    readonly [K in keyof E]?: z.output<E[K]>;
+} : unknown;
+type ExpandParameters<D> = D extends {
+    readonly expand: infer E extends Readonly<Record<string, z.ZodType>>;
+} ? readonly [
+    QueryParameter<'include', z.ZodArray<z.ZodEnum<{
+        readonly [K in keyof E & string]: K;
+    }>>>
+] : readonly [];
+export type FindRoute<C extends ResourceContext, D> = Member<C, D, 'get', ItemPath<C>, readonly [...ItemParameters<C>, ...ExpandParameters<D>], {
+    readonly 200: JsonResponse<Schema<Envelope<C> & {
+        readonly data: z.output<ItemOf<D>> & RelationsOf<D>;
+    }>>;
 }, NotFoundFor<C>>;
-export type FindAllRoute<C extends ResourceContext, D> = Member<C, D, 'get', CollectionPath<C>, readonly [...C['parents'], ...Added<C, 'listParameters'>], {
-    readonly 200: JsonResponse<Schema<Page<C, ItemOf<D>>>>;
+type KeyName<T> = T extends string ? T : T extends {
+    readonly key: infer N extends string;
+} ? N : never;
+type DropNamed<T extends readonly Parameter[], Names extends string> = T extends readonly [
+    infer First extends Parameter,
+    ...infer Rest extends readonly Parameter[]
+] ? First['name'] extends Names ? DropNamed<Rest, Names> : readonly [First, ...DropNamed<Rest, Names>] : readonly [];
+type SortParameters<D> = D extends {
+    readonly sortable: infer S extends readonly SortKey[];
+} ? readonly [
+    QueryParameter<'sortBy', z.ZodEnum<{
+        readonly [K in KeyName<S[number]>]: K;
+    }>>,
+    QueryParameter<'sortDir', z.ZodDefault<z.ZodEnum<{
+        readonly [K in SortDirection]: K;
+    }>>>
+] : readonly [];
+type FilterParameters<D> = D extends {
+    readonly filters: infer F extends z.ZodType;
+} ? readonly [QueryParameter<'filters', F>] : readonly [];
+type ListBase<C extends ResourceContext, D> = D extends {
+    readonly paging: infer P extends Paging;
+} ? P extends {
+    readonly kind: 'changesSince';
+} ? readonly [QueryParameter<'since', z.ZodString, true>] : Conv<C> extends {
+    readonly paginations: infer Pg;
+} ? P['kind'] extends keyof Pg ? Pg[P['kind']] extends {
+    readonly parameters: (...paging: never[]) => infer R extends readonly Parameter[];
+} ? R : readonly Parameter[] : readonly Parameter[] : readonly Parameter[] : Added<C, 'listParameters'>;
+type ListParameters<C extends ResourceContext, D> = readonly [
+    ...(D extends {
+        readonly sortable: unknown;
+    } ? DropNamed<ListBase<C, D>, 'sortBy' | 'sortDir'> : ListBase<C, D>),
+    ...SortParameters<D>,
+    ...FilterParameters<D>
+];
+export type FindAllRoute<C extends ResourceContext, D> = Member<C, D, 'get', CollectionPath<C>, readonly [...C['parents'], ...ListParameters<C, D>], {
+    readonly 200: JsonResponse<Schema<D extends {
+        readonly paging: {
+            readonly kind: 'changesSince';
+        };
+    } ? Item<C, ItemOf<D>> : Page<C, ItemOf<D>>>>;
 }, {
     readonly 400: InvalidCursor;
 }>;
@@ -248,8 +307,14 @@ type SelectedMember<C extends ResourceContext, O> = O extends {
 } ? X : never> | Extract<keyof O, 'replace' | 'upsert'>;
 export interface CrudOptions<C extends ResourceContext> {
     readonly item: z.ZodType;
-    readonly findAll?: Docs<C>;
-    readonly find?: Docs<C>;
+    readonly findAll?: Docs<C, {
+        readonly paging?: Paging;
+        readonly sortable?: readonly SortKey[];
+        readonly filters?: z.ZodObject;
+    }>;
+    readonly find?: Docs<C, {
+        readonly expand?: Readonly<Record<string, z.ZodType>>;
+    }>;
     readonly create?: Docs<C, {
         readonly body: z.ZodType;
         readonly response?: z.ZodType;
@@ -324,9 +389,13 @@ export type ChildContext<C extends ResourceContext, Name extends string, Id exte
 export interface Resource<C extends ResourceContext> {
     find<const D extends Docs<C, {
         readonly item: z.ZodType;
+        readonly expand?: Readonly<Record<string, z.ZodType>>;
     }>>(docs: D): FindRoute<C, D>;
     findAll<const D extends Docs<C, {
         readonly item: z.ZodType;
+        readonly paging?: Paging;
+        readonly sortable?: readonly SortKey[];
+        readonly filters?: z.ZodObject;
     }>>(docs: D): FindAllRoute<C, D>;
     /** POST on the collection, carrying an `Idempotency-Key`. */
     create<const D extends Docs<C, {

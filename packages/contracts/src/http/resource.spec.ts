@@ -6,7 +6,17 @@ import { CatalogErrorCode } from '@arthome/core';
 
 import { collect } from './collect.js';
 import type { ErrorBody } from './errors.js';
-import { successStatusOf, versionedPath } from './index.js';
+import {
+  Freshness,
+  cache,
+  changesSince,
+  cursor,
+  defineApi,
+  pages,
+  successStatusOf,
+  versionedPath,
+} from './index.js';
+import { createClient } from '../http-client/index.js';
 import { storefrontConventions, storefrontV1 } from '../storefront-api/components.js';
 import { studioV1 } from '../studio-api/components.js';
 
@@ -93,7 +103,7 @@ describe('resource members', () => {
       expect.arrayContaining(['200', '404', '409']),
     );
     expect(Object.keys(members.findSavedSearch.responses)).toEqual(
-      expect.arrayContaining(['200', '304', '404']),
+      expect.arrayContaining(['200', '404']),
     );
     expect(successStatusOf(members.createSavedSearch)).toBe(201);
   });
@@ -285,5 +295,129 @@ describe('batch', () => {
     expect(
       route.requestBody.content['application/json'].schema.safeParse({ ids: ['a'] }).success,
     ).toBe(true);
+  });
+});
+
+describe('reads', () => {
+  const dates = studioV1.resource('dates', { id: savedSearchId });
+  const Date = z.looseObject({ title: z.string() });
+
+  it('pages a list the way the api serves it, and says so on the route', () => {
+    const list = dates.findAll({ item: Date });
+    const queue = dates.findAll({
+      item: Date,
+      operationId: 'listQueue',
+      paging: cursor({ maxLimit: 30 }),
+    });
+
+    expect(list.paging).toEqual({ kind: 'pages', maxPageSize: 100 });
+    expect(queue.paging).toEqual({ kind: 'cursor', maxLimit: 30 });
+    expect(queue.parameters.map((parameter) => parameter.name)).toEqual(['cursor', 'limit']);
+    expect(Object.keys(queue.responses)).toContain('410');
+  });
+
+  it('refuses a kind of paging the api does not serve', () => {
+    expect(() => searches.findAll({ item: Date, paging: pages({ maxPageSize: 10 }) })).toThrow(
+      /no "pages" paging/,
+    );
+  });
+
+  it('reads a change feed from a token', () => {
+    const feed = searches.findAll({
+      item: Date,
+      operationId: 'listChanges',
+      paging: changesSince(),
+    });
+
+    expect(feed.parameters.map((parameter) => parameter.name)).toEqual(['since']);
+    expect(Object.keys(feed.responses)).toContain('410');
+  });
+
+  it('types the sort keys, refuses a restricted one with its code, and takes filters', () => {
+    const list = dates.findAll({
+      item: Date,
+      sortable: ['startsAt', { key: 'revenue', right: 'canRevenue' }],
+      filters: z.object({ q: z.string().optional() }),
+    });
+    const sortBy = list.parameters.find((parameter) => parameter.name === 'sortBy');
+
+    expect(sortBy?.schema.safeParse('revenue').success).toBe(true);
+    expect(sortBy?.schema.safeParse('other').success).toBe(false);
+    expect(list.sortable).toEqual(['startsAt', { key: 'revenue', right: 'canRevenue' }]);
+    expect(list.parameters.map((parameter) => parameter.name)).toEqual(
+      expect.arrayContaining(['sortBy', 'sortDir', 'filters']),
+    );
+    expect(Object.keys(list.responses)).toContain('403');
+    expectTypeOf(list.parameters[2]).toHaveProperty('name');
+  });
+
+  it('returns a relation only on demand, marked in the document', () => {
+    const Author = z.looseObject({ name: z.string() });
+    const find = dates.find({ item: Date, expand: { author: Author } });
+    const include = find.parameters.find((parameter) => parameter.name === 'include');
+    const body = find.responses[200].content['application/json'].schema;
+
+    expect(include?.schema.safeParse(['author']).success).toBe(true);
+    expect(include?.schema.safeParse(['other']).success).toBe(false);
+    expect(body.safeParse({ servedAt: 'x', rightsVersion: 1, data: { title: 't' } }).success).toBe(
+      true,
+    );
+    expect(JSON.stringify(z.toJSONSchema(body, { io: 'output' }))).toContain(
+      'x-arthome-expanded-by',
+    );
+    expect(Object.keys(find.expand ?? {})).toEqual(['author']);
+  });
+
+  it('adds the ETag only when the read caches with one', () => {
+    const plain = dates.find({ item: Date });
+    const cached = dates.find({
+      item: Date,
+      operationId: 'findCachedDate',
+      cache: cache(Freshness.MINUTE, { etag: true }),
+    });
+
+    expect(Object.keys(plain.responses)).not.toContain('304');
+    expect(Object.keys(cached.responses)).toContain('304');
+    expect(cached.parameters.map((parameter) => parameter.name)).toContain('If-None-Match');
+  });
+});
+
+describe('the client of a read with relations', () => {
+  const Author = z.looseObject({ name: z.string() });
+  const Book = z.looseObject({ title: z.string() });
+  const books = studioV1.resource('books', { id: savedSearchId });
+  const find = books.find({ item: Book, expand: { author: Author } });
+  const api = defineApi({
+    openapi: '3.1.0',
+    info: { title: 'x', version: '1' },
+    routes: { findBook: find },
+    components: {},
+  });
+  const client = createClient(api, {
+    baseUrl: 'http://x',
+    fetch: () =>
+      Promise.resolve({
+        status: 200,
+        headers: { get: () => 'application/json' },
+        text: () => Promise.resolve('{"data":{"title":"t"}}'),
+      }),
+  });
+
+  it('has a relation in the type only when it was asked for', async () => {
+    const without = await client.findBook({ params: { savedSearchId: 'a' } });
+    const asked = await client.findBook({
+      params: { savedSearchId: 'a' },
+      query: { include: ['author'] },
+    });
+
+    if (without.status === 200) {
+      expectTypeOf(without.body.data.author).toEqualTypeOf<
+        { [x: string]: unknown; name: string } | undefined
+      >();
+    }
+    if (asked.status === 200) {
+      expectTypeOf(asked.body.data.author).toEqualTypeOf<{ [x: string]: unknown; name: string }>();
+    }
+    expect(find.expand).toHaveProperty('author');
   });
 });

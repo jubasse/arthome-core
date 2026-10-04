@@ -10,6 +10,8 @@ import { defineErrorModel } from './errors.js';
 import type { Response } from './index.js';
 import { restricted, restrictedFieldsOf, sensitive, sensitivePathsOf } from './marks.js';
 import { Freshness, cache, DEFAULT_BODY_LIMIT } from './policy.js';
+import { accepted } from './responses.js';
+import { parseTolerant, tagged } from './tagged.js';
 
 const model = defineErrorModel<string>({
   standard: {},
@@ -269,5 +271,54 @@ describe('marks', () => {
     });
 
     expect(Object.keys(headersOf(route.responses[200]))).toContain('Cache-Control');
+  });
+});
+
+describe('tagged', () => {
+  const Succeeded = z.object({ receipt: z.string() });
+  const Declined = z.object({ declineCode: z.string() });
+  const Outcome = tagged('outcome', { succeeded: Succeeded, declined: Declined });
+
+  it('parses a declared variant strictly, and refuses an unknown one', () => {
+    expect(Outcome.safeParse({ outcome: 'succeeded', receipt: 'r' }).success).toBe(true);
+    expect(Outcome.safeParse({ outcome: 'later', receipt: 'r' }).success).toBe(false);
+  });
+
+  it('is tolerant on the read side: an unknown variant is kept raw and named', () => {
+    const read = parseTolerant(z.object({ data: Outcome }), { data: { outcome: 'later', x: 1 } });
+    const bad = parseTolerant(z.object({ data: Outcome }), { data: { outcome: 'declined' } });
+
+    expect(read).toEqual({
+      ok: true,
+      value: { data: { outcome: 'later', x: 1 } },
+      unknownVariants: ['later'],
+    });
+    expect(bad.ok).toBe(false);
+  });
+
+  it('writes a oneOf with its discriminator', () => {
+    const json = z.toJSONSchema(Outcome) as {
+      oneOf?: unknown[];
+      discriminator?: { propertyName: string };
+    };
+
+    expect(json.oneOf).toHaveLength(2);
+    expect(json.discriminator).toEqual({ propertyName: 'outcome' });
+  });
+
+  it('shares one schema between two tag values', () => {
+    const shared = tagged('mode', { bearer: Succeeded, device: Succeeded, cookie: Declined });
+
+    expect(shared.safeParse({ mode: 'device', receipt: 'r' }).success).toBe(true);
+    expect(shared.safeParse({ mode: 'cookie', declineCode: 'd' }).success).toBe(true);
+  });
+});
+
+describe('accepted', () => {
+  it('names the operation that reports the outcome, and when to ask again', () => {
+    const response = accepted({ operation: 'getExport' });
+
+    expect(Object.keys(response.headers ?? {})).toEqual(['Location', 'Retry-After']);
+    expect(response['x-arthome-operation']).toBe('getExport');
   });
 });

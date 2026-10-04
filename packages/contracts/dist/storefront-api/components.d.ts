@@ -3,7 +3,7 @@ import { ApiErrorCode, Surface } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { StorefrontRelayedCode } from '../envelope/index.js';
-import type { AccessorOf, ErrorModel, Header, Identity, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement } from '../http/index.js';
+import type { AccessorOf, ErrorModel, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement } from '../http/index.js';
 declare const SURFACE: readonly [
     typeof Surface.STOREFRONT_WEB,
     typeof Surface.STOREFRONT_MOBILE,
@@ -67,6 +67,15 @@ export declare const storefrontConventions: {
     readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
     readonly replayedHeader: Header;
     readonly expectedVersion: z.ZodNumber;
+    readonly paging: Paging;
+    readonly paginations: {
+        readonly cursor: {
+            readonly parameters: (paging: {
+                readonly maxLimit: number;
+            }) => readonly [typeof CursorParameter, QueryParameter<'limit', z.ZodDefault<z.ZodInt>>];
+            readonly page: ResourceConventions['page'];
+        };
+    };
 };
 /**
  * The codes a storefront response stands for. A 409 is the business refusal whose `code` says
