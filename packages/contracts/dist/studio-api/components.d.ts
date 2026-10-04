@@ -3,7 +3,7 @@ import { ApiErrorCode, Surface } from '@arthome/core';
 import type { ErrorCode } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { AccessorOf, ErrorModel, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder } from '../http/index.js';
+import type { AccessorOf, ErrorModel, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, CodedResponse } from '../http/index.js';
 declare const SURFACE: readonly [typeof Surface.STUDIO_WEB, typeof Surface.STUDIO_MOBILE];
 declare const SORT_DIR: readonly ["asc", "desc"];
 declare const STUDIO_TAGS: readonly ["bootstrap", "agenda", "publication", "ticketing", "run", "moderation", "crew", "payouts", "channel"];
@@ -24,19 +24,19 @@ export declare const LimitParameter: QueryParameter<'limit', z.ZodDefault<z.ZodI
 export declare const ServedAtHeader: Header;
 export declare const RightsVersionHeader: Header;
 export declare const IdempotencyReplayedHeader: Header;
-export declare const BadRequestResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-export declare const UnauthorizedResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-export declare const ForbiddenResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-export declare const NotFoundResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const BadRequestResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.PERIOD_FILTER_REQUIRED>;
+export declare const UnauthorizedResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UNAUTHENTICATED>;
+export declare const ForbiddenResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.RIGHTS_VERSION_STALE>;
+export declare const NotFoundResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.NOT_FOUND>;
 export declare const ConflictResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-export declare const GoneResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-export declare const TooManyRequestsResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-export declare const UnavailableResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-export declare const PayloadTooLargeResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-export declare const UnsupportedMediaTypeResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-export declare const InternalErrorResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-export declare const BadGatewayResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-export declare const GatewayTimeoutResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const GoneResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.CURSOR_TOO_OLD>;
+export declare const TooManyRequestsResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.RATE_LIMITED>;
+export declare const UnavailableResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.SERVICE_UNAVAILABLE>;
+export declare const PayloadTooLargeResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.PAYLOAD_TOO_LARGE>;
+export declare const UnsupportedMediaTypeResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UNSUPPORTED_MEDIA_TYPE>;
+export declare const InternalErrorResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.INTERNAL>;
+export declare const BadGatewayResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UPSTREAM_UNAVAILABLE>;
+export declare const GatewayTimeoutResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UPSTREAM_TIMEOUT>;
 declare const IfNoneMatchParameter: HeaderParameter<'If-None-Match', z.ZodString>;
 declare const OWN_LIST_PARAMETERS: readonly [
     typeof PageParameter,
@@ -57,6 +57,8 @@ export declare const studioConventions: {
     readonly notModified: Response;
     readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
     readonly replayedHeader: Header;
+    readonly itemExample: (data: unknown) => unknown;
+    readonly pageExample: (data: readonly unknown[]) => unknown;
     readonly expectedVersion: z.ZodNumber;
     readonly paging: Paging;
     readonly paginations: {

@@ -82,7 +82,6 @@ export declare const runTechnicalCheck: Route<{
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
         409: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const rehearseRun: Route<{
@@ -105,8 +104,6 @@ export declare const rehearseRun: Route<{
             data: typeof RunConsoleSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const goOnAir: Route<{
@@ -129,8 +126,6 @@ export declare const goOnAir: Route<{
             data: typeof RunConsoleSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const endRun: Route<{
@@ -153,8 +148,6 @@ export declare const endRun: Route<{
             data: typeof RunConsoleSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const resetRun: Route<{
@@ -177,8 +170,6 @@ export declare const resetRun: Route<{
             data: typeof RunConsoleSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const setQualityProfile: Route<{
@@ -205,8 +196,6 @@ export declare const setQualityProfile: Route<{
             data: typeof RunConsoleSchema;
         }, z.core.$loose>>>;
         409: typeof ConflictResponse;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const getHealthSeries: Route<{
@@ -258,7 +247,6 @@ export declare const submitHealthSample: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         404: typeof NotFoundResponse;
-        403: typeof ConflictResponse;
     };
 }>;
 export declare const postChapter: Route<{
@@ -287,7 +275,6 @@ export declare const postChapter: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         404: typeof NotFoundResponse;
-        403: typeof ConflictResponse;
     };
 }>;
 export declare const removeChapter: Route<{
@@ -311,7 +298,6 @@ export declare const removeChapter: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         404: typeof NotFoundResponse;
-        403: typeof ConflictResponse;
     };
 }>;
 export declare const raiseIncident: Route<{
@@ -341,7 +327,6 @@ export declare const raiseIncident: Route<{
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
         409: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const resolveIncident: Route<{
@@ -408,7 +393,6 @@ export declare const revealStreamKey: Route<{
         }, z.core.$loose>>>;
         401: typeof UnauthorizedResponse;
         403: typeof ForbiddenResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const rotateStreamKey: Route<{
@@ -432,8 +416,6 @@ export declare const rotateStreamKey: Route<{
             data: typeof StreamKeyRevealSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const getChannelStreamSettings: Route<{

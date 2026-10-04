@@ -6,7 +6,7 @@
  */
 import { z } from 'zod';
 import { ApiErrorCode } from '@arthome/core';
-import type { ErrorCode } from '@arthome/core';
+import { type ErrorCode } from '@arthome/core';
 import type { ErrorParamsRead } from '@arthome/core/schema';
 import type { JsonResponse, Response } from './index.js';
 export type ErrorStatus = 400 | 401 | 402 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;
@@ -87,4 +87,19 @@ export declare const DERIVED_ERROR_CODES: {
     ];
 };
 export type DerivedStatus = keyof typeof DERIVED_ERROR_CODES;
+/** The envelope an example of `code` shows: its params from the registry, nature from its status. */
+export declare function errorExampleOf(code: ErrorCode): unknown;
+/**
+ * A shared error response: its description, the api's envelope, and an example written once per
+ * code from the registry.
+ */
+/** Type-only: the code a shared error response stands for, so two responses never share a type. */
+export interface CodedResponse<C extends string> {
+    readonly '~code'?: C;
+}
+export declare function errorResponse<S extends z.ZodType, const C extends ErrorCode>(schema: S, options: {
+    readonly description: string;
+    readonly code: C;
+    readonly headers?: Response['headers'];
+}): JsonResponse<S> & CodedResponse<C>;
 //# sourceMappingURL=errors.d.ts.map

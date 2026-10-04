@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 154 exported names.
+Declarations: `dist/http/index.d.ts` — 160 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
@@ -97,6 +97,7 @@ Declarations: `dist/http/index.d.ts` — 154 exported names.
 - `CachePolicy` (interface)
 - `ChildContext` (type) — The context of what is nested under one record of 'C', or under 'C' itself when it has no id.
 - `ClientView` (type) — What a client may receive: each tagged union of a body gains the unknown variant, so an exhaustive 'switch' on the tag must handle it.
+- `CodedResponse` (interface) — Type-only: the code a shared error response stands for, so two responses never share a type.
 - `CodesByStatus` (type) — `type CodesByStatus = Readonly<Partial<Record<ErrorStatus, readonly string[]>>>;` — The codes each status of a declaration can carry.
 - `CodesOf` (type) — The codes an error response declares, or 'never' for a response that does not name them.
 - `CodesOfIdentity` (type) — `type CodesOfIdentity<I> = I extends Identity<string, z.ZodType, infer C> ? C : never;`
@@ -114,6 +115,7 @@ Declarations: `dist/http/index.d.ts` — 154 exported names.
 - `DerivedStatus` (type) — `type DerivedStatus = keyof typeof DERIVED_ERROR_CODES;`
 - `ERRORS` (const) — `ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C>; }`
 - `Endpoints` (type) — One method per operation id of a block of routes, each taking its 'HandlerInput' and returning its 'HandlerOutput'.
+- `EnvelopeOf` (type) — `type EnvelopeOf<K> = K extends { readonly meta?: infer M extends object; } ? M : object;` — The fields an api's envelope carries on every answer, from its conventions.
 - `ErrorBody` (type) — The body of a failure carrying 'C': a union over the members of 'C', discriminated on 'error.code'.
 - `ErrorDefinition` (interface)
 - `ErrorList` (type) — `type ErrorList<Allowed extends string> = readonly Allowed[];` — The errors a route declares: a list of codes, each answered with its status from 'ERROR_STATUS'.
@@ -135,11 +137,13 @@ Declarations: `dist/http/index.d.ts` — 154 exported names.
 - `IdentifiedAccess` (interface)
 - `Identity` (interface) — The identified state of a surface, declared once: which credentials a read and a write accept, and what the server knows about the caller o…
 - `IdentityOptions` (interface)
+- `ItemResponse` (type) — `type ItemResponse<K, S extends z.ZodType, Relations = unknown> = JsonResponse<z.ZodType<EnvelopeOf<K> & { readonly data: z.output<S> & Relations; }>>;` — The answer of one record: the api's envelope and the record under 'data'.
 - `JsonRequestBody` (interface) — The annotation of a request carrying a JSON body.
 - `JsonResponse` (interface) — The annotation of a response with a JSON body.
 - `MediaType` (interface)
 - `MemberDocs` (type) — What a member says beyond the convention: prose, metadata, extra parameters, responses and codes.
 - `MergedErrors` (type) — The error responses a set of 'errors' declarations makes, over those already held.
+- `PageResponse` (type) — `type PageResponse<K, S extends z.ZodType> = JsonResponse<z.ZodType<EnvelopeOf<K> & { readonly data: readonly z.output<S>[]; readonly page: unknown; }>>;` — The answer of a list: the api's envelope, the records under 'data' and the page.
 - `Paging` (type)
 - `PagingConvention` (interface) — What an api says about a kind of paging: its parameters, and the envelope of one page of 'data'.
 - `PagingConventions` (interface)
@@ -206,6 +210,8 @@ Declarations: `dist/http/index.d.ts` — 154 exported names.
 - `defineErrorModel` (function) — `function defineErrorModel<Allowed extends string>(model: ErrorModel<Allowed>): ErrorModel<Allowed>;`
 - `defineRoute` (function) — `function defineRoute<const T extends RouteDefinition>(definition: T): Route<T>;`
 - `errorCodesOf` (function) — The codes a route's error response stands for, or 'undefined' when the route wrote it whole.
+- `errorExampleOf` (function) — `function errorExampleOf(code: ErrorCode): unknown;` — The envelope an example of 'code' shows: its params from the registry, nature from its status.
+- `errorResponse` (function)
 - `errorResponseFor` (function) — `function errorResponseFor(model: ErrorModel<string> | undefined, status: number, codes: readonly string[], base: Response | undefined): Response;` — The response for a status.
 - `exampleOf` (function) — `function exampleOf<C extends ErrorCode>(code: C): ErrorParamsOf<C>;`
 - `groupByStatus` (function) — `function groupByStatus(codes: readonly string[]): Record<string, readonly string[]>;` — A list of codes grouped by the status each is answered with.

@@ -197,8 +197,6 @@ export const setDatePrices: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.single('prices').replace({
   operationId: 'setDatePrices',
@@ -329,8 +327,6 @@ export const openCapacityTier: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.action('capacity-tiers', {
   operationId: 'openCapacityTier',
@@ -434,8 +430,6 @@ export const setTechnicalProvision: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.single('technical-provision').replace({
   operationId: 'setTechnicalProvision',
@@ -657,8 +651,6 @@ export const issueComplimentary: Route<{
       >
     >;
     409: typeof ConflictResponse;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.action('complimentaries', {
   operationId: 'issueComplimentary',

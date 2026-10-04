@@ -1,13 +1,6 @@
 import { z } from 'zod';
 
-import {
-  ApiErrorCode,
-  ChatErrorCode,
-  FailureNature,
-  OrderErrorCode,
-  SchemaIssueRule,
-  Surface,
-} from '@arthome/core';
+import { ApiErrorCode, ChatErrorCode, OrderErrorCode, Surface } from '@arthome/core';
 import type { ErrorCode } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import {
@@ -41,8 +34,16 @@ import type {
   ResourceConventions,
   RouteBuilder,
   SecurityRequirement,
+  CodedResponse,
 } from '../http/index.js';
-import { accessorOf, cursor, defineErrorModel, identity, routeBuilder } from '../http/index.js';
+import {
+  accessorOf,
+  cursor,
+  defineErrorModel,
+  errorResponse,
+  identity,
+  routeBuilder,
+} from '../http/index.js';
 import { StorefrontCursorPageInfoSchema } from '../pagination/index.js';
 
 const SURFACE: readonly [
@@ -257,239 +258,116 @@ const SchemaInvalidEnvelopeSchema: z.ZodType<ErrorBody<typeof ApiErrorCode.SCHEM
     }),
   });
 
-export const BadRequestResponse: JsonResponse<typeof SchemaInvalidEnvelopeSchema> = {
+export const BadRequestResponse: JsonResponse<typeof SchemaInvalidEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.SCHEMA_INVALID> = errorResponse(SchemaInvalidEnvelopeSchema, {
   description: 'Malformed request, or refused by shape validation.',
-  content: {
-    'application/json': {
-      schema: SchemaInvalidEnvelopeSchema,
-      example: {
-        error: {
-          code: ApiErrorCode.SCHEMA_INVALID,
-          nature: FailureNature.REFUSED,
-          params: {
-            issues: [
-              { path: ['quantity'], rule: SchemaIssueRule.TOO_SMALL, minimum: 1, inclusive: true },
-            ],
-          },
-          traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-        },
-        servedAt: '2026-09-21T20:31:04.118Z',
-      },
-    },
-  },
-};
+  code: ApiErrorCode.SCHEMA_INVALID,
+});
 
-export const UnauthorizedResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> = {
-  description: 'No valid session, or expired token.',
-  content: {
-    'application/json': {
-      schema: StorefrontErrorEnvelopeSchema,
-      example: {
-        error: {
-          code: ApiErrorCode.UNAUTHENTICATED,
-          nature: FailureNature.REFUSED,
-          params: {},
-          traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-        },
-        servedAt: '2026-09-21T20:31:04.118Z',
-      },
-    },
+export const UnauthorizedResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.UNAUTHENTICATED> = errorResponse(
+  StorefrontErrorEnvelopeSchema,
+  {
+    description: 'No valid session, or expired token.',
+    code: ApiErrorCode.UNAUTHENTICATED,
   },
-};
+);
 
-export const CsrfRefusedResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> = {
+export const CsrfRefusedResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.FORBIDDEN> = errorResponse(StorefrontErrorEnvelopeSchema, {
   description:
     "A write with the session cookie came without its `X-Arthome-Csrf` token, or with another\nsession's (`api.forbidden`). A write with a bearer token never meets it.\n",
-  content: {
-    'application/json': {
-      schema: StorefrontErrorEnvelopeSchema,
-      example: {
-        error: {
-          code: ApiErrorCode.FORBIDDEN,
-          nature: FailureNature.REFUSED,
-          params: {},
-          traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-        },
-        servedAt: '2026-09-21T20:31:04.118Z',
-      },
-    },
-  },
-};
+  code: ApiErrorCode.FORBIDDEN,
+});
 
-export const ForbiddenResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> = {
+export const ForbiddenResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.FORBIDDEN> = errorResponse(StorefrontErrorEnvelopeSchema, {
   description: 'Session valide, droit absent.',
-  content: {
-    'application/json': {
-      schema: StorefrontErrorEnvelopeSchema,
-      example: {
-        error: {
-          code: ApiErrorCode.FORBIDDEN,
-          nature: FailureNature.REFUSED,
-          params: {},
-          traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-        },
-        servedAt: '2026-09-21T20:31:04.118Z',
-      },
-    },
-  },
-};
+  code: ApiErrorCode.FORBIDDEN,
+});
 
-export const NotFoundResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> = {
+export const NotFoundResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.NOT_FOUND> = errorResponse(StorefrontErrorEnvelopeSchema, {
   description: 'Ressource inconnue.',
-  content: {
-    'application/json': {
-      schema: StorefrontErrorEnvelopeSchema,
-      example: {
-        error: {
-          code: ApiErrorCode.NOT_FOUND,
-          nature: FailureNature.REFUSED,
-          params: {},
-          traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-        },
-        servedAt: '2026-09-21T20:31:04.118Z',
-      },
-    },
-  },
-};
+  code: ApiErrorCode.NOT_FOUND,
+});
 
-export const ConflictResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> = {
+export const ConflictResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof OrderErrorCode.PRICE_STALE> = errorResponse(StorefrontErrorEnvelopeSchema, {
   description:
     'Definitive business refusal. The `code` says which one, and `params` carries what the screen\nmust display — never a sentence.\n',
-  content: {
-    'application/json': {
-      schema: StorefrontErrorEnvelopeSchema,
-      example: {
-        error: {
-          code: OrderErrorCode.PRICE_STALE,
-          nature: FailureNature.REFUSED,
-          params: {
-            expectedAmountMinor: 2400,
-            currentAmountMinor: 2900,
-            currencyCode: 'EUR',
-          },
-          traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-        },
-        servedAt: '2026-09-21T20:31:04.118Z',
-      },
-    },
-  },
-};
+  code: OrderErrorCode.PRICE_STALE,
+});
 
-export const GoneResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> = {
+export const GoneResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.CURSOR_TOO_OLD> = errorResponse(StorefrontErrorEnvelopeSchema, {
   description: 'The targeted cursor, pairing or replay has expired.',
-  content: {
-    'application/json': {
-      schema: StorefrontErrorEnvelopeSchema,
-      example: {
-        error: {
-          code: ApiErrorCode.CURSOR_TOO_OLD,
-          nature: FailureNature.REFUSED,
-          params: {
-            maxAgeHours: 24,
-          },
-          traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-        },
-        servedAt: '2026-09-21T20:31:04.118Z',
-      },
-    },
-  },
-};
+  code: ApiErrorCode.CURSOR_TOO_OLD,
+});
 
-export const TooManyRequestsResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> = {
+export const TooManyRequestsResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof ChatErrorCode.RATE_LIMITED> = errorResponse(StorefrontErrorEnvelopeSchema, {
   description:
     'Rate limit reached. `params.retryAfterMs` allows the control to be disabled instead of stacking up refusals.',
   headers: {
     'Retry-After-Ms': RetryAfterMsHeader,
   },
-  content: {
-    'application/json': {
-      schema: StorefrontErrorEnvelopeSchema,
-      example: {
-        error: {
-          code: ChatErrorCode.RATE_LIMITED,
-          nature: FailureNature.UNAVAILABLE,
-          params: {
-            retryAfterMs: 3000,
-          },
-          traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-        },
-        servedAt: '2026-09-21T20:31:04.118Z',
-      },
-    },
+  code: ChatErrorCode.RATE_LIMITED,
+});
+
+export const UnavailableResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.SERVICE_UNAVAILABLE> = errorResponse(
+  StorefrontErrorEnvelopeSchema,
+  {
+    description:
+      'Our servers. `nature: "unavailable"` is what lets the surface say "our servers" rather than\n"your connection" — a transport failure, by contrast, has no body and reads as "your\nconnection".\n',
+    code: ApiErrorCode.SERVICE_UNAVAILABLE,
   },
-};
-
-export const UnavailableResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> = {
-  description:
-    'Our servers. `nature: "unavailable"` is what lets the surface say "our servers" rather than\n"your connection" — a transport failure, by contrast, has no body and reads as "your\nconnection".\n',
-  content: {
-    'application/json': {
-      schema: StorefrontErrorEnvelopeSchema,
-      example: {
-        error: {
-          code: ApiErrorCode.SERVICE_UNAVAILABLE,
-          nature: FailureNature.UNAVAILABLE,
-          params: {},
-          traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-        },
-        servedAt: '2026-09-21T20:31:04.118Z',
-      },
-    },
-  },
-};
-
-function refusedWith(
-  description: string,
-  code: string,
-  nature: typeof FailureNature.REFUSED | typeof FailureNature.UNAVAILABLE,
-): JsonResponse<typeof StorefrontErrorEnvelopeSchema> {
-  return {
-    description,
-    content: {
-      'application/json': {
-        schema: StorefrontErrorEnvelopeSchema,
-        example: {
-          error: { code, nature, params: {}, traceId: '4bf92f3577b34da6a3ce929d0e0e4736' },
-          servedAt: '2026-09-21T20:31:04.118Z',
-        },
-      },
-    },
-  };
-}
-
-export const PayloadTooLargeResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> =
-  refusedWith(
-    'The body is over the ceiling of the route (1 MiB unless the route says otherwise).',
-    ApiErrorCode.PAYLOAD_TOO_LARGE,
-    FailureNature.REFUSED,
-  );
-
-export const UnsupportedMediaTypeResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> =
-  refusedWith(
-    'The body is not `application/json`.',
-    ApiErrorCode.UNSUPPORTED_MEDIA_TYPE,
-    FailureNature.REFUSED,
-  );
-
-export const InternalErrorResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> =
-  refusedWith(
-    'A fault of ours, never retried as is.',
-    ApiErrorCode.INTERNAL,
-    FailureNature.UNAVAILABLE,
-  );
-
-export const BadGatewayResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> = refusedWith(
-  'A service behind the BFF failed.',
-  ApiErrorCode.UPSTREAM_UNAVAILABLE,
-  FailureNature.UNAVAILABLE,
 );
 
-export const GatewayTimeoutResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> =
-  refusedWith(
-    'The BFF stopped waiting for a service, or the deadline was already past. A command is retried with its `Idempotency-Key`.',
-    ApiErrorCode.UPSTREAM_TIMEOUT,
-    FailureNature.UNAVAILABLE,
-  );
+export const PayloadTooLargeResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.PAYLOAD_TOO_LARGE> = errorResponse(
+  StorefrontErrorEnvelopeSchema,
+  {
+    description:
+      'The body is over the ceiling of the route (1 MiB unless the route says otherwise).',
+    code: ApiErrorCode.PAYLOAD_TOO_LARGE,
+  },
+);
+
+export const UnsupportedMediaTypeResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.UNSUPPORTED_MEDIA_TYPE> = errorResponse(
+  StorefrontErrorEnvelopeSchema,
+  {
+    description: 'The body is not `application/json`.',
+    code: ApiErrorCode.UNSUPPORTED_MEDIA_TYPE,
+  },
+);
+
+export const InternalErrorResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.INTERNAL> = errorResponse(StorefrontErrorEnvelopeSchema, {
+  description: 'A fault of ours, never retried as is.',
+  code: ApiErrorCode.INTERNAL,
+});
+
+export const BadGatewayResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.UPSTREAM_UNAVAILABLE> = errorResponse(
+  StorefrontErrorEnvelopeSchema,
+  {
+    description: 'A service behind the BFF failed.',
+    code: ApiErrorCode.UPSTREAM_UNAVAILABLE,
+  },
+);
+
+export const GatewayTimeoutResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.UPSTREAM_TIMEOUT> = errorResponse(
+  StorefrontErrorEnvelopeSchema,
+  {
+    description:
+      'The BFF stopped waiting for a service, or the deadline was already past. A command is retried with its `Idempotency-Key`.',
+    code: ApiErrorCode.UPSTREAM_TIMEOUT,
+  },
+);
 
 const IfNoneMatchParameter: HeaderParameter<'If-None-Match', z.ZodString> = {
   name: 'If-None-Match',
@@ -520,6 +398,8 @@ export const storefrontConventions: {
   readonly notModified: Response;
   readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
   readonly replayedHeader: Header;
+  readonly itemExample: (data: unknown) => unknown;
+  readonly pageExample: (data: readonly unknown[]) => unknown;
   readonly expectedVersion: z.ZodNumber;
   readonly paging: Paging;
   readonly paginations: {
@@ -543,6 +423,8 @@ export const storefrontConventions: {
   notModified: { description: 'Unchanged since the validator sent in `If-None-Match`.' },
   writeParameters: [IdempotencyKeyParameter],
   replayedHeader: IdempotencyReplayedHeader,
+  itemExample: (data) => ({ servedAt: '2026-09-21T19:00:00.000Z', data }),
+  pageExample: (data) => ({ servedAt: '2026-09-21T19:00:00.000Z', data, page: { hasMore: false } }),
   expectedVersion: int64(),
   paging: cursor({ maxLimit: 50 }),
   paginations: {

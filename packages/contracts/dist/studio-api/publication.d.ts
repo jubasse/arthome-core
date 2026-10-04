@@ -41,7 +41,6 @@ export declare const createDateDraft: Route<{
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
         409: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const getDateSheet: Route<{
@@ -146,7 +145,6 @@ export declare const moveDatePublicationState: Route<{
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const setDateReplayPolicy: Route<{
@@ -171,8 +169,6 @@ export declare const setDateReplayPolicy: Route<{
             data: typeof PublicationSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const deleteDate: Route<{
@@ -196,7 +192,6 @@ export declare const deleteDate: Route<{
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
         404: typeof NotFoundResponse;
-        403: typeof ConflictResponse;
     };
 }>;
 export declare const duplicateDate: Route<{
@@ -221,8 +216,6 @@ export declare const duplicateDate: Route<{
             data: typeof DateSheetSchema;
         }, z.core.$loose>>>;
         409: typeof ConflictResponse;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const decideDateOutcome: Route<{
@@ -257,7 +250,6 @@ export declare const decideDateOutcome: Route<{
         }, z.core.$loose>>>;
         403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
         409: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export {};

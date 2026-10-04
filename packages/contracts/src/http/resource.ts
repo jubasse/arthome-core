@@ -44,6 +44,13 @@ export interface ResourceConventions {
   /** `ETag`, on the 200 of a read. */
   readonly readHeaders: Readonly<Record<string, Header>>;
   readonly notModified?: Response;
+  /**
+   * The envelope of an example: given the example of an item (`.meta({ examples })` on its schema),
+   * the example of the whole answer, so a route does not restate it.
+   */
+  readonly itemExample?: (data: unknown) => unknown;
+  /** The same for a page of items. */
+  readonly pageExample?: (data: readonly unknown[]) => unknown;
   /** The api's `Idempotency-Replayed` header, kept as one component. */
   readonly replayedHeader?: Header;
   /** The paging a list has unless it says otherwise. */
@@ -122,21 +129,28 @@ export type MemberDocs<Allowed extends string = string> = Omit<
   readonly responses?: Responses;
   /** The example of the request body. */
   readonly example?: unknown;
+  /** What a success is called, when the convention's words do not fit: `Date deleted.` */
+  readonly answer?: string;
   /** The body is not required: the request may carry none. */
   readonly optionalBody?: true;
 };
 
 type Docs<C extends ResourceContext, Own = unknown> = MemberDocs<C['allowed']> & Own;
 
-type Envelope<C extends ResourceContext> =
-  Conv<C> extends { readonly meta?: infer M extends object } ? M : object;
-type Item<C extends ResourceContext, S extends z.ZodType> = Envelope<C> & {
-  readonly data: z.output<S>;
-};
-type Page<C extends ResourceContext, S extends z.ZodType> = Envelope<C> & {
-  readonly data: readonly z.output<S>[];
-  readonly page: unknown;
-};
+/** The fields an api's envelope carries on every answer, from its conventions. */
+export type EnvelopeOf<K> = K extends { readonly meta?: infer M extends object } ? M : object;
+
+/** The answer of one record: the api's envelope and the record under `data`. */
+export type ItemResponse<K, S extends z.ZodType, Relations = unknown> = JsonResponse<
+  z.ZodType<EnvelopeOf<K> & { readonly data: z.output<S> & Relations }>
+>;
+
+/** The answer of a list: the api's envelope, the records under `data` and the page. */
+export type PageResponse<K, S extends z.ZodType> = JsonResponse<
+  z.ZodType<EnvelopeOf<K> & { readonly data: readonly z.output<S>[]; readonly page: unknown }>
+>;
+
+type Envelope<C extends ResourceContext> = EnvelopeOf<Conv<C>>;
 type Schema<T> = z.ZodType<T>;
 
 type ItemOf<D> = D extends { readonly item: infer S extends z.ZodType } ? S : z.ZodType;
@@ -265,7 +279,7 @@ type ResponseOf<
   S extends z.ZodType | undefined,
   Status extends 200 | 201,
 > = S extends z.ZodType
-  ? Readonly<Record<Status, JsonResponse<Schema<Item<C, S>>>>>
+  ? Readonly<Record<Status, ItemResponse<Conv<C>, S>>>
   : { readonly 204: Response };
 
 type RelationsOf<D> = D extends {
@@ -289,9 +303,7 @@ export type FindRoute<C extends ResourceContext, D> = Member<
   ItemPath<C>,
   readonly [...ItemParameters<C>, ...ExpandParameters<D>],
   {
-    readonly 200: JsonResponse<
-      Schema<Envelope<C> & { readonly data: z.output<ItemOf<D>> & RelationsOf<D> }>
-    >;
+    readonly 200: ItemResponse<Conv<C>, ItemOf<D>, RelationsOf<D>>;
   },
   NotFoundFor<C>
 >;
@@ -351,13 +363,9 @@ export type FindAllRoute<C extends ResourceContext, D> = Member<
   CollectionPath<C>,
   readonly [...C['parents'], ...ListParameters<C, D>],
   {
-    readonly 200: JsonResponse<
-      Schema<
-        D extends { readonly paging: { readonly kind: 'changesSince' } }
-          ? Item<C, ItemOf<D>>
-          : Page<C, ItemOf<D>>
-      >
-    >;
+    readonly 200: D extends { readonly paging: { readonly kind: 'changesSince' } }
+      ? ItemResponse<Conv<C>, ItemOf<D>>
+      : PageResponse<Conv<C>, ItemOf<D>>;
   },
   { readonly 400: InvalidCursor }
 >;
@@ -371,7 +379,7 @@ export type CreateRoute<C extends ResourceContext, D> = Member<
     ...C['parents'],
     ...(D extends { readonly idempotent: false } ? readonly [] : Added<C, 'writeParameters'>),
   ],
-  { readonly 201: JsonResponse<Schema<Item<C, ResponseSchema<D>>>> },
+  { readonly 201: ItemResponse<Conv<C>, ResponseSchema<D>> },
   D extends { readonly idempotent: false }
     ? Record<never, never>
     : { readonly 409: IdempotencyCodes },
@@ -384,7 +392,7 @@ export type UpdateRoute<C extends ResourceContext, D> = Member<
   'patch',
   ItemPath<C>,
   readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>],
-  { readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>> },
+  { readonly 200: ItemResponse<Conv<C>, ItemOf<D>> },
   NotFoundFor<C> & { readonly 409: ConflictFor<C> },
   Sent<PatchedBody<C, D>>
 >;
@@ -395,7 +403,7 @@ export type ReplaceRoute<C extends ResourceContext, D> = Member<
   'put',
   ItemPath<C>,
   readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>],
-  { readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>> },
+  { readonly 200: ItemResponse<Conv<C>, ItemOf<D>> },
   NotFoundFor<C> & { readonly 409: ConflictFor<C> },
   Sent<VersionedBody<C, BodyOf<D>>>
 >;
@@ -427,7 +435,7 @@ export type DeleteRoute<C extends ResourceContext, D> = Member<
     ...(Owned<C> extends true ? readonly [] : readonly [ExpectedVersionQuery]),
   ],
   D extends { readonly response: infer R extends z.ZodType }
-    ? { readonly 200: JsonResponse<Schema<Item<C, R>>> }
+    ? { readonly 200: ItemResponse<Conv<C>, R> }
     : { readonly 204: Response },
   NotFoundFor<C> & { readonly 409: ConflictFor<C> }
 >;
@@ -514,10 +522,10 @@ type ActionDefaultSuccess<C extends ResourceContext, D> = D extends {
   readonly status: infer S extends number;
 }
   ? D extends { readonly response: infer R extends z.ZodType }
-    ? Readonly<Record<S, JsonResponse<Schema<Item<C, R>>>>>
+    ? Readonly<Record<S, ItemResponse<Conv<C>, R>>>
     : Readonly<Record<S, Response>>
   : D extends { readonly response: infer R extends z.ZodType }
-    ? { readonly 200: JsonResponse<Schema<Item<C, R>>> }
+    ? { readonly 200: ItemResponse<Conv<C>, R> }
     : { readonly 204: Response };
 
 type BodyOf<D> = D extends { readonly body: infer B extends z.ZodType } ? B : z.ZodType;
@@ -869,6 +877,7 @@ const OPTION_KEYS = [
   'idempotent',
   'example',
   'optionalBody',
+  'answer',
   'filters',
   'max',
 ] as const;
@@ -895,12 +904,22 @@ function jsonResponse(
   description: string,
   schema: z.ZodType,
   headers?: Readonly<Record<string, Header>>,
+  example?: unknown,
 ): Response {
   return {
     description,
     ...(headers !== undefined && Object.keys(headers).length > 0 && { headers }),
-    content: { 'application/json': { schema } },
+    content: {
+      'application/json': { schema, ...(example !== undefined && { example }) },
+    },
   };
+}
+
+/** The first example the schema carries, if any: `schema.meta({ examples: [...] })`. */
+function firstExample(schema: z.ZodType | undefined): unknown {
+  if (schema === undefined) return undefined;
+  const meta = z.globalRegistry.get(schema) as { examples?: readonly unknown[] } | undefined;
+  return meta?.examples?.[0];
 }
 
 function sentBody(
@@ -1022,6 +1041,13 @@ export function makeResource(
     return conventions.item(z.intersection(item, relations));
   };
 
+  /** The example of an answer, derived from the item's own example by the api's envelope. */
+  const shown = (item: z.ZodType | undefined): unknown => {
+    const example = firstExample(item);
+    return example === undefined ? undefined : conventions.itemExample?.(example);
+  };
+  const said = (docs: AnyDocs | undefined, fallback: string): string => docs?.answer ?? fallback;
+
   const expansionParameters = (docs: AnyDocs | undefined): readonly Parameter[] => {
     const names = Object.keys(expansionsOf(docs));
     return names.length === 0
@@ -1044,7 +1070,14 @@ export function makeResource(
       derivedId: `find${singular}`,
       docs,
       parameters: [...itemParameters, ...expansionParameters(docs)],
-      responses: { 200: jsonResponse('The record.', itemOf(docs, expansionsOf(docs))) },
+      responses: {
+        200: jsonResponse(
+          said(docs, 'The record.'),
+          itemOf(docs, expansionsOf(docs)),
+          undefined,
+          shown(docs.item as z.ZodType | undefined),
+        ),
+      },
       errors: itemNotFound,
     });
 
@@ -1093,13 +1126,19 @@ export function makeResource(
         errors[403] = [ApiErrorCode.SORT_KEY_FORBIDDEN];
       }
     }
+    const pageShown = (data: z.ZodType): unknown => {
+      const example = firstExample(data);
+      return example === undefined ? undefined : conventions.pageExample?.([example]);
+    };
     return {
       parameters: [
         ...parents,
         ...listParameters,
         ...(filters === undefined ? [] : [filterParameter(filters)]),
       ],
-      responses: { 200: jsonResponse('The page.', page) },
+      responses: {
+        200: jsonResponse(said(docs, 'The page.'), page, undefined, pageShown(item)),
+      },
       errors: errors as ErrorsInput<string>,
     };
   };
@@ -1127,8 +1166,10 @@ export function makeResource(
       parameters: [...parents, ...(docs.idempotent === false ? [] : conventions.writeParameters)],
       responses: {
         201: jsonResponse(
-          'Created.',
+          said(docs, 'Created.'),
           docs.response !== undefined ? conventions.item(docs.response as z.ZodType) : itemOf(docs),
+          undefined,
+          shown((docs.response ?? docs.item) as z.ZodType | undefined),
         ),
       },
       errors: docs.idempotent === false ? {} : { 409: IDEMPOTENCY },
@@ -1144,7 +1185,14 @@ export function makeResource(
       derivedId: `update${singular}`,
       docs,
       parameters: [...itemParameters, ...conventions.writeParameters],
-      responses: { 200: jsonResponse('The record, updated.', itemOf(docs)) },
+      responses: {
+        200: jsonResponse(
+          said(docs, 'The record, updated.'),
+          itemOf(docs),
+          undefined,
+          shown(docs.item as z.ZodType | undefined),
+        ),
+      },
       errors: conflicts,
       body: withVersion(writable),
     });
@@ -1157,7 +1205,14 @@ export function makeResource(
       derivedId: `replace${singular}`,
       docs,
       parameters: [...itemParameters, ...conventions.writeParameters],
-      responses: { 200: jsonResponse('The record, replaced.', itemOf(docs)) },
+      responses: {
+        200: jsonResponse(
+          said(docs, 'The record, replaced.'),
+          itemOf(docs),
+          undefined,
+          shown(docs.item as z.ZodType | undefined),
+        ),
+      },
       errors: conflicts,
       body: withVersion(docs.body as z.ZodObject),
     });
@@ -1174,7 +1229,14 @@ export function makeResource(
       ],
       responses:
         docs.item !== undefined
-          ? { 200: jsonResponse('The record.', itemOf(docs)) }
+          ? {
+              200: jsonResponse(
+                said(docs, 'The record.'),
+                itemOf(docs),
+                undefined,
+                shown(docs.item as z.ZodType | undefined),
+              ),
+            }
           : { 204: { description: 'Done.' } },
       errors: docs.idempotent === false ? {} : { 409: IDEMPOTENCY },
       ...(docs.body !== undefined && { body: docs.body as z.ZodType }),
@@ -1194,7 +1256,14 @@ export function makeResource(
       responses:
         docs?.response === undefined
           ? { 204: { description: 'Removed.' } }
-          : { 200: jsonResponse('Removed.', conventions.item(docs.response as z.ZodType)) },
+          : {
+              200: jsonResponse(
+                said(docs, 'Removed.'),
+                conventions.item(docs.response as z.ZodType),
+                undefined,
+                shown(docs.response as z.ZodType),
+              ),
+            },
       errors: conflicts,
     });
 
@@ -1238,7 +1307,12 @@ export function makeResource(
         [status]:
           response === undefined
             ? { description: 'Done.' }
-            : jsonResponse('Done.', conventions.item(response)),
+            : jsonResponse(
+                said(docs, 'Done.'),
+                conventions.item(response),
+                undefined,
+                shown(response),
+              ),
       },
       errors: keyed ? { 409: IDEMPOTENCY } : {},
       ...(docs.body !== undefined && { body: docs.body as z.ZodType }),
@@ -1255,7 +1329,14 @@ export function makeResource(
         parameters: [...itemParameters, ...conventions.writeParameters],
         responses:
           docs.item !== undefined
-            ? { 200: jsonResponse('The record.', itemOf(docs)) }
+            ? {
+                200: jsonResponse(
+                  said(docs, 'The record.'),
+                  itemOf(docs),
+                  undefined,
+                  shown(docs.item as z.ZodType | undefined),
+                ),
+              }
             : { 204: { description: 'Done.' } },
         errors: conflicts,
         body: withVersion(docs.body as z.ZodObject),

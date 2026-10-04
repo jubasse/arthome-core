@@ -358,7 +358,6 @@ export const runTechnicalCheck: Route<{
     >;
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.single('run').action('technical-check', {
   operationId: 'runTechnicalCheck',
@@ -426,8 +425,6 @@ export const rehearseRun: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.single('run').action('rehearse', {
   operationId: 'rehearseRun',
@@ -510,8 +507,6 @@ export const goOnAir: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.single('run').action('go-on-air', {
   operationId: 'goOnAir',
@@ -594,8 +589,6 @@ export const endRun: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.single('run').action('end', {
   operationId: 'endRun',
@@ -677,8 +670,6 @@ export const resetRun: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.single('run').action('reset', {
   operationId: 'resetRun',
@@ -770,8 +761,6 @@ export const setQualityProfile: Route<{
       >
     >;
     409: typeof ConflictResponse;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.single('run/quality-profile').replace({
   operationId: 'setQualityProfile',
@@ -958,7 +947,6 @@ export const submitHealthSample: Route<{
       >
     >;
     404: typeof NotFoundResponse;
-    403: typeof ConflictResponse;
   };
 }> = date.single('run/health-samples').create({
   operationId: 'submitHealthSample',
@@ -1056,7 +1044,6 @@ export const postChapter: Route<{
       >
     >;
     404: typeof NotFoundResponse;
-    403: typeof ConflictResponse;
   };
 }> = chapters.create({
   operationId: 'postChapter',
@@ -1138,7 +1125,6 @@ export const removeChapter: Route<{
       >
     >;
     404: typeof NotFoundResponse;
-    403: typeof ConflictResponse;
   };
 }> = chapters.delete({
   operationId: 'removeChapter',
@@ -1208,7 +1194,6 @@ export const raiseIncident: Route<{
     >;
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = incidents.create({
   operationId: 'raiseIncident',
@@ -1463,7 +1448,6 @@ export const revealStreamKey: Route<{
     >;
     401: typeof UnauthorizedResponse;
     403: typeof ForbiddenResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.single('stream-key').action('reveal', {
   operationId: 'revealStreamKey',
@@ -1543,8 +1527,6 @@ export const rotateStreamKey: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.single('stream-key').action('rotate', {
   operationId: 'rotateStreamKey',

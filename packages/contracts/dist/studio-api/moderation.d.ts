@@ -59,8 +59,6 @@ export declare const setDateChatPolicy: Route<{
             data: typeof ChatPolicySchema;
         }, z.core.$loose>>>;
         409: typeof ConflictResponse;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const listModerationQueue: Route<{
@@ -277,7 +275,6 @@ export declare const listStudioChatMessages: Route<{
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
         410: typeof GoneResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export {};

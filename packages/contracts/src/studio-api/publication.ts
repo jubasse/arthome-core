@@ -116,7 +116,6 @@ export const createDateDraft: Route<{
     >;
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = channelDates.create({
   operationId: 'createDateDraft',
@@ -580,7 +579,6 @@ export const moveDatePublicationState: Route<{
     >;
     403: typeof ForbiddenResponse;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    404: typeof ConflictResponse;
   };
 }> = date.action('publication/transitions', {
   operationId: 'moveDatePublicationState',
@@ -709,8 +707,6 @@ export const setDateReplayPolicy: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.single('replay-policy').replace({
   operationId: 'setDateReplayPolicy',
@@ -809,7 +805,6 @@ export const deleteDate: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
     404: typeof NotFoundResponse;
-    403: typeof ConflictResponse;
   };
 }> = date.delete({
   operationId: 'deleteDate',
@@ -897,8 +892,6 @@ export const duplicateDate: Route<{
       >
     >;
     409: typeof ConflictResponse;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.action('duplicate', {
   operationId: 'duplicateDate',
@@ -1005,7 +998,6 @@ export const decideDateOutcome: Route<{
     >;
     403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
     409: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.action('outcome', {
   operationId: 'decideDateOutcome',

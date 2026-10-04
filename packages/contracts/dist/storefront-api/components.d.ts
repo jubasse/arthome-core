@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { ApiErrorCode, Surface } from '@arthome/core';
+import { ApiErrorCode, ChatErrorCode, OrderErrorCode, Surface } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { StorefrontRelayedCode } from '../envelope/index.js';
-import type { AccessorOf, ErrorBody, ErrorModel, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement } from '../http/index.js';
+import type { AccessorOf, ErrorBody, ErrorModel, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement, CodedResponse } from '../http/index.js';
 declare const SURFACE: readonly [
     typeof Surface.STOREFRONT_WEB,
     typeof Surface.STOREFRONT_MOBILE,
@@ -39,20 +39,20 @@ export declare const CacheControlPublicHeader: Header;
 export declare const VaryAuthHeader: Header;
 /** `api.schema_invalid`'s envelope, so the document says what a refused field carries. */
 declare const SchemaInvalidEnvelopeSchema: z.ZodType<ErrorBody<typeof ApiErrorCode.SCHEMA_INVALID>>;
-export declare const BadRequestResponse: JsonResponse<typeof SchemaInvalidEnvelopeSchema>;
-export declare const UnauthorizedResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-export declare const CsrfRefusedResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-export declare const ForbiddenResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-export declare const NotFoundResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-export declare const ConflictResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-export declare const GoneResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-export declare const TooManyRequestsResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-export declare const UnavailableResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-export declare const PayloadTooLargeResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-export declare const UnsupportedMediaTypeResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-export declare const InternalErrorResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-export declare const BadGatewayResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-export declare const GatewayTimeoutResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
+export declare const BadRequestResponse: JsonResponse<typeof SchemaInvalidEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.SCHEMA_INVALID>;
+export declare const UnauthorizedResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UNAUTHENTICATED>;
+export declare const CsrfRefusedResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.FORBIDDEN>;
+export declare const ForbiddenResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.FORBIDDEN>;
+export declare const NotFoundResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.NOT_FOUND>;
+export declare const ConflictResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof OrderErrorCode.PRICE_STALE>;
+export declare const GoneResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.CURSOR_TOO_OLD>;
+export declare const TooManyRequestsResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof ChatErrorCode.RATE_LIMITED>;
+export declare const UnavailableResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.SERVICE_UNAVAILABLE>;
+export declare const PayloadTooLargeResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.PAYLOAD_TOO_LARGE>;
+export declare const UnsupportedMediaTypeResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UNSUPPORTED_MEDIA_TYPE>;
+export declare const InternalErrorResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.INTERNAL>;
+export declare const BadGatewayResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UPSTREAM_UNAVAILABLE>;
+export declare const GatewayTimeoutResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UPSTREAM_TIMEOUT>;
 declare const IfNoneMatchParameter: HeaderParameter<'If-None-Match', z.ZodString>;
 declare const OWN_LIST_PARAMETERS: readonly [typeof CursorParameter, typeof LimitParameter];
 /** What every storefront resource is served and written like: see `ResourceConventions`. */
@@ -68,6 +68,8 @@ export declare const storefrontConventions: {
     readonly notModified: Response;
     readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
     readonly replayedHeader: Header;
+    readonly itemExample: (data: unknown) => unknown;
+    readonly pageExample: (data: readonly unknown[]) => unknown;
     readonly expectedVersion: z.ZodNumber;
     readonly paging: Paging;
     readonly paginations: {

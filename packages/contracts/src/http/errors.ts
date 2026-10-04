@@ -8,10 +8,10 @@
 import { z } from 'zod';
 
 import { ApiErrorCode } from '@arthome/core';
-import type { ErrorCode } from '@arthome/core';
+import { FailureNature, type ErrorCode } from '@arthome/core';
 import type { ErrorParamsRead } from '@arthome/core/schema';
 
-import { statusOf } from './error-registry.js';
+import { exampleOf, statusOf } from './error-registry.js';
 import type { JsonResponse, Response } from './index.js';
 
 export type ErrorStatus =
@@ -179,3 +179,43 @@ export const DERIVED_ERROR_CODES: {
 };
 
 export type DerivedStatus = keyof typeof DERIVED_ERROR_CODES;
+
+const EXAMPLE_TRACE_ID = '4bf92f3577b34da6a3ce929d0e0e4736';
+const EXAMPLE_SERVED_AT = '2026-09-21T20:31:04.118Z';
+
+/** The envelope an example of `code` shows: its params from the registry, nature from its status. */
+export function errorExampleOf(code: ErrorCode): unknown {
+  return {
+    error: {
+      code,
+      nature: statusOf(code) >= 500 ? FailureNature.UNAVAILABLE : FailureNature.REFUSED,
+      params: exampleOf(code),
+      traceId: EXAMPLE_TRACE_ID,
+    },
+    servedAt: EXAMPLE_SERVED_AT,
+  };
+}
+
+/**
+ * A shared error response: its description, the api's envelope, and an example written once per
+ * code from the registry.
+ */
+/** Type-only: the code a shared error response stands for, so two responses never share a type. */
+export interface CodedResponse<C extends string> {
+  readonly '~code'?: C;
+}
+
+export function errorResponse<S extends z.ZodType, const C extends ErrorCode>(
+  schema: S,
+  options: {
+    readonly description: string;
+    readonly code: C;
+    readonly headers?: Response['headers'];
+  },
+): JsonResponse<S> & CodedResponse<C> {
+  return {
+    description: options.description,
+    ...(options.headers !== undefined && { headers: options.headers }),
+    content: { 'application/json': { schema, example: errorExampleOf(options.code) } },
+  };
+}

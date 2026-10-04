@@ -56,8 +56,6 @@ export declare const setDatePrices: Route<{
             data: typeof DateSalesPaneSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const openCapacityTier: Route<{
@@ -86,8 +84,6 @@ export declare const openCapacityTier: Route<{
             }, z.core.$loose>;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const setTechnicalProvision: Route<{
@@ -111,8 +107,6 @@ export declare const setTechnicalProvision: Route<{
             data: typeof DateSalesPaneSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const refundSeat: Route<{
@@ -167,8 +161,6 @@ export declare const issueComplimentary: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         409: typeof ConflictResponse;
-        403: typeof ConflictResponse;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const getChannelTicketing: Route<{

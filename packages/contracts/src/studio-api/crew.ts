@@ -710,7 +710,6 @@ export const grantDateAccess: Route<{
       >
     >;
     403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    404: typeof ConflictResponse;
   };
 }> = date.single('crew').create({
   operationId: 'grantDateAccess',

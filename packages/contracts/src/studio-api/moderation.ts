@@ -234,8 +234,6 @@ export const setDateChatPolicy: Route<{
       >
     >;
     409: typeof ConflictResponse;
-    403: typeof ConflictResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.single('chat-policy').replace({
   operationId: 'setDateChatPolicy',
@@ -1127,7 +1125,6 @@ export const listStudioChatMessages: Route<{
     >;
     403: typeof ForbiddenResponse;
     410: typeof GoneResponse;
-    404: typeof ConflictResponse;
   };
 }> = date.path('chat').defineRoute({
   method: 'get',

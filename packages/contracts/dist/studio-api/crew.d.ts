@@ -171,7 +171,6 @@ export declare const grantDateAccess: Route<{
             data: typeof DateAccessGrantSchema;
         }, z.core.$loose>>>;
         403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        404: typeof ConflictResponse;
     };
 }>;
 export declare const revokeDateAccess: Route<{

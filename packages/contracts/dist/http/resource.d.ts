@@ -23,6 +23,13 @@ export interface ResourceConventions {
     /** `ETag`, on the 200 of a read. */
     readonly readHeaders: Readonly<Record<string, Header>>;
     readonly notModified?: Response;
+    /**
+     * The envelope of an example: given the example of an item (`.meta({ examples })` on its schema),
+     * the example of the whole answer, so a route does not restate it.
+     */
+    readonly itemExample?: (data: unknown) => unknown;
+    /** The same for a page of items. */
+    readonly pageExample?: (data: readonly unknown[]) => unknown;
     /** The api's `Idempotency-Replayed` header, kept as one component. */
     readonly replayedHeader?: Header;
     /** The paging a list has unless it says otherwise. */
@@ -73,20 +80,26 @@ export type MemberDocs<Allowed extends string = string> = Omit<BuiltRouteDefinit
     readonly responses?: Responses;
     /** The example of the request body. */
     readonly example?: unknown;
+    /** What a success is called, when the convention's words do not fit: `Date deleted.` */
+    readonly answer?: string;
     /** The body is not required: the request may carry none. */
     readonly optionalBody?: true;
 };
 type Docs<C extends ResourceContext, Own = unknown> = MemberDocs<C['allowed']> & Own;
-type Envelope<C extends ResourceContext> = Conv<C> extends {
+/** The fields an api's envelope carries on every answer, from its conventions. */
+export type EnvelopeOf<K> = K extends {
     readonly meta?: infer M extends object;
 } ? M : object;
-type Item<C extends ResourceContext, S extends z.ZodType> = Envelope<C> & {
-    readonly data: z.output<S>;
-};
-type Page<C extends ResourceContext, S extends z.ZodType> = Envelope<C> & {
+/** The answer of one record: the api's envelope and the record under `data`. */
+export type ItemResponse<K, S extends z.ZodType, Relations = unknown> = JsonResponse<z.ZodType<EnvelopeOf<K> & {
+    readonly data: z.output<S> & Relations;
+}>>;
+/** The answer of a list: the api's envelope, the records under `data` and the page. */
+export type PageResponse<K, S extends z.ZodType> = JsonResponse<z.ZodType<EnvelopeOf<K> & {
     readonly data: readonly z.output<S>[];
     readonly page: unknown;
-};
+}>>;
+type Envelope<C extends ResourceContext> = EnvelopeOf<Conv<C>>;
 type Schema<T> = z.ZodType<T>;
 type ItemOf<D> = D extends {
     readonly item: infer S extends z.ZodType;
@@ -161,7 +174,7 @@ type NotFoundFor<C extends ResourceContext> = C['id'] extends PathParameterOf ? 
 interface Sent<S extends z.ZodType, Required = true> {
     readonly requestBody: JsonRequestBody<S, Required>;
 }
-type ResponseOf<C extends ResourceContext, S extends z.ZodType | undefined, Status extends 200 | 201> = S extends z.ZodType ? Readonly<Record<Status, JsonResponse<Schema<Item<C, S>>>>> : {
+type ResponseOf<C extends ResourceContext, S extends z.ZodType | undefined, Status extends 200 | 201> = S extends z.ZodType ? Readonly<Record<Status, ItemResponse<Conv<C>, S>>> : {
     readonly 204: Response;
 };
 type RelationsOf<D> = D extends {
@@ -177,9 +190,7 @@ type ExpandParameters<D> = D extends {
     }>>>
 ] : readonly [];
 export type FindRoute<C extends ResourceContext, D> = Member<C, D, 'get', ItemPath<C>, readonly [...ItemParameters<C>, ...ExpandParameters<D>], {
-    readonly 200: JsonResponse<Schema<Envelope<C> & {
-        readonly data: z.output<ItemOf<D>> & RelationsOf<D>;
-    }>>;
+    readonly 200: ItemResponse<Conv<C>, ItemOf<D>, RelationsOf<D>>;
 }, NotFoundFor<C>>;
 type KeyName<T> = T extends string ? T : T extends {
     readonly key: infer N extends string;
@@ -218,11 +229,11 @@ type ListParameters<C extends ResourceContext, D> = readonly [
     ...FilterParameters<D>
 ];
 export type FindAllRoute<C extends ResourceContext, D> = Member<C, D, 'get', CollectionPath<C>, readonly [...C['parents'], ...ListParameters<C, D>], {
-    readonly 200: JsonResponse<Schema<D extends {
+    readonly 200: D extends {
         readonly paging: {
             readonly kind: 'changesSince';
         };
-    } ? Item<C, ItemOf<D>> : Page<C, ItemOf<D>>>>;
+    } ? ItemResponse<Conv<C>, ItemOf<D>> : PageResponse<Conv<C>, ItemOf<D>>;
 }, {
     readonly 400: InvalidCursor;
 }>;
@@ -232,19 +243,19 @@ export type CreateRoute<C extends ResourceContext, D> = Member<C, D, 'post', Col
         readonly idempotent: false;
     } ? readonly [] : Added<C, 'writeParameters'>)
 ], {
-    readonly 201: JsonResponse<Schema<Item<C, ResponseSchema<D>>>>;
+    readonly 201: ItemResponse<Conv<C>, ResponseSchema<D>>;
 }, D extends {
     readonly idempotent: false;
 } ? Record<never, never> : {
     readonly 409: IdempotencyCodes;
 }, Sent<BodyOf<D>>>;
 export type UpdateRoute<C extends ResourceContext, D> = Member<C, D, 'patch', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>], {
-    readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>>;
+    readonly 200: ItemResponse<Conv<C>, ItemOf<D>>;
 }, NotFoundFor<C> & {
     readonly 409: ConflictFor<C>;
 }, Sent<PatchedBody<C, D>>>;
 export type ReplaceRoute<C extends ResourceContext, D> = Member<C, D, 'put', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>], {
-    readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>>;
+    readonly 200: ItemResponse<Conv<C>, ItemOf<D>>;
 }, NotFoundFor<C> & {
     readonly 409: ConflictFor<C>;
 }, Sent<VersionedBody<C, BodyOf<D>>>>;
@@ -265,7 +276,7 @@ export type DeleteRoute<C extends ResourceContext, D> = Member<C, D, 'delete', I
 ], D extends {
     readonly response: infer R extends z.ZodType;
 } ? {
-    readonly 200: JsonResponse<Schema<Item<C, R>>>;
+    readonly 200: ItemResponse<Conv<C>, R>;
 } : {
     readonly 204: Response;
 }, NotFoundFor<C> & {
@@ -302,10 +313,10 @@ type ActionDefaultSuccess<C extends ResourceContext, D> = D extends {
     readonly status: infer S extends number;
 } ? D extends {
     readonly response: infer R extends z.ZodType;
-} ? Readonly<Record<S, JsonResponse<Schema<Item<C, R>>>>> : Readonly<Record<S, Response>> : D extends {
+} ? Readonly<Record<S, ItemResponse<Conv<C>, R>>> : Readonly<Record<S, Response>> : D extends {
     readonly response: infer R extends z.ZodType;
 } ? {
-    readonly 200: JsonResponse<Schema<Item<C, R>>>;
+    readonly 200: ItemResponse<Conv<C>, R>;
 } : {
     readonly 204: Response;
 };

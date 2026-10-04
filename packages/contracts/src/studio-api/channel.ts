@@ -1110,7 +1110,6 @@ export const pinMerchDuringLive: Route<{
       >
     >;
     404: typeof NotFoundResponse;
-    403: typeof BadRequestResponse;
   };
 }> = date.action('merch-pin', {
   operationId: 'pinMerchDuringLive',
@@ -1189,8 +1188,6 @@ export const reopenReplayWindow: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    403: typeof BadRequestResponse;
-    404: typeof BadRequestResponse;
   };
 }> = date.action('replay-window', {
   operationId: 'reopenReplayWindow',

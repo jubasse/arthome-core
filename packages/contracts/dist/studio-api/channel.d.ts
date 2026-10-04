@@ -260,7 +260,6 @@ export declare const pinMerchDuringLive: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         404: typeof NotFoundResponse;
-        403: typeof BadRequestResponse;
     };
 }>;
 export declare const reopenReplayWindow: Route<{
@@ -286,8 +285,6 @@ export declare const reopenReplayWindow: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        403: typeof BadRequestResponse;
-        404: typeof BadRequestResponse;
     };
 }>;
 export declare const updateChannelIdentity: Route<{
