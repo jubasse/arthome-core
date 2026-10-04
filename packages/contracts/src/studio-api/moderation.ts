@@ -50,15 +50,18 @@ import {
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
+  operator,
   studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
+import { cursor } from '../http/index.js';
 import type {
   JsonRequestBody,
   JsonResponse,
   PathParameter,
   QueryParameter,
   Route,
+  IdentifiedAccess,
 } from '../http/index.js';
 import { OffsetPageInfoSchema, StudioCursorPageInfoSchema } from '../pagination/index.js';
 import {
@@ -73,6 +76,12 @@ const moderationRoutes = studioV1
   .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 const moderationReads = moderationRoutes.errors({ 403: ForbiddenResponse });
 const moderationWrites = moderationRoutes.headers(IdempotencyKeyParameter);
+const moderationDates = studioV1
+  .identity(operator)
+  .tags(StudioTag.MODERATION)
+  .headers(SurfaceParameter, TraceparentParameter)
+  .errors({ 403: ForbiddenResponse, 404: NotFoundResponse });
+const date = moderationDates.resource('dates', { id: DateIdParameter });
 const ModerationItemIdParameter: PathParameter<'itemId', z.ZodString> = {
   name: 'itemId',
   in: 'path',
@@ -92,9 +101,9 @@ export const getDateChatPane: Route<{
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -128,16 +137,15 @@ export const getDateChatPane: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = moderationReads.defineRoute({
+}> = date.path('panes').defineRoute({
   method: 'get',
-  path: '/dates/{dateId}/panes/chat',
+  path: '/chat',
   operationId: 'getDateChatPane',
   summary: "A date's chat pane — the moderator's pane.",
   description:
     '**This is the pane that justified the whole mechanism**: *"a moderator must be able to load\nthe `chat` pane without loading the whole record, otherwise ticketing travels for nothing"*.\nThe argument was quoted in the contract and undone by its own implementation.\n\nOpen to `artist`, `production` and `moderation`.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [DatePane.CHAT],
-  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'Chat regime, measured rate, queue waiting.',
@@ -199,11 +207,12 @@ export const setDateChatPolicy: Route<{
   path: '/dates/{dateId}/chat-policy';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -225,44 +234,37 @@ export const setDateChatPolicy: Route<{
       >
     >;
     409: typeof ConflictResponse;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
-}> = moderationWrites.defineRoute({
-  method: 'put',
-  path: '/dates/{dateId}/chat-policy',
+}> = date.single('chat-policy').replace({
   operationId: 'setDateChatPolicy',
+  item: ChatPolicySchema,
   summary: "Sets the date's chat regime.",
   description:
     '**`chat` applies its own lock.** Once publication is committed, a live chat can still be\n**closed**; it can no longer be **opened wider**. `chat` knows this because it consumed the\nevent, not because it asked `catalog`.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [DatePane.CHAT],
-  parameters: [DateIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
-          mode: vocabularyIn(CHAT_MODES)
-            .meta({
-              'x-arthome-vocabulary-source': 'CHAT_MODES',
-            })
-            .optional(),
-          filterSeverity: vocabularyIn(FILTER_SEVERITIES)
-            .meta({
-              'x-arthome-vocabulary-source': 'FILTER_SEVERITIES',
-            })
-            .optional(),
-          slowModeSec: z.int().min(0).max(300).optional(),
-          holdersOnly: z.boolean().optional(),
-          retroactiveFilter: z.boolean().optional(),
-        }),
-        example: {
-          expectedVersion: 4,
-          mode: ChatMode.EMOJI,
-          slowModeSec: 10,
-        },
-      },
-    },
+  body: z.object({
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+    mode: vocabularyIn(CHAT_MODES)
+      .meta({
+        'x-arthome-vocabulary-source': 'CHAT_MODES',
+      })
+      .optional(),
+    filterSeverity: vocabularyIn(FILTER_SEVERITIES)
+      .meta({
+        'x-arthome-vocabulary-source': 'FILTER_SEVERITIES',
+      })
+      .optional(),
+    slowModeSec: z.int().min(0).max(300).optional(),
+    holdersOnly: z.boolean().optional(),
+    retroactiveFilter: z.boolean().optional(),
+  }),
+  example: {
+    expectedVersion: 4,
+    mode: ChatMode.EMOJI,
+    slowModeSec: 10,
   },
   responses: {
     200: {
@@ -1086,11 +1088,16 @@ export const listStudioChatMessages: Route<{
     typeof DateIdParameter,
     typeof CursorParameter,
     typeof LimitParameter,
-    QueryParameter<'sinceSeq', z.ZodNumber>,
+    {
+      readonly name: 'sinceSeq';
+      readonly in: 'query';
+      readonly description: 'Resume by sequence number after a channel break.';
+      readonly schema: z.ZodNumber;
+    },
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -1120,11 +1127,13 @@ export const listStudioChatMessages: Route<{
     >;
     403: typeof ForbiddenResponse;
     410: typeof GoneResponse;
+    404: typeof ConflictResponse;
   };
-}> = moderationReads.defineRoute({
+}> = date.path('chat').defineRoute({
   method: 'get',
-  path: '/dates/{dateId}/chat/messages',
+  path: '/messages',
   operationId: 'listStudioChatMessages',
+  paging: cursor({ maxLimit: 50 }),
   summary:
     'The live chat as the studio sees it — **by cursor**, the second exception to page + total.',
   description:
@@ -1132,7 +1141,6 @@ export const listStudioChatMessages: Route<{
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [DatePane.CHAT],
   parameters: [
-    DateIdParameter,
     CursorParameter,
     LimitParameter,
     {

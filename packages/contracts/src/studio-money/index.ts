@@ -31,6 +31,7 @@ import {
   vocabularyOutLocal,
 } from '@arthome/core/schema';
 
+import { restricted } from '../http/index.js';
 import { ActorSchema } from '../studio-access/index.js';
 
 const LOCAL_REASON =
@@ -584,9 +585,9 @@ export const DateSalesPaneSchema: z.ZodObject<
     replayUnitPrice: MoneyOut.meta(INCLUSIVE).optional(),
     complimentaries: z.array(ComplimentarySchema).optional(),
     technicalProvision: TechnicalProvisionSchema,
-    grossRevenue: MoneyOut.meta(INCLUSIVE)
-      .optional()
-      .describe('**Absent** when the role lacks `canRevenue`.'),
+    grossRevenue: restricted(MoneyOut.meta(INCLUSIVE), 'canRevenue').describe(
+      '**Absent** when the role lacks `canRevenue`.',
+    ),
     version: int().optional(),
   })
   .describe(

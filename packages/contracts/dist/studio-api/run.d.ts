@@ -1,10 +1,11 @@
 import { z } from 'zod';
 import { INCIDENT_CAUSES, INCIDENT_KINDS, RunState } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
-import { ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter, UnauthorizedResponse } from './components.js';
+import { ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter, UnauthorizedResponse, operator } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
+import type { JsonRequestBody, JsonResponse, PathParameter, Route, IdentifiedAccess, ExpectedVersionQuery } from '../http/index.js';
 import { HealthSampleSchema, HealthSeriesSchema, RunConsoleSchema, StreamKeyRevealSchema, StudioIncidentSchema } from '../studio-stage/index.js';
+declare const ChapterIdParameter: PathParameter<'chapterId', z.ZodString>;
 declare const SET_RUN_STATE_STATE: readonly [
     typeof RunState.IDLE,
     typeof RunState.REHEARSAL,
@@ -18,9 +19,9 @@ export declare const getDateTechPane: Route<{
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodObject<{
@@ -53,9 +54,9 @@ export declare const getRunConsole: Route<{
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             data: typeof RunConsoleSchema;
@@ -72,9 +73,10 @@ export declare const runTechnicalCheck: Route<{
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodObject<{
@@ -86,6 +88,7 @@ export declare const runTechnicalCheck: Route<{
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
         409: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const setRunState: Route<{
@@ -96,9 +99,10 @@ export declare const setRunState: Route<{
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         state: VocabularyIn<typeof SET_RUN_STATE_STATE>;
         expectedVersion: z.ZodInt;
@@ -108,6 +112,8 @@ export declare const setRunState: Route<{
             data: typeof RunConsoleSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const setQualityProfile: Route<{
@@ -118,9 +124,10 @@ export declare const setQualityProfile: Route<{
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         expectedVersion: z.ZodInt;
         renditions: z.ZodArray<z.ZodObject<{
@@ -133,6 +140,8 @@ export declare const setQualityProfile: Route<{
             data: typeof RunConsoleSchema;
         }, z.core.$loose>>>;
         409: typeof ConflictResponse;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const getHealthSeries: Route<{
@@ -141,11 +150,17 @@ export declare const getHealthSeries: Route<{
     path: '/dates/{dateId}/run/health-samples';
     parameters: readonly [
         typeof DateIdParameter,
-        QueryParameter<'windowSec', z.ZodDefault<z.ZodInt>>,
+        {
+            readonly name: 'windowSec';
+            readonly in: 'query';
+            readonly required: false;
+            readonly description: 'The window, in seconds, ending now. The server **caps** it and serves back the window it\napplied (`HealthSeries.windowSec`), rather than refusing: an operator asking for too much\nwants a curve, not an error.\n';
+            readonly schema: z.ZodDefault<z.ZodInt>;
+        },
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             data: typeof HealthSeriesSchema;
@@ -161,9 +176,10 @@ export declare const submitHealthSample: Route<{
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         measuredAt: z.ZodString;
         latencyMs: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
@@ -177,6 +193,7 @@ export declare const submitHealthSample: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         404: typeof NotFoundResponse;
+        403: typeof ConflictResponse;
     };
 }>;
 export declare const postChapter: Route<{
@@ -187,9 +204,10 @@ export declare const postChapter: Route<{
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         chapterId: z.ZodString;
         vocabId: z.ZodString;
@@ -204,6 +222,7 @@ export declare const postChapter: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         404: typeof NotFoundResponse;
+        403: typeof ConflictResponse;
     };
 }>;
 export declare const removeChapter: Route<{
@@ -212,12 +231,14 @@ export declare const removeChapter: Route<{
     path: '/dates/{dateId}/run/chapters/{chapterId}';
     parameters: readonly [
         typeof DateIdParameter,
-        PathParameter<'chapterId', z.ZodString>,
+        typeof ChapterIdParameter,
         typeof IdempotencyKeyParameter,
+        ExpectedVersionQuery,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodOptional<z.ZodObject<{
@@ -225,6 +246,7 @@ export declare const removeChapter: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         404: typeof NotFoundResponse;
+        403: typeof ConflictResponse;
     };
 }>;
 export declare const raiseIncident: Route<{
@@ -235,9 +257,10 @@ export declare const raiseIncident: Route<{
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         incidentId: z.ZodString;
         kind: VocabularyIn<typeof INCIDENT_KINDS>;
@@ -253,6 +276,7 @@ export declare const raiseIncident: Route<{
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
         409: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const resolveIncident: Route<{
@@ -306,9 +330,10 @@ export declare const revealStreamKey: Route<{
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         reauthToken: z.ZodString;
     }, z.core.$strip>>;
@@ -318,6 +343,7 @@ export declare const revealStreamKey: Route<{
         }, z.core.$loose>>>;
         401: typeof UnauthorizedResponse;
         403: typeof ForbiddenResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const rotateStreamKey: Route<{
@@ -328,9 +354,10 @@ export declare const rotateStreamKey: Route<{
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         reauthToken: z.ZodString;
         confirmDuringRun: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
@@ -340,6 +367,8 @@ export declare const rotateStreamKey: Route<{
             data: typeof StreamKeyRevealSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const getChannelStreamSettings: Route<{

@@ -2,9 +2,10 @@ import { z } from 'zod';
 import { DATE_OUTCOMES, PUBLICATION_PROMISES, PublicationState, REPLAY_POLICIES } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut, VocabularyOutNullable } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
-import { ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter } from './components.js';
+import type { IdempotencyKeyParameter, IfRightsVersionParameter } from './components.js';
+import { ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, NotFoundResponse, SurfaceParameter, TraceparentParameter, operator } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, Route } from '../http/index.js';
+import type { JsonRequestBody, JsonResponse, Route, IdentifiedAccess, ExpectedVersionQuery } from '../http/index.js';
 import { DateSheetSchema, PublicationSchema } from '../studio-stage/index.js';
 import { StudioLocalizedTextSchema } from '../text/index.js';
 declare const MOVE_DATE_PUBLICATION_STATE_TO: readonly [
@@ -20,11 +21,12 @@ export declare const createDateDraft: Route<{
     path: '/channels/{channelId}/dates';
     parameters: readonly [
         typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         dateId: z.ZodString;
         showId: z.ZodString;
@@ -39,6 +41,7 @@ export declare const createDateDraft: Route<{
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
         409: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const getDateSheet: Route<{
@@ -48,9 +51,9 @@ export declare const getDateSheet: Route<{
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             data: typeof DateSheetSchema;
@@ -66,9 +69,9 @@ export declare const getDatePublicPane: Route<{
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodObject<{
@@ -98,9 +101,9 @@ export declare const getDateReplayPane: Route<{
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodObject<{
@@ -126,11 +129,12 @@ export declare const moveDatePublicationState: Route<{
     path: '/dates/{dateId}/publication/transitions';
     parameters: readonly [
         typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         to: VocabularyIn<typeof MOVE_DATE_PUBLICATION_STATE_TO>;
         expectedVersion: z.ZodInt;
@@ -142,6 +146,7 @@ export declare const moveDatePublicationState: Route<{
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const setDateReplayPolicy: Route<{
@@ -150,11 +155,12 @@ export declare const setDateReplayPolicy: Route<{
     path: '/dates/{dateId}/replay-policy';
     parameters: readonly [
         typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         policy: VocabularyIn<typeof REPLAY_POLICIES>;
         windowHours: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
@@ -165,6 +171,8 @@ export declare const setDateReplayPolicy: Route<{
             data: typeof PublicationSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const deleteDate: Route<{
@@ -173,11 +181,13 @@ export declare const deleteDate: Route<{
     path: '/dates/{dateId}';
     parameters: readonly [
         typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
+        ExpectedVersionQuery,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodOptional<z.ZodObject<{
@@ -186,6 +196,7 @@ export declare const deleteDate: Route<{
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
         404: typeof NotFoundResponse;
+        403: typeof ConflictResponse;
     };
 }>;
 export declare const duplicateDate: Route<{
@@ -194,11 +205,12 @@ export declare const duplicateDate: Route<{
     path: '/dates/{dateId}/duplicate';
     parameters: readonly [
         typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         newDateId: z.ZodString;
         startsAt: z.ZodString;
@@ -209,6 +221,8 @@ export declare const duplicateDate: Route<{
             data: typeof DateSheetSchema;
         }, z.core.$loose>>>;
         409: typeof ConflictResponse;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const decideDateOutcome: Route<{
@@ -217,11 +231,12 @@ export declare const decideDateOutcome: Route<{
     path: '/dates/{dateId}/outcome';
     parameters: readonly [
         typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         outcome: VocabularyIn<typeof DATE_OUTCOMES>;
         message: z.ZodObject<{
@@ -242,6 +257,7 @@ export declare const decideDateOutcome: Route<{
         }, z.core.$loose>>>;
         403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
         409: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export {};

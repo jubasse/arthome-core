@@ -45,10 +45,17 @@ import {
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
+  operator,
   studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, QueryParameter, Route } from '../http/index.js';
+import type {
+  JsonRequestBody,
+  JsonResponse,
+  QueryParameter,
+  Route,
+  IdentifiedAccess,
+} from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import { JournalEntrySchema } from '../studio-desk/index.js';
 import { MerchItemAdminSchema, UploadTicketSchema } from '../studio-stage/index.js';
@@ -58,6 +65,12 @@ const channelRoutes = studioV1
   .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 const channelReads = channelRoutes.errors({ 403: ForbiddenResponse });
 const channelWrites = channelRoutes.headers(IdempotencyKeyParameter);
+const channelDates = studioV1
+  .identity(operator)
+  .tags(StudioTag.CHANNEL)
+  .headers(SurfaceParameter, TraceparentParameter)
+  .errors({ 403: ForbiddenResponse, 404: NotFoundResponse });
+const date = channelDates.resource('dates', { id: DateIdParameter });
 
 const LIST_CHANNEL_REPLAYS_STATE = ['online', 'expired', 'archived'] as const;
 const GET_CHANNEL_SETTINGS_SOURCE = [
@@ -1063,11 +1076,12 @@ export const pinMerchDuringLive: Route<{
   path: '/dates/{dateId}/merch-pin';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<{ itemId: z.ZodOptional<z.ZodNullable<z.ZodString>> }, z.core.$strip>
   >;
@@ -1089,33 +1103,24 @@ export const pinMerchDuringLive: Route<{
       >
     >;
     404: typeof NotFoundResponse;
+    403: typeof BadRequestResponse;
   };
-}> = channelWrites.defineRoute({
-  method: 'put',
-  path: '/dates/{dateId}/merch-pin',
+}> = date.single('merch-pin').upsert({
   operationId: 'pinMerchDuringLive',
   summary: 'Pins an item during the live show.',
   description: '**A put**: pinning the same item twice does not pin it twice.',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [DateIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          itemId: uuidOut()
-            .nullable()
-            .meta({
-              description: '`null` removes the pin.',
-            })
-            .optional(),
-        }),
-        example: {
-          itemId: '019928a0-7d31-7a10-b8c4-2f9e11a4d001',
-        },
-      },
-    },
+  body: z.object({
+    itemId: uuidOut()
+      .nullable()
+      .meta({
+        description: '`null` removes the pin.',
+      })
+      .optional(),
+  }),
+  example: {
+    itemId: '019928a0-7d31-7a10-b8c4-2f9e11a4d001',
   },
   responses: {
     200: {
@@ -1152,11 +1157,12 @@ export const reopenReplayWindow: Route<{
   path: '/dates/{dateId}/replay-window';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<z.ZodObject<{ additionalHours: z.ZodInt }, z.core.$strip>>;
   responses: {
     200: JsonResponse<
@@ -1176,29 +1182,21 @@ export const reopenReplayWindow: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+    403: typeof BadRequestResponse;
+    404: typeof BadRequestResponse;
   };
-}> = channelWrites.defineRoute({
-  method: 'post',
-  path: '/dates/{dateId}/replay-window',
+}> = date.action('replay-window', {
   operationId: 'reopenReplayWindow',
   summary: 'Reopens the replay window.',
   description:
     'Possible **only** if the policy was not `none`: the promise made before the purchase does not\nreopen. The new expiry is **derived** from the end of the live show and the served window,\nnever set by hand — otherwise the replay policy would end up encoded in a storage lifecycle,\nout of reach of the tests.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [DateIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          additionalHours: z.int().min(1).max(720),
-        }),
-        example: {
-          additionalHours: 48,
-        },
-      },
-    },
+  body: z.object({
+    additionalHours: z.int().min(1).max(720),
+  }),
+  example: {
+    additionalHours: 48,
   },
   responses: {
     200: {

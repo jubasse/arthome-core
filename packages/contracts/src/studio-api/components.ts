@@ -575,7 +575,9 @@ export const OperatorPrincipalSchema: z.ZodObject<
 export const operator: Identity<
   'operator',
   typeof OperatorPrincipalSchema,
-  typeof ApiErrorCode.RIGHTS_VERSION_STALE
+  typeof ApiErrorCode.RIGHTS_VERSION_STALE,
+  readonly [],
+  readonly [typeof IfRightsVersionParameter]
 > = identity('operator', {
   schemes: {
     read: [{ sessionCookie: [] }, { bearerToken: [] }],

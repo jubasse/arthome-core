@@ -95,6 +95,16 @@
       "file": "packages/contracts/src/http/policy.ts",
       "value": "public",
       "reason": "The Cache-Control directive `public` (may a shared cache keep this answer), not a date pane. The two share the spelling without being the same vocabulary: importing DATE_PANES here would say a cache is shared with the public pane."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/moderation.ts",
+      "value": "chat",
+      "reason": "A path segment, /dates/{dateId}/chat/messages. It shares its spelling with a date pane without being that vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/crew.ts",
+      "value": "crew",
+      "reason": "A path segment, POST /dates/{dateId}/crew. It shares its spelling with a date pane without being that vocabulary."
     }
   ]
 }

@@ -39,16 +39,19 @@ import {
   TraceparentParameter,
   UnauthorizedResponse,
   storefrontV1,
+  viewer,
 } from './components.js';
 import { ArtistSummarySchema, DateCardSchema, SavedSearchSchema } from '../catalog/index.js';
 import { NotificationEntrySchema, NotificationPreferencesSchema } from '../engagement/index.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
+import { Freshness, accepted, cache, cursor } from '../http/index.js';
 import type {
   JsonRequestBody,
   JsonResponse,
   PathParameter,
   QueryParameter,
   Route,
+  IdentifiedAccess,
 } from '../http/index.js';
 import {
   AccountScreenSchema,
@@ -77,7 +80,64 @@ const SavedSearchIdParameter: PathParameter<'savedSearchId', z.ZodString> = {
   required: true,
   schema: uuidIn(),
 };
-const savedSearches = accountRoutes.resource('me/saved-searches', { id: SavedSearchIdParameter });
+const me = storefrontV1
+  .identity(viewer)
+  .tags(StorefrontTag.ACCOUNT)
+  .headers(SurfaceParameter, TraceparentParameter)
+  .path('me');
+const PasskeyIdParameter: PathParameter<'passkeyId', z.ZodString> = {
+  name: 'passkeyId',
+  in: 'path',
+  required: true,
+  schema: z.string(),
+};
+const PaymentMethodIdParameter: PathParameter<'paymentMethodId', z.ZodString> = {
+  name: 'paymentMethodId',
+  in: 'path',
+  required: true,
+  schema: z.string(),
+};
+const DeviceIdParameter: PathParameter<'deviceId', z.ZodString> = {
+  name: 'deviceId',
+  in: 'path',
+  required: true,
+  schema: uuidIn(),
+};
+const DeviceSessionIdParameter: PathParameter<'sessionId', z.ZodString> = {
+  name: 'sessionId',
+  in: 'path',
+  required: true,
+  schema: uuidIn(),
+};
+const ExportIdParameter: PathParameter<'exportId', z.ZodString> = {
+  name: 'exportId',
+  in: 'path',
+  required: true,
+  schema: uuidIn(),
+};
+const passkeys = me.resource('passkeys', { id: PasskeyIdParameter, owner: 'caller' });
+const paymentMethods = me.resource('payment-methods', {
+  id: PaymentMethodIdParameter,
+  owner: 'caller',
+});
+const watchlist = me.resource('watchlist', { id: DateIdParameter, owner: 'caller' });
+const follows = me.resource('follows', { id: ArtistIdParameter, owner: 'caller' });
+const reminders = me.resource('reminders', { id: DateIdParameter, owner: 'caller' });
+const savedSearches = me.resource('saved-searches', {
+  id: SavedSearchIdParameter,
+  owner: 'caller',
+});
+const devices = me.resource('devices', { id: DeviceIdParameter, owner: 'caller' });
+const deviceSessions = me.resource('device-sessions', {
+  id: DeviceSessionIdParameter,
+  owner: 'caller',
+});
+const exportRequests = me.resource('exports', { id: ExportIdParameter, owner: 'caller' });
+const deletion = me.single('deletion', { owner: 'caller' });
+const preferences = me.single('preferences', { owner: 'caller' });
+const notificationPreferences = me.single('notification-preferences', { owner: 'caller' });
+const profile = me.single('profile');
+const consents = me.single('consents', { owner: 'caller' });
 
 const START_SOCIAL_SIGN_IN_PROVIDER = ['google', 'facebook'] as const;
 const LIST_MY_TICKETS_WINDOW = ['upcoming', 'past'] as const;
@@ -1424,9 +1484,10 @@ export const addPasskey: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<{ label: z.ZodOptional<z.ZodString> }, z.core.$strip>,
-    false
+    true
   >;
   responses: {
     201: JsonResponse<
@@ -1451,38 +1512,20 @@ export const addPasskey: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'post',
-  path: '/me/passkeys',
+}> = passkeys.create({
   operationId: 'addPasskey',
   summary: 'Enrols a passkey.',
   description:
     'Returns the enrolment options produced by the server; the surface passes them to the browser\nor platform API, then returns the attestation to `PUT`. **The secret never leaves the\nhardware.**\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter],
-  requestBody: {
-    required: false,
-    content: {
-      'application/json': {
-        schema: z.object({
-          label: z.string().max(80).optional(),
-        }),
-        example: {
-          label: 'MacBook de Marie',
-        },
-      },
-    },
+  body: z.object({
+    label: z.string().max(80).optional(),
+  }),
+  example: {
+    label: 'MacBook de Marie',
   },
+  optionalBody: true,
   responses: {
     201: {
       description: 'Enrolment options, single-use.',
@@ -1533,6 +1576,7 @@ export const removePasskey: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -1550,33 +1594,13 @@ export const removePasskey: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'delete',
-  path: '/me/passkeys/{passkeyId}',
+}> = passkeys.delete({
   operationId: 'removePasskey',
   summary: 'Removes a passkey.',
   description:
     "**Refused if it is the account's last credential** (`LAST_CREDENTIAL`): an account with no way to sign in is a lost account.",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [
-    {
-      name: 'passkeyId',
-      in: 'path',
-      required: true,
-      schema: z.string(),
-    },
-    IdempotencyKeyParameter,
-  ],
   responses: {
     200: {
       description: 'Passkey removed.',
@@ -1615,6 +1639,7 @@ export const addPaymentMethod: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       { returnPath: z.ZodString; setAsDefault: z.ZodOptional<z.ZodDefault<z.ZodBoolean>> },
@@ -1644,9 +1669,7 @@ export const addPaymentMethod: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'post',
-  path: '/me/payment-methods',
+}> = paymentMethods.create({
   operationId: 'addPaymentMethod',
   summary: 'Registers a payment method from the web.',
   description:
@@ -1654,32 +1677,15 @@ export const addPaymentMethod: Route<{
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
   'x-arthome-invalidates': ['account:payment-methods'],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          returnPath: z.string().meta({
-            description: '**Relative** path inside the surface. An absolute address is refused.',
-          }),
-          setAsDefault: z.boolean().default(false).optional(),
-        }),
-        example: {
-          returnPath: '/compte/securite',
-          setAsDefault: true,
-        },
-      },
-    },
+  body: z.object({
+    returnPath: z.string().meta({
+      description: '**Relative** path inside the surface. An absolute address is refused.',
+    }),
+    setAsDefault: z.boolean().default(false).optional(),
+  }),
+  example: {
+    returnPath: '/compte/securite',
+    setAsDefault: true,
   },
   responses: {
     201: {
@@ -1731,6 +1737,7 @@ export const removePaymentMethod: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -1748,33 +1755,13 @@ export const removePaymentMethod: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'delete',
-  path: '/me/payment-methods/{paymentMethodId}',
+}> = paymentMethods.delete({
   operationId: 'removePaymentMethod',
   summary: 'Removes a payment method.',
   description:
     "**Refused if it is the last method of an active subscription** (`payment_method.in_use`):\nsilently removing a subscription's only card would produce a failed charge and a cancelled\nplan that nobody intended.\n",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [
-    {
-      name: 'paymentMethodId',
-      in: 'path',
-      required: true,
-      schema: z.string(),
-    },
-    IdempotencyKeyParameter,
-  ],
   responses: {
     200: {
       description: 'Method removed. Replayed on an already-removed method, it succeeds.',
@@ -1809,6 +1796,7 @@ export const getAccountScreen: Route<{
   version: 1;
   path: '/me/account';
   parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -1818,10 +1806,11 @@ export const getAccountScreen: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = accountRoutes.defineRoute({
+}> = me.defineRoute({
   method: 'get',
-  path: '/me/account',
+  path: '/account',
   operationId: 'getAccountScreen',
+  cache: cache(Freshness.FIVE_MINUTES),
   summary: "The aggregate of the account's eleven sections, in one call.",
   description:
     'The eleven sections share **one** account shape. They justify neither eleven calls nor eleven\nschemas: eight are projections of this one. Only saved searches, orders and notifications are\npaginated separately.\n',
@@ -1890,6 +1879,7 @@ export const listMyTickets: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -1906,10 +1896,12 @@ export const listMyTickets: Route<{
     401: typeof UnauthorizedResponse;
     410: typeof GoneResponse;
   };
-}> = accountRoutes.defineRoute({
+}> = me.defineRoute({
   method: 'get',
-  path: '/me/tickets',
+  path: '/tickets',
   operationId: 'listMyTickets',
+  cache: cache(Freshness.MINUTE),
+  paging: cursor({ maxLimit: 50 }),
   summary: 'My seats, upcoming or past, already ordered by the server.',
   description:
     'The order is **server-side**: a date carrying an outcome rises to the top, because it calls\nfor action. No surface reorders.\n',
@@ -1971,6 +1963,7 @@ export const listMyReplays: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -1983,10 +1976,12 @@ export const listMyReplays: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = accountRoutes.defineRoute({
+}> = me.defineRoute({
   method: 'get',
-  path: '/me/replays',
+  path: '/replays',
   operationId: 'listMyReplays',
+  cache: cache(Freshness.MINUTE),
+  paging: cursor({ maxLimit: 50 }),
   summary: 'My replays, the ones expiring first.',
   description:
     'Each entry carries `replay.expiresAt` as an **instant**; the surface derives "expires in 41 h" against `servedAt`, with no call.',
@@ -2032,6 +2027,7 @@ export const listWatchlist: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -2044,9 +2040,7 @@ export const listWatchlist: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'get',
-  path: '/me/watchlist',
+}> = watchlist.findAll({
   operationId: 'listWatchlist',
   summary: 'Ma liste.',
   description:
@@ -2054,7 +2048,6 @@ export const listWatchlist: Route<{
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY, Service.CATALOG],
   'x-arthome-freshness': 60,
-  parameters: [CursorParameter, LimitParameter],
   responses: {
     200: {
       description: 'Page of dates set aside.',
@@ -2091,6 +2084,7 @@ export const addToWatchlist: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -2101,9 +2095,7 @@ export const addToWatchlist: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'put',
-  path: '/me/watchlist/{dateId}',
+}> = watchlist.upsert({
   operationId: 'addToWatchlist',
   summary: 'Sets a date aside.',
   description:
@@ -2111,16 +2103,6 @@ export const addToWatchlist: Route<{
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
   'x-arthome-invalidates': ['home:rails'],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [DateIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'The updated card.',
@@ -2162,6 +2144,7 @@ export const removeFromWatchlist: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -2172,25 +2155,13 @@ export const removeFromWatchlist: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'delete',
-  path: '/me/watchlist/{dateId}',
+}> = watchlist.delete({
   operationId: 'removeFromWatchlist',
   summary: 'Removes a date from my list.',
   description:
     'Replayed on an already-removed entry, it **succeeds** — an idempotent deletion must not fail.',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [DateIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'The updated card.',
@@ -2234,6 +2205,7 @@ export const listFollowedArtists: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -2250,9 +2222,7 @@ export const listFollowedArtists: Route<{
     401: typeof UnauthorizedResponse;
     410: typeof GoneResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'get',
-  path: '/me/follows',
+}> = follows.findAll({
   operationId: 'listFollowedArtists',
   summary: 'Followed artists — the "Following" page, which had no entry point.',
   description:
@@ -2261,8 +2231,6 @@ export const listFollowedArtists: Route<{
   'x-arthome-upstream': [Service.IDENTITY, Service.CATALOG, Service.NOTIFICATIONS],
   'x-arthome-freshness': 60,
   parameters: [
-    CursorParameter,
-    LimitParameter,
     {
       name: 'sort',
       in: 'query',
@@ -2332,6 +2300,7 @@ export const followArtist: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<{ alertEnabled: z.ZodOptional<z.ZodDefault<z.ZodBoolean>> }, z.core.$strip>,
     false
@@ -2346,9 +2315,7 @@ export const followArtist: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'put',
-  path: '/me/follows/{artistId}',
+}> = follows.upsert({
   operationId: 'followArtist',
   summary: 'Follows an artist.',
   description:
@@ -2356,29 +2323,13 @@ export const followArtist: Route<{
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY, Service.NOTIFICATIONS],
   'x-arthome-invalidates': ['home:rails'],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [ArtistIdParameter, IdempotencyKeyParameter],
-  requestBody: {
-    required: false,
-    content: {
-      'application/json': {
-        schema: z.object({
-          alertEnabled: z.boolean().default(false).optional(),
-        }),
-        example: {
-          alertEnabled: true,
-        },
-      },
-    },
+  body: z.object({
+    alertEnabled: z.boolean().default(false).optional(),
+  }),
+  example: {
+    alertEnabled: true,
   },
+  optionalBody: true,
   responses: {
     200: {
       description: 'The updated artist.',
@@ -2418,6 +2369,7 @@ export const unfollowArtist: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -2428,25 +2380,13 @@ export const unfollowArtist: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'delete',
-  path: '/me/follows/{artistId}',
+}> = follows.delete({
   operationId: 'unfollowArtist',
   summary: 'Unfollows an artist.',
   description:
     '**A state assignment, not a toggle.** Returns the updated artist, so the surface repaints\nwithout a second round trip. It does not touch the alert flag, which is a distinct setting\ncarried by `notifications`.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [ArtistIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'The updated artist.',
@@ -2486,6 +2426,7 @@ export const setReminder: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -2506,25 +2447,13 @@ export const setReminder: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'put',
-  path: '/me/reminders/{dateId}',
+}> = reminders.upsert({
   operationId: 'setReminder',
   summary: 'Sets a dated reminder on a date.',
   description:
     '**A reminder is a dated promise.** If the date is postponed, the reminder **follows** the\npostponement; if it is cancelled, the reminder is **cancelled** and not sent into the void.\nThe lead time (30 min) is a **served** domain constant, not a surface choice.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.NOTIFICATIONS],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [DateIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'Reminder set.',
@@ -2566,6 +2495,7 @@ export const clearReminder: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -2583,25 +2513,13 @@ export const clearReminder: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'delete',
-  path: '/me/reminders/{dateId}',
+}> = reminders.delete({
   operationId: 'clearReminder',
   summary: 'Clears the reminder.',
   description:
     'Clears the reminder. Replayed on an already-cleared reminder, it succeeds — it is queued\noffline, so it must be safe on replay.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.NOTIFICATIONS],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [DateIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: 'Reminder cleared.',
@@ -2636,6 +2554,7 @@ export const listSavedSearches: Route<{
   version: 1;
   path: '/me/saved-searches';
   parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -2645,9 +2564,9 @@ export const listSavedSearches: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = accountRoutes.defineRoute({
+}> = me.defineRoute({
   method: 'get',
-  path: '/me/saved-searches',
+  path: '/saved-searches',
   operationId: 'listSavedSearches',
   summary: 'My saved searches, with their new-match counter.',
   description:
@@ -2702,6 +2621,7 @@ export const createSavedSearch: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -2732,15 +2652,6 @@ export const createSavedSearch: Route<{
     'The **signature** is produced by `normalizeSearchCriteria()` in `@arthome/core`,\nserver-side, once. It is what deduplicates: a replay **never** creates two identical\nalerts.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
   item: SavedSearchSchema,
   body: z.object({
     scope: vocabularyIn(CREATE_SAVED_SEARCH_SCOPE).meta({
@@ -2812,15 +2723,19 @@ export const updateSavedSearch: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
-        name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-        active: z.ZodOptional<z.ZodBoolean>;
-        channels: z.ZodOptional<z.ZodArray<VocabularyIn<typeof NOTIFICATION_CHANNELS>>>;
-      },
+        readonly name: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+        readonly active: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+        readonly channels: z.ZodOptional<
+          z.ZodOptional<z.ZodArray<VocabularyIn<typeof NOTIFICATION_CHANNELS>>>
+        >;
+      } & Record<never, never>,
       z.core.$strip
-    >
+    >,
+    true
   >;
   responses: {
     200: JsonResponse<
@@ -2832,57 +2747,30 @@ export const updateSavedSearch: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'patch',
-  path: '/me/saved-searches/{savedSearchId}',
+}> = savedSearches.update({
   operationId: 'updateSavedSearch',
   summary: 'Renames, activates, or changes the channels of a saved search.',
   description:
     '**Field-by-field** write, never a whole document. A saved search is queued offline: a replay\nmust converge to the same state, not invert it.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [
-    {
-      name: 'savedSearchId',
-      in: 'path',
-      required: true,
-      schema: uuidIn(),
-    },
-    IdempotencyKeyParameter,
-  ],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z
-          .object({
-            name: z.string().nullable().optional(),
-            active: z.boolean().optional(),
-            channels: z
-              .array(
-                vocabularyIn(NOTIFICATION_CHANNELS).meta({
-                  'x-arthome-vocabulary-source': 'NOTIFICATION_CHANNELS',
-                }),
-              )
-              .optional(),
-          })
-          .meta({
-            description: '**Field-by-field** write, never a whole document.',
+  body: z
+    .object({
+      name: z.string().nullable().optional(),
+      active: z.boolean().optional(),
+      channels: z
+        .array(
+          vocabularyIn(NOTIFICATION_CHANNELS).meta({
+            'x-arthome-vocabulary-source': 'NOTIFICATION_CHANNELS',
           }),
-        example: {
-          active: false,
-        },
-      },
-    },
+        )
+        .optional(),
+    })
+    .meta({
+      description: '**Field-by-field** write, never a whole document.',
+    }),
+  example: {
+    active: false,
   },
   responses: {
     200: {
@@ -2926,6 +2814,7 @@ export const deleteSavedSearch: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -2943,33 +2832,13 @@ export const deleteSavedSearch: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'delete',
-  path: '/me/saved-searches/{savedSearchId}',
+}> = savedSearches.delete({
   operationId: 'deleteSavedSearch',
   summary: 'Deletes a saved search.',
   description:
     '**Replayed on an already-deleted entry, it succeeds** — that is what an offline queue requires.',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [
-    {
-      name: 'savedSearchId',
-      in: 'path',
-      required: true,
-      schema: uuidIn(),
-    },
-    IdempotencyKeyParameter,
-  ],
   responses: {
     200: {
       description: 'Deleted.',
@@ -3009,6 +2878,7 @@ export const listMyOrders: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -3032,10 +2902,11 @@ export const listMyOrders: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = accountRoutes.defineRoute({
+}> = me.defineRoute({
   method: 'get',
-  path: '/me/orders',
+  path: '/orders',
   operationId: 'listMyOrders',
+  paging: cursor({ maxLimit: 50 }),
   summary: 'My orders, including the reflection of orders placed with a third party.',
   description:
     'An order may **not be ours**. `externalRef` is served **with its age**: what we guarantee is\nfreshness as of `syncedAt`, nothing more. When the external host does not answer, the age\ngrows — **nothing fails**.\n',
@@ -3096,6 +2967,7 @@ export const listNotifications: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -3112,10 +2984,11 @@ export const listNotifications: Route<{
     >;
     401: typeof UnauthorizedResponse;
   };
-}> = accountRoutes.defineRoute({
+}> = me.defineRoute({
   method: 'get',
-  path: '/me/notifications',
+  path: '/notifications',
   operationId: 'listNotifications',
+  paging: cursor({ maxLimit: 50 }),
   summary: 'The notification centre, and the global badge.',
   description:
     'The `unreadCount` badge is **global**, not the page\'s: otherwise the surface would display\n"3" having loaded only the last twenty.\n',
@@ -3170,6 +3043,7 @@ export const markNotificationsRead: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -3196,24 +3070,15 @@ export const markNotificationsRead: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
+}> = me.defineRoute({
   method: 'post',
-  path: '/me/notifications',
+  path: '/notifications',
   operationId: 'markNotificationsRead',
   summary: 'Marks notifications as read.',
   description:
     '**Monotonic: one does not un-read.** Replayed, it changes nothing — which is what makes it safe in an offline queue.',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.NOTIFICATIONS],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
   parameters: [IdempotencyKeyParameter],
   requestBody: {
     required: true,
@@ -3267,16 +3132,18 @@ export const updateProfile: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
-        expectedVersion: z.ZodInt;
-        displayName: z.ZodOptional<z.ZodString>;
-        publicHandle: z.ZodOptional<z.ZodString>;
-        city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-      },
+        readonly expectedVersion: z.ZodOptional<z.ZodInt>;
+        readonly displayName: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+        readonly publicHandle: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+        readonly city: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+      } & { readonly expectedVersion: z.ZodNumber },
       z.core.$strip
-    >
+    >,
+    true
   >;
   responses: {
     200: JsonResponse<
@@ -3294,9 +3161,7 @@ export const updateProfile: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'patch',
-  path: '/me/profile',
+}> = profile.update({
   operationId: 'updateProfile',
   summary: 'Changes the displayed identity.',
   description:
@@ -3304,32 +3169,15 @@ export const updateProfile: Route<{
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
   'x-arthome-invalidates': ['account:profile'],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
-          displayName: z.string().max(80).optional(),
-          publicHandle: z.string().regex(new RegExp('^@[a-z0-9._-]{3,30}$')).optional(),
-          city: z.string().nullable().optional(),
-        }),
-        example: {
-          expectedVersion: 7,
-          displayName: 'Marie J.',
-        },
-      },
-    },
+  body: z.object({
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+    displayName: z.string().max(80).optional(),
+    publicHandle: z.string().regex(new RegExp('^@[a-z0-9._-]{3,30}$')).optional(),
+    city: z.string().nullable().optional(),
+  }),
+  example: {
+    expectedVersion: 7,
+    displayName: 'Marie J.',
   },
   responses: {
     200: {
@@ -3368,15 +3216,21 @@ export const updatePreferences: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
-        account: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>;
-        device: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>;
-        deviceId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-      },
+        readonly account: z.ZodOptional<
+          z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>
+        >;
+        readonly device: z.ZodOptional<
+          z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>
+        >;
+        readonly deviceId: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+      } & Record<never, never>,
       z.core.$strip
-    >
+    >,
+    true
   >;
   responses: {
     200: JsonResponse<
@@ -3388,43 +3242,24 @@ export const updatePreferences: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'patch',
-  path: '/me/preferences',
+}> = preferences.update({
   operationId: 'updatePreferences',
   summary: 'Writes a preference, at its scope.',
   description:
     '**Two scopes, and the contract separates them field by field**: `account` follows the\nperson, `device` follows the device and the room. A single scope would be wrong half the\ntime.\n\n**Additive and tolerant**: a key unknown to one version of the application is neither\nrejected nor erased on the next write — otherwise the mobile version stuck in store review\nwould overwrite settings made from the web.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
+  body: z.object({
+    account: z.looseObject({}).optional(),
+    device: z.looseObject({}).optional(),
+    deviceId: uuidOut().nullable().optional(),
+  }),
+  example: {
+    device: {
+      subtitleSizeStep: 2,
+      reduceMotion: true,
     },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          account: z.looseObject({}).optional(),
-          device: z.looseObject({}).optional(),
-          deviceId: uuidOut().nullable().optional(),
-        }),
-        example: {
-          device: {
-            subtitleSizeStep: 2,
-            reduceMotion: true,
-          },
-          deviceId: '019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77',
-        },
-      },
-    },
+    deviceId: '019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77',
   },
   responses: {
     200: {
@@ -3467,29 +3302,35 @@ export const updateNotificationPreferences: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
-        triggers: z.ZodOptional<
-          z.ZodObject<
-            Record<never, never>,
-            z.core.$catchall<z.ZodArray<VocabularyIn<typeof NOTIFICATION_CHANNELS>>>
+        readonly triggers: z.ZodOptional<
+          z.ZodOptional<
+            z.ZodObject<
+              Record<never, never>,
+              z.core.$catchall<z.ZodArray<VocabularyIn<typeof NOTIFICATION_CHANNELS>>>
+            >
           >
         >;
-        quietHours: z.ZodOptional<
-          z.ZodObject<
-            {
-              enabled: z.ZodOptional<z.ZodBoolean>;
-              fromHour: z.ZodOptional<z.ZodInt>;
-              toHour: z.ZodOptional<z.ZodInt>;
-              bypassWhenTicketHeld: z.ZodOptional<z.ZodBoolean>;
-            },
-            z.core.$strip
+        readonly quietHours: z.ZodOptional<
+          z.ZodOptional<
+            z.ZodObject<
+              {
+                enabled: z.ZodOptional<z.ZodBoolean>;
+                fromHour: z.ZodOptional<z.ZodInt>;
+                toHour: z.ZodOptional<z.ZodInt>;
+                bypassWhenTicketHeld: z.ZodOptional<z.ZodBoolean>;
+              },
+              z.core.$strip
+            >
           >
         >;
-      },
+      } & Record<never, never>,
       z.core.$strip
-    >
+    >,
+    true
   >;
   responses: {
     200: JsonResponse<
@@ -3501,61 +3342,42 @@ export const updateNotificationPreferences: Route<{
     401: typeof UnauthorizedResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'patch',
-  path: '/me/notification-preferences',
+}> = notificationPreferences.update({
   operationId: 'updateNotificationPreferences',
   summary: 'Five triggers, three channels, and quiet hours.',
   description:
     '**The quiet-hours exception is conditioned on holding a seat**: that is a business rule, not\nan interface setting — one does not miss a show one paid for because it starts at 11:15 pm.\nThe **thresholds** that fire an alert live in `@arthome/core` and are served in\n`ViewerContext`; `notifications` reads them, it does not invent them.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.NOTIFICATIONS],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
+  body: z.object({
+    triggers: z
+      .object({})
+      .catchall(
+        z.array(
+          vocabularyIn(NOTIFICATION_CHANNELS).meta({
+            'x-arthome-vocabulary-source': 'NOTIFICATION_CHANNELS',
+          }),
+        ),
+      )
+      .optional(),
+    quietHours: z
+      .object({
+        enabled: z.boolean().optional(),
+        fromHour: z.int().min(0).max(23).optional(),
+        toHour: z.int().min(0).max(23).optional(),
+        bypassWhenTicketHeld: z.boolean().optional(),
+      })
+      .optional(),
+  }),
+  example: {
+    triggers: {
+      date_starts_soon: [NotificationChannel.PUSH],
     },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          triggers: z
-            .object({})
-            .catchall(
-              z.array(
-                vocabularyIn(NOTIFICATION_CHANNELS).meta({
-                  'x-arthome-vocabulary-source': 'NOTIFICATION_CHANNELS',
-                }),
-              ),
-            )
-            .optional(),
-          quietHours: z
-            .object({
-              enabled: z.boolean().optional(),
-              fromHour: z.int().min(0).max(23).optional(),
-              toHour: z.int().min(0).max(23).optional(),
-              bypassWhenTicketHeld: z.boolean().optional(),
-            })
-            .optional(),
-        }),
-        example: {
-          triggers: {
-            date_starts_soon: [NotificationChannel.PUSH],
-          },
-          quietHours: {
-            enabled: true,
-            fromHour: 23,
-            toHour: 9,
-            bypassWhenTicketHeld: true,
-          },
-        },
-      },
+    quietHours: {
+      enabled: true,
+      fromHour: 23,
+      toHour: 9,
+      bypassWhenTicketHeld: true,
     },
   },
   responses: {
@@ -3600,6 +3422,7 @@ export const updateConsents: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -3630,50 +3453,31 @@ export const updateConsents: Route<{
     400: typeof BadRequestResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'put',
-  path: '/me/consents',
+}> = consents.replace({
   operationId: 'updateConsents',
   summary: 'Records consents, timestamped and versioned by the server.',
   description:
     '**Never queued offline**: a consent has evidential value, it must be timestamped **by the\nserver** and carry the **version of the text accepted**. A consent without a version or a\ndate is worth nothing. `ads` defaults to `false`, and that default is **a contract\ndecision**, not a setting.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
+  body: z.object({
+    purposes: z.object({
+      audience: z.boolean(),
+      perso: z.boolean(),
+      partners: z.boolean(),
+      ads: z.boolean(),
+    }),
+    cookieCategories: z.object({}).catchall(z.boolean()).optional(),
+    textVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+  }),
+  example: {
+    purposes: {
+      audience: true,
+      perso: true,
+      partners: false,
+      ads: false,
     },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          purposes: z.object({
-            audience: z.boolean(),
-            perso: z.boolean(),
-            partners: z.boolean(),
-            ads: z.boolean(),
-          }),
-          cookieCategories: z.object({}).catchall(z.boolean()).optional(),
-          textVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
-        }),
-        example: {
-          purposes: {
-            audience: true,
-            perso: true,
-            partners: false,
-            ads: false,
-          },
-          textVersion: 3,
-        },
-      },
-    },
+    textVersion: 3,
   },
   responses: {
     200: {
@@ -3717,6 +3521,7 @@ export const revokeDevice: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -3740,9 +3545,7 @@ export const revokeDevice: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'delete',
-  path: '/me/devices/{deviceId}',
+}> = devices.delete({
   operationId: 'revokeDevice',
   summary: 'Revokes a device — and cuts its playback.',
   description:
@@ -3750,24 +3553,6 @@ export const revokeDevice: Route<{
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
   'x-arthome-invalidates': ['account:devices'],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [
-    {
-      name: 'deviceId',
-      in: 'path',
-      required: true,
-      schema: uuidIn(),
-    },
-    IdempotencyKeyParameter,
-  ],
   responses: {
     200: {
       description:
@@ -3818,6 +3603,7 @@ export const signOutProfile: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -3828,33 +3614,13 @@ export const signOutProfile: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'delete',
-  path: '/me/device-sessions/{sessionId}',
+}> = deviceSessions.delete({
   operationId: 'signOutProfile',
   summary: 'Signs one profile out of this device — the others stay signed in.',
   description:
     '**Two gestures, and they do not do the same thing.** This one closes a `DeviceSession`: the\nliving-room television keeps its four other profiles. `revokeDevice` removes the device and\neverything attached to it.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [
-    {
-      name: 'sessionId',
-      in: 'path',
-      required: true,
-      schema: uuidIn(),
-    },
-    IdempotencyKeyParameter,
-  ],
   responses: {
     200: {
       description: 'The updated context, with the remaining profiles.',
@@ -3911,6 +3677,7 @@ export const requestExport: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -3931,81 +3698,59 @@ export const requestExport: Route<{
     429: typeof TooManyRequestsResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'post',
-  path: '/me/exports',
+}> = exportRequests.create({
   operationId: 'requestExport',
   summary: 'Requests an export — personal data or invoices.',
   description:
     '**Asynchronous.** A tax ledger or a GDPR export is not an HTTP response: the command returns\nan acknowledgement and an identifier, the state is pollable, and the document arrives through\na short-lived signed address — **usable without a session cookie**, because an export\nprotected by a cookie is undownloadable from a native shell.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY, Service.TICKETING],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          kind: vocabularyIn(REQUEST_EXPORT_KIND).meta({
-            'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
-            'x-arthome-vocabulary-reason':
-              "A document or export format. It names an accounting tool or a file type, which is the outside world's vocabulary rather than ours.",
-          }),
-          fromDate: z
-            .string()
-            .nullable()
-            .meta({
-              format: 'date',
-            })
-            .optional(),
-          toDate: z
-            .string()
-            .nullable()
-            .meta({
-              format: 'date',
-            })
-            .optional(),
-        }),
-        example: {
-          kind: 'invoices',
-          fromDate: '2026-01-01',
-          toDate: '2026-09-21',
-        },
-      },
-    },
+  body: z.object({
+    kind: vocabularyIn(REQUEST_EXPORT_KIND).meta({
+      'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
+      'x-arthome-vocabulary-reason':
+        "A document or export format. It names an accounting tool or a file type, which is the outside world's vocabulary rather than ours.",
+    }),
+    fromDate: z
+      .string()
+      .nullable()
+      .meta({
+        format: 'date',
+      })
+      .optional(),
+    toDate: z
+      .string()
+      .nullable()
+      .meta({
+        format: 'date',
+      })
+      .optional(),
+  }),
+  example: {
+    kind: 'invoices',
+    fromDate: '2026-01-01',
+    toDate: '2026-09-21',
   },
   responses: {
-    202: {
+    202: accepted({
+      operation: 'getExport',
       description: 'Request accepted.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              data: ExportRequestSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T19:07:00.000Z',
-            data: {
-              exportId: '019928fc-0000-7000-8000-000000000001',
-              kind: 'invoices',
-              state: 'queued',
-              requestedAt: '2026-09-21T19:07:00Z',
-            },
-          },
+      body: z.intersection(
+        StorefrontEnvelopeMetaSchema,
+        z.looseObject({
+          data: ExportRequestSchema,
+        }),
+      ),
+      example: {
+        servedAt: '2026-09-21T19:07:00.000Z',
+        data: {
+          exportId: '019928fc-0000-7000-8000-000000000001',
+          kind: 'invoices',
+          state: 'queued',
+          requestedAt: '2026-09-21T19:07:00Z',
         },
       },
-    },
+    }),
     429: TooManyRequestsResponse,
     403: CsrfRefusedResponse,
   },
@@ -4020,6 +3765,7 @@ export const getExport: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -4029,23 +3775,13 @@ export const getExport: Route<{
     >;
     404: typeof NotFoundResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'get',
-  path: '/me/exports/{exportId}',
+}> = exportRequests.find({
   operationId: 'getExport',
   summary: 'The state of an export, and its signed address once ready.',
   description:
     'An export is an **asynchronous job**. Until it is `ready`, `downloadUrl` is null: the\ncontract never serves an address that would not answer. The address is valid for 60 minutes\nand works **without a session cookie**.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY, Service.TICKETING],
-  parameters: [
-    {
-      name: 'exportId',
-      in: 'path',
-      required: true,
-      schema: uuidIn(),
-    },
-  ],
   responses: {
     200: {
       description: 'The state, and the address once ready (valid 60 min).',
@@ -4084,6 +3820,7 @@ export const requestAccountDeletion: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<z.ZodObject<{ confirmHandle: z.ZodString }, z.core.$strip>>;
   responses: {
     202: JsonResponse<
@@ -4109,37 +3846,18 @@ export const requestAccountDeletion: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'post',
-  path: '/me/deletion',
+}> = deletion.create({
   operationId: 'requestAccountDeletion',
   summary: 'Requests deletion of the account.',
   description:
     '**A financial command as much as a personal one.** "Deletion cancels unused seats": it\ntherefore triggers refunds, touches payouts that may already be computed, and runs into the\nten-year accounting retention. It **can be neither synchronous nor total**.\n\nThe sequence is a **persistent saga**: the account moves to `deletion_requested`, sign-ins\nare blocked, `ticketing` cancels and refunds, `payouts` recomputes; a **30-day grace period**\nruns, during which the account is **reactivated by simply signing in** — which is what makes\nthe irreversible acceptable; at the end, `identity` **anonymises** instead of deleting.\nInvoices keep their frozen contents.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          confirmHandle: z.string(),
-        }),
-        example: {
-          confirmHandle: '@marie.j',
-        },
-      },
-    },
+  body: z.object({
+    confirmHandle: z.string(),
+  }),
+  example: {
+    confirmHandle: '@marie.j',
   },
   responses: {
     202: {
@@ -4186,6 +3904,7 @@ export const cancelAccountDeletion: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -4201,25 +3920,13 @@ export const cancelAccountDeletion: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'delete',
-  path: '/me/deletion',
+}> = deletion.delete({
   operationId: 'cancelAccountDeletion',
   summary: 'Cancels the deletion request during the grace period.',
   description:
     'The account is **reactivated by simply signing in** during the 30 days of grace, and that is\nexactly what makes the irreversible acceptable. What this command **does not undo**: seats\nalready cancelled and refunded. The contract says so rather than letting anyone assume\notherwise.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  security: [
-    {
-      sessionCookie: [],
-      csrfToken: [],
-    },
-    {
-      bearerToken: [],
-    },
-  ],
-  parameters: [IdempotencyKeyParameter],
   responses: {
     200: {
       description:

@@ -22,11 +22,25 @@ import {
   TraceparentParameter,
   UnavailableResponse,
   storefrontV1,
+  viewer,
 } from './components.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
+import type {
+  JsonRequestBody,
+  JsonResponse,
+  PathParameter,
+  Route,
+  IdentifiedAccess,
+} from '../http/index.js';
 import { PlaybackRenewalSchema, PlaybackTicketSchema } from '../streaming/index.js';
 
+const progress = storefrontV1
+  .identity(viewer)
+  .tags(StorefrontTag.PLAYBACK)
+  .headers(SurfaceParameter, TraceparentParameter)
+  .errors({ 404: NotFoundResponse })
+  .path('me')
+  .resource('progress', { id: DateIdParameter, owner: 'caller' });
 const playbackRoutes = storefrontV1
   .tags(StorefrontTag.PLAYBACK)
   .headers(SurfaceParameter, TraceparentParameter)
@@ -407,6 +421,7 @@ export const recordPlaybackPosition: Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof viewer, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -437,10 +452,9 @@ export const recordPlaybackPosition: Route<{
     404: typeof NotFoundResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = playbackRoutes.defineRoute({
-  method: 'put',
-  path: '/me/progress/{dateId}',
+}> = progress.upsert({
   operationId: 'recordPlaybackPosition',
+  idempotent: false,
   summary: 'Records the playback position.',
   description:
     '**The most frequent write in the system.** It carries **no** idempotency key: one key per\n30 s slice, per viewer and per live show would make the idempotency store the hottest table\nin `streaming`, to protect a write whose loss has no consequence.\n\nExpected cadence: **on pause, on exit, on end, and a 30-to-60 s heartbeat**, plus a **forced\nwrite when going to the background**.\n\n**A late write is accepted**: the last position must be taken even if it arrives **after** a\n`releasePlayback` — a television can be cut off at any moment.\n\n**Last writer wins, and the ordering comes from the server.**\n',
@@ -448,23 +462,15 @@ export const recordPlaybackPosition: Route<{
   'x-arthome-upstream': [Service.STREAMING],
   'x-arthome-idempotency-exemption':
     '**The most frequent write in the system.** One key per 30-second slice, per viewer and per\nlive show would make the idempotency store the hottest table in `streaming` — to protect a\nwrite whose loss has no consequence and whose rule is already "last writer wins, server\nordering". The cost would be per minute of playback and per viewer.\n',
-  parameters: [DateIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          positionSec: z.int().min(0).meta({ maximum: undefined }),
-          deviceId: uuidOut(),
-          completed: z.boolean().default(false).optional(),
-        }),
-        example: {
-          positionSec: 1840,
-          deviceId: '019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77',
-          completed: false,
-        },
-      },
-    },
+  body: z.object({
+    positionSec: z.int().min(0).meta({ maximum: undefined }),
+    deviceId: uuidOut(),
+    completed: z.boolean().default(false).optional(),
+  }),
+  example: {
+    positionSec: 1840,
+    deviceId: '019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77',
+    completed: false,
   },
   responses: {
     200: {

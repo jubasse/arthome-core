@@ -85,7 +85,7 @@ export declare const OperatorPrincipalSchema: z.ZodObject<{
     rights: z.ZodArray<z.ZodString>;
 }, z.core.$strip>;
 /** A signed-in channel member, by session cookie or bearer token; a write carries the rights version it holds. */
-export declare const operator: Identity<'operator', typeof OperatorPrincipalSchema, typeof ApiErrorCode.RIGHTS_VERSION_STALE>;
+export declare const operator: Identity<'operator', typeof OperatorPrincipalSchema, typeof ApiErrorCode.RIGHTS_VERSION_STALE, readonly [], readonly [typeof IfRightsVersionParameter]>;
 export declare const studioV1: RouteBuilder<1, readonly [], Record<never, never>, ErrorCode, typeof studioConventions>;
 export {};
 //# sourceMappingURL=components.d.ts.map

@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { LOCALES, NOTIFICATION_CHANNELS } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { ArtistIdParameter, BadRequestResponse, ConflictResponse, CsrfRefusedResponse, CursorDirectionParameter, CursorParameter, DateIdParameter, GoneResponse, IdempotencyKeyParameter, LimitParameter, NotFoundResponse, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter, UnauthorizedResponse } from './components.js';
+import { ArtistIdParameter, BadRequestResponse, ConflictResponse, CsrfRefusedResponse, CursorDirectionParameter, CursorParameter, DateIdParameter, GoneResponse, IdempotencyKeyParameter, LimitParameter, NotFoundResponse, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter, UnauthorizedResponse, viewer } from './components.js';
 import { ArtistSummarySchema, DateCardSchema, SavedSearchSchema } from '../catalog/index.js';
 import { NotificationEntrySchema, NotificationPreferencesSchema } from '../engagement/index.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
+import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route, IdentifiedAccess } from '../http/index.js';
 import { AccountScreenSchema, ConsentsSchema, DeviceSchema, StorefrontSessionEstablishedSchema, StorefrontSessionModeSchema, ViewerContextSchema, ViewerPreferencesSchema } from '../identity/index.js';
 import { StorefrontCursorPageInfoSchema } from '../pagination/index.js';
 import { ExportRequestSchema, ExternalOrderRefSchema, OrderSchema, TicketCardSchema } from '../ticketing/index.js';
@@ -318,9 +318,10 @@ export declare const addPasskey: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         label: z.ZodOptional<z.ZodString>;
-    }, z.core.$strip>, false>;
+    }, z.core.$strip>, true>;
     responses: {
         201: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodObject<{
@@ -342,6 +343,7 @@ export declare const removePasskey: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodOptional<z.ZodObject<{
@@ -361,6 +363,7 @@ export declare const addPaymentMethod: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         returnPath: z.ZodString;
         setAsDefault: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
@@ -388,6 +391,7 @@ export declare const removePaymentMethod: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodOptional<z.ZodObject<{
@@ -403,6 +407,7 @@ export declare const getAccountScreen: Route<{
     version: 1;
     path: '/me/account';
     parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: typeof AccountScreenSchema;
@@ -422,6 +427,7 @@ export declare const listMyTickets: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             items: z.ZodArray<typeof TicketCardSchema>;
@@ -441,6 +447,7 @@ export declare const listMyReplays: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             items: z.ZodArray<typeof DateCardSchema>;
@@ -459,6 +466,7 @@ export declare const listWatchlist: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             items: z.ZodArray<typeof DateCardSchema>;
@@ -477,6 +485,7 @@ export declare const addToWatchlist: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: typeof DateCardSchema;
@@ -495,6 +504,7 @@ export declare const removeFromWatchlist: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: typeof DateCardSchema;
@@ -515,6 +525,7 @@ export declare const listFollowedArtists: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             items: z.ZodArray<typeof ArtistSummarySchema>;
@@ -534,6 +545,7 @@ export declare const followArtist: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         alertEnabled: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
     }, z.core.$strip>, false>;
@@ -555,6 +567,7 @@ export declare const unfollowArtist: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: typeof ArtistSummarySchema;
@@ -573,6 +586,7 @@ export declare const setReminder: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodOptional<z.ZodObject<{
@@ -594,6 +608,7 @@ export declare const clearReminder: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodOptional<z.ZodObject<{
@@ -609,6 +624,7 @@ export declare const listSavedSearches: Route<{
     version: 1;
     path: '/me/saved-searches';
     parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             items: z.ZodArray<typeof SavedSearchSchema>;
@@ -625,6 +641,7 @@ export declare const createSavedSearch: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         scope: VocabularyIn<typeof CREATE_SAVED_SEARCH_SCOPE>;
         categoryId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -651,11 +668,12 @@ export declare const updateSavedSearch: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
-        name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-        active: z.ZodOptional<z.ZodBoolean>;
-        channels: z.ZodOptional<z.ZodArray<VocabularyIn<typeof NOTIFICATION_CHANNELS>>>;
-    }, z.core.$strip>>;
+        readonly name: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+        readonly active: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+        readonly channels: z.ZodOptional<z.ZodOptional<z.ZodArray<VocabularyIn<typeof NOTIFICATION_CHANNELS>>>>;
+    } & Record<never, never>, z.core.$strip>, true>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: typeof SavedSearchSchema;
@@ -674,6 +692,7 @@ export declare const deleteSavedSearch: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodOptional<z.ZodObject<{
@@ -694,6 +713,7 @@ export declare const listMyOrders: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             items: z.ZodArray<z.ZodObject<{
@@ -715,6 +735,7 @@ export declare const listNotifications: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             items: z.ZodArray<typeof NotificationEntrySchema>;
@@ -733,6 +754,7 @@ export declare const markNotificationsRead: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         notificationIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
         all: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
@@ -756,12 +778,15 @@ export declare const updateProfile: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
-        expectedVersion: z.ZodInt;
-        displayName: z.ZodOptional<z.ZodString>;
-        publicHandle: z.ZodOptional<z.ZodString>;
-        city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    }, z.core.$strip>>;
+        readonly expectedVersion: z.ZodOptional<z.ZodInt>;
+        readonly displayName: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+        readonly publicHandle: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+        readonly city: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+    } & {
+        readonly expectedVersion: z.ZodNumber;
+    }, z.core.$strip>, true>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             version: z.ZodOptional<z.ZodInt>;
@@ -780,11 +805,12 @@ export declare const updatePreferences: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
-        account: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>;
-        device: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>;
-        deviceId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    }, z.core.$strip>>;
+        readonly account: z.ZodOptional<z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>>;
+        readonly device: z.ZodOptional<z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>>;
+        readonly deviceId: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+    } & Record<never, never>, z.core.$strip>, true>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: typeof ViewerPreferencesSchema;
@@ -802,15 +828,16 @@ export declare const updateNotificationPreferences: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
-        triggers: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodArray<VocabularyIn<typeof NOTIFICATION_CHANNELS>>>>>;
-        quietHours: z.ZodOptional<z.ZodObject<{
+        readonly triggers: z.ZodOptional<z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodArray<VocabularyIn<typeof NOTIFICATION_CHANNELS>>>>>>;
+        readonly quietHours: z.ZodOptional<z.ZodOptional<z.ZodObject<{
             enabled: z.ZodOptional<z.ZodBoolean>;
             fromHour: z.ZodOptional<z.ZodInt>;
             toHour: z.ZodOptional<z.ZodInt>;
             bypassWhenTicketHeld: z.ZodOptional<z.ZodBoolean>;
-        }, z.core.$strip>>;
-    }, z.core.$strip>>;
+        }, z.core.$strip>>>;
+    } & Record<never, never>, z.core.$strip>, true>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: typeof NotificationPreferencesSchema;
@@ -828,6 +855,7 @@ export declare const updateConsents: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         purposes: z.ZodObject<{
             audience: z.ZodBoolean;
@@ -856,6 +884,7 @@ export declare const revokeDevice: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodOptional<z.ZodObject<{
@@ -877,6 +906,7 @@ export declare const signOutProfile: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: typeof ViewerContextSchema;
@@ -894,6 +924,7 @@ export declare const requestExport: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         kind: VocabularyIn<typeof REQUEST_EXPORT_KIND>;
         fromDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -916,6 +947,7 @@ export declare const getExport: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: typeof ExportRequestSchema;
@@ -932,6 +964,7 @@ export declare const requestAccountDeletion: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         confirmHandle: z.ZodString;
     }, z.core.$strip>>;
@@ -956,6 +989,7 @@ export declare const cancelAccountDeletion: Route<{
         typeof SurfaceParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof viewer, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodOptional<z.ZodObject<{

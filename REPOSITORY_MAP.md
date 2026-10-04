@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 133 exported names.
+Declarations: `dist/http/index.d.ts` — 134 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
@@ -113,6 +113,7 @@ Declarations: `dist/http/index.d.ts` — 133 exported names.
 - `ErrorResponse` (type) — `type ErrorResponse<C extends string> = JsonResponse<z.ZodType<ErrorBody<C>>>;` — An error response whose body is one of the envelopes of 'C'.
 - `ErrorStatus` (type) — `type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;`
 - `ErrorsInput` (type) — `type ErrorsInput<Allowed extends string> = Readonly<Partial<Record<ErrorStatus, Response | readonly Allowed[]>>>;` — What a status takes where errors are declared: a response as the document writes it, or its codes.
+- `ExpectedVersionQuery` (type) — `type ExpectedVersionQuery = QueryParameter<'expectedVersion', z.ZodType, true>;`
 - `Extensions` (type) — `type Extensions = Readonly<Record<'x-${string}', unknown>>;` — OpenAPI's specification extensions, carried into the document verbatim.
 - `FindAllRoute` (type)
 - `FindRoute` (type)
@@ -180,7 +181,7 @@ Declarations: `dist/http/index.d.ts` — 133 exported names.
 - `UpsertRoute` (type)
 - `VARY_HEADER` (const) — `VARY_HEADER: Header`
 - `VersionedPath` (type) — `type VersionedPath<R extends Pick<RouteShape, 'version' | 'path'>> = '/v${R['version']}${R['path']}';`
-- `accepted` (function) — `function accepted(options?: AcceptedOptions): Response;` — '202': the work is accepted, not done.
+- `accepted` (function) — '202': the work is accepted, not done.
 - `accessorOf` (function) — `function accessorOf<const T extends readonly string[]>(members: T): AccessorOf<T>;` — The accessor built from the list rather than written beside it: the list stays the one declaration, which is what 'check-enums' reads.
 - `bodySchemaOf` (function) — `function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;` — The JSON body's schema, or 'undefined' for a route that takes none.
 - `cache` (function) — `function cache(freshness: Freshness, options?: CacheOptions): CachePolicy;` — 'cache(Freshness.FIVE_MINUTES)': the family of 'transport.md' §5.9, with its directive.

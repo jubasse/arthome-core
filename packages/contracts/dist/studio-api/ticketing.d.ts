@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { PRICE_TIERS, RefundReason } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
-import { ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter } from './components.js';
+import { ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter, operator } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
+import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route, IdentifiedAccess } from '../http/index.js';
 import { DateSalesPaneSchema } from '../studio-money/index.js';
 declare const REFUND_SEAT_REFUND_REASON_CODE: readonly [
     typeof RefundReason.DATE_CANCELLED,
@@ -19,9 +19,9 @@ export declare const getDateTicketsPane: Route<{
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             data: typeof DateSalesPaneSchema;
@@ -36,11 +36,12 @@ export declare const setDatePrices: Route<{
     path: '/dates/{dateId}/prices';
     parameters: readonly [
         typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         expectedVersion: z.ZodInt;
         tiers: z.ZodArray<z.ZodObject<{
@@ -55,6 +56,8 @@ export declare const setDatePrices: Route<{
             data: typeof DateSalesPaneSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const openCapacityTier: Route<{
@@ -63,11 +66,12 @@ export declare const openCapacityTier: Route<{
     path: '/dates/{dateId}/capacity-tiers';
     parameters: readonly [
         typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         additionalCapacity: z.ZodInt;
         expectedVersion: z.ZodInt;
@@ -82,6 +86,8 @@ export declare const openCapacityTier: Route<{
             }, z.core.$loose>;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const setTechnicalProvision: Route<{
@@ -90,11 +96,12 @@ export declare const setTechnicalProvision: Route<{
     path: '/dates/{dateId}/technical-provision';
     parameters: readonly [
         typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         provisionedCapacity: z.ZodInt;
         expectedVersion: z.ZodInt;
@@ -104,6 +111,8 @@ export declare const setTechnicalProvision: Route<{
             data: typeof DateSalesPaneSchema;
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const refundSeat: Route<{
@@ -139,11 +148,12 @@ export declare const issueComplimentary: Route<{
     path: '/dates/{dateId}/complimentaries';
     parameters: readonly [
         typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         categoryId: z.ZodString;
         quantity: z.ZodInt;
@@ -157,6 +167,8 @@ export declare const issueComplimentary: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         409: typeof ConflictResponse;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const getChannelTicketing: Route<{

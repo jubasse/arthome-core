@@ -35,15 +35,18 @@ import {
   SurfaceParameter,
   TraceparentParameter,
   UnauthorizedResponse,
+  operator,
   studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
+import { recentAuth, sensitive } from '../http/index.js';
 import type {
   JsonRequestBody,
   JsonResponse,
   PathParameter,
-  QueryParameter,
   Route,
+  IdentifiedAccess,
+  ExpectedVersionQuery,
 } from '../http/index.js';
 import {
   HealthSampleSchema,
@@ -57,16 +60,26 @@ const runRoutes = studioV1
   .tags(StudioTag.RUN)
   .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 const runReads = runRoutes.errors({ 403: ForbiddenResponse });
+const runDates = studioV1
+  .identity(operator)
+  .tags(StudioTag.RUN)
+  .headers(SurfaceParameter, TraceparentParameter)
+  .errors({ 403: ForbiddenResponse, 404: NotFoundResponse });
+const date = runDates.resource('dates', { id: DateIdParameter });
 const IncidentIdParameter: PathParameter<'incidentId', z.ZodString> = {
   name: 'incidentId',
   in: 'path',
   required: true,
   schema: uuidIn(),
 };
-const incidents = runRoutes.resource('dates/{dateId}/incidents', {
-  id: IncidentIdParameter,
-  parents: [DateIdParameter],
-});
+const incidents = date.resource('incidents', { id: IncidentIdParameter });
+const ChapterIdParameter: PathParameter<'chapterId', z.ZodString> = {
+  name: 'chapterId',
+  in: 'path',
+  required: true,
+  schema: uuidIn(),
+};
+const chapters = date.path('run').resource('chapters', { id: ChapterIdParameter });
 
 const GET_DATE_TECH_PANE_INGEST_PROTOCOL = ['rtmps', 'srt', 'whip'] as const;
 const GET_DATE_TECH_PANE_MONITOR_PATH = ['whep', 'll_hls'] as const;
@@ -84,9 +97,9 @@ export const getDateTechPane: Route<{
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -136,16 +149,15 @@ export const getDateTechPane: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = runReads.defineRoute({
+}> = date.path('panes').defineRoute({
   method: 'get',
-  path: '/dates/{dateId}/panes/tech',
+  path: '/tech',
   operationId: 'getDateTechPane',
   summary: "A date's technical pane — pre-flight and broadcast profile.",
   description:
     "Open to `artist`, `production`, `director`, `video`, `sound` and `coordination`. It is a\n`director`'s only pane; it did not exist.\n\n**The stream key does not appear in it**: it appears in no list payload, and revealing it is a\nseparate command, audited and by name.\n",
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'Protocol, return path, quality ladder, pre-flight checklist.',
@@ -237,9 +249,9 @@ export const getRunConsole: Route<{
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -250,16 +262,14 @@ export const getRunConsole: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = runReads.defineRoute({
-  method: 'get',
-  path: '/dates/{dateId}/run',
+}> = date.single('run').find({
   operationId: 'getRunConsole',
+  item: RunConsoleSchema,
   summary: 'The state of the run — one call, the whole control-room screen.',
   description:
     '**The return path actually open is served** (`monitorPath`): the studio must **know** it so\nas not to promise the operator a latency it does not have. The contract carries the truth, not\nuniformity — creating a media branch to make a schema uniform would cost more than it returns.\n\n**Two fields, not one**: `state` and `afterGracePeriod`. The studio distinguishes "hiccup\nabsorbed" from "publisher gone", and a two-second network break in a room must produce neither\nan incident nor a manifest restarted from zero.\n\n**The stream key is never here**: it appears in no list payload.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'The console.',
@@ -328,9 +338,10 @@ export const runTechnicalCheck: Route<{
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -353,17 +364,15 @@ export const runTechnicalCheck: Route<{
     >;
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
-}> = runRoutes.defineRoute({
-  method: 'post',
-  path: '/dates/{dateId}/run/technical-check',
+}> = date.single('run').action('technical-check', {
   operationId: 'runTechnicalCheck',
   summary: 'Starts the technical check.',
   description:
     'Its success **unlocks publication**: `technical_check_passed` is one of the seven checklist\nitems, and it comes from here. `catalog` **projects** it, it does not ask for it.\n`idle → on_air` is refused as long as the check has never passed.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [DateIdParameter, IdempotencyKeyParameter],
   responses: {
     200: {
       description: "The check's result, and the pre-flight checklist.",
@@ -410,9 +419,10 @@ export const setRunState: Route<{
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       { state: VocabularyIn<typeof SET_RUN_STATE_STATE>; expectedVersion: z.ZodInt },
@@ -427,37 +437,30 @@ export const setRunState: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
-}> = runRoutes.defineRoute({
-  method: 'put',
-  path: '/dates/{dateId}/run/state',
+}> = date.single('run/state').replace({
   operationId: 'setRunState',
+  item: RunConsoleSchema,
   summary: 'Goes on air, rehearses, or cuts the broadcast.',
   description:
     '**The "go on air" command goes to `streaming`, not to `catalog`**: only `streaming` knows\nwhether the feed is arriving. Publication **learns** of it afterwards, by event — two\ntransitions out of eight are caused that way, which leaves `Publication` the aggregate of a\nsingle context.\n\n`idle → on_air` is **refused** if the technical check has never passed.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [DateIdParameter, IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          state: vocabularyIn(SET_RUN_STATE_STATE).meta({
-            'x-arthome-vocabulary-source': 'RUN_STATES',
-            'x-arthome-vocabulary-narrowing':
-              '`interrupted` cannot be commanded: it is declared by raiseIncident and reached by consequence. A control room able to set it directly would have two ways into one state and only one raises the incident viewers see.',
-            description:
-              '**A strict narrowing of `RUN_STATES`, and what it leaves out is the rule.**\n`interrupted` is missing because **it cannot be commanded**: an interruption is\ndeclared by `raiseIncident` and reached by consequence, never by asking for it. A\ncontrol room that could set `interrupted` directly would have two ways into the same\nstate and only one of them would raise the incident the viewers see.\n',
-          }),
-          expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
-        }),
-        example: {
-          state: RunState.ON_AIR,
-          expectedVersion: 3,
-        },
-      },
-    },
+  body: z.object({
+    state: vocabularyIn(SET_RUN_STATE_STATE).meta({
+      'x-arthome-vocabulary-source': 'RUN_STATES',
+      'x-arthome-vocabulary-narrowing':
+        '`interrupted` cannot be commanded: it is declared by raiseIncident and reached by consequence. A control room able to set it directly would have two ways into one state and only one raises the incident viewers see.',
+      description:
+        '**A strict narrowing of `RUN_STATES`, and what it leaves out is the rule.**\n`interrupted` is missing because **it cannot be commanded**: an interruption is\ndeclared by `raiseIncident` and reached by consequence, never by asking for it. A\ncontrol room that could set `interrupted` directly would have two ways into the same\nstate and only one of them would raise the incident the viewers see.\n',
+    }),
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+  }),
+  example: {
+    state: RunState.ON_AIR,
+    expectedVersion: 3,
   },
   responses: {
     200: {
@@ -513,9 +516,10 @@ export const setQualityProfile: Route<{
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -535,45 +539,38 @@ export const setQualityProfile: Route<{
       >
     >;
     409: typeof ConflictResponse;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
-}> = runRoutes.defineRoute({
-  method: 'put',
-  path: '/dates/{dateId}/run/quality-profile',
+}> = date.single('run/quality-profile').replace({
   operationId: 'setQualityProfile',
+  item: RunConsoleSchema,
   summary: 'Changes the broadcast profile and the quality ladder.',
   description:
     'Named encoding profiles are an **account** preference, not a value local to the workstation.',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [DateIdParameter, IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
-          renditions: z.array(
-            z.object({
-              renditionId: z.string(),
-              enabled: z.boolean(),
-            }),
-          ),
-        }),
-        example: {
-          expectedVersion: 4,
-          renditions: [
-            {
-              renditionId: '1080p',
-              enabled: true,
-            },
-            {
-              renditionId: '360p',
-              enabled: true,
-            },
-          ],
-        },
+  body: z.object({
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+    renditions: z.array(
+      z.object({
+        renditionId: z.string(),
+        enabled: z.boolean(),
+      }),
+    ),
+  }),
+  example: {
+    expectedVersion: 4,
+    renditions: [
+      {
+        renditionId: '1080p',
+        enabled: true,
       },
-    },
+      {
+        renditionId: '360p',
+        enabled: true,
+      },
+    ],
   },
   responses: {
     200: {
@@ -611,11 +608,17 @@ export const getHealthSeries: Route<{
   path: '/dates/{dateId}/run/health-samples';
   parameters: readonly [
     typeof DateIdParameter,
-    QueryParameter<'windowSec', z.ZodDefault<z.ZodInt>>,
+    {
+      readonly name: 'windowSec';
+      readonly in: 'query';
+      readonly required: false;
+      readonly description: 'The window, in seconds, ending now. The server **caps** it and serves back the window it\napplied (`HealthSeries.windowSec`), rather than refusing: an operator asking for too much\nwants a curve, not an error.\n';
+      readonly schema: z.ZodDefault<z.ZodInt>;
+    },
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -626,17 +629,15 @@ export const getHealthSeries: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = runReads.defineRoute({
-  method: 'get',
-  path: '/dates/{dateId}/run/health-samples',
+}> = date.single('run/health-samples').find({
   operationId: 'getHealthSeries',
+  item: HealthSeriesSchema,
   summary: 'The health series over a bounded window — the curve a reconnection re-requests.',
   description:
     '**The write promised a read that did not exist.** `submitHealthSample`\'s own exemption motive\nsays the series "is **re-requested**, it is not replayed", and `realtime.md` §5.1 files a\nbitrate curve under "to throw away" for that same reason — yet nothing could request it, and\n`RunConsole` served `lastSample` alone. One point is not a curve.\n\nThree paths cross this read every evening and none of them is exceptional: after a\n`resume:too_old`, after a reconnection, and simply opening the console in the middle of a\nlive show.\n\n**Bounded by construction.** The window is a parameter, capped, and defaults to the last\nthree minutes — `studio-mobile` asked for it short, and a control room reads the last three\nminutes, not the last three hours.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
   parameters: [
-    DateIdParameter,
     {
       name: 'windowSec',
       in: 'query',
@@ -696,9 +697,10 @@ export const submitHealthSample: Route<{
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -725,11 +727,12 @@ export const submitHealthSample: Route<{
       >
     >;
     404: typeof NotFoundResponse;
+    403: typeof ConflictResponse;
   };
-}> = runRoutes.defineRoute({
-  method: 'post',
-  path: '/dates/{dateId}/run/health-samples',
+}> = date.single('run/health-samples').create({
   operationId: 'submitHealthSample',
+  idempotent: false,
+  item: z.looseObject({ accepted: z.boolean().optional() }).optional(),
   summary: 'Submits a measurement taken in the control room — the end-to-end latency.',
   description:
     "**End-to-end latency is a dedicated measurement**, never a native figure presented as one.\nIt is measured by `RTCPeerConnection.getStats()` on the WHEP return path and **submitted**,\nhence `source: client_submitted`. **If it is not measured, it is absent** — never replaced by\na zero.\n\n`deviceUpKbps` measures the workstation's uplink, **not the encoder**: two different bitrates\nnever carry the same name, and only `ingestUpKbps` feeds the pre-flight checklist.\n",
@@ -737,33 +740,21 @@ export const submitHealthSample: Route<{
   'x-arthome-upstream': [Service.STREAMING],
   'x-arthome-idempotency-exemption':
     "**One measurement per second per live show, loss-tolerant.** A replayed sample is one more\nsample in a series; a lost sample is missed by nobody. The series is **re-requested**, it is\nnot replayed — that is already the channel's resume rule.\n",
-  parameters: [DateIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          measuredAt: z
-            .string()
-            .regex(new RegExp('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$'))
-            .meta({
-              format: 'date-time',
-            }),
-          latencyMs: z.int().meta({ minimum: undefined, maximum: undefined }).nullable().optional(),
-          deviceUpKbps: z
-            .int()
-            .meta({ minimum: undefined, maximum: undefined })
-            .nullable()
-            .optional(),
-          jitterMs: z.int().meta({ minimum: undefined, maximum: undefined }).nullable().optional(),
-        }),
-        example: {
-          measuredAt: '2026-09-21T19:20:00Z',
-          latencyMs: 820,
-          deviceUpKbps: 4100,
-        },
-      },
-    },
+  body: z.object({
+    measuredAt: z
+      .string()
+      .regex(new RegExp('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$'))
+      .meta({
+        format: 'date-time',
+      }),
+    latencyMs: z.int().meta({ minimum: undefined, maximum: undefined }).nullable().optional(),
+    deviceUpKbps: z.int().meta({ minimum: undefined, maximum: undefined }).nullable().optional(),
+    jitterMs: z.int().meta({ minimum: undefined, maximum: undefined }).nullable().optional(),
+  }),
+  example: {
+    measuredAt: '2026-09-21T19:20:00Z',
+    latencyMs: 820,
+    deviceUpKbps: 4100,
   },
   responses: {
     202: {
@@ -802,9 +793,10 @@ export const postChapter: Route<{
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       { chapterId: z.ZodString; vocabId: z.ZodString; atMediaSec: z.ZodInt },
@@ -833,33 +825,25 @@ export const postChapter: Route<{
       >
     >;
     404: typeof NotFoundResponse;
+    403: typeof ConflictResponse;
   };
-}> = runRoutes.defineRoute({
-  method: 'post',
-  path: '/dates/{dateId}/run/chapters',
+}> = chapters.create({
   operationId: 'postChapter',
+  item: z.looseObject({}).optional(),
   summary: 'Sets a chapter, at its position in the media.',
   description:
     "A chapter carries `atMediaSec` — its **position in the media** — never the time it was set.\nIt is free now and unrecoverable later: without it, a replay's chapters are offset by however\nlong the control room took to set them.\n\n`vocabId` is a vocabulary identifier, **never an authored label**.\n",
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [DateIdParameter, IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          chapterId: uuidOut(),
-          vocabId: z.string(),
-          atMediaSec: z.int().min(0).meta({ maximum: undefined }),
-        }),
-        example: {
-          chapterId: '019928d0-0000-7000-8000-000000000001',
-          vocabId: 'chapter.second_act',
-          atMediaSec: 2760,
-        },
-      },
-    },
+  body: z.object({
+    chapterId: uuidOut(),
+    vocabId: z.string(),
+    atMediaSec: z.int().min(0).meta({ maximum: undefined }),
+  }),
+  example: {
+    chapterId: '019928d0-0000-7000-8000-000000000001',
+    vocabId: 'chapter.second_act',
+    atMediaSec: 2760,
   },
   responses: {
     201: {
@@ -900,12 +884,14 @@ export const removeChapter: Route<{
   path: '/dates/{dateId}/run/chapters/{chapterId}';
   parameters: readonly [
     typeof DateIdParameter,
-    PathParameter<'chapterId', z.ZodString>,
+    typeof ChapterIdParameter,
     typeof IdempotencyKeyParameter,
+    ExpectedVersionQuery,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -921,25 +907,15 @@ export const removeChapter: Route<{
       >
     >;
     404: typeof NotFoundResponse;
+    403: typeof ConflictResponse;
   };
-}> = runRoutes.defineRoute({
-  method: 'delete',
-  path: '/dates/{dateId}/run/chapters/{chapterId}',
+}> = chapters.delete({
   operationId: 'removeChapter',
+  response: z.looseObject({ deleted: z.boolean().optional() }).optional(),
   summary: 'Removes a chapter.',
   description: 'Replayed on an already-removed chapter, it succeeds.',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [
-    DateIdParameter,
-    {
-      name: 'chapterId',
-      in: 'path',
-      required: true,
-      schema: uuidIn(),
-    },
-    IdempotencyKeyParameter,
-  ],
   responses: {
     200: {
       description: 'Chapter removed.',
@@ -977,9 +953,10 @@ export const raiseIncident: Route<{
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -1000,6 +977,7 @@ export const raiseIncident: Route<{
     >;
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
 }> = incidents.create({
   operationId: 'raiseIncident',
@@ -1240,9 +1218,10 @@ export const revealStreamKey: Route<{
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<z.ZodObject<{ reauthToken: z.ZodString }, z.core.$strip>>;
   responses: {
     200: JsonResponse<
@@ -1253,31 +1232,24 @@ export const revealStreamKey: Route<{
     >;
     401: typeof UnauthorizedResponse;
     403: typeof ForbiddenResponse;
+    404: typeof ConflictResponse;
   };
-}> = runRoutes.defineRoute({
-  method: 'post',
-  path: '/dates/{dateId}/stream-key/reveal',
+}> = date.single('stream-key').action('reveal', {
   operationId: 'revealStreamKey',
+  requires: [recentAuth()],
+  response: StreamKeyRevealSchema,
   summary: 'Reveals the stream key — a separate command, audited, by name.',
   description:
     "**It is a secret displayed on a phone, in a room, often in front of a contractor.** Four\nguarantees, and they are in the contract because none of them is verifiable client-side:\n\n- the key is **never** in a list payload;\n- revealing it is **this command**, separate, audited and by name;\n- the response carries **`Cache-Control: no-store`** — it must end up neither in the phone's\n  HTTP cache, nor in the application snapshot the OS takes when it goes to the background;\n- **assignment to the `director` slot**, which grants access to the key, is reserved to\n  `artist ∨ production`.\n\n**Re-authentication required**: this is a sensitive operation, and it is asked for **at the\nmoment of the operation**, never on returning to a screen.\n",
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [DateIdParameter, IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          reauthToken: z.string().meta({
-            description: 'Single-use re-authentication token, short-lived.',
-          }),
-        }),
-        example: {
-          reauthToken: 'ott_9f2ac1',
-        },
-      },
-    },
+  body: z.object({
+    reauthToken: sensitive(z.string()).meta({
+      description: 'Single-use re-authentication token, short-lived.',
+    }),
+  }),
+  example: {
+    reauthToken: 'ott_9f2ac1',
   },
   responses: {
     200: {
@@ -1322,9 +1294,10 @@ export const rotateStreamKey: Route<{
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       { reauthToken: z.ZodString; confirmDuringRun: z.ZodOptional<z.ZodDefault<z.ZodBoolean>> },
@@ -1339,31 +1312,25 @@ export const rotateStreamKey: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
-}> = runRoutes.defineRoute({
-  method: 'post',
-  path: '/dates/{dateId}/stream-key/rotate',
+}> = date.single('stream-key').action('rotate', {
   operationId: 'rotateStreamKey',
+  requires: [recentAuth()],
+  response: StreamKeyRevealSchema,
   summary: 'Rotates the stream key — the old one stops broadcasting at once.',
   description:
     '**Immediate**, and the contract says so: the old key stops broadcasting at once. Rotating\n**during a live show** cuts the ingest in progress — the refusal carries a distinct code\n(`date.stream_key_rotation_during_run`) rather than silently executing a command whose consequence\nis dead air.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [DateIdParameter, IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          reauthToken: z.string(),
-          confirmDuringRun: z.boolean().default(false).optional(),
-        }),
-        example: {
-          reauthToken: 'ott_9f2ac1',
-          confirmDuringRun: false,
-        },
-      },
-    },
+  body: z.object({
+    reauthToken: sensitive(z.string()),
+    confirmDuringRun: z.boolean().default(false).optional(),
+  }),
+  example: {
+    reauthToken: 'ott_9f2ac1',
+    confirmDuringRun: false,
   },
   responses: {
     200: {

@@ -140,13 +140,7 @@ type Schema<T> = z.ZodType<T>;
 
 type ItemOf<D> = D extends { readonly item: infer S extends z.ZodType } ? S : z.ZodType;
 
-type ExpectedVersionQuery = QueryParameter<'expectedVersion', z.ZodType, true>;
-interface ExpectedVersion {
-  readonly expectedVersion: number;
-}
-
-type PatchOf<S extends z.ZodObject> = Partial<z.output<S>> & ExpectedVersion;
-
+export type ExpectedVersionQuery = QueryParameter<'expectedVersion', z.ZodType, true>;
 type CodesOf<R> = R extends readonly (infer K)[] ? K : never;
 type Join<Convention, Own> = Own extends readonly unknown[]
   ? Convention extends readonly unknown[]
@@ -198,7 +192,7 @@ type Member<
     readonly path: Path;
     readonly operationId: string;
     readonly parameters: readonly [...Params, ...OwnParameters<D>];
-    readonly responses: Omit<Success, keyof OwnResponses<D>> & OwnResponses<D>;
+    readonly responses: Omit<StatedSuccess<D, Success>, keyof OwnResponses<D>> & OwnResponses<D>;
     readonly errors: JoinErrors<Errors, OwnErrors<D>>;
   } & Body,
   C['access'] extends Access | undefined ? C['access'] : undefined,
@@ -214,9 +208,46 @@ type ItemParameters<C extends ResourceContext> = C['id'] extends PathParameterOf
   : C['parents'];
 type ConflictFor<C extends ResourceContext> =
   Owned<C> extends true ? IdempotencyCodes : ConflictCodes;
-type VersionFor<C extends ResourceContext> = Owned<C> extends true ? unknown : ExpectedVersion;
+type VersionField<C extends ResourceContext> =
+  Owned<C> extends true
+    ? Record<never, never>
+    : { readonly expectedVersion: Conv<C>['expectedVersion'] };
+
+/** The body a write sends: the schema given, with the `expectedVersion` a shared record asks for. */
+type VersionedBody<C extends ResourceContext, B> =
+  B extends z.ZodObject<infer Shape, infer Config>
+    ? z.ZodObject<Shape & VersionField<C>, Config>
+    : z.ZodType;
+
+/** The body of a partial change: each writable field optional, and the version. */
+type PatchedBody<C extends ResourceContext, D> = D extends {
+  readonly fields: infer F extends z.ZodObject;
+}
+  ? PartialBody<C, F>
+  : D extends { readonly body: infer B extends z.ZodObject }
+    ? PartialBody<C, B>
+    : z.ZodType;
+
+type PartialBody<C extends ResourceContext, F> =
+  F extends z.ZodObject<infer Shape, infer Config>
+    ? z.ZodObject<
+        { readonly [K in keyof Shape]: z.ZodOptional<Shape[K]> } & VersionField<C>,
+        Config
+      >
+    : z.ZodType;
+/**
+ * What a versioned write says about its item: a shared record's carries a `version`, the caller's
+ * own need not, and a route that states its answer in full (`responses`) owns its shape.
+ */
+type ItemFor<C extends ResourceContext> =
+  Owned<C> extends true
+    ? { readonly item?: z.ZodType }
+    : | { readonly item: VersionedItem<C> }
+      | { readonly item?: z.ZodType; readonly responses: Readonly<Record<string, Response>> };
+
+/** A shared record's item carries a `version`: absent from a given answer perhaps, never from the shape. */
 type VersionedItem<C extends ResourceContext> =
-  Owned<C> extends true ? z.ZodType : z.ZodType<{ readonly version: number }>;
+  Owned<C> extends true ? z.ZodType : z.ZodType<{ readonly version?: number | undefined }>;
 type NotFoundFor<C extends ResourceContext> = C['id'] extends PathParameterOf
   ? { readonly 404: NotFound }
   : Record<never, never>;
@@ -331,9 +362,14 @@ export type CreateRoute<C extends ResourceContext, D> = Member<
   D,
   'post',
   CollectionPath<C>,
-  readonly [...C['parents'], ...Added<C, 'writeParameters'>],
+  readonly [
+    ...C['parents'],
+    ...(D extends { readonly idempotent: false } ? readonly [] : Added<C, 'writeParameters'>),
+  ],
   { readonly 201: JsonResponse<Schema<Item<C, ResponseSchema<D>>>> },
-  { readonly 409: IdempotencyCodes },
+  D extends { readonly idempotent: false }
+    ? Record<never, never>
+    : { readonly 409: IdempotencyCodes },
   Sent<BodyOf<D>>
 >;
 
@@ -345,7 +381,7 @@ export type UpdateRoute<C extends ResourceContext, D> = Member<
   readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>],
   { readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>> },
   NotFoundFor<C> & { readonly 409: ConflictFor<C> },
-  Sent<Schema<PatchBody<D> & VersionFor<C>>>
+  Sent<PatchedBody<C, D>>
 >;
 
 export type ReplaceRoute<C extends ResourceContext, D> = Member<
@@ -356,7 +392,7 @@ export type ReplaceRoute<C extends ResourceContext, D> = Member<
   readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>],
   { readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>> },
   NotFoundFor<C> & { readonly 409: ConflictFor<C> },
-  Sent<Schema<BodyOutput<D> & VersionFor<C>>>
+  Sent<VersionedBody<C, BodyOf<D>>>
 >;
 
 export type UpsertRoute<C extends ResourceContext, D> = Member<
@@ -364,9 +400,14 @@ export type UpsertRoute<C extends ResourceContext, D> = Member<
   D,
   'put',
   ItemPath<C>,
-  readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>],
+  readonly [
+    ...ItemParameters<C>,
+    ...(D extends { readonly idempotent: false } ? readonly [] : Added<C, 'writeParameters'>),
+  ],
   ResponseOf<C, ItemSchema<D>, 200>,
-  { readonly 409: IdempotencyCodes },
+  D extends { readonly idempotent: false }
+    ? Record<never, never>
+    : { readonly 409: IdempotencyCodes },
   BodyPart<D>
 >;
 
@@ -413,7 +454,7 @@ export type SubresourceReplaceRoute<C extends ResourceContext, Name extends stri
   readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>],
   ResponseOf<C, ItemSchema<D>, 200>,
   NotFoundFor<C> & { readonly 409: ConflictFor<C> },
-  Sent<Schema<BodyOutput<D> & VersionFor<C>>>
+  Sent<VersionedBody<C, BodyOf<D>>>
 >;
 
 export type BatchRoute<C extends ResourceContext, D> = Member<
@@ -449,6 +490,13 @@ type ActionMethod<D> = D extends {
 
 type SuccessKey = 200 | 201 | 202 | 203 | 204 | 206;
 
+/** What the convention answers, unless the route states a success of its own, which replaces it. */
+type StatedSuccess<D, Default> = D extends { readonly responses: infer R }
+  ? [Extract<keyof R, SuccessKey>] extends [never]
+    ? Default
+    : Record<never, never>
+  : Default;
+
 type ActionSuccess<C extends ResourceContext, D> = D extends {
   readonly responses: infer R;
 }
@@ -468,17 +516,11 @@ type ActionDefaultSuccess<C extends ResourceContext, D> = D extends {
     : { readonly 204: Response };
 
 type BodyOf<D> = D extends { readonly body: infer B extends z.ZodType } ? B : z.ZodType;
-type BodyOutput<D> = z.output<BodyOf<D>>;
 type BodyPart<D> = D extends { readonly body: infer B extends z.ZodType }
   ? Sent<B, D extends { readonly optionalBody: true } ? false : true>
   : unknown;
 type ResponseSchema<D> = D extends { readonly response: infer R extends z.ZodType } ? R : ItemOf<D>;
 type ItemSchema<D> = D extends { readonly item: infer S extends z.ZodType } ? S : undefined;
-type PatchBody<D> = D extends { readonly fields: infer F extends z.ZodObject }
-  ? PatchOf<F>
-  : D extends { readonly body: infer B extends z.ZodObject }
-    ? PatchOf<B>
-    : ExpectedVersion;
 
 export type CrudMember = 'find' | 'findAll' | 'create' | 'update' | 'replace' | 'upsert' | 'delete';
 type DefaultMember = 'find' | 'findAll' | 'create' | 'update' | 'delete';
@@ -606,7 +648,7 @@ export interface Resource<C extends ResourceContext> {
   find<
     const D extends Docs<
       C,
-      { readonly item: z.ZodType; readonly expand?: Readonly<Record<string, z.ZodType>> }
+      { readonly item?: z.ZodType; readonly expand?: Readonly<Record<string, z.ZodType>> }
     >,
   >(
     docs: D,
@@ -615,7 +657,7 @@ export interface Resource<C extends ResourceContext> {
     const D extends Docs<
       C,
       {
-        readonly item: z.ZodType;
+        readonly item?: z.ZodType;
         readonly paging?: Paging;
         readonly sortable?: readonly SortKey[];
         readonly filters?: z.ZodObject;
@@ -628,7 +670,13 @@ export interface Resource<C extends ResourceContext> {
   create<
     const D extends Docs<
       C,
-      { readonly body: z.ZodType; readonly item: z.ZodType; readonly response?: z.ZodType }
+      {
+        readonly body: z.ZodType;
+        readonly item?: z.ZodType;
+        readonly response?: z.ZodType;
+        /** `false`: no idempotency key, for a write that is a stream of samples. */
+        readonly idempotent?: false;
+      }
     >,
   >(
     docs: D,
@@ -642,19 +690,22 @@ export interface Resource<C extends ResourceContext> {
   update<
     const D extends Docs<
       C,
-      { readonly item: VersionedItem<C> } & (
-        { readonly fields: z.ZodObject } | { readonly body: z.ZodObject }
-      )
+      ItemFor<C> & ({ readonly fields: z.ZodObject } | { readonly body: z.ZodObject })
     >,
   >(
     docs: D,
   ): UpdateRoute<C, D>;
   /** PUT: a full replacement, idempotent. The body is complete and an absent field is reset. */
-  replace<const D extends Docs<C, { readonly body: z.ZodObject; readonly item: VersionedItem<C> }>>(
+  replace<const D extends Docs<C, { readonly body: z.ZodObject } & ItemFor<C>>>(
     docs: D,
   ): ReplaceRoute<C, D>;
   /** PUT on an id the client chose, such as `/follows/{artistId}`: it creates or replaces. */
-  upsert<const D extends Docs<C, { readonly body?: z.ZodType; readonly item?: z.ZodType }>>(
+  upsert<
+    const D extends Docs<
+      C,
+      { readonly body?: z.ZodType; readonly item?: z.ZodType; readonly idempotent?: false }
+    >,
+  >(
     docs: D,
   ): UpsertRoute<C, D>;
   /** 204 unless `response` is given: the record that went, as it was, answered with a 200. */
@@ -693,7 +744,7 @@ export interface Resource<C extends ResourceContext> {
     C['allowed'],
     Extract<C['conventions'], ResourceConventions | undefined>,
     Extract<C['access'], Access | undefined>,
-    ChildContext<C, string, undefined, undefined>['scope'] & {
+    {
       readonly prefix: `${ChildContext<C, string, undefined, undefined>['scope']['prefix']}/${T}`;
       readonly params: readonly [
         ...ChildContext<C, string, undefined, undefined>['scope']['params'],
@@ -949,7 +1000,7 @@ export function makeResource(
     docs: AnyDocs | undefined,
     expand: Readonly<Record<string, z.ZodType>> = {},
   ): z.ZodType => {
-    const item = docs?.item as z.ZodType;
+    const item = (docs?.item as z.ZodType | undefined) ?? z.unknown();
     const entries = Object.entries(expand);
     if (entries.length === 0) return conventions.item(item);
     const relations = z.object(
@@ -994,7 +1045,7 @@ export function makeResource(
     const paging = docs.paging;
     const sortable = docs.sortable;
     const filters = docs.filters as z.ZodObject | undefined;
-    const item = docs.item as z.ZodType;
+    const item = (docs.item as z.ZodType | undefined) ?? z.unknown();
     let listParameters: readonly Parameter[] = conventions.listParameters;
     let page: z.ZodType = conventions.page(item);
     const errors: Record<string, readonly string[]> = { 400: [ApiErrorCode.SCHEMA_INVALID] };
@@ -1065,14 +1116,14 @@ export function makeResource(
       path: collectionPath,
       derivedId: `create${singular}`,
       docs,
-      parameters: [...parents, ...conventions.writeParameters],
+      parameters: [...parents, ...(docs.idempotent === false ? [] : conventions.writeParameters)],
       responses: {
         201: jsonResponse(
           'Created.',
           docs.response !== undefined ? conventions.item(docs.response as z.ZodType) : itemOf(docs),
         ),
       },
-      errors: { 409: IDEMPOTENCY },
+      errors: docs.idempotent === false ? {} : { 409: IDEMPOTENCY },
       body: docs.body as z.ZodType,
     });
 
@@ -1109,12 +1160,15 @@ export function makeResource(
       path: itemPath,
       derivedId: `upsert${singular}`,
       docs,
-      parameters: [...itemParameters, ...conventions.writeParameters],
+      parameters: [
+        ...itemParameters,
+        ...(docs.idempotent === false ? [] : conventions.writeParameters),
+      ],
       responses:
         docs.item !== undefined
           ? { 200: jsonResponse('The record.', itemOf(docs)) }
           : { 204: { description: 'Done.' } },
-      errors: { 409: IDEMPOTENCY },
+      errors: docs.idempotent === false ? {} : { 409: IDEMPOTENCY },
       ...(docs.body !== undefined && { body: docs.body as z.ZodType }),
     });
 

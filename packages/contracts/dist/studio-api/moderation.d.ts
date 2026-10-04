@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { AUDIENCE_SANCTIONS, CHAT_MODES, FILTER_SEVERITIES, MODERATION_REASONS, MODERATION_VERDICTS } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
-import { ChannelIdParameter, ConflictResponse, CursorParameter, DateIdParameter, ForbiddenResponse, GoneResponse, IdempotencyKeyParameter, IfRightsVersionParameter, LimitParameter, NotFoundResponse, PageParameter, PageSizeParameter, SurfaceParameter, TraceparentParameter } from './components.js';
+import { ChannelIdParameter, ConflictResponse, CursorParameter, DateIdParameter, ForbiddenResponse, GoneResponse, IdempotencyKeyParameter, IfRightsVersionParameter, LimitParameter, NotFoundResponse, PageParameter, PageSizeParameter, SurfaceParameter, TraceparentParameter, operator } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
+import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route, IdentifiedAccess } from '../http/index.js';
 import { OffsetPageInfoSchema, StudioCursorPageInfoSchema } from '../pagination/index.js';
 import { AudienceMemberSchema, ChatPolicySchema, ModerationItemSchema } from '../studio-desk/index.js';
 import { StudioLocalizedTextSchema } from '../text/index.js';
@@ -15,9 +15,9 @@ export declare const getDateChatPane: Route<{
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodObject<{
@@ -40,11 +40,12 @@ export declare const setDateChatPolicy: Route<{
     path: '/dates/{dateId}/chat-policy';
     parameters: readonly [
         typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         expectedVersion: z.ZodInt;
         mode: z.ZodOptional<VocabularyIn<typeof CHAT_MODES>>;
@@ -58,6 +59,8 @@ export declare const setDateChatPolicy: Route<{
             data: typeof ChatPolicySchema;
         }, z.core.$loose>>>;
         409: typeof ConflictResponse;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const listModerationQueue: Route<{
@@ -248,11 +251,16 @@ export declare const listStudioChatMessages: Route<{
         typeof DateIdParameter,
         typeof CursorParameter,
         typeof LimitParameter,
-        QueryParameter<'sinceSeq', z.ZodNumber>,
+        {
+            readonly name: 'sinceSeq';
+            readonly in: 'query';
+            readonly description: 'Resume by sequence number after a channel break.';
+            readonly schema: z.ZodNumber;
+        },
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             items: z.ZodArray<z.ZodObject<{
@@ -269,6 +277,7 @@ export declare const listStudioChatMessages: Route<{
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
         410: typeof GoneResponse;
+        404: typeof ConflictResponse;
     };
 }>;
 export {};

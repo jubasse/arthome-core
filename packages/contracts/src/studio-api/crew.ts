@@ -38,6 +38,7 @@ import {
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
+  operator,
   studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
@@ -47,6 +48,7 @@ import type {
   PathParameter,
   QueryParameter,
   Route,
+  IdentifiedAccess,
 } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import {
@@ -60,6 +62,12 @@ const crewRoutes = studioV1
   .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 const crewReads = crewRoutes.errors({ 403: ForbiddenResponse });
 const crewWrites = crewRoutes.headers(IdempotencyKeyParameter);
+const crewDates = studioV1
+  .identity(operator)
+  .tags(StudioTag.CREW)
+  .headers(SurfaceParameter, TraceparentParameter)
+  .errors({ 403: ForbiddenResponse, 404: NotFoundResponse });
+const date = crewDates.resource('dates', { id: DateIdParameter });
 const InvitationIdParameter: PathParameter<'invitationId', z.ZodString> = {
   name: 'invitationId',
   in: 'path',
@@ -78,9 +86,9 @@ export const getDateCrewPane: Route<{
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -114,16 +122,15 @@ export const getDateCrewPane: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = crewReads.defineRoute({
+}> = date.path('panes').defineRoute({
   method: 'get',
-  path: '/dates/{dateId}/panes/crew',
+  path: '/crew',
   operationId: 'getDateCrewPane',
   summary: "A date's crew pane — assignments and one-off accesses, with their identifiers.",
   description:
     'Three gaps compounded on the same page, the one belonging to the `coordination` persona,\nwhose entire navigation is `crew · log · help`:\n\n- `/v1/dates/{dateId}/crew` was **POST only**: the dates × posts matrix and the "tonight"\n  list had no read path at all. `listDuties` gives **my** duties,\n  `EffectiveRights.dateGrants` gives **my** accesses — neither gives the coverage;\n- **`revokeDateAccess` revokes by `grantId`, an identifier no read handed out**;\n- `moderator_assigned` is one of the checklist items and `datesToCover` a served counter:\n  **both were computed against a coverage the studio could not read.**\n\nOpen to `artist`, `production` and `coordination`.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'Posts covered, posts missing, one-off accesses with their `grantId`.',
@@ -683,11 +690,12 @@ export const grantDateAccess: Route<{
   path: '/dates/{dateId}/crew';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       { personId: z.ZodString; crewRole: VocabularyIn<typeof CREW_ROLES>; expiresAt: z.ZodString },
@@ -702,40 +710,32 @@ export const grantDateAccess: Route<{
       >
     >;
     403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+    404: typeof ConflictResponse;
   };
-}> = crewWrites.defineRoute({
-  method: 'post',
-  path: '/dates/{dateId}/crew',
+}> = date.single('crew').create({
   operationId: 'grantDateAccess',
+  item: DateAccessGrantSchema,
   summary: 'Assigns a stand-in to a date, with an instant of expiry.',
   description:
     '**Scoped to one date, expiry served as an instant.** "Expires at curtain call + 1 h" is a\nscreen sentence; the contract carries the instant. Revocable **without touching channel\nmembership** — conflating the two would turn revoking a stand-in into expulsion.\n\n**Assignment to the `director` slot grants access to the stream key.** It is therefore\nreserved to `artist ∨ production`, and the contract makes **that reason** explicit rather than\nleaving it to be guessed.\n\n**Sixty seconds is not good enough for an access that expires**: the internal token carries the\nroles, but the service checks the time-boxed access **on the loaded resource**.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [DateIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          personId: uuidOut(),
-          crewRole: vocabularyIn(CREW_ROLES).meta({
-            'x-arthome-vocabulary-source': 'CREW_ROLES',
-          }),
-          expiresAt: z
-            .string()
-            .regex(new RegExp('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$'))
-            .meta({
-              format: 'date-time',
-            }),
-        }),
-        example: {
-          personId: '019928b2-0000-7000-8000-000000000001',
-          crewRole: CrewRole.DIRECTOR,
-          expiresAt: '2026-09-21T21:45:00Z',
-        },
-      },
-    },
+  body: z.object({
+    personId: uuidOut(),
+    crewRole: vocabularyIn(CREW_ROLES).meta({
+      'x-arthome-vocabulary-source': 'CREW_ROLES',
+    }),
+    expiresAt: z
+      .string()
+      .regex(new RegExp('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$'))
+      .meta({
+        format: 'date-time',
+      }),
+  }),
+  example: {
+    personId: '019928b2-0000-7000-8000-000000000001',
+    crewRole: CrewRole.DIRECTOR,
+    expiresAt: '2026-09-21T21:45:00Z',
   },
   responses: {
     201: {

@@ -38,6 +38,7 @@ import {
   vocabularyOutNullable,
 } from '@arthome/core/schema';
 
+import { sensitive } from '../http/index.js';
 import { ActorSchema } from '../studio-access/index.js';
 import { StudioLocalizedTextSchema } from '../text/index.js';
 
@@ -425,7 +426,7 @@ export const HealthSeriesSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
 /** A secret, shown once and never cached. */
 export const StreamKeyRevealSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
   .looseObject({
-    streamKey: z.string(),
+    streamKey: sensitive(z.string()),
     ingestUrl: z.string().meta({ format: 'uri' }),
     revealedAt: InstantOut,
   })

@@ -9,7 +9,7 @@ import type { z } from 'zod';
 import { ApiErrorCode } from '@arthome/core';
 
 import type { ErrorStatus } from './errors.js';
-import type { Header, Parameter, SecurityRequirement } from './index.js';
+import type { Header, Parameter, Response, SecurityRequirement } from './index.js';
 
 /** The codes each status of a declaration can carry. */
 export type CodesByStatus = Readonly<Partial<Record<ErrorStatus, readonly string[]>>>;
@@ -22,6 +22,8 @@ export interface Identity<
   Name extends string = string,
   Principal extends z.ZodType = z.ZodType,
   Codes extends string = string,
+  Every extends readonly Parameter[] = readonly Parameter[],
+  Writes extends readonly Parameter[] = readonly Parameter[],
 > {
   readonly name: Name;
   /** The security requirements the document writes: a read, and a write (a cookie write adds its CSRF token). */
@@ -34,12 +36,14 @@ export interface Identity<
   readonly optionalAlso: readonly SecurityRequirement[];
   /** The codes this identity adds to a status of every route that requires it. */
   readonly errors: CodesByStatus;
+  /** The responses written whole for a write: the one a cookie write's CSRF refusal has, kept over a derived one. */
+  readonly writeResponses: Readonly<Partial<Record<ErrorStatus, Response>>>;
   /** The codes added to a write only (the CSRF refusal of a cookie write, a stale rights version). */
   readonly writeErrors: CodesByStatus;
   /** Parameters every route of the identity takes (an internal route's deadline). */
-  readonly parameters: readonly Parameter[];
+  readonly parameters: Every;
   /** Parameters a write takes (`If-Rights-Version`). */
-  readonly writeParameters: readonly Parameter[];
+  readonly writeParameters: Writes;
   /** Headers every 2xx response carries (`X-Arthome-Rights-Version`). */
   readonly responseHeaders: Readonly<Record<string, Header>>;
   /** An internal identity (a service's): its routes are marked internal and kept out of every surface document. */
@@ -48,7 +52,11 @@ export interface Identity<
   readonly codes?: readonly Codes[];
 }
 
-export interface IdentityOptions<Principal extends z.ZodType> {
+export interface IdentityOptions<
+  Principal extends z.ZodType,
+  Every extends readonly Parameter[] = readonly [],
+  Writes extends readonly Parameter[] = readonly [],
+> {
   readonly schemes: {
     readonly read: readonly SecurityRequirement[];
     readonly write: readonly SecurityRequirement[];
@@ -57,8 +65,9 @@ export interface IdentityOptions<Principal extends z.ZodType> {
   readonly optionalAlso?: readonly SecurityRequirement[];
   readonly errors?: CodesByStatus;
   readonly writeErrors?: CodesByStatus;
-  readonly parameters?: readonly Parameter[];
-  readonly writeParameters?: readonly Parameter[];
+  readonly writeResponses?: Readonly<Partial<Record<ErrorStatus, Response>>>;
+  readonly parameters?: Every;
+  readonly writeParameters?: Writes;
   readonly responseHeaders?: Readonly<Record<string, Header>>;
   readonly internal?: boolean;
 }
@@ -72,13 +81,15 @@ export function identity<
   const Principal extends z.ZodType,
   const Errors extends CodesByStatus = Record<never, never>,
   const WriteErrors extends CodesByStatus = Record<never, never>,
+  const Every extends readonly Parameter[] = readonly [],
+  const Writes extends readonly Parameter[] = readonly [],
 >(
   name: Name,
-  options: IdentityOptions<Principal> & {
+  options: IdentityOptions<Principal, Every, Writes> & {
     readonly errors?: Errors;
     readonly writeErrors?: WriteErrors;
   },
-): Identity<Name, Principal, CodesIn<Errors> | CodesIn<WriteErrors>> {
+): Identity<Name, Principal, CodesIn<Errors> | CodesIn<WriteErrors>, Every, Writes> {
   return {
     name,
     schemes: options.schemes,
@@ -86,8 +97,9 @@ export function identity<
     optionalAlso: options.optionalAlso ?? [],
     errors: options.errors ?? {},
     writeErrors: options.writeErrors ?? {},
-    parameters: options.parameters ?? [],
-    writeParameters: options.writeParameters ?? [],
+    writeResponses: options.writeResponses ?? {},
+    parameters: options.parameters ?? ([] as unknown as Every),
+    writeParameters: options.writeParameters ?? ([] as unknown as Writes),
     responseHeaders: options.responseHeaders ?? {},
     internal: options.internal ?? false,
   };

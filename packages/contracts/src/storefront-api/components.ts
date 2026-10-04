@@ -607,7 +607,9 @@ export const DevicePrincipalSchema: z.ZodObject<{ deviceId: z.ZodString }, z.cor
 export const viewer: Identity<
   'viewer',
   typeof ViewerPrincipalSchema,
-  typeof ApiErrorCode.FORBIDDEN
+  typeof ApiErrorCode.FORBIDDEN,
+  readonly [],
+  readonly []
 > = identity('viewer', {
   schemes: {
     read: [{ sessionCookie: [] }, { bearerToken: [] }],
@@ -616,16 +618,20 @@ export const viewer: Identity<
   principal: ViewerPrincipalSchema,
   optionalAlso: [{ deviceToken: [] }],
   writeErrors: { 403: [ApiErrorCode.FORBIDDEN] },
+  writeResponses: { 403: CsrfRefusedResponse },
 });
 
 /** The television, paired to an account: it holds a device token and no session. */
-export const device: Identity<'paired_device', typeof DevicePrincipalSchema, never> = identity(
+export const device: Identity<
   'paired_device',
-  {
-    schemes: { read: [{ deviceToken: [] }], write: [{ deviceToken: [] }] },
-    principal: DevicePrincipalSchema,
-  },
-);
+  typeof DevicePrincipalSchema,
+  never,
+  readonly [],
+  readonly []
+> = identity('paired_device', {
+  schemes: { read: [{ deviceToken: [] }], write: [{ deviceToken: [] }] },
+  principal: DevicePrincipalSchema,
+});
 
 export const storefrontV1: RouteBuilder<
   1,

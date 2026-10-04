@@ -32,39 +32,41 @@ import {
   vocabularyOutNullable,
 } from '@arthome/core/schema';
 
+import type { IdempotencyKeyParameter, IfRightsVersionParameter } from './components.js';
 import {
   ChannelIdParameter,
   ConflictResponse,
   DateIdParameter,
   ForbiddenResponse,
-  IdempotencyKeyParameter,
   IdempotencyReplayedHeader,
-  IfRightsVersionParameter,
   NotFoundResponse,
   RightsVersionHeader,
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
+  operator,
   studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, Route } from '../http/index.js';
+import type {
+  JsonRequestBody,
+  JsonResponse,
+  Route,
+  IdentifiedAccess,
+  ExpectedVersionQuery,
+} from '../http/index.js';
 import { DateSheetSchema, PublicationSchema } from '../studio-stage/index.js';
 import { StudioLocalizedTextSchema } from '../text/index.js';
 
 const publicationRoutes = studioV1
+  .identity(operator)
   .tags(StudioTag.PUBLICATION)
-  .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
-const publicationReads = publicationRoutes.errors({
-  403: ForbiddenResponse,
-  404: NotFoundResponse,
-});
-const publicationWrites = publicationRoutes.headers(IdempotencyKeyParameter);
-const dates = publicationWrites.resource('dates', { id: DateIdParameter });
-const channelDates = publicationWrites.resource('channels/{channelId}/dates', {
-  id: DateIdParameter,
-  parents: [ChannelIdParameter],
-});
+  .headers(SurfaceParameter, TraceparentParameter)
+  .errors({ 403: ForbiddenResponse, 404: NotFoundResponse });
+const date = publicationRoutes.resource('dates', { id: DateIdParameter });
+const channelDates = publicationRoutes
+  .path('channels/{channelId}', ChannelIdParameter)
+  .resource('dates', { id: DateIdParameter });
 
 const MOVE_DATE_PUBLICATION_STATE_TO: readonly [
   typeof PublicationState.DRAFT,
@@ -86,11 +88,12 @@ export const createDateDraft: Route<{
   path: '/channels/{channelId}/dates';
   parameters: readonly [
     typeof ChannelIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -113,6 +116,7 @@ export const createDateDraft: Route<{
     >;
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
 }> = channelDates.create({
   operationId: 'createDateDraft',
@@ -254,9 +258,9 @@ export const getDateSheet: Route<{
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -267,16 +271,14 @@ export const getDateSheet: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = publicationReads.defineRoute({
-  method: 'get',
-  path: '/dates/{dateId}/sheet',
+}> = date.single('sheet').find({
   operationId: 'getDateSheet',
+  item: DateSheetSchema,
   summary: "A date's record, and the list of panes open to this person.",
   description:
     '**One call for the record, then one call per open pane, at its owner.** A moderator must be\nable to load the `chat` pane **without** loading the whole record, otherwise ticketing travels\nfor nothing.\n\n`openPanes` is **served**, not inferred: the very layout of the screen depends on the\neffective rights, and the overview appears only beyond three open panes.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
-  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'The record and its publication.',
@@ -328,9 +330,9 @@ export const getDatePublicPane: Route<{
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -368,16 +370,15 @@ export const getDatePublicPane: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = publicationReads.defineRoute({
+}> = date.path('panes').defineRoute({
   method: 'get',
-  path: '/dates/{dateId}/panes/public',
+  path: '/public',
   operationId: 'getDatePublicPane',
   summary: "A date's public pane — what is published.",
   description:
     'One of the five panes that were missing. The motive "one call for the record, then one call\nper open pane, **at its owner**" was stated twice and implemented once: a `moderation` role\nreceived `openPanes: [chat]` and had **no pane to call**, a `coordination` role received\n`[tech, crew]` — neither of the two existed.\n\nOpen to `artist` and `production`.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
-  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'The public pane.',
@@ -441,9 +442,9 @@ export const getDateReplayPane: Route<{
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -473,16 +474,15 @@ export const getDateReplayPane: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = publicationReads.defineRoute({
+}> = date.path('panes').defineRoute({
   method: 'get',
-  path: '/dates/{dateId}/panes/replay',
+  path: '/replay',
   operationId: 'getDateReplayPane',
   summary: "A date's replay pane — the promise, the file, the sale.",
   description:
     'The three things the sources conflated, served separately: the **promise** belongs to\n`catalog`, the **file and its expiry** to `streaming`, the **sale** to `ticketing`.\n\nOpen to `artist` and `production`.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.CATALOG, Service.STREAMING, Service.TICKETING],
-  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'Policy, active, remaining window, sale, audience.',
@@ -553,11 +553,12 @@ export const moveDatePublicationState: Route<{
   path: '/dates/{dateId}/publication/transitions';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -579,47 +580,38 @@ export const moveDatePublicationState: Route<{
     >;
     403: typeof ForbiddenResponse;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+    404: typeof ConflictResponse;
   };
-}> = publicationWrites.defineRoute({
-  method: 'post',
-  path: '/dates/{dateId}/publication/transitions',
+}> = date.action('publication/transitions', {
   operationId: 'moveDatePublicationState',
   summary: 'Moves the date through the state machine.',
   description:
     '**Three guarantees, and not one of them is an interface courtesy.**\n\n1. **The server refuses the reverse transition.** Not offering it in the interface is not a\n   guarantee. The refusal carries `publication.transition_irreversible`, the transition attempted **and\n   the promise committed** as parameters — `prices_engaged` for `draft|reserve → scheduled`,\n   `replay_sold` for `ended → replay_online`. **The lock bears on the `from > to` pair, not\n   on the state.**\n2. **It is conditional and versioned.** Two people can be on the record: a command sent from\n   `technical` while the current state is `live` is refused with `state.conflict`,\n   **with the current state and version**. The studio is multi-operator without a lock; the arbitration\n   is on the server.\n3. **`Idempotency-Key` is mandatory, not recommended**: the transition commits a public price\n   or a sale.\n\n**The publication gate is served, not recomputed**: the refusal names the **missing** items as\nparameters, since the screen counts them ("publish — 3 missing"). Never a percentage, which\nthe client would compute.\n\n**The attempt to go backwards is itself logged**: an attempt to walk back a committed price is\nin itself a piece of operational information.\n\nTwo transitions are **not** commands: `technical → live` and `live → ended` are **caused by a\n`streaming` event**. Publication does not command the broadcast, it **learns** of it — only\n`streaming` knows whether the feed is arriving.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
-  parameters: [DateIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          to: vocabularyIn(MOVE_DATE_PUBLICATION_STATE_TO).meta({
-            'x-arthome-vocabulary-source': 'PUBLICATION_STATES',
-            'x-arthome-vocabulary-narrowing':
-              '`live` and `ended` are not commands: they are caused by a streaming event, because only streaming knows whether the feed is arriving. Offering them would let a studio declare a date on air that is sending nothing.',
-            description:
-              "**A strict narrowing of `PUBLICATION_STATES`, and the two missing members carry the\ndocument's most important rule about this path.** `live` and `ended` are **not\ncommands**: they are caused by a `streaming` event, because only `streaming` knows\nwhether the feed is arriving. Publication does not command the broadcast, it learns\nof it. Offering them here would let a studio declare a date on air that is sending\nnothing.\n",
-          }),
-          expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
-          acknowledgedPromiseCode: z
-            .literal([...PUBLICATION_PROMISES, null])
-            .meta({
-              type: ['string', 'null'],
-              'x-arthome-vocabulary-source': 'PUBLICATION_PROMISES',
-              description:
-                "**Mandatory for a transition with no way back.** The confirmation carries the promise's\ncode, and its wording comes from the contract: the interface does not invent it.\nMissing or different, the transition is refused with `publication.promise_unacknowledged`\nand the promise to confirm.\n",
-            })
-            .optional(),
-        }),
-        example: {
-          to: DisplayState.SCHEDULED,
-          expectedVersion: 7,
-          acknowledgedPromiseCode: PublicationPromise.PRICES_ENGAGED,
-        },
-      },
-    },
+  body: z.object({
+    to: vocabularyIn(MOVE_DATE_PUBLICATION_STATE_TO).meta({
+      'x-arthome-vocabulary-source': 'PUBLICATION_STATES',
+      'x-arthome-vocabulary-narrowing':
+        '`live` and `ended` are not commands: they are caused by a streaming event, because only streaming knows whether the feed is arriving. Offering them would let a studio declare a date on air that is sending nothing.',
+      description:
+        "**A strict narrowing of `PUBLICATION_STATES`, and the two missing members carry the\ndocument's most important rule about this path.** `live` and `ended` are **not\ncommands**: they are caused by a `streaming` event, because only `streaming` knows\nwhether the feed is arriving. Publication does not command the broadcast, it learns\nof it. Offering them here would let a studio declare a date on air that is sending\nnothing.\n",
+    }),
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+    acknowledgedPromiseCode: z
+      .literal([...PUBLICATION_PROMISES, null])
+      .meta({
+        type: ['string', 'null'],
+        'x-arthome-vocabulary-source': 'PUBLICATION_PROMISES',
+        description:
+          "**Mandatory for a transition with no way back.** The confirmation carries the promise's\ncode, and its wording comes from the contract: the interface does not invent it.\nMissing or different, the transition is refused with `publication.promise_unacknowledged`\nand the promise to confirm.\n",
+      })
+      .optional(),
+  }),
+  example: {
+    to: DisplayState.SCHEDULED,
+    expectedVersion: 7,
+    acknowledgedPromiseCode: PublicationPromise.PRICES_ENGAGED,
   },
   responses: {
     200: {
@@ -693,11 +685,12 @@ export const setDateReplayPolicy: Route<{
   path: '/dates/{dateId}/replay-policy';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -716,35 +709,28 @@ export const setDateReplayPolicy: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
-}> = publicationWrites.defineRoute({
-  method: 'put',
-  path: '/dates/{dateId}/replay-policy',
+}> = date.single('replay-policy').replace({
   operationId: 'setDateReplayPolicy',
+  item: PublicationSchema,
   summary: 'Sets the replay policy — the promise made before the purchase.',
   description:
     '**`none` is final for this date.** You cannot later switch on a replay you promised not to\nmake: the public price depended on it. The other values lock when ticketing opens.\n\nThe contract separates three things the sources conflated: the **promise** belongs to\n`catalog`, the **sale** to `ticketing`, the **file and its expiry** to `streaming`.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
-  parameters: [DateIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          policy: vocabularyIn(REPLAY_POLICIES).meta({
-            'x-arthome-vocabulary-source': 'REPLAY_POLICIES',
-          }),
-          windowHours: z.int().min(1).meta({ maximum: undefined }).nullable().optional(),
-          expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
-        }),
-        example: {
-          policy: ReplayPolicy.UNIT,
-          windowHours: 72,
-          expectedVersion: 7,
-        },
-      },
-    },
+  body: z.object({
+    policy: vocabularyIn(REPLAY_POLICIES).meta({
+      'x-arthome-vocabulary-source': 'REPLAY_POLICIES',
+    }),
+    windowHours: z.int().min(1).meta({ maximum: undefined }).nullable().optional(),
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+  }),
+  example: {
+    policy: ReplayPolicy.UNIT,
+    windowHours: 72,
+    expectedVersion: 7,
   },
   responses: {
     200: {
@@ -800,11 +786,13 @@ export const deleteDate: Route<{
   path: '/dates/{dateId}';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    ExpectedVersionQuery,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -821,17 +809,16 @@ export const deleteDate: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
     404: typeof NotFoundResponse;
+    403: typeof ConflictResponse;
   };
-}> = publicationWrites.defineRoute({
-  method: 'delete',
-  path: '/dates/{dateId}',
+}> = date.delete({
   operationId: 'deleteDate',
+  response: z.looseObject({ deleted: z.boolean().optional() }).optional(),
   summary: 'Deletes a date.',
   description:
     '**Refused if seats remain sold**, and the refusal carries **the count** as a parameter: the\nscreen must say "174 seats sold", not "not possible". It is a domain rule, not an interface\nguard, and the application must not try to check it on its own.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.CATALOG],
-  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'Date deleted.',
@@ -886,11 +873,12 @@ export const duplicateDate: Route<{
   path: '/dates/{dateId}/duplicate';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -909,8 +897,10 @@ export const duplicateDate: Route<{
       >
     >;
     409: typeof ConflictResponse;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
-}> = dates.action('duplicate', {
+}> = date.action('duplicate', {
   operationId: 'duplicateDate',
   summary: 'Duplicates a date, or applies it to the series.',
   description:
@@ -976,11 +966,12 @@ export const decideDateOutcome: Route<{
   path: '/dates/{dateId}/outcome';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -1014,8 +1005,9 @@ export const decideDateOutcome: Route<{
     >;
     403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
     409: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
-}> = dates.action('outcome', {
+}> = date.action('outcome', {
   operationId: 'decideDateOutcome',
   summary: "Declares a date's outcome — postpone, cancel, interrupt.",
   description:

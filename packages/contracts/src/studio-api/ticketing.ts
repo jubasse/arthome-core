@@ -31,6 +31,7 @@ import {
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
+  operator,
   studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
@@ -40,6 +41,7 @@ import type {
   PathParameter,
   QueryParameter,
   Route,
+  IdentifiedAccess,
 } from '../http/index.js';
 import { DateSalesPaneSchema } from '../studio-money/index.js';
 
@@ -48,6 +50,12 @@ const ticketingRoutes = studioV1
   .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 const ticketingReads = ticketingRoutes.errors({ 403: ForbiddenResponse });
 const ticketingWrites = ticketingRoutes.headers(IdempotencyKeyParameter);
+const ticketingDates = studioV1
+  .identity(operator)
+  .tags(StudioTag.TICKETING)
+  .headers(SurfaceParameter, TraceparentParameter)
+  .errors({ 403: ForbiddenResponse, 404: NotFoundResponse });
+const date = ticketingDates.resource('dates', { id: DateIdParameter });
 const SeatIdParameter: PathParameter<'seatId', z.ZodString> = {
   name: 'seatId',
   in: 'path',
@@ -76,9 +84,9 @@ export const getDateTicketsPane: Route<{
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -89,16 +97,15 @@ export const getDateTicketsPane: Route<{
     403: typeof ForbiddenResponse;
     404: typeof NotFoundResponse;
   };
-}> = ticketingReads.defineRoute({
+}> = date.path('panes').defineRoute({
   method: 'get',
-  path: '/dates/{dateId}/panes/tickets',
+  path: '/tickets',
   operationId: 'getDateTicketsPane',
   summary: "A date's ticketing pane.",
   description:
     'Served by `ticketing`, **projected according to the role**: `grossRevenue` is absent without\n`canRevenue`. The pane is open to `artist`, `production` and `treasury`.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [DateIdParameter],
   responses: {
     200: {
       description: 'Jauge, paliers, tarifs, promotions, provision technique.',
@@ -157,11 +164,12 @@ export const setDatePrices: Route<{
   path: '/dates/{dateId}/prices';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -189,53 +197,46 @@ export const setDatePrices: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
-}> = ticketingWrites.defineRoute({
-  method: 'put',
-  path: '/dates/{dateId}/prices',
+}> = date.single('prices').replace({
   operationId: 'setDatePrices',
+  item: DateSalesPaneSchema,
   summary: "Sets a date's prices.",
   description:
     '**`ticketing` applies its own lock**, it asks `catalog` for nothing: it refuses as soon as it\nhas consumed `publication.engaged`, with its own code and its own trace. This is the answer to\nthe reproach "an aggregate straddling three contexts" — publication publishes a fact, each\nowner locks what it owns.\n\n**"Apply to the series" excludes prices**: each date commits its own buyers.\n\n**One currency per date**, its billing market\'s (D-016): tiers in two currencies are refused\nwith `date.prices_currency_mismatch`, whose `params` name the stray `tier`, its `currency`,\nand the `expected` one.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [DateIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
-          tiers: z.array(
-            z.object({
-              tier: vocabularyIn(PRICE_TIERS).meta({
-                'x-arthome-vocabulary-source': 'PRICE_TIERS',
-              }),
-              amountMinor: z.int().min(0).meta({ maximum: undefined }),
-              currencyCode: z.string().regex(new RegExp('^[A-Z]{3}$')),
-              active: z.boolean(),
-            }),
-          ),
+  body: z.object({
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+    tiers: z.array(
+      z.object({
+        tier: vocabularyIn(PRICE_TIERS).meta({
+          'x-arthome-vocabulary-source': 'PRICE_TIERS',
         }),
-        example: {
-          expectedVersion: 12,
-          tiers: [
-            {
-              tier: PriceTier.FULL,
-              amountMinor: 2400,
-              currencyCode: 'EUR',
-              active: true,
-            },
-            {
-              tier: PriceTier.REDUCED,
-              amountMinor: 1600,
-              currencyCode: 'EUR',
-              active: true,
-            },
-          ],
-        },
+        amountMinor: z.int().min(0).meta({ maximum: undefined }),
+        currencyCode: z.string().regex(new RegExp('^[A-Z]{3}$')),
+        active: z.boolean(),
+      }),
+    ),
+  }),
+  example: {
+    expectedVersion: 12,
+    tiers: [
+      {
+        tier: PriceTier.FULL,
+        amountMinor: 2400,
+        currencyCode: 'EUR',
+        active: true,
       },
-    },
+      {
+        tier: PriceTier.REDUCED,
+        amountMinor: 1600,
+        currencyCode: 'EUR',
+        active: true,
+      },
+    ],
   },
   responses: {
     200: {
@@ -292,11 +293,12 @@ export const openCapacityTier: Route<{
   path: '/dates/{dateId}/capacity-tiers';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -327,33 +329,25 @@ export const openCapacityTier: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
-}> = ticketingWrites.defineRoute({
-  method: 'post',
-  path: '/dates/{dateId}/capacity-tiers',
+}> = date.action('capacity-tiers', {
   operationId: 'openCapacityTier',
   summary: 'Opens a capacity tier, and warns the waiting list in the same gesture.',
   description:
     '**One transactional command, not two.** Two calls would let the scarcity dissipate between\nthem: the priority window (2 h) is a **domain parameter**, served and not copied out.\n\n**Capacity widens in tiers and never shrinks** once the sale has opened: a reduction is\nrefused with `capacity.tier_must_widen`.\n\nBeyond `TECHNICAL_PROVISION_THRESHOLD` seats (`@arthome/core`), the technical provision is\nrequired: a capacity no recorded provision covers is refused with\n`date.technical_provision_required`, whose `params` name the `threshold`, the `capacityTotal`\nasked for, the `provisionedCapacity` when one is recorded, and `revisableUntil`,\n`PROVISION_REVISION_HOURS` before the start, once the date has one. The studio records the\nprovision first, with `setTechnicalProvision`. Threshold, provision, deadline and exposure to\nthe penalty are **contract data**.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [DateIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          additionalCapacity: z.int().min(1).meta({ maximum: undefined }),
-          expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
-          notifyWaitlist: z.boolean().default(true).optional(),
-        }),
-        example: {
-          additionalCapacity: 50,
-          expectedVersion: 12,
-          notifyWaitlist: true,
-        },
-      },
-    },
+  body: z.object({
+    additionalCapacity: z.int().min(1).meta({ maximum: undefined }),
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+    notifyWaitlist: z.boolean().default(true).optional(),
+  }),
+  example: {
+    additionalCapacity: 50,
+    expectedVersion: 12,
+    notifyWaitlist: true,
   },
   responses: {
     200: {
@@ -423,11 +417,12 @@ export const setTechnicalProvision: Route<{
   path: '/dates/{dateId}/technical-provision';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<{ provisionedCapacity: z.ZodInt; expectedVersion: z.ZodInt }, z.core.$strip>
   >;
@@ -439,31 +434,24 @@ export const setTechnicalProvision: Route<{
       >
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
-}> = ticketingWrites.defineRoute({
-  method: 'put',
-  path: '/dates/{dateId}/technical-provision',
+}> = date.single('technical-provision').replace({
   operationId: 'setTechnicalProvision',
+  item: DateSalesPaneSchema,
   summary: "Records or revises a date's technical provision.",
   description:
     'Beyond `TECHNICAL_PROVISION_THRESHOLD` seats (`@arthome/core`), `openCapacityTier` refuses a\ncapacity no recorded provision covers (D-088). This records the capacity the infrastructure\nis provisioned for, and replaces the one recorded before.\n\n**Revisable until `revisableUntil`**, `PROVISION_REVISION_HOURS` before the start: from then\non it is refused with `date.provision_deadline_passed`. A date with no start yet has no\ndeadline. A provision below the capacity already open covers nothing and is refused with\n`date.provision_below_capacity`, whose `params` name both figures.\n\nThe penalty for a forecast far above the real figure is not defined yet (D-088).\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [DateIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          provisionedCapacity: z.int().min(1).meta({ maximum: undefined }),
-          expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
-        }),
-        example: {
-          provisionedCapacity: 15000,
-          expectedVersion: 12,
-        },
-      },
-    },
+  body: z.object({
+    provisionedCapacity: z.int().min(1).meta({ maximum: undefined }),
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+  }),
+  example: {
+    provisionedCapacity: 15000,
+    expectedVersion: 12,
   },
   responses: {
     200: {
@@ -632,11 +620,12 @@ export const issueComplimentary: Route<{
   path: '/dates/{dateId}/complimentaries';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
     typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
   ];
+  access: IdentifiedAccess<typeof operator, false>;
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
@@ -668,33 +657,25 @@ export const issueComplimentary: Route<{
       >
     >;
     409: typeof ConflictResponse;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
   };
-}> = ticketingWrites.defineRoute({
-  method: 'post',
-  path: '/dates/{dateId}/complimentaries',
+}> = date.action('complimentaries', {
   operationId: 'issueComplimentary',
   summary: 'Issues complimentary tickets, by category.',
   description:
     'Complimentary tickets **by category** are one of the six shapes the sources did not carry.\nThey enter the `ticketing` contract at tier 3, **marked provisional**.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [DateIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          categoryId: z.string(),
-          quantity: z.int().min(1).max(100),
-          note: z.string().nullable().optional(),
-        }),
-        example: {
-          categoryId: 'press',
-          quantity: 4,
-          note: 'Invitations presse',
-        },
-      },
-    },
+  body: z.object({
+    categoryId: z.string(),
+    quantity: z.int().min(1).max(100),
+    note: z.string().nullable().optional(),
+  }),
+  example: {
+    categoryId: 'press',
+    quantity: 4,
+    note: 'Invitations presse',
   },
   responses: {
     201: {

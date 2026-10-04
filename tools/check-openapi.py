@@ -11,6 +11,22 @@ counts = {}
 HTTP = {"get","put","post","delete","patch","head","options","trace"}
 ERRS = []
 
+
+def envelope_shaped(schema):
+    """The shared envelope, or what a route that adds domain codes writes in its place.
+
+    A status whose codes the api already documents keeps the shared `ErrorEnvelope`. A status
+    that adds a code (a stale rights version, a locked price) is a `oneOf` of one envelope per
+    code, each carrying `error` and `servedAt` with the code it stands for: the typed client's
+    union on `error.code` is read from it.
+    """
+    if schema.get("$ref") == "#/components/schemas/ErrorEnvelope":
+        return True
+    if "oneOf" in schema or "anyOf" in schema:
+        return all(envelope_shaped(branch) for branch in schema.get("oneOf") or schema.get("anyOf"))
+    props = schema.get("properties") or {}
+    return "error" in props and "servedAt" in props
+
 def err(doc, msg): ERRS.append(f"{doc}: {msg}")
 
 def walk(node, path=""):
@@ -205,7 +221,7 @@ def check(fn):
                     continue
                 for ct, media in (r.get("content") or {}).items():
                     s = media.get("schema",{})
-                    if s.get("$ref") != "#/components/schemas/ErrorEnvelope":
+                    if not envelope_shaped(s):
                         err(fn, f"R10 response {c} does not use ErrorEnvelope — {oid}")
 
         # R11 — every committing write carries Idempotency-Key

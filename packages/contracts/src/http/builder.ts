@@ -372,8 +372,9 @@ function responsesOf(
   own: Readonly<Record<string, readonly string[]>>,
   ownBases: Readonly<Record<string, Response>>,
   derived: Readonly<Record<string, readonly string[]>>,
+  identityBases: Readonly<Partial<Record<string, Response>>> = {},
 ): Record<string, Response> {
-  const bases = { ...settings.bases, ...ownBases };
+  const bases = { ...identityBases, ...settings.bases, ...ownBases };
   const statuses = new Set([
     ...Object.keys(bases),
     ...Object.keys(settings.codes),
@@ -511,6 +512,10 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
         );
       }
       const [ownBases, ownCodes] = split(errors ?? {});
+      const identityBases =
+        access?.kind === 'identified' && rest.method !== 'get'
+          ? access.identity.writeResponses
+          : {};
       const tags = rest.tags ?? settings.tags;
       const identityParameters =
         access?.kind === 'identified'
@@ -550,7 +555,7 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
       });
       const responses = withHeaders(
         {
-          ...responsesOf(settings, ownCodes, ownBases, derived),
+          ...responsesOf(settings, ownCodes, ownBases, derived, identityBases),
           ...(conditional?.notModified !== undefined && { 304: conditional.notModified }),
           ...rest.responses,
         },

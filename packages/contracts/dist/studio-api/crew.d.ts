@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { CREW_ROLES, MEMBER_ROLES } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
-import { ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, PageParameter, PageSizeParameter, SurfaceParameter, TraceparentParameter } from './components.js';
+import { ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, PageParameter, PageSizeParameter, SurfaceParameter, TraceparentParameter, operator } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
+import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route, IdentifiedAccess } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import { ChannelMemberSchema, DateAccessGrantSchema, EffectiveRightsSchema } from '../studio-access/index.js';
 declare const RESPOND_TO_INVITATION_DECISION: readonly ["accept", "decline"];
@@ -14,9 +14,9 @@ export declare const getDateCrewPane: Route<{
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodObject<{
@@ -155,11 +155,12 @@ export declare const grantDateAccess: Route<{
     path: '/dates/{dateId}/crew';
     parameters: readonly [
         typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
+        typeof IfRightsVersionParameter
     ];
+    access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
         personId: z.ZodString;
         crewRole: VocabularyIn<typeof CREW_ROLES>;
@@ -170,6 +171,7 @@ export declare const grantDateAccess: Route<{
             data: typeof DateAccessGrantSchema;
         }, z.core.$loose>>>;
         403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+        404: typeof ConflictResponse;
     };
 }>;
 export declare const revokeDateAccess: Route<{
