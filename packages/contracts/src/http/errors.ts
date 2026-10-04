@@ -13,7 +13,23 @@ import type { ErrorParamsRead } from '@arthome/core/schema';
 import type { JsonResponse, Response } from './index.js';
 
 export type ErrorStatus =
-  400 | 401 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;
+  | 400
+  | 401
+  | 402
+  | 403
+  | 404
+  | 409
+  | 410
+  | 412
+  | 413
+  | 415
+  | 422
+  | 423
+  | 429
+  | 500
+  | 502
+  | 503
+  | 504;
 
 /** The body of a failure carrying `C`: a union over the members of `C`, discriminated on `error.code`. */
 export type ErrorBody<C extends string> = C extends string

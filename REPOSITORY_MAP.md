@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 133 exported names.
+Declarations: `dist/http/index.d.ts` — 135 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
@@ -107,11 +107,12 @@ Declarations: `dist/http/index.d.ts` — 133 exported names.
 - `CrudRoutes` (type) — What 'crud' returns: its routes keyed by operation id, so the record spreads into a closure.
 - `DEFAULT_BODY_LIMIT` (const) — `DEFAULT_BODY_LIMIT = 1048576` — 1 MiB: the ceiling of a request body unless a route says otherwise ('transport.md' §5.7).
 - `DeleteRoute` (type)
+- `ERROR_STATUS` (const) — `ERROR_STATUS: Readonly<Record<ErrorCode, ErrorStatus>>`
 - `Endpoints` (type) — One method per operation id of a block of routes, each taking its 'HandlerInput' and returning its 'HandlerOutput'.
 - `ErrorBody` (type) — The body of a failure carrying 'C': a union over the members of 'C', discriminated on 'error.code'.
 - `ErrorModel` (interface) — An api's error vocabulary: the response it documents once per status (a component, so a route that adds nothing keeps its '$ref'), the code…
 - `ErrorResponse` (type) — `type ErrorResponse<C extends string> = JsonResponse<z.ZodType<ErrorBody<C>>>;` — An error response whose body is one of the envelopes of 'C'.
-- `ErrorStatus` (type) — `type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;`
+- `ErrorStatus` (type) — `type ErrorStatus = 400 | 401 | 402 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;`
 - `ErrorsInput` (type) — `type ErrorsInput<Allowed extends string> = Readonly<Partial<Record<ErrorStatus, Response | readonly Allowed[]>>>;` — What a status takes where errors are declared: a response as the document writes it, or its codes.
 - `Extensions` (type) — `type Extensions = Readonly<Record<'x-${string}', unknown>>;` — OpenAPI's specification extensions, carried into the document verbatim.
 - `FindAllRoute` (type)
@@ -209,6 +210,7 @@ Declarations: `dist/http/index.d.ts` — 133 exported names.
 - `sensitivePathsOf` (function) — `function sensitivePathsOf(schema: z.ZodType): readonly string[];` — The dotted paths of the sensitive fields: 'reauthToken', 'data.streamKey', 'items[].secret'.
 - `sortDirectionSchema` (function) — `function sortDirectionSchema(): z.ZodDefault<z.ZodEnum<{ readonly [K in SortDirection]: K; }>>;` — The 'sortDir' schema: ascending unless asked otherwise.
 - `sortKeyName` (function) — `function sortKeyName(key: SortKey): string;`
+- `statusOf` (function) — `function statusOf(code: ErrorCode): ErrorStatus;`
 - `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
 - `tagged` (function) — `function tagged<const Tag extends string, const V extends Variants>(tag: Tag, variants: V): z.ZodType<Union<Tag, V>>;` — 'tagged('outcome', { succeeded: Succeeded, declined: Declined })': each variant is an object schema without the tag, and the helper adds it.
 - `throttle` (function) — `function throttle<const Bucket extends string>(bucket: Bucket): Requirement<'throttle', { readonly bucket: Bucket; }, typeof ApiErrorCode.RATE_LIMITED>;` — A rate-limit bucket by name: the server binds the cap, and the '429' is derived.
