@@ -607,9 +607,19 @@ Two choices keep the server's types simple:
    operation and the field;
 3. the IDE hover on `HandlerInput` and `HandlerOutput`.
 
-If one of them fails, the interfaces are generated instead: a script writes one file per api, with
-named types per operation, checked byte for byte by a gate, as the OpenAPI documents are
-(`check:openapi-generated`). Either way, the controller writes `implements`, and `@EndpointInput`
+If one of them fails, the interfaces are generated instead, **in the package that consumes the
+contracts, at install**. That is the product owner's proposal:
+- **The generator** ships with `@arthome/contracts` as a command. It reads the installed apis and
+  writes one file per api into a git-ignored folder, with named types per operation.
+- **The consumer chains it to its `postinstall`.** `arthome-platform` already runs one there
+  (`arthome-sync-agent-docs`), and its `bootstrap` reinstalls whenever the core tarballs are
+  refreshed.
+- **So the files always match the installed contracts.** Nothing is committed and no gate is
+  needed. A contract change shows as compile errors in the controllers, and the declaration's diff
+  is reviewed in core.
+- **Later,** the same generator family covers the surfaces: React, Angular, mocks.
+
+Either way, the controller writes `implements`, and `@EndpointInput`
 joins the platform part of pass 1. The class decorator waits.
 
 **A redirect serves browser navigations only:** the OAuth callback, a link in an email, an old slug
