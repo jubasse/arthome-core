@@ -3,7 +3,7 @@ import { ApiErrorCode, Surface } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { StorefrontRelayedCode } from '../envelope/index.js';
-import type { AccessorOf, ErrorModel, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement } from '../http/index.js';
+import type { AccessorOf, ErrorBody, ErrorModel, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement } from '../http/index.js';
 declare const SURFACE: readonly [
     typeof Surface.STOREFRONT_WEB,
     typeof Surface.STOREFRONT_MOBILE,
@@ -37,7 +37,9 @@ export declare const IdempotencyReplayedHeader: Header;
 export declare const RetryAfterMsHeader: Header;
 export declare const CacheControlPublicHeader: Header;
 export declare const VaryAuthHeader: Header;
-export declare const BadRequestResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
+/** `api.schema_invalid`'s envelope, so the document says what a refused field carries. */
+declare const SchemaInvalidEnvelopeSchema: z.ZodType<ErrorBody<typeof ApiErrorCode.SCHEMA_INVALID>>;
+export declare const BadRequestResponse: JsonResponse<typeof SchemaInvalidEnvelopeSchema>;
 export declare const UnauthorizedResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
 export declare const CsrfRefusedResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
 export declare const ForbiddenResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;

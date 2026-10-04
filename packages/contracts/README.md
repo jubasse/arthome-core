@@ -181,7 +181,8 @@ it, so a convention that disagrees with the published operation is a compile err
 member adds codes (`errors: { 409: [CatalogErrorCode.PRICES_LOCKED] }`), merged per status with the
 crud conventions (`transport.md` §5.12). A status whose codes the api already documents keeps its
 shared response, so the document does not move; a status that adds a code gets an `anyOf` of one
-envelope per code, each with the `params` schema of `ERROR_PARAMS` in `@arthome/core/schema`. The
+envelope per code, each with the `params` schema of `ERROR_PARAMS` in `@arthome/core/schema`, which
+types them from `ErrorParamsMap` in `@arthome/core`. The
 client's type for a response is a union discriminated on `error.code`, and a storefront operation can
 declare only a code of `STOREFRONT_RELAYED_CODES`.
 

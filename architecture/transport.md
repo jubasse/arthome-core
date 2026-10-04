@@ -385,8 +385,10 @@ this:
 }
 ```
 
-- **`code` is a code, never a sentence.** A zod validation failure becomes `api.schema_invalid` with
-  the field paths in `params` — **never** zod's English message;
+- **`code` is a code, never a sentence.** A zod validation failure becomes `api.schema_invalid`, its
+  `params.issues` one per refused field: the `path`, the `rule` broken (`SCHEMA_ISSUE_RULES`) and
+  that rule's limit (`minimum`, `maximum`, `inclusive`, `format`, `values`) — **never** zod's
+  English message;
 - **`traceId` is the `trace-id` part of the `traceparent`**, readable and copyable from the error
   screen. On mobile it is the only link between "my app crashed" and a server log;
 - **`nature` is what `studio-mobile` requires**, and it is the decision someone on duty must make
@@ -622,9 +624,10 @@ rules or consequences?** If it does, it is an action.
 3. the domain codes of the operation, taken from the core vocabularies
    (`errors: { 409: [CatalogErrorCode.PRICES_LOCKED] }`).
 
-`ERROR_PARAMS` in `@arthome/core/schema` maps each code to the schema of its `error.params`, so the
-documented response, the server and the typed client read the same one; the client receives a union
-discriminated on `error.code`. A storefront operation may declare only the codes of
+`ErrorParamsMap` in `@arthome/core` gives every code the type of its `error.params`, an empty one
+for a code that carries none, and `DomainError` takes the params of its code; `ERROR_PARAMS` in
+`@arthome/core/schema` is its schema, code for code. So the documented response, the server and the
+typed client read the same one; the client receives a union discriminated on `error.code`. A storefront operation may declare only the codes of
 `STOREFRONT_RELAYED_CODES`, and the compiler refuses any other.
 
 ---

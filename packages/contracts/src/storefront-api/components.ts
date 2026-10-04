@@ -5,12 +5,14 @@ import {
   ChatErrorCode,
   FailureNature,
   OrderErrorCode,
+  SchemaIssueRule,
   Service,
   Surface,
 } from '@arthome/core';
 import type { ErrorCode } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import {
+  ERROR_PARAMS,
   errorParamsSchemaOf,
   InstantOut,
   int64,
@@ -27,6 +29,7 @@ import {
 import type { StorefrontRelayedCode } from '../envelope/index.js';
 import type {
   AccessorOf,
+  ErrorBody,
   ErrorModel,
   Header,
   Identity,
@@ -246,17 +249,28 @@ export const VaryAuthHeader: Header = {
   schema: z.string(),
 };
 
-export const BadRequestResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> = {
+/** `api.schema_invalid`'s envelope, so the document says what a refused field carries. */
+const SchemaInvalidEnvelopeSchema: z.ZodType<ErrorBody<typeof ApiErrorCode.SCHEMA_INVALID>> =
+  StorefrontErrorEnvelopeSchema.extend({
+    error: StorefrontErrorSchema.extend({
+      code: z.literal(ApiErrorCode.SCHEMA_INVALID),
+      params: ERROR_PARAMS[ApiErrorCode.SCHEMA_INVALID],
+    }),
+  });
+
+export const BadRequestResponse: JsonResponse<typeof SchemaInvalidEnvelopeSchema> = {
   description: 'Malformed request, or refused by shape validation.',
   content: {
     'application/json': {
-      schema: StorefrontErrorEnvelopeSchema,
+      schema: SchemaInvalidEnvelopeSchema,
       example: {
         error: {
           code: ApiErrorCode.SCHEMA_INVALID,
           nature: FailureNature.REFUSED,
           params: {
-            fields: ['tier'],
+            issues: [
+              { path: ['quantity'], rule: SchemaIssueRule.TOO_SMALL, minimum: 1, inclusive: true },
+            ],
           },
           traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
         },

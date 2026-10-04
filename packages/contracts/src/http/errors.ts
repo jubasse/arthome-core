@@ -7,7 +7,8 @@
 
 import { z } from 'zod';
 
-import type { ErrorParamsOf } from '@arthome/core/schema';
+import type { ErrorCode } from '@arthome/core';
+import type { ErrorParamsRead } from '@arthome/core/schema';
 
 import type { JsonResponse, Response } from './index.js';
 
@@ -19,7 +20,7 @@ export type ErrorBody<C extends string> = C extends string
   ? {
       readonly error: {
         readonly code: C;
-        readonly params: ErrorParamsOf<C>;
+        readonly params: C extends ErrorCode ? ErrorParamsRead<C> : never;
         readonly nature: string;
         readonly traceId: string;
       };

@@ -48,6 +48,21 @@ export declare const ApiErrorCode: {
     readonly REAUTHENTICATION_REQUIRED: "api.reauthentication_required";
 };
 /**
+ * The rule an `api.schema_invalid` issue broke, so a form can say what is wrong with a field
+ * without a sentence on the wire. Read from zod's issue codes, closed here.
+ */
+export declare const SCHEMA_ISSUE_RULES: readonly ["too_small", "too_big", "invalid_type", "invalid_format", "invalid_value", "unrecognized_key", "custom"];
+export type SchemaIssueRule = (typeof SCHEMA_ISSUE_RULES)[number];
+export declare const SchemaIssueRule: {
+    readonly TOO_SMALL: "too_small";
+    readonly TOO_BIG: "too_big";
+    readonly INVALID_TYPE: "invalid_type";
+    readonly INVALID_FORMAT: "invalid_format";
+    readonly INVALID_VALUE: "invalid_value";
+    readonly UNRECOGNIZED_KEY: "unrecognized_key";
+    readonly CUSTOM: "custom";
+};
+/**
  * Sign-in, sign-up and session refusals. `identity.signed_out_elsewhere` is served to a session
  * still open on this device and revoked from another: not an authentication failure, and not to
  * be retried as one.

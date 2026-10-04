@@ -13,7 +13,7 @@ import {
   orderRankOf,
   publicationReadiness,
 } from './publication.js';
-import { DomainError } from '../kernel/errors.js';
+import { isDomainError, type DomainError } from '../kernel/errors.js';
 import { PublicationPromise, PublicationState } from '../vocabulary/catalog.js';
 import { DomainErrorCode } from '../vocabulary/error-codes.js';
 import { Service } from '../vocabulary/people.js';
@@ -151,7 +151,7 @@ describe('a commanded transition', () => {
     try {
       run();
     } catch (error) {
-      if (error instanceof DomainError) return error;
+      if (isDomainError(error)) return error;
     }
     throw new Error('expected a DomainError');
   }
@@ -165,7 +165,7 @@ describe('a commanded transition', () => {
       ),
     );
     expect(refusal.code).toBe(DomainErrorCode.STATE_CONFLICT);
-    expect(refusal.params).toEqual({ state: PublicationState.DRAFT, version: 7 });
+    expect(refusal.params).toEqual({ state: PublicationState.DRAFT, currentVersion: 7 });
   });
 
   it('refuses a one-way transition whose promise was not acknowledged, naming it', () => {
@@ -177,7 +177,7 @@ describe('a commanded transition', () => {
       ),
     );
     expect(refusal.code).toBe(DomainErrorCode.PUBLICATION_PROMISE_UNACKNOWLEDGED);
-    expect(refusal.params.promise).toBe(PublicationPromise.PRICES_ENGAGED);
+    expect(refusal.params).toMatchObject({ promise: PublicationPromise.PRICES_ENGAGED });
   });
 
   it('allows it once acknowledged, and returns what it commits', () => {

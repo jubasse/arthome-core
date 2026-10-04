@@ -78,7 +78,7 @@ export function normalizePairingCodeInput(raw: string): string {
     if (PAIRING_CODE_AMBIGUOUS_GLYPHS.includes(character)) {
       throw new DomainError({
         code: DomainErrorCode.PAIRING_CODE_AMBIGUOUS_GLYPH,
-        params: { glyph: character, position: String(typed.indexOf(character) + 1) },
+        params: { glyph: character, position: typed.indexOf(character) + 1 },
       });
     }
   }

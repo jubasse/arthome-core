@@ -205,7 +205,8 @@ global is not an import. What closes that hole is `types: []` on the shared base
 
 3. **a validation failure translates into a code**, never into a zod message in English — otherwise
    i18n leaks at the first form error, and it is the payment form that leaks it. Held by
-   `issueToCode` in `src/schema/error.ts`, pinned by `schema.spec.ts`, "failures leave as codes".
+   `schemaInvalidParams` in `src/schema/error.ts`, pinned by `schema.spec.ts`, "failures leave as
+   codes".
 
 **What is NOT in zod, and what one would be tempted to put there**: the rules. `decideWatch` does
 not validate its input with a schema — it receives types already checked at the boundary and

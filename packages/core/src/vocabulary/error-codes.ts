@@ -87,6 +87,31 @@ export const ApiErrorCode = {
 } as const;
 
 /**
+ * The rule an `api.schema_invalid` issue broke, so a form can say what is wrong with a field
+ * without a sentence on the wire. Read from zod's issue codes, closed here.
+ */
+export const SCHEMA_ISSUE_RULES = [
+  'too_small',
+  'too_big',
+  'invalid_type',
+  'invalid_format',
+  'invalid_value',
+  'unrecognized_key',
+  'custom',
+] as const;
+export type SchemaIssueRule = (typeof SCHEMA_ISSUE_RULES)[number];
+
+export const SchemaIssueRule = {
+  TOO_SMALL: 'too_small',
+  TOO_BIG: 'too_big',
+  INVALID_TYPE: 'invalid_type',
+  INVALID_FORMAT: 'invalid_format',
+  INVALID_VALUE: 'invalid_value',
+  UNRECOGNIZED_KEY: 'unrecognized_key',
+  CUSTOM: 'custom',
+} as const;
+
+/**
  * Sign-in, sign-up and session refusals. `identity.signed_out_elsewhere` is served to a session
  * still open on this device and revoked from another: not an authentication failure, and not to
  * be retried as one.

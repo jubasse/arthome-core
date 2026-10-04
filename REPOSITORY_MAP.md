@@ -385,7 +385,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 458 exported names.
+Declarations: `dist/index.d.ts` — 465 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -453,13 +453,15 @@ Declarations: `dist/index.d.ts` — 458 exported names.
 - `DomainConstant` (const) — The operational constants served to every surface as 'DomainConstants' (openapi/storefront.yaml) and copied nowhere: a copy is how "the web…
 - `DomainError` (class) — An invariant violation.
 - `DomainErrorCode` (type+const)
-- `DomainErrorInit` (interface)
+- `DomainErrorInit` (type) — `type DomainErrorInit<C extends RaisableErrorCode> = { readonly code: C; readonly nature?: FailureNature; } & ParamsField<ErrorParamsOf<C>>;`
 - `DomainGuardCode` (type+const)
 - `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS` (const) — `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS = 24` — 'adr-auth.md' §6.7 (D-100): an email verification link expires after a day, and is spent by its first use.
 - `ERROR_CODES` (const) — Every error code, composed — the vocabulary the two contracts declare against.
 - `EffectiveRights` (interface)
 - `Err` (interface)
 - `ErrorCode` (type) — `type ErrorCode = (typeof ERROR_CODES)[number];`
+- `ErrorParamsMap` (interface)
+- `ErrorParamsOf` (type) — `type ErrorParamsOf<C extends RaisableErrorCode> = ErrorParamsMap[C];` — Indexing by every raisable code is what makes a code without an entry fail to compile.
 - `FAILURE_NATURES` (const) — `FAILURE_NATURES: readonly ["refused", "unavailable", "offline_forbidden"]` — The nature of a failure: retry, understand, or escalate.
 - `FILTER_SEVERITIES` (const) — `FILTER_SEVERITIES: readonly ["low", "medium", "high"]` — The automatic filter's severity.
 - `FailureNature` (type+const)
@@ -527,6 +529,7 @@ Declarations: `dist/index.d.ts` — 458 exported names.
 - `NAVIGATION_ENTRIES` (const) — The studio's navigation entries.
 - `NOTIFICATION_CHANNELS` (const) — `NOTIFICATION_CHANNELS: readonly ["push", "email", "in_app"]` — The channels a notification takes; the third is 'in_app', not 'sms' (D-017).
 - `NavigationEntry` (type+const)
+- `NoErrorParams` (type) — `type NoErrorParams = Readonly<Record<string, never>>;` — The params of a code that carries none: no key at all, rather than a loose record.
 - `NotificationChannel` (type+const)
 - `ORDER_ERROR_CODES` (const) — The viewer's commerce refusals: a purchase, a seat, a means of payment.
 - `ORDER_KINDS` (const) — `ORDER_KINDS: readonly ["seat", "merch", "subscription"]` — Distinct orders, never a mixed one (D-011).
@@ -592,6 +595,7 @@ Declarations: `dist/index.d.ts` — 458 exported names.
 - `REPLAY_POLICIES` (const) — `REPLAY_POLICIES: readonly ["included", "subscription", "unit", "none"]` — The promise made before purchase — what justifies the price difference.
 - `RIGHTS_SCOPES` (const) — `RIGHTS_SCOPES: readonly ["worldwide", "restricted"]`
 - `RUN_STATES` (const) — `RUN_STATES: readonly ["idle", "rehearsal", "on_air", "interrupted", "ended"]` — The technical axis, and nothing else.
+- `RaisableErrorCode` (type) — `type RaisableErrorCode = ErrorCode | DomainGuardCode;` — Every code a 'DomainError' can carry: the published codes and the domain's internal guards.
 - `RateLimit` (interface) — The BFFs' caps on the authentication doors ('adr-auth.md' §6.2), owned here so the storefront and the studio cap alike.
 - `RefundReason` (type+const)
 - `RefundRequest` (interface)
@@ -602,6 +606,7 @@ Declarations: `dist/index.d.ts` — 458 exported names.
 - `RunState` (type+const)
 - `SALES_QUEUE_ADMISSION_SECONDS` (const) — `SALES_QUEUE_ADMISSION_SECONDS = 60` — How long an admission out of a date's sales queue lets its account buy that date (adr-ticketing.md §4).
 - `SCARCITY_THRESHOLD_BPS` (const) — `SCARCITY_THRESHOLD_BPS = 8500` — "Almost full" — and the THRESHOLD is a domain rule, not an interface literal.
+- `SCHEMA_ISSUE_RULES` (const) — `SCHEMA_ISSUE_RULES: readonly ["too_small", "too_big", "invalid_type", "invalid_format", "invalid_value", "unrecognized_key", "custom"]` — The rule an 'api.schema_invalid' issue broke, so a form can say what is wrong with a field without a sentence on the wire.
 - `SEASON_START_MONTH` (const) — `SEASON_START_MONTH = 9` — The changeover month, in human numbering: 9 = September.
 - `SEAT_CODE_ALPHABET` (const) — `SEAT_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"` — The alphabet: Crockford base 32 — the ten digits and the letters except 'I', 'L', 'O' and 'U', the last of those to avoid spelling a rude w…
 - `SEAT_CODE_BODY_LENGTH` (const) — `SEAT_CODE_BODY_LENGTH = 6`
@@ -615,6 +620,8 @@ Declarations: `dist/index.d.ts` — 458 exported names.
 - `STATE_CHANGE_ORIGINS` (const) — `STATE_CHANGE_ORIGINS: readonly ["human_verdict", "automatic_filter", "retroactive_filter", "author_sanctioned"]` — Where a state change came from; the origin survives the settlement, so "removed by the filter, then confirmed by X" does not collapse into …
 - `SUBSCRIPTION_STATES` (const) — `SUBSCRIPTION_STATES: readonly ["active", "past_due", "cancelled", "trialing"]`
 - `SURFACES` (const) — `SURFACES: readonly ["storefront_web", "storefront_mobile", "storefront_tv", "studio_web", "studio_mobile", "system"]` — Where a decision was taken — the studio journal is by-name and situated, and 'system' is an actor like any other (standby screen, lease exp…
+- `SchemaIssue` (interface) — One field of a request that failed its schema.
+- `SchemaIssueRule` (type+const)
 - `SearchCriteria` (interface)
 - `SeatAvailability` (type) — The capacity state, as a DISCRIMINATED UNION.
 - `SeatHold` (interface)
@@ -848,7 +855,7 @@ Declarations: `dist/index.d.ts` — 458 exported names.
 
 #### @arthome/core/schema
 
-Declarations: `dist/schema/index.d.ts` — 59 exported names.
+Declarations: `dist/schema/index.d.ts` — 58 exported names.
 
 - `AccountIdSchema` (const) — `AccountIdSchema: z.ZodString`
 - `ArtistIdSchema` (const) — `ArtistIdSchema: z.ZodString`
@@ -859,9 +866,8 @@ Declarations: `dist/schema/index.d.ts` — 59 exported names.
 - `CurrencyCodeSchema` (const) — `CurrencyCodeSchema: z.ZodString` — ISO 4217, uppercase.
 - `DateIdSchema` (const) — `DateIdSchema: z.ZodString`
 - `DeviceIdSchema` (const) — `DeviceIdSchema: z.ZodString`
-- `ERROR_PARAMS` (const) — `ERROR_PARAMS: { readonly [C in keyof ErrorParamsMap]: z.ZodType<ErrorParamsMap[C]>; }`
-- `ErrorParamsMap` (interface)
-- `ErrorParamsOf` (type) — `type ErrorParamsOf<C extends string> = C extends keyof ErrorParamsMap ? ErrorParamsMap[C] : Readonly<Record<string, unknown>>;`
+- `ERROR_PARAMS` (const) — `ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRead<C>>; }`
+- `ErrorParamsRead` (type) — What a reader accepts for 'C'.
 - `ErrorSchema` (const) — The 'Error' shape both contracts publish: '{ code, nature, params, traceId }'.
 - `FailureNatureOut` (const) — `FailureNatureOut: VocabularyOut` — The failure nature, tolerant — the only vocabulary in either contract declaring its unknown-member fallback, because the cost is asymmetric…
 - `IanaTimeZoneSchema` (const) — `IanaTimeZoneSchema: z.ZodString` — An IANA time zone identifier: 'Europe/Paris'.
@@ -899,7 +905,7 @@ Declarations: `dist/schema/index.d.ts` — 59 exported names.
 - `dateTimeIn` (const) — `dateTimeIn: () => z.ZodString` — An RFC 3339 instant, offset allowed, as a request carries it in a path, a query or a header.
 - `errorParamsSchemaOf` (function) — `function errorParamsSchemaOf(code: ErrorCode): z.ZodType;`
 - `int64` (const) — `int64: () => z.ZodNumber` — A 64-bit integer on the wire: 'type: integer, format: int64', and no bounds.
-- `issueToCode` (function) — `function issueToCode(issue: z.core.$ZodIssue): { readonly code: string; readonly params: Readonly<Record<string, string>>; };` — The only sanctioned way out of a zod failure.
+- `schemaInvalidParams` (function) — `function schemaInvalidParams(issues: readonly z.core.$ZodIssue[]): ErrorParamsOf<typeof ApiErrorCode.SCHEMA_INVALID>;` — The only sanctioned way out of a zod failure: 'api.schema_invalid''s params.
 - `sourceNameOf` (function) — `function sourceNameOf(values: readonly string[], name?: string): string;` — The name this vocabulary is published under, or the one the caller declares.
 - `uriIn` (const) — `uriIn: () => z.ZodString` — An absolute URI as a request carries it: 'format: uri', and what 'z.url()' refuses is refused.
 - `uuidIn` (const) — `uuidIn: () => z.ZodString` — The same identifier where a request CARRIES it, in a path, a query or a header: 'format: uuid' and nothing more is published, but the shape…

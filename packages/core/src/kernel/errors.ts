@@ -1,5 +1,7 @@
 /** A domain error carries a code and its parameters, never a sentence: i18n by codes. */
 
+import type { ErrorParamsOf, NoErrorParams, RaisableErrorCode } from './error-params.js';
+
 /** Message parameters, resolved by the surface against its catalogue. */
 export type MessageParams = Readonly<Record<string, string | number | boolean>>;
 
@@ -18,23 +20,28 @@ export const FailureNature = {
   OFFLINE_FORBIDDEN: 'offline_forbidden',
 } as const;
 
-export interface DomainErrorInit {
-  readonly code: string;
-  readonly params?: MessageParams;
-  readonly nature?: FailureNature;
-}
+/** `params` may be left out only where the code's params accept none. */
+type ParamsField<P> = NoErrorParams extends P ? { readonly params?: P } : { readonly params: P };
 
-/** An invariant violation. It carries no text: it carries a code. */
-export class DomainError extends Error {
-  public readonly code: string;
-  public readonly params: MessageParams;
+export type DomainErrorInit<C extends RaisableErrorCode> = {
+  readonly code: C;
+  readonly nature?: FailureNature;
+} & ParamsField<ErrorParamsOf<C>>;
+
+const NO_PARAMS: NoErrorParams = {};
+
+/** An invariant violation. It carries no text: it carries a code, and the params that code takes. */
+export class DomainError<C extends RaisableErrorCode = RaisableErrorCode> extends Error {
+  public readonly code: C;
+  public readonly params: ErrorParamsOf<C>;
   public readonly nature: FailureNature;
 
-  public constructor(init: DomainErrorInit) {
+  public constructor(init: DomainErrorInit<C>) {
     super(init.code);
     this.name = 'DomainError';
     this.code = init.code;
-    this.params = init.params ?? {};
+    // Absent only when `ParamsField` made it optional, that is when no params is a valid value.
+    this.params = init.params ?? (NO_PARAMS as ErrorParamsOf<C>);
     this.nature = init.nature ?? FailureNature.REFUSED;
   }
 }

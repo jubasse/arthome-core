@@ -95,6 +95,11 @@
       "file": "packages/contracts/src/http/policy.ts",
       "value": "public",
       "reason": "The Cache-Control directive `public` (may a shared cache keep this answer), not a date pane. The two share the spelling without being the same vocabulary: importing DATE_PANES here would say a cache is shared with the public pane."
+    },
+    {
+      "file": "packages/contracts/src/studio-money/index.ts",
+      "value": "custom",
+      "reason": "A period preset of the revenue screen, a period the person chose by hand, local to this endpoint. It shares the word with SCHEMA_ISSUE_RULES, where it names a refine a request broke: importing SchemaIssueRule here would say a period broke a rule."
     }
   ]
 }

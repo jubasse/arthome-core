@@ -7766,14 +7766,115 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    const: api.schema_invalid
+                  params:
+                    type: object
+                    properties:
+                      issues:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            path:
+                              type: array
+                              items:
+                                anyOf:
+                                - type: string
+                                - type: integer
+                                  format: int64
+                            rule:
+                              type: string
+                              x-arthome-vocabulary:
+                              - too_small
+                              - too_big
+                              - invalid_type
+                              - invalid_format
+                              - invalid_value
+                              - unrecognized_key
+                              - custom
+                              x-arthome-vocabulary-source: SCHEMA_ISSUE_RULES
+                            minimum:
+                              type: number
+                            maximum:
+                              type: number
+                            inclusive:
+                              type: boolean
+                            format:
+                              type: string
+                            values:
+                              type: array
+                              items:
+                                type:
+                                - string
+                                - number
+                                - boolean
+                                - 'null'
+                          required:
+                          - path
+                          - rule
+                          additionalProperties: {}
+                    required:
+                    - issues
+                    additionalProperties: {}
+                  traceId:
+                    type: string
+                    minLength: 1
+                    examples:
+                    - 4bf92f3577b34da6a3ce929d0e0e4736
+                    description: |
+                      The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                      mobile it is the only link between "my application crashed" and a server log.
+                  nature:
+                    type: string
+                    x-arthome-vocabulary:
+                    - refused
+                    - unavailable
+                    - offline_forbidden
+                    x-arthome-vocabulary-source: FAILURE_NATURES
+                    x-arthome-unknown-fallback: unavailable
+                    examples:
+                    - refused
+                    description: |
+                      The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                      retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                      the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                      **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                      `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                      `enum` here would make a television on an earlier version reject the whole envelope: it would
+                      not lose a card, it would lose its ability to **read errors**, precisely when something is
+                      already wrong, and on a fleet we cannot update.
+                required:
+                - code
+                - params
+                - traceId
+                - nature
+                additionalProperties: {}
+              servedAt:
+                type: string
+                format: date-time
+            required:
+            - error
+            - servedAt
+            additionalProperties: {}
           example:
             error:
               code: api.schema_invalid
               nature: refused
               params:
-                fields:
-                - tier
+                issues:
+                - path:
+                  - quantity
+                  rule: too_small
+                  minimum: 1
+                  inclusive: true
               traceId: 4bf92f3577b34da6a3ce929d0e0e4736
             servedAt: '2026-09-21T20:31:04.118Z'
     Unauthorized:
