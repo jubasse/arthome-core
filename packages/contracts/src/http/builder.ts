@@ -1,6 +1,10 @@
+import { ApiErrorCode } from '@arthome/core';
+
+import type { Access, IdentifiedAccess, Identity, PublicAccess, Requirement } from './access.js';
 import type { CodesOf, ErrorModel, ErrorResponse, ErrorsInput } from './errors.js';
 import { errorResponseFor } from './errors.js';
 import type {
+  Header,
   Parameter,
   RequestBody,
   Response,
@@ -9,6 +13,14 @@ import type {
   SecurityRequirement,
 } from './index.js';
 import { defineRoute } from './index.js';
+import { sensitivePathsOf } from './marks.js';
+import type { CachePolicy } from './policy.js';
+import {
+  CACHE_CONTROL_HEADER,
+  DEFAULT_BODY_LIMIT,
+  IDEMPOTENCY_REPLAYED_HEADER,
+  VARY_HEADER,
+} from './policy.js';
 import type { Resource, ResourceConventions, ResourceOptions } from './resource.js';
 import { makeResource } from './resource.js';
 
@@ -45,15 +57,35 @@ export type BuiltRoute<
   P extends readonly Parameter[],
   E extends Responses,
   D extends Omit<BuiltRouteDefinition, 'errors'> & { readonly errors?: unknown },
+  X = undefined,
 > = Route<
   {
     readonly method: D['method'];
     readonly version: V;
     readonly path: D['path'];
-    readonly parameters: readonly [...OwnParameters<D>, ...P];
+    readonly parameters: readonly [
+      ...OwnParameters<D>,
+      ...P,
+      ...IdentityParameters<X, D['method']>,
+    ];
     readonly responses: Omit<MergedErrors<E, OwnErrors<D>>, keyof D['responses']> & D['responses'];
-  } & OwnBody<D>
+  } & OwnBody<D> &
+    AccessOf<X>
 >;
+
+/** The parameters an identity adds to every route, and to a write. */
+type IdentityParameters<X, Method> = X extends {
+  readonly identity: {
+    readonly parameters: infer Every extends readonly Parameter[];
+    readonly writeParameters: infer Writes extends readonly Parameter[];
+  };
+}
+  ? Method extends 'get'
+    ? Every
+    : readonly [...Every, ...Writes]
+  : readonly [];
+
+type AccessOf<X> = X extends Access ? { readonly access: X } : unknown;
 
 /**
  * Settings shared by the routes of a group, accumulated one call at a time. Every call returns a
@@ -71,27 +103,46 @@ export interface RouteBuilder<
   E extends Responses,
   A extends string = string,
   K extends ResourceConventions | undefined = undefined,
+  X extends Access | undefined = undefined,
 > {
-  version<const N extends number>(version: N): RouteBuilder<N, P, E, A, K>;
-  tags(...tags: readonly string[]): RouteBuilder<V, P, E, A, K>;
+  version<const N extends number>(version: N): RouteBuilder<N, P, E, A, K, X>;
+  tags(...tags: readonly string[]): RouteBuilder<V, P, E, A, K, X>;
   headers<const H extends HeaderParameters>(
     ...headers: H
-  ): RouteBuilder<V, readonly [...P, ...H], E, A, K>;
+  ): RouteBuilder<V, readonly [...P, ...H], E, A, K, X>;
   errors<const R extends ErrorsInput<A>>(
     errors: R,
-  ): RouteBuilder<V, P, MergedErrors<E, R> & Responses, A, K>;
-  security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E, A, K>;
-  conventions<const C extends ResourceConventions>(conventions: C): RouteBuilder<V, P, E, A, C>;
+  ): RouteBuilder<V, P, MergedErrors<E, R> & Responses, A, K, X>;
+  security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E, A, K, X>;
+  conventions<const C extends ResourceConventions>(conventions: C): RouteBuilder<V, P, E, A, C, X>;
+  /** Every route requires this identity unless it says otherwise; its security is derived from it. */
+  identity<const I extends Identity>(
+    identity: I,
+  ): RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, false>>;
+  /** No identity: sign-in, sign-up, public links. */
+  public(): RouteBuilder<V, P, E, A, K, PublicAccess>;
+  /** An anonymous caller is let in and the principal may be null; a credential presented and refused is still a `401`. */
+  optionalAuth(): X extends IdentifiedAccess<infer I, boolean>
+    ? RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, true>>
+    : never;
+  /** Rules beyond identity, applied in the order given, after those already set. */
+  requires(...rules: readonly Requirement[]): RouteBuilder<V, P, E, A, K, X>;
+  /** The latency budget in milliseconds. */
+  budget(milliseconds: number): RouteBuilder<V, P, E, A, K, X>;
+  /** The freshness of every read of the group; a write never carries it. */
+  cache(policy: CachePolicy): RouteBuilder<V, P, E, A, K, X>;
+  /** The ceiling of a request body, in bytes. */
+  bodyLimit(bytes: number): RouteBuilder<V, P, E, A, K, X>;
   defineRoute<const D extends BuiltRouteDefinition<A>>(
-    this: RouteBuilder<number, P, E, A, K>,
+    this: RouteBuilder<number, P, E, A, K, X>,
     definition: D,
-  ): BuiltRoute<NonNullable<V>, P, E, D>;
+  ): BuiltRoute<NonNullable<V>, P, E, D, X>;
   resource<
     const Name extends string,
     const Id extends Parameter & { readonly in: 'path' },
     const Parents extends readonly (Parameter & { readonly in: 'path' })[] = readonly [],
   >(
-    this: RouteBuilder<number, P, E, A, K>,
+    this: RouteBuilder<number, P, E, A, K, X>,
     name: Name,
     options: ResourceOptions<Id, Parents>,
   ): Resource<{
@@ -100,6 +151,7 @@ export interface RouteBuilder<
     readonly responses: E;
     readonly allowed: A;
     readonly conventions: K;
+    readonly access: X;
     readonly name: Name;
     readonly id: Id;
     readonly parents: Parents;
@@ -117,6 +169,11 @@ interface BuilderSettings {
   readonly security: readonly SecurityRequirement[] | undefined;
   readonly model: ErrorModel<string> | undefined;
   readonly conventions: ResourceConventions | undefined;
+  readonly access: Access | undefined;
+  readonly requires: readonly Requirement[];
+  readonly budgetMs: number | undefined;
+  readonly cache: CachePolicy | undefined;
+  readonly bodyLimit: number | undefined;
 }
 
 type AnyBuilder = RouteBuilder<
@@ -124,7 +181,8 @@ type AnyBuilder = RouteBuilder<
   readonly Parameter[],
   Responses,
   string,
-  ResourceConventions
+  ResourceConventions,
+  Access | undefined
 >;
 
 function split(
@@ -139,23 +197,146 @@ function split(
   return [bases, codes];
 }
 
+type CodesByStatus = Record<string, readonly string[]>;
+
+const IDEMPOTENCY_KEY = 'Idempotency-Key';
+
+/**
+ * The errors a route can answer because of what it declares (`transport.md` §5.12, ADR §7.1): its
+ * input, its body, its idempotency key, its identity and rules, its rate limit, and the surface.
+ * A response the group or the route writes whole is kept over the derived one.
+ */
+function derivedCodes(
+  settings: BuilderSettings,
+  definition: {
+    readonly method: string;
+    readonly parameters: readonly Parameter[];
+    readonly requestBody?: unknown;
+  },
+): CodesByStatus {
+  const out: CodesByStatus = {};
+  const add = (from: Readonly<Record<string, readonly string[]>>): void => {
+    for (const [status, codes] of Object.entries(from)) {
+      const held = out[status] ?? [];
+      out[status] = [...held, ...codes.filter((code) => !held.includes(code))];
+    }
+  };
+  if (settings.access === undefined) return out;
+  const write = definition.method !== 'get';
+  const hasInput =
+    definition.requestBody !== undefined ||
+    definition.parameters.some((parameter) => parameter.in === 'path' || parameter.in === 'query');
+  if (hasInput) add({ 400: [ApiErrorCode.SCHEMA_INVALID] });
+  if (definition.requestBody !== undefined) {
+    add({
+      413: [ApiErrorCode.PAYLOAD_TOO_LARGE],
+      415: [ApiErrorCode.UNSUPPORTED_MEDIA_TYPE],
+    });
+  }
+  if (definition.parameters.some((parameter) => parameter.name === IDEMPOTENCY_KEY)) {
+    add({
+      409: [ApiErrorCode.IDEMPOTENCY_KEY_REUSED, ApiErrorCode.IDEMPOTENCY_IN_FLIGHT],
+    });
+  }
+  const { access } = settings;
+  if (access?.kind === 'identified') {
+    add({ 401: [ApiErrorCode.UNAUTHENTICATED] });
+    add(access.identity.errors);
+    if (write) add(access.identity.writeErrors);
+  }
+  for (const rule of settings.requires) add(rule.errors);
+  if (access !== undefined) {
+    add({ 500: [ApiErrorCode.INTERNAL] });
+    if (settings.model?.upstreams === true) {
+      add({
+        502: [ApiErrorCode.UPSTREAM_UNAVAILABLE],
+        504: [ApiErrorCode.UPSTREAM_TIMEOUT, ApiErrorCode.DEADLINE_EXCEEDED],
+      });
+    } else if (access.kind === 'identified' && access.identity.internal) {
+      add({ 504: [ApiErrorCode.DEADLINE_EXCEEDED] });
+    }
+  }
+  return out;
+}
+
 function responsesOf(
   settings: BuilderSettings,
   own: Readonly<Record<string, readonly string[]>>,
   ownBases: Readonly<Record<string, Response>>,
+  derived: Readonly<Record<string, readonly string[]>>,
 ): Record<string, Response> {
   const bases = { ...settings.bases, ...ownBases };
   const statuses = new Set([
     ...Object.keys(bases),
     ...Object.keys(settings.codes),
     ...Object.keys(own),
+    ...Object.keys(derived),
   ]);
   const out: Record<string, Response> = {};
   for (const status of statuses) {
-    const codes = [...(settings.codes[status] ?? []), ...(own[status] ?? [])];
+    const codes = [
+      ...(derived[status] ?? []),
+      ...(settings.codes[status] ?? []),
+      ...(own[status] ?? []),
+    ];
     out[status] = errorResponseFor(settings.model, Number(status), codes, bases[status]);
   }
   return out;
+}
+
+interface ResponseHeaders {
+  readonly every: Readonly<Record<string, Header>>;
+  readonly replayed: boolean;
+  readonly cache: CachePolicy | undefined;
+  readonly etag: Readonly<Record<string, Header>>;
+  readonly replayedHeader: Header | undefined;
+}
+
+function holdsSensitive(response: Response): boolean {
+  return Object.values(response.content ?? {}).some(
+    (media) => sensitivePathsOf(media.schema).length > 0,
+  );
+}
+
+/** The headers a declaration implies on its successes: the identity's, the replay marker, the cache's. */
+function withHeaders(
+  responses: Record<string, Response>,
+  implied: ResponseHeaders,
+): Record<string, Response> {
+  const out: Record<string, Response> = {};
+  for (const [status, response] of Object.entries(responses)) {
+    const success = status.startsWith('2');
+    const carriesSecret = success && holdsSensitive(response);
+    const added: Record<string, Header> = {
+      ...(success ? implied.every : {}),
+      ...(success &&
+        implied.replayed && {
+          'Idempotency-Replayed': implied.replayedHeader ?? IDEMPOTENCY_REPLAYED_HEADER,
+        }),
+      ...((carriesSecret || (status === '200' && implied.cache !== undefined)) && {
+        'Cache-Control': CACHE_CONTROL_HEADER,
+      }),
+      ...(status === '200' ? implied.etag : {}),
+      ...(status === '200' &&
+        implied.cache !== undefined &&
+        implied.cache.vary.length > 0 && { Vary: VARY_HEADER }),
+    };
+    out[status] =
+      Object.keys(added).length === 0
+        ? response
+        : { ...response, headers: { ...added, ...response.headers } };
+  }
+  return out;
+}
+
+function securityOf(access: Access, method: string): readonly SecurityRequirement[] {
+  if (access.kind === 'anyone') return [];
+  const schemes = method === 'get' ? access.identity.schemes.read : access.identity.schemes.write;
+  return access.optional && method === 'get'
+    ? [...schemes, ...access.identity.optionalAlso, {}]
+    : access.optional
+      ? [...schemes, {}]
+      : schemes;
 }
 
 function builderOf(settings: BuilderSettings): AnyBuilder {
@@ -180,6 +361,20 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
     security: (...requirements: readonly SecurityRequirement[]) =>
       next({ security: Object.freeze([...requirements]) }),
     conventions: (conventions: ResourceConventions) => next({ conventions }),
+    identity: (identity: Identity) =>
+      next({ access: Object.freeze({ kind: 'identified', identity, optional: false }) }),
+    public: () => next({ access: Object.freeze({ kind: 'anyone' }) }),
+    optionalAuth: () => {
+      if (settings.access?.kind !== 'identified') {
+        throw new Error('optionalAuth: set an identity first.');
+      }
+      return next({ access: Object.freeze({ ...settings.access, optional: true }) });
+    },
+    requires: (...rules: readonly Requirement[]) =>
+      next({ requires: Object.freeze([...settings.requires, ...rules]) }),
+    budget: (budgetMs: number) => next({ budgetMs }),
+    cache: (cache: CachePolicy) => next({ cache }),
+    bodyLimit: (bodyLimit: number) => next({ bodyLimit }),
     defineRoute: (definition: BuiltRouteDefinition) => {
       if (settings.version === undefined) {
         throw new Error(
@@ -187,30 +382,85 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
         );
       }
       const { errors, ...rest } = definition;
+      const { access } = settings;
+      if (access !== undefined && rest.security !== undefined) {
+        throw new Error(
+          `defineRoute: "${definition.operationId}" declares its security by hand and has an identity: the identity writes it.`,
+        );
+      }
       const [ownBases, ownCodes] = split(errors ?? {});
       const tags = rest.tags ?? settings.tags;
-      const security = rest.security ?? settings.security;
-      const parameters = [...(rest.parameters ?? []), ...settings.headers];
+      const identityParameters =
+        access?.kind === 'identified'
+          ? [
+              ...access.identity.parameters,
+              ...(rest.method === 'get' ? [] : access.identity.writeParameters),
+            ]
+          : [];
+      const conditional =
+        (rest.method === 'get' && rest.cache?.etag === true) ||
+        (rest.method === 'get' && settings.cache?.etag === true && rest.cache === undefined)
+          ? settings.conventions
+          : undefined;
+      const conditionalParameters = (conditional?.readParameters ?? []).filter(
+        (parameter) => !(rest.parameters ?? []).some((own) => own.name === parameter.name),
+      );
+      const parameters = [
+        ...(rest.parameters ?? []),
+        ...conditionalParameters,
+        ...settings.headers,
+        ...identityParameters,
+      ];
+      const security =
+        access !== undefined
+          ? securityOf(access, rest.method)
+          : (rest.security ?? settings.security);
+      const requires = [...settings.requires, ...(rest.requires ?? [])];
+      const internal = access?.kind === 'identified' && access.identity.internal;
+      const hasBody = rest.requestBody !== undefined;
+      const budgetMs = rest.budgetMs ?? settings.budgetMs;
+      const cache = rest.cache ?? (rest.method === 'get' ? settings.cache : undefined);
+      const derived = derivedCodes(settings, {
+        method: rest.method,
+        parameters,
+        requestBody: rest.requestBody,
+      });
+      const responses = withHeaders(
+        {
+          ...responsesOf(settings, ownCodes, ownBases, derived),
+          ...(conditional?.notModified !== undefined && { 304: conditional.notModified }),
+          ...rest.responses,
+        },
+        {
+          every: access?.kind === 'identified' ? access.identity.responseHeaders : {},
+          replayed:
+            access !== undefined &&
+            parameters.some((parameter) => parameter.name === IDEMPOTENCY_KEY),
+          cache,
+          etag: conditional?.readHeaders ?? {},
+          replayedHeader: settings.conventions?.replayedHeader,
+        },
+      );
       return defineRoute({
         ...rest,
         version: settings.version,
         ...(tags !== undefined && { tags }),
         ...(security !== undefined && { security }),
+        ...(access !== undefined && { access }),
+        ...(requires.length > 0 && { requires }),
+        ...(internal && { internal }),
+        ...(budgetMs !== undefined && { budgetMs }),
+        ...(cache !== undefined && { cache }),
+        ...(hasBody && { bodyLimit: rest.bodyLimit ?? settings.bodyLimit ?? DEFAULT_BODY_LIMIT }),
         ...(parameters.length > 0 && { parameters }),
-        responses: { ...responsesOf(settings, ownCodes, ownBases), ...rest.responses },
+        responses,
       });
     },
     resource: (name: string, options: ResourceOptions<never, never>) => {
       if (settings.conventions === undefined) {
         throw new Error(`resource "${name}": call .conventions(...) first.`);
       }
-      return makeResource(
-        builder as unknown as AnyBuilder,
-        settings.conventions,
-        name,
-        options,
-        settings.headers,
-      );
+      return makeResource(builder as never, settings.conventions, name, options, settings.headers);
     },
   };
   return Object.freeze(builder) as unknown as AnyBuilder;
@@ -232,6 +482,11 @@ export function routeBuilder<A extends string = string>(
     security: undefined,
     model,
     conventions: undefined,
+    access: undefined,
+    requires: [],
+    budgetMs: undefined,
+    cache: undefined,
+    bodyLimit: undefined,
   }) as unknown as RouteBuilder<undefined, readonly [], Record<never, never>, A>;
 }
 

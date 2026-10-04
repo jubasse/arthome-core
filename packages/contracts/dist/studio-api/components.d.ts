@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { Surface } from '@arthome/core';
+import { ApiErrorCode, Surface } from '@arthome/core';
 import type { ErrorCode } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { AccessorOf, ErrorModel, Header, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder } from '../http/index.js';
+import type { AccessorOf, ErrorModel, Header, Identity, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder } from '../http/index.js';
 declare const SURFACE: readonly [typeof Surface.STUDIO_WEB, typeof Surface.STUDIO_MOBILE];
 declare const SORT_DIR: readonly ["asc", "desc"];
 declare const STUDIO_TAGS: readonly ["bootstrap", "agenda", "publication", "ticketing", "run", "moderation", "crew", "payouts", "channel"];
@@ -32,6 +32,11 @@ export declare const ConflictResponse: JsonResponse<typeof StudioErrorEnvelopeSc
 export declare const GoneResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
 export declare const TooManyRequestsResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
 export declare const UnavailableResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const PayloadTooLargeResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const UnsupportedMediaTypeResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const InternalErrorResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const BadGatewayResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+export declare const GatewayTimeoutResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
 declare const IfNoneMatchParameter: HeaderParameter<'If-None-Match', z.ZodString>;
 declare const OWN_LIST_PARAMETERS: readonly [
     typeof PageParameter,
@@ -51,6 +56,7 @@ export declare const studioConventions: {
     };
     readonly notModified: Response;
     readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
+    readonly replayedHeader: Header;
     readonly expectedVersion: z.ZodNumber;
 };
 /**
@@ -58,6 +64,13 @@ export declare const studioConventions: {
  * it already covers the idempotency refusals and a stale version.
  */
 export declare const studioErrors: ErrorModel<ErrorCode>;
+export declare const OperatorPrincipalSchema: z.ZodObject<{
+    personId: z.ZodString;
+    rightsVersion: z.ZodNumber;
+    rights: z.ZodArray<z.ZodString>;
+}, z.core.$strip>;
+/** A signed-in channel member, by session cookie or bearer token; a write carries the rights version it holds. */
+export declare const operator: Identity<'operator', typeof OperatorPrincipalSchema, typeof ApiErrorCode.RIGHTS_VERSION_STALE>;
 export declare const studioV1: RouteBuilder<1, readonly [], Record<never, never>, ErrorCode, typeof studioConventions>;
 export {};
 //# sourceMappingURL=components.d.ts.map

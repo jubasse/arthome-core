@@ -62,6 +62,11 @@ import {
   TraceparentParameter,
   UnauthorizedResponse,
   UnavailableResponse,
+  PayloadTooLargeResponse,
+  UnsupportedMediaTypeResponse,
+  InternalErrorResponse,
+  BadGatewayResponse,
+  GatewayTimeoutResponse,
 } from './components.js';
 import {
   changeMemberRoles,
@@ -490,6 +495,11 @@ export const studioApi: Api<{
       Gone: GoneResponse,
       TooManyRequests: TooManyRequestsResponse,
       Unavailable: UnavailableResponse,
+      PayloadTooLarge: PayloadTooLargeResponse,
+      UnsupportedMediaType: UnsupportedMediaTypeResponse,
+      InternalError: InternalErrorResponse,
+      BadGateway: BadGatewayResponse,
+      GatewayTimeout: GatewayTimeoutResponse,
     },
     schemas: {
       EnvelopeMeta: StudioEnvelopeMetaSchema,

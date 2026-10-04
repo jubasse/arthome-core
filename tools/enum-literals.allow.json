@@ -90,6 +90,11 @@
       "file": "packages/contracts/src/studio-api/publication.ts",
       "value": "duplicate",
       "reason": "The last path segment of POST /dates/{dateId}/duplicate, an action name. It shares its spelling with a refund reason without being that vocabulary: importing REFUND_REASONS here would say a date is duplicated for a refund."
+    },
+    {
+      "file": "packages/contracts/src/http/policy.ts",
+      "value": "public",
+      "reason": "The Cache-Control directive `public` (may a shared cache keep this answer), not a date pane. The two share the spelling without being the same vocabulary: importing DATE_PANES here would say a cache is shared with the public pane."
     }
   ]
 }

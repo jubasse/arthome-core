@@ -32,6 +32,18 @@ const STRUCTURE = new Set(['method', 'version', 'path']);
 /** Written last, in this order, whatever order the declaration spells them: the keys a reader scans for. */
 const LAST = new Set(['security', 'parameters', 'requestBody', 'responses']);
 
+/** What the server and the client read from a route and the document does not carry as a key of its own. */
+const RUNTIME = new Set([
+  'access',
+  'requires',
+  'budgetMs',
+  'cache',
+  'bodyLimit',
+  'internal',
+  'degradable',
+  'owner',
+]);
+
 const SLOT_PREFIX = '__route_schema_';
 const SCHEMA_REF_PREFIX = '#/components/schemas/';
 
@@ -134,8 +146,17 @@ class DocumentBuilder {
   public operation(route: Route): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(route)) {
-      if (!STRUCTURE.has(key) && !LAST.has(key)) out[key] = value;
+      if (!STRUCTURE.has(key) && !LAST.has(key) && !RUNTIME.has(key)) out[key] = value;
     }
+    if (route.requires !== undefined && route.requires.length > 0) {
+      out['x-arthome-requires'] = route.requires.map((rule) => ({
+        name: rule.name,
+        ...rule.params,
+      }));
+    }
+    if (route.budgetMs !== undefined) out['x-arthome-budget-ms'] = route.budgetMs;
+    if (route.internal === true) out['x-arthome-internal'] = true;
+    if (route.degradable !== undefined) out['x-arthome-degradable'] = route.degradable;
     if (route.security !== undefined) out.security = route.security;
     if (route.parameters !== undefined) {
       out.parameters = route.parameters.map((parameter) =>

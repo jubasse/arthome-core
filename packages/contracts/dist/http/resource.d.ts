@@ -21,6 +21,8 @@ export interface ResourceConventions {
     /** `ETag`, on the 200 of a read. */
     readonly readHeaders: Readonly<Record<string, Header>>;
     readonly notModified?: Response;
+    /** The api's `Idempotency-Replayed` header, kept as one component. */
+    readonly replayedHeader?: Header;
     /** `Idempotency-Key`, on a write. */
     readonly writeParameters: readonly Parameter[];
     /** The version a write expects the record to be at: a body field on an update, a query parameter on a removal. */

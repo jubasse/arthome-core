@@ -7895,6 +7895,71 @@ components:
                 service: catalog
               traceId: 4bf92f3577b34da6a3ce929d0e0e4736
             servedAt: '2026-09-21T20:31:04.118Z'
+    PayloadTooLarge:
+      description: The body is over the ceiling of the route (1 MiB unless the route says otherwise).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.payload_too_large
+              nature: refused
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    UnsupportedMediaType:
+      description: The body is not `application/json`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.unsupported_media_type
+              nature: refused
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    InternalError:
+      description: A fault of ours, never retried as is.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.internal
+              nature: unavailable
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    BadGateway:
+      description: A service behind the BFF failed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.upstream_unavailable
+              nature: unavailable
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    GatewayTimeout:
+      description: The BFF stopped waiting for a service, or the deadline was already past. A command is retried with its `Idempotency-Key`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.upstream_timeout
+              nature: unavailable
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
   schemas:
     EnvelopeMeta:
       type: object

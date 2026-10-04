@@ -1,5 +1,7 @@
+import type { Access, IdentifiedAccess, Identity, PublicAccess, Requirement } from './access.js';
 import type { CodesOf, ErrorModel, ErrorResponse, ErrorsInput } from './errors.js';
 import type { Parameter, RequestBody, Response, Route, RouteDefinition, SecurityRequirement } from './index.js';
+import type { CachePolicy } from './policy.js';
 import type { Resource, ResourceConventions, ResourceOptions } from './resource.js';
 type HeaderParameters = readonly (Parameter & {
     readonly in: 'header';
@@ -27,13 +29,27 @@ type OwnErrors<D> = D extends {
 /** The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors. */
 export type BuiltRoute<V extends number, P extends readonly Parameter[], E extends Responses, D extends Omit<BuiltRouteDefinition, 'errors'> & {
     readonly errors?: unknown;
-}> = Route<{
+}, X = undefined> = Route<{
     readonly method: D['method'];
     readonly version: V;
     readonly path: D['path'];
-    readonly parameters: readonly [...OwnParameters<D>, ...P];
+    readonly parameters: readonly [
+        ...OwnParameters<D>,
+        ...P,
+        ...IdentityParameters<X, D['method']>
+    ];
     readonly responses: Omit<MergedErrors<E, OwnErrors<D>>, keyof D['responses']> & D['responses'];
-} & OwnBody<D>>;
+} & OwnBody<D> & AccessOf<X>>;
+/** The parameters an identity adds to every route, and to a write. */
+type IdentityParameters<X, Method> = X extends {
+    readonly identity: {
+        readonly parameters: infer Every extends readonly Parameter[];
+        readonly writeParameters: infer Writes extends readonly Parameter[];
+    };
+} ? Method extends 'get' ? Every : readonly [...Every, ...Writes] : readonly [];
+type AccessOf<X> = X extends Access ? {
+    readonly access: X;
+} : unknown;
 /**
  * Settings shared by the routes of a group, accumulated one call at a time. Every call returns a
  * NEW builder and the types carry what was set, so `defineRoute` is inferred in full: the
@@ -44,24 +60,39 @@ export type BuiltRoute<V extends number, P extends readonly Parameter[], E exten
  * (`.errors({ 400: BadRequestResponse })`), the convention errors a resource adds, and the codes a
  * route declares (`errors: { 409: ['date.prices_locked'] }`), typed from the code registry.
  */
-export interface RouteBuilder<V extends number | undefined, P extends readonly Parameter[], E extends Responses, A extends string = string, K extends ResourceConventions | undefined = undefined> {
-    version<const N extends number>(version: N): RouteBuilder<N, P, E, A, K>;
-    tags(...tags: readonly string[]): RouteBuilder<V, P, E, A, K>;
-    headers<const H extends HeaderParameters>(...headers: H): RouteBuilder<V, readonly [...P, ...H], E, A, K>;
-    errors<const R extends ErrorsInput<A>>(errors: R): RouteBuilder<V, P, MergedErrors<E, R> & Responses, A, K>;
-    security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E, A, K>;
-    conventions<const C extends ResourceConventions>(conventions: C): RouteBuilder<V, P, E, A, C>;
-    defineRoute<const D extends BuiltRouteDefinition<A>>(this: RouteBuilder<number, P, E, A, K>, definition: D): BuiltRoute<NonNullable<V>, P, E, D>;
+export interface RouteBuilder<V extends number | undefined, P extends readonly Parameter[], E extends Responses, A extends string = string, K extends ResourceConventions | undefined = undefined, X extends Access | undefined = undefined> {
+    version<const N extends number>(version: N): RouteBuilder<N, P, E, A, K, X>;
+    tags(...tags: readonly string[]): RouteBuilder<V, P, E, A, K, X>;
+    headers<const H extends HeaderParameters>(...headers: H): RouteBuilder<V, readonly [...P, ...H], E, A, K, X>;
+    errors<const R extends ErrorsInput<A>>(errors: R): RouteBuilder<V, P, MergedErrors<E, R> & Responses, A, K, X>;
+    security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E, A, K, X>;
+    conventions<const C extends ResourceConventions>(conventions: C): RouteBuilder<V, P, E, A, C, X>;
+    /** Every route requires this identity unless it says otherwise; its security is derived from it. */
+    identity<const I extends Identity>(identity: I): RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, false>>;
+    /** No identity: sign-in, sign-up, public links. */
+    public(): RouteBuilder<V, P, E, A, K, PublicAccess>;
+    /** An anonymous caller is let in and the principal may be null; a credential presented and refused is still a `401`. */
+    optionalAuth(): X extends IdentifiedAccess<infer I, boolean> ? RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, true>> : never;
+    /** Rules beyond identity, applied in the order given, after those already set. */
+    requires(...rules: readonly Requirement[]): RouteBuilder<V, P, E, A, K, X>;
+    /** The latency budget in milliseconds. */
+    budget(milliseconds: number): RouteBuilder<V, P, E, A, K, X>;
+    /** The freshness of every read of the group; a write never carries it. */
+    cache(policy: CachePolicy): RouteBuilder<V, P, E, A, K, X>;
+    /** The ceiling of a request body, in bytes. */
+    bodyLimit(bytes: number): RouteBuilder<V, P, E, A, K, X>;
+    defineRoute<const D extends BuiltRouteDefinition<A>>(this: RouteBuilder<number, P, E, A, K, X>, definition: D): BuiltRoute<NonNullable<V>, P, E, D, X>;
     resource<const Name extends string, const Id extends Parameter & {
         readonly in: 'path';
     }, const Parents extends readonly (Parameter & {
         readonly in: 'path';
-    })[] = readonly []>(this: RouteBuilder<number, P, E, A, K>, name: Name, options: ResourceOptions<Id, Parents>): Resource<{
+    })[] = readonly []>(this: RouteBuilder<number, P, E, A, K, X>, name: Name, options: ResourceOptions<Id, Parents>): Resource<{
         readonly version: NonNullable<V>;
         readonly headers: P;
         readonly responses: E;
         readonly allowed: A;
         readonly conventions: K;
+        readonly access: X;
         readonly name: Name;
         readonly id: Id;
         readonly parents: Parents;

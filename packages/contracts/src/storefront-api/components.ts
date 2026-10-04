@@ -29,6 +29,7 @@ import type {
   AccessorOf,
   ErrorModel,
   Header,
+  Identity,
   HeaderParameter,
   JsonResponse,
   PathParameter,
@@ -38,7 +39,7 @@ import type {
   RouteBuilder,
   SecurityRequirement,
 } from '../http/index.js';
-import { accessorOf, defineErrorModel, routeBuilder } from '../http/index.js';
+import { accessorOf, defineErrorModel, identity, routeBuilder } from '../http/index.js';
 import { StorefrontCursorPageInfoSchema } from '../pagination/index.js';
 
 const SURFACE: readonly [
@@ -425,6 +426,59 @@ export const UnavailableResponse: JsonResponse<typeof StorefrontErrorEnvelopeSch
   },
 };
 
+function refusedWith(
+  description: string,
+  code: string,
+  nature: typeof FailureNature.REFUSED | typeof FailureNature.UNAVAILABLE,
+): JsonResponse<typeof StorefrontErrorEnvelopeSchema> {
+  return {
+    description,
+    content: {
+      'application/json': {
+        schema: StorefrontErrorEnvelopeSchema,
+        example: {
+          error: { code, nature, params: {}, traceId: '4bf92f3577b34da6a3ce929d0e0e4736' },
+          servedAt: '2026-09-21T20:31:04.118Z',
+        },
+      },
+    },
+  };
+}
+
+export const PayloadTooLargeResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> =
+  refusedWith(
+    'The body is over the ceiling of the route (1 MiB unless the route says otherwise).',
+    ApiErrorCode.PAYLOAD_TOO_LARGE,
+    FailureNature.REFUSED,
+  );
+
+export const UnsupportedMediaTypeResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> =
+  refusedWith(
+    'The body is not `application/json`.',
+    ApiErrorCode.UNSUPPORTED_MEDIA_TYPE,
+    FailureNature.REFUSED,
+  );
+
+export const InternalErrorResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> =
+  refusedWith(
+    'A fault of ours, never retried as is.',
+    ApiErrorCode.INTERNAL,
+    FailureNature.UNAVAILABLE,
+  );
+
+export const BadGatewayResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> = refusedWith(
+  'A service behind the BFF failed.',
+  ApiErrorCode.UPSTREAM_UNAVAILABLE,
+  FailureNature.UNAVAILABLE,
+);
+
+export const GatewayTimeoutResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema> =
+  refusedWith(
+    'The BFF stopped waiting for a service, or the deadline was already past. A command is retried with its `Idempotency-Key`.',
+    ApiErrorCode.UPSTREAM_TIMEOUT,
+    FailureNature.UNAVAILABLE,
+  );
+
 const IfNoneMatchParameter: HeaderParameter<'If-None-Match', z.ZodString> = {
   name: 'If-None-Match',
   in: 'header',
@@ -453,6 +507,7 @@ export const storefrontConventions: {
   readonly readHeaders: { readonly ETag: Header };
   readonly notModified: Response;
   readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
+  readonly replayedHeader: Header;
   readonly expectedVersion: z.ZodNumber;
 } = {
   item: (data) => z.intersection(StorefrontEnvelopeMetaSchema, z.looseObject({ data })),
@@ -466,6 +521,7 @@ export const storefrontConventions: {
   readHeaders: { ETag: ETagHeader },
   notModified: { description: 'Unchanged since the validator sent in `If-None-Match`.' },
   writeParameters: [IdempotencyKeyParameter],
+  replayedHeader: IdempotencyReplayedHeader,
   expectedVersion: int64(),
 };
 
@@ -485,8 +541,20 @@ export const storefrontErrors: ErrorModel<StorefrontRelayedCode> = defineErrorMo
     },
     410: { response: GoneResponse, codes: [ApiErrorCode.CURSOR_TOO_OLD] },
     429: { response: TooManyRequestsResponse, codes: [ApiErrorCode.RATE_LIMITED] },
+    413: { response: PayloadTooLargeResponse, codes: [ApiErrorCode.PAYLOAD_TOO_LARGE] },
+    415: {
+      response: UnsupportedMediaTypeResponse,
+      codes: [ApiErrorCode.UNSUPPORTED_MEDIA_TYPE],
+    },
+    500: { response: InternalErrorResponse, codes: [ApiErrorCode.INTERNAL] },
+    502: { response: BadGatewayResponse, codes: [ApiErrorCode.UPSTREAM_UNAVAILABLE] },
     503: { response: UnavailableResponse, codes: [ApiErrorCode.UPSTREAM_UNAVAILABLE] },
+    504: {
+      response: GatewayTimeoutResponse,
+      codes: [ApiErrorCode.UPSTREAM_TIMEOUT, ApiErrorCode.DEADLINE_EXCEEDED],
+    },
   },
+  upstreams: true,
   envelopeOf: (code) =>
     StorefrontErrorEnvelopeSchema.extend({
       error: StorefrontErrorSchema.extend({
@@ -495,6 +563,38 @@ export const storefrontErrors: ErrorModel<StorefrontRelayedCode> = defineErrorMo
       }),
     }),
 });
+
+export const ViewerPrincipalSchema: z.ZodObject<
+  { accountId: z.ZodString; deviceId: z.ZodString },
+  z.core.$strip
+> = z.object({ accountId: z.string(), deviceId: z.string() });
+
+export const DevicePrincipalSchema: z.ZodObject<{ deviceId: z.ZodString }, z.core.$strip> =
+  z.object({ deviceId: z.string() });
+
+/** A signed-in viewer, by session cookie (a write carries its CSRF token) or bearer token. */
+export const viewer: Identity<
+  'viewer',
+  typeof ViewerPrincipalSchema,
+  typeof ApiErrorCode.FORBIDDEN
+> = identity('viewer', {
+  schemes: {
+    read: [{ sessionCookie: [] }, { bearerToken: [] }],
+    write: [{ sessionCookie: [], csrfToken: [] }, { bearerToken: [] }],
+  },
+  principal: ViewerPrincipalSchema,
+  optionalAlso: [{ deviceToken: [] }],
+  writeErrors: { 403: [ApiErrorCode.FORBIDDEN] },
+});
+
+/** The television, paired to an account: it holds a device token and no session. */
+export const device: Identity<'paired_device', typeof DevicePrincipalSchema, never> = identity(
+  'paired_device',
+  {
+    schemes: { read: [{ deviceToken: [] }], write: [{ deviceToken: [] }] },
+    principal: DevicePrincipalSchema,
+  },
+);
 
 export const storefrontV1: RouteBuilder<
   1,

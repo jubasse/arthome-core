@@ -29,6 +29,7 @@ import type {
   AccessorOf,
   ErrorModel,
   Header,
+  Identity,
   HeaderParameter,
   JsonResponse,
   PathParameter,
@@ -37,7 +38,7 @@ import type {
   ResourceConventions,
   RouteBuilder,
 } from '../http/index.js';
-import { accessorOf, defineErrorModel, routeBuilder } from '../http/index.js';
+import { accessorOf, defineErrorModel, identity, routeBuilder } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 
 const SURFACE: readonly [typeof Surface.STUDIO_WEB, typeof Surface.STUDIO_MOBILE] = [
@@ -371,6 +372,56 @@ export const UnavailableResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>
   },
 };
 
+function refusedWith(
+  description: string,
+  code: string,
+  nature: typeof FailureNature.REFUSED | typeof FailureNature.UNAVAILABLE,
+): JsonResponse<typeof StudioErrorEnvelopeSchema> {
+  return {
+    description,
+    content: {
+      'application/json': {
+        schema: StudioErrorEnvelopeSchema,
+        example: {
+          error: { code, nature, params: {}, traceId: '4bf92f3577b34da6a3ce929d0e0e4736' },
+          servedAt: '2026-09-21T20:31:04.118Z',
+        },
+      },
+    },
+  };
+}
+
+export const PayloadTooLargeResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> = refusedWith(
+  'The body is over the ceiling of the route (1 MiB unless the route says otherwise).',
+  ApiErrorCode.PAYLOAD_TOO_LARGE,
+  FailureNature.REFUSED,
+);
+
+export const UnsupportedMediaTypeResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> =
+  refusedWith(
+    'The body is not `application/json`.',
+    ApiErrorCode.UNSUPPORTED_MEDIA_TYPE,
+    FailureNature.REFUSED,
+  );
+
+export const InternalErrorResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> = refusedWith(
+  'A fault of ours, never retried as is.',
+  ApiErrorCode.INTERNAL,
+  FailureNature.UNAVAILABLE,
+);
+
+export const BadGatewayResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> = refusedWith(
+  'A service behind the BFF failed.',
+  ApiErrorCode.UPSTREAM_UNAVAILABLE,
+  FailureNature.UNAVAILABLE,
+);
+
+export const GatewayTimeoutResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> = refusedWith(
+  'The BFF stopped waiting for a service, or the deadline was already past. A command is retried with its `Idempotency-Key`.',
+  ApiErrorCode.UPSTREAM_TIMEOUT,
+  FailureNature.UNAVAILABLE,
+);
+
 const IfNoneMatchParameter: HeaderParameter<'If-None-Match', z.ZodString> = {
   name: 'If-None-Match',
   in: 'header',
@@ -401,6 +452,7 @@ export const studioConventions: {
   readonly readHeaders: { readonly ETag: Header };
   readonly notModified: Response;
   readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
+  readonly replayedHeader: Header;
   readonly expectedVersion: z.ZodNumber;
 } = {
   item: (data) => z.intersection(StudioEnvelopeMetaSchema, z.looseObject({ data })),
@@ -414,6 +466,7 @@ export const studioConventions: {
   readHeaders: { ETag: ETagHeader },
   notModified: { description: 'Unchanged since the validator sent in `If-None-Match`.' },
   writeParameters: [IdempotencyKeyParameter],
+  replayedHeader: IdempotencyReplayedHeader,
   expectedVersion: int64(),
 };
 
@@ -437,8 +490,20 @@ export const studioErrors: ErrorModel<ErrorCode> = defineErrorModel({
     },
     410: { response: GoneResponse, codes: [ApiErrorCode.CURSOR_TOO_OLD] },
     429: { response: TooManyRequestsResponse, codes: [ApiErrorCode.RATE_LIMITED] },
+    413: { response: PayloadTooLargeResponse, codes: [ApiErrorCode.PAYLOAD_TOO_LARGE] },
+    415: {
+      response: UnsupportedMediaTypeResponse,
+      codes: [ApiErrorCode.UNSUPPORTED_MEDIA_TYPE],
+    },
+    500: { response: InternalErrorResponse, codes: [ApiErrorCode.INTERNAL] },
+    502: { response: BadGatewayResponse, codes: [ApiErrorCode.UPSTREAM_UNAVAILABLE] },
     503: { response: UnavailableResponse, codes: [ApiErrorCode.UPSTREAM_UNAVAILABLE] },
+    504: {
+      response: GatewayTimeoutResponse,
+      codes: [ApiErrorCode.UPSTREAM_TIMEOUT, ApiErrorCode.DEADLINE_EXCEEDED],
+    },
   },
+  upstreams: true,
   envelopeOf: (code) =>
     StudioErrorEnvelopeSchema.extend({
       error: StudioErrorSchema.extend({
@@ -446,6 +511,27 @@ export const studioErrors: ErrorModel<ErrorCode> = defineErrorModel({
         params: errorParamsSchemaOf(code as ErrorCode),
       }),
     }),
+});
+
+export const OperatorPrincipalSchema: z.ZodObject<
+  { personId: z.ZodString; rightsVersion: z.ZodNumber; rights: z.ZodArray<z.ZodString> },
+  z.core.$strip
+> = z.object({ personId: z.string(), rightsVersion: int64(), rights: z.array(z.string()) });
+
+/** A signed-in channel member, by session cookie or bearer token; a write carries the rights version it holds. */
+export const operator: Identity<
+  'operator',
+  typeof OperatorPrincipalSchema,
+  typeof ApiErrorCode.RIGHTS_VERSION_STALE
+> = identity('operator', {
+  schemes: {
+    read: [{ sessionCookie: [] }, { bearerToken: [] }],
+    write: [{ sessionCookie: [] }, { bearerToken: [] }],
+  },
+  principal: OperatorPrincipalSchema,
+  writeParameters: [IfRightsVersionParameter],
+  writeErrors: { 403: [ApiErrorCode.RIGHTS_VERSION_STALE] },
+  responseHeaders: { 'X-Arthome-Rights-Version': RightsVersionHeader },
 });
 
 export const studioV1: RouteBuilder<

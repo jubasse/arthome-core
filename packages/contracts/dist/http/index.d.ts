@@ -11,6 +11,8 @@
  * the annotation is also what a server handler and a client read their types from.
  */
 import { z } from 'zod';
+import type { Access, Requirement } from './access.js';
+import type { CachePolicy } from './policy.js';
 export type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'patch';
 export type ParameterLocation = 'path' | 'query' | 'header' | 'cookie';
 /** OpenAPI's specification extensions, carried into the document verbatim. */
@@ -63,6 +65,21 @@ export interface RouteDefinition extends RouteShape, Extensions {
     readonly description?: string;
     readonly deprecated?: boolean;
     readonly security?: readonly SecurityRequirement[];
+    /** Who may call: an identity, optionally, or anyone. The builder derives `security` from it. */
+    readonly access?: Access;
+    /** Rules beyond identity, in the order the server applies them. */
+    readonly requires?: readonly Requirement[];
+    /** The latency budget, in milliseconds: the typed client times out under it. */
+    readonly budgetMs?: number;
+    readonly cache?: CachePolicy;
+    /** The ceiling of the request body, in bytes. */
+    readonly bodyLimit?: number;
+    /** Served between services only: no surface document lists it. */
+    readonly internal?: boolean;
+    /** The parts of a composed answer that may be missing: `degraded` is typed from them. */
+    readonly degradable?: readonly string[];
+    /** Only the caller reads and writes this data: another caller's id answers 404, never 403. */
+    readonly owner?: 'caller';
 }
 /** Named members for a list of words, `CHAT` for `'chat'`, so no module spells a member again. */
 export type AccessorOf<T extends readonly string[]> = {
@@ -214,7 +231,10 @@ export declare function paramsSchemaOf<R extends RouteShape>(route: R): z.ZodTyp
 export declare function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;
 /** The lowest 2xx a route declares — the status a handler answers with when it succeeds. */
 export declare function successStatusOf(route: RouteShape): number;
+export * from './access.js';
 export * from './builder.js';
 export * from './errors.js';
+export * from './marks.js';
+export * from './policy.js';
 export * from './resource.js';
 //# sourceMappingURL=index.d.ts.map

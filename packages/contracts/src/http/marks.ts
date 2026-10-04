@@ -1,0 +1,104 @@
+/**
+ * Marks a schema carries for the server to read: a field that must never be logged or cached
+ * (`sensitive`), and a field only some callers may see (`restricted`). The mark is metadata, so the
+ * schema parses as before; `sensitivePathsOf` and `restrictedFieldsOf` walk a schema and say where
+ * each mark is, so the server redacts and projects from the declaration and no field list is
+ * written twice.
+ */
+
+import { z } from 'zod';
+
+export const SENSITIVE_KEY = 'x-arthome-sensitive';
+export const RESTRICTED_KEY = 'x-arthome-restricted';
+
+/** A password, a token, a stream key: `format: password` in the document, redacted from logs, never cached. */
+export function sensitive<S extends z.ZodType>(schema: S): S {
+  return schema.meta({ format: 'password', [SENSITIVE_KEY]: true });
+}
+
+/**
+ * A field present only for a caller who holds `right`: optional in the type and in the document,
+ * absent from the answer otherwise, never present and null.
+ */
+export function restricted<S extends z.ZodType, const Right extends string>(
+  schema: S,
+  right: Right,
+): z.ZodOptional<S> {
+  return schema.meta({ [RESTRICTED_KEY]: right }).optional();
+}
+
+function metaOf(schema: z.ZodType): Readonly<Record<string, unknown>> {
+  return z.globalRegistry.get(schema) ?? {};
+}
+
+function inner(schema: z.ZodType): z.ZodType | undefined {
+  if (
+    schema instanceof z.ZodOptional ||
+    schema instanceof z.ZodNullable ||
+    schema instanceof z.ZodDefault ||
+    schema instanceof z.ZodReadonly
+  ) {
+    return schema.unwrap() as z.ZodType;
+  }
+  return undefined;
+}
+
+type Visit = (path: string, meta: Readonly<Record<string, unknown>>) => void;
+
+function walk(schema: z.ZodType, path: string, visit: Visit, seen: Set<z.ZodType>): void {
+  if (seen.has(schema)) return;
+  seen.add(schema);
+  visit(path, metaOf(schema));
+  const unwrapped = inner(schema);
+  if (unwrapped !== undefined) {
+    walk(unwrapped, path, visit, seen);
+  } else if (schema instanceof z.ZodObject) {
+    const shape: Readonly<Record<string, z.ZodType>> = schema.shape;
+    for (const [key, field] of Object.entries(shape)) {
+      walk(field, path === '' ? key : `${path}.${key}`, visit, seen);
+    }
+  } else if (schema instanceof z.ZodArray) {
+    walk(schema.element as z.ZodType, `${path}[]`, visit, seen);
+  } else if (schema instanceof z.ZodIntersection) {
+    walk(schema.def.left as z.ZodType, path, visit, seen);
+    walk(schema.def.right as z.ZodType, path, visit, seen);
+  } else if (schema instanceof z.ZodUnion) {
+    for (const option of schema.options as readonly z.ZodType[]) walk(option, path, visit, seen);
+  } else if (schema instanceof z.ZodRecord) {
+    walk(schema.valueType as z.ZodType, `${path}.*`, visit, seen);
+  }
+}
+
+/** The dotted paths of the sensitive fields: `reauthToken`, `data.streamKey`, `items[].secret`. */
+export function sensitivePathsOf(schema: z.ZodType): readonly string[] {
+  const out: string[] = [];
+  walk(
+    schema,
+    '',
+    (path, meta) => {
+      if (meta[SENSITIVE_KEY] === true) out.push(path);
+    },
+    new Set(),
+  );
+  return out;
+}
+
+export interface RestrictedField {
+  readonly path: string;
+  readonly right: string;
+}
+
+/** Each restricted field with the right that unlocks it. */
+export function restrictedFieldsOf(schema: z.ZodType): readonly RestrictedField[] {
+  const out: RestrictedField[] = [];
+  walk(
+    schema,
+    '',
+    (path, meta) => {
+      const right = meta[RESTRICTED_KEY];
+      if (typeof right === 'string') out.push({ path, right });
+    },
+    new Set(),
+  );
+  return out;
+}

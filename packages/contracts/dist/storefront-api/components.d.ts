@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { Surface } from '@arthome/core';
+import { ApiErrorCode, Surface } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { StorefrontRelayedCode } from '../envelope/index.js';
-import type { AccessorOf, ErrorModel, Header, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement } from '../http/index.js';
+import type { AccessorOf, ErrorModel, Header, Identity, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement } from '../http/index.js';
 declare const SURFACE: readonly [
     typeof Surface.STOREFRONT_WEB,
     typeof Surface.STOREFRONT_MOBILE,
@@ -46,6 +46,11 @@ export declare const ConflictResponse: JsonResponse<typeof StorefrontErrorEnvelo
 export declare const GoneResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
 export declare const TooManyRequestsResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
 export declare const UnavailableResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
+export declare const PayloadTooLargeResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
+export declare const UnsupportedMediaTypeResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
+export declare const InternalErrorResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
+export declare const BadGatewayResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
+export declare const GatewayTimeoutResponse: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
 declare const IfNoneMatchParameter: HeaderParameter<'If-None-Match', z.ZodString>;
 declare const OWN_LIST_PARAMETERS: readonly [typeof CursorParameter, typeof LimitParameter];
 /** What every storefront resource is served and written like: see `ResourceConventions`. */
@@ -60,6 +65,7 @@ export declare const storefrontConventions: {
     };
     readonly notModified: Response;
     readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
+    readonly replayedHeader: Header;
     readonly expectedVersion: z.ZodNumber;
 };
 /**
@@ -67,6 +73,17 @@ export declare const storefrontConventions: {
  * which, so it already covers the idempotency refusals.
  */
 export declare const storefrontErrors: ErrorModel<StorefrontRelayedCode>;
+export declare const ViewerPrincipalSchema: z.ZodObject<{
+    accountId: z.ZodString;
+    deviceId: z.ZodString;
+}, z.core.$strip>;
+export declare const DevicePrincipalSchema: z.ZodObject<{
+    deviceId: z.ZodString;
+}, z.core.$strip>;
+/** A signed-in viewer, by session cookie (a write carries its CSRF token) or bearer token. */
+export declare const viewer: Identity<'viewer', typeof ViewerPrincipalSchema, typeof ApiErrorCode.FORBIDDEN>;
+/** The television, paired to an account: it holds a device token and no session. */
+export declare const device: Identity<'paired_device', typeof DevicePrincipalSchema, never>;
 export declare const storefrontV1: RouteBuilder<1, readonly [], Record<never, never>, StorefrontRelayedCode, typeof storefrontConventions>;
 export {};
 //# sourceMappingURL=components.d.ts.map

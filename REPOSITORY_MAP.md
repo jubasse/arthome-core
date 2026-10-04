@@ -78,33 +78,47 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 72 exported names.
+Declarations: `dist/http/index.d.ts` — 105 exported names.
 
+- `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
 - `AccessorOf` (type) — `type AccessorOf<T extends readonly string[]> = { readonly [Member in T[number] as Uppercase<Member>]: Member; };` — Named members for a list of words, 'CHAT' for ''chat'', so no module spells a member again.
 - `ActionOptions` (type)
 - `ActionRoute` (type)
 - `Api` (type) — `type Api<Routes extends Readonly<Record<string, Route>> = Readonly<Record<string, Route>>> = ApiDefinition<Routes>;`
 - `ApiComponents` (interface)
 - `ApiDefinition` (interface) — A whole document: its top-level keys as the document writes them, 'routes' in place of 'paths'.
+- `BATCH_BODY_LIMIT` (const) — `BATCH_BODY_LIMIT = 2097152` — 2 MiB: the ceiling of a batched read.
 - `BuiltRoute` (type) — The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors.
 - `BuiltRouteDefinition` (type) — `type BuiltRouteDefinition<Allowed extends string = string> = Omit<RouteDefinition, 'version'> & { readonly errors?: ErrorsInput<Allowed>; };` — What a builder's 'defineRoute' takes: a route without its version, which the builder holds.
+- `CACHE_CONTROL_HEADER` (const) — `CACHE_CONTROL_HEADER: Header`
+- `CacheOptions` (interface)
+- `CachePolicy` (interface)
+- `CodesByStatus` (type) — `type CodesByStatus = Readonly<Partial<Record<ErrorStatus, readonly string[]>>>;` — The codes each status of a declaration can carry.
 - `CodesOf` (type) — The codes an error response declares, or 'never' for a response that does not name them.
+- `CodesOfIdentity` (type) — `type CodesOfIdentity<I> = I extends Identity<string, z.ZodType, infer C> ? C : never;`
+- `CodesOfRequirement` (type) — `type CodesOfRequirement<R> = R extends Requirement<string, object, infer C> ? C : never;`
 - `CreateRoute` (type)
 - `CrudMember` (type) — `type CrudMember = 'find' | 'findAll' | 'create' | 'update' | 'replace' | 'upsert' | 'delete';`
 - `CrudOptions` (interface)
 - `CrudRoutes` (type) — `type CrudRoutes<C extends ResourceContext, O extends { readonly item: z.ZodType; }> = { readonly [M in SelectedMember<O> & CrudMember]: CrudRoute<C, O, M>; };`
+- `DEFAULT_BODY_LIMIT` (const) — `DEFAULT_BODY_LIMIT = 1048576` — 1 MiB: the ceiling of a request body unless a route says otherwise ('transport.md' §5.7).
 - `DeleteRoute` (type)
 - `ErrorBody` (type) — The body of a failure carrying 'C': a union over the members of 'C', discriminated on 'error.code'.
 - `ErrorModel` (interface) — An api's error vocabulary: the response it documents once per status (a component, so a route that adds nothing keeps its '$ref'), the code…
 - `ErrorResponse` (type) — `type ErrorResponse<C extends string> = JsonResponse<z.ZodType<ErrorBody<C>>>;` — An error response whose body is one of the envelopes of 'C'.
-- `ErrorStatus` (type) — `type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 410 | 412 | 422 | 423 | 429 | 500 | 502 | 503 | 504;`
+- `ErrorStatus` (type) — `type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;`
 - `ErrorsInput` (type) — `type ErrorsInput<Allowed extends string> = Readonly<Partial<Record<ErrorStatus, Response | readonly Allowed[]>>>;` — What a status takes where errors are declared: a response as the document writes it, or its codes.
 - `Extensions` (type) — `type Extensions = Readonly<Record<'x-${string}', unknown>>;` — OpenAPI's specification extensions, carried into the document verbatim.
 - `FindAllRoute` (type)
 - `FindRoute` (type)
+- `Freshness` (type+const) — What a route promises about time and size: the freshness of its answer, the latency budget the typed client times out under, and the body c…
 - `Header` (interface)
 - `HeaderParameter` (type)
 - `HttpMethod` (type) — `type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'patch';`
+- `IDEMPOTENCY_REPLAYED_HEADER` (const) — `IDEMPOTENCY_REPLAYED_HEADER: Header` — On a write carrying 'Idempotency-Key': 'true' when the answer is the stored one of an earlier attempt.
+- `IdentifiedAccess` (interface)
+- `Identity` (interface) — The identified state of a surface, declared once: which credentials a read and a write accept, and what the server knows about the caller o…
+- `IdentityOptions` (interface)
 - `JsonRequestBody` (interface) — The annotation of a request carrying a JSON body.
 - `JsonResponse` (interface) — The annotation of a response with a JSON body.
 - `MediaType` (interface)
@@ -113,15 +127,21 @@ Declarations: `dist/http/index.d.ts` — 72 exported names.
 - `Parameter` (interface)
 - `ParameterLocation` (type) — `type ParameterLocation = 'path' | 'query' | 'header' | 'cookie';`
 - `PathParameter` (interface) — The annotation of a path parameter: OpenAPI makes every one required.
+- `PrincipalOf` (type) — What a handler receives for the caller: the identity's principal, or 'null' where the route lets an anonymous caller in.
+- `PublicAccess` (interface)
 - `QueryParameter` (type)
+- `RESTRICTED_KEY` (const) — `RESTRICTED_KEY = "x-arthome-restricted"`
 - `ReplaceRoute` (type)
 - `RequestBody` (interface)
+- `Requirement` (interface) — A rule beyond identity: a name the server maps to a guard, its parameters, and the codes it can answer.
 - `Resource` (interface)
 - `ResourceContext` (interface) — What a resource knows about itself: the builder it comes from and the path it serves.
 - `ResourceConventions` (interface) — What an api decides once for every resource it serves: the envelope of one record and of a page, the parameters a list takes, the validator…
 - `ResourceOf` (type) — The resource a builder makes for 'name', for an annotation: 'ResourceOf<typeof studioV1, 'incidents', typeof IncidentIdParameter>'.
 - `ResourceOptions` (interface)
 - `Response` (interface)
+- `RestrictedField` (interface)
+- `RolesRequirement` (interface) — A role rule: the caller holds one of 'allowed' on the channel or the date 'on' names.
 - `Route` (type) — `type Route<T extends RouteShape = RouteShape> = T & Omit<RouteDefinition, keyof T>;`
 - `RouteBody` (type) — `type RouteBody<R extends RouteShape> = R extends { readonly requestBody: { readonly content: infer C; }; } ? z.output<JsonSchemaOf<C>> : undefined;`
 - `RouteBuilder` (interface) — Settings shared by the routes of a group, accumulated one call at a time.
@@ -134,23 +154,36 @@ Declarations: `dist/http/index.d.ts` — 72 exported names.
 - `RouteShape` (interface) — What a route's types are read from — the part of its annotation a handler or client needs.
 - `RouteStatus` (type) — `type RouteStatus<R extends RouteShape> = keyof R['responses'] & (number | '${number}');`
 - `RouteSuccessStatus` (type) — `type RouteSuccessStatus<R extends RouteShape> = Extract<RouteStatus<R>, 200 | 201 | 202 | 203 | 204 | 206 | '200' | '201' | '202' | '203' | '204' | '206'>;` — The 2xx statuses a route declares.
+- `SENSITIVE_KEY` (const) — `SENSITIVE_KEY = "x-arthome-sensitive"`
 - `SecurityRequirement` (type) — `type SecurityRequirement = Readonly<Record<string, readonly string[]>>;` — The schemes that satisfy a route, by name: '{}' is a call with no credential at all.
 - `SubresourceReplaceRoute` (type)
 - `UpdateRoute` (type)
 - `UpsertRoute` (type)
+- `VARY_HEADER` (const) — `VARY_HEADER: Header`
 - `VersionedPath` (type) — `type VersionedPath<R extends Pick<RouteShape, 'version' | 'path'>> = '/v${R['version']}${R['path']}';`
 - `accessorOf` (function) — `function accessorOf<const T extends readonly string[]>(members: T): AccessorOf<T>;` — The accessor built from the list rather than written beside it: the list stays the one declaration, which is what 'check-enums' reads.
 - `bodySchemaOf` (function) — `function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;` — The JSON body's schema, or 'undefined' for a route that takes none.
+- `cache` (function) — `function cache(freshness: Freshness, options?: CacheOptions): CachePolicy;` — 'cache(Freshness.FIVE_MINUTES)': the family of 'transport.md' §5.9, with its directive.
+- `cacheControlOf` (function) — `function cacheControlOf(policy: CachePolicy): string;` — The 'Cache-Control' value of a policy, as the BFF writes it.
 - `defineApi` (function) — `function defineApi<const Routes extends Readonly<Record<string, Route>>>(definition: ApiDefinition<Routes>): Api<Routes>;`
 - `defineErrorModel` (function) — `function defineErrorModel<Allowed extends string>(model: ErrorModel<Allowed>): ErrorModel<Allowed>;`
 - `defineRoute` (function) — `function defineRoute<const T extends RouteDefinition>(definition: T): Route<T>;`
 - `errorResponseFor` (function) — `function errorResponseFor(model: ErrorModel<string> | undefined, status: number, codes: readonly string[], base: Response | undefined): Response;` — The response for a status.
 - `headersSchemaOf` (function) — `function headersSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteHeaders<R>, unknown>;` — The declared headers, under Node's lowercase names; every other header passes through.
+- `identity` (function)
 - `makeResource` (function)
 - `paramsSchemaOf` (function) — `function paramsSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteParams<R>, unknown>;`
 - `querySchemaOf` (function) — `function querySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteQuery<R>, unknown>;` — The query a server validates: undeclared parameters refused, defaults not materialised.
+- `recentAuth` (function) — The caller holds a recent re-authentication: the proof is the body field 'proof' names (a token 'createReauthToken' minted), and the refusa…
+- `requirement` (function)
+- `restricted` (function) — `function restricted<S extends z.ZodType, const Right extends string>(schema: S, right: Right): z.ZodOptional<S>;` — A field present only for a caller who holds 'right': optional in the type and in the document, absent from the answer otherwise, never pres…
+- `restrictedFieldsOf` (function) — `function restrictedFieldsOf(schema: z.ZodType): readonly RestrictedField[];` — Each restricted field with the right that unlocks it.
+- `roles` (function) — `function roles<const Allowed extends string>(...allowed: readonly Allowed[]): RolesRequirement<Allowed>;`
 - `routeBuilder` (function) — `function routeBuilder<A extends string = string>(model?: ErrorModel<A>): RouteBuilder<undefined, readonly [], Record<never, never>, A>;` — The empty builder: 'routeBuilder(model).version(1).tags(...).headers(...).errors(...)'.
+- `sensitive` (function) — `function sensitive<S extends z.ZodType>(schema: S): S;` — A password, a token, a stream key: 'format: password' in the document, redacted from logs, never cached.
+- `sensitivePathsOf` (function) — `function sensitivePathsOf(schema: z.ZodType): readonly string[];` — The dotted paths of the sensitive fields: 'reauthToken', 'data.streamKey', 'items[].secret'.
 - `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
+- `throttle` (function) — `function throttle<const Bucket extends string>(bucket: Bucket): Requirement<'throttle', { readonly bucket: Bucket; }, typeof ApiErrorCode.RATE_LIMITED>;` — A rate-limit bucket by name: the server binds the cap, and the '429' is derived.
 - `versionedPath` (function) — `function versionedPath(route: Pick<RouteShape, 'version' | 'path'>): string;` — The only versioning strategy: the version is a path prefix, '/v1/dates/{dateId}'.
 
 #### @arthome/contracts/http-client

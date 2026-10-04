@@ -102,6 +102,11 @@ import {
   TraceparentParameter,
   UnauthorizedResponse,
   UnavailableResponse,
+  PayloadTooLargeResponse,
+  UnsupportedMediaTypeResponse,
+  InternalErrorResponse,
+  BadGatewayResponse,
+  GatewayTimeoutResponse,
   VaryAuthHeader,
   ViewerTimezoneParameter,
 } from './components.js';
@@ -532,6 +537,11 @@ export const storefrontApi: Api<{
       Gone: GoneResponse,
       TooManyRequests: TooManyRequestsResponse,
       Unavailable: UnavailableResponse,
+      PayloadTooLarge: PayloadTooLargeResponse,
+      UnsupportedMediaType: UnsupportedMediaTypeResponse,
+      InternalError: InternalErrorResponse,
+      BadGateway: BadGatewayResponse,
+      GatewayTimeout: GatewayTimeoutResponse,
     },
     schemas: {
       // envelopes

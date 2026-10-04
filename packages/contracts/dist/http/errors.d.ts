@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import type { ErrorParamsOf } from '@arthome/core/schema';
 import type { JsonResponse, Response } from './index.js';
-export type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 410 | 412 | 422 | 423 | 429 | 500 | 502 | 503 | 504;
+export type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;
 /** The body of a failure carrying `C`: a union over the members of `C`, discriminated on `error.code`. */
 export type ErrorBody<C extends string> = C extends string ? {
     readonly error: {
@@ -39,6 +39,8 @@ export interface ErrorModel<Allowed extends string> {
         readonly codes: readonly string[];
     }>>>;
     readonly envelopeOf: (code: string) => z.ZodType;
+    /** A BFF: its calls go through a service, so a route can answer `502` and `504`. */
+    readonly upstreams?: boolean;
     /** Never read at runtime: it carries `Allowed` to the compiler. */
     readonly allowed?: readonly Allowed[];
 }
