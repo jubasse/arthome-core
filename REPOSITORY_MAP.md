@@ -78,11 +78,12 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 160 exported names.
+Declarations: `dist/http/index.d.ts` — 170 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
 - `AccessorOf` (type) — `type AccessorOf<T extends readonly string[]> = { readonly [Member in T[number] as Uppercase<Member>]: Member; };` — Named members for a list of words, 'CHAT' for ''chat'', so no module spells a member again.
+- `Acknowledged` (const) — `Acknowledged: z.ZodOptional<z.ZodObject<{ accepted: z.ZodOptional<z.ZodBoolean>; }, z.core.$loose>>` — The data of an action that answers only that it was done.
 - `ActionOptions` (type)
 - `ActionRoute` (type)
 - `Api` (type) — `type Api<Routes extends Readonly<Record<string, Route>> = Readonly<Record<string, Route>>> = ApiDefinition<Routes>;`
@@ -112,6 +113,7 @@ Declarations: `dist/http/index.d.ts` — 160 exported names.
 - `DeadlineParameter` (const) — `DeadlineParameter: HeaderParameter<'x-arthome-deadline', z.ZodString, true>`
 - `Degraded` (type) — `type Degraded<R> = R extends { readonly degradable: infer D extends readonly string[]; } ? { readonly degraded?: readonly D[number][]; } : unknown;` — 'degraded' is typed from the route's 'degradable': only the parts it names.
 - `DeleteRoute` (type)
+- `Deleted` (const) — `Deleted: z.ZodOptional<z.ZodObject<{ deleted: z.ZodOptional<z.ZodBoolean>; }, z.core.$loose>>` — The data of a removal: replayed on something already removed, it still succeeds.
 - `DerivedStatus` (type) — `type DerivedStatus = keyof typeof DERIVED_ERROR_CODES;`
 - `ERRORS` (const) — `ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C>; }`
 - `Endpoints` (type) — One method per operation id of a block of routes, each taking its 'HandlerInput' and returning its 'HandlerOutput'.
@@ -151,6 +153,9 @@ Declarations: `dist/http/index.d.ts` — 160 exported names.
 - `Parameter` (interface)
 - `ParameterLocation` (type) — `type ParameterLocation = 'path' | 'query' | 'header' | 'cookie';`
 - `PathParameter` (interface) — The annotation of a path parameter: OpenAPI makes every one required.
+- `Period` (interface) — 'from' and 'to', and the refusal a required period implies.
+- `PeriodOptions` (interface)
+- `PeriodType` (type) — `type PeriodType = 'date' | 'dateTime';`
 - `PrincipalOf` (type) — What a handler receives for the caller: the identity's principal, or 'null' where the route lets an anonymous caller in.
 - `PublicAccess` (interface)
 - `QueryParameter` (type)
@@ -184,6 +189,7 @@ Declarations: `dist/http/index.d.ts` — 160 exported names.
 - `RouteTree` (interface)
 - `SENSITIVE_KEY` (const) — `SENSITIVE_KEY = "x-arthome-sensitive"`
 - `Scope` (interface) — A path prefix and the path parameters it declares: what 'path()' accumulates.
+- `SearchTextOptions` (interface)
 - `SecurityRequirement` (type) — `type SecurityRequirement = Readonly<Record<string, readonly string[]>>;` — The schemes that satisfy a route, by name: '{}' is a call with no credential at all.
 - `ServicePrincipalSchema` (const) — `ServicePrincipalSchema: z.ZodObject<{ callingService: z.ZodString; userId: z.ZodNullable<z.ZodString>; }, z.core.$strip>`
 - `SingleOptions` (interface)
@@ -217,10 +223,13 @@ Declarations: `dist/http/index.d.ts` — 160 exported names.
 - `groupByStatus` (function) — `function groupByStatus(codes: readonly string[]): Record<string, readonly string[]>;` — A list of codes grouped by the status each is answered with.
 - `headersSchemaOf` (function) — `function headersSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteHeaders<R>, unknown>;` — The declared headers, under Node's lowercase names; every other header passes through.
 - `identity` (function)
+- `localVocabulary` (function) — `function localVocabulary<const T extends readonly [string, ...string[]]>(values: T, reason: string): VocabularyIn<T>;` — A request vocabulary no domain owns: 'source: none', and why.
 - `makeResource` (function)
 - `pages` (function) — `function pages(options: { readonly maxPageSize: number; }): { readonly kind: 'pages'; readonly maxPageSize: number; };` — 'page' and 'pageSize': the studio's page with its total.
 - `paramsSchemaOf` (function) — `function paramsSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteParams<R>, unknown>;`
 - `parseTolerant` (function) — `function parseTolerant(schema: z.ZodType, value: unknown): TolerantParse;` — Parses with the schema, and accepts a value whose only faults are variants of a tagged union it does not know: the value comes back raw, wi…
+- `period` (function) — `function period<const Required extends boolean = true>(options: PeriodOptions<Required>): Period<Required>;`
+- `perishable` (function) — `function perishable<S extends z.core.$ZodShape, C extends z.core.$ZodObjectConfig>(schema: z.ZodObject<S, C>): z.ZodObject<S & { validUntil: ValidUntil; }, C>;` — 'schema' with the 'validUntil' the envelope declares, for data that stops being true at an instant.
 - `querySchemaOf` (function) — `function querySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteQuery<R>, unknown>;` — The query a server validates: undeclared parameters refused, defaults not materialised.
 - `recentAuth` (function) — The caller holds a recent re-authentication: the proof is the body field 'proof' names (a token 'createReauthToken' minted), and the refusa…
 - `requirement` (function)
@@ -228,6 +237,7 @@ Declarations: `dist/http/index.d.ts` — 160 exported names.
 - `restrictedFieldsOf` (function) — `function restrictedFieldsOf(schema: z.ZodType): readonly RestrictedField[];` — Each restricted field with the right that unlocks it.
 - `roles` (function) — `function roles<const Allowed extends string>(...allowed: readonly Allowed[]): RolesRequirement<Allowed>;`
 - `routeBuilder` (function) — `function routeBuilder<A extends string = string>(model?: ErrorModel<A>): RouteBuilder<undefined, readonly [], Record<never, never>, A>;` — The empty builder: 'routeBuilder(model).version(1).tags(...).headers(...).errors(...)'.
+- `searchText` (function) — `function searchText(options?: SearchTextOptions): QueryParameter<'q', z.ZodString>;` — The free-text 'q', searched server-side.
 - `sensitive` (function) — `function sensitive<S extends z.ZodType>(schema: S): S;` — A password, a token, a stream key: 'format: password' in the document, redacted from logs, never cached.
 - `sensitivePathsOf` (function) — `function sensitivePathsOf(schema: z.ZodType): readonly string[];` — The dotted paths of the sensitive fields: 'reauthToken', 'data.streamKey', 'items[].secret'.
 - `service` (const) — `service: Identity<'service', typeof ServicePrincipalSchema, never, readonly [typeof DeadlineParameter], readonly []>`
