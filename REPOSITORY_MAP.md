@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 105 exported names.
+Declarations: `dist/http/index.d.ts` — 113 exported names.
 
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
 - `AccessorOf` (type) — `type AccessorOf<T extends readonly string[]> = { readonly [Member in T[number] as Uppercase<Member>]: Member; };` — Named members for a list of words, 'CHAT' for ''chat'', so no module spells a member again.
@@ -88,19 +88,22 @@ Declarations: `dist/http/index.d.ts` — 105 exported names.
 - `ApiComponents` (interface)
 - `ApiDefinition` (interface) — A whole document: its top-level keys as the document writes them, 'routes' in place of 'paths'.
 - `BATCH_BODY_LIMIT` (const) — `BATCH_BODY_LIMIT = 2097152` — 2 MiB: the ceiling of a batched read.
+- `BatchRoute` (type)
 - `BuiltRoute` (type) — The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors.
 - `BuiltRouteDefinition` (type) — `type BuiltRouteDefinition<Allowed extends string = string> = Omit<RouteDefinition, 'version'> & { readonly errors?: ErrorsInput<Allowed>; };` — What a builder's 'defineRoute' takes: a route without its version, which the builder holds.
 - `CACHE_CONTROL_HEADER` (const) — `CACHE_CONTROL_HEADER: Header`
 - `CacheOptions` (interface)
 - `CachePolicy` (interface)
+- `ChildContext` (type) — The context of what is nested under one record of 'C', or under 'C' itself when it has no id.
 - `CodesByStatus` (type) — `type CodesByStatus = Readonly<Partial<Record<ErrorStatus, readonly string[]>>>;` — The codes each status of a declaration can carry.
 - `CodesOf` (type) — The codes an error response declares, or 'never' for a response that does not name them.
 - `CodesOfIdentity` (type) — `type CodesOfIdentity<I> = I extends Identity<string, z.ZodType, infer C> ? C : never;`
 - `CodesOfRequirement` (type) — `type CodesOfRequirement<R> = R extends Requirement<string, object, infer C> ? C : never;`
+- `Collected` (type) — `type Collected<Trees extends readonly RouteTree[]> = Flatten<UnionToIntersection<Leaves<Trees[number]>>>;`
 - `CreateRoute` (type)
 - `CrudMember` (type) — `type CrudMember = 'find' | 'findAll' | 'create' | 'update' | 'replace' | 'upsert' | 'delete';`
 - `CrudOptions` (interface)
-- `CrudRoutes` (type) — `type CrudRoutes<C extends ResourceContext, O extends { readonly item: z.ZodType; }> = { readonly [M in SelectedMember<O> & CrudMember]: CrudRoute<C, O, M>; };`
+- `CrudRoutes` (type) — What 'crud' returns: its routes keyed by operation id, so the record spreads into a closure.
 - `DEFAULT_BODY_LIMIT` (const) — `DEFAULT_BODY_LIMIT = 1048576` — 1 MiB: the ceiling of a request body unless a route says otherwise ('transport.md' §5.7).
 - `DeleteRoute` (type)
 - `ErrorBody` (type) — The body of a failure carrying 'C': a union over the members of 'C', discriminated on 'error.code'.
@@ -142,6 +145,7 @@ Declarations: `dist/http/index.d.ts` — 105 exported names.
 - `Response` (interface)
 - `RestrictedField` (interface)
 - `RolesRequirement` (interface) — A role rule: the caller holds one of 'allowed' on the channel or the date 'on' names.
+- `RootScope` (interface)
 - `Route` (type) — `type Route<T extends RouteShape = RouteShape> = T & Omit<RouteDefinition, keyof T>;`
 - `RouteBody` (type) — `type RouteBody<R extends RouteShape> = R extends { readonly requestBody: { readonly content: infer C; }; } ? z.output<JsonSchemaOf<C>> : undefined;`
 - `RouteBuilder` (interface) — Settings shared by the routes of a group, accumulated one call at a time.
@@ -154,8 +158,11 @@ Declarations: `dist/http/index.d.ts` — 105 exported names.
 - `RouteShape` (interface) — What a route's types are read from — the part of its annotation a handler or client needs.
 - `RouteStatus` (type) — `type RouteStatus<R extends RouteShape> = keyof R['responses'] & (number | '${number}');`
 - `RouteSuccessStatus` (type) — `type RouteSuccessStatus<R extends RouteShape> = Extract<RouteStatus<R>, 200 | 201 | 202 | 203 | 204 | 206 | '200' | '201' | '202' | '203' | '204' | '206'>;` — The 2xx statuses a route declares.
+- `RouteTree` (interface)
 - `SENSITIVE_KEY` (const) — `SENSITIVE_KEY = "x-arthome-sensitive"`
+- `Scope` (interface) — A path prefix and the path parameters it declares: what 'path()' accumulates.
 - `SecurityRequirement` (type) — `type SecurityRequirement = Readonly<Record<string, readonly string[]>>;` — The schemes that satisfy a route, by name: '{}' is a call with no credential at all.
+- `SingleOptions` (interface)
 - `SubresourceReplaceRoute` (type)
 - `UpdateRoute` (type)
 - `UpsertRoute` (type)
@@ -165,6 +172,7 @@ Declarations: `dist/http/index.d.ts` — 105 exported names.
 - `bodySchemaOf` (function) — `function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;` — The JSON body's schema, or 'undefined' for a route that takes none.
 - `cache` (function) — `function cache(freshness: Freshness, options?: CacheOptions): CachePolicy;` — 'cache(Freshness.FIVE_MINUTES)': the family of 'transport.md' §5.9, with its directive.
 - `cacheControlOf` (function) — `function cacheControlOf(policy: CachePolicy): string;` — The 'Cache-Control' value of a policy, as the BFF writes it.
+- `collect` (function) — `function collect<const Trees extends readonly RouteTree[]>(...trees: Trees): Collected<Trees>;`
 - `defineApi` (function) — `function defineApi<const Routes extends Readonly<Record<string, Route>>>(definition: ApiDefinition<Routes>): Api<Routes>;`
 - `defineErrorModel` (function) — `function defineErrorModel<Allowed extends string>(model: ErrorModel<Allowed>): ErrorModel<Allowed>;`
 - `defineRoute` (function) — `function defineRoute<const T extends RouteDefinition>(definition: T): Route<T>;`

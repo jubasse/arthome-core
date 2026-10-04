@@ -21,7 +21,7 @@ import {
   IDEMPOTENCY_REPLAYED_HEADER,
   VARY_HEADER,
 } from './policy.js';
-import type { Resource, ResourceConventions, ResourceOptions } from './resource.js';
+import type { Resource, ResourceConventions, ResourceOptions, SingleOptions } from './resource.js';
 import { makeResource } from './resource.js';
 
 type HeaderParameters = readonly (Parameter & { readonly in: 'header' })[];
@@ -33,6 +33,37 @@ export type BuiltRouteDefinition<Allowed extends string = string> = Omit<
   RouteDefinition,
   'version'
 > & { readonly errors?: ErrorsInput<Allowed> };
+
+type PathParam = Parameter & { readonly in: 'path' };
+
+/** A path prefix and the path parameters it declares: what `path()` accumulates. */
+export interface Scope {
+  readonly prefix: string;
+  readonly params: readonly PathParam[];
+}
+
+export interface RootScope {
+  readonly prefix: '';
+  readonly params: readonly [];
+}
+
+type PlaceholdersOf<T extends string> = T extends `${string}{${infer Name}}${infer Rest}`
+  ? Name | PlaceholdersOf<Rest>
+  : never;
+
+type DeclaredBy<Ps extends readonly PathParam[]> = Ps[number]['name'];
+
+/** `never` when every `{placeholder}` of the template has its parameter. */
+type MissingParameters<T extends string, Ps extends readonly PathParam[]> = Exclude<
+  PlaceholdersOf<T>,
+  DeclaredBy<Ps>
+>;
+
+type CheckedTemplate<T extends string, Ps extends readonly PathParam[]> = [
+  MissingParameters<T, Ps>,
+] extends [never]
+  ? unknown
+  : { readonly 'path(): a placeholder has no parameter': MissingParameters<T, Ps> };
 
 type OwnParameters<D> = D extends { readonly parameters: infer X extends readonly Parameter[] }
   ? X
@@ -58,12 +89,14 @@ export type BuiltRoute<
   E extends Responses,
   D extends Omit<BuiltRouteDefinition, 'errors'> & { readonly errors?: unknown },
   X = undefined,
+  Z extends Scope = RootScope,
 > = Route<
   {
     readonly method: D['method'];
     readonly version: V;
-    readonly path: D['path'];
+    readonly path: `${Z['prefix']}${D['path']}`;
     readonly parameters: readonly [
+      ...Z['params'],
       ...OwnParameters<D>,
       ...P,
       ...IdentityParameters<X, D['method']>,
@@ -104,58 +137,129 @@ export interface RouteBuilder<
   A extends string = string,
   K extends ResourceConventions | undefined = undefined,
   X extends Access | undefined = undefined,
+  Z extends Scope = RootScope,
 > {
-  version<const N extends number>(version: N): RouteBuilder<N, P, E, A, K, X>;
-  tags(...tags: readonly string[]): RouteBuilder<V, P, E, A, K, X>;
+  version<const N extends number>(version: N): RouteBuilder<N, P, E, A, K, X, Z>;
+  tags(...tags: readonly string[]): RouteBuilder<V, P, E, A, K, X, Z>;
   headers<const H extends HeaderParameters>(
     ...headers: H
-  ): RouteBuilder<V, readonly [...P, ...H], E, A, K, X>;
+  ): RouteBuilder<V, readonly [...P, ...H], E, A, K, X, Z>;
   errors<const R extends ErrorsInput<A>>(
     errors: R,
-  ): RouteBuilder<V, P, MergedErrors<E, R> & Responses, A, K, X>;
-  security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E, A, K, X>;
-  conventions<const C extends ResourceConventions>(conventions: C): RouteBuilder<V, P, E, A, C, X>;
+  ): RouteBuilder<V, P, MergedErrors<E, R> & Responses, A, K, X, Z>;
+  security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E, A, K, X, Z>;
+  conventions<const C extends ResourceConventions>(
+    conventions: C,
+  ): RouteBuilder<V, P, E, A, C, X, Z>;
   /** Every route requires this identity unless it says otherwise; its security is derived from it. */
   identity<const I extends Identity>(
     identity: I,
-  ): RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, false>>;
+  ): RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, false>, Z>;
   /** No identity: sign-in, sign-up, public links. */
-  public(): RouteBuilder<V, P, E, A, K, PublicAccess>;
+  public(): RouteBuilder<V, P, E, A, K, PublicAccess, Z>;
   /** An anonymous caller is let in and the principal may be null; a credential presented and refused is still a `401`. */
   optionalAuth(): X extends IdentifiedAccess<infer I, boolean>
-    ? RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, true>>
+    ? RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, true>, Z>
     : never;
   /** Rules beyond identity, applied in the order given, after those already set. */
-  requires(...rules: readonly Requirement[]): RouteBuilder<V, P, E, A, K, X>;
+  requires(...rules: readonly Requirement[]): RouteBuilder<V, P, E, A, K, X, Z>;
   /** The latency budget in milliseconds. */
-  budget(milliseconds: number): RouteBuilder<V, P, E, A, K, X>;
+  budget(milliseconds: number): RouteBuilder<V, P, E, A, K, X, Z>;
   /** The freshness of every read of the group; a write never carries it. */
-  cache(policy: CachePolicy): RouteBuilder<V, P, E, A, K, X>;
+  cache(policy: CachePolicy): RouteBuilder<V, P, E, A, K, X, Z>;
   /** The ceiling of a request body, in bytes. */
-  bodyLimit(bytes: number): RouteBuilder<V, P, E, A, K, X>;
+  bodyLimit(bytes: number): RouteBuilder<V, P, E, A, K, X, Z>;
   defineRoute<const D extends BuiltRouteDefinition<A>>(
-    this: RouteBuilder<number, P, E, A, K, X>,
+    this: RouteBuilder<number, P, E, A, K, X, Z>,
     definition: D,
-  ): BuiltRoute<NonNullable<V>, P, E, D, X>;
+  ): BuiltRoute<NonNullable<V>, P, E, D, X, Z>;
+  /**
+   * A prefix and the path parameters it declares, once: everything built from the result sits under
+   * it. The compiler checks that every `{placeholder}` of the template has its parameter. What the
+   * result sets (`requires`, `tags`, the identity) adds to what the builder already holds. With a
+   * closure, the routes it returns are what the call returns.
+   */
+  path<const T extends string, const Ps extends readonly PathParam[]>(
+    template: T & CheckedTemplate<T, Ps>,
+    ...params: Ps
+  ): RouteBuilder<V, P, E, A, K, X, ScopeOf<Z, T, Ps>>;
+  /** A collection: several records, each with its id in the URL. */
   resource<
     const Name extends string,
-    const Id extends Parameter & { readonly in: 'path' },
-    const Parents extends readonly (Parameter & { readonly in: 'path' })[] = readonly [],
+    const Id extends PathParam,
+    const Parents extends readonly PathParam[] = readonly [],
+    const Owner extends 'caller' | undefined = undefined,
   >(
-    this: RouteBuilder<number, P, E, A, K, X>,
+    this: RouteBuilder<number, P, E, A, K, X, Z>,
     name: Name,
-    options: ResourceOptions<Id, Parents>,
-  ): Resource<{
-    readonly version: NonNullable<V>;
-    readonly headers: P;
-    readonly responses: E;
-    readonly allowed: A;
-    readonly conventions: K;
-    readonly access: X;
-    readonly name: Name;
-    readonly id: Id;
-    readonly parents: Parents;
-  }>;
+    options: ResourceOptions<Id, Parents, Owner>,
+  ): Resource<ContextOf<V, P, E, A, K, X, Z, Name, Id, Parents, Owner>>;
+  resource<
+    const Name extends string,
+    const Id extends PathParam,
+    const Parents extends readonly PathParam[],
+    const Owner extends 'caller' | undefined,
+    R,
+  >(
+    this: RouteBuilder<number, P, E, A, K, X, Z>,
+    name: Name,
+    options: ResourceOptions<Id, Parents, Owner>,
+    closure: (resource: Resource<ContextOf<V, P, E, A, K, X, Z, Name, Id, Parents, Owner>>) => R,
+  ): R;
+  /** What exists once in its context, so its URL has no id: my preferences, a channel's settings. */
+  single<
+    const Name extends string,
+    const Parents extends readonly PathParam[] = readonly [],
+    const Owner extends 'caller' | undefined = undefined,
+  >(
+    this: RouteBuilder<number, P, E, A, K, X, Z>,
+    name: Name,
+    options?: SingleOptions<Parents, Owner>,
+  ): Resource<ContextOf<V, P, E, A, K, X, Z, Name, undefined, Parents, Owner>>;
+  single<
+    const Name extends string,
+    const Parents extends readonly PathParam[],
+    const Owner extends 'caller' | undefined,
+    R,
+  >(
+    this: RouteBuilder<number, P, E, A, K, X, Z>,
+    name: Name,
+    options: SingleOptions<Parents, Owner> | undefined,
+    closure: (
+      single: Resource<ContextOf<V, P, E, A, K, X, Z, Name, undefined, Parents, Owner>>,
+    ) => R,
+  ): R;
+}
+
+interface ScopeOf<Z extends Scope, T extends string, Ps extends readonly PathParam[]> {
+  readonly prefix: `${Z['prefix']}/${T}`;
+  readonly params: readonly [...Z['params'], ...Ps];
+}
+
+interface ContextOf<
+  V,
+  P extends readonly Parameter[],
+  E extends Responses,
+  A extends string,
+  K,
+  X,
+  Z extends Scope,
+  Name extends string,
+  Id extends PathParam | undefined,
+  Parents extends readonly PathParam[],
+  Owner extends 'caller' | undefined,
+> {
+  readonly version: NonNullable<V> & number;
+  readonly headers: P;
+  readonly responses: E;
+  readonly allowed: A;
+  readonly conventions: K;
+  readonly access: X;
+  readonly scope: Z;
+  readonly name: Name;
+  readonly id: Id;
+  readonly parents: Parents;
+  readonly owner: Owner;
 }
 
 type Structured = Readonly<Record<string, Response>>;
@@ -174,6 +278,8 @@ interface BuilderSettings {
   readonly budgetMs: number | undefined;
   readonly cache: CachePolicy | undefined;
   readonly bodyLimit: number | undefined;
+  readonly prefix: string;
+  readonly prefixParameters: readonly Parameter[];
 }
 
 type AnyBuilder = RouteBuilder<
@@ -198,6 +304,8 @@ function split(
 }
 
 type CodesByStatus = Record<string, readonly string[]>;
+
+type Closure = (scoped: never) => unknown;
 
 const IDEMPOTENCY_KEY = 'Idempotency-Key';
 
@@ -375,6 +483,20 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
     budget: (budgetMs: number) => next({ budgetMs }),
     cache: (cache: CachePolicy) => next({ cache }),
     bodyLimit: (bodyLimit: number) => next({ bodyLimit }),
+    path: (template: string, ...rest: readonly unknown[]) => {
+      const closure = typeof rest.at(-1) === 'function' ? (rest.at(-1) as Closure) : undefined;
+      const params = (closure === undefined ? rest : rest.slice(0, -1)) as readonly Parameter[];
+      const names = [...template.matchAll(/\{([^}]+)\}/g)].map((match) => match[1]);
+      const missing = names.filter((name) => !params.some((parameter) => parameter.name === name));
+      if (missing.length > 0) {
+        throw new Error(`path "${template}": no parameter for ${missing.join(', ')}.`);
+      }
+      const scoped = next({
+        prefix: `${settings.prefix}/${template.replace(/^\/+/, '')}`,
+        prefixParameters: Object.freeze([...settings.prefixParameters, ...params]),
+      });
+      return closure === undefined ? scoped : closure(scoped as never);
+    },
     defineRoute: (definition: BuiltRouteDefinition) => {
       if (settings.version === undefined) {
         throw new Error(
@@ -406,6 +528,7 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
         (parameter) => !(rest.parameters ?? []).some((own) => own.name === parameter.name),
       );
       const parameters = [
+        ...settings.prefixParameters,
         ...(rest.parameters ?? []),
         ...conditionalParameters,
         ...settings.headers,
@@ -443,6 +566,7 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
       );
       return defineRoute({
         ...rest,
+        path: `${settings.prefix}${rest.path}`,
         version: settings.version,
         ...(tags !== undefined && { tags }),
         ...(security !== undefined && { security }),
@@ -456,11 +580,31 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
         responses,
       });
     },
-    resource: (name: string, options: ResourceOptions<never, never>) => {
+    resource: (name: string, options: ResourceOptions<never, never>, closure?: Closure) => {
       if (settings.conventions === undefined) {
         throw new Error(`resource "${name}": call .conventions(...) first.`);
       }
-      return makeResource(builder as never, settings.conventions, name, options, settings.headers);
+      const made = makeResource(
+        builder as never,
+        settings.conventions,
+        name,
+        options,
+        settings.headers,
+      );
+      return closure === undefined ? made : closure(made);
+    },
+    single: (name: string, options?: SingleOptions, closure?: Closure) => {
+      if (settings.conventions === undefined) {
+        throw new Error(`single "${name}": call .conventions(...) first.`);
+      }
+      const made = makeResource(
+        builder as never,
+        settings.conventions,
+        name,
+        { ...options, id: undefined },
+        settings.headers,
+      );
+      return closure === undefined ? made : closure(made);
     },
   };
   return Object.freeze(builder) as unknown as AnyBuilder;
@@ -487,6 +631,8 @@ export function routeBuilder<A extends string = string>(
     budgetMs: undefined,
     cache: undefined,
     bodyLimit: undefined,
+    prefix: '',
+    prefixParameters: [],
   }) as unknown as RouteBuilder<undefined, readonly [], Record<never, never>, A>;
 }
 
@@ -494,24 +640,18 @@ export function routeBuilder<A extends string = string>(
 export type ResourceOf<
   B,
   Name extends string,
-  Id extends Parameter & { readonly in: 'path' },
-  Parents extends readonly (Parameter & { readonly in: 'path' })[] = readonly [],
+  Id extends PathParam | undefined,
+  Parents extends readonly PathParam[] = readonly [],
+  Owner extends 'caller' | undefined = undefined,
 > =
   B extends RouteBuilder<
     infer V extends number,
     infer P,
     infer E,
     infer A,
-    infer K extends ResourceConventions
+    infer K extends ResourceConventions,
+    infer X,
+    infer Z
   >
-    ? Resource<{
-        readonly version: V;
-        readonly headers: P;
-        readonly responses: E;
-        readonly allowed: A;
-        readonly conventions: K;
-        readonly name: Name;
-        readonly id: Id;
-        readonly parents: Parents;
-      }>
+    ? Resource<ContextOf<V, P, E, A, K, X, Z, Name, Id, Parents, Owner>>
     : never;

@@ -1,6 +1,7 @@
-import type { z } from 'zod';
+import { z } from 'zod';
 import { ApiErrorCode, DomainErrorCode } from '@arthome/core';
-import type { BuiltRoute, BuiltRouteDefinition, RouteBuilder } from './builder.js';
+import type { Access } from './access.js';
+import type { BuiltRoute, BuiltRouteDefinition, RouteBuilder, Scope } from './builder.js';
 import type { Header, JsonRequestBody, JsonResponse, Parameter, QueryParameter, Response } from './index.js';
 type PathParameterOf = Parameter & {
     readonly in: 'path';
@@ -28,12 +29,18 @@ export interface ResourceConventions {
     /** The version a write expects the record to be at: a body field on an update, a query parameter on a removal. */
     readonly expectedVersion: z.ZodType;
 }
-export interface ResourceOptions<Id extends PathParameterOf, Parents extends readonly PathParameterOf[] = readonly []> {
+export interface ResourceOptions<Id extends PathParameterOf, Parents extends readonly PathParameterOf[] = readonly [], Owner extends 'caller' | undefined = undefined> {
     readonly id: Id;
+    /** `caller`: only the caller writes this data, so there is no version, no conflict, and another caller's id is a 404. */
+    readonly owner?: Owner;
     /** The path parameters of the resources this one is nested in, in path order. */
     readonly parents?: Parents;
     /** The singular, in kebab-case or camelCase, when dropping the final `s` of the name is wrong. */
     readonly singular?: string;
+}
+export interface SingleOptions<Parents extends readonly PathParameterOf[] = readonly [], Owner extends 'caller' | undefined = undefined> {
+    readonly parents?: Parents;
+    readonly owner?: Owner;
 }
 /** What a resource knows about itself: the builder it comes from and the path it serves. */
 export interface ResourceContext {
@@ -42,10 +49,14 @@ export interface ResourceContext {
     readonly responses: Responses;
     readonly allowed: string;
     readonly conventions: unknown;
+    readonly access: unknown;
+    readonly scope: Scope;
     readonly name: string;
-    readonly id: PathParameterOf;
+    readonly id: PathParameterOf | undefined;
     readonly parents: readonly PathParameterOf[];
+    readonly owner: 'caller' | undefined;
 }
+type Owned<C extends ResourceContext> = C['owner'] extends 'caller' ? true : false;
 type Conv<C extends ResourceContext> = Extract<C['conventions'], ResourceConventions>;
 type Without<T extends readonly Parameter[], Held extends readonly Parameter[]> = T extends readonly [infer First extends Parameter, ...infer Rest extends readonly Parameter[]] ? First extends Held[number] ? Without<Rest, Held> : readonly [First, ...Without<Rest, Held>] : readonly [];
 /** The parameters the convention adds, less those the builder already carries and so places itself. */
@@ -106,10 +117,20 @@ type Member<C extends ResourceContext, D, Method extends 'get' | 'post' | 'put' 
     readonly parameters: readonly [...Params, ...OwnParameters<D>];
     readonly responses: Omit<Success, keyof OwnResponses<D>> & OwnResponses<D>;
     readonly errors: JoinErrors<Errors, OwnErrors<D>>;
-} & Body>;
+} & Body, C['access'] extends Access | undefined ? C['access'] : undefined, C['scope']>;
 type CollectionPath<C extends ResourceContext> = `/${C['name']}`;
-type ItemPath<C extends ResourceContext> = `/${C['name']}/{${C['id']['name']}}`;
-type ItemParameters<C extends ResourceContext> = readonly [...C['parents'], C['id']];
+type ItemPath<C extends ResourceContext> = C['id'] extends {
+    readonly name: infer N extends string;
+} ? `/${C['name']}/{${N}}` : `/${C['name']}`;
+type ItemParameters<C extends ResourceContext> = C['id'] extends PathParameterOf ? readonly [...C['parents'], C['id']] : C['parents'];
+type ConflictFor<C extends ResourceContext> = Owned<C> extends true ? IdempotencyCodes : ConflictCodes;
+type VersionFor<C extends ResourceContext> = Owned<C> extends true ? unknown : ExpectedVersion;
+type VersionedItem<C extends ResourceContext> = Owned<C> extends true ? z.ZodType : z.ZodType<{
+    readonly version: number;
+}>;
+type NotFoundFor<C extends ResourceContext> = C['id'] extends PathParameterOf ? {
+    readonly 404: NotFound;
+} : Record<never, never>;
 interface Sent<S extends z.ZodType, Required = true> {
     readonly requestBody: JsonRequestBody<S, Required>;
 }
@@ -118,9 +139,7 @@ type ResponseOf<C extends ResourceContext, S extends z.ZodType | undefined, Stat
 };
 export type FindRoute<C extends ResourceContext, D> = Member<C, D, 'get', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'readParameters'>], {
     readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>>;
-}, {
-    readonly 404: NotFound;
-}>;
+}, NotFoundFor<C>>;
 export type FindAllRoute<C extends ResourceContext, D> = Member<C, D, 'get', CollectionPath<C>, readonly [...C['parents'], ...Added<C, 'listParameters'>], {
     readonly 200: JsonResponse<Schema<Page<C, ItemOf<D>>>>;
 }, {
@@ -133,24 +152,29 @@ export type CreateRoute<C extends ResourceContext, D> = Member<C, D, 'post', Col
 }, Sent<BodyOf<D>>>;
 export type UpdateRoute<C extends ResourceContext, D> = Member<C, D, 'patch', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>], {
     readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>>;
-}, {
-    readonly 404: NotFound;
-    readonly 409: ConflictCodes;
-}, Sent<Schema<PatchBody<D>>>>;
+}, NotFoundFor<C> & {
+    readonly 409: ConflictFor<C>;
+}, Sent<Schema<PatchBody<D> & VersionFor<C>>>>;
 export type ReplaceRoute<C extends ResourceContext, D> = Member<C, D, 'put', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>], {
     readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>>;
-}, {
-    readonly 404: NotFound;
-    readonly 409: ConflictCodes;
-}, Sent<Schema<BodyOutput<D> & ExpectedVersion>>>;
+}, NotFoundFor<C> & {
+    readonly 409: ConflictFor<C>;
+}, Sent<Schema<BodyOutput<D> & VersionFor<C>>>>;
 export type UpsertRoute<C extends ResourceContext, D> = Member<C, D, 'put', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>], ResponseOf<C, ItemSchema<D>, 200>, {
     readonly 409: IdempotencyCodes;
 }, BodyPart<D>>;
-export type DeleteRoute<C extends ResourceContext, D> = Member<C, D, 'delete', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>, ExpectedVersionQuery], {
+export type DeleteRoute<C extends ResourceContext, D> = Member<C, D, 'delete', ItemPath<C>, readonly [
+    ...ItemParameters<C>,
+    ...Added<C, 'writeParameters'>,
+    ...(Owned<C> extends true ? readonly [] : readonly [ExpectedVersionQuery])
+], D extends {
+    readonly response: infer R extends z.ZodType;
+} ? {
+    readonly 200: JsonResponse<Schema<Item<C, R>>>;
+} : {
     readonly 204: Response;
-}, {
-    readonly 404: NotFound;
-    readonly 409: ConflictCodes;
+}, NotFoundFor<C> & {
+    readonly 409: ConflictFor<C>;
 }>;
 export type ActionRoute<C extends ResourceContext, Scope extends 'item' | 'collection', Name extends string, D> = Member<C, D, ActionMethod<D>, Scope extends 'item' ? `${ItemPath<C>}/${Name}` : `${CollectionPath<C>}/${Name}`, readonly [
     ...(Scope extends 'item' ? ItemParameters<C> : C['parents']),
@@ -158,10 +182,16 @@ export type ActionRoute<C extends ResourceContext, Scope extends 'item' | 'colle
 ], ActionSuccess<C, D>, ActionMethod<D> extends 'get' ? Record<never, never> : {
     readonly 409: IdempotencyCodes;
 }, BodyPart<D>>;
-export type SubresourceReplaceRoute<C extends ResourceContext, Name extends string, D> = Member<C, D, 'put', `${ItemPath<C>}/${Name}`, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>], ResponseOf<C, ItemSchema<D>, 200>, {
-    readonly 404: NotFound;
-    readonly 409: ConflictCodes;
-}, Sent<Schema<BodyOutput<D> & ExpectedVersion>>>;
+export type SubresourceReplaceRoute<C extends ResourceContext, Name extends string, D> = Member<C, D, 'put', `${ItemPath<C>}/${Name}`, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>], ResponseOf<C, ItemSchema<D>, 200>, NotFoundFor<C> & {
+    readonly 409: ConflictFor<C>;
+}, Sent<Schema<BodyOutput<D> & VersionFor<C>>>>;
+export type BatchRoute<C extends ResourceContext, D> = Member<C, D, 'post', `/${C['name']}/batch`, C['parents'], {
+    readonly 200: JsonResponse<Schema<Envelope<C> & {
+        readonly data: Readonly<Record<string, z.output<ItemOf<D>>>>;
+    }>>;
+}, Record<never, never>, Sent<Schema<{
+    readonly ids: readonly (C['id'] extends PathParameterOf ? z.output<C['id']['schema']> : string)[];
+}>>>;
 type ActionMethod<D> = D extends {
     readonly method: infer M extends 'get' | 'post' | 'put' | 'patch' | 'delete';
 } ? M : 'post';
@@ -210,9 +240,10 @@ type Selection = {
     readonly omit?: undefined;
 };
 type Own<O, K extends string> = O extends Readonly<Record<K, infer X>> ? X : unknown;
-type SelectedMember<O> = O extends {
+type DefaultsOf<C extends ResourceContext> = C['id'] extends PathParameterOf ? DefaultMember : 'find' | 'update';
+type SelectedMember<C extends ResourceContext, O> = O extends {
     readonly pick: readonly (infer M)[];
-} ? M : Exclude<DefaultMember, O extends {
+} ? M : Exclude<DefaultsOf<C>, O extends {
     readonly omit: readonly (infer X)[];
 } ? X : never> | Extract<keyof O, 'replace' | 'upsert'>;
 export interface CrudOptions<C extends ResourceContext> {
@@ -234,40 +265,61 @@ export interface CrudOptions<C extends ResourceContext> {
     readonly upsert?: Docs<C, {
         readonly body?: z.ZodType;
     }>;
-    readonly delete?: Docs<C>;
+    readonly delete?: Docs<C, {
+        readonly response?: z.ZodType;
+    }>;
 }
-type CrudRequires<C extends ResourceContext, O> = ('create' extends SelectedMember<O> ? {
+type CrudRequires<C extends ResourceContext, O> = ('create' extends SelectedMember<C, O> ? {
     readonly create: NonNullable<CrudOptions<C>['create']>;
-} : unknown) & ('update' extends SelectedMember<O> ? {
+} : unknown) & ('update' extends SelectedMember<C, O> ? {
     readonly update: NonNullable<CrudOptions<C>['update']>;
 } : unknown);
+type WithItem<O extends {
+    readonly item: z.ZodType;
+}, M extends string> = Own<O, M> & {
+    readonly item: O['item'];
+};
 type CrudRoute<C extends ResourceContext, O extends {
     readonly item: z.ZodType;
 }, M> = {
-    find: FindRoute<C, Own<O, 'find'> & {
-        readonly item: O['item'];
-    }>;
-    findAll: FindAllRoute<C, Own<O, 'findAll'> & {
-        readonly item: O['item'];
-    }>;
-    create: CreateRoute<C, Own<O, 'create'> & {
-        readonly item: O['item'];
-    }>;
-    update: UpdateRoute<C, Own<O, 'update'> & {
-        readonly item: O['item'];
-    }>;
-    replace: ReplaceRoute<C, Own<O, 'replace'> & {
-        readonly item: O['item'];
-    }>;
-    upsert: UpsertRoute<C, Own<O, 'upsert'> & {
-        readonly item: O['item'];
-    }>;
+    find: FindRoute<C, WithItem<O, 'find'>>;
+    findAll: FindAllRoute<C, WithItem<O, 'findAll'>>;
+    create: CreateRoute<C, WithItem<O, 'create'>>;
+    update: UpdateRoute<C, WithItem<O, 'update'>>;
+    replace: ReplaceRoute<C, WithItem<O, 'replace'>>;
+    upsert: UpsertRoute<C, WithItem<O, 'upsert'>>;
     delete: DeleteRoute<C, Own<O, 'delete'>>;
 }[M & CrudMember];
+type LastSegment<S extends string> = S extends `${string}/${infer Rest}` ? LastSegment<Rest> : S;
+type PascalOf<S extends string> = S extends `${infer Head}-${infer Tail}` ? `${Capitalize<Head>}${PascalOf<Tail>}` : Capitalize<S>;
+type SingularOf<S extends string> = S extends `${infer B}ies` ? `${B}y` : S extends `${infer B}ches` ? `${B}ch` : S extends `${infer B}shes` ? `${B}sh` : S extends `${infer B}xes` ? `${B}x` : S extends `${infer B}sses` ? `${B}ss` : S extends `${infer B}s` ? B : S;
+/** The word an operation id ends with: a collection's singular, a single's own name. */
+type SubjectOf<C extends ResourceContext> = C['id'] extends PathParameterOf ? PascalOf<SingularOf<LastSegment<C['name']>>> : PascalOf<LastSegment<C['name']>>;
+type DerivedId<C extends ResourceContext, M> = M extends 'findAll' ? `findAll${PascalOf<LastSegment<C['name']>>}` : `${Extract<M, string>}${SubjectOf<C>}`;
+type IdOf<C extends ResourceContext, O, M extends string> = Own<O, M> extends {
+    readonly operationId: infer I extends string;
+} ? I : DerivedId<C, M>;
+/** What `crud` returns: its routes keyed by operation id, so the record spreads into a closure. */
 export type CrudRoutes<C extends ResourceContext, O extends {
     readonly item: z.ZodType;
 }> = {
-    readonly [M in SelectedMember<O> & CrudMember]: CrudRoute<C, O, M>;
+    readonly [M in SelectedMember<C, O> & CrudMember as IdOf<C, O, M>]: CrudRoute<C, O, M>;
+};
+/** The context of what is nested under one record of `C`, or under `C` itself when it has no id. */
+export type ChildContext<C extends ResourceContext, Name extends string, Id extends PathParameterOf | undefined, Owner extends 'caller' | undefined> = Omit<C, 'scope' | 'name' | 'id' | 'parents' | 'owner'> & {
+    readonly scope: {
+        readonly prefix: `${C['scope']['prefix']}/${C['name']}${C['id'] extends {
+            readonly name: infer N extends string;
+        } ? `/{${N}}` : ''}`;
+        readonly params: readonly [
+            ...C['scope']['params'],
+            ...(C['id'] extends PathParameterOf ? readonly [C['id']] : readonly [])
+        ];
+    };
+    readonly name: Name;
+    readonly id: Id;
+    readonly parents: readonly [];
+    readonly owner: Owner;
 };
 export interface Resource<C extends ResourceContext> {
     find<const D extends Docs<C, {
@@ -289,7 +341,7 @@ export interface Resource<C extends ResourceContext> {
      * rules or consequences is an `action`.
      */
     update<const D extends Docs<C, {
-        readonly item: z.ZodType;
+        readonly item: VersionedItem<C>;
     } & ({
         readonly fields: z.ZodObject;
     } | {
@@ -298,14 +350,36 @@ export interface Resource<C extends ResourceContext> {
     /** PUT: a full replacement, idempotent. The body is complete and an absent field is reset. */
     replace<const D extends Docs<C, {
         readonly body: z.ZodObject;
-        readonly item: z.ZodType;
+        readonly item: VersionedItem<C>;
     }>>(docs: D): ReplaceRoute<C, D>;
     /** PUT on an id the client chose, such as `/follows/{artistId}`: it creates or replaces. */
     upsert<const D extends Docs<C, {
         readonly body?: z.ZodType;
         readonly item?: z.ZodType;
     }>>(docs: D): UpsertRoute<C, D>;
-    delete<const D extends Docs<C>>(docs?: D): DeleteRoute<C, D>;
+    /** 204 unless `response` is given: the record that went, as it was, answered with a 200. */
+    delete<const D extends Docs<C, {
+        readonly response?: z.ZodType;
+    }>>(docs?: D): DeleteRoute<C, D>;
+    /** `POST /{name}/batch`: many records by id in one read, answered as a table keyed by id. */
+    batch<const D extends Docs<C, {
+        readonly item: z.ZodType;
+        readonly max?: number;
+    }>>(docs: D): BatchRoute<C, D>;
+    /** A collection nested under one record of this one. */
+    resource<const Name extends string, const Id extends PathParameterOf, const Owner extends 'caller' | undefined = undefined>(name: Name, options: Omit<ResourceOptions<Id, readonly [], Owner>, 'parents'>): Resource<ChildContext<C, Name, Id, Owner>>;
+    resource<const Name extends string, const Id extends PathParameterOf, const Owner extends 'caller' | undefined, R>(name: Name, options: Omit<ResourceOptions<Id, readonly [], Owner>, 'parents'>, closure: (resource: Resource<ChildContext<C, Name, Id, Owner>>) => R): R;
+    /** A prefix under this resource's record, with the path parameters it declares. */
+    path<const T extends string, const Ps extends readonly PathParameterOf[]>(template: T, ...params: Ps): RouteBuilder<C['version'], C['headers'], C['responses'], C['allowed'], Extract<C['conventions'], ResourceConventions | undefined>, Extract<C['access'], Access | undefined>, ChildContext<C, string, undefined, undefined>['scope'] & {
+        readonly prefix: `${ChildContext<C, string, undefined, undefined>['scope']['prefix']}/${T}`;
+        readonly params: readonly [
+            ...ChildContext<C, string, undefined, undefined>['scope']['params'],
+            ...Ps
+        ];
+    }>;
+    /** What exists once under this resource's record. */
+    single<const Name extends string, const Owner extends 'caller' | undefined = undefined>(name: Name, options?: Omit<SingleOptions<readonly [], Owner>, 'parents'>): Resource<ChildContext<C, Name, undefined, Owner>>;
+    single<const Name extends string, const Owner extends 'caller' | undefined, R>(name: Name, options: Omit<SingleOptions<readonly [], Owner>, 'parents'> | undefined, closure: (single: Resource<ChildContext<C, Name, undefined, Owner>>) => R): R;
     /** `/{name}/{id}/{action}`: every business state change of one record. */
     action<const Name extends string, const D extends ActionOptions<C>>(name: Name, options: D): ActionRoute<C, 'item', Name, D>;
     /** `/{name}/{action}`: an operation on the collection. */
@@ -329,6 +403,8 @@ export type ActionOptions<C extends ResourceContext> = Docs<C, {
     readonly idempotent?: boolean;
 }>;
 type AnyBuilder = RouteBuilder<number, readonly Parameter[], Responses, string, ResourceConventions>;
-export declare function makeResource(builder: AnyBuilder, given: ResourceConventions, name: string, options: ResourceOptions<PathParameterOf, readonly PathParameterOf[]>, headers: readonly Parameter[]): never;
+export declare function makeResource(builder: AnyBuilder, given: ResourceConventions, name: string, options: Omit<ResourceOptions<PathParameterOf, readonly PathParameterOf[]>, 'id'> & {
+    readonly id?: PathParameterOf | undefined;
+}, headers: readonly Parameter[]): never;
 export {};
 //# sourceMappingURL=resource.d.ts.map

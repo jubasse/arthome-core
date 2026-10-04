@@ -388,9 +388,9 @@ export declare const setSubscriptionPlan: Route<{
     };
 }>;
 export declare const cancelSubscription: Route<{
-    method: 'delete';
+    method: 'post';
     version: 1;
-    path: '/subscription';
+    path: '/subscription/cancel';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,

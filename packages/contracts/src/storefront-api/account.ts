@@ -1009,9 +1009,9 @@ export const exchangeOneTimeToken: Route<{
 });
 
 export const changePassword: Route<{
-  method: 'patch';
+  method: 'post';
   version: 1;
-  path: '/auth/password';
+  path: '/auth/change-password';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1052,8 +1052,8 @@ export const changePassword: Route<{
     429: typeof TooManyRequestsResponse;
   };
 }> = accountRoutes.defineRoute({
-  method: 'patch',
-  path: '/auth/password',
+  method: 'post',
+  path: '/auth/change-password',
   operationId: 'changePassword',
   summary: 'Changes the password from the account.',
   description:

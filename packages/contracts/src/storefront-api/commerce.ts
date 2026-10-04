@@ -1822,9 +1822,9 @@ export const setSubscriptionPlan: Route<{
 });
 
 export const cancelSubscription: Route<{
-  method: 'delete';
+  method: 'post';
   version: 1;
-  path: '/subscription';
+  path: '/subscription/cancel';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1841,8 +1841,8 @@ export const cancelSubscription: Route<{
     403: typeof CsrfRefusedResponse;
   };
 }> = commerceWrites.defineRoute({
-  method: 'delete',
-  path: '/subscription',
+  method: 'post',
+  path: '/subscription/cancel',
   operationId: 'cancelSubscription',
   summary: 'Cancels the subscription at the end of the period.',
   description:

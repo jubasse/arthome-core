@@ -1,8 +1,9 @@
-import type { z } from 'zod';
+import { z } from 'zod';
 
 import { ApiErrorCode, DomainErrorCode } from '@arthome/core';
 
-import type { BuiltRoute, BuiltRouteDefinition, RouteBuilder } from './builder.js';
+import type { Access } from './access.js';
+import type { BuiltRoute, BuiltRouteDefinition, RouteBuilder, Scope } from './builder.js';
 import type { ErrorsInput } from './errors.js';
 import type {
   Header,
@@ -12,6 +13,7 @@ import type {
   QueryParameter,
   Response,
 } from './index.js';
+import { BATCH_BODY_LIMIT } from './policy.js';
 
 type PathParameterOf = Parameter & { readonly in: 'path' };
 
@@ -43,12 +45,23 @@ export interface ResourceConventions {
 export interface ResourceOptions<
   Id extends PathParameterOf,
   Parents extends readonly PathParameterOf[] = readonly [],
+  Owner extends 'caller' | undefined = undefined,
 > {
   readonly id: Id;
+  /** `caller`: only the caller writes this data, so there is no version, no conflict, and another caller's id is a 404. */
+  readonly owner?: Owner;
   /** The path parameters of the resources this one is nested in, in path order. */
   readonly parents?: Parents;
   /** The singular, in kebab-case or camelCase, when dropping the final `s` of the name is wrong. */
   readonly singular?: string;
+}
+
+export interface SingleOptions<
+  Parents extends readonly PathParameterOf[] = readonly [],
+  Owner extends 'caller' | undefined = undefined,
+> {
+  readonly parents?: Parents;
+  readonly owner?: Owner;
 }
 
 /** What a resource knows about itself: the builder it comes from and the path it serves. */
@@ -58,10 +71,15 @@ export interface ResourceContext {
   readonly responses: Responses;
   readonly allowed: string;
   readonly conventions: unknown;
+  readonly access: unknown;
+  readonly scope: Scope;
   readonly name: string;
-  readonly id: PathParameterOf;
+  readonly id: PathParameterOf | undefined;
   readonly parents: readonly PathParameterOf[];
+  readonly owner: 'caller' | undefined;
 }
+
+type Owned<C extends ResourceContext> = C['owner'] extends 'caller' ? true : false;
 
 type Conv<C extends ResourceContext> = Extract<C['conventions'], ResourceConventions>;
 
@@ -169,12 +187,26 @@ type Member<
     readonly parameters: readonly [...Params, ...OwnParameters<D>];
     readonly responses: Omit<Success, keyof OwnResponses<D>> & OwnResponses<D>;
     readonly errors: JoinErrors<Errors, OwnErrors<D>>;
-  } & Body
+  } & Body,
+  C['access'] extends Access | undefined ? C['access'] : undefined,
+  C['scope']
 >;
 
 type CollectionPath<C extends ResourceContext> = `/${C['name']}`;
-type ItemPath<C extends ResourceContext> = `/${C['name']}/{${C['id']['name']}}`;
-type ItemParameters<C extends ResourceContext> = readonly [...C['parents'], C['id']];
+type ItemPath<C extends ResourceContext> = C['id'] extends { readonly name: infer N extends string }
+  ? `/${C['name']}/{${N}}`
+  : `/${C['name']}`;
+type ItemParameters<C extends ResourceContext> = C['id'] extends PathParameterOf
+  ? readonly [...C['parents'], C['id']]
+  : C['parents'];
+type ConflictFor<C extends ResourceContext> =
+  Owned<C> extends true ? IdempotencyCodes : ConflictCodes;
+type VersionFor<C extends ResourceContext> = Owned<C> extends true ? unknown : ExpectedVersion;
+type VersionedItem<C extends ResourceContext> =
+  Owned<C> extends true ? z.ZodType : z.ZodType<{ readonly version: number }>;
+type NotFoundFor<C extends ResourceContext> = C['id'] extends PathParameterOf
+  ? { readonly 404: NotFound }
+  : Record<never, never>;
 interface Sent<S extends z.ZodType, Required = true> {
   readonly requestBody: JsonRequestBody<S, Required>;
 }
@@ -194,7 +226,7 @@ export type FindRoute<C extends ResourceContext, D> = Member<
   ItemPath<C>,
   readonly [...ItemParameters<C>, ...Added<C, 'readParameters'>],
   { readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>> },
-  { readonly 404: NotFound }
+  NotFoundFor<C>
 >;
 
 export type FindAllRoute<C extends ResourceContext, D> = Member<
@@ -225,8 +257,8 @@ export type UpdateRoute<C extends ResourceContext, D> = Member<
   ItemPath<C>,
   readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>],
   { readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>> },
-  { readonly 404: NotFound; readonly 409: ConflictCodes },
-  Sent<Schema<PatchBody<D>>>
+  NotFoundFor<C> & { readonly 409: ConflictFor<C> },
+  Sent<Schema<PatchBody<D> & VersionFor<C>>>
 >;
 
 export type ReplaceRoute<C extends ResourceContext, D> = Member<
@@ -236,8 +268,8 @@ export type ReplaceRoute<C extends ResourceContext, D> = Member<
   ItemPath<C>,
   readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>],
   { readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>> },
-  { readonly 404: NotFound; readonly 409: ConflictCodes },
-  Sent<Schema<BodyOutput<D> & ExpectedVersion>>
+  NotFoundFor<C> & { readonly 409: ConflictFor<C> },
+  Sent<Schema<BodyOutput<D> & VersionFor<C>>>
 >;
 
 export type UpsertRoute<C extends ResourceContext, D> = Member<
@@ -256,9 +288,15 @@ export type DeleteRoute<C extends ResourceContext, D> = Member<
   D,
   'delete',
   ItemPath<C>,
-  readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>, ExpectedVersionQuery],
-  { readonly 204: Response },
-  { readonly 404: NotFound; readonly 409: ConflictCodes }
+  readonly [
+    ...ItemParameters<C>,
+    ...Added<C, 'writeParameters'>,
+    ...(Owned<C> extends true ? readonly [] : readonly [ExpectedVersionQuery]),
+  ],
+  D extends { readonly response: infer R extends z.ZodType }
+    ? { readonly 200: JsonResponse<Schema<Item<C, R>>> }
+    : { readonly 204: Response },
+  NotFoundFor<C> & { readonly 409: ConflictFor<C> }
 >;
 
 export type ActionRoute<
@@ -287,8 +325,33 @@ export type SubresourceReplaceRoute<C extends ResourceContext, Name extends stri
   `${ItemPath<C>}/${Name}`,
   readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>],
   ResponseOf<C, ItemSchema<D>, 200>,
-  { readonly 404: NotFound; readonly 409: ConflictCodes },
-  Sent<Schema<BodyOutput<D> & ExpectedVersion>>
+  NotFoundFor<C> & { readonly 409: ConflictFor<C> },
+  Sent<Schema<BodyOutput<D> & VersionFor<C>>>
+>;
+
+export type BatchRoute<C extends ResourceContext, D> = Member<
+  C,
+  D,
+  'post',
+  `/${C['name']}/batch`,
+  C['parents'],
+  {
+    readonly 200: JsonResponse<
+      Schema<
+        Envelope<C> & {
+          readonly data: Readonly<Record<string, z.output<ItemOf<D>>>>;
+        }
+      >
+    >;
+  },
+  Record<never, never>,
+  Sent<
+    Schema<{
+      readonly ids: readonly (C['id'] extends PathParameterOf
+        ? z.output<C['id']['schema']>
+        : string)[];
+    }>
+  >
 >;
 
 type ActionMethod<D> = D extends {
@@ -339,9 +402,15 @@ type Selection =
 
 type Own<O, K extends string> = O extends Readonly<Record<K, infer X>> ? X : unknown;
 
-type SelectedMember<O> = O extends { readonly pick: readonly (infer M)[] }
+type DefaultsOf<C extends ResourceContext> = C['id'] extends PathParameterOf
+  ? DefaultMember
+  : 'find' | 'update';
+
+type SelectedMember<C extends ResourceContext, O> = O extends {
+  readonly pick: readonly (infer M)[];
+}
   ? M
-  : | Exclude<DefaultMember, O extends { readonly omit: readonly (infer X)[] } ? X : never>
+  : | Exclude<DefaultsOf<C>, O extends { readonly omit: readonly (infer X)[] } ? X : never>
     | Extract<keyof O, 'replace' | 'upsert'>;
 
 export interface CrudOptions<C extends ResourceContext> {
@@ -352,28 +421,91 @@ export interface CrudOptions<C extends ResourceContext> {
   readonly update?: Docs<C, { readonly fields: z.ZodObject } | { readonly body: z.ZodObject }>;
   readonly replace?: Docs<C, { readonly body: z.ZodObject }>;
   readonly upsert?: Docs<C, { readonly body?: z.ZodType }>;
-  readonly delete?: Docs<C>;
+  readonly delete?: Docs<C, { readonly response?: z.ZodType }>;
 }
 
-type CrudRequires<C extends ResourceContext, O> = ('create' extends SelectedMember<O>
+type CrudRequires<C extends ResourceContext, O> = ('create' extends SelectedMember<C, O>
   ? { readonly create: NonNullable<CrudOptions<C>['create']> }
   : unknown) &
-  ('update' extends SelectedMember<O>
+  ('update' extends SelectedMember<C, O>
     ? { readonly update: NonNullable<CrudOptions<C>['update']> }
     : unknown);
 
+type WithItem<O extends { readonly item: z.ZodType }, M extends string> = Own<O, M> & {
+  readonly item: O['item'];
+};
+
 type CrudRoute<C extends ResourceContext, O extends { readonly item: z.ZodType }, M> = {
-  find: FindRoute<C, Own<O, 'find'> & { readonly item: O['item'] }>;
-  findAll: FindAllRoute<C, Own<O, 'findAll'> & { readonly item: O['item'] }>;
-  create: CreateRoute<C, Own<O, 'create'> & { readonly item: O['item'] }>;
-  update: UpdateRoute<C, Own<O, 'update'> & { readonly item: O['item'] }>;
-  replace: ReplaceRoute<C, Own<O, 'replace'> & { readonly item: O['item'] }>;
-  upsert: UpsertRoute<C, Own<O, 'upsert'> & { readonly item: O['item'] }>;
+  find: FindRoute<C, WithItem<O, 'find'>>;
+  findAll: FindAllRoute<C, WithItem<O, 'findAll'>>;
+  create: CreateRoute<C, WithItem<O, 'create'>>;
+  update: UpdateRoute<C, WithItem<O, 'update'>>;
+  replace: ReplaceRoute<C, WithItem<O, 'replace'>>;
+  upsert: UpsertRoute<C, WithItem<O, 'upsert'>>;
   delete: DeleteRoute<C, Own<O, 'delete'>>;
 }[M & CrudMember];
 
+type LastSegment<S extends string> = S extends `${string}/${infer Rest}` ? LastSegment<Rest> : S;
+type PascalOf<S extends string> = S extends `${infer Head}-${infer Tail}`
+  ? `${Capitalize<Head>}${PascalOf<Tail>}`
+  : Capitalize<S>;
+type SingularOf<S extends string> = S extends `${infer B}ies`
+  ? `${B}y`
+  : S extends `${infer B}ches`
+    ? `${B}ch`
+    : S extends `${infer B}shes`
+      ? `${B}sh`
+      : S extends `${infer B}xes`
+        ? `${B}x`
+        : S extends `${infer B}sses`
+          ? `${B}ss`
+          : S extends `${infer B}s`
+            ? B
+            : S;
+
+/** The word an operation id ends with: a collection's singular, a single's own name. */
+type SubjectOf<C extends ResourceContext> = C['id'] extends PathParameterOf
+  ? PascalOf<SingularOf<LastSegment<C['name']>>>
+  : PascalOf<LastSegment<C['name']>>;
+
+type DerivedId<C extends ResourceContext, M> = M extends 'findAll'
+  ? `findAll${PascalOf<LastSegment<C['name']>>}`
+  : `${Extract<M, string>}${SubjectOf<C>}`;
+
+type IdOf<C extends ResourceContext, O, M extends string> =
+  Own<O, M> extends {
+    readonly operationId: infer I extends string;
+  }
+    ? I
+    : DerivedId<C, M>;
+
+/** What `crud` returns: its routes keyed by operation id, so the record spreads into a closure. */
 export type CrudRoutes<C extends ResourceContext, O extends { readonly item: z.ZodType }> = {
-  readonly [M in SelectedMember<O> & CrudMember]: CrudRoute<C, O, M>;
+  readonly [M in SelectedMember<C, O> & CrudMember as IdOf<C, O, M>]: CrudRoute<C, O, M>;
+};
+
+/** The context of what is nested under one record of `C`, or under `C` itself when it has no id. */
+export type ChildContext<
+  C extends ResourceContext,
+  Name extends string,
+  Id extends PathParameterOf | undefined,
+  Owner extends 'caller' | undefined,
+> = Omit<C, 'scope' | 'name' | 'id' | 'parents' | 'owner'> & {
+  readonly scope: {
+    readonly prefix: `${C['scope']['prefix']}/${C['name']}${C['id'] extends {
+      readonly name: infer N extends string;
+    }
+      ? `/{${N}}`
+      : ''}`;
+    readonly params: readonly [
+      ...C['scope']['params'],
+      ...(C['id'] extends PathParameterOf ? readonly [C['id']] : readonly []),
+    ];
+  };
+  readonly name: Name;
+  readonly id: Id;
+  readonly parents: readonly [];
+  readonly owner: Owner;
 };
 
 export interface Resource<C extends ResourceContext> {
@@ -397,7 +529,7 @@ export interface Resource<C extends ResourceContext> {
   update<
     const D extends Docs<
       C,
-      { readonly item: z.ZodType } & (
+      { readonly item: VersionedItem<C> } & (
         { readonly fields: z.ZodObject } | { readonly body: z.ZodObject }
       )
     >,
@@ -405,14 +537,67 @@ export interface Resource<C extends ResourceContext> {
     docs: D,
   ): UpdateRoute<C, D>;
   /** PUT: a full replacement, idempotent. The body is complete and an absent field is reset. */
-  replace<const D extends Docs<C, { readonly body: z.ZodObject; readonly item: z.ZodType }>>(
+  replace<const D extends Docs<C, { readonly body: z.ZodObject; readonly item: VersionedItem<C> }>>(
     docs: D,
   ): ReplaceRoute<C, D>;
   /** PUT on an id the client chose, such as `/follows/{artistId}`: it creates or replaces. */
   upsert<const D extends Docs<C, { readonly body?: z.ZodType; readonly item?: z.ZodType }>>(
     docs: D,
   ): UpsertRoute<C, D>;
-  delete<const D extends Docs<C>>(docs?: D): DeleteRoute<C, D>;
+  /** 204 unless `response` is given: the record that went, as it was, answered with a 200. */
+  delete<const D extends Docs<C, { readonly response?: z.ZodType }>>(docs?: D): DeleteRoute<C, D>;
+  /** `POST /{name}/batch`: many records by id in one read, answered as a table keyed by id. */
+  batch<const D extends Docs<C, { readonly item: z.ZodType; readonly max?: number }>>(
+    docs: D,
+  ): BatchRoute<C, D>;
+  /** A collection nested under one record of this one. */
+  resource<
+    const Name extends string,
+    const Id extends PathParameterOf,
+    const Owner extends 'caller' | undefined = undefined,
+  >(
+    name: Name,
+    options: Omit<ResourceOptions<Id, readonly [], Owner>, 'parents'>,
+  ): Resource<ChildContext<C, Name, Id, Owner>>;
+  resource<
+    const Name extends string,
+    const Id extends PathParameterOf,
+    const Owner extends 'caller' | undefined,
+    R,
+  >(
+    name: Name,
+    options: Omit<ResourceOptions<Id, readonly [], Owner>, 'parents'>,
+    closure: (resource: Resource<ChildContext<C, Name, Id, Owner>>) => R,
+  ): R;
+  /** A prefix under this resource's record, with the path parameters it declares. */
+  path<const T extends string, const Ps extends readonly PathParameterOf[]>(
+    template: T,
+    ...params: Ps
+  ): RouteBuilder<
+    C['version'],
+    C['headers'],
+    C['responses'],
+    C['allowed'],
+    Extract<C['conventions'], ResourceConventions | undefined>,
+    Extract<C['access'], Access | undefined>,
+    ChildContext<C, string, undefined, undefined>['scope'] & {
+      readonly prefix: `${ChildContext<C, string, undefined, undefined>['scope']['prefix']}/${T}`;
+      readonly params: readonly [
+        ...ChildContext<C, string, undefined, undefined>['scope']['params'],
+        ...Ps,
+      ];
+    }
+  >;
+  /** What exists once under this resource's record. */
+  single<const Name extends string, const Owner extends 'caller' | undefined = undefined>(
+    name: Name,
+    options?: Omit<SingleOptions<readonly [], Owner>, 'parents'>,
+  ): Resource<ChildContext<C, Name, undefined, Owner>>;
+  single<const Name extends string, const Owner extends 'caller' | undefined, R>(
+    name: Name,
+    options: Omit<SingleOptions<readonly [], Owner>, 'parents'> | undefined,
+    closure: (single: Resource<ChildContext<C, Name, undefined, Owner>>) => R,
+  ): R;
   /** `/{name}/{id}/{action}`: every business state change of one record. */
   action<const Name extends string, const D extends ActionOptions<C>>(
     name: Name,
@@ -476,10 +661,6 @@ const IDEMPOTENCY: readonly string[] = [
   ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
   ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
 ];
-const CONFLICT: ErrorsInput<string> = {
-  ...NOT_FOUND,
-  409: [DomainErrorCode.STATE_CONFLICT, ...IDEMPOTENCY],
-};
 
 type AnyBuilder = RouteBuilder<
   number,
@@ -569,7 +750,9 @@ export function makeResource(
   builder: AnyBuilder,
   given: ResourceConventions,
   name: string,
-  options: ResourceOptions<PathParameterOf, readonly PathParameterOf[]>,
+  options: Omit<ResourceOptions<PathParameterOf, readonly PathParameterOf[]>, 'id'> & {
+    readonly id?: PathParameterOf | undefined;
+  },
   headers: readonly Parameter[],
 ): never {
   const held = new Set(headers.map((header) => `${header.in}:${header.name}`));
@@ -582,15 +765,22 @@ export function makeResource(
     writeParameters: unheld(given.writeParameters),
   };
   const parents = options.parents ?? [];
+  const { id } = options;
   const last =
     name
       .split('/')
       .filter((segment) => !segment.startsWith('{'))
       .pop() ?? name;
   const plural = pascal(last);
-  const singular = pascal(options.singular ?? singularOf(last));
+  const singular = pascal(options.singular ?? (id === undefined ? last : singularOf(last)));
+  const owned = options.owner === 'caller';
   const collectionPath = `/${name}`;
-  const itemPath = `/${name}/{${options.id.name}}`;
+  const itemPath = id === undefined ? collectionPath : `/${name}/{${id.name}}`;
+  const itemParameters: readonly Parameter[] = id === undefined ? parents : [...parents, id];
+  const itemNotFound = id === undefined ? {} : NOT_FOUND;
+  const conflicts: ErrorsInput<string> = owned
+    ? { ...itemNotFound, 409: IDEMPOTENCY }
+    : { ...itemNotFound, 409: [DomainErrorCode.STATE_CONFLICT, ...IDEMPOTENCY] };
   const expectedVersionQuery: Parameter = {
     name: 'expectedVersion',
     in: 'query',
@@ -598,7 +788,7 @@ export function makeResource(
     schema: conventions.expectedVersion,
   };
   const withVersion = (body: z.ZodObject): z.ZodType =>
-    body.extend({ expectedVersion: conventions.expectedVersion });
+    owned ? body : body.extend({ expectedVersion: conventions.expectedVersion });
 
   const route = (spec: Spec): unknown => {
     const rest: Record<string, unknown> = { ...spec.docs };
@@ -613,6 +803,7 @@ export function makeResource(
       path: spec.path,
       operationId: spec.docs?.operationId ?? spec.derivedId,
       ...(spec.body !== undefined && { requestBody: sentBody(spec.body, spec.docs) }),
+      ...(owned && { owner: 'caller' }),
       ...rest,
       parameters: [...spec.parameters, ...(spec.docs?.parameters ?? [])],
       responses: { ...generated, ...spec.docs?.responses },
@@ -630,12 +821,12 @@ export function makeResource(
       path: itemPath,
       derivedId: `find${singular}`,
       docs,
-      parameters: [...parents, options.id, ...conventions.readParameters],
+      parameters: [...itemParameters, ...conventions.readParameters],
       responses: {
         200: jsonResponse('The record.', itemOf(docs), conventions.readHeaders),
         ...(conventions.notModified !== undefined && { 304: conventions.notModified }),
       },
-      errors: NOT_FOUND,
+      errors: itemNotFound,
     });
 
   const findAll = (docs: AnyDocs) =>
@@ -674,9 +865,9 @@ export function makeResource(
       path: itemPath,
       derivedId: `update${singular}`,
       docs,
-      parameters: [...parents, options.id, ...conventions.writeParameters],
+      parameters: [...itemParameters, ...conventions.writeParameters],
       responses: { 200: jsonResponse('The record, updated.', itemOf(docs)) },
-      errors: CONFLICT,
+      errors: conflicts,
       body: withVersion(writable),
     });
   };
@@ -687,9 +878,9 @@ export function makeResource(
       path: itemPath,
       derivedId: `replace${singular}`,
       docs,
-      parameters: [...parents, options.id, ...conventions.writeParameters],
+      parameters: [...itemParameters, ...conventions.writeParameters],
       responses: { 200: jsonResponse('The record, replaced.', itemOf(docs)) },
-      errors: CONFLICT,
+      errors: conflicts,
       body: withVersion(docs.body as z.ZodObject),
     });
 
@@ -699,7 +890,7 @@ export function makeResource(
       path: itemPath,
       derivedId: `upsert${singular}`,
       docs,
-      parameters: [...parents, options.id, ...conventions.writeParameters],
+      parameters: [...itemParameters, ...conventions.writeParameters],
       responses:
         docs.item !== undefined
           ? { 200: jsonResponse('The record.', itemOf(docs)) }
@@ -714,10 +905,37 @@ export function makeResource(
       path: itemPath,
       derivedId: `delete${singular}`,
       docs,
-      parameters: [...parents, options.id, ...conventions.writeParameters, expectedVersionQuery],
-      responses: { 204: { description: 'Removed.' } },
-      errors: CONFLICT,
+      parameters: [
+        ...itemParameters,
+        ...conventions.writeParameters,
+        ...(owned ? [] : [expectedVersionQuery]),
+      ],
+      responses:
+        docs?.response === undefined
+          ? { 204: { description: 'Removed.' } }
+          : { 200: jsonResponse('Removed.', conventions.item(docs.response as z.ZodType)) },
+      errors: conflicts,
     });
+
+  const batch = (docs: AnyDocs) => {
+    const key = id?.schema ?? z.string();
+    const max = (docs.max as number | undefined) ?? 200;
+    return route({
+      method: 'post',
+      path: `${collectionPath}/batch`,
+      derivedId: `batch${plural}`,
+      docs: { bodyLimit: BATCH_BODY_LIMIT, ...docs },
+      parameters: [...parents],
+      responses: {
+        200: jsonResponse(
+          'The records found, by id.',
+          conventions.item(z.record(z.string(), docs.item as z.ZodType)),
+        ),
+      },
+      errors: {},
+      body: z.object({ ids: z.array(key).max(max) }),
+    });
+  };
 
   const action = (
     path: string,
@@ -753,12 +971,12 @@ export function makeResource(
         path: `${itemPath}/${sub}`,
         derivedId: `replace${singular}${pascal(sub)}`,
         docs,
-        parameters: [...parents, options.id, ...conventions.writeParameters],
+        parameters: [...itemParameters, ...conventions.writeParameters],
         responses:
           docs.item !== undefined
             ? { 200: jsonResponse('The record.', itemOf(docs)) }
             : { 204: { description: 'Done.' } },
-        errors: CONFLICT,
+        errors: conflicts,
         body: withVersion(docs.body as z.ZodObject),
       }),
   });
@@ -771,7 +989,8 @@ export function makeResource(
     if (pick !== undefined && omit !== undefined) {
       throw new Error(`resource "${name}": crud takes pick or omit, not both.`);
     }
-    const defaults: readonly CrudMember[] = ['find', 'findAll', 'create', 'update', 'delete'];
+    const defaults: readonly CrudMember[] =
+      id === undefined ? ['find', 'update'] : ['find', 'findAll', 'create', 'update', 'delete'];
     const selected = (member: CrudMember): boolean =>
       pick !== undefined
         ? pick.includes(member)
@@ -801,12 +1020,26 @@ export function makeResource(
           `resource "${name}": crud selects "${member}" and has no "${member}" options.`,
         );
       }
-      members[member] = make({ ...own, item: crudOptions.item });
+      const made = make({ ...own, item: crudOptions.item }) as { readonly operationId: string };
+      members[made.operationId] = made;
     }
     return members;
   };
 
+  const underItem = (): AnyBuilder =>
+    id === undefined
+      ? builder.path(name)
+      : builder.path(`${name}/{${id.name}}` as never, id as never);
+  const nested =
+    (kind: 'resource' | 'single' | 'path') =>
+    (...args: readonly unknown[]) =>
+      (underItem()[kind] as (...inner: readonly unknown[]) => unknown)(...args);
+
   const resource = {
+    batch,
+    resource: nested('resource'),
+    single: nested('single'),
+    path: nested('path'),
     find,
     findAll,
     create,
@@ -816,12 +1049,7 @@ export function makeResource(
     delete: remove,
     crud,
     action: (action_: string, docs: AnyDocs) =>
-      action(
-        `${itemPath}/${action_}`,
-        [...parents, options.id],
-        `${camel(action_)}${singular}`,
-        docs,
-      ),
+      action(`${itemPath}/${action_}`, itemParameters, `${camel(action_)}${singular}`, docs),
     collectionAction: (action_: string, docs: AnyDocs) =>
       action(`${collectionPath}/${action_}`, [...parents], `${camel(action_)}${plural}`, docs),
     subresource,

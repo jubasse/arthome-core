@@ -216,9 +216,9 @@ export declare const exchangeOneTimeToken: Route<{
     };
 }>;
 export declare const changePassword: Route<{
-    method: 'patch';
+    method: 'post';
     version: 1;
-    path: '/auth/password';
+    path: '/auth/change-password';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,

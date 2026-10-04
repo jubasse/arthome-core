@@ -471,6 +471,7 @@ export function successStatusOf(route: RouteShape): number {
 
 export * from './access.js';
 export * from './builder.js';
+export * from './collect.js';
 export * from './errors.js';
 export * from './marks.js';
 export * from './policy.js';
