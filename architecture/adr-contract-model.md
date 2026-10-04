@@ -405,13 +405,68 @@ for search engines. A call made by the application's code follows a redirect sil
 read its target. An API call therefore answers the URL in JSON, as `startSocialSignIn` and
 `resolvePublicLink` already do.
 
-## 9. Plan
+## 9. Also in pass 1: what the rest of `transport.md` asks of a declaration
+
+Found on review: what the declaration must also carry so that nothing else is written by hand.
+
+### 9.1 The internal APIs (D-121)
+
+- **The `service` identity.** It is the internal token (§5.2): the calling service and the end user,
+  verified by `InternalTokenGuard`. A service route requires it by default, as a BFF route requires
+  its viewer.
+- **The deadline header is required** on every internal route, and the `504 api.deadline_exceeded`
+  is derived on the services too, not only on the BFFs.
+- **The route is marked internal**, so the central OpenAPI lists it, and no surface document can
+  include it.
+
+### 9.2 The batched read (§5.6)
+
+`batch({ ids, max: 200, response })` declares a `POST /{res}/batch`:
+- no idempotency key, since it is a read;
+- the 2 MiB body ceiling;
+- a table keyed by id as its response.
+
+The rule "never one identifier at a time" stays in `definition-of-done.md`.
+
+### 9.3 Derived on writes
+
+- **Every write carrying `Idempotency-Key`** declares the `Idempotency-Replayed` response header.
+  Today 2 routes do.
+- **A versioned record's item schema must carry `version`** (§5.5). A resource whose members take
+  `expectedVersion` refuses, at compile time, an item without it.
+- **The `operator` identity** adds two things to every studio route:
+  - `X-Arthome-Rights-Version` on every response;
+  - `If-Rights-Version` on every write, with `403 api.rights_version_stale`.
+
+### 9.4 Budgets, freshness, size, rate
+
+- **`budget(ms)`** declares the latency budget of §5.9. The typed client uses it as its timeout,
+  under the deadline.
+- **`cache(...)`** takes the freshness family of §5.9: `cache(Freshness.FIVE_MINUTES)`. The BFF
+  stops writing `Cache-Control` and `Vary` by hand, as `getDateDetail` does today.
+- **The body ceiling is declared per route:** 1 MiB by default, 2 MiB on a batch. The server applies
+  it, and the `413` is derived.
+- **A rate limit is a rule:** `requires(throttle('auth'))`. The BFF's caps are bound to it, and the
+  `429` is derived.
+
+### 9.5 Unchanged, stated for completeness
+
+- Uploads go through signed tickets (`createUploadTicket`), and downloads through signed URLs.
+- The typed client replays nothing (§5.8).
+
+### 9.6 Tests and tools
+
+- Every `example` in a declaration parses with its schema.
+- Pass 2, with the front lanes: mock servers generated from the declarations and their examples,
+  for the surfaces' tests.
+
+## 10. Plan
 
 **Pass 1: two agents, core first, then QA by the lead.**
 
 1. **Core** (`contracts-core`), in this order:
    - the mechanisms that touch every route: derived errors (§7.1), identity, shortcuts and
-     `requires` (§4);
+     `requires` (§4), and what §9 adds;
    - then the resources (§3) and the audit of the write rule;
    - then reads and responses (§5, §6);
    - then the routes redeclared, the documents regenerated, and `transport.md` §5.12, the README and
@@ -424,10 +479,16 @@ read its target. An API call therefore answers the URL in JSON, as `startSocialS
 3. **QA, by the lead:** core verify, `verify:full`, all the integration suites, the byte gate and a
    coherence review. Then one core PR and one platform PR.
 
+**Redeclaring the existing routes is mechanical.** Once the mechanisms exist, it goes to Sonnet agents
+in parallel, one per group of operations.
+
+**The ticketing T4+T5 and streaming lanes start once the core part is merged.** Otherwise they would
+write their new routes in the old model.
+
 The generated documents grow, as errors get declared and security gets derived. That is allowed
 until the first client ships (§5.11).
 
-## 10. Open questions for the product owner
+## 11. Open questions for the product owner
 
 1. **Formats.** Keep §5.7: JSON only, and binaries through signed URLs (recommended). Or amend it
    for a calendar file or a CSV served by the API.
@@ -435,7 +496,7 @@ until the first client ships (§5.11).
 3. **Conversions.** `changePassword` becomes `POST /auth/change-password` and `cancelSubscription`
    becomes `POST /subscription/cancel`. The PUT and PATCH audit is shown before the PR.
 
-## 11. Tests to write first
+## 12. Tests to write first
 
 - every exported route is listed, and every listed route is exported;
 - a route without `.public()` answers 401 without a session, on the server;
