@@ -125,7 +125,10 @@ import {
   rotateStreamKey,
   runTechnicalCheck,
   setQualityProfile,
-  setRunState,
+  rehearseRun,
+  goOnAir,
+  endRun,
+  resetRun,
   submitHealthSample,
 } from './run.js';
 import {
@@ -244,7 +247,10 @@ export const studioApi: Api<{
   getDateTechPane: typeof getDateTechPane;
   getRunConsole: typeof getRunConsole;
   runTechnicalCheck: typeof runTechnicalCheck;
-  setRunState: typeof setRunState;
+  rehearseRun: typeof rehearseRun;
+  goOnAir: typeof goOnAir;
+  endRun: typeof endRun;
+  resetRun: typeof resetRun;
   setQualityProfile: typeof setQualityProfile;
   getHealthSeries: typeof getHealthSeries;
   submitHealthSample: typeof submitHealthSample;
@@ -411,7 +417,10 @@ export const studioApi: Api<{
     getDateTechPane,
     getRunConsole,
     runTechnicalCheck,
-    setRunState,
+    rehearseRun,
+    goOnAir,
+    endRun,
+    resetRun,
     setQualityProfile,
     getHealthSeries,
     submitHealthSample,

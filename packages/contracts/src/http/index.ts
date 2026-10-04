@@ -94,6 +94,12 @@ export interface RouteDefinition extends RouteShape, Extensions {
   readonly degradable?: readonly string[];
   /** Only the caller reads and writes this data: another caller's id answers 404, never 403. */
   readonly owner?: 'caller';
+  /**
+   * The error codes each error status stands for, so a consumer can check a response's
+   * `error.code` without reading the schema. A status the route wrote whole is absent: its codes
+   * are not known.
+   */
+  readonly errorCodes?: Readonly<Record<string, readonly string[]>>;
   /** How a list is paged. */
   readonly paging?: Paging;
   /** The keys a list can be ordered by. */
@@ -484,6 +490,15 @@ export type * from './handlers.js';
 export * from './marks.js';
 export * from './paging.js';
 export * from './policy.js';
+export * from './service.js';
 export * from './responses.js';
 export * from './tagged.js';
 export * from './resource.js';
+
+/** The codes a route's error response stands for, or `undefined` when the route wrote it whole. */
+export function errorCodesOf(
+  route: RouteShape & { readonly errorCodes?: Readonly<Record<string, readonly string[]>> },
+  status: number | string,
+): readonly string[] | undefined {
+  return route.errorCodes?.[String(status)];
+}

@@ -1,17 +1,11 @@
 import { z } from 'zod';
-import { INCIDENT_CAUSES, INCIDENT_KINDS, RunState } from '@arthome/core';
+import { INCIDENT_CAUSES, INCIDENT_KINDS } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
 import { ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter, UnauthorizedResponse, operator } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, Route, IdentifiedAccess, ExpectedVersionQuery } from '../http/index.js';
 import { HealthSampleSchema, HealthSeriesSchema, RunConsoleSchema, StreamKeyRevealSchema, StudioIncidentSchema } from '../studio-stage/index.js';
 declare const ChapterIdParameter: PathParameter<'chapterId', z.ZodString>;
-declare const SET_RUN_STATE_STATE: readonly [
-    typeof RunState.IDLE,
-    typeof RunState.REHEARSAL,
-    typeof RunState.ON_AIR,
-    typeof RunState.ENDED
-];
 export declare const getDateTechPane: Route<{
     method: 'get';
     version: 1;
@@ -91,10 +85,10 @@ export declare const runTechnicalCheck: Route<{
         404: typeof ConflictResponse;
     };
 }>;
-export declare const setRunState: Route<{
-    method: 'put';
+export declare const rehearseRun: Route<{
+    method: 'post';
     version: 1;
-    path: '/dates/{dateId}/run/state';
+    path: '/dates/{dateId}/run/rehearse';
     parameters: readonly [
         typeof DateIdParameter,
         typeof IdempotencyKeyParameter,
@@ -104,7 +98,78 @@ export declare const setRunState: Route<{
     ];
     access: IdentifiedAccess<typeof operator, false>;
     requestBody: JsonRequestBody<z.ZodObject<{
-        state: VocabularyIn<typeof SET_RUN_STATE_STATE>;
+        expectedVersion: z.ZodInt;
+    }, z.core.$strip>>;
+    responses: {
+        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
+            data: typeof RunConsoleSchema;
+        }, z.core.$loose>>>;
+        409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
+    };
+}>;
+export declare const goOnAir: Route<{
+    method: 'post';
+    version: 1;
+    path: '/dates/{dateId}/run/go-on-air';
+    parameters: readonly [
+        typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    requestBody: JsonRequestBody<z.ZodObject<{
+        expectedVersion: z.ZodInt;
+    }, z.core.$strip>>;
+    responses: {
+        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
+            data: typeof RunConsoleSchema;
+        }, z.core.$loose>>>;
+        409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
+    };
+}>;
+export declare const endRun: Route<{
+    method: 'post';
+    version: 1;
+    path: '/dates/{dateId}/run/end';
+    parameters: readonly [
+        typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    requestBody: JsonRequestBody<z.ZodObject<{
+        expectedVersion: z.ZodInt;
+    }, z.core.$strip>>;
+    responses: {
+        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
+            data: typeof RunConsoleSchema;
+        }, z.core.$loose>>>;
+        409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+        403: typeof ConflictResponse;
+        404: typeof ConflictResponse;
+    };
+}>;
+export declare const resetRun: Route<{
+    method: 'post';
+    version: 1;
+    path: '/dates/{dateId}/run/reset';
+    parameters: readonly [
+        typeof DateIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    requestBody: JsonRequestBody<z.ZodObject<{
         expectedVersion: z.ZodInt;
     }, z.core.$strip>>;
     responses: {

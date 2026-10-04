@@ -9,8 +9,15 @@
 
 import type { z } from 'zod';
 
-import type { Api, RouteInput, RouteResponseBody, RouteShape } from '../http/index.js';
-import { parseTolerant, versionedPath } from '../http/index.js';
+import type {
+  Api,
+  DerivedStatus,
+  ErrorBody,
+  RouteInput,
+  RouteResponseBody,
+  RouteShape,
+} from '../http/index.js';
+import { DERIVED_ERROR_CODES, parseTolerant, versionedPath } from '../http/index.js';
 
 export interface FetchInit {
   readonly method: string;
@@ -41,13 +48,28 @@ export interface ClientOptions<Init extends object> {
 
 type DeclaredStatus<R extends RouteShape> = keyof R['responses'] & number;
 
-export type ClientResponse<R extends RouteShape> = {
-  [S in DeclaredStatus<R>]: {
+type DerivedResponse<R extends RouteShape> = {
+  [S in Exclude<DerivedStatus, DeclaredStatus<R>>]: {
     readonly status: S;
-    readonly body: RouteResponseBody<R, S>;
+    readonly body: ErrorBody<(typeof DERIVED_ERROR_CODES)[S][number]>;
     readonly headers: FetchResponseLike['headers'];
   };
-}[DeclaredStatus<R>];
+}[Exclude<DerivedStatus, DeclaredStatus<R>>];
+
+/**
+ * What a call answers: the statuses the route declares, typed by the route, and the derived errors
+ * (400, 401, 403, 413, 415, 429, 500, 502, 504), typed by the api's own codes. A surface can switch
+ * on a 401 or a 429 with types, and a status that is neither throws `UndeclaredStatusError`.
+ */
+export type ClientResponse<R extends RouteShape> =
+  | {
+      [S in DeclaredStatus<R>]: {
+        readonly status: S;
+        readonly body: RouteResponseBody<R, S>;
+        readonly headers: FetchResponseLike['headers'];
+      };
+    }[DeclaredStatus<R>]
+  | DerivedResponse<R>;
 
 type Optional<Key extends string, T> =
   Record<never, never> extends T ? Readonly<Partial<Record<Key, T>>> : Readonly<Record<Key, T>>;
@@ -187,9 +209,10 @@ export function createClient<A extends Api, Init extends object = Record<never, 
       const response = await options.fetch(url, init);
       const body = await bodyOf(response);
       const declared = route.responses[String(response.status)];
-      if (declared === undefined)
+      if (declared === undefined && !(response.status in DERIVED_ERROR_CODES)) {
         throw new UndeclaredStatusError(operationId, response.status, body);
-      const schema = declared.content?.['application/json']?.schema;
+      }
+      const schema = declared?.content?.['application/json']?.schema;
       return {
         status: response.status,
         body:

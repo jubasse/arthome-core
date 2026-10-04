@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 134 exported names.
+Declarations: `dist/http/index.d.ts` — 140 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
@@ -106,7 +106,10 @@ Declarations: `dist/http/index.d.ts` — 134 exported names.
 - `CrudOptions` (interface)
 - `CrudRoutes` (type) — What 'crud' returns: its routes keyed by operation id, so the record spreads into a closure.
 - `DEFAULT_BODY_LIMIT` (const) — `DEFAULT_BODY_LIMIT = 1048576` — 1 MiB: the ceiling of a request body unless a route says otherwise ('transport.md' §5.7).
+- `DERIVED_ERROR_CODES` (const) — The errors every route of an api can answer whatever it declares: the framework's refusals, the rate limit, the identity and the surface.
+- `DeadlineParameter` (const) — `DeadlineParameter: HeaderParameter<'x-arthome-deadline', z.ZodString, true>`
 - `DeleteRoute` (type)
+- `DerivedStatus` (type) — `type DerivedStatus = keyof typeof DERIVED_ERROR_CODES;`
 - `Endpoints` (type) — One method per operation id of a block of routes, each taking its 'HandlerInput' and returning its 'HandlerOutput'.
 - `ErrorBody` (type) — The body of a failure carrying 'C': a union over the members of 'C', discriminated on 'error.code'.
 - `ErrorModel` (interface) — An api's error vocabulary: the response it documents once per status (a component, so a route that adds nothing keeps its '$ref'), the code…
@@ -172,6 +175,7 @@ Declarations: `dist/http/index.d.ts` — 134 exported names.
 - `SENSITIVE_KEY` (const) — `SENSITIVE_KEY = "x-arthome-sensitive"`
 - `Scope` (interface) — A path prefix and the path parameters it declares: what 'path()' accumulates.
 - `SecurityRequirement` (type) — `type SecurityRequirement = Readonly<Record<string, readonly string[]>>;` — The schemes that satisfy a route, by name: '{}' is a call with no credential at all.
+- `ServicePrincipalSchema` (const) — `ServicePrincipalSchema: z.ZodObject<{ callingService: z.ZodString; userId: z.ZodNullable<z.ZodString>; }, z.core.$strip>`
 - `SingleOptions` (interface)
 - `SortDirection` (type) — `type SortDirection = (typeof SORT_DIRECTIONS)[number];`
 - `SortKey` (type) — `type SortKey = string | { readonly key: string; readonly right: string; };` — A sort key, and the right a caller needs to order by it when the field is restricted.
@@ -192,6 +196,7 @@ Declarations: `dist/http/index.d.ts` — 134 exported names.
 - `defineApi` (function) — `function defineApi<const Routes extends Readonly<Record<string, Route>>>(definition: ApiDefinition<Routes>): Api<Routes>;`
 - `defineErrorModel` (function) — `function defineErrorModel<Allowed extends string>(model: ErrorModel<Allowed>): ErrorModel<Allowed>;`
 - `defineRoute` (function) — `function defineRoute<const T extends RouteDefinition>(definition: T): Route<T>;`
+- `errorCodesOf` (function) — The codes a route's error response stands for, or 'undefined' when the route wrote it whole.
 - `errorResponseFor` (function) — `function errorResponseFor(model: ErrorModel<string> | undefined, status: number, codes: readonly string[], base: Response | undefined): Response;` — The response for a status.
 - `headersSchemaOf` (function) — `function headersSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteHeaders<R>, unknown>;` — The declared headers, under Node's lowercase names; every other header passes through.
 - `identity` (function)
@@ -208,6 +213,7 @@ Declarations: `dist/http/index.d.ts` — 134 exported names.
 - `routeBuilder` (function) — `function routeBuilder<A extends string = string>(model?: ErrorModel<A>): RouteBuilder<undefined, readonly [], Record<never, never>, A>;` — The empty builder: 'routeBuilder(model).version(1).tags(...).headers(...).errors(...)'.
 - `sensitive` (function) — `function sensitive<S extends z.ZodType>(schema: S): S;` — A password, a token, a stream key: 'format: password' in the document, redacted from logs, never cached.
 - `sensitivePathsOf` (function) — `function sensitivePathsOf(schema: z.ZodType): readonly string[];` — The dotted paths of the sensitive fields: 'reauthToken', 'data.streamKey', 'items[].secret'.
+- `service` (const) — `service: Identity<'service', typeof ServicePrincipalSchema, never, readonly [typeof DeadlineParameter], readonly []>`
 - `sortDirectionSchema` (function) — `function sortDirectionSchema(): z.ZodDefault<z.ZodEnum<{ readonly [K in SortDirection]: K; }>>;` — The 'sortDir' schema: ascending unless asked otherwise.
 - `sortKeyName` (function) — `function sortKeyName(key: SortKey): string;`
 - `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
@@ -223,7 +229,7 @@ Declarations: `dist/http-client/index.d.ts` — 12 exported names.
 - `ClientInput` (type)
 - `ClientMethod` (type)
 - `ClientOptions` (interface)
-- `ClientResponse` (type)
+- `ClientResponse` (type) — What a call answers: the statuses the route declares, typed by the route, and the derived errors (400, 401, 403, 413, 415, 429, 500, 502, 5…
 - `FetchInit` (interface)
 - `FetchLike` (type) — `type FetchLike<Init extends object> = (url: string, init: FetchInit & Init) => Promise<FetchResponseLike>;` — 'Init' is what a caller adds per call and the 'fetch' understands — an 'AbortSignal', say.
 - `FetchResponseLike` (interface)

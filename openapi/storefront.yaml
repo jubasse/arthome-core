@@ -5350,8 +5350,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
-  /v1/dates/{dateId}/sales-queue:
-    put:
+  /v1/dates/{dateId}/sales-queue/enter:
+    post:
       operationId: enterSalesQueue
       summary: Enters a date's sales queue.
       description: |
@@ -5423,6 +5423,7 @@ paths:
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
+  /v1/dates/{dateId}/sales-queue:
     get:
       operationId: getSalesQueuePosition
       summary: Reads one's place in a date's sales queue, and the admission once it comes.
@@ -6497,8 +6498,8 @@ paths:
                 servedAt: '2026-09-21T18:46:00.000Z'
         '410':
           $ref: '#/components/responses/Gone'
-  /v1/subscription:
-    put:
+  /v1/subscription/change-plan:
+    post:
       operationId: setSubscriptionPlan
       summary: Subscribes or changes plan.
       description: |

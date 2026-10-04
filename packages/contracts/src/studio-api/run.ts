@@ -83,12 +83,6 @@ const chapters = date.path('run').resource('chapters', { id: ChapterIdParameter 
 
 const GET_DATE_TECH_PANE_INGEST_PROTOCOL = ['rtmps', 'srt', 'whip'] as const;
 const GET_DATE_TECH_PANE_MONITOR_PATH = ['whep', 'll_hls'] as const;
-const SET_RUN_STATE_STATE: readonly [
-  typeof RunState.IDLE,
-  typeof RunState.REHEARSAL,
-  typeof RunState.ON_AIR,
-  typeof RunState.ENDED,
-] = [RunState.IDLE, RunState.REHEARSAL, RunState.ON_AIR, RunState.ENDED];
 
 export const getDateTechPane: Route<{
   method: 'get';
@@ -411,10 +405,10 @@ export const runTechnicalCheck: Route<{
   },
 });
 
-export const setRunState: Route<{
-  method: 'put';
+export const rehearseRun: Route<{
+  method: 'post';
   version: 1;
-  path: '/dates/{dateId}/run/state';
+  path: '/dates/{dateId}/run/rehearse';
   parameters: readonly [
     typeof DateIdParameter,
     typeof IdempotencyKeyParameter,
@@ -423,12 +417,7 @@ export const setRunState: Route<{
     typeof IfRightsVersionParameter,
   ];
   access: IdentifiedAccess<typeof operator, false>;
-  requestBody: JsonRequestBody<
-    z.ZodObject<
-      { state: VocabularyIn<typeof SET_RUN_STATE_STATE>; expectedVersion: z.ZodInt },
-      z.core.$strip
-    >
-  >;
+  requestBody: JsonRequestBody<z.ZodObject<{ expectedVersion: z.ZodInt }, z.core.$strip>>;
   responses: {
     200: JsonResponse<
       z.ZodIntersection<
@@ -440,26 +429,268 @@ export const setRunState: Route<{
     403: typeof ConflictResponse;
     404: typeof ConflictResponse;
   };
-}> = date.single('run/state').replace({
-  operationId: 'setRunState',
+}> = date.single('run').action('rehearse', {
+  operationId: 'rehearseRun',
   item: RunConsoleSchema,
-  summary: 'Goes on air, rehearses, or cuts the broadcast.',
+  summary: 'Starts the rehearsal.',
+  description:
+    'The run goes from `idle` to `rehearsal`: the feed is checked, nothing is sold against it.',
+  'x-arthome-maturity': 'provisional',
+  'x-arthome-upstream': [Service.STREAMING],
+  body: z.object({
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+  }),
+  example: {
+    expectedVersion: 3,
+  },
+  responses: {
+    200: {
+      description: 'The console up to date.',
+      content: {
+        'application/json': {
+          schema: z.intersection(
+            StudioEnvelopeMetaSchema,
+            z.looseObject({
+              data: RunConsoleSchema,
+            }),
+          ),
+          example: {
+            servedAt: '2026-09-21T19:00:12.000Z',
+            rightsVersion: 412,
+            data: {
+              dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+              state: RunState.ON_AIR,
+              afterGracePeriod: true,
+              ingestProtocol: 'rtmps',
+              monitorPath: 'll_hls',
+              version: 4,
+            },
+          },
+        },
+      },
+    },
+    409: {
+      description: '`date.technical_check_required`, or `state.conflict`.',
+      content: {
+        'application/json': {
+          schema: StudioErrorEnvelopeSchema,
+          example: {
+            error: {
+              code: CatalogErrorCode.TECHNICAL_CHECK_REQUIRED,
+              nature: FailureNature.REFUSED,
+              params: {},
+              traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+            },
+            servedAt: '2026-09-21T19:00:12.000Z',
+          },
+        },
+      },
+    },
+  },
+});
+
+export const goOnAir: Route<{
+  method: 'post';
+  version: 1;
+  path: '/dates/{dateId}/run/go-on-air';
+  parameters: readonly [
+    typeof DateIdParameter,
+    typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
+  ];
+  access: IdentifiedAccess<typeof operator, false>;
+  requestBody: JsonRequestBody<z.ZodObject<{ expectedVersion: z.ZodInt }, z.core.$strip>>;
+  responses: {
+    200: JsonResponse<
+      z.ZodIntersection<
+        typeof StudioEnvelopeMetaSchema,
+        z.ZodObject<{ data: typeof RunConsoleSchema }, z.core.$loose>
+      >
+    >;
+    409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
+  };
+}> = date.single('run').action('go-on-air', {
+  operationId: 'goOnAir',
+  item: RunConsoleSchema,
+  summary: 'Goes on air.',
   description:
     '**The "go on air" command goes to `streaming`, not to `catalog`**: only `streaming` knows\nwhether the feed is arriving. Publication **learns** of it afterwards, by event — two\ntransitions out of eight are caused that way, which leaves `Publication` the aggregate of a\nsingle context.\n\n`idle → on_air` is **refused** if the technical check has never passed.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
   body: z.object({
-    state: vocabularyIn(SET_RUN_STATE_STATE).meta({
-      'x-arthome-vocabulary-source': 'RUN_STATES',
-      'x-arthome-vocabulary-narrowing':
-        '`interrupted` cannot be commanded: it is declared by raiseIncident and reached by consequence. A control room able to set it directly would have two ways into one state and only one raises the incident viewers see.',
-      description:
-        '**A strict narrowing of `RUN_STATES`, and what it leaves out is the rule.**\n`interrupted` is missing because **it cannot be commanded**: an interruption is\ndeclared by `raiseIncident` and reached by consequence, never by asking for it. A\ncontrol room that could set `interrupted` directly would have two ways into the same\nstate and only one of them would raise the incident the viewers see.\n',
-    }),
     expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
   }),
   example: {
-    state: RunState.ON_AIR,
+    expectedVersion: 3,
+  },
+  responses: {
+    200: {
+      description: 'The console up to date.',
+      content: {
+        'application/json': {
+          schema: z.intersection(
+            StudioEnvelopeMetaSchema,
+            z.looseObject({
+              data: RunConsoleSchema,
+            }),
+          ),
+          example: {
+            servedAt: '2026-09-21T19:00:12.000Z',
+            rightsVersion: 412,
+            data: {
+              dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+              state: RunState.ON_AIR,
+              afterGracePeriod: true,
+              ingestProtocol: 'rtmps',
+              monitorPath: 'll_hls',
+              version: 4,
+            },
+          },
+        },
+      },
+    },
+    409: {
+      description: '`date.technical_check_required`, or `state.conflict`.',
+      content: {
+        'application/json': {
+          schema: StudioErrorEnvelopeSchema,
+          example: {
+            error: {
+              code: CatalogErrorCode.TECHNICAL_CHECK_REQUIRED,
+              nature: FailureNature.REFUSED,
+              params: {},
+              traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+            },
+            servedAt: '2026-09-21T19:00:12.000Z',
+          },
+        },
+      },
+    },
+  },
+});
+
+export const endRun: Route<{
+  method: 'post';
+  version: 1;
+  path: '/dates/{dateId}/run/end';
+  parameters: readonly [
+    typeof DateIdParameter,
+    typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
+  ];
+  access: IdentifiedAccess<typeof operator, false>;
+  requestBody: JsonRequestBody<z.ZodObject<{ expectedVersion: z.ZodInt }, z.core.$strip>>;
+  responses: {
+    200: JsonResponse<
+      z.ZodIntersection<
+        typeof StudioEnvelopeMetaSchema,
+        z.ZodObject<{ data: typeof RunConsoleSchema }, z.core.$loose>
+      >
+    >;
+    409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
+  };
+}> = date.single('run').action('end', {
+  operationId: 'endRun',
+  item: RunConsoleSchema,
+  summary: 'Ends the broadcast.',
+  description: 'The run goes to `ended`. It is final for this date: a new run is a new date.',
+  'x-arthome-maturity': 'provisional',
+  'x-arthome-upstream': [Service.STREAMING],
+  body: z.object({
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+  }),
+  example: {
+    expectedVersion: 3,
+  },
+  responses: {
+    200: {
+      description: 'The console up to date.',
+      content: {
+        'application/json': {
+          schema: z.intersection(
+            StudioEnvelopeMetaSchema,
+            z.looseObject({
+              data: RunConsoleSchema,
+            }),
+          ),
+          example: {
+            servedAt: '2026-09-21T19:00:12.000Z',
+            rightsVersion: 412,
+            data: {
+              dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+              state: RunState.ON_AIR,
+              afterGracePeriod: true,
+              ingestProtocol: 'rtmps',
+              monitorPath: 'll_hls',
+              version: 4,
+            },
+          },
+        },
+      },
+    },
+    409: {
+      description: '`date.technical_check_required`, or `state.conflict`.',
+      content: {
+        'application/json': {
+          schema: StudioErrorEnvelopeSchema,
+          example: {
+            error: {
+              code: CatalogErrorCode.TECHNICAL_CHECK_REQUIRED,
+              nature: FailureNature.REFUSED,
+              params: {},
+              traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+            },
+            servedAt: '2026-09-21T19:00:12.000Z',
+          },
+        },
+      },
+    },
+  },
+});
+
+export const resetRun: Route<{
+  method: 'post';
+  version: 1;
+  path: '/dates/{dateId}/run/reset';
+  parameters: readonly [
+    typeof DateIdParameter,
+    typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
+  ];
+  access: IdentifiedAccess<typeof operator, false>;
+  requestBody: JsonRequestBody<z.ZodObject<{ expectedVersion: z.ZodInt }, z.core.$strip>>;
+  responses: {
+    200: JsonResponse<
+      z.ZodIntersection<
+        typeof StudioEnvelopeMetaSchema,
+        z.ZodObject<{ data: typeof RunConsoleSchema }, z.core.$loose>
+      >
+    >;
+    409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
+    403: typeof ConflictResponse;
+    404: typeof ConflictResponse;
+  };
+}> = date.single('run').action('reset', {
+  operationId: 'resetRun',
+  item: RunConsoleSchema,
+  summary: 'Returns the run to idle.',
+  description: 'The run goes back to `idle`, before the date starts: the console is emptied.',
+  'x-arthome-maturity': 'provisional',
+  'x-arthome-upstream': [Service.STREAMING],
+  body: z.object({
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+  }),
+  example: {
     expectedVersion: 3,
   },
   responses: {

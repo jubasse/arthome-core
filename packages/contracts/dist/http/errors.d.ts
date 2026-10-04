@@ -5,6 +5,7 @@
  * `error.code`.
  */
 import { z } from 'zod';
+import { ApiErrorCode } from '@arthome/core';
 import type { ErrorParamsOf } from '@arthome/core/schema';
 import type { JsonResponse, Response } from './index.js';
 export type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;
@@ -51,4 +52,28 @@ export declare function defineErrorModel<Allowed extends string>(model: ErrorMod
  * codes and the added ones.
  */
 export declare function errorResponseFor(model: ErrorModel<string> | undefined, status: number, codes: readonly string[], base: Response | undefined): Response;
+/**
+ * The errors every route of an api can answer whatever it declares: the framework's refusals, the
+ * rate limit, the identity and the surface. They are the same envelope on every route, so no
+ * annotation lists them and the typed client adds them to what a route declares.
+ */
+export declare const DERIVED_ERROR_CODES: {
+    readonly 400: readonly [typeof ApiErrorCode.SCHEMA_INVALID];
+    readonly 401: readonly [typeof ApiErrorCode.UNAUTHENTICATED];
+    readonly 403: readonly [
+        typeof ApiErrorCode.FORBIDDEN,
+        typeof ApiErrorCode.RIGHTS_VERSION_STALE,
+        typeof ApiErrorCode.REAUTHENTICATION_REQUIRED
+    ];
+    readonly 413: readonly [typeof ApiErrorCode.PAYLOAD_TOO_LARGE];
+    readonly 415: readonly [typeof ApiErrorCode.UNSUPPORTED_MEDIA_TYPE];
+    readonly 429: readonly [typeof ApiErrorCode.RATE_LIMITED];
+    readonly 500: readonly [typeof ApiErrorCode.INTERNAL];
+    readonly 502: readonly [typeof ApiErrorCode.UPSTREAM_UNAVAILABLE];
+    readonly 504: readonly [
+        typeof ApiErrorCode.UPSTREAM_TIMEOUT,
+        typeof ApiErrorCode.DEADLINE_EXCEEDED
+    ];
+};
+export type DerivedStatus = keyof typeof DERIVED_ERROR_CODES;
 //# sourceMappingURL=errors.d.ts.map

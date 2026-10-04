@@ -68,9 +68,9 @@ export declare const quoteSeat: Route<{
     };
 }>;
 export declare const enterSalesQueue: Route<{
-    method: 'put';
+    method: 'post';
     version: 1;
-    path: '/dates/{dateId}/sales-queue';
+    path: '/dates/{dateId}/sales-queue/enter';
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
@@ -363,9 +363,9 @@ export declare const checkoutCart: Route<{
     };
 }>;
 export declare const setSubscriptionPlan: Route<{
-    method: 'put';
+    method: 'post';
     version: 1;
-    path: '/subscription';
+    path: '/subscription/change-plan';
     parameters: readonly [
         typeof IdempotencyKeyParameter,
         typeof SurfaceParameter,

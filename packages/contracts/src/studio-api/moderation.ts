@@ -794,7 +794,7 @@ export const searchAudience: Route<{
 });
 
 export const sanctionAudienceMember: Route<{
-  method: 'put';
+  method: 'post';
   version: 1;
   path: '/channels/{channelId}/audience/{memberId}/sanction';
   parameters: readonly [
@@ -826,7 +826,7 @@ export const sanctionAudienceMember: Route<{
     404: typeof NotFoundResponse;
   };
 }> = moderationWrites.defineRoute({
-  method: 'put',
+  method: 'post',
   path: '/channels/{channelId}/audience/{memberId}/sanction',
   operationId: 'sanctionAudienceMember',
   summary: 'Sanctions a person — per channel, with an instant of expiry.',

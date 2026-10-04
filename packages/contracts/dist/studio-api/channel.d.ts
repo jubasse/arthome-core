@@ -4,7 +4,7 @@ import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
 import { BadRequestResponse, ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter, operator } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, QueryParameter, Route, IdentifiedAccess } from '../http/index.js';
+import type { JsonRequestBody, PathParameter, JsonResponse, QueryParameter, Route, IdentifiedAccess } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import { JournalEntrySchema } from '../studio-desk/index.js';
 import { MerchItemAdminSchema, UploadTicketSchema } from '../studio-stage/index.js';
@@ -207,16 +207,16 @@ export declare const listChannelMerchItems: Route<{
 export declare const upsertMerchItem: Route<{
     method: 'put';
     version: 1;
-    path: '/channels/{channelId}/merch-items';
+    path: '/channels/{channelId}/merch-items/{itemId}';
     parameters: readonly [
         typeof ChannelIdParameter,
+        PathParameter<'itemId', z.ZodString>,
         typeof SurfaceParameter,
         typeof IfRightsVersionParameter,
         typeof TraceparentParameter,
         typeof IdempotencyKeyParameter
     ];
     requestBody: JsonRequestBody<z.ZodObject<{
-        itemId: z.ZodString;
         showId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         labels: z.ZodArray<z.ZodObject<{
             contentLanguage: z.ZodString;
@@ -239,7 +239,7 @@ export declare const upsertMerchItem: Route<{
     };
 }>;
 export declare const pinMerchDuringLive: Route<{
-    method: 'put';
+    method: 'post';
     version: 1;
     path: '/dates/{dateId}/merch-pin';
     parameters: readonly [

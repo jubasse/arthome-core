@@ -43,6 +43,7 @@ const RUNTIME = new Set([
   'degradable',
   'owner',
   'paging',
+  'errorCodes',
   'sortable',
   'expand',
 ]);

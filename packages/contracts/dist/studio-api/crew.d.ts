@@ -104,9 +104,9 @@ export declare const respondToInvitation: Route<{
     };
 }>;
 export declare const changeMemberRoles: Route<{
-    method: 'patch';
+    method: 'post';
     version: 1;
-    path: '/channels/{channelId}/members/{personId}';
+    path: '/channels/{channelId}/members/{personId}/change-roles';
     parameters: readonly [
         typeof ChannelIdParameter,
         PathParameter<'personId', z.ZodString>,

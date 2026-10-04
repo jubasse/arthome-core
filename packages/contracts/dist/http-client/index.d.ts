@@ -7,7 +7,8 @@
  * Node's all fit, and so does a test double.
  */
 import type { z } from 'zod';
-import type { Api, RouteInput, RouteResponseBody, RouteShape } from '../http/index.js';
+import type { Api, DerivedStatus, ErrorBody, RouteInput, RouteResponseBody, RouteShape } from '../http/index.js';
+import { DERIVED_ERROR_CODES } from '../http/index.js';
 export interface FetchInit {
     readonly method: string;
     readonly headers: Record<string, string>;
@@ -31,13 +32,25 @@ export interface ClientOptions<Init extends object> {
     readonly validateResponses?: boolean;
 }
 type DeclaredStatus<R extends RouteShape> = keyof R['responses'] & number;
+type DerivedResponse<R extends RouteShape> = {
+    [S in Exclude<DerivedStatus, DeclaredStatus<R>>]: {
+        readonly status: S;
+        readonly body: ErrorBody<(typeof DERIVED_ERROR_CODES)[S][number]>;
+        readonly headers: FetchResponseLike['headers'];
+    };
+}[Exclude<DerivedStatus, DeclaredStatus<R>>];
+/**
+ * What a call answers: the statuses the route declares, typed by the route, and the derived errors
+ * (400, 401, 403, 413, 415, 429, 500, 502, 504), typed by the api's own codes. A surface can switch
+ * on a 401 or a 429 with types, and a status that is neither throws `UndeclaredStatusError`.
+ */
 export type ClientResponse<R extends RouteShape> = {
     [S in DeclaredStatus<R>]: {
         readonly status: S;
         readonly body: RouteResponseBody<R, S>;
         readonly headers: FetchResponseLike['headers'];
     };
-}[DeclaredStatus<R>];
+}[DeclaredStatus<R>] | DerivedResponse<R>;
 type Optional<Key extends string, T> = Record<never, never> extends T ? Readonly<Partial<Record<Key, T>>> : Readonly<Record<Key, T>>;
 export type ClientInput<R extends RouteShape, Init extends object> = Optional<'params', RouteInput<R>['params']> & Optional<'query', RouteInput<R>['query']> & (RouteInput<R>['body'] extends undefined ? {
     readonly body?: undefined;

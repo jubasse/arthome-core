@@ -511,9 +511,9 @@ export const respondToInvitation: Route<{
 });
 
 export const changeMemberRoles: Route<{
-  method: 'patch';
+  method: 'post';
   version: 1;
-  path: '/channels/{channelId}/members/{personId}';
+  path: '/channels/{channelId}/members/{personId}/change-roles';
   parameters: readonly [
     typeof ChannelIdParameter,
     PathParameter<'personId', z.ZodString>,
@@ -539,8 +539,8 @@ export const changeMemberRoles: Route<{
     409: typeof ConflictResponse;
   };
 }> = crewWrites.defineRoute({
-  method: 'patch',
-  path: '/channels/{channelId}/members/{personId}',
+  method: 'post',
+  path: '/channels/{channelId}/members/{personId}/change-roles',
   operationId: 'changeMemberRoles',
   summary: "Changes a member's set of roles.",
   description:

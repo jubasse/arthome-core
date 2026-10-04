@@ -5,7 +5,7 @@ import { changeMemberRoles, getDateCrewPane, grantDateAccess, inviteMember, list
 import { addBannedWord, claimModerationItem, getDateChatPane, listModerationQueue, listStudioChatMessages, releaseModerationItem, removeBannedWord, sanctionAudienceMember, searchAudience, setDateChatPolicy, settleModerationItem } from './moderation.js';
 import { closeReconciliationPeriod, countersignBankChange, getChannelExport, listPayouts, requestBankChange, requestChannelExport } from './payouts.js';
 import { createDateDraft, decideDateOutcome, deleteDate, duplicateDate, getDatePublicPane, getDateReplayPane, getDateSheet, moveDatePublicationState, setDateReplayPolicy } from './publication.js';
-import { escalateIncidentToProduction, getChannelStreamSettings, getDateTechPane, getHealthSeries, getRunConsole, postChapter, raiseIncident, removeChapter, resolveIncident, revealStreamKey, rotateStreamKey, runTechnicalCheck, setQualityProfile, setRunState, submitHealthSample } from './run.js';
+import { escalateIncidentToProduction, getChannelStreamSettings, getDateTechPane, getHealthSeries, getRunConsole, postChapter, raiseIncident, removeChapter, resolveIncident, revealStreamKey, rotateStreamKey, runTechnicalCheck, setQualityProfile, rehearseRun, goOnAir, endRun, resetRun, submitHealthSample } from './run.js';
 import { getChannelTicketing, getDateTicketsPane, issueComplimentary, openCapacityTier, refundSeat, setDatePrices, setTechnicalProvision } from './ticketing.js';
 import type { Api } from '../http/index.js';
 export declare const studioApi: Api<{
@@ -58,7 +58,10 @@ export declare const studioApi: Api<{
     getDateTechPane: typeof getDateTechPane;
     getRunConsole: typeof getRunConsole;
     runTechnicalCheck: typeof runTechnicalCheck;
-    setRunState: typeof setRunState;
+    rehearseRun: typeof rehearseRun;
+    goOnAir: typeof goOnAir;
+    endRun: typeof endRun;
+    resetRun: typeof resetRun;
     setQualityProfile: typeof setQualityProfile;
     getHealthSeries: typeof getHealthSeries;
     submitHealthSample: typeof submitHealthSample;

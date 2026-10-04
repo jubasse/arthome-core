@@ -379,9 +379,9 @@ export const quoteSeat: Route<{
 });
 
 export const enterSalesQueue: Route<{
-  method: 'put';
+  method: 'post';
   version: 1;
-  path: '/dates/{dateId}/sales-queue';
+  path: '/dates/{dateId}/sales-queue/enter';
   parameters: readonly [
     typeof DateIdParameter,
     typeof SurfaceParameter,
@@ -399,8 +399,8 @@ export const enterSalesQueue: Route<{
     404: typeof NotFoundResponse;
   };
 }> = commerceWrites.defineRoute({
-  method: 'put',
-  path: '/dates/{dateId}/sales-queue',
+  method: 'post',
+  path: '/dates/{dateId}/sales-queue/enter',
   operationId: 'enterSalesQueue',
   summary: "Enters a date's sales queue.",
   description:
@@ -1681,9 +1681,9 @@ export const checkoutCart: Route<{
 });
 
 export const setSubscriptionPlan: Route<{
-  method: 'put';
+  method: 'post';
   version: 1;
-  path: '/subscription';
+  path: '/subscription/change-plan';
   parameters: readonly [
     typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
@@ -1716,8 +1716,8 @@ export const setSubscriptionPlan: Route<{
     403: typeof CsrfRefusedResponse;
   };
 }> = commerceWrites.defineRoute({
-  method: 'put',
-  path: '/subscription',
+  method: 'post',
+  path: '/subscription/change-plan',
   operationId: 'setSubscriptionPlan',
   summary: 'Subscribes or changes plan.',
   description:

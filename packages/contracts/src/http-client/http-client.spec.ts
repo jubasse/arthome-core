@@ -120,7 +120,7 @@ describe('createClient', () => {
   it('refuses to type a status the route does not declare', async () => {
     const client = createClient(api, {
       baseUrl: 'https://api.test',
-      fetch: answering(502, '{"error":{}}').fetch,
+      fetch: answering(418, '{"error":{}}').fetch,
     });
 
     await expect(client.listDates({ params: { channelId: 'c' } })).rejects.toBeInstanceOf(
@@ -136,5 +136,16 @@ describe('createClient', () => {
     });
 
     await expect(client.listDates({ params: { channelId: 'c' } })).rejects.toThrow();
+  });
+
+  it('types and passes a derived error the route does not declare', async () => {
+    const client = createClient(api, {
+      baseUrl: 'https://api.test',
+      fetch: answering(429, '{"error":{"code":"api.rate_limited"}}').fetch,
+    });
+
+    const response = await client.listDates({ params: { channelId: 'c' } });
+
+    expect(response.status).toBe(429);
   });
 });

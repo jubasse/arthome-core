@@ -172,7 +172,7 @@ export declare const searchAudience: Route<{
     };
 }>;
 export declare const sanctionAudienceMember: Route<{
-    method: 'put';
+    method: 'post';
     version: 1;
     path: '/channels/{channelId}/audience/{memberId}/sanction';
     parameters: readonly [

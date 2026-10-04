@@ -51,6 +51,7 @@ import {
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type {
   JsonRequestBody,
+  PathParameter,
   JsonResponse,
   QueryParameter,
   Route,
@@ -917,9 +918,10 @@ export const listChannelMerchItems: Route<{
 export const upsertMerchItem: Route<{
   method: 'put';
   version: 1;
-  path: '/channels/{channelId}/merch-items';
+  path: '/channels/{channelId}/merch-items/{itemId}';
   parameters: readonly [
     typeof ChannelIdParameter,
+    PathParameter<'itemId', z.ZodString>,
     typeof SurfaceParameter,
     typeof IfRightsVersionParameter,
     typeof TraceparentParameter,
@@ -928,7 +930,6 @@ export const upsertMerchItem: Route<{
   requestBody: JsonRequestBody<
     z.ZodObject<
       {
-        itemId: z.ZodString;
         showId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         labels: z.ZodArray<
           z.ZodObject<{ contentLanguage: z.ZodString; text: z.ZodString }, z.core.$strip>
@@ -961,20 +962,27 @@ export const upsertMerchItem: Route<{
   };
 }> = channelWrites.defineRoute({
   method: 'put',
-  path: '/channels/{channelId}/merch-items',
+  path: '/channels/{channelId}/merch-items/{itemId}',
   operationId: 'upsertMerchItem',
   summary: 'Creates or updates a shop item.',
   description:
     '**An item without a variant is not sellable.** The label is **bilingual**; the absence of an\nEnglish label in the sources is a **data gap** to be filled during the port, not a translation\ngap.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.TICKETING],
-  parameters: [ChannelIdParameter],
+  parameters: [
+    ChannelIdParameter,
+    {
+      name: 'itemId',
+      in: 'path',
+      required: true,
+      schema: uuidIn(),
+    },
+  ],
   requestBody: {
     required: true,
     content: {
       'application/json': {
         schema: z.object({
-          itemId: uuidOut(),
           showId: uuidOut().nullable().optional(),
           labels: z
             .array(
@@ -1002,7 +1010,6 @@ export const upsertMerchItem: Route<{
             .optional(),
         }),
         example: {
-          itemId: '019928a0-7d31-7a10-b8c4-2f9e11a4d001',
           labels: [
             {
               contentLanguage: Locale.FR,
@@ -1071,7 +1078,7 @@ export const upsertMerchItem: Route<{
 });
 
 export const pinMerchDuringLive: Route<{
-  method: 'put';
+  method: 'post';
   version: 1;
   path: '/dates/{dateId}/merch-pin';
   parameters: readonly [
@@ -1105,7 +1112,7 @@ export const pinMerchDuringLive: Route<{
     404: typeof NotFoundResponse;
     403: typeof BadRequestResponse;
   };
-}> = date.single('merch-pin').upsert({
+}> = date.action('merch-pin', {
   operationId: 'pinMerchDuringLive',
   summary: 'Pins an item during the live show.',
   description: '**A put**: pinning the same item twice does not pin it twice.',

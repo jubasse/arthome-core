@@ -373,7 +373,10 @@ function responsesOf(
   ownBases: Readonly<Record<string, Response>>,
   derived: Readonly<Record<string, readonly string[]>>,
   identityBases: Readonly<Partial<Record<string, Response>>> = {},
-): Record<string, Response> {
+): {
+  readonly responses: Record<string, Response>;
+  readonly codes: Record<string, readonly string[]>;
+} {
   const bases = { ...identityBases, ...settings.bases, ...ownBases };
   const statuses = new Set([
     ...Object.keys(bases),
@@ -382,6 +385,7 @@ function responsesOf(
     ...Object.keys(derived),
   ]);
   const out: Record<string, Response> = {};
+  const named: Record<string, readonly string[]> = {};
   for (const status of statuses) {
     const codes = [
       ...(derived[status] ?? []),
@@ -389,8 +393,24 @@ function responsesOf(
       ...(own[status] ?? []),
     ];
     out[status] = errorResponseFor(settings.model, Number(status), codes, bases[status]);
+    named[status] = codesOfResponse(settings.model, status, codes, bases[status], out[status]);
   }
-  return out;
+  return { responses: out, codes: named };
+}
+
+/** The codes a built error response stands for: the standard response's own, plus those a route added. */
+function codesOfResponse(
+  model: ErrorModel<string> | undefined,
+  status: string,
+  codes: readonly string[],
+  base: Response | undefined,
+  built: Response,
+): readonly string[] {
+  const standard = model?.standard[Number(status) as keyof ErrorModel<string>['standard']];
+  const known = standard?.codes ?? [];
+  if (built === standard?.response) return known;
+  if (built === base) return codes;
+  return [...new Set([...known, ...codes])];
 }
 
 interface ResponseHeaders {
@@ -553,9 +573,15 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
         parameters,
         requestBody: rest.requestBody,
       });
+      const built = responsesOf(settings, ownCodes, ownBases, derived, identityBases);
+      const errorCodes = Object.fromEntries(
+        Object.entries(built.codes).filter(
+          ([status]) => rest.responses === undefined || !(status in rest.responses),
+        ),
+      );
       const responses = withHeaders(
         {
-          ...responsesOf(settings, ownCodes, ownBases, derived, identityBases),
+          ...built.responses,
           ...(conditional?.notModified !== undefined && { 304: conditional.notModified }),
           ...rest.responses,
         },
@@ -583,6 +609,7 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
         ...(hasBody && { bodyLimit: rest.bodyLimit ?? settings.bodyLimit ?? DEFAULT_BODY_LIMIT }),
         ...(parameters.length > 0 && { parameters }),
         responses,
+        ...(Object.keys(errorCodes).length > 0 && { errorCodes }),
       });
     },
     resource: (name: string, options: ResourceOptions<never, never>, closure?: Closure) => {
