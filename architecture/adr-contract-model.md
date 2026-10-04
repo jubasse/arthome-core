@@ -126,7 +126,7 @@ const members = channel.resource('members', { id: PersonIdParameter }, (m) => ({
   removeMember: m.delete({ requires: [roles(MemberRole.PRODUCTION).on('channelId')] }),
 }));
 
-const settings = channel.singleton('settings', (s) => ({
+const settings = channel.single('settings', (s) => ({
   getChannelSettings: s.find({ item: ChannelSettingsSchema }),
   updateChannelSettings: s.update({ item: ChannelSettingsSchema, fields: ChannelSettingsSchema }),
 }));
@@ -136,7 +136,7 @@ export const studioApi = defineApi({ /* ... */ routes: collect(members, settings
 ```
 
 **The closure is optional, and it returns its routes.**
-- `resource`, `singleton` and `path` accept a callback that returns a record of routes, keyed by
+- `resource`, `single` and `path` accept a callback that returns a record of routes, keyed by
   operation id, and they return that record.
 - **What it gives:** the code mirrors the URL tree, and `collect()` takes the record whole, so the
   listing is one line per block.
@@ -145,10 +145,10 @@ export const studioApi = defineApi({ /* ... */ routes: collect(members, settings
 - **Rules declared at several levels add up:** removing a member requires being a member of the
   channel, and holding the production role.
 
-**Nesting, at any depth.** Each scope offers `resource`, `singleton` and `path` again, so the tree
+**Nesting, at any depth.** Each scope offers `resource`, `single` and `path` again, so the tree
 nests as deep as the URL does:
 - inside a `resource`, a child sits under the item and inherits its id as a parent parameter;
-- inside a `singleton` or a `path`, a child sits under its path;
+- inside a `single` or a `path`, a child sits under its path;
 - each level may add its own `requires` and `tags`, and they add up.
 
 The record a closure returns may hold nested records. `collect()` flattens them by operation id,
@@ -157,7 +157,7 @@ and refuses a duplicate.
 ```ts
 const channelRoutes = studioV1.resource('channels', { id: ChannelIdParameter }, (channel) => ({
   getChannel: channel.find({ item: ChannelSchema }),
-  settings: channel.singleton('settings', (settings) => ({
+  settings: channel.single('settings', (settings) => ({
     updateChannelSettings: settings.update({ item: ChannelSettingsSchema, fields: ChannelSettingsSchema }),
   })),
   moderation: channel.path('moderation', (moderation) => ({
@@ -188,26 +188,31 @@ suffers, the closure goes and `path()` stays: the prefix is the real gain.
 
 ## 3. Resources
 
-### 3.1 `singleton(name, options)`
+### 3.1 `single(name, options)`: what exists once in its context
 
-A resource without an id: one record per caller, or per parent. About 25 paths are singletons
-today. Examples: `/me/preferences`, `/subscription`, `/me/deletion`, `/auth/two-factor`,
+`resource` declares a collection: several records, each with its id in the URL (`/members/{personId}`).
+`single` declares what exists **once** in its context, so its URL has no id: **my** preferences,
+**my** subscription, **a channel's** settings. The industry's name for it is a singleton resource
+(Laravel, Google's API guide); `single` says the same in a word a reader does not have to look up.
+
+A `resource` without an `id` was considered and set aside: forgetting the id would silently turn a
+collection into a single record. About 25 paths are single today. Examples: `/me/preferences`, `/subscription`, `/me/deletion`, `/auth/two-factor`,
 `/channels/{channelId}/settings`, `/dates/{dateId}/waitlist`.
 
 It has the same members as `resource`: `find`, `create`, `update`, `replace`, `upsert`, `delete`
 and `action`. They answer on `/{name}` and `/{name}/{action}`.
 
 ```ts
-const preferences = storefrontV1.singleton('me/preferences', { owner: 'caller' });
+const preferences = storefrontV1.single('me/preferences', { owner: 'caller' });
 export const updatePreferences = preferences.update({ operationId: 'updatePreferences', item, fields });
 
-const settings = studioV1.singleton('channels/{channelId}/settings', { parents: [ChannelIdParameter] });
+const settings = studioV1.single('channels/{channelId}/settings', { parents: [ChannelIdParameter] });
 export const updateChannelSettings = settings.update({ operationId: 'updateChannelSettings', item, fields });
 ```
 
 ### 3.2 `owner: 'caller'`
 
-An option of `resource` and `singleton`: **the caller is the only one who writes this data.**
+An option of `resource` and `single`: **the caller is the only one who writes this data.**
 
 **What it changes.** `update`, `replace` and `delete` then carry no `expectedVersion` and no
 `409 state.conflict`; the idempotency codes stay. The declaration states why the version is absent,
