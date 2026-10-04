@@ -8,19 +8,37 @@
 import { z } from 'zod';
 
 import { ApiErrorCode } from '@arthome/core';
-import type { ErrorParamsOf } from '@arthome/core/schema';
+import type { ErrorCode } from '@arthome/core';
+import type { ErrorParamsRead } from '@arthome/core/schema';
 
+import { statusOf } from './error-status.js';
 import type { JsonResponse, Response } from './index.js';
 
 export type ErrorStatus =
-  400 | 401 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;
+  | 400
+  | 401
+  | 402
+  | 403
+  | 404
+  | 409
+  | 410
+  | 412
+  | 413
+  | 415
+  | 422
+  | 423
+  | 429
+  | 500
+  | 502
+  | 503
+  | 504;
 
 /** The body of a failure carrying `C`: a union over the members of `C`, discriminated on `error.code`. */
 export type ErrorBody<C extends string> = C extends string
   ? {
       readonly error: {
         readonly code: C;
-        readonly params: ErrorParamsOf<C>;
+        readonly params: C extends ErrorCode ? ErrorParamsRead<C> : never;
         readonly nature: string;
         readonly traceId: string;
       };
@@ -41,10 +59,29 @@ export type CodesOf<R> =
       : never
     : never;
 
-/** What a status takes where errors are declared: a response as the document writes it, or its codes. */
+/**
+ * The errors a route declares: a list of codes, each answered with its status from `ERROR_STATUS`.
+ * The document groups them by status.
+ */
+export type ErrorList<Allowed extends string> = readonly Allowed[];
+
+/**
+ * What a group declares where a response must be written whole (a foreign error format), keyed by
+ * status. The codes under a status are the older form: prefer an `ErrorList`.
+ */
 export type ErrorsInput<Allowed extends string> = Readonly<
   Partial<Record<ErrorStatus, Response | readonly Allowed[]>>
 >;
+
+/** A list of codes grouped by the status each is answered with. */
+export function groupByStatus(codes: readonly string[]): Record<string, readonly string[]> {
+  const out: Record<string, string[]> = {};
+  for (const code of codes) {
+    const status = String(statusOf(code as ErrorCode));
+    out[status] = [...(out[status] ?? []), code];
+  }
+  return out;
+}
 
 /**
  * An api's error vocabulary: the response it documents once per status (a component, so a route

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import * as catalog from './catalog.js';
 import * as commerce from './commerce.js';
+import { SCHEMA_ISSUE_RULES, SchemaIssueRule } from './error-codes.js';
 import * as moderation from './moderation.js';
 import * as people from './people.js';
 import {
@@ -32,7 +33,7 @@ import { MODERATION_BADGES, ModerationBadge } from '../moderation/index.js';
  *   silence. That is the same class of defect as E1, where `helpers.planOf()`
  *   silently dropped every account to `free`.
  *
- *   So the proof moves from the compiler to here. One test, forty-three
+ *   So the proof moves from the compiler to here. One test, forty-four
  *   vocabularies, and it fails loudly on a single mistyped letter.
  */
 
@@ -44,6 +45,7 @@ interface VocabularyPair {
 
 const PAIRS: readonly VocabularyPair[] = [
   { name: 'FailureNature', values: FAILURE_NATURES, members: FailureNature },
+  { name: 'SchemaIssueRule', values: SCHEMA_ISSUE_RULES, members: SchemaIssueRule },
   { name: 'Locale', values: LOCALES, members: Locale },
   { name: 'MessageDomain', values: MESSAGE_DOMAINS, members: MessageDomain },
   { name: 'ModerationBadge', values: MODERATION_BADGES, members: ModerationBadge },
@@ -166,6 +168,6 @@ describe('named members match their vocabulary', () => {
     // stops matching and the omission is visible. The two vocabularies without
     // named members are the publication checklist items, which are consumed as
     // a list and never referenced one by one.
-    expect(PAIRS).toHaveLength(43);
+    expect(PAIRS).toHaveLength(44);
   });
 });

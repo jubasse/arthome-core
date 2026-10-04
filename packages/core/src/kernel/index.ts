@@ -18,6 +18,13 @@ export type {
 export { brandId } from './brand.js';
 
 export type { DomainErrorInit, MessageParams } from './errors.js';
+export type {
+  ErrorParamsMap,
+  ErrorParamsOf,
+  NoErrorParams,
+  RaisableErrorCode,
+  SchemaIssue,
+} from './error-params.js';
 // `FailureNature` is both a type and an object of named members: the re-export
 // carries both meanings of the name.
 export { DomainError, FAILURE_NATURES, FailureNature, isDomainError } from './errors.js';

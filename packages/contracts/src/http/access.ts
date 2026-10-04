@@ -9,10 +9,13 @@ import type { z } from 'zod';
 import { ApiErrorCode } from '@arthome/core';
 
 import type { ErrorStatus } from './errors.js';
+import { groupByStatus } from './errors.js';
 import type { Header, Parameter, Response, SecurityRequirement } from './index.js';
 
 /** The codes each status of a declaration can carry. */
 export type CodesByStatus = Readonly<Partial<Record<ErrorStatus, readonly string[]>>>;
+
+const grouped = (codes: readonly string[]): CodesByStatus => groupByStatus(codes);
 
 /**
  * The identified state of a surface, declared once: which credentials a read and a write accept,
@@ -63,8 +66,8 @@ export interface IdentityOptions<
   };
   readonly principal: Principal;
   readonly optionalAlso?: readonly SecurityRequirement[];
-  readonly errors?: CodesByStatus;
-  readonly writeErrors?: CodesByStatus;
+  readonly errors?: readonly string[];
+  readonly writeErrors?: readonly string[];
   readonly writeResponses?: Readonly<Partial<Record<ErrorStatus, Response>>>;
   readonly parameters?: Every;
   readonly writeParameters?: Writes;
@@ -72,15 +75,13 @@ export interface IdentityOptions<
   readonly internal?: boolean;
 }
 
-type CodesIn<E> = E extends CodesByStatus
-  ? { [S in keyof E]: E[S] extends readonly (infer C extends string)[] ? C : never }[keyof E]
-  : never;
+type CodesIn<E> = E extends readonly (infer C extends string)[] ? C : never;
 
 export function identity<
   const Name extends string,
   const Principal extends z.ZodType,
-  const Errors extends CodesByStatus = Record<never, never>,
-  const WriteErrors extends CodesByStatus = Record<never, never>,
+  const Errors extends readonly string[] = readonly [],
+  const WriteErrors extends readonly string[] = readonly [],
   const Every extends readonly Parameter[] = readonly [],
   const Writes extends readonly Parameter[] = readonly [],
 >(
@@ -95,8 +96,8 @@ export function identity<
     schemes: options.schemes,
     principal: options.principal,
     optionalAlso: options.optionalAlso ?? [],
-    errors: options.errors ?? {},
-    writeErrors: options.writeErrors ?? {},
+    errors: grouped(options.errors ?? []),
+    writeErrors: grouped(options.writeErrors ?? []),
     writeResponses: options.writeResponses ?? {},
     parameters: options.parameters ?? ([] as unknown as Every),
     writeParameters: options.writeParameters ?? ([] as unknown as Writes),
@@ -150,12 +151,12 @@ export interface Requirement<
 export function requirement<
   const Name extends string,
   const Params extends object,
-  const Errors extends CodesByStatus,
+  const Errors extends readonly string[],
 >(
   name: Name,
   options: { readonly params: Params; readonly errors: Errors },
 ): Requirement<Name, Params, CodesIn<Errors>> {
-  return { kind: 'requirement', name, params: options.params, errors: options.errors };
+  return { kind: 'requirement', name, params: options.params, errors: grouped(options.errors) };
 }
 
 export type CodesOfRequirement<R> = R extends Requirement<string, object, infer C> ? C : never;
@@ -176,7 +177,7 @@ export function roles<const Allowed extends string>(
   const make = (on: string | undefined): RolesRequirement<Allowed> => ({
     ...requirement('roles', {
       params: { allowed, ...(on !== undefined && { on }) },
-      errors: { 403: [ApiErrorCode.FORBIDDEN] },
+      errors: [ApiErrorCode.FORBIDDEN],
     }),
     on: (parameter: string) => make(parameter),
   });
@@ -196,7 +197,7 @@ export function recentAuth<const Proof extends string = 'reauthToken'>(
 > {
   return requirement('recentAuth', {
     params: { proof: { in: 'body', name: (proof ?? 'reauthToken') as Proof } },
-    errors: { 403: [ApiErrorCode.REAUTHENTICATION_REQUIRED] },
+    errors: [ApiErrorCode.REAUTHENTICATION_REQUIRED],
   });
 }
 
@@ -206,6 +207,6 @@ export function throttle<const Bucket extends string>(
 ): Requirement<'throttle', { readonly bucket: Bucket }, typeof ApiErrorCode.RATE_LIMITED> {
   return requirement('throttle', {
     params: { bucket },
-    errors: { 429: [ApiErrorCode.RATE_LIMITED] },
+    errors: [ApiErrorCode.RATE_LIMITED],
   });
 }

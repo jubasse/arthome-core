@@ -47,18 +47,16 @@ export interface IdentityOptions<Principal extends z.ZodType, Every extends read
     };
     readonly principal: Principal;
     readonly optionalAlso?: readonly SecurityRequirement[];
-    readonly errors?: CodesByStatus;
-    readonly writeErrors?: CodesByStatus;
+    readonly errors?: readonly string[];
+    readonly writeErrors?: readonly string[];
     readonly writeResponses?: Readonly<Partial<Record<ErrorStatus, Response>>>;
     readonly parameters?: Every;
     readonly writeParameters?: Writes;
     readonly responseHeaders?: Readonly<Record<string, Header>>;
     readonly internal?: boolean;
 }
-type CodesIn<E> = E extends CodesByStatus ? {
-    [S in keyof E]: E[S] extends readonly (infer C extends string)[] ? C : never;
-}[keyof E] : never;
-export declare function identity<const Name extends string, const Principal extends z.ZodType, const Errors extends CodesByStatus = Record<never, never>, const WriteErrors extends CodesByStatus = Record<never, never>, const Every extends readonly Parameter[] = readonly [], const Writes extends readonly Parameter[] = readonly []>(name: Name, options: IdentityOptions<Principal, Every, Writes> & {
+type CodesIn<E> = E extends readonly (infer C extends string)[] ? C : never;
+export declare function identity<const Name extends string, const Principal extends z.ZodType, const Errors extends readonly string[] = readonly [], const WriteErrors extends readonly string[] = readonly [], const Every extends readonly Parameter[] = readonly [], const Writes extends readonly Parameter[] = readonly []>(name: Name, options: IdentityOptions<Principal, Every, Writes> & {
     readonly errors?: Errors;
     readonly writeErrors?: WriteErrors;
 }): Identity<Name, Principal, CodesIn<Errors> | CodesIn<WriteErrors>, Every, Writes>;
@@ -97,7 +95,7 @@ export interface Requirement<Name extends string = string, Params extends object
     /** Carries `Codes` to the compiler. */
     readonly codes?: readonly Codes[];
 }
-export declare function requirement<const Name extends string, const Params extends object, const Errors extends CodesByStatus>(name: Name, options: {
+export declare function requirement<const Name extends string, const Params extends object, const Errors extends readonly string[]>(name: Name, options: {
     readonly params: Params;
     readonly errors: Errors;
 }): Requirement<Name, Params, CodesIn<Errors>>;

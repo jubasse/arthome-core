@@ -13,8 +13,9 @@
 import { z } from 'zod';
 
 import { vocabularyOut, type VocabularyOut } from './vocabulary.js';
+import type { ErrorParamsOf, SchemaIssue } from '../kernel/error-params.js';
 import { FAILURE_NATURES, FailureNature } from '../kernel/errors.js';
-import { ERROR_CODES } from '../vocabulary/error-codes.js';
+import { ERROR_CODES, SchemaIssueRule, type ApiErrorCode } from '../vocabulary/error-codes.js';
 
 /**
  * The failure nature, tolerant — the only vocabulary in either contract declaring its unknown-member
@@ -59,17 +60,68 @@ export const ErrorSchema: z.ZodObject<
 });
 
 /**
- * The only sanctioned way out of a zod failure. Its `message` is prose written by a library, and
- * putting one on a wire makes the contract's language the library's. The path is joined rather than
- * dropped because "which field" is what a form needs and a code alone cannot carry.
+ * The only sanctioned way out of a zod failure: `api.schema_invalid`'s params. An issue keeps its
+ * path, the rule it broke and that rule's limit, never zod's `message`, which is English prose.
  */
-export function issueToCode(issue: z.core.$ZodIssue): {
-  readonly code: string;
-  readonly params: Readonly<Record<string, string>>;
-} {
-  const path = issue.path.map((segment) => String(segment)).join('.');
-  return {
-    code: `validation.${issue.code}`,
-    params: path.length > 0 ? { field: path } : {},
-  };
+export function schemaInvalidParams(
+  issues: readonly z.core.$ZodIssue[],
+): ErrorParamsOf<typeof ApiErrorCode.SCHEMA_INVALID> {
+  return { issues: issues.flatMap(schemaIssuesOf) };
+}
+
+function schemaIssuesOf(issue: z.core.$ZodIssue): SchemaIssue[] {
+  const path = issue.path.map((segment) =>
+    typeof segment === 'number' ? segment : String(segment),
+  );
+  // Five rules are named as zod names its codes; the other codes are zod's alone.
+  switch (issue.code) {
+    case SchemaIssueRule.TOO_SMALL:
+      return [
+        {
+          path,
+          rule: SchemaIssueRule.TOO_SMALL,
+          minimum: Number(issue.minimum),
+          inclusive: issue.inclusive ?? true,
+        },
+      ];
+    case SchemaIssueRule.TOO_BIG:
+      return [
+        {
+          path,
+          rule: SchemaIssueRule.TOO_BIG,
+          maximum: Number(issue.maximum),
+          inclusive: issue.inclusive ?? true,
+        },
+      ];
+    case SchemaIssueRule.INVALID_TYPE:
+      return [{ path, rule: SchemaIssueRule.INVALID_TYPE }];
+    case SchemaIssueRule.INVALID_FORMAT:
+      return [{ path, rule: SchemaIssueRule.INVALID_FORMAT, format: issue.format }];
+    case SchemaIssueRule.INVALID_VALUE:
+      return [
+        { path, rule: SchemaIssueRule.INVALID_VALUE, values: issue.values.flatMap(wireValue) },
+      ];
+    case 'unrecognized_keys':
+      return issue.keys.map((key) => ({
+        path: [...path, key],
+        rule: SchemaIssueRule.UNRECOGNIZED_KEY,
+      }));
+    case 'invalid_union':
+      // A discriminated union names the tags it knows; a plain one, no branch that fit.
+      return 'options' in issue && issue.options !== undefined
+        ? [{ path, rule: SchemaIssueRule.INVALID_VALUE, values: issue.options.flatMap(wireValue) }]
+        : [{ path, rule: SchemaIssueRule.INVALID_TYPE }];
+    case 'not_multiple_of':
+    case 'invalid_key':
+    case 'invalid_element':
+      return [{ path, rule: SchemaIssueRule.INVALID_VALUE }];
+    case SchemaIssueRule.CUSTOM:
+      return [{ path, rule: SchemaIssueRule.CUSTOM }];
+  }
+}
+
+function wireValue(value: unknown): (string | number | boolean | null)[] {
+  if (typeof value === 'bigint') return [Number(value)];
+  if (value === null || typeof value === 'string' || typeof value === 'number') return [value];
+  return typeof value === 'boolean' ? [value] : [];
 }

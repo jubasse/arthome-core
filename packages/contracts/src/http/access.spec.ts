@@ -24,7 +24,7 @@ const bearer = { bearerToken: [] };
 const viewer = identity('viewer', {
   schemes: { read: [session, bearer], write: [csrf, bearer] },
   principal: z.object({ personId: z.string() }),
-  writeErrors: { 403: [ApiErrorCode.FORBIDDEN] },
+  writeErrors: [ApiErrorCode.FORBIDDEN],
 });
 const rights = {
   name: 'If-Rights-Version',
@@ -36,7 +36,7 @@ const operator = identity('operator', {
   schemes: { read: [session], write: [session] },
   principal: z.object({ roles: z.array(z.string()) }),
   writeParameters: [rights],
-  writeErrors: { 403: [ApiErrorCode.RIGHTS_VERSION_STALE] },
+  writeErrors: [ApiErrorCode.RIGHTS_VERSION_STALE],
   responseHeaders: { 'X-Arthome-Rights-Version': { schema: z.number() } },
 });
 const key = { name: 'Idempotency-Key', in: 'header', required: true, schema: z.string() } as const;
@@ -230,7 +230,7 @@ describe('policies', () => {
   it('declares a rule through requirement()', () => {
     const rule = requirement('custom', {
       params: { level: 2 },
-      errors: { 403: [ApiErrorCode.FORBIDDEN] },
+      errors: [ApiErrorCode.FORBIDDEN],
     });
 
     expect(rule.params).toEqual({ level: 2 });

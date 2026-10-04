@@ -6,7 +6,6 @@ import {
   FailureNature,
   ModerationErrorCode,
   ModerationVerdict,
-  Service,
   Surface,
 } from '@arthome/core';
 import type { ErrorCode } from '@arthome/core';
@@ -360,11 +359,9 @@ export const UnavailableResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>
       schema: StudioErrorEnvelopeSchema,
       example: {
         error: {
-          code: ApiErrorCode.UPSTREAM_UNAVAILABLE,
+          code: ApiErrorCode.SERVICE_UNAVAILABLE,
           nature: FailureNature.UNAVAILABLE,
-          params: {
-            service: Service.STREAMING,
-          },
+          params: {},
           traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
         },
         servedAt: '2026-09-21T20:31:04.118Z',
@@ -550,7 +547,7 @@ export const studioErrors: ErrorModel<ErrorCode> = defineErrorModel({
     },
     500: { response: InternalErrorResponse, codes: [ApiErrorCode.INTERNAL] },
     502: { response: BadGatewayResponse, codes: [ApiErrorCode.UPSTREAM_UNAVAILABLE] },
-    503: { response: UnavailableResponse, codes: [ApiErrorCode.UPSTREAM_UNAVAILABLE] },
+    503: { response: UnavailableResponse, codes: [ApiErrorCode.SERVICE_UNAVAILABLE] },
     504: {
       response: GatewayTimeoutResponse,
       codes: [ApiErrorCode.UPSTREAM_TIMEOUT, ApiErrorCode.DEADLINE_EXCEEDED],
@@ -585,7 +582,7 @@ export const operator: Identity<
   },
   principal: OperatorPrincipalSchema,
   writeParameters: [IfRightsVersionParameter],
-  writeErrors: { 403: [ApiErrorCode.RIGHTS_VERSION_STALE] },
+  writeErrors: [ApiErrorCode.RIGHTS_VERSION_STALE],
   responseHeaders: { 'X-Arthome-Rights-Version': RightsVersionHeader },
 });
 

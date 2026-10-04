@@ -4,7 +4,8 @@ import { ApiErrorCode, DomainErrorCode } from '@arthome/core';
 
 import type { Access } from './access.js';
 import type { BuiltRoute, BuiltRouteDefinition, RouteBuilder, Scope } from './builder.js';
-import type { ErrorsInput } from './errors.js';
+import type { ErrorList, ErrorsInput } from './errors.js';
+import { groupByStatus } from './errors.js';
 import type {
   Header,
   JsonRequestBody,
@@ -156,7 +157,11 @@ type JoinErrors<Convention, Own> = {
       ? Convention[S]
       : never;
 };
-type OwnErrors<D> = D extends { readonly errors: infer R } ? R : Record<never, never>;
+type OwnErrors<D> = D extends { readonly errors: infer R }
+  ? R extends readonly unknown[]
+    ? Record<never, never>
+    : R
+  : Record<never, never>;
 type OwnParameters<D> = D extends { readonly parameters: infer X extends readonly Parameter[] }
   ? X
   : readonly [];
@@ -870,10 +875,13 @@ const OPTION_KEYS = [
 
 function mergeErrors(
   convention: ErrorsInput<string>,
-  docs: ErrorsInput<string> | undefined,
+  given: ErrorsInput<string> | ErrorList<string> | undefined,
 ): ErrorsInput<string> {
+  const docs: ErrorsInput<string> = Array.isArray(given)
+    ? groupByStatus(given as readonly string[])
+    : ((given as ErrorsInput<string> | undefined) ?? {});
   const out: Record<string, Response | readonly string[]> = { ...convention };
-  for (const [status, value] of Object.entries(docs ?? {})) {
+  for (const [status, value] of Object.entries(docs)) {
     const held = out[status];
     out[status] =
       Array.isArray(value) && Array.isArray(held)

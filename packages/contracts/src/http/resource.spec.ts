@@ -119,7 +119,7 @@ describe('resource members', () => {
   it('adds a domain code to a status and types the client union on it', () => {
     const things = studioV1.resource('things', { id: savedSearchId });
     const publish = things.action('publish', {
-      errors: { 409: [CatalogErrorCode.PRICES_LOCKED] },
+      errors: [CatalogErrorCode.PRICES_LOCKED],
     });
     type Conflict = z.output<
       (typeof publish.responses)[409]['content']['application/json']['schema']
@@ -138,10 +138,8 @@ describe('resource members', () => {
 
   it('refuses at compile time a code the storefront does not relay', () => {
     searches.action('refuse', {
-      errors: {
-        // @ts-expect-error a surface cannot be handed this code
-        409: [CatalogErrorCode.PRICES_LOCKED],
-      },
+      // @ts-expect-error a surface cannot be handed this code
+      errors: [CatalogErrorCode.PRICES_LOCKED],
     });
   });
 

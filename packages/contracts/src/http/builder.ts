@@ -1,8 +1,8 @@
 import { ApiErrorCode } from '@arthome/core';
 
 import type { Access, IdentifiedAccess, Identity, PublicAccess, Requirement } from './access.js';
-import type { CodesOf, ErrorModel, ErrorResponse, ErrorsInput } from './errors.js';
-import { errorResponseFor } from './errors.js';
+import type { CodesOf, ErrorList, ErrorModel, ErrorResponse, ErrorsInput } from './errors.js';
+import { groupByStatus, errorResponseFor } from './errors.js';
 import type {
   Header,
   Parameter,
@@ -32,7 +32,7 @@ type Responses = Readonly<Record<string, Response>>;
 export type BuiltRouteDefinition<Allowed extends string = string> = Omit<
   RouteDefinition,
   'version'
-> & { readonly errors?: ErrorsInput<Allowed> };
+> & { readonly errors?: ErrorsInput<Allowed> | ErrorList<Allowed> };
 
 type PathParam = Parameter & { readonly in: 'path' };
 
@@ -74,13 +74,19 @@ type OwnBody<D> = D extends { readonly requestBody: infer B extends RequestBody 
   : unknown;
 
 /** The error responses a set of `errors` declarations makes, over those already held. */
-export type MergedErrors<E extends Responses, R> = Omit<E, keyof R> & {
-  readonly [S in keyof R]: R[S] extends readonly (infer C extends string)[]
-    ? ErrorResponse<C | (S extends keyof E ? CodesOf<E[S]> : never)>
-    : R[S];
-};
+export type MergedErrors<E extends Responses, R> = R extends readonly unknown[]
+  ? E
+  : Omit<E, keyof R> & {
+      readonly [S in keyof R]: R[S] extends readonly (infer C extends string)[]
+        ? ErrorResponse<C | (S extends keyof E ? CodesOf<E[S]> : never)>
+        : R[S];
+    };
 
-type OwnErrors<D> = D extends { readonly errors: infer R } ? R : Record<never, never>;
+type OwnErrors<D> = D extends { readonly errors: infer R }
+  ? R extends readonly unknown[]
+    ? Record<never, never>
+    : R
+  : Record<never, never>;
 
 /** The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors. */
 export type BuiltRoute<
@@ -144,7 +150,7 @@ export interface RouteBuilder<
   headers<const H extends HeaderParameters>(
     ...headers: H
   ): RouteBuilder<V, readonly [...P, ...H], E, A, K, X, Z>;
-  errors<const R extends ErrorsInput<A>>(
+  errors<const R extends ErrorsInput<A> | ErrorList<A>>(
     errors: R,
   ): RouteBuilder<V, P, MergedErrors<E, R> & Responses, A, K, X, Z>;
   security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E, A, K, X, Z>;
@@ -292,11 +298,12 @@ type AnyBuilder = RouteBuilder<
 >;
 
 function split(
-  input: ErrorsInput<string>,
+  input: ErrorsInput<string> | ErrorList<string>,
 ): [Record<string, Response>, Record<string, readonly string[]>] {
   const bases: Record<string, Response> = {};
+  if (Array.isArray(input)) return [bases, groupByStatus(input as readonly string[])];
   const codes: Record<string, readonly string[]> = {};
-  for (const [status, value] of Object.entries(input)) {
+  for (const [status, value] of Object.entries(input as ErrorsInput<string>)) {
     if (Array.isArray(value)) codes[status] = value as readonly string[];
     else if (value !== undefined) bases[status] = value as Response;
   }
@@ -476,7 +483,7 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
     tags: (...tags: readonly string[]) => next({ tags: Object.freeze([...tags]) }),
     headers: (...headers: readonly Parameter[]) =>
       next({ headers: Object.freeze([...settings.headers, ...headers]) }),
-    errors: (errors: ErrorsInput<string>) => {
+    errors: (errors: ErrorsInput<string> | ErrorList<string>) => {
       const [bases, codes] = split(errors);
       const merged: Record<string, readonly string[]> = { ...settings.codes };
       for (const [status, added] of Object.entries(codes)) {

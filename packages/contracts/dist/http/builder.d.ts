@@ -1,5 +1,5 @@
 import type { Access, IdentifiedAccess, Identity, PublicAccess, Requirement } from './access.js';
-import type { CodesOf, ErrorModel, ErrorResponse, ErrorsInput } from './errors.js';
+import type { CodesOf, ErrorList, ErrorModel, ErrorResponse, ErrorsInput } from './errors.js';
 import type { Parameter, RequestBody, Response, Route, RouteDefinition, SecurityRequirement } from './index.js';
 import type { CachePolicy } from './policy.js';
 import type { Resource, ResourceConventions, ResourceOptions, SingleOptions } from './resource.js';
@@ -9,7 +9,7 @@ type HeaderParameters = readonly (Parameter & {
 type Responses = Readonly<Record<string, Response>>;
 /** What a builder's `defineRoute` takes: a route without its version, which the builder holds. */
 export type BuiltRouteDefinition<Allowed extends string = string> = Omit<RouteDefinition, 'version'> & {
-    readonly errors?: ErrorsInput<Allowed>;
+    readonly errors?: ErrorsInput<Allowed> | ErrorList<Allowed>;
 };
 type PathParam = Parameter & {
     readonly in: 'path';
@@ -41,12 +41,12 @@ type OwnBody<D> = D extends {
     readonly requestBody: B;
 } : unknown;
 /** The error responses a set of `errors` declarations makes, over those already held. */
-export type MergedErrors<E extends Responses, R> = Omit<E, keyof R> & {
+export type MergedErrors<E extends Responses, R> = R extends readonly unknown[] ? E : Omit<E, keyof R> & {
     readonly [S in keyof R]: R[S] extends readonly (infer C extends string)[] ? ErrorResponse<C | (S extends keyof E ? CodesOf<E[S]> : never)> : R[S];
 };
 type OwnErrors<D> = D extends {
     readonly errors: infer R;
-} ? R : Record<never, never>;
+} ? R extends readonly unknown[] ? Record<never, never> : R : Record<never, never>;
 /** The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors. */
 export type BuiltRoute<V extends number, P extends readonly Parameter[], E extends Responses, D extends Omit<BuiltRouteDefinition, 'errors'> & {
     readonly errors?: unknown;
@@ -86,7 +86,7 @@ export interface RouteBuilder<V extends number | undefined, P extends readonly P
     version<const N extends number>(version: N): RouteBuilder<N, P, E, A, K, X, Z>;
     tags(...tags: readonly string[]): RouteBuilder<V, P, E, A, K, X, Z>;
     headers<const H extends HeaderParameters>(...headers: H): RouteBuilder<V, readonly [...P, ...H], E, A, K, X, Z>;
-    errors<const R extends ErrorsInput<A>>(errors: R): RouteBuilder<V, P, MergedErrors<E, R> & Responses, A, K, X, Z>;
+    errors<const R extends ErrorsInput<A> | ErrorList<A>>(errors: R): RouteBuilder<V, P, MergedErrors<E, R> & Responses, A, K, X, Z>;
     security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E, A, K, X, Z>;
     conventions<const C extends ResourceConventions>(conventions: C): RouteBuilder<V, P, E, A, C, X, Z>;
     /** Every route requires this identity unless it says otherwise; its security is derived from it. */

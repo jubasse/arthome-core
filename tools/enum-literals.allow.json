@@ -105,6 +105,11 @@
       "file": "packages/contracts/src/studio-api/crew.ts",
       "value": "crew",
       "reason": "A path segment, POST /dates/{dateId}/crew. It shares its spelling with a date pane without being that vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/studio-money/index.ts",
+      "value": "custom",
+      "reason": "A period preset of the revenue screen, a period the person chose by hand, not a vocabulary of the domain."
     }
   ]
 }

@@ -385,8 +385,10 @@ this:
 }
 ```
 
-- **`code` is a code, never a sentence.** A zod validation failure becomes `api.schema_invalid` with
-  the field paths in `params` — **never** zod's English message;
+- **`code` is a code, never a sentence.** A zod validation failure becomes `api.schema_invalid`, its
+  `params.issues` one per refused field: the `path`, the `rule` broken (`SCHEMA_ISSUE_RULES`) and
+  that rule's limit (`minimum`, `maximum`, `inclusive`, `format`, `values`) — **never** zod's
+  English message;
 - **`traceId` is the `trace-id` part of the `traceparent`**, readable and copyable from the error
   screen. On mobile it is the only link between "my app crashed" and a server log;
 - **`nature` is what `studio-mobile` requires**, and it is the decision someone on duty must make
@@ -408,6 +410,7 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 |---|---|---|
 | `400` | `refused` | `api.schema_invalid`, `api.period_filter_required` |
 | `401` | `refused` | `api.unauthenticated`, `api.token_expired` |
+| `402` | `refused` | `order.payment_declined` (the payment provider declined; not a rule of ours) |
 | `403` | `refused` | `api.forbidden`, `api.sort_key_forbidden`, `api.rights_version_stale`, `pairing.identity_mismatch`, `order.sales_queue_admission_required` |
 | `404` | `refused` | `api.not_found` |
 | `409` | `refused` | `state.conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `api.idempotency_in_flight`, `capacity.tier_must_widen` |
@@ -421,6 +424,11 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 **"Typical", and the word is load-bearing**: this table names the codes worth knowing per status, not
 every member of `ERROR_CODES`. A code absent from it is not a defect — a code *in* it that the vocabulary
 does not carry is, which is what the gate checks.
+
+**Every code's status is `ERROR_STATUS`, in `@arthome/contracts/http`**: one status per code, and a
+code without one does not compile. A route lists codes and takes their statuses from it, the server
+answers a refusal with it, and a test fails when a generated document shows a code under another
+status.
 
 **The BFF never relays a service error as-is** (`nestjs-bff-gateway` skill, rule 6). It maps an
 **allowlist** of domain codes, which cross with their `params`, and everything else becomes
@@ -655,11 +663,11 @@ The framework's own refusals (a malformed JSON body, a wrong content type, a bod
 an unknown route) answer the envelope with these codes too, and an end-to-end test fails on a status
 or a code the route does not declare.
 
-`ERROR_PARAMS` in `@arthome/core/schema` maps each code to the schema of its `error.params`, so the
-documented response, the server and the typed client read the same one; a status that adds a code is
-documented as a `oneOf` of one envelope per code, and the client receives a union discriminated on
-`error.code`. A storefront operation may declare only the codes of `STOREFRONT_RELAYED_CODES`, and the
-compiler refuses any other.
+`ErrorParamsMap` in `@arthome/core` gives every code the type of its `error.params`, an empty one
+for a code that carries none, and `DomainError` takes the params of its code; `ERROR_PARAMS` in
+`@arthome/core/schema` is its schema, code for code. So the documented response, the server and the
+typed client read the same one; the client receives a union discriminated on `error.code`. A storefront operation may declare only the codes of
+`STOREFRONT_RELAYED_CODES`, and the compiler refuses any other.
 
 ---
 

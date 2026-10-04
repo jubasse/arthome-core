@@ -99,7 +99,7 @@ type JoinErrors<Convention, Own> = {
 };
 type OwnErrors<D> = D extends {
     readonly errors: infer R;
-} ? R : Record<never, never>;
+} ? R extends readonly unknown[] ? Record<never, never> : R : Record<never, never>;
 type OwnParameters<D> = D extends {
     readonly parameters: infer X extends readonly Parameter[];
 } ? X : readonly [];

@@ -137,7 +137,7 @@ export function assertTierWidens(currentCapacity: number, nextCapacity: number):
   if (nextCapacity <= currentCapacity) {
     throw new DomainError({
       code: DomainErrorCode.CAPACITY_TIER_MUST_WIDEN,
-      params: { current: String(currentCapacity), next: String(nextCapacity) },
+      params: { current: currentCapacity, next: nextCapacity },
     });
   }
 }

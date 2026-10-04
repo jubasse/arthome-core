@@ -222,7 +222,7 @@ disappears is a `DELETE` even when guarded.
 already documents keeps its shared response; a status that adds a code gets a `oneOf` of one envelope
 per code, each with the `params` schema of `ERROR_PARAMS` in `@arthome/core/schema`, which is what
 `check-openapi` R10 accepts. A storefront operation may declare only a code of
-`STOREFRONT_RELAYED_CODES`.
+`STOREFRONT_RELAYED_CODES`. Each code has one status, `ERROR_STATUS` (and `statusOf(code)`) in `./http`, which a test holds the generated documents to; `ErrorParamsMap` in `@arthome/core` types each code's params.
 
 ### Reads and responses
 
