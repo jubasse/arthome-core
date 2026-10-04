@@ -266,6 +266,8 @@ errors: [...AuditPeriod.errors],   // api.period_filter_required
 | `period({ type, required?, descriptions? })` | `parameters`: `from` and `to`, as `date` or `dateTime`; `errors`: `api.period_filter_required` when required (the default) | the two inline `from` and `to` of the studio |
 | `searchText({ description?, minLength? })` | the `q` query parameter | the inline `q` |
 
+An action that only acknowledges answers `204` with no body (the resource layer's default for an action without `response`); `Acknowledged` stays for the rare route whose clients already read `accepted`. A removal keeps `Deleted` (`200`).
+
 `Deleted` and `Acknowledged` are the `response` of a resource's `delete` and the `item` of a write,
 so the route's response is the envelope around them. Each equivalence above is a test.
 
