@@ -612,9 +612,14 @@ If one of them fails, the interfaces are generated instead, **in the package tha
 contracts, at install**. That is the product owner's proposal:
 - **The generator** ships with `@arthome/contracts` as a command. It reads the installed apis and
   writes one file per api into a git-ignored folder, with named types per operation.
-- **The consumer chains it to its `postinstall`.** `arthome-platform` already runs one there
-  (`arthome-sync-agent-docs`), and its `bootstrap` reinstalls whenever the core tarballs are
-  refreshed.
+- **The consumer runs it as a step of its own scripts:** in `bootstrap`, which reinstalls whenever
+  the core tarballs are refreshed, and before `typecheck` and `build`. It is idempotent and cheap.
+- **It is never a dependency's install script.**
+  - pnpm runs a dependency's install script only with a named approval (`allowBuilds`).
+    Approving `@arthome/contracts` would let any version of it run arbitrary code at install, with
+    the developer's rights.
+  - Nor does it depend on the root `postinstall`, so an install with `--ignore-scripts` still
+    yields the files at the next typecheck.
 - **So the files always match the installed contracts.** Nothing is committed and no gate is
   needed. A contract change shows as compile errors in the controllers, and the declaration's diff
   is reviewed in core.
