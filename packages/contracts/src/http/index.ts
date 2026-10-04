@@ -480,6 +480,7 @@ export * from './access.js';
 export * from './builder.js';
 export * from './collect.js';
 export * from './errors.js';
+export type * from './handlers.js';
 export * from './marks.js';
 export * from './paging.js';
 export * from './policy.js';

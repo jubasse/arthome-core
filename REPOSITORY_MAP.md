@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 129 exported names.
+Declarations: `dist/http/index.d.ts` — 133 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
@@ -107,6 +107,7 @@ Declarations: `dist/http/index.d.ts` — 129 exported names.
 - `CrudRoutes` (type) — What 'crud' returns: its routes keyed by operation id, so the record spreads into a closure.
 - `DEFAULT_BODY_LIMIT` (const) — `DEFAULT_BODY_LIMIT = 1048576` — 1 MiB: the ceiling of a request body unless a route says otherwise ('transport.md' §5.7).
 - `DeleteRoute` (type)
+- `Endpoints` (type) — One method per operation id of a block of routes, each taking its 'HandlerInput' and returning its 'HandlerOutput'.
 - `ErrorBody` (type) — The body of a failure carrying 'C': a union over the members of 'C', discriminated on 'error.code'.
 - `ErrorModel` (interface) — An api's error vocabulary: the response it documents once per status (a component, so a route that adds nothing keeps its '$ref'), the code…
 - `ErrorResponse` (type) — `type ErrorResponse<C extends string> = JsonResponse<z.ZodType<ErrorBody<C>>>;` — An error response whose body is one of the envelopes of 'C'.
@@ -116,6 +117,8 @@ Declarations: `dist/http/index.d.ts` — 129 exported names.
 - `FindAllRoute` (type)
 - `FindRoute` (type)
 - `Freshness` (type+const) — What a route promises about time and size: the freshness of its answer, the latency budget the typed client times out under, and the body c…
+- `HandlerInput` (interface)
+- `HandlerOutput` (type) — One success status: the body itself.
 - `Header` (interface)
 - `HeaderParameter` (type)
 - `HttpMethod` (type) — `type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'patch';`
@@ -158,6 +161,7 @@ Declarations: `dist/http/index.d.ts` — 129 exported names.
 - `RouteHeaders` (type) — `type RouteHeaders<R extends RouteShape> = ValuesIn<R, 'header', 'output'>;` — The declared headers a handler receives, under the lowercase names Node gives them.
 - `RouteInput` (interface) — What a client sends: inputs (defaults may be left out), header names as the contract writes them.
 - `RouteParams` (type) — `type RouteParams<R extends RouteShape> = ValuesIn<R, 'path', 'output'>;` — The path parameters a handler receives.
+- `RoutePrincipal` (type) — `type RoutePrincipal<R> = R extends { readonly access: infer A; } ? PrincipalOf<A> : undefined;` — The caller as the route declares it: the identity's principal, 'null' where an anonymous caller is let in, 'undefined' on a public route.
 - `RouteQuery` (type) — `type RouteQuery<R extends RouteShape> = ValuesIn<R, 'query', 'output'>;` — The query a handler receives: validated and coerced, an exploded object's fields at the top.
 - `RouteResponseBody` (type)
 - `RouteShape` (interface) — What a route's types are read from — the part of its annotation a handler or client needs.
