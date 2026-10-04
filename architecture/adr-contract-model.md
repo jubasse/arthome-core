@@ -563,8 +563,33 @@ can walk, so they can drive three kinds of output, each with its own rule:
   generic helper typed from the api (`createQueries(storefrontApi)`) is preferred to generated
   files wherever the types suffice.
 
-A gate can also list the routes a service declares and does not bind yet, so the contract doubles as
-the list of what remains to implement.
+**The interface a controller implements, without generating a file.** The product owner's proposal,
+and the preferred form. A mapped type derived from a block of routes gives one method per operation
+id, with its typed input and output:
+
+```ts
+export class DatesController implements Endpoints<typeof dateRoutes> {
+  @Endpoint(publishDate)
+  public async publishDate(@EndpointInput(publishDate) { params, principal }: HandlerInput<typeof publishDate>):
+    Promise<HandlerOutput<typeof publishDate>> { /* ... */ }
+}
+```
+
+What it gives:
+- **a route declared and not implemented is a compile error** (the method is missing), so the gate
+  "declared but unbound" comes free;
+- **a wrong return type is a compile error too**;
+- **one parameter decorator, `@EndpointInput(route)`, gives `{ params, query, body, headers,
+  principal }`**, so the signature does not depend on the order of five decorators.
+
+Two limits:
+- TypeScript compares a class method's parameters loosely, so the input's type is guaranteed by
+  `@EndpointInput`, not by `implements`.
+- Later, a class decorator (`@Implements(dateRoutes)`) could apply `@Endpoint` and `@EndpointInput`
+  to each method by its name, leaving only the method bodies to write.
+
+The type and `@EndpointInput` are cheap: they join the platform part of pass 1. The class decorator
+waits.
 
 **A redirect serves browser navigations only:** the OAuth callback, a link in an email, an old slug
 for search engines. A call made by the application's code follows a redirect silently and cannot
@@ -683,6 +708,7 @@ contracts (§5.10).
      this ADR updated.
 2. **Platform** (`contracts-platform`):
    - `@Endpoint` derives the guards, and the principal decorator comes with it;
+   - `Endpoints<...>`, `HandlerInput`, `HandlerOutput` and `@EndpointInput` (§8);
    - the `restricted` projection;
    - the framework error tests (§7.2) and the undeclared-response guard (§7.3);
    - `RequiresViewer` removed.
