@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 71 exported names.
+Declarations: `dist/http/index.d.ts` — 72 exported names.
 
 - `AccessorOf` (type) — `type AccessorOf<T extends readonly string[]> = { readonly [Member in T[number] as Uppercase<Member>]: Member; };` — Named members for a list of words, 'CHAT' for ''chat'', so no module spells a member again.
 - `ActionOptions` (type)
@@ -119,6 +119,7 @@ Declarations: `dist/http/index.d.ts` — 71 exported names.
 - `Resource` (interface)
 - `ResourceContext` (interface) — What a resource knows about itself: the builder it comes from and the path it serves.
 - `ResourceConventions` (interface) — What an api decides once for every resource it serves: the envelope of one record and of a page, the parameters a list takes, the validator…
+- `ResourceOf` (type) — The resource a builder makes for 'name', for an annotation: 'ResourceOf<typeof studioV1, 'incidents', typeof IncidentIdParameter>'.
 - `ResourceOptions` (interface)
 - `Response` (interface)
 - `Route` (type) — `type Route<T extends RouteShape = RouteShape> = T & Omit<RouteDefinition, keyof T>;`

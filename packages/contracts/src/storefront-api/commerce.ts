@@ -75,6 +75,13 @@ const commerceWrites = commerceRoutes.security(
     bearerToken: [],
   },
 );
+const SeatIdParameter: PathParameter<'seatId', z.ZodString> = {
+  name: 'seatId',
+  in: 'path',
+  required: true,
+  schema: uuidIn(),
+};
+const seats = commerceWrites.resource('seats', { id: SeatIdParameter });
 
 const CANCEL_SEAT_CANCEL_REASON_CODE = ['viewer_request'] as const;
 
@@ -873,9 +880,7 @@ export const cancelSeat: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = commerceWrites.defineRoute({
-  method: 'post',
-  path: '/seats/{seatId}/cancel',
+}> = seats.action('cancel', {
   operationId: 'cancelSeat',
   summary: 'Cancels a seat before its deadline.',
   description:
@@ -883,36 +888,21 @@ export const cancelSeat: Route<{
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.TICKETING],
   'x-arthome-invalidates': ['account:tickets', 'date:{dateId}:availability'],
-  parameters: [
-    {
-      name: 'seatId',
-      in: 'path',
-      required: true,
-      schema: uuidIn(),
-    },
-    IdempotencyKeyParameter,
-  ],
-  requestBody: {
-    required: false,
-    content: {
-      'application/json': {
-        schema: z.object({
-          cancelReasonCode: vocabularyIn(CANCEL_SEAT_CANCEL_REASON_CODE)
-            .meta({
-              'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
-              'x-arthome-vocabulary-reason':
-                'A single-member enum: it records the actor on an audit line, and this path has exactly one actor. Flagged in the description as a question, not settled as a vocabulary.',
-              description:
-                '**One member, and that is a question rather than a vocabulary.** A field whose\nenum has a single value carries no information: every request that reaches this\npath says the same thing. It is here because the audit line must record *who*\nasked — and a viewer cancelling their own seat is the only actor this path has.\n\n**What would make it a vocabulary is a second actor**, and there is one in the\ndomain already: the studio cancels seats too, through `refundSeat`, with its own\nfour-member `refundReasonCode`. If those two paths ever merge, this field becomes\nthe merged reason and the single member becomes the first of several. Until then\nit is a placeholder that is honest about being one.\n',
-            })
-            .optional(),
-        }),
-        example: {
-          cancelReasonCode: RefundReason.VIEWER_REQUEST,
-        },
-      },
-    },
+  body: z.object({
+    cancelReasonCode: vocabularyIn(CANCEL_SEAT_CANCEL_REASON_CODE)
+      .meta({
+        'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
+        'x-arthome-vocabulary-reason':
+          'A single-member enum: it records the actor on an audit line, and this path has exactly one actor. Flagged in the description as a question, not settled as a vocabulary.',
+        description:
+          '**One member, and that is a question rather than a vocabulary.** A field whose\nenum has a single value carries no information: every request that reaches this\npath says the same thing. It is here because the audit line must record *who*\nasked — and a viewer cancelling their own seat is the only actor this path has.\n\n**What would make it a vocabulary is a second actor**, and there is one in the\ndomain already: the studio cancels seats too, through `refundSeat`, with its own\nfour-member `refundReasonCode`. If those two paths ever merge, this field becomes\nthe merged reason and the single member becomes the first of several. Until then\nit is a placeholder that is honest about being one.\n',
+      })
+      .optional(),
+  }),
+  example: {
+    cancelReasonCode: RefundReason.VIEWER_REQUEST,
   },
+  optionalBody: true,
   responses: {
     200: {
       description: 'Seat cancelled, with the refund and its delay code.',

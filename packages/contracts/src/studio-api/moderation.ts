@@ -73,6 +73,15 @@ const moderationRoutes = studioV1
   .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 const moderationReads = moderationRoutes.errors({ 403: ForbiddenResponse });
 const moderationWrites = moderationRoutes.headers(IdempotencyKeyParameter);
+const ModerationItemIdParameter: PathParameter<'itemId', z.ZodString> = {
+  name: 'itemId',
+  in: 'path',
+  required: true,
+  schema: uuidIn(),
+};
+const moderationItems = moderationWrites.resource('moderation/items', {
+  id: ModerationItemIdParameter,
+});
 
 const LIST_MODERATION_QUEUE_FILTER = ['all', 'pending', 'settled'] as const;
 
@@ -423,23 +432,13 @@ export const claimModerationItem: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = moderationWrites.defineRoute({
-  method: 'post',
-  path: '/moderation/items/{itemId}/claim',
+}> = moderationItems.action('claim', {
   operationId: 'claimModerationItem',
   summary: 'Claims a row — a lease, not a write.',
   description:
     '**"Taking charge is not deciding."** It is a **short lease**, renewed while the person is\npresent and **released by the server** on expiry: a moderator whose phone dies does not freeze\na row for the whole live show.\n\n**Never queued offline**: replayed on reconnection, it would claim a row someone else has\nalready handled.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [DatePane.CHAT],
-  parameters: [
-    {
-      name: 'itemId',
-      in: 'path',
-      required: true,
-      schema: uuidIn(),
-    },
-  ],
   responses: {
     200: {
       description: 'Lease taken, with the instant it expires.',
@@ -596,59 +595,42 @@ export const settleModerationItem: Route<{
     >;
     409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
   };
-}> = moderationWrites.defineRoute({
-  method: 'post',
-  path: '/moderation/items/{itemId}/verdict',
+}> = moderationItems.action('verdict', {
   operationId: 'settleModerationItem',
   summary: 'Renders a verdict — conditional, never a blind idempotent write.',
   description:
     '**The second verdict is refused, and the refusal carries the winning decision** — author\n**and** verdict — so the screen can display "X has already deleted this message" instead of a\nbare failure. A bare refusal would force a second round trip in the middle of a live show.\n\n**This is why the command is conditional** (`expectedVersion`) and **not** a blind idempotent\nwrite: an idempotent replay would overwrite the first verdict, which is exactly the opposite\nof the rule.\n\n**Two of the four verdicts bear on the person, not on the message**: `mute` and `ban` compose\nwith the channel sanction. The three axes — message state, nature of the queue row, sanction\non the person — never stack.\n\n**Queued offline**, together with sanctions on a named person, and **nothing else**: it is the\none gesture on duty that a basement 4G must be able to defer.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [DatePane.CHAT],
-  parameters: [
-    {
-      name: 'itemId',
-      in: 'path',
-      required: true,
-      schema: uuidIn(),
-    },
-  ],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          verdict: vocabularyIn(MODERATION_VERDICTS).meta({
-            'x-arthome-vocabulary-source': 'MODERATION_VERDICTS',
-          }),
-          expectedDecisionVersion: z.int().meta({ minimum: undefined, maximum: undefined }).meta({
-            description:
-              '**The settlement axis, not the lease axis.** A verdict is accepted as long as\nno other verdict has been rendered — including when a colleague holds the row\nclaimed. Refused only by `moderation.already_settled`, which carries the winning\nverdict and its author.\n',
-          }),
-          reason: vocabularyIn(MODERATION_REASONS)
-            .meta({
-              'x-arthome-vocabulary-source': 'MODERATION_REASONS',
-            })
-            .optional(),
-          muteUntil: z
-            .string()
-            .regex(new RegExp('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$'))
-            .nullable()
-            .meta({
-              format: 'date-time',
-              description: '**An instant**, never a label. Absent = no limit.',
-            })
-            .optional(),
-          expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
-        }),
-        example: {
-          verdict: ModerationVerdict.MUTE,
-          reason: ModerationReason.HARASSMENT,
-          muteUntil: '2026-09-21T20:30:00Z',
-          expectedDecisionVersion: 0,
-        },
-      },
-    },
+  body: z.object({
+    verdict: vocabularyIn(MODERATION_VERDICTS).meta({
+      'x-arthome-vocabulary-source': 'MODERATION_VERDICTS',
+    }),
+    expectedDecisionVersion: z.int().meta({ minimum: undefined, maximum: undefined }).meta({
+      description:
+        '**The settlement axis, not the lease axis.** A verdict is accepted as long as\nno other verdict has been rendered — including when a colleague holds the row\nclaimed. Refused only by `moderation.already_settled`, which carries the winning\nverdict and its author.\n',
+    }),
+    reason: vocabularyIn(MODERATION_REASONS)
+      .meta({
+        'x-arthome-vocabulary-source': 'MODERATION_REASONS',
+      })
+      .optional(),
+    muteUntil: z
+      .string()
+      .regex(new RegExp('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$'))
+      .nullable()
+      .meta({
+        format: 'date-time',
+        description: '**An instant**, never a label. Absent = no limit.',
+      })
+      .optional(),
+    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
+  }),
+  example: {
+    verdict: ModerationVerdict.MUTE,
+    reason: ModerationReason.HARASSMENT,
+    muteUntil: '2026-09-21T20:30:00Z',
+    expectedDecisionVersion: 0,
   },
   responses: {
     200: {

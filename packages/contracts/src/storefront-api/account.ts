@@ -71,6 +71,13 @@ import {
 const accountRoutes = storefrontV1
   .tags(StorefrontTag.ACCOUNT)
   .headers(SurfaceParameter, TraceparentParameter);
+const SavedSearchIdParameter: PathParameter<'savedSearchId', z.ZodString> = {
+  name: 'savedSearchId',
+  in: 'path',
+  required: true,
+  schema: uuidIn(),
+};
+const savedSearches = accountRoutes.resource('me/saved-searches', { id: SavedSearchIdParameter });
 
 const START_SOCIAL_SIGN_IN_PROVIDER = ['google', 'facebook'] as const;
 const LIST_MY_TICKETS_WINDOW = ['upcoming', 'past'] as const;
@@ -2718,9 +2725,7 @@ export const createSavedSearch: Route<{
     409: typeof ConflictResponse;
     403: typeof CsrfRefusedResponse;
   };
-}> = accountRoutes.defineRoute({
-  method: 'post',
-  path: '/me/saved-searches',
+}> = savedSearches.create({
   operationId: 'createSavedSearch',
   summary: 'Saves a search.',
   description:
@@ -2736,40 +2741,33 @@ export const createSavedSearch: Route<{
       bearerToken: [],
     },
   ],
-  parameters: [IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          scope: vocabularyIn(CREATE_SAVED_SEARCH_SCOPE).meta({
-            'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
-            'x-arthome-vocabulary-reason':
-              'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.',
-          }),
-          categoryId: z.string().nullable().optional(),
-          name: z.string().max(80).nullable().optional(),
-          queryText: z.string().nullable().optional(),
-          criteria: z.looseObject({}),
-          channels: z
-            .array(
-              vocabularyIn(NOTIFICATION_CHANNELS).meta({
-                'x-arthome-vocabulary-source': 'NOTIFICATION_CHANNELS',
-              }),
-            )
-            .optional(),
+  item: SavedSearchSchema,
+  body: z.object({
+    scope: vocabularyIn(CREATE_SAVED_SEARCH_SCOPE).meta({
+      'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
+      'x-arthome-vocabulary-reason':
+        'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.',
+    }),
+    categoryId: z.string().nullable().optional(),
+    name: z.string().max(80).nullable().optional(),
+    queryText: z.string().nullable().optional(),
+    criteria: z.looseObject({}),
+    channels: z
+      .array(
+        vocabularyIn(NOTIFICATION_CHANNELS).meta({
+          'x-arthome-vocabulary-source': 'NOTIFICATION_CHANNELS',
         }),
-        example: {
-          scope: 'search',
-          name: 'Danse à Paris',
-          criteria: {
-            categoryIds: ['dance-contemporary'],
-            cityIds: ['paris'],
-          },
-          channels: [NotificationChannel.PUSH],
-        },
-      },
+      )
+      .optional(),
+  }),
+  example: {
+    scope: 'search',
+    name: 'Danse à Paris',
+    criteria: {
+      categoryIds: ['dance-contemporary'],
+      cityIds: ['paris'],
     },
+    channels: [NotificationChannel.PUSH],
   },
   responses: {
     201: {

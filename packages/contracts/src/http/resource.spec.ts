@@ -6,7 +6,7 @@ import { CatalogErrorCode } from '@arthome/core';
 
 import type { ErrorBody } from './errors.js';
 import { successStatusOf } from './index.js';
-import { storefrontV1 } from '../storefront-api/components.js';
+import { storefrontConventions, storefrontV1 } from '../storefront-api/components.js';
 import { studioV1 } from '../studio-api/components.js';
 
 const savedSearchId = {
@@ -133,5 +133,28 @@ describe('resource members', () => {
     expect(prices.path).toBe('/saved-searches/{savedSearchId}/prices');
     expect(prices.method).toBe('put');
     expect(searches.upsert({}).path).toBe('/saved-searches/{savedSearchId}');
+  });
+
+  it('carries the request example and an optional body, and drops its own success for a stated one', () => {
+    const route = searches.action('archive', {
+      body: Writable,
+      optionalBody: true,
+      example: { name: 'x' },
+      responses: { 202: { description: 'Accepted.' } },
+    });
+
+    expect(route.requestBody.required).toBe(false);
+    expect(route.requestBody.content['application/json'].example).toEqual({ name: 'x' });
+    expect(Object.keys(route.responses)).toContain('202');
+    expect(Object.keys(route.responses)).not.toContain('204');
+  });
+
+  it('lets a builder that already holds the idempotency key place it', () => {
+    const key = storefrontConventions.writeParameters[0];
+    const held = storefrontV1.headers(key).resource('things', { id: savedSearchId });
+
+    const names = held.action('freeze', {}).parameters.map((parameter) => parameter.name);
+
+    expect(names.filter((name) => name === key.name)).toHaveLength(1);
   });
 });

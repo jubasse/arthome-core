@@ -11,6 +11,8 @@ type Responses = Readonly<Record<string, Response>>;
  * the parameters a list takes, the validators of a read, the key and the version a write carries.
  */
 export interface ResourceConventions {
+    /** Never read at runtime: the fields of the envelope every response carries, for the client's types. */
+    readonly meta?: object;
     readonly item: (data: z.ZodType) => z.ZodType;
     readonly page: (data: z.ZodType) => z.ZodType;
     readonly listParameters: readonly Parameter[];
@@ -43,20 +45,30 @@ export interface ResourceContext {
     readonly parents: readonly PathParameterOf[];
 }
 type Conv<C extends ResourceContext> = Extract<C['conventions'], ResourceConventions>;
+type Without<T extends readonly Parameter[], Held extends readonly Parameter[]> = T extends readonly [infer First extends Parameter, ...infer Rest extends readonly Parameter[]] ? First extends Held[number] ? Without<Rest, Held> : readonly [First, ...Without<Rest, Held>] : readonly [];
+/** The parameters the convention adds, less those the builder already carries and so places itself. */
+type Added<C extends ResourceContext, K extends 'listParameters' | 'readParameters' | 'writeParameters'> = Without<Conv<C>[K], C['headers']>;
 /** What a member says beyond the convention: prose, metadata, extra parameters, responses and codes. */
 export type MemberDocs<Allowed extends string = string> = Omit<BuiltRouteDefinition<Allowed>, 'method' | 'path' | 'operationId' | 'responses' | 'requestBody' | 'parameters'> & {
     readonly operationId?: string;
     readonly parameters?: readonly Parameter[];
     readonly responses?: Responses;
+    /** The example of the request body. */
+    readonly example?: unknown;
+    /** The body is not required: the request may carry none. */
+    readonly optionalBody?: true;
 };
 type Docs<C extends ResourceContext, Own = unknown> = MemberDocs<C['allowed']> & Own;
-interface ItemBody<S extends z.ZodType> {
+type Envelope<C extends ResourceContext> = Conv<C> extends {
+    readonly meta?: infer M extends object;
+} ? M : object;
+type Item<C extends ResourceContext, S extends z.ZodType> = Envelope<C> & {
     readonly data: z.output<S>;
-}
-interface PageBody<S extends z.ZodType> {
+};
+type Page<C extends ResourceContext, S extends z.ZodType> = Envelope<C> & {
     readonly data: readonly z.output<S>[];
     readonly page: unknown;
-}
+};
 type Schema<T> = z.ZodType<T>;
 type ItemOf<D> = D extends {
     readonly item: infer S extends z.ZodType;
@@ -96,43 +108,43 @@ type Member<C extends ResourceContext, D, Method extends 'get' | 'post' | 'put' 
 type CollectionPath<C extends ResourceContext> = `/${C['name']}`;
 type ItemPath<C extends ResourceContext> = `/${C['name']}/{${C['id']['name']}}`;
 type ItemParameters<C extends ResourceContext> = readonly [...C['parents'], C['id']];
-interface Sent<S extends z.ZodType> {
-    readonly requestBody: JsonRequestBody<S>;
+interface Sent<S extends z.ZodType, Required = true> {
+    readonly requestBody: JsonRequestBody<S, Required>;
 }
-type ResponseOf<S extends z.ZodType | undefined, Status extends 200 | 201> = S extends z.ZodType ? Readonly<Record<Status, JsonResponse<Schema<ItemBody<S>>>>> : {
+type ResponseOf<C extends ResourceContext, S extends z.ZodType | undefined, Status extends 200 | 201> = S extends z.ZodType ? Readonly<Record<Status, JsonResponse<Schema<Item<C, S>>>>> : {
     readonly 204: Response;
 };
-export type FindRoute<C extends ResourceContext, D> = Member<C, D, 'get', ItemPath<C>, readonly [...ItemParameters<C>, ...Conv<C>['readParameters']], {
-    readonly 200: JsonResponse<Schema<ItemBody<ItemOf<D>>>>;
+export type FindRoute<C extends ResourceContext, D> = Member<C, D, 'get', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'readParameters'>], {
+    readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>>;
 }, {
     readonly 404: NotFound;
 }>;
-export type FindAllRoute<C extends ResourceContext, D> = Member<C, D, 'get', CollectionPath<C>, readonly [...C['parents'], ...Conv<C>['listParameters']], {
-    readonly 200: JsonResponse<Schema<PageBody<ItemOf<D>>>>;
+export type FindAllRoute<C extends ResourceContext, D> = Member<C, D, 'get', CollectionPath<C>, readonly [...C['parents'], ...Added<C, 'listParameters'>], {
+    readonly 200: JsonResponse<Schema<Page<C, ItemOf<D>>>>;
 }, {
     readonly 400: InvalidCursor;
 }>;
-export type CreateRoute<C extends ResourceContext, D> = Member<C, D, 'post', CollectionPath<C>, readonly [...C['parents'], ...Conv<C>['writeParameters']], {
-    readonly 201: JsonResponse<Schema<ItemBody<ResponseSchema<D>>>>;
+export type CreateRoute<C extends ResourceContext, D> = Member<C, D, 'post', CollectionPath<C>, readonly [...C['parents'], ...Added<C, 'writeParameters'>], {
+    readonly 201: JsonResponse<Schema<Item<C, ResponseSchema<D>>>>;
 }, {
     readonly 409: IdempotencyCodes;
 }, Sent<BodyOf<D>>>;
-export type UpdateRoute<C extends ResourceContext, D> = Member<C, D, 'patch', ItemPath<C>, readonly [...ItemParameters<C>, ...Conv<C>['writeParameters']], {
-    readonly 200: JsonResponse<Schema<ItemBody<ItemOf<D>>>>;
+export type UpdateRoute<C extends ResourceContext, D> = Member<C, D, 'patch', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>], {
+    readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>>;
 }, {
     readonly 404: NotFound;
     readonly 409: ConflictCodes;
 }, Sent<Schema<PatchBody<D>>>>;
-export type ReplaceRoute<C extends ResourceContext, D> = Member<C, D, 'put', ItemPath<C>, readonly [...ItemParameters<C>, ...Conv<C>['writeParameters']], {
-    readonly 200: JsonResponse<Schema<ItemBody<ItemOf<D>>>>;
+export type ReplaceRoute<C extends ResourceContext, D> = Member<C, D, 'put', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>], {
+    readonly 200: JsonResponse<Schema<Item<C, ItemOf<D>>>>;
 }, {
     readonly 404: NotFound;
     readonly 409: ConflictCodes;
 }, Sent<Schema<BodyOutput<D> & ExpectedVersion>>>;
-export type UpsertRoute<C extends ResourceContext, D> = Member<C, D, 'put', ItemPath<C>, readonly [...ItemParameters<C>, ...Conv<C>['writeParameters']], ResponseOf<ItemSchema<D>, 200>, {
+export type UpsertRoute<C extends ResourceContext, D> = Member<C, D, 'put', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>], ResponseOf<C, ItemSchema<D>, 200>, {
     readonly 409: IdempotencyCodes;
 }, BodyPart<D>>;
-export type DeleteRoute<C extends ResourceContext, D> = Member<C, D, 'delete', ItemPath<C>, readonly [...ItemParameters<C>, ...Conv<C>['writeParameters'], ExpectedVersionQuery], {
+export type DeleteRoute<C extends ResourceContext, D> = Member<C, D, 'delete', ItemPath<C>, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>, ExpectedVersionQuery], {
     readonly 204: Response;
 }, {
     readonly 404: NotFound;
@@ -140,25 +152,29 @@ export type DeleteRoute<C extends ResourceContext, D> = Member<C, D, 'delete', I
 }>;
 export type ActionRoute<C extends ResourceContext, Scope extends 'item' | 'collection', Name extends string, D> = Member<C, D, ActionMethod<D>, Scope extends 'item' ? `${ItemPath<C>}/${Name}` : `${CollectionPath<C>}/${Name}`, readonly [
     ...(Scope extends 'item' ? ItemParameters<C> : C['parents']),
-    ...(ActionMethod<D> extends 'get' ? readonly [] : Conv<C>['writeParameters'])
-], ActionSuccess<D>, ActionMethod<D> extends 'get' ? Record<never, never> : {
+    ...(ActionMethod<D> extends 'get' ? readonly [] : Added<C, 'writeParameters'>)
+], ActionSuccess<C, D>, ActionMethod<D> extends 'get' ? Record<never, never> : {
     readonly 409: IdempotencyCodes;
 }, BodyPart<D>>;
-export type SubresourceReplaceRoute<C extends ResourceContext, Name extends string, D> = Member<C, D, 'put', `${ItemPath<C>}/${Name}`, readonly [...ItemParameters<C>, ...Conv<C>['writeParameters']], ResponseOf<ItemSchema<D>, 200>, {
+export type SubresourceReplaceRoute<C extends ResourceContext, Name extends string, D> = Member<C, D, 'put', `${ItemPath<C>}/${Name}`, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>], ResponseOf<C, ItemSchema<D>, 200>, {
     readonly 404: NotFound;
     readonly 409: ConflictCodes;
 }, Sent<Schema<BodyOutput<D> & ExpectedVersion>>>;
 type ActionMethod<D> = D extends {
     readonly method: infer M extends 'get' | 'post' | 'put' | 'patch' | 'delete';
 } ? M : 'post';
-type ActionSuccess<D> = D extends {
+type SuccessKey = 200 | 201 | 202 | 203 | 204 | 206;
+type ActionSuccess<C extends ResourceContext, D> = D extends {
+    readonly responses: infer R;
+} ? [Extract<keyof R, SuccessKey>] extends [never] ? ActionDefaultSuccess<C, D> : Record<never, never> : ActionDefaultSuccess<C, D>;
+type ActionDefaultSuccess<C extends ResourceContext, D> = D extends {
     readonly status: infer S extends number;
 } ? D extends {
     readonly response: infer R extends z.ZodType;
-} ? Readonly<Record<S, JsonResponse<Schema<ItemBody<R>>>>> : Readonly<Record<S, Response>> : D extends {
+} ? Readonly<Record<S, JsonResponse<Schema<Item<C, R>>>>> : Readonly<Record<S, Response>> : D extends {
     readonly response: infer R extends z.ZodType;
 } ? {
-    readonly 200: JsonResponse<Schema<ItemBody<R>>>;
+    readonly 200: JsonResponse<Schema<Item<C, R>>>;
 } : {
     readonly 204: Response;
 };
@@ -168,7 +184,9 @@ type BodyOf<D> = D extends {
 type BodyOutput<D> = z.output<BodyOf<D>>;
 type BodyPart<D> = D extends {
     readonly body: infer B extends z.ZodType;
-} ? Sent<B> : unknown;
+} ? Sent<B, D extends {
+    readonly optionalBody: true;
+} ? false : true> : unknown;
 type ResponseSchema<D> = D extends {
     readonly response: infer R extends z.ZodType;
 } ? R : ItemOf<D>;
@@ -309,6 +327,6 @@ export type ActionOptions<C extends ResourceContext> = Docs<C, {
     readonly idempotent?: boolean;
 }>;
 type AnyBuilder = RouteBuilder<number, readonly Parameter[], Responses, string, ResourceConventions>;
-export declare function makeResource(builder: AnyBuilder, conventions: ResourceConventions, name: string, options: ResourceOptions<PathParameterOf, readonly PathParameterOf[]>): never;
+export declare function makeResource(builder: AnyBuilder, given: ResourceConventions, name: string, options: ResourceOptions<PathParameterOf, readonly PathParameterOf[]>, headers: readonly Parameter[]): never;
 export {};
 //# sourceMappingURL=resource.d.ts.map

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Surface } from '@arthome/core';
 import type { ErrorCode } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { StudioErrorEnvelopeSchema } from '../envelope/index.js';
+import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type { AccessorOf, ErrorModel, Header, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder } from '../http/index.js';
 declare const SURFACE: readonly [typeof Surface.STUDIO_WEB, typeof Surface.STUDIO_MOBILE];
 declare const SORT_DIR: readonly ["asc", "desc"];
@@ -41,6 +41,7 @@ declare const OWN_LIST_PARAMETERS: readonly [
 ];
 /** What every studio resource is served and written like: see `ResourceConventions`. */
 export declare const studioConventions: {
+    readonly meta?: z.output<typeof StudioEnvelopeMetaSchema>;
     readonly item: ResourceConventions['item'];
     readonly page: ResourceConventions['page'];
     readonly listParameters: typeof OWN_LIST_PARAMETERS;

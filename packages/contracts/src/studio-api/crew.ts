@@ -60,6 +60,13 @@ const crewRoutes = studioV1
   .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 const crewReads = crewRoutes.errors({ 403: ForbiddenResponse });
 const crewWrites = crewRoutes.headers(IdempotencyKeyParameter);
+const InvitationIdParameter: PathParameter<'invitationId', z.ZodString> = {
+  name: 'invitationId',
+  in: 'path',
+  required: true,
+  schema: uuidIn(),
+};
+const invitations = crewWrites.resource('invitations', { id: InvitationIdParameter });
 
 const GET_DATE_CREW_PANE_MEMBERSHIP_KIND = ['member', 'grant'] as const;
 const RESPOND_TO_INVITATION_DECISION = ['accept', 'decline'] as const;
@@ -435,39 +442,22 @@ export const respondToInvitation: Route<{
     404: typeof NotFoundResponse;
     409: typeof ConflictResponse;
   };
-}> = crewWrites.defineRoute({
-  method: 'post',
-  path: '/invitations/{invitationId}/response',
+}> = invitations.action('response', {
   operationId: 'respondToInvitation',
   summary: 'Accepts or declines an invitation.',
   description:
     "Acceptance publishes the membership **then** an increment of `rightsVersion` — that is what\nbrings the channel into the switcher **without a reload**, and what makes a lost channel's\nreal-time rooms be left without waiting for a reconnection.\n",
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
-  parameters: [
-    {
-      name: 'invitationId',
-      in: 'path',
-      required: true,
-      schema: uuidIn(),
-    },
-  ],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          decision: vocabularyIn(RESPOND_TO_INVITATION_DECISION).meta({
-            'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
-            'x-arthome-vocabulary-reason':
-              "The two answers this one command accepts. It is the command's shape, not a vocabulary: a third answer would be a third command.",
-          }),
-        }),
-        example: {
-          decision: 'accept',
-        },
-      },
-    },
+  body: z.object({
+    decision: vocabularyIn(RESPOND_TO_INVITATION_DECISION).meta({
+      'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
+      'x-arthome-vocabulary-reason':
+        "The two answers this one command accepts. It is the command's shape, not a vocabulary: a third answer would be a third command.",
+    }),
+  }),
+  example: {
+    decision: 'accept',
   },
   responses: {
     200: {

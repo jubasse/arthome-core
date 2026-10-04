@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Surface } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
+import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { StorefrontRelayedCode } from '../envelope/index.js';
 import type { AccessorOf, ErrorModel, Header, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement } from '../http/index.js';
 declare const SURFACE: readonly [
@@ -50,6 +50,7 @@ declare const IfNoneMatchParameter: HeaderParameter<'If-None-Match', z.ZodString
 declare const OWN_LIST_PARAMETERS: readonly [typeof CursorParameter, typeof LimitParameter];
 /** What every storefront resource is served and written like: see `ResourceConventions`. */
 export declare const storefrontConventions: {
+    readonly meta?: z.output<typeof StorefrontEnvelopeMetaSchema>;
     readonly item: ResourceConventions['item'];
     readonly page: ResourceConventions['page'];
     readonly listParameters: typeof OWN_LIST_PARAMETERS;

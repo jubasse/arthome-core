@@ -445,6 +445,7 @@ const OWN_LIST_PARAMETERS: readonly [typeof CursorParameter, typeof LimitParamet
 
 /** What every storefront resource is served and written like: see `ResourceConventions`. */
 export const storefrontConventions: {
+  readonly meta?: z.output<typeof StorefrontEnvelopeMetaSchema>;
   readonly item: ResourceConventions['item'];
   readonly page: ResourceConventions['page'];
   readonly listParameters: typeof OWN_LIST_PARAMETERS;

@@ -393,6 +393,7 @@ const OWN_LIST_PARAMETERS: readonly [
 
 /** What every studio resource is served and written like: see `ResourceConventions`. */
 export const studioConventions: {
+  readonly meta?: z.output<typeof StudioEnvelopeMetaSchema>;
   readonly item: ResourceConventions['item'];
   readonly page: ResourceConventions['page'];
   readonly listParameters: typeof OWN_LIST_PARAMETERS;

@@ -72,5 +72,20 @@ export interface RouteBuilder<V extends number | undefined, P extends readonly P
  * is the api's error vocabulary; without one, only responses written whole can be declared.
  */
 export declare function routeBuilder<A extends string = string>(model?: ErrorModel<A>): RouteBuilder<undefined, readonly [], Record<never, never>, A>;
+/** The resource a builder makes for `name`, for an annotation: `ResourceOf<typeof studioV1, 'incidents', typeof IncidentIdParameter>`. */
+export type ResourceOf<B, Name extends string, Id extends Parameter & {
+    readonly in: 'path';
+}, Parents extends readonly (Parameter & {
+    readonly in: 'path';
+})[] = readonly []> = B extends RouteBuilder<infer V extends number, infer P, infer E, infer A, infer K extends ResourceConventions> ? Resource<{
+    readonly version: V;
+    readonly headers: P;
+    readonly responses: E;
+    readonly allowed: A;
+    readonly conventions: K;
+    readonly name: Name;
+    readonly id: Id;
+    readonly parents: Parents;
+}> : never;
 export {};
 //# sourceMappingURL=builder.d.ts.map

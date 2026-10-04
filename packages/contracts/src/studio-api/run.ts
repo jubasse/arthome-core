@@ -57,6 +57,16 @@ const runRoutes = studioV1
   .tags(StudioTag.RUN)
   .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 const runReads = runRoutes.errors({ 403: ForbiddenResponse });
+const IncidentIdParameter: PathParameter<'incidentId', z.ZodString> = {
+  name: 'incidentId',
+  in: 'path',
+  required: true,
+  schema: uuidIn(),
+};
+const incidents = runRoutes.resource('dates/{dateId}/incidents', {
+  id: IncidentIdParameter,
+  parents: [DateIdParameter],
+});
 
 const GET_DATE_TECH_PANE_INGEST_PROTOCOL = ['rtmps', 'srt', 'whip'] as const;
 const GET_DATE_TECH_PANE_MONITOR_PATH = ['whep', 'll_hls'] as const;
@@ -991,43 +1001,34 @@ export const raiseIncident: Route<{
     403: typeof ForbiddenResponse;
     409: typeof ConflictResponse;
   };
-}> = runRoutes.defineRoute({
-  method: 'post',
-  path: '/dates/{dateId}/incidents',
+}> = incidents.create({
   operationId: 'raiseIncident',
   summary: 'Declares an incident and broadcasts the holding screen.',
   description:
     '**A client-side veil, never a stream switch**: the control plane publishes the state, the\nplayer displays it **over an untouched video**. Instant, identical on all three storefronts,\nand the media stays intact for the resume.\n\n**Cause and outcome are two vocabularies**, and separating them was necessary: the four\nentries in the sources are **outcomes**, while the mobile control room distinguished three\nmore **causes** that existed nowhere.\n\nThe message travels **with its authoring language**. The catalogue supplies **templates** per\nkind of incident, which the control room reuses or replaces.\n\n**Broadcast latency: ≤ 2 s, non-negotiable** — the client-side veil depends on it.\n',
   'x-arthome-maturity': 'provisional',
   'x-arthome-upstream': [Service.STREAMING],
-  parameters: [DateIdParameter, IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          incidentId: uuidOut(),
-          kind: vocabularyIn(INCIDENT_KINDS).meta({
-            'x-arthome-vocabulary-source': 'INCIDENT_KINDS',
-          }),
-          cause: vocabularyIn(INCIDENT_CAUSES).meta({
-            'x-arthome-vocabulary-source': 'INCIDENT_CAUSES',
-          }),
-          message: z.object({
-            contentLanguage: z.string(),
-            text: z.string().max(400),
-          }),
-        }),
-        example: {
-          incidentId: '019928d1-0000-7000-8000-000000000001',
-          kind: IncidentKind.HOLD_SCREEN,
-          cause: IncidentCause.VENUE_FEED_LOST,
-          message: {
-            contentLanguage: Locale.FR,
-            text: 'Interruption technique. Nous reprenons dans quelques instants.',
-          },
-        },
-      },
+  item: StudioIncidentSchema,
+  body: z.object({
+    incidentId: uuidOut(),
+    kind: vocabularyIn(INCIDENT_KINDS).meta({
+      'x-arthome-vocabulary-source': 'INCIDENT_KINDS',
+    }),
+    cause: vocabularyIn(INCIDENT_CAUSES).meta({
+      'x-arthome-vocabulary-source': 'INCIDENT_CAUSES',
+    }),
+    message: z.object({
+      contentLanguage: z.string(),
+      text: z.string().max(400),
+    }),
+  }),
+  example: {
+    incidentId: '019928d1-0000-7000-8000-000000000001',
+    kind: IncidentKind.HOLD_SCREEN,
+    cause: IncidentCause.VENUE_FEED_LOST,
+    message: {
+      contentLanguage: Locale.FR,
+      text: 'Interruption technique. Nous reprenons dans quelques instants.',
     },
   },
   responses: {
