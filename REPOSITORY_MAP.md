@@ -65,38 +65,61 @@ Declarations: `dist/entitlement/index.d.ts` — 1 exported names.
 
 #### @arthome/contracts/envelope
 
-Declarations: `dist/envelope/index.d.ts` — 7 exported names.
+Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
-- `STOREFRONT_RELAYED_CODES` (const) — `STOREFRONT_RELAYED_CODES: readonly ErrorCode[]` — The service refusals a storefront BFF relays to a surface, 'params' included (transport.md §5.5).
+- `STOREFRONT_RELAYED_CODES` (const) — The service refusals a storefront BFF relays to a surface, 'params' included (transport.md §5.5).
 - `StorefrontEnvelopeMetaSchema` (const) — The meta every STOREFRONT response composes.
 - `StorefrontErrorEnvelopeSchema` (const) — `StorefrontErrorEnvelopeSchema: z.ZodObject<{ error: typeof StorefrontErrorSchema; servedAt: z.ZodString; }, z.core.$loose>` — 'ErrorEnvelope' — the shape every failure arrives in.
 - `StorefrontErrorSchema` (const) — `StorefrontErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>` — 'Error' — ONE SHAPE, TWO SETS OF PROSE, and the split is the smallest version of D-065 §G there is.
+- `StorefrontRelayedCode` (type) — `type StorefrontRelayedCode = (typeof STOREFRONT_RELAYED_CODES)[number];` — The codes a storefront operation may declare: only what a surface can be handed.
 - `StudioEnvelopeMetaSchema` (const) — The meta every STUDIO response composes.
 - `StudioErrorEnvelopeSchema` (const) — `StudioErrorEnvelopeSchema: z.ZodObject<{ error: typeof StudioErrorSchema; servedAt: z.ZodString; }, z.core.$loose>`
 - `StudioErrorSchema` (const) — `StudioErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>`
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 43 exported names.
+Declarations: `dist/http/index.d.ts` — 71 exported names.
 
 - `AccessorOf` (type) — `type AccessorOf<T extends readonly string[]> = { readonly [Member in T[number] as Uppercase<Member>]: Member; };` — Named members for a list of words, 'CHAT' for ''chat'', so no module spells a member again.
+- `ActionOptions` (type)
+- `ActionRoute` (type)
 - `Api` (type) — `type Api<Routes extends Readonly<Record<string, Route>> = Readonly<Record<string, Route>>> = ApiDefinition<Routes>;`
 - `ApiComponents` (interface)
 - `ApiDefinition` (interface) — A whole document: its top-level keys as the document writes them, 'routes' in place of 'paths'.
 - `BuiltRoute` (type) — The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors.
-- `BuiltRouteDefinition` (type) — `type BuiltRouteDefinition = Omit<RouteDefinition, 'version'>;` — What a builder's 'defineRoute' takes: a route without its version, which the builder holds.
+- `BuiltRouteDefinition` (type) — `type BuiltRouteDefinition<Allowed extends string = string> = Omit<RouteDefinition, 'version'> & { readonly errors?: ErrorsInput<Allowed>; };` — What a builder's 'defineRoute' takes: a route without its version, which the builder holds.
+- `CodesOf` (type) — The codes an error response declares, or 'never' for a response that does not name them.
+- `CreateRoute` (type)
+- `CrudMember` (type) — `type CrudMember = 'find' | 'findAll' | 'create' | 'update' | 'replace' | 'upsert' | 'delete';`
+- `CrudOptions` (interface)
+- `CrudRoutes` (type) — `type CrudRoutes<C extends ResourceContext, O extends { readonly item: z.ZodType; }> = { readonly [M in SelectedMember<O> & CrudMember]: CrudRoute<C, O, M>; };`
+- `DeleteRoute` (type)
+- `ErrorBody` (type) — The body of a failure carrying 'C': a union over the members of 'C', discriminated on 'error.code'.
+- `ErrorModel` (interface) — An api's error vocabulary: the response it documents once per status (a component, so a route that adds nothing keeps its '$ref'), the code…
+- `ErrorResponse` (type) — `type ErrorResponse<C extends string> = JsonResponse<z.ZodType<ErrorBody<C>>>;` — An error response whose body is one of the envelopes of 'C'.
+- `ErrorStatus` (type) — `type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 410 | 412 | 422 | 423 | 429 | 500 | 502 | 503 | 504;`
+- `ErrorsInput` (type) — `type ErrorsInput<Allowed extends string> = Readonly<Partial<Record<ErrorStatus, Response | readonly Allowed[]>>>;` — What a status takes where errors are declared: a response as the document writes it, or its codes.
 - `Extensions` (type) — `type Extensions = Readonly<Record<'x-${string}', unknown>>;` — OpenAPI's specification extensions, carried into the document verbatim.
+- `FindAllRoute` (type)
+- `FindRoute` (type)
 - `Header` (interface)
 - `HeaderParameter` (type)
 - `HttpMethod` (type) — `type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'patch';`
 - `JsonRequestBody` (interface) — The annotation of a request carrying a JSON body.
 - `JsonResponse` (interface) — The annotation of a response with a JSON body.
 - `MediaType` (interface)
+- `MemberDocs` (type) — What a member says beyond the convention: prose, metadata, extra parameters, responses and codes.
+- `MergedErrors` (type) — The error responses a set of 'errors' declarations makes, over those already held.
 - `Parameter` (interface)
 - `ParameterLocation` (type) — `type ParameterLocation = 'path' | 'query' | 'header' | 'cookie';`
 - `PathParameter` (interface) — The annotation of a path parameter: OpenAPI makes every one required.
 - `QueryParameter` (type)
+- `ReplaceRoute` (type)
 - `RequestBody` (interface)
+- `Resource` (interface)
+- `ResourceContext` (interface) — What a resource knows about itself: the builder it comes from and the path it serves.
+- `ResourceConventions` (interface) — What an api decides once for every resource it serves: the envelope of one record and of a page, the parameters a list takes, the validator…
+- `ResourceOptions` (interface)
 - `Response` (interface)
 - `Route` (type) — `type Route<T extends RouteShape = RouteShape> = T & Omit<RouteDefinition, keyof T>;`
 - `RouteBody` (type) — `type RouteBody<R extends RouteShape> = R extends { readonly requestBody: { readonly content: infer C; }; } ? z.output<JsonSchemaOf<C>> : undefined;`
@@ -111,15 +134,21 @@ Declarations: `dist/http/index.d.ts` — 43 exported names.
 - `RouteStatus` (type) — `type RouteStatus<R extends RouteShape> = keyof R['responses'] & (number | '${number}');`
 - `RouteSuccessStatus` (type) — `type RouteSuccessStatus<R extends RouteShape> = Extract<RouteStatus<R>, 200 | 201 | 202 | 203 | 204 | 206 | '200' | '201' | '202' | '203' | '204' | '206'>;` — The 2xx statuses a route declares.
 - `SecurityRequirement` (type) — `type SecurityRequirement = Readonly<Record<string, readonly string[]>>;` — The schemes that satisfy a route, by name: '{}' is a call with no credential at all.
+- `SubresourceReplaceRoute` (type)
+- `UpdateRoute` (type)
+- `UpsertRoute` (type)
 - `VersionedPath` (type) — `type VersionedPath<R extends Pick<RouteShape, 'version' | 'path'>> = '/v${R['version']}${R['path']}';`
 - `accessorOf` (function) — `function accessorOf<const T extends readonly string[]>(members: T): AccessorOf<T>;` — The accessor built from the list rather than written beside it: the list stays the one declaration, which is what 'check-enums' reads.
 - `bodySchemaOf` (function) — `function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;` — The JSON body's schema, or 'undefined' for a route that takes none.
 - `defineApi` (function) — `function defineApi<const Routes extends Readonly<Record<string, Route>>>(definition: ApiDefinition<Routes>): Api<Routes>;`
+- `defineErrorModel` (function) — `function defineErrorModel<Allowed extends string>(model: ErrorModel<Allowed>): ErrorModel<Allowed>;`
 - `defineRoute` (function) — `function defineRoute<const T extends RouteDefinition>(definition: T): Route<T>;`
+- `errorResponseFor` (function) — `function errorResponseFor(model: ErrorModel<string> | undefined, status: number, codes: readonly string[], base: Response | undefined): Response;` — The response for a status.
 - `headersSchemaOf` (function) — `function headersSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteHeaders<R>, unknown>;` — The declared headers, under Node's lowercase names; every other header passes through.
+- `makeResource` (function)
 - `paramsSchemaOf` (function) — `function paramsSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteParams<R>, unknown>;`
 - `querySchemaOf` (function) — `function querySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteQuery<R>, unknown>;` — The query a server validates: undeclared parameters refused, defaults not materialised.
-- `routeBuilder` (function) — `function routeBuilder(): RouteBuilder<undefined, readonly [], Record<never, never>>;` — The empty builder: 'routeBuilder().version(1).tags(...).headers(...).errors(...)'.
+- `routeBuilder` (function) — `function routeBuilder<A extends string = string>(model?: ErrorModel<A>): RouteBuilder<undefined, readonly [], Record<never, never>, A>;` — The empty builder: 'routeBuilder(model).version(1).tags(...).headers(...).errors(...)'.
 - `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
 - `versionedPath` (function) — `function versionedPath(route: Pick<RouteShape, 'version' | 'path'>): string;` — The only versioning strategy: the version is a path prefix, '/v1/dates/{dateId}'.
 
@@ -755,7 +784,7 @@ Declarations: `dist/index.d.ts` — 458 exported names.
 
 #### @arthome/core/schema
 
-Declarations: `dist/schema/index.d.ts` — 55 exported names.
+Declarations: `dist/schema/index.d.ts` — 59 exported names.
 
 - `AccountIdSchema` (const) — `AccountIdSchema: z.ZodString`
 - `ArtistIdSchema` (const) — `ArtistIdSchema: z.ZodString`
@@ -766,6 +795,9 @@ Declarations: `dist/schema/index.d.ts` — 55 exported names.
 - `CurrencyCodeSchema` (const) — `CurrencyCodeSchema: z.ZodString` — ISO 4217, uppercase.
 - `DateIdSchema` (const) — `DateIdSchema: z.ZodString`
 - `DeviceIdSchema` (const) — `DeviceIdSchema: z.ZodString`
+- `ERROR_PARAMS` (const) — `ERROR_PARAMS: { readonly [C in keyof ErrorParamsMap]: z.ZodType<ErrorParamsMap[C]>; }`
+- `ErrorParamsMap` (interface)
+- `ErrorParamsOf` (type) — `type ErrorParamsOf<C extends string> = C extends keyof ErrorParamsMap ? ErrorParamsMap[C] : Readonly<Record<string, unknown>>;`
 - `ErrorSchema` (const) — The 'Error' shape both contracts publish: '{ code, nature, params, traceId }'.
 - `FailureNatureOut` (const) — `FailureNatureOut: VocabularyOut` — The failure nature, tolerant — the only vocabulary in either contract declaring its unknown-member fallback, because the cost is asymmetric…
 - `IanaTimeZoneSchema` (const) — `IanaTimeZoneSchema: z.ZodString` — An IANA time zone identifier: 'Europe/Paris'.
@@ -801,6 +833,7 @@ Declarations: `dist/schema/index.d.ts` — 55 exported names.
 - `VocabularyOutNullable` (type) — `type VocabularyOutNullable = z.ZodNullable<z.ZodString>;` — A tolerant vocabulary that may also be absent.
 - `dateIn` (const) — `dateIn: () => z.ZodString` — A calendar day, '2026-10-03', as a request carries it: 'format: date', an impossible day refused.
 - `dateTimeIn` (const) — `dateTimeIn: () => z.ZodString` — An RFC 3339 instant, offset allowed, as a request carries it in a path, a query or a header.
+- `errorParamsSchemaOf` (function) — `function errorParamsSchemaOf(code: ErrorCode): z.ZodType;`
 - `int64` (const) — `int64: () => z.ZodNumber` — A 64-bit integer on the wire: 'type: integer, format: int64', and no bounds.
 - `issueToCode` (function) — `function issueToCode(issue: z.core.$ZodIssue): { readonly code: string; readonly params: Readonly<Record<string, string>>; };` — The only sanctioned way out of a zod failure.
 - `sourceNameOf` (function) — `function sourceNameOf(values: readonly string[], name?: string): string;` — The name this vocabulary is published under, or the one the caller declares.

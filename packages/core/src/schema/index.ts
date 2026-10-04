@@ -84,6 +84,8 @@ export {
 } from './tax.js';
 
 export { ErrorSchema, FailureNatureOut, issueToCode } from './error.js';
+export type { ErrorParamsMap, ErrorParamsOf } from './error-params.js';
+export { ERROR_PARAMS, errorParamsSchemaOf } from './error-params.js';
 
 export { InternalTokenClaimsSchema } from './internal-token.js';
 export type { InternalTokenClaims } from './internal-token.js';

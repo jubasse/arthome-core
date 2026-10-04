@@ -56,7 +56,6 @@ import {
   PublicationChecklistItem,
   PublicationPromise,
   PublicationState,
-  type ErrorCode,
 } from '@arthome/core';
 import { ErrorSchema, InstantOut, int64 } from '@arthome/core/schema';
 
@@ -220,7 +219,16 @@ export const StudioErrorEnvelopeSchema: z.ZodObject<
  * when the BFF stopped waiting, so a code outside this list cannot reach a surface. A code joins
  * when a route can receive it and a surface has a screen for it.
  */
-export const STOREFRONT_RELAYED_CODES: readonly ErrorCode[] = [
+export const STOREFRONT_RELAYED_CODES: readonly [
+  typeof ApiErrorCode.SCHEMA_INVALID,
+  typeof ApiErrorCode.CURSOR_TOO_OLD,
+  typeof ApiErrorCode.NOT_FOUND,
+  typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
+  typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
+  typeof IdentityErrorCode.EMAIL_TAKEN,
+  typeof IdentityErrorCode.INVALID_CREDENTIALS,
+  typeof IdentityErrorCode.VERIFICATION_LINK_INVALID,
+] = [
   ApiErrorCode.SCHEMA_INVALID,
   ApiErrorCode.CURSOR_TOO_OLD,
   ApiErrorCode.NOT_FOUND,
@@ -231,3 +239,6 @@ export const STOREFRONT_RELAYED_CODES: readonly ErrorCode[] = [
   IdentityErrorCode.INVALID_CREDENTIALS,
   IdentityErrorCode.VERIFICATION_LINK_INVALID,
 ];
+
+/** The codes a storefront operation may declare: only what a surface can be handed. */
+export type StorefrontRelayedCode = (typeof STOREFRONT_RELAYED_CODES)[number];

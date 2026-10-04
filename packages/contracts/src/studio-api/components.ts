@@ -2,14 +2,17 @@ import { z } from 'zod';
 
 import {
   ApiErrorCode,
+  DomainErrorCode,
   FailureNature,
   ModerationErrorCode,
   ModerationVerdict,
   Service,
   Surface,
 } from '@arthome/core';
+import type { ErrorCode } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import {
+  errorParamsSchemaOf,
   InstantOut,
   int64,
   VOCABULARY_SOURCE_LOCAL,
@@ -17,17 +20,25 @@ import {
   uuidIn,
 } from '@arthome/core/schema';
 
-import { StudioErrorEnvelopeSchema } from '../envelope/index.js';
+import {
+  StudioEnvelopeMetaSchema,
+  StudioErrorEnvelopeSchema,
+  StudioErrorSchema,
+} from '../envelope/index.js';
 import type {
   AccessorOf,
+  ErrorModel,
   Header,
   HeaderParameter,
   JsonResponse,
   PathParameter,
   QueryParameter,
+  Response,
+  ResourceConventions,
   RouteBuilder,
 } from '../http/index.js';
-import { accessorOf, routeBuilder } from '../http/index.js';
+import { accessorOf, defineErrorModel, routeBuilder } from '../http/index.js';
+import { OffsetPageInfoSchema } from '../pagination/index.js';
 
 const SURFACE: readonly [typeof Surface.STUDIO_WEB, typeof Surface.STUDIO_MOBILE] = [
   Surface.STUDIO_WEB,
@@ -360,6 +371,86 @@ export const UnavailableResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>
   },
 };
 
-export const studioV1: RouteBuilder<1, readonly [], Record<never, never>> = routeBuilder().version(
+const IfNoneMatchParameter: HeaderParameter<'If-None-Match', z.ZodString> = {
+  name: 'If-None-Match',
+  in: 'header',
+  required: false,
+  schema: z.string(),
+};
+
+const ETagHeader: Header = {
+  description:
+    "The record's validator: send it back in `If-None-Match` to learn that nothing changed.",
+  schema: z.string(),
+};
+
+const OWN_LIST_PARAMETERS: readonly [
+  typeof PageParameter,
+  typeof PageSizeParameter,
+  typeof SortByParameter,
+  typeof SortDirParameter,
+] = [PageParameter, PageSizeParameter, SortByParameter, SortDirParameter];
+
+/** What every studio resource is served and written like: see `ResourceConventions`. */
+export const studioConventions: {
+  readonly item: ResourceConventions['item'];
+  readonly page: ResourceConventions['page'];
+  readonly listParameters: typeof OWN_LIST_PARAMETERS;
+  readonly readParameters: readonly [typeof IfNoneMatchParameter];
+  readonly readHeaders: { readonly ETag: Header };
+  readonly notModified: Response;
+  readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
+  readonly expectedVersion: z.ZodNumber;
+} = {
+  item: (data) => z.intersection(StudioEnvelopeMetaSchema, z.looseObject({ data })),
+  page: (data) =>
+    z.intersection(
+      StudioEnvelopeMetaSchema,
+      z.looseObject({ data: z.array(data), page: OffsetPageInfoSchema }),
+    ),
+  listParameters: OWN_LIST_PARAMETERS,
+  readParameters: [IfNoneMatchParameter],
+  readHeaders: { ETag: ETagHeader },
+  notModified: { description: 'Unchanged since the validator sent in `If-None-Match`.' },
+  writeParameters: [IdempotencyKeyParameter],
+  expectedVersion: int64(),
+};
+
+/**
+ * The codes a studio response stands for. A 409 is the business refusal whose `code` says which, so
+ * it already covers the idempotency refusals and a stale version.
+ */
+export const studioErrors: ErrorModel<ErrorCode> = defineErrorModel({
+  standard: {
+    400: { response: BadRequestResponse, codes: [ApiErrorCode.SCHEMA_INVALID] },
+    401: { response: UnauthorizedResponse, codes: [ApiErrorCode.UNAUTHENTICATED] },
+    403: { response: ForbiddenResponse, codes: [ApiErrorCode.FORBIDDEN] },
+    404: { response: NotFoundResponse, codes: [ApiErrorCode.NOT_FOUND] },
+    409: {
+      response: ConflictResponse,
+      codes: [
+        DomainErrorCode.STATE_CONFLICT,
+        ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
+        ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
+      ],
+    },
+    410: { response: GoneResponse, codes: [ApiErrorCode.CURSOR_TOO_OLD] },
+    429: { response: TooManyRequestsResponse, codes: [ApiErrorCode.RATE_LIMITED] },
+    503: { response: UnavailableResponse, codes: [ApiErrorCode.UPSTREAM_UNAVAILABLE] },
+  },
+  envelopeOf: (code) =>
+    StudioErrorEnvelopeSchema.extend({
+      error: StudioErrorSchema.extend({
+        code: z.literal(code),
+        params: errorParamsSchemaOf(code as ErrorCode),
+      }),
+    }),
+});
+
+export const studioV1: RouteBuilder<
   1,
-);
+  readonly [],
+  Record<never, never>,
+  ErrorCode,
+  typeof studioConventions
+> = routeBuilder(studioErrors).version(1).conventions(studioConventions);

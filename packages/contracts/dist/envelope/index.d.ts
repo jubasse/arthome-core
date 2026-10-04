@@ -46,7 +46,7 @@
  *   week on.
  */
 import { z } from 'zod';
-import { type ErrorCode } from '@arthome/core';
+import { ApiErrorCode, IdentityErrorCode } from '@arthome/core';
 import { ErrorSchema } from '@arthome/core/schema';
 /** The meta every STOREFRONT response composes. */
 export declare const StorefrontEnvelopeMetaSchema: z.ZodObject<{
@@ -94,5 +94,16 @@ export declare const StudioErrorEnvelopeSchema: z.ZodObject<{
  * when the BFF stopped waiting, so a code outside this list cannot reach a surface. A code joins
  * when a route can receive it and a surface has a screen for it.
  */
-export declare const STOREFRONT_RELAYED_CODES: readonly ErrorCode[];
+export declare const STOREFRONT_RELAYED_CODES: readonly [
+    typeof ApiErrorCode.SCHEMA_INVALID,
+    typeof ApiErrorCode.CURSOR_TOO_OLD,
+    typeof ApiErrorCode.NOT_FOUND,
+    typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
+    typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
+    typeof IdentityErrorCode.EMAIL_TAKEN,
+    typeof IdentityErrorCode.INVALID_CREDENTIALS,
+    typeof IdentityErrorCode.VERIFICATION_LINK_INVALID
+];
+/** The codes a storefront operation may declare: only what a surface can be handed. */
+export type StorefrontRelayedCode = (typeof STOREFRONT_RELAYED_CODES)[number];
 //# sourceMappingURL=index.d.ts.map

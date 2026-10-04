@@ -104,115 +104,6 @@ export type VersionedPath<R extends Pick<RouteShape, 'version' | 'path'>> =
 
 const VERSION_SUFFIX = /V(\d+)$/;
 
-type HeaderParameters = readonly (Parameter & { readonly in: 'header' })[];
-
-type Responses = Readonly<Record<string, Response>>;
-
-/** What a builder's `defineRoute` takes: a route without its version, which the builder holds. */
-export type BuiltRouteDefinition = Omit<RouteDefinition, 'version'>;
-
-type OwnParameters<D> = D extends { readonly parameters: infer X extends readonly Parameter[] }
-  ? X
-  : readonly [];
-
-type OwnBody<D> = D extends { readonly requestBody: infer B extends RequestBody }
-  ? { readonly requestBody: B }
-  : unknown;
-
-/** The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors. */
-export type BuiltRoute<
-  V extends number,
-  P extends readonly Parameter[],
-  E extends Responses,
-  D extends BuiltRouteDefinition,
-> = Route<
-  {
-    readonly method: D['method'];
-    readonly version: V;
-    readonly path: D['path'];
-    readonly parameters: readonly [...OwnParameters<D>, ...P];
-    readonly responses: Omit<E, keyof D['responses']> & D['responses'];
-  } & OwnBody<D>
->;
-
-/**
- * Settings shared by the routes of a group, accumulated one call at a time. Every call returns a
- * NEW builder and the types carry what was set, so `defineRoute` is inferred in full: the
- * builder's headers follow a route's own parameters and its errors sit under the route's
- * responses, and the route's own `tags` and `security` replace the builder's.
- */
-export interface RouteBuilder<
-  V extends number | undefined,
-  P extends readonly Parameter[],
-  E extends Responses,
-> {
-  version<const N extends number>(version: N): RouteBuilder<N, P, E>;
-  tags(...tags: readonly string[]): RouteBuilder<V, P, E>;
-  headers<const H extends HeaderParameters>(
-    ...headers: H
-  ): RouteBuilder<V, readonly [...P, ...H], E>;
-  errors<const R extends Responses>(responses: R): RouteBuilder<V, P, Omit<E, keyof R> & R>;
-  security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E>;
-  defineRoute<const D extends BuiltRouteDefinition>(
-    this: RouteBuilder<number, P, E>,
-    definition: D,
-  ): BuiltRoute<NonNullable<V>, P, E, D>;
-}
-
-interface BuilderSettings {
-  readonly version: number | undefined;
-  readonly tags: readonly string[] | undefined;
-  readonly headers: readonly Parameter[];
-  readonly errors: Responses;
-  readonly security: readonly SecurityRequirement[] | undefined;
-}
-
-function builderOf(
-  settings: BuilderSettings,
-): RouteBuilder<number, readonly Parameter[], Responses> {
-  const next = (changes: Partial<BuilderSettings>): ReturnType<typeof builderOf> =>
-    builderOf({ ...settings, ...changes });
-  return Object.freeze({
-    version: (version: number) => next({ version }),
-    tags: (...tags: readonly string[]) => next({ tags: Object.freeze([...tags]) }),
-    headers: (...headers: readonly Parameter[]) =>
-      next({ headers: Object.freeze([...settings.headers, ...headers]) }),
-    errors: (responses: Responses) =>
-      next({ errors: Object.freeze({ ...settings.errors, ...responses }) }),
-    security: (...requirements: readonly SecurityRequirement[]) =>
-      next({ security: Object.freeze([...requirements]) }),
-    defineRoute: (definition: BuiltRouteDefinition) => {
-      if (settings.version === undefined) {
-        throw new Error(
-          `defineRoute: "${definition.operationId}" has no version; call .version(n).`,
-        );
-      }
-      const tags = definition.tags ?? settings.tags;
-      const security = definition.security ?? settings.security;
-      const parameters = [...(definition.parameters ?? []), ...settings.headers];
-      return defineRoute({
-        ...definition,
-        version: settings.version,
-        ...(tags !== undefined && { tags }),
-        ...(security !== undefined && { security }),
-        ...(parameters.length > 0 && { parameters }),
-        responses: { ...settings.errors, ...definition.responses },
-      });
-    },
-  }) as unknown as RouteBuilder<number, readonly Parameter[], Responses>;
-}
-
-/** The empty builder: `routeBuilder().version(1).tags(...).headers(...).errors(...)`. */
-export function routeBuilder(): RouteBuilder<undefined, readonly [], Record<never, never>> {
-  return builderOf({
-    version: undefined,
-    tags: undefined,
-    headers: [],
-    errors: {},
-    security: undefined,
-  }) as unknown as RouteBuilder<undefined, readonly [], Record<never, never>>;
-}
-
 /** Version 1 keeps the bare name; a later version of an operation is named `{name}V{version}`. */
 function checkOperationId(definition: RouteDefinition): void {
   const suffix = VERSION_SUFFIX.exec(definition.operationId);
@@ -559,3 +450,7 @@ export function successStatusOf(route: RouteShape): number {
   }
   return first;
 }
+
+export * from './builder.js';
+export * from './errors.js';
+export * from './resource.js';

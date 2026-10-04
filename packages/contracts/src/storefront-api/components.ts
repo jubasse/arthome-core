@@ -8,21 +8,38 @@ import {
   Service,
   Surface,
 } from '@arthome/core';
+import type { ErrorCode } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { InstantOut, VOCABULARY_SOURCE_LOCAL, vocabularyIn, uuidIn } from '@arthome/core/schema';
+import {
+  errorParamsSchemaOf,
+  InstantOut,
+  int64,
+  VOCABULARY_SOURCE_LOCAL,
+  vocabularyIn,
+  uuidIn,
+} from '@arthome/core/schema';
 
-import { StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
+import {
+  StorefrontEnvelopeMetaSchema,
+  StorefrontErrorEnvelopeSchema,
+  StorefrontErrorSchema,
+} from '../envelope/index.js';
+import type { StorefrontRelayedCode } from '../envelope/index.js';
 import type {
   AccessorOf,
+  ErrorModel,
   Header,
   HeaderParameter,
   JsonResponse,
   PathParameter,
   QueryParameter,
+  Response,
+  ResourceConventions,
   RouteBuilder,
   SecurityRequirement,
 } from '../http/index.js';
-import { accessorOf, routeBuilder } from '../http/index.js';
+import { accessorOf, defineErrorModel, routeBuilder } from '../http/index.js';
+import { StorefrontCursorPageInfoSchema } from '../pagination/index.js';
 
 const SURFACE: readonly [
   typeof Surface.STOREFRONT_WEB,
@@ -408,8 +425,80 @@ export const UnavailableResponse: JsonResponse<typeof StorefrontErrorEnvelopeSch
   },
 };
 
+const IfNoneMatchParameter: HeaderParameter<'If-None-Match', z.ZodString> = {
+  name: 'If-None-Match',
+  in: 'header',
+  required: false,
+  schema: z.string(),
+};
+
+const ETagHeader: Header = {
+  description:
+    "The record's validator: send it back in `If-None-Match` to learn that nothing changed.",
+  schema: z.string(),
+};
+
+const OWN_LIST_PARAMETERS: readonly [typeof CursorParameter, typeof LimitParameter] = [
+  CursorParameter,
+  LimitParameter,
+];
+
+/** What every storefront resource is served and written like: see `ResourceConventions`. */
+export const storefrontConventions: {
+  readonly item: ResourceConventions['item'];
+  readonly page: ResourceConventions['page'];
+  readonly listParameters: typeof OWN_LIST_PARAMETERS;
+  readonly readParameters: readonly [typeof IfNoneMatchParameter];
+  readonly readHeaders: { readonly ETag: Header };
+  readonly notModified: Response;
+  readonly writeParameters: readonly [typeof IdempotencyKeyParameter];
+  readonly expectedVersion: z.ZodNumber;
+} = {
+  item: (data) => z.intersection(StorefrontEnvelopeMetaSchema, z.looseObject({ data })),
+  page: (data) =>
+    z.intersection(
+      StorefrontEnvelopeMetaSchema,
+      z.looseObject({ data: z.array(data), page: StorefrontCursorPageInfoSchema }),
+    ),
+  listParameters: OWN_LIST_PARAMETERS,
+  readParameters: [IfNoneMatchParameter],
+  readHeaders: { ETag: ETagHeader },
+  notModified: { description: 'Unchanged since the validator sent in `If-None-Match`.' },
+  writeParameters: [IdempotencyKeyParameter],
+  expectedVersion: int64(),
+};
+
+/**
+ * The codes a storefront response stands for. A 409 is the business refusal whose `code` says
+ * which, so it already covers the idempotency refusals.
+ */
+export const storefrontErrors: ErrorModel<StorefrontRelayedCode> = defineErrorModel({
+  standard: {
+    400: { response: BadRequestResponse, codes: [ApiErrorCode.SCHEMA_INVALID] },
+    401: { response: UnauthorizedResponse, codes: [ApiErrorCode.UNAUTHENTICATED] },
+    403: { response: ForbiddenResponse, codes: [ApiErrorCode.FORBIDDEN] },
+    404: { response: NotFoundResponse, codes: [ApiErrorCode.NOT_FOUND] },
+    409: {
+      response: ConflictResponse,
+      codes: [ApiErrorCode.IDEMPOTENCY_KEY_REUSED, ApiErrorCode.IDEMPOTENCY_IN_FLIGHT],
+    },
+    410: { response: GoneResponse, codes: [ApiErrorCode.CURSOR_TOO_OLD] },
+    429: { response: TooManyRequestsResponse, codes: [ApiErrorCode.RATE_LIMITED] },
+    503: { response: UnavailableResponse, codes: [ApiErrorCode.UPSTREAM_UNAVAILABLE] },
+  },
+  envelopeOf: (code) =>
+    StorefrontErrorEnvelopeSchema.extend({
+      error: StorefrontErrorSchema.extend({
+        code: z.literal(code),
+        params: errorParamsSchemaOf(code as ErrorCode),
+      }),
+    }),
+});
+
 export const storefrontV1: RouteBuilder<
   1,
   readonly [],
-  Record<never, never>
-> = routeBuilder().version(1);
+  Record<never, never>,
+  StorefrontRelayedCode,
+  typeof storefrontConventions
+> = routeBuilder(storefrontErrors).version(1).conventions(storefrontConventions);
