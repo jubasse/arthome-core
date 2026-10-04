@@ -588,8 +588,29 @@ Two limits:
 - Later, a class decorator (`@Implements(dateRoutes)`) could apply `@Endpoint` and `@EndpointInput`
   to each method by its name, leaving only the method bodies to write.
 
-The type and `@EndpointInput` are cheap: they join the platform part of pass 1. The class decorator
-waits.
+**Derived type or generated file: measured, not assumed.** The product owner's concern is that
+TypeScript tangles itself on the heavy cases, and it is founded. Derived types cost compile time,
+and their errors can run to a screen of nested generics where a generated, named interface
+(`PublishDateInput`) reads in one line.
+
+Two choices keep the server's types simple:
+- **A relation on demand (§5.4):** the handler returns the item with every expandable relation
+  optional, and a test checks that each requested relation is there. The narrowing by `include` is
+  the client's, through a const generic on the call.
+- **Several statuses (§6.4):** the handler returns `{ status, body }`, a union TypeScript handles
+  well.
+
+**The spike, in pass 1.** On the heaviest block, the 32 routes under `dates/{dateId}`, with unions,
+`include` and several statuses, three things are measured:
+1. the typecheck time, with and without the derived type;
+2. the error printed when a method is missing, and when a return is wrong: it must name the
+   operation and the field;
+3. the IDE hover on `HandlerInput` and `HandlerOutput`.
+
+If one of them fails, the interfaces are generated instead: a script writes one file per api, with
+named types per operation, checked byte for byte by a gate, as the OpenAPI documents are
+(`check:openapi-generated`). Either way, the controller writes `implements`, and `@EndpointInput`
+joins the platform part of pass 1. The class decorator waits.
 
 **A redirect serves browser navigations only:** the OAuth callback, a link in an email, an old slug
 for search engines. A call made by the application's code follows a redirect silently and cannot
