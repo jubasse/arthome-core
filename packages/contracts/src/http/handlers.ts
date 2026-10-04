@@ -50,13 +50,20 @@ export type Strict<T> = T extends readonly (infer Item)[]
       }
     : T;
 
+/** `degraded` is typed from the route's `degradable`: only the parts it names. */
+export type Degraded<R> = R extends { readonly degradable: infer D extends readonly string[] }
+  ? { readonly degraded?: readonly D[number][] }
+  : unknown;
+
 /** The data a handler returns: the declared body, strict, without the envelope meta the server stamps. */
-export type Returned<B> = [B] extends [undefined] ? undefined : Omit<Strict<B>, Stamped>;
+export type Returned<B, R = unknown> = [B] extends [undefined]
+  ? undefined
+  : Omit<Strict<B>, Stamped | 'degraded'> & Degraded<R>;
 
 type StatusNumber<S> = S extends `${infer N extends number}` ? N : S;
 
 type OutputOf<R extends RouteShape, S extends keyof R['responses']> = S extends unknown
-  ? { readonly status: StatusNumber<S>; readonly body: Returned<RouteResponseBody<R, S>> }
+  ? { readonly status: StatusNumber<S>; readonly body: Returned<RouteResponseBody<R, S>, R> }
   : never;
 
 /**
@@ -66,7 +73,7 @@ type OutputOf<R extends RouteShape, S extends keyof R['responses']> = S extends 
 export type HandlerOutput<R extends RouteShape> = [RouteSuccessStatus<R>] extends [never]
   ? never
   : IsSingle<RouteSuccessStatus<R>> extends true
-    ? Returned<RouteResponseBody<R, RouteSuccessStatus<R>>>
+    ? Returned<RouteResponseBody<R, RouteSuccessStatus<R>>, R>
     : OutputOf<R, RouteSuccessStatus<R>>;
 
 type IsSingle<T> = IsUnion<T> extends true ? false : true;

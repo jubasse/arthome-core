@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 148 exported names.
+Declarations: `dist/http/index.d.ts` — 152 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
@@ -96,6 +96,7 @@ Declarations: `dist/http/index.d.ts` — 148 exported names.
 - `CacheOptions` (interface)
 - `CachePolicy` (interface)
 - `ChildContext` (type) — The context of what is nested under one record of 'C', or under 'C' itself when it has no id.
+- `ClientView` (type) — What a client may receive: each tagged union of a body gains the unknown variant, so an exhaustive 'switch' on the tag must handle it.
 - `CodesByStatus` (type) — `type CodesByStatus = Readonly<Partial<Record<ErrorStatus, readonly string[]>>>;` — The codes each status of a declaration can carry.
 - `CodesOf` (type) — The codes an error response declares, or 'never' for a response that does not name them.
 - `CodesOfIdentity` (type) — `type CodesOfIdentity<I> = I extends Identity<string, z.ZodType, infer C> ? C : never;`
@@ -108,6 +109,7 @@ Declarations: `dist/http/index.d.ts` — 148 exported names.
 - `DEFAULT_BODY_LIMIT` (const) — `DEFAULT_BODY_LIMIT = 1048576` — 1 MiB: the ceiling of a request body unless a route says otherwise ('transport.md' §5.7).
 - `DERIVED_ERROR_CODES` (const) — The errors every route of an api can answer whatever it declares: the framework's refusals, the rate limit, the identity and the surface.
 - `DeadlineParameter` (const) — `DeadlineParameter: HeaderParameter<'x-arthome-deadline', z.ZodString, true>`
+- `Degraded` (type) — `type Degraded<R> = R extends { readonly degradable: infer D extends readonly string[]; } ? { readonly degraded?: readonly D[number][]; } : unknown;` — 'degraded' is typed from the route's 'degradable': only the parts it names.
 - `DeleteRoute` (type)
 - `DerivedStatus` (type) — `type DerivedStatus = keyof typeof DERIVED_ERROR_CODES;`
 - `ERROR_STATUS` (const) — `ERROR_STATUS: Readonly<Record<ErrorCode, ErrorStatus>>`
@@ -158,7 +160,7 @@ Declarations: `dist/http/index.d.ts` — 148 exported names.
 - `ResourceOptions` (interface)
 - `Response` (interface)
 - `RestrictedField` (interface)
-- `Returned` (type) — `type Returned<B> = [B] extends [undefined] ? undefined : Omit<Strict<B>, Stamped>;` — The data a handler returns: the declared body, strict, without the envelope meta the server stamps.
+- `Returned` (type) — `type Returned<B, R = unknown> = [B] extends [undefined] ? undefined : Omit<Strict<B>, Stamped | 'degraded'> & Degraded<R>;` — The data a handler returns: the declared body, strict, without the envelope meta the server stamps.
 - `RolesRequirement` (interface) — A role rule: the caller holds one of 'allowed' on the channel or the date 'on' names.
 - `RootScope` (interface)
 - `Route` (type) — `type Route<T extends RouteShape = RouteShape> = T & Omit<RouteDefinition, keyof T>;`
@@ -184,7 +186,9 @@ Declarations: `dist/http/index.d.ts` — 148 exported names.
 - `SortKey` (type) — `type SortKey = string | { readonly key: string; readonly right: string; };` — A sort key, and the right a caller needs to order by it when the field is restricted.
 - `Strict` (type) — A declared shape without the index signatures its loose objects carry, so a handler returning an undeclared field is a compile error.
 - `SubresourceReplaceRoute` (type)
+- `TaggedBrand` (interface) — Type-only: marks a union as tagged on 'Tag', so the client's view of it can add the unknown variant.
 - `TolerantParse` (type)
+- `UnknownVariant` (type) — `type UnknownVariant<Tag extends string> = Readonly<Record<Tag, string & {}>> & Readonly<Record<string, unknown>>;` — A variant the client does not know yet: kept raw, and treated as neutral ('transport.md' §5.11).
 - `UpdateRoute` (type)
 - `UpsertRoute` (type)
 - `VARY_HEADER` (const) — `VARY_HEADER: Header`

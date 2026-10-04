@@ -11,6 +11,8 @@ import type { z } from 'zod';
 
 import type {
   Api,
+  ClientView,
+  Degraded,
   DerivedStatus,
   ErrorBody,
   RouteInput,
@@ -65,7 +67,7 @@ export type ClientResponse<R extends RouteShape> =
   | {
       [S in DeclaredStatus<R>]: {
         readonly status: S;
-        readonly body: RouteResponseBody<R, S>;
+        readonly body: ClientView<RouteResponseBody<R, S>> & Degraded<R>;
         readonly headers: FetchResponseLike['headers'];
       };
     }[DeclaredStatus<R>]

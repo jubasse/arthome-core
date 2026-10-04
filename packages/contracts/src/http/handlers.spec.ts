@@ -4,8 +4,10 @@ import { z } from 'zod';
 import { identity } from './access.js';
 import { routeBuilder } from './builder.js';
 import { defineErrorModel } from './errors.js';
-import type { Endpoints, HandlerInput, HandlerOutput, RoutePrincipal } from './handlers.js';
+import type { Endpoints, HandlerInput, HandlerOutput, RoutePrincipal, Strict } from './handlers.js';
 import { strippingBodiesOf } from './strict.js';
+import type { ClientView } from './tagged.js';
+import { tagged } from './tagged.js';
 
 const model = defineErrorModel<string>({
   standard: {},
@@ -155,5 +157,52 @@ describe('strict on emit', () => {
         data: { title: 't', tags: [{ id: 'a', more: 2 }], surprise: 3 },
       }),
     ).toEqual({ servedAt: 's', rightsVersion: 1, data: { title: 't', tags: [{ id: 'a' }] } });
+  });
+});
+
+describe('the client view of a tagged union', () => {
+  it('adds the unknown variant, and leaves the server strict', () => {
+    const Outcome = tagged('outcome', {
+      ok: z.object({ receipt: z.string() }),
+      no: z.object({ code: z.string() }),
+    });
+    type Server = z.output<typeof Outcome>;
+    type Seen = ClientView<{ data: Server }>['data'];
+    expect(Outcome.safeParse({ outcome: 'ok', receipt: 'r' }).success).toBe(true);
+    const known: Seen = { outcome: 'ok', receipt: 'r' };
+    const later: Seen = { outcome: 'something-new', anything: 1 };
+    // @ts-expect-error the server never emits a variant it does not declare
+    const wrong: Strict<Server> = { outcome: 'something-new' };
+
+    expect([known, later, wrong]).toHaveLength(3);
+  });
+});
+
+describe('degraded, typed from degradable', () => {
+  const composed = base.public().defineRoute({
+    method: 'get',
+    path: '/composed',
+    operationId: 'composed',
+    degradable: ['viewerProgress', 'viewerRelations'] as const,
+    responses: {
+      200: {
+        description: 'Ok.',
+        content: {
+          'application/json': {
+            schema: z.looseObject({ degraded: z.array(z.string()).optional(), data: z.string() }),
+          },
+        },
+      },
+    },
+  });
+
+  it('lets a handler name only the parts the route says may be missing', () => {
+    type Out = HandlerOutput<typeof composed>;
+    const ok: Out = { data: 'x', degraded: ['viewerProgress'] };
+    // @ts-expect-error not a degradable part
+    const bad: Out = { data: 'x', degraded: ['somethingElse'] };
+
+    expect([ok, bad]).toHaveLength(2);
+    expect(composed.degradable).toEqual(['viewerProgress', 'viewerRelations']);
   });
 });

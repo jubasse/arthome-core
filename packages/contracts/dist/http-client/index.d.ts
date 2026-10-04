@@ -7,7 +7,7 @@
  * Node's all fit, and so does a test double.
  */
 import type { z } from 'zod';
-import type { Api, DerivedStatus, ErrorBody, RouteInput, RouteResponseBody, RouteShape } from '../http/index.js';
+import type { Api, ClientView, Degraded, DerivedStatus, ErrorBody, RouteInput, RouteResponseBody, RouteShape } from '../http/index.js';
 import { DERIVED_ERROR_CODES } from '../http/index.js';
 export interface FetchInit {
     readonly method: string;
@@ -47,7 +47,7 @@ type DerivedResponse<R extends RouteShape> = {
 export type ClientResponse<R extends RouteShape> = {
     [S in DeclaredStatus<R>]: {
         readonly status: S;
-        readonly body: RouteResponseBody<R, S>;
+        readonly body: ClientView<RouteResponseBody<R, S>> & Degraded<R>;
         readonly headers: FetchResponseLike['headers'];
     };
 }[DeclaredStatus<R>] | DerivedResponse<R>;

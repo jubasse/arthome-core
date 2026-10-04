@@ -6686,6 +6686,8 @@ paths:
       x-arthome-freshness: 60
       tags:
       - date
+      x-arthome-degradable:
+      - viewerProgress
       security:
       - {}
       - sessionCookie: []

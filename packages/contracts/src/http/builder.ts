@@ -109,7 +109,8 @@ export type BuiltRoute<
     ];
     readonly responses: Omit<MergedErrors<E, OwnErrors<D>>, keyof D['responses']> & D['responses'];
   } & OwnBody<D> &
-    AccessOf<X>
+    AccessOf<X> &
+    OwnDegradable<D>
 >;
 
 /** The parameters an identity adds to every route, and to a write. */
@@ -123,6 +124,10 @@ type IdentityParameters<X, Method> = X extends {
     ? Every
     : readonly [...Every, ...Writes]
   : readonly [];
+
+type OwnDegradable<D> = D extends { readonly degradable: infer P extends readonly string[] }
+  ? { readonly degradable: P }
+  : unknown;
 
 type AccessOf<X> = X extends Access ? { readonly access: X } : unknown;
 

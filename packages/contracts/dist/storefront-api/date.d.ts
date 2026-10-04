@@ -7,6 +7,7 @@ export declare const getDateDetail: Route<{
     method: 'get';
     version: 1;
     path: '/dates/{dateId}';
+    degradable: readonly ['viewerProgress'];
     parameters: readonly [
         typeof DateIdParameter,
         typeof SurfaceParameter,
