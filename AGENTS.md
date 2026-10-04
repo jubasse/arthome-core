@@ -26,6 +26,7 @@ here, and a skill for one of them would be the wrong instrument.
 | `pnpm -r run build` | every package. There is no root `build` script — `pnpm run build` fails |
 | `pnpm run generate:openapi` | writes `openapi/storefront.yaml` and `openapi/studio.yaml` from the route declarations. Run it after any change to `packages/contracts` that reaches a document, and commit both |
 | `pnpm run fix` | Prettier, then ESLint `--fix`, then Prettier again |
+| `node tools/sync-route-annotations.mjs <module.ts>` | after a route moves under a scope, an identity or a resource: rewrites the `method`, `path`, `parameters` and `access` of its explicit annotation (`--check` only reports) |
 
 The gates, and what each proves: `check-versions` (one version per dependency across manifests) ·
 `check-tsconfig` (the compiler locks are intact) · `check-enums` (no enumeration value copied as a

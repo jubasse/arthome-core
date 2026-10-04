@@ -598,7 +598,7 @@ as neutral**, never rejected. On the zod side, a bare `z.enum()` **does not do t
 `io: "output"` is exactly what separates them. Getting it wrong produces false documentation in
 both directions.
 
-### 5.12 Writing — PUT, PATCH and the action, and the errors a route declares
+### 5.12 Writing — PUT, PATCH and the action, and what a route declares
 
 The product owner's rule on how a record changes. **The test that decides: does this change have
 rules or consequences?** If it does, it is an action.
@@ -607,25 +607,57 @@ rules or consequences?** If it does, it is an action.
 |---|---|---|
 | `PUT` | `replace`, `subresource(name).replace()`, `upsert` | a **full replacement**, idempotent. The body is complete; an absent field is **reset**. `upsert` is the same on an id the client chose (`/follows/{artistId}`) |
 | `PATCH` | `update` | a **partial change** of one or several properties with **no business rule**. An absent field is unchanged; `null` clears an optional field. The schema is derived from the writable fields made optional, and can be overridden. It carries `expectedVersion` |
-| `POST /{res}/{id}/{action}` | `action(name, ...)` | **every business state change**: a status, a publication, a cancellation, a boolean that triggers rules or events. Never a `PATCH` on a status field. On the collection: `collectionAction`, `/{res}/{action}` |
+| `POST /{res}/{id}/{action}` | `action(name, ...)` | **every business state change**: a status, a publication, a cancellation, a boolean that triggers rules or events. Never a `PATCH` on a status field. On the collection: `collectionAction`, `/{res}/{action}`; on a single resource, `/{name}/{action}` |
+| `DELETE` | `delete` | the record **disappears** (a later read answers `404`), even when guarded: a guard is a `409` with a domain code (`deleteChannel` is refused while a payout is owed). If the record **stays readable with a new state**, it is an action (`cancelSubscription` is `POST /subscription/cancel`) |
 
-`find` (`GET` one, with `ETag` and `If-None-Match`), `findAll` (the paginated list), `create`
-(`POST`, with `Idempotency-Key`) and `delete` complete the set; `crud` composes `find`, `findAll`,
-`create`, `update` and `delete`, and `replace` and `upsert` only when asked for.
+`find` (`GET` one), `findAll` (the paginated list), `create` (`POST`, with `Idempotency-Key`) complete
+the set; `crud` composes `find`, `findAll`, `create`, `update` and `delete` (on a single resource,
+`find` and `update`), and `replace` and `upsert` only when asked for. A read carries an `ETag`, with
+`If-None-Match` and the `304`, only when its `cache` says so.
 
-**Errors are declared by code, in three levels merged per status**:
+**What exists once is a `single`** (`/me/preferences`, `/subscription`, a channel's `settings`): its
+URL has no id.
+
+**Data only its caller writes is `owner: 'caller'`** (preferences, saved searches, follows, the
+watchlist, reminders, passkeys, payment methods, devices): the write carries no `expectedVersion` and
+no `409 state.conflict` (the idempotency codes stay), two devices writing at once settle on the last
+write, and another caller's id answers `404 api.not_found`, never `403`: the answer must not reveal
+that the record exists. Data a team shares keeps its version, and its item must carry `version`.
+
+**Who may call is declared, and denied by default.** A route requires its surface's identity unless it
+says `.public()`; `.optionalAuth()` lets an anonymous caller in with a principal that may be null (a
+credential presented and refused is still a `401`). A rule beyond identity is a name with parameters
+and errors (`roles(...).on('channelId')`, `recentAuth()`, `throttle('auth')`) that the server maps to a
+guard; the identity writes the document's `security`, including the CSRF token of a cookie write.
+
+**Errors are declared by code, in three levels merged per status**, and the derivable ones are added
+by the declaration, because nothing the server can answer is undocumented:
 
 1. the errors common to a group (`.errors({ 403: ForbiddenResponse })`), written as responses;
-2. the crud conventions: `404 api.not_found` on `find`, `update`, `replace` and `delete`;
-   `409 state.conflict`, carrying the current version, on `update`, `replace` and `delete`; the
-   idempotency codes on every write; `400` on an invalid cursor;
+2. the conventions: `404 api.not_found` on `find`, `update`, `replace` and `delete` of one record;
+   `409 state.conflict`, carrying the current version, on `update`, `replace` and `delete` of a shared
+   record; the idempotency codes on every write; `400` on an invalid cursor and `410` on an old one;
 3. the domain codes of the operation, taken from the core vocabularies
    (`errors: { 409: [CatalogErrorCode.PRICES_LOCKED] }`).
 
+| What the route declares | Added |
+|---|---|
+| any input (path, query, body) | `400 api.schema_invalid` |
+| a body | `413 api.payload_too_large` (1 MiB, 2 MiB on a batch), `415 api.unsupported_media_type` |
+| a write carrying `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` header |
+| an identity | `401`; a write by cookie, the CSRF `403`; the studio's `If-Rights-Version` and its `403 api.rights_version_stale`, and `X-Arthome-Rights-Version` on every success |
+| a rule | its codes (`api.reauthentication_required`, `api.rate_limited`) |
+| the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `504 api.upstream_timeout`, `504 api.deadline_exceeded` |
+
+The framework's own refusals (a malformed JSON body, a wrong content type, a body over the ceiling,
+an unknown route) answer the envelope with these codes too, and an end-to-end test fails on a status
+or a code the route does not declare.
+
 `ERROR_PARAMS` in `@arthome/core/schema` maps each code to the schema of its `error.params`, so the
-documented response, the server and the typed client read the same one; the client receives a union
-discriminated on `error.code`. A storefront operation may declare only the codes of
-`STOREFRONT_RELAYED_CODES`, and the compiler refuses any other.
+documented response, the server and the typed client read the same one; a status that adds a code is
+documented as a `oneOf` of one envelope per code, and the client receives a union discriminated on
+`error.code`. A storefront operation may declare only the codes of `STOREFRONT_RELAYED_CODES`, and the
+compiler refuses any other.
 
 ---
 

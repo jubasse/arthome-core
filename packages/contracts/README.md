@@ -129,70 +129,149 @@ ground that the semantic comparison treats the list as a set, so the builder's h
 last in the document; the same goes for the keys of an operation, which the emitter writes in
 a fixed order (identity, prose, `x-*`, `security`, `parameters`, `requestBody`, `responses`).
 
+### Who may call: identity and rules
+
+A surface declares its identified state once (`identity('viewer', { schemes, principal, errors })`
+in its `components.ts`), and a builder opts in:
+
+```ts
+const me = storefrontV1.identity(viewer).tags(StorefrontTag.ACCOUNT).headers(SurfaceParameter, TraceparentParameter);
+storefrontV1.public()          // no identity: sign-in, public links
+storefrontV1.identity(viewer).optionalAuth()   // anonymous allowed, the principal may be null
+studioV1.identity(operator).requires(roles(MemberRole.PRODUCTION).on('channelId'), recentAuth())
+```
+
+- **The route's `security` is derived** from its identity and its method (a write by cookie adds
+  the CSRF token), so a route that also writes `security` by hand is refused when the module loads.
+- **`requires(rule)`** takes rules in the order the server applies them after the identity. A rule is
+  a declaration, a name with its parameters and its errors: `roles(...)` (with `.on('channelId')` for
+  the path parameter it reads), `recentAuth()` (the proof is the body field `reauthToken`),
+  `throttle('auth')`, or `requirement(name, { params, errors })`. The contract holds no server code:
+  the server maps each name to a guard, and a name with no guard fails at boot. The rules are
+  documented as `x-arthome-requires`.
+- **The identity may add parameters and headers** to every route or to a write only (the studio's
+  `If-Rights-Version`, its `X-Arthome-Rights-Version` on every success), and an `internal` identity
+  (a service's) marks its routes internal: `defineApi` keeps them out of a surface document.
+- **The route carries what the server needs**, runtime-readable: `access` (the identity, optional or
+  not), `requires`, `budgetMs`, `cache`, `bodyLimit`, `paging`, `sortable`, `expand`, `degradable`,
+  `owner`, `internal`. `sensitive(schema)` and `restricted(schema, right)` mark fields, and
+  `sensitivePathsOf` and `restrictedFieldsOf` say where.
+
+**What is derived.** Only a builder that declares an identity (or `.public()`) derives, so a route
+still on a bare builder is unchanged. Nothing the server can answer is undocumented:
+
+| The route declares | Added |
+|---|---|
+| a path or query parameter, or a body | `400 api.schema_invalid` |
+| a body | `413 api.payload_too_large`, `415 api.unsupported_media_type`, and a `bodyLimit` (1 MiB; 2 MiB on a batch) |
+| an `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` header on its successes |
+| an identity | `401`, the identity's codes, and on a write its write codes (the CSRF `403`, a stale rights version) |
+| a rule | the rule's codes (`403 api.reauthentication_required`, `429 api.rate_limited`) |
+| the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `504 api.upstream_timeout` and `api.deadline_exceeded` |
+| a `cache` with an `etag` | `If-None-Match`, `ETag` and the `304` |
+| a response that carries a `sensitive` field | `Cache-Control` on it |
+
+A response the group or the route writes whole is kept over the derived one. The derived errors are
+**not** in the route's annotation: the annotation lists the route's own statuses, and the server and
+the typed client read `route.responses` at run time.
+
 ### Resources
 
 A route that follows the conventions is declared through its resource rather than spelled whole.
-`builder.resource(name, { id, parents? })` needs the api's conventions (`.conventions(...)`: the
-envelope of a record and of a page, the list parameters, `If-None-Match` and `ETag`, the
-idempotency key, the type of `expectedVersion`) and exposes each operation individually:
+`builder.resource(name, { id, owner? }, closure?)` needs the api's conventions (`.conventions(...)`:
+the envelope of a record and of a page, the paging it serves, the idempotency key, the type of
+`expectedVersion`) and exposes each operation individually; `single(name, { owner? })` is the same
+for what exists once in its context (`/me/preferences`, a date's `run`), with no id in its URL:
 
 | Member | Operation | Derived `operationId` |
 |---|---|---|
-| `find` | `GET /{res}/{id}`, `ETag` and `If-None-Match` | `findX` |
-| `findAll` | `GET /{res}`, paginated | `findAllXs` |
-| `create` | `POST /{res}`, `Idempotency-Key` | `createX` |
-| `update` | `PATCH /{res}/{id}`, partial, `expectedVersion` | `updateX` |
-| `replace` | `PUT /{res}/{id}`, complete, idempotent | `replaceX` |
-| `delete` | `DELETE /{res}/{id}`, `expectedVersion` in the query | `deleteX` |
-| `upsert` | `PUT /{res}/{id}` on an id the client chose | `upsertX` |
-| `action(name, ...)` | `/{res}/{id}/{name}`, `POST` unless said | `{name}X` |
+| `find` | `GET /{res}/{id}`; `ETag` only when its `cache` says so | `findX` |
+| `findAll` | `GET /{res}`, paged, with `sortable`, `filters` | `findAllXs` |
+| `create` | `POST /{res}`, `Idempotency-Key` (`idempotent: false` leaves it off) | `createX` |
+| `update` | `PATCH`, partial, `expectedVersion` | `updateX` |
+| `replace` | `PUT`, complete, idempotent, `expectedVersion` | `replaceX` |
+| `delete` | `DELETE`; 204, or 200 with `response`; `expectedVersion` in the query | `deleteX` |
+| `upsert` | `PUT` on an id the client chose | `upsertX` |
+| `action(name, ...)` | `/{res}/{id}/{name}` (`/{name}/{action}` on a single), `POST` unless said | `{name}X` |
 | `collectionAction(name, ...)` | `/{res}/{name}` | `{name}Xs` |
+| `batch({ item })` | `POST /{res}/batch`: many by id, a table keyed by id | `batchXs` |
 | `subresource(name).replace()` | `PUT /{res}/{id}/{name}` | `replaceX{Name}` |
 
-`crud({ item, create, update, ... })` composes `find`, `findAll`, `create`, `update` and `delete`
-and returns an object with those keys; `replace` and `upsert` join it when their options are given.
-`omit` or `pick` narrows it, never both, and the compiler rejects the pair and a selected member
-whose options are missing. Which verb a change takes is `transport.md` §5.12: a full replacement
-is `PUT`, a partial change without a business rule is `PATCH`, every business state change is an
-action.
+- **`owner: 'caller'`**: only the caller writes this data, so there is no `expectedVersion` and no
+  `state.conflict`, the route says `owner`, and another caller's id is a `404`, never a `403`.
+- **A shared record's item carries `version`**: a write that takes `expectedVersion` refuses, at
+  compile time, an item without it (unless the route states its `responses` itself).
+- **Nesting**: a resource's closure, or `resource.resource(...)`, `.single(...)`, `.path(...)`,
+  declares what sits under one record; `path('channels/{channelId}', ChannelIdParameter)` declares a
+  prefix and its parameters once, and the compiler checks every `{placeholder}` has its parameter.
+- **`crud({ item, create, update, ... })`** composes `find`, `findAll`, `create`, `update` and
+  `delete` (on a single, `find` and `update`) and returns its routes **keyed by operation id**, so
+  the record spreads into a closure; `replace` and `upsert` join it when their options are given;
+  `omit` or `pick` narrows it, never both. `collect(...blocks)` flattens such records into the
+  `routes` record `defineApi` takes, and a test checks that every route a module exports is listed.
+- **A fixed `operationId` always wins** over the derived one: say it in the member's options, which
+  also carry what the document says beyond the convention: prose, `x-arthome-*`, `parameters`,
+  `responses` (a stated 2xx replaces the generated one), `example` and `optionalBody`, `errors`,
+  `cache`, `requires`.
 
-A fixed `operationId` always wins over the derived one, so an operation keeps its published name:
-say it in the member's options. The options also carry what the document says beyond the
-convention: prose, `x-arthome-*`, extra `parameters`, `responses` (a stated 2xx replaces the
-generated one), `example` and `optionalBody` for the request body, and `errors`.
+Which verb a change takes is `transport.md` §5.12: a full replacement is `PUT`, a partial change
+without a business rule is `PATCH`, every business state change is an action, and a record that
+disappears is a `DELETE` even when guarded.
+
+**Errors** are declared by code in three levels (`transport.md` §5.12). A status whose codes the api
+already documents keeps its shared response; a status that adds a code gets a `oneOf` of one envelope
+per code, each with the `params` schema of `ERROR_PARAMS` in `@arthome/core/schema`, which is what
+`check-openapi` R10 accepts. A storefront operation may declare only a code of
+`STOREFRONT_RELAYED_CODES`.
+
+### Reads and responses
+
+- **Paging** is data on the route: `paging: cursor({ maxLimit })`, `pages({ maxPageSize })` or
+  `changesSince()`. The api's conventions say which parameters and which page envelope each kind has,
+  and which is the default (cursor on the storefront, pages on the studio).
+- **`sortable: ['startsAt', { key: 'revenue', right: 'canRevenue' }]`** types `sortBy` from the keys,
+  and a restricted key adds `403 api.sort_key_forbidden`. **`filters`** takes an object schema.
+- **`expand: { author: AuthorSchema }`** adds the `include` parameter, makes each relation optional and
+  marks it `x-arthome-expanded-by`; the typed client narrows on `include` (a relation is in the type
+  only when it was asked for).
+- **`cache(Freshness.FIVE_MINUTES, { etag, scope, vary })`** is the freshness family of
+  `transport.md` §5.9. `budgetMs`, `bodyLimit` and `degradable` are the other values the server reads.
+- **`tagged('outcome', { succeeded, declined })`** is a strict union for the server, a `oneOf` with its
+  `discriminator` and its mapping for the document, and `parseTolerant` for a client that keeps a
+  variant it does not know. **`accepted({ operation })`** is a `202` that names the operation to follow.
+- **`restricted(schema, right)`** is a field only some callers see: optional in the type and the
+  document, absent from the answer otherwise.
+
+### What a handler implements
+
+`HandlerInput<R>` (a type alias, so a hover shows `{ params, query, headers, body, principal }`
+resolved), `HandlerOutput<R>` (the body of a single success, `{ status, body }` for several),
+`RoutePrincipal<R>` and `Endpoints<Block>` (one method per operation id) are derived from the
+declaration: a route declared and not implemented, and a wrong return, are compile errors that name
+the operation. Measured on the 32 routes under a date, `Endpoints<>` costs 0.2% of the type
+instantiations.
+
+### Converting a route
+
+1. Put the route under its scope: `studioV1.identity(operator).tags(...).headers(...).errors(...)`,
+   then `.resource('dates', { id })`, `.single('prices')`, `.path('panes')`.
+2. Replace `builder.defineRoute({ method, path, ... })` by the member (`date.single('prices').replace({
+   ... })`), drop the parameters the scope and the convention now add, drop `security`, and turn
+   `requestBody` into `body` and `example`.
+3. Keep the route's `Route<{ ... }>` annotation, and run
+   `node tools/sync-route-annotations.mjs <module.ts>`: it rewrites the four members a conversion
+   changes (`method`, `path`, `parameters`, `access`), drops a status the route no longer answers, and
+   adds the imports; `--check` fails when one is out of line. Then `pnpm run fix`.
+4. `pnpm run generate:openapi`, and read what moved. The documents grow by the derived errors and the
+   derived security, and are allowed to until the first client ships (`transport.md` §5.11).
 
 ```ts
-const seats = ticketingWrites.resource('seats', { id: SeatIdParameter });
+const date = publicationRoutes.resource('dates', { id: DateIdParameter });
 
-export const refundSeat: Route<{ /* the annotation, unchanged */ }> = seats.action('refund', {
-  operationId: 'refundSeat',
-  summary: '...',
-  body: RefundSeatBodySchema,
-  responses: { 200: { description: '...', content: { /* ... */ } } },
-});
+export const setDateReplayPolicy: Route<{ /* the annotation, synced */ }> = date
+  .single('replay-policy')
+  .replace({ operationId: 'setDateReplayPolicy', body: SetReplayPolicyBody, item: PublicationSchema });
 ```
-
-A builder that already holds a header the convention would add (the idempotency key, for a group
-declared with `.headers(IdempotencyKeyParameter)`) places it itself, and the member does not add it
-again. The explicit annotation of an exported route stays: the resource's types are checked against
-it, so a convention that disagrees with the published operation is a compile error.
-
-**Errors** are declared by code. `.errors({ 403: ForbiddenResponse })` states a response whole; a
-member adds codes (`errors: { 409: [CatalogErrorCode.PRICES_LOCKED] }`), merged per status with the
-crud conventions (`transport.md` §5.12). A status whose codes the api already documents keeps its
-shared response, so the document does not move; a status that adds a code gets an `anyOf` of one
-envelope per code, each with the `params` schema of `ERROR_PARAMS` in `@arthome/core/schema`. The
-client's type for a response is a union discriminated on `error.code`, and a storefront operation can
-declare only a code of `STOREFRONT_RELAYED_CODES`.
-
-**Converting an existing operation** is possible only where the convention is what the document
-already says. Ten are: `createSavedSearch`, `createDateDraft`, `raiseIncident` (`create`);
-`duplicateDate`, `decideDateOutcome`, `refundSeat`, `respondToInvitation`,
-`claimModerationItem`, `settleModerationItem`, `cancelSeat` (`action`). The others stay on
-`defineRoute`: the panes, the batches and the `/me` views are irregular by nature, and most of the
-rest differ from the convention in a way that would move the published document (an idempotent write
-that documents no `409`, a `PATCH` without `expectedVersion`, a `DELETE` without it, a read without
-`ETag`, a header order). Those are a contract decision, not a rewrite.
 
 ### Versions
 
