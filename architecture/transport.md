@@ -410,6 +410,7 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 |---|---|---|
 | `400` | `refused` | `api.schema_invalid`, `api.period_filter_required` |
 | `401` | `refused` | `api.unauthenticated`, `api.token_expired` |
+| `402` | `refused` | `order.payment_declined` (the payment provider declined; not a rule of ours) |
 | `403` | `refused` | `api.forbidden`, `api.sort_key_forbidden`, `api.rights_version_stale`, `pairing.identity_mismatch`, `order.sales_queue_admission_required` |
 | `404` | `refused` | `api.not_found` |
 | `409` | `refused` | `state.conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `api.idempotency_in_flight`, `capacity.tier_must_widen` |
@@ -423,6 +424,10 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 **"Typical", and the word is load-bearing**: this table names the codes worth knowing per status, not
 every member of `ERROR_CODES`. A code absent from it is not a defect — a code *in* it that the vocabulary
 does not carry is, which is what the gate checks.
+
+**Every code has one entry in `ERRORS`, in `@arthome/contracts/http`**: its status and an example of
+its params, and a code without one does not compile. Tests fail when a generated document shows a
+code under another status, or when an example does not parse with the code's `ERROR_PARAMS`.
 
 **The BFF never relays a service error as-is** (`nestjs-bff-gateway` skill, rule 6). It maps an
 **allowlist** of domain codes, which cross with their `params`, and everything else becomes

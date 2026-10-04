@@ -184,7 +184,9 @@ shared response, so the document does not move; a status that adds a code gets a
 envelope per code, each with the `params` schema of `ERROR_PARAMS` in `@arthome/core/schema`, which
 types them from `ErrorParamsMap` in `@arthome/core`. The
 client's type for a response is a union discriminated on `error.code`, and a storefront operation can
-declare only a code of `STOREFRONT_RELAYED_CODES`.
+declare only a code of `STOREFRONT_RELAYED_CODES`. Each code has one entry in `ERRORS` (`./http`):
+its status, which a test holds the generated documents to, and an example of its params, which a test
+parses with `ERROR_PARAMS`; `statusOf(code)` and `exampleOf(code)` read them.
 
 **Converting an existing operation** is possible only where the convention is what the document
 already says. Ten are: `createSavedSearch`, `createDateDraft`, `raiseIncident` (`create`);
