@@ -4,7 +4,7 @@
 > EDIT. `pnpm run check:decisions-index` fails when this file differs from what regenerating
 > would produce. Open `DECISIONS.md` at the id for the reason behind a row.
 
-122 decisions.
+123 decisions.
 
 | Decision | Title | Documents cited |
 |---|---|---|
@@ -130,3 +130,4 @@
 | D-118 | A studio team member may work on several devices at once | none |
 | D-119 | Authentication rate limits target the device, not the address | none |
 | D-120 | Contract routes are declared in TypeScript, and the OpenAPI documents are generated | none |
+| D-121 | Every microservice declares its API in the contracts, and documents it with @nestjs/swagger | none |
