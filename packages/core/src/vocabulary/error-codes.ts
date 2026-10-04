@@ -219,6 +219,13 @@ export const CATALOG_ERROR_CODES = [
   'date.provision_below_capacity',
   'date.stream_key_rotation_during_run',
   'date.postponement_limit_reached',
+  // The refusals of an outcome declaration (outcome.ts), one per fact the date opposes to it.
+  'date.outcome_final',
+  'date.not_public',
+  'date.already_started',
+  'date.not_started',
+  'date.already_ended',
+  'date.reschedule_in_past',
 ] as const;
 export type CatalogErrorCode = (typeof CATALOG_ERROR_CODES)[number];
 
@@ -235,6 +242,12 @@ export const CatalogErrorCode = {
   PROVISION_BELOW_CAPACITY: 'date.provision_below_capacity',
   STREAM_KEY_ROTATION_DURING_RUN: 'date.stream_key_rotation_during_run',
   POSTPONEMENT_LIMIT_REACHED: 'date.postponement_limit_reached',
+  OUTCOME_FINAL: 'date.outcome_final',
+  DATE_NOT_PUBLIC: 'date.not_public',
+  DATE_ALREADY_STARTED: 'date.already_started',
+  DATE_NOT_STARTED: 'date.not_started',
+  DATE_ALREADY_ENDED: 'date.already_ended',
+  RESCHEDULE_IN_PAST: 'date.reschedule_in_past',
 } as const;
 
 /**

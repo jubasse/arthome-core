@@ -165,7 +165,7 @@ describe('a commanded transition', () => {
       ),
     );
     expect(refusal.code).toBe(DomainErrorCode.STATE_CONFLICT);
-    expect(refusal.params).toEqual({ state: PublicationState.DRAFT, currentVersion: 7 });
+    expect(refusal.params).toEqual({ currentVersion: 7, state: PublicationState.DRAFT });
   });
 
   it('refuses a one-way transition whose promise was not acknowledged, naming it', () => {

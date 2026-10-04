@@ -138,6 +138,24 @@ export interface ErrorParamsMap {
     [CatalogErrorCode.POSTPONEMENT_LIMIT_REACHED]: {
         max: number;
     };
+    [CatalogErrorCode.OUTCOME_FINAL]: {
+        outcome: string;
+    };
+    [CatalogErrorCode.DATE_NOT_PUBLIC]: {
+        state: string;
+    };
+    [CatalogErrorCode.DATE_ALREADY_STARTED]: {
+        startsAt: string;
+    };
+    [CatalogErrorCode.DATE_NOT_STARTED]: {
+        startsAt: string;
+    };
+    [CatalogErrorCode.DATE_ALREADY_ENDED]: {
+        endsAt: string;
+    };
+    [CatalogErrorCode.RESCHEDULE_IN_PAST]: {
+        rescheduledTo: string;
+    };
     [ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS]: {
         datesOnSale: number;
         payoutsDue: number;
@@ -233,10 +251,8 @@ export interface ErrorParamsMap {
         body: string;
     };
     [DomainErrorCode.STATE_CONFLICT]: {
-        currentVersion?: number;
+        currentVersion: number;
         state?: string;
-        outcome?: string;
-        startsAt?: string;
     };
     [WatchDenialReason.NO_SEAT]: NoErrorParams;
     [WatchDenialReason.ROOM_NOT_OPEN]: NoErrorParams;

@@ -247,7 +247,7 @@ export declare function successStatusOf(route: RouteShape): number;
 export * from './access.js';
 export * from './builder.js';
 export * from './collect.js';
-export * from './error-status.js';
+export * from './error-registry.js';
 export * from './errors.js';
 export type * from './handlers.js';
 export * from './marks.js';

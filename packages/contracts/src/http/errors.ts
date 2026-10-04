@@ -11,7 +11,7 @@ import { ApiErrorCode } from '@arthome/core';
 import type { ErrorCode } from '@arthome/core';
 import type { ErrorParamsRead } from '@arthome/core/schema';
 
-import { statusOf } from './error-status.js';
+import { statusOf } from './error-registry.js';
 import type { JsonResponse, Response } from './index.js';
 
 export type ErrorStatus =

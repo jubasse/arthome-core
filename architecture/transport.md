@@ -425,10 +425,9 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 every member of `ERROR_CODES`. A code absent from it is not a defect — a code *in* it that the vocabulary
 does not carry is, which is what the gate checks.
 
-**Every code's status is `ERROR_STATUS`, in `@arthome/contracts/http`**: one status per code, and a
-code without one does not compile. A route lists codes and takes their statuses from it, the server
-answers a refusal with it, and a test fails when a generated document shows a code under another
-status.
+**Every code has one entry in `ERRORS`, in `@arthome/contracts/http`**: its status and an example of
+its params, and a code without one does not compile. Tests fail when a generated document shows a
+code under another status, or when an example does not parse with the code's `ERROR_PARAMS`.
 
 **The BFF never relays a service error as-is** (`nestjs-bff-gateway` skill, rule 6). It maps an
 **allowlist** of domain codes, which cross with their `params`, and everything else becomes

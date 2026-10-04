@@ -106,6 +106,12 @@ export interface ErrorParamsMap {
   };
   [CatalogErrorCode.STREAM_KEY_ROTATION_DURING_RUN]: { runState: string };
   [CatalogErrorCode.POSTPONEMENT_LIMIT_REACHED]: { max: number };
+  [CatalogErrorCode.OUTCOME_FINAL]: { outcome: string };
+  [CatalogErrorCode.DATE_NOT_PUBLIC]: { state: string };
+  [CatalogErrorCode.DATE_ALREADY_STARTED]: { startsAt: string };
+  [CatalogErrorCode.DATE_NOT_STARTED]: { startsAt: string };
+  [CatalogErrorCode.DATE_ALREADY_ENDED]: { endsAt: string };
+  [CatalogErrorCode.RESCHEDULE_IN_PAST]: { rescheduledTo: string };
 
   [ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS]: { datesOnSale: number; payoutsDue: number };
   [ChannelErrorCode.CREW_ROLE_RESERVED]: {
@@ -166,14 +172,8 @@ export interface ErrorParamsMap {
   };
   [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: { flag: string };
   [DomainErrorCode.SEAT_CODE_MALFORMED]: { body: string };
-  // A version conflict names the current version; a declaration that does not fit the state of
-  //   the date names what it met instead (catalog/outcome.ts), so each fact is optional.
-  [DomainErrorCode.STATE_CONFLICT]: {
-    currentVersion?: number;
-    state?: string;
-    outcome?: string;
-    startsAt?: string;
-  };
+  // `state` when the record has a lifecycle state: the operator learns it moved, without a reload.
+  [DomainErrorCode.STATE_CONFLICT]: { currentVersion: number; state?: string };
 
   [WatchDenialReason.NO_SEAT]: NoErrorParams;
   [WatchDenialReason.ROOM_NOT_OPEN]: NoErrorParams;

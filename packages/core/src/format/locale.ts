@@ -3,7 +3,7 @@
  * a package imported by seven services two concurrent requests would share the same language.
  */
 
-import { DomainError } from '../kernel/errors.js';
+import { DomainError, FailureNature } from '../kernel/errors.js';
 import { DomainErrorCode } from '../vocabulary/error-codes.js';
 
 /** The product's two languages. BCP 47, short form. */
@@ -34,7 +34,10 @@ export function pickLanguage(value: Bilingual, locale: Locale): string {
   const fallback = locale === Locale.FR ? value.en : value.fr;
   const chosen = preferred.length > 0 ? preferred : fallback;
   if (chosen.length === 0) {
-    throw new DomainError({ code: DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES });
+    throw new DomainError({
+      code: DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES,
+      nature: FailureNature.UNAVAILABLE,
+    });
   }
   return chosen;
 }
