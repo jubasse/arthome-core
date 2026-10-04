@@ -145,6 +145,39 @@ export const studioApi = defineApi({ /* ... */ routes: collect(members, settings
 - **Rules declared at several levels add up:** removing a member requires being a member of the
   channel, and holding the production role.
 
+**Nesting, at any depth.** Each scope offers `resource`, `singleton` and `path` again, so the tree
+nests as deep as the URL does:
+- inside a `resource`, a child sits under the item and inherits its id as a parent parameter;
+- inside a `singleton` or a `path`, a child sits under its path;
+- each level may add its own `requires` and `tags`, and they add up.
+
+The record a closure returns may hold nested records. `collect()` flattens them by operation id,
+and refuses a duplicate.
+
+```ts
+const channelRoutes = studioV1.resource('channels', { id: ChannelIdParameter }, (channel) => ({
+  getChannel: channel.find({ item: ChannelSchema }),
+  settings: channel.singleton('settings', (settings) => ({
+    updateChannelSettings: settings.update({ item: ChannelSettingsSchema, fields: ChannelSettingsSchema }),
+  })),
+  moderation: channel.path('moderation', (moderation) => ({
+    bannedWords: moderation.resource('banned-words', { id: WordParameter }, (word) => ({
+      addBannedWord: word.upsert({ /* ... */ }),     // PUT    /channels/{channelId}/moderation/banned-words/{word}
+      removeBannedWord: word.delete({ /* ... */ }),  // DELETE /channels/{channelId}/moderation/banned-words/{word}
+    })),
+  })),
+}));
+
+const channel = collect(channelRoutes);
+export const removeBannedWord: Route<{ /* the annotation, unchanged */ }> = channel.removeBannedWord;
+```
+
+**The design rule stays: nest a child only when it has no meaning outside its parent.** A channel's
+member, a channel's banned word and a date's chapter qualify. A seat or an order, whose id is
+unique on its own, stays at the root (`/seats/{seatId}`), however deep the domain places it.
+Today the deepest path has five segments and two ids
+(`/channels/{channelId}/moderation/banned-words/{word}`).
+
 **What does not change.** Each route is still exported on its own, with its annotation:
 `isolatedDeclarations` requires it for the published `.d.ts`, and the annotation is what checks a
 route against the published operation.
