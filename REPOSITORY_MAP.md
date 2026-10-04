@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 137 exported names.
+Declarations: `dist/http/index.d.ts` — 139 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
@@ -133,6 +133,7 @@ Declarations: `dist/http/index.d.ts` — 137 exported names.
 - `MediaType` (interface)
 - `MemberDocs` (type) — What a member says beyond the convention: prose, metadata, extra parameters, responses and codes.
 - `MergedErrors` (type) — The error responses a set of 'errors' declarations makes, over those already held.
+- `NATURE_BY_STATUS` (const) — `NATURE_BY_STATUS: Readonly<Record<ErrorStatus, FailureNature>>` — transport.md §5.5: a 4xx is refused, except 429; a 5xx is unavailable.
 - `Paging` (type)
 - `PagingConvention` (interface) — What an api says about a kind of paging: its parameters, and the envelope of one page of 'data'.
 - `PagingConventions` (interface)
@@ -198,6 +199,7 @@ Declarations: `dist/http/index.d.ts` — 137 exported names.
 - `headersSchemaOf` (function) — `function headersSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteHeaders<R>, unknown>;` — The declared headers, under Node's lowercase names; every other header passes through.
 - `identity` (function)
 - `makeResource` (function)
+- `natureOf` (function) — `function natureOf(code: ErrorCode): FailureNature;`
 - `pages` (function) — `function pages(options: { readonly maxPageSize: number; }): { readonly kind: 'pages'; readonly maxPageSize: number; };` — 'page' and 'pageSize': the studio's page with its total.
 - `paramsSchemaOf` (function) — `function paramsSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteParams<R>, unknown>;`
 - `parseTolerant` (function) — `function parseTolerant(schema: z.ZodType, value: unknown): TolerantParse;` — Parses with the schema, and accepts a value whose only faults are variants of a tagged union it does not know: the value comes back raw, wi…

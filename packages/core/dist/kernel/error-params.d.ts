@@ -101,6 +101,8 @@ export interface ErrorParamsMap {
     };
     [ModerationErrorCode.DECISION_VERSION_STALE]: NoErrorParams;
     [CatalogErrorCode.ARTIST_SLUG_TAKEN]: NoErrorParams;
+    [CatalogErrorCode.ARTIST_ALREADY_EXISTS]: NoErrorParams;
+    [CatalogErrorCode.SHOW_SLUG_TAKEN]: NoErrorParams;
     [CatalogErrorCode.DATE_HAS_SOLD_SEATS]: {
         seatsSold: number;
     };

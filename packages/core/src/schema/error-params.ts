@@ -102,6 +102,8 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
   [ModerationErrorCode.DECISION_VERSION_STALE]: none(),
 
   [CatalogErrorCode.ARTIST_SLUG_TAKEN]: none(),
+  [CatalogErrorCode.ARTIST_ALREADY_EXISTS]: none(),
+  [CatalogErrorCode.SHOW_SLUG_TAKEN]: none(),
   [CatalogErrorCode.DATE_HAS_SOLD_SEATS]: z.looseObject({ seatsSold: count() }),
   [CatalogErrorCode.OUTCOME_DECISION_FORBIDDEN]: z.looseObject({ canEscalateTo: list() }),
   [CatalogErrorCode.PRICES_LOCKED]: z.looseObject({ lockedAt: text() }),

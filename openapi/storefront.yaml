@@ -8218,6 +8218,8 @@ components:
           - moderation.automatic_cannot_override_human
           - moderation.decision_version_stale
           - artist.slug_taken
+          - artist.already_exists
+          - show.slug_taken
           - date.has_sold_seats
           - date.outcome_decision_forbidden
           - date.prices_locked

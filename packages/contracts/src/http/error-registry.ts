@@ -1,6 +1,7 @@
 /**
- * One entry per error code: the status it is answered with (transport.md §5.5) and an example of
- * its params, so a route's error responses are grouped and illustrated from one place.
+ * One entry per error code: the status it is answered with (transport.md §5.5), an example of its
+ * params, and its nature where it is not its status's, so a route's error responses are grouped
+ * and illustrated from one place.
  */
 
 import {
@@ -12,6 +13,7 @@ import {
   DateOutcome,
   DomainConstant,
   DomainErrorCode,
+  FailureNature,
   IdentityErrorCode,
   MemberRole,
   ModerationErrorCode,
@@ -39,7 +41,30 @@ import type { ErrorStatus } from './errors.js';
 export interface ErrorDefinition<C extends ErrorCode = ErrorCode> {
   readonly status: ErrorStatus;
   readonly example: ErrorParamsOf<C>;
+  /** Only where it differs from `NATURE_BY_STATUS`. */
+  readonly nature?: FailureNature;
 }
+
+/** transport.md §5.5: a 4xx is refused, except 429; a 5xx is unavailable. */
+export const NATURE_BY_STATUS: Readonly<Record<ErrorStatus, FailureNature>> = {
+  400: FailureNature.REFUSED,
+  401: FailureNature.REFUSED,
+  402: FailureNature.REFUSED,
+  403: FailureNature.REFUSED,
+  404: FailureNature.REFUSED,
+  409: FailureNature.REFUSED,
+  410: FailureNature.REFUSED,
+  412: FailureNature.REFUSED,
+  413: FailureNature.REFUSED,
+  415: FailureNature.REFUSED,
+  422: FailureNature.REFUSED,
+  423: FailureNature.REFUSED,
+  429: FailureNature.UNAVAILABLE,
+  500: FailureNature.UNAVAILABLE,
+  502: FailureNature.UNAVAILABLE,
+  503: FailureNature.UNAVAILABLE,
+  504: FailureNature.UNAVAILABLE,
+};
 
 const DATE_ID = '019928a0-7d31-7a10-b8c4-2f9e11a4c001';
 
@@ -65,7 +90,12 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
   [ApiErrorCode.PERIOD_FILTER_REQUIRED]: { status: 400, example: { maxRangeDays: 92 } },
   [ApiErrorCode.RIGHTS_VERSION_STALE]: { status: 403, example: { currentRightsVersion: 412 } },
   [ApiErrorCode.IDEMPOTENCY_KEY_REUSED]: { status: 409, example: {} },
-  [ApiErrorCode.IDEMPOTENCY_IN_FLIGHT]: { status: 409, example: { retryAfterMs: 1000 } },
+  // It carries `retryAfterMs`: the client is asked to retry, which a refusal never does.
+  [ApiErrorCode.IDEMPOTENCY_IN_FLIGHT]: {
+    status: 409,
+    example: { retryAfterMs: 1000 },
+    nature: FailureNature.UNAVAILABLE,
+  },
   [ApiErrorCode.DEADLINE_EXCEEDED]: { status: 504, example: {} },
   [ApiErrorCode.UPSTREAM_TIMEOUT]: { status: 504, example: { service: Service.CATALOG } },
   [ApiErrorCode.PAYLOAD_TOO_LARGE]: { status: 413, example: {} },
@@ -112,6 +142,13 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
   [ModerationErrorCode.DECISION_VERSION_STALE]: { status: 409, example: {} },
 
   [CatalogErrorCode.ARTIST_SLUG_TAKEN]: { status: 409, example: {} },
+  [CatalogErrorCode.ARTIST_ALREADY_EXISTS]: { status: 409, example: {} },
+  // The slug is the server's choice, and publishing again takes the next free one.
+  [CatalogErrorCode.SHOW_SLUG_TAKEN]: {
+    status: 409,
+    example: {},
+    nature: FailureNature.UNAVAILABLE,
+  },
   [CatalogErrorCode.DATE_HAS_SOLD_SEATS]: { status: 409, example: { seatsSold: 174 } },
   [CatalogErrorCode.OUTCOME_DECISION_FORBIDDEN]: {
     status: 403,
@@ -317,4 +354,9 @@ export function statusOf(code: ErrorCode): ErrorStatus {
 
 export function exampleOf<C extends ErrorCode>(code: C): ErrorParamsOf<C> {
   return ERRORS[code].example;
+}
+
+export function natureOf(code: ErrorCode): FailureNature {
+  const { status, nature } = ERRORS[code];
+  return nature ?? NATURE_BY_STATUS[status];
 }

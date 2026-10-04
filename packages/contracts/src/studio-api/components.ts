@@ -290,7 +290,7 @@ export const NotFoundResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> = 
 
 export const ConflictResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> = {
   description:
-    'A final business refusal, and the `code` says which. `state.conflict` carries **the current\nversion, and the state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the\npromise committed**; `moderation.already_settled` carries **the winning verdict and its\nauthor**.\n',
+    'A final business refusal, and the `code` says which. `state.conflict` carries **the current\nversion, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the\npromise committed**; `moderation.already_settled` carries **the winning verdict and its\nauthor**.\n',
   content: {
     'application/json': {
       schema: StudioErrorEnvelopeSchema,
