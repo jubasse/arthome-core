@@ -22,6 +22,7 @@
     "check:language": "arthome-check-language",
     "check:symbols": "arthome-check-symbols",
     "check:core-entry": "node tools/check-core-entry.mjs",
+    "check:contract-docs": "node tools/check-contract-docs.mjs",
     "generate:decisions-index": "node tools/check-decisions-index.mjs --write",
     "check:decisions-index": "node tools/check-decisions-index.mjs",
     "check:versions": "arthome-check-versions",
@@ -33,8 +34,9 @@
     "_comment:openapi-generated": "The two documents are GENERATED from the route declarations in @arthome/contracts (D-120), and committed for readers and tools. `generate:openapi` writes them; `check:openapi-generated` fails when a committed document is not byte for byte what the declarations generate, paths and components and top-level keys included. It reads dist/, so it builds first.",
     "generate:openapi": "python3 tools/generate-openapi.py",
     "check:openapi-generated": "python3 tools/generate-openapi.py --check",
+    "measure:surface-bundle": "node tools/measure-surface-bundle.mjs",
     "verify": "pnpm run verify:offline && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run check:openapi-generated && pnpm run check:map",
-    "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:language && pnpm run check:symbols && pnpm run check:core-entry && pnpm run check:decisions-index && pnpm run check:openapi && pnpm run check:vocabulary && node -e \"console.log('\\n  NOTE verify:offline is the subset that needs no install. It does NOT run format:check, lint, typecheck or test. Run pnpm run verify before pushing.')\""
+    "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:language && pnpm run check:symbols && pnpm run check:core-entry && pnpm run check:contract-docs && pnpm run check:decisions-index && pnpm run check:openapi && pnpm run check:vocabulary && node -e \"console.log('\\n  NOTE verify:offline is the subset that needs no install. It does NOT run format:check, lint, typecheck or test. Run pnpm run verify before pushing.')\""
   },
   "devDependencies": {
     "@arthome/tooling": "workspace:*",

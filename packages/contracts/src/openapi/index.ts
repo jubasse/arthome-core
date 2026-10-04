@@ -1,5 +1,7 @@
 /**
- * An api's OpenAPI document, emitted from its routes and components.
+ * An api's OpenAPI document, emitted from its routes and components, and from its docs: the prose,
+ * upstream, maturity and examples its modules register (`./docs.ts`). What the docs say wins over
+ * what a route still carries itself.
  *
  * Schemas go through ONE zod registry per direction: every component under its document name,
  * and every schema a route holds under a synthetic id. Without a registry `z.toJSONSchema`
@@ -10,6 +12,8 @@
 
 import { z } from 'zod';
 
+import type { ApiDocs, ExampleRegistry, OperationDoc } from './docs.js';
+import { maturityOf } from './docs.js';
 import type {
   Api,
   ApiComponents,
@@ -28,6 +32,9 @@ export type OpenApiDocument = Readonly<Record<string, unknown>>;
 
 /** What the path and the method say, not the operation. */
 const STRUCTURE = new Set(['method', 'version', 'path']);
+
+/** Written first, in this order, whatever order the declaration spells them. */
+const FIRST = ['operationId', 'summary', 'description', 'x-arthome-maturity', 'x-arthome-upstream'];
 
 /** Written last, in this order, whatever order the declaration spells them: the keys a reader scans for. */
 const LAST = new Set(['security', 'parameters', 'requestBody', 'responses']);
@@ -66,7 +73,10 @@ class DocumentBuilder {
   private readonly schemaNames = new Map<z.ZodType, string>();
   private slotCount = 0;
 
-  public constructor(components: ApiComponents) {
+  public constructor(
+    components: ApiComponents,
+    private readonly examples: ExampleRegistry | undefined,
+  ) {
     for (const [name, schema] of Object.entries(components.schemas ?? {})) {
       this.schemaNames.set(schema, name);
     }
@@ -109,7 +119,19 @@ class DocumentBuilder {
   }
 
   private media(media: MediaType, io: Io): Record<string, unknown> {
-    return this.withSchema(media, media.schema, io);
+    const { exampleFrom: _derivation, ...declared } = media;
+    const out = this.withSchema(declared, media.schema, io);
+    const registered = this.registeredExampleOf(media);
+    if (registered !== undefined) out.example = registered;
+    return out;
+  }
+
+  /** The schema's own registered example, else the one derived from the record it wraps. */
+  private registeredExampleOf(media: MediaType): unknown {
+    const own = this.examples?.firstOf(media.schema);
+    if (own !== undefined || media.exampleFrom === undefined) return own;
+    const source = this.examples?.firstOf(media.exampleFrom.of);
+    return source === undefined ? undefined : media.exampleFrom.as(source);
   }
 
   private content(
@@ -148,10 +170,14 @@ class DocumentBuilder {
     return out;
   }
 
-  public operation(route: Route): Record<string, unknown> {
+  public operation(route: Route, doc: OperationDoc | undefined): Record<string, unknown> {
+    const declared: Readonly<Record<string, unknown>> = { ...route, ...documented(route, doc) };
     const out: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(route)) {
-      if (!STRUCTURE.has(key) && !LAST.has(key) && !RUNTIME.has(key)) out[key] = value;
+    for (const key of FIRST) if (declared[key] !== undefined) out[key] = declared[key];
+    for (const [key, value] of Object.entries(declared)) {
+      if (!STRUCTURE.has(key) && !LAST.has(key) && !RUNTIME.has(key) && !(key in out)) {
+        out[key] = value;
+      }
     }
     if (route.requires !== undefined && route.requires.length > 0) {
       out['x-arthome-requires'] = route.requires.map((rule) => ({
@@ -219,6 +245,23 @@ class DocumentBuilder {
     }
     return inlined(components, slotJson) as Record<string, unknown>;
   }
+}
+
+/** What the docs registry says of an operation, as the keys a route would carry. */
+function documented(route: Route, doc: OperationDoc | undefined): Record<string, unknown> {
+  if (doc === undefined) return {};
+  const upstream = doc.upstream ?? (route['x-arthome-upstream'] as OperationDoc['upstream']);
+  const maturity = doc.maturity ?? maturityOf(upstream ?? []);
+  if (maturity === undefined) {
+    throw new Error(
+      `openapi: "${route.operationId}" calls no service a maturity derives from; state its maturity.`,
+    );
+  }
+  return {
+    description: doc.description,
+    'x-arthome-maturity': maturity,
+    ...(upstream !== undefined && { 'x-arthome-upstream': upstream }),
+  };
 }
 
 function stripped(json: unknown): unknown {
@@ -299,23 +342,46 @@ function mapped(json: unknown, schemas: Readonly<Record<string, unknown>>): unkn
   return out;
 }
 
-export function openApiDocumentOf(api: Api): OpenApiDocument {
-  const builder = new DocumentBuilder(api.components);
-  const document: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(api)) {
-    if (key === 'routes') {
-      const paths: Record<string, Record<string, unknown>> = {};
-      for (const route of Object.values(api.routes)) {
-        const path = versionedPath(route);
-        paths[path] = { ...paths[path], [route.method]: builder.operation(route) };
-      }
-      document.paths = paths;
-    } else if (key === 'components') {
-      document[key] = componentsOf(builder, api.components);
-    } else {
-      document[key] = value;
-    }
+function extensionsOf(source: object): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(source).filter(([key]) => key.startsWith('x-')));
+}
+
+function undocumentedOperations(api: Api, docs: ApiDocs | undefined): readonly string[] {
+  return Object.keys(docs?.operations ?? {}).filter((operationId) => !(operationId in api.routes));
+}
+
+export function openApiDocumentOf(api: Api, docs?: ApiDocs): OpenApiDocument {
+  const strays = undocumentedOperations(api, docs);
+  if (strays.length > 0) {
+    throw new Error(`openapi: documented, but not an operation of this api: ${strays.join(', ')}.`);
   }
+  const info = docs?.info ?? api.info;
+  if (info === undefined) throw new Error('openapi: the document has no `info`.');
+  const servers = docs?.servers ?? api.servers;
+  const tags = docs?.tags ?? api.tags;
+  const securitySchemes = docs?.securitySchemes ?? api.components.securitySchemes;
+  const { securitySchemes: _declared, ...components } = api.components;
+  const builder = new DocumentBuilder(api.components, docs?.examples);
+  const paths: Record<string, Record<string, unknown>> = {};
+  for (const route of Object.values(api.routes)) {
+    const path = versionedPath(route);
+    const operation = builder.operation(route, docs?.operations[route.operationId]);
+    paths[path] = { ...paths[path], [route.method]: operation };
+  }
+  const document: Record<string, unknown> = {
+    openapi: api.openapi,
+    ...extensionsOf(api),
+    ...(docs !== undefined && extensionsOf(docs)),
+    info,
+    ...(servers !== undefined && { servers }),
+    ...(tags !== undefined && { tags }),
+    ...(api.security !== undefined && { security: api.security }),
+    paths,
+    components: componentsOf(builder, {
+      ...(securitySchemes !== undefined && { securitySchemes }),
+      ...components,
+    }),
+  };
   const schemas = builder.emitSchemas();
   const out = resolved(document) as Record<string, unknown>;
   if (api.components.schemas !== undefined) {
@@ -323,3 +389,5 @@ export function openApiDocumentOf(api: Api): OpenApiDocument {
   }
   return mapped(out, schemas) as Record<string, unknown>;
 }
+
+export * from './docs.js';
