@@ -97,6 +97,62 @@ exports it, and the api lists it under `routes`. This keeps three properties:
   so a `crud()` result spreads in one line. It needs the route type to carry its `operationId` as
   a literal. If that is costly, the listing stays by hand and the test above suffices.
 
+### 2.1 `path(template, ...parameters)`: a prefix, and the routes under it
+
+Most routes sit under a few prefixes:
+
+| Surface | Prefix | Operations |
+|---|---|---|
+| storefront | `me` | 33 |
+| storefront | `auth` | 13 |
+| storefront | `dates/{dateId}` | 10 |
+| studio | `dates/{dateId}` | 32 |
+| studio | `channels/{channelId}` | 29 |
+
+`path()` declares such a prefix once:
+- **its path parameters are declared once**, and the compiler checks that every `{placeholder}` in
+  the template has its parameter;
+- **what it sets applies to everything below**, like any builder setting: `requires`, `tags`,
+  `identity`;
+- **a nested resource stops repeating** its parents and its full path.
+
+```ts
+const channel = studioV1
+  .path('channels/{channelId}', ChannelIdParameter)
+  .requires(roles(...MEMBER_ROLES).on('channelId'));
+
+const members = channel.resource('members', { id: PersonIdParameter }, (m) => ({
+  listMembers: m.findAll({ item: MemberSchema, paging: pages({ maxPageSize: 50 }) }),
+  removeMember: m.delete({ requires: [roles(MemberRole.PRODUCTION).on('channelId')] }),
+}));
+
+const settings = channel.singleton('settings', (s) => ({
+  getChannelSettings: s.find({ item: ChannelSettingsSchema }),
+  updateChannelSettings: s.update({ item: ChannelSettingsSchema, fields: ChannelSettingsSchema }),
+}));
+
+export const removeMember: Route<{ /* the annotation, unchanged */ }> = members.removeMember;
+export const studioApi = defineApi({ /* ... */ routes: collect(members, settings /* ... */) });
+```
+
+**The closure is optional, and it returns its routes.**
+- `resource`, `singleton` and `path` accept a callback that returns a record of routes, keyed by
+  operation id, and they return that record.
+- **What it gives:** the code mirrors the URL tree, and `collect()` takes the record whole, so the
+  listing is one line per block.
+- **It never registers anything as a side effect.** A registration would lose each route's type, and
+  bring back the hidden state that §2 rules out.
+- **Rules declared at several levels add up:** removing a member requires being a member of the
+  channel, and holding the production role.
+
+**What does not change.** Each route is still exported on its own, with its annotation:
+`isolatedDeclarations` requires it for the published `.d.ts`, and the annotation is what checks a
+route against the published operation.
+
+**The risk to measure.** Nested generics deepen the type instantiation, and these route types are
+already heavy. The pass measures the cost on the 32 routes under `dates/{dateId}`. If the compiler
+suffers, the closure goes and `path()` stays: the prefix is the real gain.
+
 ## 3. Resources
 
 ### 3.1 `singleton(name, options)`
