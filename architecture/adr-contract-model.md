@@ -1,6 +1,7 @@
 # ADR — The contract model, second pass: what a route declares, and what is derived from it
 
-**Status**: **proposal** — written on 2026-10-04 for the product owner's review. Nothing is built.
+**Status**: **accepted** — arbitrated by the product owner on 2026-10-04, D-122. Its §11 takes the
+recommended answers. Pass 1 is in progress.
 **Date**: 4 October 2026. **Scope**: what `@arthome/contracts` lets a route declare, and what the
 server and the typed client derive from it. Not in scope: the studio's rights matrix (§4.4) and
 the real-time contracts (§8).
