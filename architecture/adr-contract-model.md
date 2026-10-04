@@ -609,7 +609,7 @@ Two choices keep the server's types simple:
 3. the IDE hover on `HandlerInput` and `HandlerOutput`.
 
 If one of them fails, the interfaces are generated instead, **in the package that consumes the
-contracts, at install**. That is the product owner's proposal:
+contracts, by its own scripts**. That is the product owner's proposal, made safe:
 - **The generator** ships with `@arthome/contracts` as a command. It reads the installed apis and
   writes one file per api into a git-ignored folder, with named types per operation.
 - **The consumer runs it as a step of its own scripts:** in `bootstrap`, which reinstalls whenever
