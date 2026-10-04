@@ -145,7 +145,7 @@ export const PublicationSchema: z.ZodObject<
     "**The rank travels with the state.** The event board sorts by state, and the order is the\nmachine's, not the alphabet's. Without a served rank, every surface reinvents its own ordering\ntable.\n",
   ),
   version: int().describe(
-    'The studio is **multi-operator without a lock**: the arbitration is on the server. Every\ntransition carries `expectedVersion`, and a command sent from `technical` while the current\nstate is `live` is refused with `state.conflict` **with the current state and version**.\n',
+    'The studio is **multi-operator without a lock**: the arbitration is on the server. Every\ntransition carries `expectedVersion`, and a command sent from `technical` while the current\nstate is `live` is refused with `state.conflict` **and the current version**.\n',
   ),
   publishedAt: instantNullable().optional(),
   pricesLockedAt: instantNullable().optional(),

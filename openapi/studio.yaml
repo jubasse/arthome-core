@@ -2164,7 +2164,7 @@ paths:
            on the state.**
         2. **It is conditional and versioned.** Two people can be on the record: a command sent from
            `technical` while the current state is `live` is refused with `state.conflict`,
-           **with the current state and version**. The studio is multi-operator without a lock; the arbitration
+           **with the current version**. The studio is multi-operator without a lock; the arbitration
            is on the server.
         3. **`Idempotency-Key` is mandatory, not recommended**: the transition commits a public price
            or a sale.
@@ -2274,7 +2274,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '409':
           description: |
-            `state.conflict` (with the current state and version),
+            `state.conflict` (with the current version),
             `publication.transition_irreversible` (with the promise committed),
             `publication.promise_unacknowledged` (a one-way transition sent without its promise), or
             `publication.checklist_incomplete` (with the list of what is missing).
@@ -7988,7 +7988,7 @@ components:
     Conflict:
       description: |
         A final business refusal, and the `code` says which. `state.conflict` carries **the current
-        state and version**; `publication.transition_irreversible` carries the transition attempted **and the
+        version**; `publication.transition_irreversible` carries the transition attempted **and the
         promise committed**; `moderation.already_settled` carries **the winning verdict and its
         author**.
       content:
@@ -8256,6 +8256,12 @@ components:
           - date.provision_below_capacity
           - date.stream_key_rotation_during_run
           - date.postponement_limit_reached
+          - date.outcome_final
+          - date.not_public
+          - date.already_started
+          - date.not_started
+          - date.already_ended
+          - date.reschedule_in_past
           - channel.has_open_obligations
           - channel.crew_role_reserved
           - channel.role_not_assignable
@@ -9585,7 +9591,7 @@ components:
           description: |
             The studio is **multi-operator without a lock**: the arbitration is on the server. Every
             transition carries `expectedVersion`, and a command sent from `technical` while the current
-            state is `live` is refused with `state.conflict` **with the current state and version**.
+            state is `live` is refused with `state.conflict` **and the current version**.
         publishedAt:
           format: date-time
           type:

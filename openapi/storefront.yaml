@@ -8229,6 +8229,12 @@ components:
           - date.provision_below_capacity
           - date.stream_key_rotation_during_run
           - date.postponement_limit_reached
+          - date.outcome_final
+          - date.not_public
+          - date.already_started
+          - date.not_started
+          - date.already_ended
+          - date.reschedule_in_past
           - channel.has_open_obligations
           - channel.crew_role_reserved
           - channel.role_not_assignable

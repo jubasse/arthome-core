@@ -125,6 +125,12 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
   }),
   [CatalogErrorCode.STREAM_KEY_ROTATION_DURING_RUN]: z.looseObject({ runState: text() }),
   [CatalogErrorCode.POSTPONEMENT_LIMIT_REACHED]: z.looseObject({ max: count() }),
+  [CatalogErrorCode.OUTCOME_FINAL]: z.looseObject({ outcome: text() }),
+  [CatalogErrorCode.DATE_NOT_PUBLIC]: z.looseObject({ state: text() }),
+  [CatalogErrorCode.DATE_ALREADY_STARTED]: z.looseObject({ startsAt: text() }),
+  [CatalogErrorCode.DATE_NOT_STARTED]: z.looseObject({ startsAt: text() }),
+  [CatalogErrorCode.DATE_ALREADY_ENDED]: z.looseObject({ endsAt: text() }),
+  [CatalogErrorCode.RESCHEDULE_IN_PAST]: z.looseObject({ rescheduledTo: text() }),
 
   [ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS]: z.looseObject({
     datesOnSale: count(),
@@ -196,12 +202,7 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
   }),
   [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: z.looseObject({ flag: text() }),
   [DomainErrorCode.SEAT_CODE_MALFORMED]: z.looseObject({ body: text() }),
-  [DomainErrorCode.STATE_CONFLICT]: z.looseObject({
-    currentVersion: count().exactOptional(),
-    state: text().exactOptional(),
-    outcome: text().exactOptional(),
-    startsAt: text().exactOptional(),
-  }),
+  [DomainErrorCode.STATE_CONFLICT]: z.looseObject({ currentVersion: count() }),
 
   [WatchDenialReason.NO_SEAT]: none(),
   [WatchDenialReason.ROOM_NOT_OPEN]: none(),
