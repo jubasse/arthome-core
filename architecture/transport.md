@@ -598,6 +598,35 @@ as neutral**, never rejected. On the zod side, a bare `z.enum()` **does not do t
 `io: "output"` is exactly what separates them. Getting it wrong produces false documentation in
 both directions.
 
+### 5.12 Writing — PUT, PATCH and the action, and the errors a route declares
+
+The product owner's rule on how a record changes. **The test that decides: does this change have
+rules or consequences?** If it does, it is an action.
+
+| Verb | Contract call | What it is |
+|---|---|---|
+| `PUT` | `replace`, `subresource(name).replace()`, `upsert` | a **full replacement**, idempotent. The body is complete; an absent field is **reset**. `upsert` is the same on an id the client chose (`/follows/{artistId}`) |
+| `PATCH` | `update` | a **partial change** of one or several properties with **no business rule**. An absent field is unchanged; `null` clears an optional field. The schema is derived from the writable fields made optional, and can be overridden. It carries `expectedVersion` |
+| `POST /{res}/{id}/{action}` | `action(name, ...)` | **every business state change**: a status, a publication, a cancellation, a boolean that triggers rules or events. Never a `PATCH` on a status field. On the collection: `collectionAction`, `/{res}/{action}` |
+
+`find` (`GET` one, with `ETag` and `If-None-Match`), `findAll` (the paginated list), `create`
+(`POST`, with `Idempotency-Key`) and `delete` complete the set; `crud` composes `find`, `findAll`,
+`create`, `update` and `delete`, and `replace` and `upsert` only when asked for.
+
+**Errors are declared by code, in three levels merged per status**:
+
+1. the errors common to a group (`.errors({ 403: ForbiddenResponse })`), written as responses;
+2. the crud conventions: `404 api.not_found` on `find`, `update`, `replace` and `delete`;
+   `409 state.conflict`, carrying the current version, on `update`, `replace` and `delete`; the
+   idempotency codes on every write; `400` on an invalid cursor;
+3. the domain codes of the operation, taken from the core vocabularies
+   (`errors: { 409: [CatalogErrorCode.PRICES_LOCKED] }`).
+
+`ERROR_PARAMS` in `@arthome/core/schema` maps each code to the schema of its `error.params`, so the
+documented response, the server and the typed client read the same one; the client receives a union
+discriminated on `error.code`. A storefront operation may declare only the codes of
+`STOREFRONT_RELAYED_CODES`, and the compiler refuses any other.
+
 ---
 
 ## 6. The signal that would change my mind, written now

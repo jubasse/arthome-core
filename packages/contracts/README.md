@@ -129,6 +129,71 @@ ground that the semantic comparison treats the list as a set, so the builder's h
 last in the document; the same goes for the keys of an operation, which the emitter writes in
 a fixed order (identity, prose, `x-*`, `security`, `parameters`, `requestBody`, `responses`).
 
+### Resources
+
+A route that follows the conventions is declared through its resource rather than spelled whole.
+`builder.resource(name, { id, parents? })` needs the api's conventions (`.conventions(...)`: the
+envelope of a record and of a page, the list parameters, `If-None-Match` and `ETag`, the
+idempotency key, the type of `expectedVersion`) and exposes each operation individually:
+
+| Member | Operation | Derived `operationId` |
+|---|---|---|
+| `find` | `GET /{res}/{id}`, `ETag` and `If-None-Match` | `findX` |
+| `findAll` | `GET /{res}`, paginated | `findAllXs` |
+| `create` | `POST /{res}`, `Idempotency-Key` | `createX` |
+| `update` | `PATCH /{res}/{id}`, partial, `expectedVersion` | `updateX` |
+| `replace` | `PUT /{res}/{id}`, complete, idempotent | `replaceX` |
+| `delete` | `DELETE /{res}/{id}`, `expectedVersion` in the query | `deleteX` |
+| `upsert` | `PUT /{res}/{id}` on an id the client chose | `upsertX` |
+| `action(name, ...)` | `/{res}/{id}/{name}`, `POST` unless said | `{name}X` |
+| `collectionAction(name, ...)` | `/{res}/{name}` | `{name}Xs` |
+| `subresource(name).replace()` | `PUT /{res}/{id}/{name}` | `replaceX{Name}` |
+
+`crud({ item, create, update, ... })` composes `find`, `findAll`, `create`, `update` and `delete`
+and returns an object with those keys; `replace` and `upsert` join it when their options are given.
+`omit` or `pick` narrows it, never both, and the compiler rejects the pair and a selected member
+whose options are missing. Which verb a change takes is `transport.md` §5.12: a full replacement
+is `PUT`, a partial change without a business rule is `PATCH`, every business state change is an
+action.
+
+A fixed `operationId` always wins over the derived one, so an operation keeps its published name:
+say it in the member's options. The options also carry what the document says beyond the
+convention: prose, `x-arthome-*`, extra `parameters`, `responses` (a stated 2xx replaces the
+generated one), `example` and `optionalBody` for the request body, and `errors`.
+
+```ts
+const seats = ticketingWrites.resource('seats', { id: SeatIdParameter });
+
+export const refundSeat: Route<{ /* the annotation, unchanged */ }> = seats.action('refund', {
+  operationId: 'refundSeat',
+  summary: '...',
+  body: RefundSeatBodySchema,
+  responses: { 200: { description: '...', content: { /* ... */ } } },
+});
+```
+
+A builder that already holds a header the convention would add (the idempotency key, for a group
+declared with `.headers(IdempotencyKeyParameter)`) places it itself, and the member does not add it
+again. The explicit annotation of an exported route stays: the resource's types are checked against
+it, so a convention that disagrees with the published operation is a compile error.
+
+**Errors** are declared by code. `.errors({ 403: ForbiddenResponse })` states a response whole; a
+member adds codes (`errors: { 409: [CatalogErrorCode.PRICES_LOCKED] }`), merged per status with the
+crud conventions (`transport.md` §5.12). A status whose codes the api already documents keeps its
+shared response, so the document does not move; a status that adds a code gets an `anyOf` of one
+envelope per code, each with the `params` schema of `ERROR_PARAMS` in `@arthome/core/schema`. The
+client's type for a response is a union discriminated on `error.code`, and a storefront operation can
+declare only a code of `STOREFRONT_RELAYED_CODES`.
+
+**Converting an existing operation** is possible only where the convention is what the document
+already says. Ten are: `createSavedSearch`, `createDateDraft`, `raiseIncident` (`create`);
+`duplicateDate`, `decideDateOutcome`, `refundSeat`, `respondToInvitation`,
+`claimModerationItem`, `settleModerationItem`, `cancelSeat` (`action`). The others stay on
+`defineRoute`: the panes, the batches and the `/me` views are irregular by nature, and most of the
+rest differ from the convention in a way that would move the published document (an idempotent write
+that documents no `409`, a `PATCH` without `expectedVersion`, a `DELETE` without it, a read without
+`ETag`, a header order). Those are a contract decision, not a rewrite.
+
 ### Versions
 
 The API version is a property of the route, never of its path: `version: 1` and `path:
