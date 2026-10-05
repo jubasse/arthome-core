@@ -129,7 +129,7 @@ export const RegisterStudioPushTokenBodySchema: z.ZodObject<
   z.core.$strip
 > = z.object({
   platform: localVocabulary(PUSH_PLATFORMS, PROVIDER_PLATFORM_REASON),
-  token: z.string(),
+  token: sensitive(z.string()),
   deviceId: uuidOut(),
   locale: LocaleInputSchema.optional(),
 });

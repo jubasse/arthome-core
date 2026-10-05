@@ -394,7 +394,7 @@ export const studioConventions: {
           name: 'limit',
           in: 'query',
           required: false,
-          schema: z.int().min(1).max(paging.maxLimit).default(20),
+          schema: z.int().min(1).max(paging.maxLimit).default(50),
         },
       ],
       page: (data) =>

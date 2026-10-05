@@ -222,6 +222,8 @@ paths:
                           format: uuid
                         deviceToken:
                           type: string
+                          format: password
+                          x-arthome-sensitive: true
                         expiresAt:
                           type: string
                           format: date-time
@@ -242,6 +244,11 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -523,6 +530,8 @@ paths:
                   type: string
                   minLength: 12
                   maxLength: 128
+                  format: password
+                  x-arthome-sensitive: true
                 displayName:
                   type: string
                   maxLength: 80
@@ -694,6 +703,8 @@ paths:
                 password:
                   type: string
                   maxLength: 128
+                  format: password
+                  x-arthome-sensitive: true
                 mode:
                   $ref: '#/components/schemas/SessionMode'
                 deviceId:
@@ -898,6 +909,8 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 256
+                  format: password
+                  x-arthome-sensitive: true
               required:
               - token
             example:
@@ -1154,10 +1167,14 @@ paths:
               properties:
                 token:
                   type: string
+                  format: password
+                  x-arthome-sensitive: true
                 password:
                   type: string
                   minLength: 12
                   maxLength: 128
+                  format: password
+                  x-arthome-sensitive: true
               required:
               - token
               - password
@@ -1366,6 +1383,8 @@ paths:
               properties:
                 state:
                   type: string
+                  format: password
+                  x-arthome-sensitive: true
                 mode:
                   $ref: '#/components/schemas/SessionMode'
                 deviceId:
@@ -1495,9 +1514,13 @@ paths:
               properties:
                 currentPassword:
                   type: string
+                  format: password
+                  x-arthome-sensitive: true
                 newPassword:
                   type: string
                   minLength: 12
+                  format: password
+                  x-arthome-sensitive: true
                 revokeOtherSessions:
                   default: true
                   type: boolean
@@ -1590,6 +1613,8 @@ paths:
                 password:
                   type: string
                   description: Re-authentication — this is a sensitive operation.
+                  format: password
+                  x-arthome-sensitive: true
               required:
               - password
             example:
@@ -1685,6 +1710,8 @@ paths:
               properties:
                 password:
                   type: string
+                  format: password
+                  x-arthome-sensitive: true
               required:
               - password
             example:
@@ -1761,6 +1788,8 @@ paths:
                   type: string
                 code:
                   type: string
+                  format: password
+                  x-arthome-sensitive: true
                 mode:
                   $ref: '#/components/schemas/SessionMode'
                 deviceId:
@@ -6310,6 +6339,12 @@ paths:
                   position: 2841
                   estimatedWaitSec: 95
                   pollIntervalSec: 2
+          headers:
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6379,9 +6414,10 @@ paths:
                   pollIntervalSec: 2
           headers:
             Cache-Control:
-              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
                 type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6657,6 +6693,11 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6799,9 +6840,10 @@ paths:
                   tickets: []
           headers:
             Cache-Control:
-              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
                 type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7743,6 +7785,11 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7911,6 +7958,11 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -9882,6 +9934,8 @@ components:
       schema:
         type: string
         minLength: 1
+        format: password
+        x-arthome-sensitive: true
     LateEntryAcknowledged:
       name: X-Arthome-Late-Entry-Acknowledged
       in: header
@@ -12447,6 +12501,8 @@ components:
               token:
                 type: string
                 minLength: 1
+                format: password
+                x-arthome-sensitive: true
               expiresAt:
                 type: string
                 format: date-time
@@ -12973,6 +13029,8 @@ components:
           description: '**Opaque** reference to the domain. Only the adapter knows how to read it.'
         clientSecret:
           type: string
+          format: password
+          x-arthome-sensitive: true
         nextAction:
           description: |
             What the surface must do next, **declared** rather than guessed: a strong-authentication

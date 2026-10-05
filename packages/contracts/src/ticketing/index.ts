@@ -50,6 +50,7 @@ import {
 } from '@arthome/core/schema';
 
 import { DateCardSchema } from '../catalog/index.js';
+import { sensitive } from '../http/index.js';
 
 const REFUND_METHODS = ['original_payment_method', 'account_credit'] as const;
 
@@ -384,7 +385,7 @@ export const PaymentHandoffSchema: z.ZodObject<
     paymentIntentRef: z
       .string()
       .describe('**Opaque** reference to the domain. Only the adapter knows how to read it.'),
-    clientSecret: z.string(),
+    clientSecret: sensitive(z.string()),
     nextAction: z
       .looseObject({
         kind: vocabularyOutLocal(NEXT_ACTION_KINDS, PROVIDER_STATE_REASON).optional(),
@@ -566,7 +567,7 @@ export const SalesQueuePositionSchema: z.ZodObject<
       ),
     admission: z
       .looseObject({
-        token: z.string().min(1),
+        token: sensitive(z.string().min(1)),
         expiresAt: InstantOut,
       })
       .nullable()

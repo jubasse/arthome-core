@@ -45,6 +45,7 @@ import {
   errorResponse,
   identity,
   routeBuilder,
+  sensitive,
 } from '../http/index.js';
 import { StorefrontCursorPageInfoSchema } from '../pagination/index.js';
 
@@ -129,7 +130,7 @@ export const AdmissionTokenParameter: HeaderParameter<'X-Arthome-Admission-Token
   required: false,
   description:
     "The admission out of a date's sales queue, as `getSalesQueuePosition` serves it: opaque to the\nsurface, bound to one account and one date, and valid until its `expiresAt`. Required on\n`purchaseSeat`, and on `createPairing` for a `seat` (D-086), while that date's queue is armed;\nignored otherwise. Provisional with the queue (D-081).\n",
-  schema: z.string().min(1),
+  schema: sensitive(z.string().min(1)),
 };
 
 export const LateEntryAcknowledgedParameter: HeaderParameter<

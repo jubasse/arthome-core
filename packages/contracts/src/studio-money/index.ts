@@ -225,19 +225,20 @@ const RevenueByDateSchema: z.ZodOptional<
       Looseness
     >
   >
-> = z
-  .looseObject({
-    total: MoneyOut.meta(INCLUSIVE).optional(),
-    totalScope: localVocabulary(['channel_period', 'listed_rows'], RAILS_REASON)
-      .optional()
-      .describe(
-        "**What the total counts, declared.** The design displays a total at the head of six rows\nwithout saying whether it is the sum of the six or the channel's total over the period — and\nthe figure there is hardcoded, so it does not settle it. The contract serves `channel_period`\nand **says so**, rather than letting two surfaces add up six bars and arrive at a different\nnumber.\n",
-      ),
-    items: z.array(RevenueByDateRowSchema).optional(),
-  })
-  .nullable()
-  .optional()
-  .describe('**Absent** without `canRevenue`.');
+> = restricted(
+  z
+    .looseObject({
+      total: MoneyOut.meta(INCLUSIVE).optional(),
+      totalScope: localVocabulary(['channel_period', 'listed_rows'], RAILS_REASON)
+        .optional()
+        .describe(
+          "**What the total counts, declared.** The design displays a total at the head of six rows\nwithout saying whether it is the sum of the six or the channel's total over the period — and\nthe figure there is hardcoded, so it does not settle it. The contract serves `channel_period`\nand **says so**, rather than letting two surfaces add up six bars and arrive at a different\nnumber.\n",
+        ),
+      items: z.array(RevenueByDateRowSchema).optional(),
+    })
+    .nullable(),
+  'canRevenue',
+).describe('**Absent** without `canRevenue`.');
 
 export const DashboardScreenSchema: z.ZodObject<
   {
@@ -289,7 +290,9 @@ const StatsAudienceHeadlineSchema: z.ZodObject<
     .describe(
       '**All** the channels dates over the period, with no state filter — the way the design counts them.',
     ),
-  netRevenue: MoneyOut.meta(EXCLUSIVE).optional().describe('**Absent** without `canRevenue`.'),
+  netRevenue: restricted(MoneyOut.meta(EXCLUSIVE), 'canRevenue').describe(
+    '**Absent** without `canRevenue`.',
+  ),
 });
 
 const FillByDateRowSchema: z.ZodObject<
@@ -406,7 +409,9 @@ const SeriesDateSchema: z.ZodObject<
   displayState: displayState().optional(),
   fillRateBps: int(),
   seatsSold: int().optional(),
-  revenue: MoneyOut.meta(INCLUSIVE).optional().describe('**Absent** without `canRevenue`.'),
+  revenue: restricted(MoneyOut.meta(INCLUSIVE), 'canRevenue').describe(
+    '**Absent** without `canRevenue`.',
+  ),
   isReference: z.boolean(),
   fillGapPoints: z
     .number()
@@ -415,13 +420,9 @@ const SeriesDateSchema: z.ZodObject<
     .describe(
       'Fill-rate gap **in points** against the reference.\n**Null — hence nothing to display — when the date has no sales at all**: "there\nis no gap to measure, it is a decision to be made, not a decline".\n',
     ),
-  revenueGapPct: z
-    .number()
-    .nullable()
-    .optional()
-    .describe(
-      'Revenue gap as a **percentage**. **Absent** without `canRevenue`, null without sales.',
-    ),
+  revenueGapPct: restricted(z.number().nullable(), 'canRevenue').describe(
+    'Revenue gap as a **percentage**. **Absent** without `canRevenue`, null without sales.',
+  ),
   canOpenSale: z
     .boolean()
     .optional()

@@ -38,7 +38,7 @@ export const SignUpBodySchema: z.ZodObject<
   email: z.string().meta({
     format: 'email',
   }),
-  password: z.string().min(12).max(128),
+  password: sensitive(z.string().min(12).max(128)),
   displayName: z.string().max(80).optional(),
   mode: StorefrontSessionModeSchema,
   deviceId: uuidOut().nullable().optional(),
@@ -66,7 +66,7 @@ export const SignInBodySchema: z.ZodObject<
   email: z.string().meta({
     format: 'email',
   }),
-  password: z.string().max(128),
+  password: sensitive(z.string().max(128)),
   mode: StorefrontSessionModeSchema,
   deviceId: uuidOut().nullable().optional(),
 });
@@ -83,7 +83,7 @@ export const ConfirmEmailVerificationBodySchema: z.ZodObject<
   { token: z.ZodString },
   z.core.$strip
 > = z.object({
-  token: z.string().min(1).max(256),
+  token: sensitive(z.string().min(1).max(256)),
 });
 
 export const EmailVerificationSchema: z.ZodObject<{ verified: z.ZodBoolean }, z.core.$loose> =
@@ -117,8 +117,8 @@ export const ResetPasswordBodySchema: z.ZodObject<
   { token: z.ZodString; password: z.ZodString },
   z.core.$strip
 > = z.object({
-  token: z.string(),
-  password: z.string().min(12).max(128),
+  token: sensitive(z.string()),
+  password: sensitive(z.string().min(12).max(128)),
 });
 
 export const PasswordChangeSchema: z.ZodOptional<
@@ -174,7 +174,7 @@ export const ExchangeOneTimeTokenBodySchema: z.ZodObject<
   },
   z.core.$strip
 > = z.object({
-  state: z.string(),
+  state: sensitive(z.string()),
   mode: StorefrontSessionModeSchema,
   deviceId: uuidOut().nullable().optional(),
 });
@@ -187,16 +187,18 @@ export const ChangePasswordBodySchema: z.ZodObject<
   },
   z.core.$strip
 > = z.object({
-  currentPassword: z.string(),
-  newPassword: z.string().min(12),
+  currentPassword: sensitive(z.string()),
+  newPassword: sensitive(z.string().min(12)),
   revokeOtherSessions: z.boolean().default(true).optional(),
 });
 
 export const EnableTwoFactorBodySchema: z.ZodObject<{ password: z.ZodString }, z.core.$strip> =
   z.object({
-    password: z.string().meta({
-      description: 'Re-authentication — this is a sensitive operation.',
-    }),
+    password: sensitive(
+      z.string().meta({
+        description: 'Re-authentication — this is a sensitive operation.',
+      }),
+    ),
   });
 
 export const TwoFactorEnrolmentSchema: z.ZodObject<
@@ -208,7 +210,7 @@ export const TwoFactorEnrolmentSchema: z.ZodObject<
 });
 
 export const DisableTwoFactorBodySchema: typeof EnableTwoFactorBodySchema = z.object({
-  password: z.string(),
+  password: sensitive(z.string()),
 });
 
 export const TwoFactorDisablingSchema: z.ZodOptional<
@@ -229,7 +231,7 @@ export const VerifyTwoFactorBodySchema: z.ZodObject<
   z.core.$strip
 > = z.object({
   challengeId: z.string(),
-  code: z.string(),
+  code: sensitive(z.string()),
   mode: StorefrontSessionModeSchema,
   deviceId: uuidOut().nullable().optional(),
 });
