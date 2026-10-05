@@ -655,9 +655,9 @@ A rule beyond identity is a name with parameters and errors (`roles(...).on('cha
 document's `security`, including the CSRF token of a cookie write.
 
 A public write takes no CSRF token because it uses no session. Login CSRF, a forged sign-in that
-signs the victim's browser into the attacker's account, threatens only the four writes that open a
-cookie session (`signIn`, `signUp`, `exchangeOneTimeToken`, `verifyTwoFactor`), and JSON-only
-bodies, the CORS preflight a JSON body triggers and `SameSite=Lax` hold them. A route that lifts
+signs the victim's browser into the attacker's account, threatens only the six writes that open a
+cookie session (storefront: `signIn`, `signUp`, `exchangeOneTimeToken`, `verifyTwoFactor`; studio:
+`signInStudio`, `verifyTwoFactorStudio`), and JSON-only bodies, the CORS preflight a JSON body triggers and `SameSite=Lax` hold them. A route that lifts
 JSON-only, such as a `form_post` callback, must declare its own CSRF defence with a reason.
 
 **Errors are declared by code, in three levels merged per status**, and the derivable ones are added
