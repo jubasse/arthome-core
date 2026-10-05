@@ -25,6 +25,7 @@ here, and a skill for one of them would be the wrong instrument.
 | `pnpm run verify:offline` | the subset needing no install. Does **not** run `format:check`, `lint`, `typecheck` or `test` |
 | `pnpm -r run build` | every package. There is no root `build` script — `pnpm run build` fails |
 | `pnpm run generate:openapi` | writes `openapi/storefront.yaml` and `openapi/studio.yaml` from the route declarations. Run it after any change to `packages/contracts` that reaches a document, and commit both |
+| `node tools/pack-release.mjs v<version> <dir>` | packs the three packages as a release would; the release workflow runs the same command (README, "Releasing") |
 | `pnpm run fix` | Prettier, then ESLint `--fix`, then Prettier again |
 | `pnpm run generate:contract-types` | writes the `types.ts` of every module folder (`<api>/<module>/`) from its `routes.ts`, and the explicit types of its `schemas.ts`. Run it after any change to a module folder, and commit what it writes |
 | `node tools/prune-unused.mjs <module.ts>...` | drops the imports and top-level consts a module no longer uses once its routes moved out; `pnpm run fix` after it |

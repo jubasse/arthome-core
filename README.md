@@ -69,6 +69,23 @@ artist and their crew operate. They share `@arthome/core`'s vocabulary and nothi
 
 ---
 
+## Releasing
+
+A release is a `v<version>` tag, cut from `main` at the end of the common release flow. Pushing it
+runs `.github/workflows/release.yml`: install, `pnpm run verify`, then `tools/pack-release.mjs`,
+which refuses a tag that disagrees with the three package versions and packs `@arthome/core`,
+`@arthome/contracts` and `@arthome/tooling`. `gh release create` attaches the tarballs
+(`arthome-<package>-<version>.tgz`) to the GitHub release. Nothing is published to a registry.
+
+The other repositories install those tarballs by URL (`pnpm run use-core <version>` in
+arthome-platform). To see what a release would carry without tagging anything:
+
+```bash
+node tools/pack-release.mjs v0.1.0 /tmp/release-assets
+```
+
+---
+
 ## Running the checks
 
 ```bash
