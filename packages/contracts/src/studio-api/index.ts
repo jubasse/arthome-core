@@ -20,6 +20,7 @@ import {
 import { createUploadTicket, deleteChannel } from './channel.js';
 import {
   changeMemberRoles,
+  closeReconciliationPeriod,
   getChannelAgenda,
   getChannelDashboard,
   getChannelSettings,
@@ -30,7 +31,10 @@ import {
   listChannelMembers,
   listChannelMerchItems,
   listChannelReplays,
+  listPayouts,
   removeMember,
+  requestBankChange,
+  requestChannelExport,
   transferChannelOwnership,
   updateChannelIdentity,
   updateChannelSettings,
@@ -114,14 +118,7 @@ import {
   searchAudience,
   settleModerationItem,
 } from './moderation.js';
-import {
-  closeReconciliationPeriod,
-  countersignBankChange,
-  getChannelExport,
-  listPayouts,
-  requestBankChange,
-  requestChannelExport,
-} from './payouts.js';
+import { countersignBankChange, getChannelExport } from './payouts.js';
 import { createDateDraft } from './publication.js';
 import { escalateIncidentToProduction, getChannelStreamSettings, resolveIncident } from './run.js';
 import { getChannelTicketing, refundSeat } from './ticketing.js';

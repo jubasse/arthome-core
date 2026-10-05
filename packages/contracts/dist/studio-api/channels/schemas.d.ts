@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { CHAT_MODES, FILTER_SEVERITIES, MEMBER_ROLES } from '@arthome/core';
+import { CHAT_MODES, FILTER_SEVERITIES, MEMBER_ROLES, PAYOUT_STATES } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
 import { StudioEnvelopeMetaSchema } from '../../envelope/index.js';
 import type { PathParameter, Period, QueryParameter } from '../../http/index.js';
 import { OffsetPageInfoSchema } from '../../pagination/index.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
-import { StatsAudienceSchema, StatsSeriesSchema } from '../../studio-money/index.js';
+import { BankChangeRequestSchema, PayoutLineSchema, StatsAudienceSchema, StatsSeriesSchema } from '../../studio-money/index.js';
 declare const CHANNEL_REPLAY_STATES: readonly ["online", "expired", "archived"];
 export declare const ChannelReplayStateParameter: QueryParameter<'state', VocabularyIn<typeof CHANNEL_REPLAY_STATES>>;
 export declare const ChannelReplaySchema: z.ZodObject<{
@@ -158,5 +158,38 @@ export declare const AgendaListSchema: z.ZodIntersection<typeof StudioEnvelopeMe
 }, z.core.$loose>>;
 export type StatsAnswer = z.output<typeof StatsAnswerSchema>;
 export type AgendaList = z.output<typeof AgendaListSchema>;
+export declare const PayoutStateParameter: QueryParameter<'state', VocabularyIn<typeof PAYOUT_STATES>>;
+export declare const PayoutPageSchema: z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
+    items: z.ZodArray<typeof PayoutLineSchema>;
+    balances: z.ZodArray<typeof MoneyOut>;
+    pendingBankChange: z.ZodOptional<typeof BankChangeRequestSchema>;
+    page: typeof OffsetPageInfoSchema;
+}, z.core.$loose>>;
+export declare const RequestBankChangeBodySchema: z.ZodObject<{
+    reauthToken: z.ZodString;
+    stripeSetupRef: z.ZodString;
+}, z.core.$strip>;
+export declare const ReconciliationPeriodIdParameter: PathParameter<'periodId', z.ZodString>;
+export declare const CloseReconciliationPeriodBodySchema: z.ZodObject<{
+    explanations: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        payoutId: z.ZodOptional<z.ZodString>;
+        note: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>>;
+}, z.core.$strip>;
+export declare const ReconciliationClosureSchema: z.ZodOptional<z.ZodObject<{
+    periodId: z.ZodOptional<z.ZodString>;
+    closedAt: z.ZodOptional<z.ZodString>;
+}, z.core.$loose>>;
+declare const EXPORT_KINDS: readonly ["sales_csv", "fec", "sage", "cegid", "grouped_invoices", "journal", "schedule_ics", "stats_csv"];
+export declare const RequestChannelExportBodySchema: z.ZodObject<{
+    kind: VocabularyIn<typeof EXPORT_KINDS>;
+    from: z.ZodString;
+    to: z.ZodString;
+}, z.core.$strip>;
+export type PayoutPage = z.output<typeof PayoutPageSchema>;
+export type RequestBankChangeBody = z.output<typeof RequestBankChangeBodySchema>;
+export type CloseReconciliationPeriodBody = z.output<typeof CloseReconciliationPeriodBodySchema>;
+export type ReconciliationClosure = z.output<typeof ReconciliationClosureSchema>;
+export type RequestChannelExportBody = z.output<typeof RequestChannelExportBodySchema>;
 export {};
 //# sourceMappingURL=schemas.d.ts.map

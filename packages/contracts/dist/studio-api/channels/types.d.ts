@@ -1,13 +1,13 @@
 /** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
 import type { z } from 'zod';
-import type { ApiErrorCode, CHAT_MODES, ChannelErrorCode, DomainErrorCode, FILTER_SEVERITIES } from '@arthome/core';
+import type { ApiErrorCode, CHAT_MODES, ChannelErrorCode, DomainErrorCode, FILTER_SEVERITIES, PayoutErrorCode } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import type { Deleted, ExpectedVersionQuery, IdentifiedAccess, ItemResponse, JsonRequestBody, PageResponse, QueryParameter, Route } from '../../http/index.js';
 import type { ChannelMemberSchema } from '../../studio-access/index.js';
 import type { JournalEntrySchema } from '../../studio-desk/index.js';
-import type { DashboardScreenSchema } from '../../studio-money/index.js';
+import type { BankChangeRequestSchema, DashboardScreenSchema, ExportJobSchema } from '../../studio-money/index.js';
 import type { ChannelIdParameter, IdempotencyKeyParameter, IfRightsVersionParameter, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter, operator, studioConventions } from '../components.js';
-import type { AgendaListSchema, ChangeMemberRolesBodySchema, ChannelDefaultsSchema, ChannelIdentitySchema, ChannelMemberPageSchema, ChannelReplaySchema, ChannelReplayStateParameter, ChannelSettingsSchema, EventSearch, EventStatesParameter, EventsWindowParameter, InviteMemberBodySchema, JournalDateParameter, JournalNatureParameter, MemberRoleParameter, MerchItemIdParameter, OwnershipTransferSchema, PersonIdParameter, StatsAnswerSchema, StatsPeriodPresetParameter, StatsShowParameter, StatsTabParameter, TransferChannelOwnershipBodySchema, UpsertMerchItemBodySchema } from './schemas.js';
+import type { AgendaListSchema, ChangeMemberRolesBodySchema, ChannelDefaultsSchema, ChannelIdentitySchema, ChannelMemberPageSchema, ChannelReplaySchema, ChannelReplayStateParameter, ChannelSettingsSchema, CloseReconciliationPeriodBodySchema, EventSearch, EventStatesParameter, EventsWindowParameter, InviteMemberBodySchema, JournalDateParameter, JournalNatureParameter, MemberRoleParameter, MerchItemIdParameter, OwnershipTransferSchema, PayoutPageSchema, PayoutStateParameter, PersonIdParameter, ReconciliationClosureSchema, ReconciliationPeriodIdParameter, RequestBankChangeBodySchema, RequestChannelExportBodySchema, StatsAnswerSchema, StatsPeriodPresetParameter, StatsShowParameter, StatsTabParameter, TransferChannelOwnershipBodySchema, UpsertMerchItemBodySchema } from './schemas.js';
 export type ListChannelReplaysRoute = Route<{
     method: 'get';
     version: 1;
@@ -415,6 +415,104 @@ export type GetChannelAgendaRoute = Route<{
         400: readonly (typeof ApiErrorCode.PERIOD_FILTER_REQUIRED)[];
         403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type ListPayoutsRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/payouts';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof PageParameter,
+        typeof PageSizeParameter,
+        typeof SortByParameter,
+        typeof SortDirParameter,
+        typeof PayoutStateParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: {
+            readonly description: 'A page of payout lines, and the balances **per currency**.';
+            readonly content: {
+                readonly 'application/json': {
+                    readonly schema: typeof PayoutPageSchema;
+                };
+            };
+        };
+    };
+    errorCodes: {
+        400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type RequestBankChangeRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/bank-change-requests';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof RequestBankChangeBodySchema, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        202: ItemResponse<typeof studioConventions, typeof BankChangeRequestSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+    };
+}>;
+export type CloseReconciliationPeriodRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/reconciliation-periods/{periodId}/close';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof ReconciliationPeriodIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof CloseReconciliationPeriodBodySchema, false>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof ReconciliationClosureSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof PayoutErrorCode.RECONCILIATION_DISCREPANCY_UNEXPLAINED)[];
+    };
+}>;
+export type RequestChannelExportRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/exports';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof RequestChannelExportBodySchema, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        202: ItemResponse<typeof studioConventions, typeof ExportJobSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
     };
 }>;
 //# sourceMappingURL=types.d.ts.map

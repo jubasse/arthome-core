@@ -165,6 +165,11 @@
       "file": "packages/contracts/src/studio-api/channels/routes.ts",
       "value": "agenda",
       "reason": "A path segment, GET /channels/{channelId}/agenda. It shares its spelling with a navigation entry without being that vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/channels/routes.ts",
+      "value": "payouts",
+      "reason": "A path segment, GET /channels/{channelId}/payouts. It shares its spelling with a navigation entry and a service without being that vocabulary."
     }
   ]
 }

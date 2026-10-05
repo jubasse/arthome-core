@@ -1,4 +1,4 @@
-import { ApiErrorCode, ChannelErrorCode, DomainErrorCode } from '@arthome/core';
+import { ApiErrorCode, ChannelErrorCode, DomainErrorCode, PayoutErrorCode } from '@arthome/core';
 
 import {
   AgendaListSchema,
@@ -10,6 +10,7 @@ import {
   ChannelReplaySchema,
   ChannelReplayStateParameter,
   ChannelSettingsSchema,
+  CloseReconciliationPeriodBodySchema,
   DashboardPeriod,
   EventSearch,
   EventStatesParameter,
@@ -21,7 +22,13 @@ import {
   MemberRoleParameter,
   MemberSearch,
   OwnershipTransferSchema,
+  PayoutPageSchema,
+  PayoutStateParameter,
   PersonIdParameter,
+  ReconciliationClosureSchema,
+  ReconciliationPeriodIdParameter,
+  RequestBankChangeBodySchema,
+  RequestChannelExportBodySchema,
   StatsAnswerSchema,
   StatsPeriod,
   StatsPeriodPresetParameter,
@@ -36,6 +43,7 @@ import {
 } from './schemas.js';
 import type {
   ChangeMemberRolesRoute,
+  CloseReconciliationPeriodRoute,
   GetChannelAgendaRoute,
   GetChannelDashboardRoute,
   GetChannelSettingsRoute,
@@ -46,7 +54,10 @@ import type {
   ListChannelMembersRoute,
   ListChannelMerchItemsRoute,
   ListChannelReplaysRoute,
+  ListPayoutsRoute,
   RemoveMemberRoute,
+  RequestBankChangeRoute,
+  RequestChannelExportRoute,
   TransferChannelOwnershipRoute,
   UpdateChannelIdentityRoute,
   UpdateChannelSettingsRoute,
@@ -55,7 +66,12 @@ import type {
 import { Deleted, Freshness, cache, pages, recentAuth } from '../../http/index.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
 import { JournalEntrySchema } from '../../studio-desk/index.js';
-import { DashboardScreenSchema } from '../../studio-money/index.js';
+import {
+  BankChangeRequestSchema,
+  DashboardScreenSchema,
+  ExportJobSchema,
+  PayoutLineSchema,
+} from '../../studio-money/index.js';
 import { EventsRowSchema, MerchItemAdminSchema } from '../../studio-stage/index.js';
 import {
   ChannelIdParameter,
@@ -254,3 +270,56 @@ export const getChannelAgenda: GetChannelAgendaRoute = agendaChannel.single('age
     },
   },
 });
+
+const payoutsChannel = channels
+  .tags(StudioTag.PAYOUTS)
+  .resource('channels', { id: ChannelIdParameter });
+
+export const listPayouts: ListPayoutsRoute = payoutsChannel.single('payouts').findAll({
+  operationId: 'listPayouts',
+  summary: 'The payouts owed, one line per date sold.',
+  item: PayoutLineSchema,
+  parameters: [PayoutStateParameter],
+  responses: {
+    200: {
+      description: 'A page of payout lines, and the balances **per currency**.',
+      content: { 'application/json': { schema: PayoutPageSchema } },
+    },
+  },
+});
+
+export const requestBankChange: RequestBankChangeRoute = payoutsChannel
+  .single('bank-change-requests')
+  .create({
+    operationId: 'requestBankChange',
+    summary: 'Requests a change of bank details — dual signature.',
+    requires: [recentAuth()],
+    body: RequestBankChangeBodySchema,
+    item: BankChangeRequestSchema,
+    status: 202,
+    answer: 'Request created, transfers suspended until counter-signature.',
+  });
+
+export const closeReconciliationPeriod: CloseReconciliationPeriodRoute = payoutsChannel
+  .resource('reconciliation-periods', { id: ReconciliationPeriodIdParameter })
+  .action('close', {
+    operationId: 'closeReconciliationPeriod',
+    summary: 'Closes a reconciliation period.',
+    body: CloseReconciliationPeriodBodySchema,
+    optionalBody: true,
+    response: ReconciliationClosureSchema,
+    answer: 'Period closed.',
+    errors: [PayoutErrorCode.RECONCILIATION_DISCREPANCY_UNEXPLAINED],
+  });
+
+export const requestChannelExport: RequestChannelExportRoute = payoutsChannel
+  .single('exports')
+  .create({
+    operationId: 'requestChannelExport',
+    summary: 'Requests an export — sales journal, FEC, Sage, Cegid, grouped invoices.',
+    body: RequestChannelExportBodySchema,
+    item: ExportJobSchema,
+    status: 202,
+    follow: 'getChannelExport',
+    answer: 'Export queued.',
+  });

@@ -92,4 +92,24 @@ export const channelsDocs: ModuleDocs = {
       'Composed by `catalog` and fed by `ticketing` for the capacity and the revenue. The revenue is\n**absent** without `canRevenue` — and that is why the schedule served to a control room has no\n`grossRevenue` field, while the one served to the treasury has no stream key.\n',
     upstream: [Service.CATALOG, Service.TICKETING],
   },
+  listPayouts: {
+    description:
+      '**One balance per currency, never a converted balance.** A channel selling in two currencies\nhas **two balances**: converting would introduce a rate, hence an exchange date, hence a\nreconciliation gap nobody could explain. Stripe keeps one balance per currency; we mirror it,\nwe do not aggregate it.\n\n**Reserved to roles with `canRevenue`** — the whole page, not only its columns.\n',
+    upstream: [Service.PAYOUTS],
+  },
+  requestBankChange: {
+    description:
+      '**An aggregate in its own right, not a write.** Two actors, two distinct roles (owner **and**\ntreasury), a delay, a trace — **and it suspends the payout in flight** for the duration of the\nsigning. A write cannot carry that.\n\nOnly the **last four characters** of the account travel: a full IBAN has no business in an\nevent log that gets replayed.\n\n**The return from an external browser confirms nothing**: the pending state lives\n**server-side**, and on the way back, "the deep link says where to go, the backend says what\nchanged".\n',
+    upstream: [Service.PAYOUTS],
+  },
+  closeReconciliationPeriod: {
+    description:
+      "**A period does not close with an unexplained discrepancy.** The refusal carries the gap and\nthe lines concerned. We never rebuild the provider's ledger: we **reconcile** ours against it,\nand any discrepancy routes an alert to `treasury`.\n",
+    upstream: [Service.PAYOUTS],
+  },
+  requestChannelExport: {
+    description:
+      '**An asynchronous job** (BullMQ **internal to its service**), never a synchronous download:\nover 24 months that is not tenable. The URL returned is **signed, short-lived, and usable\nwithout a session cookie** — an export protected by a cookie is undownloadable from the native\nshell.\n',
+    upstream: [Service.PAYOUTS, Service.CATALOG, Service.CHAT],
+  },
 };

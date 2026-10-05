@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CHAT_MODES, FILTER_SEVERITIES, MEMBER_ROLES } from '@arthome/core';
+import { CHAT_MODES, FILTER_SEVERITIES, MEMBER_ROLES, PAYOUT_STATES } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import {
   InstantOut,
@@ -17,7 +17,12 @@ import type { PathParameter, Period, QueryParameter } from '../../http/index.js'
 import { ReauthProof, localVocabulary, period, restricted, searchText } from '../../http/index.js';
 import { OffsetPageInfoSchema } from '../../pagination/index.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
-import { StatsAudienceSchema, StatsSeriesSchema } from '../../studio-money/index.js';
+import {
+  BankChangeRequestSchema,
+  PayoutLineSchema,
+  StatsAudienceSchema,
+  StatsSeriesSchema,
+} from '../../studio-money/index.js';
 import { EventsRowSchema, MerchItemAdminSchema } from '../../studio-stage/index.js';
 
 const CHANNEL_REPLAY_STATES = ['online', 'expired', 'archived'] as const;
@@ -541,3 +546,114 @@ export const AgendaListSchema: z.ZodIntersection<
 
 export type StatsAnswer = z.output<typeof StatsAnswerSchema>;
 export type AgendaList = z.output<typeof AgendaListSchema>;
+
+export const PayoutStateParameter: QueryParameter<'state', VocabularyIn<typeof PAYOUT_STATES>> = {
+  name: 'state',
+  in: 'query',
+  required: false,
+  schema: vocabularyIn(PAYOUT_STATES).meta({ 'x-arthome-vocabulary-source': 'PAYOUT_STATES' }),
+};
+
+export const PayoutPageSchema: z.ZodIntersection<
+  typeof StudioEnvelopeMetaSchema,
+  z.ZodObject<
+    {
+      items: z.ZodArray<typeof PayoutLineSchema>;
+      balances: z.ZodArray<typeof MoneyOut>;
+      pendingBankChange: z.ZodOptional<typeof BankChangeRequestSchema>;
+      page: typeof OffsetPageInfoSchema;
+    },
+    z.core.$loose
+  >
+> = z.intersection(
+  StudioEnvelopeMetaSchema,
+  z.looseObject({
+    items: z.array(PayoutLineSchema),
+    balances: z
+      .array(MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }))
+      .meta({ description: '**One balance per currency.** Never aggregated.' }),
+    pendingBankChange: BankChangeRequestSchema.optional(),
+    page: OffsetPageInfoSchema,
+  }),
+);
+
+export const RequestBankChangeBodySchema: z.ZodObject<
+  { reauthToken: z.ZodString; stripeSetupRef: z.ZodString },
+  z.core.$strip
+> = ReauthProof.extend({
+  stripeSetupRef: z.string().meta({
+    description:
+      '**Opaque** reference to the hosted flow. No provider identifier crosses the domain.,',
+  }),
+});
+
+export const ReconciliationPeriodIdParameter: PathParameter<'periodId', z.ZodString> = {
+  name: 'periodId',
+  in: 'path',
+  required: true,
+  schema: z.string(),
+};
+
+export const CloseReconciliationPeriodBodySchema: z.ZodObject<
+  {
+    explanations: z.ZodOptional<
+      z.ZodArray<
+        z.ZodObject<
+          { payoutId: z.ZodOptional<z.ZodString>; note: z.ZodOptional<z.ZodString> },
+          z.core.$strip
+        >
+      >
+    >;
+  },
+  z.core.$strip
+> = z.object({
+  explanations: z
+    .array(
+      z.object({
+        payoutId: uuidOut().optional(),
+        note: z.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+export const ReconciliationClosureSchema: z.ZodOptional<
+  z.ZodObject<
+    { periodId: z.ZodOptional<z.ZodString>; closedAt: z.ZodOptional<z.ZodString> },
+    z.core.$loose
+  >
+> = z
+  .looseObject({
+    periodId: z.string().optional(),
+    closedAt: InstantOut.optional(),
+  })
+  .optional();
+
+const EXPORT_KINDS = [
+  'sales_csv',
+  'fec',
+  'sage',
+  'cegid',
+  'grouped_invoices',
+  'journal',
+  'schedule_ics',
+  'stats_csv',
+] as const;
+
+export const RequestChannelExportBodySchema: z.ZodObject<
+  { kind: VocabularyIn<typeof EXPORT_KINDS>; from: z.ZodString; to: z.ZodString },
+  z.core.$strip
+> = z.object({
+  kind: localVocabulary(
+    EXPORT_KINDS,
+    "A document or export format. It names an accounting tool or a file type, which is the outside world's vocabulary rather than ours.",
+  ),
+  from: z.string().meta({ format: 'date' }),
+  to: z.string().meta({ format: 'date' }),
+});
+
+export type PayoutPage = z.output<typeof PayoutPageSchema>;
+export type RequestBankChangeBody = z.output<typeof RequestBankChangeBodySchema>;
+export type CloseReconciliationPeriodBody = z.output<typeof CloseReconciliationPeriodBodySchema>;
+export type ReconciliationClosure = z.output<typeof ReconciliationClosureSchema>;
+export type RequestChannelExportBody = z.output<typeof RequestChannelExportBodySchema>;

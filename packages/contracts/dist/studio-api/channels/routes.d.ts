@@ -1,4 +1,4 @@
-import type { ChangeMemberRolesRoute, GetChannelAgendaRoute, GetChannelDashboardRoute, GetChannelSettingsRoute, GetChannelStatsRoute, InviteMemberRoute, ListChannelEventsRoute, ListChannelJournalRoute, ListChannelMembersRoute, ListChannelMerchItemsRoute, ListChannelReplaysRoute, RemoveMemberRoute, TransferChannelOwnershipRoute, UpdateChannelIdentityRoute, UpdateChannelSettingsRoute, UpsertMerchItemRoute } from './types.js';
+import type { ChangeMemberRolesRoute, CloseReconciliationPeriodRoute, GetChannelAgendaRoute, GetChannelDashboardRoute, GetChannelSettingsRoute, GetChannelStatsRoute, InviteMemberRoute, ListChannelEventsRoute, ListChannelJournalRoute, ListChannelMembersRoute, ListChannelMerchItemsRoute, ListChannelReplaysRoute, ListPayoutsRoute, RemoveMemberRoute, RequestBankChangeRoute, RequestChannelExportRoute, TransferChannelOwnershipRoute, UpdateChannelIdentityRoute, UpdateChannelSettingsRoute, UpsertMerchItemRoute } from './types.js';
 export declare const listChannelReplays: ListChannelReplaysRoute;
 export declare const getChannelSettings: GetChannelSettingsRoute;
 export declare const updateChannelSettings: UpdateChannelSettingsRoute;
@@ -15,4 +15,8 @@ export declare const listChannelEvents: ListChannelEventsRoute;
 export declare const getChannelDashboard: GetChannelDashboardRoute;
 export declare const getChannelStats: GetChannelStatsRoute;
 export declare const getChannelAgenda: GetChannelAgendaRoute;
+export declare const listPayouts: ListPayoutsRoute;
+export declare const requestBankChange: RequestBankChangeRoute;
+export declare const closeReconciliationPeriod: CloseReconciliationPeriodRoute;
+export declare const requestChannelExport: RequestChannelExportRoute;
 //# sourceMappingURL=routes.d.ts.map

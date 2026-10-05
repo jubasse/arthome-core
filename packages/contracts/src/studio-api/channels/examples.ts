@@ -8,10 +8,17 @@ import {
   Locale,
   MemberRole,
   Surface,
+  TaxJurisdictionLevel,
+  TaxSupplyKind,
 } from '@arthome/core';
 
 import type {
   AgendaList,
+  CloseReconciliationPeriodBody,
+  PayoutPage,
+  ReconciliationClosure,
+  RequestBankChangeBody,
+  RequestChannelExportBody,
   ChangeMemberRolesBody,
   ChannelDefaults,
   ChannelMemberPage,
@@ -29,6 +36,11 @@ import type {
 } from './schemas.js';
 import {
   AgendaListSchema,
+  CloseReconciliationPeriodBodySchema,
+  PayoutPageSchema,
+  ReconciliationClosureSchema,
+  RequestBankChangeBodySchema,
+  RequestChannelExportBodySchema,
   ChangeMemberRolesBodySchema,
   ChannelDefaultsSchema,
   ChannelMemberPageSchema,
@@ -47,7 +59,7 @@ import {
 import type { ModuleExamples } from '../../openapi/docs.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
 import { JournalEntrySchema } from '../../studio-desk/index.js';
-import { DashboardScreenSchema } from '../../studio-money/index.js';
+import { DashboardScreenSchema, PayoutLineSchema } from '../../studio-money/index.js';
 import { EventsRowSchema, MerchItemAdminSchema } from '../../studio-stage/index.js';
 
 const channelReplay: ChannelReplay = {
@@ -314,6 +326,55 @@ const agendaList: AgendaList = {
   items: [eventsRow],
 };
 
+const payoutLine: z.output<typeof PayoutLineSchema> = {
+  payoutId: '019928e5-0000-7000-8000-000000000001',
+  dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+  channelId: '019928a0-7d31-7a10-b8c4-2f9e11a4c222',
+  state: DisplayState.SCHEDULED,
+  grossTtc: { amountMinor: 417600, currencyCode: 'EUR' },
+  vat: [
+    {
+      rateBps: 550,
+      base: { amountMinor: 395830, currencyCode: 'EUR' },
+      amount: { amountMinor: 21770, currencyCode: 'EUR' },
+      jurisdictionCode: 'FR',
+      jurisdictionLevel: TaxJurisdictionLevel.COUNTRY,
+      supplyKind: TaxSupplyKind.LIVE_STREAM_ACCESS,
+    },
+  ],
+  grossHt: { amountMinor: 395830, currencyCode: 'EUR' },
+  commissionRateBps: 1200,
+  commission: { amountMinor: 47500, currencyCode: 'EUR' },
+  net: { amountMinor: 348330, currencyCode: 'EUR' },
+  dueAt: '2026-10-05T21:30:00Z',
+};
+
+const payoutPage: PayoutPage = {
+  servedAt: '2026-09-21T18:25:00.000Z',
+  rightsVersion: 412,
+  items: [payoutLine],
+  balances: [{ amountMinor: 348330, currencyCode: 'EUR' }],
+  page: { page: 1, pageSize: 20, totalItems: 42, totalPages: 3 },
+};
+
+const requestBankChangeBody: RequestBankChangeBody = {
+  stripeSetupRef: 'seti_1Ab2Cd',
+  reauthToken: 'ott_9f2ac1',
+};
+
+const closeReconciliationPeriodBody: CloseReconciliationPeriodBody = { explanations: [] };
+
+const reconciliationClosure: ReconciliationClosure = {
+  periodId: '2026-09',
+  closedAt: '2026-10-01T09:00:00Z',
+};
+
+const requestChannelExportBody: RequestChannelExportBody = {
+  kind: 'fec',
+  from: '2026-09-01',
+  to: '2026-09-30',
+};
+
 export const channelsExamples: ModuleExamples = [
   [ChannelReplaySchema, [channelReplay]],
   [ChannelIdentitySchema, [channelIdentity]],
@@ -335,4 +396,10 @@ export const channelsExamples: ModuleExamples = [
   [DashboardScreenSchema, [dashboardScreen]],
   [StatsAnswerSchema, [statsAnswer]],
   [AgendaListSchema, [agendaList]],
+  [PayoutLineSchema, [payoutLine]],
+  [PayoutPageSchema, [payoutPage]],
+  [RequestBankChangeBodySchema, [requestBankChangeBody]],
+  [CloseReconciliationPeriodBodySchema, [closeReconciliationPeriodBody]],
+  [ReconciliationClosureSchema, [reconciliationClosure]],
+  [RequestChannelExportBodySchema, [requestChannelExportBody]],
 ];
