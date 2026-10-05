@@ -1,9 +1,9 @@
 /**
  * `@arthome/contracts/catalog` — The catalogue a viewer browses: dates, artists, rails, media, and the constants and label artefacts a surface boots with.
  *
- * EVERY SCHEMA HERE EMITS A NAMED SCHEMA OF `openapi/storefront.yaml` EXACTLY, and
- * `pnpm run check:emit-diff` is what proves it: the document is authoritative
- * (D-058), so where the two differ the schema changes.
+ * EVERY SCHEMA HERE IS A COMPONENT OF `openapi/storefront.yaml`, which is generated from it
+ * (D-120): `pnpm run check:openapi-generated` fails when the committed document is not
+ * what the schemas emit.
  *
  * The rules this file follows, each of which was a defect the gate found (D-060, D-065):
  *
@@ -26,6 +26,7 @@ import { z } from 'zod';
 import { DisplayState, LANGUAGE_DEPENDENCIES, REPLAY_POLICIES } from '@arthome/core';
 import { MoneyOut, VenueClockSchema, type VocabularyIn, type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
 import { WatchVerdictSchema } from '../entitlement/index.js';
+import type { TaggedSchema } from '../http/tagged.js';
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
 export declare const ImageRenditionSchema: z.ZodObject<{
     url: z.ZodString;
@@ -44,7 +45,7 @@ export declare const DomainConstantsSchema: z.ZodObject<{
     waitlistPriorityWindowHours: z.ZodNumber;
     chatRateLimitPerSecond: z.ZodNumber;
     chatCatchUpMessages: z.ZodOptional<z.ZodNumber>;
-    reactionQuotaPerDate: z.ZodNumber;
+    reactionQuotaPerDate: z.ZodOptional<z.ZodNumber>;
     reminderLeadMinutes: z.ZodNumber;
     replayExpiryWarningHours: z.ZodNumber;
     previewSecondsTotal: z.ZodOptional<z.ZodNumber>;
@@ -156,17 +157,22 @@ export declare const ArtistSummarySchema: z.ZodObject<{
     alertEnabled: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
     nextDate: z.ZodOptional<typeof DateCardSchema>;
 }, z.core.$loose>;
-export declare const RailSchema: z.ZodObject<{
+declare function railFields<Item extends z.ZodType>(items: Item, itemDescription: string): {
     id: z.ZodString;
     titleCode: z.ZodString;
     kind: VocabularyOut;
-    itemKind: VocabularyOut;
     cardForm: VocabularyOut;
-    items: z.ZodArray<z.ZodXor<readonly [typeof DateCardSchema, typeof ArtistSummarySchema]>>;
+    items: z.ZodArray<Item>;
     total: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     totalIsLowerBound: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
     nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-}, z.core.$loose>;
+};
+export declare const DateRailSchema: z.ZodObject<ReturnType<typeof railFields<typeof DateCardSchema>>, z.core.$loose>;
+export declare const ArtistRailSchema: z.ZodObject<ReturnType<typeof railFields<typeof ArtistSummarySchema>>, z.core.$loose>;
+export declare const RailSchema: TaggedSchema<'itemKind', {
+    date: typeof DateRailSchema;
+    artist: typeof ArtistRailSchema;
+}>;
 export declare const ScheduleSlotSchema: z.ZodObject<{
     localHourLabelKey: z.ZodString;
     startsAt: z.ZodOptional<z.ZodString>;
@@ -251,7 +257,7 @@ export declare const SavedSearchSchema: z.ZodObject<{
     categoryId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     queryText: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    criteria: z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodUnknown>>;
+    criteria: z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodUnknown>>;
     criteriaVersion: z.ZodNumber;
     criteriaSignature: z.ZodString;
     stale: z.ZodOptional<z.ZodBoolean>;
@@ -316,7 +322,7 @@ export declare const DateDetailSchema: z.ZodIntersection<typeof DateCardSchema, 
     spokenLanguages: z.ZodOptional<z.ZodArray<z.ZodString>>;
     subtitleLanguages: z.ZodOptional<z.ZodArray<z.ZodString>>;
     surtitleLanguages: z.ZodOptional<z.ZodArray<z.ZodString>>;
-    attributes: z.ZodOptional<z.ZodObject<Record<string, never>, z.core.$loose>>;
+    attributes: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>;
     priceTiers: z.ZodOptional<z.ZodArray<typeof PriceTierSchema>>;
     serviceFee: z.ZodOptional<z.ZodNullable<z.ZodObject<{
         perSeat: z.ZodOptional<typeof MoneyOut>;

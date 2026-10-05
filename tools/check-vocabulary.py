@@ -145,9 +145,9 @@ THE CONTRACT-PROSE BLOCK — and this is where the same fault actually costs
   that writes an accessor ON PURPOSE — a paragraph whose subject IS the spelling —
   is exempted in `tools/prose-literal-codes.json`, with a reason, retracted when
   the description stops writing it. That is a side file rather than an in-artefact
-  marker for a reason from ANOTHER gate, recorded in its header: check-emit-diff
-  compares `components/schemas` node for node, so a marker beside such a
-  description would turn that gate red.
+  marker for a reason from ANOTHER gate: the documents are generated (D-120), so a
+  marker beside a description would have to be declared in the TypeScript and
+  emitted into the contract, and it is not part of what the contract says.
 
 Usage: python3 tools/check-vocabulary.py openapi/*.yaml [architecture/*.md]
 No dependency beyond PyYAML. Everything runs locally.

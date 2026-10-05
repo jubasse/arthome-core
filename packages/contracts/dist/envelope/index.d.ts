@@ -4,7 +4,7 @@
  *
  * WHY THIS IS THE FIRST SHAPE IN THE PACKAGE. `check-openapi.py` R15 requires
  * every 2xx response in both contracts to compose this object, so it is the one
- * schema that appears in all 174 operations. If the emitted form of anything is
+ * schema that appears in every operation. If the emitted form of anything is
  * going to be wrong, it is cheapest to find out here.
  *
  * `looseObject`, NOT `object`, AND THE ASYMMETRY IS THE POINT.
@@ -46,7 +46,7 @@
  *   week on.
  */
 import { z } from 'zod';
-import { type ErrorCode } from '@arthome/core';
+import { ApiErrorCode, ChatErrorCode, DomainErrorCode, IdentityErrorCode, OrderErrorCode, PairingErrorCode, WATCH_DENIAL_REASONS } from '@arthome/core';
 import { ErrorSchema } from '@arthome/core/schema';
 /** The meta every STOREFRONT response composes. */
 export declare const StorefrontEnvelopeMetaSchema: z.ZodObject<{
@@ -94,5 +94,42 @@ export declare const StudioErrorEnvelopeSchema: z.ZodObject<{
  * when the BFF stopped waiting, so a code outside this list cannot reach a surface. A code joins
  * when a route can receive it and a surface has a screen for it.
  */
-export declare const STOREFRONT_RELAYED_CODES: readonly ErrorCode[];
+export declare const STOREFRONT_RELAYED_CODES: readonly [
+    typeof ApiErrorCode.SCHEMA_INVALID,
+    typeof ApiErrorCode.CURSOR_TOO_OLD,
+    typeof ApiErrorCode.NOT_FOUND,
+    typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
+    typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
+    typeof DomainErrorCode.STATE_CONFLICT,
+    typeof IdentityErrorCode.EMAIL_TAKEN,
+    typeof IdentityErrorCode.INVALID_CREDENTIALS,
+    typeof IdentityErrorCode.TWO_FACTOR_REQUIRED,
+    typeof IdentityErrorCode.VERIFICATION_LINK_INVALID,
+    typeof IdentityErrorCode.RESET_TOKEN_EXPIRED,
+    typeof IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED,
+    typeof IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED,
+    typeof OrderErrorCode.QUOTE_ADDRESS_MISMATCH,
+    typeof OrderErrorCode.QUOTE_EXPIRED,
+    typeof OrderErrorCode.SOLD_OUT,
+    typeof OrderErrorCode.TIER_UNAVAILABLE,
+    typeof OrderErrorCode.PAYMENT_DECLINED,
+    typeof OrderErrorCode.PRICE_STALE,
+    typeof OrderErrorCode.PLAN_UNAVAILABLE,
+    typeof OrderErrorCode.CONTRIBUTION_OUT_OF_RANGE,
+    typeof OrderErrorCode.CHECKOUT_LINE_UNAVAILABLE,
+    typeof OrderErrorCode.SALES_QUEUE_ADMISSION_REQUIRED,
+    typeof OrderErrorCode.LATE_ENTRY_UNACKNOWLEDGED,
+    typeof OrderErrorCode.SALES_CLOSED,
+    typeof OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED,
+    typeof ChatErrorCode.HOLDERS_ONLY,
+    typeof ChatErrorCode.RATE_LIMITED,
+    typeof IdentityErrorCode.SIGNED_OUT_ELSEWHERE,
+    typeof PairingErrorCode.SLOW_DOWN,
+    typeof PairingErrorCode.IDENTITY_MISMATCH,
+    typeof PairingErrorCode.INTENT_NOT_ENGAGEABLE,
+    typeof PairingErrorCode.EXECUTION_ENGAGED,
+    ...typeof WATCH_DENIAL_REASONS
+];
+/** The codes a storefront operation may declare: only what a surface can be handed. */
+export type StorefrontRelayedCode = (typeof STOREFRONT_RELAYED_CODES)[number];
 //# sourceMappingURL=index.d.ts.map

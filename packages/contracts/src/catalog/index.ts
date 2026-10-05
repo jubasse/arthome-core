@@ -1,9 +1,9 @@
 /**
  * `@arthome/contracts/catalog` — The catalogue a viewer browses: dates, artists, rails, media, and the constants and label artefacts a surface boots with.
  *
- * EVERY SCHEMA HERE EMITS A NAMED SCHEMA OF `openapi/storefront.yaml` EXACTLY, and
- * `pnpm run check:emit-diff` is what proves it: the document is authoritative
- * (D-058), so where the two differ the schema changes.
+ * EVERY SCHEMA HERE IS A COMPONENT OF `openapi/storefront.yaml`, which is generated from it
+ * (D-120): `pnpm run check:openapi-generated` fails when the committed document is not
+ * what the schemas emit.
  *
  * The rules this file follows, each of which was a defect the gate found (D-060, D-065):
  *
@@ -60,6 +60,8 @@ import {
 } from '@arthome/core/schema';
 
 import { WatchVerdictSchema } from '../entitlement/index.js';
+import type { TaggedSchema } from '../http/tagged.js';
+import { tagged } from '../http/tagged.js';
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
 
 // The document's name for a vocabulary local to the contract. The preferred
@@ -78,7 +80,6 @@ const RAIL_KINDS = [
   'replay_expiring',
   'artists_to_follow',
 ] as const;
-const RAIL_ITEM_KINDS = ['date', 'artist'] as const;
 const CARD_FORMS = ['wide', 'poster', 'portrait'] as const;
 
 const MERCH_STATES = ['on_sale', 'out_of_stock'] as const;
@@ -124,7 +125,7 @@ export const DomainConstantsSchema: z.ZodObject<
     waitlistPriorityWindowHours: z.ZodNumber;
     chatRateLimitPerSecond: z.ZodNumber;
     chatCatchUpMessages: z.ZodOptional<z.ZodNumber>;
-    reactionQuotaPerDate: z.ZodNumber;
+    reactionQuotaPerDate: z.ZodOptional<z.ZodNumber>;
     reminderLeadMinutes: z.ZodNumber;
     replayExpiryWarningHours: z.ZodNumber;
     previewSecondsTotal: z.ZodOptional<z.ZodNumber>;
@@ -165,7 +166,10 @@ export const DomainConstantsSchema: z.ZodObject<
       ),
     reactionQuotaPerDate: int64()
       .meta({ format: undefined })
-      .meta({ examples: [20] }),
+      .optional()
+      .describe(
+        '**Optional, and absent today.** The product owner has decided a graduated rate in place of a\nper-date quota; no document owns its numbers yet, and `sendReaction` serves what remains\n(`realtime.md` §2.3). Never null: a null quota would read as no quota at all.\n',
+      ),
     reminderLeadMinutes: int64()
       .meta({ format: undefined })
       .meta({ examples: [30] }),
@@ -584,55 +588,43 @@ export const ArtistSummarySchema: z.ZodObject<
   ),
 });
 
-export const RailSchema: z.ZodObject<
-  {
-    id: z.ZodString;
-    titleCode: z.ZodString;
-    kind: VocabularyOut;
-    itemKind: VocabularyOut;
-    cardForm: VocabularyOut;
-    items: z.ZodArray<z.ZodXor<readonly [typeof DateCardSchema, typeof ArtistSummarySchema]>>;
-    total: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
-    totalIsLowerBound: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
-    nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-  },
-  z.core.$loose
-> = z
-  .looseObject({
+const RAIL_KIND_REASON =
+  'A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.';
+
+const RAIL_CARD_FORM_REASON =
+  'A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it.';
+
+function railFields<Item extends z.ZodType>(
+  items: Item,
+  itemDescription: string,
+): {
+  id: z.ZodString;
+  titleCode: z.ZodString;
+  kind: VocabularyOut;
+  cardForm: VocabularyOut;
+  items: z.ZodArray<Item>;
+  total: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
+  totalIsLowerBound: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
+  nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+} {
+  return {
     id: z.string(),
     titleCode: z
       .string()
       .meta({ examples: ['home.rail.resume'] })
       .describe('An i18n **code**, never an authored title.'),
-    kind: vocabularyOutLocal(
-      RAIL_KINDS,
-      'A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.',
-    ).describe(
+    kind: vocabularyOutLocal(RAIL_KINDS, RAIL_KIND_REASON).describe(
       '`my_seats` carries "Your seats": it is **not** editorial but personal, and its behaviour is\nits own — the card becomes "Enter the room" when the room opens. Filing it under `editorial`\nwould have erased that difference.\n',
     ),
-    itemKind: vocabularyOut(RAIL_ITEM_KINDS, LOCAL_VOCABULARY)
-      .meta({
-        'x-arthome-vocabulary-reason':
-          'A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.',
-        examples: [RAIL_ITEM_KINDS[0]],
-      })
-      .describe(
-        '**What the rail carries.** Without this field, an artist rail is inexpressible:\n`ArtistSummary` exists in the contract but no rail could transport it, and the surface would\nhave had to guess the type from the rail identifier — that is, from a parallel literal.\n',
-      ),
     cardForm: vocabularyOut(CARD_FORMS, LOCAL_VOCABULARY)
       .meta({
-        'x-arthome-vocabulary-reason':
-          'A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it.',
+        'x-arthome-vocabulary-reason': RAIL_CARD_FORM_REASON,
         examples: [CARD_FORMS[0]],
       })
       .describe(
         '**The card form is an editorial choice, hence server-side**, exactly like the order of the\nrails. `poster` serves the "Posters" rail in vertical 2:3, `portrait` the artists as circles.\nWithout this field the surface would choose from the rail identifier, and *"variety of format\nis what stops the screen looking like a spreadsheet"* — nine rails of identical 16:9 cards is\na television\'s defect number one.\n',
       ),
-    items: z
-      .array(z.xor([DateCardSchema, ArtistSummarySchema]))
-      .describe(
-        '**Union discriminated by `itemKind`**: `DateCard` when `itemKind` is `date`,\n`ArtistSummary` when it is `artist`.\n',
-      ),
+    items: z.array(items).describe(itemDescription),
     total: int64()
       .meta({ format: undefined })
       .nullable()
@@ -648,10 +640,25 @@ export const RailSchema: z.ZodObject<
       .describe(
         '**Per-rail** cursor, consumed by `extendRail`. A rail is an excerpt; it does not paginate on\nscreen, it extends.\n',
       ),
-  })
-  .describe(
-    'A home rail. **Composition and order are server-side**: the design loads 1,814 dates\n(1.79 MB) and filters client-side, which the contract must make impossible on a device that\nhas 300 to 500 MB for everything, video included.\n',
-  );
+  };
+}
+
+export const DateRailSchema: z.ZodObject<
+  ReturnType<typeof railFields<typeof DateCardSchema>>,
+  z.core.$loose
+> = z.looseObject(railFields(DateCardSchema, 'The dates the rail carries.'));
+
+export const ArtistRailSchema: z.ZodObject<
+  ReturnType<typeof railFields<typeof ArtistSummarySchema>>,
+  z.core.$loose
+> = z.looseObject(railFields(ArtistSummarySchema, 'The artists the rail carries.'));
+
+export const RailSchema: TaggedSchema<
+  'itemKind',
+  { date: typeof DateRailSchema; artist: typeof ArtistRailSchema }
+> = tagged('itemKind', { date: DateRailSchema, artist: ArtistRailSchema }).describe(
+  'A home rail, tagged by `itemKind`, **what the rail carries**: `date` for `DateCard`s, `artist` for\n`ArtistSummary`s. Without the tag an artist rail is inexpressible, and the surface would guess\nthe type from the rail identifier, that is, from a parallel literal. **Composition and order are\nserver-side**: the design loads 1,814 dates (1.79 MB) and filters client-side, which the contract\nmust make impossible on a device that has 300 to 500 MB for everything, video included.\n',
+);
 
 export const ScheduleSlotSchema: z.ZodObject<
   {
@@ -936,7 +943,7 @@ export const SavedSearchSchema: z.ZodObject<
     categoryId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     queryText: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    criteria: z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodUnknown>>;
+    criteria: z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodUnknown>>;
     criteriaVersion: z.ZodNumber;
     criteriaSignature: z.ZodString;
     stale: z.ZodOptional<z.ZodBoolean>;
@@ -1063,7 +1070,7 @@ export const PriceTierSchema: z.ZodObject<
     validUntil: InstantOut.nullable()
       .optional()
       .describe(
-        'Present when the current price depends on the instant — the "show already started" price is\n**pro rata to the time remaining** and cannot be a frozen string. 60 s.\n',
+        'Present when the current price depends on the instant — the "show already started" price is\n**pro rata to the time remaining** and cannot be a frozen string. `AVAILABILITY_VALID_SECONDS`\nafter `servedAt` (`@arthome/core`).\n',
       ),
   })
   .meta({ 'x-arthome-price-basis': 'tax_inclusive' });
@@ -1120,7 +1127,7 @@ export const DateDetailSchema: z.ZodIntersection<
       spokenLanguages: z.ZodOptional<z.ZodArray<z.ZodString>>;
       subtitleLanguages: z.ZodOptional<z.ZodArray<z.ZodString>>;
       surtitleLanguages: z.ZodOptional<z.ZodArray<z.ZodString>>;
-      attributes: z.ZodOptional<z.ZodObject<Record<string, never>, z.core.$loose>>;
+      attributes: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>;
       priceTiers: z.ZodOptional<z.ZodArray<typeof PriceTierSchema>>;
       serviceFee: z.ZodOptional<
         z.ZodNullable<

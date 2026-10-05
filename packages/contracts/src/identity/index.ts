@@ -1,9 +1,9 @@
 /**
  * `@arthome/contracts/identity` — Who is asking: the established session, profiles, preferences, consents, devices and the bootstrap ViewerContext.
  *
- * EVERY SCHEMA HERE EMITS A NAMED SCHEMA OF `openapi/storefront.yaml` EXACTLY, and
- * `pnpm run check:emit-diff` is what proves it: the document is authoritative
- * (D-058), so where the two differ the schema changes.
+ * EVERY SCHEMA HERE IS A COMPONENT OF `openapi/storefront.yaml`, which is generated from it
+ * (D-120): `pnpm run check:openapi-generated` fails when the committed document is not
+ * what the schemas emit.
  *
  * The rules this file follows, each of which was a defect the gate found (D-060, D-065):
  *
@@ -51,6 +51,9 @@ import {
   LabelArtifactRefSchema,
 } from '../catalog/index.js';
 import { NotificationPreferencesSchema } from '../engagement/index.js';
+import { sensitive } from '../http/marks.js';
+import type { TaggedSchema } from '../http/tagged.js';
+import { tagged } from '../http/tagged.js';
 import { OrderSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
 
 // The document's name for a vocabulary local to the contract. The preferred
@@ -204,8 +207,8 @@ export const ViewerContextSchema: z.ZodObject<
     >;
     preferences: z.ZodOptional<typeof ViewerPreferencesSchema>;
     constants: typeof DomainConstantsSchema;
-    labelCatalog: typeof LabelArtifactRefSchema;
-    taxonomyArtifact: typeof LabelArtifactRefSchema;
+    labelCatalog: z.ZodNullable<typeof LabelArtifactRefSchema>;
+    taxonomyArtifact: z.ZodNullable<typeof LabelArtifactRefSchema>;
     realtime: z.ZodOptional<
       z.ZodObject<
         {
@@ -254,9 +257,11 @@ export const ViewerContextSchema: z.ZodObject<
       ),
     preferences: ViewerPreferencesSchema.optional(),
     constants: DomainConstantsSchema,
-    labelCatalog: LabelArtifactRefSchema,
-    taxonomyArtifact: LabelArtifactRefSchema.describe(
-      'Same regime as the i18n catalogue, **served per slice and per surface**: mobile loads\nneither the studio vocabulary nor the television key table. 59.5 KB raw / 8.4 KB gzipped for\nthe full slice — this is not an API call.\n',
+    labelCatalog: LabelArtifactRefSchema.nullable().describe(
+      '**Null: nothing newer than the snapshot embedded at build time**, which the surface then\nuses. A real state, not a gap: before the first publication, or for a surface or a locale\nnothing was published for (`context-map.md` §1.8).\n',
+    ),
+    taxonomyArtifact: LabelArtifactRefSchema.nullable().describe(
+      'Same regime as the i18n catalogue, **served per slice and per surface**: mobile loads\nneither the studio vocabulary nor the television key table. 59.5 KB raw / 8.4 KB gzipped for\nthe full slice — this is not an API call. Null as for `labelCatalog`: the embedded snapshot.\n',
     ),
     realtime: z
       .looseObject({
@@ -312,8 +317,10 @@ export const SessionEstablishedBearerSchema: z.ZodObject<
     ).describe(
       '**A narrowing of `SessionMode` to the two token-bearing modes.** `cookie` is absent\nbecause a cookie response carries **nothing in the body** — that is the whole point of the\nsplit — so this branch cannot describe it. `device` shares this schema rather than having\nits own: a device session is token-shaped, and the discriminator maps both values here.\n\nThe studio has no such branch because it has no device sessions; only a television carries\na device token.\n',
     ),
-    accessToken: z.string(),
-    refreshToken: z.string().nullable().optional(),
+    accessToken: sensitive(z.string()),
+    refreshToken: sensitive(z.string().nullable().optional()).describe(
+      '**Always `null` on the storefront.** The session slides instead: seven days, renewed by\nuse at most once a day (`adr-auth.md` §6.1), so the access token is the session and no\noperation takes a refresh token.\n',
+    ),
     expiresAt: InstantOut,
     viewerContext: ViewerContextSchema,
   })
@@ -335,7 +342,7 @@ export const ConsentsSchema: z.ZodObject<
       >
     >;
     cookieCategories: z.ZodOptional<
-      z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodBoolean>>
+      z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodBoolean>>
     >;
     textVersion: z.ZodOptional<z.ZodNumber>;
     recordedAt: z.ZodOptional<z.ZodString>;
@@ -471,23 +478,20 @@ export const StorefrontSessionModeSchema: z.ZodEnum<{
     '**An explicit, validated parameter, never inferred from the `User-Agent`** — that is\nforgeable, and a bypassable heuristic does not count as an answer.\n\n`cookie` for the web surfaces; `bearer` for the native shells, where\n`capacitor://localhost` is a third-party context on iOS and no cookie would survive;\n`device` for the television, which has **neither cookie nor token** at the moment it opens a\nsign-in pairing — which is what device identity solves.\n',
   );
 
-export const StorefrontSessionEstablishedSchema: z.ZodXor<
-  readonly [typeof SessionEstablishedCookieSchema, typeof SessionEstablishedBearerSchema]
-> = z
-  .xor([SessionEstablishedCookieSchema, SessionEstablishedBearerSchema])
-  .meta({
-    discriminator: {
-      propertyName: 'mode',
-      mapping: {
-        cookie: '#/components/schemas/SessionEstablishedCookie',
-        bearer: '#/components/schemas/SessionEstablishedBearer',
-        device: '#/components/schemas/SessionEstablishedBearer',
-      },
-    },
-  })
-  .describe(
-    '**Invariant: a response never carries both a cookie and a token.** Two bearers for one\nsession means **two revocations to maintain and one that will be forgotten** — that is what\nstops a session surviving its own sign-out. So this is not a schema with an optional field:\nit is **two schemas**, discriminated by mode.\n',
-  );
+export const StorefrontSessionEstablishedSchema: TaggedSchema<
+  'mode',
+  {
+    cookie: typeof SessionEstablishedCookieSchema;
+    bearer: typeof SessionEstablishedBearerSchema;
+    device: typeof SessionEstablishedBearerSchema;
+  }
+> = tagged('mode', {
+  cookie: SessionEstablishedCookieSchema,
+  bearer: SessionEstablishedBearerSchema,
+  device: SessionEstablishedBearerSchema,
+}).describe(
+  '**Invariant: a response never carries both a cookie and a token.** Two bearers for one\nsession means **two revocations to maintain and one that will be forgotten** — that is what\nstops a session surviving its own sign-out. So this is not a schema with an optional field:\nit is **two schemas**, discriminated by mode.\n',
+);
 
 export const AccountDeepLinkSchema: z.ZodObject<{ url: z.ZodString }, z.core.$loose> = z
   .looseObject({

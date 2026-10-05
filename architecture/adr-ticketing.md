@@ -1,6 +1,7 @@
 # ADR — Ticketing: selling a date's seats under load
 
-**Status**: **accepted** — arbitrated by the product owner on 2026-09-27, D-077 to D-083.
+**Status**: **accepted** — arbitrated by the product owner on 2026-09-27, D-077 to D-083, and on
+2026-09-29, D-089.
 **Date**: 27 September 2026. **Scope**: the first slice of `ticketing`, a date's seats and its
 waiting list (D-080). The shop, the cart, subscriptions and external orders come later, on the same
 foundations.
@@ -31,9 +32,14 @@ and no seat.
 ```
 purchaseSeat
   [admission]  a valid admission token when the date's waiting room is armed (§4)
+  [late entry] past the start, the buyer's acknowledgement of the delay in a header (D-089),
+               checked before the key is claimed: 409 without it; a replayed key answers its
+               original response
   tx A         idempotency record (in flight) · price verified (order.price_stale)
                UPDATE date_sales SET seats_available = seats_available - q
-                WHERE date_id = $1 AND on_sale AND seats_available >= q     0 rows: order.sold_out
+                WHERE date_id = $1 AND on_sale AND seats_available >= q
+                  AND (sales_end_at IS NULL OR sales_end_at > now)
+                                        0 rows: order.sold_out; past the cutoff, order.sales_closed
                INSERT seat_hold (active, expires_at = the purchase intent's expiry)
                INSERT seat_order (pending, the quote frozen, the tax evidence of D-021)
   outside      PaymentPort.createIntent, idempotency key = the order id
@@ -48,6 +54,10 @@ purchaseSeat
 - **The idempotency key is bound to the order** (a unique `seat_order.idempotency_key`). A replay
   after a crash between tx A and tx B resumes the order from its recorded state instead of
   answering `api.idempotency_in_flight` for ever.
+- **Sales end `SEAT_SALES_CUTOFF_MINUTES_AFTER_START` (30) minutes after the start (D-089).** A seat
+  covers the live only, and the cutoff sits in the decrement's own predicate, so no sale slips
+  past it while a sweeper catches up. Once the live has started, the quote states how long ago,
+  and `decideWatch` stops offering `buy_seat` once the cutoff has passed.
 - **The handoff expires with the hold**: `PaymentHandoff.expiresAt` is the hold's `expires_at`, one
   instant (`data-model.md` §3.2). The storefront examples showing thirty minutes are wrong.
 - **Budget**: p95 ≤ 2 s for the whole command (`transport.md` §5.9). Tx A and tx B are
@@ -158,7 +168,8 @@ may already be sold again.
   500 per transaction, with `credit.issued`.
 - **A postponed date** (`catalog.date.rescheduled`): the seats follow, nothing is refunded, and
   `cancel_deadline` is recomputed from the new start and served as an instant. Sales go on until
-  the date sells out.
+  the date sells out or reaches its new cutoff (D-089): the cutoff moves with the start, and a
+  sale closed by time reopens when the start moves later.
 
 ## 9. The waiting list (D-083)
 
@@ -210,10 +221,14 @@ operator chooses on the studio's `refundSeat`. `TicketCard.state` without `held`
   order's `paid` transition.
 - `SeatHold`, and `WaitlistEntry`.
 
-**The hot decrement is the one deliberate exception to load, modify, save.** A load-modify-save
-under the row lock would hold the lock across application code, at exactly the moment it matters
-most. So the aggregate decides the command's parameters, and its repository executes the
-conditional decrement as one atomic statement. Every other `DateSales` command (prices, tiers)
+**The counter moves of a hold, a payment and an expiry are the deliberate exception to load,
+modify, save.** A load-modify-save under the row lock would hold the lock across application code,
+at exactly the moment it matters most. So the aggregate decides the hold (the quantity, the sale
+open, its end not passed), and the repository executes each counter move as one conditional
+statement: the hold's decrement, the sale of held seats at payment, the seats given back at expiry
+or failure, and D-082's retake of a payment whose hold expired. Each runs last in its transaction,
+so the date's row is locked for the commit alone, except the retake, whose result decides between
+seating and refunding. Every other `DateSales` command (prices, tiers, the technical provision)
 loads the aggregate and saves it with a version-conditional update.
 
 **Commands and queries** go through `@nestjs/cqrs`, with the conventions of the catalog refactor

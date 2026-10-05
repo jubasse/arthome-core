@@ -134,7 +134,7 @@ is a reversible decision because the schemas and the topics do not change.
 
 ## 3. The topics
 
-**Sixteen topics, and the thirty aggregate types they carry.** An earlier version of this table
+**Every topic, and the aggregate types it carries.** An earlier version of this table
 declared fourteen and left **sixteen aggregate types with no topic** — hence no key, no partition
 count, no `groupId` and no AsyncAPI channel, while the definition of done generates the channels
 **from this table**. The table below is exhaustive: **every message in §4 finds its topic here.**
@@ -144,6 +144,7 @@ count, no `groupId` and no AsyncAPI channel, while the definition of done genera
 | `arthome.identity.account` | `identity` | `account_id` | 3 | `account`, `artist` (follows), `rights_version` | **stable** |
 | `arthome.identity.device` | `identity` | `device_id` | 3 | `device`, `device_session` | **stable** |
 | `arthome.identity.channel` | `identity` | `channel_id` | 3 | `channel`, `date_access` | **stable** |
+| `arthome.identity.email_verification` | `identity` | `account_id` | 3 | `email_verification` | **stable** |
 | `arthome.catalog.date` | `catalog` | `date_id` | **12** | `date`, **`publication`** | **stable** |
 | `arthome.catalog.show` | `catalog` | `show_id` | 3 | `show` | **stable** |
 | `arthome.catalog.artist` | `catalog` | `artist_id` | 3 | `artist` | **stable** |
@@ -159,6 +160,14 @@ count, no `groupId` and no AsyncAPI channel, while the definition of done genera
 | `arthome.notifications.delivery` | `notifications` | `account_id` | 3 | `delivery` | provisional |
 
 Plus, per context: `arthome.<context>.retry` and `arthome.<context>.dlq`.
+
+**`arthome.identity.email_verification` is a topic of its own because it carries a secret**: the
+token of D-100's verification link, which `notifications` turns into the link. `notifications` is
+its one consumer, so no other context ever reads a token. The token is short-lived by itself: spent
+by its first use, dead after `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS` (`@arthome/core`). The topic
+keeps the week every topic keeps, because a retention shorter than the platform's republish
+horizon would make every row past it look unpublished, and republish an expired link. **A token
+that opens an account, a password reset's, never takes this path**: slice D decides its own.
 
 ### 3.1 Why these groupings, and not one topic per aggregate
 
@@ -201,6 +210,7 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 | Event | Payload | Consumed by | Why |
 |---|---|---|---|
 | `identity.account.registered.v1` | `account_id`, `locale`, `country`, `occurred_at` | `notifications` | welcome email |
+| `identity.email_verification.requested.v1` | `account_id`, `email`, `locale`, `token`, `expires_at` | **`notifications` alone** | D-100's verification link, on `arthome.identity.email_verification` (§3): the token travels in clear, and the proto's comment says why that is acceptable for this token only |
 | `identity.account.deletion_requested.v1` | `account_id`, `grace_until` | `ticketing`, `payouts`, `notifications`, `chat`, `streaming` | **erasure saga** (`data-model.md` §7.5) |
 | `identity.account.anonymised.v1` | `account_id` | all | dissociate nicknames, freeze invoices |
 | `identity.device.revoked.v1` | `device_id`, `account_id` | **`streaming`** | invalidate this device's playback leases: that is what makes "disconnect this device" stop playback |
@@ -232,15 +242,15 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 
 | Event | Payload | Consumed by |
 |---|---|---|
-| `ticketing.date_sales.availability_changed.v1` | `date_id`, `seats_available`, `waitlist_count`, `lowest_price`, `fill_rate`, `sold_out` | **`catalog`** (public card, index, studio agenda), `notifications` ("almost full" at 85%) |
-| `ticketing.date_sales.pricing_changed.v1` | `date_id`, `tiers[]`, `promotions[]` | `catalog` (card, checklist) |
-| `ticketing.date_sales.capacity_set.v1` | `date_id`, `capacity_total`, `tiers[]` | `catalog` (checklist), `streaming` (technical provisioning) |
-| `ticketing.seat.activated.v1` | `seat_id`, `date_id`, `account_id`, `tier`, `seat_code` | **`streaming`** (`entitlement_projection`), `notifications` (reminder at T−30) |
+| `ticketing.date_sales.availability_changed.v1` | `date_id`, `channel_id`, `seats_available`, `waitlist_count`, `lowest_price?` (unset while no tier is active), `fill_rate_bps`, `sold_out` | **`catalog`** (public card, index, studio agenda), `notifications` ("almost full" at 85%) |
+| `ticketing.date_sales.pricing_changed.v1` | `date_id`, `channel_id`, `tiers[]`, `promotions[]`, `prices_locked`, `changed_by` | `catalog` (card, checklist) |
+| `ticketing.date_sales.capacity_set.v1` | `date_id`, `channel_id`, `capacity_total`, `technical_provision_required`, `provision_revisable_until`, `set_by`, `provisioned_capacity?` (unset while no provision is recorded). Written by `openCapacityTier` and by `setTechnicalProvision` (D-088), so provisioning reads the capacity and its provision in one fact | `catalog` (checklist), `streaming` (technical provisioning) |
+| `ticketing.seat.activated.v1` | `seat_id`, `order_id`, `date_id`, `account_id`, `profile_id?` (a purchase from a shared television), `tier`, `seat_code`, `cancel_deadline` | **`streaming`** (`entitlement_projection`), `notifications` (reminder at T−30) |
 | `ticketing.seat.cancelled.v1` | `seat_id`, `date_id`, `account_id`, `reason` | `streaming`, `payouts` |
-| `ticketing.order.paid.v1` | `order_id`, `kind` (`seat`\|`merch`\|`subscription`), `channel_id`, `date_id?`, `gross`, `vat_breakdown[]`, `fees` | **`payouts`** (this is the raw material of the right to a payout) |
-| `ticketing.order.refunded.v1` | `order_id`, `amount`, `reason` (the seat's cancellation, if any), `refund_reason` (why the money went back: `REFUND_REASONS`, `hold_expired_capacity_lost` included, D-082) | `payouts`, `notifications` |
-| `ticketing.credit.issued.v1` | `credit_id`, `account_id`, `channel_id`, `amount`, `origin_ref` | `payouts` (a credit note is a liability), `notifications` |
-| `ticketing.subscription.changed.v1` | `account_id`, `plan`, `state`, `opens[]`, `seat_discount`, `period_end` | **`streaming`** (the right to watch), `catalog` (displayed price) |
+| `ticketing.order.paid.v1` | `order_id`, `kind` (`seat`\|`merch`\|`subscription`), `channel_id`, `date_id?`, `account_id`, `gross_ttc`, `vat[]`, `service_fee`, `discount`, `credit_applied`, `payment_intent_ref`, `paid_at`, `buyer_tax_location` (with its evidence) | **`payouts`** (this is the raw material of the right to a payout) |
+| `ticketing.order.refunded.v1` | `order_id`, `channel_id`, `amount`, `refund_ref`, `reason` (the seat's cancellation, if any), `refund_reason` (why the money went back: `REFUND_REASONS`, `hold_expired_capacity_lost` included, D-082) | `payouts`, `notifications` |
+| `ticketing.credit.issued.v1` | `credit_id`, `account_id`, `channel_id`, `amount`, `origin`, `origin_date_id`, `expires_at` | `payouts` (a credit note is a liability), `notifications` |
+| `ticketing.subscription.changed.v1` | `account_id`, `plan`, `state`, `opens[]`, `seat_discount_bps`, `concurrent_streams_allowed` (`streaming` enforces it), `current_period_end` | **`streaming`** (the right to watch), `catalog` (displayed price) |
 | `ticketing.waitlist.notified.v1` | `date_id`, `account_ids[]`, `priority_until`. **Chunked**: one tier opening notifies the whole list (D-083) in as many messages as it needs, each naming at most `WAITLIST_NOTIFIED_ACCOUNTS_MAX` (500) accounts | `notifications` |
 
 ### 4.4 `streaming`

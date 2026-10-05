@@ -40,3 +40,4 @@ packages/*/dist/**/*.js
 __pycache__/
 *.pyc
 packages/tooling/docs/
+release-assets/

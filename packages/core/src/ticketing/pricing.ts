@@ -6,7 +6,7 @@ import { add, money, subtract, type Money } from '../money/money.js';
 import { applyRate, roundMinor, type BasisPoints } from '../money/rounding.js';
 import { isBefore } from '../time/instant.js';
 import type { PriceTier, PromotionReason } from '../vocabulary/commerce.js';
-import { DomainErrorCode, DomainGuardCode } from '../vocabulary/error-codes.js';
+import { CatalogErrorCode, DomainErrorCode, DomainGuardCode } from '../vocabulary/error-codes.js';
 
 export interface TierPrice {
   readonly tier: PriceTier;
@@ -19,6 +19,22 @@ export interface Promotion {
   readonly currentPrice: Money;
   readonly validFrom: Instant;
   readonly validUntil: Instant;
+}
+
+/**
+ * A date sells in one currency, its billing market's (D-016). `lowestActivePrice` compares tier
+ * amounts and relies on it.
+ */
+export function assertPricesShareCurrency(tiers: readonly TierPrice[]): void {
+  const [first, ...rest] = tiers;
+  if (first === undefined) return;
+  const expected = first.amount.currencyCode;
+  const stray = rest.find((tier) => tier.amount.currencyCode !== expected);
+  if (stray === undefined) return;
+  throw new DomainError({
+    code: CatalogErrorCode.PRICES_CURRENCY_MISMATCH,
+    params: { tier: stray.tier, currency: stray.amount.currencyCode, expected },
+  });
 }
 
 /** The headline price: the lowest of the ACTIVE tiers. */

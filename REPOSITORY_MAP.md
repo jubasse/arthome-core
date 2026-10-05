@@ -22,15 +22,17 @@ A declaration longer than 160 characters is listed by kind only — read the `.d
 
 #### @arthome/contracts/catalog
 
-Declarations: `dist/catalog/index.d.ts` — 22 exported names.
+Declarations: `dist/catalog/index.d.ts` — 24 exported names.
 
 - `ArtistDetailSchema` (const) — 'ArtistDetail' and 'DateDetail' — the two pages.
+- `ArtistRailSchema` (const) — `ArtistRailSchema: z.ZodObject<ReturnType<typeof railFields<typeof ArtistSummarySchema>>, z.core.$loose>`
 - `ArtistSummarySchema` (const)
 - `CategoryScreenSchema` (const)
 - `CategoryTileSchema` (const)
 - `ChapterSchema` (const) — `ChapterSchema: z.ZodObject<{ id: z.ZodString; vocabId: z.ZodString; atMediaSec: z.ZodNumber; }, z.core.$loose>`
 - `DateCardSchema` (const)
 - `DateDetailSchema` (const)
+- `DateRailSchema` (const) — `DateRailSchema: z.ZodObject<ReturnType<typeof railFields<typeof DateCardSchema>>, z.core.$loose>`
 - `DomainConstantsSchema` (const)
 - `FacetSchema` (const) — `FacetSchema: z.ZodObject<{ facetId: z.ZodString; values: z.ZodArray<z.ZodObject<{ id: z.ZodString; count: z.ZodNumber; }, z.core.$loose>>; }, z.core.$loose>`
 - `HomeScreenSchema` (const)
@@ -40,7 +42,7 @@ Declarations: `dist/catalog/index.d.ts` — 22 exported names.
 - `MediaSetSchema` (const)
 - `MerchItemSchema` (const) — An item of merchandise sold alongside an artist or a date.
 - `PriceTierSchema` (const)
-- `RailSchema` (const)
+- `RailSchema` (const) — `RailSchema: TaggedSchema<'itemKind', { date: typeof DateRailSchema; artist: typeof ArtistRailSchema; }>`
 - `SavedSearchSchema` (const)
 - `ScheduleSlotSchema` (const)
 - `SearchCriteriaSchema` (const)
@@ -65,15 +67,221 @@ Declarations: `dist/entitlement/index.d.ts` — 1 exported names.
 
 #### @arthome/contracts/envelope
 
-Declarations: `dist/envelope/index.d.ts` — 7 exported names.
+Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
-- `STOREFRONT_RELAYED_CODES` (const) — `STOREFRONT_RELAYED_CODES: readonly ErrorCode[]` — The service refusals a storefront BFF relays to a surface, 'params' included (transport.md §5.5).
+- `STOREFRONT_RELAYED_CODES` (const) — The service refusals a storefront BFF relays to a surface, 'params' included (transport.md §5.5).
 - `StorefrontEnvelopeMetaSchema` (const) — The meta every STOREFRONT response composes.
 - `StorefrontErrorEnvelopeSchema` (const) — `StorefrontErrorEnvelopeSchema: z.ZodObject<{ error: typeof StorefrontErrorSchema; servedAt: z.ZodString; }, z.core.$loose>` — 'ErrorEnvelope' — the shape every failure arrives in.
 - `StorefrontErrorSchema` (const) — `StorefrontErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>` — 'Error' — ONE SHAPE, TWO SETS OF PROSE, and the split is the smallest version of D-065 §G there is.
+- `StorefrontRelayedCode` (type) — `type StorefrontRelayedCode = (typeof STOREFRONT_RELAYED_CODES)[number];` — The codes a storefront operation may declare: only what a surface can be handed.
 - `StudioEnvelopeMetaSchema` (const) — The meta every STUDIO response composes.
 - `StudioErrorEnvelopeSchema` (const) — `StudioErrorEnvelopeSchema: z.ZodObject<{ error: typeof StudioErrorSchema; servedAt: z.ZodString; }, z.core.$loose>`
 - `StudioErrorSchema` (const) — `StudioErrorSchema: z.ZodObject<typeof ErrorSchema.shape, z.core.$loose>`
+
+#### @arthome/contracts/http
+
+Declarations: `dist/http/index.d.ts` — 183 exported names.
+
+- `AcceptedOptions` (interface)
+- `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
+- `AccessorOf` (type) — `type AccessorOf<T extends readonly string[]> = { readonly [Member in T[number] as Uppercase<Member>]: Member; };` — Named members for a list of words, 'CHAT' for ''chat'', so no module spells a member again.
+- `Acknowledged` (const) — `Acknowledged: z.ZodOptional<z.ZodObject<{ accepted: z.ZodOptional<z.ZodBoolean>; }, z.core.$loose>>` — The data of an action that answers only that it was done.
+- `ActionOptions` (type)
+- `ActionRoute` (type)
+- `Api` (type) — `type Api<Routes extends Readonly<Record<string, Route>> = Readonly<Record<string, Route>>> = ApiDefinition<Routes>;`
+- `ApiComponents` (interface)
+- `ApiDefinition` (interface) — A whole document: its top-level keys as the document writes them, 'routes' in place of 'paths'.
+- `BATCH_BODY_LIMIT` (const) — `BATCH_BODY_LIMIT = 2097152` — 2 MiB: the ceiling of a batched read.
+- `BatchRoute` (type)
+- `BuiltRoute` (type) — The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors.
+- `BuiltRouteDefinition` (type) — What a builder's 'defineRoute' takes: a route without its version and its security, which the builder holds and derives.
+- `CacheOptions` (interface)
+- `CachePolicy` (interface)
+- `CallerKind` (type+const) — `CallerKind: { readonly ANONYMOUS: "anonymous"; readonly IDENTIFIED: "identified"; } type CallerKind = (typeof CallerKind)[keyof typeof CallerKind];` — Who an answer goes to, as a cache sees it: nobody in particular, or a principal.
+- `ChildContext` (type) — The context of what is nested under one record of 'C', or under 'C' itself when it has no id.
+- `ClientView` (type) — What a client may receive: each tagged union of a body gains the unknown variant, so an exhaustive 'switch' on the tag must handle it.
+- `CodedResponse` (interface) — Type-only: the code a shared error response stands for, so two responses never share a type.
+- `CodesByStatus` (type) — `type CodesByStatus = Readonly<Partial<Record<ErrorStatus, readonly string[]>>>;` — The codes each status of a declaration can carry.
+- `CodesOf` (type) — The codes an error response declares, or 'never' for a response that does not name them.
+- `CodesOfIdentity` (type) — `type CodesOfIdentity<I> = I extends Identity<string, z.ZodType, infer C> ? C : never;`
+- `CodesOfRequirement` (type) — `type CodesOfRequirement<R> = R extends Requirement<string, object, infer C> ? C : never;`
+- `Collected` (type) — `type Collected<Trees extends readonly RouteTree[]> = Flatten<UnionToIntersection<Leaves<Trees[number]>>>;`
+- `CreateRoute` (type)
+- `CrudMember` (type) — `type CrudMember = 'find' | 'findAll' | 'create' | 'update' | 'replace' | 'upsert' | 'delete';`
+- `CrudOptions` (interface)
+- `CrudRoutes` (type) — What 'crud' returns: its routes keyed by operation id, so the record spreads into a closure.
+- `DEFAULT_BODY_LIMIT` (const) — `DEFAULT_BODY_LIMIT = 1048576` — 1 MiB: the ceiling of a request body unless a route says otherwise ('transport.md' §5.7).
+- `DERIVED_ERROR_CODES` (const) — The errors every route of an api can answer whatever it declares: the framework's refusals, the rate limit, the identity and the surface.
+- `DeadlineParameter` (const) — `DeadlineParameter: HeaderParameter<'x-arthome-deadline', z.ZodString, true>`
+- `Degraded` (type) — `type Degraded<R> = R extends { readonly degradable: infer D extends readonly string[]; } ? { readonly degraded?: readonly D[number][]; } : unknown;` — 'degraded' is typed from the route's 'degradable': only the parts it names.
+- `DeleteRoute` (type)
+- `Deleted` (const) — `Deleted: z.ZodOptional<z.ZodObject<{ deleted: z.ZodOptional<z.ZodBoolean>; }, z.core.$loose>>` — The data of a removal: replayed on something already removed, it still succeeds.
+- `DerivedExample` (interface) — A record's registered example, shown as this answer: wrapped in the api's envelope.
+- `DerivedStatus` (type) — `type DerivedStatus = keyof typeof DERIVED_ERROR_CODES;`
+- `ERRORS` (const) — `ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C>; }`
+- `Endpoints` (type) — One method per operation id of a block of routes, each taking its 'HandlerInput' and returning its 'HandlerOutput'.
+- `EnvelopeOf` (type) — `type EnvelopeOf<K> = K extends { readonly meta?: infer M extends object; } ? M : object;` — The fields an api's envelope carries on every answer, from its conventions.
+- `ErrorBody` (type) — The body of a failure carrying 'C': a union over the members of 'C', discriminated on 'error.code'.
+- `ErrorCodesIn` (type) — `type ErrorCodesIn<R> = { readonly [S in keyof R as [CodesInResponse<R[S]>] extends [never] ? never : S]: readonly CodesInResponse<R[S]>[]; };` — The codes each error response of 'R' names in its type, by status: what a route's 'errorCodes' holds.
+- `ErrorDefinition` (interface)
+- `ErrorList` (type) — `type ErrorList<Allowed extends string> = readonly Allowed[];` — The errors a route declares: a list of codes, each answered with its status from 'ERRORS'.
+- `ErrorModel` (interface) — An api's error vocabulary: the response it documents once per status (a component, so a route that adds nothing keeps its '$ref'), the code…
+- `ErrorResponse` (type) — `type ErrorResponse<C extends string> = JsonResponse<z.ZodType<ErrorBody<C>>> & CodedResponse<C>;` — An error response whose body is one of the envelopes of 'C'.
+- `ErrorStatus` (type) — `type ErrorStatus = 400 | 401 | 402 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;`
+- `ErrorStatusMap` (interface) — The status of each code, as a type, so a route's codes are grouped by status at compile time.
+- `ExpectedVersionQuery` (type) — `type ExpectedVersionQuery = QueryParameter<'expectedVersion', z.ZodType, true>;`
+- `Extensions` (type) — `type Extensions = Readonly<Record<'x-${string}', unknown>>;` — OpenAPI's specification extensions, carried into the document verbatim.
+- `FindAllRoute` (type)
+- `FindRoute` (type)
+- `Freshness` (type+const) — What a route promises about time and size: the freshness of its answer, the latency budget the typed client times out under, and the body c…
+- `GroupedByStatus` (type) — `type GroupedByStatus<C extends string> = { readonly [S in StatusOfCode<C>]: readonly CodesAnsweredWith<C, S>[]; };` — A list of codes grouped by the status each is answered with, as 'groupByStatus' does at run time.
+- `HandlerInput` (interface)
+- `HandlerOutput` (type) — One success status: the body itself.
+- `Header` (interface)
+- `HeaderParameter` (type)
+- `HttpMethod` (type) — `type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'patch';`
+- `IDEMPOTENCY_REPLAYED_HEADER` (const) — `IDEMPOTENCY_REPLAYED_HEADER: Header` — On a write carrying 'Idempotency-Key': 'true' when the answer is the stored one of an earlier attempt.
+- `IdentifiedAccess` (interface)
+- `Identity` (interface) — The identified state of a surface, declared once: which credentials a read and a write accept, and what the server knows about the caller o…
+- `IdentityOptions` (interface)
+- `ItemResponse` (type) — `type ItemResponse<K, S extends z.ZodType, Relations = unknown> = JsonResponse<z.ZodType<EnvelopeOf<K> & { readonly data: z.output<S> & Relations; }>>;` — The answer of one record: the api's envelope and the record under 'data'.
+- `JsonRequestBody` (interface) — The annotation of a request carrying a JSON body.
+- `JsonResponse` (interface) — The annotation of a response with a JSON body.
+- `MediaType` (interface) — Its example is never written here: the emitter takes it from a registry (a module's or 'ERRORS').
+- `MemberDocs` (type) — What a member says beyond the convention: prose, metadata, extra parameters, responses and codes.
+- `MergedErrors` (type) — The error responses a list of codes, or the same codes grouped by status, makes over those already held.
+- `NATURE_BY_STATUS` (const) — `NATURE_BY_STATUS: Readonly<Record<ErrorStatus, FailureNature>>` — transport.md §5.5: a 4xx is refused, except 429; a 5xx is unavailable.
+- `NO_STORE_HEADER` (const) — `NO_STORE_HEADER: Header` — On an answer carrying a 'sensitive' field: kept out of every cache, and out of the app snapshot.
+- `PageResponse` (type) — `type PageResponse<K, S extends z.ZodType> = JsonResponse<z.ZodType<EnvelopeOf<K> & { readonly items: readonly z.output<S>[]; readonly page: unknown; }>>;` — The answer of a list: the api's envelope, the records under 'items' and the page ('transport.md' §5.5).
+- `Paging` (type)
+- `PagingConvention` (interface) — What an api says about a kind of paging: its parameters, and the envelope of one page of 'data'.
+- `PagingConventions` (interface)
+- `PagingKind` (type) — `type PagingKind = Paging['kind'];`
+- `Parameter` (interface)
+- `ParameterLocation` (type) — `type ParameterLocation = 'path' | 'query' | 'header' | 'cookie';`
+- `PathParameter` (interface) — The annotation of a path parameter: OpenAPI makes every one required.
+- `Period` (interface) — 'from' and 'to', and the refusal a required period implies.
+- `PeriodOptions` (interface)
+- `PeriodType` (type) — `type PeriodType = 'date' | 'dateTime';`
+- `PrincipalOf` (type) — What a handler receives for the caller: the identity's principal, or 'null' where the route lets an anonymous caller in.
+- `PublicAccess` (interface)
+- `QueryParameter` (type)
+- `RESTRICTED_KEY` (const) — `RESTRICTED_KEY = "x-arthome-restricted"`
+- `ReauthProof` (const) — `ReauthProof: z.ZodObject<{ reauthToken: z.ZodString; }, z.core.$strip>` — The proof 'recentAuth({ intent })' reads: the body of a route that requires it extends this.
+- `RecentAuth` (type) — The 'recentAuth' rule of a surface, typed by its re-authentication intents.
+- `ReplaceRoute` (type)
+- `RequestBody` (interface)
+- `Requirement` (interface) — A rule beyond identity: a name the server maps to a guard, its parameters, and the codes it can answer.
+- `Resource` (interface)
+- `ResourceContext` (interface) — What a resource knows about itself: the builder it comes from and the path it serves.
+- `ResourceConventions` (interface) — What an api decides once for every resource it serves: the envelope of one record and of a page, the parameters a list takes, the validator…
+- `ResourceOf` (type) — The resource a builder makes for 'name', for an annotation: 'ResourceOf<typeof studioV1, 'incidents', typeof IncidentIdParameter>'.
+- `ResourceOptions` (interface)
+- `Response` (interface)
+- `RestrictedField` (interface)
+- `Returned` (type) — `type Returned<B, R = unknown> = [B] extends [undefined] ? undefined : Omit<Strict<B>, Stamped | 'degraded'> & Degraded<R>;` — The data a handler returns: the declared body, strict, without the envelope meta the server stamps.
+- `RolesRequirement` (interface) — A role rule: the caller holds one of 'allowed' on the channel or the date 'on' names.
+- `RootScope` (interface)
+- `Route` (type) — `type Route<T extends RouteShape = RouteShape> = T & Omit<RouteDefinition, keyof T>;`
+- `RouteBody` (type) — `type RouteBody<R extends RouteShape> = R extends { readonly requestBody: { readonly content: infer C; }; } ? z.output<JsonSchemaOf<C>> : undefined;`
+- `RouteBuilder` (interface) — Settings shared by the routes of a group, accumulated one call at a time.
+- `RouteDefinition` (interface)
+- `RouteHeaders` (type) — `type RouteHeaders<R extends RouteShape> = ValuesIn<R, 'header', 'output'>;` — The declared headers a handler receives, under the lowercase names Node gives them.
+- `RouteInput` (interface) — What a client sends: inputs (defaults may be left out), header names as the contract writes them.
+- `RouteParams` (type) — `type RouteParams<R extends RouteShape> = ValuesIn<R, 'path', 'output'>;` — The path parameters a handler receives.
+- `RoutePrincipal` (type) — `type RoutePrincipal<R> = R extends { readonly access: infer A; } ? PrincipalOf<A> : undefined;` — The caller as the route declares it: the identity's principal, 'null' where an anonymous caller is let in, 'undefined' on a public route.
+- `RouteQuery` (type) — `type RouteQuery<R extends RouteShape> = ValuesIn<R, 'query', 'output'>;` — The query a handler receives: validated and coerced, an exploded object's fields at the top.
+- `RouteResponseBody` (type)
+- `RouteShape` (interface) — What a route's types are read from — the part of its annotation a handler or client needs.
+- `RouteStatus` (type) — `type RouteStatus<R extends RouteShape> = keyof R['responses'] & (number | '${number}');`
+- `RouteSuccessStatus` (type) — `type RouteSuccessStatus<R extends RouteShape> = Extract<RouteStatus<R>, 200 | 201 | 202 | 203 | 204 | 206 | '200' | '201' | '202' | '203' | '204' | '206'>;` — The 2xx statuses a route declares.
+- `RouteTree` (interface)
+- `SENSITIVE_KEY` (const) — `SENSITIVE_KEY = "x-arthome-sensitive"`
+- `SERVED_AT_HEADER` (const) — `SERVED_AT_HEADER: Header` — Beside 'Idempotency-Replayed': when the replay was served, the body's 'servedAt' being the first attempt's.
+- `Scope` (interface) — A path prefix and the path parameters it declares: what 'path()' accumulates.
+- `SearchTextOptions` (interface)
+- `SecurityRequirement` (type) — `type SecurityRequirement = Readonly<Record<string, readonly string[]>>;` — The schemes that satisfy a route, by name: '{}' is a call with no credential at all.
+- `ServicePrincipalSchema` (const) — `ServicePrincipalSchema: z.ZodObject<{ callingService: z.ZodString; userId: z.ZodNullable<z.ZodString>; }, z.core.$strip>`
+- `SingleOptions` (interface)
+- `SortDirection` (type) — `type SortDirection = (typeof SORT_DIRECTIONS)[number];`
+- `SortKey` (type) — `type SortKey = string | { readonly key: string; readonly right: string; };` — A sort key, and the right a caller needs to order by it when the field is restricted.
+- `Strict` (type) — A declared shape without the index signatures its loose objects carry, so a handler returning an undeclared field is a compile error.
+- `SubresourceReplaceRoute` (type)
+- `TaggedBrand` (interface) — Type-only: marks a union as tagged on 'Tag', so the client's view of it can add the unknown variant.
+- `TaggedSchema` (type) — `type TaggedSchema<Tag extends string, V extends Variants> = z.ZodType<Union<Tag, V>>;` — What 'tagged' returns: the explicit type of an exported union, under 'isolatedDeclarations'.
+- `TolerantParse` (type)
+- `UnknownVariant` (type) — `type UnknownVariant<Tag extends string> = Readonly<Record<Tag, string & {}>> & Readonly<Record<string, unknown>>;` — A variant the client does not know yet: kept raw, and treated as neutral ('transport.md' §5.11).
+- `UpdateRoute` (type)
+- `UpsertRoute` (type)
+- `VARY_HEADER` (const) — `VARY_HEADER: Header`
+- `VersionedPath` (type) — `type VersionedPath<R extends Pick<RouteShape, 'version' | 'path'>> = '/v${R['version']}${R['path']}';`
+- `accepted` (function) — '202': the work is accepted, not done.
+- `accessorOf` (function) — `function accessorOf<const T extends readonly string[]>(members: T): AccessorOf<T>;` — The accessor built from the list rather than written beside it: the list stays the one declaration, which is what 'check-enums' reads.
+- `bodySchemaOf` (function) — `function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;` — The JSON body's schema, or 'undefined' for a route that takes none.
+- `cache` (function) — `function cache(freshness: Freshness, options?: CacheOptions): CachePolicy;` — 'cache(Freshness.FIVE_MINUTES)': the family of 'transport.md' §5.9, with its directive.
+- `cacheControlHeaderOf` (function) — `function cacheControlHeaderOf(policy: CachePolicy, callers: readonly [CallerKind, ...CallerKind[]]): Header;` — The 'Cache-Control' a 200 declares: the one value of 'cacheControlOf', or one per kind of caller where they differ.
+- `cacheControlOf` (function) — `function cacheControlOf(policy: CachePolicy, caller: CallerKind): string;` — The 'Cache-Control' value of a policy for one caller, as the BFF writes it.
+- `changesSince` (function) — `function changesSince(): { readonly kind: 'changesSince'; };` — The token a change feed takes: '410' when it is too old.
+- `codedEnvelopesIn` (function) — `function codedEnvelopesIn(schema: z.ZodType): readonly (readonly [string, z.ZodType])[];` — The coded envelopes 'schema' is, itself or as the members of a union, each with its code.
+- `collect` (function) — `function collect<const Trees extends readonly RouteTree[]>(...trees: Trees): Collected<Trees>;`
+- `cursor` (function) — `function cursor(options: { readonly maxLimit: number; }): { readonly kind: 'cursor'; readonly maxLimit: number; };` — 'cursor' and 'limit': '400 api.schema_invalid' on a malformed cursor, '410 api.cursor_too_old' on an old one.
+- `defineApi` (function) — `function defineApi<const Routes extends Readonly<Record<string, Route>>>(definition: ApiDefinition<Routes>): Api<Routes>;`
+- `defineErrorModel` (function) — `function defineErrorModel<Allowed extends string>(model: ErrorModel<Allowed>): ErrorModel<Allowed>;`
+- `defineRoute` (function) — `function defineRoute<const T extends RouteDefinition>(definition: T): Route<T>;`
+- `errorCodesOf` (function) — The codes a route's error response stands for, or 'undefined' when the route wrote it whole.
+- `errorComponentNameOf` (function) — `function errorComponentNameOf(code: string): string;` — A code's envelope and example as the document names them: 'state.conflict' is 'StateConflictError'.
+- `errorExampleOf` (function) — `function errorExampleOf(code: ErrorCode): unknown;` — The envelope an example of 'code' shows: its params and its nature from the registry.
+- `errorResponse` (function) — A shared error response: its description, the api's envelope, and the code its example shows.
+- `errorResponseFor` (function) — `function errorResponseFor(model: ErrorModel<string>, status: number, codes: readonly string[], base: Response | undefined): Response;` — The response for a status.
+- `exampleOf` (function) — `function exampleOf<C extends ErrorCode>(code: C): ErrorParamsOf<C>;`
+- `groupByStatus` (function) — `function groupByStatus(codes: readonly string[]): Record<string, readonly string[]>;` — A list of codes grouped by the status each is answered with.
+- `headersSchemaOf` (function) — `function headersSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteHeaders<R>, unknown>;` — The declared headers, under Node's lowercase names; every other header passes through.
+- `identity` (function)
+- `localVocabulary` (function) — `function localVocabulary<const T extends readonly [string, ...string[]]>(values: T, reason: string): VocabularyIn<T>;` — A request vocabulary no domain owns: 'source: none', and why.
+- `makeResource` (function)
+- `pages` (function) — `function pages(options: { readonly maxPageSize: number; }): { readonly kind: 'pages'; readonly maxPageSize: number; };` — 'page' and 'pageSize': the studio's page with its total.
+- `paramsSchemaOf` (function) — `function paramsSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteParams<R>, unknown>;`
+- `parseTolerant` (function) — `function parseTolerant(schema: z.ZodType, value: unknown): TolerantParse;` — Parses with the schema, and accepts a value whose only faults are variants of a tagged union it does not know: the value comes back raw, wi…
+- `period` (function) — `function period<const Required extends boolean = true>(options: PeriodOptions<Required>): Period<Required>;`
+- `perishable` (function) — `function perishable<S extends z.core.$ZodShape, C extends z.core.$ZodObjectConfig>(schema: z.ZodObject<S, C>): z.ZodObject<S & { validUntil: ValidUntil; }, C>;` — 'schema' with the 'validUntil' the envelope declares, for data that stops being true at an instant.
+- `querySchemaOf` (function) — `function querySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteQuery<R>, unknown>;` — The query a server validates: undeclared parameters refused, defaults not materialised.
+- `recentAuthOver` (function) — `function recentAuthOver<const Intents extends readonly string[]>(intents: Intents): RecentAuth<Intents>;` — The caller holds a recent re-authentication for the one command 'intent' names: the proof is the body's 'reauthToken' (the body extends 'Re…
+- `requirement` (function)
+- `restricted` (function) — `function restricted<S extends z.ZodType, const Right extends string>(schema: S, right: Right, meta?: Readonly<Record<string, unknown>>): z.ZodOptional<S>;` — A field present only for a caller who holds 'right': optional in the type and in the document, absent from the answer otherwise, never pres…
+- `restrictedFieldsOf` (function) — `function restrictedFieldsOf(schema: z.ZodType): readonly RestrictedField[];` — Each restricted field with the right that unlocks it.
+- `roles` (function) — `function roles<const Allowed extends string>(...allowed: readonly Allowed[]): RolesRequirement<Allowed>;`
+- `routeBuilder` (function) — `function routeBuilder<A extends string = string>(model: ErrorModel<A>): RouteBuilder<undefined, readonly [], Record<never, never>, A>;` — The empty builder of an api, given its error vocabulary: 'routeBuilder(model).version(1).identity(...)'.
+- `searchText` (function) — `function searchText(options?: SearchTextOptions): QueryParameter<'q', z.ZodString>;` — The free-text 'q', searched server-side.
+- `sensitive` (function) — `function sensitive<S extends z.ZodType>(schema: S): S;` — A password, a token, a stream key: 'format: password' in the document, redacted from logs, never cached.
+- `sensitivePathsOf` (function) — `function sensitivePathsOf(schema: z.ZodType): readonly string[];` — The dotted paths of the sensitive fields: 'reauthToken', 'data.streamKey', 'items[].secret'.
+- `service` (const) — `service: Identity<'service', typeof ServicePrincipalSchema, never, readonly [typeof DeadlineParameter], readonly []>`
+- `sortDirectionSchema` (function) — `function sortDirectionSchema(): z.ZodDefault<z.ZodEnum<{ readonly [K in SortDirection]: K; }>>;` — The 'sortDir' schema: ascending unless asked otherwise.
+- `sortKeyName` (function) — `function sortKeyName(key: SortKey): string;`
+- `statusOf` (function) — `function statusOf<C extends ErrorCode>(code: C): ErrorStatusMap[C];`
+- `stripping` (function) — `function stripping(schema: z.ZodType): z.ZodType;` — The schema with each loose object turned into a stripping one.
+- `strippingBodiesOf` (function) — `function strippingBodiesOf(route: RouteShape): Readonly<Record<string, z.ZodType>>;` — The stripping schema of each success response of a route that has a JSON body, by status.
+- `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
+- `tagged` (function) — `function tagged<const Tag extends string, const V extends Variants>(tag: Tag, variants: V): TaggedSchema<Tag, V>;` — 'tagged('outcome', { succeeded: Succeeded, declined: Declined })': each variant is an object schema without the tag, and the helper adds it.
+- `throttle` (function) — `function throttle<const Bucket extends string>(bucket: Bucket): Requirement<'throttle', { readonly bucket: Bucket; }, typeof ApiErrorCode.RATE_LIMITED>;` — A rate-limit bucket by name: the server binds the cap, and the '429' is derived.
+- `variantOf` (function) — `function variantOf(union: z.ZodType, key: string): z.ZodObject;` — The variant a tag value selects, as the union holds it: the schema to register as that variant's component.
+- `versionedPath` (function) — `function versionedPath(route: Pick<RouteShape, 'version' | 'path'>): string;` — The only versioning strategy: the version is a path prefix, '/v1/dates/{dateId}'.
+
+#### @arthome/contracts/http-client
+
+Declarations: `dist/http-client/index.d.ts` — 12 exported names.
+
+- `Client` (type) — `type Client<A extends Api, Init extends object> = { readonly [K in keyof A['routes']]: ClientMethod<A['routes'][K], Init>; };`
+- `ClientInput` (type)
+- `ClientMethod` (type)
+- `ClientOptions` (interface)
+- `ClientResponse` (type) — What a call answers: the statuses the route declares, typed by the route; the codes it declares, by status ('errorCodes'); and the derived …
+- `FetchInit` (interface)
+- `FetchLike` (type) — `type FetchLike<Init extends object> = (url: string, init: FetchInit & Init) => Promise<FetchResponseLike>;` — 'Init' is what a caller adds per call and the 'fetch' understands — an 'AbortSignal', say.
+- `FetchResponseLike` (interface)
+- `IncludeNames` (type) — The relations a read can return on demand: the names its 'include' parameter takes.
+- `NarrowIncluded` (type) — A response whose 'data' has the relations that were asked for, and only those, present.
+- `UndeclaredStatusError` (class) — A status the route does not declare: the body is not the route's to type, so it is not typed.
+- `createClient` (function) — `function createClient<A extends Api, Init extends object = Record<never, never>>(api: A, options: ClientOptions<Init>): Client<A, Init>;`
 
 #### @arthome/contracts/identity
 
@@ -90,7 +298,7 @@ Declarations: `dist/identity/index.d.ts` — 15 exported names.
 - `SessionEstablishedBearerSchema` (const)
 - `SessionEstablishedCookieSchema` (const) — `SessionEstablishedCookieSchema: z.ZodObject<{ mode: z.ZodLiteral<'cookie'>; viewerContext: typeof ViewerContextSchema; }, z.core.$loose>`
 - `SessionMode` (const) — `SessionMode: { readonly COOKIE: "cookie"; readonly BEARER: "bearer"; readonly DEVICE: "device"; }` — The NAMED members, so nothing writes one of these as a string — and so nothing reaches for 'SESSION_MODES[0]' either.
-- `StorefrontSessionEstablishedSchema` (const) — `StorefrontSessionEstablishedSchema: z.ZodXor<readonly [typeof SessionEstablishedCookieSchema, typeof SessionEstablishedBearerSchema]>`
+- `StorefrontSessionEstablishedSchema` (const)
 - `StorefrontSessionModeSchema` (const) — `StorefrontSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bearer'; device: 'device'; }>`
 - `ViewerContextSchema` (const)
 - `ViewerPreferencesSchema` (const)
@@ -104,14 +312,50 @@ Declarations: `dist/money/index.d.ts` — 4 exported names.
 - `TaxInclusive` (type) — `type TaxInclusive<T> = Taxed<T, 'inclusive'>;` — A price as served: tax included (D-056).
 - `Taxed` (type) — `type Taxed<T, B extends TaxBasis> = T & { readonly [taxBasisBrand]: B; };` — An amount tagged with its tax basis, for TypeScript consumers.
 
+#### @arthome/contracts/openapi
+
+Declarations: `dist/openapi/index.d.ts` — 17 exported names.
+
+- `ApiDocs` (interface)
+- `ApiDocsDefinition` (interface)
+- `DocumentDocs` (interface) — The parts of an api's document no consumer reads: its introduction and the names it documents.
+- `ExampleEntry` (type) — `type ExampleEntry = readonly [schema: z.ZodType, examples: readonly unknown[]];`
+- `ExampleRegistry` (class) — The examples of each schema, registered once.
+- `MATURITY_BY_SERVICE` (const) — `MATURITY_BY_SERVICE: Readonly<Record<Service, Maturity>>` — The regime of each service's contract: a copy of 'transport.md' §5.11, held to it by 'check-contract-docs'.
+- `Maturity` (type) — `type Maturity = 'stable' | 'provisional';`
+- `ModuleDocs` (type) — `type ModuleDocs = Readonly<Record<string, OperationDoc>>;` — A module's operations, by operation id: 'export const datesDocs = { ...
+- `ModuleExamples` (type) — `type ModuleExamples = readonly ExampleEntry[];` — A module's examples, by schema: '[[DateSchema, [dateExample]]] as const satisfies ModuleExamples'.
+- `OpenApiDocument` (type) — `type OpenApiDocument = Readonly<Record<string, unknown>>;`
+- `OperationDoc` (type)
+- `OperationDocumentation` (interface) — What a document says of one operation beyond its route's runtime fields.
+- `apiDocs` (function) — `function apiDocs(definition: ApiDocsDefinition): ApiDocs;` — Gathers an api's modules, and refuses an operation documented twice.
+- `documentationLookup` (function) — `function documentationLookup(docs: ApiDocs): (route: RouteDefinition) => OperationDocumentation;` — The documentation of each route of an api, looked up by route: what a server's own docs show.
+- `documentationOf` (function) — `function documentationOf(route: RouteDefinition, doc: OperationDoc | undefined): OperationDocumentation;` — The prose and doc-only 'x-arthome-*' of 'route', from what its module registered: the registry is the only source, and a route carrying its…
+- `maturityOf` (function) — `function maturityOf(upstream: readonly Upstream[]): Maturity | undefined;` — The regime of the operation's owning service, the first service in its upstream: a BFF keeps its own shape stable over a provisional servic…
+- `openApiDocumentOf` (function) — `function openApiDocumentOf(api: Api, docs?: ApiDocs): OpenApiDocument;`
+
 #### @arthome/contracts/pagination
 
-Declarations: `dist/pagination/index.d.ts` — 4 exported names.
+Declarations: `dist/pagination/index.d.ts` — 5 exported names.
 
 - `EMPTY_REASONS` (const) — Why a list came back empty.
+- `EmptyReason` (const) — `EmptyReason: AccessorOf<typeof EMPTY_REASONS>`
 - `OffsetPageInfoSchema` (const) — 'OffsetPageInfo' — the studio's pagination primitive, and the deliberate opposite of the one above.
 - `StorefrontCursorPageInfoSchema` (const) — The storefront's cursor page.
 - `StudioCursorPageInfoSchema` (const) — The studio's cursor page: the moderation queue and the live chat, with a separate badge total.
+
+#### @arthome/contracts/storefront-api
+
+Declarations: `dist/storefront-api/index.d.ts` — 1 exported names.
+
+- `storefrontApi` (const)
+
+#### @arthome/contracts/storefront-api/docs
+
+Declarations: `dist/storefront-api/docs.d.ts` — 2 exported names.
+
+- `storefrontDocs` (const) — `storefrontDocs: ApiDocs` — The storefront document's introduction, and the docs and examples its modules register.
+- `storefrontDocsOf` (const) — `storefrontDocsOf: (route: RouteDefinition) => OperationDocumentation` — Each storefront operation's prose and doc-only metadata, by route: for a server's own docs.
 
 #### @arthome/contracts/streaming
 
@@ -135,8 +379,21 @@ Declarations: `dist/studio-access/index.d.ts` — 11 exported names.
 - `StudioCountersSchema` (const) — The badges, served at bootstrap and kept up to date by the real-time channel.
 - `StudioSessionEstablishedBearerSchema` (const) — A bearer session: an opaque token in the body, no cookie.
 - `StudioSessionEstablishedCookieSchema` (const) — `StudioSessionEstablishedCookieSchema: z.ZodObject<{ mode: z.ZodLiteral<typeof SessionMode.COOKIE>; bootstrap: typeof StudioBootstrapSchema; }, z.core.$loose>` — A cookie session: nothing in the body but the bootstrap.
-- `StudioSessionEstablishedSchema` (const) — `StudioSessionEstablishedSchema: z.ZodDiscriminatedUnion<[ typeof StudioSessionEstablishedCookieSchema, typeof StudioSessionEstablishedBearerSchema ]>` — Exactly one of a cookie or a bearer session, discriminated by the mode.
+- `StudioSessionEstablishedSchema` (const) — Exactly one of a cookie or a bearer session, discriminated by the mode.
 - `StudioSessionModeSchema` (const) — `StudioSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bearer'; }>` — The session mode, chosen by the caller and never inferred.
+
+#### @arthome/contracts/studio-api
+
+Declarations: `dist/studio-api/index.d.ts` — 1 exported names.
+
+- `studioApi` (const)
+
+#### @arthome/contracts/studio-api/docs
+
+Declarations: `dist/studio-api/docs.d.ts` — 2 exported names.
+
+- `studioDocs` (const) — `studioDocs: ApiDocs` — The studio document's introduction, and the docs and examples its modules register.
+- `studioDocsOf` (const) — `studioDocsOf: (route: RouteDefinition) => OperationDocumentation` — Each studio operation's prose and doc-only metadata, by route: for a server's own docs.
 
 #### @arthome/contracts/studio-desk
 
@@ -209,18 +466,22 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 396 exported names.
+Declarations: `dist/index.d.ts` — 466 exported names.
 
+- `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
 - `API_ERROR_CODES` (const) — The BFF's own refusals, the only family here that is not a domain notion.
 - `AUDIENCE_SANCTIONS` (const) — `AUDIENCE_SANCTIONS: readonly ["none", "muted", "banned"]` — Axis 3 — the sanction on the person, within one channel.
 - `AVAILABILITY_PUBLISH_MIN_INTERVAL_SECONDS` (const) — `AVAILABILITY_PUBLISH_MIN_INTERVAL_SECONDS = 5` — At most one 'availability_changed' per date in this interval while the date keeps moving.
+- `AVAILABILITY_VALID_SECONDS` (const) — `AVAILABILITY_VALID_SECONDS = 60` — How long a date's availability read holds from its 'servedAt': short, because the "show already started" price it carries is pro rata of th…
 - `AccountId` (type) — `type AccountId = Brand<'AccountId'>;`
+- `AccountStatus` (type+const)
 - `ApiErrorCode` (type+const)
 - `ArtistId` (type) — `type ArtistId = Brand<'ArtistId'>;`
 - `AttributeGroup` (interface) — A facetable attribute group: 'audience', 'accessibility', …
 - `AttributeValue` (interface)
 - `AudienceSanction` (type+const) — `type AudienceSanction = (typeof AUDIENCE_SANCTIONS)[number]; AudienceSanction: { readonly NONE: "none"; readonly MUTED: "muted"; readonly BANNED: "banned"; }`
+- `AuthRateLimit` (const)
 - `BASIS_POINTS_SCALE` (const) — `BASIS_POINTS_SCALE = 10000`
 - `BLACKOUT_REASONS` (const) — `BLACKOUT_REASONS: readonly ["co_production", "broadcaster", "festival"]` — A code, never a sentence: 'geography.rightsPolicy.blackoutReasons[]' carries 'label' and 'labelEn', prose written inside the data where eve…
 - `BasisPoints` (type) — `type BasisPoints = number;` — A rate in basis points, as an integer: 1200 = 12%, 550 = 5.5%.
@@ -229,6 +490,7 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `Brand` (type) — `type Brand<TBrand extends string> = string & { readonly [brand]: TBrand; };` — A nominal type: structurally a string, distinct at compile time.
 - `CATALOG_ERROR_CODES` (const) — Refusals about a date and what may still be changed on it — the wire's half of 'publication.ts''s irreversible transitions.
 - `CHANNEL_ERROR_CODES` (const) — Channel membership, crew and ownership refusals.
+- `CHAT_ALLOWANCE_BY_SURFACE` (const) — `CHAT_ALLOWANCE_BY_SURFACE: Readonly<Record<StorefrontSurface, ChatAllowance>>` — Enforced at the source: a television cannot absorb a fast stream to throw most of it away.
 - `CHAT_BURST_THRESHOLD_PER_MINUTE` (const) — `CHAT_BURST_THRESHOLD_PER_MINUTE = 60`
 - `CHAT_ERROR_CODES` (const) — `CHAT_ERROR_CODES: readonly ["chat.holders_only", "chat.rate_limited"]` — Chat refusals, both about who may write: a removed message is moderation's vocabulary.
 - `CHAT_MODES` (const) — `CHAT_MODES: readonly ["open", "emoji", "read_only", "off"]` — The chat mode a channel is in; 'catalogue.json' has authority.
@@ -242,6 +504,7 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `CatalogErrorCode` (type+const)
 - `ChannelErrorCode` (type+const)
 - `ChannelId` (type) — `type ChannelId = Brand<'ChannelId'>;`
+- `ChatAllowance` (interface) — What a storefront surface's chat is served: its ceiling and its catch-up on entering a room.
 - `ChatErrorCode` (type+const)
 - `ChatMode` (type+const) — `type ChatMode = (typeof CHAT_MODES)[number]; ChatMode: { readonly OPEN: "open"; readonly EMOJI: "emoji"; readonly READ_ONLY: "read_only"; readonly OFF: "off"; }`
 - `Clock` (interface)
@@ -271,12 +534,15 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `DomainConstant` (const) — The operational constants served to every surface as 'DomainConstants' (openapi/storefront.yaml) and copied nowhere: a copy is how "the web…
 - `DomainError` (class) — An invariant violation.
 - `DomainErrorCode` (type+const)
-- `DomainErrorInit` (interface)
+- `DomainErrorInit` (type) — `type DomainErrorInit<C extends RaisableErrorCode> = { readonly code: C; } & ParamsField<ErrorParamsOf<C>>;`
 - `DomainGuardCode` (type+const)
+- `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS` (const) — `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS = 24` — 'adr-auth.md' §6.7 (D-100): an email verification link expires after a day, and is spent by its first use.
 - `ERROR_CODES` (const) — Every error code, composed — the vocabulary the two contracts declare against.
 - `EffectiveRights` (interface)
 - `Err` (interface)
 - `ErrorCode` (type) — `type ErrorCode = (typeof ERROR_CODES)[number];`
+- `ErrorParamsMap` (interface)
+- `ErrorParamsOf` (type) — `type ErrorParamsOf<C extends RaisableErrorCode> = ErrorParamsMap[C];` — Indexing by every raisable code is what makes a code without an entry fail to compile.
 - `FAILURE_NATURES` (const) — `FAILURE_NATURES: readonly ["refused", "unavailable", "offline_forbidden"]` — The nature of a failure: retry, understand, or escalate.
 - `FILTER_SEVERITIES` (const) — `FILTER_SEVERITIES: readonly ["low", "medium", "high"]` — The automatic filter's severity.
 - `FailureNature` (type+const)
@@ -286,18 +552,28 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `FixtureDate` (interface)
 - `FixtureVenue` (interface)
 - `Fixtures` (interface)
+- `GENERATED_HANDLE_ALPHABET` (const) — `GENERATED_HANDLE_ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789"` — 32 symbols, so a byte masked to five bits picks one without bias.
+- `GENERATED_HANDLE_RANDOM_LENGTH` (const) — `GENERATED_HANDLE_RANDOM_LENGTH = 8` — 32^8 = 2^40 handles: a collision is rare, and the caller retries it with fresh bytes.
 - `Gauge` (interface)
 - `Genre` (interface) — A sub-genre: optional, MULTIPLE, closed vocabulary.
+- `HOLD_EXPIRY_BATCH` (const) — `HOLD_EXPIRY_BATCH = 500` — adr-ticketing.md §6: how many expired holds one pass of the sweeper's one-second loop takes.
 - `HOLD_MINUTES_CHECKOUT` (const) — `HOLD_MINUTES_CHECKOUT = 15` — THE CAPACITY HOLD, and its SINGLE-INSTANT invariant.
 - `HOLD_MINUTES_TV_PAIRING` (const) — `HOLD_MINUTES_TV_PAIRING = 5`
 - `HOUR_MS` (const) — `HOUR_MS = 3600000`
-- `IDENTITY_ERROR_CODES` (const) — `IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.handle_taken", "identity.two_factor_required", "identity.signed_out_elsewhere"]` — Sign-in, sign-up and session refusals.
+- `IDENTITY_ERROR_CODES` (const) — Sign-in, sign-up and session refusals.
 - `INCIDENT_CAUSES` (const) — `INCIDENT_CAUSES: readonly ["venue_feed_lost", "run_desk_disconnected", "bitrate_collapsed", "compatibility_worker_failed", "provider_error", "manual"]` — The cause, a vocabulary distinct from the outcome.
 - `INCIDENT_KINDS` (const) — `INCIDENT_KINDS: readonly ["hold_screen", "postponed", "cancelled", "interrupted"]` — The four incident kinds a viewer can see.
+- `INTENT_STATUSES` (const) — `INTENT_STATUSES: readonly ["succeeded", "requires_action", "processing", "declined"]`
+- `INTERNAL_TOKEN_ALGORITHM` (const) — `INTERNAL_TOKEN_ALGORITHM = "ES256"` — 'adr-auth.md' §8.1: ES256 for every issuer, never EdDSA.
+- `INTERNAL_TOKEN_ISSUERS` (const) — `INTERNAL_TOKEN_ISSUERS: readonly ["arthome.bff-storefront", "arthome.bff-studio"]` — The two BFFs, the only callers of a service.
+- `INTERNAL_TOKEN_LIFETIME_SECONDS` (const) — `INTERNAL_TOKEN_LIFETIME_SECONDS = 60` — 'adr-auth.md' §8: one internal token covers one BFF → service call.
 - `IdentityErrorCode` (type+const)
 - `IncidentCause` (type+const)
 - `IncidentKind` (type+const)
 - `Instant` (type) — `type Instant = string;` — An instant, in ISO 8601 UTC.
+- `IntentStatus` (type+const)
+- `InternalTokenIssuer` (type+const)
+- `KEY_ID_PREFIX_BY_ISSUER` (const) — `KEY_ID_PREFIX_BY_ISSUER: Readonly<Record<InternalTokenIssuer, string>>` — 'adr-auth.md' §8.1: one JWKS document carries four issuers' keys, told apart by this prefix of their 'kid'.
 - `KnownMember` (interface)
 - `LANGUAGE_DEPENDENCIES` (const) — `LANGUAGE_DEPENDENCIES: readonly ["none", "helpful", "essential"]` — The real vocabulary, corrected (D1).
 - `LIVE_START_LEAD_MINUTES` (const) — `LIVE_START_LEAD_MINUTES = 0` — A followed artist goes on air: as soon as the feed opens.
@@ -305,6 +581,7 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `LabelCatalogRef` (interface) — The catalogue version served to a surface, carried by the bootstrap.
 - `LanguageDependency` (type+const)
 - `LanguageProfile` (interface) — The INGREDIENTS.
+- `LateEntry` (interface) — What a buyer arriving after the start is told, and must acknowledge, before buying (D-089).
 - `Locale` (type+const) — `type Locale = (typeof LOCALES)[number]; Locale: { readonly FR: "fr"; readonly EN: "en"; }`
 - `MEMBER_ROLES` (const) — `MEMBER_ROLES: readonly ["artist", "production", "coordination", "director", "video", "sound", "moderation", "treasury"]` — The eight canonical roles from 'catalogue.json'.
 - `MESSAGE_DOMAINS` (const) — `MESSAGE_DOMAINS: readonly ["common", "storefront", "studio", "taxonomy", "system"]` — The five copy domains, split so the embedded snapshot stays small.
@@ -333,14 +610,17 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `NAVIGATION_ENTRIES` (const) — The studio's navigation entries.
 - `NOTIFICATION_CHANNELS` (const) — `NOTIFICATION_CHANNELS: readonly ["push", "email", "in_app"]` — The channels a notification takes; the third is 'in_app', not 'sms' (D-017).
 - `NavigationEntry` (type+const)
+- `NoErrorParams` (type) — `type NoErrorParams = Readonly<Record<string, never>>;` — The params of a code that carries none: no key at all, rather than a loose record.
 - `NotificationChannel` (type+const)
 - `ORDER_ERROR_CODES` (const) — The viewer's commerce refusals: a purchase, a seat, a means of payment.
 - `ORDER_KINDS` (const) — `ORDER_KINDS: readonly ["seat", "merch", "subscription"]` — Distinct orders, never a mixed one (D-011).
+- `ORDER_STATES` (const) — `ORDER_STATES: readonly ["pending", "awaiting_action", "processing", "paid", "failed", "refunded", "partially_refunded", "disputed"]` — adr-payments.md §8's order states; a transition applies only forward (§7.3).
 - `Ok` (interface)
 - `OrderErrorCode` (type+const)
 - `OrderId` (type) — `type OrderId = Brand<'OrderId'>;`
 - `OrderKind` (type+const) — `type OrderKind = (typeof ORDER_KINDS)[number]; OrderKind: { readonly SEAT: "seat"; readonly MERCH: "merch"; readonly SUBSCRIPTION: "subscription"; }`
 - `OrderQuote` (interface) — The four lines of the summary, composed ONCE.
+- `OrderState` (type+const)
 - `OutcomeDeclaration` (type) — 'rescheduledTo' is where a postponement moves the date (D-074); the other two carry none.
 - `PAIRING_CODE_ALPHABET` (const) — `PAIRING_CODE_ALPHABET = "ACDEFHJKLMNPQRTVWXY23456789"` — 27 symbols.
 - `PAIRING_CODE_AMBIGUOUS_GLYPHS` (const) — `PAIRING_CODE_AMBIGUOUS_GLYPHS: readonly string[]` — The glyphs that are excluded AND unmappable — the refusing class's edges.
@@ -348,8 +628,10 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `PAIRING_CODE_NORMALISATION` (const) — `PAIRING_CODE_NORMALISATION: Readonly<Record<string, string>>` — The normalisation table, exhaustive over the mappable excluded glyphs.
 - `PAIRING_CONFUSABLE_CLASSES` (const) — `PAIRING_CONFUSABLE_CLASSES: readonly (readonly string[])[]` — The CONFUSABLE CLASSES this channel recognises, as data so the invariant is computed.
 - `PAIRING_ERROR_CODES` (const) — `PAIRING_ERROR_CODES: readonly ["pairing.slow_down", "pairing.identity_mismatch", "pairing.intent_not_engageable", "pairing.execution_engaged"]` — Device pairing, where the same code is polled repeatedly.
+- `PAYMENT_EVENT_KINDS` (const) — `PAYMENT_EVENT_KINDS: readonly ["intent_succeeded", "intent_requires_action", "intent_processing", "intent_failed", "intent_cancelled", "unhandled"]` — What a provider's webhook says happened to an intent, recorded before anything reads it.
+- `PAYMENT_WEBHOOK_TOLERANCE_SECONDS` (const) — `PAYMENT_WEBHOOK_TOLERANCE_SECONDS = 300` — adr-payments.md §7.1: a webhook signed further in the past than this is rejected.
 - `PAYOUT_DELAY_DAYS` (const) — `PAYOUT_DELAY_DAYS = 14` — 'payoutDelayDays: 14'.
-- `PAYOUT_ERROR_CODES` (const) — `PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained"]` — Payout refusals: a period does not close over an unexplained discrepancy.
+- `PAYOUT_ERROR_CODES` (const) — `PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained", "payout.bank_change_request_expired"]` — Payout refusals: a period does not close over an unexplained discrepancy, and a bank change request past its deadline can no longer be coun…
 - `PAYOUT_STATES` (const) — `PAYOUT_STATES: readonly ["scheduled", "held", "paid", "refunded", "suspended"]` — Where a payout stands: 'held' while an outcome is open, 'refunded' if the date is cancelled, 'suspended' while a bank-details change waits …
 - `PLAN_OPENINGS` (const) — `PLAN_OPENINGS: readonly ["browse", "trailers", "free_dates", "replays", "no_ads", "one_live_month", "all_lives", "multi_screen", "archive"]` — The nine openings 'catalogue.json' carries.
 - `PLAN_TIERS` (const) — `PLAN_TIERS: readonly ["free", "pass", "premium"]` — The plan a viewer holds; 'catalogue.json' has authority.
@@ -361,6 +643,13 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `PUBLICATION_PROMISES` (const) — `PUBLICATION_PROMISES: readonly ["prices_engaged", "replay_sold"]` — What a one-way transition commits, served with its refusal and asked back as its confirmation.
 - `PUBLICATION_STATES` (const) — `PUBLICATION_STATES: readonly ["draft", "reserve", "scheduled", "technical", "live", "ended", "replay_online"]` — The channel's act; 'catalogue.json' has authority (D2).
 - `PairingErrorCode` (type+const)
+- `PaymentEvent` (interface)
+- `PaymentEventKind` (type+const)
+- `PaymentIntent` (interface)
+- `PaymentIntentRequest` (interface)
+- `PaymentPort` (interface)
+- `PaymentProviderUnavailable` (class) — The provider could not be reached or did not answer: nothing is known of what it did, so the caller retries under the same idempotency key,…
+- `PaymentWebhookPort` (interface)
 - `PayoutBreakdown` (interface)
 - `PayoutErrorCode` (type+const)
 - `PayoutInput` (interface)
@@ -387,7 +676,10 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `REPLAY_POLICIES` (const) — `REPLAY_POLICIES: readonly ["included", "subscription", "unit", "none"]` — The promise made before purchase — what justifies the price difference.
 - `RIGHTS_SCOPES` (const) — `RIGHTS_SCOPES: readonly ["worldwide", "restricted"]`
 - `RUN_STATES` (const) — `RUN_STATES: readonly ["idle", "rehearsal", "on_air", "interrupted", "ended"]` — The technical axis, and nothing else.
+- `RaisableErrorCode` (type) — `type RaisableErrorCode = ErrorCode | DomainGuardCode;` — Every code a 'DomainError' can carry: the published codes and the domain's internal guards.
+- `RateLimit` (interface) — The BFFs' caps on the authentication doors ('adr-auth.md' §6.2), owned here so the storefront and the studio cap alike.
 - `RefundReason` (type+const)
+- `RefundRequest` (interface)
 - `Rendition` (interface) — One image at a size that is actually displayed.
 - `ReplayPolicy` (type+const)
 - `Result` (type) — `type Result<T> = Ok<T> | Err;`
@@ -395,23 +687,37 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `RunState` (type+const)
 - `SALES_QUEUE_ADMISSION_SECONDS` (const) — `SALES_QUEUE_ADMISSION_SECONDS = 60` — How long an admission out of a date's sales queue lets its account buy that date (adr-ticketing.md §4).
 - `SCARCITY_THRESHOLD_BPS` (const) — `SCARCITY_THRESHOLD_BPS = 8500` — "Almost full" — and the THRESHOLD is a domain rule, not an interface literal.
+- `SCHEMA_ISSUE_RULES` (const) — `SCHEMA_ISSUE_RULES: readonly ["too_small", "too_big", "invalid_type", "invalid_format", "invalid_value", "unrecognized_key", "custom"]` — The rule an 'api.schema_invalid' issue broke, so a form can say what is wrong with a field without a sentence on the wire.
 - `SEASON_START_MONTH` (const) — `SEASON_START_MONTH = 9` — The changeover month, in human numbering: 9 = September.
 - `SEAT_CODE_ALPHABET` (const) — `SEAT_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"` — The alphabet: Crockford base 32 — the ten digits and the letters except 'I', 'L', 'O' and 'U', the last of those to avoid spelling a rude w…
 - `SEAT_CODE_BODY_LENGTH` (const) — `SEAT_CODE_BODY_LENGTH = 6`
+- `SEAT_HOLD_ORIGINS` (const) — `SEAT_HOLD_ORIGINS: readonly ["checkout", "pairing"]` — data-model.md §3.2: the intent whose expiry the hold's is.
+- `SEAT_HOLD_STATES` (const) — `SEAT_HOLD_STATES: readonly ["active", "consumed", "expired", "released"]` — data-model.md §3.2.
+- `SEAT_SALES_CUTOFF_MINUTES_AFTER_START` (const) — `SEAT_SALES_CUTOFF_MINUTES_AFTER_START = 30` — D-089: a seat covers the live alone, sold until this long after its start, every channel alike.
+- `SEAT_STATES` (const) — `SEAT_STATES: readonly ["active", "cancelled", "refunded", "transferred", "credited"]` — data-model.md §3.3; 'held' is gone, a hold is a SeatHold (D-077).
 - `SERVICES` (const) — `SERVICES: readonly ["identity", "catalog", "ticketing", "streaming", "chat", "payouts", "notifications"]` — The seven services.
+- `SESSION_LIFETIME_SECONDS` (const) — `SESSION_LIFETIME_SECONDS: number` — 'adr-auth.md' §6.1: a session lives seven days.
+- `SESSION_RENEWAL_AGE_SECONDS` (const) — `SESSION_RENEWAL_AGE_SECONDS: number` — 'adr-auth.md' §6.1: a session in use slides forward at most once a day.
 - `STATE_CHANGE_ORIGINS` (const) — `STATE_CHANGE_ORIGINS: readonly ["human_verdict", "automatic_filter", "retroactive_filter", "author_sanctioned"]` — Where a state change came from; the origin survives the settlement, so "removed by the filter, then confirmed by X" does not collapse into …
 - `SUBSCRIPTION_STATES` (const) — `SUBSCRIPTION_STATES: readonly ["active", "past_due", "cancelled", "trialing"]`
 - `SURFACES` (const) — `SURFACES: readonly ["storefront_web", "storefront_mobile", "storefront_tv", "studio_web", "studio_mobile", "system"]` — Where a decision was taken — the studio journal is by-name and situated, and 'system' is an actor like any other (standby screen, lease exp…
+- `SchemaIssue` (interface) — One field of a request that failed its schema.
+- `SchemaIssueRule` (type+const)
 - `SearchCriteria` (interface)
 - `SeatAvailability` (type) — The capacity state, as a DISCRIMINATED UNION.
 - `SeatHold` (interface)
+- `SeatHoldOrigin` (type+const) — `type SeatHoldOrigin = (typeof SEAT_HOLD_ORIGINS)[number]; SeatHoldOrigin: { readonly CHECKOUT: "checkout"; readonly PAIRING: "pairing"; }`
+- `SeatHoldState` (type+const)
 - `SeatId` (type) — `type SeatId = Brand<'SeatId'>;`
+- `SeatState` (type+const)
 - `Service` (type+const)
 - `ServiceFeeSchedule` (interface) — Service fees: PER SEAT, and the schedule is SERVED.
 - `SettlementAttempt` (interface)
 - `SettlementOutcome` (type)
 - `ShowId` (type) — `type ShowId = Brand<'ShowId'>;`
+- `SignInSlowdown` (const) — `SignInSlowdown: { readonly FREE_FAILURES: 5; readonly FIRST_DELAY_MS: 250; readonly MAX_DELAY_MS: 4000; readonly WINDOW_SECONDS: 900; }` — Failed sign-ins to one email, from anywhere, delay its next attempt rather than refuse it: a growing pause, bounded, which never locks the …
 - `StateChangeOrigin` (type+const)
+- `StorefrontSurface` (type) — `type StorefrontSurface = typeof Surface.STOREFRONT_WEB | typeof Surface.STOREFRONT_MOBILE | typeof Surface.STOREFRONT_TV;` — The three surfaces that call the storefront BFF; the studio's two call the other.
 - `SubscriptionState` (type+const)
 - `Surface` (type+const)
 - `SystemClock` (class) — The production clock.
@@ -419,6 +725,7 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `TAX_JURISDICTION_LEVELS` (const) — `TAX_JURISDICTION_LEVELS: readonly ["country", "state", "county", "city"]` — Roughly 9,000 US jurisdictions: a country allows no calculation at all.
 - `TAX_SUPPLY_KINDS` (const) — `TAX_SUPPLY_KINDS: readonly ["live_stream_access", "replay_access", "subscription", "merchandise"]` — What is being supplied, for tax.
 - `TECHNICAL_PROVISION_THRESHOLD` (const) — `TECHNICAL_PROVISION_THRESHOLD = 10000` — The TECHNICAL PROVISIONING threshold and its parameters — CONTRACT DATA, not constants copied onto five surfaces.
+- `TOKEN_CLOCK_TOLERANCE_SECONDS` (const) — `TOKEN_CLOCK_TOLERANCE_SECONDS = 30` — 'adr-auth.md' §5.2 and §9.5: every verifier tolerates this much clock skew, both ways.
 - `Tag` (interface)
 - `TaxEvidenceKind` (type+const)
 - `TaxJurisdictionLevel` (type+const)
@@ -431,7 +738,7 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `Tolerant` (type) — `type Tolerant<T extends string> = KnownMember<T> | UnknownMember;`
 - `UPSTREAMS` (const) — `UPSTREAMS: readonly [...typeof SERVICES, 'realtime']` — Everything a BFF operation may declare as its upstream: the seven services, plus what is depended on without being one.
 - `UnknownMember` (interface)
-- `Upstream` (type) — `type Upstream = (typeof UPSTREAMS)[number];`
+- `Upstream` (type+const)
 - `VatLine` (interface) — One VAT line, PER JURISDICTION — and not per billing market.
 - `VenueClock` (interface) — A venue's time zone, served alongside the UTC instant it qualifies.
 - `VenueId` (type) — `type VenueId = Brand<'VenueId'>;`
@@ -456,11 +763,16 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `assertCanOverride` (function) — `function assertCanOverride(existingOrigin: StateChangeOrigin, incomingOrigin: StateChangeOrigin): void;`
 - `assertCommandedTransition` (function) — The server's decision on a commanded transition, returning the transition it allows.
 - `assertKnownFlag` (function) — `function assertKnownFlag(flag: string, knownFlags: readonly string[]): void;`
-- `assertOutcomeDeclarable` (function) — `function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;` — Throws 'state.conflict' when the declaration does not fit the date: a final outcome already declared; a date not public yet, which is delet…
+- `assertOutcomeDeclarable` (function) — `function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;` — Refuses a declaration that does not fit the date, naming what it met: a final outcome already declared, a date not public yet (deleted rath…
+- `assertPricesShareCurrency` (function) — `function assertPricesShareCurrency(tiers: readonly TierPrice[]): void;` — A date sells in one currency, its billing market's (D-016).
+- `assertTechnicalProvisionCovers` (function) — `function assertTechnicalProvisionCovers(capacityTotal: number, provisionedCapacity: number | null, startsAt: Instant | null): void;` — Refuses a capacity beyond the threshold that no recorded provision covers.
+- `assertTechnicalProvisionRecordable` (function) — `function assertTechnicalProvisionRecordable(capacityTotal: number, provisionedCapacity: number, startsAt: Instant | null, now: Instant): void;` — Refuses to record a provision from 'provisionRevisableUntil' on, or one below the capacity already open (D-088).
 - `assertTierWidens` (function) — `function assertTierWidens(currentCapacity: number, nextCapacity: number): void;` — Capacity tiers: they WIDEN, never shrink after going on sale.
 - `assertTransitionAllowed` (function) — `function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): PublicationTransition;`
 - `assignableRolesOf` (function) — `function assignableRolesOf(heldRoles: readonly MemberRole[]): readonly MemberRole[];` — The roles a person may assign, given those they hold — the union, never a rank.
+- `audienceOf` (function) — `function audienceOf(service: string): string;` — 'transport.md' §5.2: a token minted for one service is refused by every other.
 - `availabilityOf` (function) — `function availabilityOf(gauge: Gauge): SeatAvailability;`
+- `availabilityValidUntil` (function) — `function availabilityValidUntil(servedAt: Instant): Instant;`
 - `basisPoints` (function) — `function basisPoints(value: number): BasisPoints;`
 - `blackoutReasonOf` (function) — `function blackoutReasonOf(rights: TerritoryRights, viewerCountry: string): BlackoutReason | null;` — The reason for the refusal, as a CODE — served with the error, so no second request.
 - `brandId` (function) — `function brandId<T extends Brand<string>>(value: string): T;` — Brands a string already validated at the boundary.
@@ -509,6 +821,7 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `formatMoney` (function) — `function formatMoney(value: Money, locale: Locale): string;`
 - `formatTimecode` (function) — `function formatTimecode(totalSeconds: number): string;` — "1:04:09" — the position in a media item.
 - `fromEpochMs` (function) — `function fromEpochMs(ms: number): Instant;`
+- `generatedPublicHandle` (function) — `function generatedPublicHandle(randomBytes: Uint8Array): string;` — A handle 'PublicHandleSchema' accepts, from the first 'GENERATED_HANDLE_RANDOM_LENGTH' bytes.
 - `genreIdsOf` (function) — `function genreIdsOf(taxonomy: Taxonomy, disciplineId: string): readonly string[];`
 - `hasLanguageBarrier` (function) — `function hasLanguageBarrier(profile: LanguageProfile): boolean;` — Is there a language barrier?
 - `hasReplayPolicy` (function) — `function hasReplayPolicy(timing: DateTiming): boolean;` — Does the date promise a replay at all, whatever the window?
@@ -523,10 +836,12 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `isEventDriven` (function) — `function isEventDriven(from: PublicationState, to: PublicationState): boolean;` — Is this transition caused by an event rather than commanded?
 - `isFullyOver` (function) — `function isFullyOver(timing: DateTiming, now: Instant): boolean;` — Is the date behind us, replay included?
 - `isHoldExpired` (function) — `function isHoldExpired(hold: SeatHold, now: Instant): boolean;`
+- `isKeyIdOfIssuer` (function) — `function isKeyIdOfIssuer(keyId: string | undefined, issuer: InternalTokenIssuer): boolean;`
 - `isLanguageNeutral` (function) — `function isLanguageNeutral(profile: LanguageProfile): boolean;` — Is the show barrier-free for ANYONE AT ALL?
 - `isMember` (function) — `function isMember<T extends string>(vocabulary: Vocabulary<T>, raw: string): raw is T;` — Type guard for the paths where an unknown value is ignored rather than kept — a filter, a sort, an aggregate.
 - `isNegative` (function) — `function isNegative(value: Money): boolean;`
 - `isOk` (function) — `function isOk<T>(result: Result<T>): result is Ok<T>;`
+- `isOrderReference` (function) — `function isOrderReference(value: string): boolean;`
 - `isPairingCode` (function) — `function isPairingCode(value: string): boolean;`
 - `isPairingCodeAlphabetMember` (function) — `function isPairingCodeAlphabetMember(character: string): boolean;`
 - `isReplaySoldSeparately` (function) — `function isReplaySoldSeparately(timing: DateTiming): boolean;` — Is the replay paid for separately?
@@ -538,8 +853,10 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `isUnderstandable` (function) — `function isUnderstandable(profile: LanguageProfile, understoodLanguages: readonly string[]): boolean;` — Can this show be followed with the languages I understand?
 - `isWithinQuietHours` (function) — `function isWithinQuietHours(instant: Instant, viewerUtcOffsetMinutes: number): boolean;`
 - `isZero` (function) — `function isZero(value: Money): boolean;`
+- `lateEntryOf` (function) — `function lateEntryOf(startsAt: Instant | null, now: Instant): LateEntry | null;` — Null before the start, and for a date with none.
 - `lateRatePrice` (function) — `function lateRatePrice(fullPrice: Money, progress: number): Money;` — The "show already started" price, PRO RATA of the time remaining.
 - `latest` (function) — `function latest(left: Instant, right: Instant): Instant;`
+- `limitForAddress` (function) — `function limitForAddress(rateLimit: RateLimit, ipv4: boolean): number;` — The limit a cap sets on one caller's network: its IPv4 ceiling, or its /64 limit.
 - `lowestActivePrice` (function) — `function lowestActivePrice(tiers: readonly TierPrice[]): Money | null;` — The headline price: the lowest of the ACTIVE tiers.
 - `matchesTag` (function) — `function matchesTag(tag: Tag, term: string): boolean;` — Does a tag match a free-text term?
 - `max` (function) — `function max(left: Money, right: Money): Money;`
@@ -552,24 +869,30 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `moderationBadgeOf` (function) — `function moderationBadgeOf(messageState: MessageState, authorSanction: AudienceSanction): ModerationBadge;`
 - `money` (function) — `function money(amountMinor: number, currencyCode: string): Money;`
 - `multiplyByCount` (function) — `function multiplyByCount(value: Money, count: number): Money;`
+- `natureOf` (function) — `function natureOf(code: RaisableErrorCode): FailureNature;` — A code's nature, for the error a domain raises and for the error a route documents.
 - `nextPublicationTransitions` (function) — `function nextPublicationTransitions(from: PublicationState, canDecide: boolean): readonly PublicationTransition[];` — The transitions offered to this operator.
 - `normalizePairingCodeInput` (function) — `function normalizePairingCodeInput(raw: string): string;` — Normalises a code typed by a person, or refuses it by name.
 - `normalizeSearchCriteria` (function) — `function normalizeSearchCriteria(criteria: SearchCriteria): SearchCriteria;` — Normalises criteria so that two equivalent entries produce the same thing.
 - `normalizeSeatCodeInput` (function) — `function normalizeSeatCodeInput(raw: string): string;` — Normalises human input before comparison: case, spaces, a forgotten hyphen, an omitted prefix and the confusables, which are absent from th…
 - `ok` (function) — `function ok<T>(value: T): Ok<T>;`
 - `orderRankOf` (function) — `function orderRankOf(state: PublicationState): number;`
+- `orderReference` (function) — `function orderReference(year: number, sequence: number): string;` — 'Order.reference', the one support reads out over the phone: 'ATH-2026-00042'.
+- `orderStateMovesForward` (function) — `function orderStateMovesForward(from: OrderState, to: OrderState): boolean;`
 - `overlaps` (function) — `function overlaps(left: Window, right: Window): boolean;` — Do two windows overlap?
 - `parseLocale` (function) — `function parseLocale(raw: string): Locale;`
 - `parseTolerant` (function) — `function parseTolerant<T extends string>(vocabulary: Vocabulary<T>, raw: string): Tolerant<T>;` — Reads a value against its vocabulary without ever failing.
+- `paymentReturnPath` (function) — `function paymentReturnPath(orderId: string): string;` — Where the provider sends the buyer back after strong authentication; it concludes nothing.
 - `payoutOf` (function) — `function payoutOf(input: PayoutInput): PayoutBreakdown;` — The computation, in the order that matters.
 - `payoutStateFor` (function) — `function payoutStateFor(outcome: DateOutcome | null, alreadyPaid: boolean, bankChangePending: boolean): PayoutState;` — A payout's state.
 - `pickLanguage` (function) — `function pickLanguage(value: Bilingual, locale: Locale): string;`
 - `pickRendition` (function) — `function pickRendition(renditions: readonly Rendition[], targetWidthPx: number): Rendition | null;` — The rendition closest to the requested width, never below it when a larger one exists: too small is blurry and final, too large only costs …
 - `plusHours` (function) — `function plusHours(instant: Instant, hours: number): Instant;`
 - `plusMinutes` (function) — `function plusMinutes(instant: Instant, minutes: number): Instant;`
+- `plusSeconds` (function) — `function plusSeconds(instant: Instant, seconds: number): Instant;`
 - `previewSecondsLeft` (function) — `function previewSecondsLeft(secondsUsed: number): number;`
 - `priceOfTier` (function) — `function priceOfTier(tiers: readonly TierPrice[], tier: PriceTier): Money | null;`
 - `progressOf` (function) — `function progressOf(timing: DateTiming, now: Instant): number;` — A live show's progress, clamped to '[0, 1]'.
+- `provisionRevisableUntil` (function) — `function provisionRevisableUntil(startsAt: Instant): Instant;`
 - `publicDisplayStateOf` (function) — `function publicDisplayStateOf(input: DisplayStateInput): DisplayStateResult;` — What a public surface shows.
 - `publicationReadiness` (function) — `function publicationReadiness(satisfied: readonly PublicationChecklistItem[]): PublicationReadiness;`
 - `quoteSeats` (function)
@@ -585,15 +908,19 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 - `restrictedRights` (function) — `function restrictedRights(blackoutCountries: readonly string[], reason: BlackoutReason): TerritoryRights;`
 - `roomOpensAt` (function) — `function roomOpensAt(timing: DateTiming): Instant;`
 - `roundMinor` (function) — `function roundMinor(value: number): number;` — Rounds half away from zero, to the minor unit.
+- `salesEndedBy` (function) — `function salesEndedBy(salesEndAt: Instant | null, now: Instant): boolean;` — Past the sale's end by time; a date with no start has no end.
 - `sameCriteria` (function) — `function sameCriteria(left: SearchCriteria, right: SearchCriteria): boolean;`
 - `sanctionExpiryFrom` (function) — `function sanctionExpiryFrom(sanctionedAt: Instant, durationMinutes: number | null): Instant | null;` — A sanction carries an EXPIRY INSTANT, never a label.
 - `seasonBounds` (function) — `function seasonBounds(instant: Instant, utcOffsetMinutes: number): Window;` — The season CONTAINING this instant, expressed in the given offset.
 - `seasonLabel` (function) — `function seasonLabel(instant: Instant, utcOffsetMinutes: number): string;` — A season's label, as a CODE: "2026-2027".
+- `seatCancelDeadline` (function) — `function seatCancelDeadline(startsAt: Instant): Instant;` — A seat's cancellation deadline, served as an instant (data-model.md §3.3), never a sentence.
 - `seatCode` (function) — `function seatCode(body: string): string;` — Composes a code from a body already drawn by the service, which owns the cryptographic randomness: a source here would make this package de…
+- `seatSalesEndAt` (function) — `function seatSalesEndAt(startsAt: Instant): Instant;`
 - `seatsAvailable` (function) — `function seatsAvailable(gauge: Gauge): number;` — The seats ACTUALLY available: net of holds in progress.
 - `serviceFeeFor` (function) — `function serviceFeeFor(schedule: ServiceFeeSchedule, unitPrice: Money, quantity: number): Money;`
 - `shouldCollapseToQueue` (function) — `function shouldCollapseToQueue(messagesInWindow: number): boolean;` — Past the threshold, the console stops showing the chat message by message.
 - `shouldDeliverNow` (function) — `function shouldDeliverNow(instant: Instant, viewerUtcOffsetMinutes: number, isHeldSeatLiveStart: boolean): DeliveryDecision;` — Whether to deliver now — the quiet-hours exception covers a held seat's live start only.
+- `signInDelayMs` (function) — `function signInDelayMs(failures: number): number;` — The pause before an attempt on an email that has failed 'failures' times in the window.
 - `smallestRendition` (function) — `function smallestRendition(renditions: readonly Rendition[]): Rendition | null;` — The smallest rendition — a television's standby mode, a thumbnail.
 - `subtract` (function) — `function subtract(left: Money, right: Money): Money;`
 - `sum` (function) — `function sum(values: readonly Money[], currencyCode: string): Money;`
@@ -610,7 +937,7 @@ Declarations: `dist/index.d.ts` — 396 exported names.
 
 #### @arthome/core/schema
 
-Declarations: `dist/schema/index.d.ts` — 49 exported names.
+Declarations: `dist/schema/index.d.ts` — 58 exported names.
 
 - `AccountIdSchema` (const) — `AccountIdSchema: z.ZodString`
 - `ArtistIdSchema` (const) — `ArtistIdSchema: z.ZodString`
@@ -621,11 +948,15 @@ Declarations: `dist/schema/index.d.ts` — 49 exported names.
 - `CurrencyCodeSchema` (const) — `CurrencyCodeSchema: z.ZodString` — ISO 4217, uppercase.
 - `DateIdSchema` (const) — `DateIdSchema: z.ZodString`
 - `DeviceIdSchema` (const) — `DeviceIdSchema: z.ZodString`
+- `ERROR_PARAMS` (const) — `ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRead<C>>; }`
+- `ErrorParamsRead` (type) — What a reader accepts for 'C'.
 - `ErrorSchema` (const) — The 'Error' shape both contracts publish: '{ code, nature, params, traceId }'.
 - `FailureNatureOut` (const) — `FailureNatureOut: VocabularyOut` — The failure nature, tolerant — the only vocabulary in either contract declaring its unknown-member fallback, because the cost is asymmetric…
 - `IanaTimeZoneSchema` (const) — `IanaTimeZoneSchema: z.ZodString` — An IANA time zone identifier: 'Europe/Paris'.
 - `InstantIn` (const) — `InstantIn: z.ZodString` — An instant on the wire, STRICT — for one a client SENDS.
 - `InstantOut` (const) — `InstantOut: z.ZodString` — The same instant as a server SENDS it: the format, and no pattern.
+- `InternalTokenClaims` (type) — `type InternalTokenClaims = z.output<typeof InternalTokenClaimsSchema>;`
+- `InternalTokenClaimsSchema` (const)
 - `LocaleIn` (const) — `LocaleIn: VocabularyIn<typeof LOCALES>` — BCP 47, short form, STRICT — for a locale that arrives on a request.
 - `LocaleOut` (const) — `LocaleOut: VocabularyOut` — The same vocabulary, TOLERANT — for a locale a server serves: an unknown member is kept.
 - `MoneyIn` (const) — `MoneyIn: z.ZodObject<{ amountMinor: z.ZodNumber; currencyCode: z.ZodString; }>` — The same shape, STRICT — for a 'Money' a client sends.
@@ -652,9 +983,14 @@ Declarations: `dist/schema/index.d.ts` — 49 exported names.
 - `VocabularyIn` (type) — `type VocabularyIn<T extends Members> = z.ZodEnum<{ [K in T[number]]: K; }>;` — The annotation for a strict vocabulary schema, derived from the vocabulary.
 - `VocabularyOut` (type) — `type VocabularyOut = z.ZodString;` — The annotation for a tolerant vocabulary schema — a plain string at runtime.
 - `VocabularyOutNullable` (type) — `type VocabularyOutNullable = z.ZodNullable<z.ZodString>;` — A tolerant vocabulary that may also be absent.
+- `dateIn` (const) — `dateIn: () => z.ZodString` — A calendar day, '2026-10-03', as a request carries it: 'format: date', an impossible day refused.
+- `dateTimeIn` (const) — `dateTimeIn: () => z.ZodString` — An RFC 3339 instant, offset allowed, as a request carries it in a path, a query or a header.
+- `errorParamsSchemaOf` (function) — `function errorParamsSchemaOf(code: ErrorCode): z.ZodType;`
 - `int64` (const) — `int64: () => z.ZodNumber` — A 64-bit integer on the wire: 'type: integer, format: int64', and no bounds.
-- `issueToCode` (function) — `function issueToCode(issue: z.core.$ZodIssue): { readonly code: string; readonly params: Readonly<Record<string, string>>; };` — The only sanctioned way out of a zod failure.
+- `schemaInvalidParams` (function) — `function schemaInvalidParams(issues: readonly z.core.$ZodIssue[]): ErrorParamsOf<typeof ApiErrorCode.SCHEMA_INVALID>;` — The only sanctioned way out of a zod failure: 'api.schema_invalid''s params.
 - `sourceNameOf` (function) — `function sourceNameOf(values: readonly string[], name?: string): string;` — The name this vocabulary is published under, or the one the caller declares.
+- `uriIn` (const) — `uriIn: () => z.ZodString` — An absolute URI as a request carries it: 'format: uri', and what 'z.url()' refuses is refused.
+- `uuidIn` (const) — `uuidIn: () => z.ZodString` — The same identifier where a request CARRIES it, in a path, a query or a header: 'format: uuid' and nothing more is published, but the shape…
 - `uuidOut` (const) — `uuidOut: () => z.ZodString` — A server-issued identifier on the wire — 'format: uuid', no pattern.
 - `vocabularyIn` (function) — `function vocabularyIn<const T extends Members>(values: T): VocabularyIn<T>;` — A vocabulary schema, STRICT — for a request: an unknown member is refused.
 - `vocabularyOut` (function) — `function vocabularyOut<const T extends Members>(values: T, name?: string): VocabularyOut;` — A vocabulary schema, TOLERANT — for a response: an unknown member is kept as a raw string.
@@ -668,6 +1004,7 @@ Tracked or not-yet-ignored directories only. Purposes are hand-written in `repo-
 each directory is covered and each entry has a directory, not that the sentence is true.
 
 - `.githooks/` — The two git hooks section 8.4 prescribes, with no dependency: pre-commit formats the STAGED files and then refuses a commit whose `pnpm run verify` is red. Installed with `git config core.hooksPath .githooks`, which is not committable and is therefore the one command after cloning.
+- `.github/` — The GitHub Actions workflows; verify.yml runs verify on every pull request, release.yml attaches the packed @arthome/* tarballs to a v<version> release.
 - `architecture/` — Design documents: code conventions, context map, ADRs, transport, events, and the handover notes for each worker. A document that names error codes declares `arthome-codes-source` and is checked by tools/check-vocabulary.py; transport.md does.
 - `docs/` — The original handover dossier and product documents (streaming, taxonomy, storefront TV).
 - `needs/` — Each surface's written needs and the confrontation with the contract, preserved verbatim.
@@ -679,11 +1016,16 @@ each directory is covered and each entry has a directory, not that the sentence 
 - `packages/contracts/src/engagement/` — Chat, reactions, notifications and the change feed a surface polls.
 - `packages/contracts/src/entitlement/` — The right to watch, served per date. It sits below `catalog` and `streaming` because both need it and each needed the other.
 - `packages/contracts/src/envelope/` — The shared response envelope and its meta instants (subpath @arthome/contracts/envelope).
+- `packages/contracts/src/http/` — Routes as TypeScript: an operation mirrors OpenAPI with zod in place of JSON Schema, typed for a server handler and a client, with the request decoders a server validates against.
+- `packages/contracts/src/http-client/` — The typed client: one method per operation id, over any `fetch` (browser, React Native, Node).
 - `packages/contracts/src/identity/` — Who is asking: sessions, devices, pairing, consents, and the context a surface is handed.
 - `packages/contracts/src/money/` — The tax basis of an amount on the wire (subpath @arthome/contracts/money).
+- `packages/contracts/src/openapi/` — The OpenAPI document an api emits from its routes and components, through one zod registry per direction.
 - `packages/contracts/src/pagination/` — Cursor pagination primitives (subpath @arthome/contracts/pagination).
+- `packages/contracts/src/storefront-api/` — Every operation of the storefront contract, declared as TypeScript: the source of openapi/storefront.yaml.
 - `packages/contracts/src/streaming/` — Watching: the entitlement verdict, the playback ticket and its renewal, and what interrupts a run.
 - `packages/contracts/src/studio-access/` — Who may operate, and with what: the actor, their effective rights, and the bootstrap a studio surface is handed on sign-in. Separate from `identity` because the two products' session shapes genuinely differ — a viewer receives a ViewerContext, a control room receives a StudioBootstrap.
+- `packages/contracts/src/studio-api/` — Every operation of the studio contract, declared as TypeScript: the source of openapi/studio.yaml.
 - `packages/contracts/src/studio-desk/` — Moderation, the audience, the inbox and the journal — the duty desk.
 - `packages/contracts/src/studio-money/` — Payouts, bank changes, reconciliation periods, statistics, and the dashboard they feed.
 - `packages/contracts/src/studio-stage/` — Operating a date: its sheet, its run console, its health, its uploads and its stream key.
@@ -696,12 +1038,14 @@ each directory is covered and each entry has a directory, not that the sentence 
 - `packages/core/src/fixtures/` — The deterministic data set for tests, staging and demonstration.
 - `packages/core/src/format/` — Number and locale formatting without Intl, with an explicit locale.
 - `packages/core/src/i18n/` — Translation keys and the reference catalogue, never the sentences.
+- `packages/core/src/identity/` — Identity's rules: the generated handle, how long each credential lives, the internal token, the sign-in doors' caps.
 - `packages/core/src/kernel/` — The floor: clock, errors, results and branded identifiers, with no rules.
 - `packages/core/src/media/` — Declared media renditions, never a URL recipe.
 - `packages/core/src/moderation/` — Moderation: three separate axes, two counters and a written precedence.
 - `packages/core/src/money/` — Money in whole minor units, rates in basis points and one rounding rule.
 - `packages/core/src/notification/` — The notification thresholds as domain rules, not screen copy.
 - `packages/core/src/pairing/` — Device pairing: the short code a television shows and a phone retypes.
+- `packages/core/src/payment/` — The payment ports: what the domain asks of a provider, and nothing of how.
 - `packages/core/src/payout/` — Artist payout: commission, VAT by jurisdiction, net and withholding.
 - `packages/core/src/permissions/` — Rights: the eight canonical roles, the union rather than a rank, and grants.
 - `packages/core/src/replay/` — The replay promise, its window and what remains of it.

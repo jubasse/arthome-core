@@ -12,5 +12,9 @@ export declare const DomainConstant: {
     readonly SLUG_REDIRECT_DAYS: 30;
     /** D-076: how many times one date may be postponed; a cancellation stays possible after. */
     readonly POSTPONEMENTS_MAX: 3;
+    /** needs/storefront-web.md, `cancelSeat`: "cancel up to 1 h before the start". */
+    readonly CANCEL_DEADLINE_MINUTES_BEFORE: 60;
+    /** answers-to-surfaces.md Q14: how long the billboard waits before its preview plays. */
+    readonly BILLBOARD_PREVIEW_DELAY_SECONDS: 4;
 };
 //# sourceMappingURL=domain-constants.d.ts.map

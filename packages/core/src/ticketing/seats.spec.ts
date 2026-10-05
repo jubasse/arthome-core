@@ -1,16 +1,27 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  TECHNICAL_PROVISION_THRESHOLD,
+  assertTechnicalProvisionCovers,
+  assertTechnicalProvisionRecordable,
   assertTierWidens,
   availabilityOf,
+  availabilityValidUntil,
   checkoutIntentExpiry,
   holdFor,
   isHoldExpired,
   isScarce,
+  lateEntryOf,
+  provisionRevisableUntil,
+  salesEndedBy,
+  seatCancelDeadline,
+  seatSalesEndAt,
   seatsAvailable,
   tvPairingIntentExpiry,
   type Gauge,
 } from './seats.js';
+import { isDomainError } from '../kernel/errors.js';
+import { CatalogErrorCode } from '../vocabulary/error-codes.js';
 
 const gauge = (over: Partial<Gauge> = {}): Gauge => ({
   capacityTotal: 100,
@@ -19,6 +30,16 @@ const gauge = (over: Partial<Gauge> = {}): Gauge => ({
   waitlistCount: 0,
   ...over,
 });
+
+function refusalOf(act: () => void): unknown {
+  try {
+    act();
+  } catch (error) {
+    if (isDomainError(error)) return { code: error.code, params: error.params };
+    throw error;
+  }
+  return null;
+}
 
 describe('the capacity hold', () => {
   it("takes the intent's expiry instant, not a duration of its own", () => {
@@ -57,6 +78,138 @@ describe('the capacity tiers', () => {
     expect(() => assertTierWidens(500, 800)).not.toThrow();
     expect(() => assertTierWidens(500, 500)).toThrow();
     expect(() => assertTierWidens(500, 300)).toThrow();
+  });
+});
+
+describe('the technical provision', () => {
+  const beyond = TECHNICAL_PROVISION_THRESHOLD + 1;
+  const startsAt = '2026-09-21T19:00:00.000Z';
+
+  it('stops being revisable three days before the date starts', () => {
+    expect(provisionRevisableUntil(startsAt)).toBe('2026-09-18T19:00:00.000Z');
+  });
+
+  it('asks for nothing up to the threshold, provision or not', () => {
+    expect(
+      refusalOf(() =>
+        assertTechnicalProvisionCovers(TECHNICAL_PROVISION_THRESHOLD, null, startsAt),
+      ),
+    ).toBeNull();
+  });
+
+  it('refuses a capacity beyond the threshold while no provision is recorded, naming the deadline', () => {
+    expect(refusalOf(() => assertTechnicalProvisionCovers(beyond, null, startsAt))).toEqual({
+      code: CatalogErrorCode.TECHNICAL_PROVISION_REQUIRED,
+      params: {
+        threshold: TECHNICAL_PROVISION_THRESHOLD,
+        capacityTotal: beyond,
+        revisableUntil: '2026-09-18T19:00:00.000Z',
+      },
+    });
+  });
+
+  it('refuses a provision smaller than the capacity, and names it', () => {
+    expect(refusalOf(() => assertTechnicalProvisionCovers(beyond, beyond - 1, startsAt))).toEqual({
+      code: CatalogErrorCode.TECHNICAL_PROVISION_REQUIRED,
+      params: {
+        threshold: TECHNICAL_PROVISION_THRESHOLD,
+        capacityTotal: beyond,
+        provisionedCapacity: beyond - 1,
+        revisableUntil: '2026-09-18T19:00:00.000Z',
+      },
+    });
+  });
+
+  it('accepts a provision covering the capacity', () => {
+    expect(refusalOf(() => assertTechnicalProvisionCovers(beyond, beyond, startsAt))).toBeNull();
+  });
+
+  it('names no deadline while the date has no start', () => {
+    expect(refusalOf(() => assertTechnicalProvisionCovers(beyond, null, null))).toEqual({
+      code: CatalogErrorCode.TECHNICAL_PROVISION_REQUIRED,
+      params: { threshold: TECHNICAL_PROVISION_THRESHOLD, capacityTotal: beyond },
+    });
+  });
+});
+
+describe('recording a technical provision', () => {
+  const startsAt = '2026-09-21T19:00:00.000Z';
+  const beforeDeadline = '2026-09-18T18:59:59.000Z';
+  const atDeadline = '2026-09-18T19:00:00.000Z';
+
+  it('accepts a provision covering the open capacity before the deadline, beyond it or not', () => {
+    expect(
+      refusalOf(() => assertTechnicalProvisionRecordable(8_000, 8_000, startsAt, beforeDeadline)),
+    ).toBeNull();
+    expect(
+      refusalOf(() => assertTechnicalProvisionRecordable(8_000, 15_000, startsAt, beforeDeadline)),
+    ).toBeNull();
+  });
+
+  it('refuses any provision from the deadline on, naming it', () => {
+    expect(
+      refusalOf(() => assertTechnicalProvisionRecordable(8_000, 15_000, startsAt, atDeadline)),
+    ).toEqual({
+      code: CatalogErrorCode.PROVISION_DEADLINE_PASSED,
+      params: { revisableUntil: atDeadline },
+    });
+  });
+
+  it('refuses a provision below the capacity already open, even under the threshold', () => {
+    expect(
+      refusalOf(() => assertTechnicalProvisionRecordable(500, 499, startsAt, beforeDeadline)),
+    ).toEqual({
+      code: CatalogErrorCode.PROVISION_BELOW_CAPACITY,
+      params: { capacityTotal: 500, provisionedCapacity: 499 },
+    });
+  });
+
+  it('sets no deadline while the date has no start', () => {
+    expect(
+      refusalOf(() => assertTechnicalProvisionRecordable(8_000, 15_000, null, atDeadline)),
+    ).toBeNull();
+  });
+});
+
+describe('the availability read', () => {
+  it('holds a minute from the instant it is served', () => {
+    expect(availabilityValidUntil('2026-09-21T18:40:00.000Z')).toBe('2026-09-21T18:41:00.000Z');
+  });
+});
+
+describe('the cancel deadline', () => {
+  it('is an hour before the start', () => {
+    expect(seatCancelDeadline('2026-09-21T19:00:00.000Z')).toBe('2026-09-21T18:00:00.000Z');
+  });
+});
+
+describe('seat sales end (D-089)', () => {
+  const startsAt = '2026-09-21T19:00:00.000Z';
+
+  it('closes thirty minutes after the start', () => {
+    expect(seatSalesEndAt(startsAt)).toBe('2026-09-21T19:30:00.000Z');
+  });
+
+  it('is not ended before its instant, and is at it', () => {
+    expect(salesEndedBy(seatSalesEndAt(startsAt), '2026-09-21T19:29:59.000Z')).toBe(false);
+    expect(salesEndedBy(seatSalesEndAt(startsAt), '2026-09-21T19:30:00.000Z')).toBe(true);
+  });
+
+  it('never ends for a date with no end', () => {
+    expect(salesEndedBy(null, '2026-09-21T19:30:00.000Z')).toBe(false);
+  });
+
+  it('is null before the start, and for a date with none', () => {
+    expect(lateEntryOf(startsAt, '2026-09-21T18:59:59.000Z')).toBeNull();
+    expect(lateEntryOf(null, '2026-09-21T19:00:00.000Z')).toBeNull();
+  });
+
+  it('names what a late buyer missed, and their cutoff', () => {
+    expect(lateEntryOf(startsAt, '2026-09-21T19:11:30.000Z')).toEqual({
+      startedAt: startsAt,
+      minutesElapsed: 11,
+      salesEndAt: '2026-09-21T19:30:00.000Z',
+    });
   });
 });
 

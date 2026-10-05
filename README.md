@@ -8,7 +8,7 @@ API contracts every surface reads, and records why each irreversible decision wa
 was.
 
 > **Status: the foundation is built, the applications are not.** The domain, the contracts, the
-> tooling and eleven gates exist and are verified. **Every schema in both contracts is generated from a
+> tooling and fourteen gates exist and are verified. **Every schema in both contracts is generated from a
 > zod source and checked against the document it publishes.** No application code has been written
 > yet. What is
 > here is the part that is expensive to change later.
@@ -20,11 +20,11 @@ was.
 | Directory | What lives there | Authored by |
 |---|---|---|
 | `packages/core/` | `@arthome/core` — the domain. **Zero framework dependencies.** Two entry points: `.` has no dependency at all, `./schema` is the only one that may import zod | the domain |
-| `packages/contracts/` | `@arthome/contracts` — the boundary schemas, which **extend** core's base schemas rather than redeclaring them. **Fourteen subpaths, one per bounded context**, and no `.` entry point: a barrel would hand zod's fixed cost to every surface, so the constraint is the mechanism rather than a written rule | the contracts |
+| `packages/contracts/` | `@arthome/contracts` — the boundary schemas, which **extend** core's base schemas rather than redeclaring them. **21 subpaths** (fourteen bounded contexts, the HTTP layer, the two APIs and their docs), and no `.` entry point: a barrel would hand zod's fixed cost to every surface, so the constraint is the mechanism rather than a written rule | the contracts |
 | `packages/tooling/` | `@arthome/tooling` — ESLint, Prettier, TypeScript and Vitest configuration shared by all seven repositories, plus five of the gates |
-| `openapi/` | The two API contracts — one per product. **Hand-written and reviewed as prose**, and every one of their 111 schemas now has a zod source that a gate compares against it | the contracts |
+| `openapi/` | The two API contracts — one per product. **Generated** from the route declarations and zod schemas of `@arthome/contracts` (D-120), committed so readers and tools have them, and held to that source by a gate | the contracts |
 | `proto/` | Kafka event schemas. 109 types, **zero `service` declarations** — Protobuf serves the event log, never a synchronous call | the domain |
-| `architecture/` | 15 documents, ~11,600 lines: the context map, the data model, the ADRs, the conventions, and the sceptic's adversarial review | the whole team |
+| `architecture/` | 20 documents, ~14,250 lines: the context map, the data model, the ADRs, the conventions, and the sceptic's adversarial review | the whole team |
 | `needs/` | What each of the five surfaces asked the contract for, and what it contested when it got the answer. One file per surface, each its sole author | the surfaces |
 | `docs/` | The design handoff as corrected — the brief this project started from | imported |
 | `prototypes/` | The five design mockups, byte-identical to their source, plus 175 screen extractions | the designer |
@@ -38,9 +38,12 @@ text. Everything else in this repository is written in English, and a gate enfor
 
 ## What to read first
 
-**[`DECISIONS.md`](DECISIONS.md) — 65 arbitrations, each with its reason.** This is the document to
+**[`DECISIONS.md`](DECISIONS.md) — the arbitrations, each with its reason (the count is in the index below).** This is the document to
 open if you want to know *why* rather than *what*. It is also the honest one: several entries are
 corrections of earlier entries, and a few record a decision that turned out to be wrong and says so.
+**[`DECISIONS-INDEX.md`](DECISIONS-INDEX.md)** is its **generated projection**: one line per decision
+with the documents its entry cites, so an agent opens the index first and `DECISIONS.md` only at the
+id it needs.
 
 > *Almost every rule in it is a mistake with its evidence attached rather than a principle.*
 
@@ -58,11 +61,29 @@ Then, depending on what you are doing:
 
 | | paths | schemas |
 |---|---|---|
-| `openapi/storefront.yaml` | 75 | 65 — **all sourced** |
-| `openapi/studio.yaml` | 79 | 46 — **all sourced** |
+| `openapi/storefront.yaml` | 80 | 111 — generated |
+| `openapi/studio.yaml` | 85 | 89 — generated |
 
 Two products, two contracts, one domain. The storefront is what a viewer sees; the studio is what an
 artist and their crew operate. They share `@arthome/core`'s vocabulary and nothing else.
+
+---
+
+## Releasing
+
+A release is a `v<version>` tag, cut from `main` at the end of the common release flow. Pushing it
+runs `.github/workflows/release.yml`: install, `pnpm -r run build`, `pnpm run verify`, then `tools/pack-release.mjs`,
+which refuses a tag that disagrees with the three package versions and packs `@arthome/core`,
+`@arthome/contracts` and `@arthome/tooling`. `gh release create` attaches the tarballs
+(`arthome-<package>-<version>.tgz`) to the GitHub release. Nothing is published to a registry.
+Every pull request to `develop` or `main` runs `pnpm run verify` in CI (`.github/workflows/verify.yml`).
+
+The other repositories install those tarballs by URL (`pnpm run use-core <version>` in
+arthome-platform). To see what a release would carry without tagging anything:
+
+```bash
+node tools/pack-release.mjs v0.1.0 /tmp/release-assets
+```
 
 ---
 
@@ -75,13 +96,15 @@ pnpm run verify:offline   # the subset that needs no install — it prints what 
 pnpm run fix              # prettier, eslint, prettier — in that order, and the order matters
 ```
 
-**Eleven gates, and each says what it looked at — including where it stops looking.** They check that
+**Fourteen gates, and each says what it looked at — including where it stops looking.** They check that
 no enumeration value is copied, that the domain and the contracts share one vocabulary — **and that
 an architecture document naming an error code names one that exists** — that the `.`
-entry point reaches neither zod nor a Node API, that every version is pinned, that ESLint and
+entry point reaches neither zod nor a Node API, that no surface bundles the contracts' prose and
+examples, that every version is pinned, that ESLint and
 Prettier do not overlap, that the two contracts conform to twenty rules, that everything committed
-is written in English and carries no warning sign, check mark or emoji, that the repository map still matches the installed declarations, and that
-**every schema emits exactly what the contract publishes.**
+is written in English and carries no warning sign, check mark or emoji, that the repository map still matches the installed declarations, that
+**every schema emits exactly what the contract publishes**, that every route's generated annotation
+is current, and that `DECISIONS-INDEX.md` still matches `DECISIONS.md`.
 
 The prose half of the vocabulary gate is the newest: `transport.md` §5.5's status table was a
 hand-kept copy of `ERROR_CODES` that had drifted to nine names no package exported, and was written

@@ -91,10 +91,15 @@ write the "bearer token" path yourself carries a hidden cost.
 
 ## 3. Decision
 
-### D-A1 — **better-auth 1.7.5**, as a library inside the `identity` service, with four plugins
+### D-A1 — **better-auth 1.7.5**, as a library inside the `identity` service
 
-`better-auth` + `@thallesp/nestjs-better-auth` 2.8.0, and the plugins **`jwt`**, **`bearer`**,
-**`two-factor`**, **`multi-session`**, **`device-authorization`**.
+`better-auth` called from `identity`'s own controllers through `auth.api`, no handler mounted: a
+third option, neither A nor B of §3.1 (amended 2026-10-03). No NestJS adapter and no `jwt` plugin.
+Plugins per slice: **`bearer`** (A), then **`two-factor`**, **`multi-session`** and
+**`device-authorization`** with the slices that need them.
+
+*Amended 2026-10-03 (§3.1). Before it, this decision named `@thallesp/nestjs-better-auth` 2.8.0
+and the `jwt` plugin.*
 
 **Why this one, in one sentence**: it is the only candidate that ticks *at the same time* the
 native device flow, the bearer-token session for the three cookie-less surfaces, five profiles on
@@ -158,8 +163,9 @@ waiting, the screen does not switch. The contract separates them by name, not by
 ### 3.1 — The `express` peer against the `FastifyAdapter`: the contradiction, and what it was
 
 *Raised by the audit; settled on **25 September 2026** against npm and vendor documentation. The
-conclusion changes no decision — D-A1 stands unmodified — but the reasoning below is what makes it
-safe to implement, and without it the next reader re-opens the question.*
+conclusion changed no decision then; D-A1 was amended later, on 2026-10-03, by the amendment that
+closes this section. The reasoning below is what makes it safe to implement, and without it the
+next reader re-opens the question.*
 
 **The contradiction, stated plainly.** §1's verification table records, for the NestJS adapter:
 
@@ -284,6 +290,25 @@ it.
   `trustedOrigins` only and throws on function-based ones (`dist/index.mjs`, lines 845–857) — and
   §6.6 already requires literal strings. The constraint was met before it was known.
 
+#### Amendment, 2026-10-03: the library without the adapter
+
+`arthome-platform` calls better-auth's server API (`auth.api.*`) from `identity`'s own controllers
+and does **not** install `@thallesp/nestjs-better-auth`. The reason is the property stated above:
+the adapter mounts better-auth's routes ahead of Nest's router, where no guard sees them. In the
+topology of §8 every `identity` route sits behind the internal token's guard, so a raw
+`/api/auth/sign-in/email` would be the one door a caller could reach without passing the BFF, and
+so without the BFF's rate limit, which is what bounds enumeration (D-099). It would also mount
+`/token` and `/jwks`, which §8.2.1 never exposes. Without the adapter there is no handler to feed,
+so `bodyParser: false` (§8.2.7) does not apply either.
+
+This is neither option A nor option B. B mounts `auth.handler` by hand and must rewrite the guard;
+here no handler is mounted at all, so B's trap (a route invisible to Nest) cannot arise. What B
+would have cost, a guard of our own, is the internal token's guard every service needed anyway. The
+`jwt` plugin is not installed either: the BFF mints the internal token with `jose` (§8), and
+whether the device token (§8.1's `dev-` issuer) uses it is slice C's to decide. §11's S1 criterion
+"`/api/auth/sign-in/email` answering through the adapter" is therefore moot; the rest of S1 is kept
+as a regression suite in the platform.
+
 #### Versions, with their dates, since a bump pins what is already mature
 
 | Package | Recorded in this ADR | Latest on 25 Sept. 2026 | Published | Verdict |
@@ -335,8 +360,8 @@ screen. No `MISMATCH` is therefore possible on `signin`.
 | `intent` | `expiresAt` | Why |
 |---|---|---|
 | `signin` | **15 min** | finding your phone, signing in, possibly doing 2FA |
-| `payment-method` · `plan` · `merch` | **10 min** | no gauge to honour, but a payment does not linger |
-| **`seat`** | **5 min** | the gauge shown at booking time must stay true |
+| `payment-method` · `plan` | **10 min** | no gauge to honour, but a payment does not linger |
+| **`seat`** · `merch` | **5 min** | the gauge shown at booking time must stay true; for `merch`, the contract's duration, kept (D-104) |
 
 **And for `seat`, one further requirement, addressed to `backend-domain`:** the pairing duration
 must be **the duration of a seat hold** placed by `ticketing` when the pairing is created.
@@ -567,6 +592,27 @@ address, and a living room behind a NAT shares its address. At the BFF we add a 
 wrong-code attempts**, per code and per device. That is the defence the 28.5 bits of entropy
 presuppose.
 
+**The numbers have one owner: `AuthRateLimit` in `@arthome/core`.** Sign-up, sign-in (per address,
+and per email from one address) and the email verification's doors are capped there. Until a device
+carries a verified identity (§4/Q3's `device_token`) the count is per network address, an IPv6
+address counting as its /64, because a `deviceId` the caller merely asserts caps nothing: it sends a
+new one with each attempt. **D-119: the limits target the device**, which slice C brings. Until then
+an IPv6 /64 keeps tight caps, and an IPv4 address gets a high anti-abuse ceiling (`ipv4Limit`: 300
+sign-ins per 15 minutes, 60 sign-ups per hour): mobile carriers share one IPv4 address across
+hundreds of subscribers (CGNAT), and D-079's openings would otherwise refuse real viewers.
+
+**No hard lockout per email** (the lead's ruling, 2026-10-03, on the security review's M4). A cap
+counted per email alone lets anyone keep any known address signed out with ten wrong passwords.
+Per email, failures only slow the next attempt down (`SignInSlowdown`: a doubling pause past five
+failures, bounded at four seconds); the hard cap is per email *and* address, which a third party
+exhausts for itself alone. **The bound this leaves on guessing** (the lead's ruling on the
+re-review's F5b, accepted for slice A): ten attempts per (email, address or /64) per fifteen
+minutes, times the attacker's networks. The pause does not slow a spray, whose attempts wait in
+parallel. Slice C tightens it with OWASP's device cookies, which recognise the owner's device. A resend is capped per hour and per day: one account has one address,
+and D-100 lets a stranger register it. The pairing lockout's
+N joins `AuthRateLimit` with the pairing itself. better-auth's own limiter guards its HTTP handler,
+which `identity` does not mount (§3.1), so it caps nothing here.
+
 ### 6.3 The ownership guard, written by us
 
 In light of CVE-2026-45337, `approvePairing` and `denyPairing` **are not exposed as they stand**.
@@ -595,6 +641,11 @@ What `studio-mobile` asks for is adopted in full and becomes a contract rule:
 
 The opaque state is served by better-auth's **`one-time-token`** plugin, which already exists.
 
+A single-use token that has run out answers `410` with the code of its own journey, so a surface restarts
+the right one: `identity.one_time_token_expired` on the exchange of this state,
+`identity.reset_token_expired` on a password reset, `identity.two_factor_challenge_expired` on the
+answer to a two-factor challenge. None carries params.
+
 ### 6.5 The shared television
 
 `multi-session` with `maximumSessions: 5` — which is already the default — carries exactly the
@@ -610,6 +661,24 @@ The studio BFF's allow-list contains the **literal strings** `capacitor://localh
 `Access-Control-Allow-Origin: *` is illegal with credentialed requests, and a framework that
 normalises `Origin` through a URL parser will reject `capacitor://` — so the comparison is on the
 raw string. Details and settings → `nestjs-web-security`.
+
+---
+
+### 6.7 Email verification
+
+*D-100: verified by a link, with a resend; an unverified address blocks nothing.*
+
+- `identity` issues the token at sign-up and on `resendEmailVerification`, keeps only its hash, and
+  publishes `identity.email_verification.requested.v1` with the token on a topic `notifications`
+  alone reads (`events.md` §3; the proto's comment says why this one token may travel in clear). The token is never logged. A password reset's token must
+  not take this path.
+- The link points at the surface, which sends the token to `confirmEmailVerification`. The token is
+  **spent by its first use** and expires after `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS`
+  (`@arthome/core`); a resend spends the earlier ones. A token verifies only the address it was
+  sent to: once the address changes, it verifies nothing.
+- Unknown, expired and used answer the same `410` `identity.verification_link_invalid`.
+- better-auth's own verification is not used: its token is a signed JWT that a second use does
+  not spend.
 
 ---
 
@@ -700,7 +769,9 @@ surface ──(cookie | Bearer)──► BFF ──(JWT ES256, ~60 s, aud=<servi
   session store. Redis stays **at the BFF only**.
 - **The BFF mints the internal token**: `jose`, **ES256**, `iss` = the BFF, `aud` = the target
   service, `sub` = `user_id`, minimal claims (roles per channel, `device_id`), `exp` 60 s. A token
-  minted for `ticketing` is **refused** by `billing`.
+  minted for `ticketing` is **refused** by `billing`. A call made for an anonymous visitor (a public
+  read, a sign-up) carries a token **without `sub`**, and a route that serves an account refuses it
+  with a 401.
 - **Each service verifies locally** with `createRemoteJWKSet` built **once** (not per request),
   with `algorithms`, `issuer` and `audience` **pinned** — without pinning, any token signed by
   that key passes. Never `x-user-id` in a header: any caller can set it.
@@ -918,7 +989,8 @@ Three configuration traps, to be written down before they cost half a day each:
   `studio.arthome.fr/reset?token=…`, therefore **per product and per language**. We override
   `sendResetPassword`; the default built from `baseURL` would land the user on an API.
 - **`bodyParser: false` concerns the `identity` application**, not the BFF. It is a requirement of
-  better-auth's NestJS adapter; applying it to the BFF would break everything else there.
+  better-auth's NestJS adapter; applying it to the BFF would break everything else there. The
+  platform does not install the adapter (§3.1), so it applies nowhere today.
 
 ---
 

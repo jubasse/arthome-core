@@ -112,6 +112,20 @@ Account
 **Invariants.** An account with no `password_hash` must have at least one social provider or one
 passkey. `deletion_requested` freezes purchases but deletes nothing (§7.5).
 
+**At sign-up** (D-100, D-101): `public_handle` is generated and neutral
+(`generatedPublicHandle` in `@arthome/core`), then changeable through `updateProfile`;
+`email_verified_at` stays null until the link of `adr-auth.md` §6.7 is used, and blocks nothing.
+`status` is `ACCOUNT_STATUSES`. The credential columns live in better-auth's `auth` schema, keyed by
+the same UUIDv7 as `id` (`adr-auth.md` R2).
+
+### 1.1b `EmailVerification` — entity of the `Account` aggregate
+
+One verification link (`adr-auth.md` §6.7, D-100): the SHA-256 of its token (the token itself is
+never stored), the account, the address it was sent to, `expires_at` and `used_at`. Spent by its
+first use; a resend spends the account's outstanding links; it verifies nothing once the account's
+address differs from the one it was sent to. Its event travels on a topic of its own
+(`events.md` §3).
+
 ### 1.2 `Profile` — entity of the `Account` aggregate
 
 Up to five per account (a television constraint, but carried by the account). Name, sized avatar,
@@ -274,7 +288,7 @@ Date
   starts_at             timestamptz UTC
   runtime_min           denormalised from the show (it freezes at publication)
   rights                scope (worldwide | restricted) · territories[] · reason_code
-  replay_policy         included | subscription | unit | none
+  replay_policy         included | subscription | unit | none   ← a set of modes from D-091 (adr-replay.md §3)
   replay_window_hours   int
   outcome               nullable: postponed | cancelled | interrupted
   rescheduled_to        nullable timestamptz
@@ -286,6 +300,7 @@ Date
 **Invariants.**
 - `replay_policy = 'none'` is **final** for this date: you cannot later enable a replay you promised
   not to make — the public price depended on it. The other values lock when the box office opens.
+  From D-091 the policy becomes a set of access modes the channel chooses (`adr-replay.md` §3).
 - An outcome is a fact, kept in the date's events. Only a **postponement** can be followed by
   another outcome: up to `DomainConstant.POSTPONEMENTS_MAX` (3) postponements, then a
   cancellation or an interruption, which are final (D-076).
@@ -299,6 +314,20 @@ Date
 **What is not on this table, and what the fixture puts there**: `prices`, `seats`, `revenue`,
 `sold`, `viewers`, `chatMode`, `publication`, `publishedBy`. Copying the fixture's shape would carve
 a read model into the write contract.
+
+**The replay is not on it either (D-090).** From D-090 the replay has a root of its own in
+`catalog`, created when the live ends (`adr-replay.md` §5):
+
+```
+Replay
+  date_id (root, one per date) · channel_id
+  state            pending | online | closed | withdrawn
+  modes            the date's access modes, copied when created (locked since publication)
+  live_ended_at    the run's actual end, from streaming.run.ended.v1
+  closes_at        replayClosesAt(live_ended_at, replay_window_hours), computed once
+  online_at        nullable
+  version
+```
 
 ### 2.3 `Publication` — an entity of the `Date` aggregate (D-085)
 
@@ -323,7 +352,7 @@ Publication
 | `technical → scheduled` | studio command | — |
 | `technical → live` | **`streaming.run.started.v1` consumed** | — |
 | `live → ended` | **`streaming.run.ended.v1` consumed** | — |
-| `ended → replay-online` | studio command, guarded | **yes** — *viewers have paid for the replay* |
+| `ended → replay-online` | studio command, guarded | **yes** — *viewers have paid for the replay*; moves to a `Replay` of its own in `catalog` (D-090, `adr-replay.md` §1) |
 
 **This point is the answer to "an aggregate straddling three contexts".** `Publication` does not
 command going on air: it **learns** it. The "go on air" command goes to `streaming`, which alone
@@ -334,8 +363,9 @@ knows whether the feed is coming in. So two of the eight transitions are caused 
 - The lock is on the **pair** `from > to`, not on the state (E5). Refusal:
   `TRANSITION_IRREVERSIBLE` + the target transition + the promise committed, as parameters.
 - Every transition is **conditioned on the version**: sent from `technical` while the current state
-  is `live`, it is refused with `STATE_CONFLICT` **and the current state and version**. The studio
-  is multi-operator with no lock: the arbitration is on the server.
+  is `live`, it is refused with `STATE_CONFLICT` **and the current version, and the current state
+  when the record has one**. The studio is multi-operator with no lock: the arbitration is on the
+  server.
 - Every transition carries an `Idempotency-Key` — **mandatory, not recommended**: it commits a
   public price or a sale.
 - The transitions offered are served **for this operator**, computed by
@@ -435,6 +465,9 @@ the Share action (`storefront-tv` Q10, E15), and what the web shares and indexes
 
 ## 3. `ticketing`
 
+From D-090, `ticketing` also holds `ReplayAccess`, the right to watch a replay, apart from the seat
+(`adr-replay.md` §1 and §2).
+
 ### 3.1 `DateSales` — root aggregate (a date's commercial face)
 
 ```
@@ -448,8 +481,9 @@ DateSales
   promotions[]      reason · struck price · current price · validity window
   replay_unit_price nullable, when replay_policy = 'unit'
   prices_locked_at  nullable
+  sales_end_at      the start + SEAT_SALES_CUTOFF_MINUTES_AFTER_START (D-089); moves with a postponement
   complimentaries[] issued / allocated, by category
-  technical_provision  threshold, provisioning, revision deadline, penalty exposure
+  technical_provision  threshold, provisioned capacity (nullable), revision deadline, penalty exposure
   version
 ```
 
@@ -461,12 +495,20 @@ DateSales
 - **Opening a tier notifies the waiting list in the same act**: one single transactional command,
   with the **priority window (2 h) as a domain parameter**. Two calls would let the scarcity
   dissipate between them.
-- Beyond **10,000 seats**, the infrastructure is provisioned in advance; a forecast far above the
-  real figure incurs a penalty; revisable up to **72 h** before. **Threshold, provisioning, deadline
-  and exposure are contract data**, not constants copied onto five surfaces (`studio-web` Q25,
-  `studio-mobile` #13).
+- Beyond `TECHNICAL_PROVISION_THRESHOLD` seats, the infrastructure is provisioned in advance: a
+  capacity beyond it that no recorded provision covers is refused with
+  `date.technical_provision_required` (`assertTechnicalProvisionCovers`). The studio records the
+  provision with `setTechnicalProvision` (D-088), revisable until `PROVISION_REVISION_HOURS` before
+  the start (`provisionRevisableUntil`), then refused with `date.provision_deadline_passed`; one below
+  the capacity already open is refused with `date.provision_below_capacity`
+  (`assertTechnicalProvisionRecordable`). A forecast far above the real figure incurs a penalty, not
+  defined yet (D-088). **Threshold, provisioning, deadline and exposure are contract data**, not
+  constants copied onto five surfaces (`studio-web` Q25, `studio-mobile` #13).
 - Prices lock when the box office opens (`publication.engaged` consumed); the schedule locks when
   the show goes on air.
+- A date sells in **one currency**, its billing market's (D-016): every price tier carries it, active
+  or not, and `setDatePrices` refuses a mix with `date.prices_currency_mismatch`
+  (`assertPricesShareCurrency`).
 - "Apply to the series" **excludes prices and capacity**: each date commits its own buyers.
 
 **The price paid is not the tier's price.** The summary is composed **server-side**:
@@ -487,7 +529,7 @@ defect.
   price displayed and the valid price is **structural, not accidental**.
 - The "show already started" price (`late_rate`) is **pro rata of the time remaining**: it cannot be
   a frozen string. The contract carries **the rule and its parameters**, and serves the current
-  price with its `validUntil` (60 s).
+  price with its `validUntil`, `AVAILABILITY_VALID_SECONDS` after `servedAt` (`@arthome/core`).
 
 ### 3.2 `SeatHold` — the capacity hold, and its duration
 
@@ -545,6 +587,25 @@ has no location, and it exists from payment on. Before that, a `SeatHold` carrie
 on mobile and on TV. The mockup computes it by hashing: ported as it stands, it would give **three
 different codes for the same seat** as soon as one surface changed hash function. A served format,
 never recomposed.
+
+```
+SeatOrder
+  id · reference (ATH-{year}-{five digits}) · date_id · channel_id · account_id · profile_id (nullable)
+  idempotency_key  unique per account: the purchase's key, bound to the order (adr-ticketing §2)
+  tier · quantity · the quote frozen: unit price, tier total, service fee, discount, total, currency
+  declared_tax_location  nullable, one piece of evidence among the others (D-021)
+  hold_id          the SeatHold it pays for; expires_at = the hold's
+  state            pending | awaiting_action | processing | paid | failed | refunded
+                   | partially_refunded | disputed        forward only (adr-payments §8, §7.3)
+  payment_intent_ref · client_secret · next_action   the provider's, opaque
+  failure_code · decline_code
+  refund_reason · refund_owed_at · refund_ref · refunded_at · intent_cancel_owed_at
+                   a provider call owed is a fact on the order before it is a call
+  placed_at · paid_at · version
+```
+
+Its seats are created in its `paid` transition, one per unit (D-077); an order never holds capacity
+itself, its hold does.
 
 ### 3.4 `MerchOrder` — root aggregate, and `MerchItem`
 
@@ -807,7 +868,9 @@ can **resume its own session**, identified by the device.
 ### 5.5 `ReplayAsset`, `PreviewBudget`, `ResumePoint`
 
 `ReplayAsset`: existence, duration, `available_from`, **`expires_at` computed** from the end of the
-run and `replay_window_hours` served by `catalog`. The **policy** belongs to `catalog`; the **file**
+run and `replay_window_hours` served by `catalog`. From D-090 that instant is computed once in core
+and carried by catalog's `Replay`; the asset takes it from `catalog.replay.state_changed.v1`
+(`adr-replay.md` §4). The **policy** belongs to `catalog`; the **file**
 and its expiry belong to `streaming`. `RecordingProvider` stores and deletes; it is `@arthome/core`
 that decides the duration, otherwise the replay policy would end up encoded in a storage lifecycle,
 out of reach of the tests.

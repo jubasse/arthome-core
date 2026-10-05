@@ -39,7 +39,7 @@ export declare const DashboardReminderSchema: z.ZodObject<{
     kind: z.ZodString;
     severity: z.ZodString;
     textCode: z.ZodString;
-    params: z.ZodObject<Record<string, never>, z.core.$loose>;
+    params: z.ZodObject<Record<never, never>, z.core.$loose>;
     targetPage: z.ZodString;
     dateId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     countdownTo: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -150,6 +150,7 @@ declare const ComplimentarySchema: z.ZodObject<{
 declare const TechnicalProvisionSchema: z.ZodOptional<z.ZodObject<{
     required: z.ZodOptional<z.ZodBoolean>;
     threshold: z.ZodOptional<z.ZodNumber>;
+    provisionedCapacity: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     revisableUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     malusExposure: z.ZodOptional<Money>;
 }, Looseness>>;

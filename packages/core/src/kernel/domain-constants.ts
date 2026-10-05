@@ -12,4 +12,8 @@ export const DomainConstant = {
   SLUG_REDIRECT_DAYS: 30,
   /** D-076: how many times one date may be postponed; a cancellation stays possible after. */
   POSTPONEMENTS_MAX: 3,
+  /** needs/storefront-web.md, `cancelSeat`: "cancel up to 1 h before the start". */
+  CANCEL_DEADLINE_MINUTES_BEFORE: 60,
+  /** answers-to-surfaces.md Q14: how long the billboard waits before its preview plays. */
+  BILLBOARD_PREVIEW_DELAY_SECONDS: 4,
 } as const;

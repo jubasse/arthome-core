@@ -15,6 +15,7 @@
  *   which emits the reason the document gives instead of inventing a source name.
  */
 import { z } from 'zod';
+import type { TaggedSchema } from '../http/tagged.js';
 import { SessionMode } from '../identity/index.js';
 /** The badges, served at bootstrap and kept up to date by the real-time channel. */
 export declare const StudioCountersSchema: z.ZodObject<{
@@ -113,10 +114,10 @@ export declare const StudioSessionModeSchema: z.ZodEnum<{
     bearer: 'bearer';
 }>;
 /** Exactly one of a cookie or a bearer session, discriminated by the mode. */
-export declare const StudioSessionEstablishedSchema: z.ZodDiscriminatedUnion<[
-    typeof StudioSessionEstablishedCookieSchema,
-    typeof StudioSessionEstablishedBearerSchema
-]>;
+export declare const StudioSessionEstablishedSchema: TaggedSchema<'mode', {
+    cookie: typeof StudioSessionEstablishedCookieSchema;
+    bearer: typeof StudioSessionEstablishedBearerSchema;
+}>;
 /** A member of a channel's team. */
 export declare const ChannelMemberSchema: z.ZodObject<z.ZodRawShape, z.core.$loose>;
 /** The one-off stand-in, scoped to a date. */

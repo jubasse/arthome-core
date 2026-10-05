@@ -32,12 +32,6 @@
   ],
   "allow": [
     {
-      "code": "api.token_expired",
-      "kind": "promised",
-      "named_in": ["architecture/transport.md"],
-      "reason": "No BFF exists to mint or expire a token; adr-auth.md is Status: proposed. 401 is served today as api.unauthenticated, which D-069's standing exception makes correct rather than vague."
-    },
-    {
       "code": "pairing.expired",
       "kind": "promised",
       "named_in": ["architecture/transport.md"],
@@ -48,12 +42,6 @@
       "kind": "promised",
       "named_in": ["architecture/transport.md"],
       "reason": "Traefik's own 5xx, served by a static error service. No Traefik configuration exists in any repository yet, so nothing can emit it."
-    },
-    {
-      "code": "api.payload_too_large",
-      "kind": "promised",
-      "named_in": ["architecture/transport.md"],
-      "reason": "transport.md §5.7's 413. No service enforces a body limit in the contract's vocabulary — the two that exist inherit Fastify's 1 MiB default and answer with its own error shape, not ours."
     },
     {
       "code": "date.interrupted",

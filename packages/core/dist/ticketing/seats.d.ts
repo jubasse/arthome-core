@@ -54,6 +54,12 @@ export declare const SALES_QUEUE_ADMISSION_SECONDS = 60;
  * Selling out and coming back from sold out publish at once: they change what surfaces offer.
  */
 export declare const AVAILABILITY_PUBLISH_MIN_INTERVAL_SECONDS = 5;
+/**
+ * How long a date's availability read holds from its `servedAt`: short, because the "show already
+ * started" price it carries is pro rata of the time remaining.
+ */
+export declare const AVAILABILITY_VALID_SECONDS = 60;
+export declare function availabilityValidUntil(servedAt: Instant): Instant;
 export interface SeatHold {
     readonly quantity: number;
     readonly expiresAt: Instant;
@@ -65,6 +71,8 @@ export declare function checkoutIntentExpiry(openedAt: Instant): Instant;
 /** The intent duration for a TV pairing — five minutes, not fifteen. */
 export declare function tvPairingIntentExpiry(openedAt: Instant): Instant;
 export declare function isHoldExpired(hold: SeatHold, now: Instant): boolean;
+/** A seat's cancellation deadline, served as an instant (data-model.md §3.3), never a sentence. */
+export declare function seatCancelDeadline(startsAt: Instant): Instant;
 /**
  * Capacity tiers: they WIDEN, never shrink after going on sale. Shrinking then
  * would cancel seats already sold.
@@ -73,11 +81,24 @@ export declare function assertTierWidens(currentCapacity: number, nextCapacity: 
 /**
  * The TECHNICAL PROVISIONING threshold and its parameters — CONTRACT DATA, not
  * constants copied onto five surfaces. A forecast far above the real figure
- * exposes you to a penalty, and is revisable up to 72 h before.
+ * exposes you to a penalty, and is revisable until `PROVISION_REVISION_HOURS`
+ * before the date.
  */
 export declare const TECHNICAL_PROVISION_THRESHOLD = 10000;
 export declare const PROVISION_REVISION_HOURS = 72;
 export declare function requiresTechnicalProvision(capacityTotal: number): boolean;
+export declare function provisionRevisableUntil(startsAt: Instant): Instant;
+/**
+ * Refuses a capacity beyond the threshold that no recorded provision covers. `provisionedCapacity`
+ * is null while none is recorded; `startsAt` is null while the date has no start, and the refusal
+ * then names no deadline.
+ */
+export declare function assertTechnicalProvisionCovers(capacityTotal: number, provisionedCapacity: number | null, startsAt: Instant | null): void;
+/**
+ * Refuses to record a provision from `provisionRevisableUntil` on, or one below the capacity already
+ * open (D-088). A date with no start has no deadline yet.
+ */
+export declare function assertTechnicalProvisionRecordable(capacityTotal: number, provisionedCapacity: number, startsAt: Instant | null, now: Instant): void;
 /**
  * The priority window granted to the waiting list when a tier opens.
  *
@@ -87,4 +108,20 @@ export declare function requiresTechnicalProvision(capacityTotal: number): boole
 export declare const WAITLIST_PRIORITY_HOURS = 2;
 /** One `waitlist.notified` names at most this many accounts; a tier opening writes as many as it needs. */
 export declare const WAITLIST_NOTIFIED_ACCOUNTS_MAX = 500;
+/** adr-ticketing.md §6: how many expired holds one pass of the sweeper's one-second loop takes. */
+export declare const HOLD_EXPIRY_BATCH = 500;
+/** D-089: a seat covers the live alone, sold until this long after its start, every channel alike. */
+export declare const SEAT_SALES_CUTOFF_MINUTES_AFTER_START = 30;
+export declare function seatSalesEndAt(startsAt: Instant): Instant;
+/** Past the sale's end by time; a date with no start has no end. */
+export declare function salesEndedBy(salesEndAt: Instant | null, now: Instant): boolean;
+/** What a buyer arriving after the start is told, and must acknowledge, before buying (D-089). */
+export interface LateEntry {
+    readonly startedAt: Instant;
+    /** Whole minutes of the live already missed. */
+    readonly minutesElapsed: number;
+    readonly salesEndAt: Instant;
+}
+/** Null before the start, and for a date with none. */
+export declare function lateEntryOf(startsAt: Instant | null, now: Instant): LateEntry | null;
 //# sourceMappingURL=seats.d.ts.map

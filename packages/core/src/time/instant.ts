@@ -40,6 +40,10 @@ export function fromEpochMs(ms: number): Instant {
   return new Date(ms).toISOString();
 }
 
+export function plusSeconds(instant: Instant, seconds: number): Instant {
+  return fromEpochMs(toEpochMs(instant) + seconds * 1_000);
+}
+
 export function plusMinutes(instant: Instant, minutes: number): Instant {
   return fromEpochMs(toEpochMs(instant) + minutes * MINUTE_MS);
 }

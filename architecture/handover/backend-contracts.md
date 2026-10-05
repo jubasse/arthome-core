@@ -103,5 +103,7 @@ short-lived. }` leaves the one-word key `short-lived.`
 core/contract boundary three times in a day because each of us was answering the other's last
 message. What ended it: does `decideWatch` return it? It did not.
 
-**Distrust `x-arthome-freshness`.** It is on 24 operations and nothing checks it against
-`data-model.md` §4. It is the last number in these documents with no owning gate.
+**Distrust the freshness values.** They no longer travel as `x-arthome-freshness`: each cached
+`200` declares its `Cache-Control` value, derived from the route's `cache(...)`, so the document
+cannot drift from the declaration. The max-ages behind them (`MAX_AGE_SECONDS` in
+`packages/contracts/src/http/policy.ts`) are another matter: no gate holds them to `data-model.md` §4.

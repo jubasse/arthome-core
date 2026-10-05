@@ -3242,3 +3242,252 @@ shows the queue like every surface, and the purchase pairing (`intent = seat`) o
 five-minute hold (`HOLD_MINUTES_TV_PAIRING`), only once the account is admitted. First come, first served for
 everyone, with no way around it through the TV: `createPairing` carries `X-Arthome-Admission-Token`,
 or is refused with `403` `order.sales_queue_admission_required`.
+
+### D-087 — Branches: feature, develop, release, main, and one version for the four repositories
+
+**Arbitrated by the product owner on 2026-09-27**, after every change had gone straight to `main`.
+In each of the four repositories, work goes on `feature/{name}` from `develop` and reaches `develop`
+through a GitHub pull request, merged once `verify` is green and the change reviewed. A release is
+`release/{version}` cut from `develop`, merged into `main`, tagged `v{version}`, and merged back into
+`develop`. One version is shared by the four repositories and released in all of them at once, even
+one that did not change. Nothing is committed on `main` or `develop` directly. The history before
+this date stays as it was.
+
+### D-088 — The studio records a date's technical provision
+
+**Arbitrated by the product owner on 2026-09-27**, closing a gap the core rule left open: beyond
+`TECHNICAL_PROVISION_THRESHOLD`, a capacity needs a provision covering it
+(`assertTechnicalProvisionCovers`), and no command could record one, so every capacity past the
+threshold was refused. The studio records it with `setTechnicalProvision`, revisable until
+`provisionRevisableUntil` (`PROVISION_REVISION_HOURS` before the start) and refused from then on with
+`date.provision_deadline_passed`. A provision below the capacity already open covers nothing and is
+refused with `date.provision_below_capacity`. The penalty for a forecast far above the real figure
+(`data-model.md` §3.1) is left to define later.
+
+### D-089 — Seats sell until 30 minutes after the start, and a late buyer confirms the delay
+
+**Arbitrated by the product owner on 2026-09-29.** A seat covers the live only. Unlike a theatre, a
+late viewer disturbs nobody online, so the live stays joinable once started, but a seat bought near
+the end is worth little: sales close `SEAT_SALES_CUTOFF_MINUTES_AFTER_START` (30) minutes after the
+start, one platform value for every channel. Once the live has started, the quote states how long
+ago, and the purchase is refused unless the buyer explicitly acknowledges having missed part of the
+show, so no surface can skip the warning. A postponement moves the cutoff with the start.
+
+### D-090 — A replay is on-demand content, with a life of its own, never before its event ended
+
+**Arbitrated by the product owner on 2026-09-29.** A replay is not an event: it is watched at any
+hour while it is online, like a film in a catalogue. Its life (`pending`, `online`, `closed`, or
+`withdrawn`) is held by a `Replay` of its own in `catalog`, no longer by the date's `Publication`
+(`replay_online`) nor its display state. It stays tied to its event: a replay never goes online
+before the event has ended. A seat is not a replay right; access is a `ReplayAccess` of its own
+(`adr-replay.md` §1).
+
+### D-091 — A date's replay access modes are a set the channel chooses
+
+**Arbitrated by the product owner on 2026-09-29.** `included` (seat holders), `subscription`
+(subscribers whose plan opens replays) and `unit` (a purchase of its own, at its own price) combine
+on one date; `none` stands alone. What a seat holder gets depends only on the channel's choice:
+under `unit` alone, a seat does not give the replay, and a channel that wants it to adds `included`.
+The modes lock at publication, like the prices (`adr-replay.md` §3).
+
+### D-092 — Replay accesses are created when the show ends, and last the online window
+
+**Arbitrated by the product owner on 2026-09-29.** No access exists before the end of the show: the
+seat holders' accesses (`included`) are created when the live ends, and a unit access is bought
+only once the replay is online, never pre-ordered. An access lasts the replay's online window, with
+no viewing period of its own. An interrupted date has no replay, partial or not. So a cancellation,
+an interruption or a postponement never has a replay access to carry over or refund
+(`adr-replay.md` §5).
+
+### D-093 — A seat freed on a sold-out date returns to public sale
+
+**Arbitrated by the product owner on 2026-10-03.** A seat freed on a sold-out date, by a viewer's
+cancellation or by a refund that cancels it, returns to public sale at once, first come first served.
+The waiting list is not notified and gets no priority (`adr-ticketing.md` §5, §9).
+
+### D-094 — `openCapacityTier` honours `notifyWaitlist: false`
+
+**Arbitrated by the product owner on 2026-10-03.** With `notifyWaitlist: false`, nobody is notified and
+no priority pool is made, and the new seats go on public sale at once. The default (`true`) is D-083's
+behaviour (studio.yaml `openCapacityTier`).
+
+### D-095 — Only `date_cancelled` cancels a seat
+
+**Arbitrated by the product owner on 2026-10-03.** A studio refund for `goodwill`, `duplicate` or
+`dispute` refunds money and leaves the seat active, whatever the amount (studio.yaml `refundSeat`).
+
+### D-096 — A cancellation or an interruption ends the waiting list
+
+**Arbitrated by the product owner on 2026-10-03.** At a cancellation or an interruption, every
+`waiting` or `notified` waiting-list entry ends and the priority pool closes. Nobody is told beyond the
+date's own card. A postponement leaves the entries waiting (`data-model.md` §3.9).
+
+### D-097 — A refund decided on a cancelled date carries `date_cancelled`
+
+**Arbitrated by the product owner on 2026-10-03.** A refund decided while the date is cancelled
+carries `date_cancelled`, including a late payment on a date since cancelled (D-082).
+
+### D-098 — Ticketing T4 leaves out the Stripe adapter and credit redemption
+
+**Arbitrated by the product owner on 2026-10-03**, confirming the scope: the Stripe adapter and credit
+redemption stay out of T4.
+
+### D-099 — Sign-up keeps `409 identity.email_taken`
+
+**Arbitrated by the product owner on 2026-10-03.** Sign-up keeps `409` `identity.email_taken`, with
+enumeration slowed by the BFF's per-device rate limit (`storefront.yaml` `signUp`, `adr-auth.md` §6.2).
+
+### D-100 — An email is verified by a link at sign-up, and blocks nothing
+
+**Arbitrated by the product owner on 2026-10-03.** An email is verified by a link at sign-up, with a
+resend operation. An unverified email blocks nothing; `emailVerified` informs.
+
+### D-101 — A new viewer's public handle is generated at sign-up
+
+**Arbitrated by the product owner on 2026-10-03.** A new viewer's public handle is generated, neutral,
+at sign-up, and changeable through `updateProfile`.
+
+### D-102 — One account per person for both products
+
+**Arbitrated by the product owner on 2026-10-03.** There is one account per person for both products.
+An invited person with no account creates it from the invitation link, and their studio login is their
+viewer login.
+
+### D-103 — On a shared television, the session grain is the profile
+
+**Arbitrated by the product owner on 2026-10-03.** On a shared television, each (device, profile) is a
+session, and a device holds up to five profiles.
+
+### D-104 — A television merchandise pairing stays open 5 minutes
+
+**Arbitrated by the product owner on 2026-10-03.** A television merchandise pairing stays open 5
+minutes, as the contract says.
+
+### D-105 — No passkeys at launch
+
+**Arbitrated by the product owner on 2026-10-03.** `addPasskey` and `removePasskey` stay unimplemented
+and are marked so.
+
+### D-106 — A social sign-in links to an existing account only on a verified address
+
+**Arbitrated by the product owner on 2026-10-03.** Google or Facebook sign-in on an address that
+already has an account links automatically only when the provider asserts the address is verified;
+otherwise it is refused.
+
+### D-107 — Authentication is delivered in four slices
+
+**Arbitrated by the product owner on 2026-10-03**, confirming the scope: A storefront session, B
+studio, C devices and TV, D the other sign-in methods.
+
+### D-108 — An account watches on as many screens as the active seats it holds on the date
+
+**Arbitrated by the product owner on 2026-10-03.** On a date, an account may watch on as many screens
+as the active seats it holds on that date, or the plan's ceiling if higher.
+
+### D-109 — Before the run is on air the player shows a waiting screen, and the card turns `live` on air
+
+**Arbitrated by the product owner on 2026-10-03.** From the room opening, the player shows a waiting
+screen with no media until the run is on air. The card turns `live` on the real on-air switch, not at
+`startsAt` by the clock, which is a core change to `displayStateOf` for a late start.
+
+### D-110 — The preview budget is spent only while the run is on air with no incident veil
+
+**Arbitrated by the product owner on 2026-10-03.** The preview budget is spent only while the run is
+on air with no incident veil up. There is no preview before on air: a non-holder in the room sees the
+room screen and the buy action.
+
+### D-111 — A live gives no control of playback, a replay gives full control
+
+**Arbitrated by the product owner on 2026-10-03, with a rule of their own.** A live broadcast gives the
+viewer no control of playback: no seeking backward or forward, and no start-over. The viewer sees only
+the live. So no resume point comes from a live, and positions are not recorded during a live. A replay
+gives full control of playback: seek, pause, resume point.
+
+### D-112 — Only a date with a replay mode is recorded
+
+**Arbitrated by the product owner on 2026-10-03.** Only a date with at least one replay mode is
+recorded. The file is deleted when its `Replay` is withdrawn.
+
+### D-113 — The recording is deleted at the online window's closing
+
+**Arbitrated by the product owner on 2026-10-03.** The file is deleted at the online window's closing.
+Reopening a replay window can only extend a window that is still open.
+
+### D-114 — A technical check proves a feed on the date's key, in a carried codec, above a bitrate floor
+
+**Arbitrated by the product owner on 2026-10-03.** A technical check proves a feed received on the
+date's key, in a codec the chain carries, above a bitrate floor. Its `failures` are a closed
+vocabulary in core.
+
+### D-115 — A run left on air ends by itself, and `ended` is final
+
+**Arbitrated by the product owner on 2026-10-03.** A run left on air ends by itself once no publisher
+has been connected for a set number of minutes after the scheduled end. `ended` is final.
+
+### D-116 — Reactions and chat messages are rate-limited in grades, with no quota per date
+
+**Arbitrated by the product owner on 2026-10-03.**
+
+- **Client:** reactions are aggregated (several taps sent as one count), and chat messages keep a
+  minimal spacing.
+- **Server**, per account and date:
+  - level 1: the excess is dropped silently for reactions, and a chat message over the rate is
+    refused with a retry delay;
+  - level 2: a sustained excess flags the account to the channel's moderation queue, and its
+    messages are visible to their author only until a moderator decides, with an automatic lift
+    after a delay;
+  - level 3: an abuse rate, or many accounts from one address or device, is refused at the edge
+    (429) with a temporary block and an alert.
+- **Shared state:** the rate state is shared across instances, carried by events.
+- **Starting values,** adjustable: 5 reactions per second with a burst of 10; level 2 after 30
+  seconds above the limit.
+- **Contract:** `reactionQuotaPerDate` gives way to a reaction rate and burst, served like
+  `chatRateLimitPerSecond`.
+
+### D-117 — A seat is watched on one device at a time
+
+**Arbitrated by the product owner on 2026-10-03.** On the storefront, a seat plays on one device at
+a time. Starting it on another device stops it on the previous one. With D-108, an account watches
+on at most as many devices as the active seats it holds on the date, or its plan's ceiling if
+higher.
+
+### D-118 — A studio team member may work on several devices at once
+
+**Arbitrated by the product owner on 2026-10-03.**
+
+- A member of a channel's team may be signed in to the studio on several devices at once, up to 5
+  active studio sessions, adjustable. The sessions are visible to the member and revocable, and
+  starting one does not stop another.
+- The control room's monitor feed is not a viewer screen.
+- Studio request limits are counted per authenticated member and set high, sized for work on
+  several dates at once.
+
+### D-119 — Authentication rate limits target the device, not the address
+
+**Arbitrated by the product owner on 2026-10-03.** The sign-up and sign-in limits are meant to count
+per device.
+
+- Until slice C brings a trusted device identifier, the limits per IPv4 address are a high
+  anti-abuse ceiling, since mobile carriers share one IPv4 address across many subscribers.
+- The limits per IPv6 /64 stay tight.
+- Slice C moves the limits to the device.
+
+### D-120 — Contract routes are declared in TypeScript, and the OpenAPI documents are generated
+
+**Arbitrated by the product owner on 2026-10-03**, superseding the scope D-058 gave the empty diff.
+Every operation of the storefront and studio contracts is declared once, in TypeScript, in
+`@arthome/contracts`: method, path, parameters, body, responses, prose and `x-arthome-*` metadata,
+built from the zod schemas of D-057. `openapi/storefront.yaml` and `openapi/studio.yaml` are
+generated from those declarations, and the empty-diff gate covers the whole document, paths
+included. The BFF controllers bind to their route, and the surfaces use a typed client generated
+from the same declarations. The ts-rest library is not used: its model is, written in house.
+Messages between services stay in `.proto`.
+
+### D-121 — Every microservice declares its API in the contracts, and documents it with @nestjs/swagger
+
+**Arbitrated by the product owner on 2026-10-04.** The internal APIs of the microservices are declared in `@arthome/contracts`, like the public APIs (D-120), and marked internal. Each service binds its controllers to their route through a decorator composed only of standard NestJS and `@nestjs/swagger` annotations, filled from the declaration, so each service exposes its own OpenAPI, generated by `@nestjs/swagger`. A central OpenAPI, generated from all the declarations, lists the endpoints of every service. Calls between services use the typed client built from the same declarations.
+
+### D-122 — The contract model's second pass: what a route declares, and what is derived from it
+
+**Arbitrated by the product owner on 2026-10-04**, who launched its first pass after reviewing `architecture/adr-contract-model.md`. A route declares what it requires, accepts and answers, and the server's guards, validation, projection and error documentation are derived from that declaration, as the typed client is. Routes are deny-by-default: a surface's identity is required unless a route is declared public or optionally authenticated, and every further rule (roles, re-authentication, rate limits) goes through one extension point, `requires`. Paths nest at any depth through `path`, `resource` and `single` (what exists once in its context), each optionally taking a closure that returns its routes; `crud` returns its routes keyed by operation id. The three open questions of the ADR take its recommended answers, the product owner having been told they would by default: one format (JSON, binaries through signed URLs), roles applied with the studio BFF, and `changePassword` and `cancelSubscription` converted to actions. Whether controller interfaces are derived types or generated at install is decided by a measured spike.
+

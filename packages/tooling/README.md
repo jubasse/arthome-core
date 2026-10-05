@@ -164,7 +164,9 @@ an explicit written principle forbidding it. The lesson is that a principle is n
 
 It **discovers** the `export const NAME = [...] as const` declarations in `@arthome/core`'s sources,
 then reports any reappearance of those values elsewhere. It **carries no list of enumerations** — a
-list would be one more parallel table. A new enumeration is covered the day it is declared.
+list would be one more parallel table. A new enumeration is covered the day it is declared. Two
+places hold a value that is not a vocabulary member, and it skips them: a JSON Schema keyword's value
+(`format: 'email'`) and a URL segment given to the contracts' route builder (`.single('chat')`).
 
 | Option | Effect |
 |---|---|

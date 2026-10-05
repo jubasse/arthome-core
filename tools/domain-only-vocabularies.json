@@ -35,11 +35,35 @@
     },
     {
       "vocabulary": "SERVICES",
-      "reason": "Reaches the documents through `x-arthome-upstream`, not through `x-arthome-vocabulary`, so this gate cannot see it — it reads member lists on fields, and an upstream is an annotation on an OPERATION. R22 in check-openapi.py compares all 174 of them against UPSTREAMS, which spreads this list. Declared here so the inverse check states what it cannot reach rather than reporting a gap that another gate covers."
+      "reason": "Reaches the documents through `x-arthome-upstream`, not through `x-arthome-vocabulary`, so this gate cannot see it — it reads member lists on fields, and an upstream is an annotation on an OPERATION. R22 in check-openapi.py compares every one of them against UPSTREAMS, which spreads this list. Declared here so the inverse check states what it cannot reach rather than reporting a gap that another gate covers."
     },
     {
       "vocabulary": "UPSTREAMS",
       "reason": "Same position as SERVICES, which it spreads. It adds `realtime`, which is NOT a service: two operations read the real-time gateway's Redis resume buffer, and their own comments say so — the annotation was right about the dependency and wrong about the category, so anyone counting upstreams got eight services out of seven. R22 is what compares it."
+    },
+    {
+      "vocabulary": "INTENT_STATUSES",
+      "reason": "The payment provider's own status for an intent (adr-payments.md §4), read by the domain to decide an order's transition and never relayed as itself: a surface reads `Order.state` and, while awaiting payment, `PaymentHandoff.state`, both `ORDER_STATES`. Nothing outside the domain asks a provider's intent whether it is `requires_action` or `succeeded` — that is exactly the translation `settleConfirmedPayment` performs."
+    },
+    {
+      "vocabulary": "PAYMENT_EVENT_KINDS",
+      "reason": "What a provider's webhook says happened, recorded on `stripe_event_inbox` before anything reads it (adr-payments.md §7.2) and consumed by the worker that applies it to an order. It is a fact the domain reacts to, never a value any surface polls or displays."
+    },
+    {
+      "vocabulary": "SEAT_HOLD_STATES",
+      "reason": "A `SeatHold`'s own bookkeeping (data-model.md §3.2): whether the capacity behind a purchase is still claimed, spent, timed out or given back. A surface never asks for a hold; it reads `Order.state` and `TicketCard.state`, which the hold's transitions cause but do not mirror one for one — `consumed` and `released` both resolve to an order that has already moved on."
+    },
+    {
+      "vocabulary": "ACCOUNT_STATUSES",
+      "reason": "The account's lifecycle as identity records it (data-model.md §1.1), read by identity to decide whether a credential may open a session. A surface reads the consequences, never the status: a refused sign-in, and the account deletion screen's own `DeletionState`, which describes the request rather than the account."
+    },
+    {
+      "vocabulary": "INTERNAL_TOKEN_ISSUERS",
+      "reason": "The `iss` of the token a BFF mints for each call to a service (adr-auth.md §8). It travels from a BFF to a service and nowhere else: no client ever obtains a service-audience token (§8.2.1 does not relay `/token`), so neither contract can carry one."
+    },
+    {
+      "vocabulary": "SEAT_HOLD_ORIGINS",
+      "reason": "Which intent a `SeatHold`'s expiry belongs to — a direct checkout or a TV pairing (data-model.md §3.2) — kept to size the hold's duration (`HOLD_MINUTES_CHECKOUT` versus `HOLD_MINUTES_TV_PAIRING`). Internal sizing, never served: neither purchase path tells a surface which one it took."
     }
   ]
 }

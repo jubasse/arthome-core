@@ -1,9 +1,9 @@
 /**
  * `@arthome/contracts/identity` — Who is asking: the established session, profiles, preferences, consents, devices and the bootstrap ViewerContext.
  *
- * EVERY SCHEMA HERE EMITS A NAMED SCHEMA OF `openapi/storefront.yaml` EXACTLY, and
- * `pnpm run check:emit-diff` is what proves it: the document is authoritative
- * (D-058), so where the two differ the schema changes.
+ * EVERY SCHEMA HERE IS A COMPONENT OF `openapi/storefront.yaml`, which is generated from it
+ * (D-120): `pnpm run check:openapi-generated` fails when the committed document is not
+ * what the schemas emit.
  *
  * The rules this file follows, each of which was a defect the gate found (D-060, D-065):
  *
@@ -26,6 +26,7 @@ import { z } from 'zod';
 import { MoneyOut, type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
 import { DomainConstantsSchema, ImageRenditionSchema, LabelArtifactRefSchema } from '../catalog/index.js';
 import { NotificationPreferencesSchema } from '../engagement/index.js';
+import type { TaggedSchema } from '../http/tagged.js';
 import { OrderSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
 export declare const ProfileSummarySchema: z.ZodObject<{
     id: z.ZodString;
@@ -70,8 +71,8 @@ export declare const ViewerContextSchema: z.ZodObject<{
     }, z.core.$loose>>>;
     preferences: z.ZodOptional<typeof ViewerPreferencesSchema>;
     constants: typeof DomainConstantsSchema;
-    labelCatalog: typeof LabelArtifactRefSchema;
-    taxonomyArtifact: typeof LabelArtifactRefSchema;
+    labelCatalog: z.ZodNullable<typeof LabelArtifactRefSchema>;
+    taxonomyArtifact: z.ZodNullable<typeof LabelArtifactRefSchema>;
     realtime: z.ZodOptional<z.ZodObject<{
         namespace: z.ZodOptional<z.ZodString>;
         pulseIntervalSec: z.ZodOptional<z.ZodNumber>;
@@ -95,7 +96,7 @@ export declare const ConsentsSchema: z.ZodObject<{
         partners: z.ZodOptional<z.ZodBoolean>;
         ads: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
     }, z.core.$loose>>;
-    cookieCategories: z.ZodOptional<z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodBoolean>>>;
+    cookieCategories: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodBoolean>>>;
     textVersion: z.ZodOptional<z.ZodNumber>;
     recordedAt: z.ZodOptional<z.ZodString>;
 }, z.core.$loose>;
@@ -144,7 +145,11 @@ export declare const StorefrontSessionModeSchema: z.ZodEnum<{
     bearer: 'bearer';
     device: 'device';
 }>;
-export declare const StorefrontSessionEstablishedSchema: z.ZodXor<readonly [typeof SessionEstablishedCookieSchema, typeof SessionEstablishedBearerSchema]>;
+export declare const StorefrontSessionEstablishedSchema: TaggedSchema<'mode', {
+    cookie: typeof SessionEstablishedCookieSchema;
+    bearer: typeof SessionEstablishedBearerSchema;
+    device: typeof SessionEstablishedBearerSchema;
+}>;
 export declare const AccountDeepLinkSchema: z.ZodObject<{
     url: z.ZodString;
 }, z.core.$loose>;
