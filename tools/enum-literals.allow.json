@@ -95,6 +95,11 @@
       "file": "packages/contracts/src/studio-money/index.ts",
       "value": "custom",
       "reason": "A period preset of the revenue screen, a period the person chose by hand, not a vocabulary of the domain."
+    },
+    {
+      "file": "packages/contracts/src/http/schema-kinds.ts",
+      "value": "custom",
+      "reason": "A zod schema kind (`def.type`), the vocabulary of the library the walkers read, not a schema issue rule. The two share the word without being the same vocabulary."
     }
   ]
 }

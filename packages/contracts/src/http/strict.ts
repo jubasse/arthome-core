@@ -9,12 +9,7 @@
 import { z } from 'zod';
 
 import type { RouteShape } from './index.js';
-
-type Def = { readonly type: string } & Readonly<Record<string, unknown>>;
-
-function defOf(schema: z.ZodType): Def {
-  return (schema as unknown as { _zod: { def: Def } })._zod.def;
-}
+import { defOf, isLeafKind, unknownKind } from './schema-kinds.js';
 
 function keptMeta<S extends z.ZodType>(from: z.ZodType, to: S): S {
   const meta = z.globalRegistry.get(from);
@@ -37,14 +32,45 @@ export function stripping(schema: z.ZodType): z.ZodType {
     }
     case 'array':
       return keptMeta(schema, z.array(again(def.element)));
-    case 'optional':
-      return keptMeta(schema, again(def.innerType).optional());
+    case 'optional': {
+      const stripped = again(def.innerType);
+      return keptMeta(
+        schema,
+        schema instanceof z.ZodExactOptional ? stripped.exactOptional() : stripped.optional(),
+      );
+    }
     case 'nullable':
       return keptMeta(schema, again(def.innerType).nullable());
     case 'default':
       return keptMeta(schema, again(def.innerType).default(def.defaultValue as never));
+    case 'prefault':
+      return keptMeta(schema, again(def.innerType).prefault(def.defaultValue as never));
+    case 'nonoptional':
+      return keptMeta(schema, again(def.innerType).nonoptional());
     case 'readonly':
       return keptMeta(schema, again(def.innerType).readonly());
+    case 'catch':
+      return keptMeta(schema, again(def.innerType).catch(def.catchValue as never));
+    case 'success':
+      return keptMeta(schema, z.success(again(def.innerType)));
+    case 'promise':
+      return keptMeta(schema, z.promise(again(def.innerType)));
+    case 'lazy': {
+      let stripped: z.ZodType | undefined;
+      return keptMeta(
+        schema,
+        z.lazy(() => (stripped ??= again((def.getter as () => unknown)()))),
+      );
+    }
+    case 'pipe':
+      return keptMeta(schema, z.pipe(again(def.in), again(def.out)));
+    case 'transform':
+      return schema;
+    case 'tuple': {
+      const items = (def.items as readonly unknown[]).map(again);
+      const rest = def.rest === null ? null : again(def.rest);
+      return keptMeta(schema, z.tuple(items as never, rest as never));
+    }
     case 'intersection':
       return keptMeta(schema, z.intersection(again(def.left), again(def.right)));
     case 'union': {
@@ -58,8 +84,13 @@ export function stripping(schema: z.ZodType): z.ZodType {
     }
     case 'record':
       return keptMeta(schema, z.record(def.keyType as z.ZodString, again(def.valueType)));
+    case 'map':
+      return keptMeta(schema, z.map(again(def.keyType), again(def.valueType)));
+    case 'set':
+      return keptMeta(schema, z.set(again(def.valueType)));
     default:
-      return schema;
+      if (isLeafKind(def.type)) return schema;
+      return unknownKind('the stripping walker', def.type);
   }
 }
 
