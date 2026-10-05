@@ -2035,6 +2035,7 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+                const: private, max-age=300
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2177,6 +2178,7 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+                const: private, max-age=300
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':

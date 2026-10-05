@@ -25,7 +25,8 @@ import { defineRoute } from './index.js';
 import { sensitivePathsOf } from './marks.js';
 import type { CachePolicy } from './policy.js';
 import {
-  CACHE_CONTROL_HEADER,
+  CallerKind,
+  cacheControlHeaderOf,
   NO_STORE_HEADER,
   DEFAULT_BODY_LIMIT,
   IDEMPOTENCY_REPLAYED_HEADER,
@@ -467,6 +468,7 @@ interface ResponseHeaders {
   readonly every: Readonly<Record<string, Header>>;
   readonly replayed: boolean;
   readonly cache: CachePolicy | undefined;
+  readonly callers: readonly [CallerKind, ...CallerKind[]];
   readonly etag: Readonly<Record<string, Header>>;
   readonly replayedHeader: Header | undefined;
 }
@@ -494,7 +496,7 @@ function withHeaders(
         }),
       ...(status === '200' &&
         implied.cache !== undefined && {
-          'Cache-Control': CACHE_CONTROL_HEADER,
+          'Cache-Control': cacheControlHeaderOf(implied.cache, implied.callers),
         }),
       ...(carriesSecret && { 'Cache-Control': NO_STORE_HEADER }),
       ...(status === '200' ? implied.etag : {}),
@@ -508,6 +510,11 @@ function withHeaders(
         : { ...response, headers: { ...added, ...response.headers } };
   }
   return out;
+}
+
+function callersOf(access: Access): readonly [CallerKind, ...CallerKind[]] {
+  if (access.kind === 'anyone') return [CallerKind.ANONYMOUS];
+  return access.optional ? [CallerKind.ANONYMOUS, CallerKind.IDENTIFIED] : [CallerKind.IDENTIFIED];
 }
 
 function securityOf(access: Access, method: string): readonly SecurityRequirement[] {
@@ -657,6 +664,7 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
           every: access.kind === 'identified' ? access.identity.responseHeaders : {},
           replayed: parameters.some((parameter) => parameter.name === IDEMPOTENCY_KEY),
           cache,
+          callers: callersOf(access),
           etag: conditional?.readHeaders ?? {},
           replayedHeader: settings.conventions?.replayedHeader,
         },

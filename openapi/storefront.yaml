@@ -61,12 +61,11 @@ info:
 
     ## Public read and identified read — two bodies, one path
 
-    **Ten catalogue operations are callable with no authentication at all**, and that is the
-    **nominal** case: `home`, `live`, `categories`, `categories/{id}`, `artists`,
-    `artists/{id}`, `dates/{id}`, `dates/{id}/availability`, `search`, `plans`. This surface
-    exists to be indexed — the brief defines it by "search ranking and server rendering are
-    decisive" — and a search engine's crawler has no cookie, no bearer token, and no reason
-    whatsoever to manufacture one. **Guest mode** takes exactly the same path.
+    **Every read whose `security` lists `{}` is callable with no authentication at all**, and
+    that is the **nominal** case. This surface exists to be indexed — the brief defines it by
+    "search ranking and server rendering are decisive" — and a search engine's crawler has no
+    cookie, no bearer token, and no reason whatsoever to manufacture one. **Guest mode** takes
+    exactly the same path.
 
     The same path returns **two bodies**, and the difference is declared:
 
@@ -75,17 +74,20 @@ info:
     | with no authentication at all | **public body** — `watchVerdict`, `viewerRelations` and `viewerProgress` are **absent** | `public, max-age=<freshness>` |
     | with a session, bearer token or device token | public body **plus** the three overlays | `private, max-age=<freshness>` |
 
+    Each of these responses declares both values of its `Cache-Control`, and which caller gets
+    which.
+
     **The public body is identical for every anonymous caller.** That is what makes it shareable:
     a cached render function can read neither cookie nor header, so it is anonymous by
     construction, and it can cache that body without risk. Serving as `public` a body that varies
     per viewer would be **a leak, not an optimisation** — and that is the sole reason for the
-    `Vary` declared on these ten responses.
+    `Vary` declared on these responses.
 
     **An absent field is never a null field**: the projection rule holds here as it does on the
     studio side. A surface receiving the public body knows it did not ask for the overlays; it
     does not confuse them with a refused right.
 
-    **The absence of a credential is never a `401`.** A `401` on these ten paths means a
+    **The absence of a credential is never a `401`.** A `401` on these paths means a
     credential was **presented and refused** — expired, malformed, wrong audience.
 
     ## What every response carries
@@ -351,6 +353,7 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+                const: private, max-age=300
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2306,6 +2309,7 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+                const: private, max-age=300
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2415,6 +2419,7 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+                const: private, max-age=60
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2506,6 +2511,7 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+                const: private, max-age=60
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2598,6 +2604,7 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+                const: private, max-age=60
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2878,6 +2885,7 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+                const: private, max-age=60
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3239,6 +3247,7 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+                const: private, max-age=300
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3617,6 +3626,7 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+                const: private, max-age=300
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3691,6 +3701,7 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+                const: private, max-age=60
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4971,7 +4982,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=60
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=60
+                  description: Sent as soon as a credential identifies the caller.
             Vary:
               description: The request headers the answer depends on.
               schema:
@@ -5045,7 +5062,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=15
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=15
+                  description: Sent as soon as a credential identifies the caller.
             Vary:
               description: The request headers the answer depends on.
               schema:
@@ -5119,7 +5142,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=300
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=300
+                  description: Sent as soon as a credential identifies the caller.
             Vary:
               description: The request headers the answer depends on.
               schema:
@@ -5243,7 +5272,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=300
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=300
+                  description: Sent as soon as a credential identifies the caller.
             Vary:
               description: The request headers the answer depends on.
               schema:
@@ -5349,7 +5384,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=300
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=300
+                  description: Sent as soon as a credential identifies the caller.
             Vary:
               description: The request headers the answer depends on.
               schema:
@@ -5427,7 +5468,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=300
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=300
+                  description: Sent as soon as a credential identifies the caller.
             Vary:
               description: The request headers the answer depends on.
               schema:
@@ -5582,7 +5629,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=60
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=60
+                  description: Sent as soon as a credential identifies the caller.
             Vary:
               description: The request headers the answer depends on.
               schema:
@@ -5709,7 +5762,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=60
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=60
+                  description: Sent as soon as a credential identifies the caller.
             Vary:
               description: The request headers the answer depends on.
               schema:
@@ -5795,7 +5854,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=60
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=60
+                  description: Sent as soon as a credential identifies the caller.
             Vary:
               description: The request headers the answer depends on.
               schema:
@@ -5924,7 +5989,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=300
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=300
+                  description: Sent as soon as a credential identifies the caller.
             Vary:
               description: The request headers the answer depends on.
               schema:
@@ -6006,7 +6077,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=300
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=300
+                  description: Sent as soon as a credential identifies the caller.
             Vary:
               description: The request headers the answer depends on.
               schema:
@@ -6104,7 +6181,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=15
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=15
+                  description: Sent as soon as a credential identifies the caller.
             Vary:
               description: The request headers the answer depends on.
               schema:
@@ -8163,7 +8246,13 @@ paths:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
-                type: string
+                anyOf:
+                - type: string
+                  const: public, max-age=60
+                  description: Sent to an anonymous caller.
+                - type: string
+                  const: private, max-age=60
+                  description: Sent as soon as a credential identifies the caller.
             ETag:
               description: 'The record''s validator: send it back in `If-None-Match` to learn that nothing changed.'
               schema:

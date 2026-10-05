@@ -28,7 +28,7 @@ export declare const CategoryIdParameter: PathParameter<'categoryId', z.ZodStrin
 export declare const ServedAtHeader: Header;
 export declare const IdempotencyReplayedHeader: Header;
 export declare const RetryAfterMsHeader: Header;
-/** The freshness of a public read: `public` for an anonymous caller, varying on every credential and the surface. */
+/** The freshness of a public read: `public` for an anonymous caller, `private` for an identified one, varying on every credential and the surface. */
 export declare function publicRead(freshness: Freshness, options?: {
     readonly etag?: boolean;
 }): CachePolicy;
