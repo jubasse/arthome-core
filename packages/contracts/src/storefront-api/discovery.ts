@@ -13,7 +13,6 @@ import {
   ArtistIdParameter,
   BadRequestResponse,
   CacheControlPublicHeader,
-  CategoryIdParameter,
   CursorDirectionParameter,
   CursorParameter,
   GoneResponse,
@@ -30,8 +29,6 @@ import {
 import {
   ArtistDetailSchema,
   ArtistSummarySchema,
-  CategoryScreenSchema,
-  CategoryTileSchema,
   DateCardSchema,
   FacetSchema,
   RailSchema,
@@ -48,7 +45,6 @@ const discoveryRoutes = storefrontV1
   .headers(SurfaceParameter, TraceparentParameter)
   .security(...PublicReadSecurity);
 
-const GET_CATEGORY_SCREEN_SECTION = ['overview', 'live', 'upcoming', 'replays', 'artists'] as const;
 const GET_CATEGORY_SCREEN_SORT = [
   'relevance',
   'soon',
@@ -60,182 +56,6 @@ const LIST_ARTISTS_SORT = ['alpha', 'followers'] as const;
 const SEARCH_TAB = ['best', 'lives', 'replays', 'artists'] as const;
 const LIST_REPLAYS_SORT = ['expiring_first', 'recent', 'popularity'] as const;
 const RESOLVE_PUBLIC_LINK_KIND = ['date', 'show', 'artist', 'category'] as const;
-
-export const listCategories: Route<{
-  method: 'get';
-  version: 1;
-  path: '/categories';
-  parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StorefrontEnvelopeMetaSchema,
-        z.ZodObject<{ items: z.ZodArray<typeof CategoryTileSchema> }, z.core.$loose>
-      >
-    >;
-    503: typeof UnavailableResponse;
-  };
-}> = discoveryRoutes.defineRoute({
-  method: 'get',
-  path: '/categories',
-  operationId: 'listCategories',
-  summary: 'The 21 disciplines, with family, rank and counts.',
-  description:
-    '**One call, not one per tile.** The editorial rank is authoritative and **no surface\nreorders**. The full taxonomy is not here: it is an **immutable versioned artefact** served\nby the CDN, referenced in `ViewerContext`.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.CATALOG],
-  'x-arthome-freshness': 300,
-  responses: {
-    200: {
-      description: 'The disciplines.',
-      headers: {
-        'Cache-Control': CacheControlPublicHeader,
-        Vary: VaryAuthHeader,
-      },
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              items: z.array(CategoryTileSchema),
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:02:15.000Z',
-            items: [
-              {
-                id: 'dance-contemporary',
-                universe: 'stage',
-                rank: 3,
-                datesCount: 84,
-                liveCount: 2,
-                featured: true,
-              },
-            ],
-          },
-        },
-      },
-    },
-    503: UnavailableResponse,
-  },
-});
-
-export const getCategoryScreen: Route<{
-  method: 'get';
-  version: 1;
-  path: '/categories/{categoryId}';
-  parameters: readonly [
-    typeof CategoryIdParameter,
-    QueryParameter<'section', VocabularyIn<typeof GET_CATEGORY_SCREEN_SECTION>>,
-    typeof CursorParameter,
-    typeof LimitParameter,
-    QueryParameter<'subGenreId', z.ZodString>,
-    QueryParameter<'filters', typeof SearchCriteriaSchema>,
-    QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof GET_CATEGORY_SCREEN_SORT>>>,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StorefrontEnvelopeMetaSchema,
-        z.ZodObject<{ data: typeof CategoryScreenSchema }, z.core.$loose>
-      >
-    >;
-    404: typeof NotFoundResponse;
-  };
-}> = discoveryRoutes.defineRoute({
-  method: 'get',
-  path: '/categories/{categoryId}',
-  operationId: 'getCategoryScreen',
-  summary: 'A discipline — hero, sub-genres, five bounded sections, facets.',
-  description:
-    '**One call.** The overview **does not paginate**: it is bounded (8 per section). The four\nother sections each carry their own cursor.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  'x-arthome-freshness': 300,
-  parameters: [
-    CategoryIdParameter,
-    {
-      name: 'section',
-      in: 'query',
-      description:
-        '**Extend a single section.** Without this parameter the response serves the five bounded\nsections; with it, it serves that one section, paginated. This is what consumes the\n`sections[].nextCursor` the response already carried — four cursors served and no consumer,\nthat is, four "See more" buttons that led nowhere.\n',
-      schema: vocabularyIn(GET_CATEGORY_SCREEN_SECTION).meta({
-        'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
-        'x-arthome-vocabulary-reason':
-          'A screen composition the server decides so that five surfaces do not each decide it differently.',
-      }),
-    },
-    CursorParameter,
-    LimitParameter,
-    {
-      name: 'subGenreId',
-      in: 'query',
-      description: '**Stable** sub-genre identifier, never an array index.',
-      schema: z.string(),
-    },
-    {
-      name: 'filters',
-      in: 'query',
-      description:
-        "Criteria, in the **same normalised grammar** as `/v1/search` and `SavedSearch.criteria`. The\ndiscipline's own filter panel — price, date, status, nearly sold out, on promotion — lands\nhere.\n",
-      schema: SearchCriteriaSchema,
-    },
-    {
-      name: 'sort',
-      in: 'query',
-      schema: vocabularyIn(GET_CATEGORY_SCREEN_SORT)
-        .meta({
-          'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
-          'x-arthome-vocabulary-reason':
-            "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.",
-        })
-        .default('soon'),
-    },
-  ],
-  responses: {
-    200: {
-      description: 'The discipline.',
-      headers: {
-        'Cache-Control': CacheControlPublicHeader,
-        Vary: VaryAuthHeader,
-      },
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              data: CategoryScreenSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:02:16.000Z',
-            data: {
-              categoryId: 'dance-contemporary',
-              subGenres: [
-                {
-                  id: 'dance-contemporary-repertoire',
-                  rank: 1,
-                },
-              ],
-              sections: [
-                {
-                  id: 'overview',
-                  titleCode: 'category.section.overview',
-                  items: [],
-                  nextCursor: null,
-                },
-              ],
-              facets: [],
-            },
-          },
-        },
-      },
-    },
-    404: NotFoundResponse,
-  },
-});
 
 export const listArtists: Route<{
   method: 'get';

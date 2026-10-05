@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Api, Route } from './http/index.js';
 import * as storefrontAccount from './storefront-api/account.js';
 import * as storefrontBootstrap from './storefront-api/bootstrap.js';
+import * as storefrontCategories from './storefront-api/categories/routes.js';
 import * as storefrontChat from './storefront-api/chat.js';
 import * as storefrontCommerce from './storefront-api/commerce.js';
 import * as storefrontDate from './storefront-api/date.js';
@@ -60,6 +61,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       storefrontDiscovery,
       storefrontHome,
       storefrontLive,
+      storefrontCategories,
       storefrontMe,
       storefrontPairing,
       storefrontPlayback,

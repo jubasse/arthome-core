@@ -1,50 +1,15 @@
 import { z } from 'zod';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
-import { ArtistIdParameter, BadRequestResponse, CategoryIdParameter, CursorDirectionParameter, CursorParameter, GoneResponse, LimitParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter, UnavailableResponse } from './components.js';
-import { ArtistDetailSchema, ArtistSummarySchema, CategoryScreenSchema, CategoryTileSchema, DateCardSchema, FacetSchema, RailSchema, SearchCriteriaSchema, ShowGroupSchema, StructuredFilterSchema } from '../catalog/index.js';
+import { ArtistIdParameter, BadRequestResponse, CursorDirectionParameter, CursorParameter, GoneResponse, LimitParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter, UnavailableResponse } from './components.js';
+import { ArtistDetailSchema, ArtistSummarySchema, DateCardSchema, FacetSchema, RailSchema, SearchCriteriaSchema, ShowGroupSchema, StructuredFilterSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
 import type { JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
 import { StorefrontCursorPageInfoSchema } from '../pagination/index.js';
-declare const GET_CATEGORY_SCREEN_SECTION: readonly ["overview", "live", "upcoming", "replays", "artists"];
 declare const GET_CATEGORY_SCREEN_SORT: readonly ["relevance", "soon", "popularity", "price_asc", "price_desc"];
 declare const LIST_ARTISTS_SORT: readonly ["alpha", "followers"];
 declare const SEARCH_TAB: readonly ["best", "lives", "replays", "artists"];
 declare const LIST_REPLAYS_SORT: readonly ["expiring_first", "recent", "popularity"];
 declare const RESOLVE_PUBLIC_LINK_KIND: readonly ["date", "show", "artist", "category"];
-export declare const listCategories: Route<{
-    method: 'get';
-    version: 1;
-    path: '/categories';
-    parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            items: z.ZodArray<typeof CategoryTileSchema>;
-        }, z.core.$loose>>>;
-        503: typeof UnavailableResponse;
-    };
-}>;
-export declare const getCategoryScreen: Route<{
-    method: 'get';
-    version: 1;
-    path: '/categories/{categoryId}';
-    parameters: readonly [
-        typeof CategoryIdParameter,
-        QueryParameter<'section', VocabularyIn<typeof GET_CATEGORY_SCREEN_SECTION>>,
-        typeof CursorParameter,
-        typeof LimitParameter,
-        QueryParameter<'subGenreId', z.ZodString>,
-        QueryParameter<'filters', typeof SearchCriteriaSchema>,
-        QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof GET_CATEGORY_SCREEN_SORT>>>,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof CategoryScreenSchema;
-        }, z.core.$loose>>>;
-        404: typeof NotFoundResponse;
-    };
-}>;
 export declare const listArtists: Route<{
     method: 'get';
     version: 1;

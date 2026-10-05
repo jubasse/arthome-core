@@ -22,6 +22,7 @@ import {
   verifyTwoFactor,
 } from './account.js';
 import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
+import { getCategoryScreen, listCategories } from './categories/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
 import {
   addCartLine,
@@ -80,9 +81,7 @@ import { getDateDetail } from './date.js';
 import {
   extendRail,
   getArtistDetail,
-  getCategoryScreen,
   listArtists,
-  listCategories,
   listReplays,
   resolvePublicLink,
   search,
