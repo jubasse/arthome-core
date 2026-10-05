@@ -6,7 +6,7 @@ import { AdmissionTokenParameter, BadRequestResponse, ConflictResponse, CsrfRefu
 import { DateCardSchema, PriceTierSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
-import { CartQuoteSchema, CartSchema, OrderSchema, PaymentHandoffSchema, SalesQueuePositionSchema, SeatQuoteSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
+import { CartSchema, OrderSchema, PaymentHandoffSchema, SalesQueuePositionSchema, SeatQuoteSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
 export declare const refreshDateAvailability: Route<{
     method: 'get';
     version: 1;
@@ -195,98 +195,6 @@ export declare const leaveWaitlist: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         404: typeof NotFoundResponse;
-        403: typeof CsrfRefusedResponse;
-    };
-}>;
-export declare const getCart: Route<{
-    method: 'get';
-    version: 1;
-    path: '/cart';
-    parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof CartSchema;
-        }, z.core.$loose>>>;
-        401: typeof UnauthorizedResponse;
-    };
-}>;
-export declare const addCartLine: Route<{
-    method: 'post';
-    version: 1;
-    path: '/cart/lines';
-    parameters: readonly [
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        itemId: z.ZodString;
-        variantId: z.ZodString;
-        quantity: z.ZodInt;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof CartSchema;
-        }, z.core.$loose>>>;
-        409: typeof ConflictResponse;
-        403: typeof CsrfRefusedResponse;
-    };
-}>;
-export declare const updateCartLine: Route<{
-    method: 'patch';
-    version: 1;
-    path: '/cart/lines/{lineId}';
-    parameters: readonly [
-        PathParameter<'lineId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        quantity: z.ZodInt;
-        expectedVersion: z.ZodInt;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof CartSchema;
-        }, z.core.$loose>>>;
-        404: typeof NotFoundResponse;
-        409: typeof ConflictResponse;
-        403: typeof CsrfRefusedResponse;
-    };
-}>;
-export declare const removeCartLine: Route<{
-    method: 'delete';
-    version: 1;
-    path: '/cart/lines/{lineId}';
-    parameters: readonly [
-        PathParameter<'lineId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof CartSchema;
-        }, z.core.$loose>>>;
-        404: typeof NotFoundResponse;
-        403: typeof CsrfRefusedResponse;
-    };
-}>;
-export declare const quoteCart: Route<{
-    method: 'post';
-    version: 1;
-    path: '/cart/quote';
-    parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        shippingCountryCode: z.ZodString;
-        shippingPostalCode: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof CartQuoteSchema;
-        }, z.core.$loose>>>;
-        409: typeof ConflictResponse;
         403: typeof CsrfRefusedResponse;
     };
 }>;

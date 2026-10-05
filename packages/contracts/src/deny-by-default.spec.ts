@@ -12,7 +12,6 @@ import { studioApi } from './studio-api/index.js';
  * lists empty.
  */
 const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
-  'addCartLine',
   'cancelPairing',
   'cancelSubscription',
   'changePassword',
@@ -29,7 +28,6 @@ const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
   'extendRail',
   'getAccountDeepLink',
   'getArtistDetail',
-  'getCart',
   'getCategoryScreen',
   'getDateDetail',
   'getHomeScreen',
@@ -47,12 +45,10 @@ const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
   'openPlayback',
   'pollPairing',
   'purchaseSeat',
-  'quoteCart',
   'quoteSeat',
   'refreshDateAvailability',
   'registerDevice',
   'releasePlayback',
-  'removeCartLine',
   'renewPlaybackTicket',
   'reportChatMessage',
   'requestPasswordReset',
@@ -67,7 +63,6 @@ const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
   'signOut',
   'signUp',
   'startSocialSignIn',
-  'updateCartLine',
   'verifyTwoFactor',
 ];
 

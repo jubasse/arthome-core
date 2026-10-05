@@ -6338,6 +6338,9 @@ paths:
       - ticketing
       tags:
       - commerce
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
@@ -6357,12 +6360,30 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:44:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
-                  lines: []
-                  vendorGroups: []
+                  lines:
+                  - id: 019928f6-0000-7000-8000-000000000001
+                    itemId: 019928a0-7d31-7a10-b8c4-2f9e11a4d001
+                    variantId: M
+                    channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    quantity: 1
+                    unitPrice:
+                      amountMinor: 2500
+                      currencyCode: EUR
+                    version: 1
+                  vendorGroups:
+                  - channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    lineIds:
+                    - 019928f6-0000-7000-8000-000000000001
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/cart/lines:
     post:
       operationId: addCartLine
@@ -6425,7 +6446,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:44:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   lines:
                   - id: 019928f6-0000-7000-8000-000000000001
@@ -6441,10 +6462,27 @@ paths:
                   - channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
                     lineIds:
                     - 019928f6-0000-7000-8000-000000000001
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '409':
           $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/cart/lines/{lineId}:
     patch:
       operationId: updateCartLine
@@ -6484,12 +6522,13 @@ paths:
                   maximum: 20
                 expectedVersion:
                   type: integer
+                  format: int64
               required:
               - quantity
               - expectedVersion
             example:
               quantity: 2
-              expectedVersion: 1
+              expectedVersion: 7
       responses:
         '200':
           description: The updated cart.
@@ -6508,14 +6547,59 @@ paths:
               example:
                 servedAt: '2026-09-21T18:44:40.000Z'
                 data:
-                  lines: []
-                  vendorGroups: []
+                  lines:
+                  - id: 019928f6-0000-7000-8000-000000000001
+                    itemId: 019928a0-7d31-7a10-b8c4-2f9e11a4d001
+                    variantId: M
+                    channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    quantity: 1
+                    unitPrice:
+                      amountMinor: 2500
+                      currencyCode: EUR
+                    version: 1
+                  vendorGroups:
+                  - channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    lineIds:
+                    - 019928f6-0000-7000-8000-000000000001
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/StateConflictError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     delete:
       operationId: removeCartLine
       summary: Removes a line from the cart.
@@ -6557,14 +6641,41 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:45:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
-                  lines: []
-                  vendorGroups: []
+                  lines:
+                  - id: 019928f6-0000-7000-8000-000000000001
+                    itemId: 019928a0-7d31-7a10-b8c4-2f9e11a4d001
+                    variantId: M
+                    channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    quantity: 1
+                    unitPrice:
+                      amountMinor: 2500
+                      currencyCode: EUR
+                    version: 1
+                  vendorGroups:
+                  - channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    lineIds:
+                    - 019928f6-0000-7000-8000-000000000001
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/cart/quote:
     post:
       operationId: quoteCart
@@ -6576,6 +6687,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       x-arthome-idempotency-exemption: |
         **A read disguised as a `POST`**, for the same reason as `quoteSeat`: the cart and the
         shipping address do not fit in a URL. A quote computes shipping and discounts; it creates
@@ -6586,8 +6699,6 @@ paths:
         and that promise holds for **fifteen minutes**. Serving a memorised quote would return a
         total whose window is part-spent or closed, that is, **a binding quote that no longer
         binds**. A replay therefore produces a fresh quote, with its own window.
-      tags:
-      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -6630,8 +6741,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:45:20.000Z'
-                validUntil: '2026-09-21T19:00:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   validUntil: '2026-09-21T19:00:20.000Z'
                   groups:
@@ -6650,10 +6760,22 @@ paths:
                     total:
                       amountMinor: 4840
                       currencyCode: EUR
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
-        '409':
-          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/orders/merch:
     post:
       operationId: checkoutCart
