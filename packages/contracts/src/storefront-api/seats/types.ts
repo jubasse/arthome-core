@@ -1,6 +1,6 @@
 /** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
 
-import type { ApiErrorCode } from '@arthome/core';
+import type { ApiErrorCode, OrderErrorCode } from '@arthome/core';
 
 import type { IdentifiedAccess, ItemResponse, JsonRequestBody, Route } from '../../http/index.js';
 import type {
@@ -30,7 +30,9 @@ export type CancelSeatRoute = Route<{
   errorCodes: {
     404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
     409: readonly (
-      typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
+      | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED
     )[];
   };
 }>;

@@ -46,7 +46,7 @@
  *   week on.
  */
 import { z } from 'zod';
-import { ApiErrorCode, DomainErrorCode, IdentityErrorCode } from '@arthome/core';
+import { ApiErrorCode, ChatErrorCode, DomainErrorCode, IdentityErrorCode, OrderErrorCode } from '@arthome/core';
 import { ErrorSchema } from '@arthome/core/schema';
 /** The meta every STOREFRONT response composes. */
 export declare const StorefrontEnvelopeMetaSchema: z.ZodObject<{
@@ -103,7 +103,21 @@ export declare const STOREFRONT_RELAYED_CODES: readonly [
     typeof DomainErrorCode.STATE_CONFLICT,
     typeof IdentityErrorCode.EMAIL_TAKEN,
     typeof IdentityErrorCode.INVALID_CREDENTIALS,
-    typeof IdentityErrorCode.VERIFICATION_LINK_INVALID
+    typeof IdentityErrorCode.VERIFICATION_LINK_INVALID,
+    typeof OrderErrorCode.QUOTE_ADDRESS_MISMATCH,
+    typeof OrderErrorCode.SOLD_OUT,
+    typeof OrderErrorCode.TIER_UNAVAILABLE,
+    typeof OrderErrorCode.PAYMENT_DECLINED,
+    typeof OrderErrorCode.PRICE_STALE,
+    typeof OrderErrorCode.PLAN_UNAVAILABLE,
+    typeof OrderErrorCode.CONTRIBUTION_OUT_OF_RANGE,
+    typeof OrderErrorCode.CHECKOUT_LINE_UNAVAILABLE,
+    typeof OrderErrorCode.SALES_QUEUE_ADMISSION_REQUIRED,
+    typeof OrderErrorCode.LATE_ENTRY_UNACKNOWLEDGED,
+    typeof OrderErrorCode.SALES_CLOSED,
+    typeof OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED,
+    typeof ChatErrorCode.HOLDERS_ONLY,
+    typeof ChatErrorCode.RATE_LIMITED
 ];
 /** The codes a storefront operation may declare: only what a surface can be handed. */
 export type StorefrontRelayedCode = (typeof STOREFRONT_RELAYED_CODES)[number];

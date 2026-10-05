@@ -1,5 +1,5 @@
 /** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
-import type { ApiErrorCode } from '@arthome/core';
+import type { ApiErrorCode, OrderErrorCode } from '@arthome/core';
 import type { IdentifiedAccess, ItemResponse, JsonRequestBody, Route } from '../../http/index.js';
 import type { SubscriptionSchema } from '../../ticketing/index.js';
 import type { IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter, storefrontConventions, viewer } from '../components.js';
@@ -34,7 +34,8 @@ export type SetSubscriptionPlanRoute = Route<{
         };
     };
     errorCodes: {
-        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+        402: readonly (typeof OrderErrorCode.PAYMENT_DECLINED)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof OrderErrorCode.PLAN_UNAVAILABLE)[];
     };
 }>;
 export type CancelSubscriptionRoute = Route<{

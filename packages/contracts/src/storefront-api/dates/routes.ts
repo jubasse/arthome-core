@@ -1,4 +1,4 @@
-import { ApiErrorCode } from '@arthome/core';
+import { ApiErrorCode, ChatErrorCode, OrderErrorCode } from '@arthome/core';
 
 import {
   DateAvailabilitySchema,
@@ -74,7 +74,12 @@ export const quoteSeat: QuoteSeatRoute = dates.action('seat-quote', {
   body: QuoteSeatBodySchema,
   response: SeatQuoteSchema,
   answer: 'Devis.',
-  errors: [ApiErrorCode.NOT_FOUND],
+  errors: [
+    ApiErrorCode.NOT_FOUND,
+    OrderErrorCode.SALES_CLOSED,
+    OrderErrorCode.CONTRIBUTION_OUT_OF_RANGE,
+    OrderErrorCode.TIER_UNAVAILABLE,
+  ],
 });
 
 const polledDates = identified
@@ -144,6 +149,7 @@ export const sendChatMessage: SendChatMessageRoute = chatMessages.create({
   body: SendChatMessageBodySchema,
   item: ChatMessageSchema,
   answer: 'Message posted.',
+  errors: [ChatErrorCode.HOLDERS_ONLY, ChatErrorCode.RATE_LIMITED],
 });
 
 export const sendReaction: SendReactionRoute = chat.action('reactions', {
@@ -153,4 +159,5 @@ export const sendReaction: SendReactionRoute = chat.action('reactions', {
   body: SendReactionBodySchema,
   response: ReactionQuotaSchema,
   answer: 'Reaction accepted, remaining quota.',
+  errors: [ChatErrorCode.RATE_LIMITED],
 });

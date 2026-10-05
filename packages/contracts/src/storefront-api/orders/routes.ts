@@ -1,3 +1,5 @@
+import { OrderErrorCode } from '@arthome/core';
+
 import {
   CheckoutCartBodySchema,
   MerchCheckoutAnswerSchema,
@@ -44,6 +46,16 @@ export const purchaseSeat: PurchaseSeatRoute = orders.collectionAction('seats', 
       content: { 'application/json': { schema: PaymentHandoffAnswerSchema } },
     },
   },
+  errors: [
+    OrderErrorCode.PRICE_STALE,
+    OrderErrorCode.SOLD_OUT,
+    OrderErrorCode.SALES_CLOSED,
+    OrderErrorCode.LATE_ENTRY_UNACKNOWLEDGED,
+    OrderErrorCode.CONTRIBUTION_OUT_OF_RANGE,
+    OrderErrorCode.TIER_UNAVAILABLE,
+    OrderErrorCode.SALES_QUEUE_ADMISSION_REQUIRED,
+    OrderErrorCode.PAYMENT_DECLINED,
+  ],
 });
 
 export const checkoutCart: CheckoutCartRoute = orders.collectionAction('merch', {
@@ -62,6 +74,12 @@ export const checkoutCart: CheckoutCartRoute = orders.collectionAction('merch', 
       content: { 'application/json': { schema: PaymentHandoffAnswerSchema } },
     },
   },
+  errors: [
+    OrderErrorCode.CHECKOUT_LINE_UNAVAILABLE,
+    OrderErrorCode.QUOTE_ADDRESS_MISMATCH,
+    OrderErrorCode.PRICE_STALE,
+    OrderErrorCode.PAYMENT_DECLINED,
+  ],
 });
 
 export const getOrder: GetOrderRoute = orders.find({

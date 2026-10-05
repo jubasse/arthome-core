@@ -1,4 +1,4 @@
-import { ApiErrorCode } from '@arthome/core';
+import { ApiErrorCode, OrderErrorCode } from '@arthome/core';
 
 import { CancelSeatBodySchema, SeatCancellationSchema, SeatIdParameter } from './schemas.js';
 import type { CancelSeatRoute } from './types.js';
@@ -24,5 +24,5 @@ export const cancelSeat: CancelSeatRoute = seats.action('cancel', {
   optionalBody: true,
   response: SeatCancellationSchema,
   answer: 'Seat cancelled, with the refund and its delay code.',
-  errors: [ApiErrorCode.NOT_FOUND],
+  errors: [ApiErrorCode.NOT_FOUND, OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED],
 });

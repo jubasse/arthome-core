@@ -1,6 +1,6 @@
 /** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
 
-import type { ApiErrorCode } from '@arthome/core';
+import type { ApiErrorCode, OrderErrorCode } from '@arthome/core';
 
 import type {
   Header,
@@ -57,8 +57,17 @@ export type PurchaseSeatRoute = Route<{
     };
   };
   errorCodes: {
+    402: readonly (typeof OrderErrorCode.PAYMENT_DECLINED)[];
+    403: readonly (typeof OrderErrorCode.SALES_QUEUE_ADMISSION_REQUIRED)[];
     409: readonly (
-      typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
+      | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof OrderErrorCode.CONTRIBUTION_OUT_OF_RANGE
+      | typeof OrderErrorCode.LATE_ENTRY_UNACKNOWLEDGED
+      | typeof OrderErrorCode.PRICE_STALE
+      | typeof OrderErrorCode.SALES_CLOSED
+      | typeof OrderErrorCode.SOLD_OUT
+      | typeof OrderErrorCode.TIER_UNAVAILABLE
     )[];
   };
 }>;
@@ -89,8 +98,13 @@ export type CheckoutCartRoute = Route<{
     };
   };
   errorCodes: {
+    402: readonly (typeof OrderErrorCode.PAYMENT_DECLINED)[];
     409: readonly (
-      typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
+      | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof OrderErrorCode.CHECKOUT_LINE_UNAVAILABLE
+      | typeof OrderErrorCode.PRICE_STALE
+      | typeof OrderErrorCode.QUOTE_ADDRESS_MISMATCH
     )[];
   };
 }>;

@@ -1,5 +1,5 @@
 /** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
-import type { ApiErrorCode } from '@arthome/core';
+import type { ApiErrorCode, ChatErrorCode, OrderErrorCode } from '@arthome/core';
 import type { DateDetailSchema } from '../../catalog/index.js';
 import type { ChatMessageSchema, ReactionQuotaSchema } from '../../engagement/index.js';
 import type { IdentifiedAccess, ItemResponse, JsonRequestBody, PageResponse, Route } from '../../http/index.js';
@@ -57,7 +57,7 @@ export type QuoteSeatRoute = Route<{
     };
     errorCodes: {
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
-        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof OrderErrorCode.CONTRIBUTION_OUT_OF_RANGE | typeof OrderErrorCode.SALES_CLOSED | typeof OrderErrorCode.TIER_UNAVAILABLE)[];
     };
 }>;
 export type EnterSalesQueueRoute = Route<{
@@ -171,7 +171,9 @@ export type SendChatMessageRoute = Route<{
         201: ItemResponse<typeof storefrontConventions, typeof ChatMessageSchema, unknown>;
     };
     errorCodes: {
+        403: readonly (typeof ChatErrorCode.HOLDERS_ONLY)[];
         409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+        429: readonly (typeof ChatErrorCode.RATE_LIMITED)[];
     };
 }>;
 export type SendReactionRoute = Route<{
@@ -191,6 +193,7 @@ export type SendReactionRoute = Route<{
     };
     errorCodes: {
         409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+        429: readonly (typeof ChatErrorCode.RATE_LIMITED)[];
     };
 }>;
 //# sourceMappingURL=types.d.ts.map

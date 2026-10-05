@@ -1,3 +1,5 @@
+import { OrderErrorCode } from '@arthome/core';
+
 import {
   PaymentHandoffAnswerSchema,
   SetSubscriptionPlanBodySchema,
@@ -35,6 +37,7 @@ export const setSubscriptionPlan: SetSubscriptionPlanRoute = subscription.action
       content: { 'application/json': { schema: PaymentHandoffAnswerSchema } },
     },
   },
+  errors: [OrderErrorCode.PAYMENT_DECLINED, OrderErrorCode.PLAN_UNAVAILABLE],
 });
 
 export const cancelSubscription: CancelSubscriptionRoute = subscription.action('cancel', {
