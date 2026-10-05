@@ -1,15 +1,16 @@
 import type { Access, IdentifiedAccess, Identity, PublicAccess, Requirement } from './access.js';
-import type { GroupedByStatus, CodesOf, ErrorCodesIn, ErrorList, ErrorModel, ErrorResponse, ErrorsInput } from './errors.js';
-import type { Parameter, RequestBody, Response, Route, RouteDefinition, SecurityRequirement } from './index.js';
+import type { GroupedByStatus, CodesOf, ErrorCodesIn, ErrorList, ErrorModel, ErrorResponse } from './errors.js';
+import type { Parameter, RequestBody, Response, Route, RouteDefinition } from './index.js';
 import type { CachePolicy } from './policy.js';
 import type { Resource, ResourceConventions, ResourceOptions, SingleOptions } from './resource.js';
 type HeaderParameters = readonly (Parameter & {
     readonly in: 'header';
 })[];
 type Responses = Readonly<Record<string, Response>>;
-/** What a builder's `defineRoute` takes: a route without its version, which the builder holds. */
-export type BuiltRouteDefinition<Allowed extends string = string> = Omit<RouteDefinition, 'version'> & {
-    readonly errors?: ErrorsInput<Allowed> | ErrorList<Allowed>;
+/** What a builder's `defineRoute` takes: a route without its version and its security, which the builder holds and derives. */
+export type BuiltRouteDefinition<Allowed extends string = string> = Omit<RouteDefinition, 'version' | 'security'> & {
+    readonly errors?: ErrorList<Allowed>;
+    readonly security?: never;
 };
 type PathParam = Parameter & {
     readonly in: 'path';
@@ -40,9 +41,9 @@ type OwnBody<D> = D extends {
 } ? {
     readonly requestBody: B;
 } : unknown;
-/** The error responses a set of `errors` declarations makes, over those already held. */
+/** The error responses a list of codes, or the same codes grouped by status, makes over those already held. */
 export type MergedErrors<E extends Responses, R> = R extends readonly (infer C extends string)[] ? MergedErrors<E, GroupedByStatus<C>> : Omit<E, keyof R> & {
-    readonly [S in keyof R]: R[S] extends readonly (infer C extends string)[] ? ErrorResponse<C | (S extends keyof E ? CodesOf<E[S]> : never)> : R[S];
+    readonly [S in keyof R]: R[S] extends readonly (infer C extends string)[] ? ErrorResponse<C | (S extends keyof E ? CodesOf<E[S]> : never)> : never;
 };
 type OwnErrors<D> = D extends {
     readonly errors: infer R;
@@ -91,18 +92,18 @@ type AccessOf<X> = X extends Access ? {
  * Settings shared by the routes of a group, accumulated one call at a time. Every call returns a
  * NEW builder and the types carry what was set, so `defineRoute` is inferred in full: the
  * builder's headers follow a route's own parameters and its errors sit under the route's
- * responses, and the route's own `tags` and `security` replace the builder's.
+ * responses, and the route's own `tags` replace the builder's. A route is defined only once the
+ * builder has its access, `.identity(...)` or `.public()`, from which its security is derived.
  *
- * Errors cumulate in three levels, merged per status: a response the api documents once
- * (`.errors({ 400: BadRequestResponse })`), the convention errors a resource adds, and the codes a
- * route declares (`errors: { 409: ['date.prices_locked'] }`), typed from the code registry.
+ * Errors cumulate in three levels, merged per status: the codes the group answers
+ * (`.errors([ApiErrorCode.FORBIDDEN])`), the convention errors a resource adds, and the codes a
+ * route declares (`errors: [CatalogErrorCode.PRICES_LOCKED]`), typed from the code registry.
  */
 export interface RouteBuilder<V extends number | undefined, P extends readonly Parameter[], E extends Responses, A extends string = string, K extends ResourceConventions | undefined = undefined, X extends Access | undefined = undefined, Z extends Scope = RootScope> {
     version<const N extends number>(version: N): RouteBuilder<N, P, E, A, K, X, Z>;
     tags(...tags: readonly string[]): RouteBuilder<V, P, E, A, K, X, Z>;
     headers<const H extends HeaderParameters>(...headers: H): RouteBuilder<V, readonly [...P, ...H], E, A, K, X, Z>;
-    errors<const R extends ErrorsInput<A> | ErrorList<A>>(errors: R): RouteBuilder<V, P, MergedErrors<E, R> & Responses, A, K, X, Z>;
-    security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E, A, K, X, Z>;
+    errors<const R extends ErrorList<A>>(errors: R): RouteBuilder<V, P, MergedErrors<E, R> & Responses, A, K, X, Z>;
     conventions<const C extends ResourceConventions>(conventions: C): RouteBuilder<V, P, E, A, C, X, Z>;
     /** Every route requires this identity unless it says otherwise; its security is derived from it. */
     identity<const I extends Identity>(identity: I, options?: {
@@ -125,7 +126,7 @@ export interface RouteBuilder<V extends number | undefined, P extends readonly P
     cache(policy: CachePolicy): RouteBuilder<V, P, E, A, K, X, Z>;
     /** The ceiling of a request body, in bytes. */
     bodyLimit(bytes: number): RouteBuilder<V, P, E, A, K, X, Z>;
-    defineRoute<const D extends BuiltRouteDefinition<A>>(this: RouteBuilder<number, P, E, A, K, X, Z>, definition: D): BuiltRoute<NonNullable<V>, P, E, D, X, Z>;
+    defineRoute<const D extends BuiltRouteDefinition<A>>(this: RouteBuilder<number, P, E, A, K, NonNullable<X>, Z>, definition: D): BuiltRoute<NonNullable<V>, P, E, D, X, Z>;
     /**
      * A prefix and the path parameters it declares, once: everything built from the result sits under
      * it. The compiler checks that every `{placeholder}` of the template has its parameter. What the
@@ -134,11 +135,11 @@ export interface RouteBuilder<V extends number | undefined, P extends readonly P
      */
     path<const T extends string, const Ps extends readonly PathParam[]>(template: T & CheckedTemplate<T, Ps>, ...params: Ps): RouteBuilder<V, P, E, A, K, X, ScopeOf<Z, T, Ps>>;
     /** A collection: several records, each with its id in the URL. */
-    resource<const Name extends string, const Id extends PathParam, const Parents extends readonly PathParam[] = readonly [], const Owner extends 'caller' | undefined = undefined>(this: RouteBuilder<number, P, E, A, K, X, Z>, name: Name, options: ResourceOptions<Id, Parents, Owner>): Resource<ContextOf<V, P, E, A, K, X, Z, Name, Id, Parents, Owner>>;
-    resource<const Name extends string, const Id extends PathParam, const Parents extends readonly PathParam[], const Owner extends 'caller' | undefined, R>(this: RouteBuilder<number, P, E, A, K, X, Z>, name: Name, options: ResourceOptions<Id, Parents, Owner>, closure: (resource: Resource<ContextOf<V, P, E, A, K, X, Z, Name, Id, Parents, Owner>>) => R): R;
+    resource<const Name extends string, const Id extends PathParam, const Parents extends readonly PathParam[] = readonly [], const Owner extends 'caller' | undefined = undefined>(this: RouteBuilder<number, P, E, A, K, NonNullable<X>, Z>, name: Name, options: ResourceOptions<Id, Parents, Owner>): Resource<ContextOf<V, P, E, A, K, X, Z, Name, Id, Parents, Owner>>;
+    resource<const Name extends string, const Id extends PathParam, const Parents extends readonly PathParam[], const Owner extends 'caller' | undefined, R>(this: RouteBuilder<number, P, E, A, K, NonNullable<X>, Z>, name: Name, options: ResourceOptions<Id, Parents, Owner>, closure: (resource: Resource<ContextOf<V, P, E, A, K, X, Z, Name, Id, Parents, Owner>>) => R): R;
     /** What exists once in its context, so its URL has no id: my preferences, a channel's settings. */
-    single<const Name extends string, const Parents extends readonly PathParam[] = readonly [], const Owner extends 'caller' | undefined = undefined>(this: RouteBuilder<number, P, E, A, K, X, Z>, name: Name, options?: SingleOptions<Parents, Owner>): Resource<ContextOf<V, P, E, A, K, X, Z, Name, undefined, Parents, Owner>>;
-    single<const Name extends string, const Parents extends readonly PathParam[], const Owner extends 'caller' | undefined, R>(this: RouteBuilder<number, P, E, A, K, X, Z>, name: Name, options: SingleOptions<Parents, Owner> | undefined, closure: (single: Resource<ContextOf<V, P, E, A, K, X, Z, Name, undefined, Parents, Owner>>) => R): R;
+    single<const Name extends string, const Parents extends readonly PathParam[] = readonly [], const Owner extends 'caller' | undefined = undefined>(this: RouteBuilder<number, P, E, A, K, NonNullable<X>, Z>, name: Name, options?: SingleOptions<Parents, Owner>): Resource<ContextOf<V, P, E, A, K, X, Z, Name, undefined, Parents, Owner>>;
+    single<const Name extends string, const Parents extends readonly PathParam[], const Owner extends 'caller' | undefined, R>(this: RouteBuilder<number, P, E, A, K, NonNullable<X>, Z>, name: Name, options: SingleOptions<Parents, Owner> | undefined, closure: (single: Resource<ContextOf<V, P, E, A, K, X, Z, Name, undefined, Parents, Owner>>) => R): R;
 }
 interface ScopeOf<Z extends Scope, T extends string, Ps extends readonly PathParam[]> {
     readonly prefix: `${Z['prefix']}/${T}`;
@@ -157,11 +158,8 @@ interface ContextOf<V, P extends readonly Parameter[], E extends Responses, A ex
     readonly parents: Parents;
     readonly owner: Owner;
 }
-/**
- * The empty builder: `routeBuilder(model).version(1).tags(...).headers(...).errors(...)`. The model
- * is the api's error vocabulary; without one, only responses written whole can be declared.
- */
-export declare function routeBuilder<A extends string = string>(model?: ErrorModel<A>): RouteBuilder<undefined, readonly [], Record<never, never>, A>;
+/** The empty builder of an api, given its error vocabulary: `routeBuilder(model).version(1).identity(...)`. */
+export declare function routeBuilder<A extends string = string>(model: ErrorModel<A>): RouteBuilder<undefined, readonly [], Record<never, never>, A>;
 /** The resource a builder makes for `name`, for an annotation: `ResourceOf<typeof studioV1, 'incidents', typeof IncidentIdParameter>`. */
 export type ResourceOf<B, Name extends string, Id extends PathParam | undefined, Parents extends readonly PathParam[] = readonly [], Owner extends 'caller' | undefined = undefined> = B extends RouteBuilder<infer V extends number, infer P, infer E, infer A, infer K extends ResourceConventions, infer X, infer Z> ? Resource<ContextOf<V, P, E, A, K, X, Z, Name, Id, Parents, Owner>> : never;
 export {};

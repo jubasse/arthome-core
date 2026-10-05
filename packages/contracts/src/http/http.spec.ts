@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
+import { ApiErrorCode } from '@arthome/core';
+
 import {
   accessorOf,
   defineApi,
+  defineErrorModel,
   defineRoute,
   headersSchemaOf,
   paramsSchemaOf,
@@ -133,11 +136,19 @@ describe('routeBuilder', () => {
     required: true,
     schema: z.string(),
   } as const;
-  const refused = { description: 'Refused.' } as const;
-  const base = routeBuilder().version(1).tags('dates').headers(surface).errors({ 400: refused });
+  const model = defineErrorModel<string>({
+    standard: {},
+    envelopeOf: (code) => z.object({ error: z.object({ code: z.literal(code) }) }),
+  });
+  const base = routeBuilder(model)
+    .version(1)
+    .public()
+    .tags('dates')
+    .headers(surface)
+    .errors([ApiErrorCode.NOT_FOUND]);
 
   it('never changes the builder it is called on', () => {
-    const derived = base.tags('other').errors({ 404: { description: 'Missing.' } });
+    const derived = base.tags('other').errors([ApiErrorCode.FORBIDDEN]);
 
     const kept = base.defineRoute({
       method: 'get',
@@ -152,9 +163,9 @@ describe('routeBuilder', () => {
       responses: { 200: { description: 'Dates.' } },
     });
 
-    expect(Object.keys(kept.responses)).toEqual(['200', '400']);
+    expect(Object.keys(kept.responses)).toEqual(['200', '404', '500']);
     expect(kept.tags).toEqual(['dates']);
-    expect(Object.keys(changed.responses)).toEqual(['200', '400', '404']);
+    expect(Object.keys(changed.responses)).toEqual(['200', '403', '404', '500']);
     expect(changed.tags).toEqual(['other']);
   });
 
@@ -179,7 +190,7 @@ describe('routeBuilder', () => {
   });
 
   it('refuses a route before a version is set', () => {
-    const unversioned = routeBuilder() as unknown as typeof base;
+    const unversioned = routeBuilder(model).public() as unknown as typeof base;
 
     expect(() =>
       unversioned.defineRoute({

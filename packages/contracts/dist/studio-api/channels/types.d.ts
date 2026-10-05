@@ -6,7 +6,7 @@ import type { Deleted, ExpectedVersionQuery, IdentifiedAccess, ItemResponse, Jso
 import type { ChannelMemberSchema } from '../../studio-access/index.js';
 import type { AudienceMemberSchema, JournalEntrySchema, ModerationItemSchema } from '../../studio-desk/index.js';
 import type { BankChangeRequestSchema, DashboardScreenSchema, ExportJobSchema } from '../../studio-money/index.js';
-import type { ChannelIdParameter, CursorParameter, IdempotencyKeyParameter, IfRightsVersionParameter, LimitParameter, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter, operator, studioConventions } from '../components.js';
+import type { ChannelIdParameter, CursorParameter, IdempotencyKeyParameter, IfRightsVersionParameter, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter, operator, studioConventions } from '../components.js';
 import type { AddBannedWordBodySchema, AgendaListSchema, AudienceMemberIdParameter, AudienceSanctionParameter, AudienceSearch, BannedWordAdditionSchema, BannedWordParameter, ChangeMemberRolesBodySchema, ChannelDefaultsSchema, ChannelDeletionAnswerSchema, ChannelIdentitySchema, ChannelMemberPageSchema, ChannelReplaySchema, ChannelReplayStateParameter, ChannelSettingsSchema, ChannelStreamSettingsSchema, ChannelTicketingSchema, CloseReconciliationPeriodBodySchema, CreateDateDraftBodySchema, DeleteChannelBodySchema, EventStatesParameter, EventsWindowParameter, InviteMemberBodySchema, JournalDateParameter, JournalNatureParameter, MemberRoleParameter, MerchItemIdParameter, ModerationQueueFilterParameter, OwnershipTransferSchema, PayoutPageSchema, PayoutStateParameter, PersonIdParameter, PresentOnDateParameter, ReconciliationClosureSchema, ReconciliationPeriodIdParameter, RequestBankChangeBodySchema, RequestChannelExportBodySchema, SanctionAudienceMemberBodySchema, StatsAnswerSchema, StatsPeriodPresetParameter, StatsShowParameter, StatsTabParameter, TransferChannelOwnershipBodySchema, UpsertMerchItemBodySchema } from './schemas.js';
 export type ListChannelReplaysRoute = Route<{
     method: 'get';
@@ -522,7 +522,7 @@ export type ListModerationQueueRoute = Route<{
     parameters: readonly [
         typeof ChannelIdParameter,
         typeof CursorParameter,
-        typeof LimitParameter,
+        QueryParameter<'limit', z.ZodDefault<z.ZodInt>>,
         typeof JournalDateParameter,
         typeof ModerationQueueFilterParameter,
         typeof AudienceSearch,

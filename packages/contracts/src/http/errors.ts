@@ -96,14 +96,6 @@ export type ErrorCodesIn<R> = {
   ]: readonly CodesInResponse<R[S]>[];
 };
 
-/**
- * What a group declares where a response must be written whole (a foreign error format), keyed by
- * status. The codes under a status are the older form: prefer an `ErrorList`.
- */
-export type ErrorsInput<Allowed extends string> = Readonly<
-  Partial<Record<ErrorStatus, Response | readonly Allowed[]>>
->;
-
 /** A list of codes grouped by the status each is answered with. */
 export function groupByStatus(codes: readonly string[]): Record<string, readonly string[]> {
   const out: Record<string, string[]> = {};
@@ -175,17 +167,15 @@ export function codedEnvelopesIn(schema: z.ZodType): readonly (readonly [string,
  * codes and the added ones: one named envelope per code, and its example by reference.
  */
 export function errorResponseFor(
-  model: ErrorModel<string> | undefined,
+  model: ErrorModel<string>,
   status: number,
   codes: readonly string[],
   base: Response | undefined,
 ): Response {
-  const standard = model?.standard[status as ErrorStatus];
+  const standard = model.standard[status as ErrorStatus];
   const answering = base ?? standard?.response;
   const known = standard?.codes ?? [];
   if (answering !== undefined && codes.every((code) => known.includes(code))) return answering;
-  if (model === undefined)
-    throw new Error(`errors: status ${String(status)} names codes with no error model.`);
   const all = unique([...known, ...codes]);
   const schemas = all.map((code) => codedEnvelope(model, code));
   const [first, ...rest] = schemas;

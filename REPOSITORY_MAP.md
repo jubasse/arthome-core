@@ -80,7 +80,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 182 exported names.
+Declarations: `dist/http/index.d.ts` — 181 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
@@ -94,7 +94,7 @@ Declarations: `dist/http/index.d.ts` — 182 exported names.
 - `BATCH_BODY_LIMIT` (const) — `BATCH_BODY_LIMIT = 2097152` — 2 MiB: the ceiling of a batched read.
 - `BatchRoute` (type)
 - `BuiltRoute` (type) — The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors.
-- `BuiltRouteDefinition` (type) — What a builder's 'defineRoute' takes: a route without its version, which the builder holds.
+- `BuiltRouteDefinition` (type) — What a builder's 'defineRoute' takes: a route without its version and its security, which the builder holds and derives.
 - `CACHE_CONTROL_HEADER` (const) — `CACHE_CONTROL_HEADER: Header`
 - `CacheOptions` (interface)
 - `CachePolicy` (interface)
@@ -129,7 +129,6 @@ Declarations: `dist/http/index.d.ts` — 182 exported names.
 - `ErrorResponse` (type) — `type ErrorResponse<C extends string> = JsonResponse<z.ZodType<ErrorBody<C>>> & CodedResponse<C>;` — An error response whose body is one of the envelopes of 'C'.
 - `ErrorStatus` (type) — `type ErrorStatus = 400 | 401 | 402 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;`
 - `ErrorStatusMap` (interface) — The status of each code, as a type, so a route's codes are grouped by status at compile time.
-- `ErrorsInput` (type) — `type ErrorsInput<Allowed extends string> = Readonly<Partial<Record<ErrorStatus, Response | readonly Allowed[]>>>;` — What a group declares where a response must be written whole (a foreign error format), keyed by status.
 - `ExpectedVersionQuery` (type) — `type ExpectedVersionQuery = QueryParameter<'expectedVersion', z.ZodType, true>;`
 - `Extensions` (type) — `type Extensions = Readonly<Record<'x-${string}', unknown>>;` — OpenAPI's specification extensions, carried into the document verbatim.
 - `FindAllRoute` (type)
@@ -150,7 +149,7 @@ Declarations: `dist/http/index.d.ts` — 182 exported names.
 - `JsonResponse` (interface) — The annotation of a response with a JSON body.
 - `MediaType` (interface)
 - `MemberDocs` (type) — What a member says beyond the convention: prose, metadata, extra parameters, responses and codes.
-- `MergedErrors` (type) — The error responses a set of 'errors' declarations makes, over those already held.
+- `MergedErrors` (type) — The error responses a list of codes, or the same codes grouped by status, makes over those already held.
 - `NATURE_BY_STATUS` (const) — `NATURE_BY_STATUS: Readonly<Record<ErrorStatus, FailureNature>>` — transport.md §5.5: a 4xx is refused, except 429; a 5xx is unavailable.
 - `NO_STORE_HEADER` (const) — `NO_STORE_HEADER: Header` — On an answer carrying a 'sensitive' field: kept out of every cache, and out of the app snapshot.
 - `PageResponse` (type) — `type PageResponse<K, S extends z.ZodType> = JsonResponse<z.ZodType<EnvelopeOf<K> & { readonly items: readonly z.output<S>[]; readonly page: unknown; }>>;` — The answer of a list: the api's envelope, the records under 'items' and the page ('transport.md' §5.5).
@@ -230,7 +229,7 @@ Declarations: `dist/http/index.d.ts` — 182 exported names.
 - `errorComponentNameOf` (function) — `function errorComponentNameOf(code: string): string;` — A code's envelope and example as the document names them: 'state.conflict' is 'StateConflictError'.
 - `errorExampleOf` (function) — `function errorExampleOf(code: ErrorCode): unknown;` — The envelope an example of 'code' shows: its params and its nature from the registry.
 - `errorResponse` (function) — A shared error response: its description, the api's envelope, and an example written once per code from the registry.
-- `errorResponseFor` (function) — `function errorResponseFor(model: ErrorModel<string> | undefined, status: number, codes: readonly string[], base: Response | undefined): Response;` — The response for a status.
+- `errorResponseFor` (function) — `function errorResponseFor(model: ErrorModel<string>, status: number, codes: readonly string[], base: Response | undefined): Response;` — The response for a status.
 - `exampleOf` (function) — `function exampleOf<C extends ErrorCode>(code: C): ErrorParamsOf<C>;`
 - `groupByStatus` (function) — `function groupByStatus(codes: readonly string[]): Record<string, readonly string[]>;` — A list of codes grouped by the status each is answered with.
 - `headersSchemaOf` (function) — `function headersSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteHeaders<R>, unknown>;` — The declared headers, under Node's lowercase names; every other header passes through.
@@ -249,7 +248,7 @@ Declarations: `dist/http/index.d.ts` — 182 exported names.
 - `restricted` (function) — `function restricted<S extends z.ZodType, const Right extends string>(schema: S, right: Right, meta?: Readonly<Record<string, unknown>>): z.ZodOptional<S>;` — A field present only for a caller who holds 'right': optional in the type and in the document, absent from the answer otherwise, never pres…
 - `restrictedFieldsOf` (function) — `function restrictedFieldsOf(schema: z.ZodType): readonly RestrictedField[];` — Each restricted field with the right that unlocks it.
 - `roles` (function) — `function roles<const Allowed extends string>(...allowed: readonly Allowed[]): RolesRequirement<Allowed>;`
-- `routeBuilder` (function) — `function routeBuilder<A extends string = string>(model?: ErrorModel<A>): RouteBuilder<undefined, readonly [], Record<never, never>, A>;` — The empty builder: 'routeBuilder(model).version(1).tags(...).headers(...).errors(...)'.
+- `routeBuilder` (function) — `function routeBuilder<A extends string = string>(model: ErrorModel<A>): RouteBuilder<undefined, readonly [], Record<never, never>, A>;` — The empty builder of an api, given its error vocabulary: 'routeBuilder(model).version(1).identity(...)'.
 - `searchText` (function) — `function searchText(options?: SearchTextOptions): QueryParameter<'q', z.ZodString>;` — The free-text 'q', searched server-side.
 - `sensitive` (function) — `function sensitive<S extends z.ZodType>(schema: S): S;` — A password, a token, a stream key: 'format: password' in the document, redacted from logs, never cached.
 - `sensitivePathsOf` (function) — `function sensitivePathsOf(schema: z.ZodType): readonly string[];` — The dotted paths of the sensitive fields: 'reauthToken', 'data.streamKey', 'items[].secret'.

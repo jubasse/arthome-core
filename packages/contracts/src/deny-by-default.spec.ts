@@ -5,30 +5,16 @@ import { strippingBodiesOf } from './http/index.js';
 import { storefrontApi } from './storefront-api/index.js';
 import { studioApi } from './studio-api/index.js';
 
-/**
- * The routes not yet declared through an identity (`.identity(...)` or `.public()`): deny by default
- * holds only when this list is empty. A route outside it must declare its access, and a route in it
- * that now does must leave it, so the list only shrinks. The fan-out of the model ends with both
- * lists empty.
- */
-const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [];
-
-const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [];
-
 describe.each([
-  ['storefront', storefrontApi, STOREFRONT_NOT_YET_OPTED_IN],
-  ['studio', studioApi, STUDIO_NOT_YET_OPTED_IN],
-] as const)('deny by default, %s', (_name, api: Api, pending: readonly string[]) => {
-  const lacking = Object.values(api.routes)
-    .filter((route) => route.access === undefined)
-    .map((route) => route.operationId);
+  ['storefront', storefrontApi],
+  ['studio', studioApi],
+] as const)('deny by default, %s', (_name, api: Api) => {
+  it('has every route declare its access, a plain defineRoute included', () => {
+    const lacking = Object.values(api.routes)
+      .filter((route) => route.access === undefined)
+      .map((route) => route.operationId);
 
-  it('has every route declare its access, but those still to be converted', () => {
-    expect(lacking.filter((id) => !pending.includes(id))).toEqual([]);
-  });
-
-  it('keeps no converted route in the list of those still to be converted', () => {
-    expect(pending.filter((id) => !lacking.includes(id))).toEqual([]);
+    expect(lacking).toEqual([]);
   });
 });
 

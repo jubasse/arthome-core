@@ -4,17 +4,6 @@ import type { Api, Route } from './http/index.js';
 import { storefrontApi } from './storefront-api/index.js';
 import { studioApi } from './studio-api/index.js';
 
-/**
- * The routes that still carry what only the document reads: an operation description, a doc-only
- * `x-arthome-*` key, or an example written in the route instead of registered. A converted module
- * carries none of it (its `docs.ts` and `examples.ts` do), so a route outside these lists must stay
- * clean, and a route in them that is now clean must leave them: the lists only shrink, and the
- * fan-out ends with both empty.
- */
-const STOREFRONT_STILL_INLINE: readonly string[] = [];
-
-const STUDIO_STILL_INLINE: readonly string[] = [];
-
 const DOC_ONLY_KEYS = [
   'x-arthome-maturity',
   'x-arthome-upstream',
@@ -39,12 +28,12 @@ function writesAnExample(route: Route, shared: ReadonlySet<unknown>): boolean {
   );
 }
 
+/** What only the document reads is registered in a module's `docs.ts` and `examples.ts`, never in a route. */
 describe.each([
-  ['storefront', storefrontApi, STOREFRONT_STILL_INLINE],
-  ['studio', studioApi, STUDIO_STILL_INLINE],
-] as const)(
-  'docs and examples out of the routes, %s',
-  (_name, api: Api, pending: readonly string[]) => {
+  ['storefront', storefrontApi],
+  ['studio', studioApi],
+] as const)('docs and examples out of the routes, %s', (_name, api: Api) => {
+  it('has no route carry a description, a doc-only x-arthome-* or an example itself', () => {
     const shared = new Set<unknown>(Object.values(api.components.responses ?? {}));
     const carrying = Object.values(api.routes)
       .filter(
@@ -55,12 +44,6 @@ describe.each([
       )
       .map((route) => route.operationId);
 
-    it('has no route carry its docs or examples itself, but those still to be converted', () => {
-      expect(carrying.filter((id) => !pending.includes(id))).toEqual([]);
-    });
-
-    it('keeps no converted route in the list of those still to be converted', () => {
-      expect(pending.filter((id) => !carrying.includes(id))).toEqual([]);
-    });
-  },
-);
+    expect(carrying).toEqual([]);
+  });
+});

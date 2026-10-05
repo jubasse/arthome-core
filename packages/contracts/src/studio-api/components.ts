@@ -5,7 +5,6 @@ import type { ErrorCode } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import {
   errorParamsSchemaOf,
-  InstantOut,
   int64,
   VOCABULARY_SOURCE_LOCAL,
   vocabularyIn,
@@ -186,19 +185,6 @@ export const CursorParameter: QueryParameter<'cursor', z.ZodString> = {
   description:
     '**The only two exceptions to "page + total"**: the moderation queue and the live chat.\nOpaque Base64 cursor on `(created_at, id)`, valid 24 h, `410 api.cursor_too_old` beyond.\n',
   schema: z.string(),
-};
-
-export const LimitParameter: QueryParameter<'limit', z.ZodDefault<z.ZodInt>> = {
-  name: 'limit',
-  in: 'query',
-  required: false,
-  schema: z.int().min(1).max(200).default(50),
-};
-
-export const ServedAtHeader: Header = {
-  description:
-    "The server instant of this response. Every duty countdown refers to it, never to the workstation's clock.",
-  schema: InstantOut,
 };
 
 export const RightsVersionHeader: Header = {

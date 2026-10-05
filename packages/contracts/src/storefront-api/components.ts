@@ -35,7 +35,6 @@ import type {
   Response,
   ResourceConventions,
   RouteBuilder,
-  SecurityRequirement,
   CodedResponse,
 } from '../http/index.js';
 import {
@@ -66,19 +65,6 @@ const STOREFRONT_TAGS = [
   'pairing',
   'account',
 ] as const;
-
-/**
- * **Public read.** A complete absence of authentication is a NOMINAL case, not an error: this
- * read is the indexable face of the product, and a search engine's crawler has neither cookie,
- * nor bearer token, nor any way of minting one. Guest mode takes the same path. See "Public read
- * and identified read" at the top of the document.
- */
-export const PublicReadSecurity: readonly SecurityRequirement[] = [
-  {},
-  { sessionCookie: [] },
-  { bearerToken: [] },
-  { deviceToken: [] },
-];
 
 /** The tags this document groups its operations by. */
 export const StorefrontTag: AccessorOf<typeof STOREFRONT_TAGS> = accessorOf(STOREFRONT_TAGS);
@@ -238,14 +224,6 @@ export const RetryAfterMsHeader: Header = {
   schema: z.int().min(0).meta({ maximum: undefined }),
 };
 
-export const CacheControlPublicHeader: Header = {
-  description:
-    "Set by the BFF. **`public` only on an anonymous read** — the body is then identical for every\ncaller, hence shareable in a common cache and in Next's render cache. As soon as a session or\na bearer token accompanies the request, the body carries the per-viewer overlays and the\nheader becomes `private`: **serving a personalised body as `public` would be a leak, not an\noptimisation.**\n",
-  schema: z.string().meta({
-    examples: ['public, max-age=60'],
-  }),
-};
-
 const PUBLIC_READ_VARY: readonly string[] = [
   'Cookie',
   'Authorization',
@@ -260,12 +238,6 @@ export function publicRead(
 ): CachePolicy {
   return cache(freshness, { ...options, scope: 'public', vary: PUBLIC_READ_VARY });
 }
-
-export const VaryAuthHeader: Header = {
-  description:
-    "**`Cookie, Authorization, X-Arthome-Device-Token, X-Arthome-Surface`.** Without this `Vary`,\nan intermediate cache would serve an anonymous visitor someone else's personalised body. The\nfirst three separate public from identified; `X-Arthome-Surface` separates the chat ceilings\nand the label catalogue slices, which differ per surface.\n",
-  schema: z.string(),
-};
 
 /** `api.schema_invalid`'s envelope, so the document says what a refused field carries. */
 const SchemaInvalidEnvelopeSchema: z.ZodType<ErrorBody<typeof ApiErrorCode.SCHEMA_INVALID>> =

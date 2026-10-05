@@ -22,6 +22,7 @@ import type {
   ItemResponse,
   JsonRequestBody,
   PageResponse,
+  QueryParameter,
   ReauthProof,
   Route,
 } from '../../http/index.js';
@@ -34,7 +35,6 @@ import type {
   DateIdParameter,
   IdempotencyKeyParameter,
   IfRightsVersionParameter,
-  LimitParameter,
   SurfaceParameter,
   TraceparentParameter,
   operator,
@@ -509,7 +509,7 @@ export type ListStudioChatMessagesRoute = Route<{
   parameters: readonly [
     typeof DateIdParameter,
     typeof CursorParameter,
-    typeof LimitParameter,
+    QueryParameter<'limit', z.ZodDefault<z.ZodInt>>,
     typeof SinceSeqParameter,
     typeof SurfaceParameter,
     typeof TraceparentParameter,

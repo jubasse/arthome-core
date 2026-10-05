@@ -47,11 +47,6 @@ type CodesInResponse<R> = NamedCode<R>;
 export type ErrorCodesIn<R> = {
     readonly [S in keyof R as [CodesInResponse<R[S]>] extends [never] ? never : S]: readonly CodesInResponse<R[S]>[];
 };
-/**
- * What a group declares where a response must be written whole (a foreign error format), keyed by
- * status. The codes under a status are the older form: prefer an `ErrorList`.
- */
-export type ErrorsInput<Allowed extends string> = Readonly<Partial<Record<ErrorStatus, Response | readonly Allowed[]>>>;
 /** A list of codes grouped by the status each is answered with. */
 export declare function groupByStatus(codes: readonly string[]): Record<string, readonly string[]>;
 /**
@@ -80,7 +75,7 @@ export declare function codedEnvelopesIn(schema: z.ZodType): readonly (readonly 
  * is the api's own and is returned as it is; otherwise a response is built that lists the standard
  * codes and the added ones: one named envelope per code, and its example by reference.
  */
-export declare function errorResponseFor(model: ErrorModel<string> | undefined, status: number, codes: readonly string[], base: Response | undefined): Response;
+export declare function errorResponseFor(model: ErrorModel<string>, status: number, codes: readonly string[], base: Response | undefined): Response;
 /**
  * The errors every route of an api can answer whatever it declares: the framework's refusals, the
  * rate limit, the identity and the surface. They are the same envelope on every route, so no

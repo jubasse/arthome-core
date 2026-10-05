@@ -73,17 +73,16 @@ is part of `pnpm run verify`.
 ## Adding or changing an operation
 
 Every operation of both contracts is declared once, in `src/storefront-api/` or `src/studio-api/`:
-a module folder per URL block (`studio-api/dates/`, below) or, until it converts, one module per tag
-(`payouts.ts`), the shared parameters, headers and responses in
-`components.ts`, the api itself and its component names in `index.ts`, and the document's
-introduction (`info`, `servers`, `tags`, the security schemes) in `docs.ts`, which also gathers what
-each module documents (below).
+a module folder per URL block (`studio-api/dates/`, "Writing a module" below), the shared
+parameters, headers and responses in `components.ts`, the api itself and its component names in
+`index.ts`, and the document's introduction (`info`, `servers`, `tags`, the security schemes) in
+`docs.ts`, which also gathers what each module documents (below).
 `openapi/storefront.yaml` and `openapi/studio.yaml` are **generated** from those declarations (D-120),
 and committed for readers and tools.
 
-1. Edit the route in its module, through the group's builder (`pairingWrites.defineRoute({ ... })`:
-   method, path, parameters, body, responses, prose and `x-arthome-*` metadata), built from the schemas
-   of the subpaths above. A new operation is also listed under `routes` in the api's `index.ts`.
+1. Edit the route in its module's `routes.ts`, through the block's builder, built from the schemas
+   of the subpaths above; its prose goes in the module's `docs.ts`. A new operation is also listed
+   under `routes` in the api's `index.ts`.
 2. Regenerate: `pnpm run generate:openapi`. It builds the packages, then writes both documents.
 3. Commit the declaration **and** both documents. `pnpm run check:openapi-generated`, which `verify`
    runs, fails when a committed document is not byte for byte what the declarations generate, paths,
@@ -109,20 +108,19 @@ What only the document reads is registered per module, beside the routes:
 
 `openApiDocumentOf(api, docs)` reads both:
 
-- **What is registered wins** over what a route still carries, so a module converts without its
-  operations moving in the document; a test refuses an operation documented in both places.
+- **What is registered wins** over what a route carries itself, and a test refuses an operation
+  documented in both places.
 - **The maturity is derived** from the upstream: the regime of the owning service, the first one the
   operation calls (`maturityOf`, `MATURITY_BY_SERVICE`, `transport.md` §5.11). A module states
   `maturity` only where an operation differs, always with its `maturityReason` in one phrase, and the
   emitter refuses one that repeats the derived value; an operation that calls no service
-  (`realtime`) states it. Until a module converts, its stated maturities sit in the api's
-  `docs.ts`; `maturity.spec.ts` holds every operation to the rule.
+  (`realtime`) states it; `maturity.spec.ts` holds every operation to the rule.
 - **A media type's example** is its schema's registered example, or else the one derived from the
   record it wraps: a resource member's answer shows its item's registered example in the api's
-  envelope (`itemExample`, `pageExample`). An example a route still writes is kept when nothing is
-  registered.
+  envelope (`itemExample`, `pageExample`). An example a route writes itself is kept when nothing
+  is registered.
 - **Every registered example parses with its schema** (ADR §9.6, `examples-parse.spec.ts`), and so
-  does every example a route or a schema still writes itself.
+  does every example a route or a schema writes itself.
 
 `pnpm run measure:surface-bundle` prints what a surface ships for `createClient(api)`, minified and
 gzipped, part by part. Measured on 2026-10-05, before any module moved its docs: storefront 126.9 KB
@@ -136,9 +134,10 @@ without touching the others, and the generic types accumulate what was set, so a
 query, headers, body and responses stay fully inferred for the server binding and the typed client.
 
 ```ts
-export const storefrontV1 = routeBuilder().version(1);
+export const storefrontV1 = routeBuilder(storefrontErrors).version(1);
 
 const pairingRoutes = storefrontV1
+  .identity(viewerOrDevice)
   .tags(StorefrontTag.PAIRING)
   .headers(SurfaceParameter, TraceparentParameter);
 const pairingWrites = pairingRoutes.headers(IdempotencyKeyParameter);
@@ -150,10 +149,10 @@ export const createPairing: Route<{ method: 'post'; version: 1; path: '/pairings
 | Call | Sets | A route can override it |
 |---|---|---|
 | `.version(n)` | the API version, required before `defineRoute` | no |
+| `.identity(...)`, `.public()` | who may call, required before `defineRoute`, `resource` and `single`; the security is derived from it | no |
 | `.tags(...)` | the operation's tags | yes, with its own `tags` |
 | `.headers(...)` | header parameters, appended **after** the route's own `parameters` | no |
-| `.errors({ 400: ... })` | responses every route of the group answers | yes, a status the route writes wins |
-| `.security(...)` | the security requirements | yes, with its own `security` |
+| `.errors([...])` | the codes every route of the group answers, each with its status | it adds its own; a status it writes whole in `responses` wins |
 
 The explicit annotation on each exported route (`isolatedDeclarations` demands one) spells the
 merged type in full: the route's own parameters, then the builder's headers. A builder that
@@ -181,7 +180,8 @@ studioV1.identity(operator).requires(roles(MemberRole.PRODUCTION).on('channelId'
 ```
 
 - **The route's `security` is derived** from its identity and its method (a write by cookie adds
-  the CSRF token), so a route that also writes `security` by hand is refused when the module loads.
+  the CSRF token): a route that writes `security` by hand is a compile error, and refused when the
+  module loads.
 - **`requires(rule)`** takes rules in the order the server applies them after the identity. A rule is
   a declaration, a name with its parameters and its errors: `roles(...)` (with `.on('channelId')` for
   the path parameter it reads), `recentAuth()` (the proof is the body field `reauthToken`),
@@ -205,8 +205,9 @@ studioV1.identity(operator).requires(roles(MemberRole.PRODUCTION).on('channelId'
   `owner`, `internal`. `sensitive(schema)` and `restricted(schema, right)` mark fields, and
   `sensitivePathsOf` and `restrictedFieldsOf` say where.
 
-**What is derived.** Only a builder that declares an identity (or `.public()`) derives, so a route
-still on a bare builder is unchanged. Nothing the server can answer is undocumented:
+**What is derived.** A builder defines a route only once it has an identity or `.public()`:
+`defineRoute`, `resource` and `single` on a bare builder are compile errors, and throw when the module
+loads. So every route derives, and nothing the server can answer is undocumented:
 
 | The route declares | Added |
 |---|---|
@@ -219,7 +220,8 @@ still on a bare builder is unchanged. Nothing the server can answer is undocumen
 | a `cache` with an `etag` | `If-None-Match`, `ETag` and the `304` |
 | a response that carries a `sensitive` field | `Cache-Control: no-store` on it |
 
-A response the group or the route writes whole is kept over the derived one. The derived errors are
+A response the route writes whole in `responses`, or the identity's own (the CSRF refusal), is kept
+over the derived one. The derived errors are
 **not** in the route's annotation: the annotation lists the route's own statuses, and the server and
 the typed client read `route.responses` at run time. The codes the route declares are: its type
 carries them in `errorCodes`, grouped by status.
@@ -360,36 +362,33 @@ compile errors that name the operation. Measured on the 32 routes under a date, 
   a surface narrows on a code and reads its params typed. The full derived set is added rather than the subset a route
   implies, so a surface switches on a `401` or a `429` with types on any route, and the cost is one
   union per call. A status that is neither declared nor derived throws `UndeclaredStatusError`.
-- **Deny by default is a ratchet**: `deny-by-default.spec.ts` lists the routes not yet declared through
-  an identity or `.public()`; the list only shrinks, and the fan-out ends with it empty.
+- **Deny by default**: a builder defines no route without an identity or `.public()`, and
+  `deny-by-default.spec.ts` holds every route of both apis to an access, one made by the plain
+  `defineRoute` included.
 
-### Converting a module
+### Writing a module
 
-A module is the block of routes under one URL prefix, converted in one pass: `studio-api/dates/`
-holds everything under `/dates/{dateId}` and is the reference, so read it before starting. The
-routes keep their tags and their operation ids; they leave the tag modules they were declared in.
+A module is the block of routes under one URL prefix: `studio-api/dates/` holds everything under
+`/dates/{dateId}` and is the reference, so read it before writing one. A route under a prefix that
+has a module goes in that module.
 
 | File | Holds | Written by |
 |---|---|---|
 | `schemas.ts` | named schemas (`DateTechPaneSchema`), named parameters (`ChapterIdParameter`), local vocabularies, and the types `X` (`z.output`) and `XIn` (`z.input`, only where it differs) of each `XSchema` | hand; `pnpm run generate:contract-types` adds the explicit types |
 | `examples.ts` | one typed example per schema the module accepts or answers, and `export const datesExamples: ModuleExamples = [[XSchema, [x]], ...]` | hand |
-| `docs.ts` | `export const datesDocs: ModuleDocs = { operationId: { description, upstream, ... } }` | `node tools/route-docs.mjs <api> <operationId>...` prints the entries |
+| `docs.ts` | `export const datesDocs: ModuleDocs = { operationId: { description, upstream, ... } }` | hand |
 | `routes.ts` | the routes and nothing else | hand; the tool adds each annotation |
 | `types.ts` | each route's annotation, `GetDateSheetRoute` | `pnpm run generate:contract-types`, never edited; `check:contract-types` fails when stale |
 
 `routes.ts` never imports `examples.ts` or `docs.ts`: only the api's `docs.ts` does
 (`check:contract-docs`).
 
-1. **Docs.** `pnpm -r run build`, then `node tools/route-docs.mjs studio getDateSheet ...` and paste
-   its entries into `docs.ts`: the description, the upstream services, the idempotency exemption.
-   Move each stated maturity of these operations from the api's `docs.ts` into the module's, with its
-   reason; a maturity the route states itself is printed, and named on stderr when its owning service
-   gives another: give it a `maturityReason`, or drop it. A route's 4xx prose that the description does
-   not already say goes into the description.
-2. **Schemas.** Move every inline schema of the routes into `schemas.ts`, verbatim, so the document
-   does not move for nothing:
+1. **Docs.** In `docs.ts`, each operation's description, its upstream services (owning service
+   first) and, on a write that takes no key (`idempotent: false`), its `idempotencyExemption`; a
+   `maturity` only where it differs from its owning service's, with its `maturityReason`.
+2. **Schemas.** Every schema the routes take or answer is named in `schemas.ts`, never inline:
    - a request body is `<OperationId>BodySchema`; on `update`, `replace` and `subresource().replace()`
-     of a shared record, drop its `expectedVersion`, which the convention adds; on an `action`, keep it;
+     of a shared record, without `expectedVersion`, which the convention adds; on an `action`, with it;
    - the data of an answer has a domain name when it is a record (`DateCrewPaneSchema`), else the
      name of what happened (`CapacityTierOpeningSchema`); never redeclare what a subpath exports;
    - a path or query parameter is an exported `XParameter` with its explicit type;
@@ -399,8 +398,8 @@ routes keep their tags and their operation ids; they leave the tag modules they 
    - a field only some callers see is `restricted(schema, right, meta)`, its own meta given there;
    - a body carrying a re-authentication proof extends `ReauthProof`, and the route
      `requires: [recentAuth()]`.
-3. **Examples.** Move each inline example onto the schema it shows: a request's `example` onto its
-   body, the `data` of an answer's example onto the data's schema. Type it (`const x: DateTechPane`, or
+3. **Examples.** One example per schema the module accepts or answers, on the schema it shows: a
+   request's on its body, an answer's on the data's schema. Type it (`const x: DateTechPane`, or
    `z.output<typeof RunConsoleSchema>` for a subpath's schema) and register it once: the registry
    refuses a schema registered twice in one api. Write in the current vocabulary
    (`Surface.STUDIO_MOBILE`, never `'studio-mobile'`). Never write what is derived: the envelope
@@ -438,21 +437,20 @@ routes keep their tags and their operation ids; they leave the tag modules they 
    `responses` only where no member gives its shape (a field beside a page such as `unreadCount`, a
    list without a page, a POST on a collection that creates nothing), with a named schema and the
    reason in the commit.
-5. **Move them out.** Delete the routes from their old modules, then
-   `node tools/prune-unused.mjs <old modules>` drops what nothing uses any more. List the module's
-   routes in the api's `index.ts` by name, where they were (the document keeps its order), add the
-   module to `routes-listed.spec.ts`, its docs and examples to the api's `docs.ts` (`modules`,
-   `examples`), and move its `tools/enum-literals.allow.json` entries to `routes.ts`. A path segment
-   that spells a core vocabulary member (`'chat'`, `'crew'`, `'tickets'`) is written as it is:
-   `check-enums` skips the segment given to the builder, never an import of the vocabulary.
+5. **List them.** List the module's routes in the api's `index.ts` by name (the document keeps
+   that order), add the module to `routes-listed.spec.ts`, and its docs and examples to the api's
+   `docs.ts` (`modules`, `examples`). A path segment that spells a core vocabulary member
+   (`'chat'`, `'crew'`, `'tickets'`) is written as it is: `check-enums` skips the segment given to
+   the builder, never an import of the vocabulary.
    `deny-by-default.spec.ts` and `inline-docs.spec.ts` hold every route to an identity and to no
-   description, doc-only `x-arthome-*` or example of its own; their lists of exceptions are empty.
+   description, doc-only `x-arthome-*` or example of its own.
 6. **Generate and check.** `pnpm run generate:contract-types`, `pnpm run fix`, `pnpm -r run build`,
    `pnpm run generate:openapi`, `pnpm exec arthome-generate-map`, `pnpm run verify`.
-7. **Read what moved.** Each operation keeps its path, method, statuses and parameters. Examples,
-   the order of `required`, the coded error unions and what is derived (security, errors, headers)
-   may move until the first client ships (`transport.md` §5.11); the commit lists them per
-   operation. A change of wire shape (a field renamed, a page's envelope) is a ruling: ask first.
+7. **Read what moved.** A change to an existing operation keeps its path, method, statuses and
+   parameters unless it means to change them. Examples, the order of `required`, the coded error
+   unions and what is derived (security, errors, headers) may move until the first client ships
+   (`transport.md` §5.11); the commit lists them per operation. A change of wire shape (a field
+   renamed, a page's envelope) is a ruling: ask first.
 
 ```ts
 const dates = studioV1
@@ -470,10 +468,6 @@ export const rehearseRun: RehearseRunRoute = runDate.single('run').action('rehea
   errors: [CatalogErrorCode.TECHNICAL_CHECK_REQUIRED, DomainErrorCode.STATE_CONFLICT],
 });
 ```
-
-A route left in a tag module keeps its hand annotation until its module converts:
-`node tools/sync-route-annotations.mjs <module.ts>` rewrites the four members a scope changes
-(`method`, `path`, `parameters`, `access`).
 
 ### Versions
 

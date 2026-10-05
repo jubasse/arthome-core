@@ -9950,25 +9950,6 @@ components:
       schema:
         type: integer
         minimum: 0
-    CacheControlPublic:
-      description: |
-        Set by the BFF. **`public` only on an anonymous read** — the body is then identical for every
-        caller, hence shareable in a common cache and in Next's render cache. As soon as a session or
-        a bearer token accompanies the request, the body carries the per-viewer overlays and the
-        header becomes `private`: **serving a personalised body as `public` would be a leak, not an
-        optimisation.**
-      schema:
-        type: string
-        examples:
-        - public, max-age=60
-    VaryAuth:
-      description: |
-        **`Cookie, Authorization, X-Arthome-Device-Token, X-Arthome-Surface`.** Without this `Vary`,
-        an intermediate cache would serve an anonymous visitor someone else's personalised body. The
-        first three separate public from identified; `X-Arthome-Surface` separates the chat ceilings
-        and the label catalogue slices, which differ per surface.
-      schema:
-        type: string
   responses:
     BadRequest:
       description: Malformed request, or refused by shape validation.

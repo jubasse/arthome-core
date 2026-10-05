@@ -31,7 +31,10 @@ const SavedSearch = z.looseObject({ name: z.string(), query: z.string() });
 const Versioned = z.looseObject({ name: z.string(), version: z.number() });
 const Writable = z.looseObject({ name: z.string(), query: z.string().nullable().optional() });
 
-const searches = storefrontV1.tags('searches').resource('saved-searches', { id: savedSearchId });
+const searches = storefrontV1
+  .public()
+  .tags('searches')
+  .resource('saved-searches', { id: savedSearchId });
 const members = searches.crud({
   item: SavedSearch,
   create: { body: Writable },
@@ -117,7 +120,7 @@ describe('resource members', () => {
   });
 
   it('adds a domain code to a status and types the client union on it', () => {
-    const things = studioV1.resource('things', { id: savedSearchId });
+    const things = studioV1.public().resource('things', { id: savedSearchId });
     const publish = things.action('publish', {
       errors: [CatalogErrorCode.PRICES_LOCKED],
     });
@@ -170,7 +173,7 @@ describe('resource members', () => {
 
   it('lets a builder that already holds the idempotency key place it', () => {
     const key = storefrontConventions.writeParameters[0];
-    const held = storefrontV1.headers(key).resource('things', { id: savedSearchId });
+    const held = storefrontV1.public().headers(key).resource('things', { id: savedSearchId });
 
     const names = held.action('freeze', {}).parameters.map((parameter) => parameter.name);
 
@@ -179,7 +182,7 @@ describe('resource members', () => {
 });
 
 describe('owner: caller', () => {
-  const mine = storefrontV1.resource('devices', { id: savedSearchId, owner: 'caller' });
+  const mine = storefrontV1.public().resource('devices', { id: savedSearchId, owner: 'caller' });
 
   it('carries no version, no state conflict, and says whose data it is', () => {
     const update = mine.update({ item: Versioned, fields: Writable });
@@ -206,7 +209,7 @@ describe('owner: caller', () => {
 });
 
 describe('single', () => {
-  const preferences = storefrontV1.single('me/preferences', { owner: 'caller' });
+  const preferences = storefrontV1.public().single('me/preferences', { owner: 'caller' });
 
   it('has no id in its URL, and no 404 to find', () => {
     const find = preferences.find({ item: SavedSearch });
@@ -230,7 +233,7 @@ describe('single', () => {
 });
 
 describe('path', () => {
-  const channel = studioV1.path('channels/{channelId}', channelId);
+  const channel = studioV1.public().path('channels/{channelId}', channelId);
 
   it('puts its prefix and its path parameters on every route below it', () => {
     const members = channel.resource('members', { id: savedSearchId });
@@ -252,7 +255,7 @@ describe('path', () => {
   });
 
   it('nests as deep as the URL does, in closures that return their routes', () => {
-    const tree = studioV1.resource('channels', { id: channelId }, (c) => ({
+    const tree = studioV1.public().resource('channels', { id: channelId }, (c) => ({
       settings: c.single('settings', undefined, (s) => ({
         updateChannelSettings: s.update({
           operationId: 'updateChannelSettings',
@@ -297,7 +300,7 @@ describe('batch', () => {
 });
 
 describe('reads', () => {
-  const dates = studioV1.resource('dates', { id: savedSearchId });
+  const dates = studioV1.public().resource('dates', { id: savedSearchId });
   const Date = z.looseObject({ title: z.string() });
 
   it('pages a list the way the api serves it, and says so on the route', () => {
@@ -383,7 +386,7 @@ describe('reads', () => {
 describe('the client of a read with relations', () => {
   const Author = z.looseObject({ name: z.string() });
   const Book = z.looseObject({ title: z.string() });
-  const books = studioV1.resource('books', { id: savedSearchId });
+  const books = studioV1.public().resource('books', { id: savedSearchId });
   const find = books.find({ item: Book, expand: { author: Author } });
   const api = defineApi({
     openapi: '3.1.0',
