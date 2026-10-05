@@ -286,8 +286,9 @@ status in its type: `errors: [PRICE_STALE, SOLD_OUT]` gives `errorCodes: { 409: 
   only when it was asked for).
 - **`cache(Freshness.FIVE_MINUTES, { etag, scope, vary })`** is the freshness family of
   `transport.md` §5.9. `budgetMs`, `bodyLimit` and `degradable` are the other values the server reads.
-  A storefront read that serves an anonymous caller (`.optionalAuth()`) declares `publicRead(Freshness.X)`
-  (`storefront-api/components.ts`): `cache` with the `public` scope and the `Vary` of every credential and the surface.
+  A storefront read that serves an anonymous caller (`.optionalAuth()`) declares `publicRead(Freshness.X)`,
+  or `publicRead(Freshness.X, { etag: true })` (`storefront-api/components.ts`): `cache` with the
+  `public` scope and the `Vary` of every credential and the surface.
 - **`tagged('outcome', { succeeded, declined })`** (an exported one is annotated `TaggedSchema<'outcome', { succeeded: typeof Succeeded, declined: typeof Declined }>`) is a strict union for the server, a `oneOf` with its
   `discriminator` and its mapping for the document, and `parseTolerant` for a client that keeps a
   variant it does not know. **`accepted({ operation })`** is a `202` that names the operation to follow.

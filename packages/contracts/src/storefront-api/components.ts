@@ -254,8 +254,11 @@ const PUBLIC_READ_VARY: readonly string[] = [
 ];
 
 /** The freshness of a public read: `public` for an anonymous caller, varying on every credential and the surface. */
-export function publicRead(freshness: Freshness): CachePolicy {
-  return cache(freshness, { scope: 'public', vary: PUBLIC_READ_VARY });
+export function publicRead(
+  freshness: Freshness,
+  options: { readonly etag?: boolean } = {},
+): CachePolicy {
+  return cache(freshness, { ...options, scope: 'public', vary: PUBLIC_READ_VARY });
 }
 
 export const VaryAuthHeader: Header = {

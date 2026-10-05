@@ -30,11 +30,10 @@ import {
   StorefrontTag,
   SurfaceParameter,
   TraceparentParameter,
+  publicRead,
   storefrontV1,
   viewer,
 } from '../components.js';
-
-const PUBLIC_VARY = ['Cookie', 'Authorization', 'X-Arthome-Device-Token', 'X-Arthome-Surface'];
 
 const identified = storefrontV1.identity(viewer).headers(SurfaceParameter, TraceparentParameter);
 const anonymousAllowed = identified.optionalAuth();
@@ -51,7 +50,7 @@ export const getDateDetail: GetDateDetailRoute = publicDates.find({
   operationId: 'getDateDetail',
   summary: "A date's page — series, suggestions, shop, prices, in the same response.",
   degradable: ['viewerProgress'] as const,
-  cache: cache(Freshness.MINUTE, { etag: true, scope: 'public', vary: PUBLIC_VARY }),
+  cache: publicRead(Freshness.MINUTE, { etag: true }),
   item: DateDetailSchema,
   answer: 'The page.',
 });
@@ -61,7 +60,7 @@ export const refreshDateAvailability: RefreshDateAvailabilityRoute = publicComme
   .find({
     operationId: 'refreshDateAvailability',
     summary: 'Refreshes capacity and prices before showing a total.',
-    cache: cache(Freshness.FIFTEEN_SECONDS, { scope: 'public', vary: PUBLIC_VARY }),
+    cache: publicRead(Freshness.FIFTEEN_SECONDS),
     item: DateAvailabilitySchema,
     answer: 'Capacity and prices at the instant of serving.',
     errors: [ApiErrorCode.NOT_FOUND],
